@@ -117,11 +117,43 @@ await test('subscription perf', async (t) => {
 
   let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
-    writeUint32(q.buffer, i + 1, 4)
-    native.getQueryBuf(q.buffer, db.server.dbCtxExternal)
+  const p = []
+  let cnt = 0
+  for (let i = 0; i < 12; i++) {
+    // clientWorker()
+
+    p.push(
+      clientWorker(
+        t,
+        db,
+        async (client, { ctx }, { native, utils }) => {
+          // address: BigInt ctx = BigInt
+          const dbCtx = native.externalFromInt(ctx)
+
+          await client.schemaIsSet()
+          const q = client.query('user', 1)
+          const y = await q.get()
+          console.log(q.buffer, y)
+          client.flushTime = 11
+          for (let i = 0; i < 1e6; i++) {
+            utils.writeUint32(q.buffer, i + 1, 4)
+            native.getQueryBuf(q.buffer, dbCtx)
+          }
+          await client.drain()
+        },
+        { ctx: native.intFromExternal(db.server.dbCtxExternal) },
+      ),
+    )
+
+    // const address: BigInt = native.intFromExternal(db.dbCtxExternal)
+
+    // writeUint32(q.buffer, i + 1, 4)
+    // native.getQueryBuf(q.buffer, db.server.dbCtxExternal)
+    // db.server.getQueryBuf(q.buffer).then((v) => {
+    //   cnt++
+    // }))
   }
 
-  // await Promise.all(p)
-  console.log(Date.now() - d)
+  await Promise.all(p)
+  console.log('multicore', Date.now() - d)
 })

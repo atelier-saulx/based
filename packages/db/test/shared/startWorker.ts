@@ -5,15 +5,24 @@ import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import { DbClient } from '../../src/client/index.js'
 import { BasedDb } from '../../src/index.js'
+import native from '../../src/native.js'
+import * as utils from '@based/utils'
 
 const exists = async (path: string) => await fs.stat(path).catch((e) => false)
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
+type Native = typeof native
+type Utils = typeof utils
+
 export const clientWorker = async <T>(
   t: any,
   db: BasedDb,
-  fn: (client: DbClient, data?: T) => Promise<void>,
+  fn: (
+    client: DbClient,
+    data: T,
+    p: { native: Native; utils: Utils },
+  ) => Promise<void>,
   data?: T,
 ) => {
   const path = join(__dirname, '/tmp')
