@@ -6,7 +6,7 @@ const config = @import("config");
 const c = @import("../c.zig");
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
-const subs = @import("./subscriptionCtx.zig");
+const subs = @import("./subscription.zig");
 
 const rand = std.crypto.random;
 
