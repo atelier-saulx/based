@@ -216,13 +216,17 @@ await test('multiple functions', async (t) => {
 
   const multi = await db
     .query('vote')
-    // .count()
+    // .count() // This is still buggy
     .sum('NL')
+    .stddev('NO')
+    .max('PT')
+    .sum('PL')
+    .stddev('PT', 'NO')
     .sum('NO')
-    // .stddev('PT', 'NO')
     .max('NL')
+    .avg('NO')
     .min('NL')
-    // .groupBy('region')
+    .sum('NO')
     .get()
 
   console.log(multi.toObject())

@@ -28,23 +28,23 @@ inline fn execAgg(
         j += 2;
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
-
+        _ = resultPos; // MV: to remove
         if (aggType == aggregateTypes.AggType.COUNT) {
-            writeInt(u32, accumulatorField, resultPos, read(u32, accumulatorField, resultPos) + 1);
+            writeInt(u32, accumulatorField, accumulatorPos, read(u32, accumulatorField, accumulatorPos) + 1);
         } else if (aggType == aggregateTypes.AggType.MAX) {
             if (!hadAccumulated.*) {
-                writeInt(f64, accumulatorField, resultPos, microbufferToF64(propType, value, start));
+                writeInt(f64, accumulatorField, accumulatorPos, microbufferToF64(propType, value, start));
             } else {
-                writeInt(f64, accumulatorField, resultPos, @max(read(f64, accumulatorField, resultPos), microbufferToF64(propType, value, start)));
+                writeInt(f64, accumulatorField, accumulatorPos, @max(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)));
             }
         } else if (aggType == aggregateTypes.AggType.MIN) {
             if (!hadAccumulated.*) {
-                writeInt(f64, accumulatorField, resultPos, microbufferToF64(propType, value, start));
+                writeInt(f64, accumulatorField, accumulatorPos, microbufferToF64(propType, value, start));
             } else {
-                writeInt(f64, accumulatorField, resultPos, @min(read(f64, accumulatorField, resultPos), microbufferToF64(propType, value, start)));
+                writeInt(f64, accumulatorField, accumulatorPos, @min(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)));
             }
         } else if (aggType == aggregateTypes.AggType.SUM) {
-            writeInt(f64, accumulatorField, resultPos, read(f64, accumulatorField, resultPos) + microbufferToF64(propType, value, start));
+            writeInt(f64, accumulatorField, accumulatorPos, read(f64, accumulatorField, accumulatorPos) + microbufferToF64(propType, value, start));
         } else if (aggType == aggregateTypes.AggType.AVERAGE) {
             const val = microbufferToF64(propType, value, start);
             var count = read(u64, accumulatorField, accumulatorPos);
