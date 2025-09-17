@@ -1,4 +1,10 @@
-import { wait, writeUint16, writeUint64 } from '@based/utils'
+import {
+  readDoubleLE,
+  readUint64,
+  wait,
+  writeUint16,
+  writeUint64,
+} from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
@@ -66,6 +72,25 @@ await test('subscriptionIds', async (t) => {
   await clients[0].drain()
 
   await clients[1].update('user', id, { derp: 69 })
+
+  await wait(1e3)
+
+  const markedSubsR = native.getMarkedSubscriptions(server.dbCtxExternal)
+
+  if (markedSubsR) {
+    const markedSubs = new Uint8Array(markedSubsR)
+    console.info('->', subId, markedSubs)
+    const len = markedSubs.byteLength / 8
+    console.log({ len })
+    for (let i = 0; i < len; i++) {
+      console.log(' -> SUB ID MARKED!', readUint64(markedSubs, i * 8))
+    }
+  }
+
+  console.log(
+    'DERP -> shiuld be empty',
+    native.getMarkedSubscriptions(server.dbCtxExternal),
+  )
 
   const close2 = clients[0]
     .query('user', id)

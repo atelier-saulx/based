@@ -5,6 +5,7 @@ const types = @import("../types.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
+const subs = @import("../db/subscription.zig");
 
 pub const ModifyCtx = struct {
     field: u8,
@@ -19,6 +20,9 @@ pub const ModifyCtx = struct {
     db: *db.DbCtx,
     typeInfo: []u8,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
+    subTypes: ?*subs.TypeSubscriptionCtx,
+    subId: ?*subs.SingleId,
+    // subId id ?
 };
 
 pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {

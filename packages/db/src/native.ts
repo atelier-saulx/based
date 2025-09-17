@@ -20,6 +20,10 @@ const native = {
     return db.addIdSubscription(dbCtx, value)
   },
 
+  getMarkedSubscriptions: (dbCtx: any): ArrayBuffer | null => {
+    return db.getMarkedSubscriptions(dbCtx)
+  },
+
   getThreadId: (): BigInt => {
     return db.getThreadId()
   },

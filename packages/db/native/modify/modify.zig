@@ -52,7 +52,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .db = dbCtx,
         .typeInfo = typeInfo,
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
+        .subTypes = null,
+        .subId = null,
     };
+
     defer ctx.dirtyRanges.deinit();
 
     var offset: u32 = 0;
@@ -87,6 +90,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 }
             },
             types.ModOp.DELETE_NODE => {
+                // check for subs!
                 if (ctx.node) |node| {
                     db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
                     // no other side handled
@@ -95,6 +99,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i = i + 1;
             },
             types.ModOp.DELETE_TEXT_FIELD => {
+                // check for subs!
                 const lang: types.LangCode = @enumFromInt(operation[0]);
                 deleteTextLang(&ctx, lang);
                 i = i + 2;
@@ -119,10 +124,26 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             types.ModOp.SWITCH_NODE => {
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
+
+                // add id so you know what to check
                 if (ctx.node != null) {
                     // It would be even better if we'd mark it dirty only in the case
                     // something was actually changed.
                     Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+
+                    // std.debug.print("DERP id? {any} \n", .{ctx.id});
+
+                    if (ctx.subTypes) |subTypes| {
+                        // std.debug.print("DERP !id?2? ---> {any} {any} {any} \n", .{
+                        //     ctx.id,
+                        //     subTypes.ids.get(ctx.id),
+                        //     subTypes.ids.count(),
+                        // });
+
+                        ctx.subId = subTypes.ids.get(ctx.id);
+                    } else {
+                        ctx.subId = null;
+                    }
                 }
                 i = i + 5;
             },
@@ -132,6 +153,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
                 // store offset for this type
                 idOffset = Modify.getIdOffset(&ctx, ctx.typeId);
+
+                // test perf impact
+                ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
+                // } else {
+                //     ctx.subTypes = null;
+                // }
                 // RFE shouldn't we technically unset .id and .node now?
                 i = i + 3;
             },
@@ -142,21 +169,42 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
             types.ModOp.DELETE => {
+                // check for subs!
                 i += try deleteField(&ctx) + 1;
             },
             types.ModOp.DELETE_SORT_INDEX => {
                 i += try deleteFieldSortIndex(&ctx) + 1;
             },
             types.ModOp.CREATE_PROP => {
+                // check for subs! - bit shitty
                 i += try createField(&ctx, operation) + offset;
             },
             types.ModOp.UPDATE_PROP => {
+                // check for subs!
+
+                // std.debug.print("FLAP \n", .{});
                 i += try updateField(&ctx, operation) + offset;
             },
             types.ModOp.UPDATE_PARTIAL => {
+
+                // make this into a function
+                if (ctx.subId) |singleId| {
+                    if (singleId.fields.get(ctx.field)) |subIds| {
+                        std.debug.print("FLAP YESH! \n", .{});
+                        ctx.db.subscriptions.hasMarkedSubscriptions = true;
+                        var keyIter = subIds.keyIterator();
+                        while (keyIter.next()) |subId| {
+                            std.debug.print("FLAP YESH?! {any} \n", .{subId.*});
+
+                            try ctx.db.subscriptions.subscriptionsMarked.put(subId.*, undefined);
+                        }
+                    }
+                }
+                // check for subs!
                 i += try updatePartialField(&ctx, operation) + offset;
             },
             types.ModOp.INCREMENT, types.ModOp.DECREMENT => {
+                // check for subs!
                 i += try increment(&ctx, operation, op) + 1;
             },
             types.ModOp.EXPIRE => {
@@ -177,6 +225,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     assert(newDirtyRanges.len < dirtyRanges.len);
     _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     dirtyRanges[newDirtyRanges.len] = 0.0;
+
+    // return sub ids
 
     return null;
 }
