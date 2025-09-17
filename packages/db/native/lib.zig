@@ -15,7 +15,7 @@ const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
 const colvecTest = @import("./colvec.zig").colvec;
 const dbCtx = @import("./db/ctx.zig");
-const subscriptions = @import("./db/subscriptionCtx.zig");
+const subscriptions = @import("./db/subscription.zig");
 
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;

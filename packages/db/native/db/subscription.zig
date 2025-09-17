@@ -28,25 +28,33 @@ pub const Bitmap255 = struct {
 };
 
 // [type u16]
+//  subscriptions.*.types = subs.TypeSubMap.init(allocator);
+
+pub const Fields = std.AutoHashMap(u8, void);
+pub const SubIds = std.AutoHashMap(u64, void);
 
 // start / end
 pub const SingleId = struct {
     // specificMain: ?std.AutoHashMap(u16, u16),
     // specificMain? is this important at all for single ids in real scenarios
     // if not the bitmap technique is prob better scince the lookup is a lot faster porbably
-    fields: std.AutoHashMap(u8, void),
-    subIds: std.AutoHashMap(u64, void),
+    fields: Fields,
+    subIds: SubIds,
 };
 
+pub const IdsSubscriptions = std.AutoHashMap(u32, SingleId);
+
 pub const TypeSubscriptionCtx = struct {
-    ids: std.AutoHashMap(u32, SingleId),
+    ids: IdsSubscriptions,
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, TypeSubscriptionCtx);
 
+pub const SubscriptionMarked = std.AutoHashMap(u64, void);
+
 pub const SubscriptionCtx = struct {
     types: TypeSubMap,
-    subscriptionsMarked: std.AutoHashMap(u64, void),
+    subscriptionsMarked: SubscriptionMarked,
     hasMarkedSubscriptions: bool,
 };
 
@@ -67,33 +75,32 @@ fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
     const headerLen = 14;
-
-    // std.debug.print("{any} \n", .{value});
-
     const subId = utils.read(u64, value, 0);
     const typeId = utils.read(u16, value, 8);
     const id = utils.read(u32, value, 10);
     const fields = value[headerLen..value.len];
-
-    // typeIndexes = try dbCtx.allocator.create(TypeIndex);
-
+    var typeSubscriptionCtx: TypeSubscriptionCtx = undefined;
     if (!ctx.subscriptions.types.contains(typeId)) {
-        // const
-        // ctx.subscriptions.ids.set(id);
-        std.debug.print("DONT HAVE TYPE {any} \n", .{typeId});
+        const t = try ctx.allocator.create(TypeSubscriptionCtx);
+        t.*.ids = IdsSubscriptions.init(ctx.allocator);
+        typeSubscriptionCtx = t.*;
+        try ctx.subscriptions.types.put(typeId, typeSubscriptionCtx);
+    } else {
+        typeSubscriptionCtx = ctx.subscriptions.types.get(typeId).?;
     }
+    if (!typeSubscriptionCtx.ids.contains(id)) {
+        try typeSubscriptionCtx.ids.put(id, .{
+            .fields = Fields.init(ctx.allocator),
+            .subIds = SubIds.init(ctx.allocator),
+        });
+    }
+    var idContainer = typeSubscriptionCtx.ids.get(id).?;
+    try idContainer.subIds.put(subId, undefined);
 
-    //
-    // std.debug.print("b {any} \n", .{ id, subId });
-
-    // const fields = try napi.get([]u8, napi_env, args[3]);
-    std.debug.print("addIdSubscription: typeId:{any} id:{any} subId:{any} fields:{any} \n", .{
-        typeId,
-        id,
-        subId,
-        fields,
-        // ctx.subscriptions.ids,
-    });
+    for (fields) |f| {
+        std.debug.print("FIEKD {any} \n", .{f});
+        try idContainer.fields.put(f, undefined);
+    }
     return null;
 }
 
