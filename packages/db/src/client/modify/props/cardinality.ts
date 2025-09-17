@@ -17,6 +17,7 @@ export const writeCardinalityRaw = (
   sizeFixBecauseEdgeIsDifferent = val.length,
 ) => {
   writeU32(ctx, sizeFixBecauseEdgeIsDifferent)
+
   for (const item of val) {
     validate(def, item)
     if (typeof item === 'string') {
@@ -55,6 +56,8 @@ export const writeCardinality = (ctx: Ctx, def: PropDef, val: any) => {
   reserve(ctx, PROP_CURSOR_SIZE + size + 1)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
+  writeU8(ctx, def.cardinalityMode)
+  writeU8(ctx, def.cardinalityPrecision)
   writeCardinalityRaw(ctx, def, val)
   if (ctx.operation === CREATE) {
     ctx.schema.separateSort.bufferTmp[def.prop] = 2

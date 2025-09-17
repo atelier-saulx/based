@@ -14,47 +14,33 @@ import {
   CONTENT_TYPE_UINT8_ARRAY_U8,
   CONTENT_TYPE_STRING_U8,
   CONTENT_TYPE_UNDEFINED_U8,
-  CONTENT_TYPE_NULL,
 } from '../contentType.js'
+import {
+  FunctionServerType,
+  FunctionServerSubType,
+} from '@based/protocol/client-server'
 
 const encoder = new TextEncoder()
 
 const encodeHeader = (
-  type: number,
+  type: FunctionServerType,
   isDeflate: boolean,
   len: number,
 ): number => {
-  // 4 bytes
-  // type (3 bits)
-  //   0 = function
-  //   1 = subscribe
-  //   2 = unsubscribe
-  //   3 = get from observable
-  //   4 = auth
-  //   5 = subscribeChannel
-  //   6 = publishChannel
-  //   7.0 = unsubscribeChannel
-  //   7.1 = register stream
-  //   7.2 = chunk
-  // isDeflate (1 bit)
-  // len (28 bits)
-
   // @ts-ignore
   const encodedMeta = (type << 1) + (isDeflate | 0)
   const nr = (len << 4) + encodedMeta
-  // write in the buffer
   return nr
 }
 
 const createBuffer = (
-  type: number,
+  type: FunctionServerType,
   isDeflate: boolean,
   len: number,
   size: number = len,
 ): Uint8Array => {
   const header = encodeHeader(type, isDeflate, len)
   const buf = new Uint8Array(size)
-
   writeUint32(buf, header, 0)
   return buf
 }
@@ -131,9 +117,8 @@ export const encodeGetObserveMessage = (
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, checksum, payload] = o
-  // Type 3 = get
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
-  if (type === 3) {
+  if (type === FunctionServerType.get) {
     const n = encoder.encode(name)
     len += 1 + n.length
     const val = encodePayloadV2(payload, true)
@@ -155,16 +140,17 @@ export const encodeSubscribeChannelMessage = (
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, payload] = o
-  // Type 5 = subscribe
-  // | 4 header | 8 id | 1 name length | * name | * payload |
   // Type 7 = unsubscribe
   // | 4 header | 1    = 0 | 8 id |
+  // use enum as well...
   if (type === 7) {
-    const buff = createBuffer(type, false, 13)
-    buff[4] = 0
+    const buff = createBuffer(FunctionServerType.subType, false, 13)
+    buff[4] = FunctionServerSubType.channelUnsubscribe
     writeUint64(buff, id, 5)
     return { buffers: [buff], len: 13 }
   }
+  // Type 5 = subscribe
+  // | 4 header | 8 id | 1 name length | * name | * payload |
   const n = encoder.encode(name)
   len += 1 + n.length
   const isRequestSubscriber = type === 6
@@ -172,10 +158,14 @@ export const encodeSubscribeChannelMessage = (
   len += val.buf.byteLength + 1
   const buffLen = 8
   len += buffLen
-  const buff = createBuffer(5, isRequestSubscriber, len, 5 + buffLen)
+  const buff = createBuffer(
+    FunctionServerType.channelSubscribe,
+    isRequestSubscriber,
+    len,
+    5 + buffLen,
+  )
   writeUint64(buff, id, 4)
   buff[12] = n.length
-
   return { buffers: [buff, n, val.contentByte, val.buf], len }
 }
 

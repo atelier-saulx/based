@@ -116,6 +116,19 @@ const native = {
     return db.getNodeRangeHash(typeId, start, end, bufOut, dbCtx)
   },
 
+  createCompressor() {
+    return db.createCompressor()
+  },
+
+  compressRaw: (
+    compressor: any,
+    buf: Uint8Array,
+    offset: number,
+    stringSize: number,
+  ) => {
+    return db.compress(compressor, buf, offset, stringSize)
+  },
+
   compress: (buf: Uint8Array, offset: number, stringSize: number) => {
     return db.compress(compressor, buf, offset, stringSize)
   },
@@ -161,9 +174,15 @@ const native = {
     return db.selvaStrerror(err)
   },
 
-  colvecTest: (dbCtx: any, typeId: number, field: number, nodeId: number, len: number) => {
-    return db.colvecTest(dbCtx, typeId, field, nodeId, len);
-  }
+  colvecTest: (
+    dbCtx: any,
+    typeId: number,
+    field: number,
+    nodeId: number,
+    len: number,
+  ) => {
+    return db.colvecTest(dbCtx, typeId, field, nodeId, len)
+  },
 }
 
 global.__basedDb__native__ = native

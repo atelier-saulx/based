@@ -5,11 +5,7 @@ import { WebSocketSession, BasedRoute } from '@based/functions'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { installFn } from '../../installFn.js'
-import {
-  authorize,
-  IsAuthorizedHandler,
-  AuthErrorHandler,
-} from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import {
   hasChannel,
@@ -20,37 +16,38 @@ import {
   extendChannel,
 } from '../../channel/index.js'
 import { readUint64 } from '@based/utils'
+import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
 
-export const enableChannelSubscribe: IsAuthorizedHandler<
+export const enableChannelSubscribe: FunctionHandler<
   WebSocketSession,
   BasedRoute<'channel'>
-> = (route, _spec, server, ctx, payload, id) => {
-  if (hasChannel(server, id)) {
-    subscribeChannel(server, id, ctx)
+> = (props) => {
+  if (hasChannel(props.server, props.id)) {
+    subscribeChannel(props.server, props.id, props.ctx)
     return
   }
-  const session = ctx.session
-  if (!session || !session.obs.has(id)) {
+  const session = props.ctx.session
+  if (!session || !session.obs.has(props.id)) {
     return
   }
-  if (!hasChannel(server, id)) {
-    createChannel(server, route.name, id, payload, true)
+  if (!hasChannel(props.server, props.id)) {
+    createChannel(props.server, props.route.name, props.id, props.payload, true)
   }
-  subscribeChannel(server, id, ctx)
+  subscribeChannel(props.server, props.id, props.ctx)
 }
 
-const isNotAuthorized: AuthErrorHandler<
+const isNotAuthorized: FunctionErrorHandler<
   WebSocketSession,
   BasedRoute<'channel'>
-> = (route, _server, ctx, payload, id) => {
-  const session = ctx.session
+> = (props) => {
+  const session = props.ctx.session
   if (!session.unauthorizedChannels) {
     session.unauthorizedChannels = new Set()
   }
   session.unauthorizedChannels.add({
-    id,
-    name: route.name,
-    payload,
+    id: props.id,
+    route: props.route,
+    payload: props.payload,
   })
 }
 
@@ -123,7 +120,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
       // This has to be done instantly so publish can be received immediatly
       const channel = createChannel(server, name, id, payload, true)
 
-      installFn(server, ctx, tmpRoute, id).then((spec) => {
+      installFn({ server, ctx, route: tmpRoute, id }).then((spec) => {
         if (spec === null) {
           channel.doesNotExist = true
         } else {
@@ -169,17 +166,14 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
 
   session.obs.add(id)
 
-  authorize(
+  authorize({
     route,
     server,
     ctx,
     payload,
-    enableChannelSubscribe,
     id,
-    0,
-    false,
-    isNotAuthorized,
-  )
+    error: isNotAuthorized,
+  }).then(enableChannelSubscribe)
 
   return true
 }

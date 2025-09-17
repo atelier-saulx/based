@@ -18,13 +18,17 @@ import {
   subscribeNext,
   ActiveObservable,
   start,
-  genObservableId,
+  createObsNoStart,
+  AttachedCtx,
 } from '../../query/index.js'
 import zlib from 'node:zlib'
 import { BasedErrorCode } from '@based/errors'
 import { sendError } from '../../sendError.js'
 import { promisify } from 'node:util'
-import { authorize, IsAuthorizedHandler } from '../../authorize.js'
+import { authorize } from '../../authorize.js'
+import { FunctionHandler } from '../../types.js'
+import { genObserveId } from '@based/protocol/client-server'
+import { attachCtx } from '../../query/attachCtx.js'
 
 const inflate = promisify(zlib.inflateRaw)
 
@@ -121,7 +125,7 @@ const sendGetResponseInternal = (
     if (!obs.cache) {
       sendError(server, ctx, BasedErrorCode.NoOservableCacheAvailable, {
         observableId: id,
-        route: { name: obs.name, type: 'query' },
+        route: { name: obs.route.name, type: 'query' },
       })
     } else if (obs.isDeflate) {
       if (typeof encoding === 'string' && encoding.includes('deflate')) {
@@ -212,33 +216,21 @@ const getFromExisting = (
   })
 }
 
-const isAuthorized: IsAuthorizedHandler<HttpSession, BasedRoute<'query'>> = (
-  route,
-  spec,
-  server,
-  ctx,
-  payload,
-  id,
-  checksum,
-) => {
-  const name = route.name
-
+const get: FunctionHandler<HttpSession, BasedRoute<'query'>> = (props) => {
+  const { route, server, ctx, id, checksum } = props
   if (hasObs(server, id)) {
-    getFromExisting(server, id, ctx, route, spec, checksum)
+    getFromExisting(server, id, ctx, route, props.spec, checksum)
     return
   }
-
-  const obs = createObs(server, name, id, payload, true)
-
+  const obs = createObsNoStart(props)
   if (server.queryEvents) {
     server.queryEvents.get(obs, ctx)
   }
-
   subscribeNext(obs, (err) => {
     if (err) {
       sendObsGetError(server, ctx, obs.id, err)
     } else {
-      sendGetResponse(route, spec, server, id, obs, checksum, ctx)
+      sendGetResponse(route, props.spec, server, id, obs, checksum, ctx)
     }
   })
   start(server, id)
@@ -254,14 +246,35 @@ export const httpGet = (
   if (!ctx.session) {
     return
   }
-
-  authorize(
-    route,
-    server,
-    ctx,
-    payload,
-    isAuthorized,
-    genObservableId(route.name, payload),
-    checksum,
-  )
+  const id = genObserveId(route.name, payload)
+  if (route.ctx) {
+    const attachedCtx = attachCtx(server, route, ctx, id)
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id: attachedCtx.id,
+      checksum,
+      attachedCtx,
+    }).then((p) => {
+      if (attachedCtx && attachedCtx.authState) {
+        const attachedCtx2 = attachCtx(server, route, ctx, id)
+        if (attachedCtx2.id !== attachedCtx.id) {
+          p.id = attachedCtx2.id
+          p.attachedCtx = attachedCtx2
+        }
+      }
+      return get(p)
+    })
+  } else {
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id,
+      checksum,
+    }).then(get)
+  }
 }

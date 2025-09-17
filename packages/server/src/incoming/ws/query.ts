@@ -1,56 +1,63 @@
-import { decodePayload, decodeName } from '../../protocol.js'
+import {
+  decodePayload,
+  decodeName,
+  parseIncomingQueryPayload,
+} from '../../protocol.js'
 import {
   createObs,
   unsubscribeWs,
   subscribeWs,
   hasObs,
+  AttachedCtx,
 } from '../../query/index.js'
 import { BasedErrorCode } from '@based/errors'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
-import {
-  authorize,
-  IsAuthorizedHandler,
-  AuthErrorHandler,
-} from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { BinaryMessageHandler } from './types.js'
 import { readUint64 } from '@based/utils'
+import { attachCtx } from '../../query/attachCtx.js'
+import { FunctionErrorHandler, FunctionHandler } from '../../types.js'
+import { genObserveId } from '@based/protocol/client-server'
 
-export const enableSubscribe: IsAuthorizedHandler<
+export const enableSubscribe: FunctionHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, _spec, server, ctx, payload, id, checksum) => {
-  if (hasObs(server, id)) {
-    subscribeWs(server, id, checksum, ctx)
+> = (props) => {
+  if (hasObs(props.server, props.id)) {
+    subscribeWs(props.server, props.id, props.checksum, props.ctx)
     return
   }
-  const session = ctx.session
-  if (!session.obs.has(id)) {
+  const session = props.ctx.session
+  if (!session.obs.has(props.id)) {
     return
   }
-  if (!hasObs(server, id)) {
-    createObs(server, route.name, id, payload)
+  if (!hasObs(props.server, props.id)) {
+    const obs = createObs(props)
   }
-  subscribeWs(server, id, checksum, ctx)
+  subscribeWs(props.server, props.id, props.checksum, props.ctx)
 }
 
-const isNotAuthorized: AuthErrorHandler<
+export const queryIsNotAuthorized: FunctionErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, _server, ctx, payload, id, checksum) => {
-  const session = ctx.session
+> = (props) => {
+  const session = props.ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
   }
+  // session.obs.delete(props.id)
   session.unauthorizedObs.add({
-    id,
-    checksum,
-    name: route.name,
-    payload,
+    id: props.attachedCtx ? props.attachedCtx.fromId : props.id,
+    checksum: props.checksum,
+    route: props.route,
+    payload: props.payload,
   })
 }
+
+export const subscribeQuery: FunctionHandler = () => {}
 
 export const subscribeMessage: BinaryMessageHandler = (
   arr,
@@ -63,6 +70,8 @@ export const subscribeMessage: BinaryMessageHandler = (
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
   const nameLen = arr[start + 20]
+  // get id maybe
+
   const id = readUint64(arr, start + 4)
   const checksum = readUint64(arr, start + 12)
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
@@ -96,39 +105,57 @@ export const subscribeMessage: BinaryMessageHandler = (
     sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
       route,
       observableId: id,
-    })
+    }) // just call it id and add function type
     return true
   }
 
-  const session = ctx.session
-
-  if (session.obs.has(id)) {
-    // Allready subscribed to this id
-    return true
-  }
-
-  const payload =
-    len === nameLen + 21
-      ? undefined
-      : decodePayload(
-          new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-          isDeflate,
-          ctx.session.v < 2,
-        )
-
-  session.obs.add(id)
-
-  authorize(
-    route,
-    server,
-    ctx,
-    payload,
-    enableSubscribe,
-    id,
-    checksum,
-    false,
-    isNotAuthorized,
+  const payload = parseIncomingQueryPayload(
+    arr,
+    start,
+    nameLen + 21,
+    len,
+    ctx.session,
+    isDeflate,
   )
+
+  if (genObserveId(route.name, payload) !== id) {
+    // Check if the payload has been altered (potential attack to target other ids)
+    ctx.session.ws.close()
+    return false
+  }
+
+  if (route.ctx) {
+    const attachedCtx = attachCtx(server, route, ctx, id)
+    if (ctx.session.obs.has(attachedCtx.id)) {
+      return true
+    }
+    ctx.session.obs.add(attachedCtx.id)
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id: attachedCtx.id,
+      checksum,
+      error: queryIsNotAuthorized,
+      attachedCtx,
+    }).then(enableSubscribe)
+    return true
+  } else {
+    if (ctx.session.obs.has(id)) {
+      return true
+    }
+    ctx.session.obs.add(id)
+    authorize({
+      route,
+      server,
+      ctx,
+      payload,
+      id,
+      checksum,
+      error: queryIsNotAuthorized,
+    }).then(enableSubscribe)
+  }
 
   return true
 }
@@ -136,8 +163,8 @@ export const subscribeMessage: BinaryMessageHandler = (
 export const unsubscribeMessage: BinaryMessageHandler = (
   arr,
   start,
-  _len,
-  _isDeflate,
+  len,
+  isDeflate,
   ctx,
   server,
 ) => {

@@ -51,11 +51,14 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             return len;
         },
         types.Prop.CARDINALITY => {
-            const len = read(u32, data, 0);
+            const hllMode = if (data[0] == 0) true else false;
+            const hllPrecision = data[1];
+            const offset = 2;
+            const len = read(u32, data, offset);
             const hll = try db.ensurePropString(ctx, ctx.fieldSchema.?);
-            selva.hll_init(hll, 14, true);
-            var i: usize = 4;
-            while (i < len * 8) {
+            selva.hll_init(hll, hllPrecision, hllMode);
+            var i: usize = 4 + offset;
+            while (i < (len * 8) + offset) {
                 const hash = read(u64, data, i);
                 selva.hll_add(hll, hash);
                 i += 8;

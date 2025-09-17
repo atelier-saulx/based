@@ -30,6 +30,8 @@ import {
   ID,
 } from './typeIndexes.js'
 
+import type { HLLRegisterRepresentation } from '../types.js'
+
 export * from './typeIndexes.js'
 
 export const TYPE_INDEX_MAP: Record<string, TypeIndex> = {
@@ -94,6 +96,9 @@ export type PropDef = {
   // vectors
   vectorBaseType?: VectorBaseType
   vectorSize?: number
+  // cardinality
+  cardinalityMode?: number
+  cardinalityPrecision?: number
   // edge stuff
   edgeNodeTypeId?: number,
   edgeMainLen?: 0

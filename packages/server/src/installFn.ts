@@ -6,61 +6,58 @@ import {
   BasedFunctionConfig,
   isBasedFunctionConfig,
   BasedFunctionTypes,
+  Session,
 } from '@based/functions'
 import { sendSimpleError } from './sendError.js'
 import { BasedErrorCode } from '@based/errors'
+import { FunctionErrorHandler, FunctionProps } from './types.js'
 
-const functionNotFound = (
-  server: BasedServer,
-  ctx: Context,
-  route: BasedRoute,
-  _type?: BasedFunctionTypes,
-  id?: number
-) => {
-  if (!isClientContext(ctx)) {
+const functionNotFound = (props): FunctionErrorHandler => {
+  if (!isClientContext(props.ctx)) {
     return
   }
   sendSimpleError(
-    server,
-    ctx,
+    props.server,
+    props.ctx,
     BasedErrorCode.FunctionNotFound,
-    { type: route.type, name: route.name },
-    id
+    { type: props.route.type, name: props.route.name },
+    props.id,
   )
 }
 
-export const installFn = async <R extends BasedRoute>(
-  server: BasedServer,
-  ctx: Context,
-  route: R,
-  id?: number
+// make this a function hander as well
+export const installFn = async <
+  S extends Session = Session,
+  R extends BasedRoute = BasedRoute,
+  P = any,
+>(
+  props: FunctionProps<S, R, P>,
 ): Promise<null | BasedFunctionConfig<R['type']>> => {
-  if (!route) {
+  if (!props.route) {
     return null
   }
-
-  const { type, name } = route
+  const { type, name } = props.route
   try {
-    const spec = await server.functions.install(name)
-    if (!ctx.session) {
+    const spec = await props.server.functions.install(name)
+    if (!props.ctx.session) {
       return null
     }
 
     if (spec === null) {
-      functionNotFound(server, ctx, route, type, id)
+      functionNotFound(props)
       return null
     }
 
-    if (!isBasedFunctionConfig(type, route)) {
-      if (!isClientContext(ctx)) {
+    if (!isBasedFunctionConfig(type, props.route)) {
+      if (!isClientContext(props.ctx)) {
         return null
       }
       sendSimpleError(
-        server,
-        ctx,
+        props.server,
+        props.ctx,
         BasedErrorCode.FunctionIsWrongType,
         { name, type },
-        id
+        props.id,
       )
       return null
     }
@@ -68,7 +65,7 @@ export const installFn = async <R extends BasedRoute>(
     // @ts-ignore Fixed by chekcing the specs
     return spec
   } catch (err) {
-    functionNotFound(server, ctx, route, type, id)
+    functionNotFound(props)
   }
   return null
 }

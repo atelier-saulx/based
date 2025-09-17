@@ -486,7 +486,10 @@ await test('cardinality', async (t) => {
         week: 'string',
         lala: 'number',
         lele: 'number',
-        Mon: 'cardinality',
+        Mon: {
+          type: 'cardinality',
+          precision: 12,
+        },
         Tue: 'cardinality',
         Wed: 'cardinality',
         Thu: 'cardinality',

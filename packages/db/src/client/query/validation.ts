@@ -458,7 +458,9 @@ export const validateAlias = (
     if (typeof alias[k] === 'string') {
       const p = path ? `${path}.${k}` : k
       const prop = schema.props[p]
-      if (prop.typeIndex === ALIAS) {
+      if (!prop) {
+        // def.errors.push({ code: ERR_TARGET_INVAL_ALIAS, payload: def })
+      } else if (prop.typeIndex === ALIAS) {
         return { def: prop, value: alias[k] }
       }
     } else if (typeof alias[k] === 'object') {

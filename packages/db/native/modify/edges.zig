@@ -81,7 +81,7 @@ pub fn writeEdges(
             len = read(u32, data, i);
             offset = 4;
             const hll = try db.ensureEdgePropString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
-            selva.hll_init(hll, 14, true);
+            selva.hll_init(hll, 8, true); // TBD: to get optionals from buffer
             var it: usize = i + offset;
             while (it < len) {
                 const hash = read(u64, data, it);

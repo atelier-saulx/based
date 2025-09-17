@@ -20,7 +20,12 @@ import {
   COLVEC,
 } from './types.js'
 
-import { SchemaProp, SchemaVectorBaseType, isPropType } from '../types.js'
+import {
+  SchemaProp,
+  SchemaVectorBaseType,
+  isPropType,
+  HLLRegisterRepresentation,
+} from '../types.js'
 import { getPropType } from '../parse/utils.js'
 import { convertToTimestamp } from '@based/utils'
 
@@ -80,6 +85,11 @@ export const schemaVectorBaseTypeToEnum = (
     case 'number':
       return VectorBaseType.Float64
   }
+}
+
+export const cardinalityModeToEnum = (mode: HLLRegisterRepresentation) => {
+  if (mode === 'dense') return 1
+  else 0
 }
 
 export function getPropLen(schemaProp: SchemaProp) {

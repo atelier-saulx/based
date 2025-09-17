@@ -106,14 +106,7 @@ test.serial('nested functions (raw api)', async (t: T) => {
           closeAfterIdleTime: 1e3,
           uninstallAfterIdleTime: 1e3,
           fn: (based, _, update) => {
-            return observe(
-              server,
-              'obsWithNested',
-              based.server.client.ctx,
-              'json',
-              update,
-              () => {},
-            )
+            return based.query('obsWithNested', 'json').subscribe(update)
           },
         },
         obsWithNested: {
@@ -121,14 +114,9 @@ test.serial('nested functions (raw api)', async (t: T) => {
           closeAfterIdleTime: 1e3,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update) => {
-            return observe(
-              server,
-              payload === 'json' ? 'objectCounter' : 'counter',
-              based.server.client.ctx,
-              payload,
-              update,
-              () => {},
-            )
+            return based
+              .query(payload === 'json' ? 'objectCounter' : 'counter', payload)
+              .subscribe(update)
           },
         },
         objectCounter: {
@@ -174,9 +162,9 @@ test.serial('nested functions (raw api)', async (t: T) => {
         fnWithNested: {
           type: 'function',
           uninstallAfterIdleTime: 1e3,
-          fn: async (_, payload, context) => {
-            const x = await callFunction(server, 'hello', context, payload)
-            await get(server, 'obsWithNested', context, 'json')
+          fn: async (based, payload, context) => {
+            const x = await based.call('hello', payload, context)
+            await based.query('obsWithNested', 'json', context).get()
             return x
           },
         },

@@ -10,7 +10,8 @@
   ],
   "exports": {
     "./db-read": "./dist/db-read/read.js",
-    "./db-read/serialize-schema": "./dist/db-read/schema/serialize.js"
+    "./db-read/serialize-schema": "./dist/db-read/schema/serialize.js",
+    "./client-server": "./dist/client-server/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -28,6 +29,7 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
+    "@based/hash": "^1.0.0",
     "fflate": "0.8.2",
     "@based/utils": "^1.0.0",
     "@based/schema": "^5.0.2"

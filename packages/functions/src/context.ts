@@ -2,7 +2,7 @@ import { parseQuery } from '@based/utils'
 import { AuthState } from './auth.js'
 import { WebSocket, HttpRequest, HttpResponse } from './uws.js'
 import { BasedFunctionClient } from './client.js'
-import { StreamPayload } from './functions.js'
+import { BasedRoute, StreamPayload } from './functions.js'
 
 export type WebSocketSession = {
   // State can be used for anything - for us the based class instance
@@ -19,16 +19,17 @@ export type WebSocketSession = {
   unauthorizedObs?: Set<{
     id: number
     checksum: number
-    name: string
+    route: BasedRoute<'query'>
     payload: any
   }>
-  streams?: { [reqId: string]: StreamPayload }
-  headers: { [key: string]: string }
   unauthorizedChannels?: Set<{
     id: number
-    name: string
+    route: BasedRoute<'channel'>
     payload: any
   }>
+  attachedCtxObs?: Set<number>
+  streams?: { [reqId: string]: StreamPayload }
+  headers: { [key: string]: string }
   v?: 2
   // Optimization so we dont need to keep track of websockets outside of uws
   c?: Context<WebSocketSession>

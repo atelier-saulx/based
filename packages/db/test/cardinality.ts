@@ -344,3 +344,101 @@ await test('hll', async (t) => {
     ],
   )
 })
+
+await test('switches', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      store: {
+        name: 'string',
+        visitors: {
+          type: 'cardinality',
+          precision: 6,
+          mode: 'dense',
+        },
+        visits: 'number',
+      },
+    },
+  })
+
+  const visits = ['Clint', 'Lee', 'Clint', 'Aldo', 'Lee']
+
+  const store1 = db.create('store', {
+    name: 'Handsome Sportsman',
+    visitors: visits,
+    visits: visits.length,
+  })
+
+  deepEqual(
+    await db.query('store').include('visitors').get(),
+    [
+      {
+        id: 1,
+        visitors: 3,
+      },
+    ],
+    'create with schema optionals (dense, prec=6)',
+  )
+
+  await db.update('store', store1, {
+    visitors: 'Ennio',
+  })
+
+  await db.drain()
+
+  deepEqual(
+    await db.query('store').include('visitors').get(),
+    [
+      {
+        id: 1,
+        visitors: 4,
+      },
+    ],
+    'update with schema optionals (dense, prec=6)',
+  )
+})
+
+await test('defaultPrecision', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    props: {
+      myRootCount: 'cardinality',
+    },
+    types: {
+      stores: {
+        name: 'string',
+        customers: {
+          items: {
+            ref: 'customer',
+            prop: 'customer',
+          },
+        },
+      },
+      customer: {
+        name: 'string',
+        productsBought: 'cardinality',
+      },
+    },
+  })
+
+  const cus = db.create('customer', {
+    name: 'Alex Atala',
+    productsBought: ['fork', 'knife', 'knife', 'frying pan'],
+  })
+  const sto = db.create('stores', {
+    name: "Worderland's Kitchen",
+    customers: [cus],
+  })
+
+  await db.query('stores').include('*', '**').get().inspect()
+})
