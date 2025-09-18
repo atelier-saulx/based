@@ -17,13 +17,8 @@ import {
   BLOCK_CAPACITY_MAX,
   BLOCK_CAPACITY_DEFAULT,
   BLOCK_CAPACITY_MIN,
-  ALIAS,
-  ALIASES,
   VECTOR,
   COLVEC,
-  SIZE_MAP,
-  REVERSE_SIZE_MAP,
-  REVERSE_TYPE_INDEX_MAP,
   CARDINALITY,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
