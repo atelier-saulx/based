@@ -67,7 +67,7 @@ await test('sum branched includes', async (t) => {
       })
       .get()
       .toObject(),
-    [{ id: 1, votes: { NL: 30, AU: 15 } }],
+    [{ id: 1, votes: { NL: { sum: 30 }, AU: { sum: 15 } } }],
     'brached include, sum, references',
   )
 
@@ -79,7 +79,15 @@ await test('sum branched includes', async (t) => {
       })
       .get()
       .toObject(),
-    [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
+    [
+      {
+        id: 1,
+        votes: {
+          aa: { AU: { sum: 15 }, NL: { sum: 20 } },
+          bb: { AU: { sum: 0 }, NL: { sum: 10 } },
+        },
+      },
+    ],
     'branched include, references, groupBy',
   )
 
@@ -91,7 +99,7 @@ await test('sum branched includes', async (t) => {
       })
       .get()
       .toObject(),
-    [{ id: 1, votes: { NL: 20, AU: 15 } }],
+    [{ id: 1, votes: { NL: { sum: 20 }, AU: { sum: 15 } } }],
     'branched include, references, filtered, groupBy',
   )
 })
@@ -170,7 +178,15 @@ await test('count branched includes', async (t) => {
       })
       .get()
       .toObject(),
-    [{ id: 1, votes: { aa: { AU: 15, NL: 20 }, bb: { AU: 0, NL: 10 } } }],
+    [
+      {
+        id: 1,
+        votes: {
+          aa: { AU: { sum: 15 }, NL: { sum: 20 } },
+          bb: { AU: { sum: 0 }, NL: { sum: 10 } },
+        },
+      },
+    ],
     'branched include, references, groupBy',
   )
 
@@ -299,8 +315,8 @@ await test('agg on references', async (t) => {
         teamName: 'Grêmio',
         city: 'Porto Alegre',
         players: {
-          Forward: { goalsScored: 22, gamesPlayed: 11 }, // Martin (10,5) + Pavon (12,6)
-          Defender: { goalsScored: 1, gamesPlayed: 10 }, // Jemerson (1,10)
+          Forward: { goalsScored: { sum: 22 }, gamesPlayed: { sum: 11 } }, // Martin (10,5) + Pavon (12,6)
+          Defender: { goalsScored: { sum: 1 }, gamesPlayed: { sum: 10 } }, // Jemerson (1,10)
         },
       },
       {
@@ -308,8 +324,8 @@ await test('agg on references', async (t) => {
         teamName: 'Ajax',
         city: 'Amsterdam',
         players: {
-          Forward: { goalsScored: 8, gamesPlayed: 7 }, // Wout (8,7)
-          Defender: { goalsScored: 2, gamesPlayed: 9 }, // Jorrel (2,9)
+          Forward: { goalsScored: { sum: 8 }, gamesPlayed: { sum: 7 } }, // Wout (8,7)
+          Defender: { goalsScored: { sum: 2 }, gamesPlayed: { sum: 9 } }, // Jorrel (2,9)
         },
       },
       {
@@ -323,7 +339,7 @@ await test('agg on references', async (t) => {
         teamName: 'Barcelona',
         city: 'Barcelona',
         players: {
-          Forward: { goalsScored: 5, gamesPlayed: 5 }, // Lewandowski
+          Forward: { goalsScored: { sum: 5 }, gamesPlayed: { sum: 5 } }, // Lewandowski
         },
       },
     ],
@@ -381,10 +397,10 @@ await test('enums', async (t) => {
     await db.query('beer').avg('price').groupBy('type').get(),
     {
       Tripel: {
-        price: 11.85,
+        price: { average: 11.85 },
       },
       Wit: {
-        price: 7.2,
+        price: { average: 7.2 },
       },
     },
     'group by enum in main',
@@ -394,10 +410,10 @@ await test('enums', async (t) => {
     await db.query('beer').harmonicMean('price').groupBy('type').get(),
     {
       Tripel: {
-        price: 11.839662447257384,
+        price: { hmean: 11.839662447257384 },
       },
       Wit: {
-        price: 7.199999999999999, // 7.2 should be approximated
+        price: { hmean: 7.199999999999999 }, // 7.2 should be approximated
       },
     },
     'harmonic_mean by enum in main',
@@ -542,9 +558,7 @@ await test('cardinality', async (t) => {
 
   deepEqual(
     await db.query('lunch').cardinality('Mon').get(),
-    {
-      Mon: 7,
-    },
+    { Mon: { cardinality: 7 } },
     'main cardinality no group by',
   )
 
@@ -552,10 +566,10 @@ await test('cardinality', async (t) => {
     await db.query('lunch').cardinality('Mon').groupBy('week').get(),
     {
       27: {
-        Mon: 5,
+        Mon: { cardinality: 5 },
       },
       28: {
-        Mon: 3,
+        Mon: { cardinality: 3 },
       },
     },
     'cardinality main groupBy',
@@ -675,7 +689,7 @@ await test('group by reference ids', async (t) => {
     await db.query('driver').sum('rank').groupBy('vehicle').get(),
     {
       2: {
-        rank: 5,
+        rank: { sum: 5 },
       },
     },
     'group by reference id',
@@ -694,7 +708,7 @@ await test('group by reference ids', async (t) => {
         name: 'Luc Ferry',
         trips: {
           2: {
-            distance: 523.1,
+            distance: { max: 523.1 },
           },
         },
       },

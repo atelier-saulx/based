@@ -39,8 +39,8 @@ await test('undefined numbers', async (t) => {
     await db.query('vote').max('AU', 'FI').groupBy('region').get().toObject(),
     {
       EU: {
-        AU: 23,
-        FI: 0,
+        AU: { max: 23 },
+        FI: { max: 0 },
       },
     },
     'number is initialized with zero',
@@ -49,8 +49,8 @@ await test('undefined numbers', async (t) => {
     await db.query('vote').avg('AU', 'FI').groupBy('region').get().toObject(),
     {
       EU: {
-        AU: 16.5,
-        FI: -500_000.15,
+        AU: { average: 16.5 },
+        FI: { average: -500_000.15 },
       },
     },
     'avg affected by count because number is initialized with zero',
@@ -65,8 +65,8 @@ await test('undefined numbers', async (t) => {
       .toObject(),
     {
       EU: {
-        AU: 13.93939393939394,
-        FI: 0,
+        AU: { hmean: 13.93939393939394 },
+        FI: { hmean: 0 },
       },
     },
     'harmonic_mean affected by count because number is initialized with zero',
@@ -155,7 +155,7 @@ await test('boundary cases for validation', async (t) => {
     await db.query('movie').groupBy('genre').min('year').get(),
     {
       undefined: {
-        year: 1994,
+        year: { min: 1994 },
       },
     },
     'groupBy undefined prop',
