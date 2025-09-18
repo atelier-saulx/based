@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "8.2.0",
+  "version": "8.2.1",
   "license": "MIT",
   "scripts": {
     "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
