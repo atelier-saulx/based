@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { equal } from './shared/assert.js'
+import { deepEqual, equal } from './shared/assert.js'
 import { italy } from './shared/examples.js'
 
 await test('like filter', async (t) => {
@@ -502,4 +502,30 @@ await test('giraffe first', async (t) => {
     1,
     'Search "giraffe first"',
   )
+})
+
+await test('first letter', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      article: {
+        props: {
+          name: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  await db.create('article', {
+    name: 'Kavel Omval Naast De Poort',
+  })
+
+  deepEqual(await db.query('article').search('Kavel').get(), [
+    { id: 1, $searchScore: 0, name: 'Kavel Omval Naast De Poort' },
+  ])
 })
