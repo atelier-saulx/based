@@ -76,10 +76,7 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
         var i: usize = 0;
         while (keyIter.next()) |key| {
             utils.writeInt(u64, data, i, key.*);
-            if (markedSubs.remove(key.*)) {
-                // Double check if this remove
-                // ctx.allocator.free(key);
-            }
+            _ = markedSubs.remove(key.*);
             i += 8;
         }
         return result;
@@ -94,6 +91,7 @@ pub fn getMarkedSubscriptions(napi_env: c.napi_env, info: c.napi_callback_info) 
     };
 }
 
+// TODO: Add a count options to know that you dont have to check further this can help a great deal
 fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
@@ -115,24 +113,16 @@ fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !
         const singleId = try ctx.allocator.create(SingleId);
         singleId.* = .{
             .fields = Fields.init(ctx.allocator),
-            // .subIds = SubIds.init(ctx.allocator),
         };
-
         try typeSubscriptionCtx.ids.put(id, singleId);
     }
     var idContainer = typeSubscriptionCtx.ids.get(id).?;
-
-    // try idContainer.subIds.put(subId, undefined);
-
     for (fields) |f| {
-        std.debug.print("FIELD: {any} \n", .{f});
-
         if (!idContainer.fields.contains(f)) {
             const fSubIds = try ctx.allocator.create(SubIds);
             fSubIds.* = SubIds.init(ctx.allocator);
             try idContainer.fields.put(f, fSubIds);
         }
-
         if (idContainer.fields.get(f)) |fieldsSubIds| {
             try fieldsSubIds.put(subId, undefined);
         }
@@ -147,15 +137,58 @@ pub fn addIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callc
     };
 }
 
+fn removeIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, napi_env, info);
+    const ctx = try napi.get(*DbCtx, napi_env, args[0]);
+    const value = try napi.get([]u8, napi_env, args[1]);
+    const headerLen = 14;
+    const subId = utils.read(u64, value, 0);
+    const typeId = utils.read(u16, value, 8);
+    const id = utils.read(u32, value, 10);
+    const fields = value[headerLen..value.len];
+    if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
+        if (typeSubscriptionCtx.ids.get(id)) |idContainer| {
+            for (fields) |f| {
+                if (idContainer.fields.get(f)) |fieldsSubIds| {
+                    _ = fieldsSubIds.remove(subId);
+                    if (fieldsSubIds.count() == 0) {
+                        if (idContainer.fields.fetchRemove(f)) |removed_entry| {
+                            removed_entry.value.deinit(); // De-initialize the SubIds HashMap.
+                            ctx.allocator.destroy(removed_entry.value); // Free the memory for the SubIds struct.
+                        }
+                    }
+                }
+            }
+            if (idContainer.fields.count() == 0) {
+                if (typeSubscriptionCtx.ids.fetchRemove(id)) |removed_entry| {
+                    removed_entry.value.fields.deinit(); // De-initialize the Fields HashMap.
+                    ctx.allocator.destroy(removed_entry.value); // Free the memory for the SingleId struct.
+                }
+            }
+        }
+        if (typeSubscriptionCtx.ids.count() == 0) {
+            if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
+                removed_entry.value.ids.deinit(); // De-initialize the IdsSubscriptions HashMap.
+                ctx.allocator.destroy(removed_entry.value); // Free the memory for the TypeSubscriptionCtx struct.
+            }
+        }
+    }
+    return null;
+}
+
+pub fn removeIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return removeIdSubscriptionInternal(napi_env, info) catch |err| {
+        std.log.err("removeIdSubscription {any} \n", .{err});
+        return null;
+    };
+}
+
+// -----------------------------------------------------------
 // pub fn
 
 // pub fn getMarkedSubscriptions
 
 // or even better exec marked subscriptions? (less native calls)
-
-// pub fn removeIdSubscription(ctx: DbCtx, id: u32, subId: u64, fields: u8) !void {
-//     // const fieldLen = fields[0]
-// }
 
 // pub const SubscriptionCtx = struct { ids: std.AutoHashMap(u32, Bitmap255) };
 // prob want to store start index as well
