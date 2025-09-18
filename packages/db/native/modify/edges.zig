@@ -12,6 +12,14 @@ const copy = utils.copy;
 const ModifyCtx = Modify.ModifyCtx;
 const p = types.Prop;
 
+fn isMainEmpty(val: []u8) bool {
+    var b = false;
+    for (val) |byte| {
+        b = b or byte != 0;
+    }
+    return b == false;
+}
+
 pub fn writeEdges(
     ctx: *ModifyCtx,
     ref: *selva.SelvaNodeLargeReference,
@@ -41,7 +49,7 @@ pub fn writeEdges(
             const mainBufferOffset = len - totalMainBufferLen;
             const val = db.getEdgeProp(ctx.db, edgeConstraint, ref, edgeFieldSchema);
 
-            if (val.len > 0) {
+            if (!isMainEmpty(val)) {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 var j: usize = offset + i;
                 while (j < mainBufferOffset + offset + i) : (j += 6) {
