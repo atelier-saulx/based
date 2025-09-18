@@ -1,6 +1,6 @@
 {
   "name": "@based/db",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "main": "./dist/src/index.js",
   "scripts": {
@@ -43,7 +43,7 @@
   "dependencies": {
     "@based/hash": "1.0.0",
     "@based/schema": "^5.0.2",
-    "@based/utils": "^1.0.0",
+    "@based/utils": "^1.1.0",
     "@based/protocol": "^0.0.4",
     "exit-hook": "^4.0.0",
     "picocolors": "^1.1.0"
