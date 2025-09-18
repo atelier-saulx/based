@@ -61,7 +61,7 @@ export async function contextProgram(): Promise<Based.Context.Project> {
   }
 
   basedProject = {
-    cluster: 'production',
+    cluster: 'baseddb',
     ...basedFile,
     ...(cluster !== undefined && { cluster }),
     ...(org !== undefined && { org }),
