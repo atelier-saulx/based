@@ -18,9 +18,8 @@
   "sideEffects": false,
   "dependencies": {
     "@based/db": "^0.1.1",
-    "@based/utils": "^1.0.0",
-    "utility-types": "^3.10.0",
-    "arktype": "^2.1.20"
+    "@based/utils": "^1.1.0",
+    "utility-types": "^3.10.0"
   },
   "devDependencies": {
     "ts-node": "10.9.1"
