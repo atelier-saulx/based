@@ -62,34 +62,24 @@ pub const SubscriptionCtx = struct {
 fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
-
-    // std.debug.print("flap  {any} \n", .{ctx.subscriptions.hasMarkedSubscriptions});
     if (ctx.subscriptions.hasMarkedSubscriptions) {
-        // std.debug.print("reset market {any} ", .{ctx});
         var markedSubs = ctx.subscriptions.subscriptionsMarked;
         ctx.subscriptions.hasMarkedSubscriptions = false;
         var keyIter = markedSubs.keyIterator();
         var resultBuffer: ?*anyopaque = undefined;
         var result: c.napi_value = undefined;
         const size: usize = markedSubs.count() * 8;
-
         if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
             return null;
         }
-
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
-
         var i: usize = 0;
         while (keyIter.next()) |key| {
-            std.debug.print("------> {any} \n", .{key.*});
             utils.writeInt(u64, data, i, key.*);
-
-            std.debug.print(" --> {d} {any}\n", .{ i, data });
-
-            if (markedSubs.remove(key.*)) {}
-
-            // check how to do this faster
-            // ctx.allocator.free(key.*);
+            if (markedSubs.remove(key.*)) {
+                // Double check if this remove
+                // ctx.allocator.free(key);
+            }
             i += 8;
         }
         return result;
