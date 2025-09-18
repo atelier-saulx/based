@@ -118,5 +118,5 @@ await test('upsert no alias', async (t) => {
     lili: 813,
   })
 
-  await db.query('lala').include('*').get().inspect()
+  // await db.query('lala').include('*').get().inspect()
 })

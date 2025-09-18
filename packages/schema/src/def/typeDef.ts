@@ -211,7 +211,8 @@ const createSchemaTypeDef = (
         prop.cardinalityMode ??= cardinalityModeToEnum(
           (schemaProp.mode ??= 'sparse'),
         )
-        prop.cardinalityPrecision ??= schemaProp.precision ??= 14
+        const prec = typeName == '_root' ? 14 : 8
+        prop.cardinalityPrecision ??= schemaProp.precision ??= prec
       }
 
       if (isPropType('enum', schemaProp)) {

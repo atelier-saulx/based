@@ -411,6 +411,9 @@ await test('defaultPrecision', async (t) => {
   t.after(() => db.stop())
 
   await db.setSchema({
+    props: {
+      myRootCount: 'cardinality',
+    },
     types: {
       stores: {
         name: 'string',
@@ -427,6 +430,7 @@ await test('defaultPrecision', async (t) => {
       },
     },
   })
+
   const cus = db.create('customer', {
     name: 'Alex Atala',
     productsBought: ['fork', 'knife', 'knife', 'frying pan'],
@@ -436,5 +440,5 @@ await test('defaultPrecision', async (t) => {
     customers: [cus],
   })
 
-  await db.query('stores').include('*', '**').get().inspect()
+  // await db.query('stores').include('*', '**').get().inspect()
 })
