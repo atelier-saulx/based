@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "8.1.2",
+  "version": "8.2.0",
   "description": "based cli",
   "type": "module",
   "main": "dist/index.js",
