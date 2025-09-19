@@ -4,14 +4,14 @@ import { ActiveObservable } from './types.js'
 const destroyObs = (server: BasedServer, obs: ActiveObservable) => {
   const id = obs.id
   obs.timeTillDestroy = null
-  if (!server.activeObservables[obs.name]) {
+  if (!server.activeObservables[obs.route.name]) {
     console.info('Trying to destroy a removed query function')
     server.activeObservablesById.delete(id)
     return
   }
-  server.activeObservables[obs.name].delete(id)
-  if (server.activeObservables[obs.name].size === 0) {
-    delete server.activeObservables[obs.name]
+  server.activeObservables[obs.route.name].delete(id)
+  if (server.activeObservables[obs.route.name].size === 0) {
+    delete server.activeObservables[obs.route.name]
   }
   server.activeObservablesById.delete(id)
   obs.isDestroyed = true

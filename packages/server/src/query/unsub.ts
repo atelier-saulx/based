@@ -21,17 +21,50 @@ export const unsubscribeFunction = (
   }
 }
 
+// true means obs does not exist
 export const unsubscribeWs = (
   server: BasedServer,
   id: number,
   ctx: Context<WebSocketSession>,
 ): true | void => {
   const session = ctx.session
-  if (!session || !session.obs.has(id)) {
+
+  if (!session) {
     return
   }
 
+  if (!session.obs.has(id)) {
+    if (session.attachedCtxObs) {
+      let match = false
+      for (const attachedId of session.attachedCtxObs) {
+        const attachedObs = server.activeObservablesById.get(attachedId)
+        if (attachedObs.attachedCtx.fromId === id) {
+          session.attachedCtxObs.delete(attachedId)
+          if (session.attachedCtxObs.size === 0) {
+            delete session.attachedCtxObs
+          }
+          id = attachedId
+          match = true
+          break
+        }
+      }
+      if (!match) {
+        return
+      }
+    } else {
+      return
+    }
+  } else if (session.attachedCtxObs?.has(id)) {
+    session.attachedCtxObs.delete(id)
+    if (session.attachedCtxObs.size === 0) {
+      delete session.attachedCtxObs
+    }
+  }
+
   const isV1 = ctx.session.v < 2
+
+  const obs = server.activeObservablesById.get(id)
+  session.obs.delete(id)
 
   if (isV1) {
     ctx.session.ws.unsubscribe(String(id) + '-v1')
@@ -39,8 +72,6 @@ export const unsubscribeWs = (
     ctx.session.ws.unsubscribe(String(id))
   }
 
-  const obs = server.activeObservablesById.get(id)
-  session.obs.delete(id)
   if (!obs) {
     return
   }
@@ -64,6 +95,7 @@ export const unsubscribeWs = (
   }
 }
 
+// true is it does not exist
 export const unsubscribeWsIgnoreClient = (
   server: BasedServer,
   id: number,
@@ -75,6 +107,7 @@ export const unsubscribeWsIgnoreClient = (
   }
   const obs = server.activeObservablesById.get(id)
   if (!obs) {
+    // is not an obs might be a channel
     return true
   }
 

@@ -7,6 +7,8 @@ import {
   ENUM,
   TEXT,
   VECTOR,
+  BINARY,
+  CARDINALITY,
 } from '@based/schema/def'
 import {
   ReaderLocales,
@@ -24,7 +26,7 @@ const createReaderPropDef = (
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
     path: p.__isEdge ? p.path.slice(1) : p.path,
-    typeIndex: p.typeIndex,
+    typeIndex: opts?.raw ? BINARY : p.typeIndex,
     readBy: 0,
   }
   if (opts?.meta) {
@@ -37,6 +39,10 @@ const createReaderPropDef = (
   if (p.typeIndex === VECTOR || p.typeIndex === COLVEC) {
     readerPropDef.vectorBaseType = p.vectorBaseType
     readerPropDef.len = p.len
+  }
+  if (p.typeIndex === CARDINALITY) {
+    readerPropDef.cardinalityMode = p.cardinalityMode
+    readerPropDef.cardinalityPrecision = p.cardinalityPrecision
   }
   if (p.typeIndex === TEXT) {
     if (opts.codes.has(0)) {

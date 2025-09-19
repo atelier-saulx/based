@@ -13,6 +13,10 @@ import { freeCacheMemory } from '../cache.js'
 import { convertDataToBasedError } from '@based/errors/client'
 import { forceReload } from './forceReload.js'
 import { parseIncomingData } from './parseIncomingData.js'
+import {
+  FunctionClientType,
+  FunctionClientSubType,
+} from '@based/protocol/client-server'
 
 const deflate = (
   start: number,
@@ -36,16 +40,14 @@ export const incoming = async (client: BasedClient, data: any) => {
 
     const { type, len, isDeflate } = decodeHeader(readUint32(buffer, 0))
 
-    // reader for batched replies
-    // ------- Function
-    if (type === 0) {
+    if (type === FunctionClientType.function) {
       // | 4 header | 3 id | * payload |
       const id = readUint24(buffer, 4)
       const start = 7
       const end = len + 4
       let payload: any
 
-      // if not empty response, parse it
+      // If not empty response, parse it
       if (len !== 3) {
         payload = parseIncomingData(
           buffer[start],
@@ -57,10 +59,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         client.functionResponseListeners.get(id)[0](payload)
         client.functionResponseListeners.delete(id)
       }
-    }
-
-    // ------- Get checksum is up to date
-    else if (type === 3) {
+    } else if (type === FunctionClientType.get) {
       // | 4 header | 8 id |
       const id = readUint64(buffer, 4)
       if (client.getState.has(id) && client.cache.has(id)) {
@@ -70,10 +69,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
         client.getState.delete(id)
       }
-    }
-
-    // ------- Subscription diff data
-    else if (type === 2) {
+    } else if (type === FunctionClientType.subscriptionDiff) {
       // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
       const id = readUint64(buffer, 4)
 
@@ -140,10 +136,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
         client.getState.delete(id)
       }
-    }
-
-    // ------- Subscription data
-    else if (type === 1) {
+    } else if (type === FunctionClientType.subscriptionData) {
       // | 4 header | 8 id | 8 checksum | * payload |
       const id = readUint64(buffer, 4)
       const checksum = readUint64(buffer, 12)
@@ -204,10 +197,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
         client.getState.delete(id)
       }
-    }
-
-    // ------- AuthState
-    else if (type === 4) {
+    } else if (type === FunctionClientType.auth) {
       // | 4 header | * payload |
       const start = 4
       const end = len + 4
@@ -237,10 +227,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
         client.authRequest?.resolve?.(client.authState)
       }
-    }
-
-    // ------- Errors
-    else if (type === 5) {
+    } else if (type === FunctionClientType.error) {
       // | 4 header | * payload |
       const start = 4
       const end = len + 4
@@ -303,7 +290,7 @@ export const incoming = async (client: BasedClient, data: any) => {
               handlers.onError(error)
             } else {
               console.error(
-                getTargetInfo(client, payload.observableId, 'sub'),
+                // getTargetInfo(client, payload.observableId, 'sub'),
                 error,
               )
             }
@@ -320,8 +307,7 @@ export const incoming = async (client: BasedClient, data: any) => {
           client.getState.delete(payload.observableId)
         }
       }
-    } // ------- Re-Publish send channel name + payload
-    else if (type === 6) {
+    } else if (type === FunctionClientType.rePublishChannelName) {
       // | 4 header | 8 id | * payload |
       // get id add last send on the state
       const id = readUint64(buffer, 4)
@@ -353,13 +339,11 @@ export const incoming = async (client: BasedClient, data: any) => {
         }
         client.connection.ws.send(buffer)
       }
-    } // ----------- SubType 7
-    else if (type === 7) {
+    } else if (type === FunctionClientType.subType) {
       // | 4 header | 1 subType |
       const subType = buffer[4]
 
-      // channel
-      if (subType === 0) {
+      if (subType === FunctionClientSubType.channel) {
         // | 4 header | 1 subType | 8 id | * payload |
         const id = readUint64(buffer, 5)
 
@@ -367,7 +351,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         const end = len + 5
         let payload: any
 
-        // if not empty response, parse it
+        // If not empty response, parse it
         if (len !== 9 + 1) {
           payload = parseIncomingData(
             buffer[start],
@@ -381,7 +365,7 @@ export const incoming = async (client: BasedClient, data: any) => {
             handlers.onMessage(payload)
           }
         }
-      } else if (subType === 1) {
+      } else if (subType === FunctionClientSubType.streamFullResponse) {
         // | 4 header | 1 subType | 3 id | * payload |
         const id = readUint24(buffer, 5)
         const start = 8
@@ -398,7 +382,7 @@ export const incoming = async (client: BasedClient, data: any) => {
           client.streamFunctionResponseListeners.get(id)[0](payload)
           client.streamFunctionResponseListeners.delete(id)
         }
-      } else if (subType === 2) {
+      } else if (subType === FunctionClientSubType.streamChunkResponse) {
         // | 4 header | 1 subType | 3 id | 1 seqId | 1 code | maxChunkSize
         const id = readUint24(buffer, 5)
         const seqId = buffer[8]
@@ -406,8 +390,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         let maxChunkSize = 0
 
-        if (len > 10 - 4 + 1) {
-          // derp bit weird
+        if (len > 7) {
           maxChunkSize = readUint24(buffer, 10)
         }
 
@@ -419,14 +402,13 @@ export const incoming = async (client: BasedClient, data: any) => {
             maxChunkSize,
           )
         }
-      } else if (subType === 3) {
+      } else if (subType === FunctionClientSubType.forceReload) {
         // | 4 header | 1 subType | 1 type | 1 seqId
         forceReload(client, buffer[5], buffer[6])
       }
     }
     // ---------------------------------
   } catch (err) {
-    // just code can load error codes as well
     // 981 - cannot parse data
     console.error(981, err)
   }

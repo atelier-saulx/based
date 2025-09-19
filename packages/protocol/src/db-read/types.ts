@@ -1,5 +1,5 @@
 import { TypeIndex, VectorBaseType } from '@based/schema/prop-types'
-import type { SchemaHooks } from '@based/schema'
+import type { HLLRegisterRepresentation, SchemaHooks } from '@based/schema'
 
 export type Item = {
   id: number
@@ -55,6 +55,8 @@ export type ReaderPropDef = {
   len?: number
   readBy: number
   locales?: { [langCode: string]: string }
+  cardinalityMode?: number
+  cardinalityPrecision?: number
 }
 
 export type ReaderAggregateSchema = {

@@ -265,11 +265,13 @@ export type SchemaBoolean = Prop<{
   default?: boolean
 }>
 
+export type HLLRegisterRepresentation = 'sparse' | 'dense'
+
 export type SchemaCardinality = Prop<{
   type: 'cardinality'
-  maxBytes?: number // should be fixed
-  mime?: Mime // TODO: check if this is correct
-  format?: NumberDisplay // when queried should return the count
+  maxBytes?: number
+  precision?: number
+  mode?: HLLRegisterRepresentation
 }>
 
 type VectorDefaultType =

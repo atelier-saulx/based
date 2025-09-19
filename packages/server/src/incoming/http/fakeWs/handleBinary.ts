@@ -6,9 +6,13 @@ import {
   encodeAuthResponse,
   valueToBuffer,
 } from '../../../protocol.js'
-import { handleQuery } from './query.js'
-import { handleFunction } from './function.js'
+// import { handleQuery } from './query.js'
+// import { handleFunction } from './function.js'
 import { readUint32 } from '@based/utils'
+import {
+  FunctionServerType,
+  FunctionServerSubType,
+} from '@based/protocol/client-server'
 
 const reader = (
   server: BasedServer,
@@ -19,45 +23,40 @@ const reader = (
   const { len, isDeflate, type } = decodeHeader(readUint32(arr, start))
   const next = len + start
 
-  // type 0 = function
-  if (type === 0) {
-    const p = handleFunction(arr, start, len, isDeflate, ctx, server)
-    if (p) {
-      return [next, p]
-    } else {
-      return [undefined]
-    }
+  if (type === FunctionServerType.function) {
+    // const p = handleFunction(arr, start, len, isDeflate, ctx, server)
+    // if (p) {
+    //   return [next, p]
+    // } else {
+    //   return [undefined]
+    // }
   }
 
-  // type 1 = subscribe , type 2 === get
-  if (type === 1 || type === 3) {
-    const p = handleQuery(arr, start, len, isDeflate, ctx, server)
-    if (p) {
-      return [next, p]
-    } else {
-      return [undefined]
-    }
+  if (
+    type === FunctionServerType.subscribe ||
+    type === FunctionServerType.get
+  ) {
+    // const p = handleQuery(arr, start, len, isDeflate, ctx, server)
+    // if (p) {
+    //   return [next, p]
+    // } else {
+    return [undefined]
+    // }
   }
 
-  // type 2 unsubscribe
-  if (type === 2) {
+  if (type === FunctionServerType.unsubscribe) {
     return [next]
   }
 
-  // // type 4 = auth
-  if (type === 4) {
+  if (type === FunctionServerType.auth) {
     return [next]
   }
 
-  // fix these 2!
-
-  // type 5 = channel sub
-  if (type === 5) {
+  if (type === FunctionServerType.channelSubscribe) {
     return [next]
   }
 
-  // type 6 = channelPublish
-  if (type === 6) {
+  if (type === FunctionServerType.channelPublish) {
     return [next]
   }
 
@@ -134,7 +133,6 @@ export const handleBinary = async (
 
   const prevToken = ctx.session.authState.token
 
-  // TRY CATCH...
   const r = await Promise.all(q)
 
   if (!ctx.session) {

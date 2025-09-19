@@ -7,8 +7,6 @@ import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'
 import { includeField } from './query.js'
 import { convertToReaderSchema } from './queryDefToReadSchema.js'
-import { deSerializeSchema } from '@based/protocol/db-read'
-import { serialize } from '@based/protocol/db-read/serialize-schema'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.id) {
@@ -23,16 +21,13 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     )
     def.schemaChecksum = q.db.schema?.hash || 0
     q.def = def
-    // proposal:
     for (const command of commands) {
       q[command.method](...command.args)
     }
-    // locale first...
     if (!q.def.include.stringFields.size && !q.def.references.size) {
       includeField(q.def, { field: '*' })
     }
     q.queryCommands = commands
-
     const b = defToBuffer(q.db, q.def)
     const buf = concatUint8Arr(b)
     let id = native.crc32(buf)
@@ -42,10 +37,13 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
 
     // console.log('--------------------------------------------------')
     // console.dir(convertToReaderSchema(q.def), { depth: 100 })
-    // console.log(deSerializeSchema(serialize(convertToReaderSchema(q.def))))
+    // const c = convertToReaderSchema(q.def)
+    // const s = serialize(c)
+    // console.log(deSerializeSchema(s))
     // q.def.readSchema = deSerializeSchema(
     //   serialize(convertToReaderSchema(q.def)),
     // )
+    // console.log('--------------------------------------------------')
 
     q.def.readSchema = convertToReaderSchema(q.def)
     handleErrors(q.def)

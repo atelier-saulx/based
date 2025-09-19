@@ -14,7 +14,7 @@ import { BasedErrorCode } from '@based/errors'
 
 const wrapStream = (
   stream: BasedDataStream | Readable | Duplex,
-  size: number
+  size: number,
 ): BasedDataStream => {
   if (stream instanceof BasedDataStream) {
     return stream
@@ -28,21 +28,21 @@ export const streamFunction = async (
   server: BasedServer,
   name: string,
   ctx: Context,
-  streamOpts: StreamFunctionOpts
+  streamOpts: StreamFunctionOpts,
 ): Promise<any> => {
   const route = verifyRoute(
     server,
     server.client.ctx,
     'stream',
     server.functions.route(name),
-    name
+    name,
   )
 
   if (route === null) {
     return
   }
 
-  const fn = await installFn(server, server.client.ctx, route)
+  const fn = await installFn({ server, ctx: server.client.ctx, route })
 
   if (!fn) {
     throw createError(server, ctx, BasedErrorCode.FunctionNotFound, {

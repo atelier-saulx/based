@@ -16,7 +16,8 @@ export const sendObsWs = (
   }
   if (ctx.session.v < 2) {
     if (obs.reusedCache) {
-      const prevId = updateId(buffer, obs.id)
+      const id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
+      const prevId = updateId(buffer, id)
       if (isDiff) {
         ctx.session.ws.send(diffV2toV1(buffer), true, false)
       } else {
@@ -32,7 +33,8 @@ export const sendObsWs = (
     }
   } else {
     if (obs.reusedCache) {
-      const prevId = updateId(buffer, obs.id)
+      const id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
+      const prevId = updateId(buffer, id)
       ctx.session.ws.send(buffer, true, false)
       buffer.set(prevId, 4)
     } else {

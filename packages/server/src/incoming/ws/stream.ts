@@ -9,7 +9,7 @@ import {
 } from '../../protocol.js'
 import { BasedDataStream } from '@based/functions'
 import mimeTypes from 'mime-types'
-import { authorize, IsAuthorizedHandler } from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { rateLimitRequest } from '../../security.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
@@ -17,28 +17,35 @@ import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '@based/errors'
 import zlib from 'node:zlib'
 import { BasedServer } from '../../server.js'
-import { readUint64, readUint24, readUint32 } from '@based/utils'
+import { readUint24, readUint32 } from '@based/utils'
+import { FunctionHandler } from '../../types.js'
+import {
+  FunctionClientType,
+  FunctionClientSubType,
+} from '@based/protocol/client-server'
 
-const startStreamFunction: IsAuthorizedHandler<
+const startStreamFunction: FunctionHandler<
   WebSocketSession,
   BasedRoute<'stream'>
-> = (route, spec, server, ctx, payload, streamRequestId) => {
-  spec
-    .fn(server.client, payload, ctx)
+> = (props) => {
+  props.spec
+    .fn(props.server.client, props.payload, props.ctx)
     .then(async (v) => {
-      ctx.session?.ws.send(
+      props.ctx.session?.ws.send(
         encodeStreamFunctionResponse(
-          streamRequestId,
-          ctx.session.v < 2 ? valueToBufferV1(v, true) : valueToBuffer(v, true),
+          props.id,
+          props.ctx.session.v < 2
+            ? valueToBufferV1(v, true)
+            : valueToBuffer(v, true),
         ),
         true,
         false,
       )
     })
     .catch((err) => {
-      sendError(server, ctx, BasedErrorCode.FunctionError, {
-        route,
-        streamRequestId,
+      sendError(props.server, props.ctx, BasedErrorCode.FunctionError, {
+        route: props.route,
+        streamRequestId: props.id,
         err,
       })
     })
@@ -174,22 +181,19 @@ export const registerStream: BinaryMessageHandler = (
 
   ctx.session.streams[reqId] = streamPayload
 
-  authorize(
+  authorize({
     route,
     server,
     ctx,
-    streamPayload,
-    startStreamFunction,
-    reqId,
-    undefined,
-    route.public,
-    () => {
+    payload: streamPayload,
+    id: reqId,
+    error: () => {
       if (!ctx.session) {
-        return
+        return true
       }
       delete ctx.session.streams[reqId]
     },
-  )
+  }).then(startStreamFunction)
 
   return true
 }
@@ -248,8 +252,6 @@ export const receiveChunkStream: BinaryMessageHandler = (
   }
 
   streamPayload.seqId = seqId === 255 ? 0 : seqId
-
-  // encoding can still be a thing for streams test with png's
 
   const chunk = !isDeflate
     ? arr.slice(infoLen + start, start + len)

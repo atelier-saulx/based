@@ -8,11 +8,7 @@ import {
 import { BasedServer } from '../../../../server.js'
 import { installFn } from '../../../../installFn.js'
 import readFormData from './readFormData.js'
-import {
-  BasedErrorCode,
-  BasedErrorData,
-  createErrorData,
-} from '@based/errors'
+import { BasedErrorCode, BasedErrorData, createErrorData } from '@based/errors'
 import { sendHttpResponse } from '../../../../sendHttpResponse.js'
 
 const handleFile = async (
@@ -20,17 +16,17 @@ const handleFile = async (
   ctx: Context<HttpSession>,
   installedFn: Promise<BasedFunctionConfig<'stream'> | null>,
   file: StreamPayload,
-  route: BasedRoute<'stream'>
+  route: BasedRoute<'stream'>,
 ): Promise<
   | { value: any }
   | {
-    error: BasedErrorData<
-      | BasedErrorCode.FunctionError
-      | BasedErrorCode.FunctionNotFound
-      | BasedErrorCode.AuthorizeFunctionError
-      | BasedErrorCode.AuthorizeRejectedError
-    >
-  }
+      error: BasedErrorData<
+        | BasedErrorCode.FunctionError
+        | BasedErrorCode.FunctionNotFound
+        | BasedErrorCode.AuthorizeFunctionError
+        | BasedErrorCode.AuthorizeRejectedError
+      >
+    }
 > => {
   const spec = await installedFn
 
@@ -47,7 +43,7 @@ const handleFile = async (
       server.client,
       ctx,
       route.name,
-      file
+      file,
     )
     if (!ok) {
       return {
@@ -78,9 +74,9 @@ const handleFile = async (
 export const multiPart = (
   server: BasedServer,
   ctx: Context<HttpSession>,
-  route: BasedRoute<'stream'>
+  route: BasedRoute<'stream'>,
 ) => {
-  const installedFn = installFn(server, server.client.ctx, route)
+  const installedFn = installFn({ server, ctx: server.client.ctx, route })
 
   const pendingFiles: ReturnType<typeof handleFile>[] = []
 

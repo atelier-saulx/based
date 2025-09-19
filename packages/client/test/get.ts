@@ -198,7 +198,7 @@ test('get', async (t: T) => {
   t.is(Object.keys(server.functions.specs).length, 0)
 })
 
-test('authorize get', async (t: T) => {
+test.only('authorize get', async (t: T) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
@@ -221,8 +221,11 @@ test('authorize get', async (t: T) => {
   const error: BasedError = await t.throwsAsync(
     coreClient.query('counter').get(),
   )
+
   t.is(error.code, BasedErrorCode.AuthorizeRejectedError)
+
   await coreClient.setAuthState({ token: 'mock_token' })
+
   await t.notThrowsAsync(coreClient.query('counter').get())
 })
 

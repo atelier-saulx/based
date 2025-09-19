@@ -40,7 +40,7 @@ await test('group by datetime intervals', async (t) => {
     await db.query('trip').sum('distance').groupBy('pickup', 'day').get(),
     {
       11: {
-        distance: 1026.88,
+        distance: { sum: 1026.88 },
       },
     },
     'shorthand for step type',
@@ -53,7 +53,7 @@ await test('group by datetime intervals', async (t) => {
       .get(),
     {
       11: {
-        distance: 1026.88,
+        distance: { sum: 1026.88 },
       },
     },
     'group timestamp by day, without shorthand',
@@ -62,7 +62,7 @@ await test('group by datetime intervals', async (t) => {
     await db.query('trip').sum('distance').groupBy('pickup', 'hour').get(),
     {
       11: {
-        distance: 1026.88,
+        distance: { sum: 1026.88 },
       },
     },
     'group timestamp by hour',
@@ -71,7 +71,7 @@ await test('group by datetime intervals', async (t) => {
     await db.query('trip').sum('distance').groupBy('pickup', 'dow').get(),
     {
       3: {
-        distance: 1026.88,
+        distance: { sum: 1026.88 },
       },
     },
     'group timestamp by day of week',
@@ -80,7 +80,7 @@ await test('group by datetime intervals', async (t) => {
     await db.query('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
     {
       3: {
-        distance: 1026.88,
+        distance: { sum: 1026.88 },
       },
     },
     'group timestamp by hour',
@@ -89,7 +89,7 @@ await test('group by datetime intervals', async (t) => {
     await db.query('trip').sum('distance').groupBy('pickup', 'doy').get(),
     {
       345: {
-        distance: 1026.88,
+        distance: { sum: 1026.88 },
       },
     },
     'group timestamp by hour',
@@ -98,7 +98,7 @@ await test('group by datetime intervals', async (t) => {
     await db.query('trip').sum('distance').groupBy('pickup', 'month').get(),
     {
       11: {
-        distance: 1026.88,
+        distance: { sum: 1026.88 },
       },
     },
     'group timestamp by month[0-11]',
@@ -107,7 +107,7 @@ await test('group by datetime intervals', async (t) => {
     await db.query('trip').sum('distance').groupBy('pickup', 'year').get(),
     {
       2024: {
-        distance: 1026.88,
+        distance: { sum: 1026.88 },
       },
     },
     'group timestamp by hour',
@@ -165,13 +165,17 @@ await test('group by datetime ranges', async (t) => {
   let endDate = epoch + interval * 1000
 
   // console.log(r) // epoch as index
-  deepEqual(r, { '1733914800000': { distance: 1326.88 } }, 'epoch as index')
+  deepEqual(
+    r,
+    { '1733914800000': { distance: { sum: 1326.88 } } },
+    'epoch as index',
+  )
 
   const startDateAsIndex = { [startDate]: Object.values(r)[0] }
   // console.log(startDateAsIndex) // startDate as index
   deepEqual(
     startDateAsIndex,
-    { '11/12/2024, 08:00': { distance: 1326.88 } },
+    { '11/12/2024, 08:00': { distance: { sum: 1326.88 } } },
     'startDate as index',
   )
   const rangeAsIndex = {
@@ -180,7 +184,7 @@ await test('group by datetime ranges', async (t) => {
   // console.log(rangeAsIndex) // range as index
   deepEqual(
     rangeAsIndex,
-    { '11/12/2024 08:00 – 08:40': { distance: 1326.88 } },
+    { '11/12/2024 08:00 – 08:40': { distance: { sum: 1326.88 } } },
     'range as index',
   )
 
@@ -201,7 +205,7 @@ await test('group by datetime ranges', async (t) => {
   // console.log(rangeByIndex2)
   deepEqual(
     rangeByIndex2,
-    { '11/12/2024, 08:00 – 23/12/2024, 10:00': { distance: 1326.88 } },
+    { '11/12/2024, 08:00 – 23/12/2024, 10:00': { distance: { sum: 1326.88 } } },
     'another range interval as index',
   )
 
@@ -278,7 +282,7 @@ await test('cardinality with dates', async (t) => {
   const total = await db.query('lunch').cardinality('eaters').get().toObject()
 
   // console.log('Total Eaters: ', total.eaters)
-  deepEqual(total.eaters, 11, 'Total Eaters')
+  deepEqual(total.eaters.cardinality, 11, 'Total Eaters')
 
   const groupByDay = await db
     .query('lunch')
@@ -288,7 +292,7 @@ await test('cardinality with dates', async (t) => {
     .toObject()
 
   const meals = Object.entries(groupByDay) //@ts-ignore
-    .map((m) => m[1].eaters)
+    .map((m) => m[1].eaters.cardinality)
     .reduce((e, acc) => (acc += e))
 
   // console.log('Total Meals: ', meals)
@@ -321,7 +325,11 @@ await test('cardinality with dates', async (t) => {
     return { [months[e[0]]]: e[1].eaters }
   })
   // console.log('Total Eaters by Month: ', eatersByMonth)
-  deepEqual(eatersByMonth, [{ Jun: 5 }, { Jul: 11 }], 'Total Eaters by Month')
+  deepEqual(
+    eatersByMonth,
+    [{ Jun: { cardinality: 5 } }, { Jul: { cardinality: 11 } }],
+    'Total Eaters by Month',
+  )
 })
 
 await test('formating timestamp', async (t) => {
@@ -366,10 +374,10 @@ await test('formating timestamp', async (t) => {
     await db.query('trip').sum('distance').groupBy('pickup').get(),
     {
       1733916600000: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
       1733914800000: {
-        distance: 813.44,
+        distance: { sum: 813.44 },
       },
     },
     'no format => epoch ',
@@ -383,7 +391,7 @@ await test('formating timestamp', async (t) => {
       .get(),
     {
       '11/12/2024 08:00 – 08:40': {
-        distance: 1326.88,
+        distance: { sum: 1326.88 },
       },
     },
     'formated range interval as range',
@@ -396,8 +404,8 @@ await test('formating timestamp', async (t) => {
       .groupBy('pickup', { display: dtFormat })
       .get(),
     {
-      '11/12/2024, 08:30': { distance: 513.44 },
-      '11/12/2024, 08:00': { distance: 813.44 },
+      '11/12/2024, 08:30': { distance: { sum: 513.44 } },
+      '11/12/2024, 08:00': { distance: { sum: 813.44 } },
     },
     'formated timestamp without range',
   )
@@ -450,10 +458,10 @@ await test('timezone offsets', async (t) => {
     {
       10: {
         // it is 10th Dec 21h in São Paulo (depending on DST)
-        distance: 813.44,
+        distance: { sum: 813.44 },
       },
       11: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'reading stored datetime (as UTC) with specific timezone',
@@ -466,10 +474,10 @@ await test('timezone offsets', async (t) => {
       .get(),
     {
       21: {
-        distance: 813.44,
+        distance: { sum: 813.44 },
       },
       12: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'reading stored datetime (as UTC) with specific timezone',
@@ -483,11 +491,11 @@ await test('timezone offsets', async (t) => {
     {
       11: {
         // Dec, 0 index
-        distance: 813.44,
+        distance: { sum: 813.44 },
       },
       10: {
         // Nov, 0 index
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'reading stored datetime (as UTC) with specific timezone',
