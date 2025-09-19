@@ -74,23 +74,22 @@ export const reEvaulateUnauthorized = (
   if (session.unauthorizedObs?.size) {
     session.unauthorizedObs.forEach((obs) => {
       let { id, route, checksum, payload } = obs
-      let attachedCtx: AttachedCtx
-      if (route.ctx) {
-        attachedCtx = attachCtx(server, route, ctx, id)
-        ctx.session.obs.delete(id)
-        ctx.session.obs.add(attachedCtx.id)
-        id = attachedCtx.id
-      }
       authorize({
         route,
         server,
         ctx,
-        payload,
         id,
-        attachedCtx,
+        payload,
         checksum,
         error: () => {}, // Do not remove from unauthorizedObs,
       }).then((props) => {
+        if (route.ctx) {
+          const attachedCtx = attachCtx(server, route, ctx, id)
+          ctx.session.obs.delete(id)
+          ctx.session.obs.add(attachedCtx.id)
+          props.id = attachedCtx.id
+          props.attachedCtx = attachedCtx
+        }
         session.unauthorizedObs.delete(obs)
         enableSubscribe(props)
       })
