@@ -113,7 +113,7 @@ function moveLibraryToPlatformDir(
     console.log(`Renaming library to ${newPath}...`)
     fs.renameSync(originalPath, newPath)
 
-    if (isRelease && platform.os === 'linux') {
+    if (platform.os === 'linux') {
       execSync(
         `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_${platform.arch} /bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`,
         {
