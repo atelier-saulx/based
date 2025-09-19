@@ -5,6 +5,10 @@ import { clientWorker } from './shared/startWorker.js'
 import { allCountryCodes } from './shared/examples.js'
 import { wait } from '@based/utils'
 
+const NR_VOTES = 7.5e6
+const NR_WORKERS = 15
+const LOG_INTERVAL = 1e3
+
 const countrySchema: SchemaType = {
   props: {
     AL: 'uint8',
@@ -62,8 +66,6 @@ await test('schema with many uint8 fields', async (t) => {
     'Requested',
     'ReadyForConfirmationToken',
     'RequestedIntent',
-    // paymentStatusTime(ID TOKEN)
-    // SUB THAT IS ALSO ON THE FRONT END.getWhen(v => v.status == ReadyForPayment)
     'ReadyForPaymentIntent',
     'PaymentIntentIsDone',
     'WebhookSuccess',
@@ -125,12 +127,12 @@ await test('schema with many uint8 fields', async (t) => {
   const s = countryCodesArray.map((v) => 'countries.' + v)
 
   const timeActions = async () => {
-    console.log('\n----------------------Logging interval')
+    console.log('\n------ Status ------')
     // await db.query('vote').count().get().inspect()
     // await db.query('payment').count().get().inspect()
     const d = performance.now()
     await db.save()
-    console.log('took', performance.now() - d, 'ms to save')
+    console.log('took', (performance.now() - d).toFixed(2), 'ms to save')
 
     await db.query('vote').count().get().inspect()
 
@@ -149,7 +151,7 @@ await test('schema with many uint8 fields', async (t) => {
           .groupBy('fromCountry')
           .sum(...s)
           .get()
-      ).execTime,
+      ).execTime.toFixed(2),
       'ms',
     )
   }
@@ -158,28 +160,36 @@ await test('schema with many uint8 fields', async (t) => {
   let timed = async () => {
     await timeActions()
     if (!stopped) {
-      int = setTimeout(timed, 1e3)
+      int = setTimeout(timed, LOG_INTERVAL)
     }
   }
-  let int = setTimeout(timed, 1e3)
+  let int = setTimeout(timed, LOG_INTERVAL)
   t.after(() => clearInterval(int))
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < NR_WORKERS; i++) {
     await clientWorker(
       t,
       db,
-      async (client, { allCountryCodes, countryCodesArray, status }) => {
+      async (client, { NR_VOTES, allCountryCodes, countryCodesArray, status }) => {
+        const fastPrng = (seed: number = 100) => {
+          return (min: number, max: number) => {
+            seed = (214013 * seed + 2531011) & 0xFFFFFFFF
+            return ((seed >> 16) & 0x7FFF) % (max - min + 1) + min
+          }
+        }
+        const prng = fastPrng(~~(Math.random() * 100))
+
         await client.schemaIsSet()
         client.flushTime = 10
-        for (let i = 0; i < 5e5; i++) {
+        for (let i = 0; i < NR_VOTES; i++) {
           const payment = client.create('payment', {
-            // status: status[~~(Math.random() * status.length)],
+            // status: status[prng(0, status.length - 1)],
           })
           const c: any = {}
           for (const key of countryCodesArray) {
             const code = key
             let max = 0
-            const p = ~~(Math.random() * 3)
+            const p = prng(0, 3)
             max += p
             if (max > 20) {
               break
@@ -199,7 +209,7 @@ await test('schema with many uint8 fields', async (t) => {
         }
         await client.drain()
       },
-      { allCountryCodes, countryCodesArray, status },
+      { NR_VOTES: NR_VOTES / NR_WORKERS, allCountryCodes, countryCodesArray, status },
     )
   }
 
