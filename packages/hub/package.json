@@ -12,12 +12,12 @@
   "main": "./dist/index.js",
   "source": "src/index.ts",
   "dependencies": {
-    "@based/client": "^8.0.2",
-    "@based/db": "^0.1.0",
+    "@based/client": "^8.1.1",
+    "@based/db": "^0.1.2",
     "@based/hash": "1.0.0",
     "@based/s3": "*",
-    "@based/schema": "^5.0.2",
-    "@based/server": "^10.0.6",
+    "@based/schema": "^5.0.3",
+    "@based/server": "^10.1.1",
     "@based/utils": "^1.0.0",
     "arktype": "^2.1.20",
     "nodemailer": "^7.0.5"
