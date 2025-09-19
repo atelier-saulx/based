@@ -110,6 +110,7 @@ await test('subscriptionIds', async (t) => {
   console.log('1M d', Date.now() - d, 'ms')
   logSubIds(server)
 
+  // ----------
   native.removeIdSubscription(server.dbCtxExternal, val)
   console.info('------- UPDATE 4 after remove')
   // await clients[1].update('user', id, { derp: 69 })
