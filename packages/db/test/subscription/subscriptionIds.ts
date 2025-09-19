@@ -112,7 +112,7 @@ await test('subscriptionIds', async (t) => {
 
   // ----------
   native.removeIdSubscription(server.dbCtxExternal, val)
-  console.info('------- UPDATE 4 after remove')
+  console.info('------- UPDATE 4 after remove of sub (no marked)')
   // await clients[1].update('user', id, { derp: 69 })
   await clients[1].update('user', id, { derp: 71 })
   await wait(100)
@@ -126,9 +126,14 @@ await test('subscriptionIds', async (t) => {
   //     cnt++
   //   })
 
-  await wait(1e3)
+  console.info('------- UPDATE 5 after remove of node')
+  native.addIdSubscription(server.dbCtxExternal, val)
+  // await clients[1].update('user', id, { derp: 69 })
+  await clients[1].delete('user', id)
+  await wait(100)
+  logSubIds(server)
 
-  await clients[0].create('user', { derp: 99 })
+  await wait(100)
 
   // close()
   // close2()

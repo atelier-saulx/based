@@ -1,6 +1,8 @@
 const Modify = @import("./ctx.zig");
 const ModifyCtx = Modify.ModifyCtx;
 
+const std = @import("std");
+
 pub inline fn singleId(
     ctx: *ModifyCtx,
 ) !void {
@@ -19,7 +21,8 @@ pub inline fn singleIdRemove(
     ctx: *ModifyCtx,
 ) !void {
     if (ctx.subId) |idContainer| {
-        var fieldIter = idContainer.fields.valueIterator();
+        var fieldIter = idContainer.*.fields.valueIterator();
+        ctx.db.subscriptions.hasMarkedSubscriptions = true;
         while (fieldIter.next()) |subIds| {
             var keyIter = subIds.*.keyIterator();
             while (keyIter.next()) |subId| {

@@ -73,7 +73,6 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
         var i: usize = 0;
-
         while (keyIter.next()) |key| {
             utils.writeInt(u64, data, i, key.*);
             _ = ctx.subscriptions.subscriptionsMarked.remove(key.*);
