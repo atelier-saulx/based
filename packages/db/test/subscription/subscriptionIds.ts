@@ -53,7 +53,6 @@ await test('subscriptionIds', async (t) => {
     },
   })
 
-  let cnt = 0
   const id = await clients[0].create('user', { derp: 66 })
   const fields = new Uint8Array([0])
   const subId = 66
@@ -84,28 +83,38 @@ await test('subscriptionIds', async (t) => {
   await clients[0].drain()
   console.info('------- UPDATE')
   await clients[1].update('user', id, { derp: 69 })
-  await wait(1e3)
+  await wait(100)
   logSubIds(server)
 
   // if the same dont!
   console.info('------- UPDATE 2')
   // await clients[1].update('user', id, { derp: 69 })
   await clients[1].update('user', id, { derp: 70 })
-  await wait(1e3)
+  await wait(100)
   logSubIds(server)
 
   console.info('------- UPDATE 3')
   // await clients[1].update('user', id, { derp: 69 })
   await clients[1].update('user', id, { derp: 71 })
-  await wait(1e3)
+  await wait(100)
+  logSubIds(server)
+
+  // native.removeIdSubscription(server.dbCtxExternal, val)
+
+  console.info('------- 1M updates')
+  let d = Date.now()
+  for (let i = 0; i < 1e6; i++) {
+    await clients[1].update('user', id, { derp: 71 })
+  }
+  await clients[0].drain()
+  console.log('1M d', Date.now() - d, 'ms')
   logSubIds(server)
 
   native.removeIdSubscription(server.dbCtxExternal, val)
-
   console.info('------- UPDATE 4 after remove')
   // await clients[1].update('user', id, { derp: 69 })
   await clients[1].update('user', id, { derp: 71 })
-  await wait(1e3)
+  await wait(100)
   logSubIds(server)
 
   // const close2 = clients[0]
