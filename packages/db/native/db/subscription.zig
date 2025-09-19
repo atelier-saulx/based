@@ -146,6 +146,8 @@ fn removeIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info
     const id = utils.read(u32, value, 10);
     const fields = value[headerLen..value.len];
     if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
+        std.debug.print("AMOUNT OF SUBS {any} \n", .{typeSubscriptionCtx.ids.count()});
+
         if (typeSubscriptionCtx.ids.get(id)) |idContainer| {
             for (fields) |f| {
                 if (idContainer.fields.get(f)) |fieldsSubIds| {

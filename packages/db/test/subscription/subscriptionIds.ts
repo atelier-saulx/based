@@ -3,6 +3,7 @@ import {
   readUint64,
   wait,
   writeUint16,
+  writeUint32,
   writeUint64,
 } from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
@@ -62,13 +63,13 @@ await test('subscriptionIds', async (t) => {
   const val = new Uint8Array(headerLen + fields.byteLength)
   writeUint64(val, subId, 0)
   writeUint16(val, typeId, 8)
-  writeUint16(val, id, 10)
+  writeUint32(val, id, 10)
   val.set(fields, headerLen)
 
   native.addIdSubscription(server.dbCtxExternal, val)
 
   for (let i = 1; i < 1e6 - 1; i++) {
-    writeUint16(val, i, 10)
+    writeUint32(val, i, 10)
     native.addIdSubscription(server.dbCtxExternal, val)
   }
   writeUint16(val, id, 10)
