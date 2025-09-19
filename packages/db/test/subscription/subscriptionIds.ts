@@ -100,6 +100,14 @@ await test('subscriptionIds', async (t) => {
   await wait(1e3)
   logSubIds(server)
 
+  native.removeIdSubscription(server.dbCtxExternal, val)
+
+  console.info('------- UPDATE 4 after remove')
+  // await clients[1].update('user', id, { derp: 69 })
+  await clients[1].update('user', id, { derp: 71 })
+  await wait(1e3)
+  logSubIds(server)
+
   // const close2 = clients[0]
   //   .query('user', id)
   //   .include('derp')
