@@ -26,6 +26,12 @@ export const getPropType = (
 
   if ('items' in prop) {
     if (getPropType(prop.items) === 'reference') {
+      Object.keys(prop.items).filter((v) => v[0] === '$').forEach((v) => {
+          if (typeof prop.items[v] === 'string') {
+              prop.items[v] = { type: prop.items[v] }
+          }
+      })
+
       return 'references'
     }
     return 'set'

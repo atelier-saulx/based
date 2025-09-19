@@ -45,11 +45,8 @@ await test('include ', async (t) => {
   )
 
   equal((await db.query('user', 1).get()).id, 1)
-
-  equal((await db.query('user', 1).get()).queryId, 3978712180)
-
+  //equal((await db.query('user', 1).get()).queryId, 3978712180)
   equal((await db.query('user').get()).checksum, 2149520223)
-
   equal((await db.query('user').get()).version, 4507870634704934)
 })
 

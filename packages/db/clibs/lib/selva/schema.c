@@ -34,11 +34,6 @@ struct schemabuf_parser_ctx {
     size_t colvec_index;
 };
 
-/**
- * Parse field schema to efc.
- */
-static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const uint8_t *buf, size_t len);
-
 static int type2fs_reserved(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *, field_t)
 {
     return SELVA_EINTYPE;
@@ -115,11 +110,10 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         enum EdgeFieldConstraintFlag flags;
         node_type_t dst_node_type;
         field_t inverse_field;
-        uint32_t schema_len;
-        uint8_t schema[] __counted_by(schema_len);
+        node_type_t meta_node_type;
     } __packed constraints;
 
-    static_assert(sizeof(constraints) == 9);
+    static_assert(sizeof(constraints) == 7);
 
     if (len < sizeof(constraints)) {
         return SELVA_EINVAL;
@@ -128,10 +122,6 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
     memcpy(&constraints, buf, sizeof(constraints));
     buf += sizeof(constraints);
     len -= sizeof(constraints);
-
-    if (constraints.schema_len > len) {
-        return SELVA_EINVAL;
-    }
 
     enum EdgeFieldConstraintFlag flags = constraints.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT | EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP);
 
@@ -142,21 +132,9 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
             .flags = flags,
             .inverse_field = constraints.inverse_field,
             .dst_node_type = constraints.dst_node_type,
+            .meta_node_type = constraints.meta_node_type,
         },
     };
-
-    if (constraints.schema_len > 0) {
-        int err;
-
-        err = parse2efc(ctx, &fs->edge_constraint, buf, constraints.schema_len);
-        if (err) {
-            return err;
-        }
-#if 0
-        buf += constraints.schema_len;
-#endif
-        len -= constraints.schema_len;
-    }
 
     return orig_len - len;
 }
@@ -178,10 +156,10 @@ static int type2fs_weak_refs(struct schemabuf_parser_ctx *ctx, struct SelvaField
         enum SelvaFieldType type;
         uint8_t spare;
         node_type_t dst_node_type;
-        uint8_t pad[5]; /* Reserved for future use. */
+        uint8_t pad[3]; /* Reserved for future use. */
     } __packed constraints;
 
-    static_assert(sizeof(constraints) == 9);
+    static_assert(sizeof(constraints) == 7);
 
     if (ctx->len < sizeof(constraints)) {
         return SELVA_EINVAL;
@@ -410,34 +388,6 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
     return 0;
 }
 
-static int parse2efc(struct schemabuf_parser_ctx *ctx, struct EdgeFieldConstraint *efc, const uint8_t *buf, size_t len)
-{
-    struct schema_info nfo;
-    int err;
-
-    err = schemabuf_get_info(&nfo, buf, len); /* Currently `block_capacity` has no meaning here. */
-    if (!err && nfo.nr_fields > 0) {
-        struct SelvaFieldsSchema *schema;
-
-        schema = selva_calloc(1, sizeof_wflex(struct SelvaFieldsSchema, field_schemas, nfo.nr_fields));
-        efc->_fields_schema = schema;
-
-        /*
-         * SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_WEAK_REFERENCES,
-         * SELVA_FIELD_TYPE_ALIAS, SELVA_FIELD_TYPE_ALIASES, and
-         * SELVA_FIELD_TYPE_COLVEC are not supported here.
-         * len < SCHEMA_MIN_SIZE was already checked inschemabuf_get_info().
-         * TODO Should we fail on unsupported types?
-         */
-
-        schema->nr_fields = nfo.nr_fields;
-        schema->nr_fixed_fields = nfo.nr_fixed_fields;
-        err = parse2(ctx, schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
-    }
-
-    return err;
-}
-
 /**
  * ns->nr_fields must be set before calling this function.
  * @param[out] ns
@@ -468,21 +418,6 @@ int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t le
 
 void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
 {
-    const size_t nr_fields = schema->nr_fields;
-
-    for (size_t i = 0; i < nr_fields; i++) {
-        struct SelvaFieldSchema *fs = &schema->field_schemas[i];
-
-        if (fs->type == SELVA_FIELD_TYPE_REFERENCE ||
-            fs->type == SELVA_FIELD_TYPE_REFERENCES) {
-            struct SelvaFieldsSchema *efc_schema = fs->edge_constraint._fields_schema;
-            if (efc_schema && !(fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SCHEMA_REF_CACHED)) {
-                schemabuf_deinit_fields_schema(efc_schema);
-                selva_free(efc_schema);
-            }
-            fs->edge_constraint._fields_schema = nullptr;
-        }
-    }
     selva_free(schema->field_map_template.buf);
 }
 

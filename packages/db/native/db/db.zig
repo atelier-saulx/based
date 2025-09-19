@@ -79,8 +79,13 @@ pub fn selvaStringDestroy(str: ?selva.selva_string) void {
     try selva.selva_string_free(str);
 }
 
-pub fn getCardinalityReference(ctx: *DbCtx, ref: *selva.SelvaNodeLargeReference, fieldSchema: FieldSchema) []u8 {
-    if (selva.selva_fields_get_selva_string3(ctx.selva, ref, fieldSchema) orelse null) |stored| {
+pub fn getCardinalityReference(ctx: *DbCtx, efc: EdgeFieldConstraint, ref: *selva.SelvaNodeLargeReference, fieldSchema: FieldSchema) []u8 {
+    const meta_node = getMetaNode(ctx, efc, ref);
+    if (meta_node == null) {
+        return emptySlice;
+    }
+
+    if (selva.selva_fields_get_selva_string(meta_node, fieldSchema) orelse null) |stored| {
         const countDistinct = selva.hll_count(@ptrCast(stored));
         return countDistinct[0..4];
     } else {
@@ -156,6 +161,8 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
         node,
         fieldSchema,
         id,
+        markDirtyCb,
+        ctx,
     ));
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
@@ -168,6 +175,8 @@ pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
         selva.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.selva_fields_set_micro_buffer2(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_STRING => selva.selva_fields_set_string(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_TEXT => selva.selva_fields_set_text(node, fieldSchema, data.ptr, data.len),
+        selva.SELVA_FIELD_TYPE_WEAK_REFERENCE => selva.selva_fields_set_weak_reference(node, fieldSchema, @bitCast(data[0..4].*)),
+        selva.SELVA_FIELD_TYPE_WEAK_REFERENCES => selva.selva_fields_set_weak_references(node, fieldSchema, @alignCast(@ptrCast(data.ptr)), data.len / 4),
         else => selva.SELVA_EINTYPE,
     });
 }
@@ -235,6 +244,8 @@ pub fn putReferences(ctx: *modifyCtx.ModifyCtx, ids: []u32, target: Node, fieldS
         typeEntry,
         ids.ptr,
         ids.len,
+        markDirtyCb,
+        ctx,
     ));
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
@@ -258,6 +269,8 @@ pub fn insertReference(ctx: *modifyCtx.ModifyCtx, value: Node, target: Node, fie
         te_dst,
         value,
         &ref,
+        markDirtyCb,
+        ctx,
     );
 
     if (code != selva.SELVA_EEXIST) {
@@ -296,19 +309,35 @@ pub fn swapReference(
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
+fn getMetaNode(
+    db: *DbCtx,
+    efc: EdgeFieldConstraint,
+    ref: *selva.SelvaNodeLargeReference
+) ?Node {
+    if (ref.*.meta == 0) {
+        return null;
+    }
+
+    const meta_type = selva.selva_get_type_by_index(db.selva, efc.*.meta_node_type);
+    return selva.selva_find_node(meta_type, ref.*.meta);
+}
+
 pub fn getEdgeProp(
+    db: *DbCtx,
+    efc: EdgeFieldConstraint,
     ref: *selva.SelvaNodeLargeReference,
     fieldSchema: FieldSchema,
 ) []u8 {
-    if (ref.meta != null) {
-        const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw2(
-            ref.meta,
-            fieldSchema,
-        );
-        return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
-    } else {
+    const meta_node = getMetaNode(db, efc, ref);
+    if (meta_node == null) {
         return emptySlice;
     }
+
+    const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(
+        meta_node,
+        fieldSchema,
+    );
+    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
 pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstraint: *const selva.EdgeFieldConstraint, field: u8) !FieldSchema {
@@ -322,17 +351,22 @@ pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstraint: *const selva.EdgeFieldCons
     return edgeFieldSchema;
 }
 
+// TODO This should be going away
 pub fn getEdgeReferences(
+    db: *DbCtx,
+    efc: EdgeFieldConstraint,
     ref: *selva.SelvaNodeLargeReference,
     field: u8,
 ) ?selva.SelvaNodeWeakReferences {
-    if (ref.meta != null) {
-        return selva.selva_fields_get_weak_references(
-            ref.meta,
-            field,
-        );
+    const meta_node = getMetaNode(db, efc, ref);
+    if (meta_node == null) {
+        return null;
     }
-    return null;
+
+    return selva.selva_fields_get_weak_references(
+        selva.selva_fields_node2fields(meta_node),
+        field,
+    );
 }
 
 pub fn resolveEdgeReference(ctx: *DbCtx, fieldSchema: FieldSchema, ref: *selva.SelvaNodeWeakReference) ?Node {
@@ -343,35 +377,33 @@ pub fn resolveEdgeReference(ctx: *DbCtx, fieldSchema: FieldSchema, ref: *selva.S
 }
 
 pub fn getEdgeReference(
+    db: *DbCtx,
+    efc: EdgeFieldConstraint,
     ref: *selva.SelvaNodeLargeReference,
     field: u8,
 ) ?selva.SelvaNodeWeakReference {
-    if (ref.meta != null) {
-        return selva.selva_fields_get_weak_reference(
-            ref.meta,
-            field,
-        );
+    const meta_node = getMetaNode(db, efc, ref);
+    if (meta_node == null) {
+        return null;
     }
-    return null;
+
+    return selva.selva_fields_get_weak_reference(
+        selva.selva_fields_node2fields(meta_node),
+        field,
+    );
 }
 
 pub fn writeEdgeProp(
     ctx: *modifyCtx.ModifyCtx,
-    data: []u8,
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
     ref: *selva.SelvaNodeLargeReference,
     fieldSchema: FieldSchema,
+    data: []u8,
 ) !void {
-    try errors.selva(selva.selva_fields_set_reference_meta(
-        ctx.db.selva,
-        node,
-        ref,
-        efc,
-        fieldSchema,
-        data.ptr,
-        data.len,
-    ));
+    const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
+
+    try writeField(data, meta_node, fieldSchema);
     if ((efc.flags & selva.EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) == 0) {
         modifyCtx.markDirtyRange(ctx, ctx.typeId, ctx.id);
     } else if (ref.dst) |dst| {
@@ -387,7 +419,6 @@ pub fn ensurePropString(
     return selva.selva_fields_ensure_string(ctx.node.?, fieldSchema, selva.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
-// TODO This is now hll specific but we might want to change it.
 pub fn ensureEdgePropString(
     ctx: *modifyCtx.ModifyCtx,
     node: Node,
@@ -395,14 +426,8 @@ pub fn ensureEdgePropString(
     ref: *selva.SelvaNodeLargeReference,
     fieldSchema: FieldSchema,
 ) !*selva.selva_string {
-    return selva.selva_fields_ensure_string2(
-        ctx.db.selva.?,
-        node,
-        efc,
-        ref,
-        fieldSchema,
-        selva.HLL_INIT_SIZE,
-    ) orelse errors.SelvaError.SELVA_EINTYPE;
+    const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
+    return selva.selva_fields_ensure_string(meta_node, fieldSchema, selva.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
 }
 
 pub fn preallocReferences(ctx: *modifyCtx.ModifyCtx, len: u64) void {
