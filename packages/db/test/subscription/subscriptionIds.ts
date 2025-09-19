@@ -1,5 +1,4 @@
 import {
-  readDoubleLE,
   readUint64,
   wait,
   writeUint16,
@@ -140,6 +139,20 @@ await test('subscriptionIds', async (t) => {
   logSubIds(server)
 
   await wait(100)
+
+  // 1M subs - pretty fast....
+  // only thing we need in the client is subs[id]
+  // prob make a map there with 2 fields -1 field ids -1 field multi
+  const c = clients[1]
+  const allUsersRange = await c.query('user').include('derp').get()
+
+  const allUsersFilter = await c
+    .query('user')
+    .include('name')
+    .filter('derp', '>', 10)
+    .get()
+
+  // need to include the filter for the field
 
   // close()
   // close2()
