@@ -124,22 +124,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             types.ModOp.SWITCH_NODE => {
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
-
-                // add id so you know what to check
                 if (ctx.node != null) {
                     // It would be even better if we'd mark it dirty only in the case
-                    // something was actually changed.
-                    Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
-
-                    // std.debug.print("DERP id? {any} \n", .{ctx.id});
+                    Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id); // move this to SUB / similair checks
 
                     if (ctx.subTypes) |subTypes| {
-                        // std.debug.print("DERP !id?2? ---> {any} {any} {any} \n", .{
-                        //     ctx.id,
-                        //     subTypes.ids.get(ctx.id),
-                        //     subTypes.ids.count(),
-                        // });
-
                         ctx.subId = subTypes.ids.get(ctx.id);
                     } else {
                         ctx.subId = null;
@@ -153,13 +142,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
                 // store offset for this type
                 idOffset = Modify.getIdOffset(&ctx, ctx.typeId);
-
-                // test perf impact
                 ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
-                // } else {
-                //     ctx.subTypes = null;
-                // }
-                // RFE shouldn't we technically unset .id and .node now?
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
@@ -169,39 +152,21 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
             types.ModOp.DELETE => {
-                // check for subs!
                 i += try deleteField(&ctx) + 1;
             },
             types.ModOp.DELETE_SORT_INDEX => {
                 i += try deleteFieldSortIndex(&ctx) + 1;
             },
             types.ModOp.CREATE_PROP => {
-                // check for subs! - bit shitty
                 i += try createField(&ctx, operation) + offset;
             },
             types.ModOp.UPDATE_PROP => {
-                // check for subs!
-
-                // std.debug.print("FLAP \n", .{});
                 i += try updateField(&ctx, operation) + offset;
             },
             types.ModOp.UPDATE_PARTIAL => {
-
-                // make this into a function
-                if (ctx.subId) |singleId| {
-                    if (singleId.fields.get(ctx.field)) |subIds| {
-                        ctx.db.subscriptions.hasMarkedSubscriptions = true;
-                        var keyIter = subIds.keyIterator();
-                        while (keyIter.next()) |subId| {
-                            try ctx.db.subscriptions.subscriptionsMarked.put(subId.*, undefined);
-                        }
-                    }
-                }
-                // check for subs!
                 i += try updatePartialField(&ctx, operation) + offset;
             },
             types.ModOp.INCREMENT, types.ModOp.DECREMENT => {
-                // check for subs!
                 i += try increment(&ctx, operation, op) + 1;
             },
             types.ModOp.EXPIRE => {

@@ -8,6 +8,7 @@ const ModifyCtx = Modify.ModifyCtx;
 const references = @import("./references.zig");
 const reference = @import("./reference.zig");
 const types = @import("../types.zig");
+const subs = @import("./subscription.zig");
 
 const read = utils.read;
 const copy = utils.copy;
@@ -17,6 +18,8 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         const len = read(u32, data, 0);
         return len;
     }
+
+    try subs.checkForSingleId(ctx);
 
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
@@ -156,6 +159,9 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     if (ctx.node == null) {
         return len;
     }
+
+    try subs.checkForSingleId(ctx);
+
     const slice = data[4 .. len + 4];
     var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     if (currentData.len != 0) {
@@ -299,6 +305,8 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     if (ctx.node == null) {
         return propSize + 3;
     }
+
+    try subs.checkForSingleId(ctx);
 
     const addition = data[3 .. 3 + propSize];
 

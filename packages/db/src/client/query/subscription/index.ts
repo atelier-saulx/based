@@ -3,6 +3,9 @@ import { BasedQueryResponse } from '../BasedQueryResponse.js'
 import { registerQuery } from '../registerQuery.js'
 import { OnData, OnError, OnClose } from './types.js'
 
+// exec
+// subscription thing
+
 export class SubStore {
   listeners: Map<OnData, OnError>
   onClose: OnClose
