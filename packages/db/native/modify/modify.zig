@@ -24,6 +24,8 @@ const config = @import("config");
 const read = utils.read;
 const errors = @import("../errors.zig");
 
+const subs = @import("./subscription.zig");
+
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return modifyInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
@@ -90,8 +92,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 }
             },
             types.ModOp.DELETE_NODE => {
-                // check for subs!
                 if (ctx.node) |node| {
+                    try subs.singleIdRemove(&ctx);
                     db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
                     // no other side handled
                     ctx.node = null;
