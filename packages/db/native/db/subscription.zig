@@ -63,20 +63,20 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
     const args = try napi.getArgs(1, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
     if (ctx.subscriptions.hasMarkedSubscriptions) {
-        var markedSubs = ctx.subscriptions.subscriptionsMarked;
         ctx.subscriptions.hasMarkedSubscriptions = false;
-        var keyIter = markedSubs.keyIterator();
+        var keyIter = ctx.subscriptions.subscriptionsMarked.keyIterator();
         var resultBuffer: ?*anyopaque = undefined;
         var result: c.napi_value = undefined;
-        const size: usize = markedSubs.count() * 8;
+        const size: usize = ctx.subscriptions.subscriptionsMarked.count() * 8;
         if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
             return null;
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
         var i: usize = 0;
+
         while (keyIter.next()) |key| {
             utils.writeInt(u64, data, i, key.*);
-            _ = markedSubs.remove(key.*);
+            _ = ctx.subscriptions.subscriptionsMarked.remove(key.*);
             i += 8;
         }
         return result;
@@ -132,7 +132,7 @@ fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !
 
 pub fn addIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return addIdSubscriptionInternal(napi_env, info) catch |err| {
-        std.log.err("addIdSubscription {any} \n", .{err});
+        std.log.err("addIdSubscription err {any} \n", .{err});
         return null;
     };
 }
@@ -153,23 +153,23 @@ fn removeIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info
                     _ = fieldsSubIds.remove(subId);
                     if (fieldsSubIds.count() == 0) {
                         if (idContainer.fields.fetchRemove(f)) |removed_entry| {
-                            removed_entry.value.deinit(); // De-initialize the SubIds HashMap.
-                            ctx.allocator.destroy(removed_entry.value); // Free the memory for the SubIds struct.
+                            removed_entry.value.deinit();
+                            ctx.allocator.destroy(removed_entry.value);
                         }
                     }
                 }
             }
             if (idContainer.fields.count() == 0) {
                 if (typeSubscriptionCtx.ids.fetchRemove(id)) |removed_entry| {
-                    removed_entry.value.fields.deinit(); // De-initialize the Fields HashMap.
-                    ctx.allocator.destroy(removed_entry.value); // Free the memory for the SingleId struct.
+                    removed_entry.value.fields.deinit();
+                    ctx.allocator.destroy(removed_entry.value);
                 }
             }
         }
         if (typeSubscriptionCtx.ids.count() == 0) {
             if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-                removed_entry.value.ids.deinit(); // De-initialize the IdsSubscriptions HashMap.
-                ctx.allocator.destroy(removed_entry.value); // Free the memory for the TypeSubscriptionCtx struct.
+                removed_entry.value.ids.deinit();
+                ctx.allocator.destroy(removed_entry.value);
             }
         }
     }
@@ -178,7 +178,7 @@ fn removeIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info
 
 pub fn removeIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return removeIdSubscriptionInternal(napi_env, info) catch |err| {
-        std.log.err("removeIdSubscription {any} \n", .{err});
+        std.log.err("removeIdSubscription err {any} \n", .{err});
         return null;
     };
 }

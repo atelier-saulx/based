@@ -190,12 +190,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 // make this into a function
                 if (ctx.subId) |singleId| {
                     if (singleId.fields.get(ctx.field)) |subIds| {
-                        std.debug.print("FLAP YESH! \n", .{});
                         ctx.db.subscriptions.hasMarkedSubscriptions = true;
                         var keyIter = subIds.keyIterator();
                         while (keyIter.next()) |subId| {
-                            std.debug.print("FLAP YESH?! {any} \n", .{subId.*});
-
                             try ctx.db.subscriptions.subscriptionsMarked.put(subId.*, undefined);
                         }
                     }

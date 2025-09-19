@@ -1,4 +1,10 @@
-import { wait, writeUint16, writeUint32, writeUint64 } from '@based/utils'
+import {
+  ENCODER,
+  wait,
+  writeUint16,
+  writeUint32,
+  writeUint64,
+} from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
@@ -6,7 +12,9 @@ import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
 import { clientWorker } from '../shared/startWorker.js'
 import { BasedDb } from '../../src/index.js'
-import { sentence } from '../shared/examples.js'
+import { italy, sentence } from '../shared/examples.js'
+import { it } from 'node:test'
+// import { s } from '../../src/client/string.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -35,22 +43,26 @@ await test('subscription perf', async (t) => {
     types: {
       user: {
         // derp: 'uint32',
-        binary: { type: 'binary', maxBytes: 20 },
+        // binary: { type: 'binary', maxBytes: 20 },
         flap: { type: 'string', compression: 'none' },
         // lang: 'string',
       },
     },
   })
 
-  let a = sentence + sentence + sentence + sentence
+  // const x = ENCODER.encode(italy)
+
+  let a = italy //sentence + sentence + sentence + sentence + sentence
 
   const bin = new Uint8Array(20)
-  for (let i = 0; i < 10e6; i++) {
-    db.create('user', { binary: bin, flap: a })
+  const amount = 1e4
+
+  for (let i = 0; i < amount; i++) {
+    db.create('user', { flap: a })
   }
 
   const dx = await db.drain()
-  console.log('db time 10M sets', dx, (10e6 / dx) * 1e3, 'Creates / Second')
+  console.log('db time sets', dx, (amount / dx) * 1e3, 'Creates / Second')
   let x = Date.now()
 
   const q = db.query('user', 1)
@@ -66,14 +78,14 @@ await test('subscription perf', async (t) => {
       clientWorker(
         t,
         db,
-        async (client, { ctx, buffer }, { native, utils }) => {
+        async (client, { ctx, buffer, amount }, { native, utils }) => {
           const dbCtx = native.externalFromInt(ctx)
           // await client.schemaIsSet()
           // const q = client.query('user', 1)
           // await q.get()
           // console.log(q.buffer, y)
-          client.flushTime = 11
-          for (let i = 0; i < 10e6; i++) {
+          // client.flushTime = 11
+          for (let i = 0; i < amount; i++) {
             utils.writeUint32(buffer, i + 1, 4)
             native.getQueryBuf(buffer, dbCtx)
           }
@@ -81,11 +93,16 @@ await test('subscription perf', async (t) => {
         {
           ctx: native.intFromExternal(db.server.dbCtxExternal),
           buffer: q.buffer,
+          amount,
         },
       ),
     )
   }
 
   await Promise.all(p)
-  console.log('multicore', ((15 * 10e6) / (Date.now() - d)) * 1e3, ' / Second')
+  console.log(
+    'multicore',
+    ((15 * amount) / (Date.now() - d)) * 1e3,
+    ' / Second',
+  )
 })
