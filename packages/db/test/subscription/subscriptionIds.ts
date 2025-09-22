@@ -68,11 +68,10 @@ await test('subscriptionIds', async (t) => {
 
   native.addIdSubscription(server.dbCtxExternal, val)
 
-  for (let i = 1; i < 10e6 - 1; i++) {
-    writeUint32(val, i, 10)
-    native.addIdSubscription(server.dbCtxExternal, val)
-  }
-  writeUint16(val, id, 10)
+  // for (let i = 1; i < 10e6 - 1; i++) {
+  //   writeUint32(val, i, 10)
+  //   native.addIdSubscription(server.dbCtxExternal, val)
+  // }
 
   // const close = clients[1]
   //   .query('user', id)
@@ -107,20 +106,20 @@ await test('subscriptionIds', async (t) => {
 
   // native.removeIdSubscription(server.dbCtxExternal, val)
 
-  console.info('------- 1M updates')
-  let d = Date.now()
-  for (let i = 0; i < 1e6; i++) {
-    await clients[1].update('user', id, { derp: 71 })
-  }
-  await clients[0].drain()
-  console.log('1M d', Date.now() - d, 'ms')
+  // console.info('------- 1M updates')
+  // let d = Date.now()
+  // for (let i = 0; i < 1e6; i++) {
+  //   await clients[1].update('user', i + 1, { derp: 72 })
+  // }
+  // await clients[0].drain()
+  // console.log('1M d', Date.now() - d, 'ms')
   logSubIds(server)
 
   // ----------
   native.removeIdSubscription(server.dbCtxExternal, val)
   console.info('------- UPDATE 4 after remove of sub (no marked)')
   // await clients[1].update('user', id, { derp: 69 })
-  await clients[1].update('user', id, { derp: 71 })
+  await clients[1].update('user', id, { derp: 73 })
   await wait(100)
   logSubIds(server)
 
@@ -160,6 +159,7 @@ await test('subscriptionIds', async (t) => {
   // const fields = new Uint8Array([0])
   // val.set(fields, headerLen)
 
+  console.log('\n=============MULTI TIME')
   const q = c.query('user').include('derp').range(0, 10)
   // .filter('derp', '>', 10)
 
@@ -178,6 +178,18 @@ await test('subscriptionIds', async (t) => {
   val2.set(fields, 19)
 
   native.addMultiSubscription(server.dbCtxExternal, val2)
+
+  console.info('------- UPDATE FOR MULTI after remove of sub (no marked)')
+  // await clients[1].update('user', id, { derp: 69 })
+  await clients[1].update('user', 3, { derp: 72 })
+
+  logSubIds(server)
+
+  console.log('derp?')
+  logSubIds(server)
+
+  await clients[1].update('user', 3, { derp: 72 })
+  logSubIds(server)
 
   // range first
 

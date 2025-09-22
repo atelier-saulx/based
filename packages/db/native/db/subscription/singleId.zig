@@ -5,7 +5,8 @@ const napi = @import("../../napi.zig");
 const c = @import("../../c.zig");
 const utils = @import("../../utils.zig");
 const types = @import("./types.zig");
-const upsertSubType = @import("./upsertType.zig").upsertSubType;
+const upsertSubType = @import("./shared.zig").upsertSubType;
+const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
 
 pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, napi_env, info);
@@ -69,12 +70,8 @@ pub fn removeIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_
                 }
             }
         }
-        if (typeSubscriptionCtx.ids.count() == 0) {
-            if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-                removed_entry.value.ids.deinit();
-                ctx.allocator.destroy(removed_entry.value);
-            }
-        }
+
+        removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
     }
     return null;
 }

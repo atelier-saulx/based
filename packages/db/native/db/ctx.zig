@@ -58,7 +58,7 @@ pub fn createDbCtx() !*DbCtx {
     const subscriptions = try allocator.create(subs.SubscriptionCtx);
     subscriptions.*.types = subs.TypeSubMap.init(allocator);
     subscriptions.*.subscriptionsIdMarked = subs.SubscriptionMarked.init(allocator);
-    subscriptions.*.subscriptionsMultiMarked = subs.SubscriptionMarked.init(allocator);
+    subscriptions.*.subscriptionsMultiMarked = subs.SubscriptionMultiMarked.init(allocator);
 
     errdefer {
         arena.deinit();

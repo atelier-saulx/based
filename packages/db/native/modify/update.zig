@@ -161,6 +161,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     try subs.singleId(ctx);
+    try subs.multiId(ctx);
 
     const slice = data[4 .. len + 4];
     var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);

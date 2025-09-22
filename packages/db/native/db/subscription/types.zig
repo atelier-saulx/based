@@ -58,6 +58,8 @@ pub const IdsSubscriptions = std.AutoHashMap(u32, *SingleId);
 //     added: bool,
 // };
 
+// specific ids can be seprate that it just keeps it here or adds it on a single id (prop best)
+
 // only for non sorted
 pub const MultiId = struct {
     // specificMain: ?std.AutoHashMap(u16, u16),
@@ -92,12 +94,13 @@ pub const TypeSubscriptionCtx = struct {
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
 
 pub const SubscriptionMarked = std.AutoHashMap(u64, void);
+pub const SubscriptionMultiMarked = std.AutoHashMap(u64, u16);
 
 pub const SubscriptionCtx = struct {
     types: TypeSubMap,
     subscriptionsIdMarked: SubscriptionMarked,
     // and these get re-staged
-    subscriptionsMultiMarked: SubscriptionMarked,
+    subscriptionsMultiMarked: SubscriptionMultiMarked,
     //
     hasMarkedSubscriptions: bool,
 };

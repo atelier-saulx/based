@@ -12,22 +12,34 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
     const ctx = try napi.get(*DbCtx, env, args[0]);
     if (ctx.subscriptions.hasMarkedSubscriptions) {
         ctx.subscriptions.hasMarkedSubscriptions = false;
-        var keyIter = ctx.subscriptions.subscriptionsIdMarked.keyIterator();
         var resultBuffer: ?*anyopaque = undefined;
         var result: c.napi_value = undefined;
-        const size: usize = ctx.subscriptions.subscriptionsIdMarked.count() * 8;
+        const size: usize = ctx.subscriptions.subscriptionsIdMarked.count() * 8 +
+            ctx.subscriptions.subscriptionsMultiMarked.count() * 8;
         if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
             return null;
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
         var i: usize = 0;
+        var keyIter = ctx.subscriptions.subscriptionsIdMarked.keyIterator();
         while (keyIter.next()) |key| {
             utils.writeInt(u64, data, i, key.*);
             _ = ctx.subscriptions.subscriptionsIdMarked.remove(key.*);
             i += 8;
         }
+        var iter = ctx.subscriptions.subscriptionsMultiMarked.iterator();
+        while (iter.next()) |entry| {
+            utils.writeInt(u64, data, i, entry.key_ptr.*);
+            if (ctx.subscriptions.types.get(entry.value_ptr.*)) |t| {
+                try t.nonMarkedMulti.put(entry.key_ptr.*, t.multi.get(entry.key_ptr.*).?);
+            }
+            _ = ctx.subscriptions.subscriptionsMultiMarked.remove(entry.key_ptr.*);
+            i += 8;
+        }
         return result;
     }
+
+    // subscriptionsMultiMarked
     return null;
 }
 

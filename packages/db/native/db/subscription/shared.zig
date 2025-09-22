@@ -14,3 +14,13 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
     }
     return typeSubscriptionCtx;
 }
+
+pub inline fn removeSubTypeIfEmpty(ctx: *DbCtx, typeId: u16, typeSubscriptionCtx: *types.TypeSubscriptionCtx) void {
+    if (typeSubscriptionCtx.ids.count() == 0 and typeSubscriptionCtx.multi.count() == 0) {
+        // if all is empty
+        if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
+            removed_entry.value.ids.deinit();
+            ctx.allocator.destroy(removed_entry.value);
+        }
+    }
+}
