@@ -1,12 +1,12 @@
 {
   "name": "@based/client",
-  "version": "8.2.1",
+  "version": "8.2.2-alpha.1",
   "license": "MIT",
   "scripts": {
     "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts && npm run buildCjs",
     "watch": "npx tsc --watch",
-    "clean": "rm -rf ./dist ./node_modules",
+    "clean": "rm -rf ./dist ./node_modules ./tsconfig.tsbuildinfo",
     "test": "npx ava",
     "browser": "npx vite ./test/browser",
     "browser-server": "node ./test/browser/server.js"
@@ -53,8 +53,8 @@
   },
   "devDependencies": {
     "@based/client-old": "npm:@based/client@6.11.2",
-    "@based/db": "^0.1.2",
-    "@based/functions": "^3.3.1",
+    "@based/db": "0.1.3-alpha.1",
+    "@based/functions": "3.3.2-alpha.1",
     "ava": "5.3.1",
     "cross-fetch": "4.0.0",
     "esbuild": "^0.25.9",

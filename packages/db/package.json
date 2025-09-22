@@ -12,7 +12,7 @@
     "build-release": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "make -C clibs clean",
-    "clean": "rm -rf ./dist ./node_modules .zig-cache .zig-out ./tmp && npm run clean-selva",
+    "clean": "rm -rf ./dist ./node_modules .zig-cache .zig-out ./tmp && npm run clean-selva ./tsconfig.tsbuildinfo",
     "playground-nodebug": "npm run build && node ./dist/test/shared/playground.js",
     "playground": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./dist/test/shared/playground.js",
     "playground-fast": "node ./dist/test/shared/playground.js",
