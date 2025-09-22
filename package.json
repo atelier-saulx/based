@@ -29,7 +29,7 @@
     "clean": "git clean -dfx",
     "build-podman": "cd podman && ./build.sh",
     "build-locale": "cd packages/locale && ./build.sh",
-    "build-release-debug": "rm -rf packages/*/dist; npm run build-podman && npm run build-locale && npm run build && (cd packages/db && npm run build-release-debug)",
+    "build-release-debug": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo; npm run build-podman && npm run build-locale && npm run build && (cd packages/db && npm run build-release-debug)",
     "build-release": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo; npm run build-podman && npm run build-locale && npm run build && (cd packages/db && npm run build-release)"
   },
   "publishConfig": {
