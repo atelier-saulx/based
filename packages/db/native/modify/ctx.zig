@@ -5,7 +5,7 @@ const types = @import("../types.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
-const subs = @import("../db/subscription.zig");
+const subs = @import("../db/subscription/types.zig");
 
 pub const ModifyCtx = struct {
     field: u8,

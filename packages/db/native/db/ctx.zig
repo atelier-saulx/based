@@ -6,7 +6,7 @@ const config = @import("config");
 const c = @import("../c.zig");
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
-const subs = @import("./subscription.zig");
+const subs = @import("./subscription/types.zig");
 
 const rand = std.crypto.random;
 
@@ -57,7 +57,8 @@ pub fn createDbCtx() !*DbCtx {
     const b = try allocator.create(DbCtx);
     const subscriptions = try allocator.create(subs.SubscriptionCtx);
     subscriptions.*.types = subs.TypeSubMap.init(allocator);
-    subscriptions.*.subscriptionsMarked = subs.SubscriptionMarked.init(allocator);
+    subscriptions.*.subscriptionsIdMarked = subs.SubscriptionMarked.init(allocator);
+    subscriptions.*.subscriptionsMultiMarked = subs.SubscriptionMarked.init(allocator);
 
     errdefer {
         arena.deinit();

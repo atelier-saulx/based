@@ -11,6 +11,7 @@ import test from '../shared/test.js'
 import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
 import { BasedDb } from '../../src/index.js'
+import { TYPE_INDEX_MAP } from '@based/schema/def'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -59,7 +60,7 @@ await test('subscriptionIds', async (t) => {
   const typeId = server.schemaTypesParsed['user'].id
   // ----------------------------
   const headerLen = 14
-  const val = new Uint8Array(headerLen + fields.byteLength)
+  let val = new Uint8Array(headerLen + fields.byteLength)
   writeUint64(val, subId, 0)
   writeUint16(val, typeId, 8)
   writeUint32(val, id, 10)
@@ -67,7 +68,7 @@ await test('subscriptionIds', async (t) => {
 
   native.addIdSubscription(server.dbCtxExternal, val)
 
-  for (let i = 1; i < 1e6 - 1; i++) {
+  for (let i = 1; i < 10e6 - 1; i++) {
     writeUint32(val, i, 10)
     native.addIdSubscription(server.dbCtxExternal, val)
   }
@@ -146,11 +147,47 @@ await test('subscriptionIds', async (t) => {
   const c = clients[1]
   const allUsersRange = await c.query('user').include('derp').get()
 
-  const allUsersFilter = await c
-    .query('user')
-    .include('name')
-    .filter('derp', '>', 10)
-    .get()
+  // ----------------------------
+  // const id = await clients[0].create('user', { derp: 66 })
+  const multiSubId = 99
+  // const typeId = server.schemaTypesParsed['user'].id
+  // ----------------------------
+  // const headerLen = 14
+  const val2 = new Uint8Array(10 + 9 + fields.byteLength)
+  writeUint32(val2, multiSubId, 0)
+  writeUint16(val2, typeId, 8)
+
+  // const fields = new Uint8Array([0])
+  // val.set(fields, headerLen)
+
+  const q = c.query('user').include('derp').range(0, 10)
+  // .filter('derp', '>', 10)
+
+  const x = await q.get()
+  // update range will be a fn
+
+  val2[10] = TYPE_INDEX_MAP.id
+
+  const n = x.toObject()
+
+  console.log('id:', n[0], n[n.length - 1])
+
+  writeUint32(val2, n[0].id, 11)
+  writeUint32(val2, n[n.length - 1].id, 15)
+  // const fields = new Uint8Array([0])
+  val2.set(fields, 19)
+
+  native.addMultiSubscription(server.dbCtxExternal, val2)
+
+  // range first
+
+  // filter + conditions
+  // get range keep track of last id OR last sort value
+  // if > lastId ignore if < firstId - ignore
+  // this works very well for ids subs
+  // and this can be sort as well
+  // range[TYPEINDEX][start][end]
+  // id = 255
 
   // need to include the filter for the field
 

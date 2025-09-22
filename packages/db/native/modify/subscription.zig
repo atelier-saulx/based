@@ -11,7 +11,7 @@ pub inline fn singleId(
             ctx.db.subscriptions.hasMarkedSubscriptions = true;
             var keyIter = subIds.keyIterator();
             while (keyIter.next()) |subId| {
-                try ctx.db.subscriptions.subscriptionsMarked.put(subId.*, undefined);
+                try ctx.db.subscriptions.subscriptionsIdMarked.put(subId.*, undefined);
             }
         }
     }
@@ -26,7 +26,7 @@ pub inline fn singleIdRemove(
         while (fieldIter.next()) |subIds| {
             var keyIter = subIds.*.keyIterator();
             while (keyIter.next()) |subId| {
-                try ctx.db.subscriptions.subscriptionsMarked.put(subId.*, undefined);
+                try ctx.db.subscriptions.subscriptionsIdMarked.put(subId.*, undefined);
             }
         }
     }

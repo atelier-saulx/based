@@ -16,6 +16,10 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
 }
 
 const native = {
+  addMultiSubscription: (dbCtx: any, value: Uint8Array): void => {
+    return db.addMultiSubscription(dbCtx, value)
+  },
+
   removeIdSubscription: (dbCtx: any, value: Uint8Array): void => {
     return db.removeIdSubscription(dbCtx, value)
   },
