@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "9.0.0-alpha.1",
+  "version": "9.0.0-alpha.2",
   "description": "Based command line tool",
   "bin": "dist/cli.js",
   "scripts": {
@@ -21,9 +21,9 @@
     "ink-testing-library": "^3.0.0"
   },
   "dependencies": {
-    "@based/client": "^8.0.2",
-    "@based/functions": "^3.2.3",
-    "@based/hash": "1.0.0",
+    "@based/client": "8.2.2-alpha.1",
+    "@based/functions": "3.3.2-alpha.1",
+    "@based/hash": "^1.0.0",
     "@based/hub": "*",
     "@based/react": "^5.2.1",
     "@based/s3": "*",

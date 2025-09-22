@@ -40,7 +40,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@based/errors": "^1.3.0",
+    "@based/errors": "1.3.1-alpha.1",
     "@based/fetch": "^2.0.3",
     "@based/hash": "1.0.0",
     "@based/opts": "^1.1.0",
