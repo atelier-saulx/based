@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
-import axios from 'axios'
 import * as tar from 'tar'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
@@ -14,7 +13,7 @@ const AVAILABLE_PLATFORMS = [
   //   { os: 'macos', arch: 'x86_64' },
 ]
 const ARGS_PLATFORMS = {}
-AVAILABLE_PLATFORMS.forEach((v) => ARGS_PLATFORMS[`${v.os}-${v.arch}`] = v)
+AVAILABLE_PLATFORMS.forEach((v) => (ARGS_PLATFORMS[`${v.os}-${v.arch}`] = v))
 
 const args = process.argv.slice(2)
 const isRelease = args.includes('release')
@@ -29,7 +28,12 @@ if (isDebugging) {
 type Platform = { os: string; arch: string }
 
 async function fetchAvailableNodeVersions(): Promise<Map<string, string>> {
-  const { data } = await axios.get('https://nodejs.org/dist/index.json')
+  const response = await fetch('https://nodejs.org/dist/index.json')
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+  const data = await response.json()
+
   const versions = new Map()
   for (const release of data) {
     const [_, major, minor, patch] =
@@ -43,18 +47,19 @@ async function fetchAvailableNodeVersions(): Promise<Map<string, string>> {
 
 const PLATFORMS = isRelease
   ? AVAILABLE_PLATFORMS
-  : argsArchs.length ? argsArchs
-  : [
-      {
-        os: os.platform() === 'darwin' ? 'macos' : os.platform(),
-        arch: {
-          arm64: 'aarch64',
-          aarch64: 'aarch64',
-          x64: 'x86_64',
-          x86_64: 'x86_64',
-        }[os.arch() as 'arm64' | 'aarch64' | 'x64' | 'x86_64'],
-      },
-    ]
+  : argsArchs.length
+    ? argsArchs
+    : [
+        {
+          os: os.platform() === 'darwin' ? 'macos' : os.platform(),
+          arch: {
+            arm64: 'aarch64',
+            aarch64: 'aarch64',
+            x64: 'x86_64',
+            x86_64: 'x86_64',
+          }[os.arch() as 'arm64' | 'aarch64' | 'x64' | 'x86_64'],
+        },
+      ]
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.join(dirname(__filename), '..')
@@ -75,8 +80,13 @@ async function downloadAndExtractNodeHeaders(version: string) {
   }
 
   console.log(`Downloading Node.js headers for version ${version}...`)
-  const response = await axios.get(url, { responseType: 'arraybuffer' })
-  fs.writeFileSync(tarballPath, response.data)
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+  const arrayBuffer = await response.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+  fs.writeFileSync(tarballPath, buffer)
 
   console.log(`Extracting Node.js headers for version ${version}...`)
   await tar.x({ file: tarballPath, cwd: DEPS_DIR })
