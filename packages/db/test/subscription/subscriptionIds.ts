@@ -106,13 +106,13 @@ await test('subscriptionIds', async (t) => {
 
   // native.removeIdSubscription(server.dbCtxExternal, val)
 
-  // console.info('------- 1M updates')
-  // let d = Date.now()
-  // for (let i = 0; i < 1e6; i++) {
-  //   await clients[1].update('user', i + 1, { derp: 72 })
-  // }
-  // await clients[0].drain()
-  // console.log('1M d', Date.now() - d, 'ms')
+  console.info('------- 1M updates')
+  let d = Date.now()
+  for (let i = 0; i < 1e6; i++) {
+    await clients[1].update('user', i + 1, { derp: 72 })
+  }
+  await clients[0].drain()
+  console.log('1M d', Date.now() - d, 'ms')
   logSubIds(server)
 
   // ----------
@@ -190,6 +190,14 @@ await test('subscriptionIds', async (t) => {
 
   await clients[1].update('user', 3, { derp: 72 })
   logSubIds(server)
+
+  console.info('------- 1M updates multi updates')
+  d = Date.now()
+  for (let i = 1e6; i > 0; i--) {
+    await clients[1].update('user', i + 1, { derp: 72 })
+  }
+  await clients[0].drain()
+  console.log('1M multi d', Date.now() - d, 'ms')
 
   // range first
 
