@@ -99,53 +99,53 @@ await test('subscriptionIds', async (t) => {
   logSubIds(server)
 
   let d = Date.now()
-  for (let i = 1; i < 1e6; i++) {
+  for (let i = 1; i < 2e6; i++) {
     writeUint32(val, i, 10)
     native.addIdSubscription(server.dbCtxExternal, val)
   }
-  console.log('add 1M subs', Date.now() - d, 'ms')
+  console.log('add 2M subs', Date.now() - d, 'ms')
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 2e6; i++) {
     clients[1].create('user', { derp: 99 })
   }
   await clients[1].drain()
 
-  console.info('------- 1M updates')
+  console.info('------- 2M updates')
   d = Date.now()
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 2e6; i++) {
     clients[1].update('user', i + 1, { derp: 99 })
   }
   await clients[1].drain()
   console.log(
-    'handling 1M updates with 1M unique subs firing',
+    'handling 2M updates with 2M unique subs firing',
     Date.now() - d,
     'ms',
   )
 
-  console.info('------- 1M updates no active subs (all staged for updates)')
+  console.info('------- 2M updates no active subs (all staged for updates)')
   d = Date.now()
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 2e6; i++) {
     clients[1].update('user', i + 1, { derp: 99 })
   }
   await clients[1].drain()
   console.log(
-    'handling 1M updates with 1M unique NO subs firing',
+    'handling 2M updates with 2M unique NO subs firing',
     Date.now() - d,
     'ms',
   )
   logSubIds(server)
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 2e6; i++) {
     clients[1].create('control', { derp: 99 })
   }
   await clients[1].drain()
-  console.info('------- 1M updates control')
+  console.info('------- 2M updates control')
   d = Date.now()
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 2e6; i++) {
     clients[1].update('control', i + 1, { derp: 99 })
   }
   await clients[1].drain()
-  console.log('handling 1M updates with 1M CONTROL', Date.now() - d, 'ms')
+  console.log('handling 2M updates with 1M CONTROL', Date.now() - d, 'ms')
 
   // const close = clients[1]
   //   .query('user', id)

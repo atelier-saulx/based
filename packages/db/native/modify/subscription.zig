@@ -12,8 +12,8 @@ pub const Op = enum(u8) {
 
 pub inline fn idSwitch(ctx: *ModifyCtx) !void {
     if (ctx.subTypes) |sub| {
-        if (sub.activeIdSubs.getEntry(ctx.id)) |cnt| {
-            ctx.hasSpecificIdSub = cnt.value_ptr.* > 0;
+        if (sub.activeIdSubs.get(ctx.id)) |cnt| {
+            ctx.hasSpecificIdSub = cnt > 0;
         } else {
             ctx.hasSpecificIdSub = false;
         }
@@ -42,6 +42,10 @@ pub inline fn stage(
 
                     if (typeSub.activeIdSubs.getEntry(ctx.id)) |cnt| {
                         cnt.value_ptr.* = cnt.value_ptr.* - 1;
+                        if (cnt.value_ptr.* == 0) {
+                            // delete me
+                            _ = typeSub.activeIdSubs.remove(ctx.id);
+                        }
                     }
                 }
             }
