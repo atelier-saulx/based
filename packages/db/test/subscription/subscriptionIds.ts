@@ -68,10 +68,10 @@ await test('subscriptionIds', async (t) => {
 
   native.addIdSubscription(server.dbCtxExternal, val)
 
-  // for (let i = 1; i < 10e6 - 1; i++) {
-  //   writeUint32(val, i, 10)
-  //   native.addIdSubscription(server.dbCtxExternal, val)
-  // }
+  for (let i = 1; i < 10e6 - 1; i++) {
+    writeUint32(val, i, 10)
+    native.addIdSubscription(server.dbCtxExternal, val)
+  }
 
   // const close = clients[1]
   //   .query('user', id)
