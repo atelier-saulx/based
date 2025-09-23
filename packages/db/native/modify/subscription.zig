@@ -10,19 +10,25 @@ pub const Op = enum(u8) {
     deleteFieldLang = 4,
 };
 
-pub inline fn idSwitch(ctx: *ModifyCtx) !void {
+pub fn idSwitch(ctx: *ModifyCtx) !void {
     if (ctx.subTypes) |sub| {
         if (sub.activeIdSubs.contains(ctx.id)) {
             ctx.hasSpecificIdSub = true;
         } else {
             ctx.hasSpecificIdSub = false;
         }
+
+        // if (sub.activeIdSubs.get(ctx.id)) |cnt| {
+        //     ctx.hasSpecificIdSub = cnt > 0;
+        // } else {
+        //     ctx.hasSpecificIdSub = false;
+        // }
     } else {
         ctx.hasSpecificIdSub = false;
     }
 }
 
-pub inline fn stage(
+pub fn stage(
     ctx: *ModifyCtx,
     comptime _: Op,
 ) !void {
@@ -43,7 +49,7 @@ pub inline fn stage(
                     if (typeSub.activeIdSubs.getEntry(ctx.id)) |cnt| {
                         cnt.value_ptr.* = cnt.value_ptr.* - 1;
                         if (cnt.value_ptr.* == 0) {
-                            // delete me
+                            //     // delete me
                             _ = typeSub.activeIdSubs.remove(ctx.id);
                         }
                     }

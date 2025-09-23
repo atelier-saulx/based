@@ -68,11 +68,13 @@ await test('subscriptionIds', async (t) => {
   await clients[0].setSchema({
     types: {
       user: {
+        x: 'uint8',
         derp: 'uint32',
         location: 'string',
         lang: 'string',
       },
       control: {
+        x: 'uint8',
         derp: 'uint32',
         location: 'string',
         lang: 'string',
@@ -113,24 +115,30 @@ await test('subscriptionIds', async (t) => {
   console.info('------- 2M updates')
   d = Date.now()
   for (let i = 0; i < 2e6; i++) {
-    clients[1].update('user', i + 1, { derp: 99 })
+    clients[1].update('user', i + 1, { derp: 99, x: 1 })
   }
-  await clients[1].drain()
+  let dTime = await clients[1].drain()
   console.log(
     'handling 2M updates with 2M unique subs firing',
     Date.now() - d,
+    'ms',
+    'drain time (real db)',
+    dTime,
     'ms',
   )
 
   console.info('------- 2M updates no active subs (all staged for updates)')
   d = Date.now()
   for (let i = 0; i < 2e6; i++) {
-    clients[1].update('user', i + 1, { derp: 99 })
+    clients[1].update('user', i + 1, { derp: 99, x: 2 })
   }
-  await clients[1].drain()
+  dTime = await clients[1].drain()
   console.log(
     'handling 2M updates with 2M unique NO subs firing',
     Date.now() - d,
+    'ms',
+    'drain time (real db)',
+    dTime,
     'ms',
   )
   logSubIds(server)
@@ -142,10 +150,17 @@ await test('subscriptionIds', async (t) => {
   console.info('------- 2M updates control')
   d = Date.now()
   for (let i = 0; i < 2e6; i++) {
-    clients[1].update('control', i + 1, { derp: 99 })
+    clients[1].update('control', i + 1, { derp: 99, x: 2 })
   }
-  await clients[1].drain()
-  console.log('handling 2M updates with 1M CONTROL', Date.now() - d, 'ms')
+  dTime = await clients[1].drain()
+  console.log(
+    'handling 2M updates with 2M CONTROL',
+    Date.now() - d,
+    'ms',
+    'drain time (real db)',
+    dTime,
+    'ms',
+  )
 
   // const close = clients[1]
   //   .query('user', id)
