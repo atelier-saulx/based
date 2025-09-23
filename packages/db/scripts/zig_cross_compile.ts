@@ -124,12 +124,23 @@ function moveLibraryToPlatformDir(
     fs.renameSync(originalPath, newPath)
 
     if (platform.os === 'linux') {
-      execSync(
-        `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_${platform.arch} /bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`,
-        {
-          stdio: 'inherit',
-        },
-      )
+      if (os.platform() == 'darwin') {
+        const cmd = `/bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
+        execSync(
+          `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_${platform.arch} ${cmd}`,
+          {
+            stdio: 'inherit',
+          },
+        )
+      } else {
+        const cmd = `/bin/bash -c "cd dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
+        execSync(
+          cmd,
+          {
+            stdio: 'inherit',
+          },
+        )
+      }
     }
   } else {
     throw new Error(`Library not found at ${originalPath}`)
