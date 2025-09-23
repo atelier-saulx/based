@@ -70,6 +70,8 @@ pub const MultiId = struct {
     // range: []u8, // typeId[s][e] - only for prop type
     startId: u32,
     endId: u32,
+
+    hasFullRange: bool,
     // subId: u64,
     // sId
     // eId

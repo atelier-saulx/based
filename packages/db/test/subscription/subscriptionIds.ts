@@ -68,10 +68,10 @@ await test('subscriptionIds', async (t) => {
 
   native.addIdSubscription(server.dbCtxExternal, val)
 
-  for (let i = 1; i < 10e6 - 1; i++) {
-    writeUint32(val, i, 10)
-    native.addIdSubscription(server.dbCtxExternal, val)
-  }
+  // for (let i = 1; i < 10e6 - 1; i++) {
+  //   writeUint32(val, i, 10)
+  //   native.addIdSubscription(server.dbCtxExternal, val)
+  // }
 
   // const close = clients[1]
   //   .query('user', id)
@@ -151,31 +151,29 @@ await test('subscriptionIds', async (t) => {
   const multiSubId = 99
   // const typeId = server.schemaTypesParsed['user'].id
   // ----------------------------
-  // const headerLen = 14
-  const val2 = new Uint8Array(10 + 9 + fields.byteLength)
-  writeUint32(val2, multiSubId, 0)
-  writeUint16(val2, typeId, 8)
+  // const headerLen =
 
   // const fields = new Uint8Array([0])
   // val.set(fields, headerLen)
 
   console.log('\n=============MULTI TIME')
   const q = c.query('user').include('derp').range(0, 10)
-  // .filter('derp', '>', 10)
+  let x = await q.get()
+  let n = x.toObject()
 
-  const x = await q.get()
-  // update range will be a fn
-
-  val2[10] = TYPE_INDEX_MAP.id
-
-  const n = x.toObject()
-
+  const val2 = new Uint8Array(20 + fields.byteLength)
+  writeUint32(val2, multiSubId, 0)
+  writeUint16(val2, typeId, 8)
   console.log('id:', n[0], n[n.length - 1])
+  val2[10] = TYPE_INDEX_MAP.id
 
   writeUint32(val2, n[0].id, 11)
   writeUint32(val2, n[n.length - 1].id, 15)
+
+  // hasFullRange
+  val2[19] = 1
   // const fields = new Uint8Array([0])
-  val2.set(fields, 19)
+  val2.set(fields, 20)
 
   native.addMultiSubscription(server.dbCtxExternal, val2)
 
@@ -198,6 +196,33 @@ await test('subscriptionIds', async (t) => {
   }
   await clients[0].drain()
   console.log('1M multi d', Date.now() - d, 'ms')
+  logSubIds(server)
+
+  console.log('CREATE!')
+  await clients[1].create('user', { derp: 72 })
+  logSubIds(server)
+
+  console.log('REMOVE!')
+  await clients[1].delete('user', 3)
+  logSubIds(server)
+
+  x = await q.get()
+  n = x.toObject()
+  writeUint32(val2, n[0].id, 11)
+  writeUint32(val2, n[n.length - 1].id, 15)
+  // update range index
+  native.addMultiSubscription(server.dbCtxExternal, val2)
+
+  // try create with id range where the range is not full
+
+  // if id remove <= endID update all
+  // if create and !hasComplete (extra flag on thing) rerun
+
+  // then filters ofc
+
+  // then sort
+
+  // can add more optmization with LANGCODE for both single id and multi id
 
   // range first
 

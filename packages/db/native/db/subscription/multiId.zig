@@ -13,7 +13,7 @@ pub fn addMultiSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
-    // const headerLen = 14;
+    const headerLen = 20;
     const subId = utils.read(u64, value, 0);
     const typeId = utils.read(u16, value, 8);
 
@@ -25,9 +25,10 @@ pub fn addMultiSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_
     // if (rangeType == t.Prop.NULL) {
     const id1 = utils.read(u32, value, 11);
     const id2 = utils.read(u32, value, 15);
+    const hasFullRange = value[19] == 1;
     // }
 
-    const fields = value[19..value.len];
+    const fields = value[headerLen..value.len];
 
     var typeSubscriptionCtx = try upsertSubType(ctx, typeId);
 
@@ -37,6 +38,7 @@ pub fn addMultiSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_
             .fields = types.FieldsSimple.init(ctx.allocator),
             .startId = id1,
             .endId = id2,
+            .hasFullRange = hasFullRange,
         };
         try typeSubscriptionCtx.multi.put(subId, multiId);
         try typeSubscriptionCtx.nonMarkedMulti.put(subId, multiId);
@@ -47,6 +49,7 @@ pub fn addMultiSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_
         var multiContainer = typeSubscriptionCtx.multi.get(subId).?;
         multiContainer.startId = id1;
         multiContainer.endId = id2;
+        multiContainer.hasFullRange = hasFullRange;
     }
 
     return null;

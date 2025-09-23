@@ -9,7 +9,7 @@ const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 const std = @import("std");
 const lib = @import("../lib.zig");
-
+const subs = @import("./subscription.zig");
 const read = utils.read;
 
 const ModifyCtx = Modify.ModifyCtx;
@@ -17,6 +17,8 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
+    try subs.multiId(ctx, subs.Op.create);
+
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
             switch (@as(types.RefOp, @enumFromInt(data[4]))) {

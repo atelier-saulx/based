@@ -20,6 +20,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     try subs.singleId(ctx);
+    try subs.multiId(ctx, subs.Op.update);
 
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
@@ -161,7 +162,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     try subs.singleId(ctx);
-    try subs.multiId(ctx);
+    try subs.multiId(ctx, subs.Op.update);
 
     const slice = data[4 .. len + 4];
     var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
@@ -308,6 +309,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
     }
 
     try subs.singleId(ctx);
+    try subs.multiId(ctx, subs.Op.update);
 
     const addition = data[3 .. 3 + propSize];
 
