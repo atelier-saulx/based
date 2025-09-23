@@ -38,18 +38,15 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
             if (ctx.subscriptions.types.get(entry.value_ptr.*)) |t| {
                 const sub = t.subs.get(entry.key_ptr.*).?;
                 if (sub.*.subType == types.SubType.singleId) {
-                    std.debug.print("LETS PUT! \n", .{});
                     data[i] = 255; // isId
                     utils.writeInt(u64, data, i + 1, entry.key_ptr.*);
                     utils.writeInt(u32, data, i + 9, sub.*.stagedIds.?.count());
                     var stagedKeyIter = sub.*.stagedIds.?.keyIterator();
                     i += 13;
                     while (stagedKeyIter.next()) |stagedIdKey| {
-                        std.debug.print("LETS PUT? {any} {any} \n", .{ t.activeIdSubs.get(stagedIdKey.*), stagedIdKey.* });
                         if (t.activeIdSubs.getEntry(stagedIdKey.*)) |cnt| {
                             cnt.value_ptr.* = cnt.value_ptr.* + 1;
                         }
-
                         utils.writeInt(u32, data, i, stagedIdKey.*);
                         _ = sub.*.stagedIds.?.remove(stagedIdKey.*);
                         i += 4;

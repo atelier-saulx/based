@@ -38,7 +38,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
         sub = typeSubscriptionCtx.subs.get(subId).?;
     }
     const r = try sub.*.ids.getOrPut(id);
-    std.debug.print("ID: {any} X: {any} \n", .{ id, r.found_existing });
+
     if (!r.found_existing) {
         const idK = try typeSubscriptionCtx.*.activeIdSubs.getOrPut(id);
         if (idK.found_existing) {
@@ -46,9 +46,8 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
         } else {
             idK.value_ptr.* = 1;
         }
-    } else {
-        // r.value_ptr.* = ;
     }
+
     return null;
 }
 

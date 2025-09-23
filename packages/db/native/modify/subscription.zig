@@ -12,10 +12,7 @@ pub const Op = enum(u8) {
 
 pub inline fn idSwitch(ctx: *ModifyCtx) !void {
     if (ctx.subTypes) |sub| {
-        // std.debug.print("flap ID: {any} \n", .{ctx.id});
-
         if (sub.activeIdSubs.getEntry(ctx.id)) |cnt| {
-            std.debug.print("flap ? {any} \n", .{ctx.id});
             ctx.hasSpecificIdSub = cnt.value_ptr.* > 0;
         } else {
             ctx.hasSpecificIdSub = false;
@@ -41,7 +38,7 @@ pub inline fn stage(
                         _ = typeSub.nonMarkedId.remove(sub.key_ptr.*);
                     }
 
-                    std.debug.print("yo yo hopw much? id:{any} cnt:{any} \n", .{ ctx.id, typeSub.activeIdSubs.get(ctx.id) });
+                    // std.debug.print("yo yo hopw much? id:{any} cnt:{any} \n", .{ ctx.id, typeSub.activeIdSubs.get(ctx.id) });
 
                     if (typeSub.activeIdSubs.getEntry(ctx.id)) |cnt| {
                         cnt.value_ptr.* = cnt.value_ptr.* - 1;
