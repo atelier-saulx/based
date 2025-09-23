@@ -244,7 +244,7 @@ typedef union {
  * @param s is a pointer to a selva_string.
  */
 SELVA_EXPORT
-#if __zig
+#ifdef __zig
 void selva_string_free(struct selva_string *s);
 #else
 void selva_string_free(_selva_string_ptr_t s);
