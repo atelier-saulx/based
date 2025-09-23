@@ -67,7 +67,7 @@ pub const MultiId = struct {
     // if not the bitmap technique is prob better scince the lookup is a lot faster porbably
     fields: FieldsSimple,
     // filters
-    // range: []u8, // typeId[s][e] - only for prop type
+    // range: []u8, // typeId[s][e] - only for prop type have to copy it in mem ofc else it gets gc'ed by js,,,
     startId: u32,
     endId: u32,
 

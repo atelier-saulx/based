@@ -59,33 +59,22 @@ pub fn removeMultiSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callba
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
-    // const headerLen = 14;
-    // const subId = utils.read(u64, value, 0);
-    const typeId = utils.read(u16, value, 8);
-    // const id = utils.read(u32, value, 10);
-    // const fields = value[headerLen..value.len];
-    if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
-        std.debug.print("AMOUNT OF SUBS {any} \n", .{typeSubscriptionCtx.ids.count()});
 
-        // if (typeSubscriptionCtx.ids.get(id)) |idContainer| {
-        //     for (fields) |f| {
-        //         if (idContainer.fields.get(f)) |fieldsSubIds| {
-        //             _ = fieldsSubIds.remove(subId);
-        //             if (fieldsSubIds.count() == 0) {
-        //                 if (idContainer.fields.fetchRemove(f)) |removed_entry| {
-        //                     removed_entry.value.deinit();
-        //                     ctx.allocator.destroy(removed_entry.value);
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     if (idContainer.fields.count() == 0) {
-        //         if (typeSubscriptionCtx.ids.fetchRemove(id)) |removed_entry| {
-        //             removed_entry.value.fields.deinit();
-        //             ctx.allocator.destroy(removed_entry.value);
-        //         }
-        //     }
-        // }
+    // const headerLen = 20;
+    const subId = utils.read(u64, value, 0);
+    const typeId = utils.read(u16, value, 8);
+    if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
+        std.debug.print("remove multi AMOUNT OF SUBS subId: {any} multi: {any} ids: {any} \n", .{
+            subId,
+            typeSubscriptionCtx.multi.count(),
+            typeSubscriptionCtx.ids.count(),
+        });
+
+        if (typeSubscriptionCtx.multi.fetchRemove(subId)) |removedMultiContainer| {
+            removedMultiContainer.value.fields.deinit();
+            ctx.allocator.destroy(removedMultiContainer.value);
+            _ = typeSubscriptionCtx.nonMarkedMulti.remove(subId);
+        }
 
         removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
     }

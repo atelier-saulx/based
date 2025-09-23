@@ -20,6 +20,10 @@ const native = {
     return db.addMultiSubscription(dbCtx, value)
   },
 
+  removeMultiSubscription: (dbCtx: any, value: Uint8Array): void => {
+    return db.removeMultiSubscription(dbCtx, value)
+  },
+
   removeIdSubscription: (dbCtx: any, value: Uint8Array): void => {
     return db.removeIdSubscription(dbCtx, value)
   },

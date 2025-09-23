@@ -142,6 +142,7 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
 
     // subscriptions
     registerFunction(env, exports, "addMultiSubscription", subscriptions.addMultiSubscription) catch return null;
+    registerFunction(env, exports, "removeMultiSubscription", subscriptions.removeMultiSubscription) catch return null;
     registerFunction(env, exports, "addIdSubscription", subscriptions.addIdSubscription) catch return null;
     registerFunction(env, exports, "removeIdSubscription", subscriptions.removeIdSubscription) catch return null;
     registerFunction(env, exports, "getMarkedSubscriptions", subscriptions.getMarkedSubscriptions) catch return null;

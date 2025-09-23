@@ -1,5 +1,6 @@
 const types = @import("./types.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
+const std = @import("std");
 
 pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCtx {
     var typeSubscriptionCtx: *types.TypeSubscriptionCtx = undefined;
@@ -20,7 +21,11 @@ pub inline fn removeSubTypeIfEmpty(ctx: *DbCtx, typeId: u16, typeSubscriptionCtx
         // if all is empty
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
             removed_entry.value.ids.deinit();
+            removed_entry.value.multi.deinit();
+            removed_entry.value.nonMarkedMulti.deinit();
             ctx.allocator.destroy(removed_entry.value);
+
+            std.debug.print("hello remove this type? {any}\n", .{typeId});
         }
     }
 }

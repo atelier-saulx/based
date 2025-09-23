@@ -212,6 +212,16 @@ await test('subscriptionIds', async (t) => {
   writeUint32(val2, n[n.length - 1].id, 15)
   // update range index
   native.addMultiSubscription(server.dbCtxExternal, val2)
+  await clients[1].update('user', n[n.length - 1].id, { derp: 77 })
+  logSubIds(server)
+
+  console.info('=-===REMOVE SUBS')
+  native.removeIdSubscription(server.dbCtxExternal, val)
+
+  native.removeMultiSubscription(server.dbCtxExternal, val2)
+
+  await clients[1].update('user', n[n.length - 1].id, { derp: 77 })
+  logSubIds(server)
 
   // try create with id range where the range is not full
 

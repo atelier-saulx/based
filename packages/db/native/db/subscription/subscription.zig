@@ -28,6 +28,7 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
             i += 8;
         }
         var iter = ctx.subscriptions.subscriptionsMultiMarked.iterator();
+
         while (iter.next()) |entry| {
             utils.writeInt(u64, data, i, entry.key_ptr.*);
             if (ctx.subscriptions.types.get(entry.value_ptr.*)) |t| {
@@ -68,6 +69,13 @@ pub fn addIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callc
 pub fn addMultiSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return multiId.addMultiSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("addMultiSubscription err {any} \n", .{err});
+        return null;
+    };
+}
+
+pub fn removeMultiSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return multiId.removeMultiSubscriptionInternal(napi_env, info) catch |err| {
+        std.log.err("removeMultiSubscription err {any} \n", .{err});
         return null;
     };
 }
