@@ -2,14 +2,9 @@ import { MICRO_BUFFER, PropDef } from '@based/schema/def'
 import { Ctx } from './Ctx.js'
 import {
   SWITCH_TYPE,
-  SWITCH_FIELD,
-  SWITCH_ID_CREATE,
-  SWITCH_ID_UPDATE,
-  SWITCH_ID_CREATE_UNSAFE,
-  UPDATE,
-  CREATE,
+  SWITCH_FIELD
 } from './types.js'
-import { writeU32, writeU8, writeU8Array } from './uint.js'
+import { writeU8, writeU8Array } from './uint.js'
 
 export const TYPE_CURSOR_SIZE = 3
 export const PROP_CURSOR_SIZE = 3
@@ -22,9 +17,7 @@ export const writeTypeCursor = (ctx: Ctx) => {
     writeU8(ctx, SWITCH_TYPE)
     writeU8Array(ctx, ctx.schema.idUint8)
     ctx.cursor.type = ctx.schema.id
-    // ctx.cursor.main = null
     ctx.cursor.prop = null
-    // ctx.cursor.id = null
   }
 }
 
@@ -49,26 +42,3 @@ export const writeMainCursor = (ctx: Ctx) => {
     ctx.cursor.prop = 0
   }
 }
-
-/*
-export const writeNodeCursor = (ctx: Ctx) => {
-
-
-  // if (ctx.id !== ctx.cursor.id || ctx.operation !== ctx.cursor.operation) {
-    // TODO maybe check if toggling between unsafe and safe
-    if (ctx.operation !== CREATE) {
-      writeU8(ctx, SWITCH_ID_UPDATE)
-      writeU32(ctx, ctx.id)
-    } else if (ctx.unsafe) {
-      writeU8(ctx, SWITCH_ID_CREATE_UNSAFE)
-      writeU32(ctx, ctx.id)
-    } else {
-      writeU8(ctx, SWITCH_ID_CREATE)
-    }
-    ctx.cursor.id = ctx.id
-    ctx.cursor.main = null
-    ctx.cursor.operation = ctx.operation
-  // }
-}
-
-*/

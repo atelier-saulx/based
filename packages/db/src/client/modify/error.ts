@@ -5,7 +5,7 @@ import {
   REVERSE_TYPE_INDEX_MAP,
   SchemaPropTree,
 } from '@based/schema/def'
-import { DbClient, DbClientHooks } from '../../index.js'
+import { DbClient } from '../../index.js'
 import { create } from './create/index.js'
 import { Ctx } from './Ctx.js'
 import { del } from './delete/index.js'
