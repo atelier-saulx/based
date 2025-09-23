@@ -12,8 +12,8 @@ pub const Op = enum(u8) {
 
 pub inline fn idSwitch(ctx: *ModifyCtx) !void {
     if (ctx.subTypes) |sub| {
-        if (sub.activeIdSubs.get(ctx.id)) |cnt| {
-            ctx.hasSpecificIdSub = cnt > 0;
+        if (sub.activeIdSubs.contains(ctx.id)) {
+            ctx.hasSpecificIdSub = true;
         } else {
             ctx.hasSpecificIdSub = false;
         }
