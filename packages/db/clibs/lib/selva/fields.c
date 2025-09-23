@@ -571,6 +571,11 @@ static void del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, const 
 
     if (i < refs->nr_refs - 1) {
         if (i == 0) {
+            static_assert(sizeof(refs->offset) == sizeof(uint16_t));
+            if (refs->offset == 0xffff) {
+                remove_refs_offset(refs);
+            }
+
             /*
              * Head removal can be done by offsetting the pointer.
              */
@@ -584,11 +589,6 @@ static void del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, const 
                 break;
             default:
                 db_panic("Invalid ref type: %d", refs->size);
-            }
-
-            static_assert(sizeof(refs->offset) == sizeof(uint16_t));
-            if (refs->offset == 0xffff) {
-                remove_refs_offset(refs);
             }
         } else if (i + 1 < refs->nr_refs) {
             /*
