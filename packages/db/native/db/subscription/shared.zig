@@ -6,9 +6,10 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
     var typeSubscriptionCtx: *types.TypeSubscriptionCtx = undefined;
     if (!ctx.subscriptions.types.contains(typeId)) {
         typeSubscriptionCtx = try ctx.allocator.create(types.TypeSubscriptionCtx);
-        typeSubscriptionCtx.*.ids = types.IdsSubscriptions.init(ctx.allocator);
-        typeSubscriptionCtx.*.multi = types.MultiIdSubscriptions.init(ctx.allocator);
-        typeSubscriptionCtx.*.nonMarkedMulti = types.MultiIdSubscriptions.init(ctx.allocator);
+        typeSubscriptionCtx.*.activeIdSubs = types.ActiveSubIds.init(ctx.allocator);
+        typeSubscriptionCtx.*.subs = types.Subscriptions.init(ctx.allocator);
+        typeSubscriptionCtx.*.nonMarkedId = types.Subscriptions.init(ctx.allocator);
+        typeSubscriptionCtx.*.nonMarkedMulti = types.Subscriptions.init(ctx.allocator);
         try ctx.subscriptions.types.put(typeId, typeSubscriptionCtx);
     } else {
         typeSubscriptionCtx = ctx.subscriptions.types.get(typeId).?;
@@ -16,15 +17,18 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
     return typeSubscriptionCtx;
 }
 
-pub inline fn removeSubTypeIfEmpty(ctx: *DbCtx, typeId: u16, typeSubscriptionCtx: *types.TypeSubscriptionCtx) void {
-    if (typeSubscriptionCtx.ids.count() == 0 and typeSubscriptionCtx.multi.count() == 0) {
-        // if all is empty
+pub inline fn removeSubTypeIfEmpty(
+    ctx: *DbCtx,
+    typeId: u16,
+    typeSubscriptionCtx: *types.TypeSubscriptionCtx,
+) void {
+    if (typeSubscriptionCtx.subs.count() == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-            removed_entry.value.ids.deinit();
-            removed_entry.value.multi.deinit();
+            removed_entry.value.activeIdSubs.deinit();
             removed_entry.value.nonMarkedMulti.deinit();
+            removed_entry.value.nonMarkedId.deinit();
+            removed_entry.value.subs.deinit();
             ctx.allocator.destroy(removed_entry.value);
-
             std.debug.print("hello remove this type? {any}\n", .{typeId});
         }
     }

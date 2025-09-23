@@ -17,7 +17,7 @@ const getOrCreateShard = Modify.getOrCreateShard;
 const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
-    try subs.multiId(ctx, subs.Op.create);
+    try subs.stage(ctx, subs.Op.create);
 
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
