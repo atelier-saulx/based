@@ -48,7 +48,7 @@ await test('filter references drones', async (t) => {
     }
   }
 
-  await db.drain()
+  console.log(await db.drain(), 'ms')
 
   const user = 1
 

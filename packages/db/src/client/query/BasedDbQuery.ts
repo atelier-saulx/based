@@ -523,14 +523,14 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
       return
     }
 
-    const d = performance.now()
-
     await this.db.isModified()
 
     if (this.db.schema?.hash !== this.def.schemaChecksum) {
       this.reset()
       return this.#getInternal(resolve, reject)
     }
+    const d = performance.now()
+
     const res = await this.db.hooks.getQueryBuf(buf)
 
     if (res.byteLength === 1) {
