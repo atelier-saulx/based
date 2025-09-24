@@ -46,35 +46,39 @@ await test('ah', async (t) => {
     droneUnrelated: number,
     user: number
 
-  wsA = await db.create('workspace', { name: 'A Workspace' })
-  wsB = await db.create('workspace', { name: 'B Workspace' })
-  const wsC = await db.create('workspace', { name: 'C Workspace' })
-  user = await db.create('user', { name: 'User A', workspaces: [wsA, wsB] })
-  droneA = await db.create('drone', { workspace: wsA, name: 'Drone A' })
-  droneB = await db.create('drone', { workspace: wsB, name: 'Drone B' })
-  droneUnrelated = await db.create('drone', {
-    name: 'Dont include me in results!',
-  })
+  // wsA = await db.create('workspace', { name: 'A Workspace' })
+  // wsB = await db.create('workspace', { name: 'B Workspace' })
+  // user = await db.create('user', { name: 'User A', workspaces: [wsA, wsB] })
+  // droneA = await db.create('drone', { workspace: wsA, name: 'Drone A' })
+  // droneB = await db.create('drone', { workspace: wsB, name: 'Drone B' })
+  // droneUnrelated = await db.create('drone', {
+  //   name: 'Dont include me in results!',
+  // })
 
-  for (let i = 0; i < 1e7; i++) {
-    db.create('drone', { workspace: wsC, name: `Drone ${i}` })
+  for (let w = 1; w <= 1000; w++) {
+    const wkspc = db.create('workspace', { name: `Workspace ${w}` })
+    if (w == 500 || w == 750) {
+      db.create('user', { name: 'User A', workspaces: [wkspc] })
+    }
+    for (let d = 0; d < 1000; d++) {
+      db.create('drone', { workspace: wkspc, name: `Drone ${w}-${d}` })
+    }
   }
 
-  console.time('q1')
   const drones = await db
-    .query('user', user)
+    .query('user')
     .include((s) =>
-      s('workspaces').include((s) => s('drones').include('*').range(0, 1)),
+      s('workspaces').include((s) =>
+        s('drones').include('*').filter('workspace.users', 'includes', user),
+      ),
     )
+    .include('*')
     .get()
-  console.timeEnd('q1')
 
-  console.time('q2')
   const drones2 = await db
     .query('drone')
     .filter('workspace.users', 'includes', user)
     .get()
-  console.timeEnd('q2')
 
   drones.inspect()
   drones2.inspect()
