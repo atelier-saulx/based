@@ -62,9 +62,29 @@ const logSubIds = (server: BasedDb['server']) => {
         i += 8
       }
     }
+    const uniq = new Set()
     console.log(
       `   • Subscriptions fired ${d}ms:`,
-      marked.map((v) => ({ ids: v.ids.length, sub: v.id })),
+      marked.reduce(
+        (acc, v, i) => {
+          for (const x of v.ids) {
+            acc.uniqIds.add(x)
+          }
+          if (i === marked.length - 1) {
+            return {
+              ids: acc.ids + v.ids?.length,
+              subs: acc.subs + 1,
+              uniqIds: acc.uniqIds.size,
+            }
+          }
+          return {
+            ids: acc.ids + v.ids?.length,
+            subs: acc.subs + 1,
+            uniqIds: acc.uniqIds,
+          }
+        },
+        { ids: 0, subs: 0, uniqIds: new Set() },
+      ),
     )
   } else {
     console.log('   • No subs fired!')
@@ -125,12 +145,12 @@ await test('subscriptionIds', async (t) => {
   const payload = {
     derp: 99,
     x: 1,
-    location: array.slice(0, l),
-    lang: array.slice(0, l),
+    // location: array.slice(0, l),
+    // lang: array.slice(0, l),
   }
 
   const updateAll = async (type = 'user') => {
-    d = Date.now()
+    let d = Date.now()
     for (let i = 0; i < amount; i++) {
       payload.derp = i
       payload.x = i % 255
@@ -148,62 +168,37 @@ await test('subscriptionIds', async (t) => {
   }
 
   const removeAllSubsForId = (val: Uint8Array) => {
-    d = Date.now()
+    let d = Date.now()
     for (let i = 1; i < amount; i++) {
       writeUint32(val, i, 10)
       native.removeIdSubscription(server.dbCtxExternal, val)
     }
-    console.log(
-      `Remove subscriptions ${readable} subs sub:(${subId})`,
-      Date.now() - d,
-      'ms',
-    )
+    console.log(`Remove subscriptions ${readable} subs`, Date.now() - d, 'ms')
   }
 
-  // -----------------------------------
-  const fields = new Uint8Array([0, 1, 2])
-  const subId = 66
-  const typeId = server.schemaTypesParsed['user'].id
-  const val = createSingleSubscriptionBuffer(subId, typeId, fields, id)
-  native.addIdSubscription(server.dbCtxExternal, val)
+  const addSubs = (subId: number, start = 0, end = 100): Uint8Array => {
+    const fields = new Uint8Array([0, 1, 2])
+    const typeId = server.schemaTypesParsed['user'].id
+    const val = createSingleSubscriptionBuffer(subId, typeId, fields, id)
+    let d = Date.now()
+    for (let i = start; i < end; i++) {
+      writeUint32(val, ~~(Math.random() * amount) + 1, 10)
+      native.addIdSubscription(server.dbCtxExternal, val)
+    }
+    // console.log(`#1 add ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
+    return val
+  }
 
-  console.log('single UPDATE #1')
-  await clients[1].update('user', id, payload)
-  logSubIds(server)
-  let d = Date.now()
-  for (let i = 1; i < amount; i++) {
-    writeUint32(val, i, 10)
-    native.addIdSubscription(server.dbCtxExternal, val)
-  }
-  console.log(`#1 add ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
-  d = Date.now()
-  const secondSubId = 11
-  const val2 = createSingleSubscriptionBuffer(
-    secondSubId,
-    typeId,
-    new Uint8Array([0]),
-    id,
-  )
-  for (let i = 1; i < amount; i++) {
-    writeUint32(val2, i, 10)
-    native.addIdSubscription(server.dbCtxExternal, val2)
-  }
-  console.log(
-    `#2 add second sub:(${secondSubId}) ${readable} subs`,
-    Date.now() - d,
-    'ms',
-  )
+  // ----------------- HERE --------------
   for (let i = 0; i < amount; i++) {
     clients[1].create('user', payload)
   }
   await clients[1].drain()
-  // ----------------- HERE --------------
+  // logSubIds(server)
 
-  logSubIds(server)
-
-  await updateAll()
-  await updateAll()
-  logSubIds(server)
+  for (let i = 1; i < 1e4; i++) {
+    addSubs(i)
+  }
 
   await updateAll()
   await updateAll()
@@ -221,13 +216,17 @@ await test('subscriptionIds', async (t) => {
   await updateAll()
   logSubIds(server)
 
-  removeAllSubsForId(val)
   await updateAll()
   await updateAll()
   logSubIds(server)
 
-  removeAllSubsForId(val2)
-  await updateAll()
-  await updateAll()
-  logSubIds(server)
+  // removeAllSubsForId(val)
+  // await updateAll()
+  // await updateAll()
+  // logSubIds(server)
+
+  // removeAllSubsForId(val2)
+  // await updateAll()
+  // await updateAll()
+  // logSubIds(server)
 })
