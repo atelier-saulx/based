@@ -120,7 +120,6 @@ const propDefBuffer = (
     const buf = new Uint8Array(7)
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
-    //let eschema = []
 
     // @ts-ignore
     buf[0] = selvaType + 2 * !!prop.__isEdge // field type
@@ -140,33 +139,6 @@ const propDefBuffer = (
       view.setUint16(5, prop.edgeNodeTypeId, true) // meta_node_type
     }
 
-      //if (prop.edges) {
-      //  const edgesS = Object.values(prop.edges)
-      //  if (edgesS.length) {
-      //    const props = edgesS
-      //      .filter((v) => v.separate === true)
-      //      .sort((a, b) => (a.prop > b.prop ? 1 : -1))
-      //    const p = [
-      //      {
-      //        ...EMPTY_MICRO_BUFFER,
-      //        len: prop.edgeMainLen || 1, // allow zero here... else useless padding
-      //        __isEdgeDef: true,
-      //      },
-      //      // or handle this here...
-      //      ...props,
-      //    ]
-      //    eschema = p
-      //      .map((prop) =>
-      //        propDefBuffer(null, 0, schema, prop as PropDef, true),
-      //      )
-      //      .flat(1)
-      //    eschema.unshift(0, 0, 0, 0, sepPropCount(p), 0, 0, 0)
-      //    view.setUint32(5, eschema.length, true)
-      //  }
-      //}
-    //}
-
-    //return [...buf, ...eschema]
     return [...buf]
   } else if (
     type === STRING ||
