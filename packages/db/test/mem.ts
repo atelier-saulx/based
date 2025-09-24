@@ -71,13 +71,16 @@ await test('mem', async (t) => {
       ).length > 1,
       true,
     )
+
     // console.log('before:', (await db.query('data').range(0, 10e6).get()).length)
     // console.log('delete:', { amount })
+
     for (let i = 0; i < amount; i++) {
       db.delete('data', ids[i])
     }
 
     await db.drain()
+    // await wait(100)
     // console.log('after:', (await db.query('data').range(0, 10e6).get()).length)
 
     equal((await db.query('data').range(0, 10e6).get()).length, (j + 1) * 2)
