@@ -50,9 +50,9 @@ await test('single reference', async (t) => {
     },
   })
 
-  console.log(db.server.schemaTypesParsed)
+  //console.log(db.server.schemaTypesParsed)
   await db.query('article').include('*', '**').get().inspect()
-  await db.query('article:author').include('*').get().inspect()
+  await db.query('_article:author').include('*').get().inspect()
   deepEqual([...db.server.verifTree.types()].map((type) => type.typeId), [2, 3, 4])
   deepEqual(db.server.dirtyRanges.size, 3)
 })
