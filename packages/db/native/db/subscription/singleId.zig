@@ -40,15 +40,6 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
 
     try sub.*.ids.put(id, undefined);
 
-    // if (!r.found_existing) {
-    //     const idK = try typeSubscriptionCtx.*.activeIdSubs.getOrPut(id);
-    //     if (idK.found_existing) {
-    //         idK.value_ptr.* = idK.value_ptr.* + 1;
-    //     } else {
-    //         idK.value_ptr.* = 1;
-    //     }
-    // }
-
     return null;
 }
 

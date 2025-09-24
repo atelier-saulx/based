@@ -32,7 +32,6 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
         var i: usize = 0;
-
         iter = ctx.subscriptions.subscriptionsMarked.iterator();
         while (iter.next()) |entry| {
             if (ctx.subscriptions.types.get(entry.value_ptr.*)) |t| {
@@ -44,16 +43,6 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
                     var stagedKeyIter = sub.*.stagedIds.?.keyIterator();
                     i += 13;
                     while (stagedKeyIter.next()) |stagedIdKey| {
-                        // prob want to remove the ids - seems
-                        // const r = try t.activeIdSubs.getOrPut(stagedIdKey.*);
-                        // if (r.found_existing) {
-                        //     r.value_ptr.* = r.value_ptr.* + 1;
-                        // } else {
-                        //     r.value_ptr.* = 1;
-                        // }
-                        // if (t.activeIdSubs.getEntry(stagedIdKey.*)) |cnt| {
-                        //     cnt.value_ptr.* = cnt.value_ptr.* + 1;
-                        // }
                         utils.writeInt(u32, data, i, stagedIdKey.*);
                         _ = sub.*.stagedIds.?.remove(stagedIdKey.*);
                         i += 4;
@@ -68,10 +57,8 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
             }
             _ = ctx.subscriptions.subscriptionsMarked.remove(entry.key_ptr.*);
         }
-
         return result;
     }
-    // subscriptionsMultiMarked
     return null;
 }
 

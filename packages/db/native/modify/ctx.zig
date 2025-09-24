@@ -21,9 +21,6 @@ pub const ModifyCtx = struct {
     typeInfo: []u8,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
     subTypes: ?*subs.TypeSubscriptionCtx,
-
-    hasSpecificIdSub: bool,
-    hasMultiIdSub: bool,
 };
 
 pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {

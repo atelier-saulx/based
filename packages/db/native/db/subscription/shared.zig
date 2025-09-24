@@ -6,7 +6,6 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
     var typeSubscriptionCtx: *types.TypeSubscriptionCtx = undefined;
     if (!ctx.subscriptions.types.contains(typeId)) {
         typeSubscriptionCtx = try ctx.allocator.create(types.TypeSubscriptionCtx);
-        typeSubscriptionCtx.*.activeIdSubs = types.ActiveSubIds.init(ctx.allocator);
         typeSubscriptionCtx.*.subs = types.Subscriptions.init(ctx.allocator);
         typeSubscriptionCtx.*.nonMarkedId = types.Subscriptions.init(ctx.allocator);
         typeSubscriptionCtx.*.nonMarkedMulti = types.Subscriptions.init(ctx.allocator);

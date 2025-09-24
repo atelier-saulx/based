@@ -55,8 +55,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .typeInfo = typeInfo,
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
         .subTypes = null,
-        .hasMultiIdSub = false,
-        .hasSpecificIdSub = false,
     };
 
     defer ctx.dirtyRanges.deinit();
@@ -129,23 +127,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
                 if (ctx.node != null) {
-                    // It would be even better if we'd mark it dirty only in the case
-                    // has to check the next or at end
                     Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id); // move this to SUB / similair checks
-                    // try subs.idSwitch(&ctx);
-
-                    // here we want to add BOOL
-                    // not here then...
-                    // if (ctx.subTypes) |subTypes| {
-                    //     // has subs? maybe thats good?
-                    //     // things has Id subs
-                    //     // has multi Id sub
-
-                    //     ctx.subId = subTypes.ids.get(ctx.id);
-                    // } else {
-                    //     ctx.subId = null;
-                    // }
-                    // ctx.
                 }
                 i = i + 5;
             },

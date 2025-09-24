@@ -22,12 +22,9 @@ pub const Subscription = struct {
 
 pub const Subscriptions = std.AutoHashMap(u64, *Subscription);
 
-pub const ActiveSubIds = std.AutoHashMap(u32, u32); // max 65k different subs per id - seems ok
-
 pub const TypeSubscriptionCtx = struct {
     nonMarkedId: Subscriptions, // see difference in perf
     nonMarkedMulti: Subscriptions, // different for different things
-    activeIdSubs: ActiveSubIds, // can add every id here (doubles mem usage but might be good to do)
     subs: Subscriptions, // if zero remove type
 };
 
