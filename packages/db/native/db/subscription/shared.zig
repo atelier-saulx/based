@@ -7,7 +7,7 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
     if (!ctx.subscriptions.types.contains(typeId)) {
         typeSubscriptionCtx = try ctx.allocator.create(types.TypeSubscriptionCtx);
         typeSubscriptionCtx.*.subs = types.Subscriptions.init(ctx.allocator);
-        typeSubscriptionCtx.*.nonMarkedId = types.Subscriptions.init(ctx.allocator);
+        typeSubscriptionCtx.*.ids = types.IdsSubs.init(ctx.allocator);
         typeSubscriptionCtx.*.nonMarkedMulti = types.Subscriptions.init(ctx.allocator);
         try ctx.subscriptions.types.put(typeId, typeSubscriptionCtx);
     } else {
@@ -24,8 +24,8 @@ pub inline fn removeSubTypeIfEmpty(
     if (typeSubscriptionCtx.subs.count() == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
             removed_entry.value.nonMarkedMulti.deinit();
-            removed_entry.value.nonMarkedId.deinit();
             removed_entry.value.subs.deinit();
+            removed_entry.value.ids.deinit();
             ctx.allocator.destroy(removed_entry.value);
             std.debug.print("hello remove this type? {any}\n", .{typeId});
         }

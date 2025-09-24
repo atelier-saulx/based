@@ -40,6 +40,7 @@ pub fn addMultiSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_
             .hasFullRange = hasFullRange,
             .filters = null,
             .stagedIds = null,
+            .id = subId,
         };
         try typeSubscriptionCtx.subs.put(subId, sub);
         try typeSubscriptionCtx.nonMarkedMulti.put(subId, sub);

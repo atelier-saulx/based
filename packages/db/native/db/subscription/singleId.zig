@@ -28,16 +28,28 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
             .hasFullRange = false,
             .filters = null,
             .stagedIds = types.Ids.init(ctx.allocator),
+            .id = subId,
         };
         try typeSubscriptionCtx.subs.put(subId, sub);
-        try typeSubscriptionCtx.nonMarkedId.put(subId, sub);
+        // try typeSubscriptionCtx.nonMarkedId.put(subId, sub);
         for (fields) |f| {
             try sub.fields.put(f, undefined);
         }
     } else {
         sub = typeSubscriptionCtx.subs.get(subId).?;
     }
-    try sub.*.ids.put(id, undefined);
+
+    const s = try typeSubscriptionCtx.ids.getOrPut(id);
+
+    if (!s.found_existing) {
+        const sMap = try ctx.allocator.create(types.SubscriptionsSet);
+        sMap.* = types.SubscriptionsSet.init(ctx.allocator);
+        s.value_ptr.* = sMap;
+    }
+
+    try sub.ids.put(id, undefined);
+    try s.value_ptr.*.put(sub, undefined);
+
     return null;
 }
 
@@ -52,13 +64,22 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
     if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
         if (typeSubscriptionCtx.subs.get(subId)) |sub| {
             if (sub.*.ids.remove(id)) {
+                if (typeSubscriptionCtx.ids.get(id)) |subs| {
+                    if (subs.*.remove(sub)) {
+                        if (subs.*.count() == 0) {
+                            subs.*.deinit();
+                            ctx.allocator.destroy(subs);
+                            _ = typeSubscriptionCtx.ids.remove(id);
+                        }
+                    }
+                }
                 if (sub.*.ids.count() == 0) {
                     sub.ids.deinit();
                     sub.stagedIds.?.deinit();
                     sub.fields.deinit();
                     if (typeSubscriptionCtx.subs.remove(subId)) {
                         // std.debug.print("REMOVE SUB {any}!\n", .{subId});
-                        _ = typeSubscriptionCtx.nonMarkedId.remove(subId);
+                        // _ = typeSubscriptionCtx.nonMarkedId.remove(subId);
                         ctx.allocator.destroy(sub);
                         removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
                     }

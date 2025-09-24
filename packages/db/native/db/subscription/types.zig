@@ -16,16 +16,22 @@ pub const Subscription = struct {
     fields: Fields,
     hasFullRange: bool,
     filters: ?*Filters,
-    ids: Ids,
+    ids: Ids, // remove this for now
     stagedIds: ?Ids,
+    id: u64,
 };
 
 pub const Subscriptions = std.AutoHashMap(u64, *Subscription);
 
+pub const SubscriptionsSet = std.AutoHashMap(*Subscription, void);
+
+pub const IdsSubs = std.AutoHashMap(u32, *SubscriptionsSet);
+
 pub const TypeSubscriptionCtx = struct {
-    nonMarkedId: Subscriptions, // see difference in perf
+    // nonMarkedId: Subscriptions, // see difference in perf
     nonMarkedMulti: Subscriptions, // different for different things
     subs: Subscriptions, // if zero remove type
+    ids: IdsSubs,
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);

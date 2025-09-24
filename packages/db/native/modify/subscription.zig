@@ -11,10 +11,15 @@ pub const Op = enum(u8) {
 };
 
 pub fn checkId(
-    // ctx: *ModifyCtx,
+    ctx: *ModifyCtx,
 ) !void {
-
-    //
+    if (ctx.subTypes) |typeSub| {
+        if (typeSub.ids.get(ctx.id)) |subs| {
+            ctx.idSubs = subs;
+        } else {
+            ctx.idSubs = null;
+        }
+    }
 }
 
 pub fn stage(
@@ -22,19 +27,14 @@ pub fn stage(
     comptime op: Op,
 ) !void {
     if (op != Op.create and op != Op.deleteNode) {
-        if (ctx.subTypes) |typeSub| {
-            var iter = typeSub.nonMarkedId.iterator();
+        if (ctx.idSubs) |idSubs| {
+            // std.debug.print("{any}\n", .{idSubs});
+            var iter = idSubs.iterator();
             while (iter.next()) |sub| {
-                if (sub.value_ptr.*.fields.contains(ctx.field) and
-                    sub.value_ptr.*.ids.contains(ctx.id) and
-                    !sub.value_ptr.*.stagedIds.?.contains(ctx.id))
-                {
-                    try sub.value_ptr.*.stagedIds.?.put(ctx.id, undefined);
+                if (sub.key_ptr.*.fields.contains(ctx.field) and !sub.key_ptr.*.stagedIds.?.contains(ctx.field)) {
+                    try sub.key_ptr.*.stagedIds.?.put(ctx.id, undefined);
                     ctx.db.subscriptions.hasMarkedSubscriptions = true;
-                    try ctx.db.subscriptions.subscriptionsMarked.put(sub.key_ptr.*, ctx.typeId);
-                    if (sub.value_ptr.*.stagedIds.?.count() == sub.value_ptr.*.ids.count()) {
-                        _ = typeSub.nonMarkedId.remove(sub.key_ptr.*);
-                    }
+                    try ctx.db.subscriptions.subscriptionsMarked.put(sub.key_ptr.*.id, ctx.typeId);
                 }
             }
         }

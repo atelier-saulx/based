@@ -55,6 +55,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .typeInfo = typeInfo,
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
         .subTypes = null,
+        .idSubs = null,
     };
 
     defer ctx.dirtyRanges.deinit();
@@ -127,6 +128,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 ctx.id = read(u32, operation, 0);
                 ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
                 if (ctx.node != null) {
+                    try subs.checkId(&ctx);
                     Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id); // move this to SUB / similair checks
                 }
                 i = i + 5;

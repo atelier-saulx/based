@@ -53,8 +53,10 @@ await test('filter references drones', async (t) => {
   const drones = await db
     .query('user')
     .include((s) =>
-      s('workspaces').include((s) =>
-        s('drones').include('*').filter('workspace.users', 'includes', user),
+      s('workspaces').include(
+        (s) =>
+          s('drones').include('*').filter('workspace.users', 'includes', user),
+        // .range(0, 1),
       ),
     )
     .include('*')
