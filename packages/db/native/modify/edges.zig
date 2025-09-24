@@ -12,6 +12,14 @@ const copy = utils.copy;
 const ModifyCtx = Modify.ModifyCtx;
 const p = types.Prop;
 
+fn isMainEmpty(val: []u8) bool {
+    var b = false;
+    for (val) |byte| {
+        b = b or byte != 0;
+    }
+    return b == false;
+}
+
 pub fn writeEdges(
     ctx: *ModifyCtx,
     ref: *selva.SelvaNodeLargeReference,
@@ -26,7 +34,7 @@ pub fn writeEdges(
         i += 3;
 
         const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
-            std.log.err("Edge field schema cannot be found \n", .{});
+            std.log.err("Edge field schema not found\n", .{});
             return;
         };
 
@@ -39,9 +47,9 @@ pub fn writeEdges(
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
             const mainBufferOffset = len - totalMainBufferLen;
-            const val = db.getEdgeProp(ref, edgeFieldSchema);
+            const val = db.getEdgeProp(ctx.db, edgeConstraint, ref, edgeFieldSchema);
 
-            if (val.len > 0) {
+            if (!isMainEmpty(val)) {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 var j: usize = offset + i;
                 while (j < mainBufferOffset + offset + i) : (j += 6) {
@@ -58,11 +66,11 @@ pub fn writeEdges(
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 try db.writeEdgeProp(
                     ctx,
-                    edgeData,
                     ctx.node.?,
                     edgeConstraint,
                     ref,
                     edgeFieldSchema,
+                    edgeData,
                 );
             }
         } else if (t == p.REFERENCE) {
@@ -71,11 +79,11 @@ pub fn writeEdges(
             const edgeData = data[i + offset .. i + offset + len];
             try db.writeEdgeProp(
                 ctx,
-                edgeData,
                 ctx.node.?,
                 edgeConstraint,
                 ref,
                 edgeFieldSchema,
+                edgeData,
             );
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
@@ -94,11 +102,11 @@ pub fn writeEdges(
             const edgeData = data[i + offset .. i + offset + len];
             try db.writeEdgeProp(
                 ctx,
-                edgeData,
                 ctx.node.?,
                 edgeConstraint,
                 ref,
                 edgeFieldSchema,
+                edgeData,
             );
         }
 

@@ -17,13 +17,8 @@ import {
   BLOCK_CAPACITY_MAX,
   BLOCK_CAPACITY_DEFAULT,
   BLOCK_CAPACITY_MIN,
-  ALIAS,
-  ALIASES,
   VECTOR,
   COLVEC,
-  SIZE_MAP,
-  REVERSE_SIZE_MAP,
-  REVERSE_TYPE_INDEX_MAP,
   CARDINALITY,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
@@ -65,14 +60,33 @@ export const updateTypeDefs = (schema: StrictSchema) => {
     schemaTypesParsedById[type.id] = def
   }
 
-  // Update inverseProps in references
   for (const schema of Object.values(schemaTypesParsed)) {
     for (const prop of Object.values(schema.props)) {
       if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+        // FIXME Now references in edgeType are missing __isEdge
+        // However, we can soon just delete weak refs
+        if (!prop.__isEdge && !prop.inversePropName) {
+          prop.__isEdge = true
+        }
+
         if (!prop.__isEdge) {
+          // Update inverseProps in references
           const dstType: SchemaTypeDef = schemaTypesParsed[prop.inverseTypeName]
           prop.inverseTypeId = dstType.id
           prop.inversePropNumber = dstType.props[prop.inversePropName].prop
+
+          // Update edgeNodeTypeId
+          if (!prop.edgeNodeTypeId) {
+            if (prop.edges) {
+              const edgeTypeName = `_${schema.type}:${prop.path.join('.')}`
+              const edgeType = schemaTypesParsed[edgeTypeName]
+
+              prop.edgeNodeTypeId = edgeType.id
+              dstType.props[prop.inversePropName].edgeNodeTypeId = edgeType.id
+            } else {
+              prop.edgeNodeTypeId = 0
+            }
+          }
         }
       }
     }

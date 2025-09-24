@@ -30,7 +30,8 @@ struct SelvaNodeSmallReference {
 
 struct SelvaNodeLargeReference {
     struct SelvaNode *dst;
-    struct SelvaFields *meta;
+    node_id_t meta;
+    uint32_t _spare;
 };
 
 enum SelvaNodeReferenceType {
@@ -116,12 +117,14 @@ void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo
 SELVA_EXPORT
 struct SelvaFields *selva_fields_node2fields(struct SelvaNode *node);
 
-void selva_fields_ensure_ref_meta(
+SELVA_EXPORT
+struct SelvaNode *selva_fields_ensure_ref_meta(
         struct SelvaDb *db,
         struct SelvaNode *node,
+        const struct EdgeFieldConstraint *efc,
         struct SelvaNodeLargeReference *ref,
-        const struct EdgeFieldConstraint *efc)
-    __attribute__((nonnull));
+        node_id_t meta_id,
+        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
 
 SELVA_EXPORT
 int selva_fields_get_mutable_string(
@@ -140,15 +143,6 @@ struct SelvaFieldInfo *selva_fields_ensure(struct SelvaFields *fields, const str
 SELVA_EXPORT
 struct selva_string *selva_fields_ensure_string(
         struct SelvaNode *node,
-        const struct SelvaFieldSchema *fs,
-        size_t initial_len);
-
-SELVA_EXPORT
-struct selva_string *selva_fields_ensure_string2(
-        struct SelvaDb *db,
-        struct SelvaNode *node,
-        const struct EdgeFieldConstraint *efc,
-        struct SelvaNodeLargeReference *ref,
         const struct SelvaFieldSchema *fs,
         size_t initial_len);
 
@@ -179,7 +173,8 @@ int selva_fields_references_insert(
         bool reorder,
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode * restrict dst,
-        struct SelvaNodeReferenceAny *ref_out)
+        struct SelvaNodeReferenceAny *ref_out,
+        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
     __attribute__((access(write_only, 8)));
 
 /**
@@ -196,7 +191,8 @@ int selva_fields_references_insert_tail_wupsert(
         const struct SelvaFieldSchema *fs,
         struct SelvaTypeEntry *te_dst,
         const node_id_t ids[],
-        size_t nr_ids)
+        size_t nr_ids,
+        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
     __attribute__((access(read_only, 5, 6)));
 
 /**
@@ -222,25 +218,6 @@ int selva_fields_references_swap(
         const struct SelvaFieldSchema *fs,
         size_t index_a,
         size_t index_b);
-
-SELVA_EXPORT
-int selva_fields_set_reference_meta(
-        struct SelvaDb *db,
-        struct SelvaNode *node,
-        struct SelvaNodeLargeReference *ref,
-        const struct EdgeFieldConstraint *efc,
-        const struct SelvaFieldSchema *efs,
-        const void *value, size_t len);
-
-SELVA_EXPORT
-int selva_fields_get_reference_meta_mutable_string(
-        struct SelvaDb *db,
-        struct SelvaNode *node,
-        struct SelvaNodeLargeReference *ref,
-        const struct EdgeFieldConstraint *efc,
-        const struct SelvaFieldSchema *efs,
-        size_t len,
-        struct selva_string **s);
 
 /**
  * Set string field.
@@ -340,10 +317,6 @@ struct SelvaNode *selva_fields_resolve_weak_reference(
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct selva_string *selva_fields_get_selva_string3(struct SelvaDb *db, struct SelvaNodeLargeReference *ref, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull));
-
-SELVA_EXPORT
 struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
@@ -374,7 +347,7 @@ int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct Se
  * Delete an edge from a references field.
  */
 SELVA_EXPORT
-int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id);
+int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
 
 /**
  * Clear a references field but don't free it.
