@@ -42,13 +42,20 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const s = try typeSubscriptionCtx.ids.getOrPut(id);
 
     if (!s.found_existing) {
-        const sMap = try ctx.allocator.create(types.SubscriptionsSet);
-        sMap.* = types.SubscriptionsSet.init(ctx.allocator);
+        const sMap = try ctx.allocator.create(types.IdsSubsMap);
+        sMap.* = .{
+            .set = types.SubscriptionsSet.init(ctx.allocator),
+            .active = 0,
+        };
         s.value_ptr.* = sMap;
     }
 
-    try sub.ids.put(id, undefined);
-    try s.value_ptr.*.put(sub, undefined);
+    const gs = try sub.ids.getOrPut(id);
+    if (!gs.found_existing) {
+        try s.value_ptr.*.set.put(sub, undefined);
+        // lets see fastest
+        s.value_ptr.*.active = s.value_ptr.*.set.count();
+    }
 
     return null;
 }
@@ -65,11 +72,13 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
         if (typeSubscriptionCtx.subs.get(subId)) |sub| {
             if (sub.*.ids.remove(id)) {
                 if (typeSubscriptionCtx.ids.get(id)) |subs| {
-                    if (subs.*.remove(sub)) {
-                        if (subs.*.count() == 0) {
-                            subs.*.deinit();
+                    if (subs.*.set.remove(sub)) {
+                        if (subs.*.set.count() == 0) {
+                            subs.*.set.deinit();
                             ctx.allocator.destroy(subs);
                             _ = typeSubscriptionCtx.ids.remove(id);
+                        } else {
+                            subs.*.active = subs.*.set.count();
                         }
                     }
                 }

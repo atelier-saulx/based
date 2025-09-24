@@ -43,6 +43,9 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
                     var stagedKeyIter = sub.*.stagedIds.?.keyIterator();
                     i += 13;
                     while (stagedKeyIter.next()) |stagedIdKey| {
+                        if (t.ids.get(stagedIdKey.*)) |idMap| {
+                            idMap.*.active = idMap.*.active + 1;
+                        }
                         utils.writeInt(u32, data, i, stagedIdKey.*);
                         i += 4;
                     }

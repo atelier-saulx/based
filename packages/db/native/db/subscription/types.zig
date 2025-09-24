@@ -25,7 +25,12 @@ pub const Subscriptions = std.AutoHashMap(u64, *Subscription);
 
 pub const SubscriptionsSet = std.AutoHashMap(*Subscription, void);
 
-pub const IdsSubs = std.AutoHashMap(u32, *SubscriptionsSet);
+pub const IdsSubsMap = struct {
+    set: SubscriptionsSet,
+    active: u32,
+};
+
+pub const IdsSubs = std.AutoHashMap(u32, *IdsSubsMap);
 
 pub const TypeSubscriptionCtx = struct {
     // nonMarkedId: Subscriptions, // see difference in perf

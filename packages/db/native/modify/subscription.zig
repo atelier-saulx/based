@@ -13,9 +13,14 @@ pub const Op = enum(u8) {
 pub fn checkId(
     ctx: *ModifyCtx,
 ) !void {
+    // this has to be in c - seems very slow...
     if (ctx.subTypes) |typeSub| {
         if (typeSub.ids.get(ctx.id)) |subs| {
-            ctx.idSubs = subs;
+            if (subs.active != 0) {
+                ctx.idSubs = subs;
+            } else {
+                ctx.idSubs = null;
+            }
         } else {
             ctx.idSubs = null;
         }
@@ -28,13 +33,13 @@ pub fn stage(
 ) !void {
     if (op != Op.create and op != Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
-            // std.debug.print("{any}\n", .{idSubs});
-            var iter = idSubs.iterator();
+            var iter = idSubs.set.iterator();
             while (iter.next()) |sub| {
                 if (sub.key_ptr.*.fields.contains(ctx.field) and !sub.key_ptr.*.stagedIds.?.contains(ctx.field)) {
                     try sub.key_ptr.*.stagedIds.?.put(ctx.id, undefined);
                     ctx.db.subscriptions.hasMarkedSubscriptions = true;
                     try ctx.db.subscriptions.subscriptionsMarked.put(sub.key_ptr.*.id, ctx.typeId);
+                    idSubs.active = idSubs.active - 1;
                 }
             }
         }
