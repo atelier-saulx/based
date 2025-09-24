@@ -12,6 +12,7 @@ import {
 import { writeEdges } from '../edges/index.js'
 import { deleteProp } from './delete.js'
 import { writeU32, writeU8 } from '../uint.js'
+import { validate } from '../validate.js'
 
 const writeReferenceId = (
   ctx: Ctx,
@@ -23,9 +24,6 @@ const writeReferenceId = (
     | typeof EDGE_NOINDEX_REALID
     | typeof EDGE_NOINDEX_TMPID,
 ) => {
-  if (!def.validation(val, def)) {
-    throw [def, val]
-  }
   reserve(ctx, PROP_CURSOR_SIZE + 6)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
@@ -44,6 +42,7 @@ export const writeReference = (
   }
 
   if (typeof val === 'number') {
+    validate(def, val)
     if (def.hasDefaultEdges) {
       writeReferenceId(ctx, def, val, EDGE_NOINDEX_REALID)
       writeEdges(ctx, def, {}, true)
@@ -69,6 +68,7 @@ export const writeReference = (
     }
 
     if (typeof val.id === 'number') {
+      validate(def, val.id)
       if (!def.edges || val instanceof Tmp || val instanceof Promise) {
         writeReferenceId(ctx, def, val.id, NOEDGE_NOINDEX_REALID)
       } else {

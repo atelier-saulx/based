@@ -524,7 +524,6 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     }
 
     const d = performance.now()
-
     await this.db.isModified()
 
     if (this.db.schema?.hash !== this.def.schemaChecksum) {

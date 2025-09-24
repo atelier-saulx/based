@@ -1,10 +1,11 @@
+import native from '../native.js'
 import { DbServer } from './index.js'
 
 export const resizeModifyDirtyRanges = (server: DbServer) => {
   let maxNrChanges = 0
   for (const typeId in server.schemaTypesParsedById) {
     const def = server.schemaTypesParsedById[typeId]
-    const lastId = def.lastId
+    const lastId = server.ids[def.id - 1]
     const blockCapacity = def.blockCapacity
     const tmp = lastId - +!(lastId % def.blockCapacity)
     const lastBlock = Math.ceil(

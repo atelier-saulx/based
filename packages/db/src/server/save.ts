@@ -2,7 +2,7 @@ import native from '../native.js'
 import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { VerifTree, destructureTreeKey, makeTreeKey } from './tree.js'
+import { VerifTree, destructureTreeKey } from './tree.js'
 import {
   saveBlock,
   foreachBlock,
@@ -23,7 +23,7 @@ type RangeDump = {
 
 export type Writelog = {
   ts: number
-  types: { [t: number]: { lastId: number; blockCapacity: number } }
+  types: { [t: number]: { blockCapacity: number } }
   hash: string
   commonDump: string
   rangeDumps: {
@@ -79,8 +79,8 @@ function makeWritelog(db: DbServer, ts: number): Writelog {
   const rangeDumps: Writelog['rangeDumps'] = {}
 
   for (const key in db.schemaTypesParsed) {
-    const { id, lastId, blockCapacity } = db.schemaTypesParsed[key]
-    types[id] = { lastId, blockCapacity }
+    const { id, blockCapacity } = db.schemaTypesParsed[key]
+    types[id] = { blockCapacity }
     rangeDumps[id] = []
   }
 

@@ -38,11 +38,10 @@ const native = {
 
   modify: (
     data: Uint8Array,
-    types: Uint8Array,
     dbCtx: any,
     dirtyBlocksOut: Float64Array,
-  ): any => {
-    db.modify(data, types, dbCtx, dirtyBlocksOut)
+  ): number | null => {
+    return db.modify(data, dbCtx, dirtyBlocksOut)
   },
 
   getQueryBuf: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
@@ -98,10 +97,19 @@ const native = {
     db.delBlock(dbCtx, typeId, block)
   },
 
-  updateSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
-    return db.updateSchema(prefix, buf, dbCtx)
+  setSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
+    return db.setSchemaType(prefix, buf, dbCtx)
   },
 
+  setSchemaIds: (ids: Uint32Array, dbCtx: any) => {
+    return db.setSchemaIds(ids, dbCtx)
+  },
+
+  getSchemaIds: (dbCtx: any): Uint32Array => {
+    return new Uint32Array(db.getSchemaIds(dbCtx))
+  },
+
+  // TODO: not in use, remove
   getTypeInfo: (typeId: number, dbCtx: any) => {
     return db.getTypeInfo(typeId, dbCtx)
   },

@@ -3,11 +3,12 @@ import { Ctx } from '../Ctx.js'
 import { writeSeparate } from './separate.js'
 import { writeMainValue } from './main.js'
 import { writeIncrement } from './increment.js'
+import { CREATE } from '../types.js'
 
 const writeProp = (ctx: Ctx, def: PropDef, val: any) => {
   if (def.separate) {
     writeSeparate(ctx, def, val)
-  } else if (ctx.overwrite) {
+  } else if (ctx.operation === CREATE) {
     writeMainValue(ctx, def, val)
   } else if (typeof val === 'object' && val !== null) {
     writeIncrement(ctx, def, val)

@@ -5,10 +5,10 @@ import { reserve } from '../resize.js'
 import {
   NODE_CURSOR_SIZE,
   TYPE_CURSOR_SIZE,
-  writeNodeCursor,
+  // writeNodeCursor,
   writeTypeCursor,
 } from '../cursor.js'
-import { EXPIRE } from '../types.js'
+import { EXPIRE, SWITCH_ID_UPDATE } from '../types.js'
 import { schedule } from '../drain.js'
 import { Tmp } from '../Tmp.js'
 import { writeU32, writeU8 } from '../uint.js'
@@ -22,17 +22,19 @@ export function expire(
   const ctx = db.modifyCtx
   const schema = getValidSchema(db, type)
   try {
-    ctx.id = id
+    // ctx.id = id
     ctx.start = ctx.index
     ctx.schema = schema
-    ctx.operation = EXPIRE
+    // ctx.operation = EXPIRE
     validateId(id)
     reserve(ctx, TYPE_CURSOR_SIZE + NODE_CURSOR_SIZE + 5)
     writeTypeCursor(ctx)
-    writeNodeCursor(ctx)
+    // writeNodeCursor(ctx)
+    writeU8(ctx, SWITCH_ID_UPDATE)
+    writeU32(ctx, id)
     writeU8(ctx, EXPIRE)
     writeU32(ctx, seconds)
-    const tmp = new Tmp(ctx, id)
+    const tmp = new Tmp(ctx)
     schedule(db, ctx)
     return tmp
   } catch (e) {

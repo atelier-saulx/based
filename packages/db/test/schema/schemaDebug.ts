@@ -78,9 +78,8 @@ await test('schema debug', async (t) => {
       const res = await server.setSchema(schema, transformFns)
       return res
     },
-    async flushModify(buf) {
-      buf = new Uint8Array(buf)
-      return { offsets: await server.modify(buf) }
+    flushModify(buf) {
+      return Promise.resolve(server.modify(new Uint8Array(buf)))
     },
     async getQueryBuf(buf) {
       buf = new Uint8Array(buf)

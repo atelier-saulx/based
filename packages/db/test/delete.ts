@@ -33,6 +33,7 @@ await test('delete', async (t) => {
   })
 
   await db.drain()
+
   await db.delete('user', simple)
   await db.drain()
 
@@ -40,7 +41,6 @@ await test('delete', async (t) => {
 
   const nurp = db.create('nurp', {})
   await db.drain()
-
   deepEqual((await db.query('nurp').include('email').get()).toObject(), [
     {
       email: '',
@@ -291,14 +291,12 @@ await test('delete performance', async (t) => {
   }
   await db.drain()
   console.timeEnd('create 1M articles')
-
   console.time('delete 1M articles')
   for (const article of articles) {
     db.delete('article', article)
   }
   await db.drain()
   console.timeEnd('delete 1M articles')
-
   deepEqual((await db.query('article').get()).toObject(), [])
 
   const articles2 = []

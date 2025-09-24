@@ -60,14 +60,16 @@ const hooks: DbClientHooks = {
     schema = { ...schema }
     return request('setSchema', schema, transformFns)
   },
-  async flushModify(buf) {
-    let offsets = await request('modify', new Uint8Array(buf))
-    offsets = offsets && { ...offsets }
-    return { offsets }
+  flushModify(buf) {
+    return request('modify', new Uint8Array(buf))
+    // let offsets = await request('modify', new Uint8Array(buf))
+    // offsets = offsets && { ...offsets }
+    // return { offsets }
   },
-  async getQueryBuf(buf) {
-    const res = await request('getQueryBuf', new Uint8Array(buf))
-    return res
+  getQueryBuf(buf) {
+    return request('getQueryBuf', new Uint8Array(buf))
+    // const res = await request('getQueryBuf', new Uint8Array(buf))
+    // return res
   },
 }
 const client = new DbClient({

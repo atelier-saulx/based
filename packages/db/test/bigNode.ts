@@ -69,6 +69,7 @@ await test('big nodes', async (t) => {
 
   const megaRef = megaRefQ.toObject()
   const gigaRef = (await db.query('giga').include('ref').get()).toObject()
+
   deepEqual(gigaRef[0].ref.id, 2)
   deepEqual(megaRef[1].ref.id, 1)
 
