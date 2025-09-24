@@ -9,7 +9,7 @@ export type SchemaChecksum = number
 function _makeEdgeTypes(newTypes: SchemaTypes<true>, typeName: string, props: SchemaProps<true>, propPrefix: string): void {
   type EdgeProps = Record<`$${string}`, SchemaPropOneWay>
   const putEdgeProps = (typeName: string, refPath: string, edgeProps: EdgeProps) =>
-    newTypes[`${typeName}:${refPath}`] = { props: edgeProps }
+    newTypes[`_${typeName}:${refPath}`] = { props: edgeProps }
 
   for (const propName in props) {
     const prop = props[propName]
