@@ -132,7 +132,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                     // It would be even better if we'd mark it dirty only in the case
                     // has to check the next or at end
                     Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id); // move this to SUB / similair checks
-                    try subs.idSwitch(&ctx);
+                    // try subs.idSwitch(&ctx);
 
                     // here we want to add BOOL
                     // not here then...

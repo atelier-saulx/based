@@ -13,6 +13,8 @@ import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
 import { BasedDb, filterToBuffer } from '../../src/index.js'
 import { TYPE_INDEX_MAP } from '@based/schema/def'
+import { write } from '../../src/client/string.js'
+import { Ctx } from '../../src/client/modify/Ctx.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -56,8 +58,23 @@ const logSubIds = (server: BasedDb['server']) => {
         i += 8
       }
     }
-    console.log('YO', marked)
+    console.log('Subscriptions fired:', marked)
   }
+}
+
+const createSingleSubscriptionBuffer = (
+  subId: number,
+  typeId: number,
+  fields: Uint8Array,
+  id: number,
+) => {
+  const headerLen = 14
+  let val = new Uint8Array(headerLen + fields.byteLength)
+  writeUint64(val, subId, 0)
+  writeUint16(val, typeId, 8)
+  writeUint32(val, id, 10)
+  val.set(fields, headerLen)
+  return val
 }
 
 // make a tool to test subs
@@ -78,48 +95,84 @@ await test('subscriptionIds', async (t) => {
         derp: 'uint32',
         location: 'string',
         lang: 'string',
+        // add text
       },
     },
   })
 
+  const amount = 2e6
+  const readable =
+    amount > 1e6
+      ? Math.round(amount / 1e6) + 'M'
+      : amount > 1e3
+        ? Math.round(amount / 1e3) + 'K'
+        : amount
+
   const id = await clients[0].create('user', { derp: 66 })
-  const fields = new Uint8Array([0])
+
+  // ----------------------------
+  const fields = new Uint8Array([0, 1, 2])
   const subId = 66
   const typeId = server.schemaTypesParsed['user'].id
-  // ----------------------------
-  const headerLen = 14
-  let val = new Uint8Array(headerLen + fields.byteLength)
-  writeUint64(val, subId, 0)
-  writeUint16(val, typeId, 8)
-  writeUint32(val, id, 10)
-  val.set(fields, headerLen)
+  // console.log(server.schemaTypesParsed.user.separate)
 
+  const val = createSingleSubscriptionBuffer(subId, typeId, fields, id)
   native.addIdSubscription(server.dbCtxExternal, val)
+  // ----------------------------
 
-  console.log('DERP! UPDATE #1')
-  await clients[1].update('user', id, { derp: 69 })
+  const array = new Uint8Array(20)
+  const l = write({ array } as Ctx, 'A', 0, false)
+
+  // can make a proxy
+  const payload = {
+    derp: 99,
+    x: 1,
+    location: array.slice(0, l),
+    lang: array.slice(0, l),
+  }
+
+  console.log('single UPDATE #1')
+  await clients[1].update('user', id, payload)
   logSubIds(server)
 
   let d = Date.now()
-  for (let i = 1; i < 2e6; i++) {
+  for (let i = 1; i < amount; i++) {
     writeUint32(val, i, 10)
     native.addIdSubscription(server.dbCtxExternal, val)
   }
-  console.log('add 2M subs', Date.now() - d, 'ms')
+  console.log(`#1 add ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
 
-  for (let i = 0; i < 2e6; i++) {
-    clients[1].create('user', { derp: 99 })
+  d = Date.now()
+  const secondSubId = 11
+  const val2 = createSingleSubscriptionBuffer(
+    secondSubId,
+    typeId,
+    new Uint8Array([0]),
+    id,
+  )
+  for (let i = 1; i < amount; i++) {
+    writeUint32(val2, i, 10)
+    native.addIdSubscription(server.dbCtxExternal, val2)
+  }
+  console.log(
+    `#2 add second sub:(${secondSubId}) ${readable} subs`,
+    Date.now() - d,
+    'ms',
+  )
+
+  for (let i = 0; i < amount; i++) {
+    clients[1].create('user', payload)
   }
   await clients[1].drain()
 
-  console.info('------- 2M updates')
+  console.info(`------- ${readable} updates`)
   d = Date.now()
-  for (let i = 0; i < 2e6; i++) {
-    clients[1].update('user', i + 1, { derp: 99, x: 1 })
+  for (let i = 0; i < amount; i++) {
+    clients[1].update('user', i + 1, payload)
   }
   let dTime = await clients[1].drain()
   console.log(
-    'handling 2M updates with 2M unique subs firing',
+    `handling ${readable} updates with unique subs firing`,
     Date.now() - d,
     'ms',
     'drain time (real db)',
@@ -127,14 +180,16 @@ await test('subscriptionIds', async (t) => {
     'ms',
   )
 
-  console.info('------- 2M updates no active subs (all staged for updates)')
+  console.info(
+    `------- ${readable} updates  no active subs (all staged for updates)`,
+  )
   d = Date.now()
-  for (let i = 0; i < 2e6; i++) {
-    clients[1].update('user', i + 1, { derp: 99, x: 2 })
+  for (let i = 0; i < amount; i++) {
+    clients[1].update('user', i + 1, payload)
   }
   dTime = await clients[1].drain()
   console.log(
-    'handling 2M updates with 2M unique NO subs firing',
+    `handling ${readable} updates /w snoozed subs`,
     Date.now() - d,
     'ms',
     'drain time (real db)',
@@ -143,18 +198,18 @@ await test('subscriptionIds', async (t) => {
   )
   logSubIds(server)
 
-  for (let i = 0; i < 2e6; i++) {
-    clients[1].create('control', { derp: 99 })
+  for (let i = 0; i < amount; i++) {
+    clients[1].create('control', payload)
   }
   await clients[1].drain()
-  console.info('------- 2M updates control')
+  console.info(`------- ${readable} updates control`)
   d = Date.now()
-  for (let i = 0; i < 2e6; i++) {
-    clients[1].update('control', i + 1, { derp: 99, x: 2 })
+  for (let i = 0; i < amount; i++) {
+    clients[1].update('control', i + 1, payload)
   }
   dTime = await clients[1].drain()
   console.log(
-    'handling 2M updates with 2M CONTROL',
+    `handling ${readable} updates with CONTROL (zero subs)`,
     Date.now() - d,
     'ms',
     'drain time (real db)',

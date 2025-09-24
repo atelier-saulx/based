@@ -33,29 +33,20 @@ pub fn stage(
     comptime _: Op,
 ) !void {
     if (ctx.subTypes) |typeSub| {
-        if (ctx.hasSpecificIdSub) {
-            var iter = typeSub.nonMarkedId.iterator();
-            while (iter.next()) |sub| {
-                if (sub.value_ptr.*.ids.contains(ctx.id) and !sub.value_ptr.*.stagedIds.?.contains(ctx.id)) {
-                    try sub.value_ptr.*.stagedIds.?.put(ctx.id, undefined);
-                    ctx.db.subscriptions.hasMarkedSubscriptions = true;
-                    try ctx.db.subscriptions.subscriptionsMarked.put(sub.key_ptr.*, ctx.typeId);
-                    if (sub.value_ptr.*.stagedIds.?.count() == sub.value_ptr.*.ids.count()) {
-                        _ = typeSub.nonMarkedId.remove(sub.key_ptr.*);
-                    }
-
-                    // std.debug.print("yo yo hopw much? id:{any} cnt:{any} \n", .{ ctx.id, typeSub.activeIdSubs.get(ctx.id) });
-
-                    if (typeSub.activeIdSubs.getEntry(ctx.id)) |cnt| {
-                        cnt.value_ptr.* = cnt.value_ptr.* - 1;
-                        if (cnt.value_ptr.* == 0) {
-                            //     // delete me
-                            _ = typeSub.activeIdSubs.remove(ctx.id);
-                        }
-                    }
+        var iter = typeSub.nonMarkedId.iterator();
+        // test with multiple sub ids
+        while (iter.next()) |sub| {
+            if (sub.value_ptr.*.fields.contains(ctx.field) and sub.value_ptr.*.ids.contains(ctx.id) and !sub.value_ptr.*.stagedIds.?.contains(ctx.id)) {
+                try sub.value_ptr.*.stagedIds.?.put(ctx.id, undefined);
+                ctx.db.subscriptions.hasMarkedSubscriptions = true;
+                try ctx.db.subscriptions.subscriptionsMarked.put(sub.key_ptr.*, ctx.typeId);
+                if (sub.value_ptr.*.stagedIds.?.count() == sub.value_ptr.*.ids.count()) {
+                    _ = typeSub.nonMarkedId.remove(sub.key_ptr.*);
                 }
             }
         }
+
+        // }
         // var iter = sub.*.nonMarkedMulti.iterator();
         //     while (iter.next()) |multiSub| {
         //         if (operation == Op.remove) {
