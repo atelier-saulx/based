@@ -23,7 +23,6 @@ pub inline fn removeSubTypeIfEmpty(
 ) void {
     if (typeSubscriptionCtx.subs.count() == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-            removed_entry.value.activeIdSubs.deinit();
             removed_entry.value.nonMarkedMulti.deinit();
             removed_entry.value.nonMarkedId.deinit();
             removed_entry.value.subs.deinit();

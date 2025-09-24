@@ -37,49 +37,35 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     } else {
         sub = typeSubscriptionCtx.subs.get(subId).?;
     }
-
     try sub.*.ids.put(id, undefined);
-
     return null;
 }
 
-pub fn removeIdSubscriptionInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
-    // const args = try napi.getArgs(2, napi_env, info);
-    // const ctx = try napi.get(*DbCtx, napi_env, args[0]);
-    // const value = try napi.get([]u8, napi_env, args[1]);
-    // const headerLen = 14;
-    // const subId = utils.read(u64, value, 0);
-    // const typeId = utils.read(u16, value, 8);
-    // const id = utils.read(u32, value, 10);
-    // const fields = value[headerLen..value.len];
-    // if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
-    //     std.debug.print("remove singleId AMOUNT OF SUBS id: {any} multi: {any} ids: {any} \n", .{
-    //         id,
-    //         typeSubscriptionCtx.multi.count(),
-    //         typeSubscriptionCtx.ids.count(),
-    //     });
+pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, env, info);
+    const ctx = try napi.get(*DbCtx, env, args[0]);
+    const value = try napi.get([]u8, env, args[1]);
+    const subId = utils.read(u64, value, 0);
+    const typeId = utils.read(u16, value, 8);
+    const id = utils.read(u32, value, 10);
 
-    //     if (typeSubscriptionCtx.ids.get(id)) |idContainer| {
-    //         for (fields) |f| {
-    //             if (idContainer.fields.get(f)) |fieldsSubIds| {
-    //                 _ = fieldsSubIds.remove(subId);
-    //                 if (fieldsSubIds.count() == 0) {
-    //                     if (idContainer.fields.fetchRemove(f)) |removed_entry| {
-    //                         removed_entry.value.deinit();
-    //                         ctx.allocator.destroy(removed_entry.value);
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         if (idContainer.fields.count() == 0) {
-    //             if (typeSubscriptionCtx.ids.fetchRemove(id)) |removed_entry| {
-    //                 removed_entry.value.fields.deinit();
-    //                 ctx.allocator.destroy(removed_entry.value);
-    //             }
-    //         }
-    //     }
+    if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
+        if (typeSubscriptionCtx.subs.get(subId)) |sub| {
+            if (sub.*.ids.remove(id)) {
+                if (sub.*.ids.count() == 0) {
+                    sub.ids.deinit();
+                    sub.stagedIds.?.deinit();
+                    sub.fields.deinit();
+                    ctx.allocator.destroy(sub);
+                    if (typeSubscriptionCtx.subs.remove(subId)) {
+                        _ = typeSubscriptionCtx.nonMarkedId.remove(subId);
+                        std.debug.print("REMOVE SUB {any}!\n", .{subId});
+                        removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
+                    }
+                }
+            }
+        }
+    }
 
-    //     removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
-    // }
     return null;
 }

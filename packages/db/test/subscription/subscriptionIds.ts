@@ -61,6 +61,8 @@ const logSubIds = (server: BasedDb['server']) => {
       }
     }
     console.log('Subscriptions fired:', marked)
+  } else {
+    console.log('No subs fired!')
   }
 }
 
@@ -218,6 +220,58 @@ await test('subscriptionIds', async (t) => {
     dTime,
     'ms',
   )
+
+  d = Date.now()
+  for (let i = 1; i < amount; i++) {
+    writeUint32(val, i, 10)
+    native.removeIdSubscription(server.dbCtxExternal, val)
+  }
+
+  console.log(`REMOVE ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
+
+  console.info(`------- ${readable} updates`)
+  d = Date.now()
+  for (let i = 0; i < amount; i++) {
+    clients[1].update('user', i + 1, payload)
+  }
+  dTime = await clients[1].drain()
+  console.log(
+    `handling ${readable} updates with unique subs firing`,
+    Date.now() - d,
+    'ms',
+    'drain time (real db)',
+    dTime,
+    'ms',
+  )
+  logSubIds(server)
+
+  d = Date.now()
+  for (let i = 1; i < amount; i++) {
+    writeUint32(val2, i, 10)
+    native.removeIdSubscription(server.dbCtxExternal, val2)
+  }
+
+  console.log(
+    `REMOVE ${readable} subs sub:(${secondSubId})`,
+    Date.now() - d,
+    'ms',
+  )
+
+  console.info(`------- ${readable} updates`)
+  d = Date.now()
+  for (let i = 0; i < amount; i++) {
+    clients[1].update('user', i + 1, payload)
+  }
+  dTime = await clients[1].drain()
+  console.log(
+    `handling ${readable} updates with unique subs firing`,
+    Date.now() - d,
+    'ms',
+    'drain time (real db)',
+    dTime,
+    'ms',
+  )
+  logSubIds(server)
 
   // const close = clients[1]
   //   .query('user', id)
