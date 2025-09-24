@@ -1,18 +1,17 @@
 import { BasedServer } from '../server.js'
-import { createError, } from '../error/index.js'
+import { createError } from '../error/index.js'
 import { Context, BasedRoute } from '@based/functions'
 import {
-  genObservableId,
   hasObs,
-  createObs,
   subscribeNext,
   getObsAndStopRemove,
   destroyObs,
   start,
+  createObsNoStart,
 } from '../query/index.js'
-import { verifyRoute } from '../verifyRoute.js'
 import { installFn } from '../installFn.js'
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
+import { BasedQuery } from './client/query.js'
 
 const getObsData = (
   resolve: (x: any) => any,
@@ -20,7 +19,7 @@ const getObsData = (
   server: BasedServer,
   id: number,
   ctx: Context,
-  route: BasedRoute<'query'>
+  route: BasedRoute<'query'>,
 ) => {
   const obs = getObsAndStopRemove(server, id)
 
@@ -34,7 +33,7 @@ const getObsData = (
         route,
         observableId: id,
         err: obs.error.message,
-      })
+      }),
     )
     return
   }
@@ -54,46 +53,34 @@ const getObsData = (
   })
 }
 
-export const get = (
-  server: BasedServer,
-  name: string,
-  ctx: Context,
-  payload: any
-): Promise<any> => {
+export const get = (query: BasedQuery): Promise<any> => {
   return new Promise((resolve, reject) => {
-    let route: BasedRoute<'query'>
-    try {
-      route = verifyRoute(
-        server,
-        server.client.ctx,
-        'query',
-        server.functions.route(name),
-        name
-      )
-      if (route === null) {
-        reject(new Error(`[${name}] No session in ctx`))
-        return
-      }
-    } catch (err) {
-      reject(err)
-      return
-    }
-
-    const id = genObservableId(name, payload)
-
+    const attachedCtx = query.attachedCtx
+    const id = attachedCtx ? attachedCtx.id : query.id
+    const server = query.ctx.session.client.server
+    const route = query.route
+    const ctx = query.ctx
+    const payload = query.payload
     if (!hasObs(server, id)) {
-      installFn(server, server.client.ctx, route).then((spec) => {
+      installFn({ server, ctx, route }).then((spec) => {
         if (!spec) {
           reject(
-            createError(server, ctx, BasedErrorCode.FunctionNotFound, {
+            createError(server, query.ctx, BasedErrorCode.FunctionNotFound, {
               route,
-            })
+            }),
           )
           return
         }
-
         if (!hasObs(server, id)) {
-          createObs(server, name, id, payload, true)
+          createObsNoStart({
+            server,
+            route,
+            id,
+            payload,
+            ctx,
+            spec,
+            attachedCtx,
+          })
           getObsData(resolve, reject, server, id, ctx, route)
           start(server, id)
         } else {

@@ -28,17 +28,21 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
     }
   }
 
-  geo(ctx: Context) {
-    return this.server.geo(ctx)
-  }
+  // geo(ctx: Context) {
+  //   return this.server.geo(ctx)
+  // }
 
   // TODO: CTX - Transpile the ctx in there by static analysis for "call" & "stream"
   call(name: string, payload?: any, ctx: Context = this.ctx): Promise<any> {
     return callFunction(this.server, name, ctx, payload)
   }
 
-  query(name: string, payload?: any): BasedQuery {
-    return new BasedQuery(this.ctx, name, payload)
+  query(
+    name: string,
+    payload?: any,
+    attachedCtx?: Context | { [key: string]: any },
+  ): BasedQuery {
+    return new BasedQuery(this.ctx, name, payload, attachedCtx)
   }
 
   channel(name: string, payload?: any): BasedChannel {
@@ -48,7 +52,7 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
   async stream(
     name: string,
     streamOpts: StreamFunctionOpts,
-    ctx: Context = this.ctx
+    ctx: Context = this.ctx,
   ): Promise<any> {
     // make later
     return streamFunction(this.server, name, ctx, streamOpts)
@@ -56,7 +60,7 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
 
   renewAuthState(
     ctx: Context<Session>,
-    authState?: AuthState
+    authState?: AuthState,
   ): Promise<AuthState> {
     return this.server.auth.renewAuthState(ctx, authState)
   }

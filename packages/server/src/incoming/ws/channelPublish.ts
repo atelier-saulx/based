@@ -3,37 +3,38 @@ import { rateLimitRequest } from '../../security.js'
 import { verifyRoute } from '../../verifyRoute.js'
 import { BinaryMessageHandler } from './types.js'
 import { extendChannel, hasChannel } from '../../channel/index.js'
-import { IsAuthorizedHandler, authorize } from '../../authorize.js'
+import { authorize } from '../../authorize.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError.js'
 import { BasedErrorCode } from '@based/errors'
 import { readUint64 } from '@based/utils'
+import { FunctionHandler } from '../../types.js'
 
-const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
-  route,
-  spec,
-  server,
-  ctx,
-  payload,
-  id,
+const publish: FunctionHandler<WebSocketSession, BasedRoute<'channel'>> = (
+  props,
 ) => {
-  const channel = server.activeChannelsById.get(id)
+  const channel = props.server.activeChannelsById.get(props.id)
   if (!channel) {
     return
   }
-
   try {
-    if (spec.relay) {
-      const client = server.clients[spec.relay.client]
-      client.channel(channel.name, channel.payload).publish(payload)
+    if (props.spec.relay) {
+      const client = props.server.clients[props.spec.relay.client]
+      client.channel(channel.name, channel.payload).publish(props.payload)
     } else {
-      spec.publisher(server.client, channel.payload, payload, channel.id, ctx)
+      props.spec.publisher(
+        props.server.client,
+        channel.payload,
+        props.payload,
+        channel.id,
+        props.ctx,
+      )
     }
   } catch (err) {
-    sendError(server, ctx, BasedErrorCode.FunctionError, {
-      channelId: id,
+    sendError(props.server, props.ctx, BasedErrorCode.FunctionError, {
+      channelId: props.id,
       err,
-      route,
+      route: props.route,
     })
   }
 }
@@ -97,15 +98,8 @@ export const channelPublishMessage: BinaryMessageHandler = (
           ctx.session.v < 2,
         )
 
-  authorize(
-    route,
-    server,
-    ctx,
-    payload,
+  authorize({ route, server, ctx, payload, id }, route.publicPublisher).then(
     publish,
-    id,
-    undefined,
-    route.publicPublisher,
   )
 
   return true

@@ -61,6 +61,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 ctx.fieldType = @enumFromInt(operation[1]);
                 if (ctx.fieldType == types.Prop.REFERENCE) {
                     offset = 1;
+                } else if (ctx.fieldType == types.Prop.CARDINALITY) {
+                    offset = 7;
                 } else {
                     offset = 5;
                 }

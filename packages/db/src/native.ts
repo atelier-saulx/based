@@ -124,6 +124,19 @@ const native = {
     return db.getNodeRangeHash(typeId, start, end, bufOut, dbCtx)
   },
 
+  createCompressor() {
+    return db.createCompressor()
+  },
+
+  compressRaw: (
+    compressor: any,
+    buf: Uint8Array,
+    offset: number,
+    stringSize: number,
+  ) => {
+    return db.compress(compressor, buf, offset, stringSize)
+  },
+
   compress: (buf: Uint8Array, offset: number, stringSize: number) => {
     return db.compress(compressor, buf, offset, stringSize)
   },

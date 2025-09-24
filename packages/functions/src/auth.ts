@@ -4,7 +4,7 @@ import { Context, WebSocketSession, HttpSession } from './context.js'
 
 export type AuthState = {
   token?: string
-  userId?: string
+  userId?: string | number
   refreshToken?: string
   error?: string
   persistent?: boolean

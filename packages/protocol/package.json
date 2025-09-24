@@ -1,6 +1,6 @@
 {
   "name": "@based/protocol",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "files": [
     "dist",
@@ -10,9 +10,11 @@
   ],
   "exports": {
     "./db-read": "./dist/db-read/read.js",
-    "./db-read/serialize-schema": "./dist/db-read/schema/serialize.js"
+    "./db-read/serialize-schema": "./dist/db-read/schema/serialize.js",
+    "./client-server": "./dist/client-server/index.js"
   },
   "scripts": {
+    "clean": "rm -rf ./node_modules ./dist ./tsconfig.tsbuildinfo",
     "build": "tsc",
     "watch": "tsc --watch",
     "test": "tsc && tsc $npm_config --noEmit && tsx --test $npm_config"
@@ -28,8 +30,9 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
+    "@based/hash": "^1.0.0",
     "fflate": "0.8.2",
-    "@based/utils": "^1.0.0",
+    "@based/utils": "^1.1.0",
     "@based/schema": "^5.0.2"
   }
 }

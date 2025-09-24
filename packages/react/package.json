@@ -22,7 +22,7 @@
     "@based/hash": "1.0.0"
   },
   "devDependencies": {
-    "@based/client": "^8.0.2",
+    "@based/client": "^8.2.2-alpha.1",
     "@saulx/tsconfig": "^1.1.0",
     "@types/react": "^18.0.29",
     "esbuild": "^0.25.9",

@@ -597,6 +597,7 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
       if (edgeAllowed) {
         let t: any = ctx.schema.types[prop.ref].props[prop.prop]
         t = t.items || t
+
         if (t[key] && t !== prop) {
           throw Error('Edge can not be defined on both props')
         }
@@ -637,6 +638,18 @@ p.cardinality = propParser<SchemaCardinality>(
   {
     default(val, prop, ctx) {
       return isDefault(val, prop, ctx)
+    },
+    mode(val, prop, ctx) {
+      if (!['dense', 'sparse'].includes(val)) {
+        throw Error(INVALID_VALUE)
+      }
+      p.mode = val
+    },
+    precision(val, prop, ctx) {
+      if (val < 2 || val > 16) {
+        throw Error(INVALID_VALUE)
+      }
+      p.precision = val
     },
   },
   0,

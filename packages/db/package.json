@@ -1,6 +1,6 @@
 {
   "name": "@based/db",
-  "version": "0.1.1",
+  "version": "0.1.3-alpha.1",
   "type": "module",
   "main": "./dist/src/index.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "build-release": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
     "watch": "npx tsc --watch",
     "clean-selva": "make -C clibs clean",
-    "clean": "rm -rf ./dist ./node_modules .zig-cache .zig-out ./tmp && npm run clean-selva",
+    "clean": "rm -rf ./dist ./node_modules .zig-cache .zig-out ./tmp ./tsconfig.tsbuildinfo && npm run clean-selva",
     "playground-nodebug": "npm run build && node ./dist/test/shared/playground.js",
     "playground": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./dist/test/shared/playground.js",
     "playground-fast": "node ./dist/test/shared/playground.js",
@@ -43,8 +43,8 @@
   "dependencies": {
     "@based/hash": "1.0.0",
     "@based/schema": "^5.0.2",
-    "@based/utils": "^1.0.0",
-    "@based/protocol": "^0.0.3",
+    "@based/utils": "^1.1.0",
+    "@based/protocol": "^0.0.4",
     "exit-hook": "^4.0.0",
     "picocolors": "^1.1.0"
   },
@@ -54,7 +54,6 @@
   "devDependencies": {
     "@types/node": "^22.5.3",
     "async-sema": "3.1.1",
-    "axios": "^1.7.9",
     "fs-extra": "^11.1.1",
     "jsondiffpatch": "^0.7.3",
     "tar": "^7.4.3",

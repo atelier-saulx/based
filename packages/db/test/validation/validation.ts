@@ -45,6 +45,10 @@ await test('update', async (t) => {
     },
   })
 
+  await throws(async () => {
+    await db.query('derp', { flap: 'snru' }).get()
+  }, true)
+
   db.create('user', {
     text: {
       en: 'xxx',

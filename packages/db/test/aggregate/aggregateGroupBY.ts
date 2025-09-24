@@ -60,7 +60,10 @@ await test('sum group by', async (t) => {
 
   deepEqual(
     await db.query('vote').sum('NL', 'AU').groupBy('country').get().toObject(),
-    { bb: { NL: 10, AU: 0 }, aa: { NL: 20, AU: 15 } },
+    {
+      bb: { NL: { sum: 10 }, AU: { sum: 0 } },
+      aa: { NL: { sum: 20 }, AU: { sum: 15 } },
+    },
     'sum, top level, groupBy',
   )
 
@@ -78,7 +81,7 @@ await test('sum group by', async (t) => {
       .sum('NL', 'AU')
       .get()
       .toObject(),
-    { bb: { NL: 10, AU: 0 } },
+    { bb: { NL: { sum: 10 }, AU: { sum: 0 } } },
     'filter, groupBy on single distinct value',
   )
 })
@@ -247,11 +250,15 @@ await test('variable key sum', async (t) => {
       .get()
       .toObject(),
     [
-      { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
+      {
+        id: 1,
+        name: 'The wonders of Strudel',
+        contributors: { flap: { sum: 100 } },
+      },
       {
         id: 2,
         name: 'Les lois fondamentales de la stupidité humaine',
-        contributors: { flap: 80 },
+        contributors: { flap: { sum: 80 } },
       },
     ],
     'sum, branched query, var len string',
@@ -260,11 +267,11 @@ await test('variable key sum', async (t) => {
   deepEqual(
     await db.query('user').groupBy('name').sum('flap').get().toObject(),
     {
-      Flippie: { flap: 20 },
-      'Carlo Cipolla': { flap: 80 },
-      'Mr snurp': { flap: 10 },
-      'Dinkel Doink': { flap: 40 },
-      Derpie: { flap: 30 },
+      Flippie: { flap: { sum: 20 } },
+      'Carlo Cipolla': { flap: { sum: 80 } },
+      'Mr snurp': { flap: { sum: 10 } },
+      'Dinkel Doink': { flap: { sum: 40 } },
+      Derpie: { flap: { sum: 30 } },
     },
     'sum, groupBy, main',
   )
@@ -272,10 +279,10 @@ await test('variable key sum', async (t) => {
   deepEqual(
     await db.query('user').groupBy('country').sum('flap').get().toObject(),
     {
-      $undefined: { flap: 40 },
-      NL: { flap: 30 },
-      BR: { flap: 30 },
-      IT: { flap: 80 },
+      $undefined: { flap: { sum: 40 } },
+      NL: { flap: { sum: 30 } },
+      BR: { flap: { sum: 30 } },
+      IT: { flap: { sum: 80 } },
     },
     'sum, groupBy, main, $undefined',
   )
@@ -292,16 +299,16 @@ await test('variable key sum', async (t) => {
       {
         id: 1,
         contributors: {
-          Flippie: { flap: 20 },
-          'Mr snurp': { flap: 10 },
-          Derpie: { flap: 30 },
-          'Dinkel Doink': { flap: 40 },
+          Flippie: { flap: { sum: 20 } },
+          'Mr snurp': { flap: { sum: 10 } },
+          Derpie: { flap: { sum: 30 } },
+          'Dinkel Doink': { flap: { sum: 40 } },
         },
       },
       {
         id: 2,
         contributors: {
-          'Carlo Cipolla': { flap: 80 },
+          'Carlo Cipolla': { flap: { sum: 80 } },
         },
       },
     ],
@@ -350,7 +357,7 @@ await test('group by unique numbers', async (t) => {
     await db.query('trip').sum('distance').groupBy('vendorIduint8').get(),
     {
       13: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'group by number',
@@ -359,7 +366,7 @@ await test('group by unique numbers', async (t) => {
     await db.query('trip').sum('distance').groupBy('vendorIdint8').get(),
     {
       13: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'group by number',
@@ -368,7 +375,7 @@ await test('group by unique numbers', async (t) => {
     await db.query('trip').sum('distance').groupBy('vendorIduint16').get(),
     {
       813: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'group by number',
@@ -377,7 +384,7 @@ await test('group by unique numbers', async (t) => {
     await db.query('trip').sum('distance').groupBy('vendorIdint16').get(),
     {
       813: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'group by number',
@@ -386,7 +393,7 @@ await test('group by unique numbers', async (t) => {
     await db.query('trip').sum('distance').groupBy('vendorIduint32').get(),
     {
       813: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'group by number',
@@ -395,7 +402,7 @@ await test('group by unique numbers', async (t) => {
     await db.query('trip').sum('distance').groupBy('vendorIdint32').get(),
     {
       813: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'group by number',
@@ -404,7 +411,7 @@ await test('group by unique numbers', async (t) => {
     await db.query('trip').sum('distance').groupBy('vendorIdnumber').get(),
     {
       813.813: {
-        distance: 513.44,
+        distance: { sum: 513.44 },
       },
     },
     'group by number',
@@ -437,5 +444,5 @@ await test('groupBy ranges in numeric properties', async (t) => {
     })
   }
 
-  await db.query('trip').sum('distance').groupBy('tripId').get().inspect()
+  // await db.query('trip').sum('distance').groupBy('tripId').get().inspect()
 })

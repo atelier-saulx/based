@@ -194,12 +194,7 @@ const inspectObject = (
       if (typeof v === 'number') {
         if (q.aggregate) {
           str += printNumber(v)
-          // TBD: replace comptime const enum and reverse map it
-          const [[__, akv], _] = q.aggregate.aggregates
-          const aggType = akv[0].type
-          str += picocolors.italic(
-            picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
-          )
+          str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
           str += ',\n'
         } else {
           str += printNumber(v) + '\n'
@@ -212,11 +207,7 @@ const inspectObject = (
       if (def.typeIndex === REFERENCES) {
         if (q.aggregate) {
           str += printNumber(v)
-          const [[__, akv], _] = q.aggregate.aggregates
-          const aggType = akv[0].type
-          str += picocolors.italic(
-            picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
-          )
+          str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
         } else {
           str += inspectData(
             v,
@@ -232,11 +223,7 @@ const inspectObject = (
         } else {
           if (q.aggregate) {
             str += printNumber(v)
-            const [[__, akv], _] = q.aggregate.aggregates
-            const aggType = akv[0].type
-            str += picocolors.italic(
-              picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
-            )
+            str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
           } else {
             str += inspectObject(
               v,
@@ -281,21 +268,22 @@ const inspectObject = (
         if (typeof v === 'number') {
           if (q.aggregate) {
             str += printNumber(v)
-            const [[__, akv], _] = q.aggregate.aggregates
-            const aggType = akv[0].type
-            str += picocolors.italic(
-              picocolors.dim(` ${AggregateType[aggType].toLowerCase()}`),
-            )
+            str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
           } else {
             str += printNumber(v)
           }
         } else if (typeof v === 'object' && v) {
-          inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
+          str +=
+            inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
         } else {
           str += v
         }
       }
-      if (def?.typeIndex !== REFERENCE && def?.typeIndex !== REFERENCES) {
+      if (
+        def?.typeIndex !== REFERENCE &&
+        def?.typeIndex !== REFERENCES &&
+        typeof v !== 'object'
+      ) {
         str += ',\n'
       }
     } else {

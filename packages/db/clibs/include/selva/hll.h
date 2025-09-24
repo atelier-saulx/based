@@ -13,6 +13,8 @@
 SELVA_EXPORT
 void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse);
 SELVA_EXPORT
+void hll_init_like(struct selva_string *hlla, struct selva_string *hllb);
+SELVA_EXPORT
 void hll_add(struct selva_string *hllss, uint64_t element);
 SELVA_EXPORT
 uint8_t *hll_count(struct selva_string *hllss);

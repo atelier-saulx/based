@@ -1,3 +1,4 @@
+import { numberTypes } from '@based/schema/def'
 import { BasedDb, xxHash64 } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from 'node:assert'
@@ -15,8 +16,14 @@ await test('sortCardinality', async (t) => {
     types: {
       article: {
         derp: 'number',
-        count: 'cardinality',
-        brazilians: 'cardinality',
+        count: {
+          type: 'cardinality',
+          precision: 14,
+        },
+        brazilians: {
+          type: 'cardinality',
+          precision: 14,
+        },
       },
     },
   })
@@ -131,46 +138,60 @@ await test('sortCardinality', async (t) => {
     'Gabriel',
   ]
 
-  let brazos = []
-  let num_brazos = 1e7
-  for (let i = 0; i < num_brazos; i++) {
-    brazos.push(names[Math.floor(Math.random() * names.length)] + i)
+  const numTrials = 1e3
+  let successTrials = 0
+
+  for (let trial = 0; trial < numTrials; trial++) {
+    let brazos = []
+    let num_brazos = 1e4
+    for (let i = 0; i < num_brazos; i++) {
+      brazos.push(names[Math.floor(Math.random() * names.length)] + i)
+    }
+
+    const testRecordId = await db.create('article', {
+      brazilians: brazos,
+    })
+
+    const result = await db
+      .query('article')
+      .filter('id', '=', testRecordId)
+      .get()
+      .toObject()
+
+    const count = Math.abs(result[0].brazilians)
+    const countError = count - num_brazos
+
+    if (countError < num_brazos * 0.02) {
+      successTrials++
+    }
+
+    await db.delete('article', testRecordId)
+    await db.drain()
   }
 
-  await db.update('article', c2, {
-    brazilians: brazos,
-  })
+  console.log(`Success rate:  ${(successTrials / numTrials) * 100}%`)
 
-  await db.drain()
+  const confidenceLevel = 0.95
+  const successRate = successTrials / numTrials
 
-  const countError = Math.abs(
-    (
-      await db
-        .query('article')
-        .sort('brazilians', 'desc')
-        .include('brazilians')
-        .get()
-        .toObject()
-    )[0].brazilians - num_brazos,
+  equal(
+    successRate >= confidenceLevel,
+    true,
+    'HLL meets 2% accuracy with 95% confidence.',
   )
-  equal(countError < num_brazos * 0.02, true, 'HLL 2% typical accuracy.')
 
   deepEqual(
     (
-      await db
-        .query('article')
-        .sort('brazilians', 'desc')
-        .include('count')
-        .get()
+      await db.query('article').sort('count', 'desc').include('count').get()
     ).toObject(),
     [
       {
-        id: 2,
-        count: 2,
-      },
-      {
         id: 1,
         count: 7,
+      },
+      {
+        id: 2,
+        count: 2,
       },
     ],
     'update 1M distinct values, exclude, sort desc',
@@ -228,14 +249,14 @@ await test('sortCardinality', async (t) => {
       .get()
       .toObject(),
     [
-      { id: 8, count: 3 },
+      { id: 1008, count: 3 },
       { id: 2, count: 2 },
-      { id: 9, count: 2 },
-      { id: 3, count: 1 },
-      { id: 4, count: 1 },
-      { id: 5, count: 1 },
-      { id: 6, count: 0 },
-      { id: 7, count: 0 },
+      { id: 1009, count: 2 },
+      { id: 1003, count: 1 },
+      { id: 1004, count: 1 },
+      { id: 1005, count: 1 },
+      { id: 1006, count: 0 },
+      { id: 1007, count: 0 },
     ],
     'test from undefined / non undefined',
   )

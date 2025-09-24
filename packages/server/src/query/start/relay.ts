@@ -9,10 +9,10 @@ export const relay = (
   relay: { target?: string; client: string },
   obs: ActiveObservable,
   client: any,
-  update: ObservableUpdateFunction
+  update: ObservableUpdateFunction,
 ) => {
   obs.closeFunction = client
-    .query(relay.target ?? obs.name, obs.payload)
+    .query(relay.target ?? obs.route.name, obs.payload)
     .subscribe(update, (err) => {
       errorListener(server, obs, err)
     })

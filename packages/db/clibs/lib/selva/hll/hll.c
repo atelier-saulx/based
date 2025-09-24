@@ -29,9 +29,11 @@ enum hll_type {
 #define DSC false
 
 typedef struct {
-    uint8_t is_sparse : 1;
-    uint16_t precision : 14;
-    uint8_t dirty : 1;
+    struct {
+        uint16_t precision : 14;
+        uint8_t is_sparse : 1;
+        uint8_t dirty : 1;
+    };
     uint16_t num_registers;
     uint32_t count;
     uint8_t registers[];
@@ -66,6 +68,17 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
         hll->precision = precision;
         hll->num_registers = num_registers;
     }
+}
+
+void hll_init_like(struct selva_string *hlla, struct selva_string *hllb){
+    if (hlla == nullptr || hllb == nullptr) {
+        db_panic("selva_string can't be null during HLL initialization");
+    }
+    size_t len;
+    HyperLogLogPlusPlus *hllFrom = (HyperLogLogPlusPlus *)selva_string_to_mstr(hllb, &len);
+    uint8_t precision = hllFrom->precision;
+    bool is_sparse = hllFrom->is_sparse;
+    hll_init(hlla, precision, is_sparse);
 }
 
 static int count_leading_zeros(uint64_t x) {
@@ -141,7 +154,7 @@ void hll_union(struct selva_string *result, struct selva_string *hll_new) {
         selva_string_append(result, 0, new_mem_bytes);  // might already be zeroed for unseen values but not
         selva_string_append(result, nullptr, new_mem_bytes);
         result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, &result_len);
-        
+
         result_hll->num_registers = num_new_regs;
     }
 
@@ -221,7 +234,7 @@ uint8_t *hll_count(struct selva_string *hllss) {
 //         z = z & (uint32x4_t){1, 1, 1, 1};
 //         zero_count += (double)(vaddvq_u32(z));
 //         r = exp2_ps(vnegq_f32(b));
-//         raw_estimate += vaddvq_f32(r); 
+//         raw_estimate += vaddvq_f32(r);
 //     }
 // #else
     for (size_t i = 0; i < num_registers; i++) {

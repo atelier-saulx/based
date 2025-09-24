@@ -8,7 +8,7 @@ import {
   createChannel,
 } from '../channel/index.js'
 import { installFn } from '../installFn.js'
-import { createError, } from '../error/index.js'
+import { createError } from '../error/index.js'
 import { BasedErrorCode } from '@based/errors'
 
 export const subscribeChannel = (
@@ -16,7 +16,7 @@ export const subscribeChannel = (
   name: string,
   id: number,
   payload: any,
-  update: ChannelMessageFunctionInternal
+  update: ChannelMessageFunctionInternal,
 ): (() => void) => {
   const route = verifyRoute(
     server,
@@ -24,7 +24,7 @@ export const subscribeChannel = (
     'channel',
     server.functions.route(name),
     name,
-    id
+    id,
   )
 
   if (route === null) {
@@ -46,7 +46,7 @@ export const subscribeChannel = (
     return close
   }
 
-  installFn(server, server.client.ctx, route).then((spec) => {
+  installFn({ server, ctx: server.client.ctx, route }).then((spec) => {
     if (isClosed) {
       return
     }
@@ -59,8 +59,8 @@ export const subscribeChannel = (
           BasedErrorCode.FunctionNotFound,
           {
             route,
-          }
-        )
+          },
+        ),
       )
       return
     }

@@ -1,9 +1,5 @@
-import { BasedServer } from '../server.js'
 import { createError } from '../error/index.js'
-import { Context } from '@based/functions'
-import { verifyRoute } from '../verifyRoute.js'
 import {
-  genObservableId,
   hasObs,
   createObs,
   ObservableUpdateFunction,
@@ -13,29 +9,19 @@ import {
 } from '../query/index.js'
 import { installFn } from '../installFn.js'
 import { BasedErrorCode } from '@based/errors'
+import { BasedQuery } from './client/query.js'
 
 export const observe = (
-  server: BasedServer,
-  name: string,
-  ctx: Context,
-  payload: any,
+  query: BasedQuery,
   update: ObservableUpdateFunction,
-  error: ObserveErrorListener
+  error: ObserveErrorListener,
 ): (() => void) => {
-  const id = genObservableId(name, payload)
-
-  const route = verifyRoute(
-    server,
-    server.client.ctx,
-    'query',
-    server.functions.route(name),
-    name,
-    id
-  )
-
-  if (route === null) {
-    throw new Error(`[${name}] No session in ctx`)
-  }
+  const attachedCtx = query.attachedCtx
+  const id = attachedCtx ? attachedCtx.id : query.id
+  const server = query.ctx.session.client.server
+  const route = query.route
+  const ctx = query.ctx
+  const payload = query.payload
 
   let isClosed = false
 
@@ -52,7 +38,7 @@ export const observe = (
     return close
   }
 
-  installFn(server, server.client.ctx, route).then((spec) => {
+  installFn({ server, ctx: server.client.ctx, route }).then((spec) => {
     if (isClosed) {
       return
     }
@@ -60,12 +46,12 @@ export const observe = (
       error(
         createError(server, ctx, BasedErrorCode.FunctionNotFound, {
           route,
-        })
+        }),
       )
       return
     }
     if (!hasObs(server, id)) {
-      createObs(server, name, id, payload)
+      createObs({ server, route, id, payload, ctx, spec, attachedCtx })
     }
     subscribeFunction(server, id, update)
   })
