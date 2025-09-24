@@ -73,7 +73,7 @@ struct sdb_text_meta {
     enum selva_string_flags flags; /*!< Saved flags SDB_STRING_META_FLAGS_MASK. */
 };
 
-static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields);
+static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields);
 
 /**
  * Write one of the magic numbers to the dump.
@@ -147,32 +147,23 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
     }
 }
 
-static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc, const struct SelvaFieldsSchema *schema, struct SelvaNodeLargeReference *ref)
+static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc, struct SelvaNodeLargeReference *ref)
 {
     /*
      * If EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP then this is a SELVA_FIELD_TYPE_REFERENCES
      * field (i.e. need to preserve the sort order) and meta is save on the other end.
      */
-    const uint8_t meta_present = ref->dst && !!ref->meta && !(efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP);
     const node_id_t node_id = ref->dst ? ref->dst->node_id : 0;
 
     io->sdb_write(&node_id, sizeof(node_id), 1, io);
-    io->sdb_write(&meta_present, sizeof(meta_present), 1, io);
-    if (meta_present) {
-        /*
-         * We don't pass the db here to prevent any attempt to access node schema.
-         * Static analyzers may think that ref->meta is somehow null now but it's
-         * definitely not!
-         */
-        save_fields(io, nullptr, schema, ref->meta);
-    }
+    io->sdb_write(&ref->meta, sizeof(ref->meta), 1, io);
 }
 
 /**
  * Save references.
  * The caller must save nr_refs.
  */
-static void save_field_references(struct selva_io *io, const struct EdgeFieldConstraint *efc, const struct SelvaFieldsSchema *schema, struct SelvaNodeReferences *refs)
+static void save_field_references(struct selva_io *io, const struct EdgeFieldConstraint *efc, struct SelvaNodeReferences *refs)
 {
     switch (refs->size) {
     case SELVA_NODE_REFERENCE_NULL:
@@ -181,21 +172,21 @@ static void save_field_references(struct selva_io *io, const struct EdgeFieldCon
         for (size_t i = 0; i < refs->nr_refs; i++) {
             struct SelvaNodeLargeReference ref = (struct SelvaNodeLargeReference) {
                 .dst = refs->small[i].dst,
-                .meta = nullptr,
+                .meta = 0,
             };
-            save_ref(io, efc, schema, &ref);
+            save_ref(io, efc, &ref);
         }
         break;
     case SELVA_NODE_REFERENCE_LARGE:
         for (size_t i = 0; i < refs->nr_refs; i++) {
-            save_ref(io, efc, schema, &refs->large[i]);
+            save_ref(io, efc, &refs->large[i]);
         }
         break;
     }
 }
 
 __attribute__((nonnull))
-static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
+static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
 {
     const size_t nr_fields = fields->nr_fields;
 
@@ -238,12 +229,11 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_REFERENCE:
             if (((struct SelvaNodeLargeReference *)selva_fields_nfo2p(fields, nfo))->dst) {
                 const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
-                const struct SelvaFieldsSchema *eschema = selva_get_edge_field_fields_schema(db, efc);
                 struct SelvaNodeLargeReference *ref = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = 1;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_ref(io, efc, eschema, ref);
+                save_ref(io, efc, ref);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
@@ -251,12 +241,11 @@ static void save_fields(struct selva_io *io, struct SelvaDb *db, const struct Se
         case SELVA_FIELD_TYPE_REFERENCES:
             if (((struct SelvaNodeReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {
                 const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
-                const struct SelvaFieldsSchema *eschema = selva_get_edge_field_fields_schema(db, efc);
                 struct SelvaNodeReferences *refs = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = refs->nr_refs;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_field_references(io, efc, eschema, refs);
+                save_field_references(io, efc, refs);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
@@ -297,7 +286,7 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
 
     write_dump_magic(io, DUMP_MAGIC_NODE);
     io->sdb_write(&node->node_id, sizeof(node_id_t), 1, io);
-    save_fields(io, db, schema, &node->fields);
+    save_fields(io, schema, &node->fields);
 }
 
 static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
@@ -610,28 +599,6 @@ static int load_field_string(struct selva_io *io, struct SelvaNode *node, const 
 }
 
 __attribute__((warn_unused_result))
-static int load_reference_meta_field_string(
-        struct SelvaDb *db,
-        struct selva_io *io,
-        struct SelvaNode *node,
-        struct SelvaNodeLargeReference *ref,
-        const struct EdgeFieldConstraint *efc,
-        const struct SelvaFieldSchema *efs)
-{
-    struct sdb_string_meta meta;
-    struct selva_string *s;
-    int err;
-
-    io->sdb_read(&meta, sizeof(meta), 1, io);
-    err = selva_fields_get_reference_meta_mutable_string(db, node, ref, efc, efs, meta.len - sizeof(uint32_t), &s);
-    if (err) {
-        return err;
-    }
-
-    return load_string(io, s, &meta);
-}
-
-__attribute__((warn_unused_result))
 static int load_field_text(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     uint8_t len;
@@ -699,123 +666,6 @@ static int load_field_weak_references(struct selva_io *io, const struct SelvaFie
     return 0;
 }
 
-
-/**
- * Load meta fields of an edge in an edge field of node.
- */
-__attribute__((warn_unused_result))
-static int load_reference_meta(
-        struct selva_io *io,
-        struct SelvaDb *db,
-        struct SelvaNode *node,
-        struct SelvaNodeReferenceAny *ref_any, const struct EdgeFieldConstraint *efc)
-{
-    const struct SelvaFieldsSchema *schema = selva_get_edge_field_fields_schema(db, efc);
-    struct SelvaNodeLargeReference *ref;
-    int err = 0;
-
-    if (!read_dump_magic(io, DUMP_MAGIC_FIELDS)) {
-        selva_io_errlog(io, "Load ref meta fields of %d:%d: Invalid magic", node->type, node->node_id);
-        return SELVA_EINVAL;
-    }
-
-    sdb_nr_fields_t nr_fields;
-    io->sdb_read(&nr_fields, sizeof(nr_fields), 1, io);
-
-    if (nr_fields > 0) {
-        assert(ref_any->type == SELVA_NODE_REFERENCE_LARGE);
-        ref = ref_any->large;
-        selva_fields_ensure_ref_meta(db, node, ref, efc);
-        assert(ref->meta);
-    }
-
-    for (sdb_nr_fields_t i = 0; i < nr_fields; i++) {
-        struct {
-            field_t field;
-            enum SelvaFieldType type;
-        } __packed rd;
-        const struct SelvaFieldSchema *fs;
-
-#if USE_DUMP_MAGIC_FIELD_BEGIN
-        if (!read_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN)) {
-            selva_io_errlog(io, "Invalid field begin magic for %d:%d",
-                            node->type, node->node_id);
-            return SELVA_EINVAL;
-        }
-#endif
-
-        io->sdb_read(&rd, sizeof(rd), 1, io);
-
-        fs = get_fs_by_fields_schema_field(schema, rd.field);
-        if (!fs) {
-            selva_io_errlog(io, "Field schema not found for the field %d", rd.field);
-            return SELVA_EINVAL;
-        }
-        if (rd.type != SELVA_FIELD_TYPE_NULL && rd.type != fs->type) {
-            selva_io_errlog(io, "Invalid field type found %d != %d",
-                            rd.type, fs->type);
-            return SELVA_EINVAL;
-        }
-
-        const size_t value_size = selva_fields_get_data_size(fs);
-        alignas(uint64_t) uint8_t value_buf[value_size + !value_size]; /* 0 length VLA is prohibited. */
-
-        err = SELVA_EINVAL;
-
-        switch (rd.type) {
-        case SELVA_FIELD_TYPE_NULL:
-            err = 0;
-            break;
-        case SELVA_FIELD_TYPE_MICRO_BUFFER:
-            err = load_field_micro_buffer(io, ref->meta, fs);
-            break;
-        case SELVA_FIELD_TYPE_STRING:
-            err = load_reference_meta_field_string(db, io, node, ref, efc, fs);
-            break;
-        case SELVA_FIELD_TYPE_TEXT:
-            /* TODO Text field support in meta */
-#if 0
-            err = load_field_text(io, ns, node, fs);
-#endif
-            err = SELVA_ENOTSUP;
-            break;
-        case SELVA_FIELD_TYPE_REFERENCE:
-        case SELVA_FIELD_TYPE_REFERENCES:
-            selva_io_errlog(io, "References not supported in edge meta");
-            err = SELVA_ENOTSUP;
-            break;
-        case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-            /* TODO check return value */
-            io->sdb_read(value_buf, sizeof(uint8_t), value_size, io);
-            err = selva_fields_set_weak_reference2(ref->meta, fs, *(node_id_t *)value_buf);
-            break;
-        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-            err = load_field_weak_references(io, fs, ref->meta);
-            break;
-        case SELVA_FIELD_TYPE_ALIAS:
-        case SELVA_FIELD_TYPE_ALIASES:
-            /* NOP */
-            break;
-        case SELVA_FIELD_TYPE_COLVEC:
-            selva_io_errlog(io, "Colvec not supported in edge meta");
-            err = SELVA_ENOTSUP;
-            break;
-        }
-        if (err) {
-            selva_io_errlog(io, "Failed to set edge (%d:%d.%d %s): %s",
-                            node->type, node->node_id, rd.field,
-                            selva_str_field_type(rd.type),
-                            selva_strerror(err));
-        } else if (!read_dump_magic(io, DUMP_MAGIC_FIELD_END)) {
-            selva_io_errlog(io, "Invalid field end magic for %d:%d.%d",
-                            node->type, node->node_id, rd.field);
-            err = SELVA_EINVAL;
-        }
-    }
-
-    return err;
-}
-
 static void faux_dirty_cb(void *, node_type_t, node_id_t)
 {
 }
@@ -824,42 +674,50 @@ __attribute__((warn_unused_result))
 static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaTypeEntry *dst_te, ssize_t index)
 {
     node_id_t dst_id;
-    uint8_t meta_present;
     struct SelvaNode *dst_node;
-    struct SelvaNodeReferenceAny ref;
-    int err;
+    struct SelvaNodeReferenceAny ref = { .type = SELVA_NODE_REFERENCE_NULL };
+    int err = 0;
 
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
-    io->sdb_read(&meta_present, sizeof(meta_present), 1, io);
 
-    if (unlikely(dst_id == 0)) {
-        /* TODO Should we insert nullptr? */
-        return 0;
-    }
-
-    dst_node = selva_upsert_node(dst_te, dst_id);
-    if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
-        err = selva_fields_reference_set(db, node, fs, dst_node, &ref, faux_dirty_cb, nullptr);
-    } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
-        err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, meta_present ? &ref : nullptr);
-    } else {
-        err = SELVA_EINTYPE;
-    }
-    if (err == SELVA_EEXIST) {
+    if (likely(dst_id != 0)) {
+        /* TODO In the future we want to just have an id here. */
+        dst_node = selva_upsert_node(dst_te, dst_id);
+        if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
+            err = selva_fields_reference_set(db, node, fs, dst_node, &ref, faux_dirty_cb, nullptr);
+        } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
+            err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, &ref, nullptr, nullptr);
+        } else {
+            err = SELVA_EINTYPE;
+        }
+        if (err == SELVA_EEXIST) {
 #if 0
-        fprintf(stderr, "%s: Reference %u:%u.%u <-> %u:%u.%u exists: %s\n",
-                __func__,
-                node->type, node->node_id, fs->field,
-                dst_te->type, dst_id, fs->edge_constraint.inverse_field,
-                selva_strerror(err));
+            fprintf(stderr, "%s: Reference %u:%u.%u <-> %u:%u.%u exists: %s\n",
+                    __func__,
+                    node->type, node->node_id, fs->field,
+                    dst_te->type, dst_id, fs->edge_constraint.inverse_field,
+                    selva_strerror(err));
 #endif
-        err = 0;
-    } else if (err) {
-        return SELVA_EIO;
+            err = 0;
+        } else if (err) {
+            return SELVA_EIO;
+        }
     }
 
-    if (meta_present) {
-        err = load_reference_meta(io, db, node, &ref, &fs->edge_constraint);
+    /*
+     * Load meta.
+     */
+    node_id_t meta;
+    io->sdb_read(&meta, sizeof(meta), 1, io); /* Always read. */
+    if (meta) {
+        switch (ref.type) {
+        case SELVA_NODE_REFERENCE_LARGE:
+            (void)selva_fields_ensure_ref_meta(db, node, &fs->edge_constraint, ref.large, meta, nullptr, nullptr);
+            break;
+        case SELVA_NODE_REFERENCE_NULL:
+        case SELVA_NODE_REFERENCE_SMALL:
+            break;
+        }
     }
 
     return err;

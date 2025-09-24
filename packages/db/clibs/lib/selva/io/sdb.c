@@ -70,6 +70,7 @@
  *
  * **3**
  * - ref save logic moved completely to flags given from the schema package
+ * - meta/edge fields is now a *type*
  */
 
 #define SDB_VERSION 3 /*!< Bump this if the serialization format changes. */
