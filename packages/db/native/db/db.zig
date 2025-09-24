@@ -131,20 +131,17 @@ pub fn getField(
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub inline fn getNodeFromReference(ref: ?*selva.SelvaNodeLargeReference) ?Node {
+pub inline fn getNodeFromReference(dstType: Type, ref: ?*selva.SelvaNodeLargeReference) ?Node {
     if (ref) |r| {
-        return r.*.dst;
+        return selva.selva_find_node(dstType, r.*.dst_id);
     }
     return null;
 }
 
 pub inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeLargeReference) []u8 {
-    if (ref != null) {
-        const dst = getNodeFromReference(ref);
-        if (dst != null) {
-            const id: *u32 = @alignCast(@ptrCast(dst));
-            return std.mem.asBytes(id)[0..4];
-        }
+    if (ref != null) |r| {
+        const id: *u32 = @alignCast(@ptrCast(&r.*.dst_id));
+        return std.mem.asBytes(id)[0..4];
     }
     return &[_]u8{};
 }

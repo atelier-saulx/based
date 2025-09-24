@@ -25,13 +25,12 @@ struct SelvaTextField {
 #endif
 
 struct SelvaNodeSmallReference {
-    struct SelvaNode *dst;
+    node_id_t dst;
 };
 
 struct SelvaNodeLargeReference {
-    struct SelvaNode *dst;
+    node_id_t dst;
     node_id_t meta;
-    uint32_t _spare;
 };
 
 enum SelvaNodeReferenceType {

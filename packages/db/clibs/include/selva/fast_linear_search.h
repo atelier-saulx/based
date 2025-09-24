@@ -21,7 +21,7 @@ SELVA_EXPORT
 ssize_t fast_linear_search_node(const struct SelvaNode *arr[], size_t len, const struct SelvaNode *x);
 
 SELVA_EXPORT
-ssize_t fast_linear_search_references_small(const struct SelvaNodeSmallReference *arr, size_t len, const struct SelvaNode *x);
+ssize_t fast_linear_search_references_small(const struct SelvaNodeSmallReference *arr, size_t len, node_id_t x);
 
 SELVA_EXPORT
-ssize_t fast_linear_search_references_large(const struct SelvaNodeLargeReference *arr, size_t len, const struct SelvaNode *x);
+ssize_t fast_linear_search_references_large(const struct SelvaNodeLargeReference *arr, size_t len, node_id_t x);
