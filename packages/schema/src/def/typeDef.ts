@@ -51,7 +51,6 @@ export const updateTypeDefs = (schema: StrictSchema) => {
     const def = createSchemaTypeDef(
       typeName,
       type,
-      schemaTypesParsed,
       schema.locales ?? {
         en: {},
       },
@@ -74,6 +73,20 @@ export const updateTypeDefs = (schema: StrictSchema) => {
           const dstType: SchemaTypeDef = schemaTypesParsed[prop.inverseTypeName]
           prop.inverseTypeId = dstType.id
           prop.inversePropNumber = dstType.props[prop.inversePropName].prop
+
+          if (prop.edges) {
+            if (dstType.props[prop.inversePropName].edges) {
+              // this currently is not allowed, but might be
+              const mergedEdges = {
+                ...dstType.props[prop.inversePropName].edges,
+                ...prop.edges,
+              }
+              dstType.props[prop.inversePropName].edges = mergedEdges
+              prop.edges = mergedEdges
+            } else {
+              dstType.props[prop.inversePropName].edges = prop.edges
+            }
+          }
 
           // Update edgeNodeTypeId
           if (!prop.edgeNodeTypeId) {
@@ -98,7 +111,6 @@ export const updateTypeDefs = (schema: StrictSchema) => {
 const createSchemaTypeDef = (
   typeName: string,
   type: StrictSchemaType | SchemaObject,
-  parsed: SchemaTypesParsed,
   locales: Partial<SchemaLocales>,
   result: Partial<SchemaTypeDef> = createEmptyDef(typeName, type, locales),
   path: string[] = [],
@@ -152,7 +164,6 @@ const createSchemaTypeDef = (
       createSchemaTypeDef(
         typeName,
         schemaProp as SchemaObject,
-        parsed,
         locales,
         result,
         propPath,
