@@ -44,10 +44,13 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
                     i += 13;
                     while (stagedKeyIter.next()) |stagedIdKey| {
                         utils.writeInt(u32, data, i, stagedIdKey.*);
-                        _ = sub.*.stagedIds.?.remove(stagedIdKey.*);
                         i += 4;
                     }
-                    try t.nonMarkedId.put(entry.key_ptr.*, t.subs.get(entry.key_ptr.*).?);
+                    sub.*.stagedIds.?.deinit();
+                    sub.*.stagedIds = types.Ids.init(ctx.allocator);
+                    if (t.subs.get(entry.key_ptr.*)) |s| {
+                        try t.nonMarkedId.put(entry.key_ptr.*, s);
+                    }
                 } else if (sub.*.subType == types.SubType.simpleMulti) {
                     data[i] = 1; // isMultiId
                     utils.writeInt(u64, data, i + 1, entry.key_ptr.*);

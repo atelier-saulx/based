@@ -56,10 +56,10 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                     sub.ids.deinit();
                     sub.stagedIds.?.deinit();
                     sub.fields.deinit();
-                    ctx.allocator.destroy(sub);
                     if (typeSubscriptionCtx.subs.remove(subId)) {
+                        // std.debug.print("REMOVE SUB {any}!\n", .{subId});
                         _ = typeSubscriptionCtx.nonMarkedId.remove(subId);
-                        std.debug.print("REMOVE SUB {any}!\n", .{subId});
+                        ctx.allocator.destroy(sub);
                         removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
                     }
                 }

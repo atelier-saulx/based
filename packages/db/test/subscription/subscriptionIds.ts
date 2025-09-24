@@ -34,10 +34,12 @@ const start = async (t, clientsN = 2) => {
 type Marked = { type: 0 | 1; ids?: Uint32Array; id: number }
 
 const logSubIds = (server: BasedDb['server']) => {
+  let d = Date.now()
   const markedSubsR = native.getMarkedSubscriptions(server.dbCtxExternal)
+  d = Date.now() - d
   if (markedSubsR) {
     const markedSubs = new Uint8Array(markedSubsR)
-    console.log('MARKED SUB:', markedSubsR)
+    // console.log('MARKED SUB:', markedSubsR)
     const marked: Marked[] = []
     let i = 0
     while (i < markedSubs.byteLength) {
@@ -60,9 +62,12 @@ const logSubIds = (server: BasedDb['server']) => {
         i += 8
       }
     }
-    console.log('Subscriptions fired:', marked)
+    console.log(
+      `   • Subscriptions fired ${d}ms:`,
+      marked.map((v) => ({ ids: v.ids.length, sub: v.id })),
+    )
   } else {
-    console.log('No subs fired!')
+    console.log('   • No subs fired!')
   }
 }
 
@@ -114,20 +119,9 @@ await test('subscriptionIds', async (t) => {
 
   const id = await clients[0].create('user', { derp: 66 })
 
-  // ----------------------------
-  const fields = new Uint8Array([0, 1, 2])
-  const subId = 66
-  const typeId = server.schemaTypesParsed['user'].id
-  // console.log(server.schemaTypesParsed.user.separate)
-
-  const val = createSingleSubscriptionBuffer(subId, typeId, fields, id)
-  native.addIdSubscription(server.dbCtxExternal, val)
-  // ----------------------------
-
   const array = new Uint8Array(20)
   const l = write({ array } as Ctx, 'A', 0, false)
 
-  // can make a proxy
   const payload = {
     derp: 99,
     x: 1,
@@ -135,17 +129,53 @@ await test('subscriptionIds', async (t) => {
     lang: array.slice(0, l),
   }
 
+  const updateAll = async (type = 'user') => {
+    d = Date.now()
+    for (let i = 0; i < amount; i++) {
+      payload.derp = i
+      payload.x = i % 255
+      clients[1].update(type, i + 1, payload)
+    }
+    let dTime = await clients[1].drain()
+    console.log(
+      `handling ${readable} updates with unique subs firing`,
+      Date.now() - d,
+      'ms',
+      'drain time (real db)',
+      dTime,
+      'ms',
+    )
+  }
+
+  const removeAllSubsForId = (val: Uint8Array) => {
+    d = Date.now()
+    for (let i = 1; i < amount; i++) {
+      writeUint32(val, i, 10)
+      native.removeIdSubscription(server.dbCtxExternal, val)
+    }
+    console.log(
+      `Remove subscriptions ${readable} subs sub:(${subId})`,
+      Date.now() - d,
+      'ms',
+    )
+  }
+
+  // -----------------------------------
+  const fields = new Uint8Array([0, 1, 2])
+  const subId = 66
+  const typeId = server.schemaTypesParsed['user'].id
+  const val = createSingleSubscriptionBuffer(subId, typeId, fields, id)
+  native.addIdSubscription(server.dbCtxExternal, val)
+
   console.log('single UPDATE #1')
   await clients[1].update('user', id, payload)
   logSubIds(server)
-
   let d = Date.now()
   for (let i = 1; i < amount; i++) {
     writeUint32(val, i, 10)
     native.addIdSubscription(server.dbCtxExternal, val)
   }
   console.log(`#1 add ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
-
   d = Date.now()
   const secondSubId = 11
   const val2 = createSingleSubscriptionBuffer(
@@ -163,325 +193,41 @@ await test('subscriptionIds', async (t) => {
     Date.now() - d,
     'ms',
   )
-
   for (let i = 0; i < amount; i++) {
     clients[1].create('user', payload)
   }
   await clients[1].drain()
+  // ----------------- HERE --------------
 
-  console.info(`------- ${readable} updates`)
-  d = Date.now()
-  for (let i = 0; i < amount; i++) {
-    clients[1].update('user', i + 1, payload)
-  }
-  let dTime = await clients[1].drain()
-  console.log(
-    `handling ${readable} updates with unique subs firing`,
-    Date.now() - d,
-    'ms',
-    'drain time (real db)',
-    dTime,
-    'ms',
-  )
-
-  console.info(
-    `------- ${readable} updates  no active subs (all staged for updates)`,
-  )
-  d = Date.now()
-  for (let i = 0; i < amount; i++) {
-    clients[1].update('user', i + 1, payload)
-  }
-  dTime = await clients[1].drain()
-  console.log(
-    `handling ${readable} updates /w snoozed subs`,
-    Date.now() - d,
-    'ms',
-    'drain time (real db)',
-    dTime,
-    'ms',
-  )
   logSubIds(server)
 
-  for (let i = 0; i < amount; i++) {
-    clients[1].create('control', payload)
-  }
-  await clients[1].drain()
-  console.info(`------- ${readable} updates control`)
-  d = Date.now()
-  for (let i = 0; i < amount; i++) {
-    clients[1].update('control', i + 1, payload)
-  }
-  dTime = await clients[1].drain()
-  console.log(
-    `handling ${readable} updates with CONTROL (zero subs)`,
-    Date.now() - d,
-    'ms',
-    'drain time (real db)',
-    dTime,
-    'ms',
-  )
-
-  d = Date.now()
-  for (let i = 1; i < amount; i++) {
-    writeUint32(val, i, 10)
-    native.removeIdSubscription(server.dbCtxExternal, val)
-  }
-
-  console.log(`REMOVE ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
-
-  console.info(`------- ${readable} updates`)
-  d = Date.now()
-  for (let i = 0; i < amount; i++) {
-    clients[1].update('user', i + 1, payload)
-  }
-  dTime = await clients[1].drain()
-  console.log(
-    `handling ${readable} updates with unique subs firing`,
-    Date.now() - d,
-    'ms',
-    'drain time (real db)',
-    dTime,
-    'ms',
-  )
+  await updateAll()
+  await updateAll()
   logSubIds(server)
 
-  d = Date.now()
-  for (let i = 1; i < amount; i++) {
-    writeUint32(val2, i, 10)
-    native.removeIdSubscription(server.dbCtxExternal, val2)
-  }
-
-  console.log(
-    `REMOVE ${readable} subs sub:(${secondSubId})`,
-    Date.now() - d,
-    'ms',
-  )
-
-  console.info(`------- ${readable} updates`)
-  d = Date.now()
-  for (let i = 0; i < amount; i++) {
-    clients[1].update('user', i + 1, payload)
-  }
-  dTime = await clients[1].drain()
-  console.log(
-    `handling ${readable} updates with unique subs firing`,
-    Date.now() - d,
-    'ms',
-    'drain time (real db)',
-    dTime,
-    'ms',
-  )
+  await updateAll()
+  await updateAll()
   logSubIds(server)
 
-  // const close = clients[1]
-  //   .query('user', id)
-  //   .include('derp')
-  //   .subscribe((q) => {
-  //     console.log('#0 YO UPDATE id 1 on client 0', q)
-  //     cnt++
-  //   })
+  await updateAll()
+  await updateAll()
+  logSubIds(server)
 
-  // for (let i = 0; i < 1e6; i++) {
-  //   clients[0].create('user', { derp: i })
-  // }
+  await updateAll()
+  await updateAll()
+  logSubIds(server)
 
-  // await clients[0].drain()
-  // console.info('------- UPDATE')
-  // await clients[1].update('user', id, { derp: 69 })
-  // await wait(100)
-  // logSubIds(server)
+  await updateAll()
+  await updateAll()
+  logSubIds(server)
 
-  // if the same dont!
-  // console.info('------- UPDATE 2')
-  // // await clients[1].update('user', id, { derp: 69 })
-  // await clients[1].update('user', id, { derp: 70 })
-  // await wait(100)
-  // logSubIds(server)
+  removeAllSubsForId(val)
+  await updateAll()
+  await updateAll()
+  logSubIds(server)
 
-  // console.info('------- UPDATE 3')
-  // // await clients[1].update('user', id, { derp: 69 })
-  // await clients[1].update('user', id, { derp: 71 })
-  // await wait(100)
-  // logSubIds(server)
-
-  // native.removeIdSubscription(server.dbCtxExternal, val)
-
-  // console.info('------- 1M updates')
-  // let d = Date.now()
-  // for (let i = 0; i < 1e6; i++) {
-  //   await clients[1].update('user', i + 1, { derp: 72 })
-  // }
-  // await clients[0].drain()
-  // console.log('1M d', Date.now() - d, 'ms')
-  // logSubIds(server)
-
-  // ----------
-  // native.removeIdSubscription(server.dbCtxExternal, val)
-  // console.info('------- UPDATE 4 after remove of sub (no marked)')
-  // // await clients[1].update('user', id, { derp: 69 })
-  // await clients[1].update('user', id, { derp: 73 })
-  // await wait(100)
-  // logSubIds(server)
-
-  // const close2 = clients[0]
-  //   .query('user', id)
-  //   .include('derp')
-  //   .subscribe((q) => {
-  //     console.log('#1 YO UPDATE id 1 on client 1', q)
-  //     cnt++
-  //   })
-
-  // console.info('------- UPDATE 5 after remove of node')
-  // native.addIdSubscription(server.dbCtxExternal, val)
-  // // await clients[1].update('user', id, { derp: 69 })
-  // await clients[1].delete('user', id)
-  // await wait(100)
-  // logSubIds(server)
-
-  // await wait(100)
-
-  // 1M subs - pretty fast....
-  // only thing we need in the client is subs[id]
-  // prob make a map there with 2 fields -1 field ids -1 field multi
-  // const c = clients[1]
-  // const allUsersRange = await c.query('user').include('derp').get()
-
-  // ----------------------------
-  // const id = await clients[0].create('user', { derp: 66 })
-  // const multiSubId = 99
-  // const typeId = server.schemaTypesParsed['user'].id
-  // ----------------------------
-  // const headerLen =
-
-  // const fields = new Uint8Array([0])
-  // val.set(fields, headerLen)
-
-  // console.log('\n=============MULTI TIME')
-  // const q = c.query('user').include('derp').range(0, 10)
-  // let x = await q.get()
-  // let n = x.toObject()
-
-  // const val2 = new Uint8Array(22 + fields.byteLength)
-  // writeUint32(val2, multiSubId, 0)
-  // writeUint16(val2, typeId, 8)
-  // console.log('id:', n[0], n[n.length - 1])
-  // val2[10] = TYPE_INDEX_MAP.id
-  // writeUint32(val2, n[0].id, 11)
-  // writeUint32(val2, n[n.length - 1].id, 15)
-
-  // // hasFullRange
-  // val2[19] = 1
-  // // filterLen
-  // val2[20] = 0
-  // val2[21] = 0
-
-  // // const fields = new Uint8Array([0])
-  // val2.set(fields, 22)
-
-  // native.addMultiSubscription(server.dbCtxExternal, val2)
-
-  // console.info('------- UPDATE FOR MULTI after remove of sub (no marked)')
-  // // await clients[1].update('user', id, { derp: 69 })
-  // await clients[1].update('user', 3, { derp: 72 })
-
-  // logSubIds(server)
-
-  // console.log('derp?')
-  // logSubIds(server)
-
-  // await clients[1].update('user', 3, { derp: 72 })
-  // logSubIds(server)
-
-  // console.info('------- 1M updates multi updates')
-  // d = Date.now()
-  // for (let i = 1e6; i > 0; i--) {
-  //   await clients[1].update('user', i + 1, { derp: 72 })
-  // }
-  // await clients[0].drain()
-  // console.log('1M multi d', Date.now() - d, 'ms')
-  // logSubIds(server)
-
-  // console.log('CREATE!')
-  // await clients[1].create('user', { derp: 72 })
-  // logSubIds(server)
-
-  // console.log('REMOVE!')
-  // await clients[1].delete('user', 3)
-  // logSubIds(server)
-
-  // x = await q.get()
-  // n = x.toObject()
-  // writeUint32(val2, n[0].id, 11)
-  // writeUint32(val2, n[n.length - 1].id, 15)
-  // update range index
-  // native.addMultiSubscription(server.dbCtxExternal, val2)
-  // await clients[1].update('user', n[n.length - 1].id, { derp: 77 })
-  // logSubIds(server)
-
-  // console.info('=-===REMOVE SUBS')
-  // native.removeIdSubscription(server.dbCtxExternal, val)
-
-  // native.removeMultiSubscription(server.dbCtxExternal, val2)
-
-  // await clients[1].update('user', n[n.length - 1].id, { derp: 666 })
-  // logSubIds(server)
-
-  // console.log('========FILTER')
-  // const q2 = c.query('user').filter('derp', '=', 666)
-  // x = await q2.get()
-  // n = x.toObject()
-  // console.log(n)
-
-  // only for very simple filters to start?
-  // const filterBuf = filterToBuffer(q2.def.filter)
-  // console.log({ filterBuf })
-
-  // const filterLen = 0 //filterBuf.byteLength
-
-  // const val3 = new Uint8Array(22 + filterLen + fields.byteLength)
-  // writeUint32(val3, multiSubId, 0)
-  // writeUint16(val3, typeId, 8)
-  // console.log('id:', n[0], n[n.length - 1])
-  // val2[10] = TYPE_INDEX_MAP.id
-  // writeUint32(val2, n[0].id, 11)
-  // writeUint32(val2, n[n.length - 1].id, 15)
-  // put this in
-  // console.log(q2.def.filter, q2.def.filter.conditions.get(0))
-  // ADD FIELDS so you know this field is included
-  // hasFullRange
-  // val2[19] = 0
-  // writeUint16(val, filterLen, 20)
-  // val2.set(fields, 22 + filterLen)
-  // native.addMultiSubscription(server.dbCtxExternal, val2)
-
-  // exception hasFullRange id > (dont need to evaluate anything)
-  // if id < start yes do need to eval
-
-  // add IDS[] as single id subs if its not a range - if its a perfect range just use multi
-
-  // try create with id range where the range is not full
-
-  // if id remove <= endID update all
-  // if create and !hasComplete (extra flag on thing) rerun
-
-  // then filters ofc
-
-  // then sort
-
-  // can add more optmization with LANGCODE for both single id and multi id
-
-  // range first
-
-  // filter + conditions
-  // get range keep track of last id OR last sort value
-  // if > lastId ignore if < firstId - ignore
-  // this works very well for ids subs
-  // and this can be sort as well
-  // range[TYPEINDEX][start][end]
-  // id = 255
-
-  // need to include the filter for the field
-
-  // close()
-  // close2()
+  removeAllSubsForId(val2)
+  await updateAll()
+  await updateAll()
+  logSubIds(server)
 })
