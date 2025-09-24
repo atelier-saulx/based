@@ -31,7 +31,7 @@ const start = async (t, clientsN = 2) => {
   return { clients, server }
 }
 
-type Marked = { type: 0 | 1; ids?: number[]; id: number }
+type Marked = { type: 0 | 1; ids?: Uint32Array; id: number }
 
 const logSubIds = (server: BasedDb['server']) => {
   const markedSubsR = native.getMarkedSubscriptions(server.dbCtxExternal)
@@ -44,14 +44,16 @@ const logSubIds = (server: BasedDb['server']) => {
       const isId = markedSubs[i] === 255
       i++
       if (isId) {
-        const m: Marked = { id: readUint64(markedSubs, i), type: 1, ids: [] }
+        const m: Marked = { id: readUint64(markedSubs, i), type: 1 }
         i += 8
         const len = readUint32(markedSubs, i)
+        m.ids = new Uint32Array(len)
         i += 4
         for (let j = 0; j < len; j++) {
-          m.ids.push(readUint32(markedSubs, i))
+          m.ids[j] = readUint32(markedSubs, i)
           i += 4
         }
+        m.ids.sort() // not nessecary in prod just to see
         marked.push(m)
       } else {
         marked.push({ id: readUint64(markedSubs, i), type: 0 })
