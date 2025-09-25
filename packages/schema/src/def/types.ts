@@ -100,6 +100,7 @@ export type PropDef = {
   cardinalityMode?: number
   cardinalityPrecision?: number
   // edge stuff
+  edgeNodeTypeId?: number,
   edgeMainLen?: 0
   hasDefaultEdges?: boolean
   reverseEnum?: { [key: string]: number }

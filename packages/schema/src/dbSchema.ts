@@ -1,10 +1,51 @@
 import { hash } from '@based/hash'
 import { getPropType } from "./parse/utils.js";
-import { StrictSchema } from "./types.js"
+import { SchemaPropOneWay, SchemaProps, SchemaTypes, StrictSchema } from "./types.js"
 import { deepCopy } from '@based/utils'
 
 export type DbSchema = StrictSchema & { lastId: number; hash: number }
 export type SchemaChecksum = number
+
+function _makeEdgeTypes(newTypes: SchemaTypes<true>, typeName: string, props: SchemaProps<true>, propPrefix: string): void {
+  type EdgeProps = Record<`$${string}`, SchemaPropOneWay>
+  const putEdgeProps = (typeName: string, refPath: string, edgeProps: EdgeProps) =>
+    newTypes[`_${typeName}:${refPath}`] = { props: edgeProps }
+
+  for (const propName in props) {
+    const prop = props[propName]
+    const propType = getPropType(prop)
+    const nextPropPrefix = propPrefix ? `${propPrefix}.${propName}` : propName
+
+    if (propType === 'object') {
+      _makeEdgeTypes(newTypes, typeName, prop.props, nextPropPrefix)
+    } else if (propType === 'reference') {
+        const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
+        Object.keys(prop).filter((k) => k[0] === '$').forEach((k) => edgeProps[k] = prop[k])
+
+        if (Object.keys(edgeProps).length > 0) {
+          putEdgeProps(typeName, nextPropPrefix, edgeProps)
+        }
+    } else if (propType === 'references') {
+        const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
+        Object.keys(prop.items).filter((k) => k[0] === '$').forEach((k) => edgeProps[k] = prop.items[k])
+
+        if (Object.keys(edgeProps).length > 0) {
+          putEdgeProps(typeName, nextPropPrefix, edgeProps)
+        }
+    }
+  }
+}
+
+function makeEdgeTypes(types: SchemaTypes<true>): SchemaTypes<true> {
+  const newTypes = {}
+
+  for (const typeName in types) {
+    const type = types[typeName]
+    _makeEdgeTypes(newTypes, typeName, type.props, '')
+  }
+
+  return newTypes
+}
 
 export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
   // @ts-ignore
@@ -53,6 +94,11 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
       props: dbSchema.props,
     }
     delete dbSchema.props
+  }
+
+  const edgeTypes = makeEdgeTypes(dbSchema.types)
+  for (const et in edgeTypes) {
+    dbSchema.types[et] = edgeTypes[et]
   }
 
   // Assign typeIds

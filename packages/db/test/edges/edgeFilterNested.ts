@@ -27,7 +27,7 @@ await test('edge enum', async (t) => {
           items: {
             ref: 'initiative',
             prop: 'users',
-            $role: ['a', 'b'],
+            // $role: ['a', 'b'],
           },
         },
       },

@@ -21,7 +21,7 @@ pub const RefStruct = struct {
     smallReference: ?*selva.SelvaNodeSmallReference,
     largeReference: ?*selva.SelvaNodeLargeReference,
     edgeReference: ?selva.SelvaNodeWeakReference,
-    edgeConstraint: ?db.EdgeFieldConstraint,
+    edgeConstraint: ?db.EdgeFieldConstraint, // TODO This should be mandatory
 };
 
 pub inline fn resolveRefsNode(

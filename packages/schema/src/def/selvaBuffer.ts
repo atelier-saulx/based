@@ -66,7 +66,7 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
 }
 
 function makeEdgeConstraintFlags(
-  refSet: RefSet | null,
+  refSet: RefSet,
   nodeTypeId: number,
   prop: PropDef,
   dstNodeTypeId: number,
@@ -82,7 +82,7 @@ function makeEdgeConstraintFlags(
       ? EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
       : 0x00
 
-  if (refSet) {
+  if (inverseProp) {
     const x = refSet.add(nodeTypeId, prop.prop, dstNodeTypeId, inverseProp.prop)
     flags |= x ? 0x00 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
   }
@@ -91,11 +91,10 @@ function makeEdgeConstraintFlags(
 }
 
 const propDefBuffer = (
-  refSet: RefSet | null,
+  refSet: RefSet,
   nodeTypeId: number,
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
-  isEdge?: boolean,
 ): number[] => {
   const type = prop.typeIndex
   const selvaType = selvaTypeMap[type]
@@ -118,13 +117,12 @@ const propDefBuffer = (
     view.setUint16(3, baseSize, true) // element size
     return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
-    const buf = new Uint8Array(9)
+    const buf = new Uint8Array(7)
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
-    let eschema = []
 
     // @ts-ignore
-    buf[0] = selvaType + 2 * !!isEdge // field type
+    buf[0] = selvaType + 2 * !!prop.__isEdge // field type
     buf[1] = makeEdgeConstraintFlags(
       refSet,
       nodeTypeId,
@@ -133,37 +131,15 @@ const propDefBuffer = (
       dstType.props[prop.inversePropName],
     ) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
-    view.setUint32(5, 0, true) // schema_len
-    if (!isEdge) {
+    if (prop.__isEdge) {
+      buf[4] = 0
+      view.setUint16(5, 0, true)
+    } else {
       buf[4] = prop.inversePropNumber
-
-      if (prop.edges) {
-        const edgesS = Object.values(prop.edges)
-        if (edgesS.length) {
-          const props = edgesS
-            .filter((v) => v.separate === true)
-            .sort((a, b) => (a.prop > b.prop ? 1 : -1))
-          const p = [
-            {
-              ...EMPTY_MICRO_BUFFER,
-              len: prop.edgeMainLen || 1, // allow zero here... else useless padding
-              __isEdgeDef: true,
-            },
-            // or handle this here...
-            ...props,
-          ]
-          eschema = p
-            .map((prop) =>
-              propDefBuffer(null, 0, schema, prop as PropDef, true),
-            )
-            .flat(1)
-          eschema.unshift(0, 0, 0, 0, sepPropCount(p), 0, 0, 0)
-          view.setUint32(5, eschema.length, true)
-        }
-      }
+      view.setUint16(5, prop.edgeNodeTypeId, true) // meta_node_type
     }
 
-    return [...buf, ...eschema]
+    return [...buf]
   } else if (
     type === STRING ||
     type === BINARY ||
@@ -217,7 +193,7 @@ export function schemaToSelvaBuffer(schema: {
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
       0, // u8 spare1
-      ...propDefBuffer(null, t.id, schema, {
+      ...propDefBuffer(refSet, t.id, schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,
       }),
