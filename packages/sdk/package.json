@@ -23,25 +23,19 @@
     ".": {
       "import": {
         "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "import": "./dist/index.js"
       }
     },
     "./db": {
       "import": {
         "types": "./dist/db.d.ts",
-        "default": "./dist/db.js"
+        "import": "./dist/db.js"
       }
     },
     "./schema": {
       "import": {
         "types": "./dist/schema.d.ts",
-        "default": "./dist/schema.js"
-      }
-    },
-    "./utils": {
-      "import": {
-        "types": "./dist/utils.d.ts",
-        "default": "./dist/utils.js"
+        "import": "./dist/schema.js"
       }
     }
   },
@@ -52,8 +46,7 @@
   },
   "dependencies": {
     "@based/db": "*",
-    "@based/schema": "*",
-    "@based/utils": "*"
+    "@based/schema": "*"
   },
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",
