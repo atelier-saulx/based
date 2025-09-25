@@ -159,13 +159,13 @@ await test('subscriptionIds', async (t) => {
     console.log(`Remove subscriptions ${readable} subs`, Date.now() - d, 'ms')
   }
 
-  const addSubs = (subId: number, start = 0, end = 100): Uint8Array => {
+  const addSubs = (subId: number, start = 0, end = 1000): Uint8Array => {
     const fields = new Uint8Array([0, 1, 2])
     const typeId = server.schemaTypesParsed['user'].id
     const val = createSingleSubscriptionBuffer(subId, typeId, fields, id)
     let d = Date.now()
     for (let i = start; i < end; i++) {
-      writeUint32(val, ~~(Math.random() * amount) + 1, 10)
+      writeUint32(val, ~~(Math.random() * amount) + 1, 6)
       native.addIdSubscription(server.dbCtxExternal, val)
     }
     // console.log(`#1 add ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
@@ -179,7 +179,7 @@ await test('subscriptionIds', async (t) => {
   await clients[1].drain()
   // logSubIds(server)
 
-  for (let i = 1; i < 1e4; i++) {
+  for (let i = 1; i < 1e5; i++) {
     addSubs(i)
   }
 
