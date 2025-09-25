@@ -1,4 +1,5 @@
 import {
+  makeTmpBuffer,
   readUint32,
   readUint64,
   wait,
@@ -165,43 +166,78 @@ await test('subscriptionIds', async (t) => {
     const val = createSingleSubscriptionBuffer(subId, typeId, fields, id)
     let d = Date.now()
     for (let i = start; i < end; i++) {
-      writeUint32(val, ~~(Math.random() * amount) + 1, 6)
+      writeUint32(val, ~~(Math.random() * amount * 5) + 1, 6)
       native.addIdSubscription(server.dbCtxExternal, val)
     }
     // console.log(`#1 add ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
     return val
   }
 
-  // ----------------- HERE --------------
-  for (let i = 0; i < amount; i++) {
-    clients[1].create('user', payload)
+  let BLA = Date.now()
+
+  native.addMultiSubscription(
+    server.dbCtxExternal,
+    createSingleSubscriptionBuffer(6, 2, new Uint8Array([0, 1]), 2),
+  )
+  console.log('ZIG ZAG', Date.now() - BLA, 'ms')
+
+  const x = Date.now()
+  //100000
+  const shurp = {}
+  for (let i = 1; i < 100e6; i++) {
+    shurp[i] = true
+    // if (i % 4) {
+    //   shurp[i + ~~(Math.random() * 10e6)] = i < 1e5
+    // }
+    // if (i % 3) {
+    //   shurp[20e6 + i] = false
+    // }
   }
-  await clients[1].drain()
+  shurp[20e6 - 1] = true
+
+  // const bla = new Uint8Array(2e6)
+  BLA = Date.now()
+  let cnt = 0
+  for (let i = 1; i < 25e6; i++) {
+    if (shurp[i]) {
+      cnt++
+    }
+  }
+
+  // shurp[20e6 - 10] = true
+
+  console.log(
+    '!!!!!!!',
+    Date.now() - BLA,
+    'ms',
+    cnt,
+    'all',
+    Date.now() - x,
+    'ms',
+  )
+
+  //   for (let i = 1; i < 2e6; i++) {
+  //   addSubs(i)
+  // }
+
+  // await updateAll()
   // logSubIds(server)
 
-  for (let i = 1; i < 1e5; i++) {
-    addSubs(i)
-  }
+  // await updateAll()
+  // await updateAll()
+  // logSubIds(server)
 
-  await updateAll()
-  await updateAll()
-  logSubIds(server)
+  // await updateAll()
+  // await updateAll()
+  // logSubIds(server)
 
-  await updateAll()
-  await updateAll()
-  logSubIds(server)
+  // await updateAll()
+  // await updateAll()
+  // logSubIds(server)
 
-  await updateAll()
-  await updateAll()
-  logSubIds(server)
-
-  await updateAll()
-  await updateAll()
-  logSubIds(server)
-
-  await updateAll()
-  await updateAll()
-  logSubIds(server)
+  // await updateAll()
+  // await updateAll()
+  // logSubIds(server)
 
   // removeAllSubsForId(val)
   // await updateAll()

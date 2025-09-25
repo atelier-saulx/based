@@ -30,6 +30,14 @@ const std = @import("std");
 
 pub const IdsSet = std.AutoHashMap(u32, void);
 pub const Fields = std.AutoHashMap(u8, IdsSet);
+
+// ARRAY LIST FOR SUBS (packed)
+// can try pointer vs access by index
+
+// pub const Subscription = struct {
+
+// }
+
 pub const IdsSubs = std.AutoHashMap(u32, Fields);
 
 pub const TypeSubscriptionCtx = struct {

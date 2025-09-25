@@ -9,7 +9,105 @@ const t = @import("../../types.zig");
 const upsertSubType = @import("./shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
 
+const vectorLen = std.simd.suggestVectorLength(u8).?;
+
+const SubRecord = packed struct {
+    sub_id: u32,
+    marker: u8,
+    // f1: u8,
+    // f2: u8,
+    // f3: u8,
+    total_ids: u32,
+    total_ids_copy: u32,
+};
+
+pub const Context = struct {
+    pub fn hash(_: Context, d: u32) u32 {
+        return d;
+    }
+
+    pub fn eql(_: Context, x: u32, y: u32, _: usize) bool {
+        //  _: usize
+        return x == y;
+    }
+};
+
+fn bla() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    const allocator = gpa.allocator();
+    var map = std.ArrayHashMap(u32, u32, Context, false).init(allocator);
+    defer map.deinit();
+    const num_items = 1_000_000_000;
+    const buffer_size = (num_items + 7) / 8;
+    const buffer = try allocator.alloc(u8, buffer_size);
+    defer allocator.free(buffer);
+
+    // set all bit to 1 bitmaps ftw
+    @memset(buffer, 255);
+    // keep track of lowest and highest
+    // const lowBound: u32 = 5_000_000;
+    // const highBound: u32 = 35_000_000;
+    var i: u32 = 0;
+    var timer = try std.time.Timer.start();
+    var cnt: u32 = 0;
+
+    // fields def like this
+    // max 1 vector else we count it as all
+
+    // this type of stuff is really fast scince it gets optmized in 1 instruction
+    while (i < num_items) : (i += 1) {
+        const byte_index = i / 8;
+        const bit_index: u3 = @truncate(i % 8);
+        const mask = @as(u8, 1) << bit_index;
+        if ((buffer[byte_index] & mask) != 0) {
+            cnt += 1;
+        }
+    }
+    std.debug.print("{} {any}\n", .{ std.fmt.fmtDuration(timer.read()), cnt });
+
+    timer = try std.time.Timer.start();
+    cnt = 0;
+    i = 0;
+    // i u32
+    // if (i )
+    while (i < buffer.len - vectorLen) : (i += vectorLen) {
+        const vec: @Vector(vectorLen, u8) = buffer[i..][0..vectorLen].*;
+        const popCount: @Vector(vectorLen, u8) = @popCount(vec);
+        cnt += @reduce(.Add, popCount);
+    }
+    while (i < buffer.len) : (i += 1) {
+        cnt += @popCount(buffer[i]);
+    }
+
+    std.debug.print("SIMD {any} {} {any}\n", .{ vectorLen, std.fmt.fmtDuration(timer.read()), cnt });
+
+    const buffer2 = try allocator.alloc(u8, 1_000_000 * vectorLen);
+    var x: u8 = 0;
+    while (x < vectorLen) : (x += 1) {
+        buffer2[x] = x + 1;
+    }
+
+    timer = try std.time.Timer.start();
+    cnt = 0;
+    i = 0;
+
+    while (i < 16_000_000 - vectorLen) : (i += vectorLen) {
+        const vec: @Vector(vectorLen, u8) = buffer2[i..][0..vectorLen].*;
+
+        const f: @Vector(vectorLen, u8) = @splat(10);
+        const eq = (vec == f);
+        const hasfield = @reduce(.Or, eq);
+        if (hasfield) {
+            cnt += 1;
+        }
+    }
+
+    std.debug.print("SIMD has field {any} {} {any}\n", .{ vectorLen, std.fmt.fmtDuration(timer.read()), cnt });
+}
+
 pub fn addMultiSubscriptionInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
+    try bla();
     // const args = try napi.getArgs(2, napi_env, info);
     // const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     // const value = try napi.get([]u8, napi_env, args[1]);

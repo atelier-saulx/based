@@ -14,6 +14,7 @@ pub fn checkId(
     ctx: *ModifyCtx,
 ) !void {
     if (ctx.subTypes) |typeSub| {
+        // this is acceptable (ish)
         if (typeSub.ids.getEntry(ctx.id)) |entry| {
             ctx.idSubs = entry.value_ptr;
         } else {
@@ -23,21 +24,22 @@ pub fn checkId(
 }
 
 pub fn stage(
-    ctx: *ModifyCtx,
-    comptime op: Op,
+    _: *ModifyCtx,
+    comptime _: Op,
 ) !void {
-    if (op != Op.create and op != Op.deleteNode) {
-        if (ctx.idSubs) |idSubs| {
-            if (idSubs.getEntry(ctx.field)) |entry| {
-                var iterator = entry.value_ptr.*.iterator();
-                while (iterator.next()) |subIdEntry| {
-                    ctx.db.subscriptions.hasMarkedSubscriptions = true;
-                    try ctx.db.subscriptions.subscriptionsMarked.put(.{
-                        subIdEntry.key_ptr.*,
-                        ctx.id,
-                    }, undefined);
-                }
-            }
-        }
-    }
+    // if (op != Op.create and op != Op.deleteNode) {
+    //     if (ctx.idSubs) |idSubs| {
+    //         // lets make a UINT8ARRAY
+    //         if (idSubs.getEntry(ctx.field)) |entry| {
+    //             var iterator = entry.value_ptr.*.iterator();
+    //             while (iterator.next()) |subIdEntry| {
+    //                 ctx.db.subscriptions.hasMarkedSubscriptions = true;
+    //                 try ctx.db.subscriptions.subscriptionsMarked.put(.{
+    //                     subIdEntry.key_ptr.*,
+    //                     ctx.id,
+    //                 }, undefined);
+    //             }
+    //         }
+    //     }
+    // }
 }
