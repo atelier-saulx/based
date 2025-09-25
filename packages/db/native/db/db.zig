@@ -36,6 +36,14 @@ pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     return selvaTypeEntry.?;
 }
 
+pub fn getRefDstType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
+    return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type);
+}
+
+pub fn getRefMetaType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
+    return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.meta_node_type);
+}
+
 pub fn getFieldSchema(typeEntry: ?Type, field: u8) !FieldSchema {
     const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
         typeEntry.?,
