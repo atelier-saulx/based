@@ -57,13 +57,10 @@ fn bla() !void {
 
     // this type of stuff is really fast scince it gets optmized in 1 instruction
     while (i < num_items) : (i += 1) {
-        const byte_index = i / 8;
         const bit_index: u3 = @truncate(i % 8);
-        const mask = @as(u8, 1) << bit_index;
-        if ((buffer[byte_index] & mask) != 0) {
-            cnt += 1;
-        }
+        cnt += (buffer[i / 8] & @as(u8, 1) << bit_index) >> bit_index;
     }
+
     std.debug.print("{} {any}\n", .{ std.fmt.fmtDuration(timer.read()), cnt });
 
     timer = try std.time.Timer.start();
@@ -88,14 +85,25 @@ fn bla() !void {
         buffer2[x] = x + 1;
     }
 
-    timer = try std.time.Timer.start();
+    cnt = 0;
+    // has BITMAP (with offset)
+    // const min: u32 = 100;
+    // const max: u32 = 10e6;
+
+    i = 1e6;
+
+    // const bit_to_add: u1 = if (i >= min and i <= max)
+    //     (buffer[@divTrunc(i, 8)] >> @truncate(i % 8)) & 1
+    // else
+    //     0;
+
+    // cnt += bit_to_add;
+
     cnt = 0;
     i = 0;
-
     while (i < 16_000_000 - vectorLen) : (i += vectorLen) {
         const vec: @Vector(vectorLen, u8) = buffer2[i..][0..vectorLen].*;
-
-        const f: @Vector(vectorLen, u8) = @splat(10);
+        const f: @Vector(vectorLen, u8) = @splat(10); // this is different all the time
         const eq = (vec == f);
         const hasfield = @reduce(.Or, eq);
         if (hasfield) {
@@ -103,7 +111,11 @@ fn bla() !void {
         }
     }
 
-    std.debug.print("SIMD has field {any} {} {any}\n", .{ vectorLen, std.fmt.fmtDuration(timer.read()), cnt });
+    // using selva id has check can be very nice as well vs this - then have a pointer maybe?
+
+    // for subs it would be really nice to only have the cursors in an array
+    // maybe prepare this as well? would be nice to have a very aligned thing there
+    std.debug.print("SIMD has field (1M times 16 fields) {any} {} {any}\n", .{ vectorLen, std.fmt.fmtDuration(timer.read()), cnt });
 }
 
 pub fn addMultiSubscriptionInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
