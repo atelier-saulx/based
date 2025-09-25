@@ -16,48 +16,20 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
         var resultBuffer: ?*anyopaque = undefined;
         var result: c.napi_value = undefined;
         var iter = ctx.subscriptions.subscriptionsMarked.iterator();
-        var size: usize = 0;
-        while (iter.next()) |entry| {
-            if (ctx.subscriptions.types.get(entry.value_ptr.*)) |t| {
-                const sub = t.subs.get(entry.key_ptr.*).?;
-                if (sub.*.subType == types.SubType.singleId) {
-                    size += sub.*.stagedIds.?.count() * 4 + 13;
-                } else if (sub.*.subType == types.SubType.simpleMulti) {
-                    size += 9;
-                }
-            }
-        }
+        const size: usize = ctx.subscriptions.subscriptionsMarked.count() * 8;
         if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
             return null;
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
         var i: usize = 0;
+        while (iter.next()) |entry| {
+            const u8a: [8]u8 = @bitCast(entry.key_ptr.*);
+            const u8as = (&u8a)[0..8];
+            utils.copy(data[i .. i + 8], u8as);
+            i += 8;
+        }
         iter = ctx.subscriptions.subscriptionsMarked.iterator();
         while (iter.next()) |entry| {
-            if (ctx.subscriptions.types.get(entry.value_ptr.*)) |t| {
-                const sub = t.subs.get(entry.key_ptr.*).?;
-                if (sub.*.subType == types.SubType.singleId) {
-                    data[i] = 255; // isId
-                    utils.writeInt(u64, data, i + 1, entry.key_ptr.*);
-                    utils.writeInt(u32, data, i + 9, sub.*.stagedIds.?.count());
-                    var stagedKeyIter = sub.*.stagedIds.?.keyIterator();
-                    i += 13;
-                    while (stagedKeyIter.next()) |stagedIdKey| {
-                        if (t.ids.get(stagedIdKey.*)) |idMap| {
-                            idMap.*.active = idMap.*.active + 1;
-                        }
-                        utils.writeInt(u32, data, i, stagedIdKey.*);
-                        i += 4;
-                    }
-                    sub.*.stagedIds.?.deinit();
-                    sub.*.stagedIds = types.Ids.init(ctx.allocator);
-                } else if (sub.*.subType == types.SubType.simpleMulti) {
-                    data[i] = 1; // isMultiId
-                    utils.writeInt(u64, data, i + 1, entry.key_ptr.*);
-                    try t.nonMarkedMulti.put(entry.key_ptr.*, t.subs.get(entry.key_ptr.*).?);
-                    i += 9;
-                }
-            }
             _ = ctx.subscriptions.subscriptionsMarked.remove(entry.key_ptr.*);
         }
         return result;

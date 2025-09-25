@@ -13,14 +13,9 @@ pub const Op = enum(u8) {
 pub fn checkId(
     ctx: *ModifyCtx,
 ) !void {
-    // this has to be in c - seems very slow...
     if (ctx.subTypes) |typeSub| {
-        if (typeSub.ids.get(ctx.id)) |subs| {
-            if (subs.active != 0) {
-                ctx.idSubs = subs;
-            } else {
-                ctx.idSubs = null;
-            }
+        if (typeSub.ids.getEntry(ctx.id)) |entry| {
+            ctx.idSubs = entry.value_ptr;
         } else {
             ctx.idSubs = null;
         }
@@ -33,75 +28,16 @@ pub fn stage(
 ) !void {
     if (op != Op.create and op != Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
-            var iter = idSubs.set.iterator();
-            while (iter.next()) |sub| {
-                if (sub.key_ptr.*.fields.contains(ctx.field) and !sub.key_ptr.*.stagedIds.?.contains(ctx.field)) {
-                    try sub.key_ptr.*.stagedIds.?.put(ctx.id, undefined);
+            if (idSubs.getEntry(ctx.field)) |entry| {
+                var iterator = entry.value_ptr.*.iterator();
+                while (iterator.next()) |subIdEntry| {
                     ctx.db.subscriptions.hasMarkedSubscriptions = true;
-                    try ctx.db.subscriptions.subscriptionsMarked.put(sub.key_ptr.*.id, ctx.typeId);
-                    idSubs.active = idSubs.active - 1;
+                    try ctx.db.subscriptions.subscriptionsMarked.put(.{
+                        subIdEntry.key_ptr.*,
+                        ctx.id,
+                    }, undefined);
                 }
             }
         }
     }
-
-    // var iter = sub.*.nonMarkedMulti.iterator();
-    //     while (iter.next()) |multiSub| {
-    //         if (operation == Op.remove) {
-    //             if (ctx.id <= multiSub.value_ptr.*.endId) {
-    //                 // in this case it can result in an update - only thing you need to do is
-    //                 ctx.db.subscriptions.hasMarkedSubscriptions = true;
-    //                 try ctx.db.subscriptions.subscriptionsMultiMarked.put(multiSub.key_ptr.*, ctx.typeId);
-    //                 _ = sub.nonMarkedMulti.remove(multiSub.key_ptr.*);
-    //             }
-    //             continue;
-    //         }
-
-    //         if (operation == Op.create and multiSub.value_ptr.*.hasFullRange) {
-    //             std.debug.print("CREATE MULTI_ID SKIP within range SUBID! {any} \n", .{multiSub.key_ptr.*});
-    //             continue;
-    //         }
-
-    //         if (multiSub.value_ptr.*.startId <= ctx.id and
-    //             multiSub.value_ptr.*.endId >= ctx.id and
-    //             // a field can not be created even though its included - filters do need to be evaluated
-    //             (operation == Op.create or multiSub.value_ptr.*.fields.contains(ctx.field)))
-    //         {
-    //             ctx.db.subscriptions.hasMarkedSubscriptions = true;
-    //             try ctx.db.subscriptions.subscriptionsMultiMarked.put(multiSub.key_ptr.*, ctx.typeId);
-    //             _ = sub.nonMarkedMulti.remove(multiSub.key_ptr.*);
-    //         }
-    //     }
-
-    //     // derp
-    // }
 }
-
-// pub inline fn singleIdRemove(
-//     ctx: *ModifyCtx,
-// ) !void {
-//     if (ctx.subId) |idContainer| {
-//         var fieldIter = idContainer.*.fields.valueIterator();
-//         ctx.db.subscriptions.hasMarkedSubscriptions = true;
-//         while (fieldIter.next()) |subIds| {
-//             var keyIter = subIds.*.keyIterator();
-//             while (keyIter.next()) |subId| {
-//                 try ctx.db.subscriptions.subscriptionsIdMarked.put(subId.*, undefined);
-//             }
-//         }
-//     }
-// }
-
-// pub inline fn singleId(
-//     ctx: *ModifyCtx,
-// ) !void {
-//     if (ctx.subId) |idContainer| {
-//         if (idContainer.fields.get(ctx.field)) |subIds| {
-//             ctx.db.subscriptions.hasMarkedSubscriptions = true;
-//             var keyIter = subIds.keyIterator();
-//             while (keyIter.next()) |subId| {
-//                 try ctx.db.subscriptions.subscriptionsIdMarked.put(subId.*, undefined);
-//             }
-//         }
-//     }
-// }

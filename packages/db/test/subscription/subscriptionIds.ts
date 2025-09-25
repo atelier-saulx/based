@@ -16,6 +16,8 @@ import { TYPE_INDEX_MAP } from '@based/schema/def'
 import { write } from '../../src/client/string.js'
 import { Ctx } from '../../src/client/modify/Ctx.js'
 
+// make multi thread
+
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
     path: t.tmp,
@@ -31,7 +33,7 @@ const start = async (t, clientsN = 2) => {
   return { clients, server }
 }
 
-type Marked = { type: 0 | 1; ids?: Uint32Array; id: number }
+type Marked = { ids: number[]; id: number }
 
 const logSubIds = (server: BasedDb['server']) => {
   let d = Date.now()
@@ -40,52 +42,33 @@ const logSubIds = (server: BasedDb['server']) => {
   if (markedSubsR) {
     const markedSubs = new Uint8Array(markedSubsR)
     // console.log('MARKED SUB:', markedSubsR)
-    const marked: Marked[] = []
+    const marked: { [subId: number]: Marked } = {}
     let i = 0
     while (i < markedSubs.byteLength) {
-      const isId = markedSubs[i] === 255
-      i++
-      if (isId) {
-        const m: Marked = { id: readUint64(markedSubs, i), type: 1 }
-        i += 8
-        const len = readUint32(markedSubs, i)
-        m.ids = new Uint32Array(len)
-        i += 4
-        for (let j = 0; j < len; j++) {
-          m.ids[j] = readUint32(markedSubs, i)
-          i += 4
-        }
-        m.ids.sort() // not nessecary in prod just to see
-        marked.push(m)
-      } else {
-        marked.push({ id: readUint64(markedSubs, i), type: 0 })
-        i += 8
+      const subId = readUint32(markedSubs, i)
+      const id = readUint32(markedSubs, i + 4)
+      if (!marked[subId]) {
+        marked[subId] = { id: subId, ids: [] }
       }
+      marked[subId].ids.push(id)
+      i += 8
     }
     const uniq = new Set()
-    console.log(
-      `   • Subscriptions fired ${d}ms:`,
-      marked.reduce(
-        (acc, v, i) => {
-          for (const x of v.ids) {
-            acc.uniqIds.add(x)
-          }
-          if (i === marked.length - 1) {
-            return {
-              ids: acc.ids + v.ids?.length,
-              subs: acc.subs + 1,
-              uniqIds: acc.uniqIds.size,
-            }
-          }
-          return {
-            ids: acc.ids + v.ids?.length,
-            subs: acc.subs + 1,
-            uniqIds: acc.uniqIds,
-          }
-        },
-        { ids: 0, subs: 0, uniqIds: new Set() },
-      ),
-    )
+    const results: { ids: number; subs: number; uniqIds: number } = {
+      ids: 0,
+      subs: 0,
+      uniqIds: 0,
+    }
+    for (const key in marked) {
+      const v = marked[key]
+      for (const x of v.ids) {
+        uniq.add(x)
+      }
+      results.subs++
+      results.ids += v.ids.length
+    }
+    results.uniqIds = uniq.size
+    console.log(`   • Subscriptions fired ${d}ms:`, results)
   } else {
     console.log('   • No subs fired!')
   }
@@ -97,11 +80,11 @@ const createSingleSubscriptionBuffer = (
   fields: Uint8Array,
   id: number,
 ) => {
-  const headerLen = 14
+  const headerLen = 10
   let val = new Uint8Array(headerLen + fields.byteLength)
-  writeUint64(val, subId, 0)
-  writeUint16(val, typeId, 8)
-  writeUint32(val, id, 10)
+  writeUint32(val, subId, 0)
+  writeUint16(val, typeId, 4)
+  writeUint32(val, id, 6)
   val.set(fields, headerLen)
   return val
 }
