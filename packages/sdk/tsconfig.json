@@ -6,7 +6,8 @@
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": false,
-    "composite": false
+    "composite": false,
+    "noEmit": false
   },
   "include": ["src/**/*"],
   "references": [{ "path": "../db" }, { "path": "../schema" }]

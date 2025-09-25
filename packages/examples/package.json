@@ -1,0 +1,13 @@
+{
+  "name": "sdk-examples",
+  "type": "module",
+  "scripts": {
+    "basic": "tsx basic-usage.ts",
+    "individual": "tsx individual-imports.ts",
+    "all": "npm run basic && npm run individual",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo tmp node_modules"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}
