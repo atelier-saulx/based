@@ -90,13 +90,13 @@ fn checkMinZig(current: std.SemanticVersion, exe: *std.Build.Step.Compile) void 
 
 pub const dirs = struct {
     pub const _root = "";
-    pub const _ywcj89uzwncu = "/Users/jimdebeer/saulx/based/packages/db";
+    pub const _rwddk0mc60ty = "/Users/jimdebeer/saulx/based/packages/db";
     pub const _6ok85gktcmgr = cache ++ "/v/git/github.com/jwhear/roaring-zig/commit-60372756692651cc7676041f9d0f5dc4c5388cbb";
 };
 
 pub const package_data = struct {
-    pub var _ywcj89uzwncu = Package{
-        .directory = dirs._ywcj89uzwncu,
+    pub var _rwddk0mc60ty = Package{
+        .directory = dirs._rwddk0mc60ty,
         .dependencies = &.{ },
     };
     pub var _6ok85gktcmgr = Package{
@@ -109,7 +109,7 @@ pub const package_data = struct {
     };
     pub var _root = Package{
         .directory = dirs._root,
-        .dependencies = &.{ &_ywcj89uzwncu, &_6ok85gktcmgr },
+        .dependencies = &.{ &_rwddk0mc60ty, &_6ok85gktcmgr },
     };
 };
 
