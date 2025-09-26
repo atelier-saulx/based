@@ -43,8 +43,20 @@ export const drain = (db: DbClient, ctx: Ctx) => {
       })
       .finally(() => {
         batch.ready = true
-        batch.promises?.forEach(batch.error ? rejectTmp : resolveTmp)
+        const start = ctx.index
+        console.log('--a')
+        batch.promises.forEach(batch.error ? rejectTmp : resolveTmp)
+        console.log('--b')
         batch.promises = null
+        return new Promise<void>((resolve) => {
+          process.nextTick(() => {
+            if (start !== ctx.index) {
+              resolve(drain(db, ctx))
+            } else {
+              resolve()
+            }
+          })
+        })
       })
   }
   return ctx.draining

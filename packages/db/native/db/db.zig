@@ -309,11 +309,7 @@ pub fn swapReference(
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
-fn getMetaNode(
-    db: *DbCtx,
-    efc: EdgeFieldConstraint,
-    ref: *selva.SelvaNodeLargeReference
-) ?Node {
+fn getMetaNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: *selva.SelvaNodeLargeReference) ?Node {
     if (ref.*.meta == 0) {
         return null;
     }
@@ -404,10 +400,14 @@ pub fn writeEdgeProp(
     const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
 
     try writeField(data, meta_node, fieldSchema);
-    if ((efc.flags & selva.EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) == 0) {
-        modifyCtx.markDirtyRange(ctx, ctx.typeId, ctx.id);
-    } else if (ref.dst) |dst| {
-        modifyCtx.markDirtyRange(ctx, efc.dst_node_type, getNodeId(dst));
+
+    const edgeId = ref.*.meta;
+    const edgeTypeId = efc.*.meta_node_type;
+    if ((efc.flags & selva.EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) != 0) {
+        modifyCtx.markDirtyRange(ctx, edgeTypeId, edgeId);
+    }
+    if (edgeId > ctx.db.ids[edgeTypeId - 1]) {
+        ctx.db.ids[edgeTypeId - 1] = edgeId;
     }
 }
 

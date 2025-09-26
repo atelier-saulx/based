@@ -37,6 +37,7 @@ await test('mem', async (t) => {
       name: 'BASIC ' + j,
     })
 
+
     const ids = []
     let cnt = 0
     for (let i = 0; i < amount; i++) {
@@ -54,7 +55,6 @@ await test('mem', async (t) => {
     }
 
     await db.drain()
-
     await db.create('data', {
       age: 667,
       name: 'BASIC2 ' + j,
@@ -72,8 +72,6 @@ await test('mem', async (t) => {
       true,
     )
 
-    // console.log('before:', (await db.query('data').range(0, 10e6).get()).length)
-    // console.log('delete:', { amount })
 
     for (let i = 0; i < amount; i++) {
       db.delete('data', ids[i])
@@ -81,7 +79,7 @@ await test('mem', async (t) => {
 
     await db.drain()
     // await wait(100)
-    // console.log('after:', (await db.query('data').range(0, 10e6).get()).length)
+
 
     equal((await db.query('data').range(0, 10e6).get()).length, (j + 1) * 2)
   }
