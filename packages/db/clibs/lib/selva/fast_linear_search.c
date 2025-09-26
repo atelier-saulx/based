@@ -48,7 +48,7 @@ MAKE_FUN(uint32_t, fast_linear_search_uint32)
 MAKE_FUN(node_id_t, fast_linear_search_node_id)
 MAKE_FUN_S(struct SelvaNode, fast_linear_search_node, node_id)
 
-ssize_t fast_linear_search_references_large(const struct SelvaNodeLargeReference arr[], size_t len, const struct SelvaNode *x)
+ssize_t fast_linear_search_references_large(const struct SelvaNodeLargeReference arr[], size_t len, node_id_t x)
 {
     if (len == 0) return -1;
 
@@ -64,7 +64,7 @@ ssize_t fast_linear_search_references_large(const struct SelvaNodeLargeReference
     return -1;
 }
 
-ssize_t fast_linear_search_references_small(const struct SelvaNodeSmallReference arr[], size_t len, const struct SelvaNode *x)
+ssize_t fast_linear_search_references_small(const struct SelvaNodeSmallReference arr[], size_t len, node_id_t x)
 {
     if (len == 0) return -1;
 
