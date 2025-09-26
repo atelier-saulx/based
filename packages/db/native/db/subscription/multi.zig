@@ -142,9 +142,9 @@ fn bla() !void {
     i = 0;
     cnt = 0;
     while (i < 100_000_000) : (i += 1) {
-        const ix: [4]u8 = @bitCast(i);
-        const ix2: [4]u8 = @bitCast(selva.crc32c(0, &ix, 4));
-        cnt += ix2 << 3;
+        if (r1.contains(i)) {
+            cnt += 1;
+        }
         // // const ix: [4]u8 = @bitCast(selva.crc32c(0, &i, 4));
 
         // const h0 = @as(u32, ix[0]);
