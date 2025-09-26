@@ -183,9 +183,12 @@ await test('subscriptionIds', async (t) => {
 
   const x = Date.now()
   //100000
+  const bla = new Set()
   const shurp = {}
-  for (let i = 1; i < 100e6; i++) {
-    shurp[i] = true
+  for (let i = 1; i < 10e6; i++) {
+    // shurp[i] = i % 4 === 0
+
+    bla.add(i)
     // if (i % 4) {
     //   shurp[i + ~~(Math.random() * 10e6)] = i < 1e5
     // }
@@ -198,8 +201,8 @@ await test('subscriptionIds', async (t) => {
   // const bla = new Uint8Array(2e6)
   BLA = Date.now()
   let cnt = 0
-  for (let i = 1; i < 25e6; i++) {
-    if (shurp[i]) {
+  for (let i = 1; i < 10e6; i++) {
+    if (bla.has(i)) {
       cnt++
     }
   }

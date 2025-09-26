@@ -3,5 +3,4 @@
     .paths = .{ "src", "build.zig", "build.zig.zon" },
     .name = .based_db_zig,
     .version = "0.0.1",
-    .dependencies = .{},
 }

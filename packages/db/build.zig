@@ -20,6 +20,7 @@ pub fn build(b: *std.Build) void {
         .optimize = opt,
         .link_libc = true,
     });
+
     lib.linker_allow_shlib_undefined = true;
 
     lib.root_module.addOptions("config", options);
