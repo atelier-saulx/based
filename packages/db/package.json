@@ -67,6 +67,7 @@
     "./native": {
       "require": "./basedDbNative.cjs",
       "import": "./basedDbNative.cjs"
-    }
+    },
+    "./dist/*": "./dist/*"
   }
 }

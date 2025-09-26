@@ -8,6 +8,6 @@
     "rootDir": "./",
     "composite": true
   },
-  "include": ["src", "./test"],
-  "exclude": ["./dist/src", "./dist/test"]
+  "include": ["./src", "./test"],
+  "exclude": ["./dist"]
 }
