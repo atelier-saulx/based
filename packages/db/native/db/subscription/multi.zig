@@ -8,7 +8,7 @@ const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const upsertSubType = @import("./shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
-
+const selva = @import("../../selva.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 
 const SubRecord = packed struct {
@@ -84,6 +84,79 @@ fn bla() !void {
     while (x < vectorLen) : (x += 1) {
         buffer2[x] = x + 1;
     }
+
+    // [0 - 255] (256 /8 => 32)
+    // 4 bytes   4 bytes  4 bytes 4 bytes
+
+    // field set
+    const buffer3 = try allocator.alloc(u8, 128);
+    // const xN: u32 = 213124;
+    // var u: u8 = 0;
+    // const xx: [4]u8 = @bitCast(xN);
+    // // do this branch less as well...
+    // while (u < 4) : (u += 1) {
+    //     const val = @as(u32, xx[u]) + @as(u32, u) * 255;
+    //     const bitIndex = val & (1024 - 1);
+    //     const mask = @as(u8, 1) << @as(u3, @truncate(bitIndex % 8));
+    //     buffer3[bitIndex / 8] |= mask;
+    // }
+    timer = try std.time.Timer.start();
+
+    i = 0;
+    while (i < 100_000_000) : (i += 1) {
+        const xx: [4]u8 = @bitCast(i);
+        const bitIndex0 = @as(u32, xx[0]) & (1023);
+        buffer3[bitIndex0 / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex0 % 8));
+        const bitIndex1 = (@as(u32, xx[1]) + 255) & (1023);
+        buffer3[bitIndex1 / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex1 % 8));
+        const bitIndex2 = (@as(u32, xx[2]) + 510) & (1023);
+        buffer3[bitIndex2 / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex2 % 8));
+        const bitIndex3 = (@as(u32, xx[2]) + 765) & (1023);
+        buffer3[bitIndex3 / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex3 % 8));
+    }
+
+    std.debug.print("setting 100M? has time ? {} {any}\n", .{ std.fmt.fmtDuration(timer.read()), cnt });
+
+    timer = try std.time.Timer.start();
+    i = 0;
+    cnt = 0;
+    while (i < 100_000_000) : (i += 1) {
+        const ix: [4]u8 = @bitCast(i);
+        const h0 = @as(u32, ix[0]);
+        const h1 = @as(u32, ix[1]) + 1 * 255;
+        const h2 = @as(u32, ix[2]) + 2 * 255;
+        const h3 = @as(u32, ix[3]) + 3 * 255;
+        const b0 = (buffer3[(h0 & (1024 - 1)) / 8] >> (@truncate(h0 % 8))) & 1;
+        const b1 = (buffer3[(h1 & (1024 - 1)) / 8] >> (@truncate(h1 % 8))) & 1;
+        const b2 = (buffer3[(h2 & (1024 - 1)) / 8] >> (@truncate(h2 % 8))) & 1;
+        const b3 = (buffer3[(h3 & (1024 - 1)) / 8] >> (@truncate(h3 % 8))) & 1;
+        cnt += b0 & b1 & b2 & b3;
+    }
+    std.debug.print("check 100M? has time ? {} {any}\n", .{ std.fmt.fmtDuration(timer.read()), cnt });
+
+    //     pub fn simdReferencesHasSingle(
+    //     value: u32,
+    //     values: []u8,
+    // ) bool {
+    //     if (values.len < 4) {
+    //         return false;
+    //     }
+    //     const l = values.len / 4;
+    //     const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
+    //     return selva.node_id_set_bsearch(tmp, l, value) != -1;
+    // }
+
+    // if bloom filter yields result check in array thats ordered by id that returns an index that index has the address of the subs
+
+    // var j:u32 = 0;
+    //  while (i < buffer.32) : (i += 1) {
+    //     cnt += @popCount(buffer[i]);
+    // }
+
+    // const bufferMatrix
+
+    // const h1 = std.hash.Wyhash.hash(self.hash_seed, std.mem.asBytes(&item));
+    // prob a lot slower the xx hash
 
     cnt = 0;
     // has BITMAP (with offset)
