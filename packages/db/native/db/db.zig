@@ -389,28 +389,6 @@ pub fn getEdgeReference(
     );
 }
 
-pub fn writeEdgeProp(
-    ctx: *modifyCtx.ModifyCtx,
-    node: Node,
-    efc: *const selva.EdgeFieldConstraint,
-    ref: *selva.SelvaNodeLargeReference,
-    fieldSchema: FieldSchema,
-    data: []u8,
-) !void {
-    const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
-
-    try writeField(data, meta_node, fieldSchema);
-
-    const edgeId = ref.*.meta;
-    const edgeTypeId = efc.*.meta_node_type;
-    if ((efc.flags & selva.EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) != 0) {
-        modifyCtx.markDirtyRange(ctx, edgeTypeId, edgeId);
-    }
-    if (edgeId > ctx.db.ids[edgeTypeId - 1]) {
-        ctx.db.ids[edgeTypeId - 1] = edgeId;
-    }
-}
-
 // TODO This is now hll specific but we might want to change it.
 pub fn ensurePropString(
     ctx: *modifyCtx.ModifyCtx,
@@ -434,7 +412,7 @@ pub fn preallocReferences(ctx: *modifyCtx.ModifyCtx, len: u64) void {
     _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
 }
 
-fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
+pub fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
     const mctx: *modifyCtx.ModifyCtx = @ptrCast(@alignCast(ctx));
     modifyCtx.markDirtyRange(mctx, typeId, nodeId);
 }
