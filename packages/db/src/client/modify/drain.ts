@@ -30,6 +30,8 @@ export const drain = (db: DbClient, ctx: Ctx) => {
   if (ctx.index > 8) {
     const { batch } = ctx
     const payload = consume(ctx)
+    let start: number
+
     ctx.draining = db.hooks
       .flushModify(payload)
       .then((res) => {
@@ -43,19 +45,15 @@ export const drain = (db: DbClient, ctx: Ctx) => {
       })
       .finally(() => {
         batch.ready = true
-        const start = ctx.index
         if (batch.promises) {
+          start = ctx.index
           batch.promises.forEach(batch.error ? rejectTmp : resolveTmp)
           batch.promises = null
-          return new Promise<void>((resolve) => {
-            process.nextTick(() => {
-              if (start !== ctx.index) {
-                resolve(drain(db, ctx))
-              } else {
-                resolve()
-              }
-            })
-          })
+        }
+      })
+      .then(() => {
+        if (start && start !== ctx.index) {
+          return drain(db, ctx)
         }
       })
   }
