@@ -24,14 +24,15 @@
   ],
   "scripts": {
     "watch": "node ./scripts/concurrently watch",
-    "build": "if test \"$OSTYPE\" '==' 'linux-gnu'; then npm run build-locale; fi; set -e; for pkg in hash utils schema protocol db functions errors schema-diagram server client react s3 hub type-gen cli exporter; do npm run build -w \"@based/$pkg\"; done",
+    "build": "if test \"$OSTYPE\" '==' 'linux-gnu'; then npm run build-locale; fi; set -e; for pkg in hash utils schema protocol db functions errors schema-diagram server client react s3 hub type-gen cli exporter sdk; do npm run build -w \"@based/$pkg\"; done",
     "reset": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo;",
     "test": "npm run test --prefix packages/db",
     "clean": "git clean -dfx",
     "build-podman": "cd podman && ./build.sh",
     "build-locale": "cd packages/locale && ./build.sh",
     "build-release-debug": "npm run reset; npm run build-podman && npm run build-locale release && npm run build && (cd packages/db && npm run build-release-debug)",
-    "build-release": "npm run reset; npm run build-podman && npm run build-locale release && npm run build && (cd packages/db && npm run build-release)"
+    "build-release": "npm run reset; npm run build-podman && npm run build-locale release && npm run build && (cd packages/db && npm run build-release)",
+    "build-sdk": "npm run build -w @based/sdk"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"

@@ -4,8 +4,10 @@
     "outDir": "dist",
     "esModuleInterop": true,
     "allowJs": true,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+    "rootDir": "./",
+    "composite": true
   },
-  "include": ["src", "./test"],
-  "exclude": ["./dist/src", "./dist/test"]
+  "include": ["./src", "./test"],
+  "exclude": ["./dist"]
 }

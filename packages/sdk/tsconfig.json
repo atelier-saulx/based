@@ -1,0 +1,14 @@
+{
+  // "extends": "@saulx/tsconfig/default.json",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": false,
+    "composite": false,
+    "noEmit": false
+  },
+  "include": ["src/**/*"],
+  "references": [{ "path": "../db" }, { "path": "../schema" }]
+}
