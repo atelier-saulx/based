@@ -37,6 +37,24 @@
         "types": "./dist/schema.d.ts",
         "import": "./dist/schema.js"
       }
+    },
+    "./utils": {
+      "import": {
+        "types": "./dist/utils.d.ts",
+        "import": "./dist/utils.js"
+      }
+    },
+    "./hash": {
+      "import": {
+        "types": "./dist/hash.d.ts",
+        "import": "./dist/hash.js"
+      }
+    },
+    "./protocol": {
+      "import": {
+        "types": "./dist/protocol.d.ts",
+        "import": "./dist/protocol.js"
+      }
     }
   },
   "scripts": {
@@ -46,7 +64,10 @@
   },
   "dependencies": {
     "@based/db": "*",
-    "@based/schema": "*"
+    "@based/schema": "*",
+    "@based/utils": "*",
+    "@based/protocol": "*",
+    "@based/hash": "*"
   },
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",
