@@ -61,6 +61,12 @@
         "types": "./dist/functions.d.ts",
         "import": "./dist/functions.js"
       }
+    },
+    "./errors": {
+      "import": {
+        "types": "./dist/errors.d.ts",
+        "import": "./dist/errors.js"
+      }
     }
   },
   "scripts": {
@@ -74,7 +80,8 @@
     "@based/utils": "*",
     "@based/protocol": "0.0.5",
     "@based/hash": "*",
-    "@based/functions": "*"
+    "@based/functions": "*",
+    "@based/errors": "*"
   },
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",
