@@ -55,6 +55,12 @@
         "types": "./dist/protocol.d.ts",
         "import": "./dist/protocol.js"
       }
+    },
+    "./functions": {
+      "import": {
+        "types": "./dist/functions.d.ts",
+        "import": "./dist/functions.js"
+      }
     }
   },
   "scripts": {
@@ -67,7 +73,8 @@
     "@based/schema": "*",
     "@based/utils": "*",
     "@based/protocol": "0.0.5",
-    "@based/hash": "*"
+    "@based/hash": "*",
+    "@based/functions": "*"
   },
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",
