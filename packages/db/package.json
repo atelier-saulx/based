@@ -44,7 +44,7 @@
     "@based/hash": "1.0.0",
     "@based/schema": "^5.0.2",
     "@based/utils": "^1.1.0",
-    "@based/protocol": "^0.0.5",
+    "@based/protocol": "0.0.5",
     "exit-hook": "^4.0.0",
     "picocolors": "^1.1.0"
   },
