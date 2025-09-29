@@ -147,15 +147,13 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
     }
 }
 
-static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc, struct SelvaNodeLargeReference *ref)
+static void save_ref(struct selva_io *io, struct SelvaNodeLargeReference *ref)
 {
     /*
      * If EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP then this is a SELVA_FIELD_TYPE_REFERENCES
      * field (i.e. need to preserve the sort order) and meta is save on the other end.
      */
-    const node_id_t node_id = ref->dst ? ref->dst->node_id : 0;
-
-    io->sdb_write(&node_id, sizeof(node_id), 1, io);
+    io->sdb_write(&ref->dst, sizeof(ref->dst), 1, io);
     io->sdb_write(&ref->meta, sizeof(ref->meta), 1, io);
 }
 
@@ -163,7 +161,7 @@ static void save_ref(struct selva_io *io, const struct EdgeFieldConstraint *efc,
  * Save references.
  * The caller must save nr_refs.
  */
-static void save_field_references(struct selva_io *io, const struct EdgeFieldConstraint *efc, struct SelvaNodeReferences *refs)
+static void save_field_references(struct selva_io *io, struct SelvaNodeReferences *refs)
 {
     switch (refs->size) {
     case SELVA_NODE_REFERENCE_NULL:
@@ -174,12 +172,12 @@ static void save_field_references(struct selva_io *io, const struct EdgeFieldCon
                 .dst = refs->small[i].dst,
                 .meta = 0,
             };
-            save_ref(io, efc, &ref);
+            save_ref(io, &ref);
         }
         break;
     case SELVA_NODE_REFERENCE_LARGE:
         for (size_t i = 0; i < refs->nr_refs; i++) {
-            save_ref(io, efc, &refs->large[i]);
+            save_ref(io, &refs->large[i]);
         }
         break;
     }
@@ -228,24 +226,22 @@ static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *sch
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             if (((struct SelvaNodeLargeReference *)selva_fields_nfo2p(fields, nfo))->dst) {
-                const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
                 struct SelvaNodeLargeReference *ref = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = 1;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_ref(io, efc, ref);
+                save_ref(io, ref);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
             if (((struct SelvaNodeReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {
-                const struct EdgeFieldConstraint *efc = &fs->edge_constraint;
                 struct SelvaNodeReferences *refs = selva_fields_nfo2p(fields, nfo);
                 const sdb_arr_len_t nr_refs = refs->nr_refs;
 
                 io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_field_references(io, efc, refs);
+                save_field_references(io, refs);
             } else {
                 io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
             }

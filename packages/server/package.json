@@ -19,7 +19,7 @@
     "@based/errors": "1.3.1-alpha.1",
     "@based/functions": "3.3.2-alpha.1",
     "@based/hash": "1.0.0",
-    "@based/protocol": "^0.0.4",
+    "@based/protocol": "0.0.5",
     "@based/utils": "^1.1.0",
     "@based/uws": "^6.0.0",
     "@saulx/diff": "^2.0.3",

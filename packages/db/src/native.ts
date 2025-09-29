@@ -1,9 +1,6 @@
 // @ts-ignore
-import db from '../../basedDbNative.cjs'
-
-// Can't import these from utils or it would be a cyclic import.
-const DECODER = new TextDecoder('utf-8')
-const ENCODER = new TextEncoder()
+import db from '@based/db/native'
+import { DECODER, ENCODER } from '@based/utils'
 
 const selvaIoErrlog = new Uint8Array(256)
 var compressor = db.createCompressor()

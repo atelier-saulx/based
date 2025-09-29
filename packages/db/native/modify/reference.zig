@@ -29,7 +29,8 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     var node: db.Node = undefined;
 
     const oldRefDst = db.getSingleReference(ctx.db, ctx.node.?, ctx.fieldSchema.?);
-    const dstNode = db.getNodeFromReference(oldRefDst);
+    const dstType = try db.getRefDstType(ctx.db, ctx.fieldSchema.?);
+    const dstNode = db.getNodeFromReference(dstType, oldRefDst);
 
     if (dstNode) |d| {
         if (db.getNodeId(d) == id) {

@@ -44,7 +44,7 @@
     "@based/hash": "1.0.0",
     "@based/schema": "^5.0.2",
     "@based/utils": "^1.1.0",
-    "@based/protocol": "^0.0.4",
+    "@based/protocol": "0.0.5",
     "exit-hook": "^4.0.0",
     "picocolors": "^1.1.0"
   },
@@ -58,5 +58,16 @@
     "jsondiffpatch": "^0.7.3",
     "tar": "^7.4.3",
     "typescript": "^5.6.3"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    },
+    "./native": {
+      "require": "./basedDbNative.cjs",
+      "import": "./basedDbNative.cjs"
+    },
+    "./dist/*": "./dist/*"
   }
 }

@@ -279,6 +279,6 @@ const innerSerialize = (schema: ReaderSchema, blocks: Uint8Array[] = []) => {
   return blocks
 }
 
-export const serialize = (schema: ReaderSchema) => {
+export const serializeReaderSchema = (schema: ReaderSchema) => {
   return concatUint8Arr(innerSerialize(schema))
 }

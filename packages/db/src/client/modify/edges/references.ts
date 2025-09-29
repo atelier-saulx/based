@@ -1,7 +1,7 @@
 import { PropDefEdge, REFERENCES } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { reserve } from '../resize.js'
-import { writeU32 } from '../uint.js'
+import { writePadding, writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 
 export const writeReferencesEdge = (ctx: Ctx, edge: PropDefEdge, vals: any) => {
@@ -15,7 +15,7 @@ export const writeReferencesEdge = (ctx: Ctx, edge: PropDefEdge, vals: any) => {
     throw [edge, vals]
   }
 
-  const size = vals.length * 4
+  const size = vals.length * 4 + 3 // add 3 padding
   reserve(ctx, 3 + 4 + size)
   writeEdgeHeader(ctx, edge, REFERENCES)
   writeU32(ctx, size)
@@ -36,4 +36,5 @@ export const writeReferencesEdge = (ctx: Ctx, edge: PropDefEdge, vals: any) => {
     }
     throw [edge, vals]
   }
+  writePadding(ctx, 3)
 }

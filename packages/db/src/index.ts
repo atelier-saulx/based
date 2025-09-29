@@ -6,8 +6,7 @@ import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import { BasedDbOpts } from './types.js'
-import { decompress } from '@based/protocol/db-read'
-export { compress, decompress }
+export { compress }
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'
 export { crc32 } from './client/crc32.js'

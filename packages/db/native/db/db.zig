@@ -12,7 +12,7 @@ const config = @import("config");
 pub const DbCtx = @import("./ctx.zig").DbCtx;
 
 const read = utils.read;
-
+const move = utils.move;
 pub const TypeId = u16;
 pub const Node = *selva.SelvaNode;
 pub const Aliases = *selva.SelvaAliases;
@@ -34,6 +34,14 @@ pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
         return errors.SelvaError.SELVA_EINTYPE;
     }
     return selvaTypeEntry.?;
+}
+
+pub fn getRefDstType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
+    return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type);
+}
+
+pub fn getRefMetaType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
+    return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.meta_node_type);
 }
 
 pub fn getFieldSchema(typeEntry: ?Type, field: u8) !FieldSchema {
@@ -123,20 +131,23 @@ pub fn getField(
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub inline fn getNodeFromReference(ref: ?*selva.SelvaNodeLargeReference) ?Node {
-    if (ref) |r| {
-        return r.*.dst;
+pub inline fn getNodeFromReference(dstType: Type, ref: anytype) ?Node {
+    if (comptime @TypeOf(ref) == *allowzero selva.SelvaNodeSmallReference or @TypeOf(ref) == *allowzero selva.SelvaNodeLargeReference) {
+        return selva.selva_find_node(dstType, ref.*.dst);
+    } else if (comptime @TypeOf(ref) == ?*selva.SelvaNodeSmallReference or @TypeOf(ref) == ?*selva.SelvaNodeLargeReference) {
+        if (ref) |r| {
+            return selva.selva_find_node(dstType, r.*.dst);
+        }
+    } else {
+        @compileError("Invalid type");
     }
     return null;
 }
 
 pub inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeLargeReference) []u8 {
-    if (ref != null) {
-        const dst = getNodeFromReference(ref);
-        if (dst != null) {
-            const id: *u32 = @alignCast(@ptrCast(dst));
-            return std.mem.asBytes(id)[0..4];
-        }
+    if (ref) |r| {
+        const id: *u32 = @alignCast(@ptrCast(&r.*.dst));
+        return std.mem.asBytes(id)[0..4];
     }
     return &[_]u8{};
 }
@@ -171,12 +182,23 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
 }
 
 pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
+    if (fieldSchema.*.type == selva.SELVA_FIELD_TYPE_WEAK_REFERENCES) {
+        const address = @intFromPtr(data.ptr);
+        const delta: u8 = @truncate(address % 4);
+        const offset = if (delta == 0) 0 else 4 - delta;
+        const aligned = data[offset .. data.len - 3 + offset];
+        if (offset != 0) {
+            move(aligned, data[0 .. data.len - 3]);
+        }
+        try errors.selva(selva.selva_fields_set_weak_references(node, fieldSchema, @alignCast(@ptrCast(aligned.ptr)), aligned.len / 4));
+        return;
+    }
+
     try errors.selva(switch (fieldSchema.*.type) {
         selva.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.selva_fields_set_micro_buffer2(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_STRING => selva.selva_fields_set_string(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_TEXT => selva.selva_fields_set_text(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_WEAK_REFERENCE => selva.selva_fields_set_weak_reference(node, fieldSchema, @bitCast(data[0..4].*)),
-        selva.SELVA_FIELD_TYPE_WEAK_REFERENCES => selva.selva_fields_set_weak_references(node, fieldSchema, @alignCast(@ptrCast(data.ptr)), data.len / 4),
         else => selva.SELVA_EINTYPE,
     });
 }

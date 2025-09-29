@@ -37,11 +37,3 @@ export const readString = (
   }
   return ''
 }
-
-export const readUtf8 = (
-  val: Uint8Array,
-  offset: number,
-  len: number,
-): string => {
-  return DECODER.decode(val.subarray(offset, len + offset))
-}
