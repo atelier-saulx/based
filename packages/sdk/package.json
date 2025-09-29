@@ -91,6 +91,12 @@
         "types": "./dist/react.d.ts",
         "import": "./dist/react.js"
       }
+    },
+    "./schema-diagram": {
+      "import": {
+        "types": "./dist/schema-diagram.d.ts",
+        "import": "./dist/schema-diagram.js"
+      }
     }
   },
   "scripts": {
