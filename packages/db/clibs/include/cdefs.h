@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2024 SAULX
+ * Copyright (c) 2020-2025 SAULX
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
@@ -51,6 +51,9 @@
 #define __constfn
 #endif
 
+/**
+ * The last argument to a function is expected to be nullptr.
+ */
 #define __sentinel __attribute__((sentinel))
 
 #if __has_c_attribute(noreturn)
