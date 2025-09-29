@@ -538,7 +538,7 @@ export default function based(
   return new BasedClient(opts, settings)
 }
 
-export type QueryMap = {
+export type ClientQueryMap = {
   db: { payload: any; result: any }
   [key: string]: { payload: any; result: any }
 }
