@@ -52,7 +52,7 @@ export const write = (
   }
 }
 
-export const compress = (str: string): Uint8Array => {
+export const stringCompress = (str: string): Uint8Array => {
   const len = ENCODER.encode(str).byteLength
   const tmpCompressBlock = getTmpBuffer(len * 3)
   const l = write({ array: tmpCompressBlock } as Ctx, str, 0, false)
