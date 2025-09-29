@@ -64,8 +64,8 @@ pub fn loadCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     if (com.meta_data != null) {
         const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(com.meta_data)));
         const len = com.meta_len / @sizeOf(u32);
+        defer selva.selva_free(@constCast(com.meta_data));
         ctx.ids = ctx.allocator.dupe(u32, ptr[0..len]) catch return null;
-        selva.selva_free(@constCast(com.meta_data));
     }
 
     return res;
