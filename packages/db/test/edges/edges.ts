@@ -454,7 +454,7 @@ await test('preserve fields', async (t) => {
   })
 
   const user3 = await db.create('user', {
-    bestFriend: { id: user2 },
+    bestFriend: { id: user2, $x: 0 },
     friends: [
       { id: user1, $x: 10 },
       { id: user2, $x: 20 },
