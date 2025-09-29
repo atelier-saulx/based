@@ -1,4 +1,7 @@
-import { AttachedCtx, ObserveErrorListener } from '../../query/index.js'
+import {
+  AttachedCtx,
+  ServerObserveErrorListener as ObserveErrorListener,
+} from '../../query/index.js'
 import { observe } from '../observe.js'
 import { get } from '../get.js'
 import {

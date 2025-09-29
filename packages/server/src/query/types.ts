@@ -10,7 +10,7 @@ export type ObservableError =
   | BasedErrorData<BasedErrorCode.FunctionIsWrongType>
   | BasedErrorData<BasedErrorCode.FunctionNotFound>
 
-export type ObserveErrorListener = (err: ObservableError) => void
+export type ServerObserveErrorListener = (err: ObservableError) => void
 
 export type ActiveObservable = {
   startId: number

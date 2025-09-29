@@ -2,7 +2,7 @@ import { createError } from '../error/index.js'
 import {
   hasObs,
   createObs,
-  ObserveErrorListener,
+  ServerObserveErrorListener as ObserveErrorListener,
   subscribeFunction,
   unsubscribeFunction,
 } from '../query/index.js'
