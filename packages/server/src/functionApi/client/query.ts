@@ -1,8 +1,4 @@
-import {
-  AttachedCtx,
-  ObservableUpdateFunction,
-  ObserveErrorListener,
-} from '../../query/index.js'
+import { AttachedCtx, ObserveErrorListener } from '../../query/index.js'
 import { observe } from '../observe.js'
 import { get } from '../get.js'
 import {
@@ -10,6 +6,7 @@ import {
   BasedRoute,
   Context,
   InternalSessionClient,
+  ObservableUpdateFunction,
 } from '@based/functions'
 import { attachCtx, attachCtxInternal } from '../../query/attachCtx.js'
 import { genObserveId } from '@based/protocol/client-server'

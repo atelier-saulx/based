@@ -15,7 +15,7 @@ import {
   Session,
 } from '@based/functions'
 
-export class BasedFunctionClient extends BasedfunctionClientAbstract {
+export class BasedServerFunctionClient extends BasedfunctionClientAbstract {
   declare server: BasedServer
 
   ctx: Context<InternalSessionClient>
