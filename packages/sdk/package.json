@@ -1,0 +1,95 @@
+{
+  "name": "@based/sdk",
+  "version": "1.0.0",
+  "description": "The official SDK for the Based platform, providing a unified entry point for all packages.",
+  "author": "Based",
+  "license": "MIT",
+  "homepage": "https://github.com/atelier-saulx/based#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atelier-saulx/based.git",
+    "directory": "packages/sdk"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "prettier": "@saulx/prettier-config",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "./db": {
+      "import": {
+        "types": "./dist/db.d.ts",
+        "import": "./dist/db.js"
+      }
+    },
+    "./schema": {
+      "import": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js"
+      }
+    },
+    "./utils": {
+      "import": {
+        "types": "./dist/utils.d.ts",
+        "import": "./dist/utils.js"
+      }
+    },
+    "./hash": {
+      "import": {
+        "types": "./dist/hash.d.ts",
+        "import": "./dist/hash.js"
+      }
+    },
+    "./protocol": {
+      "import": {
+        "types": "./dist/protocol.d.ts",
+        "import": "./dist/protocol.js"
+      }
+    },
+    "./functions": {
+      "import": {
+        "types": "./dist/functions.d.ts",
+        "import": "./dist/functions.js"
+      }
+    },
+    "./errors": {
+      "import": {
+        "types": "./dist/errors.d.ts",
+        "import": "./dist/errors.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@based/db": "*",
+    "@based/schema": "*",
+    "@based/utils": "*",
+    "@based/protocol": "0.0.5",
+    "@based/hash": "*",
+    "@based/functions": "*",
+    "@based/errors": "*"
+  },
+  "devDependencies": {
+    "@saulx/prettier-config": "^2.0.0",
+    "@saulx/tsconfig": "^1.1.0",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/atelier-saulx/based/issues"
+  }
+}

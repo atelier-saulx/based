@@ -8,7 +8,7 @@ import {
   readUint32,
 } from '@based/utils'
 import { BasedQueryResponse } from '@based/db'
-import { serialize } from '@based/protocol/db-read/serialize-schema'
+import { serializeReaderSchema } from '@based/protocol/db-read/serialize-schema'
 import { deSerializeSchema, resultToObject } from '@based/protocol/db-read'
 import {
   FunctionClientSubType,
@@ -237,7 +237,7 @@ export const valueToBuffer = (payload: any, deflate: boolean): ValueBuffer => {
   }
 
   if (payload instanceof BasedQueryResponse) {
-    const serializedSchema = serialize(payload.def.readSchema)
+    const serializedSchema = serializeReaderSchema(payload.def.readSchema)
     const res = payload.result.subarray(0, -4) // minus 4 for hash
     // keep 4 for serializedSchema byteLength
     const buf = new Uint8Array(4 + serializedSchema.byteLength + res.byteLength)

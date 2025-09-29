@@ -36,6 +36,14 @@ pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     return selvaTypeEntry.?;
 }
 
+pub fn getRefDstType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
+    return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type);
+}
+
+pub fn getRefMetaType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
+    return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.meta_node_type);
+}
+
 pub fn getFieldSchema(typeEntry: ?Type, field: u8) !FieldSchema {
     const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
         typeEntry.?,
@@ -123,20 +131,23 @@ pub fn getField(
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub inline fn getNodeFromReference(ref: ?*selva.SelvaNodeLargeReference) ?Node {
-    if (ref) |r| {
-        return r.*.dst;
+pub inline fn getNodeFromReference(dstType: Type, ref: anytype) ?Node {
+    if (comptime @TypeOf(ref) == *allowzero selva.SelvaNodeSmallReference or @TypeOf(ref) == *allowzero selva.SelvaNodeLargeReference) {
+        return selva.selva_find_node(dstType, ref.*.dst);
+    } else if (comptime @TypeOf(ref) == ?*selva.SelvaNodeSmallReference or @TypeOf(ref) == ?*selva.SelvaNodeLargeReference) {
+        if (ref) |r| {
+            return selva.selva_find_node(dstType, r.*.dst);
+        }
+    } else {
+        @compileError("Invalid type");
     }
     return null;
 }
 
 pub inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeLargeReference) []u8 {
-    if (ref != null) {
-        const dst = getNodeFromReference(ref);
-        if (dst != null) {
-            const id: *u32 = @alignCast(@ptrCast(dst));
-            return std.mem.asBytes(id)[0..4];
-        }
+    if (ref) |r| {
+        const id: *u32 = @alignCast(@ptrCast(&r.*.dst));
+        return std.mem.asBytes(id)[0..4];
     }
     return &[_]u8{};
 }
@@ -413,8 +424,8 @@ pub fn writeEdgeProp(
     try writeField(data, meta_node, fieldSchema);
     if ((efc.flags & selva.EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) == 0) {
         modifyCtx.markDirtyRange(ctx, ctx.typeId, ctx.id);
-    } else if (ref.dst) |dst| {
-        modifyCtx.markDirtyRange(ctx, efc.dst_node_type, getNodeId(dst));
+    } else if (ref.dst != 0) {
+        modifyCtx.markDirtyRange(ctx, efc.dst_node_type, ref.dst);
     }
 }
 

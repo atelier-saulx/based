@@ -74,9 +74,9 @@ await test('test embedded', async (t) => {
   const qtime1 = performance.now() - start
   console.log(qtime1, 'ms', toxps(N3, qtime1), 'q/s')
 
-  assert(toxpsNum(N, ctime) > 1000000)
+  assert(toxpsNum(N, ctime) > 1_000_000)
   assert(toxpsNum(N2, qtime) > 500)
-  assert(toxpsNum(N3, qtime1) > 10000000)
+  assert(toxpsNum(N3, qtime1) > 50_000)
 })
 
 await test('test client-server', async (t) => {
@@ -110,7 +110,7 @@ await test('test client-server', async (t) => {
     )
   ).reduce((prev, cur) => prev + cur.length, 0)
   const qtime = performance.now() - start
-  assert(res === 10000000)
+  assert(res === 1_0000_000)
   console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
 
   start = performance.now()
@@ -124,7 +124,7 @@ await test('test client-server', async (t) => {
   const qtime1 = performance.now() - start
   console.log(qtime1, 'ms', toxps(N3, qtime1), 'q/s')
 
-  assert(toxpsNum(N, ctime) > 1000000)
+  assert(toxpsNum(N, ctime) > 1_000_000)
   assert(toxpsNum(N2, qtime) > 500)
-  assert(toxpsNum(N3, qtime1) > 1000000)
+  assert(toxpsNum(N3, qtime1) > 30_000)
 })

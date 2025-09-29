@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { SchemaProps } from '@based/schema'
-import { serialize } from '@based/protocol/db-read/serialize-schema'
+import { serializeReaderSchema as serialize } from '@based/protocol/db-read/serialize-schema'
 import { deSerializeSchema, resultToObject } from '@based/protocol/db-read'
 import { equal } from 'assert'
 
