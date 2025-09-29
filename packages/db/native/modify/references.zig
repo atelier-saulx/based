@@ -121,7 +121,6 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const idsUnAligned = data[5 .. len + 4];
     const address = @intFromPtr(idsUnAligned.ptr);
     const offset: u8 = @truncate(address % 4);
-
     const aligned = data[5 - offset .. len - offset + 4];
 
     if (offset != 0) {

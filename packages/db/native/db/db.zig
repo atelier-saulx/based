@@ -12,7 +12,7 @@ const config = @import("config");
 pub const DbCtx = @import("./ctx.zig").DbCtx;
 
 const read = utils.read;
-
+const move = utils.move;
 pub const TypeId = u16;
 pub const Node = *selva.SelvaNode;
 pub const Aliases = *selva.SelvaAliases;
@@ -171,12 +171,23 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
 }
 
 pub fn writeField(data: []u8, node: Node, fieldSchema: FieldSchema) !void {
+    if (fieldSchema.*.type == selva.SELVA_FIELD_TYPE_WEAK_REFERENCES) {
+        const address = @intFromPtr(data.ptr);
+        const delta: u8 = @truncate(address % 4);
+        const offset = if (delta == 0) 0 else 4 - delta;
+        const aligned = data[offset .. data.len - 3 + offset];
+        if (offset != 0) {
+            move(aligned, data[0 .. data.len - 3]);
+        }
+        try errors.selva(selva.selva_fields_set_weak_references(node, fieldSchema, @alignCast(@ptrCast(aligned.ptr)), aligned.len / 4));
+        return;
+    }
+
     try errors.selva(switch (fieldSchema.*.type) {
         selva.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.selva_fields_set_micro_buffer2(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_STRING => selva.selva_fields_set_string(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_TEXT => selva.selva_fields_set_text(node, fieldSchema, data.ptr, data.len),
         selva.SELVA_FIELD_TYPE_WEAK_REFERENCE => selva.selva_fields_set_weak_reference(node, fieldSchema, @bitCast(data[0..4].*)),
-        selva.SELVA_FIELD_TYPE_WEAK_REFERENCES => selva.selva_fields_set_weak_references(node, fieldSchema, @alignCast(@ptrCast(data.ptr)), data.len / 4),
         else => selva.SELVA_EINTYPE,
     });
 }
@@ -309,11 +320,7 @@ pub fn swapReference(
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
-fn getMetaNode(
-    db: *DbCtx,
-    efc: EdgeFieldConstraint,
-    ref: *selva.SelvaNodeLargeReference
-) ?Node {
+fn getMetaNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: *selva.SelvaNodeLargeReference) ?Node {
     if (ref.*.meta == 0) {
         return null;
     }
