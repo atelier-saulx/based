@@ -4,6 +4,7 @@ import { BasedFunctionClient } from './client.js'
 import { BasedDataStream } from './stream.js'
 import { Authorize } from './auth.js'
 import type { Plugin } from 'esbuild'
+import { BasedErrorCode, BasedErrorData } from '@based/errors'
 
 export type ObservableUpdateFunction<K = any> = (
   data: K,
@@ -15,7 +16,12 @@ export type ObservableUpdateFunction<K = any> = (
   isDeflate?: boolean,
 ) => void
 
-export type ObserveErrorListener = (err: any) => void
+export type ObservableError =
+  | BasedErrorData<BasedErrorCode.FunctionError>
+  | BasedErrorData<BasedErrorCode.FunctionIsWrongType>
+  | BasedErrorData<BasedErrorCode.FunctionNotFound>
+
+export type ObserveErrorListener = (err: ObservableError) => void
 
 export type HttpHeaders = {
   [header: string]: number | string | (string | number)[]
