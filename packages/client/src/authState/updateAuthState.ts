@@ -1,4 +1,4 @@
-import { AuthState } from '../types/index.js'
+import { ClientAuthState as AuthState } from '../types/index.js'
 import { BasedClient } from '../index.js'
 import { setStorage, removeStorage } from '../persistentStorage/index.js'
 import { CACHE_AUTH } from '../persistentStorage/constants.js'

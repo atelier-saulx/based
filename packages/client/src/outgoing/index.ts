@@ -1,5 +1,5 @@
 import { BasedClient } from '../index.js'
-import { AuthState, GenericObject } from '../types/index.js'
+import { ClientAuthState as AuthState, GenericObject } from '../types/index.js'
 import { updateAuthState } from '../authState/updateAuthState.js'
 import {
   encodeAuthMessage,

@@ -1,6 +1,6 @@
 import {
   BasedOpts,
-  AuthState,
+  ClientAuthState as AuthState,
   FunctionResponseListeners,
   Settings,
   FunctionQueue,
@@ -50,7 +50,7 @@ export * from './authState/parseAuthState.js'
 
 export { cacheId }
 
-export { AuthState, BasedQuery }
+export { AuthState as ClientAuthState, BasedQuery }
 
 const isBrowser = typeof window !== 'undefined'
 let lastReloadSeqId = -1

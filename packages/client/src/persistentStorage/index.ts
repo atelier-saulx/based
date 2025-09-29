@@ -1,4 +1,4 @@
-import { AuthState, BasedClient } from '../index.js'
+import { ClientAuthState as AuthState, BasedClient } from '../index.js'
 import { join } from 'path'
 import { gzip, gunzipSync } from 'node:zlib'
 import {

@@ -1,4 +1,4 @@
-import { AuthState } from '@based/client'
+import { ClientAuthState as AuthState } from '@based/client'
 
 export type Opts = {
   noCloud?: boolean
