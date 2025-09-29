@@ -85,6 +85,12 @@
         "types": "./dist/client.d.ts",
         "import": "./dist/client.js"
       }
+    },
+    "./react": {
+      "import": {
+        "types": "./dist/react.d.ts",
+        "import": "./dist/react.js"
+      }
     }
   },
   "scripts": {
@@ -102,7 +108,8 @@
     "@based/errors": "*",
     "@based/server": "*",
     "@based/type-gen": "*",
-    "@based/client": "*"
+    "@based/client": "*",
+    "@based/react": "*"
   },
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",
