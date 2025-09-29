@@ -18,8 +18,7 @@ import { update } from './modify/update/index.js'
 import { del } from './modify/delete/index.js'
 import { expire } from './modify/expire/index.js'
 import { cancel, drain, schedule } from './modify/drain.js'
-import { upsert } from './modify/upsert/index.js'
-import { Tmp } from './modify/Tmp.js'
+import { insert, upsert } from './modify/upsert/index.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -230,6 +229,10 @@ export class DbClient extends DbShared {
 
   upsert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
     return upsert(this, type, obj, opts)
+  }
+
+  insert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
+    return insert(this, type, obj, opts)
   }
 
   delete(type: string, id: number | Promise<number>) {

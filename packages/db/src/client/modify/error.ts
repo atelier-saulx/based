@@ -14,6 +14,7 @@ import { expire } from './expire/index.js'
 import { Tmp } from './Tmp.js'
 import { RANGE_ERR } from './types.js'
 import { update } from './update/index.js'
+import { upsert } from './upsert/index.js'
 
 const MAGIC_KEY = Math.random().toString(36).substring(2)
 const MAGIC_REG = RegExp(`("${MAGIC_KEY}|${MAGIC_KEY}")`, 'g')
@@ -59,7 +60,12 @@ const parseErrorMsg = (
 export const handleError = (
   db: DbClient,
   ctx: Ctx,
-  fn: typeof create | typeof update | typeof del | typeof expire,
+  fn:
+    | typeof create
+    | typeof update
+    | typeof del
+    | typeof expire
+    | typeof upsert,
   args: IArguments,
   e: any,
 ): Promise<number> => {
