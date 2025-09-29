@@ -1,5 +1,5 @@
 import { genObserveId } from '@based/protocol/client-server'
-import { BasedClient, BasedQuery } from './index.js'
+import { BasedClient, BasedClientQuery } from './index.js'
 import { CacheValue } from './types/cache.js'
 
 export const createCacheObject = (
@@ -44,7 +44,7 @@ export const createInlineFromCurrentCache = (
 
 export const createInlineCache = async (
   client: BasedClient,
-  queries: BasedQuery[],
+  queries: BasedClientQuery[],
 ): Promise<{ scriptTag: string; results: any[] }> => {
   const m = {}
   const results = await Promise.all(
