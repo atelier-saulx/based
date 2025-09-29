@@ -2,16 +2,14 @@ import { createError } from '../error/index.js'
 import {
   hasObs,
   createObs,
+  ObserveErrorListener,
   subscribeFunction,
   unsubscribeFunction,
 } from '../query/index.js'
 import { installFn } from '../installFn.js'
 import { BasedErrorCode } from '@based/errors'
 import { BasedQuery } from './client/query.js'
-import {
-  ObservableUpdateFunction,
-  ObserveErrorListener,
-} from '@based/functions'
+import { ObservableUpdateFunction } from '@based/functions'
 
 export const observe = (
   query: BasedQuery,

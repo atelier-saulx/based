@@ -3,8 +3,14 @@ import {
   BasedQueryFunctionConfig,
   BasedRoute,
   ObservableUpdateFunction,
-  ObservableError,
 } from '@based/functions'
+
+export type ObservableError =
+  | BasedErrorData<BasedErrorCode.FunctionError>
+  | BasedErrorData<BasedErrorCode.FunctionIsWrongType>
+  | BasedErrorData<BasedErrorCode.FunctionNotFound>
+
+export type ObserveErrorListener = (err: ObservableError) => void
 
 export type ActiveObservable = {
   startId: number
