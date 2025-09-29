@@ -57,16 +57,11 @@ pub fn getRefsFields(
     const resultIndex: usize = ctx.results.items.len - 1;
 
     var edgeConstraint: ?db.EdgeFieldConstraint = null;
-    var refs: ?types.Refs(isEdge) = undefined;
+    var refs: ?types.Refs = undefined;
 
     if (isEdge) {
-        if (db.getEdgeReferences(ctx.db, ref.?.edgeConstraint.?, ref.?.largeReference.?, refField)) |r| {
-            if (ref.?.edgeConstraint == null) {
-                std.log.err("Trying to get an edge field from a weakRef (3) \n", .{});
-                // Is a edge ref cant filter on an edge field!
-                return 11;
-            }
-            const edgeFs = db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstraint.?, refField) catch {
+        if (db.getEdgeReferences(ctx.db, ref.?.edgeConstraint, ref.?.largeReference.?, refField)) |r| {
+            const edgeFs = db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstraint, refField) catch {
                 // 10 + 1 for edge marker
                 return 11;
             };
@@ -94,14 +89,14 @@ pub fn getRefsFields(
 
     if (sortArr != null) {
         if (hasFilter) {
-            result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstraint, true, filterArr.?, offset, limit);
+            result = sortedReferences(refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstraint, true, filterArr.?, offset, limit);
         } else {
-            result = sortedReferences(isEdge, refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstraint, false, null, offset, limit);
+            result = sortedReferences(refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstraint, false, null, offset, limit);
         }
     } else if (hasFilter) {
-        result = defaultReferences(isEdge, refs.?, ctx, includeNested, typeEntry.?, edgeConstraint, true, filterArr.?, offset, limit);
+        result = defaultReferences(refs.?, ctx, includeNested, typeEntry.?, edgeConstraint, true, filterArr.?, offset, limit);
     } else {
-        result = defaultReferences(isEdge, refs.?, ctx, includeNested, typeEntry.?, edgeConstraint, false, null, offset, limit);
+        result = defaultReferences(refs.?, ctx, includeNested, typeEntry.?, edgeConstraint, false, null, offset, limit);
     }
 
     const r: *results.Result = &ctx.results.items[resultIndex];

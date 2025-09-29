@@ -26,8 +26,8 @@ pub fn writeEdges(
     data: []u8,
 ) !void {
     var i: usize = 0;
-    const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema.?);
-    const edgeNode = selva.selva_fields_ensure_ref_meta(ctx.db.selva, ctx.node.?, edgeConstraint, ref, 0, db.markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
+    const edgeConstraint = db.getEdgeFieldConstraint(ctx.fieldSchema.?);
+    const edgeNode = try db.ensureRefEdgeNode(ctx, ctx.node.?, edgeConstraint, ref);
     const edgeId = ref.*.meta;
     const edgeTypeId = edgeConstraint.*.meta_node_type;
     if (edgeId > ctx.db.ids[edgeTypeId - 1]) {
@@ -76,8 +76,18 @@ pub fn writeEdges(
         } else if (t == p.REFERENCE) {
             len = 4;
             offset = 0;
+            const dstId = read(u32, data, i + offset);
+            if (db.getNode(dstId, try db.getRefDstType(ctx.db, edgeFieldSchema))) |dstNode| {
+                _ = try db.writeReference(ctx, dstNode, edgeNode, edgeFieldSchema);
+            } else {
+                return errors.SelvaError.SELVA_ENOENT;
+            }
+        } else if (t == p.REFERENCES) {
+            len = read(u32, data, i);
+            offset = 4;
             const edgeData = data[i + offset .. i + offset + len];
-            try db.writeField(edgeData, edgeNode, edgeFieldSchema);
+
+            try  db.putReferences(ctx, utils.realign(u32, edgeData), edgeNode, edgeFieldSchema);
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;

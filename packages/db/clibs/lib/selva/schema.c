@@ -149,45 +149,6 @@ static int type2fs_references(struct schemabuf_parser_ctx *ctx, struct SelvaFiel
     return type2fs_refs(ctx, schema, field, SELVA_FIELD_TYPE_REFERENCES);
 }
 
-static int type2fs_weak_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)
-{
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-    struct {
-        enum SelvaFieldType type;
-        uint8_t spare;
-        node_type_t dst_node_type;
-        uint8_t pad[3]; /* Reserved for future use. */
-    } __packed constraints;
-
-    static_assert(sizeof(constraints) == 7);
-
-    if (ctx->len < sizeof(constraints)) {
-        return SELVA_EINVAL;
-    }
-
-    memcpy(&constraints, ctx->buf, sizeof(constraints));
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = type,
-        .edge_constraint = {
-            .dst_node_type = constraints.dst_node_type,
-        },
-    };
-
-    return sizeof(constraints);
-}
-
-static int type2fs_weak_reference(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
-{
-    return type2fs_weak_refs(ctx, schema, field, SELVA_FIELD_TYPE_WEAK_REFERENCE);
-}
-
-static int type2fs_weak_references(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
-{
-    return type2fs_weak_refs(ctx, schema, field, SELVA_FIELD_TYPE_WEAK_REFERENCES);
-}
-
 static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -270,14 +231,6 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_REFERENCES] = {
         .type = SELVA_FIELD_TYPE_REFERENCES,
         .type2fs = type2fs_references,
-    },
-    [SELVA_FIELD_TYPE_WEAK_REFERENCE] = {
-        .type = SELVA_FIELD_TYPE_WEAK_REFERENCE,
-        .type2fs = type2fs_weak_reference,
-    },
-    [SELVA_FIELD_TYPE_WEAK_REFERENCES] = {
-        .type = SELVA_FIELD_TYPE_WEAK_REFERENCES,
-        .type2fs = type2fs_weak_references,
     },
     [SELVA_FIELD_TYPE_ALIAS] = {
         .type = SELVA_FIELD_TYPE_ALIAS,
