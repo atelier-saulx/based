@@ -67,9 +67,9 @@ function parseArgs() {
   }
 
   let packageNames = args.packages ? args.packages.split(',') : []
-  packageNames.map((pkg) => {
+  packageNames.map((pkg, i) => {
     if (!pkg.includes('@based/')) {
-      pkg = '@based/' + pkg
+      packageNames[i] = '@based/' + pkg
     }
   })
 
