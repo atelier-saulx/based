@@ -23,7 +23,6 @@ type ChangeType = 'major' | 'minor' | 'patch'
 
 const LOG_PREFIX = '[Version Bumper]'
 const WORKSPACE_ROOT = process.cwd() + '/../'
-console.log('==>', WORKSPACE_ROOT)
 const TEMP_DIR = path.join(WORKSPACE_ROOT, '.tmp-version-bumper')
 const SDK_PACKAGE_NAME = 'sdk'
 
@@ -53,29 +52,31 @@ function parseArgs() {
     {} as Record<string, any>,
   )
 
-  if (
-    !args.changeType ||
-    !['major', 'minor', 'patch'].includes(args.changeType)
-  ) {
+  if (!args.change || !['major', 'minor', 'patch'].includes(args.change)) {
     exitWithError(
-      "Mandatory argument '--changeType' must be one of: major, minor, patch.",
+      "Mandatory argument '--change' must be one of: major, minor, patch.",
     )
   }
-  if (args.all && args.packageNames) {
-    exitWithError(
-      "Arguments '--all' and '--packageNames' are mutually exclusive.",
-    )
+  if (args.all && args.packages) {
+    exitWithError("Arguments '--all' and '--packages' are mutually exclusive.")
   }
-  if (!args.all && !args.packageNames) {
+  if (!args.all && !args.packages) {
     exitWithError(
-      "You must provide either '--all' or '--packageNames=<pkg1>,<pkg2>'.",
+      "You must provide either '--all' or '--packages=<pkg1>,<pkg2>'.",
     )
   }
 
+  let packageNames = args.packages ? args.packages.split(',') : []
+  packageNames.map((pkg) => {
+    if (!pkg.includes('@based/')) {
+      pkg = '@based/' + pkg
+    }
+  })
+
   return {
-    releaseType: (args.releaseType as ReleaseType) || 'release',
-    changeType: args.changeType as ChangeType,
-    packageNames: args.packageNames ? args.packageNames.split(',') : [],
+    releaseType: (args.tag as ReleaseType) || 'release',
+    changeType: args.change as ChangeType,
+    packageNames: packageNames,
     all: !!args.all,
     force: args.force || args['no-diff'] || false,
   }
