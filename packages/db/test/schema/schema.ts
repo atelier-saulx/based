@@ -79,10 +79,9 @@ await test('dont accept modify with mismatch schema', async (t) => {
   t.after(() => db.destroy())
 
   db.client.hooks.flushModify = async (buf) => {
+    buf = new Uint8Array(buf)
     await setTimeout(100)
-    return {
-      offsets: db.server.modify(buf),
-    }
+    return db.server.modify(buf)
   }
 
   await db.setSchema({
@@ -92,13 +91,11 @@ await test('dont accept modify with mismatch schema', async (t) => {
       },
     },
   })
-
   await db.create('flurp', {
     name: 'xxx',
   })
 
   const q1 = db.query('flurp')
-
   const setSchemaPromise = db.setSchema({
     types: {
       flurp: {
@@ -107,14 +104,22 @@ await test('dont accept modify with mismatch schema', async (t) => {
     },
   })
 
-  await db.create('flurp', {
+  db.create('flurp', {
     name: 'yyy',
   })
-
   await setSchemaPromise
+
+  throws(() => {
+    return db.create('flurp', {
+      name: 'zzz',
+    })
+  })
   const res = await db.query('flurp').get().toObject()
 
-  deepEqual(res, [{ id: 1, title: '' }])
+  deepEqual(res, [
+    { id: 1, title: '' },
+    { id: 2, title: '' },
+  ])
 })
 
 await test('set schema before start', async (t) => {

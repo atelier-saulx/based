@@ -1,4 +1,10 @@
-import { MigrateFns, parse, Schema, StrictSchema, SchemaChecksum } from '@based/schema'
+import {
+  MigrateFns,
+  parse,
+  Schema,
+  StrictSchema,
+  SchemaChecksum,
+} from '@based/schema'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { debugMode } from '../utils.js'
 import { SubStore } from './query/subscription/index.js'
@@ -11,8 +17,8 @@ import { Ctx } from './modify/Ctx.js'
 import { update } from './modify/update/index.js'
 import { del } from './modify/delete/index.js'
 import { expire } from './modify/expire/index.js'
-import { cancel, consume, drain, schedule } from './modify/drain.js'
-import { upsert } from './modify/upsert/index.js'
+import { cancel, drain, schedule } from './modify/drain.js'
+import { insert, upsert } from './modify/upsert/index.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -50,7 +56,7 @@ export class DbClient extends DbShared {
   }
 
   subs = new Map<BasedDbQuery, SubStore>()
-
+  stopped: boolean
   hooks: DbClientHooks
 
   // modify
@@ -78,6 +84,9 @@ export class DbClient extends DbShared {
       strictSchema as StrictSchema,
       transformFns,
     )
+    if (this.stopped) {
+      return this.schema.hash
+    }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
       return this.schema.hash
@@ -222,6 +231,10 @@ export class DbClient extends DbShared {
     return upsert(this, type, obj, opts)
   }
 
+  insert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
+    return insert(this, type, obj, opts)
+  }
+
   delete(type: string, id: number | Promise<number>) {
     if (
       typeof id === 'object' &&
@@ -234,6 +247,7 @@ export class DbClient extends DbShared {
         // @ts-ignore
         id = id.id
       } else {
+        // @ts-ignore
         return id.then((id) => this.delete(type, id))
       }
     }
@@ -251,6 +265,7 @@ export class DbClient extends DbShared {
   }
 
   stop() {
+    this.stopped = true
     for (const [, { onClose }] of this.subs) {
       onClose()
     }

@@ -1,7 +1,7 @@
-import { fastPrng } from '@based/utils'
+import { fastPrng, wait } from '@based/utils'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { equal } from 'assert'
+import { equal } from './shared/assert.js'
 
 await test('mem', async (t) => {
   const db = new BasedDb({
@@ -54,7 +54,6 @@ await test('mem', async (t) => {
     }
 
     await db.drain()
-
     await db.create('data', {
       age: 667,
       name: 'BASIC2 ' + j,

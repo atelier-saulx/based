@@ -157,7 +157,6 @@ export type SchemaTypeDef = {
   cnt: number
   checksum: number
   type: string
-  lastId: number
   blockCapacity: number
   mainLen: number
   insertOnly: boolean // delete not allowed

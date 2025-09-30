@@ -20,7 +20,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try db.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
-    const idOffset = Modify.getIdOffset(ctx, refTypeId);
     var i: usize = 9;
 
     db.preallocReferences(ctx, refsLen);
@@ -34,7 +33,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         var id = read(u32, data, i + 1);
 
         if (isTmpId) {
-            id = id + idOffset;
+            id = Modify.resolveTmpId(ctx, id);
         }
 
         if (ctx.id == id and ctx.typeId == refTypeId) {
