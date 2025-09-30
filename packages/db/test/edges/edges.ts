@@ -482,7 +482,7 @@ await test('preserve fields', async (t) => {
   })
   deepEqual(await db.query('user', user3).include('**').get(), {
     id: user3,
-    bestFriend: { id: user2 },
+    bestFriend: { id: user2, $x: 0 },
     friends: [
       { id: user2, $x: 20 },
       { id: user1, $x: 10 },
