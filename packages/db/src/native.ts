@@ -106,11 +106,6 @@ const native = {
     return new Uint32Array(db.getSchemaIds(dbCtx))
   },
 
-  // TODO: not in use, remove
-  getTypeInfo: (typeId: number, dbCtx: any) => {
-    return db.getTypeInfo(typeId, dbCtx)
-  },
-
   getNodeRangeHash: (
     typeId: number,
     start: number,

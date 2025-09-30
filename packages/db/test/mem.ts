@@ -37,7 +37,6 @@ await test('mem', async (t) => {
       name: 'BASIC ' + j,
     })
 
-
     const ids = []
     let cnt = 0
     for (let i = 0; i < amount; i++) {
@@ -72,14 +71,11 @@ await test('mem', async (t) => {
       true,
     )
 
-
     for (let i = 0; i < amount; i++) {
       db.delete('data', ids[i])
     }
 
     await db.drain()
-    // await wait(100)
-
 
     equal((await db.query('data').range(0, 10e6).get()).length, (j + 1) * 2)
   }

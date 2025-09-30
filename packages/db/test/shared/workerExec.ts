@@ -62,14 +62,9 @@ const hooks: DbClientHooks = {
   },
   flushModify(buf) {
     return request('modify', new Uint8Array(buf))
-    // let offsets = await request('modify', new Uint8Array(buf))
-    // offsets = offsets && { ...offsets }
-    // return { offsets }
   },
   getQueryBuf(buf) {
     return request('getQueryBuf', new Uint8Array(buf))
-    // const res = await request('getQueryBuf', new Uint8Array(buf))
-    // return res
   },
 }
 const client = new DbClient({

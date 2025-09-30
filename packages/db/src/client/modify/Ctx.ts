@@ -11,7 +11,6 @@ export class Ctx {
     this.size = array.buffer.byteLength - 4
     writeUint64(array, schemaChecksum, 0)
   }
-  // id: number
   start: number
   index: number = 8
   schema: SchemaTypeDef
@@ -23,13 +22,11 @@ export class Ctx {
   main: Map<PropDef, any> = new Map()
   draining: Promise<void>
   scheduled: Promise<void>
-  // created: Record<number, number> = {} // <typeId, count
   locale: LangCode
   sort: number = 0
   sortText: number = 0
   defaults: number = 0
   cursor: {
-    // id?: number
     type?: number
     prop?: number
     main?: number

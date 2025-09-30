@@ -16,7 +16,6 @@ import {
   FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
   writeMainCursor,
-  // writeNodeCursor,
   writeTypeCursor,
 } from '../cursor.js'
 import { getByPath, writeUint32 } from '@based/utils'
@@ -79,7 +78,6 @@ export const writeUpdate = (
   writeTypeCursor(ctx)
   writeU8(ctx, SWITCH_ID_UPDATE)
   writeU32(ctx, id)
-  // writeNodeCursor(ctx)
   writeObject(ctx, ctx.schema.tree, payload)
   writeUpdateTs(ctx, payload)
   writeMergeMain(ctx)
@@ -97,7 +95,6 @@ export function update(
   ctx.start = ctx.index
   try {
     validateId(id)
-    // ctx.id = id
     writeUpdate(ctx, schema, id, payload, opts)
     const tmp = new Tmp(ctx)
     schedule(db, ctx)

@@ -108,8 +108,6 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "loadCommon", dump.loadCommon) catch return null;
     registerFunction(env, exports, "loadBlock", dump.loadBlock) catch return null;
     registerFunction(env, exports, "delBlock", dump.delBlock) catch return null;
-
-    registerFunction(env, exports, "getTypeInfo", info.ofType) catch return null;
     registerFunction(env, exports, "getNodeRangeHash", info.nodeRangeHash) catch return null;
     registerFunction(env, exports, "setSchemaType", schema.setSchemaType) catch return null;
     registerFunction(env, exports, "setSchemaIds", schema.setSchemaIds) catch return null;

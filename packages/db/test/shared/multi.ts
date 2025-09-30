@@ -29,7 +29,6 @@ export const start = async (t, clientsN = 2) => {
       buf = new Uint8Array(buf)
       await setTimeout(20)
       const res = await server.modify(buf)
-      // offsets = offsets && { ...offsets }
       await setTimeout(~~(Math.random() * 100))
       return res
     },

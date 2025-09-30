@@ -116,7 +116,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             },
             types.ModOp.SWITCH_ID_UPDATE => {
                 const id = read(u32, operation, 0);
-                // std.debug.print("update id {d}\n", .{id});
                 if (id != 0) {
                     if (ctx.id != 0) {
                         writeInt(u32, batch, resCount.* * 5, ctx.id);

@@ -260,8 +260,6 @@ await test('update', async (t) => {
   const res = await Promise.all(promises)
   const total = res.reduce((n, { execTime }) => n + execTime, 0)
 
-  console.log({ total, len: res.length }, total / res.length)
-
   equal(
     total / res.length < 1e3,
     true,

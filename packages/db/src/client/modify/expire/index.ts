@@ -5,7 +5,6 @@ import { reserve } from '../resize.js'
 import {
   NODE_CURSOR_SIZE,
   TYPE_CURSOR_SIZE,
-  // writeNodeCursor,
   writeTypeCursor,
 } from '../cursor.js'
 import { EXPIRE, SWITCH_ID_UPDATE } from '../types.js'
@@ -22,14 +21,11 @@ export function expire(
   const ctx = db.modifyCtx
   const schema = getValidSchema(db, type)
   try {
-    // ctx.id = id
     ctx.start = ctx.index
     ctx.schema = schema
-    // ctx.operation = EXPIRE
     validateId(id)
     reserve(ctx, TYPE_CURSOR_SIZE + NODE_CURSOR_SIZE + 5)
     writeTypeCursor(ctx)
-    // writeNodeCursor(ctx)
     writeU8(ctx, SWITCH_ID_UPDATE)
     writeU32(ctx, id)
     writeU8(ctx, EXPIRE)

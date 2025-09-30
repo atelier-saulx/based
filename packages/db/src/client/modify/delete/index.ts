@@ -3,7 +3,6 @@ import { getValidSchema, validateId } from '../validate.js'
 import {
   FULL_CURSOR_SIZE,
   writeMainCursor,
-  // writeNodeCursor,
   writePropCursor,
   writeTypeCursor,
 } from '../cursor.js'
