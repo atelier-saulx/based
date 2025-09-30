@@ -94,9 +94,7 @@ async function findWorkspacePackages(): Promise<Map<string, WorkspacePackage>> {
       const json: PackageJson = JSON.parse(
         fs.readFileSync(packageJsonPath, 'utf-8'),
       )
-      if (!json.private) {
-        packageMap.set(json.name, { path: packagePath, json })
-      }
+      packageMap.set(json.name, { path: packagePath, json })
     }
   }
   log(`Found ${packageMap.size} packages.`)
