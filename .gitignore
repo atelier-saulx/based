@@ -13,7 +13,7 @@ dump.rdb
 .cluster.json
 
 # Logs
-logs
+/logs
 !helpers/logs
 *.log
 npm-debug.log*
