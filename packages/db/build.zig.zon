@@ -3,10 +3,5 @@
     .paths = .{ "src", "build.zig", "build.zig.zon" },
     .name = .based_db_zig,
     .version = "0.0.1",
-    .dependencies = .{
-        .roaring = .{
-            .url = "https://github.com/jwhear/roaring-zig/archive/refs/tags/zig_0.14.1.tar.gz",
-            .hash = "N-V-__8AAEr4EgBmgfJUGeT2xf1BB82IBn1EOMoZELP6M7bn",
-        },
-    },
+    .dependencies = .{},
 }
