@@ -15,9 +15,11 @@
   "sideEffects": false,
   "prettier": "@saulx/prettier-config",
   "files": [
+    "bin",
     "dist",
     "README.md"
   ],
+  "bin": "./bin.js",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -100,6 +102,7 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
+    "@based/cli": "8.2.4-alpha.1",
     "@based/db": "*",
     "@based/schema": "*",
     "@based/utils": "*",
