@@ -25,7 +25,7 @@
     ]
   },
   "scripts": {
-    "test": "npx ava",
+    "_test": "npx ava",
     "watch": "npx tsc --watch",
     "build": "rm -rf ./dist && tsc",
     "perf": "node --prof ./node_modules/.bin/ts-node test/perf/",
