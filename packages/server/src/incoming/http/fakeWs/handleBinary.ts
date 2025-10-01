@@ -6,13 +6,10 @@ import {
   encodeAuthResponse,
   valueToBuffer,
 } from '../../../protocol.js'
-// import { handleQuery } from './query.js'
-// import { handleFunction } from './function.js'
+import { handleFunction } from './function.js'
 import { readUint32 } from '@based/utils'
-import {
-  FunctionServerType,
-  FunctionServerSubType,
-} from '@based/protocol/client-server'
+import { FunctionServerType } from '@based/protocol/client-server'
+import { handleQuery } from './query.js'
 
 const reader = (
   server: BasedServer,
@@ -36,12 +33,12 @@ const reader = (
     type === FunctionServerType.subscribe ||
     type === FunctionServerType.get
   ) {
-    // const p = handleQuery(arr, start, len, isDeflate, ctx, server)
-    // if (p) {
-    //   return [next, p]
-    // } else {
-    return [undefined]
-    // }
+    const p = handleQuery(arr, start, len, isDeflate, ctx, server)
+    if (p) {
+      return [next, p]
+    } else {
+      return [undefined]
+    }
   }
 
   if (type === FunctionServerType.unsubscribe) {
@@ -111,6 +108,7 @@ export const handleBinary = async (
   if (!ctx.session) {
     return
   }
+
   const uint8View = data
   const len = uint8View.byteLength
   let next = 0
@@ -132,7 +130,6 @@ export const handleBinary = async (
   }
 
   const prevToken = ctx.session.authState.token
-
   const r = await Promise.all(q)
 
   if (!ctx.session) {
