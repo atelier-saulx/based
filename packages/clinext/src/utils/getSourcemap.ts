@@ -5,7 +5,7 @@ import { pipeline } from 'node:stream/promises'
 import { BasedClient, encodeAuthState } from '@based/client'
 import { hash } from '@based/hash'
 import { SOURCEMAPS_DIR } from '../constants.js'
-import { getHostAndPortFromUrl } from '../utils/index.js'
+import { getHostAndPortFromUrl } from './index.js'
 
 const exists = (path: string) =>
   stat(path)
