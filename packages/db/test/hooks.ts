@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal, throws } from './shared/assert.js'
+import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
 
 await test('hooks - undefined values', async (t) => {
   const db = new BasedDb({
@@ -624,4 +624,57 @@ await test('include hooks', async (t) => {
   equal(await db.query('user').include('name', 'age').get().toObject(), [
     { id: 1, age: 21, name: 'youzi' },
   ])
+})
+
+await test('upsert calls create and/or update hooks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        hooks: {
+          create(payload) {
+            payload.createdString = new Date().toJSON()
+          },
+          update(payload) {
+            payload.updatedString = new Date().toJSON()
+          },
+        },
+        props: {
+          name: 'alias',
+          age: 'uint8',
+          createdString: 'string',
+          updatedString: 'string',
+        },
+      },
+    },
+  })
+
+  await db.upsert('user', {
+    name: 'youzi',
+    age: 21,
+  })
+
+  const results1 = await db.query('user').get().toObject()
+  equal(results1.length, 1)
+  equal(results1[0].createdString.length > 1, true)
+  equal(results1[0].updatedString.length > 1, true)
+
+  await db.upsert('user', {
+    name: 'youzi',
+    age: 45,
+  })
+
+  const results2 = await db.query('user').get().toObject()
+  equal(results2.length, 1)
+  equal(results2[0].createdString.length > 1, true)
+  equal(results2[0].updatedString.length > 1, true)
+  equal(results1[0].createdString, results2[0].createdString)
+  notEqual(results1[0].updatedString, results2[0].updatedString)
 })
