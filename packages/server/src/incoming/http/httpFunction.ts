@@ -45,7 +45,6 @@ export const httpFunction: FunctionHandler<
           await spec.fn(server.client, payload, send, ctx)
           return
         }
-
         sendHttpResponse(ctx, result)
       })
       .catch((err) => {
@@ -68,7 +67,6 @@ export const httpFunction: FunctionHandler<
         await spec.fn(server.client, payload, send, ctx)
         return
       }
-
       sendHttpResponse(ctx, result)
     })
     .catch((err) => {

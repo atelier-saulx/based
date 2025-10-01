@@ -57,9 +57,12 @@ test('ctx on close', async (t: T) => {
   t.is(bla, 'bla')
 
   await client.destroy()
-
-  await wait(1e3)
+  await wait(100)
   t.is(cnt, 1)
+
+  t.is(await (await fetch(t.context.http + '/derp')).text(), 'bla')
+
+  t.is(cnt, 2)
 
   await server.destroy()
 })

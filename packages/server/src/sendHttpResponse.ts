@@ -21,6 +21,9 @@ export const end = (
   }
   ctx.session.res = null
   ctx.session.req = null
+  if (ctx.session.onClose) {
+    ctx.session.onClose()
+  }
   ctx.session = null
 }
 
@@ -82,12 +85,7 @@ export const sendHttpResponse = (
     })
     result.on('data', (d) => {
       ctx.session.res.cork(() => {
-        if (ctx.session) {
-          if (ctx.session.onClose) {
-            ctx.session.onClose()
-          }
-          ctx.session.res.write(d)
-        }
+        ctx.session?.res.write(d)
       })
     })
     result.on('end', () => {
