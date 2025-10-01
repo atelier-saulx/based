@@ -3,16 +3,16 @@ import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import getPort from 'get-port'
 import { encodeAuthState } from '@based/client'
+import { inflateSync } from 'fflate'
+import { concatUint8Arr, readUint32 } from '@based/utils'
+import { FunctionClientType, genObserveId } from '@based/protocol/client-server'
+
+import { parseIncomingData } from '../src/incoming/parseIncomingData.js'
+import { decodeHeader } from '../src/incoming/protocol.js'
 import {
   encodeFunctionMessage,
   encodeObserveMessage,
 } from '../src/outgoing/protocol.js'
-
-import { concatUint8Arr, readUint32 } from '@based/utils'
-import { parseIncomingData } from '../src/incoming/parseIncomingData.js'
-import { inflateSync } from 'fflate'
-import { FunctionClientType, genObserveId } from '@based/protocol/client-server'
-import { decodeHeader } from '../src/incoming/protocol.js'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
