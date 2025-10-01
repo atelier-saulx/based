@@ -517,3 +517,59 @@ await test('groupBy hooks', async (t) => {
     youzi: { age: { sum: 21 } },
   })
 })
+
+await test('filter hooks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        hooks: {
+          filter(query, field, operator, value) {
+            if (value === 'youzi') {
+              query.filter('age', '<', 100)
+            }
+          },
+        },
+        props: {
+          name: {
+            type: 'string',
+            hooks: {
+              filter(query, field, operator, value) {
+                if (value === 'youzi') {
+                  query.filter('age', '>', 10)
+                }
+              },
+            },
+          },
+          age: 'uint8',
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 21,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 10,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 100,
+  })
+
+  equal(await db.query('user').filter('name', '=', 'youzi').get().toObject(), [
+    { id: 1, age: 21, name: 'youzi' },
+  ])
+})

@@ -19,7 +19,16 @@ export const convertFilter = (
   opts?: FilterOpts | undefined,
 ): FilterAst => {
   const def = query.def
+
+  const propFilterHook = def.schema.props[field]?.hooks?.filter
   const filterHook = def.schema.hooks?.filter
+  if (propFilterHook) {
+    if (typeof operator === 'boolean') {
+      propFilterHook(query, field, '=', operator)
+    } else {
+      propFilterHook(query, field, operator, value)
+    }
+  }
   if (filterHook) {
     def.schema.hooks.filter = null
     if (typeof operator === 'boolean') {

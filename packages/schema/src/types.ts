@@ -467,6 +467,12 @@ export type SchemaPropHooks = {
   aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
   search?: (query: BasedDbQuery, fields: Set<string>) => void
   groupBy?: (query: BasedDbQuery, field: string) => void
+  filter?: (
+    query: BasedDbQuery,
+    field: string,
+    operator: Operator,
+    value: any,
+  ) => void
   // include?: (
   //   query: BasedDbQuery,
   //   fields: Map<
@@ -476,12 +482,6 @@ export type SchemaPropHooks = {
   //       opts?: any // temp this type
   //     }
   //   >,
-  // ) => void
-  // filter?: (
-  //   query: BasedDbQuery,
-  //   field: string,
-  //   operator: Operator,
-  //   value: any,
   // ) => void
 }
 
