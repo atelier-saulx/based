@@ -10,6 +10,7 @@
     "url": "git+https://github.com/atelier-saulx/based.git",
     "directory": "packages/sdk"
   },
+  "bin": "@based/cli",
   "type": "module",
   "sideEffects": false,
   "prettier": "@saulx/prettier-config",
