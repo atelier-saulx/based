@@ -378,11 +378,11 @@ await test('aggregate hooks', async (t) => {
   await db.setSchema({
     types: {
       user: {
-        // hooks: {
-        //   aggregate(query) {
-        //     query.filter('age', '>', 10)
-        //   },
-        // },
+        hooks: {
+          aggregate(query) {
+            query.filter('age', '<', 100)
+          },
+        },
         props: {
           name: 'string',
           age: {
@@ -406,6 +406,11 @@ await test('aggregate hooks', async (t) => {
   await db.create('user', {
     name: 'youzi',
     age: 10,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 100,
   })
 
   equal((await db.query('user').sum('age').get().toObject()).age.sum, 21)
