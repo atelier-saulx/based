@@ -1,4 +1,3 @@
-import { writeUint16, writeUint32 } from '@based/utils'
 import { DbClient } from '../../index.js'
 import { Ctx } from './Ctx.js'
 import { rejectTmp, resolveTmp } from './Tmp.js'
@@ -8,7 +7,6 @@ export const reset = (ctx: Ctx) => {
   ctx.max = ctx.array.buffer.maxByteLength - 4
   ctx.size = ctx.array.buffer.byteLength - 4
   ctx.cursor = {}
-  ctx.created = {}
   ctx.batch = {}
 }
 
@@ -23,21 +21,8 @@ export const consume = (ctx: Ctx): Uint8Array => {
   if (ctx.index > ctx.array.byteLength) {
     throw new Error('Invalid size - modify buffer length mismatch')
   }
-
-  const typeIds = Object.keys(ctx.created)
-  const typeSize = typeIds.length * 6 + 4
-  const payload = ctx.array.subarray(0, ctx.index + typeSize)
-  let i = payload.byteLength - 4
-  writeUint32(payload, ctx.index, i)
-  for (const typeId of typeIds) {
-    const count = ctx.created[typeId]
-    i -= 6
-    writeUint16(payload, Number(typeId), i)
-    writeUint32(payload, count, i + 2)
-  }
-
+  const payload = ctx.array.subarray(0, ctx.index)
   reset(ctx)
-
   return payload
 }
 
@@ -45,21 +30,31 @@ export const drain = (db: DbClient, ctx: Ctx) => {
   if (ctx.index > 8) {
     const { batch } = ctx
     const payload = consume(ctx)
+    let start: number
+
     ctx.draining = db.hooks
       .flushModify(payload)
-      .then(({ offsets, dbWriteTime }) => {
-        db.writeTime += dbWriteTime ?? 0
-        batch.ready = true
-        batch.offsets = offsets
-        batch.promises?.forEach(resolveTmp)
-        batch.promises = null
+      .then((res) => {
+        if (res === null) {
+          throw Error('Schema mismatch')
+        }
+        batch.res = res
       })
       .catch((e) => {
-        console.error(e)
-        batch.ready = true
         batch.error = e
-        batch.promises?.forEach(rejectTmp)
-        batch.promises = null
+      })
+      .finally(() => {
+        batch.ready = true
+        if (batch.promises) {
+          start = ctx.index
+          batch.promises.forEach(batch.error ? rejectTmp : resolveTmp)
+          batch.promises = null
+        }
+      })
+      .then(() => {
+        if (start && start !== ctx.index) {
+          return drain(db, ctx)
+        }
       })
   }
   return ctx.draining

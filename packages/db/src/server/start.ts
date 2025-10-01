@@ -111,8 +111,6 @@ export async function start(db: DbServer, opts: StartOpts) {
 
   for (const { typeId } of db.verifTree.types()) {
     const def = db.schemaTypesParsedById[typeId]
-    const [total, lastId] = native.getTypeInfo(def.id, db.dbCtxExternal)
-    def.lastId = writelog?.types[def.id]?.lastId || lastId
     def.blockCapacity =
       writelog?.types[def.id]?.blockCapacity ||
       def.blockCapacity ||

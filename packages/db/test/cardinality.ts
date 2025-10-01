@@ -221,7 +221,6 @@ await test('hll', async (t) => {
   const mrSnurp = db.create('user', {
     name: 900,
   })
-
   const edge = await db.create('article', {
     derp: 813,
     contributors: [{ id: mrSnurp, $tokens: ['lala', 'lele', 'lili'] }],
@@ -246,7 +245,6 @@ await test('hll', async (t) => {
     ],
     '3 distinct filter',
   )
-
   await db.update('article', edge, {
     contributors: [
       {

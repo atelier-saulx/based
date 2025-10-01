@@ -66,6 +66,8 @@ const restPing = (
       const x = realUrl.replace(/^wss?:\/\//, '').split('/')
       const url = `http${realUrl.startsWith('wss') ? 's' : ''}://${x[0]}/based:rpstatus`
 
+      // fix this
+
       fetch(url).then(async (r) => {
         if (connection.fallBackInProgress) {
           connection.fallBackInProgress = false
@@ -146,13 +148,13 @@ const connect = (
       if (reconnect) {
         client.authState.t = 1
       }
-
+      //@ts-ignore
       const ws = (connection.ws = connection.useFallback
         ? new FakeWebsocket(realUrl, connection.useFallback, client)
         : new WebSocket(realUrl, [encodeAuthState(client.authState)]))
 
       // pretty shitty
-
+      //@ts-ignore
       ws.binaryType = 'blob'
 
       let isError = false

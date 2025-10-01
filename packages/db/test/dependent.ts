@@ -1,4 +1,4 @@
-import { deepEqual } from './shared/assert.js'
+import { equal } from './shared/assert.js'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
@@ -6,7 +6,9 @@ await test('dependent', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
+
   await db.start({ clean: true })
+
   t.after(() => t.backup(db))
 
   const schema = {
@@ -51,23 +53,35 @@ await test('dependent', async (t) => {
 
   await db.setSchema(schema)
 
-  const showId = await db.create('show', {
-    editions: [
-      db.create('edition', {
-        sequences: [
-          db.create('sequence', {
-            pages: [db.create('page', { items: [db.create('item')] })],
-          }),
-        ],
-      }),
-    ],
-  })
+  const createShowTree = async () => {
+    const showId = await db.create('show', {})
+    const editionId = await db.create('edition', {
+      show: showId,
+    })
+    const sequenceId = await db.create('sequence', {
+      edition: editionId,
+    })
+    const pageId = await db.create('page', {
+      sequence: sequenceId,
+    })
+    await db.create('item', {
+      page: pageId,
+    })
 
-  db.delete('show', showId)
+    await db.drain()
 
-  await db.drain()
-
-  for (const type in schema.types) {
-    deepEqual(await db.query(type).get(), [], `${type} is empty`)
+    for (const type in schema.types) {
+      const len = (await db.query(type).get()).length
+      equal(len, 1)
+    }
+    return showId
   }
+
+  const showId = await createShowTree()
+  await db.delete('show', showId)
+  await db.drain()
+  for (const type in schema.types) {
+    equal((await db.query(type).get()).length, 0)
+  }
+  await createShowTree()
 })

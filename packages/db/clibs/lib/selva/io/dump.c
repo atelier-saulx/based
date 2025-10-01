@@ -35,7 +35,8 @@
  */
 #define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
 #define DUMP_MAGIC_EXPIRE       2147483647 /* common.sdb */
-#define DUMP_MAGIC_TYPES        3550908863 /* [range].sdb */
+#define DUMP_MAGIC_COMMON_META  2974848157 /* common.sdb */
+#define DUMP_MAGIC_TYPES        3550908863 /* [block].sdb */
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -343,7 +344,6 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
     struct SelvaExpireToken *token;
     const sdb_arr_len_t count = selva_expire_count(&db->expiring);
 
-
     write_dump_magic(io, DUMP_MAGIC_EXPIRE);
     io->sdb_write(&count, sizeof(count), 1, io);
 
@@ -364,11 +364,22 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
 
 }
 
-int selva_dump_save_common(struct SelvaDb *db, const char *filename)
+static void save_common_meta(struct selva_io *io, const void *meta_data, size_t meta_len)
+{
+    const sdb_arr_len_t len = meta_len;
+
+    write_dump_magic(io, DUMP_MAGIC_COMMON_META);
+    io->sdb_write(&len, sizeof(len), 1, io);
+    if (likely(len > 0)) {
+        io->sdb_write(meta_data, len, 1, io);
+    }
+}
+
+int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename)
 {
     struct selva_io io = {
-        .errlog_buf = nullptr,
-        .errlog_left = 0,
+        .errlog_buf = com->errlog_buf,
+        .errlog_left = com->errlog_size,
     };
     int err;
 
@@ -382,6 +393,7 @@ int selva_dump_save_common(struct SelvaDb *db, const char *filename)
      */
     save_schema(&io, db);
     save_expire(&io, db);
+    save_common_meta(&io, com->meta_data, com->meta_len);
     selva_io_end(&io, nullptr);
 
     return 0;
@@ -670,7 +682,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
             err = selva_fields_reference_set(db, node, fs, dst_node, &ref, faux_dirty_cb, nullptr);
         } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
-            err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, &ref, nullptr, nullptr);
+            err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, &ref, nullptr, nullptr, true);
         } else {
             err = SELVA_EINTYPE;
         }
@@ -783,7 +795,6 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
         alignas(uint64_t) uint8_t value_buf[value_size + !value_size]; /* 0 length VLA is prohibited. */
 
         err = SELVA_EINVAL;
-
         switch (rd.type) {
         case SELVA_FIELD_TYPE_NULL:
             err = 0;
@@ -974,11 +985,40 @@ static int load_type(struct selva_io *io, struct SelvaDb *db)
     return 0;
 }
 
-int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
+__attribute__((warn_unused_result))
+static int load_common_meta(struct selva_io *io, const void **meta_data, size_t *meta_len)
+{
+    sdb_arr_len_t len;
+    void *data = nullptr;
+
+    if (!read_dump_magic(io, DUMP_MAGIC_COMMON_META)) {
+        selva_io_errlog(io, "Ivalid types magic");
+        return SELVA_EINVAL;
+    }
+
+    if (io->sdb_read(&len, sizeof(len), 1, io) != 1) {
+        selva_io_errlog(io, "%s: len", __func__);
+        return SELVA_EIO;
+    }
+
+    if (likely(len > 0)) {
+        data = selva_malloc(len);
+        if (io->sdb_read(data, len, 1, io) != 1) {
+            selva_io_errlog(io, "%s: data", __func__);
+            return SELVA_EIO;
+        }
+    }
+
+    *meta_len = len;
+    *meta_data = data;
+    return 0;
+}
+
+int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename)
 {
     struct selva_io io = {
-        .errlog_buf = errlog_buf,
-        .errlog_left = errlog_size,
+        .errlog_buf = com->errlog_buf,
+        .errlog_left = com->errlog_size,
     };
     int err;
 
@@ -989,6 +1029,9 @@ int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlo
 
     err = load_schema(&io, db);
     err = err ?: load_expire(&io, db);
+    if (io.sdb_version >= 3) {
+        err = err ?: load_common_meta(&io, &com->meta_data, &com->meta_len);
+    }
     selva_io_end(&io, nullptr);
 
     return err;

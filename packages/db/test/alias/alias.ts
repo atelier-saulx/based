@@ -405,6 +405,9 @@ await test('same-name-alias', async (t) => {
   for (const sequence of sequences) {
     db.upsert('sequence', sequence)
   }
+
+  await db.drain()
+
   for (const round of rounds) {
     await db.upsert('round', round)
   }

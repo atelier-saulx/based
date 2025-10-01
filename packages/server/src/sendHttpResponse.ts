@@ -21,6 +21,9 @@ export const end = (
   }
   ctx.session.res = null
   ctx.session.req = null
+  if (ctx.session.onClose) {
+    ctx.session.onClose()
+  }
   ctx.session = null
 }
 
@@ -61,6 +64,11 @@ export const sendHttpResponse = (
       if (headers) {
         sendHeaders(ctx, headers)
       }
+
+      if (ctx.session.onClose) {
+        ctx.session.onClose()
+      }
+
       ctx.session.res.end()
     })
     return
@@ -82,7 +90,12 @@ export const sendHttpResponse = (
     })
     result.on('end', () => {
       ctx.session.res.cork(() => {
-        ctx.session?.res.end()
+        if (ctx.session) {
+          if (ctx.session.onClose) {
+            ctx.session.onClose()
+          }
+          ctx.session.res.end()
+        }
       })
     })
     return

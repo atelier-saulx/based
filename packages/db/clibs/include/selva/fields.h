@@ -173,7 +173,7 @@ int selva_fields_references_insert(
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode * restrict dst,
         struct SelvaNodeReferenceAny *ref_out,
-        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx, bool ignore_src_dependent)
     __attribute__((access(write_only, 8)));
 
 /**

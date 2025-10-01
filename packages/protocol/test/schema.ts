@@ -1,8 +1,10 @@
 import test from 'node:test'
-import { serialize } from '../src/db-read/schema/serialize.js'
+import { serializeReaderSchema } from '../src/db-read/schema/serialize.js'
 import { deSerializeSchema } from '../src/db-read/schema/deserialize.js'
 import type { ReaderSchema } from '../dist/db-read/types.js'
 import { deepEqual, equal } from 'node:assert'
+import { Schema, StrictSchema } from '@based/schema'
+import { updateTypeDefs } from '@based/schema/def'
 
 await test('schema serialization/deserialization', async (t) => {
   await t.test('schema with references', () => {
@@ -60,7 +62,7 @@ await test('schema serialization/deserialization', async (t) => {
       type: 2,
     }
 
-    const serialized = serialize(refs)
+    const serialized = serializeReaderSchema(refs)
 
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, refs)
@@ -83,7 +85,7 @@ await test('schema serialization/deserialization', async (t) => {
       type: 2,
     }
 
-    const serialized = serialize(textSchema)
+    const serialized = serializeReaderSchema(textSchema)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, textSchema)
   })
@@ -124,7 +126,7 @@ await test('schema serialization/deserialization', async (t) => {
       },
       type: 2,
     }
-    const serialized = serialize(metaSchema)
+    const serialized = serializeReaderSchema(metaSchema)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, metaSchema)
   })
@@ -158,7 +160,7 @@ await test('schema serialization/deserialization', async (t) => {
       },
     }
 
-    const serialized = serialize(enums)
+    const serialized = serializeReaderSchema(enums)
 
     const deserialized = deSerializeSchema(serialized)
 
@@ -182,7 +184,7 @@ await test('schema serialization/deserialization', async (t) => {
         totalResultsSize: 8,
       },
     }
-    const serialized = serialize(agg)
+    const serialized = serializeReaderSchema(agg)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, agg)
   })
@@ -201,7 +203,7 @@ await test('schema serialization/deserialization', async (t) => {
         groupBy: { typeIndex: 1 },
       },
     }
-    const serialized = serialize(agg)
+    const serialized = serializeReaderSchema(agg)
     const deserialized = deSerializeSchema(serialized)
 
     deepEqual(deserialized, agg)
@@ -224,7 +226,7 @@ await test('schema serialization/deserialization', async (t) => {
         },
       },
     }
-    const serialized = serialize(agg)
+    const serialized = serializeReaderSchema(agg)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, agg)
   })
@@ -243,7 +245,7 @@ await test('schema serialization/deserialization', async (t) => {
         groupBy: { typeIndex: 1, stepType: true },
       },
     }
-    const serialized = serialize(agg)
+    const serialized = serializeReaderSchema(agg)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, agg)
   })
@@ -270,7 +272,7 @@ await test('schema serialization/deserialization', async (t) => {
         },
       },
     }
-    const serialized = serialize(agg)
+    const serialized = serializeReaderSchema(agg)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized.aggregate.groupBy.display.resolvedOptions(), {
       locale: 'en-GB',
@@ -298,7 +300,7 @@ await test('schema serialization/deserialization - main', async (t) => {
       refs: {},
       type: 2,
     }
-    const serialized = serialize(smallMeta)
+    const serialized = serializeReaderSchema(smallMeta)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, smallMeta)
   })
@@ -320,7 +322,7 @@ await test('schema serialization/deserialization - main', async (t) => {
         readBy: 0,
       }
     }
-    const serialized = serialize(bigSchema)
+    const serialized = serializeReaderSchema(bigSchema)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, bigSchema)
   })
@@ -340,7 +342,7 @@ await test('schema serialization/deserialization - main', async (t) => {
       refs: {},
       type: 2,
     }
-    const serialized = serialize(simple)
+    const serialized = serializeReaderSchema(simple)
     const deserialized = deSerializeSchema(serialized)
     deepEqual(deserialized, simple)
   })

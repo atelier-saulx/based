@@ -5,7 +5,7 @@ import {
   REVERSE_TYPE_INDEX_MAP,
   SchemaPropTree,
 } from '@based/schema/def'
-import { DbClient, DbClientHooks } from '../../index.js'
+import { DbClient } from '../../index.js'
 import { create } from './create/index.js'
 import { Ctx } from './Ctx.js'
 import { del } from './delete/index.js'
@@ -14,6 +14,7 @@ import { expire } from './expire/index.js'
 import { Tmp } from './Tmp.js'
 import { RANGE_ERR } from './types.js'
 import { update } from './update/index.js'
+import { upsert } from './upsert/index.js'
 
 const MAGIC_KEY = Math.random().toString(36).substring(2)
 const MAGIC_REG = RegExp(`("${MAGIC_KEY}|${MAGIC_KEY}")`, 'g')
@@ -42,7 +43,7 @@ const parseVal = (val) => {
   return val
 }
 
-const parseErrorMsg = (
+const parseErrorArr = (
   prop: PropDef | PropDefEdge | SchemaPropTree,
   val: any,
   msg?: string,
@@ -59,7 +60,12 @@ const parseErrorMsg = (
 export const handleError = (
   db: DbClient,
   ctx: Ctx,
-  fn: typeof create | typeof update | typeof del | typeof expire,
+  fn:
+    | typeof create
+    | typeof update
+    | typeof del
+    | typeof expire
+    | typeof upsert,
   args: IArguments,
   e: any,
 ): Promise<number> => {
@@ -89,7 +95,7 @@ export const handleError = (
 
   if (Array.isArray(e)) {
     const [def, val, msg] = e
-    throw Error(parseErrorMsg(def, val, msg))
+    throw Error(parseErrorArr(def, val, msg))
   }
 
   throw e

@@ -22,46 +22,37 @@ const dbSort = @import("../db/sort.zig");
 const increment = Update.increment;
 const config = @import("config");
 const read = utils.read;
+const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    return modifyInternal(env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
+    var result: c.napi_value = undefined;
+    var resCount: u32 = 0;
+    modifyInternal(env, info, &resCount) catch undefined;
+    _ = c.napi_create_uint32(env, resCount * 5, &result);
+    return result;
 }
 
-fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
-    const typeInfo = try napi.get([]u8, env, args[1]);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[2]);
-    const dirtyRanges = try napi.get([]f64, env, args[3]);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
+    const dirtyRanges = try napi.get([]f64, env, args[2]);
 
     var i: usize = 0;
-    var ctx: ModifyCtx = .{
-        .field = undefined,
-        .typeId = undefined,
-        .id = undefined,
-        .currentSortIndex = null,
-        .typeSortIndex = null,
-        .node = null,
-        .typeEntry = null,
-        .fieldSchema = null,
-        .fieldType = types.Prop.NULL,
-        .db = dbCtx,
-        .typeInfo = typeInfo,
-        .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
-    };
-    defer ctx.dirtyRanges.deinit();
+    var ctx: ModifyCtx = .{ .field = undefined, .typeId = 0, .id = 0, .currentSortIndex = null, .typeSortIndex = null, .node = null, .typeEntry = null, .fieldSchema = null, .fieldType = types.Prop.NULL, .db = dbCtx, .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator), .batch = batch };
 
+    defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
-    var idOffset: u32 = 0;
 
     while (i < batch.len) {
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
+        // std.debug.print("op: {any}\n", .{op});
         switch (op) {
+            types.ModOp.PADDING => {
+                i = i + 1;
+            },
             types.ModOp.SWITCH_FIELD => {
                 // Wrongly here.. lets find it...
                 ctx.field = operation[0];
@@ -99,39 +90,91 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
                 deleteTextLang(&ctx, lang);
                 i = i + 2;
             },
-            types.ModOp.CREATE_OR_GET => {
-                if (config.enable_debug) {
-                    // Only assert this on DEBUG scince it makes it a lot slower
-                    ctx.id = std.math.add(u32, read(u32, operation, 0), idOffset) catch |err| {
-                        std.log.err("Overflow ID error (modify create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
-                        return err;
-                    };
-                    if (ctx.id == 0) {
-                        std.log.err("ID == 0 error (modify create or get) id: {d} offset: {d} in modify", .{ read(u32, operation, 0), idOffset });
-                        return errors.SelvaError.SELVA_EINVAL;
-                    }
+            types.ModOp.SWITCH_ID_CREATE => {
+                if (ctx.id != 0) {
+                    writeInt(u32, batch, resCount.* * 5, ctx.id);
+                    resCount.* += 1;
                 }
-                ctx.id = read(u32, operation, 0) + idOffset;
+                ctx.id = dbCtx.ids[ctx.typeId - 1] + 1;
+                dbCtx.ids[ctx.typeId - 1] = ctx.id;
+                ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
+                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                i = i + 1;
+            },
+            types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
+                if (ctx.id != 0) {
+                    writeInt(u32, batch, resCount.* * 5, ctx.id);
+                    resCount.* += 1;
+                }
+                ctx.id = read(u32, operation, 0);
+                if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
+                    dbCtx.ids[ctx.typeId - 1] = ctx.id;
+                }
                 ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
-            types.ModOp.SWITCH_NODE => {
-                ctx.id = read(u32, operation, 0);
-                ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
-                if (ctx.node != null) {
-                    // It would be even better if we'd mark it dirty only in the case
-                    // something was actually changed.
-                    Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+            types.ModOp.SWITCH_ID_UPDATE => {
+                const id = read(u32, operation, 0);
+                if (id != 0) {
+                    if (ctx.id != 0) {
+                        writeInt(u32, batch, resCount.* * 5, ctx.id);
+                        resCount.* += 1;
+                    }
+                    // if its zero than we don't want to switch (for upsert)
+                    ctx.id = id;
+                    ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
+                    if (ctx.node != null) {
+                        // It would be even better if we'd mark it dirty only in the case
+                        // something was actually changed.
+                        Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                    }
                 }
                 i = i + 5;
+            },
+            types.ModOp.UPSERT => {
+                const writeIndex = read(u32, operation, 0);
+                const updateIndex = read(u32, operation, 4);
+                var nextIndex: u32 = writeIndex;
+                var j: u32 = 8;
+                while (j < writeIndex) {
+                    const prop = read(u8, operation, j);
+                    const len = read(u32, operation, j + 1);
+                    const val = operation[j + 5 .. j + 5 + len];
+                    if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                        // write the id into the operation
+                        writeInt(u32, operation, updateIndex + 1, db.getNodeId(node));
+                        nextIndex = updateIndex;
+                        break;
+                    }
+                    j = j + 5 + len;
+                }
+                i = i + nextIndex + 1;
+            },
+            types.ModOp.INSERT => {
+                const writeIndex = read(u32, operation, 0);
+                const endIndex = read(u32, operation, 4);
+                var nextIndex: u32 = writeIndex;
+                var j: u32 = 8;
+                while (j < writeIndex) {
+                    const prop = read(u8, operation, j);
+                    const len = read(u32, operation, j + 1);
+                    const val = operation[j + 5 .. j + 5 + len];
+                    if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                        const id = db.getNodeId(node);
+                        writeInt(u32, batch, resCount.* * 5, id);
+                        resCount.* += 1;
+                        nextIndex = endIndex;
+                        break;
+                    }
+                    j = j + 5 + len;
+                }
+                i = i + nextIndex + 1;
             },
             types.ModOp.SWITCH_TYPE => {
                 ctx.typeId = read(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
-                // store offset for this type
-                idOffset = Modify.getIdOffset(&ctx, ctx.typeId);
                 // RFE shouldn't we technically unset .id and .node now?
                 i = i + 3;
             },
@@ -177,6 +220,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     assert(newDirtyRanges.len < dirtyRanges.len);
     _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     dirtyRanges[newDirtyRanges.len] = 0.0;
-
-    return null;
+    if (ctx.id != 0) {
+        writeInt(u32, batch, resCount.* * 5, ctx.id);
+        resCount.* += 1;
+    }
 }

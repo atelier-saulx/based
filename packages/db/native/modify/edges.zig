@@ -27,6 +27,13 @@ pub fn writeEdges(
 ) !void {
     var i: usize = 0;
     const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema.?);
+    const edgeNode = selva.selva_fields_ensure_ref_meta(ctx.db.selva, ctx.node.?, edgeConstraint, ref, 0, db.markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
+    const edgeId = ref.*.meta;
+    const edgeTypeId = edgeConstraint.*.meta_node_type;
+    if (edgeId > ctx.db.ids[edgeTypeId - 1]) {
+        ctx.db.ids[edgeTypeId - 1] = edgeId;
+    }
+
     while (i < data.len) {
         const op: types.ModOp = @enumFromInt(data[i]);
         const prop = data[i + 1];
@@ -64,27 +71,13 @@ pub fn writeEdges(
                 }
             } else {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
-                try db.writeEdgeProp(
-                    ctx,
-                    ctx.node.?,
-                    edgeConstraint,
-                    ref,
-                    edgeFieldSchema,
-                    edgeData,
-                );
+                try db.writeField(edgeData, edgeNode, edgeFieldSchema);
             }
         } else if (t == p.REFERENCE) {
             len = 4;
             offset = 0;
             const edgeData = data[i + offset .. i + offset + len];
-            try db.writeEdgeProp(
-                ctx,
-                ctx.node.?,
-                edgeConstraint,
-                ref,
-                edgeFieldSchema,
-                edgeData,
-            );
+            try db.writeField(edgeData, edgeNode, edgeFieldSchema);
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;
@@ -100,14 +93,7 @@ pub fn writeEdges(
             len = read(u32, data, i);
             offset = 4;
             const edgeData = data[i + offset .. i + offset + len];
-            try db.writeEdgeProp(
-                ctx,
-                ctx.node.?,
-                edgeConstraint,
-                ref,
-                edgeFieldSchema,
-                edgeData,
-            );
+            try db.writeField(edgeData, edgeNode, edgeFieldSchema);
         }
 
         i += offset + len;

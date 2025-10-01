@@ -5,6 +5,7 @@ import { BasedFunctionClient } from './client.js'
 import { BasedRoute, StreamPayload } from './functions.js'
 
 export type WebSocketSession = {
+  onClose?: () => void
   // State can be used for anything - for us the based class instance
   state?: any
   query: string
@@ -39,6 +40,7 @@ export type WebSocketSession = {
 export type BasedWebSocket = WebSocket<WebSocketSession>
 
 export type HttpSession = {
+  onClose?: () => void
   // State can be used for anything - for us the based class instance
   state?: any
   res: HttpResponse

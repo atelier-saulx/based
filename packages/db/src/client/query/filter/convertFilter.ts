@@ -19,15 +19,27 @@ export const convertFilter = (
   opts?: FilterOpts | undefined,
 ): FilterAst => {
   const def = query.def
-  const filterHook = def.schema.hooks?.filter
+  const propHooks = def.schema.props[field]?.hooks
+  const hooks = def.schema.hooks
+  const propFilterHook = propHooks?.filter
+  const filterHook = hooks?.filter
+  if (propFilterHook) {
+    propHooks.filter = null
+    if (typeof operator === 'boolean') {
+      propFilterHook(query, field, '=', operator)
+    } else {
+      propFilterHook(query, field, operator, value)
+    }
+    propHooks.filter = propFilterHook
+  }
   if (filterHook) {
-    def.schema.hooks.filter = null
+    hooks.filter = null
     if (typeof operator === 'boolean') {
       filterHook(query, field, '=', operator)
     } else {
       filterHook(query, field, operator, value)
     }
-    def.schema.hooks.filter = filterHook
+    hooks.filter = filterHook
   }
 
   if (operator === undefined) {
