@@ -61,6 +61,7 @@ export const httpHandler = (
     return
   }
 
+  // OR path[2]
   if (server.restFallbackPath && path[1] === server.restFallbackPath) {
     if (method !== 'post') {
       res.end()

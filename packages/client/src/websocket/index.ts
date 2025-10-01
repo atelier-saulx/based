@@ -66,6 +66,8 @@ const restPing = (
       const x = realUrl.replace(/^wss?:\/\//, '').split('/')
       const url = `http${realUrl.startsWith('wss') ? 's' : ''}://${x[0]}/based:rpstatus`
 
+      // fix this
+
       fetch(url).then(async (r) => {
         if (connection.fallBackInProgress) {
           connection.fallBackInProgress = false

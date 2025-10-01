@@ -24,12 +24,12 @@ const reader = (
   const next = len + start
 
   if (type === FunctionServerType.function) {
-    // const p = handleFunction(arr, start, len, isDeflate, ctx, server)
-    // if (p) {
-    //   return [next, p]
-    // } else {
-    //   return [undefined]
-    // }
+    const p = handleFunction(arr, start, len, isDeflate, ctx, server)
+    if (p) {
+      return [next, p]
+    } else {
+      return [undefined]
+    }
   }
 
   if (
