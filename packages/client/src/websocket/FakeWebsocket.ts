@@ -23,7 +23,10 @@ export class FakeWebsocket {
   url: string
   authState: string[]
   constructor(url: string, restPrefix: string, client: BasedClient) {
-    this.url = url.replace(/^ws/, 'http')
+    // wss://1x7j3eroh-5mzale2mp.based.dev/ze1xch7kjGQtwg
+    const segments = url.split('/')
+    segments[0] = segments[0].replace(/^ws/, 'http')
+    this.url = segments[0] + '//' + segments[2]
     this.client = client
     this._r = restPrefix
     syncSubs(this)
@@ -32,7 +35,6 @@ export class FakeWebsocket {
   client: BasedClient
   _c: boolean
   _r: string
-  _t: string
   _om: (x?: any) => void
   _oe: (x?: any) => void
   _oc: (x?: any) => void
@@ -59,12 +61,7 @@ export class FakeWebsocket {
       return
     }
     fetch(
-      this.url +
-        '/' +
-        this._r +
-        '/' +
-        this._t +
-        encodeAuthState(this.client.authState),
+      this.url + '/' + this._r + '/' + encodeAuthState(this.client.authState),
       {
         method: 'post',
         body: binary,
