@@ -1,0 +1,16 @@
+{
+  "extends": "@saulx/tsconfig/default.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
+  "include": ["version_bumper.ts"],
+  "exclude": ["*.js"]
+}
