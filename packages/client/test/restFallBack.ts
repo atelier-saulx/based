@@ -7,6 +7,7 @@ import { inflateSync } from 'fflate'
 import { concatUint8Arr, readUint32 } from '@based/utils'
 import { FunctionClientType, genObserveId } from '@based/protocol/client-server'
 
+// ----- src does not work
 import { parseIncomingData } from '../src/incoming/parseIncomingData.js'
 import { decodeHeader } from '../src/incoming/protocol.js'
 import {
