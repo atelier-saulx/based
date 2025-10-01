@@ -1,5 +1,5 @@
 {
-  "name": "@based/cli",
+  "name": "@based/clinext",
   "version": "9.0.0-alpha.2",
   "description": "Based command line tool",
   "bin": "dist/cli.js",
