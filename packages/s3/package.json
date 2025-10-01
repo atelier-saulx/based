@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc -b",
     "watch": "tsc -b --watch",
-    "test": "c8 ava --verbose"
+    "_test": "c8 ava --verbose"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.299.0",

@@ -31,6 +31,7 @@ export const handleFakeWs = (
         return
       }
     }
+
     // @ts-ignore
     total.set(c, lastWritten)
     lastWritten += c.byteLength
