@@ -3,7 +3,7 @@
   "version": "8.2.4-alpha.1",
   "description": "based cli",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "bin/cmd.js",
   "private": false,
   "bin": "bin/cmd.js",
   "files": [
