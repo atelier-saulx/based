@@ -1,6 +1,6 @@
 # Version Bumper
 
-A command-line script for automating package versioning in a monorepo.
+A command-line script for automating package versioning in @Based monorepo.
 
 This tool inspects your local packages, compares them against the versions published on NPM, and automatically bumps versions for packages that have changed. It also updates all interdependent `package.json` files across the workspace to ensure versions stay in sync.
 
@@ -38,7 +38,7 @@ npm run bump -- --all --change=patch
 ```
 
 **2. Bumping Specific Packages to a Minor Alpha Version**
-This is useful when working on a new feature in a few packages.
+This is useful when working on a new feature in a few packages. Package names can be scoped as `@based/schema` of not as in `schema`.
 
 ```bash
 npm run bump -- --packages=protocol,schema --change=minor --tag=alpha
@@ -54,20 +54,20 @@ npm run bump -- --all --change=patch --tag=release
 _(Note: `change` is still mandatory but is ignored for promotions.)_
 
 **4. Forcing a Major Version Bump on a Specific Package**
-This command will bump the version of `@my-scope/core` without checking for any file changes.
+This command will bump the version of `@Based/schema` without checking for any file changes.
 
 ```bash
-npm run bump -- --packages=@my-scope/core --change=major --force
+npm run bump -- --packages=@Based/schema --change=major --force
 ```
 
 ## Command-Line Arguments
 
-| Argument     | Description                                                                                     | Required | Example                  |
-| ------------ | ----------------------------------------------------------------------------------------------- | -------- | ------------------------ |
-| `--all`      | Process all non-private packages in the workspace. Cannot be used with `--packages`.            | Yes\*    | `--all`                  |
-| `--packages` | A comma-separated list of specific package names to process. Cannot be used with `--all`.       | Yes\*    | `--packages=pkg-a,pkg-b` |
-| `--change`   | The type of semantic version bump to apply.                                                     | **Yes**  | `--change=minor`         |
-| `--tag`      | The release channel. Defaults to `release`. Use `alpha` for pre-releases.                       | No       | `--tag=alpha`            |
-| `--force`    | Bypasses the diff check and forces a version bump on the targeted packages. Alias: `--no-diff`. | No       | `--force`                |
+| Argument     | Description                                                                                                                 | Required | Example                  |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------ |
+| `--all`      | Process all non-private packages in the workspace. Cannot be used with `--packages`.                                        | Yes\*    | `--all`                  |
+| `--packages` | A comma-separated list of specific package names to process. Can use the scope `@Based`or not. Cannot be used with `--all`. | Yes\*    | `--packages=pkg-a,pkg-b` |
+| `--change`   | The type of semantic version bump to apply.                                                                                 | **Yes**  | `--change=minor`         |
+| `--tag`      | The release channel. Defaults to `release`. Use `alpha` for pre-releases.                                                   | No       | `--tag=alpha`            |
+| `--force`    | Bypasses the diff check and forces a version bump on the targeted packages. Alias: `--no-diff`.                             | No       | `--force`                |
 
 _\*You must provide either `--all` or `--packages`._
