@@ -463,7 +463,7 @@ export type SchemaHooks = {
 export type SchemaPropHooks = {
   create?: (value: any, payload: Record<string, any>) => any
   update?: (value: any, payload: Record<string, any>) => any
-  // read?: (result: Record<string, any>) => void | null | Record<string, any>
+  read?: (value: any, result: Record<string, any>) => any
   // search?: (query: BasedDbQuery, fields: Set<string>) => void
   // include?: (
   //   query: BasedDbQuery,
