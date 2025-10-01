@@ -1,6 +1,6 @@
 import {
   Context,
-  BasedFunctionClient,
+  // BasedFunctionClient,
   WebSocketSession,
   HttpSession,
   Geo,
@@ -61,7 +61,7 @@ export type ServerOptions = {
   cert?: string
   functions?: FunctionConfig
   rateLimit?: RateLimit
-  client?: (server: BasedServer) => BasedFunctionClient
+  client?: (server: BasedServer) => BasedServerFunctionClient
   auth?: AuthConfig
   query?: QueryEvents
   channel?: ChannelEvents
