@@ -312,17 +312,27 @@ async function main() {
         releaseType === 'release' &&
         !!alphaVersion &&
         alphaVersion.split('-')[0] > (releaseVersion || '0.0.0')
-      const baseVersion = isPromotion
+
+      let baseVersion = isPromotion
         ? alphaVersion
         : releaseType === 'alpha'
           ? alphaVersion
           : releaseVersion
 
+      if (!baseVersion) {
+        log(
+          `[${name}] No valid NPM tag found. Using local package version '${pkg.json.version}' as the baseline.`,
+        )
+        baseVersion = pkg.json.version
+      }
+
+      const canPromote = isPromotion && baseVersion === alphaVersion
+
       const nextVersion = calculateNextVersion(
         baseVersion,
         changeType,
         releaseType,
-        isPromotion,
+        canPromote,
       )
       newVersions.set(name, nextVersion)
     } else {
