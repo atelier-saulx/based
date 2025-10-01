@@ -55,7 +55,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
         .typeInfo = typeInfo,
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
         .subTypes = null,
-        .idSubs = null,
+        .idSubs = false,
+        .subTypeEntry = try db.getType(dbCtx, 4),
     };
 
     defer ctx.dirtyRanges.deinit();
@@ -136,6 +137,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
             types.ModOp.SWITCH_TYPE => {
                 ctx.typeId = read(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
+
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
                 // store offset for this type
                 idOffset = Modify.getIdOffset(&ctx, ctx.typeId);

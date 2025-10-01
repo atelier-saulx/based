@@ -110,6 +110,10 @@ await test('subscriptionIds', async (t) => {
         lang: 'string',
         // add text
       },
+      subs: {
+        buf: { type: 'binary', maxBytes: 16 },
+        // add text
+      },
     },
   })
 
@@ -121,10 +125,10 @@ await test('subscriptionIds', async (t) => {
         ? Math.round(amount / 1e3) + 'K'
         : amount
 
-  const id = await clients[0].create('user', { derp: 66 })
+  // const id = await clients[0].create('user', { derp: 66 })
 
-  const array = new Uint8Array(20)
-  const l = write({ array } as Ctx, 'A', 0, false)
+  // const array = new Uint8Array(20)
+  // const l = write({ array } as Ctx, 'A', 0, false)
 
   const payload = {
     derp: 99,
@@ -163,7 +167,7 @@ await test('subscriptionIds', async (t) => {
   const addSubs = (subId: number, start = 0, end = 1000): Uint8Array => {
     const fields = new Uint8Array([0, 1, 2])
     const typeId = server.schemaTypesParsed['user'].id
-    const val = createSingleSubscriptionBuffer(subId, typeId, fields, id)
+    const val = createSingleSubscriptionBuffer(subId, typeId, fields, 1)
     let d = Date.now()
     for (let i = start; i < end; i++) {
       writeUint32(val, ~~(Math.random() * amount * 5) + 1, 6)
@@ -181,42 +185,61 @@ await test('subscriptionIds', async (t) => {
   )
   console.log('ZIG ZAG', Date.now() - BLA, 'ms')
 
-  const x = Date.now()
-  //100000
-  const bla = new Set()
-  const shurp = {}
-  for (let i = 1; i < 100e6; i++) {
-    shurp[i] = i % 4 === 0
+  // const x = Date.now()
+  // //100000
+  // const bla = new Set()
+  // const shurp = {}
+  // for (let i = 1; i < 100e6; i++) {
+  //   shurp[i] = i % 4 === 0
 
-    // if (i % 4) {
-    //   shurp[i + ~~(Math.random() * 10e6)] = i < 1e5
-    // }
-    // if (i % 3) {
-    //   shurp[20e6 + i] = false
-    // }
+  //   // if (i % 4) {
+  //   //   shurp[i + ~~(Math.random() * 10e6)] = i < 1e5
+  //   // }
+  //   // if (i % 3) {
+  //   //   shurp[20e6 + i] = false
+  //   // }
+  // }
+  // shurp[20e6 - 1] = true
+
+  // // const bla = new Uint8Array(2e6)
+  // BLA = Date.now()
+  // let cnt = 0
+  // for (let i = 1; i < 100e6; i++) {
+  //   if (shurp[i]) {
+  //     cnt++
+  //   }
+  // }
+
+  // // shurp[20e6 - 10] = true
+
+  // console.log(
+  //   '!!!!!!!',
+  //   Date.now() - BLA,
+  //   'ms',
+  //   cnt,
+  //   'all',
+  //   Date.now() - x,
+  //   'ms',
+  // )
+
+  // console.log(server.schemaTypesParsedById)
+
+  // 200k sub
+  for (let i = 0; i < 2e6; i++) {
+    // 16 for has simd filter
+    clients[0].create('subs', { buf: new Uint8Array(16) })
   }
-  shurp[20e6 - 1] = true
 
-  // const bla = new Uint8Array(2e6)
-  BLA = Date.now()
-  let cnt = 0
-  for (let i = 1; i < 100e6; i++) {
-    if (shurp[i]) {
-      cnt++
-    }
+  for (let i = 0; i < 2e6; i++) {
+    // 16 for has simd filter
+    clients[0].create('user', { x: i % 255 })
   }
 
-  // shurp[20e6 - 10] = true
+  console.log('create', await clients[0].drain(), 'ms')
 
-  console.log(
-    '!!!!!!!',
-    Date.now() - BLA,
-    'ms',
-    cnt,
-    'all',
-    Date.now() - x,
-    'ms',
-  )
+  // addSubs(1, 0, 2e6)
+
+  await updateAll()
 
   //   for (let i = 1; i < 2e6; i++) {
   //   addSubs(i)

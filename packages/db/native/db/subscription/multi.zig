@@ -34,13 +34,15 @@ pub const Context = struct {
     }
 };
 
+//
+
 fn bla() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     var map = std.ArrayHashMap(u32, u32, Context, false).init(allocator);
     defer map.deinit();
-    const num_items = 1_000_000_000;
+    const num_items = 100_000_000;
     const buffer_size = (num_items + 7) / 8;
     const buffer = try allocator.alloc(u8, buffer_size);
     defer allocator.free(buffer);
@@ -59,9 +61,10 @@ fn bla() !void {
 
     // this type of stuff is really fast scince it gets optmized in 1 instruction
     while (i < num_items) : (i += 1) {
-        const bit_index: u3 = @truncate(i % 8);
+        const bit_index: u3 = @truncate(i % 10_000_000 % 8);
         cnt += (buffer[i / 8] & @as(u8, 1) << bit_index) >> bit_index;
     }
+    //
 
     std.debug.print("{} {any}\n", .{ std.fmt.fmtDuration(timer.read()), cnt });
 
@@ -91,7 +94,7 @@ fn bla() !void {
     // 4 bytes   4 bytes  4 bytes 4 bytes
 
     // field set
-    const buffer3 = try allocator.alloc(u8, 128 * 2);
+    const buffer3 = try allocator.alloc(u8, 128);
 
     // const xN: u32 = 213124;
     // var u: u8 = 0;
@@ -105,23 +108,23 @@ fn bla() !void {
     // }
     timer = try std.time.Timer.start();
 
-    var prng = std.Random.DefaultPrng.init(blk: {
-        var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
-        break :blk seed;
-    });
-    const rand = prng.random();
+    // var prng = std.Random.DefaultPrng.init(blk: {
+    //     var seed: u64 = undefined;
+    //     try std.posix.getrandom(std.mem.asBytes(&seed));
+    //     break :blk seed;
+    // });
+    // const rand = prng.random();
 
-    var r1 = try Bitmap.create();
+    // var r1 = try Bitmap.create();
 
     i = 0;
     while (i < 10_000_000) : (i += 1) {
-        const d: u32 = rand.intRangeAtMost(u32, 0, 100_000_000);
+        const d: u32 = i; //rand.intRangeAtMost(u32, 0, 100_000_000);
 
-        r1.add(d);
+        // r1.add(d);
 
         const xx: [4]u8 = @bitCast(d);
-        const x2: [4]u8 = @bitCast(selva.crc32c(0, &xx, 4));
+        // const x2: [4]u8 = @bitCast(selva.crc32c(0, &xx, 4));
 
         // const xx: [4]u8 = @bitCast(selva.crc32c(0, &d, 4));
 
@@ -130,10 +133,10 @@ fn bla() !void {
             buffer3[bitIndex / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex & 7));
         }
 
-        inline for (x2, 0..) |byte, u| {
-            const bitIndex = (byte + u * 255) & (1023) + 128 * 8;
-            buffer3[bitIndex / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex & 7));
-        }
+        // inline for (x2, 0..) |byte, u| {
+        //     const bitIndex = (byte + u * 255) & (1023) + 128 * 8;
+        //     buffer3[bitIndex / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex & 7));
+        // }
     }
 
     std.debug.print("setting 100M? has time ? {} {any}\n", .{ std.fmt.fmtDuration(timer.read()), cnt });
@@ -142,20 +145,21 @@ fn bla() !void {
     i = 0;
     cnt = 0;
     while (i < 100_000_000) : (i += 1) {
-        if (r1.contains(i)) {
-            cnt += 1;
-        }
-        // // const ix: [4]u8 = @bitCast(selva.crc32c(0, &i, 4));
+        // if (r1.contains(i)) {
+        //     cnt += 1;
+        // }
+        // const ix: [4]u8 = @bitCast(selva.crc32c(0, &i, 4));
 
-        // const h0 = @as(u32, ix[0]);
-        // const h1 = @as(u32, ix[1]) + 1 * 255;
-        // const h2 = @as(u32, ix[2]) + 2 * 255;
-        // const h3 = @as(u32, ix[3]) + 3 * 255;
-        // const b0 = (buffer3[(h0 & (1024 - 1)) / 8] >> (@truncate(h0 % 8))) & 1;
-        // const b1 = (buffer3[(h1 & (1024 - 1)) / 8] >> (@truncate(h1 % 8))) & 1;
-        // const b2 = (buffer3[(h2 & (1024 - 1)) / 8] >> (@truncate(h2 % 8))) & 1;
-        // const b3 = (buffer3[(h3 & (1024 - 1)) / 8] >> (@truncate(h3 % 8))) & 1;
-        // // cnt += b0 & b1 & b2 & b3;
+        const ix: [4]u8 = @bitCast(i);
+        const h0 = @as(u32, ix[0] % 3);
+        const h1 = @as(u32, ix[1] % 8) + 1 * 255;
+        const h2 = @as(u32, ix[2] ^ 3) + 2 * 255;
+        const h3 = @as(u32, ix[3] << 1) + 3 * 255;
+        const b0 = (buffer3[(h0 & (1024 - 1)) / 8] >> (@truncate(h0 % 8))) & 1;
+        const b1 = (buffer3[(h1 & (1024 - 1)) / 8] >> (@truncate(h1 % 8))) & 1;
+        const b2 = (buffer3[(h2 & (1024 - 1)) / 8] >> (@truncate(h2 % 8))) & 1;
+        const b3 = (buffer3[(h3 & (1024 - 1)) / 8] >> (@truncate(h3 % 8))) & 1;
+        cnt += b0 & b1 & b2 & b3;
 
         // const h4 = @as(u32, ix2[0]) + 128 * 8;
         // const h5 = @as(u32, ix2[1]) + 1 * 255 + 128 * 8;
@@ -206,6 +210,7 @@ fn bla() !void {
     //     0;
 
     // cnt += bit_to_add;
+    timer = try std.time.Timer.start();
 
     cnt = 0;
     i = 0;
@@ -224,6 +229,25 @@ fn bla() !void {
     // for subs it would be really nice to only have the cursors in an array
     // maybe prepare this as well? would be nice to have a very aligned thing there
     std.debug.print("SIMD has field (1M times 16 fields) {any} {} {any}\n", .{ vectorLen, std.fmt.fmtDuration(timer.read()), cnt });
+
+    timer = try std.time.Timer.start();
+    cnt = 0;
+
+    var idsList = try allocator.alloc(u32, 10_000_000);
+    while (i < 10_000_000) : (i += 1) {
+        idsList[i] = i;
+    }
+
+    timer = try std.time.Timer.start();
+    i = 0;
+    cnt = 0;
+    while (i < 100_000_000) : (i += 1) {
+        if (selva.node_id_set_bsearch(@constCast(idsList.ptr), idsList.len, i) != -1) {
+            cnt += 1;
+        }
+    }
+
+    std.debug.print("olli bsearch has field (100M times ) {any} {} {any}\n", .{ vectorLen, std.fmt.fmtDuration(timer.read()), cnt });
 }
 
 pub fn addMultiSubscriptionInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {

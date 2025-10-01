@@ -6,6 +6,13 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
     var typeSubscriptionCtx: *types.TypeSubscriptionCtx = undefined;
     if (!ctx.subscriptions.types.contains(typeId)) {
         typeSubscriptionCtx = try ctx.allocator.create(types.TypeSubscriptionCtx);
+
+        typeSubscriptionCtx.*.lastId = 0;
+        typeSubscriptionCtx.*.idBitMap = try ctx.allocator.alloc(u8, 2_000_000);
+
+        @memset(typeSubscriptionCtx.*.idBitMap, 255);
+        typeSubscriptionCtx.*.idsList = try ctx.allocator.alloc(u32, 2_000_000);
+
         // typeSubscriptionCtx.*.subs = types.Subscriptions.init(ctx.allocator);
         typeSubscriptionCtx.*.ids = types.IdsSubs.init(ctx.allocator);
         // typeSubscriptionCtx.*.nonMarkedMulti = types.Subscriptions.init(ctx.allocator);
