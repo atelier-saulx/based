@@ -3,11 +3,12 @@
   "scripts": {
     "build": "tsc -b",
     "watch": "tsc -b --watch",
-    "test": "node --import=tsx --test test/logFilter.ts"
+    "_test": "node --import=tsx --test test/logFilter.ts"
   },
   "files": [
     "dist"
   ],
+  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "source": "src/index.ts",
