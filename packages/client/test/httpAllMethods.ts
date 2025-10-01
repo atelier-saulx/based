@@ -54,10 +54,5 @@ test('http methods', async (t: T) => {
     'derp-get',
   )
 
-  // t.is(
-  //   await (await fetch(t.context.http + '/bla', { method: 'head' })).text(),
-  //   'derp-head',
-  // )
-
   await server.destroy()
 })

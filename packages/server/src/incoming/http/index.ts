@@ -225,6 +225,7 @@ export const httpHandler = (
     ctx.session.headers['content-length'] = lenConverted
   }
 
+  // add extra leeway here
   if (
     method === 'post' &&
     ctx.session.headers['content-length'] === undefined
