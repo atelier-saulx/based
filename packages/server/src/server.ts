@@ -5,8 +5,6 @@ import {
   HttpSession,
   Geo,
   isClientContext,
-  BasedQuery,
-  BasedQueryFunctionConfig,
 } from '@based/functions'
 import type { ActiveObservable } from './query/index.js'
 import uws from '@based/uws'
