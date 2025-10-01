@@ -573,3 +573,55 @@ await test('filter hooks', async (t) => {
     { id: 1, age: 21, name: 'youzi' },
   ])
 })
+
+await test('include hooks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        hooks: {
+          include(query) {
+            query.filter('age', '<', 100)
+          },
+        },
+        props: {
+          name: {
+            type: 'string',
+            hooks: {
+              include(query) {
+                query.filter('age', '>', 10)
+              },
+            },
+          },
+          age: 'uint8',
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 21,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 10,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 100,
+  })
+
+  equal(await db.query('user').include('name', 'age').get().toObject(), [
+    { id: 1, age: 21, name: 'youzi' },
+  ])
+})

@@ -473,16 +473,16 @@ export type SchemaPropHooks = {
     operator: Operator,
     value: any,
   ) => void
-  // include?: (
-  //   query: BasedDbQuery,
-  //   fields: Map<
-  //     string,
-  //     {
-  //       field: string
-  //       opts?: any // temp this type
-  //     }
-  //   >,
-  // ) => void
+  include?: (
+    query: BasedDbQuery,
+    fields: Map<
+      string,
+      {
+        field: string
+        opts?: any // temp this type
+      }
+    >,
+  ) => void
 }
 
 type GenericSchemaType<isStrict = false> = {

@@ -417,6 +417,17 @@ export class QueryBranch<T> {
       this.queryCommands.push({ method: 'include', args: fields })
     } else {
       include(this, fields)
+      if (this.def.schema.propHooks?.include) {
+        for (const field of this.def.include.stringFields.keys()) {
+          this.def.schema.props[field]?.hooks?.include(
+            this,
+            this.def.include.stringFields,
+          )
+        }
+        for (const { def } of this.def.include.props.values()) {
+          def.hooks?.include?.(this, this.def.include.stringFields)
+        }
+      }
       const includeHook = this.def.schema.hooks?.include
       if (includeHook) {
         this.def.schema.hooks.include = null
