@@ -23,7 +23,6 @@ import { writeU16, writeU32, writeU8 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
 import { schedule } from '../drain.js'
 import { SchemaTypeDef } from '@based/schema/def'
-import { applyHooks } from '../hooks.js'
 
 const writeUpdateTs = (ctx: Ctx, payload: any) => {
   if (ctx.schema.updateTs) {
@@ -64,7 +63,18 @@ export const writeUpdate = (
   validatePayload(payload)
 
   if (schema.propHooks?.update) {
-    applyHooks(schema.propHooks.update, payload)
+    for (const def of schema.propHooks.update) {
+      let val = payload
+      let obj: any
+      let key: string
+      for (key of def.path) {
+        obj = val
+        val = val?.[key]
+      }
+      if (val !== undefined) {
+        obj[key] = def.hooks.update(val, obj)
+      }
+    }
   }
 
   if (schema.hooks?.update) {

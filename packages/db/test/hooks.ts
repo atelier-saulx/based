@@ -415,3 +415,105 @@ await test('aggregate hooks', async (t) => {
 
   equal((await db.query('user').sum('age').get().toObject()).age.sum, 21)
 })
+
+await test('search hooks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        hooks: {
+          search(query) {
+            query.filter('age', '<', 100)
+          },
+        },
+        props: {
+          name: {
+            type: 'string',
+            hooks: {
+              search(query) {
+                query.filter('age', '>', 10)
+              },
+            },
+          },
+          age: 'uint8',
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 21,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 10,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 100,
+  })
+
+  equal((await db.query('user').search('youzi').get().toObject()).length, 1)
+})
+
+await test('groupBy hooks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        hooks: {
+          groupBy(query) {
+            query.filter('age', '<', 100)
+          },
+        },
+        props: {
+          name: {
+            type: 'string',
+            hooks: {
+              groupBy(query) {
+                query.filter('age', '>', 10)
+              },
+            },
+          },
+          age: 'uint8',
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 21,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 10,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 100,
+  })
+
+  equal(await db.query('user').groupBy('name').sum('age').get().toObject(), {
+    youzi: { age: { sum: 21 } },
+  })
+})

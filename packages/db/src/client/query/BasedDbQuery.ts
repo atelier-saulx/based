@@ -168,13 +168,7 @@ export class QueryBranch<T> {
         args: [field, step],
       })
     } else {
-      const groupByHook = this.def.schema.hooks?.groupBy
-      if (groupByHook) {
-        this.def.schema.hooks.groupBy = null
-        groupByHook(this, field)
-        this.def.schema.hooks.groupBy = groupByHook
-      }
-      groupBy(this.def, field, step)
+      groupBy(this, field, step)
     }
     // only works with aggregates for now
     // @ts-ignore

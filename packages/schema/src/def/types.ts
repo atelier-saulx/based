@@ -123,6 +123,7 @@ export type PropDef = {
   max?: any
   min?: any
   step?: any
+  hooks?: SchemaPropHooks
 }
 
 export type PropDefEdge = Partial<PropDef> & {
@@ -199,7 +200,7 @@ export type SchemaTypeDef = {
   localeSize: number
   hooks?: SchemaHooks
   propHooks?: {
-    [K in keyof SchemaPropHooks]: Map<SchemaPropHooks[K], string[]>
+    [K in keyof SchemaPropHooks]: Set<PropDef>
   }
 }
 

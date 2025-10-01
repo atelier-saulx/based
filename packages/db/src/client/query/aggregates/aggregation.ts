@@ -82,11 +82,24 @@ const ensureAggregate = (def: QueryDef) => {
   }
 }
 
-export const groupBy = (def: QueryDef, field: string, StepInput: StepInput) => {
+export const groupBy = (
+  q: QueryBranch<any>,
+  field: string,
+  StepInput: StepInput,
+) => {
+  const def = q.def
   const fieldDef = def.schema.props[field]
   if (!fieldDef) {
     aggregationFieldDoesNotExist(def, field)
   }
+  fieldDef.hooks?.groupBy?.(q, field)
+  const groupByHook = def.schema.hooks?.groupBy
+  if (groupByHook) {
+    def.schema.hooks.groupBy = null
+    groupByHook(q, field)
+    def.schema.hooks.groupBy = groupByHook
+  }
+
   ensureAggregate(def)
   if (!def.aggregate.groupBy) {
     def.aggregate.size += 12
@@ -132,19 +145,6 @@ export const addAggregate = (
 ) => {
   const def = query.def
   let hookFields: Set<string>
-  if (def.schema.propHooks?.aggregate) {
-    hookFields = new Set(fields)
-    for (const [fn, path] of def.schema.propHooks.aggregate) {
-      // TODO: improve perf by storing this different (eg. on the propDef)
-      if (hookFields.has(path.join('.'))) {
-        fn(query, hookFields)
-      }
-    }
-  }
-
-  if (def.schema.hooks?.aggregate) {
-    def.schema.hooks.aggregate(query, hookFields ?? new Set(fields))
-  }
 
   ensureAggregate(def)
 
@@ -173,6 +173,11 @@ export const addAggregate = (
       aggregationFieldDoesNotExist(def, field)
     }
 
+    if (fieldDef.hooks?.aggregate) {
+      hookFields ??= new Set(fields)
+      fieldDef.hooks.aggregate(query, hookFields)
+    }
+
     if (!aggregates.get(fieldDef.prop)) {
       aggregates.set(fieldDef.prop, [])
       def.aggregate.size += 3
@@ -196,6 +201,10 @@ export const addAggregate = (
     }
     // needs to add an extra field WRITE TO
     def.aggregate.size += 8
+  }
+
+  if (def.schema.hooks?.aggregate) {
+    def.schema.hooks.aggregate(query, hookFields || new Set(fields))
   }
 }
 

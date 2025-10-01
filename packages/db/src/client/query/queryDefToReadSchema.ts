@@ -133,9 +133,9 @@ export const convertToReaderSchema = (
   } else {
     if (q.schema?.propHooks?.read) {
       let body = ''
-      for (const [fn, path] of q.schema.propHooks.read) {
-        const target = `r.${path.join('.')}`
-        body += `if(r.${path.join('?.')}!=null)${target}=(${normalizeHookFn(fn)})(${target},r);`
+      for (const def of q.schema.propHooks.read) {
+        const target = `r.${def.path.join('.')}`
+        body += `if(r.${def.path.join('?.')}!=null)${target}=(${normalizeHookFn(def.hooks.read)})(${target},r);`
       }
 
       if (q.schema?.hooks?.read) {

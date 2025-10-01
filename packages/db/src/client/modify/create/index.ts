@@ -28,7 +28,6 @@ import { writeString } from '../props/string.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { getValidSchema, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
-import { applyHooks } from '../hooks.js'
 
 const writeDefaults = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateDefaults) {
@@ -150,7 +149,18 @@ export const writeCreate = (
   validatePayload(payload)
 
   if (schema.propHooks?.create) {
-    applyHooks(schema.propHooks.create, payload)
+    for (const def of schema.propHooks.create) {
+      let val = payload
+      let obj: any
+      let key: string
+      for (key of def.path) {
+        obj = val
+        val = val?.[key]
+      }
+      if (val !== undefined) {
+        obj[key] = def.hooks.create(val, obj)
+      }
+    }
   }
 
   if (schema.hooks?.create) {

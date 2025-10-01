@@ -214,9 +214,9 @@ const createSchemaTypeDef = (
     if (schemaProp.hooks) {
       result.propHooks ??= {}
       for (const key in schemaProp.hooks) {
-        const fn = schemaProp.hooks[key]
-        result.propHooks[key] ??= new Map()
-        result.propHooks[key].set(fn, propPath)
+        prop.hooks = schemaProp.hooks
+        result.propHooks[key] ??= new Set()
+        result.propHooks[key].add(prop)
       }
     }
 
