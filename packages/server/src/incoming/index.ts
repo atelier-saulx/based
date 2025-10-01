@@ -108,6 +108,9 @@ export default (
             unsubscribeChannelIgnoreClient(server, id, session.c)
           }
         })
+        if (session.onClose) {
+          session.onClose()
+        }
         wsOptions.close(session.c)
         // Looks really ugly but same impact on memory and GC as using the ws directly
         // and better for dc's when functions etc are in progress

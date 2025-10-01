@@ -61,6 +61,11 @@ export const sendHttpResponse = (
       if (headers) {
         sendHeaders(ctx, headers)
       }
+
+      if (ctx.session.onClose) {
+        ctx.session.onClose()
+      }
+
       ctx.session.res.end()
     })
     return
@@ -77,12 +82,22 @@ export const sendHttpResponse = (
     })
     result.on('data', (d) => {
       ctx.session.res.cork(() => {
-        ctx.session?.res.write(d)
+        if (ctx.session) {
+          if (ctx.session.onClose) {
+            ctx.session.onClose()
+          }
+          ctx.session.res.write(d)
+        }
       })
     })
     result.on('end', () => {
       ctx.session.res.cork(() => {
-        ctx.session?.res.end()
+        if (ctx.session) {
+          if (ctx.session.onClose) {
+            ctx.session.onClose()
+          }
+          ctx.session.res.end()
+        }
       })
     })
     return
