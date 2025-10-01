@@ -2,12 +2,12 @@ import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import getPort from 'get-port'
-import { encodeAuthState } from '@based/client'
 import { inflateSync } from 'fflate'
 import { concatUint8Arr, readUint32 } from '@based/utils'
 import { FunctionClientType, genObserveId } from '@based/protocol/client-server'
 
 // ----- src does not work
+import { encodeAuthState } from '../src/index.js'
 import { parseIncomingData } from '../src/incoming/parseIncomingData.js'
 import { decodeHeader } from '../src/incoming/protocol.js'
 import {
