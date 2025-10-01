@@ -259,16 +259,7 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
 
 // want to have one without upsert
 pub fn putReferences(ctx: *modifyCtx.ModifyCtx, ids: []u32, target: Node, fieldSchema: FieldSchema, typeEntry: Type) !void {
-    try errors.selva(selva.selva_fields_references_insert_tail_wupsert(
-        ctx.db.selva,
-        target,
-        fieldSchema,
-        typeEntry,
-        ids.ptr,
-        ids.len,
-        markDirtyCb,
-        ctx,
-    ));
+    try errors.selva(selva.selva_fields_references_insert_tail_wupsert(ctx.db.selva, target, fieldSchema, typeEntry, ids.ptr, ids.len, markDirtyCb, ctx));
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
     const dstType = efc.*.dst_node_type;
@@ -282,18 +273,7 @@ pub fn insertReference(ctx: *modifyCtx.ModifyCtx, value: Node, target: Node, fie
     // TODO Things can be optimized quite a bit if the type entry could be passed as an arg.
     const te_dst = selva.selva_get_type_by_node(ctx.db.selva, value);
     var ref: selva.SelvaNodeReferenceAny = undefined;
-    const code = selva.selva_fields_references_insert(
-        ctx.db.selva,
-        target,
-        fieldSchema,
-        index,
-        reorder,
-        te_dst,
-        value,
-        &ref,
-        markDirtyCb,
-        ctx,
-    );
+    const code = selva.selva_fields_references_insert(ctx.db.selva, target, fieldSchema, index, reorder, te_dst, value, &ref, markDirtyCb, ctx, false);
 
     if (code != selva.SELVA_EEXIST) {
         try errors.selva(code);
