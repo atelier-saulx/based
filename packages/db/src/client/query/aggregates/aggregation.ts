@@ -131,11 +131,26 @@ export const addAggregate = (
   option?: aggFnOptions,
 ) => {
   const def = query.def
-  def.schema.hooks?.aggregate?.(def, new Set(fields))
+  let hookFields: Set<string>
+  if (def.schema.propHooks?.aggregate) {
+    hookFields = new Set(fields)
+    for (const [fn, path] of def.schema.propHooks.aggregate) {
+      // TODO: improve perf by storing this different (eg. on the propDef)
+      if (hookFields.has(path.join('.'))) {
+        fn(query, hookFields)
+      }
+    }
+  }
+
+  if (def.schema.hooks?.aggregate) {
+    def.schema.hooks.aggregate(query, hookFields ?? new Set(fields))
+  }
 
   ensureAggregate(def)
 
-  if (option?.mode) def.aggregate.option = option
+  if (option?.mode) {
+    def.aggregate.option = option
+  }
 
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {

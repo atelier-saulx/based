@@ -29,7 +29,7 @@ export const writeObjectSafe = (
     }
     const def = tree[key]
     if (def === undefined) {
-      throw [def, val]
+      throw [tree, val]
     }
     if (isPropDef(def)) {
       writeProp(ctx, def, val)

@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, throws } from './shared/assert.js'
+import { deepEqual, equal, throws } from './shared/assert.js'
 
 await test('hooks - undefined values', async (t) => {
   const db = new BasedDb({
@@ -364,4 +364,49 @@ await test('property read hooks', async (t) => {
       parsedAge: 21 * 2,
     },
   ])
+})
+
+await test('aggregate hooks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        // hooks: {
+        //   aggregate(query) {
+        //     query.filter('age', '>', 10)
+        //   },
+        // },
+        props: {
+          name: 'string',
+          age: {
+            type: 'uint8',
+            hooks: {
+              aggregate(query) {
+                query.filter('age', '>', 10)
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 21,
+  })
+
+  await db.create('user', {
+    name: 'youzi',
+    age: 10,
+  })
+
+  equal((await db.query('user').sum('age').get().toObject()).age.sum, 21)
 })

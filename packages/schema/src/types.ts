@@ -464,6 +464,7 @@ export type SchemaPropHooks = {
   create?: (value: any, payload: Record<string, any>) => any
   update?: (value: any, payload: Record<string, any>) => any
   read?: (value: any, result: Record<string, any>) => any
+  aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
   // search?: (query: BasedDbQuery, fields: Set<string>) => void
   // include?: (
   //   query: BasedDbQuery,
@@ -482,7 +483,6 @@ export type SchemaPropHooks = {
   //   value: any,
   // ) => void
   // groupBy?: (query: BasedDbQuery, field: string) => void
-  // aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
 }
 
 type GenericSchemaType<isStrict = false> = {

@@ -43,7 +43,7 @@ const parseVal = (val) => {
   return val
 }
 
-const parseErrorMsg = (
+const parseErrorArr = (
   prop: PropDef | PropDefEdge | SchemaPropTree,
   val: any,
   msg?: string,
@@ -95,7 +95,7 @@ export const handleError = (
 
   if (Array.isArray(e)) {
     const [def, val, msg] = e
-    throw Error(parseErrorMsg(def, val, msg))
+    throw Error(parseErrorArr(def, val, msg))
   }
 
   throw e
