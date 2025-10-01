@@ -103,6 +103,12 @@ const shared: PropsFns<SchemaAnyProp> = {
   validation(val) {
     expectFunction(val)
   },
+  hooks(val, prop, ctx) {
+    expectObject(val)
+    for (const key in val) {
+      expectFunction(val[key])
+    }
+  },
 }
 
 function propParser<PropType extends SchemaAnyProp>(

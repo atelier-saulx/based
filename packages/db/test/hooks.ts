@@ -224,11 +224,85 @@ await test('hooks - as SQL CHECK constraints', async (t) => {
     },
   })
 
-  throws(() => db.create('user', {
-    name: '',
-    age: 15,
-    city: 'Sandcity',
-  }))
+  throws(() =>
+    db.create('user', {
+      name: '',
+      age: 15,
+      city: 'Sandcity',
+    }),
+  )
 
   deepEqual((await db.query('user').get()).length, 0)
+})
+
+test('property hooks', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          age: 'uint8',
+          city: {
+            type: 'string',
+            hooks: {
+              create(value, payload) {
+                if (payload.age < 21 && value === 'Sandcity') {
+                  throw new Error('Minors not allowed in Sandcity')
+                }
+                return 'Snurko'
+              },
+              update(value) {
+                if (value?.toLowerCase() === 'ignore') {
+                  return undefined
+                }
+                return 'Success'
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  throws(() =>
+    db.create('user', {
+      name: '',
+      age: 15,
+      city: 'Sandcity',
+    }),
+  )
+
+  const youzi = await db.create('user', {
+    name: 'youzi',
+    age: 21,
+    city: 'wut',
+  })
+
+  deepEqual(await db.query('user').get(), [
+    { id: 1, age: 21, name: 'youzi', city: 'Snurko' },
+  ])
+
+  await db.update('user', youzi, {
+    city: 'Fail',
+  })
+
+  deepEqual(await db.query('user').get(), [
+    { id: 1, age: 21, name: 'youzi', city: 'Success' },
+  ])
+
+  await db.update('user', youzi, {
+    city: 'ignore',
+  })
+
+  deepEqual(await db.query('user').get(), [
+    { id: 1, age: 21, name: 'youzi', city: 'Success' },
+  ])
 })
