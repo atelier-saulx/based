@@ -1,0 +1,14 @@
+{
+  "extends": "@saulx/tsconfig/default.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "declarationMap": true,
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "noEmit": false,
+    "types": ["node", "@based/i18n", "./src/types.d.ts"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.json"]
+}
