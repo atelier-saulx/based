@@ -92,7 +92,12 @@ export const groupBy = (
   if (!fieldDef) {
     aggregationFieldDoesNotExist(def, field)
   }
-  fieldDef.hooks?.groupBy?.(q, field)
+  const groupByPropHook = fieldDef.hooks?.groupBy
+  if (groupByPropHook) {
+    fieldDef.hooks.groupBy = null
+    groupByPropHook(q, field)
+    fieldDef.hooks.groupBy = groupByPropHook
+  }
   const groupByHook = def.schema.hooks?.groupBy
   if (groupByHook) {
     def.schema.hooks.groupBy = null

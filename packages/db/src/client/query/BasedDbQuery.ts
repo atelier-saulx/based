@@ -419,13 +419,13 @@ export class QueryBranch<T> {
       include(this, fields)
       if (this.def.schema.propHooks?.include) {
         for (const field of this.def.include.stringFields.keys()) {
-          this.def.schema.props[field]?.hooks?.include(
-            this,
-            this.def.include.stringFields,
-          )
-        }
-        for (const { def } of this.def.include.props.values()) {
-          def.hooks?.include?.(this, this.def.include.stringFields)
+          const hooks = this.def.schema.props[field]?.hooks
+          const includeHook = hooks?.include
+          if (includeHook) {
+            hooks.include = null
+            includeHook(this, this.def.include.stringFields)
+            hooks.include = includeHook
+          }
         }
       }
       const includeHook = this.def.schema.hooks?.include

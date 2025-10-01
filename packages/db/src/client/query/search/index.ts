@@ -145,9 +145,12 @@ export const search = (
       start: prop.start ?? 0, // also need lang ofc if you have start
     })
 
-    if (prop.hooks?.search) {
+    const searchHook = prop.hooks?.search
+    if (searchHook) {
       hookFields ??= new Set(Object.keys(s))
-      prop.hooks?.search(queryBranch, hookFields)
+      prop.hooks.search = null
+      searchHook(queryBranch, hookFields)
+      prop.hooks.search = searchHook
     }
   }
 
