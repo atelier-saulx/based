@@ -319,14 +319,27 @@ await test('property read hooks', async (t) => {
   await db.setSchema({
     types: {
       user: {
+        hooks: {
+          read: (result) => {
+            result.powerful = true
+            result.parsedAge = result.age
+          },
+        },
         props: {
           name: 'string',
-          age: 'uint8',
+          age: {
+            type: 'uint8',
+            hooks: {
+              read(value) {
+                return value * 2
+              },
+            },
+          },
           city: {
             type: 'string',
             hooks: {
-              read(value, result) {
-                return 'Amsterdam'
+              read(value) {
+                return 'Amsterdam    test for whitespace:' + value
               },
             },
           },
@@ -342,6 +355,13 @@ await test('property read hooks', async (t) => {
   })
 
   deepEqual(await db.query('user').get(), [
-    { id: 1, age: 21, name: 'youzi', city: 'Amsterdam' },
+    {
+      id: 1,
+      age: 21 * 2,
+      name: 'youzi',
+      city: 'Amsterdam    test for whitespace:wut',
+      powerful: true,
+      parsedAge: 21 * 2,
+    },
   ])
 })
