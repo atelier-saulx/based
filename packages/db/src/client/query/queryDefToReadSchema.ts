@@ -61,6 +61,14 @@ const createReaderPropDef = (
   return readerPropDef
 }
 
+const normalizeHookFn = (fn: Function) => {
+  let src = fn.toString()
+  if (/^[a-zA-Z0-9_$]+\s*\(/.test(src)) {
+    src = 'function ' + src
+  }
+  return src
+}
+
 export const convertToReaderSchema = (
   q: QueryDef,
   locales?: ReaderLocales,
@@ -123,7 +131,20 @@ export const convertToReaderSchema = (
       }
     }
   } else {
-    if (q.schema?.hooks?.read) {
+    if (q.schema?.propHooks?.read) {
+      let body = ''
+      for (const def of q.schema.propHooks.read) {
+        const target = `r.${def.path.join('.')}`
+        body += `if(r.${def.path.join('?.')}!=null)${target}=(${normalizeHookFn(def.hooks.read)})(${target},r);`
+      }
+
+      if (q.schema?.hooks?.read) {
+        body += `r=(${normalizeHookFn(q.schema.hooks.read)})(r);`
+      }
+
+      body += `return r;`
+      readerSchema.hook = new Function('r', body) as typeof readerSchema.hook
+    } else if (q.schema?.hooks?.read) {
       readerSchema.hook = q.schema.hooks.read
     }
     if (isRoot && q.search) {

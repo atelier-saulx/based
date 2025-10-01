@@ -1,4 +1,9 @@
-import type { LangCode, SchemaHooks, SchemaLocales } from '../index.js'
+import type {
+  LangCode,
+  SchemaHooks,
+  SchemaLocales,
+  SchemaPropHooks,
+} from '../index.js'
 import { Validation } from './validation.js'
 import {
   ALIAS,
@@ -29,8 +34,6 @@ import {
   VectorBaseType,
   ID,
 } from './typeIndexes.js'
-
-import type { HLLRegisterRepresentation } from '../types.js'
 
 export * from './typeIndexes.js'
 
@@ -100,7 +103,7 @@ export type PropDef = {
   cardinalityMode?: number
   cardinalityPrecision?: number
   // edge stuff
-  edgeNodeTypeId?: number,
+  edgeNodeTypeId?: number
   edgeMainLen?: 0
   hasDefaultEdges?: boolean
   reverseEnum?: { [key: string]: number }
@@ -120,6 +123,7 @@ export type PropDef = {
   max?: any
   min?: any
   step?: any
+  hooks?: SchemaPropHooks
 }
 
 export type PropDefEdge = Partial<PropDef> & {
@@ -195,6 +199,9 @@ export type SchemaTypeDef = {
   locales: Partial<SchemaLocales>
   localeSize: number
   hooks?: SchemaHooks
+  propHooks?: {
+    [K in keyof SchemaPropHooks]: Set<PropDef>
+  }
 }
 
 export const VECTOR_BASE_TYPE_SIZE_MAP: Record<VectorBaseType, number> = {

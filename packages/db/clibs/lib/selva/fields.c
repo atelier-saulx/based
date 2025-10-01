@@ -1281,7 +1281,10 @@ int selva_fields_references_insert(
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode *restrict dst,
         struct SelvaNodeReferenceAny *ref_out,
-        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+        selva_dirty_node_cb_t dirty_cb,
+        void *dirty_ctx,
+        bool ignore_src_dependent
+    )
 {
     const struct SelvaFieldSchema *fs_dst;
     node_type_t type_dst = te_dst->type;
@@ -1300,7 +1303,7 @@ int selva_fields_references_insert(
 
     if (add_to_refs_index(db, &fs->edge_constraint, node, dst, fs, fs_dst)) {
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-            remove_reference(db, dst, fs_dst, 0, -1, false, dirty_cb, dirty_ctx);
+            remove_reference(db, dst, fs_dst, 0, -1, ignore_src_dependent, dirty_cb, dirty_ctx);
         }
 
         /*
