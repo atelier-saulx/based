@@ -16,7 +16,7 @@
     "@based/client": "8.2.3",
     "@based/db": "0.1.5",
     "@based/hash": "1.1.0",
-    "@based/s3": "1.0.1",
+    "@based/s3": "*",
     "@based/schema": "5.0.4",
     "@based/server": "10.2.4",
     "@based/utils": "1.1.1",
