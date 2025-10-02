@@ -4,7 +4,7 @@ Welcome to the official SDK for the Based platform. This package is the single, 
 
 ## Why use `@based/sdk`?
 
-Previously, to use different parts of the Based ecosystem, you had to install and manage multiple packages individually (e.g., `@based/db`, `@based/schema`).
+Previously, to use different parts of the Based ecosystem, you had to install and manage multiple packages individually (e.g., `@based/schema`).
 
 The `@based/sdk` package simplifies this by providing a single, consistent, and optimized way to access the entire Based toolset.
 
@@ -30,14 +30,12 @@ The SDK is designed to be flexible, allowing you to import exactly what you need
 
 ### Importing an Entire Module
 
-You can import an entire module (like `db` or `schema`) directly from its subpath. This is the recommended approach for clarity and organization.
+You can import an entire module (like `schema`) directly from its subpath. This is the recommended approach for clarity and organization.
 
 ```js
-import * as db from '@based/sdk/db'
 import * as schema from '@based/sdk/schema'
 
 // Now you can use functions from each module
-const myDb = db.create(/* ... */)
 const mySchema = schema.parse({
   /* ... */
 })
@@ -48,47 +46,25 @@ const mySchema = schema.parse({
 For better tree-shaking and cleaner code, you can import specific functions or components directly from the module's subpath.
 
 ```js
-import { BasedDb } from '@based/sdk/db';
 import { SchemaProp, SchemaType } from '@based/sdk/schema';
 import { wait } from '@based/sdk/utils';
 
 // Use the imported functions directly
-const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const voteCountrySchema: SchemaProp = countrySchema
 
   await wait(500)
-```
-
-## Main Entry Point (Convenience Exports)
-
-The main entry point provides convenient, top-level exports for the most commonly used functionalities.
-
-```ts
-import { db, schema } from '@based/sdk'
-
-const client = db.create()
-const userSchema = schema.parse({
-  /* ... */
-})
 ```
 
 ## Packages Included
 
 This SDK provides exports from the following core Based packages:
 
-- @based/db - The core database client.
 - @based/schema - Tools for schema definition and validation.
 - @based/utils - Shared utility functions.
 - @based/hash - Fast, low collision hashing based on djb2
 - @based/protocol - Protocols for network operations and storage
 - @based/functions - To be used with based cloud functions, adds types and utilities.
 - @based/errors - Error codes and handlers
-- @based/server - Live graph data platform, build for hyper-scale & progressive security
 - @based/type-gen - Generates based client types and validators from functions & schema
 - @based/client - Based client
 - @based/react - Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into react hooks
