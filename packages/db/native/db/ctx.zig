@@ -29,6 +29,7 @@ pub const DbCtx = struct {
     sortIndexes: sort.TypeSortIndexes,
     selva: ?*selva.SelvaDb,
     subscriptions: subs.SubscriptionCtx,
+    ids: []u32,
     pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
         self.arena.deinit();
         backing_allocator.destroy(self.arena);
@@ -72,6 +73,7 @@ pub fn createDbCtx() !*DbCtx {
         .initialized = false,
         .selva = null,
         .subscriptions = subscriptions.*,
+        .ids = &[_]u32{},
     };
     for (&b.*.threadCtx) |*tctx| {
         tctx.* = .{ .threadId = 0, .decompressor = null, .libdeflateBlockState = undefined };

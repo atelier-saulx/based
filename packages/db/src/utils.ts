@@ -2,9 +2,6 @@ import { inspect } from 'node:util'
 import picocolors from 'picocolors'
 import { DbServer } from './server/index.js'
 
-export const DECODER = new TextDecoder('utf-8')
-export const ENCODER = new TextEncoder()
-
 export const debugMode = (target, getInfo = null) => {
   const opts = { showHidden: false, depth: null, colors: true }
   const info = (v) => (typeof v === 'object' ? inspect(v, opts) : v)
@@ -49,5 +46,5 @@ export const debugServer = (server: DbServer) =>
   debugMode(
     server,
     () =>
-      `p: ${server.activeReaders} m: ${server.modifyQueue.length} q: ${server.queryQueue.size}`,
+      `p: ${server.activeReaders} m: ${server.modifyQueue.size} q: ${server.queryQueue.size}`,
   )

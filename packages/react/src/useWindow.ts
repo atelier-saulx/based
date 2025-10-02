@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext, useRef } from 'react'
 import { Ctx } from './Ctx.js'
-import { BasedClient, BasedQuery } from '@based/client'
+import { BasedClient, BasedClientQuery as BasedQuery } from '@based/client'
 import { hash } from '@based/hash'
 
 type UseWindowState = {

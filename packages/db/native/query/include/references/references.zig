@@ -60,7 +60,7 @@ pub fn getRefsFields(
     var refs: ?types.Refs(isEdge) = undefined;
 
     if (isEdge) {
-        if (db.getEdgeReferences(ref.?.largeReference.?, refField)) |r| {
+        if (db.getEdgeReferences(ctx.db, ref.?.edgeConstraint.?, ref.?.largeReference.?, refField)) |r| {
             if (ref.?.edgeConstraint == null) {
                 std.log.err("Trying to get an edge field from a weakRef (3) \n", .{});
                 // Is a edge ref cant filter on an edge field!
@@ -70,7 +70,7 @@ pub fn getRefsFields(
                 // 10 + 1 for edge marker
                 return 11;
             };
-            refs = .{ .weakRefs = r, .fs = edgeFs };
+            refs = .{ .refs = r, .fs = edgeFs };
         } else {
             // 10 + 1 for edge marker
             return 11;
@@ -81,11 +81,13 @@ pub fn getRefsFields(
             return 10;
         };
         edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
-        refs = db.getReferences(ctx.db, node, fieldSchema);
-        if (refs == null) {
+        const references = db.getReferences(ctx.db, node, fieldSchema);
+        if (references == null) {
             // default empty size - this should never happen
             return 10;
         }
+
+        refs = .{ .refs = references.?, .fs = fieldSchema };
     }
 
     var result: types.RefsResult = undefined;

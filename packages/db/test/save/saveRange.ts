@@ -363,17 +363,9 @@ await test('large block gap', async (t) => {
 
   await db.setSchema({
     types: {
-      a: {
-        blockCapacity: 10_000,
-        props: {
-          brefs: { items: { ref: 'b', prop: 'aref' } },
-          x: { type: 'uint8' },
-        },
-      },
       b: {
         blockCapacity: 10_000,
         props: {
-          aref: { ref: 'a', prop: 'brefs' },
           y: { type: 'uint8' },
         },
       },
@@ -381,13 +373,18 @@ await test('large block gap', async (t) => {
   })
 
   db.create('b', {
-    aref: 1,
     y: 10,
   })
   for (let i = 268435456; i < 268468224; i++) {
-    db.create('b', {
-      aref: i,
-      y: i % 255,
-    })
+    db.create(
+      'b',
+      {
+        id: i,
+        y: i % 255,
+      },
+      { unsafe: true },
+    )
   }
+
+  await db.drain()
 })

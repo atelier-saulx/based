@@ -1,9 +1,6 @@
 // @ts-ignore
-import db from '../../basedDbNative.cjs'
-
-// Can't import these from utils or it would be a cyclic import.
-const DECODER = new TextDecoder('utf-8')
-const ENCODER = new TextEncoder()
+import db from '@based/db/native'
+import { DECODER, ENCODER } from '@based/utils'
 
 const selvaIoErrlog = new Uint8Array(256)
 var compressor = db.createCompressor()
@@ -58,11 +55,10 @@ const native = {
 
   modify: (
     data: Uint8Array,
-    types: Uint8Array,
     dbCtx: any,
     dirtyBlocksOut: Float64Array,
-  ): any => {
-    db.modify(data, types, dbCtx, dirtyBlocksOut)
+  ): number | null => {
+    return db.modify(data, dbCtx, dirtyBlocksOut)
   },
 
   getQueryBuf: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
@@ -118,12 +114,16 @@ const native = {
     db.delBlock(dbCtx, typeId, block)
   },
 
-  updateSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
-    return db.updateSchema(prefix, buf, dbCtx)
+  setSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
+    return db.setSchemaType(prefix, buf, dbCtx)
   },
 
-  getTypeInfo: (typeId: number, dbCtx: any) => {
-    return db.getTypeInfo(typeId, dbCtx)
+  setSchemaIds: (ids: Uint32Array, dbCtx: any) => {
+    return db.setSchemaIds(ids, dbCtx)
+  },
+
+  getSchemaIds: (dbCtx: any): Uint32Array => {
+    return new Uint32Array(db.getSchemaIds(dbCtx))
   },
 
   getNodeRangeHash: (

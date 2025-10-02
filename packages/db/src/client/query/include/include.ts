@@ -23,7 +23,7 @@ export const include = (
       includeField(query.def, { field: f, opts })
     } else if (typeof f === 'function') {
       f((field: string) => {
-        if (field[0] == '$') {
+        if (field[0] === '$') {
           // @ts-ignore
           const prop = query.def.target?.propDef?.edges[field]
           if (
@@ -38,11 +38,7 @@ export const include = (
             `No edge reference or edge references field named "${field}"`,
           )
         } else {
-          const prop =
-            field[0] == '$'
-              ? // @ts-ignore
-                query.def.target?.propDef?.edges[field]
-              : query.def.props[field]
+          const prop = query.def.props[field]
           if (
             prop &&
             (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)

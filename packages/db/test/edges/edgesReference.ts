@@ -191,4 +191,38 @@ await test('multiple references', async (t) => {
       },
     ],
   )
+
+  // this tests offsets
+  let i = 10
+  while (i--) {
+    db.create('article', {
+      name: 'The secrets of sourkraut',
+      contributor: {
+        id: mrFlap,
+        $countries: [nl, de],
+      },
+    })
+  }
+  await db.drain()
+  const articles = (
+    await db
+      .query('article')
+      .include('name', 'contributor.$countries')
+      .get()
+      .toObject()
+  ).slice(-10)
+
+  for (const article of articles) {
+    deepEqual(article, {
+      id: article.id,
+      name: 'The secrets of sourkraut',
+      contributor: {
+        id: 2,
+        $countries: [
+          { id: 3, code: 'nl', name: 'Netherlands' },
+          { id: 2, code: 'de', name: 'Germany' },
+        ],
+      },
+    })
+  }
 })

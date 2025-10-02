@@ -1,22 +1,16 @@
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
-import { BasedQueryFunctionConfig, BasedRoute } from '@based/functions'
+import {
+  BasedQueryFunctionConfig,
+  BasedRoute,
+  ObservableUpdateFunction,
+} from '@based/functions'
 
 export type ObservableError =
   | BasedErrorData<BasedErrorCode.FunctionError>
   | BasedErrorData<BasedErrorCode.FunctionIsWrongType>
   | BasedErrorData<BasedErrorCode.FunctionNotFound>
 
-export type ObservableUpdateFunction = (
-  data: any,
-  checksum?: number,
-  err?: null | ObservableError,
-  cache?: Uint8Array,
-  diff?: any,
-  fromChecksum?: number,
-  isDeflate?: boolean,
-) => void
-
-export type ObserveErrorListener = (err: ObservableError) => void
+export type ServerObserveErrorListener = (err: ObservableError) => void
 
 export type ActiveObservable = {
   startId: number

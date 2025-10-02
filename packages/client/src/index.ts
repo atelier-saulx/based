@@ -1,6 +1,6 @@
 import {
   BasedOpts,
-  AuthState,
+  ClientAuthState as AuthState,
   FunctionResponseListeners,
   Settings,
   FunctionQueue,
@@ -27,7 +27,7 @@ import {
   sendAuth,
 } from './outgoing/index.js'
 import { incoming } from './incoming/index.js'
-import { BasedQuery } from './query/index.js'
+import { BasedClientQuery } from './query/index.js'
 import startStream from './stream/index.js'
 import {
   StreamFunctionOpts,
@@ -50,7 +50,7 @@ export * from './authState/parseAuthState.js'
 
 export { cacheId }
 
-export { AuthState, BasedQuery }
+export { AuthState as ClientAuthState, BasedClientQuery }
 
 const isBrowser = typeof window !== 'undefined'
 let lastReloadSeqId = -1
@@ -386,8 +386,8 @@ export class BasedClient extends Emitter {
   }).get()
   ```
   */
-  query(name: string, payload?: any, opts?: QueryOptions): BasedQuery {
-    return new BasedQuery(this, name, payload, opts)
+  query(name: string, payload?: any, opts?: QueryOptions): BasedClientQuery {
+    return new BasedClientQuery(this, name, payload, opts)
   }
 
   // -------- Function
@@ -538,7 +538,7 @@ export default function based(
   return new BasedClient(opts, settings)
 }
 
-export type QueryMap = {
+export type ClientQueryMap = {
   db: { payload: any; result: any }
   [key: string]: { payload: any; result: any }
 }

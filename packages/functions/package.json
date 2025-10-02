@@ -1,6 +1,6 @@
 {
   "name": "@based/functions",
-  "version": "3.3.0",
+  "version": "3.3.2",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -13,14 +13,13 @@
     "clean:ts:before": "rm -rf ./dist ./tsconfig.tsbuildinfo || true",
     "build": "npm run clean:ts:before && npx tsc -b && npm run copy:uws && npm run copy:client",
     "watch": "npx tsc --watch",
-    "clean": "rm -rf ./dist ./node_modules"
+    "clean": "rm -rf ./dist ./node_modules ./tsconfig.tsbuildinfo"
   },
   "sideEffects": false,
   "dependencies": {
-    "@based/db": "^0.1.1",
-    "@based/utils": "^1.0.0",
-    "utility-types": "^3.10.0",
-    "arktype": "^2.1.20"
+    "@based/db": "0.1.4",
+    "@based/utils": "1.1.1",
+    "utility-types": "^3.10.0"
   },
   "devDependencies": {
     "ts-node": "10.9.1"

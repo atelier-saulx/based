@@ -18,22 +18,15 @@ pub const ModifyCtx = struct {
     node: ?db.Node,
     fieldType: types.Prop,
     db: *db.DbCtx,
-    typeInfo: []u8,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
     subTypes: ?*subs.TypeSubscriptionCtx,
     idSubs: bool, //?*subs.Fields,
-    subTypeEntry: db.Type,
+    batch: []u8,
 };
 
-pub fn getIdOffset(ctx: *ModifyCtx, typeId: u16) u32 {
-    var j: usize = 0;
-    while (j < ctx.typeInfo.len) : (j += 6) {
-        const tId = read(u16, ctx.typeInfo, j);
-        if (tId == typeId) {
-            return read(u32, ctx.typeInfo, j + 2);
-        }
-    }
-    return 0;
+pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {
+    const index = tmpId * 5;
+    return read(u32, ctx.batch, index);
 }
 
 pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {

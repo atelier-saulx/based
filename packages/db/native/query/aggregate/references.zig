@@ -84,10 +84,12 @@ pub inline fn aggregateRefsGroup(
             return 0;
         };
         edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
-        refs = db.getReferences(ctx.db, node, fieldSchema);
-        if (refs == null) {
+        const references = db.getReferences(ctx.db, node, fieldSchema);
+        if (references == null) {
             return 0;
         }
+
+        refs = .{ .refs = references.?, .fs = fieldSchema };
     }
 
     var index: usize = 0;
@@ -102,7 +104,7 @@ pub inline fn aggregateRefsGroup(
     var i: usize = offset;
 
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
-    defer selva.selva_free(hllAccumulator);
+    defer selva.selva_string_free(hllAccumulator);
 
     checkItem: while (i < refsCnt) : (i += 1) {
         if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |n| {
@@ -187,10 +189,12 @@ pub inline fn aggregateRefsDefault(
             return 10;
         };
         edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
-        refs = db.getReferences(ctx.db, node, fieldSchema);
-        if (refs == null) {
+        const references = db.getReferences(ctx.db, node, fieldSchema);
+        if (references == null) {
             return 10;
         }
+
+        refs = .{ .refs = references.?, .fs = fieldSchema };
     }
 
     const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);

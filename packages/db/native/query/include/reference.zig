@@ -55,7 +55,7 @@ pub fn getSingleRefFields(
 
     if (isEdge) {
         size += 1;
-        var selvaRef = db.getEdgeReference(ref.?.largeReference.?, refField);
+        var selvaRef = db.getEdgeReference(ctx.db, ref.?.edgeConstraint.?, ref.?.largeReference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }
@@ -77,6 +77,9 @@ pub fn getSingleRefFields(
         if (selvaRef == null) {
             return 6 + size;
         }
+        const dstType = db.getRefDstType(ctx.db, fieldSchema.?) catch {
+            return 6 + size;
+        };
         const edgeConstraint = selva.selva_get_edge_field_constraint(
             fieldSchema,
         );
@@ -87,7 +90,7 @@ pub fn getSingleRefFields(
             .edgeReference = null,
             .edgeConstraint = edgeConstraint,
         };
-        node = selvaRef.?.*.dst;
+        node = db.getNodeFromReference(dstType, selvaRef);
         if (node == null) {
             return 6 + size;
         }

@@ -41,7 +41,8 @@ typedef struct {
 
 static_assert(HLL_INIT_SIZE == sizeof(HyperLogLogPlusPlus));
 
-void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
+void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse)
+{
     if (precision < HLL_MIN_PRECISION ||
         precision > HLL_MAX_PRECISION) {
         db_panic("Precision must be between %d and %d", HLL_MIN_PRECISION, HLL_MAX_PRECISION);
@@ -70,7 +71,8 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse) {
     }
 }
 
-void hll_init_like(struct selva_string *hlla, struct selva_string *hllb){
+void hll_init_like(struct selva_string *hlla, struct selva_string *hllb)
+{
     if (hlla == nullptr || hllb == nullptr) {
         db_panic("selva_string can't be null during HLL initialization");
     }
@@ -81,11 +83,13 @@ void hll_init_like(struct selva_string *hlla, struct selva_string *hllb){
     hll_init(hlla, precision, is_sparse);
 }
 
-static int count_leading_zeros(uint64_t x) {
+static int count_leading_zeros(uint64_t x)
+{
     return (x == 0 ? 0 : __builtin_clzll(x));
 }
 
-void hll_add(struct selva_string *hllss, const uint64_t hash) {
+void hll_add(struct selva_string *hllss, const uint64_t hash)
+{
     if (!hllss || !hash) {
         db_panic("Unable to read stored value.");
     }
@@ -133,8 +137,8 @@ void hll_add(struct selva_string *hllss, const uint64_t hash) {
     }
 }
 
-void hll_union(struct selva_string *result, struct selva_string *hll_new) {
-
+void hll_union(struct selva_string *result, struct selva_string *hll_new)
+{
     size_t result_len, new_len;
     HyperLogLogPlusPlus *new_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(hll_new, &new_len);
     HyperLogLogPlusPlus *result_hll = (HyperLogLogPlusPlus *)selva_string_to_mstr(result, &result_len);
@@ -165,41 +169,49 @@ void hll_union(struct selva_string *result, struct selva_string *hll_new) {
     result_hll->dirty = true;
 }
 
-// // static unsigned long locate(const float  *xx, size_t n, float x, bool ascnd) {
-// //     size_t jl = 0;
-// //     size_t ju = n;
+#if 0
+static unsigned long locate(const float  *xx, size_t n, float x, bool ascnd) {
+    size_t jl = 0;
+    size_t ju = n;
 
-// //     while (ju - jl > 1) {
-// //         size_t jm = (ju + jl) >> 1;
-// //         if (x >= xx[jm] == ascnd) {
-// //             jl = jm;
-// //         } else {
-// //             ju = jm;
-// //         }
-// //     }
-// //     return jl;
-// // }
-
-// // static double apply_bias_correction(double estimate, uint8_t precision) {
-// //     size_t j = locate(raw_estimate_data[precision - 4], actual_cols[precision], estimate, ASC);
-
-// //     const float avg_estimate = (raw_estimate_data[precision - 4][j] + raw_estimate_data[precision - 4][j + 1]) * 0.5f;
-// //     const float avg_bias = (bias_data[precision - 4][j] + bias_data[precision - 4][j + 1]) * 0.5f;
-
-// //     return (avg_estimate + avg_bias) * 0.5f);
-// // }
-
-static double compute_alpha_m(size_t m) {
-    switch(m) {
-        case 16: return 0.673; break;
-        case 32: return 0.697; break;
-        case 64: return 0.709; break;
-        default:
-            return 0.7213 / (1.0 + 1.079 / m); break;
+    while (ju - jl > 1) {
+        size_t jm = (ju + jl) >> 1;
+        if (x >= xx[jm] == ascnd) {
+            jl = jm;
+        } else {
+            ju = jm;
+        }
     }
+    return jl;
 }
 
-uint8_t *hll_count(struct selva_string *hllss) {
+static double apply_bias_correction(double estimate, uint8_t precision) {
+    size_t j = locate(raw_estimate_data[precision - 4], actual_cols[precision], estimate, ASC);
+
+    const float avg_estimate = (raw_estimate_data[precision - 4][j] + raw_estimate_data[precision - 4][j + 1]) * 0.5f;
+    const float avg_bias = (bias_data[precision - 4][j] + bias_data[precision - 4][j + 1]) * 0.5f;
+
+    return (avg_estimate + avg_bias) * 0.5f);
+}
+#endif
+
+static double compute_alpha_m(size_t m)
+{
+    switch(m) {
+    case 16:
+        return 0.673;
+    case 32:
+        return 0.697;
+    case 64:
+        return 0.709;
+    default:
+        return 0.7213 / (1.0 + 1.079 / m);
+    }
+    unreachable();
+}
+
+uint8_t *hll_count(struct selva_string *hllss)
+{
     if (!hllss) {
         return nullptr;
     }
@@ -211,40 +223,39 @@ uint8_t *hll_count(struct selva_string *hllss) {
         return (uint8_t *)&hll->count;
     }
 
-    // uint32_t precision = hll->precision;
-    const uint16_t num_registers = hll->num_registers;
+    const size_t num_registers = hll->num_registers;
     const uint8_t *registers = hll->registers;
 
     double raw_estimate = 0.0;
     double zero_count = 0.0;
 
-// #if __ARM_NEON
-//     assert(num_registers % 4 == 0);
-//     for (size_t i = 0; i < num_registers; i += 4) {
-//         float32x4_t b = {
-//             (float)registers[i],
-//             (float)registers[i + 1],
-//             (float)registers[i + 2],
-//             (float)registers[i + 3],
-//         };
-//         float32x4_t r;
-//         uint32x4_t z;
+#if __ARM_NEON
+    assert(num_registers % 4 == 0);
+    for (size_t i = 0; i < num_registers; i += 4) {
+        float32x4_t b = {
+            (float)registers[i],
+            (float)registers[i + 1],
+            (float)registers[i + 2],
+            (float)registers[i + 3],
+        };
+        float32x4_t r;
+        uint32x4_t z;
 
-//         z = vceqzq_f32(b); // zero mask
-//         z = z & (uint32x4_t){1, 1, 1, 1};
-//         zero_count += (double)(vaddvq_u32(z));
-//         r = exp2_ps(vnegq_f32(b));
-//         raw_estimate += vaddvq_f32(r);
-//     }
-// #else
+        z = vceqzq_f32(b); /* zero mask */
+        z = z & (uint32x4_t){1, 1, 1, 1};
+        zero_count += (double)(vaddvq_u32(z));
+        r = exp2_ps(vnegq_f32(b));
+        raw_estimate += vaddvq_f32(r);
+    }
+#else
     for (size_t i = 0; i < num_registers; i++) {
         if (registers[i] == 0) {
             zero_count++;
         }
-        raw_estimate += 1.0/exp2((double)registers[i]);
-        // raw_estimate += ldexp(1.0, -(double)registers[i]);
+        /* raw_estimate += ldexp(1.0, -(double)registers[i]); */
+        raw_estimate += 1.0 / exp2((double)registers[i]);
     }
-// #endif
+#endif
 
     double m = (double)num_registers;
     double alpha_m = compute_alpha_m(num_registers);
@@ -254,10 +265,12 @@ uint8_t *hll_count(struct selva_string *hllss) {
         estimate = m * log(m / zero_count);
     }
 
-    // bias correction is suspended until a validation of threshould table being done
-    // if (estimate <= 5 * m){
-    //     estimate = apply_bias_correction(estimate, precision);
-    // }
+    /* bias correction is suspended until a validation of threshold table being done */
+#if 0
+    if (estimate <= 5 * m){
+        estimate = apply_bias_correction(estimate, precision);
+    }
+#endif
 
     hll->count = (uint32_t)estimate;
     hll->dirty = false;

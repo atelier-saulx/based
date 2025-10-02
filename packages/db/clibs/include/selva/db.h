@@ -5,6 +5,7 @@
 #pragma once
 
 #include <assert.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include "selva/_export.h"
@@ -15,6 +16,20 @@
  * We should have something with selva_hash_state;
  */
 struct XXH3_state_s;
+
+struct selva_dump_common_data {
+    /**
+     * Pointer to data returned here when loading; Data read from here when saving.
+     */
+    const void *meta_data __pcounted_by(meta_len);
+    size_t meta_len;
+
+    /**
+     * Can be nullptr. Also set errlog_size to 0.
+     */
+    char *errlog_buf __pcounted_by(errlog_size);
+    size_t errlog_size;
+};
 
 /**
  * Create a new DB instance.
@@ -39,7 +54,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
  * Save the common/shared data of the database.
  */
 SELVA_EXPORT
-int selva_dump_save_common(struct SelvaDb *db, const char *filename) __attribute__((nonnull));
+int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename) __attribute__((nonnull));
 
 /**
  * Save a nodes block starting from start.
@@ -56,7 +71,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
  *  ```
  */
 SELVA_EXPORT
-int selva_dump_load_common(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
+int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename) __attribute__((nonnull));
 
 SELVA_EXPORT
 int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
@@ -124,11 +139,10 @@ inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEn
 #endif
 
 SELVA_EXPORT
-__attribute__((nonnull, pure))
 inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field)
 #ifndef __zig
 {
-    if (field >= fields_schema->nr_fields) {
+    if (!fields_schema || field >= fields_schema->nr_fields) {
         return nullptr;
     }
 
@@ -223,7 +237,16 @@ inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const s
 #endif
 
 SELVA_EXPORT
-const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
+inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
+#ifndef __zig
+{
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->meta_node_type);
+
+    return (te) ? &selva_get_ns_by_te(te)->fields_schema : nullptr;
+}
+#else
+;
+#endif
 
 SELVA_EXPORT
 void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts);

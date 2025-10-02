@@ -230,14 +230,9 @@ await test('basic', async (t) => {
     'sort by email after updating email',
   )
 
-  db.update(
-    'user',
-    mrX,
-    {
-      age: 1e6,
-    },
-    { overwrite: true },
-  )
+  db.update('user', mrX, {
+    age: 1e6,
+  })
 
   await db.drain()
 

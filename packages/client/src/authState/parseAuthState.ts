@@ -1,4 +1,4 @@
-import { AuthState } from '../types/index.js'
+import { ClientAuthState as AuthState } from '../types/index.js'
 import { createEncoder, encodeBase64, decodeBase64 } from '@based/utils'
 
 export const decodeAuthState = (authState: string): AuthState => {

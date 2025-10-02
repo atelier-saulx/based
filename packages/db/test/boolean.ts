@@ -20,6 +20,7 @@ await test('boolean', async (t) => {
   })
 
   const user1 = await db.create('user', {})
+
   db.create('user', {
     isNice: true,
   })

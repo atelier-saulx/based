@@ -1,0 +1,47 @@
+{
+  "name": "@based/clinext",
+  "version": "9.0.0-alpha.3",
+  "description": "Based command line tool",
+  "bin": "dist/cli.js",
+  "scripts": {
+    "build": "tsc -b",
+    "watch": "tsc -b --watch"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "source": "src/index.ts",
+  "sideEffects": false,
+  "devDependencies": {
+    "@based/ui": "8.2.0-alpha.4",
+    "@saulx/tsconfig": "^1.1.0",
+    "@types/maildev": "^0.0.7",
+    "ink-testing-library": "^3.0.0"
+  },
+  "dependencies": {
+    "@based/client": "8.2.2",
+    "@based/functions": "3.3.2",
+    "@based/hash": "1.1.0",
+    "@based/hub": "0.1.0",
+    "@based/react": "5.3.0",
+    "@based/s3": "1.0.0",
+    "@based/schema": "5.0.4",
+    "@based/utils": "1.1.1",
+    "@inkjs/ui": "^2.0.0",
+    "@parcel/watcher": "^2.5.1",
+    "@saulx/validators": "^1.2.1",
+    "esbuild": "^0.25.9",
+    "fullscreen-ink": "^0.1.0",
+    "get-port": "^7.1.0",
+    "ink": "^5.0.0",
+    "maildev": "^2.2.1",
+    "meow": "^11.0.0",
+    "picocolors": "^1.1.1",
+    "react": "^18.2.0",
+    "serve-handler": "^6.1.6",
+    "source-map": "0.7.4",
+    "unique-names-generator": "^4.7.1"
+  }
+}

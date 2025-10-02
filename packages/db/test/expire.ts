@@ -65,7 +65,6 @@ await test('expire', async (t) => {
     '1 token after load',
   )
   await setTimeout(3e3)
-  console.log(await db2.query('token').get().toObject())
   equal(
     (await db2.query('token').get().toObject()).length,
     0,

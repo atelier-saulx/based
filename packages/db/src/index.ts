@@ -1,4 +1,4 @@
-import { compress } from './client/string.js'
+import { stringCompress } from './client/string.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
 import { wait } from '@based/utils'
@@ -6,8 +6,7 @@ import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import { BasedDbOpts } from './types.js'
-import { decompress } from '@based/protocol/db-read'
-export { compress, decompress }
+export { stringCompress }
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'
 export { crc32 } from './client/crc32.js'
@@ -68,6 +67,10 @@ export class BasedDb extends Emitter {
 
   upsert: DbClient['upsert'] = function (this: BasedDb) {
     return this.client.upsert.apply(this.client, arguments)
+  }
+
+  insert: DbClient['insert'] = function (this: BasedDb) {
+    return this.client.insert.apply(this.client, arguments)
   }
 
   delete: DbClient['delete'] = function (this: BasedDb) {

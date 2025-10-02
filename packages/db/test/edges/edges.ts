@@ -73,18 +73,15 @@ await test('multiple references', async (t) => {
       lat: 32.14,
     },
   })
-
   const mrYur = db.create('user', {
     name: 'Mr Yur',
   })
-
   const mrDerp = db.create('user', {
     name: 'Mr Derp',
   })
-
   await db.drain()
 
-  await db.create('article', {
+  const artStrudel = await db.create('article', {
     name: 'The wonders of Strudel',
     contributors: [
       {
@@ -97,8 +94,7 @@ await test('multiple references', async (t) => {
       },
     ],
   })
-
-  await db.create('article', {
+  const artItaly = await db.create('article', {
     name: 'Italy',
     contributors: [
       {
@@ -117,12 +113,12 @@ await test('multiple references', async (t) => {
     ).toObject(),
     [
       {
-        id: 1,
+        id: artStrudel,
         contributors: [{ id: 1, $role: 'writer' }],
       },
       {
-        id: 2,
-        contributors: [{ id: 1, $bigString: italy }],
+        id: artItaly,
+        contributors: [{ id: 1, $role: undefined, $bigString: italy }],
       },
     ],
   )
@@ -133,12 +129,12 @@ await test('multiple references', async (t) => {
     ).toObject(),
     [
       {
-        id: 1,
+        id: artStrudel,
         contributors: [{ id: 1, $rating: 5 }],
       },
       {
-        id: 2,
-        contributors: [{ id: 1 }],
+        id: artItaly,
+        contributors: [{ id: 1, $rating: 0 }],
       },
     ],
   )
@@ -166,7 +162,7 @@ await test('multiple references', async (t) => {
       },
       {
         id: 2,
-        contributors: [{ id: 1 }],
+        contributors: [{ id: 1, $on: false }],
       },
     ],
   )
@@ -458,7 +454,7 @@ await test('preserve fields', async (t) => {
   })
 
   const user3 = await db.create('user', {
-    bestFriend: { id: user2 },
+    bestFriend: { id: user2, $x: 0 },
     friends: [
       { id: user1, $x: 10 },
       { id: user2, $x: 20 },
@@ -473,6 +469,7 @@ await test('preserve fields', async (t) => {
     id: user3,
     bestFriend: {
       id: user2,
+      $x: 0,
     },
     friends: [
       { id: user1, $x: 10 },
@@ -485,7 +482,7 @@ await test('preserve fields', async (t) => {
   })
   deepEqual(await db.query('user', user3).include('**').get(), {
     id: user3,
-    bestFriend: { id: user2 },
+    bestFriend: { id: user2, $x: 0 },
     friends: [
       { id: user2, $x: 20 },
       { id: user1, $x: 10 },

@@ -1,12 +1,10 @@
 import {
   Context,
-  BasedFunctionClient,
+  // BasedFunctionClient,
   WebSocketSession,
   HttpSession,
   Geo,
   isClientContext,
-  BasedQuery,
-  BasedQueryFunctionConfig,
 } from '@based/functions'
 import type { ActiveObservable } from './query/index.js'
 import uws from '@based/uws'
@@ -15,7 +13,7 @@ import { BasedFunctions, FunctionConfig } from './functions/index.js'
 import { BasedAuth, AuthConfig } from './auth/index.js'
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
 import { wait } from '@based/utils'
-import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi/index.js'
+import { BasedServerFunctionClient } from './functionApi/index.js'
 import { ActiveChannel } from './channel/index.js'
 import util, { styleText } from 'node:util'
 import { encodeReload } from './protocol.js'
@@ -63,7 +61,7 @@ export type ServerOptions = {
   cert?: string
   functions?: FunctionConfig
   rateLimit?: RateLimit
-  client?: (server: BasedServer) => BasedFunctionClient
+  client?: (server: BasedServer) => BasedServerFunctionClient
   auth?: AuthConfig
   query?: QueryEvents
   channel?: ChannelEvents

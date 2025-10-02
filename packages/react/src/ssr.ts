@@ -1,4 +1,4 @@
-import { BasedQuery } from '@based/client'
+import { BasedClientQuery as BasedQuery } from '@based/client'
 import { renderToString } from 'react-dom/server'
 import { lastCollected } from './collectQuery.js'
 import { meta } from './Head.js'

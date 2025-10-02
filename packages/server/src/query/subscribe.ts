@@ -1,11 +1,15 @@
 import { BasedServer } from '../server.js'
-import { ActiveObservable, ObservableUpdateFunction } from './types.js'
+import { ActiveObservable } from './types.js'
 import { extendCache } from './extendCache.js'
 import { BasedErrorCode, BasedErrorData } from '@based/errors'
 import { sendObsWs } from './send.js'
 import { getObsAndStopRemove } from './get.js'
 import { sendErrorData } from '../sendError.js'
-import { WebSocketSession, Context } from '@based/functions'
+import {
+  WebSocketSession,
+  Context,
+  ObservableUpdateFunction,
+} from '@based/functions'
 
 // make this a FunctionHandler
 export const subscribeWs = (

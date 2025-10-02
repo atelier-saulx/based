@@ -92,7 +92,10 @@ pub fn filter(
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const selvaRef = db.getSingleReference(ctx, node, fieldSchema);
-            const refNode: ?db.Node = selvaRef.?.*.dst;
+            const dstType = db.getRefDstType(ctx, fieldSchema) catch {
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            };
+            const refNode: ?db.Node = db.getNodeFromReference(dstType, selvaRef);
             const edgeConstraint: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
             if (refNode == null) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -126,12 +129,12 @@ pub fn filter(
             if (isEdge) {
                 if (ref) |r| {
                     if (prop == Prop.REFERENCES) {
-                        const refs = db.getEdgeReferences(r.largeReference.?, field);
+                        const refs = db.getEdgeReferences(ctx, r.edgeConstraint.?, r.largeReference.?, field);
                         if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (prop == Prop.REFERENCE) {
-                        const checkRef = db.getEdgeReference(r.largeReference.?, field);
+                        const checkRef = db.getEdgeReference(ctx, r.edgeConstraint.?, r.largeReference.?, field);
                         if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
@@ -139,7 +142,7 @@ pub fn filter(
                         const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstraint.?, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const value = db.getEdgeProp(r.largeReference.?, edgeFieldSchema);
+                        const value = db.getEdgeProp(ctx, r.edgeConstraint.?,r.largeReference.?, edgeFieldSchema);
                         if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
@@ -163,7 +166,10 @@ pub fn filter(
                     const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
-                    const checkRef = db.getNodeFromReference(db.getSingleReference(ctx, node, fs));
+                    const dstType = db.getRefDstType(ctx, fs) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
+                    const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(ctx, node, fs));
                     if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -199,7 +205,7 @@ pub fn filter(
                 const edgeFieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstraint.?, field) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
-                value = db.getEdgeProp(ref.?.largeReference.?, edgeFieldSchema);
+                value = db.getEdgeProp(ctx, ref.?.edgeConstraint.?, ref.?.largeReference.?, edgeFieldSchema);
                 if (value.len == 0 or !runCondition(tctx.decompressor.?, &tctx.libdeflateBlockState, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
@@ -252,7 +258,10 @@ pub fn filter(
                         const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const checkRef = db.getNodeFromReference(db.getSingleReference(ctx, node, fs));
+                        const dstType = db.getRefDstType(ctx, fs) catch {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        };
+                        const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(ctx, node, fs));
                         // -----------
                         if (checkRef) |r| {
                             value = db.getNodeIdAsSlice(r);

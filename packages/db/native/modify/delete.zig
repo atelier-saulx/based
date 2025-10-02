@@ -89,7 +89,9 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
     } else {
         // TODO check it!
         if (ctx.fieldType == types.Prop.REFERENCE) {
-            const oldRefDst = db.getNodeFromReference(db.getSingleReference(ctx.db, ctx.node.?, ctx.fieldSchema.?));
+            const fs = ctx.fieldSchema.?;
+            const dstType = try db.getRefDstType(ctx.db, fs);
+            const oldRefDst = db.getNodeFromReference(dstType, db.getSingleReference(ctx.db, ctx.node.?, fs));
             if (oldRefDst) |dstNode| {
                 Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), db.getNodeId(dstNode));
             }

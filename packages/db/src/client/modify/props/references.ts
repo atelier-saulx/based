@@ -144,6 +144,7 @@ const updateReferences = (
     }
 
     if (typeof id.id === 'number') {
+      validate(def, id.id)
       writeReferenceObj(ctx, def, id.id, id, false)
       continue
     }
@@ -154,6 +155,7 @@ const updateReferences = (
 
     if (typeof id.id.then === 'function') {
       if (id.id.id) {
+        validate(def, id.id.id)
         writeReferenceObj(ctx, def, id.id.id, id, false)
         continue
       }
@@ -211,7 +213,6 @@ const writeReferenceObj = (
 ) => {
   const hasIndex = typeof obj.$index === 'number'
   const hasEdges = hasAnEdge(def, obj)
-  validate(def, id)
   if (hasIndex) {
     if (hasEdges) {
       writeU8(ctx, isTmp ? EDGE_INDEX_TMPID : EDGE_INDEX_REALID)

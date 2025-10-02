@@ -15,7 +15,7 @@ import { freeCacheMemory } from '../cache.js'
 
 // Can extend this as a query builder
 // TODO: maybe add user bound as option (will clear / set on a-state chage)
-export class BasedQuery<P = any, K = any> {
+export class BasedClientQuery<P = any, K = any> {
   public id: number
   public query: P
   public name: string

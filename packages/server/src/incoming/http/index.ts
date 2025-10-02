@@ -44,6 +44,7 @@ export const httpHandler = (
   }
 
   const method = req.getMethod()
+
   const url = req.getUrl()
 
   // Now we are doing this for fun
@@ -60,6 +61,7 @@ export const httpHandler = (
     return
   }
 
+  // OR path[2]
   if (server.restFallbackPath && path[1] === server.restFallbackPath) {
     if (method !== 'post') {
       res.end()
@@ -224,6 +226,7 @@ export const httpHandler = (
     ctx.session.headers['content-length'] = lenConverted
   }
 
+  // add extra leeway here
   if (
     method === 'post' &&
     ctx.session.headers['content-length'] === undefined
@@ -244,10 +247,10 @@ export const httpHandler = (
 
   if (isBasedRoute('query', route)) {
     // Handle HEAD
-    if (method !== 'post' && method !== 'get') {
-      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      return
-    }
+    // if (method !== 'post' && method !== 'get') {
+    // sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+    // return
+    // }
     const checksumRaw = req.getHeader('if-none-match')
     const checksumNum = Number(checksumRaw)
     const checksum = !isNaN(checksumNum) ? checksumNum : 0
@@ -262,10 +265,10 @@ export const httpHandler = (
       end(ctx)
       return
     }
-    if (method !== 'post') {
-      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      return
-    }
+    // if (method !== 'post') {
+    // sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+    // return
+    // }
     if (ctx.session.headers['content-length'] === 0) {
       // Zero is also not allowed for streams
       sendError(server, ctx, BasedErrorCode.LengthRequired, route)
@@ -276,10 +279,10 @@ export const httpHandler = (
   }
 
   if (isBasedRoute('channel', route)) {
-    if (method !== 'post' && method !== 'get') {
-      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      return
-    }
+    // if (method !== 'post' && method !== 'get') {
+    //   sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+    //   return
+    // }
     handleRequest(server, method, ctx, route, (payload) => {
       authorize(
         {
@@ -295,20 +298,20 @@ export const httpHandler = (
   }
 
   if (isBasedRoute('function', route)) {
-    if (method !== 'post' && method !== 'get') {
-      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      return
-    }
+    // if (method !== 'post' && method !== 'get') {
+    //   sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+    //   return
+    // }
     handleRequest(server, method, ctx, route, (payload) => {
       authorize({ route, server, ctx, payload }).then(basicFunction)
     })
   }
 
   if (isBasedRoute('http', route)) {
-    if (method !== 'post' && method !== 'get') {
-      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      return
-    }
+    // if (method !== 'post' && method !== 'get') {
+    //   sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+    //   return
+    // }
     handleRequest(server, method, ctx, route, (payload) => {
       authorize({ route, server, ctx, payload }).then(httpFunction)
     })

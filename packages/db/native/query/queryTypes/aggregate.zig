@@ -58,7 +58,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     var hadAccumulated: bool = false;
 
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
-    defer selva.selva_free(hllAccumulator);
+    defer selva.selva_string_free(hllAccumulator);
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {
@@ -91,7 +91,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     const agg = aggInput[index..];
     const emptyKey = &[_]u8{};
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
-    defer selva.selva_free(hllAccumulator);
+    defer selva.selva_string_free(hllAccumulator);
 
     checkItem: while (ctx.totalResults < limit) {
         if (first) {

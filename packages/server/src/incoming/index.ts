@@ -108,6 +108,9 @@ export default (
             unsubscribeChannelIgnoreClient(server, id, session.c)
           }
         })
+        if (session.onClose) {
+          session.onClose()
+        }
         wsOptions.close(session.c)
         // Looks really ugly but same impact on memory and GC as using the ws directly
         // and better for dc's when functions etc are in progress
@@ -129,7 +132,12 @@ export default (
   if (!disableRest) {
     app.get('/*', (res, req) => httpHandler(server, req, res))
     app.post('/*', (res, req) => httpHandler(server, req, res))
+    app.del('/*', (res, req) => httpHandler(server, req, res))
+    app.put('/*', (res, req) => httpHandler(server, req, res))
+    app.patch('/*', (res, req) => httpHandler(server, req, res))
     app.options('/*', (res, req) => httpHandler(server, req, res))
+    app.head('/*', (res, req) => httpHandler(server, req, res))
+    app.trace('/*', (res, req) => httpHandler(server, req, res))
   }
 
   server.uwsApp = app

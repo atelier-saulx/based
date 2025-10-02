@@ -168,13 +168,7 @@ export class QueryBranch<T> {
         args: [field, step],
       })
     } else {
-      const groupByHook = this.def.schema.hooks?.groupBy
-      if (groupByHook) {
-        this.def.schema.hooks.groupBy = null
-        groupByHook(this, field)
-        this.def.schema.hooks.groupBy = groupByHook
-      }
-      groupBy(this.def, field, step)
+      groupBy(this, field, step)
     }
     // only works with aggregates for now
     // @ts-ignore
@@ -423,6 +417,17 @@ export class QueryBranch<T> {
       this.queryCommands.push({ method: 'include', args: fields })
     } else {
       include(this, fields)
+      if (this.def.schema.propHooks?.include) {
+        for (const field of this.def.include.stringFields.keys()) {
+          const hooks = this.def.schema.props[field]?.hooks
+          const includeHook = hooks?.include
+          if (includeHook) {
+            hooks.include = null
+            includeHook(this, this.def.include.stringFields)
+            hooks.include = includeHook
+          }
+        }
+      }
       const includeHook = this.def.schema.hooks?.include
       if (includeHook) {
         this.def.schema.hooks.include = null
