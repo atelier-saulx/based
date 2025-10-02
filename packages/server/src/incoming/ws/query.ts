@@ -118,11 +118,11 @@ export const subscribeMessage: BinaryMessageHandler = (
     isDeflate,
   )
 
-  if (genObserveId(route.name, payload) !== id) {
-    // Check if the payload has been altered (potential attack to target other ids)
-    ctx.session.ws.close()
-    return false
-  }
+  // if (genObserveId(route.name, payload) !== id) {
+  //   // Check if the payload has been altered (potential attack to target other ids)
+  //   ctx.session.ws.close()
+  //   return false
+  // }
 
   if (route.ctx) {
     const attachedCtx = attachCtx(server, route, ctx, id)
