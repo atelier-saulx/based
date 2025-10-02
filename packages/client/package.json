@@ -45,7 +45,7 @@
     "@based/hash": "1.1.0",
     "@based/opts": "^1.1.0",
     "@based/protocol": "0.0.4",
-    "@based/utils": "1.1.0",
+    "@based/utils": "1.1.1",
     "@saulx/diff": "^2.0.3",
     "fflate": "0.8.2",
     "isomorphic-ws": "^5.0.0",
