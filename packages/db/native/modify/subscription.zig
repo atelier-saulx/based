@@ -16,16 +16,12 @@ pub fn checkId(
     ctx: *ModifyCtx,
 ) !void {
     if (ctx.subTypes) |st| {
-        const i = ctx.id % 10_000_000;
-        const bit_index: u3 = @truncate(i % 8);
-
-        // fix this
-        if ((st.idBitMap[i / 8] & @as(u8, 1) << bit_index) >> bit_index == 1) {
-            if (selva.node_id_set_bsearch(@constCast(st.idsList.ptr), st.lastId, ctx.id) != -1) {
-                ctx.idSubs = true;
-            }
-
-            // get index , and then get the value
+        if (st.idBitSet[ctx.id % 10_000_000] == 1) {
+            //  this can be used to get the subs
+            // if (selva.node_id_set_bsearch(@constCast(st.idsList.ptr), st.lastId, ctx.id) != -1) {
+            ctx.idSubs = true;
+            std.debug.print("HAS ID \n", .{});
+            // }
         } else {
             ctx.idSubs = false;
         }

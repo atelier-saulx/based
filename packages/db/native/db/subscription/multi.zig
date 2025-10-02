@@ -94,7 +94,7 @@ fn bla() !void {
     // 4 bytes   4 bytes  4 bytes 4 bytes
 
     // field set
-    const buffer3 = try allocator.alloc(u8, 128);
+    // const buffer3 = try allocator.alloc(u8, 128);
 
     // const xN: u32 = 213124;
     // var u: u8 = 0;
@@ -106,6 +106,9 @@ fn bla() !void {
     //     const mask = @as(u8, 1) << @as(u3, @truncate(bitIndex % 8));
     //     buffer3[bitIndex / 8] |= mask;
     // }
+
+    const DERP = try allocator.alloc(u1, 10_000_000 * 4);
+
     timer = try std.time.Timer.start();
 
     // var prng = std.Random.DefaultPrng.init(blk: {
@@ -119,19 +122,15 @@ fn bla() !void {
 
     i = 0;
     while (i < 10_000_000) : (i += 1) {
-        const d: u32 = i; //rand.intRangeAtMost(u32, 0, 100_000_000);
-
+        // const d: u32 = i; //rand.intRangeAtMost(u32, 0, 100_000_000);
+        DERP[i % 10_000_000] = 1;
         // r1.add(d);
 
-        const xx: [4]u8 = @bitCast(d);
-        // const x2: [4]u8 = @bitCast(selva.crc32c(0, &xx, 4));
-
-        // const xx: [4]u8 = @bitCast(selva.crc32c(0, &d, 4));
-
-        inline for (xx, 0..) |byte, u| {
-            const bitIndex = (byte + u * 255) & (1023);
-            buffer3[bitIndex / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex & 7));
-        }
+        // const xx: [4]u8 = @bitCast(d);
+        // inline for (xx, 0..) |byte, u| {
+        //     const bitIndex = (byte + u * 255) & (1023);
+        //     buffer3[bitIndex / 8] |= @as(u8, 1) << @as(u3, @truncate(bitIndex & 7));
+        // }
 
         // inline for (x2, 0..) |byte, u| {
         //     const bitIndex = (byte + u * 255) & (1023) + 128 * 8;
@@ -145,31 +144,34 @@ fn bla() !void {
     i = 0;
     cnt = 0;
     while (i < 100_000_000) : (i += 1) {
-        // if (r1.contains(i)) {
-        //     cnt += 1;
-        // }
-        // const ix: [4]u8 = @bitCast(selva.crc32c(0, &i, 4));
+        if (DERP[i % 10_000_000] == 1) {
+            cnt += 1;
+        }
+        // // if (r1.contains(i)) {
+        // //     cnt += 1;
+        // // }
+        // // const ix: [4]u8 = @bitCast(selva.crc32c(0, &i, 4));
 
-        const ix: [4]u8 = @bitCast(i);
-        const h0 = @as(u32, ix[0] % 3);
-        const h1 = @as(u32, ix[1] % 8) + 1 * 255;
-        const h2 = @as(u32, ix[2] ^ 3) + 2 * 255;
-        const h3 = @as(u32, ix[3] << 1) + 3 * 255;
-        const b0 = (buffer3[(h0 & (1024 - 1)) / 8] >> (@truncate(h0 % 8))) & 1;
-        const b1 = (buffer3[(h1 & (1024 - 1)) / 8] >> (@truncate(h1 % 8))) & 1;
-        const b2 = (buffer3[(h2 & (1024 - 1)) / 8] >> (@truncate(h2 % 8))) & 1;
-        const b3 = (buffer3[(h3 & (1024 - 1)) / 8] >> (@truncate(h3 % 8))) & 1;
-        cnt += b0 & b1 & b2 & b3;
+        // const ix: [4]u8 = @bitCast(i);
+        // const h0 = @as(u32, ix[0] % 3);
+        // const h1 = @as(u32, ix[1] % 8) + 1 * 255;
+        // const h2 = @as(u32, ix[2] ^ 3) + 2 * 255;
+        // const h3 = @as(u32, ix[3] << 1) + 3 * 255;
+        // const b0 = (buffer3[(h0 & (1024 - 1)) / 8] >> (@truncate(h0 % 8))) & 1;
+        // const b1 = (buffer3[(h1 & (1024 - 1)) / 8] >> (@truncate(h1 % 8))) & 1;
+        // const b2 = (buffer3[(h2 & (1024 - 1)) / 8] >> (@truncate(h2 % 8))) & 1;
+        // const b3 = (buffer3[(h3 & (1024 - 1)) / 8] >> (@truncate(h3 % 8))) & 1;
+        // cnt += b0 & b1 & b2 & b3;
 
-        // const h4 = @as(u32, ix2[0]) + 128 * 8;
-        // const h5 = @as(u32, ix2[1]) + 1 * 255 + 128 * 8;
-        // const h6 = @as(u32, ix2[2]) + 2 * 255 + 128 * 8;
-        // const h7 = @as(u32, ix2[3]) + 3 * 255 + 128 * 8;
-        // const b4 = (buffer3[(h4 & (1024 - 1)) / 8] >> (@truncate(h4 % 8))) & 1;
-        // const b5 = (buffer3[(h5 & (1024 - 1)) / 8] >> (@truncate(h5 % 8))) & 1;
-        // const b6 = (buffer3[(h6 & (1024 - 1)) / 8] >> (@truncate(h6 % 8))) & 1;
-        // const b7 = (buffer3[(h7 & (1024 - 1)) / 8] >> (@truncate(h7 % 8))) & 1;
-        // cnt += b0 & b1 & b2 & b3 & b4 & b5 & b6 & b7;
+        // // const h4 = @as(u32, ix2[0]) + 128 * 8;
+        // // const h5 = @as(u32, ix2[1]) + 1 * 255 + 128 * 8;
+        // // const h6 = @as(u32, ix2[2]) + 2 * 255 + 128 * 8;
+        // // const h7 = @as(u32, ix2[3]) + 3 * 255 + 128 * 8;
+        // // const b4 = (buffer3[(h4 & (1024 - 1)) / 8] >> (@truncate(h4 % 8))) & 1;
+        // // const b5 = (buffer3[(h5 & (1024 - 1)) / 8] >> (@truncate(h5 % 8))) & 1;
+        // // const b6 = (buffer3[(h6 & (1024 - 1)) / 8] >> (@truncate(h6 % 8))) & 1;
+        // // const b7 = (buffer3[(h7 & (1024 - 1)) / 8] >> (@truncate(h7 % 8))) & 1;
+        // // cnt += b0 & b1 & b2 & b3 & b4 & b5 & b6 & b7;
     }
     std.debug.print("check 100M? has time ?  {} {any}\n", .{ std.fmt.fmtDuration(timer.read()), cnt });
 

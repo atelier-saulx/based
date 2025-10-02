@@ -1,23 +1,10 @@
-import {
-  makeTmpBuffer,
-  readUint32,
-  readUint64,
-  wait,
-  writeUint16,
-  writeUint32,
-  writeUint64,
-} from '@based/utils'
+import { readUint32, writeUint16, writeUint32 } from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
 import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
-import { BasedDb, filterToBuffer } from '../../src/index.js'
-import { TYPE_INDEX_MAP } from '@based/schema/def'
-import { write } from '../../src/client/string.js'
-import { Ctx } from '../../src/client/modify/Ctx.js'
-
-// make multi thread
+import { BasedDb } from '../../src/index.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -108,11 +95,6 @@ await test('subscriptionIds', async (t) => {
         derp: 'uint32',
         location: 'string',
         lang: 'string',
-        // add text
-      },
-      subs: {
-        buf: { type: 'binary', maxBytes: 16 },
-        // add text
       },
     },
   })
@@ -125,16 +107,9 @@ await test('subscriptionIds', async (t) => {
         ? Math.round(amount / 1e3) + 'K'
         : amount
 
-  // const id = await clients[0].create('user', { derp: 66 })
-
-  // const array = new Uint8Array(20)
-  // const l = write({ array } as Ctx, 'A', 0, false)
-
   const payload = {
     derp: 99,
     x: 1,
-    // location: array.slice(0, l),
-    // lang: array.slice(0, l),
   }
 
   const updateAll = async (type = 'user') => {
@@ -164,16 +139,16 @@ await test('subscriptionIds', async (t) => {
     console.log(`Remove subscriptions ${readable} subs`, Date.now() - d, 'ms')
   }
 
+  // different
   const addSubs = (subId: number, start = 0, end = 1000): Uint8Array => {
     const fields = new Uint8Array([0, 1, 2])
     const typeId = server.schemaTypesParsed['user'].id
     const val = createSingleSubscriptionBuffer(subId, typeId, fields, 1)
     let d = Date.now()
     for (let i = start; i < end; i++) {
-      writeUint32(val, ~~(Math.random() * amount * 5) + 1, 6)
+      writeUint32(val, ~~(Math.random() * amount) + 1, 6)
       native.addIdSubscription(server.dbCtxExternal, val)
     }
-    // console.log(`#1 add ${readable} subs sub:(${subId})`, Date.now() - d, 'ms')
     return val
   }
 
@@ -181,96 +156,22 @@ await test('subscriptionIds', async (t) => {
 
   native.addMultiSubscription(
     server.dbCtxExternal,
-    createSingleSubscriptionBuffer(6, 2, new Uint8Array([0, 1]), 2),
+    createSingleSubscriptionBuffer(
+      6,
+      server.schemaTypesParsed.user.id,
+      new Uint8Array([0, 1]),
+      2,
+    ),
   )
   console.log('ZIG ZAG', Date.now() - BLA, 'ms')
 
-  // const x = Date.now()
-  // //100000
-  // const bla = new Set()
-  // const shurp = {}
-  // for (let i = 1; i < 100e6; i++) {
-  //   shurp[i] = i % 4 === 0
-
-  //   // if (i % 4) {
-  //   //   shurp[i + ~~(Math.random() * 10e6)] = i < 1e5
-  //   // }
-  //   // if (i % 3) {
-  //   //   shurp[20e6 + i] = false
-  //   // }
-  // }
-  // shurp[20e6 - 1] = true
-
-  // // const bla = new Uint8Array(2e6)
-  // BLA = Date.now()
-  // let cnt = 0
-  // for (let i = 1; i < 100e6; i++) {
-  //   if (shurp[i]) {
-  //     cnt++
-  //   }
-  // }
-
-  // // shurp[20e6 - 10] = true
-
-  // console.log(
-  //   '!!!!!!!',
-  //   Date.now() - BLA,
-  //   'ms',
-  //   cnt,
-  //   'all',
-  //   Date.now() - x,
-  //   'ms',
-  // )
-
-  // console.log(server.schemaTypesParsedById)
-
-  // 200k sub
-  for (let i = 0; i < 2e6; i++) {
-    // 16 for has simd filter
-    clients[0].create('subs', { buf: new Uint8Array(16) })
-  }
-
-  for (let i = 0; i < 2e6; i++) {
-    // 16 for has simd filter
+  for (let i = 0; i < amount; i++) {
     clients[0].create('user', { x: i % 255 })
   }
 
   console.log('create', await clients[0].drain(), 'ms')
 
-  // addSubs(1, 0, 2e6)
+  addSubs(666, 0, 1)
 
   await updateAll()
-
-  //   for (let i = 1; i < 2e6; i++) {
-  //   addSubs(i)
-  // }
-
-  // await updateAll()
-  // logSubIds(server)
-
-  // await updateAll()
-  // await updateAll()
-  // logSubIds(server)
-
-  // await updateAll()
-  // await updateAll()
-  // logSubIds(server)
-
-  // await updateAll()
-  // await updateAll()
-  // logSubIds(server)
-
-  // await updateAll()
-  // await updateAll()
-  // logSubIds(server)
-
-  // removeAllSubsForId(val)
-  // await updateAll()
-  // await updateAll()
-  // logSubIds(server)
-
-  // removeAllSubsForId(val2)
-  // await updateAll()
-  // await updateAll()
-  // logSubIds(server)
 })

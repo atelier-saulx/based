@@ -8,9 +8,9 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
         typeSubscriptionCtx = try ctx.allocator.create(types.TypeSubscriptionCtx);
 
         typeSubscriptionCtx.*.lastId = 0;
-        typeSubscriptionCtx.*.idBitMap = try ctx.allocator.alloc(u8, 2_000_000);
+        // 5MB
+        typeSubscriptionCtx.*.idBitSet = try ctx.allocator.alloc(u1, 10_000_000 * 4);
 
-        @memset(typeSubscriptionCtx.*.idBitMap, 255);
         typeSubscriptionCtx.*.idsList = try ctx.allocator.alloc(u32, 2_000_000);
 
         // typeSubscriptionCtx.*.subs = types.Subscriptions.init(ctx.allocator);
@@ -30,9 +30,12 @@ pub inline fn removeSubTypeIfEmpty(
 ) void {
     if (typeSubscriptionCtx.ids.count() == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-            // removed_entry.value.nonMarkedMulti.deinit();
-            // removed_entry.value.subs.deinit();
             removed_entry.value.ids.deinit();
+
+            removed_entry.value.idBitSet.deinit();
+
+            removed_entry.value.idsList.deinit();
+
             ctx.allocator.destroy(removed_entry.value);
         }
     }

@@ -24,8 +24,17 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     // if (!idEntry.found_existing) {
     // idEntry.value_ptr.* = types.Fields.init(ctx.allocator);
     // }
-    typeSubscriptionCtx.lastId += 1;
     typeSubscriptionCtx.idsList[typeSubscriptionCtx.lastId] = id;
+    typeSubscriptionCtx.lastId += 1;
+    typeSubscriptionCtx.idBitSet[id % 10_000_000] = 1;
+
+    // const bit_index: u3 = @truncate(xxx % 8);
+    // if ((typeSubscriptionCtx.idBitMap[xxx / 8] & @as(u8, 1) << bit_index) >> bit_index == 1) {
+    //     std.debug.print("-> id: {any} \n", .{xxx});
+    // } else {
+    //     // ctx.idSubs = false;
+    // }
+
     // typeSubscriptionCtx.lastId += 1;
 
     // for (fields) |field| {

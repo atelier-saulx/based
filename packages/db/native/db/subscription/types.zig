@@ -42,7 +42,7 @@ pub const IdsSubs = std.AutoHashMap(u32, Fields);
 
 pub const TypeSubscriptionCtx = struct {
     idsList: []u32,
-    idBitMap: []u8,
+    idBitSet: []u1,
     lastId: u32,
     // nonMarkedId: Subscriptions, // see difference in perf
     // nonMarkedMulti: Subscriptions, // different for different things

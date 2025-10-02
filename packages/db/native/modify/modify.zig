@@ -30,6 +30,7 @@ const subs = @import("./subscription.zig");
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     var result: c.napi_value = undefined;
     var resCount: u32 = 0;
+
     modifyInternal(env, info, &resCount) catch undefined;
     _ = c.napi_create_uint32(env, resCount * 5, &result);
     return result;
@@ -40,6 +41,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
     const dirtyRanges = try napi.get([]f64, env, args[2]);
+
+    var timer = try std.time.Timer.start();
 
     var i: usize = 0;
 
@@ -66,7 +69,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     while (i < batch.len) {
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
-        // std.debug.print("op: {any}\n", .{op});
         switch (op) {
             types.ModOp.PADDING => {
                 i = i + 1;
@@ -98,7 +100,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             types.ModOp.DELETE_NODE => {
                 if (ctx.node) |node| {
                     try subs.stage(&ctx, subs.Op.deleteNode);
-
                     db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
                     // no other side handled
                     ctx.node = null;
@@ -250,4 +251,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
         writeInt(u32, batch, resCount.* * 5, ctx.id);
         resCount.* += 1;
     }
+
+    std.debug.print("DRAIN {any}\n", .{
+        std.fmt.fmtDuration(timer.read()),
+    });
 }
