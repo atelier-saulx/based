@@ -148,13 +148,13 @@ const connect = (
       if (reconnect) {
         client.authState.t = 1
       }
-
+      //@ts-ignore
       const ws = (connection.ws = connection.useFallback
         ? new FakeWebsocket(realUrl, connection.useFallback, client)
         : new WebSocket(realUrl, [encodeAuthState(client.authState)]))
 
       // pretty shitty
-
+      //@ts-ignore
       ws.binaryType = 'blob'
 
       let isError = false

@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from 'react'
-import { BasedClient, AuthState } from '@based/client'
+import { BasedClient, ClientAuthState as AuthState } from '@based/client'
 import { Ctx } from './Ctx.js'
 
 /**

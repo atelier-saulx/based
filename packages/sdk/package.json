@@ -10,10 +10,12 @@
     "url": "git+https://github.com/atelier-saulx/based.git",
     "directory": "packages/sdk"
   },
+  "bin": "./bin.js",
   "type": "module",
   "sideEffects": false,
   "prettier": "@saulx/prettier-config",
   "files": [
+    "bin",
     "dist",
     "README.md"
   ],
@@ -91,6 +93,12 @@
         "types": "./dist/react.d.ts",
         "import": "./dist/react.js"
       }
+    },
+    "./schema-diagram": {
+      "import": {
+        "types": "./dist/schema-diagram.d.ts",
+        "import": "./dist/schema-diagram.js"
+      }
     }
   },
   "scripts": {
@@ -99,17 +107,18 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@based/db": "*",
-    "@based/schema": "*",
-    "@based/utils": "*",
+    "@based/db": "0.1.4",
+    "@based/schema": "5.0.4",
+    "@based/utils": "1.1.1",
+    "@based/cli": "8.2.4",
     "@based/protocol": "0.0.5",
-    "@based/hash": "*",
-    "@based/functions": "*",
-    "@based/errors": "*",
-    "@based/server": "*",
-    "@based/type-gen": "*",
-    "@based/client": "*",
-    "@based/react": "*"
+    "@based/hash": "1.1.0",
+    "@based/functions": "3.3.2",
+    "@based/errors": "1.5.0",
+    "@based/server": "10.2.3",
+    "@based/type-gen": "0.1.0",
+    "@based/client": "8.2.2",
+    "@based/react": "5.3.0"
   },
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",

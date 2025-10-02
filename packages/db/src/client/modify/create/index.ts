@@ -148,6 +148,21 @@ export const writeCreate = (
 ) => {
   validatePayload(payload)
 
+  if (schema.propHooks?.create) {
+    for (const def of schema.propHooks.create) {
+      let val = payload
+      let obj: any
+      let key: string
+      for (key of def.path) {
+        obj = val
+        val = val?.[key]
+      }
+      if (val !== undefined) {
+        obj[key] = def.hooks.create(val, obj)
+      }
+    }
+  }
+
   if (schema.hooks?.create) {
     payload = schema.hooks.create(payload) || payload
   }

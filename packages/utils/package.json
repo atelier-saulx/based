@@ -1,6 +1,6 @@
 {
   "name": "@based/utils",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "repository": "https://github.com/atelier-saulx/based",
   "files": [
     "dist/src"
@@ -25,7 +25,7 @@
     ]
   },
   "dependencies": {
-    "@based/hash": "1.0.0",
+    "@based/hash": "1.1.0",
     "path": "^0.12.7"
   },
   "devDependencies": {

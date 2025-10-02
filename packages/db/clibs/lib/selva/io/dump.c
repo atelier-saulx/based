@@ -682,7 +682,7 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
             err = selva_fields_reference_set(db, node, fs, dst_node, &ref, faux_dirty_cb, nullptr);
         } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
-            err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, &ref, nullptr, nullptr);
+            err = selva_fields_references_insert(db, node, fs, index, true, dst_te, dst_node, &ref, nullptr, nullptr, true);
         } else {
             err = SELVA_EINTYPE;
         }
@@ -795,7 +795,6 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
         alignas(uint64_t) uint8_t value_buf[value_size + !value_size]; /* 0 length VLA is prohibited. */
 
         err = SELVA_EINVAL;
-
         switch (rd.type) {
         case SELVA_FIELD_TYPE_NULL:
             err = 0;

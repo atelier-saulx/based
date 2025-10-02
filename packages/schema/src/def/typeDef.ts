@@ -4,6 +4,7 @@ import {
   StrictSchemaType,
   getPropType,
   SchemaLocales,
+  SchemaHooks,
 } from '../index.js'
 import { setByPath } from '@based/utils'
 import {
@@ -146,7 +147,7 @@ const createSchemaTypeDef = (
       result.partial = !!type.partial
     }
     if ('hooks' in type) {
-      result.hooks = type.hooks
+      result.hooks = type.hooks as SchemaHooks
     }
   }
   result.locales = locales
@@ -169,126 +170,130 @@ const createSchemaTypeDef = (
         propPath,
         false,
       )
-    } else {
-      const len = getPropLen(schemaProp)
-      if (
-        isPropType('string', schemaProp) ||
-        isPropType('alias', schemaProp) ||
-        isPropType('cardinality', schemaProp)
-      ) {
-        if (typeof schemaProp === 'object') {
-          if (
-            !(schemaProp.maxBytes < 61) ||
-            !('max' in schemaProp && schemaProp.max < 31)
-          ) {
-            result.separateSortProps++
-          }
-        } else {
+      continue
+    }
+
+    const len = getPropLen(schemaProp)
+    if (
+      isPropType('string', schemaProp) ||
+      isPropType('alias', schemaProp) ||
+      isPropType('cardinality', schemaProp)
+    ) {
+      if (typeof schemaProp === 'object') {
+        if (
+          !(schemaProp.maxBytes < 61) ||
+          !('max' in schemaProp && schemaProp.max < 31)
+        ) {
           result.separateSortProps++
         }
-      } else if (isPropType('text', schemaProp)) {
-        result.separateSortText++
-      } else if (isPropType('colvec', schemaProp)) {
-        if (!result.insertOnly) {
-          throw new Error('colvec requires insertOnly')
+      } else {
+        result.separateSortProps++
+      }
+    } else if (isPropType('text', schemaProp)) {
+      result.separateSortText++
+    } else if (isPropType('colvec', schemaProp)) {
+      if (!result.insertOnly) {
+        throw new Error('colvec requires insertOnly')
+      }
+    }
+    const isseparate = isSeparate(schemaProp, len)
+    const typeIndex = TYPE_INDEX_MAP[propType]
+    const prop: PropDef = {
+      typeIndex,
+      __isPropDef: true,
+      separate: isseparate,
+      path: propPath,
+      start: 0,
+      validation:
+        schemaProp.validation ?? VALIDATION_MAP[typeIndex] ?? defaultValidation,
+      len,
+      default: schemaProp.default ?? DEFAULT_MAP[typeIndex],
+      prop: isseparate ? ++result.cnt : 0,
+    }
+
+    if (schemaProp.hooks) {
+      result.propHooks ??= {}
+      for (const key in schemaProp.hooks) {
+        prop.hooks = schemaProp.hooks
+        result.propHooks[key] ??= new Set()
+        result.propHooks[key].add(prop)
+      }
+    }
+
+    if (schemaProp.max !== undefined) {
+      prop.max = parseMinMaxStep(schemaProp.max)
+    }
+
+    if (schemaProp.min !== undefined) {
+      prop.min = parseMinMaxStep(schemaProp.min)
+    }
+
+    if (schemaProp.step !== undefined) {
+      prop.step = parseMinMaxStep(schemaProp.step)
+    }
+
+    if (prop.typeIndex !== NUMBER && prop.step === undefined) {
+      prop.step = 1
+    }
+    if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
+      prop.vectorBaseType = schemaVectorBaseTypeToEnum(
+        schemaProp.baseType ?? 'number',
+      )
+    }
+
+    if (prop.typeIndex === CARDINALITY) {
+      prop.cardinalityMode ??= cardinalityModeToEnum(
+        (schemaProp.mode ??= 'sparse'),
+      )
+      const prec = typeName == '_root' ? 14 : 8
+      prop.cardinalityPrecision ??= schemaProp.precision ??= prec
+    }
+
+    if (isPropType('enum', schemaProp)) {
+      prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
+      prop.reverseEnum = {}
+      for (let i = 0; i < prop.enum.length; i++) {
+        prop.reverseEnum[prop.enum[i]] = i
+      }
+    } else if (isPropType('references', schemaProp)) {
+      if (result.partial) {
+        throw new Error('references is not supported with partial')
+      }
+
+      prop.inversePropName = schemaProp.items.prop
+      prop.inverseTypeName = schemaProp.items.ref
+      prop.dependent = schemaProp.items.dependent
+      addEdges(prop, schemaProp.items)
+    } else if (isPropType('reference', schemaProp)) {
+      if (result.partial) {
+        throw new Error('reference is not supported with partial')
+      }
+
+      prop.inversePropName = schemaProp.prop
+      prop.inverseTypeName = schemaProp.ref
+      prop.dependent = schemaProp.dependent
+      addEdges(prop, schemaProp)
+    } else if (typeof schemaProp === 'object') {
+      if (isPropType('string', schemaProp) || isPropType('text', schemaProp)) {
+        prop.compression =
+          'compression' in schemaProp && schemaProp.compression === 'none'
+            ? 0
+            : 1
+      } else if (isPropType('timestamp', schemaProp) && 'on' in schemaProp) {
+        if (schemaProp.on[0] === 'c') {
+          result.createTs ??= []
+          result.createTs.push(prop)
+        } else if (schemaProp.on[0] === 'u') {
+          result.createTs ??= []
+          result.createTs.push(prop)
+          result.updateTs ??= []
+          result.updateTs.push(prop)
         }
       }
-      const isseparate = isSeparate(schemaProp, len)
-      const typeIndex = TYPE_INDEX_MAP[propType]
-
-      const prop: PropDef = {
-        typeIndex,
-        __isPropDef: true,
-        separate: isseparate,
-        path: propPath,
-        start: 0,
-        validation:
-          schemaProp.validation ??
-          VALIDATION_MAP[typeIndex] ??
-          defaultValidation,
-        len,
-        default: schemaProp.default ?? DEFAULT_MAP[typeIndex],
-        prop: isseparate ? ++result.cnt : 0,
-      }
-
-      if (schemaProp.max !== undefined) {
-        prop.max = parseMinMaxStep(schemaProp.max)
-      }
-
-      if (schemaProp.min !== undefined) {
-        prop.min = parseMinMaxStep(schemaProp.min)
-      }
-
-      if (schemaProp.step !== undefined) {
-        prop.step = parseMinMaxStep(schemaProp.step)
-      }
-
-      if (prop.typeIndex !== NUMBER && prop.step === undefined) {
-        prop.step = 1
-      }
-      if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
-        prop.vectorBaseType = schemaVectorBaseTypeToEnum(
-          schemaProp.baseType ?? 'number',
-        )
-      }
-
-      if (prop.typeIndex === CARDINALITY) {
-        prop.cardinalityMode ??= cardinalityModeToEnum(
-          (schemaProp.mode ??= 'sparse'),
-        )
-        const prec = typeName == '_root' ? 14 : 8
-        prop.cardinalityPrecision ??= schemaProp.precision ??= prec
-      }
-
-      if (isPropType('enum', schemaProp)) {
-        prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
-        prop.reverseEnum = {}
-        for (let i = 0; i < prop.enum.length; i++) {
-          prop.reverseEnum[prop.enum[i]] = i
-        }
-      } else if (isPropType('references', schemaProp)) {
-        if (result.partial) {
-          throw new Error('references is not supported with partial')
-        }
-
-        prop.inversePropName = schemaProp.items.prop
-        prop.inverseTypeName = schemaProp.items.ref
-        prop.dependent = schemaProp.items.dependent
-        addEdges(prop, schemaProp.items)
-      } else if (isPropType('reference', schemaProp)) {
-        if (result.partial) {
-          throw new Error('reference is not supported with partial')
-        }
-
-        prop.inversePropName = schemaProp.prop
-        prop.inverseTypeName = schemaProp.ref
-        prop.dependent = schemaProp.dependent
-        addEdges(prop, schemaProp)
-      } else if (typeof schemaProp === 'object') {
-        if (
-          isPropType('string', schemaProp) ||
-          isPropType('text', schemaProp)
-        ) {
-          prop.compression =
-            'compression' in schemaProp && schemaProp.compression === 'none'
-              ? 0
-              : 1
-        } else if (isPropType('timestamp', schemaProp) && 'on' in schemaProp) {
-          if (schemaProp.on[0] === 'c') {
-            result.createTs ??= []
-            result.createTs.push(prop)
-          } else if (schemaProp.on[0] === 'u') {
-            result.createTs ??= []
-            result.createTs.push(prop)
-            result.updateTs ??= []
-            result.updateTs.push(prop)
-          }
-        }
-      }
-      result.props[propPath.join('.')] = prop
-      if (isseparate) {
-        result.separate.push(prop)
-      }
+    }
+    result.props[propPath.join('.')] = prop
+    if (isseparate) {
+      result.separate.push(prop)
     }
   }
   if (top) {

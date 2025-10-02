@@ -1,9 +1,11 @@
 import { BasedServer } from '../../server.js'
 import { updateListener } from './update.js'
 import { errorListener } from './error.js'
-import { ObservableUpdateFunction } from '../types.js'
 import { relay } from './relay.js'
-import { isBasedFunctionConfig } from '@based/functions'
+import {
+  isBasedFunctionConfig,
+  ObservableUpdateFunction,
+} from '@based/functions'
 
 export const start = (server: BasedServer, id: number) => {
   //  really hate this look up here

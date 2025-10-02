@@ -1,4 +1,4 @@
-import { BasedQuery } from '@based/client'
+import { BasedClientQuery as BasedQuery } from '@based/client'
 
 export const lastCollected: { q: BasedQuery[] } = { q: [] }
 

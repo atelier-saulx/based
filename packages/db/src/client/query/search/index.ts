@@ -105,6 +105,7 @@ export const search = (
     s = x
   }
 
+  let hookFields: Set<string>
   for (const key in s) {
     let prop = def.props[key]
     let lang = def.lang.lang
@@ -143,12 +144,20 @@ export const search = (
       field: prop.prop,
       start: prop.start ?? 0, // also need lang ofc if you have start
     })
+
+    const searchHook = prop.hooks?.search
+    if (searchHook) {
+      hookFields ??= new Set(Object.keys(s))
+      prop.hooks.search = null
+      searchHook(queryBranch, hookFields)
+      prop.hooks.search = searchHook
+    }
   }
 
   const searchHook = def.schema.hooks?.search
   if (searchHook) {
     def.schema.hooks.search = null
-    searchHook(queryBranch, new Set(Object.keys(s)))
+    searchHook(queryBranch, hookFields || new Set(Object.keys(s)))
     def.schema.hooks.search = searchHook
   }
 }

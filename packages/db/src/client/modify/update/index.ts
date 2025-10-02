@@ -62,6 +62,21 @@ export const writeUpdate = (
 ) => {
   validatePayload(payload)
 
+  if (schema.propHooks?.update) {
+    for (const def of schema.propHooks.update) {
+      let val = payload
+      let obj: any
+      let key: string
+      for (key of def.path) {
+        obj = val
+        val = val?.[key]
+      }
+      if (val !== undefined) {
+        obj[key] = def.hooks.update(val, obj)
+      }
+    }
+  }
+
   if (schema.hooks?.update) {
     payload = schema.hooks.update(payload) || payload
   }

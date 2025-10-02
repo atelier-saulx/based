@@ -1,5 +1,5 @@
 {
-  "name": "sdk-examples",
+  "name": "@based/examples",
   "type": "module",
   "scripts": {
     "basic": "tsx basic-usage.ts",

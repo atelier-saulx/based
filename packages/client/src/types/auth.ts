@@ -1,4 +1,4 @@
-export type AuthState = {
+export type ClientAuthState = {
   token?: string
   userId?: string
   refreshToken?: string

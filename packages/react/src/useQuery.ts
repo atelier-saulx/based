@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from 'react'
-import { BasedClient, QueryMap } from '@based/client'
+import { BasedClient, ClientQueryMap as QueryMap } from '@based/client'
 import { BasedError } from '@based/errors'
 import { Ctx } from './Ctx.js'
 import { hooksLoading, useLoadingListeners } from './useLoading.js'

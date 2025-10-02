@@ -1,4 +1,4 @@
-import { AuthState } from './auth.js'
+import { ClientAuthState as AuthState } from './auth.js'
 
 export type EventMap = {
   reconnect: true

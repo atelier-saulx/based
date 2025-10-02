@@ -4,7 +4,7 @@ import {
   DbSchema,
   SchemaChecksum,
 } from '@based/schema'
-import { BasedDbQuery } from './client/query/BasedDbQuery.js'
+import type { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
 import picocolors from 'picocolors'
