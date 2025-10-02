@@ -27,7 +27,7 @@
     "@based/hub": "0.1.0",
     "@based/react": "5.3.0",
     "@based/s3": "1.0.0",
-    "@based/schema": "5.0.3",
+    "@based/schema": "5.0.4",
     "@based/utils": "1.1.1",
     "@inkjs/ui": "^2.0.0",
     "@parcel/watcher": "^2.5.1",
