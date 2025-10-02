@@ -12,6 +12,7 @@
     "browser-server": "node ./test/browser/server.js"
   },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "browser": {
     "./dist/src/stream/index.js": "./dist/src/stream/browser.js",

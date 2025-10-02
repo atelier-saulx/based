@@ -5,6 +5,7 @@
   "type": "module",
   "main": "bin/cmd.js",
   "private": false,
+  "sideEffects": false,
   "bin": "bin/cmd.js",
   "files": [
     "bin",

@@ -5,6 +5,7 @@
   "files": [
     "dist/src"
   ],
+  "sideEffects": false,
   "license": "MIT",
   "scripts": {
     "clean": "rm -rf ./dist ./node_modules",

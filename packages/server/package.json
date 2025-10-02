@@ -9,6 +9,7 @@
     "README.md",
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
