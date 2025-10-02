@@ -111,7 +111,7 @@
     "@based/schema": "5.0.4",
     "@based/utils": "1.1.1",
     "@based/cli": "8.2.4",
-    "@based/protocol": "0.0.4",
+    "@based/protocol": "0.0.5",
     "@based/hash": "1.1.0",
     "@based/functions": "3.3.2",
     "@based/errors": "1.5.0",
