@@ -68,7 +68,6 @@ This SDK provides exports from the following core Based packages:
 - @based/type-gen - Generates based client types and validators from functions & schema
 - @based/client - Based client
 - @based/react - Wraps the [`@based/client`](https://github.com/atelier-saulx/based/tree/main/packages/client) into react hooks
-- @based/schema-diagram - Utility to generate [mermaid](https://mermaid.js.org/intro/).js diagrams
 
 For detailed documentation on the specific functions available within each module, please refer to the documentation for that individual package.
 
