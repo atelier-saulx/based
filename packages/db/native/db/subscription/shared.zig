@@ -8,9 +8,11 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
         typeSubscriptionCtx = try ctx.allocator.create(types.TypeSubscriptionCtx);
 
         typeSubscriptionCtx.*.lastId = 0;
-        // 5MB
+        // 4MB - make this dynamic (add till max first)
         typeSubscriptionCtx.*.idBitSet = try ctx.allocator.alloc(u1, 10_000_000 * 4);
 
+        // 4MB - make this dynamic per block of 100k and grow it
+        // ctx.allocator.realloc()
         typeSubscriptionCtx.*.idsList = try ctx.allocator.alloc(u32, 2_000_000);
 
         // typeSubscriptionCtx.*.subs = types.Subscriptions.init(ctx.allocator);

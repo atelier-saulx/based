@@ -17,7 +17,8 @@ pub fn checkId(
 ) !void {
     if (ctx.subTypes) |st| {
         if (st.idBitSet[ctx.id % 10_000_000] == 1) {
-            //  this can be used to get the subs
+            // this can be used to get the subs
+            // add index and get stuff - still need this because there can be overhead here
             // if (selva.node_id_set_bsearch(@constCast(st.idsList.ptr), st.lastId, ctx.id) != -1) {
             ctx.idSubs = true;
             std.debug.print("HAS ID \n", .{});
@@ -32,6 +33,10 @@ pub fn stage(
     _: *ModifyCtx,
     comptime _: Op,
 ) !void {
+
+    // here we check field in subs
+    // idSubs has to be some indexes i geuss
+
     // if (op != Op.create and op != Op.deleteNode) {
     //     if (ctx.idSubs) |idSubs| {
     //         // lets make a UINT8ARRAY
