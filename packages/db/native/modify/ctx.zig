@@ -20,7 +20,7 @@ pub const ModifyCtx = struct {
     db: *db.DbCtx,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
     subTypes: ?*subs.TypeSubscriptionCtx,
-    idSubs: bool, //?*subs.Fields,
+    idSubs: bool,
     batch: []u8,
 };
 

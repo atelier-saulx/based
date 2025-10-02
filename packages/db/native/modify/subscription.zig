@@ -19,6 +19,7 @@ pub fn checkId(
         const i = ctx.id % 10_000_000;
         const bit_index: u3 = @truncate(i % 8);
 
+        // fix this
         if ((st.idBitMap[i / 8] & @as(u8, 1) << bit_index) >> bit_index == 1) {
             if (selva.node_id_set_bsearch(@constCast(st.idsList.ptr), st.lastId, ctx.id) != -1) {
                 ctx.idSubs = true;
@@ -28,23 +29,6 @@ pub fn checkId(
         } else {
             ctx.idSubs = false;
         }
-
-        // if (db.getNode(ctx.id, ctx.subTypeEntry) != null) {
-        //     // do something
-        //     // cnt += 1;
-        //     ctx.idSubs = true;
-        // } else {
-        //     ctx.idSubs = false;
-        // }
-
-        // ctx.fieldSchema = try db.getFieldSchema(ctx.typeEntry.?, ctx.field);
-
-        // this is acceptable (ish)
-        // if (typeSub.ids.getEntry(ctx.id)) |_| {
-        //     ctx.idSubs = true;
-        // } else {
-        //     ctx.idSubs = false;
-        // }
     }
 }
 
