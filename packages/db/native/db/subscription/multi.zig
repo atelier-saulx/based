@@ -121,7 +121,7 @@ fn bla() !void {
     // var r1 = try Bitmap.create();
 
     i = 0;
-    while (i < 10_000_000) : (i += 1) {
+    while (i < num_items) : (i += 1) {
         // const d: u32 = i; //rand.intRangeAtMost(u32, 0, 100_000_000);
         DERP[i % 10_000_000] = 1;
         // r1.add(d);
@@ -147,9 +147,10 @@ fn bla() !void {
         if (DERP[i % 10_000_000] == 1) {
             cnt += 1;
         }
-        // // if (r1.contains(i)) {
-        // //     cnt += 1;
-        // // }
+
+        // if ((buffer[@divTrunc(i, 8)] >> @truncate(i % 8)) & 1 == 1) {
+        //     cnt += 1;
+        // }
         // // const ix: [4]u8 = @bitCast(selva.crc32c(0, &i, 4));
 
         // const ix: [4]u8 = @bitCast(i);

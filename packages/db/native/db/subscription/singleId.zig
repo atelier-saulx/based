@@ -12,38 +12,25 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
-    // const headerLen = 10;
-    // const subId = utils.read(u32, value, 0);
+    const headerLen = 10;
+    const subId = utils.read(u32, value, 0);
     const typeId = utils.read(u16, value, 4);
     const id = utils.read(u32, value, 6);
-    // const fields = value[headerLen..value.len];
+    const fields = value[headerLen..value.len];
     var typeSubscriptionCtx = try upsertSubType(ctx, typeId);
 
-    // const idEntry = try typeSubscriptionCtx.ids.getOrPut(id);
+    std.debug.print("FLAP {any} \n", .{id});
 
-    // if (!idEntry.found_existing) {
-    // idEntry.value_ptr.* = types.Fields.init(ctx.allocator);
-    // }
     typeSubscriptionCtx.idsList[typeSubscriptionCtx.lastId] = id;
     typeSubscriptionCtx.lastId += 1;
+
     typeSubscriptionCtx.idBitSet[id % 10_000_000] = 1;
 
-    // const bit_index: u3 = @truncate(xxx % 8);
-    // if ((typeSubscriptionCtx.idBitMap[xxx / 8] & @as(u8, 1) << bit_index) >> bit_index == 1) {
-    //     std.debug.print("-> id: {any} \n", .{xxx});
-    // } else {
-    //     // ctx.idSubs = false;
-    // }
+    const sub = try ctx.allocator.alloc(u8, 24);
+    typeSubscriptionCtx.ids.items[typeSubscriptionCtx.lastId - 1] = sub;
 
-    // typeSubscriptionCtx.lastId += 1;
-
-    // for (fields) |field| {
-    //     const fieldEntry = try idEntry.value_ptr.*.getOrPut(field);
-    //     if (!fieldEntry.found_existing) {
-    //         fieldEntry.value_ptr.* = types.IdsSet.init(ctx.allocator);
-    //     }
-    //     try fieldEntry.value_ptr.*.put(subId, undefined);
-    // }
+    utils.writeInt(u32, sub, 4, subId);
+    utils.copy(sub[8..], fields);
 
     return null;
 }

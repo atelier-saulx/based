@@ -1,2 +1,0 @@
-root_dependencies:
-  - src: git https://github.com/jwhear/roaring-zig commit-60372756692651cc7676041f9d0f5dc4c5388cbb

@@ -1,5 +1,4 @@
 const std = @import("std");
-const deps = @import("./deps.zig");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -40,7 +39,6 @@ pub fn build(b: *std.Build) void {
     lib.linkSystemLibrary("selva");
 
     lib.linkLibC();
-    deps.addAllTo(lib);
 
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = "./lib.node",

@@ -19,7 +19,7 @@ const std = @import("std");
 //     id: u64,
 // };
 
-// pub const Subscriptions = std.AutoHashMap(u64, *Subscription);
+// pub const Subscriptions = std.AutoHashMap(u32, );
 
 // pub const SubscriptionsSet = std.AutoHashMap(*Subscription, void);
 
@@ -38,16 +38,23 @@ pub const Fields = std.AutoHashMap(u8, IdsSet);
 
 // }
 
-pub const IdsSubs = std.AutoHashMap(u32, Fields);
+// pub const Subscription = []u8;
+
+// 16 + 4
+pub const IdsSubs = std.ArrayList([]u8);
 
 pub const TypeSubscriptionCtx = struct {
     idsList: []u32,
     idBitSet: []u1,
     lastId: u32,
+    ids: IdsSubs,
+    singleIdMarked: []u8,
+    lastIdMarked: u32,
+    // marked: std.AutoHashMap(u32, void);
     // nonMarkedId: Subscriptions, // see difference in perf
     // nonMarkedMulti: Subscriptions, // different for different things
     // subs: Subscriptions, // if zero remove type
-    ids: IdsSubs,
+    // ids: IdsSubs,
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);

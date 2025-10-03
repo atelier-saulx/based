@@ -146,7 +146,7 @@ await test('subscriptionIds', async (t) => {
     const val = createSingleSubscriptionBuffer(subId, typeId, fields, 1)
     let d = Date.now()
     for (let i = start; i < end; i++) {
-      writeUint32(val, ~~(Math.random() * amount) + 1, 6)
+      writeUint32(val, i, 6)
       native.addIdSubscription(server.dbCtxExternal, val)
     }
     return val
@@ -171,7 +171,7 @@ await test('subscriptionIds', async (t) => {
 
   console.log('create', await clients[0].drain(), 'ms')
 
-  addSubs(666, 0, 1)
+  addSubs(666, 1, 10)
 
   await updateAll()
 })
