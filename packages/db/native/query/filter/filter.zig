@@ -20,8 +20,8 @@ const EMPTY_SLICE = @constCast(&EMPTY)[0..1];
 
 inline fn fail(
     ctx: *db.DbCtx,
-    node: *selva.SelvaNode,
-    typeEntry: *selva.SelvaTypeEntry,
+    node: db.Node,
+    typeEntry: db.Type,
     conditions: []u8,
     ref: ?types.RefStruct,
     jump: ?[]u8,

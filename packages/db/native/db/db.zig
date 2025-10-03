@@ -29,7 +29,7 @@ const emptyArray: []const [16]u8 = emptySlice;
 extern "c" const selva_string: opaque {};
 
 pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
-    const selvaTypeEntry: ?*selva.SelvaTypeEntry = selva.selva_get_type_by_index(
+    const selvaTypeEntry: ?Type = selva.selva_get_type_by_index(
         ctx.selva.?,
         typeId,
     );

@@ -330,8 +330,8 @@ inline fn getScore(
 pub fn search(
     decompressor: *LibdeflateDecompressor,
     blockState: *LibdeflateBlockState,
-    node: *selva.SelvaNode,
-    typeEntry: *selva.SelvaTypeEntry,
+    node: db.Node,
+    typeEntry: db.Type,
     ctx: *const SearchCtx(false),
 ) u8 {
     const fl = ctx.fields.len;
@@ -426,8 +426,8 @@ pub fn search(
 }
 
 pub fn searchVector(
-    node: *selva.SelvaNode,
-    typeEntry: *selva.SelvaTypeEntry,
+    node: db.Node,
+    typeEntry: db.Type,
     ctx: *const SearchCtx(true),
 ) f32 {
     const fieldSchema = db.getFieldSchema(typeEntry, ctx.field) catch {
