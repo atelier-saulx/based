@@ -15,8 +15,8 @@ pub inline fn getRefsCnt(comptime isEdge: bool, refs: Refs(isEdge)) u32 {
 }
 
 pub const RefStruct = struct {
-    smallReference: ?*selva.SelvaNodeSmallReference,
-    largeReference: ?*selva.SelvaNodeLargeReference,
+    smallReference: ?db.ReferenceSmall,
+    largeReference: ?db.ReferenceLarge,
     edgeReference: ?selva.SelvaNodeWeakReference,
     edgeConstraint: ?db.EdgeFieldConstraint, // TODO This should be mandatory
 };

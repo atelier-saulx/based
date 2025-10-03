@@ -19,6 +19,9 @@ pub const Aliases = *selva.SelvaAliases;
 pub const Type = *selva.SelvaTypeEntry;
 pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
+pub const ReferenceSmall = *selva.SelvaNodeSmallReference;
+pub const ReferenceLarge = *selva.SelvaNodeLargeReference;
+pub const References = *const selva.SelvaNodeReferences;
 
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
@@ -87,7 +90,7 @@ pub fn selvaStringDestroy(str: ?selva.selva_string) void {
     try selva.selva_string_free(str);
 }
 
-pub fn getCardinalityReference(ctx: *DbCtx, efc: EdgeFieldConstraint, ref: *selva.SelvaNodeLargeReference, fieldSchema: FieldSchema) []u8 {
+pub fn getCardinalityReference(ctx: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge, fieldSchema: FieldSchema) []u8 {
     const meta_node = getMetaNode(ctx, efc, ref);
     if (meta_node == null) {
         return emptySlice;
@@ -132,9 +135,17 @@ pub fn getField(
 }
 
 pub inline fn getNodeFromReference(dstType: Type, ref: anytype) ?Node {
-    if (comptime @TypeOf(ref) == *allowzero selva.SelvaNodeSmallReference or @TypeOf(ref) == *allowzero selva.SelvaNodeLargeReference) {
+    if (comptime
+        @TypeOf(ref) == ReferenceSmall or
+        @TypeOf(ref) == ReferenceLarge or
+        @TypeOf(ref) == *allowzero selva.SelvaNodeSmallReference or
+        @TypeOf(ref) == *allowzero selva.SelvaNodeLargeReference) {
         return selva.selva_find_node(dstType, ref.*.dst);
-    } else if (comptime @TypeOf(ref) == ?*selva.SelvaNodeSmallReference or @TypeOf(ref) == ?*selva.SelvaNodeLargeReference) {
+    } else if (comptime
+        @TypeOf(ref) == ?ReferenceSmall or
+        @TypeOf(ref) == ?ReferenceLarge or
+        @TypeOf(ref) == ?*selva.SelvaNodeSmallReference or
+        @TypeOf(ref) == ?*selva.SelvaNodeLargeReference) {
         if (ref) |r| {
             return selva.selva_find_node(dstType, r.*.dst);
         }
@@ -144,7 +155,7 @@ pub inline fn getNodeFromReference(dstType: Type, ref: anytype) ?Node {
     return null;
 }
 
-pub inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeLargeReference) []u8 {
+pub inline fn getReferenceNodeId(ref: ?ReferenceLarge) []u8 {
     if (ref) |r| {
         const id: *u32 = @alignCast(@ptrCast(&r.*.dst));
         return std.mem.asBytes(id)[0..4];
@@ -152,7 +163,7 @@ pub inline fn getReferenceNodeId(ref: ?*selva.SelvaNodeLargeReference) []u8 {
     return &[_]u8{};
 }
 
-pub fn getSingleReference(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema) ?*selva.SelvaNodeLargeReference {
+pub fn getSingleReference(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema) ?ReferenceLarge {
     const result = selva.selva_fields_get_reference(ctx.selva, node, fieldSchema);
     return result;
 }
@@ -230,7 +241,7 @@ pub fn setColvec(te: Type, nodeId: selva.node_id_t, fieldSchema: FieldSchema, ve
     );
 }
 
-pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?*selva.SelvaNodeLargeReference {
+pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSchema: FieldSchema) !?ReferenceLarge {
     var refAny: selva.SelvaNodeReferenceAny = undefined;
     errors.selva(selva.selva_fields_reference_set(
         ctx.db.selva,
@@ -311,7 +322,7 @@ pub fn swapReference(
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
-fn getMetaNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: *selva.SelvaNodeLargeReference) ?Node {
+fn getMetaNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge) ?Node {
     if (ref.*.meta == 0) {
         return null;
     }
@@ -323,7 +334,7 @@ fn getMetaNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: *selva.SelvaNodeLargeR
 pub fn getEdgeProp(
     db: *DbCtx,
     efc: EdgeFieldConstraint,
-    ref: *selva.SelvaNodeLargeReference,
+    ref: ReferenceLarge,
     fieldSchema: FieldSchema,
 ) []u8 {
     const meta_node = getMetaNode(db, efc, ref);
@@ -353,7 +364,7 @@ pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstraint: *const selva.EdgeFieldCons
 pub fn getEdgeReferences(
     db: *DbCtx,
     efc: EdgeFieldConstraint,
-    ref: *selva.SelvaNodeLargeReference,
+    ref: ReferenceLarge,
     field: u8,
 ) ?selva.SelvaNodeWeakReferences {
     const meta_node = getMetaNode(db, efc, ref);
@@ -377,7 +388,7 @@ pub fn resolveEdgeReference(ctx: *DbCtx, fieldSchema: FieldSchema, ref: *selva.S
 pub fn getEdgeReference(
     db: *DbCtx,
     efc: EdgeFieldConstraint,
-    ref: *selva.SelvaNodeLargeReference,
+    ref: ReferenceLarge,
     field: u8,
 ) ?selva.SelvaNodeWeakReference {
     const meta_node = getMetaNode(db, efc, ref);
@@ -403,7 +414,7 @@ pub fn ensureEdgePropString(
     ctx: *modifyCtx.ModifyCtx,
     node: Node,
     efc: *const selva.EdgeFieldConstraint,
-    ref: *selva.SelvaNodeLargeReference,
+    ref: ReferenceLarge,
     fieldSchema: FieldSchema,
 ) !*selva.selva_string {
     const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;

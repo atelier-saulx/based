@@ -22,7 +22,7 @@ fn isMainEmpty(val: []u8) bool {
 
 pub fn writeEdges(
     ctx: *ModifyCtx,
-    ref: *selva.SelvaNodeLargeReference,
+    ref: db.ReferenceLarge,
     data: []u8,
 ) !void {
     var i: usize = 0;
