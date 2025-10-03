@@ -19,13 +19,13 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const fields = value[headerLen..value.len];
     var typeSubscriptionCtx = try upsertSubType(ctx, typeId);
 
-    std.debug.print("FLAP {any} \n", .{id});
+    // std.debug.print("FLAP {any} \n", .{id});
+
+    // grow all this dynamicly...
 
     typeSubscriptionCtx.idsList[typeSubscriptionCtx.lastId] = id;
     typeSubscriptionCtx.lastId += 1;
-
     typeSubscriptionCtx.idBitSet[id % 10_000_000] = 1;
-
     const sub = try ctx.allocator.alloc(u8, 24);
     typeSubscriptionCtx.ids.items[typeSubscriptionCtx.lastId - 1] = sub;
 
