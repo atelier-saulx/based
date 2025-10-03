@@ -7,7 +7,7 @@ pub fn Refs(comptime isEdge: bool) type {
     if (isEdge) {
         return struct { refs: selva.SelvaNodeWeakReferences, fs: db.FieldSchema };
     }
-    return struct { refs: *selva.SelvaNodeReferences, fs: db.FieldSchema };
+    return struct { refs: db.References, fs: db.FieldSchema };
 }
 
 pub inline fn getRefsCnt(comptime isEdge: bool, refs: Refs(isEdge)) u32 {

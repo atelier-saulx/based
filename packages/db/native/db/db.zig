@@ -168,7 +168,7 @@ pub fn getSingleReference(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema) ?Re
     return result;
 }
 
-pub fn getReferences(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema) ?*selva.SelvaNodeReferences {
+pub fn getReferences(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema) ?References {
     const result = selva.selva_fields_get_references(ctx.selva, node, fieldSchema);
     return result;
 }
