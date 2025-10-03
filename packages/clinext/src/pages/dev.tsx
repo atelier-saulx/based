@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react'
-import { Box, Text } from 'ink'
+import { useEffect } from 'react'
 import { parseFolder, watch } from '../bundle/index.js'
 import { initS3 } from '@based/s3'
 import startHub from '@based/hub'
