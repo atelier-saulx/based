@@ -28,7 +28,7 @@ pub inline fn get(
     comptime subType: ResultType,
 ) !?*results.Result {
     var value: []u8 = undefined;
-    var fieldSchema: *const selva.SelvaFieldSchema = undefined;
+    var fieldSchema: db.FieldSchema = undefined;
     var result: results.Result = undefined;
     if (isEdge) {
         if (edgeRef.?.edgeConstraint == null) {

@@ -5,7 +5,7 @@ const selva = @import("./selva.zig");
 const db = @import("./db/db.zig");
 
 pub const Type = *selva.SelvaTypeEntry;
-pub const FieldSchema = *const selva.SelvaFieldSchema;
+pub const FieldSchema = db.FieldSchema;
 
 pub fn colvec(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     return colvecInternal(env, info) catch |err| {

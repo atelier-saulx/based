@@ -48,7 +48,7 @@ pub fn getRefMetaType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
 }
 
 pub fn getFieldSchema(typeEntry: ?Type, field: u8) !FieldSchema {
-    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
+    const s: ?FieldSchema = selva.selva_get_fs_by_te_field(
         typeEntry.?,
         @bitCast(field),
     );
@@ -59,7 +59,7 @@ pub fn getFieldSchema(typeEntry: ?Type, field: u8) !FieldSchema {
 }
 
 pub fn getFieldSchemaByNode(ctx: *DbCtx, node: Node, field: u8) !FieldSchema {
-    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_node(ctx.selva.?, node, field);
+    const s: ?FieldSchema = selva.selva_get_fs_by_node(ctx.selva.?, node, field);
     if (s == null) {
         return errors.SelvaError.SELVA_EINVAL;
     }
@@ -67,7 +67,7 @@ pub fn getFieldSchemaByNode(ctx: *DbCtx, node: Node, field: u8) !FieldSchema {
 }
 
 pub fn getFieldSchemaFromEdge(field: u8, typeEntry: ?Type) !FieldSchema {
-    const s: ?*const selva.SelvaFieldSchema = selva.selva_get_fs_by_te_field(
+    const s: ?FieldSchema = selva.selva_get_fs_by_te_field(
         typeEntry.?,
         @bitCast(field),
     );
