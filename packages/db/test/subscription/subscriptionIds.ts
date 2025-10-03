@@ -154,15 +154,15 @@ await test('subscriptionIds', async (t) => {
 
   let BLA = Date.now()
 
-  native.addMultiSubscription(
-    server.dbCtxExternal,
-    createSingleSubscriptionBuffer(
-      6,
-      server.schemaTypesParsed.user.id,
-      new Uint8Array([0, 1]),
-      2,
-    ),
-  )
+  // native.addMultiSubscription(
+  //   server.dbCtxExternal,
+  //   createSingleSubscriptionBuffer(
+  //     6,
+  //     server.schemaTypesParsed.user.id,
+  //     new Uint8Array([0, 1]),
+  //     2,
+  //   ),
+  // )
   console.log('ZIG ZAG', Date.now() - BLA, 'ms')
 
   for (let i = 0; i < amount; i++) {
@@ -171,7 +171,7 @@ await test('subscriptionIds', async (t) => {
 
   console.log('create', await clients[0].drain(), 'ms')
 
-  addSubs(666, 1, 10)
+  addSubs(666, 1, 1e4)
 
   await updateAll()
 })
