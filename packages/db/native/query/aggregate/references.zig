@@ -73,7 +73,7 @@ pub inline fn aggregateRefsGroup(
     filterArr: ?[]u8,
 ) !usize {
     const typeEntry = try db.getType(ctx.db, typeId);
-    var edgeConstraint: ?*const selva.EdgeFieldConstraint = null;
+    var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs(isEdge) = undefined;
     const hasFilter: bool = filterArr != null;
     const emptyKey = &[_]u8{};
@@ -177,7 +177,7 @@ pub inline fn aggregateRefsDefault(
     const accumulatorField = try ctx.allocator.alloc(u8, accumulatorSize);
     @memset(accumulatorField, 0);
     const typeEntry = try db.getType(ctx.db, typeId);
-    var edgeConstraint: ?*const selva.EdgeFieldConstraint = null;
+    var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs(isEdge) = undefined;
     const hasFilter: bool = filterArr != null;
     var hadAccumulated: bool = false;

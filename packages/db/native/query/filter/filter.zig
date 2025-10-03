@@ -96,7 +96,7 @@ pub fn filter(
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const refNode: ?db.Node = db.getNodeFromReference(dstType, selvaRef);
-            const edgeConstraint: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+            const edgeConstraint: db.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
             if (refNode == null) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
