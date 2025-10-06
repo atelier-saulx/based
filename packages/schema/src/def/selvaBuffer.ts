@@ -13,8 +13,6 @@ import {
   STRING,
   TEXT,
   VECTOR,
-  WEAK_REFERENCE,
-  WEAK_REFERENCES,
   JSON,
   COLVEC,
   VECTOR_BASE_TYPE_SIZE_MAP,
@@ -28,8 +26,6 @@ const selvaFieldType: Readonly<Record<string, number>> = {
   TEXT: 3,
   REFERENCE: 4,
   REFERENCES: 5,
-  WEAK_REFERENCE: 6,
-  WEAK_REFERENCES: 7,
   ALIAS: 8,
   ALIASES: 9,
   COLVEC: 10,
@@ -45,8 +41,6 @@ selvaTypeMap[STRING] = selvaFieldType.STRING
 selvaTypeMap[TEXT] = selvaFieldType.TEXT
 selvaTypeMap[REFERENCE] = selvaFieldType.REFERENCE
 selvaTypeMap[REFERENCES] = selvaFieldType.REFERENCES
-selvaTypeMap[WEAK_REFERENCE] = selvaFieldType.WEAK_REFERENCE
-selvaTypeMap[WEAK_REFERENCES] = selvaFieldType.WEAK_REFERENCES
 selvaTypeMap[ALIAS] = selvaFieldType.ALIAS
 selvaTypeMap[ALIASES] = selvaFieldType.ALIASES
 selvaTypeMap[COLVEC] = selvaFieldType.COLVEC
@@ -121,8 +115,7 @@ const propDefBuffer = (
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
 
-    // @ts-ignore
-    buf[0] = selvaType + 2 * !!prop.__isEdge // field type
+    buf[0] = selvaType // field type
     buf[1] = makeEdgeConstraintFlags(
       refSet,
       nodeTypeId,
@@ -131,13 +124,8 @@ const propDefBuffer = (
       dstType.props[prop.inversePropName],
     ) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
-    if (prop.__isEdge) {
-      buf[4] = 0
-      view.setUint16(5, 0, true)
-    } else {
-      buf[4] = prop.inversePropNumber
-      view.setUint16(5, prop.edgeNodeTypeId, true) // meta_node_type
-    }
+    buf[4] = prop.inversePropNumber // inverse_field
+    view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // meta_node_type
 
     return [...buf]
   } else if (

@@ -26,8 +26,6 @@ import {
   ALIASES,
   VECTOR,
   COLVEC,
-  WEAK_REFERENCE,
-  WEAK_REFERENCES,
   NULL,
   OBJECT,
 } from './types.js'
@@ -40,8 +38,6 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   [NULL]: () => true,
   [OBJECT]: () => true,
   [COLVEC]: () => true,
-  [WEAK_REFERENCE]: () => true,
-  [WEAK_REFERENCES]: () => true,
   [ALIAS]: (value) => {
     if (typeof value !== 'string') {
       return false
