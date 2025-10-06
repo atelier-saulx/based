@@ -1305,7 +1305,7 @@ size_t selva_fields_prealloc_refs(struct SelvaDb *db, struct SelvaNode *node, co
         db_panic("Invalid type: %s", selva_str_field_type(fs->type));
     }
 
-    const enum SelvaNodeReferenceType type = refs_get_type(db, &fs->edge_constraint);;
+    const enum SelvaNodeReferenceType type = refs_get_type(db, selva_get_edge_field_constraint(fs));
     struct SelvaFieldInfo *nfo = ensure_field_references(fields, fs, type);
     struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
 
@@ -1786,7 +1786,7 @@ struct SelvaNode *selva_fields_ensure_ref_meta(
     return meta;
 }
 
-struct SelvaNodeReferenceAny selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+struct SelvaNodeReferenceAny selva_fields_get_reference(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFields *fields = &node->fields;
     assert(fs->field < fields->nr_fields);
@@ -1804,10 +1804,21 @@ struct SelvaNodeReferenceAny selva_fields_get_reference(struct SelvaDb *db, stru
     assert(((uintptr_t)ref & 7) == 0);
 #endif
 
-    return (struct SelvaNodeReferenceAny){
-        .type = SELVA_NODE_REFERENCE_LARGE,
-        .large = (struct SelvaNodeLargeReference *)nfo2p(fields, nfo),
-    };
+#if 0
+    const enum SelvaNodeReferenceType type = refs_get_type(db, selva_get_edge_field_constraint(fs));
+#endif
+    const enum SelvaNodeReferenceType type = SELVA_NODE_REFERENCE_LARGE;
+    switch (type) {
+    case SELVA_NODE_REFERENCE_SMALL:
+    case SELVA_NODE_REFERENCE_LARGE:
+        return (struct SelvaNodeReferenceAny){
+            .type = type,
+            .any = nfo2p(fields, nfo),
+        };
+    case SELVA_NODE_REFERENCE_NULL:
+        break;
+    }
+    abort();
 }
 
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
