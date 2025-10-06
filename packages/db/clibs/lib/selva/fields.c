@@ -257,6 +257,12 @@ static field_t refs_get_nr_fields(struct SelvaDb *db, const struct EdgeFieldCons
     return nr_fields;
 }
 
+__attribute__((pure))
+static enum SelvaNodeReferenceType refs_get_type(struct SelvaDb *db, const struct EdgeFieldConstraint *efc)
+{
+    return refs_get_nr_fields(db, efc) == 0 ? SELVA_NODE_REFERENCE_SMALL : SELVA_NODE_REFERENCE_LARGE;
+}
+
 static ssize_t refs_find_node_i(struct SelvaNodeReferences *refs, struct SelvaNode *node)
 {
     switch (refs->size) {
@@ -1251,13 +1257,12 @@ static bool add_to_refs_index_(
 
 static bool add_to_refs_index(
         struct SelvaDb *db,
-         const struct EdgeFieldConstraint *efc,
         struct SelvaNode * restrict src,
         struct SelvaNode * restrict dst,
         const struct SelvaFieldSchema * restrict fs_src,
         const struct SelvaFieldSchema * restrict fs_dst)
 {
-    const enum SelvaNodeReferenceType type = refs_get_nr_fields(db, efc) == 0 ? SELVA_NODE_REFERENCE_SMALL : SELVA_NODE_REFERENCE_LARGE;
+    const enum SelvaNodeReferenceType type = refs_get_type(db, &fs_src->edge_constraint);
     struct SelvaFieldInfo *nfo_src = ensure_field_references(&src->fields, fs_src, type);
     struct SelvaFieldInfo *nfo_dst = ensure_field_references(&dst->fields, fs_dst, type);
     const bool added_src = add_to_refs_index_(src, fs_src, nfo_src, dst->node_id);
@@ -1301,7 +1306,7 @@ int selva_fields_references_insert(
         return SELVA_EINTYPE;
     }
 
-    if (add_to_refs_index(db, &fs->edge_constraint, node, dst, fs, fs_dst)) {
+    if (add_to_refs_index(db, node, dst, fs, fs_dst)) {
         if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
             remove_reference(db, dst, fs_dst, 0, -1, ignore_src_dependent, dirty_cb, dirty_ctx);
         }
@@ -1399,7 +1404,7 @@ int selva_fields_reference_set(
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
 #endif
 
-    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES && !add_to_refs_index(db, &fs_src->edge_constraint, src, dst, fs_src, fs_dst)) {
+    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES && !add_to_refs_index(db, src, dst, fs_src, fs_dst)) {
         return SELVA_EEXIST;
     }
 
@@ -1450,7 +1455,7 @@ size_t selva_fields_prealloc_refs(struct SelvaDb *db, struct SelvaNode *node, co
         db_panic("Invalid type: %s", selva_str_field_type(fs->type));
     }
 
-    const enum SelvaNodeReferenceType type = refs_get_nr_fields(db, &fs->edge_constraint) == 0 ? SELVA_NODE_REFERENCE_SMALL : SELVA_NODE_REFERENCE_LARGE;
+    const enum SelvaNodeReferenceType type = refs_get_type(db, &fs->edge_constraint);;
     struct SelvaFieldInfo *nfo = ensure_field_references(fields, fs, type);
     struct SelvaNodeReferences *refs = nfo2p(fields, nfo);
 
@@ -1507,7 +1512,7 @@ static void selva_fields_references_insert_tail_wupsert_empty_src_field(
             continue;
         }
 
-        if (!add_to_refs_index(db, &fs_src->edge_constraint, src, dst, fs_src, fs_dst)) {
+        if (!add_to_refs_index(db, src, dst, fs_src, fs_dst)) {
             continue; /* ignore. */
         }
 
@@ -1552,7 +1557,7 @@ static void selva_fields_references_insert_tail_wupsert_nonempty_src_field(
             continue;
         }
 
-        if (!add_to_refs_index(db, &fs_src->edge_constraint, src, dst, fs_src, fs_dst)) {
+        if (!add_to_refs_index(db, src, dst, fs_src, fs_dst)) {
             continue; /* already inserted. */
         }
 
