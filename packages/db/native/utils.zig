@@ -71,13 +71,12 @@ pub inline fn move(dest: []u8, source: []const u8) void {
 
 pub inline fn realign(comptime T: type, data: []u8) []T {
     const address = @intFromPtr(data.ptr);
-    const delta: u8 = @truncate(address % 4);
-    //@typeInfo(T).array.child
-    const offset = if (delta == 0) 0 else 4 - delta;
-    const aligned: []u8 align(4) = @alignCast(data[offset .. data.len - 3 + offset]);
+    const delta: u8 = @truncate(address % @alignOf(T));
+    const offset = if (delta == 0) 0 else @alignOf(T) - delta;
+    const aligned: []u8 align(@alignOf(T)) = @alignCast(data[offset .. data.len - (@alignOf(T) - 1) + offset]);
     if (offset != 0) {
-        move(aligned, data[0 .. data.len - 3]);
+        move(aligned, data[0 .. data.len - (@alignOf(T) - 1)]);
     }
 
-    return @alignCast(std.mem.bytesAsSlice(u32, aligned[0..]));
+    return @alignCast(std.mem.bytesAsSlice(T, aligned[0..]));
 }
