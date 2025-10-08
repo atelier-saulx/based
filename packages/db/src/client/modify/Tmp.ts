@@ -27,10 +27,10 @@ export const resolveTmp = (tmp: Tmp) => {
   if (id) {
     return tmp.resolve(tmp.id)
   }
-  return tmp.reject(tmp.error)
+  return rejectTmp(tmp)
 }
 export const rejectTmp = (tmp: Tmp) => {
-  return tmp.reject(tmp.error)
+  return tmp.reject(tmp.error || new Error('Modify error'))
 }
 
 export class Tmp implements Promise<number> {

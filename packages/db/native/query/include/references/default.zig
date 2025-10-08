@@ -7,8 +7,7 @@ const filter = @import("../../filter/filter.zig").filter;
 const std = @import("std");
 
 pub fn defaultReferences(
-    comptime isEdge: bool,
-    refs: types.Refs(isEdge),
+    refs: types.Refs,
     ctx: *QueryCtx,
     include: []u8,
     typeEntry: db.Type,
@@ -20,11 +19,11 @@ pub fn defaultReferences(
 ) types.RefsResult {
     var result: types.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = offset;
-    const refsCnt = types.getRefsCnt(isEdge, refs);
+    const refsCnt = refs.refs.nr_refs;
 
     checkItem: while (i < refsCnt and result.cnt < limit) : (i += 1) {
-        if (types.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
-            const refStruct = types.RefResult(isEdge, refs, edgeConstraint, i);
+        if (types.resolveRefsNode(ctx, refs, i)) |refNode| {
+            const refStruct = types.RefResult(refs, edgeConstraint, i);
             if (hasFilter and !filter(
                 ctx.db,
                 refNode,

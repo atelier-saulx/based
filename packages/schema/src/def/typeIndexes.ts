@@ -15,8 +15,6 @@ export const STRING = 11
 export const TEXT = 12
 export const REFERENCE = 13
 export const REFERENCES = 14
-export const WEAK_REFERENCE = 15
-export const WEAK_REFERENCES = 16
 export const MICRO_BUFFER = 17
 export const ALIAS = 18
 export const ALIASES = 19
@@ -44,8 +42,6 @@ export type TypeIndex =
   | typeof TEXT
   | typeof REFERENCE
   | typeof REFERENCES
-  | typeof WEAK_REFERENCE
-  | typeof WEAK_REFERENCES
   | typeof MICRO_BUFFER
   | typeof ALIAS
   | typeof ALIASES

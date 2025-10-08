@@ -97,8 +97,39 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
   }
 
   const edgeTypes = makeEdgeTypes(dbSchema.types)
+  // Create inverse props for reference(s)
   for (const et in edgeTypes) {
     dbSchema.types[et] = edgeTypes[et]
+
+    for (const key in edgeTypes[et].props) {
+      const prop = edgeTypes[et].props[key]
+      const propType = getPropType(prop)
+      let refProp: any
+
+      if (propType === 'reference') {
+        refProp = prop
+      } else if (propType === 'references') {
+        refProp = prop.items
+      } else {
+        continue // not a ref
+      }
+
+      const type = dbSchema.types[refProp.ref]
+      const inverseKey = `_${et}_${key}`
+      dbSchema.types[refProp.ref] = {
+        ...type,
+        props: {
+          ...type.props,
+          [inverseKey]: {
+            items: {
+              ref: et,
+              prop: key,
+            },
+          },
+        },
+      }
+      refProp.prop = inverseKey
+    }
   }
 
   // Assign typeIds

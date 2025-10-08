@@ -37,7 +37,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         }
 
         if (ctx.id == id and ctx.typeId == refTypeId) {
-
             // don't ref yourself
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
@@ -55,12 +54,13 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         const ref = try db.insertReference(ctx, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
 
         if (hasEdgeData) {
-            assert(ref.type == selva.SELVA_NODE_REFERENCE_LARGE);
             const sizepos = if (hasIndex) i + 9 else i + 5;
             const edgelen = read(u32, data, sizepos);
             const edgepos = sizepos + 4;
             const edges = data[edgepos .. edgepos + edgelen];
-            try edge.writeEdges(ctx, ref.p.large, edges);
+            if (ref.type == selva.SELVA_NODE_REFERENCE_LARGE) {
+                try edge.writeEdges(ctx, ref.p.large, edges);
+            }
             i += edges.len + 4;
         }
         if (hasIndex) {
@@ -127,15 +127,12 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     const u32ids = read([]u32, aligned, 0);
-    const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
-    const refTypeEntry = try db.getType(ctx.db, refTypeId);
 
     try db.putReferences(
         ctx,
         u32ids,
         ctx.node.?,
         ctx.fieldSchema.?,
-        refTypeEntry,
     );
 
     return len;

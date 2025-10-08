@@ -74,7 +74,7 @@ pub inline fn aggregateRefsGroup(
 ) !usize {
     const typeEntry = try db.getType(ctx.db, typeId);
     var edgeConstraint: ?db.EdgeFieldConstraint = null;
-    var refs: ?incTypes.Refs(isEdge) = undefined;
+    var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     const emptyKey = &[_]u8{};
     if (isEdge) {
@@ -100,16 +100,16 @@ pub inline fn aggregateRefsGroup(
 
     const agg = aggInput[index..aggInput.len];
 
-    const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
+    const refsCnt = if (!isEdge) refs.?.refs.*.nr_refs else 0;
     var i: usize = offset;
 
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
     defer selva.selva_string_free(hllAccumulator);
 
     checkItem: while (i < refsCnt) : (i += 1) {
-        if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |n| {
+        if (incTypes.resolveRefsNode(ctx, refs.?, i)) |n| {
             if (hasFilter) {
-                const refStruct = incTypes.RefResult(isEdge, refs, edgeConstraint, i);
+                const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
                 if (!filter(ctx.db, n, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                     continue :checkItem;
                 }
@@ -178,7 +178,7 @@ pub inline fn aggregateRefsDefault(
     @memset(accumulatorField, 0);
     const typeEntry = try db.getType(ctx.db, typeId);
     var edgeConstraint: ?db.EdgeFieldConstraint = null;
-    var refs: ?incTypes.Refs(isEdge) = undefined;
+    var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     var hadAccumulated: bool = false;
 
@@ -197,7 +197,7 @@ pub inline fn aggregateRefsDefault(
         refs = .{ .refs = references.?, .fs = fieldSchema };
     }
 
-    const refsCnt = incTypes.getRefsCnt(isEdge, refs.?);
+    const refsCnt = if (!isEdge) refs.?.refs.*.nr_refs else 0;
 
     const fieldAggsSize = read(u16, agg, 1);
     const aggPropDef = agg[3 .. 3 + fieldAggsSize];
@@ -208,9 +208,9 @@ pub inline fn aggregateRefsDefault(
     } else {
         var i: usize = offset;
         checkItem: while (i < refsCnt) : (i += 1) {
-            if (incTypes.resolveRefsNode(ctx, isEdge, refs.?, i)) |refNode| {
+            if (incTypes.resolveRefsNode(ctx, refs.?, i)) |refNode| {
                 if (hasFilter) {
-                    const refStruct = incTypes.RefResult(isEdge, refs, edgeConstraint, i);
+                    const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
                     if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                         continue :checkItem;
                     }

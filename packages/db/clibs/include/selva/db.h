@@ -227,9 +227,7 @@ inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(const s
 #ifndef __zig
 {
     assert(fs->type == SELVA_FIELD_TYPE_REFERENCE ||
-           fs->type == SELVA_FIELD_TYPE_REFERENCES ||
-           fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCE ||
-           fs->type == SELVA_FIELD_TYPE_WEAK_REFERENCES);
+           fs->type == SELVA_FIELD_TYPE_REFERENCES);
     return &fs->edge_constraint;
 }
 #else

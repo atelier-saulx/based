@@ -42,7 +42,7 @@ pub fn getSingleRefFields(
     const resultIndex: usize = ctx.results.items.len - 1;
 
     // add error handler...
-    const fieldSchema = if (isEdge) db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstraint.?, refField) catch null else db.getFieldSchema(originalType, refField) catch null;
+    const fieldSchema = if (isEdge) db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstraint, refField) catch null else db.getFieldSchema(originalType, refField) catch null;
 
     if (fieldSchema == null) {
         // this just means broken..
@@ -51,11 +51,11 @@ pub fn getSingleRefFields(
     }
 
     var edgeRefStruct: types.RefStruct = undefined;
-    var node: ?db.Node = undefined;
+    var node: ?db.Node = null;
 
     if (isEdge) {
         size += 1;
-        var selvaRef = db.getEdgeReference(ctx.db, ref.?.edgeConstraint.?, ref.?.largeReference.?, refField);
+        const selvaRef = db.getEdgeReference(ctx.db, ref.?.edgeConstraint, ref.?.largeReference.?, refField);
         if (selvaRef == null) {
             return 6 + size;
         }
@@ -66,9 +66,11 @@ pub fn getSingleRefFields(
 
         edgeRefStruct = std.mem.zeroInit(types.RefStruct, .{
             .edgeConstraint = edgeConstraint,
-            .edgeReference = selvaRef,
+            .largeReference = selvaRef,
         });
-        node = db.resolveEdgeReference(ctx.db, fieldSchema.?, &selvaRef.?);
+        if (db.getRefDstType(ctx.db, fieldSchema.?) catch null) |dstType| {
+            node = db.getNodeFromReference(dstType, selvaRef);
+        }
         if (node == null) {
             return 6 + size;
         }
@@ -87,7 +89,6 @@ pub fn getSingleRefFields(
         edgeRefStruct = .{
             .smallReference = null,
             .largeReference = @ptrCast(selvaRef.?),
-            .edgeReference = null,
             .edgeConstraint = edgeConstraint,
         };
         node = db.getNodeFromReference(dstType, selvaRef);
