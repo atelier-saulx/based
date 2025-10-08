@@ -93,7 +93,6 @@ __purefn
 #endif
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 
-SELVA_EXPORT
 #if __has_c_attribute(reproducible)
 [[reproducible]]
 #endif
