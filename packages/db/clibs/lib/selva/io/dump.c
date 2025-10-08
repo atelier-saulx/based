@@ -89,8 +89,6 @@ struct sdb_text_meta {
     enum selva_string_flags flags; /*!< Saved flags SDB_STRING_META_FLAGS_MASK. */
 };
 
-static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields);
-
 /**
  * Write one of the magic numbers to the dump.
  */
@@ -200,8 +198,9 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
 }
 
 __attribute__((nonnull))
-static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
+static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaNode *node)
 {
+    struct SelvaFields *fields = &node->fields;
     const size_t nr_fields = fields->nr_fields;
 
     write_dump_magic(io, DUMP_MAGIC_FIELDS);
@@ -284,7 +283,7 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
 
     write_dump_magic(io, DUMP_MAGIC_NODE);
     io->sdb_write(&node->node_id, sizeof(node_id_t), 1, io);
-    save_fields(io, schema, &node->fields);
+    save_fields(io, schema, node);
 }
 
 static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
