@@ -120,7 +120,7 @@ int selva_fields_get_mutable_string(
     __attribute__((access(write_only, 4)));
 
 SELVA_EXPORT
-struct SelvaFieldInfo *selva_fields_ensure(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
+void *selva_fields_ensure_micro_buffer(struct SelvaNode *node, const struct SelvaFieldSchema *fs);
 
 /*
  * TODO Document diff to get_mutable_string

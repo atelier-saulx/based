@@ -163,11 +163,6 @@ static struct SelvaFieldInfo *ensure_field_references(struct SelvaFields *fields
     return nfo;
 }
 
-struct SelvaFieldInfo *selva_fields_ensure(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
-{
-    return ensure_field(fields, fs);
-}
-
 /**
  * Get a mutable string in fields at fs/nfo.
  */
@@ -1050,6 +1045,20 @@ int selva_fields_get_text(
     }
 
     return SELVA_ENOENT;
+}
+
+void *selva_fields_ensure_micro_buffer(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+{
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo;
+
+    if (fs->type != SELVA_FIELD_TYPE_MICRO_BUFFER) {
+        return nullptr;
+    }
+
+    nfo = ensure_field(fields, fs);
+
+    return nfo2p(fields, nfo);
 }
 
 int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len)
