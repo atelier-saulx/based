@@ -287,9 +287,6 @@ struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaFieldInfo *selva_field_get_nfo(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
-
-SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
