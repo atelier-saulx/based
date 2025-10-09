@@ -2075,7 +2075,6 @@ static void reference_meta_destroy(
     }
 }
 
-/* TODO Better typing for sizes. It's not nice to alias the types. */
 static inline void hash_ref(selva_hash_state_t *hash_state, const struct SelvaNodeLargeReference *ref)
 {
     node_id_t dst_id = ref->dst;
