@@ -20,14 +20,11 @@ pub fn checkId(
     ctx: *ModifyCtx,
 ) !void {
     if (ctx.subTypes) |st| {
-        // can do a min offset
+        // can do a min offset as well?
         if (st.idBitSet[ctx.id % 10_000_000] == 1) {
             const index = selva.node_id_set_bsearch(@constCast(st.idsList.ptr), st.lastId, ctx.id);
-
             if (index != -1) {
-                // std.debug.print("DERP???? {any} {any} - {any} = {any} {any} \n", .{ ctx.id, index, st.lastId, @as(usize, @intCast(index)), st.ids.items[@intCast(index)] });
-
-                ctx.idSubs = st.ids.items[@intCast(index)];
+                ctx.idSubs = st.ids[@intCast(index)];
             }
         } else {
             ctx.idSubs = null;
@@ -42,10 +39,9 @@ pub fn stage(
     if (op != Op.create and op != Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
             var i: u32 = 8;
-            const size = 24;
-            const f: @Vector(vectorLen, u8) = @splat(ctx.field);
-
-            // std.debug.print("DERP {any} \n", .{ctx.id});
+            const size = vectorLen + 8;
+            var f: @Vector(vectorLen, u8) = @splat(ctx.field);
+            f[vectorLen - 1] = 255; // This means all
             while (i < idSubs.len - 15) : (i += size) {
                 if (idSubs[i - 8] == 255) {
                     continue;
