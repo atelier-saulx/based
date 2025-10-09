@@ -17,6 +17,13 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
         // init this smaller.... 4mb per type is quite significant if you dont use it
         typeSubscriptionCtx.*.idBitSet = try std.heap.c_allocator.alloc(u1, 10_000_000 * 4); // 4mb
 
+        // starts single ids with 1,5mb per type (for 100k)
+        // we can make this much smaller (5,5mb per thing ram might be too much)
+        // especialy with edges etc
+        // e.g. 500 types -> 2.75gb with 1 sub per thing in ram seems quite intense
+        // lets see 500mb as max? so that means starting with 1k and grow accordingly
+        // 2.75gb/6
+
         // maybe do scaling blocksize? start with e.g. 100 then go 1000 etc log to 100k
         typeSubscriptionCtx.*.idsList = try std.heap.c_allocator.alloc(u32, types.BLOCK_SIZE);
         typeSubscriptionCtx.*.ids = try std.heap.c_allocator.alloc([]u8, types.BLOCK_SIZE);
