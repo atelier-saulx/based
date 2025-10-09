@@ -62,6 +62,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
         @memset(sub, 254);
         typeSubscriptionCtx.ids[typeSubscriptionCtx.lastId - 1] = sub;
     } else {
+        // lots of re-alloc
         subIndex = sub.len;
         sub = try ctx.allocator.realloc(sub, vectorLen + 8 + sub.len);
         typeSubscriptionCtx.ids[@intCast(idIndex)] = sub;

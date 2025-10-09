@@ -24,4 +24,4 @@ pub const SubscriptionCtx = struct {
 };
 
 // can make this smaller
-pub const BLOCK_SIZE = 10_000;
+pub const BLOCK_SIZE = 1000;
