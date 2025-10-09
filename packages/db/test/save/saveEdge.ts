@@ -40,9 +40,10 @@ await test('save edge', async (t) => {
       $uint8: 42,
     },
   })
-  console.log(db.server.schema)
-  console.log(db.server.dirtyRanges)
-    foreachDirtyBlock(db.server, (_, typeId, start) => console.log(typeId, start))
+
+  //console.log(db.server.schema)
+  //console.log(db.server.dirtyRanges)
+  //foreachDirtyBlock(db.server, (_, typeId, start) => console.log(typeId, start))
 
   deepEqual(await db.query('user', user2).include('**').get(), {
     id: 2,
