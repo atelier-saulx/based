@@ -418,7 +418,13 @@ pub fn ensureRefEdgeNode(
     efc: EdgeFieldConstraint,
     ref: ReferenceLarge
 ) !Node {
-    return selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
+    const edgeNode = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx);
+    if (edgeNode) |n| {
+        modifyCtx.markDirtyRange(ctx, efc.meta_node_type, getNodeId(n));
+        return n;
+    } else {
+        return errors.SelvaError.SELVA_ENOTSUP;
+    }
 }
 
 pub fn preallocReferences(ctx: *modifyCtx.ModifyCtx, len: u64) void {
