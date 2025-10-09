@@ -76,7 +76,7 @@ pub fn getRefsFields(
             return 10;
         };
         edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
-        const references = db.getReferences(ctx.db, node, fieldSchema);
+        const references = db.getReferences(node, fieldSchema);
         if (references == null) {
             // default empty size - this should never happen
             return 10;

@@ -75,7 +75,7 @@ pub fn getSingleRefFields(
             return 6 + size;
         }
     } else {
-        const selvaRef = db.getSingleReference(ctx.db, originalNode, fieldSchema.?);
+        const selvaRef = db.getSingleReference(originalNode, fieldSchema.?);
         if (selvaRef == null) {
             return 6 + size;
         }

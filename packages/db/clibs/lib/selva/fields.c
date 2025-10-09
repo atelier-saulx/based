@@ -1785,60 +1785,26 @@ struct SelvaNode *selva_fields_ensure_ref_meta(
     return meta;
 }
 
-struct SelvaNodeReferenceAny selva_fields_get_reference(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+struct SelvaNodeLargeReference *selva_fields_get_reference(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFields *fields = &node->fields;
     assert(fs->field < fields->nr_fields);
     const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
 
-    if (fs->type != SELVA_FIELD_TYPE_REFERENCE || !nfo->in_use) {
-        return (struct SelvaNodeReferenceAny){
-            .type = SELVA_NODE_REFERENCE_NULL,
-            .any = nullptr,
-        };
-    }
-
-#if 0
-    /* Verify proper alignment. */
-    assert(((uintptr_t)ref & 7) == 0);
-#endif
-
-#if 0
-    const enum SelvaNodeReferenceType type = refs_get_type(db, selva_get_edge_field_constraint(fs));
-#endif
-    const enum SelvaNodeReferenceType type = SELVA_NODE_REFERENCE_LARGE;
-    switch (type) {
-    case SELVA_NODE_REFERENCE_SMALL:
-    case SELVA_NODE_REFERENCE_LARGE:
-        return (struct SelvaNodeReferenceAny){
-            .type = type,
-            .any = nfo2p(fields, nfo),
-        };
-    case SELVA_NODE_REFERENCE_NULL:
-        break;
-    }
-    abort();
+    return (fs->type != SELVA_FIELD_TYPE_REFERENCE || !nfo->in_use)
+        ? nullptr
+        : (struct SelvaNodeLargeReference *)nfo2p(fields, nfo);
 }
 
-struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaFields *fields = &node->fields;
     assert(fs->field < fields->nr_fields);
     const struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
-    struct SelvaNodeReferences *refs;
 
-    if (fs->type != SELVA_FIELD_TYPE_REFERENCES || !nfo->in_use) {
-        return nullptr;
-    }
-
-    refs = (struct SelvaNodeReferences *)nfo2p(fields, nfo);
-
-#if 0
-    /* Verify proper alignment. */
-    assert(((uintptr_t)refs & 7) == 0);
-#endif
-
-    return refs;
+    return (fs->type != SELVA_FIELD_TYPE_REFERENCES || !nfo->in_use)
+        ? nullptr
+        : (struct SelvaNodeReferences *)nfo2p(fields, nfo);
 }
 
 struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
@@ -1984,7 +1950,7 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struc
         return SELVA_EINTYPE;
     }
 
-    struct SelvaNodeReferences *refs = selva_fields_get_references(db, node, fs);
+    struct SelvaNodeReferences *refs = selva_fields_get_references(node, fs);
     if (!refs) {
         return SELVA_ENOENT;
     }

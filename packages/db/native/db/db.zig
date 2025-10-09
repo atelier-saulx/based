@@ -164,17 +164,12 @@ pub inline fn getReferenceNodeId(ref: ?ReferenceLarge) []u8 {
     return &[_]u8{};
 }
 
-pub fn getSingleReference(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema) ?ReferenceLarge {
-    const result = selva.selva_fields_get_reference(ctx.selva, node, fieldSchema);
-    if (result.type != selva.SELVA_NODE_REFERENCE_LARGE) {
-        return null;
-    }
-
-    return result.p.large;
+pub fn getSingleReference(node: Node, fieldSchema: FieldSchema) ?ReferenceLarge {
+    return selva.selva_fields_get_reference(node, fieldSchema);
 }
 
-pub fn getReferences(ctx: *DbCtx, node: Node, fieldSchema: FieldSchema) ?References {
-    return selva.selva_fields_get_references(ctx.selva, node, fieldSchema);
+pub fn getReferences(node: Node, fieldSchema: FieldSchema) ?References {
+    return selva.selva_fields_get_references(node, fieldSchema);
 }
 
 pub fn clearReferences(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: FieldSchema) void {
@@ -248,10 +243,13 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
             return err;
         }
 
-        refAny = selva.selva_fields_get_reference(ctx.db.selva, src, fieldSchema);
-        if (refAny.type == selva.SELVA_NODE_REFERENCE_NULL) {
-            return errors.SelvaError.SELVA_ENOENT; // how???
+        const ref = selva.selva_fields_get_reference(src, fieldSchema);
+        if (ref == null) {
+            return errors.SelvaError.SELVA_ENOENT; // how, it was just there???
         }
+
+        refAny.type = selva.SELVA_NODE_REFERENCE_LARGE;
+        refAny.p.large = ref;
     };
 
     assert(refAny.type == selva.SELVA_NODE_REFERENCE_LARGE);
@@ -373,7 +371,7 @@ pub fn getEdgeReferences(
         return null;
     }
 
-    return selva.selva_fields_get_references(db.selva, meta_node, fs);
+    return selva.selva_fields_get_references(meta_node, fs);
 }
 
 pub fn getEdgeReference(
@@ -392,18 +390,7 @@ pub fn getEdgeReference(
         return null;
     }
 
-    const edgeRef = selva.selva_fields_get_reference(db.selva, meta_node, fs);
-    // TODO We want this to be smol
-    //if (edgeRef.type != selva.SELVA_NODE_REFERENCE_SMALL) {
-    //    return null;
-    //}
-
-    //return edgeRef.p.small;
-    if (edgeRef.type != selva.SELVA_NODE_REFERENCE_LARGE) {
-        return null;
-    }
-
-    return edgeRef.p.large;
+    return selva.selva_fields_get_reference(meta_node, fs);
 }
 
 // TODO This is now hll specific but we might want to change it.
