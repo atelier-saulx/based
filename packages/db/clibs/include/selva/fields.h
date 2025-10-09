@@ -99,9 +99,6 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
 
 SELVA_EXPORT
-struct SelvaFields *selva_fields_node2fields(struct SelvaNode *node);
-
-SELVA_EXPORT
 struct SelvaNode *selva_fields_ensure_ref_meta(
         struct SelvaDb *db,
         struct SelvaNode *node,
@@ -264,10 +261,7 @@ int selva_fields_get_text(
         size_t *len);
 
 SELVA_EXPORT
-int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len);
-
-SELVA_EXPORT
-int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+int selva_fields_set_micro_buffer(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
 
 SELVA_EXPORT
 struct SelvaNodeReferenceAny selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
@@ -278,15 +272,7 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, stru
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull));
-
-SELVA_EXPORT
 struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull));
-
-SELVA_EXPORT
-struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT
@@ -317,10 +303,6 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
 /**
  * Init the fields struct of a node or edge.
  */
-SELVA_EXPORT
-void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
-    __attribute__((nonnull));
-
 void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
     __attribute__((nonnull));
 
@@ -332,7 +314,7 @@ void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node, selva_dirt
     __attribute__((nonnull(1, 2)));
 
 SELVA_EXPORT
-void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
+void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaNode *node);
 
 SELVA_EXPORT
-selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
+selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaNode *node);

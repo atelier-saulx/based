@@ -120,11 +120,6 @@ void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo
     return nfo2p(fields, nfo);
 }
 
-struct SelvaFields *selva_fields_node2fields(struct SelvaNode *node)
-{
-    return &node->fields;
-}
-
 /**
  * Ensure that a field is allocated properly.
  * @param node Optional node context.
@@ -1061,8 +1056,9 @@ void *selva_fields_ensure_micro_buffer(struct SelvaNode *node, const struct Selv
     return nfo2p(fields, nfo);
 }
 
-int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len)
+int selva_fields_set_micro_buffer(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
 {
+    struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
 
     if (fs->type != SELVA_FIELD_TYPE_MICRO_BUFFER) {
@@ -1078,11 +1074,6 @@ int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct Selva
     memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
 
     return 0;
-}
-
-int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
-{
-    return selva_fields_set_micro_buffer(&node->fields, fs, value, len);
 }
 
 /**
@@ -1851,8 +1842,9 @@ struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *, struct
     return refs;
 }
 
-struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
+    struct SelvaFields *fields = &node->fields;
     const struct SelvaFieldInfo *nfo;
 
     assert(fs->type == SELVA_FIELD_TYPE_STRING);
@@ -1863,13 +1855,9 @@ struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, 
     return !nfo->in_use ? nullptr : nfo2p(fields, nfo);
 }
 
-struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
-    return selva_fields_get_selva_string2(&node->fields, fs);
-}
-
-struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
-{
+    struct SelvaFields *fields = &node->fields;
     const struct SelvaFieldInfo *nfo;
     enum SelvaFieldType type;
 
@@ -1919,11 +1907,6 @@ struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, cons
         };
     }
     db_panic("Invalid type");
-}
-
-struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-{
-    return selva_fields_get_raw2(&node->fields, fs);
 }
 
 static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
@@ -2017,7 +2000,7 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
     (void)clear_references(db, node, fs, dirty_cb, dirty_ctx);
 }
 
-void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
+static void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
 {
     fields->nr_fields = schema->nr_fields - schema->nr_virtual_fields;
     fields->data_len = schema->field_map_template.fixed_data_size;
@@ -2103,8 +2086,9 @@ static inline void hash_ref(selva_hash_state_t *hash_state, const struct SelvaNo
     selva_hash_update(hash_state, &meta_id, sizeof(meta_id));
 }
 
-void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+void selva_fields_hash_update(selva_hash_state_t *hash_state, struct SelvaDb *, const struct SelvaFieldsSchema *schema, const struct SelvaNode *node)
 {
+    const struct SelvaFields *fields = &node->fields;
     const field_t nr_fields = fields->nr_fields;
 
     for (field_t field = 0; field < nr_fields; field++) {
@@ -2196,13 +2180,13 @@ nil:
     }
 }
 
-selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields)
+selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaNode *node)
 {
     selva_hash_state_t *hash_state = selva_hash_create_state();
     selva_hash128_t res;
 
     selva_hash_reset(hash_state);
-    selva_fields_hash_update(hash_state, db, schema, fields);
+    selva_fields_hash_update(hash_state, db, schema, node);
     res = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
 
