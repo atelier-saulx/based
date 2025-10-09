@@ -1058,20 +1058,19 @@ void *selva_fields_ensure_micro_buffer(struct SelvaNode *node, const struct Selv
 
 int selva_fields_set_micro_buffer(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len)
 {
-    struct SelvaFields *fields = &node->fields;
-    struct SelvaFieldInfo *nfo;
+    char *p;
 
-    if (fs->type != SELVA_FIELD_TYPE_MICRO_BUFFER) {
-        return SELVA_EINTYPE;
-    }
-
-    nfo = ensure_field(fields, fs);
     if (len > fs->smb.len) {
         return SELVA_EINVAL;
     }
 
-    memcpy(nfo2p(fields, nfo), value, len);
-    memset((char *)nfo2p(fields, nfo) + len, 0, fs->smb.len - len);
+    p = selva_fields_ensure_micro_buffer(node, fs);
+    if (!p) {
+        return SELVA_EINTYPE;
+    }
+
+    memcpy(p, value, len);
+    memset(p + len, 0, fs->smb.len - len);
 
     return 0;
 }
