@@ -6,6 +6,7 @@ const vectorLen = std.simd.suggestVectorLength(u8).?;
 
 pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCtx {
     var typeSubscriptionCtx: *types.TypeSubscriptionCtx = undefined;
+
     if (!ctx.subscriptions.types.contains(typeId)) {
         typeSubscriptionCtx = try ctx.allocator.create(types.TypeSubscriptionCtx);
 
@@ -13,12 +14,12 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
 
         // DEFAULT_LEN for bitmap? ASK YUZI
         // 4MB - make this dynamic (add till max first)
-        typeSubscriptionCtx.*.idBitSet = try ctx.allocator.alloc(u1, 10_000_000 * 4); // 4mb
+        typeSubscriptionCtx.*.idBitSet = try std.heap.c_allocator.alloc(u1, 10_000_000 * 4); // 4mb
 
-        typeSubscriptionCtx.*.idsList = try ctx.allocator.alloc(u32, types.BLOCK_SIZE);
-        typeSubscriptionCtx.*.ids = try ctx.allocator.alloc([]u8, types.BLOCK_SIZE);
+        typeSubscriptionCtx.*.idsList = try std.heap.c_allocator.alloc(u32, types.BLOCK_SIZE);
+        typeSubscriptionCtx.*.ids = try std.heap.c_allocator.alloc([]u8, types.BLOCK_SIZE);
         typeSubscriptionCtx.*.lastIdMarked = 0;
-        typeSubscriptionCtx.*.singleIdMarked = try ctx.allocator.alloc(u8, types.BLOCK_SIZE * 8);
+        typeSubscriptionCtx.*.singleIdMarked = try std.heap.c_allocator.alloc(u8, types.BLOCK_SIZE * 8);
 
         try ctx.subscriptions.types.put(typeId, typeSubscriptionCtx);
     } else {
@@ -34,10 +35,11 @@ pub inline fn removeSubTypeIfEmpty(
 ) void {
     if (typeSubscriptionCtx.ids.count() == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-            removed_entry.value.ids.deinit();
-            removed_entry.value.idBitSet.deinit();
-            removed_entry.value.idsList.deinit();
-            ctx.allocator.destroy(removed_entry.value);
+            // have to destroy all
+            // removed_entry.value.ids.deinit();
+            // removed_entry.value.idBitSet.deinit();
+            // removed_entry.value.idsList.deinit();
+            std.heap.c_allocator.destroy(removed_entry.value);
         }
     }
 }

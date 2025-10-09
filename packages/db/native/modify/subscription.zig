@@ -4,6 +4,7 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
+const subTypes = @import("../db//subscription//types.zig");
 
 // use this later for the max field check
 const vectorLen = std.simd.suggestVectorLength(u8).?;
@@ -35,13 +36,14 @@ pub fn checkId(
 pub fn stage(
     ctx: *ModifyCtx,
     comptime op: Op,
-) !void {
+) void {
     if (op != Op.create and op != Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
             var i: u32 = 8;
             const size = vectorLen + 8;
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
             f[vectorLen - 1] = 255; // This means all
+
             while (i < idSubs.len - 15) : (i += size) {
                 if (idSubs[i - 8] == 255) { // here we can do a branchless check to also check fror 254 (removed)
                     continue;
@@ -49,8 +51,26 @@ pub fn stage(
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;
                 if (@reduce(.Or, vec == f)) {
                     if (ctx.subTypes) |st| {
-                        utils.writeInt(u32, st.singleIdMarked, st.lastIdMarked, utils.read(u32, idSubs, i - 4));
-                        utils.writeInt(u32, st.singleIdMarked, st.lastIdMarked + 4, ctx.id);
+
+                        // typeSubscriptionCtx.*.singleIdMarked = try std.heap.c_allocator.realloc(
+                        //     typeSubscriptionCtx.*.singleIdMarked,
+                        //     typeSubscriptionCtx.*.singleIdMarked.len + types.BLOCK_SIZE * 8,
+                        // );
+
+                        // std.debug.print("x 1 {d}  {d} \n", .{ st.singleIdMarked.len, st.lastIdMarked });
+
+                        if (st.singleIdMarked.len < st.lastIdMarked + 8) {
+                            st.singleIdMarked = std.heap.c_allocator.realloc(
+                                st.singleIdMarked,
+                                st.singleIdMarked.len + subTypes.BLOCK_SIZE * 8,
+                            ) catch &.{};
+                            // std.debug.print("RE-ALLOC SINGLE ID MARKED \n", .{});
+                        }
+
+                        // const subId = utils.read(u32, idSubs, i - 4);
+                        // utils.writeInt(u32, st.singleIdMarked, st.lastIdMarked, subId);
+                        // std.debug.print("x 2\n", .{});
+                        // utils.writeInt(u32, st.singleIdMarked, st.lastIdMarked + 4, ctx.id);
                         st.lastIdMarked += 8;
                         idSubs[i - 8] = 255;
                     }

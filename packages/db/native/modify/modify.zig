@@ -99,7 +99,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             },
             types.ModOp.DELETE_NODE => {
                 if (ctx.node) |node| {
-                    try subs.stage(&ctx, subs.Op.deleteNode);
+                    subs.stage(&ctx, subs.Op.deleteNode);
                     db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
                     // no other side handled
                     ctx.node = null;
