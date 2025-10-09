@@ -59,7 +59,9 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     utils.writeInt(u32, sub, 4, subId);
 
     if (fields.len > vectorLen) {
-        utils.copy(sub[8..], fields[0..vectorLen]);
+        @memset(sub[8 .. 8 + vectorLen], 255);
+        // utils.copy(sub[8..], fields[0..vectorLen]);
+        // sub[8 + vectorLen] = 255; // means include all
     } else {
         utils.copy(sub[8..], fields);
     }
