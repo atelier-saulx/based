@@ -23,4 +23,5 @@ pub const SubscriptionCtx = struct {
     // hasMarkedSubscriptions: bool,
 };
 
-pub const BLOCK_SIZE = 100_000;
+// can make this smaller
+pub const BLOCK_SIZE = 10_000;

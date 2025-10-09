@@ -7,7 +7,7 @@ const utils = @import("../../utils.zig");
 const types = @import("./types.zig");
 const upsertSubType = @import("./shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
-
+const selva = @import("../../selva.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 
 pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
@@ -21,49 +21,58 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const fields = value[headerLen..value.len];
     var typeSubscriptionCtx = try upsertSubType(ctx, typeId);
 
+    var sub: []u8 = undefined;
+    var idDoesNotExist = true;
+    var subIndex: usize = 0;
+    var idIndex: isize = 0;
     // multiple subs per ID fix
-
-    if (typeSubscriptionCtx.lastId + 1 > typeSubscriptionCtx.idsList.len) {
-        std.debug.print("DERP NEED RESIZE \n", .{});
-
-        typeSubscriptionCtx.*.idsList = try ctx.allocator.realloc(
-            typeSubscriptionCtx.*.idsList,
-            typeSubscriptionCtx.*.idsList.len + types.BLOCK_SIZE,
+    if (typeSubscriptionCtx.idBitSet[id % 10_000_000] == 1) {
+        idIndex = selva.node_id_set_bsearch(
+            @constCast(typeSubscriptionCtx.idsList.ptr),
+            typeSubscriptionCtx.lastId,
+            id,
         );
-
-        typeSubscriptionCtx.*.ids = try ctx.allocator.realloc(
-            typeSubscriptionCtx.*.ids,
-            typeSubscriptionCtx.*.ids.len + types.BLOCK_SIZE,
-        );
-
-        // try typeSubscriptionCtx.ids.ensureTotalCapacity(typeSubscriptionCtx.ids.items.len + types.BLOCK_SIZE);
-
-        typeSubscriptionCtx.*.singleIdMarked = try ctx.allocator.realloc(
-            typeSubscriptionCtx.*.singleIdMarked,
-            typeSubscriptionCtx.*.singleIdMarked.len + types.BLOCK_SIZE * 8,
-        );
+        if (idIndex != -1) {
+            sub = typeSubscriptionCtx.ids[@intCast(idIndex)];
+            idDoesNotExist = false;
+        }
     }
 
-    // grow all this dynamicly...
-    typeSubscriptionCtx.idsList[typeSubscriptionCtx.lastId] = id;
-    typeSubscriptionCtx.lastId += 1;
-    typeSubscriptionCtx.idBitSet[id % 10_000_000] = 1;
-
-    const sub = try ctx.allocator.alloc(u8, vectorLen + 8);
-    // 254 means no match
-    @memset(sub, 254);
-
-    // need to put 253 as default for empty vecs
-    typeSubscriptionCtx.ids[typeSubscriptionCtx.lastId - 1] = sub;
-
-    utils.writeInt(u32, sub, 4, subId);
-
-    if (fields.len > vectorLen) {
-        @memset(sub[8 .. 8 + vectorLen], 255);
-        // utils.copy(sub[8..], fields[0..vectorLen]);
-        // sub[8 + vectorLen] = 255; // means include all
+    if (idDoesNotExist) {
+        const newSize = typeSubscriptionCtx.lastId + 1;
+        if (newSize > typeSubscriptionCtx.idsList.len) {
+            std.debug.print("RESIZE ID SUBS \n", .{});
+            // grow bitset!
+            typeSubscriptionCtx.*.idsList = try ctx.allocator.realloc(typeSubscriptionCtx.*.idsList, newSize + types.BLOCK_SIZE);
+            typeSubscriptionCtx.*.ids = try ctx.allocator.realloc(
+                typeSubscriptionCtx.*.ids,
+                newSize + types.BLOCK_SIZE,
+            );
+            typeSubscriptionCtx.*.singleIdMarked = try ctx.allocator.realloc(
+                typeSubscriptionCtx.*.singleIdMarked,
+                typeSubscriptionCtx.*.singleIdMarked.len + types.BLOCK_SIZE * 8,
+            );
+        }
+        typeSubscriptionCtx.idsList[typeSubscriptionCtx.lastId] = id;
+        typeSubscriptionCtx.lastId += 1;
+        // Want to grow this dynamcly as well
+        typeSubscriptionCtx.idBitSet[id % 10_000_000] = 1;
+        sub = try ctx.allocator.alloc(u8, vectorLen + 8);
+        // 254 means no match
+        @memset(sub, 254);
+        typeSubscriptionCtx.ids[typeSubscriptionCtx.lastId - 1] = sub;
     } else {
-        utils.copy(sub[8..], fields);
+        subIndex = sub.len;
+        sub = try ctx.allocator.realloc(sub, vectorLen + 8 + sub.len);
+        typeSubscriptionCtx.ids[@intCast(idIndex)] = sub;
+    }
+
+    utils.writeInt(u32, sub, subIndex + 4, subId);
+    if (fields.len > vectorLen) {
+        // if too many fields just fire for each
+        @memset(sub[subIndex + 8 .. subIndex + 8 + vectorLen], 255);
+    } else {
+        utils.copy(sub[subIndex + 8 ..], fields);
     }
 
     return null;

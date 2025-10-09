@@ -171,7 +171,8 @@ await test('subscriptionIds', async (t) => {
 
   console.log('create', await clients[0].drain(), 'ms')
 
-  addSubs(666, 1, 2e6)
+  addSubs(666, 2000, 2005)
+  addSubs(420, 2000, 2005)
 
   await updateAll()
 })
