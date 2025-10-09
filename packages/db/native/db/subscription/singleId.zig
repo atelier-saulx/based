@@ -41,7 +41,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     if (idDoesNotExist) {
         const newSize = typeSubscriptionCtx.lastId + 1;
         if (newSize > typeSubscriptionCtx.idsList.len) {
-            std.debug.print("RESIZE ID SUBS \n", .{});
+            // std.debug.print("RESIZE ID SUBS \n", .{});
             // grow bitset!
             typeSubscriptionCtx.*.idsList = try ctx.allocator.realloc(typeSubscriptionCtx.*.idsList, newSize + types.BLOCK_SIZE);
             typeSubscriptionCtx.*.ids = try ctx.allocator.realloc(
@@ -57,12 +57,16 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
         typeSubscriptionCtx.lastId += 1;
         // Want to grow this dynamcly as well
         typeSubscriptionCtx.idBitSet[id % 10_000_000] = 1;
-        sub = try ctx.allocator.alloc(u8, vectorLen + 8);
+        sub = try ctx.allocator.alloc(u8, (vectorLen + 8) * 2);
         // 254 means no match
         @memset(sub, 254);
         typeSubscriptionCtx.ids[typeSubscriptionCtx.lastId - 1] = sub;
     } else {
-        // lots of re-alloc
+        // lots of re-alloc - we can prob keep the number here - will become very annoying to remove things otherwise
+
+        // we can also do addIds and invalidate the total allocater every period
+        // this will remove the need for ANY reallocation scine we know
+
         subIndex = sub.len;
         sub = try ctx.allocator.realloc(sub, vectorLen + 8 + sub.len);
         typeSubscriptionCtx.ids[@intCast(idIndex)] = sub;

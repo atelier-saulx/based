@@ -43,7 +43,7 @@ pub fn stage(
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
             f[vectorLen - 1] = 255; // This means all
             while (i < idSubs.len - 15) : (i += size) {
-                if (idSubs[i - 8] == 255) {
+                if (idSubs[i - 8] == 255) { // here we can do a branchless check to also check fror 254 (removed)
                     continue;
                 }
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;

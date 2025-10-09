@@ -171,8 +171,15 @@ await test('subscriptionIds', async (t) => {
 
   console.log('create', await clients[0].drain(), 'ms')
 
-  addSubs(666, 2000, 2005)
-  addSubs(420, 2000, 2005)
+  let d = Date.now()
+  addSubs(666, 1, 2e6)
+  addSubs(420, 1, 2e6)
+
+  console.log(Date.now() - d, 'ms', 'to create 4M')
+
+  d = Date.now()
+  addSubs(667, 1000, 2001)
+  console.log(Date.now() - d, 'ms', 'to add 1000')
 
   await updateAll()
 })
