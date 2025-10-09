@@ -42,7 +42,6 @@ pub fn getFields(
                 size += try getFields(node, ctx, id, typeEntry, operation, .{
                     .smallReference = edgeRef.?.smallReference,
                     .largeReference = edgeRef.?.largeReference,
-                    .edgeReference = null,
                     .edgeConstraint = edgeRef.?.edgeConstraint,
                 }, null, true);
                 i += edgeSize + 2;

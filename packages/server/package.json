@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "10.2.3",
+  "version": "10.2.4",
   "license": "MIT",
   "main": "./dist/index.js",
   "type": "module",
@@ -9,15 +9,16 @@
     "README.md",
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
     "clean": "rm -rf ./dist ./node_modules ./tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@based/db": "0.1.4",
-    "@based/errors": "1.5.0",
-    "@based/functions": "3.3.2",
+    "@based/db": "0.1.5",
+    "@based/errors": "1.5.1",
+    "@based/functions": "3.3.3",
     "@based/hash": "1.1.0",
     "@based/protocol": "0.0.5",
     "@based/utils": "1.1.1",

@@ -103,7 +103,7 @@ const messages = {
   },
   [ERR_SORT_ENOENT]: (p) => `Sort: field does not exist "${p}"`,
   [ERR_SORT_WRONG_TARGET]: (p) =>
-    `Sort: incorrect qeury target "${displayTarget(p)}"`,
+    `Sort: incorrect query target "${displayTarget(p)}"`,
   [ERR_SORT_ORDER]: (p) =>
     `Sort: incorrect order option "${safeStringify(p.order)}" passed to sort "${p.field}"`,
   [ERR_SORT_TYPE]: (p) =>

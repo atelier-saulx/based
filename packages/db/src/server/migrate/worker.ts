@@ -16,111 +16,120 @@ import { wait } from '@based/utils'
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
 } else if (workerData?.isDbMigrateWorker) {
-  const { from, to, fromSchema, toSchema, channel, workerState, transformFns } =
-    workerData
+  ;(async () => {
+    const {
+      from,
+      to,
+      fromSchema,
+      toSchema,
+      channel,
+      workerState,
+      transformFns,
+    } = workerData
 
-  const fromCtx = native.externalFromInt(from)
-  const toCtx = native.externalFromInt(to)
+    const fromCtx = native.externalFromInt(from)
+    const toCtx = native.externalFromInt(to)
 
-  native.createThreadCtx(fromCtx, native.getThreadId())
-  native.createThreadCtx(toCtx, native.getThreadId())
+    native.createThreadCtx(fromCtx, native.getThreadId())
+    native.createThreadCtx(toCtx, native.getThreadId())
 
-  const fromDb = new BasedDb({ path: null })
-  const toDb = new BasedDb({ path: null })
-  fromDb.server.dbCtxExternal = fromCtx
-  toDb.server.dbCtxExternal = toCtx
+    const fromDb = new BasedDb({ path: null })
+    const toDb = new BasedDb({ path: null })
+    fromDb.server.dbCtxExternal = fromCtx
+    toDb.server.dbCtxExternal = toCtx
 
-  setSchemaOnServer(fromDb.server, deSerialize(fromSchema) as DbSchema)
-  setSchemaOnServer(toDb.server, deSerialize(toSchema) as DbSchema)
-  setLocalClientSchema(fromDb.client, fromDb.server.schema)
-  setLocalClientSchema(toDb.client, toDb.server.schema)
+    setSchemaOnServer(fromDb.server, deSerialize(fromSchema) as DbSchema)
+    setSchemaOnServer(toDb.server, deSerialize(toSchema) as DbSchema)
+    setLocalClientSchema(fromDb.client, fromDb.server.schema)
+    setLocalClientSchema(toDb.client, toDb.server.schema)
 
-  try {
-    const map: Record<
-      number,
-      { type: string; include: string[]; includeRaw: string[] }
-    > = {}
-    for (const type in fromDb.server.schemaTypesParsed) {
-      const { id, props } = fromDb.server.schemaTypesParsed[type]
-      const include = []
-      const includeRaw = []
+    try {
+      const map: Record<
+        number,
+        { type: string; include: string[]; includeRaw: string[] }
+      > = {}
+      for (const type in fromDb.server.schemaTypesParsed) {
+        const { id, props } = fromDb.server.schemaTypesParsed[type]
+        const include = []
+        const includeRaw = []
 
-      for (const path in props) {
-        const prop = props[path]
-        if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
-          include.push(`${path}.id`)
-          if (prop.edges) {
-            for (const key in prop.edges) {
-              const edge = prop.edges[key]
-              if (
-                edge.typeIndex === REFERENCE ||
-                edge.typeIndex === REFERENCES
-              ) {
-                include.push(`${path}.${key}.id`)
-              } else if (edge.typeIndex === CARDINALITY) {
-                includeRaw.push(`${path}.${key}`)
-              } else {
-                include.push(`${path}.${key}`)
+        for (const path in props) {
+          const prop = props[path]
+          if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+            include.push(`${path}.id`)
+            if (prop.edges) {
+              for (const key in prop.edges) {
+                const edge = prop.edges[key]
+                if (
+                  edge.typeIndex === REFERENCE ||
+                  edge.typeIndex === REFERENCES
+                ) {
+                  include.push(`${path}.${key}.id`)
+                } else if (edge.typeIndex === CARDINALITY) {
+                  includeRaw.push(`${path}.${key}`)
+                } else {
+                  include.push(`${path}.${key}`)
+                }
               }
             }
-          }
-        } else if (prop.typeIndex === CARDINALITY) {
-          includeRaw.push(path)
-        } else {
-          include.push(path)
-        }
-      }
-      map[id] = { type, include, includeRaw }
-    }
-
-    for (const type in transformFns) {
-      const fnOrNull = transformFns[type]
-      transformFns[type] = eval(`(${fnOrNull})`)
-    }
-
-    while (true) {
-      let msg: any
-
-      while ((msg = receiveMessageOnPort(channel))) {
-        const leafData: MigrateRange = msg.message
-        const { type, include, includeRaw } = map[leafData.typeId]
-        const typeTransformFn = transformFns[type]
-        const query = fromDb
-          .query(type)
-          .range(leafData.start - 1, leafData.end)
-          .include(include)
-        for (const rawProp of includeRaw) {
-          query.include(rawProp, { raw: true })
-        }
-        const nodes = query._getSync(fromCtx)
-
-        if (typeTransformFn) {
-          for (const node of nodes) {
-            const res = typeTransformFn(node)
-            if (res === null) {
-              continue
-            }
-            if (Array.isArray(res)) {
-              toDb.create(res[0], res[1] || node, { unsafe: true })
-            } else {
-              toDb.create(type, res || node, { unsafe: true })
-            }
-          }
-        } else if (type in toDb.server.schemaTypesParsed) {
-          for (const node of nodes) {
-            toDb.create(type, node, { unsafe: true })
+          } else if (prop.typeIndex === CARDINALITY) {
+            includeRaw.push(path)
+          } else {
+            include.push(path)
           }
         }
+        map[id] = { type, include, includeRaw }
       }
 
-      await toDb.drain()
-      native.membarSyncWrite()
-      setToSleep(workerState)
+      for (const type in transformFns) {
+        const fnOrNull = transformFns[type]
+        transformFns[type] = eval(`(${fnOrNull})`)
+      }
+
+      while (true) {
+        let msg: any
+
+        while ((msg = receiveMessageOnPort(channel))) {
+          const leafData: MigrateRange = msg.message
+          const { type, include, includeRaw } = map[leafData.typeId]
+          const typeTransformFn = transformFns[type]
+          const query = fromDb
+            .query(type)
+            .range(leafData.start - 1, leafData.end)
+            .include(include)
+          for (const rawProp of includeRaw) {
+            query.include(rawProp, { raw: true })
+          }
+          const nodes = query._getSync(fromCtx)
+
+          if (typeTransformFn) {
+            for (const node of nodes) {
+              const res = typeTransformFn(node)
+              if (res === null) {
+                continue
+              }
+              if (Array.isArray(res)) {
+                toDb.create(res[0], res[1] || node, { unsafe: true })
+              } else {
+                toDb.create(type, res || node, { unsafe: true })
+              }
+            }
+          } else if (type in toDb.server.schemaTypesParsed) {
+            for (const node of nodes) {
+              toDb.create(type, node, { unsafe: true })
+            }
+          }
+        }
+
+        await toDb.drain()
+        native.membarSyncWrite()
+        setToSleep(workerState)
+      }
+    } catch (e) {
+      console.error(e)
+      throw e
     }
-  } catch (e) {
-    console.error(e)
-    throw e
-  }
+  })()
 } else {
   console.info('incorrect worker db migrate')
 }

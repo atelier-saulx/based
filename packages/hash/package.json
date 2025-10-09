@@ -12,6 +12,7 @@
     "dist/src"
   ],
   "license": "MIT",
+  "sideEffects": false,
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",

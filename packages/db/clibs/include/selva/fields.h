@@ -70,20 +70,6 @@ static_assert(offsetof(struct SelvaNodeReferences, any) == offsetof(struct Selva
 static_assert(offsetof(struct SelvaNodeReferences, any) == offsetof(struct SelvaNodeReferences, large));
 static_assert(offsetof(struct SelvaNodeReferences, small) == offsetof(struct SelvaNodeReferences, large));
 
-struct SelvaNodeWeakReference {
-    /* The type can be found from the schema. */
-#if 0
-    node_type_t dst_type;
-#endif
-    node_id_t dst_id;
-};
-
-struct SelvaNodeWeakReferences {
-    uint32_t nr_refs;
-    uint32_t offset;
-    struct SelvaNodeWeakReference *refs __pcounted_by(nr_refs);
-};
-
 struct SelvaFieldsPointer {
     uint8_t *ptr;
     size_t off;
@@ -107,7 +93,6 @@ __purefn
 #endif
 size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 
-SELVA_EXPORT
 #if __has_c_attribute(reproducible)
 [[reproducible]]
 #endif
@@ -134,7 +119,7 @@ int selva_fields_get_mutable_string(
     __attribute__((access(write_only, 4)));
 
 SELVA_EXPORT
-struct SelvaFieldInfo *selva_fields_ensure(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
+void *selva_fields_ensure_micro_buffer(struct SelvaNode *node, const struct SelvaFieldSchema *fs);
 
 /*
  * TODO Document diff to get_mutable_string
@@ -157,7 +142,11 @@ int selva_fields_reference_set(
         struct SelvaNodeReferenceAny *ref_out,
         selva_dirty_node_cb_t dirty_cb,
         void *dirty_ctx);
-    // __attribute__((access(write_only, 5), access(write_only, 6)));
+
+enum selva_fields_references_insert_flags {
+    SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER = 0x01,
+    SELVA_FIELDS_REFERENCES_INSERT_FLAGS_IGNORE_SRC_DEPENDENT = 0x02,
+};
 
 /**
  * @param index 0 = first; -1 = last.
@@ -169,11 +158,11 @@ int selva_fields_references_insert(
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
         ssize_t index,
-        bool reorder,
+        enum selva_fields_references_insert_flags flags,
         struct SelvaTypeEntry *te_dst,
         struct SelvaNode * restrict dst,
         struct SelvaNodeReferenceAny *ref_out,
-        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx, bool ignore_src_dependent)
+        selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
     __attribute__((access(write_only, 8)));
 
 /**
@@ -281,38 +270,11 @@ SELVA_EXPORT
 int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
 
 SELVA_EXPORT
-int selva_fields_set_weak_reference(struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst);
-
-SELVA_EXPORT
-int selva_fields_set_weak_reference2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, node_id_t dst);
-
-SELVA_EXPORT
-int selva_fields_set_weak_references2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, node_id_t dst[], size_t nr_dsts);
-
-SELVA_EXPORT
-int selva_fields_set_weak_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst[], size_t nr_dsts);
-
-SELVA_EXPORT
-struct SelvaNodeLargeReference *selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+struct SelvaNodeReferenceAny selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT
 struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull));
-
-SELVA_EXPORT
-struct SelvaNodeWeakReference selva_fields_get_weak_reference(struct SelvaFields *fields, field_t field)
-    __attribute__((nonnull));
-
-SELVA_EXPORT
-struct SelvaNodeWeakReferences selva_fields_get_weak_references(struct SelvaFields *fields, field_t field)
-    __attribute__((nonnull));
-
-SELVA_EXPORT
-struct SelvaNode *selva_fields_resolve_weak_reference(
-        const struct SelvaDb *db,
-        const struct SelvaFieldSchema *fs,
-        const struct SelvaNodeWeakReference *weak_ref)
     __attribute__((nonnull));
 
 SELVA_EXPORT
@@ -322,9 +284,6 @@ struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, 
 SELVA_EXPORT
 struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
-
-SELVA_EXPORT
-struct SelvaFieldInfo *selva_field_get_nfo(struct SelvaFields *fields, const struct SelvaFieldSchema *fs);
 
 SELVA_EXPORT
 struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)

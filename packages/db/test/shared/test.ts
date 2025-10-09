@@ -200,6 +200,8 @@ const test = async (
         `${Math.round((performance.now() - d) * 100) / 100} ms`,
       ),
     )
+    err =
+      err instanceof Error ? err : new Error(`err is not an Error: '${err}'`)
     const msg =
       (err.stack || err.msg || err.message || err)
         .replace(/\.js(?=\s|$)/g, '.ts')

@@ -20,8 +20,8 @@ const EMPTY_SLICE = @constCast(&EMPTY)[0..1];
 
 inline fn fail(
     ctx: *db.DbCtx,
-    node: *selva.SelvaNode,
-    typeEntry: *selva.SelvaTypeEntry,
+    node: db.Node,
+    typeEntry: db.Type,
     conditions: []u8,
     ref: ?types.RefStruct,
     jump: ?[]u8,
@@ -96,7 +96,7 @@ pub fn filter(
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const refNode: ?db.Node = db.getNodeFromReference(dstType, selvaRef);
-            const edgeConstraint: *const selva.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+            const edgeConstraint: db.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
             if (refNode == null) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
@@ -111,7 +111,6 @@ pub fn filter(
                 .{
                     .smallReference = null,
                     .largeReference = @ptrCast(selvaRef.?),
-                    .edgeReference = null,
                     .edgeConstraint = edgeConstraint,
                 },
                 null,
@@ -129,26 +128,23 @@ pub fn filter(
             if (isEdge) {
                 if (ref) |r| {
                     if (prop == Prop.REFERENCES) {
-                        const refs = db.getEdgeReferences(ctx, r.edgeConstraint.?, r.largeReference.?, field);
+                        const refs = db.getEdgeReferences(ctx, r.edgeConstraint, r.largeReference.?, field);
                         if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (prop == Prop.REFERENCE) {
-                        const checkRef = db.getEdgeReference(ctx, r.edgeConstraint.?, r.largeReference.?, field);
+                        const checkRef = db.getEdgeReference(ctx, r.edgeConstraint, r.largeReference.?, field);
                         if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
-                    } else if (r.edgeConstraint != null) {
-                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstraint.?, field) catch {
+                    } else {
+                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstraint, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const value = db.getEdgeProp(ctx, r.edgeConstraint.?,r.largeReference.?, edgeFieldSchema);
+                        const value = db.getEdgeProp(ctx, r.edgeConstraint, r.largeReference.?, edgeFieldSchema);
                         if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
-                    } else {
-                        // Is a edge ref cant filter on an edge field!
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
                 } else if (negate == Type.default) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -196,16 +192,10 @@ pub fn filter(
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else if (isEdge) {
-                if (ref.?.edgeConstraint == null) {
-                    std.log.err("Trying to get an edge field from a weakRef (2) \n", .{});
-                    // Is a edge ref cant filter on an edge field!
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                }
-
-                const edgeFieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstraint.?, field) catch {
+                const edgeFieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstraint, field) catch {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 };
-                value = db.getEdgeProp(ctx, ref.?.edgeConstraint.?, ref.?.largeReference.?, edgeFieldSchema);
+                value = db.getEdgeProp(ctx, ref.?.edgeConstraint, ref.?.largeReference.?, edgeFieldSchema);
                 if (value.len == 0 or !runCondition(tctx.decompressor.?, &tctx.libdeflateBlockState, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }

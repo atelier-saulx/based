@@ -25,7 +25,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
         return 5;
     }
 
-    var ref: ?*selva.SelvaNodeLargeReference = null;
+    var ref: ?db.ReferenceLarge = null;
     var node: db.Node = undefined;
 
     const oldRefDst = db.getSingleReference(ctx.db, ctx.node.?, ctx.fieldSchema.?);

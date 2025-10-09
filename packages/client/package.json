@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "8.2.2",
+  "version": "8.2.3",
   "license": "MIT",
   "scripts": {
     "buildCjs": "npx esbuild index.cjs --bundle --platform=node --minify --outfile=./dist/index.cjs",
@@ -12,6 +12,7 @@
     "browser-server": "node ./test/browser/server.js"
   },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/src/index.js",
   "browser": {
     "./dist/src/stream/index.js": "./dist/src/stream/browser.js",
@@ -40,7 +41,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@based/errors": "1.5.0",
+    "@based/errors": "1.5.1",
     "@based/fetch": "2.1.0",
     "@based/hash": "1.1.0",
     "@based/opts": "^1.1.0",
@@ -53,8 +54,8 @@
   },
   "devDependencies": {
     "@based/client-old": "npm:@based/client@6.11.2",
-    "@based/db": "0.1.4",
-    "@based/functions": "3.3.2",
+    "@based/db": "0.1.5",
+    "@based/functions": "3.3.3",
     "ava": "5.3.1",
     "cross-fetch": "4.0.0",
     "esbuild": "^0.25.9",

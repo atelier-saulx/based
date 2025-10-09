@@ -10,8 +10,7 @@ const selva = @import("../../../selva.zig");
 const std = @import("std");
 
 pub fn sortedReferences(
-    comptime isEdge: bool,
-    refs: queryTypes.Refs(isEdge),
+    refs: queryTypes.Refs,
     ctx: *QueryCtx,
     include: []u8,
     sortBuffer: []u8,
@@ -42,9 +41,9 @@ pub fn sortedReferences(
     ) catch {
         return result;
     };
-    const refsCnt = queryTypes.getRefsCnt(isEdge, refs);
+    const refsCnt = refs.refs.nr_refs;
     checkItem: while (i < refsCnt) : (i += 1) {
-        if (queryTypes.resolveRefsNode(ctx, isEdge, refs, i)) |refNode| {
+        if (queryTypes.resolveRefsNode(ctx, refs, i)) |refNode| {
             if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
                 continue :checkItem;
             }
@@ -71,7 +70,7 @@ pub fn sortedReferences(
             db.getNodeId(refNode),
             typeEntry,
             include,
-            queryTypes.RefResult(isEdge, refs, edgeConstraint, i),
+            queryTypes.RefResult(refs, edgeConstraint, i),
             null,
             false,
         ) catch 0;

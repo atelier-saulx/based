@@ -51,6 +51,9 @@ export const filesBundle = async (
           global: 'window',
           'process.env.NODE_ENV': `"${environment}"`,
         },
+        loader: {
+          '.node': 'empty',
+        },
       },
       onChange,
     ),

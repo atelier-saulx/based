@@ -28,18 +28,15 @@ pub inline fn get(
     comptime subType: ResultType,
 ) !?*results.Result {
     var value: []u8 = undefined;
-    var fieldSchema: *const selva.SelvaFieldSchema = undefined;
+    var fieldSchema: db.FieldSchema = undefined;
     var result: results.Result = undefined;
     if (isEdge) {
-        if (edgeRef.?.edgeConstraint == null) {
-            return errors.DbIncludeError.EDGE_FROM_WEAKREF;
-        }
-        fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeRef.?.edgeConstraint.?, field);
+        fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeRef.?.edgeConstraint, field);
         if (prop == t.Prop.CARDINALITY) {
             // make this in getEdgeProp
-            value = db.getCardinalityReference(ctx.db, edgeRef.?.edgeConstraint.?, edgeRef.?.largeReference.?, fieldSchema);
+            value = db.getCardinalityReference(ctx.db, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema);
         } else {
-            value = db.getEdgeProp(ctx.db, edgeRef.?.edgeConstraint.?, edgeRef.?.largeReference.?, fieldSchema);
+            value = db.getEdgeProp(ctx.db, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema);
         }
         if (value.len == 0) {
             return null;

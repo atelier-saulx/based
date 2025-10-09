@@ -23,8 +23,6 @@ import {
   ALIASES,
   VECTOR,
   COLVEC,
-  WEAK_REFERENCE,
-  WEAK_REFERENCES,
   NULL,
   OBJECT,
 } from './types.js'
@@ -32,8 +30,6 @@ import {
 export const DEFAULT_MAP: Record<TypeIndex, any> = {
   [NULL]: 0,
   [OBJECT]: 0,
-  [WEAK_REFERENCE]: 0,
-  [WEAK_REFERENCES]: 0,
   [ALIAS]: '',
   [BINARY]: new Uint8Array(),
   [BOOLEAN]: false,
