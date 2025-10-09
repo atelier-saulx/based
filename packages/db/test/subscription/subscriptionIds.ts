@@ -177,9 +177,9 @@ await test('subscriptionIds', async (t) => {
 
   console.log(Date.now() - d, 'ms', 'to create 4M')
 
-  // d = Date.now()
-  addSubs(666, 1, 2e6 - 2)
-  // console.log(Date.now() - d, 'ms', 'to add 1')
+  d = Date.now()
+  addSubs(666, 1, 1e5)
+  console.log(Date.now() - d, 'ms', 'to add 100k')
 
   await updateAll()
 })

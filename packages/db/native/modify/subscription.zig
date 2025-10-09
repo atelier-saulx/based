@@ -43,37 +43,21 @@ pub fn stage(
             const size = vectorLen + 8;
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
             f[vectorLen - 1] = 255; // This means all
-
             while (i < idSubs.len - 15) : (i += size) {
-                if (idSubs[i - 8] == 255) { // here we can do a branchless check to also check fror 254 (removed)
+                if (idSubs[i - 8] == 255) { // here we can do a branchless check to also check fror 254 (removed), 255 allready handled dont stage again
                     continue;
                 }
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;
                 if (@reduce(.Or, vec == f)) {
-                    if (ctx.subTypes) |st| {
-
-                        // typeSubscriptionCtx.*.singleIdMarked = try std.heap.c_allocator.realloc(
-                        //     typeSubscriptionCtx.*.singleIdMarked,
-                        //     typeSubscriptionCtx.*.singleIdMarked.len + types.BLOCK_SIZE * 8,
-                        // );
-
-                        // std.debug.print("x 1 {d}  {d} \n", .{ st.singleIdMarked.len, st.lastIdMarked });
-
-                        if (st.singleIdMarked.len < st.lastIdMarked + 8) {
-                            st.singleIdMarked = std.heap.c_allocator.realloc(
-                                st.singleIdMarked,
-                                st.singleIdMarked.len + subTypes.BLOCK_SIZE * 8,
-                            ) catch &.{};
-                            // std.debug.print("RE-ALLOC SINGLE ID MARKED \n", .{});
-                        }
-
-                        // const subId = utils.read(u32, idSubs, i - 4);
-                        // utils.writeInt(u32, st.singleIdMarked, st.lastIdMarked, subId);
-                        // std.debug.print("x 2\n", .{});
-                        // utils.writeInt(u32, st.singleIdMarked, st.lastIdMarked + 4, ctx.id);
-                        st.lastIdMarked += 8;
-                        idSubs[i - 8] = 255;
+                    if (ctx.*.db.subscriptions.singleIdMarked.len < ctx.*.db.subscriptions.lastIdMarked + 8) {
+                        ctx.*.db.subscriptions.singleIdMarked = std.heap.c_allocator.realloc(
+                            ctx.*.db.subscriptions.singleIdMarked,
+                            ctx.*.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE * 8,
+                        ) catch &.{};
+                        // prob make stage tryable
                     }
+                    ctx.*.db.subscriptions.lastIdMarked += 8;
+                    idSubs[i - 8] = 255;
                 }
             }
         }

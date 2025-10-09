@@ -59,6 +59,9 @@ pub fn createDbCtx() !*DbCtx {
     const subscriptions = try allocator.create(subs.SubscriptionCtx);
     subscriptions.*.types = subs.TypeSubMap.init(allocator);
 
+    subscriptions.*.lastIdMarked = 0;
+    subscriptions.*.singleIdMarked = try std.heap.c_allocator.alloc(u8, subs.BLOCK_SIZE * 8);
+
     errdefer {
         arena.deinit();
         db_backing_allocator.destroy(arena);

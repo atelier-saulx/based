@@ -252,8 +252,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
         resCount.* += 1;
     }
 
-    if (ctx.subTypes) |s| {
-        std.debug.print(" subs: {any} \n", .{s.lastIdMarked / 8});
+    if (ctx.subTypes) |_| {
+        std.debug.print(" subs: {any} \n", .{dbCtx.subscriptions.lastIdMarked / 8});
     }
 
     std.debug.print("DRAIN {any} \n", .{

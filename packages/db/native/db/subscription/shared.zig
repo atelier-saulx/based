@@ -14,12 +14,12 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
 
         // DEFAULT_LEN for bitmap? ASK YUZI
         // 4MB - make this dynamic (add till max first)
+        // init this smaller.... 4mb per type is quite significant if you dont use it
         typeSubscriptionCtx.*.idBitSet = try std.heap.c_allocator.alloc(u1, 10_000_000 * 4); // 4mb
 
+        // maybe do scaling blocksize? start with e.g. 100 then go 1000 etc log to 100k
         typeSubscriptionCtx.*.idsList = try std.heap.c_allocator.alloc(u32, types.BLOCK_SIZE);
         typeSubscriptionCtx.*.ids = try std.heap.c_allocator.alloc([]u8, types.BLOCK_SIZE);
-        typeSubscriptionCtx.*.lastIdMarked = 0;
-        typeSubscriptionCtx.*.singleIdMarked = try std.heap.c_allocator.alloc(u8, types.BLOCK_SIZE * 8);
 
         try ctx.subscriptions.types.put(typeId, typeSubscriptionCtx);
     } else {
@@ -35,7 +35,7 @@ pub inline fn removeSubTypeIfEmpty(
 ) void {
     if (typeSubscriptionCtx.ids.count() == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-            // have to destroy all
+            // have to destroy all using c_allocator
             // removed_entry.value.ids.deinit();
             // removed_entry.value.idBitSet.deinit();
             // removed_entry.value.idsList.deinit();
