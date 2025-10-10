@@ -176,6 +176,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
                 // RFE shouldn't we technically unset .id and .node now?
+                ctx.node = null;
+                // TODO This can't be reset because it's used just at the end of the function.
+                //ctx.id = 0;
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
