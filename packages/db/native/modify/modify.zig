@@ -121,7 +121,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                         writeInt(u32, batch, resCount.* * 5, ctx.id);
                         resCount.* += 1;
                     }
-                    // if its zero than we don't want to switch (for upsert)
+                    // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
                     ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
                     if (ctx.node != null) {
