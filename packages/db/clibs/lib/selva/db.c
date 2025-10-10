@@ -411,6 +411,10 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
     struct SelvaTypeBlock *block = selva_get_block(type->blocks, node->node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
 
+    if (dirty_cb) {
+        dirty_cb(dirty_ctx, node->type, node->node_id);
+    }
+
     selva_remove_all_aliases(type, node->node_id);
     RB_REMOVE(SelvaNodeIndex, nodes, node);
     if (node == type->max_node) {
