@@ -36,6 +36,11 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     return result;
 }
 
+// have to add comptime var here
+// and call update sub
+// can even make 1 thread for MULTI and 1 thread for single ID
+// i tihnk thats nice so add a comptime enum
+
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
