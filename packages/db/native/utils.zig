@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const config = @import("config");
+
 extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
 extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;
 
@@ -71,12 +72,12 @@ pub inline fn move(dest: []u8, source: []const u8) void {
 
 pub inline fn realign(comptime T: type, data: []u8) []T {
     const address = @intFromPtr(data.ptr);
-    const delta: u8 = @truncate(address % @alignOf(T));
-    const offset = if (delta == 0) 0 else @alignOf(T) - delta;
+    const offset = (@alignOf(T) - (address & (@alignOf(T) - 1))) & @alignOf(T);
     const aligned: []u8 align(@alignOf(T)) = @alignCast(data[offset .. data.len - (@alignOf(T) - 1) + offset]);
     if (offset != 0) {
         move(aligned, data[0 .. data.len - (@alignOf(T) - 1)]);
     }
+    const p: *anyopaque = aligned.ptr;
 
-    return @alignCast(std.mem.bytesAsSlice(T, aligned[0..]));
+    return @as([*]T, @ptrCast(@alignCast(p)))[0..aligned.len / @sizeOf(T)];
 }
