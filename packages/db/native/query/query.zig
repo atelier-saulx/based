@@ -56,7 +56,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .aggResult = null,
         .allocator = allocator,
     };
-
+    utils.debugPrint("q: {any}\n", .{q});
     var index: usize = 0;
     const queryType: QueryType = @enumFromInt(q[index]);
     index += 1;
