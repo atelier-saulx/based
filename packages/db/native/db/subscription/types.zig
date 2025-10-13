@@ -1,15 +1,13 @@
 const std = @import("std");
 
+pub const IdSubs = std.AutoHashMap(u32, []u8);
+
 pub const TypeSubscriptionCtx = struct {
-    idsList: []u32,
     idBitSet: []u1,
-    lastId: u32,
-    ids: [][]u8,
+    idSubs: IdSubs,
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
-
-pub const SubscriptionMarked = std.AutoHashMap([2]u32, void);
 
 pub const SubscriptionCtx = struct {
     types: TypeSubMap,

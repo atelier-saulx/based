@@ -149,8 +149,82 @@ await test('subscriptionIds', async (t) => {
       writeUint32(val, i, 6)
       native.addIdSubscription(server.dbCtxExternal, val)
     }
+    console.log('  Add all those subs ', Date.now() - d, 'ms')
     return val
   }
+
+  // this is single type ofc
+  type Subs = {
+    idsSubSize: number
+    idsAmount: number
+    // ids:
+    // bitSetSize
+    subs: {
+      [subId: string]: Uint8Array
+    }
+    // want to sort by number
+    ids: {
+      [id: string]: number[]
+    }
+  }
+
+  const addAllSubs = (subs: Subs) => {
+    const idsList = new Uint32Array(subs.idsAmount)
+    const idsSubs = new Uint8Array(subs.idsSubSize)
+    let cnt = 0
+    let i = 0
+    for (const id in subs.ids) {
+      const idNr = Number(id)
+      idsList[cnt] = idNr
+      writeUint32(idsSubs, idNr, i)
+      i += 4
+      const subI = subs.ids[id]
+      for (const sub of subI) {
+        const s = subs.subs[sub]
+        writeUint32(s, idNr, 4)
+        idsSubs.set(s, i)
+        i += 24
+      }
+      cnt++
+    }
+    idsList.sort()
+    return { idsList, idsSubs }
+  }
+
+  const addSubsJS = (subs: Subs, subId: number, start = 0, end = 1000) => {
+    const fields = new Uint8Array(16)
+    fields.fill(254)
+    fields[0] = 0
+    fields[1] = 1
+    fields[2] = 2
+    const typeId = server.schemaTypesParsed['user'].id
+    const val = new Uint8Array(24)
+    subs.subs[subId] = val
+    let d = Date.now()
+    for (let i = start; i < end; i++) {
+      const id = i
+      if (!subs.ids[id]) {
+        subs.idsSubSize += 4
+        subs.idsAmount += 1
+        subs.ids[id] = [subId]
+      } else {
+        subs.ids[id].push(subId)
+      }
+      subs.idsSubSize += 24 // fields + 8 overhead
+    }
+  }
+
+  const subsJS: Subs = { ids: {}, subs: {}, idsAmount: 0, idsSubSize: 0 }
+  let xxx = Date.now()
+
+  addSubsJS(subsJS, 666, 1, 2e6 - 2)
+  addSubsJS(subsJS, 420, 1, 2e6 - 2)
+
+  console.log(Date.now() - xxx, 'JS MAKE MAKE MS')
+
+  xxx = Date.now()
+  addAllSubs(subsJS)
+  console.log(Date.now() - xxx, 'JS PREP BUFFERS')
 
   let BLA = Date.now()
 

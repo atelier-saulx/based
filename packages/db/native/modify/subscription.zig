@@ -23,9 +23,8 @@ pub fn checkId(
     if (ctx.subTypes) |st| {
         // can do a min offset as well?
         if (st.idBitSet[ctx.id % 10_000_000] == 1) {
-            const index = selva.node_id_set_bsearch(@constCast(st.idsList.ptr), st.lastId, ctx.id);
-            if (index != -1) {
-                ctx.idSubs = st.ids[@intCast(index)];
+            if (st.idSubs.get(ctx.id)) |idSubs| {
+                ctx.idSubs = idSubs;
             }
         } else {
             ctx.idSubs = null;
@@ -44,13 +43,14 @@ pub fn stage(
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
             f[vectorLen - 1] = 255; // This means all
             while (i < idSubs.len - 15) : (i += size) {
-                if (idSubs[i - 8] == 255) { // here we can do a branchless check to also check fror 254 (removed), 255 allready handled dont stage again
+                if (idSubs[i - 8] == 255) {
+                    // here we can do a branchless check to also check fror 254 (removed), 255 allready handled dont stage again
                     continue;
                 }
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;
                 if (@reduce(.Or, vec == f)) {
                     if (ctx.*.db.subscriptions.singleIdMarked.len < ctx.*.db.subscriptions.lastIdMarked + 8) {
-                        ctx.*.db.subscriptions.singleIdMarked = std.heap.c_allocator.realloc(
+                        ctx.*.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                             ctx.*.db.subscriptions.singleIdMarked,
                             ctx.*.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE * 8,
                         ) catch &.{};
