@@ -772,13 +772,22 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
 
     while (refs->nr_refs > 0) {
         ssize_t i = refs->nr_refs - 1;
-        node_id_t removed_dst;
+        node_id_t dst_node_id, removed_dst;
 
         /*
          * Deleting the last ref first is faster because a memmove() is not needed.
          * TODO do we even need dst_node_id here.
          */
-        node_id_t dst_node_id = refs_get_node(dst_type, refs, i)->node_id;
+        switch (refs->size) {
+        case SELVA_NODE_REFERENCE_SMALL:
+            dst_node_id = refs->small[i].dst;
+            break;
+        case SELVA_NODE_REFERENCE_LARGE:
+            dst_node_id = refs->large[i].dst;
+            break;
+        default:
+            db_panic("Invalid ref type: %d", refs->size);
+        }
         removed_dst = remove_reference(db, node, fs, dst_node_id, i, false, dirty_cb, dirty_ctx);
         assert(removed_dst == dst_node_id);
         if (dirty_cb) {
