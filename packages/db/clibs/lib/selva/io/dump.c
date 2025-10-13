@@ -163,10 +163,6 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
 
 static void save_ref(struct selva_io *io, struct SelvaNodeLargeReference *ref)
 {
-    /*
-     * If EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP then this is a SELVA_FIELD_TYPE_REFERENCES
-     * field (i.e. need to preserve the sort order) and meta is save on the other end.
-     */
     io->sdb_write(&ref->dst, sizeof(ref->dst), 1, io);
     io->sdb_write(&ref->meta, sizeof(ref->meta), 1, io);
 }
@@ -210,19 +206,6 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
         const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, field);
         struct SelvaFieldInfo *nfo = &fields->fields_map[field];
         enum SelvaFieldType type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
-
-        if (fs->type == SELVA_FIELD_TYPE_REFERENCE &&
-            (fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP)) {
-            /*
-             * This saves it as a NULL and the loader will skip it.
-             * Note that SELVA_FIELD_TYPE_REFERENCES still needs to be saved
-             * to preserve the order.
-             */
-            type = SELVA_FIELD_TYPE_NULL;
-#if 0
-            fprintf(stderr, "Skip %d (refs %d) on type %d\n", field, any.type == SELVA_FIELD_TYPE_REFERENCES, node->type);
-#endif
-        }
 
 #if USE_DUMP_MAGIC_FIELD_BEGIN
         write_dump_magic(io, DUMP_MAGIC_FIELD_BEGIN);

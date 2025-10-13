@@ -763,7 +763,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     assert(((uintptr_t)refs & 7) == 0);
 #endif
 
-    if (dirty_cb && !(fs->edge_constraint.flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP)) {
+    if (dirty_cb) {
         dirty_cb(dirty_ctx, node->type, node->node_id);
     }
 
@@ -2096,11 +2096,6 @@ nil:
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
             if (nfo->in_use) {
-                const struct EdgeFieldConstraint *efc = selva_get_edge_field_constraint(fs);
-                if (efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
-                    goto nil;
-                }
-
                 hash_ref(hash_state, p);
             } else {
                 goto nil;
@@ -2108,11 +2103,6 @@ nil:
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
             do {
-                const struct EdgeFieldConstraint *efc = selva_get_edge_field_constraint(fs);
-                if (efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP) {
-                    goto nil;
-                }
-
                 const struct SelvaNodeReferences *refs = p;
                 const size_t len = nfo->in_use ? refs->nr_refs : 0;
 
