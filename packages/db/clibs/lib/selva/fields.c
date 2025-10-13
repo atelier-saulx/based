@@ -624,7 +624,7 @@ static void del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, const 
     assert(id_set_len == refs->nr_refs);
 
     if  ((efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT) && refs->nr_refs == 0) {
-        selva_expire_node(db, src_node->type, src_node->node_id, 0, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
+        selva_expire_node(db, src_node->type, src_node->node_id, 0, SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
     }
 }
 

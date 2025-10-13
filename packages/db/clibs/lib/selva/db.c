@@ -94,6 +94,7 @@ void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, 
         }
         break;
     case SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD:
+        /* TODO This will currently only cancel one previous hit. */
         selva_expire_node_cancel(db, type, node_id);
         break;
     }

@@ -260,6 +260,7 @@ enum selva_expire_node_strategy {
     SELVA_EXPIRE_NODE_STRATEGY_CANCEL = 1,
     /**
      * Cancel the previous expire before adding a new one.
+     * TODO This will currently only cancel one previous hit. */
      */
     SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD = 2,
 };
