@@ -558,7 +558,7 @@ static int load_expire(struct selva_io *io, struct SelvaDb *db)
         io->sdb_read(&node_id, sizeof(node_id), 1, io);
         io->sdb_read(&expire, sizeof(expire), 1, io);
 
-        selva_expire_node(db, type, node_id, expire);
+        selva_expire_node(db, type, node_id, expire, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
     }
 
     return 0;
