@@ -15,6 +15,8 @@ inline fn execAgg(
     value: []u8,
     fieldAggsSize: u16,
     hadAccumulated: *bool,
+    hllAccumulator: anytype,
+    hllValue: anytype,
 ) void {
     var j: usize = 0;
     var x: u8 = 0;
@@ -25,14 +27,13 @@ inline fn execAgg(
         j += 1;
         const start = read(u16, aggPropDef, j);
         j += 2;
-        const resultPos = read(u16, aggPropDef, j);
+        // const resultPos = read(u16, aggPropDef, j); // TODO: Remove from buffer if not used
         j += 2;
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
 
         x += 1;
-        utils.debugPrint("[execAgg]: aggBuffer item {d}, resulPos {d} \n", .{ x, resultPos });
-        // _ = resultPos; // MV: to remove
+        utils.debugPrint("[execAgg]: aggBuffer item {d}\n", .{x});
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, accumulatorPos, read(u32, accumulatorField, accumulatorPos) + 1);
         } else if (aggType == aggregateTypes.AggType.MAX) {
@@ -89,6 +90,11 @@ inline fn execAgg(
             writeInt(u64, accumulatorField, accumulatorPos, count);
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
             writeInt(f64, accumulatorField, accumulatorPos + 16, sum_sq);
+        } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
+            selva.hll_union(hllAccumulator, hllValue);
+            writeInt(u32, accumulatorField, accumulatorPos, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
+            utils.debugPrint("[aggregate]: accumulatorField: {d} {d}\n", .{ read(f64, accumulatorField, 0), read(u32, accumulatorField, 8) });
+            hadAccumulated.* = true;
         }
     }
 }
@@ -133,24 +139,21 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 if (!hadAccumulated) {
                     _ = selva.selva_string_replace(hllAccumulator, null, selva.HLL_INIT_SIZE);
                     selva.hll_init_like(hllAccumulator, hllValue);
+                    execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, &hadAccumulated, hllValue, hllAccumulator);
+                    hadAccumulated = true;
                 }
-                selva.hll_union(hllAccumulator, hllValue);
-                const accumulatorPos = read(u16, aggPropDef, 6); // MV: forced offset
-                writeInt(u32, accumulatorField, accumulatorPos, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
-                utils.debugPrint("[aggregate]: accumulatorField: {d} {d}\n", .{ read(f64, accumulatorField, 0), read(u32, accumulatorField, 8) });
-                hadAccumulated = true;
             } else {
                 value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
                 if (value.len == 0) {
                     i += fieldAggsSize;
                     continue;
                 }
-                execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, &hadAccumulated);
+                execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, &hadAccumulated, null, null);
                 hadAccumulated = true;
             }
         } else {
             // TODO: check field == aggregateTypes.IsId case
-            execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, &hadAccumulated);
+            execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, &hadAccumulated, null, null);
             hadAccumulated = true;
         }
         i += fieldAggsSize;
