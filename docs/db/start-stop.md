@@ -99,14 +99,8 @@ db.expire('token', token, 1)
 ### Notes
 
 - The expiration time is measured in seconds
-- The expiration process continues to work even if:
-- The client database is saved and restarted
-- The application is restarted
 - You must call await db.drain() to ensure all operations are processed
 - Expired nodes are completely removed from the database
-
-The expiration mechanism is persistent:
-
-If you set an expiration and then save/restart the client database, the expiration timer continues
-After restart, nodes will still be removed when their time expires
-The state is maintained through database saves
+- The expiration process continues to work even if:
+  - The client database is saved and restarted;
+  - The application is restarted.
