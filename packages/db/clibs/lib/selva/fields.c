@@ -140,6 +140,16 @@ static struct SelvaFieldInfo *ensure_field(struct SelvaFields *fields, const str
     return nfo;
 }
 
+struct SelvaNodeLargeReference *selva_fields_ensure_reference(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs)
+{
+    struct SelvaFields *fields = &node->fields;
+    struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
+
+    return nfo2p(fields, nfo);
+}
+
 /**
  * Initialize a reference(s) field.
  * Accepts both SELVA_FIELD_TYPE_REFERENCE and SELVA_FIELD_TYPE_REFERENCES.
@@ -776,7 +786,6 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
 
         /*
          * Deleting the last ref first is faster because a memmove() is not needed.
-         * TODO do we even need dst_node_id here.
          */
         switch (refs->size) {
         case SELVA_NODE_REFERENCE_SMALL:
@@ -788,15 +797,13 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
         default:
             db_panic("Invalid ref type: %d", refs->size);
         }
+
         removed_dst = remove_reference(db, node, fs, dst_node_id, i, false, dirty_cb, dirty_ctx);
-        assert(removed_dst == dst_node_id);
-        if (dirty_cb) {
-            /*
-             * TODO Don't call if this side of the ref is not saved. This would
-             * be if the other side is a SELVA_FIELD_TYPE_REFERENCE field.
-             * Otherwise, it's always saved.
-             */
-            dirty_cb(dirty_ctx, fs->edge_constraint.dst_node_type, removed_dst);
+        if (removed_dst != 0) {
+            assert(removed_dst == dst_node_id);
+            if (dirty_cb) {
+                dirty_cb(dirty_ctx, fs->edge_constraint.dst_node_type, removed_dst);
+            }
         }
     }
 

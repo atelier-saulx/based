@@ -123,7 +123,7 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
     buf += sizeof(constraints);
     len -= sizeof(constraints);
 
-    enum EdgeFieldConstraintFlag flags = constraints.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT | EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP);
+    enum EdgeFieldConstraintFlag flags = constraints.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,

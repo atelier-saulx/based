@@ -161,10 +161,15 @@ static void save_field_text(struct selva_io *io, struct SelvaTextField *text)
     }
 }
 
-static void save_ref(struct selva_io *io, struct SelvaNodeLargeReference *ref)
+static void save_field_reference(struct selva_io *io, struct SelvaNodeLargeReference *ref)
 {
-    io->sdb_write(&ref->dst, sizeof(ref->dst), 1, io);
-    io->sdb_write(&ref->meta, sizeof(ref->meta), 1, io);
+    if (ref->dst) {
+        io->sdb_write(&((sdb_arr_len_t){ 1 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
+        io->sdb_write(&ref->dst, sizeof(ref->dst), 1, io);
+        io->sdb_write(&ref->meta, sizeof(ref->meta), 1, io);
+    } else {
+        io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
+    }
 }
 
 /**
@@ -173,23 +178,24 @@ static void save_ref(struct selva_io *io, struct SelvaNodeLargeReference *ref)
  */
 static void save_field_references(struct selva_io *io, struct SelvaNodeReferences *refs)
 {
-    switch (refs->size) {
-    case SELVA_NODE_REFERENCE_NULL:
-        break;
-    case SELVA_NODE_REFERENCE_SMALL:
-        for (size_t i = 0; i < refs->nr_refs; i++) {
-            struct SelvaNodeLargeReference ref = (struct SelvaNodeLargeReference) {
-                .dst = refs->small[i].dst,
-                .meta = 0,
-            };
-            save_ref(io, &ref);
+    const sdb_arr_len_t nr_refs = refs->nr_refs;
+
+    io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
+
+    if (nr_refs > 0) {
+        switch (refs->size) {
+        case SELVA_NODE_REFERENCE_NULL:
+            db_panic("refs can't be NULL");
+            break;
+        case SELVA_NODE_REFERENCE_SMALL:
+            io->sdb_write(refs->small, sizeof(refs->small[0]), nr_refs, io);
+            break;
+        case SELVA_NODE_REFERENCE_LARGE:
+            io->sdb_write(refs->large, sizeof(refs->large[0]), nr_refs, io);
+            break;
         }
-        break;
-    case SELVA_NODE_REFERENCE_LARGE:
-        for (size_t i = 0; i < refs->nr_refs; i++) {
-            save_ref(io, &refs->large[i]);
-        }
-        break;
+
+        io->sdb_write(refs->index, sizeof(refs->index[0]), nr_refs, io);
     }
 }
 
@@ -223,26 +229,10 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
             save_field_text(io, selva_fields_nfo2p(fields, nfo));
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
-            if (((struct SelvaNodeLargeReference *)selva_fields_nfo2p(fields, nfo))->dst) {
-                struct SelvaNodeLargeReference *ref = selva_fields_nfo2p(fields, nfo);
-                const sdb_arr_len_t nr_refs = 1;
-
-                io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_ref(io, ref);
-            } else {
-                io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
-            }
+            save_field_reference(io, selva_fields_nfo2p(fields, nfo));
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
-            if (((struct SelvaNodeReferences *)selva_fields_nfo2p(fields, nfo))->nr_refs > 0) {
-                struct SelvaNodeReferences *refs = selva_fields_nfo2p(fields, nfo);
-                const sdb_arr_len_t nr_refs = refs->nr_refs;
-
-                io->sdb_write(&nr_refs, sizeof(nr_refs), 1, io); /* nr_refs */
-                save_field_references(io, refs);
-            } else {
-                io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
-            }
+            save_field_references(io, selva_fields_nfo2p(fields, nfo));
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof(uint8_t), fs->smb.len, io);
@@ -630,7 +620,7 @@ static void faux_dirty_cb(void *, node_type_t, node_id_t)
  * dump_version < 4 compat.
  */
 __attribute__((warn_unused_result))
-static int load_field_weak_reference(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static int load_field_weak_reference_v3(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaTypeEntry *dst_te = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
     node_id_t dst_id;
@@ -645,7 +635,7 @@ static int load_field_weak_reference(struct selva_io *io, struct SelvaDb *db, st
  * dump_version < 4 compat.
  */
 __attribute__((warn_unused_result))
-static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static int load_field_weak_references_v3(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaTypeEntry *dst_te = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
     sdb_arr_len_t nr_refs;
@@ -669,7 +659,7 @@ static int load_field_weak_references(struct selva_io *io, struct SelvaDb *db, s
 }
 
 __attribute__((warn_unused_result))
-static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaTypeEntry *dst_te, ssize_t index)
+static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, struct SelvaTypeEntry *dst_te, ssize_t index)
 {
     node_id_t dst_id;
     struct SelvaNode *dst_node;
@@ -723,17 +713,33 @@ static int load_ref(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *n
 }
 
 __attribute__((warn_unused_result))
-static int load_field_reference(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static int load_field_reference_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaTypeEntry *dst_te = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
     sdb_arr_len_t nr_refs;
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
-    return (nr_refs) ? load_ref(io, db, node, fs, dst_te, -1) : 0;
+    return (nr_refs) ? load_ref_v4(io, db, node, fs, dst_te, -1) : 0;
 }
 
 __attribute__((warn_unused_result))
-static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static int load_field_reference(struct selva_io *io, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+{
+    sdb_arr_len_t nr_refs;
+
+    io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
+    if (nr_refs) {
+        struct SelvaNodeLargeReference *ref = selva_fields_ensure_reference(node, fs);
+
+        io->sdb_read(&ref->dst, sizeof(ref->dst), 1, io);
+        io->sdb_read(&ref->meta, sizeof(ref->meta), 1, io);
+    }
+
+    return 0;
+}
+
+__attribute__((warn_unused_result))
+static int load_field_references_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     struct SelvaTypeEntry *dst_te = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
     sdb_arr_len_t nr_refs;
@@ -742,11 +748,47 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
     (void)selva_fields_prealloc_refs(db, node, fs, nr_refs);
     for (sdb_arr_len_t i = 0; i < nr_refs; i++) {
-        err = load_ref(io, db, node, fs, dst_te, i);
+        err = load_ref_v4(io, db, node, fs, dst_te, i);
         if (err) {
             break;
         }
     }
+
+    return err;
+}
+
+__attribute__((warn_unused_result))
+static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+{
+    sdb_arr_len_t nr_refs;
+    int err = 0;
+
+    io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
+    if (nr_refs == 0) {
+        return 0;
+    }
+
+    (void)selva_fields_prealloc_refs(db, node, fs, nr_refs);
+    struct SelvaNodeReferences *refs = selva_fields_get_references(node, fs);
+    if (!refs) {
+        return SELVA_ENOENT;
+    }
+
+    refs->nr_refs = nr_refs;
+    refs->offset = 0;
+
+    switch (refs->size) {
+    case SELVA_NODE_REFERENCE_SMALL:
+        io->sdb_read(refs->small, sizeof(refs->small[0]), nr_refs, io);
+        break;
+    case SELVA_NODE_REFERENCE_LARGE:
+        io->sdb_read(refs->large, sizeof(refs->large[0]), nr_refs, io);
+        break;
+    default:
+        db_panic("Invalid ref type: %d", refs->size);
+    }
+
+    io->sdb_read(refs->index, sizeof(refs->index[0]), nr_refs, io);
 
     return err;
 }
@@ -806,16 +848,24 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
             err = load_field_text(io, node, fs);
             break;
         case SELVA_FIELD_TYPE_REFERENCE:
-            err = load_field_reference(io, db, node, fs);
+            if (io->sdb_version <= 4) {
+                err = load_field_reference_v4(io, db, node, fs);
+            } else {
+                err = load_field_reference(io, node, fs);
+            }
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
-            err = load_field_references(io, db, node, fs);
+            if (io->sdb_version <= 4) {
+                err = load_field_references_v4(io, db, node, fs);
+            } else {
+                err = load_field_references(io, db, node, fs);
+            }
             break;
-        case SELVA_FIELD_TYPE_WEAK_REFERENCE:
-            err = load_field_weak_reference(io, db, node, fs);
+        case SELVA_FIELD_TYPE_WEAK_REFERENCE: // < v4 compat
+            err = load_field_weak_reference_v3(io, db, node, fs);
             break;
-        case SELVA_FIELD_TYPE_WEAK_REFERENCES:
-            err = load_field_weak_references(io, db, node, fs);
+        case SELVA_FIELD_TYPE_WEAK_REFERENCES: // < v4 compat
+            err = load_field_weak_references_v3(io, db, node, fs);
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             err = load_field_micro_buffer(io, node, fs);
