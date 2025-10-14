@@ -67,18 +67,6 @@ RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
 RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
 RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
 
-void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts)
-{
-    struct SelvaDbExpireToken *token = selva_calloc(1, sizeof(*token));
-
-    token->token.expire = ts;
-    token->db = db;
-    token->type = type;
-    token->node_id = node_id;
-
-    selva_expire_insert(&db->expiring, &token->token);
-}
-
 static bool node_expire_cmp(struct SelvaExpireToken *tok, selva_expire_cmp_arg_t arg)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
@@ -86,6 +74,38 @@ static bool node_expire_cmp(struct SelvaExpireToken *tok, selva_expire_cmp_arg_t
     node_id_t node_id = (uint32_t)(arg.v & 0xFFFFFFFF);
 
     return type == token->type && node_id == token->node_id;
+}
+
+static bool node_expire_exists(struct SelvaDb *db, node_type_t type, node_id_t node_id)
+{
+    return selva_expire_exists(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
+}
+
+void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts, enum selva_expire_node_strategy stg)
+{
+    struct SelvaDbExpireToken *token;
+
+    switch (stg) {
+    case SELVA_EXPIRE_NODE_STRATEGY_IGNORE:
+        break;
+    case SELVA_EXPIRE_NODE_STRATEGY_CANCEL:
+        if (node_expire_exists(db, type, node_id)) {
+            return;
+        }
+        break;
+    case SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD:
+        /* TODO This will currently only cancel one previous hit. */
+        selva_expire_node_cancel(db, type, node_id);
+        break;
+    }
+
+    token = selva_calloc(1, sizeof(*token));
+    token->token.expire = ts;
+    token->db = db;
+    token->type = type;
+    token->node_id = node_id;
+
+    selva_expire_insert(&db->expiring, &token->token);
 }
 
 void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id)

@@ -246,8 +246,27 @@ inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct
 ;
 #endif
 
+/**
+ * Strategy for adding new node expires.
+ */
+enum selva_expire_node_strategy {
+    /**
+     * Ignore any existing expire and just add a new one.
+     */
+    SELVA_EXPIRE_NODE_STRATEGY_IGNORE = 0,
+    /**
+     * Cancel adding an expire if one already exists.
+     */
+    SELVA_EXPIRE_NODE_STRATEGY_CANCEL = 1,
+    /**
+     * Cancel the previous expire before adding a new one.
+     * TODO This will currently only cancel one previous hit.
+     */
+    SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD = 2,
+};
+
 SELVA_EXPORT
-void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts);
+void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts, enum selva_expire_node_strategy stg);
 
 SELVA_EXPORT
 void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id);

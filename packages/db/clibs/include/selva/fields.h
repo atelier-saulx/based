@@ -141,6 +141,10 @@ int selva_fields_reference_set(
         void *dirty_ctx);
 
 enum selva_fields_references_insert_flags {
+    /**
+     * Reorder existing reference to the new index.
+     * The reference is either inserted or moved to the given index.
+     */
     SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER = 0x01,
     SELVA_FIELDS_REFERENCES_INSERT_FLAGS_IGNORE_SRC_DEPENDENT = 0x02,
 };

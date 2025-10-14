@@ -79,6 +79,23 @@ void selva_expire_insert(struct SelvaExpire *ex, struct SelvaExpireToken *token)
     }
 }
 
+bool selva_expire_exists(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireToken *token, selva_expire_cmp_arg_t arg), selva_expire_cmp_arg_t arg)
+{
+    struct SVectorIterator it;
+    struct SelvaExpireToken *token;
+
+    SVector_ForeachBegin(&it, &ex->list);
+    while (!SVector_Done(&it)) {
+        token = SVector_Foreach(&it);
+        do {
+            if (cmp(token, arg)) {
+                return true;
+            }
+        } while ((token = token->next));
+    }
+    return false;
+}
+
 void selva_expire_remove(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireToken *token, selva_expire_cmp_arg_t arg), selva_expire_cmp_arg_t arg)
 {
     struct SVectorIterator it;

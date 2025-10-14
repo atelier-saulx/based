@@ -198,7 +198,7 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
 }
 
 __attribute__((nonnull))
-static void save_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaNode *node)
+static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaNode *node)
 {
     struct SelvaFields *fields = &node->fields;
     const size_t nr_fields = fields->nr_fields;
@@ -283,7 +283,7 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
 
     write_dump_magic(io, DUMP_MAGIC_NODE);
     io->sdb_write(&node->node_id, sizeof(node_id_t), 1, io);
-    save_fields(io, schema, node);
+    save_node_fields(io, schema, node);
 }
 
 static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
@@ -558,7 +558,7 @@ static int load_expire(struct selva_io *io, struct SelvaDb *db)
         io->sdb_read(&node_id, sizeof(node_id), 1, io);
         io->sdb_read(&expire, sizeof(expire), 1, io);
 
-        selva_expire_node(db, type, node_id, expire);
+        selva_expire_node(db, type, node_id, expire, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
     }
 
     return 0;
