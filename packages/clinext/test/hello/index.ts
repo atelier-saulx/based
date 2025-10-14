@@ -9,59 +9,30 @@ import type { BasedFunction } from '@based/functions'
 // wiohfwepofhew
 
 const hello: BasedFunction = async (based) => {
-  // let x = ''
-  // // Generate a text of 400 characters
-  // x = `Lorem ipsum dol${~~(Math.random() * 100000)}, consectetur adipisci, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Suspendisse potenti. Etiam euismod, urna eu tincidunt consectetur, nisi nisl aliquam enim, eget facilisis enim nisl nec elit. Pellentesque habitant morbi.`
-  // const y = []
-  // for (let i = 0; i < 2; i++) {
-  //   await new Promise((resolve) => setTimeout(resolve, 18))
-  //   console.info(
-  //     i,
-  //     uniqueNamesGenerator({
-  //       dictionaries: [adjectives, animals, colors],
-  //       separator: ' ',
-  //       length: 2,
-  //     }),
-  //   )
-  // }
-  // console.info(x)
-  // const bla = () => {
-  //   console.error(new Error('derp'))
-  // }
+  await based.db.setSchema({
+    types: {
+      user: {
+        email: 'alias',
+        firstName: 'string',
+        lastName: 'string',
+      },
+    },
+  })
+  let i = 1_000_000
+  while (i--) {
+    const firstName = 'John ' + i
+    const lastName = 'Doe ' + i
+    const email = `${firstName}${lastName}@example.com`.toLowerCase()
 
-  // bla()
+    based.db.upsert('user', {
+      firstName,
+      lastName,
+      email,
+    })
+  }
 
-  // // await based.db.setSchema({
-  // //   types: {
-  // //     thing: {
-  // //       name: 'string',
-  // //       x: 'string',
-  // //     },
-  // //   },
-  // // })
-
-  // // console.log(' ???  ???xxx?')
-
-  // await based.db.create('thing', {
-  //   name: 'derp1',
-  // })
-
-  // await based.db.create('thing', {
-  //   name: 'derp2',
-  // })
-
-  // // await based.db.query('thing').get().inspect()
-
-  // // console.warn('derp')
-  // // console.debug('derp')
-  // // console.log('derp')
-  // // console.trace('derp')
-  // // throw new Error('COOKIE PANTS')
-  // // return 'FLAP DROOLxx'
-
-  console.log('call this')
-  return 'xxx'
-  // return based.db.schema
+  await based.db.drain()
+  return 'populated'
 }
 
 export default hello

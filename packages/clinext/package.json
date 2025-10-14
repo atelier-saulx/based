@@ -18,6 +18,7 @@
     "@based/ui": "8.2.0-alpha.4",
     "@saulx/tsconfig": "^1.1.0",
     "@types/maildev": "^0.0.7",
+    "@types/react-dom": "^19.2.2",
     "ink-testing-library": "^3.0.0"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "@based/s3": "*",
     "@based/schema": "5.0.4",
     "@based/utils": "1.1.1",
+    "@glideapps/glide-data-grid": "^6.0.3",
     "@inkjs/ui": "^2.0.0",
     "@parcel/watcher": "^2.5.1",
     "@saulx/validators": "^1.2.1",
@@ -36,10 +38,14 @@
     "fullscreen-ink": "^0.1.0",
     "get-port": "^7.1.0",
     "ink": "^5.0.0",
+    "lodash": "^4.17.21",
     "maildev": "^2.2.1",
+    "marked": "^16.4.0",
     "meow": "^11.0.0",
     "picocolors": "^1.1.1",
-    "react": "^18.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-responsive-carousel": "^3.2.23",
     "serve-handler": "^6.1.6",
     "source-map": "0.7.4",
     "unique-names-generator": "^4.7.1"

@@ -9,8 +9,8 @@ export const decompress = (val: Uint8Array): string => {
   return readString(val, 0, val.length, false)
 }
 
-const inflate = global.__basedDb__native__
-  ? global.__basedDb__native__.decompress
+const inflate = globalThis.__basedDb__native__
+  ? globalThis.__basedDb__native__.decompress
   : (input: Uint8Array, output: Uint8Array, offset: number, len: number) => {
       return inflateSync(input.subarray(offset, offset + len), { out: output })
     }
