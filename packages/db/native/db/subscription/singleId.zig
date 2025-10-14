@@ -34,7 +34,6 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
         if (typeSubscriptionCtx.idSubs.get(id)) |s| {
             sub = s;
             idDoesNotExist = false;
-
             subIndex = sub.len;
             sub = try std.heap.raw_c_allocator.realloc(sub, vectorLen + 8 + sub.len);
             try typeSubscriptionCtx.idSubs.put(id, sub);
@@ -61,45 +60,65 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     return null;
 }
 
-pub fn removeIdSubscriptionInternal(_: c.napi_env, _: c.napi_callback_info) !c.napi_value {
+pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, env, info);
+    const ctx = try napi.get(*DbCtx, env, args[0]);
+    const value = try napi.get([]u8, env, args[1]);
 
-    // this will become slow if you have many on a single id...
+    const id = utils.read(u32, value, 0);
+    const subId = utils.read(u32, value, 4);
+    const typeId = utils.read(u16, value, 8);
 
-    // const args = try napi.getArgs(2, env, info);
-    // const ctx = try napi.get(*DbCtx, env, args[0]);
-    // const value = try napi.get([]u8, env, args[1]);
-    // const subId = utils.read(u64, value, 0);
-    // const typeId = utils.read(u16, value, 8);
-    // const id = utils.read(u32, value, 10);
+    std.debug.print("DERPxx THIS IS IT! {any} {any} {any} \n", .{ id, subId, typeId });
 
-    // if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
-    // if (typeSubscriptionCtx.subs.get(subId)) |sub| {
-    //     if (sub.*.ids.remove(id)) {
-    //         if (typeSubscriptionCtx.ids.get(id)) |subs| {
-    //             if (subs.*.set.remove(sub)) {
-    //                 if (subs.*.set.count() == 0) {
-    //                     subs.*.set.deinit();
-    //                     ctx.allocator.destroy(subs);
-    //                     _ = typeSubscriptionCtx.ids.remove(id);
-    //                 } else {
-    //                     subs.*.active = subs.*.set.count();
-    //                 }
-    //             }
-    //         }
-    //         if (sub.*.ids.count() == 0) {
-    //             sub.ids.deinit();
-    //             sub.stagedIds.?.deinit();
-    //             sub.fields.deinit();
-    //             if (typeSubscriptionCtx.subs.remove(subId)) {
-    //                 // std.debug.print("REMOVE SUB {any}!\n", .{subId});
-    //                 // _ = typeSubscriptionCtx.nonMarkedId.remove(subId);
-    //                 ctx.allocator.destroy(sub);
-    //                 removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
-    //             }
-    //         }
-    //     }
-    // }
-    // }
+    if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
+        if (typeSubscriptionCtx.idSubs.get(id)) |subs| {
+            var i: usize = 0;
+            std.debug.print("ID ID ID {any} ! \n", .{id});
+
+            while (i < subs.len) {
+                if (utils.read(u32, subs, i + 4) == subId) {
+                    std.debug.print("DERP THIS IS IT! \n", .{});
+                }
+                i += 24;
+
+                // if (id > 10_000_000) {
+                //     var overlap = @divTrunc(id, 10_000_000);
+                //     while (overlap > 0) {
+                //         const potentialId = ((id) % 10_000_000) + overlap * 10_000_000;
+                //         std.debug.print(
+                //             "hello need to double check if there are more ids on the same number {any} \n",
+                //             .{potentialId},
+                //         );
+                //         overlap -= 1;
+                //     }
+                // }
+
+                // if (typeSubscriptionCtx.ids.get(id)) |subs| {
+                //     if (subs.*.set.remove(sub)) {
+                //         if (subs.*.set.count() == 0) {
+                //             subs.*.set.deinit();
+                //             ctx.allocator.destroy(subs);
+                //             _ = typeSubscriptionCtx.ids.remove(id);
+                //         } else {
+                //             subs.*.active = subs.*.set.count();
+                //         }
+                //     }
+                // }
+                // if (sub.*.ids.count() == 0) {
+                //     sub.ids.deinit();
+                //     sub.stagedIds.?.deinit();
+                //     sub.fields.deinit();
+                //     if (typeSubscriptionCtx.subs.remove(subId)) {
+                //         // std.debug.print("REMOVE SUB {any}!\n", .{subId});
+                //         // _ = typeSubscriptionCtx.nonMarkedId.remove(subId);
+                //         ctx.allocator.destroy(sub);
+                //         removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
+                //     }
+                // }
+            }
+        }
+    }
 
     return null;
 }

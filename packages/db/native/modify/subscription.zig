@@ -50,6 +50,7 @@ pub fn stage(
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;
                 if (@reduce(.Or, vec == f)) {
                     if (ctx.*.db.subscriptions.singleIdMarked.len < ctx.*.db.subscriptions.lastIdMarked + 8) {
+                        // can also have it pre allocated...
                         ctx.*.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                             ctx.*.db.subscriptions.singleIdMarked,
                             ctx.*.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE * 8,

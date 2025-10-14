@@ -99,7 +99,7 @@ await test('subscriptionIds', async (t) => {
     },
   })
 
-  const amount = 2e6
+  const amount = 20e6 + 1
   const readable =
     amount > 1e6
       ? Math.round(amount / 1e6) + 'M'
@@ -114,7 +114,7 @@ await test('subscriptionIds', async (t) => {
 
   const updateAll = async (type = 'user') => {
     let d = Date.now()
-    for (let i = 0; i < amount; i++) {
+    for (let i = 0; i < 2e6; i++) {
       payload.derp = i
       payload.x = i % 255
       clients[1].update(type, i + 1, payload)
@@ -130,12 +130,14 @@ await test('subscriptionIds', async (t) => {
     )
   }
 
-  const removeAllSubsForId = (val: Uint8Array) => {
+  const removeAllSubsForId = (subId: number, id: number, type: number) => {
     let d = Date.now()
-    for (let i = 1; i < amount; i++) {
-      writeUint32(val, i, 10)
-      native.removeIdSubscription(server.dbCtxExternal, val)
-    }
+    const val = new Uint8Array(10)
+
+    writeUint32(val, id, 0)
+    writeUint32(val, subId, 4)
+    writeUint16(val, type, 8)
+    native.removeIdSubscription(server.dbCtxExternal, val)
     console.log(`Remove subscriptions ${readable} subs`, Date.now() - d, 'ms')
   }
 
@@ -237,6 +239,7 @@ await test('subscriptionIds', async (t) => {
   //     2,
   //   ),
   // )
+
   console.log('ZIG ZAG', Date.now() - BLA, 'ms')
 
   for (let i = 0; i < amount; i++) {
@@ -248,11 +251,15 @@ await test('subscriptionIds', async (t) => {
   let d = Date.now()
   addSubs(666, 1, 2e6 - 2)
   addSubs(420, 1, 2e6 - 2)
+  addSubs(666, 20e6 - 10, 20e6)
 
   console.log(Date.now() - d, 'ms', 'to create 4M')
 
   d = Date.now()
   addSubs(666, 1, 1e5)
+
+  removeAllSubsForId(666, 20e6 - 2, 1)
+
   console.log(Date.now() - d, 'ms', 'to add 100k')
 
   await updateAll()
