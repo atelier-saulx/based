@@ -145,11 +145,15 @@ Note that version numbers may change due to nightly releases.
   - Installation and handling of Based functions
 - User-sortable _references_ as an option on the schema
 - A Max len option for _references_ and _types_
-- Partial loading of large databases (Experimental) better memory and concurency management
+- Partial loading of large databases (Experimental) better memory and concurrency management
 - Parquet exporter
 - Filter engine working for partials - automatically loads and unloads blocks when visiting
 - JS function support for include, filter, and aggregate, allowing users to create custom query functions
 - Graceful handling of incompatible dumps
+- Refresh `.expire()`
+- Improved load/save speed for references
+- Removed weak references support
+- Fixed an issue where edge props were not always saved properly
 
 ## v0.4.\* (Dec 1st 2025)
 
