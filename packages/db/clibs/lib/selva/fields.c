@@ -1347,7 +1347,6 @@ out:
     return refs->nr_refs;
 }
 
-
 typedef void (*selva_fields_references_insert_tail_wupsert_cb_t)(
         struct SelvaDb *db,
         struct SelvaNode *restrict src,
