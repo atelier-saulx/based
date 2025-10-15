@@ -9,6 +9,18 @@ import { Topbar } from './components/topbar.js'
 import '@picocss/pico/css/pico.classless.conditional.slate.min.css'
 
 const client = based()
+const extend = () => {
+  const x = HTMLElement.prototype.setAttribute
+  if (x.name) {
+    HTMLElement.prototype.setAttribute = function (k, v) {
+      if (k.at(-1) === '-') k = k.slice(0, -1)
+      return x.call(this, k, v)
+    }
+  }
+}
+
+extend()
+
 export default function App() {
   const [search, setSearch] = useQueryState('search', { defaultValue: '' })
   const [type, setType] = useQueryState('type', { defaultValue: '' })
@@ -21,22 +33,18 @@ export default function App() {
         setType={setType}
       />
       <div
-        style={{
-          height: 'calc(100vh - 96px)',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-        }}
+        style-="height:calc(100vh - 96px);
+        display:flex;
+        flex-direction:column;
+        position:relative"
       >
         <div
           className="pico"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style-="position:absolute;
+          inset:0px;
+          display:flex;
+          align-items:center;
+          justify-content:center"
         >
           {type ? (
             <article>

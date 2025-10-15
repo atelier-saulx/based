@@ -7,10 +7,8 @@ const RowButton = ({ type }) => {
   const client = useClient()
   return (
     <button
-      style={{ flexShrink: 0, height: 60 }}
-      onClick={() => {
-        client.call('create', [type])
-      }}
+      style-="flex-shrink:0;height: 60px"
+      onClick={() => client.call('create', [type])}
     >
       add row
     </button>
@@ -121,14 +119,7 @@ const TypeInput = ({ type, setType }) => {
 export const Topbar = ({ type, search, setSearch, setType }) => {
   return (
     <div className="pico">
-      <nav
-        className="pico"
-        style={{
-          gap: 8,
-          padding: 8,
-          height: 80,
-        }}
-      >
+      <nav className="pico" style-="gap:8px;padding:8px;height:80px">
         <TypeInput type={type} setType={setType} />
         <SearchInput search={search} setSearch={setSearch} />
         <ColButton type={type} />
