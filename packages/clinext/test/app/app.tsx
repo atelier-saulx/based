@@ -25,8 +25,27 @@ export default function App() {
           height: 'calc(100vh - 96px)',
           display: 'flex',
           flexDirection: 'column',
+          position: 'relative',
         }}
       >
+        <div
+          className="pico"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {type ? (
+            <article>
+              This type does not exist. Press "add row" to create it.
+            </article>
+          ) : (
+            <article>Select a type to get started.</article>
+          )}
+        </div>
         <Table
           client={client}
           type={type}
