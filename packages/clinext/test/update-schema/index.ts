@@ -8,7 +8,7 @@ import type { BasedFunction } from '@based/functions'
 
 // wiohfwepofhew
 
-const clean = (obj) => {
+const clean = (obj: any) => {
   delete obj.id
   delete obj.hash
   delete obj.lastId
@@ -21,7 +21,6 @@ const clean = (obj) => {
 
 const hello: BasedFunction = async (based, payload) => {
   clean(payload)
-  console.log(payload)
   return based.db.setSchema(payload)
 }
 

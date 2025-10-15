@@ -18,7 +18,7 @@ const hello: BasedFunction = async (based) => {
       },
     },
   })
-  let i = 1_000_000
+  let i = 1
   while (i--) {
     const firstName = 'John ' + i
     const lastName = 'Doe ' + i

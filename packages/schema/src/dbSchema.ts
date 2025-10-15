@@ -1,15 +1,28 @@
 import { hash } from '@based/hash'
-import { getPropType } from "./parse/utils.js";
-import { SchemaPropOneWay, SchemaProps, SchemaTypes, StrictSchema } from "./types.js"
+import { getPropType } from './parse/utils.js'
+import {
+  SchemaPropOneWay,
+  SchemaProps,
+  SchemaTypes,
+  StrictSchema,
+} from './types.js'
 import { deepCopy } from '@based/utils'
 
 export type DbSchema = StrictSchema & { lastId: number; hash: number }
 export type SchemaChecksum = number
 
-function _makeEdgeTypes(newTypes: SchemaTypes<true>, typeName: string, props: SchemaProps<true>, propPrefix: string): void {
+function _makeEdgeTypes(
+  newTypes: SchemaTypes<true>,
+  typeName: string,
+  props: SchemaProps<true>,
+  propPrefix: string,
+): void {
   type EdgeProps = Record<`$${string}`, SchemaPropOneWay>
-  const putEdgeProps = (typeName: string, refPath: string, edgeProps: EdgeProps) =>
-    newTypes[`_${typeName}:${refPath}`] = { props: edgeProps }
+  const putEdgeProps = (
+    typeName: string,
+    refPath: string,
+    edgeProps: EdgeProps,
+  ) => (newTypes[`_${typeName}:${refPath}`] = { props: edgeProps })
 
   for (const propName in props) {
     const prop = props[propName]
@@ -19,19 +32,23 @@ function _makeEdgeTypes(newTypes: SchemaTypes<true>, typeName: string, props: Sc
     if (propType === 'object') {
       _makeEdgeTypes(newTypes, typeName, prop.props, nextPropPrefix)
     } else if (propType === 'reference') {
-        const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
-        Object.keys(prop).filter((k) => k[0] === '$').forEach((k) => edgeProps[k] = prop[k])
+      const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
+      Object.keys(prop)
+        .filter((k) => k[0] === '$')
+        .forEach((k) => (edgeProps[k] = prop[k]))
 
-        if (Object.keys(edgeProps).length > 0) {
-          putEdgeProps(typeName, nextPropPrefix, edgeProps)
-        }
+      if (Object.keys(edgeProps).length > 0) {
+        putEdgeProps(typeName, nextPropPrefix, edgeProps)
+      }
     } else if (propType === 'references') {
-        const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
-        Object.keys(prop.items).filter((k) => k[0] === '$').forEach((k) => edgeProps[k] = prop.items[k])
+      const edgeProps: Record<`$${string}`, SchemaPropOneWay> = {}
+      Object.keys(prop.items)
+        .filter((k) => k[0] === '$')
+        .forEach((k) => (edgeProps[k] = prop.items[k]))
 
-        if (Object.keys(edgeProps).length > 0) {
-          putEdgeProps(typeName, nextPropPrefix, edgeProps)
-        }
+      if (Object.keys(edgeProps).length > 0) {
+        putEdgeProps(typeName, nextPropPrefix, edgeProps)
+      }
     }
   }
 }

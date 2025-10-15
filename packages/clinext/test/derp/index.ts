@@ -2,14 +2,17 @@ import type { BasedQueryFunction } from '@based/functions'
 
 const derp: BasedQueryFunction = (
   based,
-  { type, start = 0, end = 1000, sort, order } = {},
+  { type, start = 0, end = 1000, sort, search } = {},
   update,
 ) => {
-  const query = based.db.query(type).range(start, end)
-  if (sort && order) {
-    query.sort(sort, order)
+  const query = based.db.query(type).include('*', '**')
+  if (sort?.field) {
+    query.sort(sort.field, sort.order)
   }
-  return query.subscribe(update)
+  if (search?.query) {
+    query.search(search.query, search.fields)
+  }
+  return query.range(start, end).subscribe(update)
 }
 
 export default derp
