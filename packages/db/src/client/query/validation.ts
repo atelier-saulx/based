@@ -76,6 +76,7 @@ export const ERR_AGG_ENOENT = 25
 export const ERR_AGG_TYPE = 26
 export const ERR_AGG_INVALID_STEP_TYPE = 27
 export const ERR_AGG_INVALID_STEP_RANGE = 28
+export const ERR_AGG_NOT_IMPLEMENTED = 29
 
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
@@ -124,6 +125,8 @@ const messages = {
   [ERR_AGG_INVALID_STEP_TYPE]: (p) => `Aggregate: Incorrect step type "${p}"`,
   [ERR_AGG_INVALID_STEP_RANGE]: (p) =>
     `Aggregate: Incorrect step range "${p}". Step ranges are limited to uint32 max value in seconds => group by ~136 years.`,
+  [ERR_AGG_NOT_IMPLEMENTED]: (p) =>
+    `Aggregate: Can't aggregate, feature not implemented yet. Prop: "${p}".`,
 }
 
 export type ErrorCode = keyof typeof messages
@@ -626,4 +629,12 @@ export const validateStepRange = (def: QueryDef, step: StepInput) => {
     })
     handleErrors(def)
   }
+}
+
+export const edgeNotImplemented = (def: QueryDef, field: string) => {
+  def.errors.push({
+    code: ERR_AGG_NOT_IMPLEMENTED,
+    payload: field,
+  })
+  handleErrors(def)
 }
