@@ -176,15 +176,14 @@ export class QueryBranch<T> {
   }
 
   count(): T {
-    const field: string = 'count'
+    const fields: string[] = ['count']
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'count',
-        args: [field],
+        args: fields,
       })
     } else {
-      const p = field.split('.')
-      addAggregate(this, AggregateType.COUNT, p)
+      addAggregate(this, AggregateType.COUNT, fields)
     }
     // @ts-ignore
     return this
