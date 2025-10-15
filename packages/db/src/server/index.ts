@@ -489,32 +489,26 @@ export class DbServer extends DbShared {
     if (this.stopped) {
       return
     }
-
     this.stopped = true
     this.unlistenExit()
-
     if (this.cleanupTimer) {
       clearTimeout(this.cleanupTimer)
       this.cleanupTimer = null
     }
-
     if (this.saveInterval) {
       clearInterval(this.saveInterval)
       this.saveInterval = null
     }
-
     try {
       if (!noSave) {
         await this.save()
       }
-
       await this.ioWorker.terminate()
       this.ioWorker = null
       await Promise.all(this.workers.map((worker) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
       this.dbCtxExternal = null
-      await setTimeout(100)
     } catch (e) {
       this.stopped = false
       throw e

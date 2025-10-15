@@ -130,13 +130,13 @@ await test('subscriptionIds', async (t) => {
     )
   }
 
-  const removeAllSubsForId = (subId: number, id: number, type: number) => {
+  const removeAllSubsForId = (subId: number, id: number) => {
     let d = Date.now()
     const val = new Uint8Array(10)
-
+    const typeId = server.schemaTypesParsed['user'].id
     writeUint32(val, id, 0)
     writeUint32(val, subId, 4)
-    writeUint16(val, type, 8)
+    writeUint16(val, typeId, 8)
     native.removeIdSubscription(server.dbCtxExternal, val)
     console.log(`Remove subscriptions ${readable} subs`, Date.now() - d, 'ms')
   }
@@ -249,16 +249,16 @@ await test('subscriptionIds', async (t) => {
   console.log('create', await clients[0].drain(), 'ms')
 
   let d = Date.now()
-  addSubs(666, 1, 2e6 - 2)
-  addSubs(420, 1, 2e6 - 2)
-  addSubs(666, 20e6 - 10, 20e6)
+  // addSubs(666, 1, 2e6 - 2)
+  // addSubs(420, 1, 2e6 - 2)
+  addSubs(666, 20e6 - 2, 20e6 - 1)
 
   console.log(Date.now() - d, 'ms', 'to create 4M')
 
   d = Date.now()
-  addSubs(666, 1, 1e5)
+  // addSubs(666, 1, 1e5)
 
-  removeAllSubsForId(666, 20e6 - 2, 1)
+  removeAllSubsForId(666, 20e6 - 2)
 
   console.log(Date.now() - d, 'ms', 'to add 100k')
 
