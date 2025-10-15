@@ -1,10 +1,11 @@
 import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
-import { PropDef, UINT32 } from '@based/schema/def'
+import { PropDef, UINT32, SchemaPropTree } from '@based/schema/def'
 import {
   aggregationFieldDoesNotExist,
   validateStepRange,
+  edgeNotImplemented,
 } from '../validation.js'
 import {
   aggregateTypeMap,
@@ -174,8 +175,23 @@ export const addAggregate = (
           }
         : def.schema.props[field]
 
+    const path = field.split('.')
     if (!fieldDef) {
-      aggregationFieldDoesNotExist(def, field)
+      let t: PropDef | SchemaPropTree = def.schema.tree
+      for (let i = 0; i < path.length; i++) {
+        let p = path[i]
+
+        if (p[0] == '$') {
+          const edgeProp = t[path[i - 1]].edges[p]
+          if (edgeProp) {
+            edgeNotImplemented(def, field)
+            return
+          } else {
+            aggregationFieldDoesNotExist(def, field)
+            return
+          }
+        }
+      }
     }
 
     if (fieldDef.hooks?.aggregate) {
