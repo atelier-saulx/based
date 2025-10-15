@@ -263,7 +263,7 @@ await test('try to modify undefined refs', async (t) => {
   const a1 = db.create('actor', { name: 'Uma Thurman', movies: [m1, m2] })
   const a2 = db.create('actor', { name: 'Jonh Travolta', movies: [m2] })
 
-  db.query('movie').include('*').get().inspect()
+  //await db.query('movie').include('*', '**').get().inspect()
 
   await db.update('movie', m1, {
     actors: { delete: [a1] },

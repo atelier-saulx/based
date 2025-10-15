@@ -97,7 +97,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 }
                 ctx.id = dbCtx.ids[ctx.typeId - 1] + 1;
                 dbCtx.ids[ctx.typeId - 1] = ctx.id;
-                ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
+                ctx.node = try db.upsertNode(&ctx, ctx.typeEntry.?,  ctx.id);
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 1;
             },
@@ -110,7 +110,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
                 }
-                ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
+                ctx.node = try db.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },

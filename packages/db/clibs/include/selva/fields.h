@@ -98,6 +98,10 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 #endif
 void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
 
+struct SelvaNodeLargeReference *selva_fields_ensure_reference(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs);
+
 SELVA_EXPORT
 struct SelvaNode *selva_fields_ensure_ref_meta(
         struct SelvaDb *db,
@@ -307,7 +311,7 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
 /**
  * Init the fields struct of a node or edge.
  */
-void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
+void selva_fields_init_node(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
     __attribute__((nonnull));
 
 /**

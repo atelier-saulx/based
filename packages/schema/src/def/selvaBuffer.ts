@@ -17,7 +17,6 @@ import {
   COLVEC,
   VECTOR_BASE_TYPE_SIZE_MAP,
 } from './types.js'
-import RefSet from './refSet.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -46,7 +45,6 @@ selvaTypeMap[ALIASES] = selvaFieldType.ALIASES
 selvaTypeMap[COLVEC] = selvaFieldType.COLVEC
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
-const EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
@@ -60,33 +58,16 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
 }
 
 function makeEdgeConstraintFlags(
-  refSet: RefSet,
-  nodeTypeId: number,
   prop: PropDef,
-  dstNodeTypeId: number,
-  inverseProp: PropDef,
 ): number {
   let flags = 0
 
   flags |= prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00
-  flags |=
-    prop.typeIndex === REFERENCE &&
-    inverseProp &&
-    inverseProp.typeIndex === REFERENCES
-      ? EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
-      : 0x00
-
-  if (inverseProp) {
-    const x = refSet.add(nodeTypeId, prop.prop, dstNodeTypeId, inverseProp.prop)
-    flags |= x ? 0x00 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
-  }
 
   return flags
 }
 
 const propDefBuffer = (
-  refSet: RefSet,
-  nodeTypeId: number,
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
 ): number[] => {
@@ -116,13 +97,7 @@ const propDefBuffer = (
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
 
     buf[0] = selvaType // field type
-    buf[1] = makeEdgeConstraintFlags(
-      refSet,
-      nodeTypeId,
-      prop,
-      dstType.id,
-      dstType.props[prop.inversePropName],
-    ) // flags
+    buf[1] = makeEdgeConstraintFlags(prop) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
     buf[4] = prop.inversePropNumber // inverse_field
     view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // meta_node_type
@@ -145,8 +120,6 @@ const propDefBuffer = (
 export function schemaToSelvaBuffer(schema: {
   [key: string]: SchemaTypeDef
 }): ArrayBuffer[] {
-  const refSet = new RefSet()
-
   return Object.values(schema).map((t) => {
     const props = Object.values(t.props)
     const rest: PropDef[] = []
@@ -181,11 +154,11 @@ export function schemaToSelvaBuffer(schema: {
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
       0, // u8 spare1
-      ...propDefBuffer(refSet, t.id, schema, {
+      ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,
       }),
-      ...rest.map((f) => propDefBuffer(refSet, t.id, schema, f)).flat(1),
+      ...rest.map((f) => propDefBuffer(schema, f)).flat(1),
     ]).buffer
   })
 }

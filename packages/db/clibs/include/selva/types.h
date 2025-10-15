@@ -48,12 +48,6 @@ enum SelvaFieldType {
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
         EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01,
-        /**
-         * Skip saving this field while dumping.
-         * If the field is of type SELVA_FIELD_TYPE_REFERENCES it's saved
-         * regardless of this flag to preserve the original order of references.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
     } __packed flags;
     field_t inverse_field;
     node_type_t dst_node_type;
