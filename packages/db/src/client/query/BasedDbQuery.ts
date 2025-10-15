@@ -175,7 +175,8 @@ export class QueryBranch<T> {
     return this
   }
 
-  count(field: string = 'count'): T {
+  count(): T {
+    const field: string = 'count'
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'count',
