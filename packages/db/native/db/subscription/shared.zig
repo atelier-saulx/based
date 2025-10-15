@@ -9,6 +9,7 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
     if (!ctx.subscriptions.types.contains(typeId)) {
         typeSubscriptionCtx = try std.heap.raw_c_allocator.create(types.TypeSubscriptionCtx);
         typeSubscriptionCtx.*.maxId = 0;
+        typeSubscriptionCtx.*.minId = std.math.maxInt(u32);
         typeSubscriptionCtx.*.idBitSet = try std.heap.raw_c_allocator.alloc(u1, 10_000_000 * 4); // 4mb (too much)
         typeSubscriptionCtx.*.idSubs = types.IdSubs.init(std.heap.raw_c_allocator);
         try ctx.subscriptions.types.put(typeId, typeSubscriptionCtx);

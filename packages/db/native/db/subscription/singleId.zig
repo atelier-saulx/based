@@ -26,25 +26,26 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const fields = value[headerLen..value.len];
     var typeSubscriptionCtx = try upsertSubType(ctx, typeId);
 
-    std.debug.print("BOIK DERPxx THIS IS IT! {any} {any} {any} \n", .{ id, subId, typeId });
-
     var subs: []u8 = undefined;
     var idDoesNotExist = true;
     var subIndex: usize = 0;
 
+    // minId
+
+    // id - minId => has less overlap
     if (typeSubscriptionCtx.idBitSet[id % 10_000_000] == 1) {
         if (typeSubscriptionCtx.idSubs.get(id)) |s| {
             subs = s;
             idDoesNotExist = false;
             subIndex = subs.len;
-            subs = try std.heap.raw_c_allocator.realloc(subs, vectorLen + 8 + subs.len);
+            subs = try std.heap.raw_c_allocator.realloc(subs, types.SUB_SIZE + subs.len);
             try typeSubscriptionCtx.idSubs.put(id, subs);
         }
     }
 
     if (idDoesNotExist) {
         typeSubscriptionCtx.idBitSet[id % 10_000_000] = 1;
-        subs = try std.heap.c_allocator.alloc(u8, (vectorLen + 8));
+        subs = try std.heap.c_allocator.alloc(u8, types.SUB_SIZE);
         // 254 means no match
         @memset(subs, 254);
         try typeSubscriptionCtx.idSubs.put(id, subs);
@@ -54,13 +55,17 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
 
     if (fields.len > vectorLen) {
         // If too many fields just fire for each
-        @memset(subs[subIndex + 8 .. subIndex + 8 + vectorLen], 255);
+        @memset(subs[subIndex + 8 .. subIndex + types.SUB_SIZE], 255);
     } else {
         utils.copy(subs[subIndex + 8 ..], fields);
     }
 
     if (id > typeSubscriptionCtx.maxId) {
         typeSubscriptionCtx.maxId = id;
+    }
+
+    if (id < typeSubscriptionCtx.minId) {
+        typeSubscriptionCtx.minId = id;
     }
 
     return null;
@@ -77,32 +82,32 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
 
     if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
         if (typeSubscriptionCtx.idBitSet[id % 10_000_000] == 1) {
-
-            // add check with bitset as well...
-            if (typeSubscriptionCtx.idSubs.get(id)) |subs| {
-                if (id == typeSubscriptionCtx.maxId) {
-                    // find previous MAX...
-                    // typeSubscriptionCtx.maxId = id;
-                    std.debug.print("NEED TO GET THE PREVIOUS MAX ID... lets see what fastest... \n", .{});
-                }
+            if (typeSubscriptionCtx.idSubs.getEntry(id)) |subsEntry| {
+                const subs = subsEntry.value_ptr.*;
 
                 var i: usize = 0;
                 var idRemoved = false;
 
                 while (i < subs.len) {
                     if (utils.read(u32, subs, i + 4) == subId) {
-                        std.debug.print("DERP THIS IS IT! \n", .{});
                         break;
                     } else {
-                        i += 24;
+                        i += types.SUB_SIZE;
                     }
                 }
 
-                if (subs.len == 24) {
+                if (subs.len == types.SUB_SIZE) {
                     std.heap.raw_c_allocator.free(subs);
                     idRemoved = true;
                 } else {
-                    std.debug.print("resize shennaigans \n", .{});
+                    const newLen = subs.len - types.SUB_SIZE;
+                    if (i != newLen) {
+                        const dest = subs[i .. i + types.SUB_SIZE];
+                        const src = subs[newLen..];
+                        utils.copy(dest, src);
+                    }
+                    const newSubs = try std.heap.raw_c_allocator.realloc(subs, newLen);
+                    subsEntry.value_ptr.* = newSubs;
                 }
 
                 if (idRemoved) {
@@ -110,34 +115,81 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                     if (id > 10_000_000) {
                         var hasOthers = false;
                         var overlap = @divTrunc(id, 10_000_000);
-                        std.debug.print("? {any} \n", .{overlap});
-                        while (overlap > 0) {
+                        const lowBound = @divTrunc(typeSubscriptionCtx.minId, 10_000_000);
+                        while (overlap > lowBound) {
                             const potentialId = ((id) % 10_000_000) + (overlap - 1) * 10_000_000;
-                            std.debug.print(
-                                "hello need to double check if there are more ids on the same number {any} \n",
-                                .{potentialId},
-                            );
-
                             if (typeSubscriptionCtx.idSubs.contains(potentialId)) {
-                                std.debug.print(
-                                    "has double match STOP {any} \n",
-                                    .{potentialId},
-                                );
                                 hasOthers = true;
                                 break;
                             }
-
                             overlap -= 1;
                         }
-
                         if (!hasOthers) {
-                            std.debug.print("flap flap remove \n", .{});
                             typeSubscriptionCtx.idBitSet[id % 10_000_000] = 0;
                         }
                     } else if (typeSubscriptionCtx.maxId < 10_000_001) {
                         typeSubscriptionCtx.idBitSet[id % 10_000_000] = 0;
                     } else {
-                        // loop other way
+                        var hasOthers = false;
+                        var overlap = @divTrunc(id, 10_000_000);
+                        const maxId = @divTrunc(typeSubscriptionCtx.maxId, 10_000_000) + 1;
+                        while (overlap < maxId) {
+                            const potentialId = ((id) % 10_000_000) + (overlap + 1) * 10_000_000;
+                            if (typeSubscriptionCtx.idSubs.contains(potentialId)) {
+                                hasOthers = true;
+                                break;
+                            }
+                            overlap += 1;
+                        }
+                        if (!hasOthers) {
+                            typeSubscriptionCtx.idBitSet[id % 10_000_000] = 0;
+                        }
+                    }
+
+                    const idCount = typeSubscriptionCtx.idSubs.count();
+                    const range = typeSubscriptionCtx.maxId - typeSubscriptionCtx.minId;
+
+                    if (range / idCount > 1000) {
+                        if (id == typeSubscriptionCtx.maxId) {
+                            var keyIterator = typeSubscriptionCtx.idSubs.keyIterator();
+                            while (keyIterator.next()) |k| {
+                                if (k.* > typeSubscriptionCtx.maxId) {
+                                    typeSubscriptionCtx.maxId = k.*;
+                                }
+                            }
+                        } else if (id == typeSubscriptionCtx.minId) {
+                            var keyIterator = typeSubscriptionCtx.idSubs.keyIterator();
+                            while (keyIterator.next()) |k| {
+                                if (k.* < typeSubscriptionCtx.maxId) {
+                                    typeSubscriptionCtx.minId = k.*;
+                                }
+                            }
+                        }
+                    } else if (idCount != 0) {
+                        if (id == typeSubscriptionCtx.maxId) {
+                            var j: u32 = typeSubscriptionCtx.maxId;
+                            const min = typeSubscriptionCtx.minId;
+                            while (j >= min) {
+                                if (typeSubscriptionCtx.idBitSet[j % 10_000_000] == 1) {
+                                    if (typeSubscriptionCtx.idSubs.contains(j)) {
+                                        typeSubscriptionCtx.maxId = j;
+                                        break;
+                                    }
+                                }
+                                j -= 1;
+                            }
+                        } else if (id == typeSubscriptionCtx.minId) {
+                            var j: u32 = typeSubscriptionCtx.minId;
+                            while (j <= typeSubscriptionCtx.maxId) {
+                                if (typeSubscriptionCtx.idBitSet[j % 10_000_000] == 1 and
+                                    typeSubscriptionCtx.idSubs.contains(j))
+                                {
+                                    typeSubscriptionCtx.minId = j;
+                                    break;
+                                }
+                                j += 1;
+                            }
+                        }
                     }
                 }
             }

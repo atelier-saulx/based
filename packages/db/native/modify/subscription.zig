@@ -4,7 +4,7 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
-const subTypes = @import("../db//subscription//types.zig");
+const subTypes = @import("../db//subscription/types.zig");
 
 // use this later for the max field check
 const vectorLen = std.simd.suggestVectorLength(u8).?;
@@ -39,7 +39,7 @@ pub fn stage(
     if (op != Op.create and op != Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
             var i: u32 = 8;
-            const size = vectorLen + 8;
+            const size = subTypes.SUB_SIZE;
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
             f[vectorLen - 1] = 255; // This means all
             while (i < idSubs.len - 15) : (i += size) {
