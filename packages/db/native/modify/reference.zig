@@ -44,7 +44,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     if (ref == null) {
-        node = try db.upsertNode(id, refTypeEntry);
+        node = try db.upsertNode(ctx, refTypeEntry, id);
         ref = try db.writeReference(ctx, node, ctx.node.?, ctx.fieldSchema.?);
     }
 

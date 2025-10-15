@@ -479,7 +479,7 @@ struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_i
     return RB_NFIND(SelvaNodeIndex, nodes, &find);
 }
 
-struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNode *selva_upsert_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id)
 {
     if (unlikely(node_id == 0)) {
         return nullptr;
@@ -508,7 +508,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         }
     }
 
-    selva_fields_init_node(type, node);
+    selva_fields_init_node(db, type, node);
 
     block->nr_nodes_in_block++;
     type->nr_nodes++;
