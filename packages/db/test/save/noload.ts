@@ -1,10 +1,10 @@
 import assert from 'node:assert'
 import { fastPrng } from '@based/utils'
-import { BasedDb } from '../src/index.js'
-import { deepEqual } from './shared/assert.js'
-import test from './shared/test.js'
-import NAMES from './shared/names.js'
-import { makeTreeKey, VerifBlock } from '../src/server/tree.js'
+import { BasedDb } from '../../src/index.js'
+import { deepEqual } from '../shared/assert.js'
+import test from '../shared/test.js'
+import NAMES from '../shared/names.js'
+import { makeTreeKey, VerifBlock } from '../../src/server/tree.js'
 
 function makeEmployee(i: number) {
   const name = NAMES[i % NAMES.length]
