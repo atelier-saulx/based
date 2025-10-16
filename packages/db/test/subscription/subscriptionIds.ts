@@ -266,16 +266,16 @@ await test('subscriptionIds', async (t) => {
   addSubs(666, 500, 501)
   addSubs(999, 500, 501)
 
-  addSubs(666, 10e6, 12e6)
+  // addSubs(666, 10e6, 12e6)
 
   console.log(Date.now() - d, 'ms', 'to create 4M')
 
   d = Date.now()
 
-  removeubsForId(666, 500)
-  removeubsForId(666, 10e6 - 2)
-  removeubsForId(666, 20e6 - 2)
-  removeubsForId(999, 500)
+  // removeubsForId(666, 500)
+  // removeubsForId(666, 10e6 - 2)
+  // removeubsForId(666, 20e6 - 2)
+  // removeubsForId(999, 500)
 
   console.log(Date.now() - d, 'ms', 'to remove subs...')
 
