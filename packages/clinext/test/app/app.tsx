@@ -7,52 +7,30 @@ import { useQueryState } from 'nuqs'
 import { NuqsAdapter } from 'nuqs/adapters/react'
 import { Topbar } from './components/topbar.js'
 import '@picocss/pico/css/pico.classless.conditional.slate.min.css'
+import { extend } from './extend.js'
 
 const client = based()
-const extend = () => {
-  const x = HTMLElement.prototype.setAttribute
-  if (x.name) {
-    HTMLElement.prototype.setAttribute = function (k, v) {
-      if (k.at(-1) === '-') k = k.slice(0, -1)
-      return x.call(this, k, v)
-    }
-  }
-}
 
-extend()
+extend(HTMLElement.prototype)
 
 export default function App() {
   const [search, setSearch] = useQueryState('search', { defaultValue: '' })
   const [type, setType] = useQueryState('type', { defaultValue: '' })
   return (
-    <>
+    <div style-="flex;column;100vh">
       <Topbar
         type={type}
         search={search}
         setSearch={setSearch}
         setType={setType}
       />
-      <div
-        style-="height:calc(100vh - 96px);
-        display:flex;
-        flex-direction:column;
-        position:relative"
-      >
-        <div
-          className="pico"
-          style-="position:absolute;
-          inset:0px;
-          display:flex;
-          align-items:center;
-          justify-content:center"
-        >
-          {type ? (
-            <article>
-              This type does not exist. Press "add row" to create it.
-            </article>
-          ) : (
-            <article>Select a type to get started.</article>
-          )}
+      <div style-="grow;relative">
+        <div className="pico" style-="absolute;flex;center;inset:0">
+          <article>
+            {type
+              ? 'This type does not exist. Press "add row" to create it.'
+              : 'Select a type to get started.'}
+          </article>
         </div>
         <Table
           client={client}
@@ -62,7 +40,7 @@ export default function App() {
           }}
         />
       </div>
-    </>
+    </div>
   )
 }
 

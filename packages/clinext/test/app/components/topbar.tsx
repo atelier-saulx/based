@@ -7,7 +7,7 @@ const RowButton = ({ type }) => {
   const client = useClient()
   return (
     <button
-      style-="flex-shrink:0;height: 60px"
+      style-="flex-shrink:0;height:60px"
       onClick={() => client.call('create', [type])}
     >
       add row
@@ -21,9 +21,7 @@ const SearchInput = ({ search, setSearch }) => {
       type="search"
       placeholder="Search..."
       value={search}
-      onChange={(e) => {
-        setSearch(e.target.value)
-      }}
+      onChange={(e) => setSearch(e.target.value)}
     />
   )
 }
@@ -95,15 +93,7 @@ const TypeInput = ({ type, setType }) => {
       />
       {isOpen
         ? renderLayer(
-            <div
-              {...layerProps}
-              style={{
-                ...layerProps.style,
-                display: 'flex',
-                gap: 8,
-                padding: 8,
-              }}
-            >
+            <div style-="flex;pad8;gap8" {...layerProps}>
               {items.map((item) => (
                 <button key={item} onMouseDown={() => setType(item)}>
                   {item}
@@ -119,7 +109,7 @@ const TypeInput = ({ type, setType }) => {
 export const Topbar = ({ type, search, setSearch, setType }) => {
   return (
     <div className="pico">
-      <nav className="pico" style-="gap:8px;padding:8px;height:80px">
+      <nav className="pico" style-="gap8;pad8;h80">
         <TypeInput type={type} setType={setType} />
         <SearchInput search={search} setSearch={setSearch} />
         <ColButton type={type} />
