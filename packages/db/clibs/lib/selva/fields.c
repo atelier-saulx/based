@@ -529,10 +529,12 @@ static node_id_t del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, c
     switch (refs->size) {
     case SELVA_NODE_REFERENCE_SMALL:
         dst_id = refs->small[i].dst;
+        memset(&refs->small[i], 0, sizeof(refs->small[i]));
         break;
     case SELVA_NODE_REFERENCE_LARGE:
         dst_id = refs->large[i].dst;
         reference_meta_destroy(db, efc, &refs->large[i], false, dirty_cb, dirty_ctx);
+        memset(&refs->large[i], 0, sizeof(refs->large[i]));
         break;
     default:
         return 0;
@@ -541,16 +543,6 @@ static node_id_t del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, c
     assert(refs->index);
     if (!node_id_set_remove(&refs->index, &id_set_len, dst_id)) {
         db_panic("node_id not found in refs: %u:%u\n", efc->dst_node_type, dst_id);
-    }
-    switch (refs->size) {
-    case SELVA_NODE_REFERENCE_NULL:
-        break;
-    case SELVA_NODE_REFERENCE_SMALL:
-        memset(&refs->small[i], 0, sizeof(refs->small[i]));
-        break;
-    case SELVA_NODE_REFERENCE_LARGE:
-        memset(&refs->large[i], 0, sizeof(refs->large[i]));
-        break;
     }
 
     if (i < refs->nr_refs - 1) {
