@@ -6,10 +6,7 @@ import { useLayer } from 'react-laag'
 const RowButton = ({ type }) => {
   const client = useClient()
   return (
-    <button
-      style-="flex-shrink:0;height:60px"
-      onClick={() => client.call('create', [type])}
-    >
+    <button style-="shrink0;h60" onClick={() => client.call('create', [type])}>
       add row
     </button>
   )
@@ -30,7 +27,7 @@ const ColButton = ({ type }) => {
   const client = useClient()
   return (
     <button
-      style={{ flexShrink: 0, height: 60 }}
+      style-="shrink0;h60"
       onClick={async () => {
         const name = prompt('column name?')
         if (!name) return
@@ -93,7 +90,7 @@ const TypeInput = ({ type, setType }) => {
       />
       {isOpen
         ? renderLayer(
-            <div style-="flex;pad8;gap8" {...layerProps}>
+            <div style-="pad8;gap8" {...layerProps}>
               {items.map((item) => (
                 <button key={item} onMouseDown={() => setType(item)}>
                   {item}

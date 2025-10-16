@@ -17,7 +17,7 @@ export default function App() {
   const [search, setSearch] = useQueryState('search', { defaultValue: '' })
   const [type, setType] = useQueryState('type', { defaultValue: '' })
   return (
-    <div style-="flex;column;100vh">
+    <div style-="column;100vh">
       <Topbar
         type={type}
         search={search}
@@ -25,7 +25,7 @@ export default function App() {
         setType={setType}
       />
       <div style-="grow;relative">
-        <div className="pico" style-="absolute;flex;center;inset:0">
+        <div className="pico" style-="center;inset:0">
           <article>
             {type
               ? 'This type does not exist. Press "add row" to create it.'
