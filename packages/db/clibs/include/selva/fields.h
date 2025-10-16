@@ -112,6 +112,9 @@ struct SelvaNode *selva_fields_ensure_ref_meta(
         selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
 
 SELVA_EXPORT
+void selva_faux_dirty_cb(void *, node_type_t, node_id_t);
+
+SELVA_EXPORT
 int selva_fields_get_mutable_string(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,

@@ -168,6 +168,10 @@ static struct SelvaFieldInfo *ensure_field_references(struct SelvaFields *fields
     return nfo;
 }
 
+void selva_faux_dirty_cb(void *, node_type_t, node_id_t)
+{
+}
+
 /**
  * Get a mutable string in fields at fs/nfo.
  */
