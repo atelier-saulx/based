@@ -612,10 +612,6 @@ static int load_field_micro_buffer(struct selva_io *io, struct SelvaNode *node, 
     return 0;
 }
 
-static void faux_dirty_cb(void *, node_type_t, node_id_t)
-{
-}
-
 /**
  * dump_version < 4 compat.
  */
@@ -628,7 +624,7 @@ static int load_field_weak_reference_v3(struct selva_io *io, struct SelvaDb *db,
 
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
     dst_node = selva_upsert_node(db, dst_te, dst_id);
-    return selva_fields_reference_set(db, node, fs, dst_node, nullptr, faux_dirty_cb, nullptr);
+    return selva_fields_reference_set(db, node, fs, dst_node, nullptr, selva_faux_dirty_cb, nullptr);
 }
 
 /**
@@ -672,7 +668,7 @@ static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode
         /* TODO In the future we want to just have an id here. */
         dst_node = selva_upsert_node(db, dst_te, dst_id);
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
-            err = selva_fields_reference_set(db, node, fs, dst_node, &ref, faux_dirty_cb, nullptr);
+            err = selva_fields_reference_set(db, node, fs, dst_node, &ref, selva_faux_dirty_cb, nullptr);
         } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
             enum selva_fields_references_insert_flags insert_flags = SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER | SELVA_FIELDS_REFERENCES_INSERT_FLAGS_IGNORE_SRC_DEPENDENT;
             err = selva_fields_references_insert(db, node, fs, index, insert_flags, dst_te, dst_node, &ref, nullptr, nullptr);

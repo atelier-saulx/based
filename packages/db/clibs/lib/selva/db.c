@@ -196,7 +196,7 @@ static void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEntry *te
 
     RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
         /* Presumably dirty_cb is not needed here. */
-        selva_del_node(db, te, node, nullptr, nullptr);
+        selva_del_node(db, te, node, selva_faux_dirty_cb, nullptr);
     }
 }
 
