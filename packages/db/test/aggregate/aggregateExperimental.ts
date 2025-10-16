@@ -1,4 +1,4 @@
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, groupBy } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 
@@ -136,6 +136,7 @@ await test('multiple functions', async (t) => {
       },
       vote: {
         props: {
+          judges: 'cardinality',
           sequence: {
             ref: 'sequence',
             prop: 'votes',
@@ -214,22 +215,38 @@ await test('multiple functions', async (t) => {
   //   'multiple func with groupBy',
   // )
 
+  // const multi = await db
+  //   .query('vote')
+  //   // .count() // This is still buggy
+  //   .sum('NL')
+  //   .stddev('NO')
+  //   .max('PT')
+  //   .sum('PL')
+  //   .stddev('PT', 'NO')
+  //   .sum('NO')
+  //   .max('NL')
+  //   .avg('NO')
+  //   .min('NL')
+  //   .sum('NO')
+  //   .get()
+
+  db.create('vote', { judges: ['lala', 'lele', 'lili'] })
+
   const multi = await db
     .query('vote')
-    // .count() // This is still buggy
     .sum('NL')
-    .stddev('NO')
-    .max('PT')
-    .sum('PL')
-    .stddev('PT', 'NO')
-    .sum('NO')
-    .max('NL')
-    .avg('NO')
-    .min('NL')
-    .sum('NO')
+    // .max('PT')
+    .cardinality('judges')
+    // .sum('NL')
+    // .max('PT')
+    // .avg('NO')
+    // .min('NL')
+    // .sum('NO')
+    // .groupBy('region')
     .get()
 
-  console.log(multi.toObject())
+  console.log(multi.toObject().judges)
+  // console.log(multi.toObject())
   console.log('------------------')
   multi.inspect(10)
 })

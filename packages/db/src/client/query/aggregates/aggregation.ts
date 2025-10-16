@@ -69,6 +69,7 @@ export const aggregateToBuffer = (
     }
     writeUint16(aggBuffer, size, sizeIndex)
   }
+  console.log('aggBuffer', aggBuffer)
   return aggBuffer
 }
 
