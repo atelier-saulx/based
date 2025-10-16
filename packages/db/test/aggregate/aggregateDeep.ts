@@ -717,7 +717,7 @@ await test('group by reference ids', async (t) => {
   )
 })
 
-await test.skip('edges aggregation', async (t) => {
+await test('edges aggregation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -788,5 +788,5 @@ await test.skip('edges aggregation', async (t) => {
   //   .inspect(10)
 
   // edges still not implemented
-  db.query('movie').max('actors.$rating').get().inspect(10)
+  await db.query('movie').max('actors.$rating').get().inspect(10)
 })
