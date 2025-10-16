@@ -1931,7 +1931,6 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
             assert(node);
             node_id_t old_dst = remove_reference(db, node, fs, 0, -1, false, dirty_cb, dirty_ctx);
             if (old_dst && dirty_cb) {
-                /* TODO Don't call if this side of the ref is not saved. */
                 dirty_cb(dirty_ctx, fs->edge_constraint.dst_node_type, old_dst);
             }
         }
