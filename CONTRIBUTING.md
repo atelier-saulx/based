@@ -73,3 +73,10 @@ Never use `interface` only use `type`
 ### Binary
 
 Prefer using `Uint8Array` over `Buffer` in node.js `Uint8Array` is the standard
+
+### Comments
+
+Try to avoid redundant comments the order is
+
+- 1. Can the variable name, clarity of code explain what is happening?
+- 2. Write a comment and keep it minimal

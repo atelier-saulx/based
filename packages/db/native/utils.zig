@@ -66,6 +66,5 @@ pub inline fn realign(comptime T: type, data: []u8) []T {
     if (offset != 0) {
         move(aligned, data[0 .. data.len - (@alignOf(T) - 1)]);
     }
-
     return @alignCast(std.mem.bytesAsSlice(T, aligned[0..]));
 }

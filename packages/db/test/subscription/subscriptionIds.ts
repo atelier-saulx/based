@@ -99,7 +99,7 @@ await test('subscriptionIds', async (t) => {
     },
   })
 
-  const amount = 20e6 + 1
+  const amount = 200 + 1
   const readable =
     amount > 1e6
       ? Math.round(amount / 1e6) + 'M'
@@ -251,23 +251,35 @@ await test('subscriptionIds', async (t) => {
   let d = Date.now()
   // addSubs(666, 1, 2e6 - 2)
   // addSubs(420, 1, 2e6 - 2)
-  addSubs(666, 20e6 - 2, 20e6 - 1)
+  addSubs(666, 198, 199)
+  console.log('REST 1------------')
+
+  addSubs(666, 1, 2)
+
+  console.log('REST 2------------')
+
+  addSubs(666, 20e6 - 10e3, 20e6 - 10e3 + 1)
+
+  console.log('REST 3------------')
   addSubs(666, 10e6 - 2, 10e6 - 1)
   addSubs(666, 500, 501)
   addSubs(999, 500, 501)
+
+  addSubs(666, 10e6, 12e6)
 
   console.log(Date.now() - d, 'ms', 'to create 4M')
 
   d = Date.now()
 
-  removeubsForId(666, 500)
-
-  removeubsForId(666, 10e6 - 2)
-
-  // -------- derp derp
-  removeubsForId(666, 20e6 - 2)
+  // removeubsForId(666, 500)
+  // removeubsForId(666, 10e6 - 2)
+  // removeubsForId(666, 20e6 - 2)
+  // removeubsForId(999, 500)
 
   console.log(Date.now() - d, 'ms', 'to remove subs...')
+
+  // addSubs(666, 1, 2e6 - 1)
+  // addSubs(777, 1, 2e6 - 1)
 
   await updateAll()
 })

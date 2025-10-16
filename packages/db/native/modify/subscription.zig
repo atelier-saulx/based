@@ -20,10 +20,12 @@ pub const Op = enum(u8) {
 pub fn checkId(
     ctx: *ModifyCtx,
 ) !void {
-    if (ctx.subTypes) |st| {
-        // can do a min offset as well?
-        if (st.idBitSet[ctx.id % 10_000_000] == 1) {
-            if (st.idSubs.get(ctx.id)) |idSubs| {
+    if (ctx.subTypes) |typeSubs| {
+        if (ctx.id >= typeSubs.minId and
+            // ctx.id <= st.maxId and
+            typeSubs.idBitSet[(ctx.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1)
+        {
+            if (typeSubs.idSubs.get(ctx.id)) |idSubs| {
                 ctx.idSubs = idSubs;
             }
         } else {

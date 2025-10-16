@@ -8,6 +8,9 @@ pub const TypeSubscriptionCtx = struct {
     idSubs: IdSubs,
     maxId: u32,
     minId: u32,
+    bitSetSize: u32,
+    bitSetMin: u32,
+    bitSetRatio: u32,
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
@@ -21,3 +24,8 @@ pub const SubscriptionCtx = struct {
 pub const BLOCK_SIZE = 100_000;
 
 pub const SUB_SIZE = vectorLen + 8;
+
+pub const MAX_BIT_SET_SIZE = 10_000_000;
+
+// should be a % of the max size
+// pub const BIT_SET_MIN_SIZE = 10_000;

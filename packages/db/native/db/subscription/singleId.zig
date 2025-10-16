@@ -15,6 +15,69 @@ const vectorLen = std.simd.suggestVectorLength(u8).?;
 //   - Add id [sub buffer]
 //   - Add marked ids buffer
 
+pub inline fn getNewBitSize(size: u32) u32 {
+    var n: u32 = size;
+    if (size < 100) {
+        n = 100;
+    } else if (size < 1000) {
+        n = 1000;
+    } else if (size < 10_000) {
+        n = 10_000;
+    } else if (size < 100_000) {
+        n = 100_000;
+    } else {
+        n = types.MAX_BIT_SET_SIZE;
+    }
+    if (n > types.MAX_BIT_SET_SIZE) {
+        n = types.MAX_BIT_SET_SIZE;
+    }
+    return n;
+}
+
+pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
+    // SIZE based on range
+    // MIN has to be 10% of the total range else the amount of change will be too high
+    var needsChange = false;
+    const range = typeSubs.maxId - typeSubs.minId;
+
+    if (typeSubs.bitSetSize != types.MAX_BIT_SET_SIZE and
+        (range > typeSubs.bitSetSize and
+            typeSubs.idSubs.count() * typeSubs.*.bitSetRatio > typeSubs.bitSetSize))
+    {
+        const newSize = getNewBitSize(typeSubs.bitSetSize);
+
+        if (newSize != typeSubs.bitSetSize) {
+            typeSubs.bitSetSize = newSize;
+            typeSubs.idBitSet = try std.heap.raw_c_allocator.realloc(typeSubs.idBitSet, newSize);
+            needsChange = true;
+        }
+    }
+
+    if (typeSubs.bitSetMin == std.math.maxInt(u32) or typeSubs.minId < typeSubs.bitSetMin) {
+        const div = typeSubs.bitSetSize / 10;
+        var newBitMin: u32 = 0;
+        if (div > typeSubs.minId) {
+            newBitMin = 0;
+        } else {
+            newBitMin = (typeSubs.minId / div) * div;
+        }
+
+        if (newBitMin != typeSubs.bitSetMin) {
+            typeSubs.bitSetMin = newBitMin;
+            needsChange = true;
+        }
+    }
+
+    if (needsChange) {
+        std.debug.print("🤪 RE SET FULL BITSET size: {any} min: {any} \n", .{ typeSubs.bitSetSize, typeSubs.bitSetMin });
+        @memset(typeSubs.*.idBitSet, 0);
+        var keyIterator = typeSubs.idSubs.keyIterator();
+        while (keyIterator.next()) |k| {
+            typeSubs.idBitSet[(k.* - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
+        }
+    }
+}
+
 pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
@@ -24,31 +87,36 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const typeId = utils.read(u16, value, 4);
     const id = utils.read(u32, value, 6);
     const fields = value[headerLen..value.len];
-    var typeSubscriptionCtx = try upsertSubType(ctx, typeId);
+    var typeSubs = try upsertSubType(ctx, typeId);
 
     var subs: []u8 = undefined;
     var idDoesNotExist = true;
     var subIndex: usize = 0;
 
-    // minId
-
-    // id - minId => has less overlap
-    if (typeSubscriptionCtx.idBitSet[id % 10_000_000] == 1) {
-        if (typeSubscriptionCtx.idSubs.get(id)) |s| {
-            subs = s;
+    if (typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
+        if (typeSubs.idSubs.getEntry(id)) |entry| {
+            subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
             subs = try std.heap.raw_c_allocator.realloc(subs, types.SUB_SIZE + subs.len);
-            try typeSubscriptionCtx.idSubs.put(id, subs);
+            entry.value_ptr.* = subs;
         }
     }
 
     if (idDoesNotExist) {
-        typeSubscriptionCtx.idBitSet[id % 10_000_000] = 1;
         subs = try std.heap.c_allocator.alloc(u8, types.SUB_SIZE);
         // 254 means no match
         @memset(subs, 254);
-        try typeSubscriptionCtx.idSubs.put(id, subs);
+        try typeSubs.idSubs.put(id, subs);
+        // Let optmize this part
+        if (id > typeSubs.maxId) {
+            typeSubs.maxId = id;
+        }
+        if (id < typeSubs.minId) {
+            typeSubs.minId = id;
+        }
+        try sizeBitSet(typeSubs);
+        typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
     utils.writeInt(u32, subs, subIndex + 4, subId);
@@ -58,14 +126,6 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
         @memset(subs[subIndex + 8 .. subIndex + types.SUB_SIZE], 255);
     } else {
         utils.copy(subs[subIndex + 8 ..], fields);
-    }
-
-    if (id > typeSubscriptionCtx.maxId) {
-        typeSubscriptionCtx.maxId = id;
-    }
-
-    if (id < typeSubscriptionCtx.minId) {
-        typeSubscriptionCtx.minId = id;
     }
 
     return null;
@@ -80,9 +140,9 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
     const subId = utils.read(u32, value, 4);
     const typeId = utils.read(u16, value, 8);
 
-    if (ctx.subscriptions.types.get(typeId)) |typeSubscriptionCtx| {
-        if (typeSubscriptionCtx.idBitSet[id % 10_000_000] == 1) {
-            if (typeSubscriptionCtx.idSubs.getEntry(id)) |subsEntry| {
+    if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
+        if (typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
+            if (typeSubs.idSubs.getEntry(id)) |subsEntry| {
                 const subs = subsEntry.value_ptr.*;
 
                 var i: usize = 0;
@@ -111,80 +171,80 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                 }
 
                 if (idRemoved) {
-                    _ = typeSubscriptionCtx.idSubs.remove(id);
-                    if (id > 10_000_000) {
+                    _ = typeSubs.idSubs.remove(id);
+                    if (id > typeSubs.bitSetSize) {
                         var hasOthers = false;
-                        var overlap = @divTrunc(id, 10_000_000);
-                        const lowBound = @divTrunc(typeSubscriptionCtx.minId, 10_000_000);
+                        var overlap = @divTrunc(id, typeSubs.bitSetSize);
+                        const lowBound = @divTrunc(typeSubs.minId, typeSubs.bitSetSize);
                         while (overlap > lowBound) {
-                            const potentialId = ((id) % 10_000_000) + (overlap - 1) * 10_000_000;
-                            if (typeSubscriptionCtx.idSubs.contains(potentialId)) {
+                            const potentialId = ((id) % typeSubs.bitSetSize) + (overlap - 1) * typeSubs.bitSetSize;
+                            if (typeSubs.idSubs.contains(potentialId)) {
                                 hasOthers = true;
                                 break;
                             }
                             overlap -= 1;
                         }
                         if (!hasOthers) {
-                            typeSubscriptionCtx.idBitSet[id % 10_000_000] = 0;
+                            typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 0;
                         }
-                    } else if (typeSubscriptionCtx.maxId < 10_000_001) {
-                        typeSubscriptionCtx.idBitSet[id % 10_000_000] = 0;
+                    } else if (typeSubs.maxId < typeSubs.bitSetSize + 1) {
+                        typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 0;
                     } else {
                         var hasOthers = false;
-                        var overlap = @divTrunc(id, 10_000_000);
-                        const maxId = @divTrunc(typeSubscriptionCtx.maxId, 10_000_000) + 1;
+                        var overlap = @divTrunc(id, typeSubs.bitSetSize);
+                        const maxId = @divTrunc(typeSubs.maxId, typeSubs.bitSetSize) + 1;
                         while (overlap < maxId) {
-                            const potentialId = ((id) % 10_000_000) + (overlap + 1) * 10_000_000;
-                            if (typeSubscriptionCtx.idSubs.contains(potentialId)) {
+                            const potentialId = ((id) % typeSubs.bitSetSize) + (overlap + 1) * typeSubs.bitSetSize;
+                            if (typeSubs.idSubs.contains(potentialId)) {
                                 hasOthers = true;
                                 break;
                             }
                             overlap += 1;
                         }
                         if (!hasOthers) {
-                            typeSubscriptionCtx.idBitSet[id % 10_000_000] = 0;
+                            typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 0;
                         }
                     }
 
-                    const idCount = typeSubscriptionCtx.idSubs.count();
-                    const range = typeSubscriptionCtx.maxId - typeSubscriptionCtx.minId;
+                    const idCount = typeSubs.idSubs.count();
+                    const range = typeSubs.maxId - typeSubs.minId;
 
                     if (range / idCount > 1000) {
-                        if (id == typeSubscriptionCtx.maxId) {
-                            var keyIterator = typeSubscriptionCtx.idSubs.keyIterator();
+                        if (id == typeSubs.maxId) {
+                            var keyIterator = typeSubs.idSubs.keyIterator();
                             while (keyIterator.next()) |k| {
-                                if (k.* > typeSubscriptionCtx.maxId) {
-                                    typeSubscriptionCtx.maxId = k.*;
+                                if (k.* > typeSubs.maxId) {
+                                    typeSubs.maxId = k.*;
                                 }
                             }
-                        } else if (id == typeSubscriptionCtx.minId) {
-                            var keyIterator = typeSubscriptionCtx.idSubs.keyIterator();
+                        } else if (id == typeSubs.minId) {
+                            var keyIterator = typeSubs.idSubs.keyIterator();
                             while (keyIterator.next()) |k| {
-                                if (k.* < typeSubscriptionCtx.maxId) {
-                                    typeSubscriptionCtx.minId = k.*;
+                                if (k.* < typeSubs.maxId) {
+                                    typeSubs.minId = k.*;
                                 }
                             }
                         }
                     } else if (idCount != 0) {
-                        if (id == typeSubscriptionCtx.maxId) {
-                            var j: u32 = typeSubscriptionCtx.maxId;
-                            const min = typeSubscriptionCtx.minId;
+                        if (id == typeSubs.maxId) {
+                            var j: u32 = typeSubs.maxId;
+                            const min = typeSubs.minId;
                             while (j >= min) {
-                                if (typeSubscriptionCtx.idBitSet[j % 10_000_000] == 1) {
-                                    if (typeSubscriptionCtx.idSubs.contains(j)) {
-                                        typeSubscriptionCtx.maxId = j;
+                                if (typeSubs.idBitSet[(j - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
+                                    if (typeSubs.idSubs.contains(j)) {
+                                        typeSubs.maxId = j;
                                         break;
                                     }
                                 }
                                 j -= 1;
                             }
-                        } else if (id == typeSubscriptionCtx.minId) {
-                            var j: u32 = typeSubscriptionCtx.minId;
-                            while (j <= typeSubscriptionCtx.maxId) {
-                                if (typeSubscriptionCtx.idBitSet[j % 10_000_000] == 1 and
-                                    typeSubscriptionCtx.idSubs.contains(j))
+                        } else if (id == typeSubs.minId) {
+                            var j: u32 = typeSubs.minId;
+                            while (j <= typeSubs.maxId) {
+                                if (typeSubs.idBitSet[(j - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1 and
+                                    typeSubs.idSubs.contains(j))
                                 {
-                                    typeSubscriptionCtx.minId = j;
+                                    typeSubs.minId = j;
                                     break;
                                 }
                                 j += 1;
@@ -195,7 +255,7 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
             }
         }
 
-        removeSubTypeIfEmpty(ctx, typeId, typeSubscriptionCtx);
+        removeSubTypeIfEmpty(ctx, typeId, typeSubs);
     }
 
     return null;

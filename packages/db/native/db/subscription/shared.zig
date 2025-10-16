@@ -5,26 +5,33 @@ const std = @import("std");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 
 pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCtx {
-    var typeSubscriptionCtx: *types.TypeSubscriptionCtx = undefined;
+    var typeSubs: *types.TypeSubscriptionCtx = undefined;
     if (!ctx.subscriptions.types.contains(typeId)) {
-        typeSubscriptionCtx = try std.heap.raw_c_allocator.create(types.TypeSubscriptionCtx);
-        typeSubscriptionCtx.*.maxId = 0;
-        typeSubscriptionCtx.*.minId = std.math.maxInt(u32);
-        typeSubscriptionCtx.*.idBitSet = try std.heap.raw_c_allocator.alloc(u1, 10_000_000 * 4); // 4mb (too much)
-        typeSubscriptionCtx.*.idSubs = types.IdSubs.init(std.heap.raw_c_allocator);
-        try ctx.subscriptions.types.put(typeId, typeSubscriptionCtx);
+        typeSubs = try std.heap.raw_c_allocator.create(types.TypeSubscriptionCtx);
+        typeSubs.*.maxId = 0;
+        typeSubs.*.minId = std.math.maxInt(u32);
+        typeSubs.*.bitSetMin = std.math.maxInt(u32);
+        typeSubs.*.bitSetSize = 10;
+        typeSubs.*.bitSetRatio = 5;
+        typeSubs.*.idBitSet = try std.heap.raw_c_allocator.alloc(
+            u1,
+            typeSubs.*.bitSetSize,
+        );
+        @memset(typeSubs.*.idBitSet, 0);
+        typeSubs.*.idSubs = types.IdSubs.init(std.heap.raw_c_allocator);
+        try ctx.subscriptions.types.put(typeId, typeSubs);
     } else {
-        typeSubscriptionCtx = ctx.subscriptions.types.get(typeId).?;
+        typeSubs = ctx.subscriptions.types.get(typeId).?;
     }
-    return typeSubscriptionCtx;
+    return typeSubs;
 }
 
 pub inline fn removeSubTypeIfEmpty(
     ctx: *DbCtx,
     typeId: u16,
-    typeSubscriptionCtx: *types.TypeSubscriptionCtx,
+    typeSubs: *types.TypeSubscriptionCtx,
 ) void {
-    if (typeSubscriptionCtx.idSubs.count() == 0) {
+    if (typeSubs.idSubs.count() == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
             std.debug.print("REMOVE SUB TYPE... \n", .{});
             removed_entry.value.idSubs.deinit();
