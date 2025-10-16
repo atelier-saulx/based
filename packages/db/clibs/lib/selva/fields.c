@@ -685,7 +685,6 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
      */
     if (dst_node_id != 0) {
         struct SelvaNode *dst = selva_find_node(dst_type, dst_node_id);
-        if (!dst) fprintf(stderr, "%s dst (%u) not found\n", __func__, (unsigned)dst_node_id);
         if (dst) {
             const struct SelvaFieldSchema *fs_dst;
             struct SelvaFields *fields_dst = &dst->fields;
