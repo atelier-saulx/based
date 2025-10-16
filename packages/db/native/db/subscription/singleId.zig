@@ -47,6 +47,10 @@ pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
         const newSize = getNewBitSize(typeSubs.bitSetSize);
 
         if (newSize != typeSubs.bitSetSize) {
+            if (newSize > 10_000) {
+                typeSubs.*.bitSetRatio = 25;
+            }
+
             typeSubs.bitSetSize = newSize;
             typeSubs.idBitSet = try std.heap.raw_c_allocator.realloc(typeSubs.idBitSet, newSize);
             needsChange = true;
@@ -108,7 +112,6 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
         // 254 means no match
         @memset(subs, 254);
         try typeSubs.idSubs.put(id, subs);
-        // Let optmize this part
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
         }
