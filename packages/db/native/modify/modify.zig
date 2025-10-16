@@ -257,8 +257,10 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
         resCount.* += 1;
     }
 
-    std.debug.print("DRAIN {any} \n", .{
+    std.debug.print("DRAIN {any} {any} byteSize {any} \n", .{
         std.fmt.fmtDuration(timer.read()),
+        resCount.*,
+        batch.len,
     });
 
     if (ctx.subTypes) |_| {

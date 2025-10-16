@@ -1,4 +1,4 @@
-import { readUint32, writeUint16, writeUint32 } from '@based/utils'
+import { readUint32, wait, writeUint16, writeUint32 } from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
@@ -99,7 +99,7 @@ await test('subscriptionIds', async (t) => {
     },
   })
 
-  const amount = 200 + 1
+  const amount = 2e6
   const readable =
     amount > 1e6
       ? Math.round(amount / 1e6) + 'M'
@@ -107,7 +107,7 @@ await test('subscriptionIds', async (t) => {
         ? Math.round(amount / 1e3) + 'K'
         : amount
 
-  const payload = {
+  const payload: any = {
     derp: 99,
     x: 1,
   }
@@ -117,6 +117,7 @@ await test('subscriptionIds', async (t) => {
     for (let i = 0; i < 2e6; i++) {
       payload.derp = i
       payload.x = i % 255
+      // payload.location = 'x ' + i
       clients[1].update(type, i + 1, payload)
     }
     let dTime = await clients[1].drain()
@@ -271,10 +272,10 @@ await test('subscriptionIds', async (t) => {
 
   d = Date.now()
 
-  // removeubsForId(666, 500)
-  // removeubsForId(666, 10e6 - 2)
-  // removeubsForId(666, 20e6 - 2)
-  // removeubsForId(999, 500)
+  removeubsForId(666, 500)
+  removeubsForId(666, 10e6 - 2)
+  removeubsForId(666, 20e6 - 2)
+  removeubsForId(999, 500)
 
   console.log(Date.now() - d, 'ms', 'to remove subs...')
 
@@ -282,4 +283,8 @@ await test('subscriptionIds', async (t) => {
   // addSubs(777, 1, 2e6 - 1)
 
   await updateAll()
+
+  await clients[0].query('user').range(0, 2e6).get().inspect()
+
+  await wait(100)
 })

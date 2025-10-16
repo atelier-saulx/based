@@ -53,7 +53,7 @@ pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
         }
     }
 
-    if (typeSubs.bitSetMin == std.math.maxInt(u32) or typeSubs.minId < typeSubs.bitSetMin) {
+    if (typeSubs.bitSetMin == std.math.maxInt(u32) or typeSubs.minId < typeSubs.bitSetMin or needsChange) {
         const div = typeSubs.bitSetSize / 10;
         var newBitMin: u32 = 0;
         if (div > typeSubs.minId) {
