@@ -3,7 +3,6 @@ const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
-const selva = @import("../../selva.zig");
 const std = @import("std");
 const results = @import("../results.zig");
 const types = @import("./types.zig");
@@ -60,9 +59,7 @@ pub fn getSingleRefFields(
             return 6 + size;
         }
 
-        const edgeConstraint = selva.selva_get_edge_field_constraint(
-            fieldSchema,
-        );
+        const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema.?);
 
         edgeRefStruct = std.mem.zeroInit(types.RefStruct, .{
             .edgeConstraint = edgeConstraint,
@@ -82,9 +79,7 @@ pub fn getSingleRefFields(
         const dstType = db.getRefDstType(ctx.db, fieldSchema.?) catch {
             return 6 + size;
         };
-        const edgeConstraint = selva.selva_get_edge_field_constraint(
-            fieldSchema,
-        );
+        const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema.?);
 
         edgeRefStruct = .{
             .smallReference = null,

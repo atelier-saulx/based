@@ -1,5 +1,4 @@
 const db = @import("../../db/db.zig");
-const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
