@@ -39,8 +39,12 @@ pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     return selvaTypeEntry.?;
 }
 
-pub fn getBlockCapacity(ctx: *DbCtx, typeId: TypeId) u64 {
+pub inline fn getBlockCapacity(ctx: *DbCtx, typeId: TypeId) u64 {
     return selva.selva_get_block_capacity(selva.selva_get_type_by_index(ctx.selva, typeId));
+}
+
+pub inline fn getNodeTypeId(node: Node) TypeId {
+    return selva.selva_get_node_type(node);
 }
 
 pub fn getRefDstType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
