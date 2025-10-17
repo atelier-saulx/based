@@ -96,6 +96,7 @@ await test('noLoadDumps', async (t) => {
       .subordinates.length,
     511,
   )
+  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
   deepEqual(getBlock1().inmem, true)
   deepEqual(getBlock2().inmem, false)
