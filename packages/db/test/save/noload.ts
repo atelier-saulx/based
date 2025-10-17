@@ -107,12 +107,14 @@ await test('noLoadDumps', async (t) => {
       .subordinates.length,
     750,
   )
+  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get().inspect(), 750)
 
+  await db2.query('employee', 2).include((s) => s('subordinates').count()).get().inspect()
   await db2.server.unloadBlock('employee', 1100)
   deepEqual(getBlock2().inmem, false)
-  // FIXME refs shouldn't probably disappear on unload
-  //deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
+  // FIXME refs shouldn't probably disappear like this on unload
   deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 511)
+  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get().inspect(), 750)
 
   // for (const type of db2.server.verifTree.types()) {
   //   for (const block of db2.server.verifTree.blocks(type)) {
