@@ -135,13 +135,13 @@ pub inline fn aggregateRefsGroup(
             else
                 try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
             const accumulatorField = hash_map_entry.value;
-            // var hadAccumulated = !hash_map_entry.is_new;
+            var hadAccumulated = !hash_map_entry.is_new;
             const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
                 resultsSize += 2 + resultKeyLen + groupCtx.resultsSize;
             }
 
-            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator);
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
         }
     }
 
@@ -179,7 +179,7 @@ pub inline fn aggregateRefsDefault(
     var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
-    // var hadAccumulated: bool = false;
+    var hadAccumulated: bool = false;
 
     if (isEdge) {
         //later
@@ -214,7 +214,7 @@ pub inline fn aggregateRefsDefault(
                         continue :checkItem;
                     }
                 }
-                aggregate(agg, typeEntry, refNode, accumulatorField, null);
+                aggregate(agg, typeEntry, refNode, accumulatorField, null, &hadAccumulated);
             }
         }
     }
