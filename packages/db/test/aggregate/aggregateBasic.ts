@@ -301,6 +301,7 @@ await test('two phase accumulation', async (t) => {
     },
     'stddev, top level, NO groupBy, option = sample',
   )
+
   deepEqual(
     await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
     {
@@ -308,6 +309,7 @@ await test('two phase accumulation', async (t) => {
     },
     'stddev, top level, NO groupBy, no option (default = sample)',
   )
+
   deepEqual(
     await db.query('vote').stddev('NL', { mode: 'population' }).get(),
     {
@@ -344,6 +346,7 @@ await test('two phase accumulation', async (t) => {
     },
     'stddev, top level, groupBy',
   )
+
   deepEqual(
     await db
       .query('sequence')
@@ -360,6 +363,7 @@ await test('two phase accumulation', async (t) => {
     ],
     'stddev, branched References, no groupBy',
   )
+
   deepEqual(
     await db
       .query('sequence')
@@ -475,6 +479,7 @@ await test('numeric types', async (t) => {
     },
     'empty aggregation function, group by',
   )
+
   deepEqual(
     await db.query('vote').sum('NL', 'FI').groupBy('region').get(),
     {

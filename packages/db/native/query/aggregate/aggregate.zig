@@ -107,7 +107,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
     }
 
     var i: usize = 0;
-    while (i < agg.len - 1) {
+    while (i < agg.len) {
         hadAccumulated = false;
         const field = agg[i];
         i += 1;
@@ -127,7 +127,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                 std.log.err("Cannot get fieldschema {any} \n", .{field});
                 i += fieldAggsSize;
-                continue; // TODO: to check it
+                continue;
             };
             if (aggType == aggregateTypes.AggType.CARDINALITY) {
                 const hllValue = selva.selva_fields_get_selva_string(node, fieldSchema) orelse null;

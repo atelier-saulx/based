@@ -52,8 +52,8 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     const filterSize = def.filter.size || 0
 
     if (def.type === QueryDefType.References) {
-      const buf = new Uint8Array(13 + filterSize + aggregateSize)
-      const sz = 10 + filterSize + aggregateSize
+      const buf = new Uint8Array(12 + filterSize + aggregateSize) // op + refSize + filterSize + offset + typeId + refField
+      const sz = 9 + filterSize + aggregateSize // filterSize + offset + typeId + refField
 
       buf[0] = includeOp.REFERENCES_AGGREGATION
       buf[1] = sz
