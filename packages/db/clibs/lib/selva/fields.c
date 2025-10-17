@@ -16,7 +16,6 @@
 #include "bits.h"
 #include "db.h"
 #include "db_panic.h"
-#include "ptag.h"
 #include "selva/fast_linear_search.h"
 #include "selva/node_id_set.h"
 #include "selva/fields.h"
@@ -68,7 +67,7 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 
 static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
-    char *data = (char *)PTAG_GETP(fields->data);
+    char *data = (char *)fields->data;
     const size_t off = fields->data_len;
     const size_t field_data_size = selva_fields_get_data_size(fs);
     const size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
@@ -81,8 +80,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     }
 
     if (!data || selva_sallocx(data, 0) < new_size) {
-        data = selva_realloc(data, new_size);
-        fields->data = PTAG(data, PTAG_GETTAG(fields->data));
+        data = fields->data = selva_realloc(data, new_size);
     }
     fields->data_len = new_size;
     memset(data + off, 0, field_data_size);
@@ -98,7 +96,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
 #endif
 static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
 {
-    char *data = (char *)PTAG_GETP(fields->data);
+    char *data = (char *)fields->data;
     void *p = data + (nfo->off << SELVA_FIELDS_OFF);
 
     if (unlikely((char *)p > data + fields->data_len)) {
@@ -1821,7 +1819,7 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
     switch (type) {
     case SELVA_FIELD_TYPE_NULL:
         return (struct SelvaFieldsPointer){
-            .ptr = (uint8_t *)PTAG_GETP(fields->data),
+            .ptr = (uint8_t *)fields->data,
             .off = (nfo->off << SELVA_FIELDS_OFF),
             .len = 0,
         };
@@ -1829,13 +1827,13 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
     case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_REFERENCES:
         return (struct SelvaFieldsPointer){
-            .ptr = (uint8_t *)PTAG_GETP(fields->data),
+            .ptr = (uint8_t *)fields->data,
             .off = (nfo->off << 3),
             .len = selva_fields_get_data_size(fs),
         };
     case SELVA_FIELD_TYPE_STRING:
         do {
-            const struct selva_string *s = (const struct selva_string *)((uint8_t *)PTAG_GETP(fields->data) + (nfo->off << 3));
+            const struct selva_string *s = (const struct selva_string *)((uint8_t *)fields->data + (nfo->off << 3));
             size_t len;
             const uint8_t *str = selva_string_to_buf(s, &len);
             return (struct SelvaFieldsPointer){
@@ -1846,7 +1844,7 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
         } while (0);
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
         return (struct SelvaFieldsPointer){
-            .ptr = (uint8_t *)PTAG_GETP(fields->data),
+            .ptr = (uint8_t *)fields->data,
             .off = (nfo->off << SELVA_FIELDS_OFF),
             .len = selva_fields_get_data_size(fs),
         };
@@ -2001,7 +1999,7 @@ void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node, selva_dirt
 
     fields->nr_fields = 0;
     fields->data_len = 0;
-    selva_free(PTAG_GETP(fields->data));
+    selva_free(fields->data);
     fields->data = nullptr;
 }
 
