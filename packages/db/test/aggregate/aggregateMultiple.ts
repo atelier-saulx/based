@@ -104,7 +104,10 @@ await test('multiple functions', async (t) => {
     'multiple func main with groupBy',
   )
 
-  db.create('vote', { region: 'Great', judges: ['lala', 'lele', 'lili'] })
+  const j = db.create('vote', {
+    region: 'Great',
+    judges: ['lala', 'lele', 'lili'],
+  })
 
   const multi = await db
     .query('vote')
@@ -116,7 +119,6 @@ await test('multiple functions', async (t) => {
     .avg('NO')
     .min('NL')
     .sum('NO')
-    // .groupBy('region')
     .get()
 
   deepEqual(
@@ -273,4 +275,84 @@ await test('multiple functions', async (t) => {
     },
     'multiple main + count groupBy',
   )
+
+  const multiref = await db
+    .query('sequence')
+    .include((q) => q('votes').sum('NL').count().cardinality('judges'))
+    .get()
+
+  deepEqual(
+    multiref,
+    [
+      {
+        id: 1,
+        votes: {
+          NL: {
+            sum: 176,
+          },
+          count: 5,
+          judges: {
+            cardinality: 0,
+          },
+        },
+      },
+    ],
+    'multi references + count + no cardinality',
+  )
+
+  //   db.create('sequence', { votes: [j] })
+
+  // cardinality on references crashing
+  //   await db
+  //     .query('sequence')
+  //     .include((q) => q('votes').cardinality('judges'))
+  //     .get()
+  //     .inspect(10)
+
+  //   deepEqual(
+  //     await db
+  //       .query('sequence')
+  //       .include((q) => q('votes').sum('NL').count().cardinality('judges'))
+  //       .get(),
+  //     [
+  //       {
+  //         id: 1,
+  //         votes: {
+  //           NL: {
+  //             sum: 176,
+  //           },
+  //           count: 5,
+  //           judges: {
+  //             cardinality: 0,
+  //           },
+  //         },
+  //       },
+  //     ],
+  //     'multi references + count + cardinality',
+  //   )
+
+  // count first zeroing the rest
+  //   deepEqual(
+  //     await db
+  //       .query('sequence')
+  //       .include((q) => q('votes').count().sum('NL').cardinality('judges'))
+  //       .get(),
+  //     [
+  //       {
+  //         id: 1,
+  //         votes: {
+  //           count: 5,
+  //           NL: {
+  //             sum: 176,
+  //           },
+  //           judges: {
+  //             cardinality: 0,
+  //           },
+  //         },
+  //       },
+  //     ],
+  //     'multi references + count first + cardinality',
+  //   )
+
+  //   multiref.inspect(10)
 })
