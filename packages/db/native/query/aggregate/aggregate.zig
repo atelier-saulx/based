@@ -95,11 +95,10 @@ inline fn execAgg(
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
             writeInt(f64, accumulatorField, accumulatorPos + 16, sum_sq);
         } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
+            utils.debugPrint("[aggregate]: accumulatorField antes: {d}\n", .{read(u32, accumulatorField, 0)});
             selva.hll_union(hllAccumulator, hllValue);
             writeInt(u32, accumulatorField, accumulatorPos, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
-            utils.debugPrint("[aggregate]: accumulatorField: {d} {d}\n", .{ read(f64, accumulatorField, 0), read(u32, accumulatorField, 8) });
-            hadAccumulated.* = true;
-            utils.debugPrint("[execAgg] hadAccumulated = {any}\n", .{hadAccumulated});
+            utils.debugPrint("[aggregate]: accumulatorField depois: {d}\n", .{read(u32, accumulatorField, 0)});
         }
     }
 }
@@ -109,7 +108,6 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
     if (agg.len == 0) {
         return;
     }
-
     var i: usize = 0;
     while (i < agg.len) {
         const field = agg[i];
@@ -141,10 +139,9 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 if (!hadAccumulated.*) {
                     _ = selva.selva_string_replace(hllAccumulator, null, selva.HLL_INIT_SIZE);
                     selva.hll_init_like(hllAccumulator, hllValue);
-                    execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, hllValue, hllAccumulator);
-                    hadAccumulated.* = true;
-                    utils.debugPrint("[aggregate] hadAccumulated = {any}\n", .{hadAccumulated.*});
                 }
+                execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, hllAccumulator, hllValue);
+                hadAccumulated.* = true;
             } else {
                 value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
                 if (value.len == 0) {

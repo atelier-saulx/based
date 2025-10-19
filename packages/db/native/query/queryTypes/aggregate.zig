@@ -73,7 +73,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
                 continue :checkItem;
             }
             aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
-            // hadAccumulated = true;
         } else {
             break :checkItem;
         }
