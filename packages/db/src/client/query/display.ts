@@ -261,7 +261,12 @@ const inspectObject = (
         }
         str += prettyPrintVal(v, def.typeIndex)
       } else if (def.typeIndex === CARDINALITY) {
-        str += prettyPrintVal(v, def.typeIndex)
+        if (typeof v === 'object' && v !== null) {
+          str +=
+            inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
+        } else {
+          str += prettyPrintVal(v, def.typeIndex)
+        }
       } else if (def.typeIndex === TIMESTAMP) {
         str += prettyPrintVal(v, def.typeIndex)
       } else {
