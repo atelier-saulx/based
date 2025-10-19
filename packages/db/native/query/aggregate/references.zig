@@ -180,6 +180,8 @@ pub inline fn aggregateRefsDefault(
     var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     var hadAccumulated: bool = false;
+    const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
+    defer selva.selva_string_free(hllAccumulator);
 
     if (isEdge) {
         //later
@@ -214,7 +216,7 @@ pub inline fn aggregateRefsDefault(
                         continue :checkItem;
                     }
                 }
-                aggregate(agg, typeEntry, refNode, accumulatorField, null, &hadAccumulated);
+                aggregate(agg, typeEntry, refNode, accumulatorField, hllAccumulator, &hadAccumulated);
             }
         }
     }

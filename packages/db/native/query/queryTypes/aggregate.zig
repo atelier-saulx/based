@@ -59,7 +59,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
 
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
     defer selva.selva_string_free(hllAccumulator);
-    var y: u8 = 0;
+    var y: usize = 0;
     checkItem: while (ctx.totalResults < limit) {
         y += 1;
         utils.debugPrint("[default]: node {d}\n", .{y});

@@ -137,6 +137,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                     continue;
                 }
                 if (!hadAccumulated.*) {
+                    utils.debugPrint("❤️❤️❤️ {any}\n", .{hllAccumulator});
                     _ = selva.selva_string_replace(hllAccumulator, null, selva.HLL_INIT_SIZE);
                     selva.hll_init_like(hllAccumulator, hllValue);
                 }
