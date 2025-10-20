@@ -1,10 +1,15 @@
-import { readUint32, wait, writeUint16, writeUint32 } from '@based/utils'
+import {
+  readUint32,
+  wait,
+  writeUint16,
+  writeUint24,
+  writeUint32,
+} from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
 import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
-import { BasedDb } from '../../src/index.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -19,47 +24,6 @@ const start = async (t, clientsN = 2) => {
   await server.start({ clean: true })
   t.after(() => server.destroy())
   return { clients, server }
-}
-
-type Marked = { ids: number[]; id: number }
-
-const logSubIds = (server: BasedDb['server']) => {
-  let d = Date.now()
-  const markedSubsR = native.getMarkedSubscriptions(server.dbCtxExternal)
-  d = Date.now() - d
-  if (markedSubsR) {
-    const markedSubs = new Uint8Array(markedSubsR)
-    // console.log('MARKED SUB:', markedSubsR)
-    const marked: { [subId: number]: Marked } = {}
-    let i = 0
-    while (i < markedSubs.byteLength) {
-      const subId = readUint32(markedSubs, i)
-      const id = readUint32(markedSubs, i + 4)
-      if (!marked[subId]) {
-        marked[subId] = { id: subId, ids: [] }
-      }
-      marked[subId].ids.push(id)
-      i += 8
-    }
-    const uniq = new Set()
-    const results: { ids: number; subs: number; uniqIds: number } = {
-      ids: 0,
-      subs: 0,
-      uniqIds: 0,
-    }
-    for (const key in marked) {
-      const v = marked[key]
-      for (const x of v.ids) {
-        uniq.add(x)
-      }
-      results.subs++
-      results.ids += v.ids.length
-    }
-    results.uniqIds = uniq.size
-    console.log(`   • Subscriptions fired ${d}ms:`, results)
-  } else {
-    console.log('   • No subs fired!')
-  }
 }
 
 const createSingleSubscriptionBuffer = (
@@ -156,90 +120,15 @@ await test('subscriptionIds', async (t) => {
     return val
   }
 
-  // this is single type ofc
-  type Subs = {
-    idsSubSize: number
-    idsAmount: number
-    // ids:
-    // bitSetSize
-    subs: {
-      [subId: string]: Uint8Array
-    }
-    // want to sort by number
-    ids: {
-      [id: string]: number[]
-    }
-  }
-
-  const addAllSubs = (subs: Subs) => {
-    const idsList = new Uint32Array(subs.idsAmount)
-    const idsSubs = new Uint8Array(subs.idsSubSize)
-    let cnt = 0
-    let i = 0
-    for (const id in subs.ids) {
-      const idNr = Number(id)
-      idsList[cnt] = idNr
-      writeUint32(idsSubs, idNr, i)
-      i += 4
-      const subI = subs.ids[id]
-      for (const sub of subI) {
-        const s = subs.subs[sub]
-        writeUint32(s, idNr, 4)
-        idsSubs.set(s, i)
-        i += 24
-      }
-      cnt++
-    }
-    idsList.sort()
-    return { idsList, idsSubs }
-  }
-
-  const addSubsJS = (subs: Subs, subId: number, start = 0, end = 1000) => {
-    const fields = new Uint8Array(16)
-    fields.fill(254)
-    fields[0] = 0
-    fields[1] = 1
-    fields[2] = 2
-    const typeId = server.schemaTypesParsed['user'].id
-    const val = new Uint8Array(24)
-    subs.subs[subId] = val
-    let d = Date.now()
-    for (let i = start; i < end; i++) {
-      const id = i
-      if (!subs.ids[id]) {
-        subs.idsSubSize += 4
-        subs.idsAmount += 1
-        subs.ids[id] = [subId]
-      } else {
-        subs.ids[id].push(subId)
-      }
-      subs.idsSubSize += 24 // fields + 8 overhead
-    }
-  }
-
-  const subsJS: Subs = { ids: {}, subs: {}, idsAmount: 0, idsSubSize: 0 }
-  let xxx = Date.now()
-
-  addSubsJS(subsJS, 666, 1, 2e6 - 2)
-  addSubsJS(subsJS, 420, 1, 2e6 - 2)
-
-  console.log(Date.now() - xxx, 'JS MAKE MAKE MS')
-
-  xxx = Date.now()
-  addAllSubs(subsJS)
-  console.log(Date.now() - xxx, 'JS PREP BUFFERS')
-
   let BLA = Date.now()
 
-  // native.addMultiSubscription(
-  //   server.dbCtxExternal,
-  //   createSingleSubscriptionBuffer(
-  //     6,
-  //     server.schemaTypesParsed.user.id,
-  //     new Uint8Array([0, 1]),
-  //     2,
-  //   ),
-  // )
+  // [type][type]
+  // [subId][subId][subId][subId]
+  const multiSubscription = new Uint8Array(6)
+  const typeId = server.schemaTypesParsed['user'].id
+  writeUint16(multiSubscription, typeId, 0)
+  writeUint24(multiSubscription, 777, 0)
+  native.addMultiSubscription(server.dbCtxExternal, multiSubscription)
 
   console.log('ZIG ZAG', Date.now() - BLA, 'ms')
 
@@ -266,7 +155,7 @@ await test('subscriptionIds', async (t) => {
   addSubs(666, 500, 501)
   addSubs(999, 500, 501)
 
-  addSubs(666, 0, 2e6)
+  addSubs(666, 2e6, 4e6)
 
   console.log(Date.now() - d, 'ms', 'to create 4M')
 

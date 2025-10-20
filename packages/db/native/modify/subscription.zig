@@ -22,7 +22,7 @@ pub fn checkId(
 ) !void {
     if (ctx.subTypes) |typeSubs| {
         if (ctx.id >= typeSubs.minId and
-            typeSubs.idBitSet[(ctx.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1)
+            typeSubs.idBitSet[(ctx.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) // can remove the modulo ^2
         {
             if (typeSubs.idSubs.get(ctx.id)) |idSubs| {
                 ctx.idSubs = idSubs;

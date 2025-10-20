@@ -3,6 +3,9 @@ const vectorLen = std.simd.suggestVectorLength(u8).?;
 
 pub const IdSubs = std.AutoHashMap(u32, []u8); // [24] [24] [24] [4 4] [16 bytes]
 
+// can make a multi sub thing here
+pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
+
 pub const TypeSubscriptionCtx = struct {
     idBitSet: []u1,
     idSubs: IdSubs,
@@ -11,6 +14,14 @@ pub const TypeSubscriptionCtx = struct {
     bitSetSize: u32,
     bitSetMin: u32,
     bitSetRatio: u32,
+    // multi
+    // multiSubsStore: MultiSubsStore, // iterator seems very expensive
+    multiSubsSize: u32, // if 0 faster check
+    multiSubs: []u8, // [subType,subType, subType, subType][subId 4] (8) // lets add 100k of these will not be fast im affraid
+    multiSubsStageMarked: []u1, // then simd check // just increases in size never gets de-alloc
+    // ^ can scan if it makes sense (true not staged, not true)
+    // what about u8 in there and having more
+    // what can we put in a byte to help?
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
