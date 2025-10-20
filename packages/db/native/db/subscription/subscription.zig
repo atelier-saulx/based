@@ -8,34 +8,18 @@ const singleId = @import("./singleId.zig");
 const multi = @import("./multi.zig");
 const types = @import("./types.zig");
 
+// fix this
 fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, env, info);
-    _ = try napi.get(*DbCtx, env, args[0]);
-    // const args = try napi.getArgs(1, env, info);
-    // const ctx = try napi.get(*DbCtx, env, args[0]);
-    // if (ctx.subscriptions.hasMarkedSubscriptions) {
-    //     ctx.subscriptions.hasMarkedSubscriptions = false;
-    //     var resultBuffer: ?*anyopaque = undefined;
-    //     var result: c.napi_value = undefined;
-    //     var iter = ctx.subscriptions.subscriptionsMarked.iterator();
-    //     const size: usize = ctx.subscriptions.subscriptionsMarked.count() * 8;
-    //     if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
-    //         return null;
-    //     }
-    //     const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
-    //     var i: usize = 0;
-    //     while (iter.next()) |entry| {
-    //         const u8a: [8]u8 = @bitCast(entry.key_ptr.*);
-    //         const u8as = (&u8a)[0..8];
-    //         utils.copy(data[i .. i + 8], u8as);
-    //         i += 8;
-    //     }
-    //     iter = ctx.subscriptions.subscriptionsMarked.iterator();
-    //     while (iter.next()) |entry| {
-    //         _ = ctx.subscriptions.subscriptionsMarked.remove(entry.key_ptr.*);
-    //     }
-    //     return result;
-    // }
+    const ctx = try napi.get(*DbCtx, env, args[0]);
+
+    if (ctx.subscriptions.lastIdMarked > 0) {
+        std.debug.print("hello {any} {d} \n", .{ ctx.subscriptions.singleIdMarked.len, ctx.subscriptions.lastIdMarked });
+
+        ctx.subscriptions.singleIdMarked = try std.heap.raw_c_allocator.realloc(ctx.subscriptions.singleIdMarked, 0);
+        ctx.subscriptions.lastIdMarked = 0;
+    }
+
     return null;
 }
 

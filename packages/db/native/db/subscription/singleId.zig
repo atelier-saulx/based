@@ -10,11 +10,6 @@ const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
 const selva = @import("../../selva.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 
-// If we do it per staged area its going to be
-//   - Add typeSub (ids LEN, id min, id max)
-//   - Add id [sub buffer]
-//   - Add marked ids buffer
-
 pub inline fn getNewBitSize(size: u32) u32 {
     var n: u32 = size;
     if (size < 100) {
@@ -35,8 +30,6 @@ pub inline fn getNewBitSize(size: u32) u32 {
 }
 
 pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
-    // SIZE based on range
-    // MIN has to be 10% of the total range else the amount of change will be too high
     var needsChange = false;
     const range = typeSubs.maxId - typeSubs.minId;
 
@@ -45,12 +38,10 @@ pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
             typeSubs.idSubs.count() * typeSubs.*.bitSetRatio > typeSubs.bitSetSize))
     {
         const newSize = getNewBitSize(typeSubs.bitSetSize);
-
         if (newSize != typeSubs.bitSetSize) {
             if (newSize > 10_000) {
                 typeSubs.*.bitSetRatio = 25;
             }
-
             typeSubs.bitSetSize = newSize;
             typeSubs.idBitSet = try std.heap.raw_c_allocator.realloc(typeSubs.idBitSet, newSize);
             needsChange = true;
@@ -65,7 +56,6 @@ pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
         } else {
             newBitMin = (typeSubs.minId / div) * div;
         }
-
         if (newBitMin != typeSubs.bitSetMin) {
             typeSubs.bitSetMin = newBitMin;
             needsChange = true;
@@ -73,7 +63,6 @@ pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
     }
 
     if (needsChange) {
-        std.debug.print("🤪 RE SET FULL BITSET size: {any} min: {any} \n", .{ typeSubs.bitSetSize, typeSubs.bitSetMin });
         @memset(typeSubs.*.idBitSet, 0);
         var keyIterator = typeSubs.idSubs.keyIterator();
         while (keyIterator.next()) |k| {
@@ -227,6 +216,7 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                                     typeSubs.minId = k.*;
                                 }
                             }
+                            try sizeBitSet(typeSubs);
                         }
                     } else if (idCount != 0) {
                         if (id == typeSubs.maxId) {
@@ -252,6 +242,7 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                                 }
                                 j += 1;
                             }
+                            try sizeBitSet(typeSubs);
                         }
                     }
                 }

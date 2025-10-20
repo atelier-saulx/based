@@ -22,7 +22,6 @@ pub fn checkId(
 ) !void {
     if (ctx.subTypes) |typeSubs| {
         if (ctx.id >= typeSubs.minId and
-            // ctx.id <= st.maxId and
             typeSubs.idBitSet[(ctx.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1)
         {
             if (typeSubs.idSubs.get(ctx.id)) |idSubs| {

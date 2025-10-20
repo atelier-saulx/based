@@ -286,5 +286,8 @@ await test('subscriptionIds', async (t) => {
 
   await clients[0].query('user').range(0, 2e6).get().inspect()
 
+  const markedSubsR = native.getMarkedSubscriptions(server.dbCtxExternal)
+  console.log({ markedSubsR })
+
   await wait(100)
 })

@@ -10,8 +10,6 @@ const upsertSubType = @import("./shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
 const selva = @import("../../selva.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
-const zap = @import("roaring");
-const Bitmap = zap.Bitmap;
 
 const SubRecord = packed struct {
     sub_id: u32,
