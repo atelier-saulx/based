@@ -42,9 +42,9 @@ pub fn stage(
             var i: u32 = 0;
             const size = subTypes.SUB_SIZE;
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
-            f[vectorLen - 1] = 255; // This means all
+            f[vectorLen - 1] = @intFromEnum(subTypes.SubStatus.all);
             while (i < idSubs.len) : (i += size) {
-                if (idSubs[i + 8] == 255) {
+                if (idSubs[i + 8] == @intFromEnum(subTypes.SubStatus.marked)) {
                     continue;
                 }
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;
@@ -68,7 +68,7 @@ pub fn stage(
                         ctx.id,
                     );
                     ctx.db.subscriptions.lastIdMarked += 8;
-                    idSubs[i + 8] = 255;
+                    idSubs[i + 8] = @intFromEnum(subTypes.SubStatus.marked);
                 }
             }
         }

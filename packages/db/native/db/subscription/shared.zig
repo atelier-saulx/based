@@ -13,10 +13,7 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
         typeSubs.*.bitSetMin = std.math.maxInt(u32);
         typeSubs.*.bitSetSize = 10;
         typeSubs.*.bitSetRatio = 5;
-        typeSubs.*.idBitSet = try std.heap.raw_c_allocator.alloc(
-            u1,
-            typeSubs.*.bitSetSize,
-        );
+        typeSubs.*.idBitSet = try std.heap.raw_c_allocator.alloc(u1, typeSubs.*.bitSetSize);
         @memset(typeSubs.*.idBitSet, 0);
         typeSubs.*.idSubs = types.IdSubs.init(std.heap.raw_c_allocator);
         try ctx.subscriptions.types.put(typeId, typeSubs);

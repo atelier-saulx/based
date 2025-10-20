@@ -99,7 +99,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     if (idDoesNotExist) {
         subs = try std.heap.c_allocator.alloc(u8, types.SUB_SIZE);
         // 254 means no match
-        @memset(subs, 254);
+        @memset(subs, @intFromEnum(types.SubStatus.noMatch));
         try typeSubs.idSubs.put(id, subs);
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
@@ -115,7 +115,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
 
     if (fields.len > vectorLen) {
         // If too many fields just fire for each
-        @memset(subs[subIndex + 8 .. subIndex + types.SUB_SIZE], 255);
+        @memset(subs[subIndex + 8 .. subIndex + types.SUB_SIZE], @intFromEnum(types.SubStatus.all));
     } else {
         utils.copy(subs[subIndex + 8 ..], fields);
     }

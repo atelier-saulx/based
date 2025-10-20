@@ -26,3 +26,9 @@ pub const BLOCK_SIZE = 100_000;
 pub const SUB_SIZE = vectorLen + 8;
 
 pub const MAX_BIT_SET_SIZE = 10_000_000; // 5mb
+
+pub const SubStatus = enum(u8) {
+    all = 255,
+    marked = 254,
+    noMatch = 253,
+};
