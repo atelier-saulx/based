@@ -34,11 +34,6 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     if (dstNode) |d| {
         if (db.getNodeId(d) == id) {
             ref = oldRefDst;
-            if (hasEdges) {
-                Modify.markDirtyRange(ctx, db.getNodeTypeId(d), db.getNodeId(d));
-            }
-        } else {
-            Modify.markDirtyRange(ctx, db.getNodeTypeId(d), db.getNodeId(d));
         }
     }
 
