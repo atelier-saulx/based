@@ -135,13 +135,13 @@ pub inline fn aggregateRefsGroup(
             else
                 try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
             const accumulatorField = hash_map_entry.value;
-            // var hadAccumulated = !hash_map_entry.is_new;
+            var hadAccumulated = !hash_map_entry.is_new;
             const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
                 resultsSize += 2 + resultKeyLen + groupCtx.resultsSize;
             }
 
-            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator);
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
         }
     }
 
@@ -179,7 +179,9 @@ pub inline fn aggregateRefsDefault(
     var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
-    // var hadAccumulated: bool = false;
+    var hadAccumulated: bool = false;
+    const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
+    defer selva.selva_string_free(hllAccumulator);
 
     if (isEdge) {
         //later
@@ -201,7 +203,7 @@ pub inline fn aggregateRefsDefault(
     const fieldAggsSize = read(u16, agg, 1);
     const aggPropDef = agg[3 .. 3 + fieldAggsSize];
     const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
-    if (aggType == aggregateTypes.AggType.COUNT and !hasFilter) {
+    if (aggType == aggregateTypes.AggType.COUNT and !hasFilter and fieldAggsSize == 4) {
         const resultPos = read(u16, aggPropDef, 4);
         writeInt(u32, accumulatorField, resultPos, refsCnt);
     } else {
@@ -214,7 +216,7 @@ pub inline fn aggregateRefsDefault(
                         continue :checkItem;
                     }
                 }
-                aggregate(agg, typeEntry, refNode, accumulatorField, null);
+                aggregate(agg, typeEntry, refNode, accumulatorField, hllAccumulator, &hadAccumulated);
             }
         }
     }

@@ -55,13 +55,13 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
     const accumulatorField = try ctx.allocator.alloc(u8, accumulatorSize);
     @memset(accumulatorField, 0);
+    var hadAccumulated: bool = false;
 
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
     defer selva.selva_string_free(hllAccumulator);
-    var y: u8 = 0;
+    var y: usize = 0;
     checkItem: while (ctx.totalResults < limit) {
         y += 1;
-        utils.debugPrint("[default]: node {d}\n", .{y});
         if (first) {
             first = false;
         } else {
@@ -71,7 +71,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             if (hasFilter and !filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator);
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
         } else {
             break :checkItem;
         }
@@ -124,13 +124,14 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
             else
                 try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
             const accumulatorField = hash_map_entry.value;
+            var hadAccumulated = !hash_map_entry.is_new;
 
             const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
                 ctx.size += 2 + resultKeyLen + groupCtx.resultsSize;
                 ctx.totalResults += 1;
             }
-            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator);
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
         } else {
             break :checkItem;
         }

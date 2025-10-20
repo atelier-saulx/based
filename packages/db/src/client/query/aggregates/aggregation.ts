@@ -69,14 +69,14 @@ export const aggregateToBuffer = (
     }
     writeUint16(aggBuffer, size, sizeIndex)
   }
-  console.log('aggBuffer', aggBuffer)
+  // console.log('aggBuffer', aggBuffer)
   return aggBuffer
 }
 
 const ensureAggregate = (def: QueryDef) => {
   if (!def.aggregate) {
     def.aggregate = {
-      size: 7,
+      size: 6, // groupBy + resultSize, accumulatorSize, mode,
       aggregates: new Map(),
       totalResultsSize: 0,
       totalAccumulatorSize: 0,
@@ -107,9 +107,12 @@ export const groupBy = (
     def.schema.hooks.groupBy = groupByHook
   }
 
-  ensureAggregate(def)
+  if (!def.aggregate) {
+    ensureAggregate(def)
+  }
+
   if (!def.aggregate.groupBy) {
-    def.aggregate.size += 12
+    def.aggregate.size += 13 // field, srcPropType, start, len, stepType, stepRange, timezone
   }
   def.aggregate.groupBy = fieldDef
   def.aggregate.groupBy.stepRange = undefined
@@ -202,7 +205,7 @@ export const addAggregate = (
 
     if (!aggregates.get(fieldDef.prop)) {
       aggregates.set(fieldDef.prop, [])
-      def.aggregate.size += 3
+      def.aggregate.size += 3 // fielp-[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[defrd + fieldAggSize
     }
 
     const aggregateField = aggregates.get(fieldDef.prop)
@@ -222,7 +225,7 @@ export const addAggregate = (
       def.aggregate.totalAccumulatorSize += 8
     }
     // needs to add an extra field WRITE TO
-    def.aggregate.size += 8
+    def.aggregate.size += 8 // aggType + propType + start + resultPos + accumulatorPos
   }
 
   if (def.schema.hooks?.aggregate) {

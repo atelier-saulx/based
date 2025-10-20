@@ -62,9 +62,7 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
         var y: u8 = 0;
         while (j < fieldAggsSize) {
             y += 1;
-            utils.debugPrint("[finalizeResults]: aggBuffer item {d}\n", .{y});
             const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
-            utils.debugPrint("[finalizeResults]: aggType {any}\n", .{aggType});
             j += 1;
             // propType
             j += 1;
@@ -137,7 +135,6 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                 }
             } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
                 writeInt(u32, resultsField, resultPos, read(u32, accumulatorField, accumulatorPos));
-                utils.debugPrint("[finalizeResults]: {d}\n", .{read(u32, accumulatorField, accumulatorPos)});
             }
         }
         i += fieldAggsSize;

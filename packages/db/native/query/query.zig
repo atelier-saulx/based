@@ -56,7 +56,6 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         .aggResult = null,
         .allocator = allocator,
     };
-    utils.debugPrint("q: {any}\n", .{q});
     var index: usize = 0;
     const queryType: QueryType = @enumFromInt(q[index]);
     index += 1;
@@ -125,12 +124,16 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const include = q[8 + filterSize + valueSize .. len];
         try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
     } else if (queryType == QueryType.aggregates) {
-        const limit = read(u32, q, 7);
-        const filterSize = read(u16, q, 11);
-        const filterBuf = q[13 .. 13 + filterSize]; // lost 1 byte when no filter
-
-        const aggSize = read(u16, q, 14 + filterSize);
-        const agg: []u8 = q[16 + filterSize .. 16 + filterSize + aggSize];
+        var i: usize = 7; // queryType + typeId + offset
+        const limit = read(u32, q, i);
+        i += 4;
+        const filterSize = read(u16, q, i);
+        i += 2;
+        const filterBuf = q[i .. i + filterSize];
+        i += 1 + filterSize; // isSimpleFilter + filterSize
+        const aggSize = read(u16, q, i);
+        i += 2;
+        const agg: []u8 = q[i .. i + aggSize];
         const groupBy: aggregateTypes.GroupedBy = @enumFromInt(agg[0]);
         if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
             return try AggDefault.group(env, &ctx, limit, typeId, filterBuf, agg);
