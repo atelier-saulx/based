@@ -25,7 +25,6 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     var ref: ?db.ReferenceLarge = null;
-    var node: db.Node = undefined;
 
     const oldRefDst = db.getSingleReference(ctx.node.?, ctx.fieldSchema.?);
     const dstType = try db.getRefDstType(ctx.db, ctx.fieldSchema.?);
@@ -38,8 +37,11 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     if (ref == null) {
-        node = try db.upsertNode(ctx, refTypeEntry, id);
-        ref = try db.writeReference(ctx, node, ctx.node.?, ctx.fieldSchema.?);
+        if (db.getNode(refTypeEntry, id)) |node| {
+            ref = try db.writeReference(ctx, node, ctx.node.?, ctx.fieldSchema.?);
+        } else {
+            return 5; //TODO WARN errors.SelvaError.SELVA_ENOENT
+        }
     }
 
     if (hasEdges) {

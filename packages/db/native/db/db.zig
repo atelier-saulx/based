@@ -21,6 +21,7 @@ pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 pub const ReferenceSmall = *selva.SelvaNodeSmallReference;
 pub const ReferenceLarge = *selva.SelvaNodeLargeReference;
+pub const ReferenceAny = selva.SelvaNodeReferenceAny;
 pub const References = *const selva.SelvaNodeReferences;
 
 const emptySlice = &.{};
