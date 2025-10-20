@@ -57,8 +57,6 @@ pub fn createResultsBuffer(
 
     writeInt(u32, data, 0, ctx.totalResults);
 
-    // while () {}
-
     for (ctx.results.items) |*item| {
         // Always start with id
         if (item.id != 0) {

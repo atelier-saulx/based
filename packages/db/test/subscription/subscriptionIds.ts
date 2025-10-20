@@ -266,7 +266,7 @@ await test('subscriptionIds', async (t) => {
   addSubs(666, 500, 501)
   addSubs(999, 500, 501)
 
-  // addSubs(666, 10e6, 12e6)
+  addSubs(666, 0, 2e6)
 
   console.log(Date.now() - d, 'ms', 'to create 4M')
 

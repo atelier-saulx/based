@@ -14,10 +14,22 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
     const ctx = try napi.get(*DbCtx, env, args[0]);
 
     if (ctx.subscriptions.lastIdMarked > 0) {
-        std.debug.print("hello {any} {d} \n", .{ ctx.subscriptions.singleIdMarked.len, ctx.subscriptions.lastIdMarked });
-
-        ctx.subscriptions.singleIdMarked = try std.heap.raw_c_allocator.realloc(ctx.subscriptions.singleIdMarked, 0);
+        var resultBuffer: ?*anyopaque = undefined;
+        var result: c.napi_value = undefined;
+        const size = ctx.subscriptions.lastIdMarked;
+        if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
+            return null;
+        }
+        const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
+        utils.copy(data, ctx.subscriptions.singleIdMarked[0..size]);
+        if (ctx.subscriptions.singleIdMarked.len > types.BLOCK_SIZE * 8) {
+            ctx.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
+                ctx.subscriptions.singleIdMarked,
+                types.BLOCK_SIZE * 8,
+            ) catch &.{};
+        }
         ctx.subscriptions.lastIdMarked = 0;
+        return result;
     }
 
     return null;
