@@ -640,6 +640,11 @@ pub inline fn getText(
     return getTextFromValue(data, langCode);
 }
 
+pub fn expireNode(ctx: *modifyCtx.ModifyCtx, typeId: TypeId, nodeId: u32, ts: i64) void {
+    selva.selva_expire_node(ctx.db.selva, typeId, nodeId, ts, selva.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
+    modifyCtx.markDirtyRange(ctx, typeId, nodeId);
+}
+
 pub fn expire(ctx: *modifyCtx.ModifyCtx) void {
     // Expire things before query
     selva.selva_db_expire_tick(ctx.db.selva, markDirtyCb, ctx, std.time.timestamp());

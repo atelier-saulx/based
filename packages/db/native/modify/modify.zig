@@ -206,8 +206,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i += try increment(&ctx, operation, op) + 1;
             },
             types.ModOp.EXPIRE => {
-                selva.selva_expire_node(dbCtx.selva, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0), selva.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
-                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                db.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
                 i += 5;
             },
             else => {
