@@ -83,7 +83,7 @@ pub inline fn aggregateRefsGroup(
         const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             return 0;
         };
-        edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+        edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
         const references = db.getReferences(node, fieldSchema);
         if (references == null) {
             return 0;
@@ -189,7 +189,7 @@ pub inline fn aggregateRefsDefault(
         const fieldSchema = db.getFieldSchema(originalType, refField) catch {
             return 10;
         };
-        edgeConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+        edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
         const references = db.getReferences(node, fieldSchema);
         if (references == null) {
             return 10;

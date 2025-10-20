@@ -123,7 +123,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     }
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
-                    ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
+                    ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
                     if (ctx.node != null) {
                         // It would be even better if we'd mark it dirty only in the case
                         // something was actually changed.
@@ -206,8 +206,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i += try increment(&ctx, operation, op) + 1;
             },
             types.ModOp.EXPIRE => {
-                selva.selva_expire_node(dbCtx.selva, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0), selva.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
-                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                db.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
                 i += 5;
             },
             else => {

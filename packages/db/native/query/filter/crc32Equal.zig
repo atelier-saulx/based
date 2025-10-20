@@ -1,5 +1,4 @@
 const read = @import("../../utils.zig").read;
-const selva = @import("../../selva.zig");
 const Prop = @import("../../types.zig").Prop;
 const db = @import("../../db//db.zig");
 const std = @import("std");

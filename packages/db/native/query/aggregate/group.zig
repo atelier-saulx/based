@@ -1,4 +1,3 @@
-const selva = @import("../../selva.zig");
 const std = @import("std");
 const utils = @import("../../utils.zig");
 const copy = utils.copy;

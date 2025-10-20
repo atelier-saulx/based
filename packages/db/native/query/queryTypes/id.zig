@@ -1,5 +1,4 @@
 const db = @import("../../db/db.zig");
-const selva = @import("../../selva.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
@@ -13,7 +12,7 @@ pub fn default(
     include: []u8,
 ) !void {
     const typeEntry = try db.getType(ctx.db, typeId);
-    if (db.getNode(id, typeEntry)) |node| {
+    if (db.getNode(typeEntry, id)) |node| {
         if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
             return;
         }

@@ -77,7 +77,7 @@ pub fn writeEdges(
             len = 4;
             offset = 0;
             const dstId = read(u32, data, i + offset);
-            if (db.getNode(dstId, try db.getRefDstType(ctx.db, edgeFieldSchema))) |dstNode| {
+            if (db.getNode(try db.getRefDstType(ctx.db, edgeFieldSchema), dstId)) |dstNode| {
                 _ = try db.writeReference(ctx, dstNode, edgeNode, edgeFieldSchema);
             } else {
                 return errors.SelvaError.SELVA_ENOENT;

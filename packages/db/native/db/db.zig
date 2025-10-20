@@ -28,6 +28,10 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
+pub fn createType(ctx: *DbCtx, typeId: TypeId, schema: []u8) !void {
+    try errors.selva(selva.selva_db_create_type(ctx.selva, typeId, schema.ptr, schema.len));
+}
+
 pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     const selvaTypeEntry: ?Type = selva.selva_get_type_by_index(
         ctx.selva.?,
@@ -37,6 +41,14 @@ pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
         return errors.SelvaError.SELVA_EINTYPE;
     }
     return selvaTypeEntry.?;
+}
+
+pub inline fn getBlockCapacity(ctx: *DbCtx, typeId: TypeId) u64 {
+    return selva.selva_get_block_capacity(selva.selva_get_type_by_index(ctx.selva, typeId));
+}
+
+pub inline fn getNodeTypeId(node: Node) TypeId {
+    return selva.selva_get_node_type(node);
 }
 
 pub fn getRefDstType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
@@ -461,7 +473,7 @@ pub fn upsertNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, id: u32) !Node {
     return node.?;
 }
 
-pub fn getNode(id: u32, typeEntry: Type) ?Node {
+pub fn getNode(typeEntry: Type, id: u32) ?Node {
     return selva.selva_find_node(typeEntry, id);
 }
 
@@ -626,6 +638,11 @@ pub inline fn getText(
     // fallbacks
     const data = getField(typeEntry, id, node, fieldSchema, fieldType);
     return getTextFromValue(data, langCode);
+}
+
+pub fn expireNode(ctx: *modifyCtx.ModifyCtx, typeId: TypeId, nodeId: u32, ts: i64) void {
+    selva.selva_expire_node(ctx.db.selva, typeId, nodeId, ts, selva.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
+    modifyCtx.markDirtyRange(ctx, typeId, nodeId);
 }
 
 pub fn expire(ctx: *modifyCtx.ModifyCtx) void {

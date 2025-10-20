@@ -54,7 +54,7 @@ fn setSchemaTypeInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_va
         return errors.SelvaError.DB_NOT_CREATED;
     }
 
-    try errors.selva(selva.selva_db_create_type(ctx.selva, typeId, schema.ptr, schema.len));
+    try db.createType(ctx, typeId, schema);
 
     return null;
 }

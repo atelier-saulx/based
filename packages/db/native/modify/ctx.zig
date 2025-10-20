@@ -1,6 +1,5 @@
 const db = @import("../db/db.zig");
 const c = @import("../c.zig");
-const selva = @import("../selva.zig");
 const types = @import("../types.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
@@ -27,7 +26,7 @@ pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {
 }
 
 pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {
-    const blockCapacity: u64 = selva.selva_get_block_capacity(selva.selva_get_type_by_index(ctx.db.selva, typeId));
+    const blockCapacity = db.getBlockCapacity(ctx.db, typeId);
     const tmp: u64 = nodeId - @as(u64, @intFromBool((nodeId % blockCapacity) == 0));
     const mtKey = (@as(u64, typeId) << 32) | ((tmp / blockCapacity) * blockCapacity + 1);
     ctx.dirtyRanges.put(mtKey, @floatFromInt(mtKey)) catch return;

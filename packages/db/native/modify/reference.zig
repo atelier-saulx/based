@@ -1,7 +1,6 @@
 const db = @import("../db/db.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./ctx.zig");
-const selva = @import("../selva.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
@@ -36,10 +35,10 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
         if (db.getNodeId(d) == id) {
             ref = oldRefDst;
             if (hasEdges) {
-                Modify.markDirtyRange(ctx, selva.selva_get_node_type(d), selva.selva_get_node_id(d));
+                Modify.markDirtyRange(ctx, db.getNodeTypeId(d), db.getNodeId(d));
             }
         } else {
-            Modify.markDirtyRange(ctx, selva.selva_get_node_type(d), selva.selva_get_node_id(d));
+            Modify.markDirtyRange(ctx, db.getNodeTypeId(d), db.getNodeId(d));
         }
     }
 

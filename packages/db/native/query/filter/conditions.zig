@@ -6,7 +6,6 @@ const Type = t.Type;
 const ConditionsResult = t.ConditionsResult;
 const c = @import("./condition.zig");
 const std = @import("std");
-const selva = @import("../../selva.zig");
 const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
 const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
 

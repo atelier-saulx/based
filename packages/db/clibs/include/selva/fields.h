@@ -324,6 +324,14 @@ SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
     __attribute__((nonnull(1, 2)));
 
+/**
+ * Unload node fields.
+ * Same as selva_fields_destroy() but only clears references from one side.
+ */
+SELVA_EXPORT
+void selva_fields_unload(struct SelvaDb *db, struct SelvaNode *node)
+    __attribute__((nonnull));
+
 SELVA_EXPORT
 void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaNode *node);
 

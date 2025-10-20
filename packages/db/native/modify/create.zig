@@ -76,7 +76,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
                         if (ctx.currentSortIndex != null) {
-                            sort.remove(ctx.db, ctx.currentSortIndex.?, slice, db.getNode(old, ctx.typeEntry.?).?);
+                            sort.remove(ctx.db, ctx.currentSortIndex.?, slice, db.getNode(ctx.typeEntry.?, old).?);
                         }
                         Modify.markDirtyRange(ctx, ctx.typeId, old);
                     }
