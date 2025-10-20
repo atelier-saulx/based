@@ -62,7 +62,6 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
     var y: usize = 0;
     checkItem: while (ctx.totalResults < limit) {
         y += 1;
-        utils.debugPrint("[default]: node {d}\n", .{y});
         if (first) {
             first = false;
         } else {

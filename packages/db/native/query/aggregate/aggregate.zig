@@ -19,31 +19,24 @@ inline fn execAgg(
     hllValue: anytype,
 ) void {
     var j: usize = 0;
-    var x: u8 = 0;
     while (j < fieldAggsSize) {
-        utils.debugPrint("aggPropDef: {any}\n", .{aggPropDef});
         const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
         j += 1;
         const propType: types.Prop = @enumFromInt(aggPropDef[j]);
         j += 1;
         const start = read(u16, aggPropDef, j);
-        utils.debugPrint("[execAgg]: start: {d}, offset: {d}\n", .{ start, j });
         j += 2;
         // const resultPos = read(u16, aggPropDef, j); // TODO: Remove from buffer if not used
         j += 2;
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
 
-        x += 1;
-        utils.debugPrint("[execAgg]: aggBuffer item {d}\n", .{x});
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, accumulatorPos, read(u32, accumulatorField, accumulatorPos) + 1);
         } else if (aggType == aggregateTypes.AggType.MAX) {
             if (!hadAccumulated.*) {
-                utils.debugPrint("\n\nvalue: {d}\n", .{microbufferToF64(propType, value, start)});
                 writeInt(f64, accumulatorField, accumulatorPos, microbufferToF64(propType, value, start));
             } else {
-                utils.debugPrint("max : {d}\n", .{@max(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start))});
                 writeInt(f64, accumulatorField, accumulatorPos, @max(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)));
             }
         } else if (aggType == aggregateTypes.AggType.MIN) {
@@ -95,16 +88,13 @@ inline fn execAgg(
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
             writeInt(f64, accumulatorField, accumulatorPos + 16, sum_sq);
         } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
-            utils.debugPrint("[aggregate]: accumulatorField antes: {d}\n", .{read(u32, accumulatorField, 0)});
             selva.hll_union(hllAccumulator, hllValue);
             writeInt(u32, accumulatorField, accumulatorPos, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
-            utils.debugPrint("[aggregate]: accumulatorField depois: {d}\n", .{read(u32, accumulatorField, 0)});
         }
     }
 }
 
 pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8, hllAccumulator: anytype, hadAccumulated: *bool) void {
-    utils.debugPrint("[aggregate] 1 hadAccumulated = {any}\n", .{hadAccumulated.*});
     if (agg.len == 0) {
         return;
     }
@@ -116,7 +106,6 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
         i += 2;
         const aggPropDef = agg[i .. i + fieldAggsSize];
         const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
-        utils.debugPrint("aggType: {any}, hadAccumulated: {any}\n", .{ aggType, hadAccumulated.* });
         var value: []u8 = undefined;
 
         if (field != aggregateTypes.IsId) {
@@ -131,13 +120,11 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
             };
             if (aggType == aggregateTypes.AggType.CARDINALITY) {
                 const hllValue = selva.selva_fields_get_selva_string(node, fieldSchema) orelse null;
-                utils.debugPrint("hll selva string: {any}\n", .{hllValue});
                 if (hllValue == null) {
                     i += fieldAggsSize;
                     continue;
                 }
                 if (!hadAccumulated.*) {
-                    utils.debugPrint("❤️❤️❤️ {any}\n", .{hllAccumulator});
                     _ = selva.selva_string_replace(hllAccumulator, null, selva.HLL_INIT_SIZE);
                     selva.hll_init_like(hllAccumulator, hllValue);
                 }
@@ -151,13 +138,10 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 }
                 execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, null, null);
                 hadAccumulated.* = true;
-                utils.debugPrint("[aggregate] hadAccumulated = {any}\n", .{hadAccumulated.*});
             }
         } else {
-            // TODO: check field == aggregateTypes.IsId case
             execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, null, null);
             hadAccumulated.* = true;
-            utils.debugPrint("[aggregate] hadAccumulated = {any}\n", .{hadAccumulated.*});
         }
         i += fieldAggsSize;
     }
