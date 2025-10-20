@@ -203,7 +203,7 @@ pub inline fn aggregateRefsDefault(
     const fieldAggsSize = read(u16, agg, 1);
     const aggPropDef = agg[3 .. 3 + fieldAggsSize];
     const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
-    if (aggType == aggregateTypes.AggType.COUNT and !hasFilter) {
+    if (aggType == aggregateTypes.AggType.COUNT and !hasFilter and fieldAggsSize == 4) {
         const resultPos = read(u16, aggPropDef, 4);
         writeInt(u32, accumulatorField, resultPos, refsCnt);
     } else {
