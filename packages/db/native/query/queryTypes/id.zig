@@ -12,7 +12,7 @@ pub fn default(
     include: []u8,
 ) !void {
     const typeEntry = try db.getType(ctx.db, typeId);
-    if (db.getNode(id, typeEntry)) |node| {
+    if (db.getNode(typeEntry, id)) |node| {
         if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
             return;
         }

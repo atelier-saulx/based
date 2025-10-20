@@ -123,7 +123,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     }
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
-                    ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
+                    ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
                     if (ctx.node != null) {
                         // It would be even better if we'd mark it dirty only in the case
                         // something was actually changed.

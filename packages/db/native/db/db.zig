@@ -473,7 +473,7 @@ pub fn upsertNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, id: u32) !Node {
     return node.?;
 }
 
-pub fn getNode(id: u32, typeEntry: Type) ?Node {
+pub fn getNode(typeEntry: Type, id: u32) ?Node {
     return selva.selva_find_node(typeEntry, id);
 }
 
