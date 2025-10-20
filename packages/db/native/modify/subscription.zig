@@ -45,36 +45,29 @@ pub fn stage(
             f[vectorLen - 1] = 255; // This means all
             while (i < idSubs.len) : (i += size) {
                 if (idSubs[i + 8] == 255) {
-                    // here we can do a branchless check to also check fror 254 (removed), 255 allready handled dont stage again
                     continue;
                 }
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;
                 if (@reduce(.Or, vec == f)) {
                     if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 8) {
-                        // can also have it pre allocated...
                         ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                             ctx.db.subscriptions.singleIdMarked,
                             ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE * 8,
                         ) catch &.{};
                     }
-
-                    // lets see how this goes
                     utils.writeInt(
                         u32,
                         ctx.db.subscriptions.singleIdMarked,
                         ctx.db.subscriptions.lastIdMarked,
                         utils.read(u32, idSubs, i + 4),
                     );
-
                     utils.writeInt(
                         u32,
                         ctx.db.subscriptions.singleIdMarked,
                         ctx.db.subscriptions.lastIdMarked + 4,
                         ctx.id,
                     );
-
                     ctx.db.subscriptions.lastIdMarked += 8;
-
                     idSubs[i + 8] = 255;
                 }
             }
