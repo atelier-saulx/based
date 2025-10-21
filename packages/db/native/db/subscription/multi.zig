@@ -31,10 +31,16 @@ pub fn addMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
         typeSubs.multiSubsSize,
     );
 
+    typeSubs.multiSubsStageMarked[typeSubs.multiSubsSize - 1] = 0;
+
     typeSubs.multiSubs = try std.heap.raw_c_allocator.realloc(
         typeSubs.multiSubs,
-        typeSubs.multiSubsSize * 8,
+        typeSubs.multiSubsSize * types.SUB_SIZE, // only fields for now...
     );
+
+    // utils.read(u32, idSubs, i + 4)
+    utils.writeInt(u32, typeSubs.multiSubs, typeSubs.multiSubsSize * types.SUB_SIZE + 4, subId);
+    // typeSubs.multiSubs[]
 
     std.debug.print("DERP typeId: {any} subId: {any} \n", .{ typeId, subId });
 
