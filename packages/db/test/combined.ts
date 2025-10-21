@@ -173,8 +173,6 @@ await test('E-commerce Simulation', async (t) => {
   await db.drain()
 
   // --- Simulation Loop ---
-  const startTime = Date.now()
-
   let totalAliasUpdate = 0
   let totalAliasUpdateTime = 0
 
