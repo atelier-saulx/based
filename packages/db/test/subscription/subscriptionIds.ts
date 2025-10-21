@@ -127,10 +127,10 @@ await test('subscriptionIds', async (t) => {
   const multiSubscription = new Uint8Array(6)
   const typeId = server.schemaTypesParsed['user'].id
   writeUint16(multiSubscription, typeId, 0)
-  writeUint24(multiSubscription, 777, 0)
+  writeUint32(multiSubscription, 777, 2)
   native.addMultiSubscription(server.dbCtxExternal, multiSubscription)
 
-  console.log('ZIG ZAG', Date.now() - BLA, 'ms')
+  console.log('ZIG ZAGx', Date.now() - BLA, 'ms')
 
   for (let i = 0; i < amount; i++) {
     clients[0].create('user', { x: i % 255 })
