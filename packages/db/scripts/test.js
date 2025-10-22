@@ -15,7 +15,9 @@ const stopOnCrashIndex = args.indexOf('stopOnFail')
 global.stopOnCrash = stopOnCrashIndex != -1
 
 const repeat = args[2] && /^\d+$/.test(args[2]) ? Number(args[2]) : 1
-const match = args.slice(repeat == 1 ? 2 : 3)
+const match = args
+  .slice(repeat == 1 ? 2 : 3)
+  .map((t) => t.replace(/\.ts$/, '.js'))
 
 const testsToRun = []
 

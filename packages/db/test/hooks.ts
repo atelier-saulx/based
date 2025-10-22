@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
+import { wait } from '@based/utils'
 
 await test('hooks - undefined values', async (t) => {
   const db = new BasedDb({
@@ -662,10 +663,12 @@ await test('upsert calls create and/or update hooks', async (t) => {
   })
 
   const results1 = await db.query('user').get().toObject()
+
   equal(results1.length, 1)
   equal(results1[0].createdString.length > 1, true)
   equal(results1[0].updatedString.length > 1, true)
 
+  await wait(1)
   await db.upsert('user', {
     name: 'youzi',
     age: 45,
