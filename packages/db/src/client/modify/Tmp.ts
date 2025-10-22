@@ -46,8 +46,7 @@ export class Tmp implements Promise<number> {
   #id: number
   #err: number
   get error(): Error {
-    if (this.batch.ready) {
-      this.#err ??= this.batch.res[this.tmpId * 5 + 4]
+    if (this.batch.ready && !this.id) {
       return Error(errors[this.#err] || this.batch.error || 'Modify error')
     }
   }

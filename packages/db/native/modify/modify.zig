@@ -171,6 +171,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = db.getNodeId(node);
                         writeInt(u32, batch, resCount.* * 5, id);
+                        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(errors.ClientError.null));
                         resCount.* += 1;
                         nextIndex = endIndex;
                         break;
