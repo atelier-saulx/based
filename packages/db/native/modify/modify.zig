@@ -40,7 +40,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     const dirtyRanges = try napi.get([]f64, env, args[2]);
 
     var i: usize = 0;
-    var ctx: ModifyCtx = .{ .field = undefined, .typeId = 0, .id = 0, .currentSortIndex = null, .typeSortIndex = null, .node = null, .typeEntry = null, .fieldSchema = null, .fieldType = types.Prop.NULL, .db = dbCtx, .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator), .batch = batch };
+    var ctx: ModifyCtx = .{ .field = undefined, .typeId = 0, .id = 0, .currentSortIndex = null, .typeSortIndex = null, .node = null, .typeEntry = null, .fieldSchema = null, .fieldType = types.Prop.NULL, .db = dbCtx, .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator), .batch = batch, .err = errors.ClientError.null };
 
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
@@ -93,17 +93,21 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             types.ModOp.SWITCH_ID_CREATE => {
                 if (ctx.id != 0) {
                     writeInt(u32, batch, resCount.* * 5, ctx.id);
+                    writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+                    ctx.err = errors.ClientError.null;
                     resCount.* += 1;
                 }
                 ctx.id = dbCtx.ids[ctx.typeId - 1] + 1;
                 dbCtx.ids[ctx.typeId - 1] = ctx.id;
-                ctx.node = try db.upsertNode(&ctx, ctx.typeEntry.?,  ctx.id);
+                ctx.node = try db.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 1;
             },
             types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
                 if (ctx.id != 0) {
                     writeInt(u32, batch, resCount.* * 5, ctx.id);
+                    writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+                    ctx.err = errors.ClientError.null;
                     resCount.* += 1;
                 }
                 ctx.id = read(u32, operation, 0);
@@ -119,12 +123,16 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 if (id != 0) {
                     if (ctx.id != 0) {
                         writeInt(u32, batch, resCount.* * 5, ctx.id);
+                        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+                        ctx.err = errors.ClientError.null;
                         resCount.* += 1;
                     }
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
                     ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
-                    if (ctx.node != null) {
+                    if (ctx.node == null) {
+                        ctx.err = errors.ClientError.nx;
+                    } else {
                         // It would be even better if we'd mark it dirty only in the case
                         // something was actually changed.
                         Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
@@ -163,6 +171,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = db.getNodeId(node);
                         writeInt(u32, batch, resCount.* * 5, id);
+                        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(errors.ClientError.null));
                         resCount.* += 1;
                         nextIndex = endIndex;
                         break;
@@ -224,6 +233,8 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     dirtyRanges[newDirtyRanges.len] = 0.0;
     if (ctx.id != 0) {
         writeInt(u32, batch, resCount.* * 5, ctx.id);
+        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+        ctx.err = errors.ClientError.null;
         resCount.* += 1;
     }
 }

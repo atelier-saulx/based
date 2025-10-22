@@ -90,3 +90,8 @@ pub const DbError = error{
 pub const DbIncludeError = error{
     EDGE_FROM_WEAKREF,
 };
+
+pub const ClientError = enum(u8) {
+    null = 0,
+    nx = 1,
+};

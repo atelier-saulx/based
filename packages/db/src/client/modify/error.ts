@@ -100,3 +100,7 @@ export const handleError = (
 
   throw e
 }
+
+export const errors = {
+  1: 'Target does not exist',
+}

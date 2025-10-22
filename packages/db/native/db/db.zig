@@ -21,6 +21,7 @@ pub const FieldSchema = *const selva.SelvaFieldSchema;
 pub const EdgeFieldConstraint = *const selva.EdgeFieldConstraint;
 pub const ReferenceSmall = *selva.SelvaNodeSmallReference;
 pub const ReferenceLarge = *selva.SelvaNodeLargeReference;
+pub const ReferenceAny = selva.SelvaNodeReferenceAny;
 pub const References = *const selva.SelvaNodeReferences;
 
 const emptySlice = &.{};
@@ -269,9 +270,8 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, value: Node, src: Node, fieldSc
     return refAny.p.large;
 }
 
-// want to have one without upsert
 pub fn putReferences(ctx: *modifyCtx.ModifyCtx, ids: []u32, target: Node, fieldSchema: FieldSchema) !void {
-    try errors.selva(selva.selva_fields_references_insert_tail_wupsert(ctx.db.selva, target, fieldSchema, try getRefDstType(ctx.db, fieldSchema), ids.ptr, ids.len, markDirtyCb, ctx));
+    try errors.selva(selva.selva_fields_references_insert_tail(ctx.db.selva, target, fieldSchema, try getRefDstType(ctx.db, fieldSchema), ids.ptr, ids.len, markDirtyCb, ctx));
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
     const dstType = efc.*.dst_node_type;

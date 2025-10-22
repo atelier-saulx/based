@@ -1,5 +1,6 @@
 import { readUint32 } from '@based/utils'
 import { Ctx } from './Ctx.js'
+import { errors } from './error.js'
 
 const promisify = (tmp: Tmp) => {
   if (!tmp.promise) {
@@ -29,8 +30,9 @@ export const resolveTmp = (tmp: Tmp) => {
   }
   return rejectTmp(tmp)
 }
+
 export const rejectTmp = (tmp: Tmp) => {
-  return tmp.reject(tmp.error || new Error('Modify error'))
+  return tmp.reject(tmp.error)
 }
 
 export class Tmp implements Promise<number> {
@@ -42,15 +44,16 @@ export class Tmp implements Promise<number> {
   }
   [Symbol.toStringTag]: 'ModifyPromise'
   #id: number
+  #err: number
   get error(): Error {
-    if (this.batch.ready) {
-      // TODO: also handle individual errors here
-      return this.batch.error
+    if (this.batch.ready && !this.id) {
+      return Error(errors[this.#err] || this.batch.error || 'Modify error')
     }
   }
   get id(): number {
-    if (this.batch.ready) {
-      this.#id ??= this.batch.res && readUint32(this.batch.res, this.tmpId * 5)
+    if (this.batch.res) {
+      this.#err ??= this.batch.res[this.tmpId * 5 + 4]
+      this.#id ??= !this.#err && readUint32(this.batch.res, this.tmpId * 5)
       return this.#id
     }
   }
