@@ -29,6 +29,7 @@ await test('handle errors - references', async (t) => {
 
   equal(await db.query('user').include('friends').get(), [
     {
+      id: 1,
       friends: [],
     },
   ])
