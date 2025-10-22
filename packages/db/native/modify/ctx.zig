@@ -1,6 +1,7 @@
 const db = @import("../db/db.zig");
 const c = @import("../c.zig");
 const types = @import("../types.zig");
+const errors = @import("../errors.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
@@ -18,6 +19,7 @@ pub const ModifyCtx = struct {
     db: *db.DbCtx,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
     batch: []u8,
+    err: errors.ClientError,
 };
 
 pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {
