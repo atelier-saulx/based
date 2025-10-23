@@ -13,12 +13,15 @@ pub fn build(b: *std.Build) void {
         false => .ReleaseFast,
     };
 
-    const lib = b.addSharedLibrary(.{
+    const lib = b.addLibrary(.{
+        .linkage = .dynamic,
         .name = "based_db_zig",
-        .root_source_file = b.path("native/lib.zig"),
-        .target = target,
-        .optimize = opt,
-        .link_libc = true,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("native/lib.zig"),
+            .target = target,
+            .optimize = opt,
+            .link_libc = true,
+        }),
     });
     lib.linker_allow_shlib_undefined = true;
 
