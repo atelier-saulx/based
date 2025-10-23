@@ -1,7 +1,7 @@
 const db = @import("../db/db.zig");
 const utils = @import("../utils.zig");
 const Modify = @import("./ctx.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
 const types = @import("../types.zig");
 const update = @import("./update.zig");
@@ -87,7 +87,7 @@ pub fn writeEdges(
             offset = 4;
             const edgeData = data[i + offset .. i + offset + len];
 
-            try  db.putReferences(ctx, edgeNode, edgeFieldSchema, utils.realign(u32, edgeData));
+            try db.putReferences(ctx, edgeNode, edgeFieldSchema, utils.realign(u32, edgeData));
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;

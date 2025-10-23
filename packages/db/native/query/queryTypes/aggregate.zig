@@ -1,5 +1,5 @@
 const db = @import("../../db/db.zig");
-const selva = @import("../../selva.zig");
+const selva = @import("../../selva.zig").c;
 const QueryCtx = @import("../types.zig").QueryCtx;
 const types = @import("../../types.zig");
 const AggFn = types.AggFn;
@@ -17,7 +17,7 @@ const finalizeResults = groupFunctions.finalizeResults;
 const createGroupCtx = groupFunctions.createGroupCtx;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
 
-const c = @import("../../c.zig");
+const c = @import("../../c.zig").c;
 const aux = @import("../aggregate/utils.zig");
 
 pub fn countType(env: c.napi_env, ctx: *QueryCtx, typeId: db.TypeId) !c.napi_value {
