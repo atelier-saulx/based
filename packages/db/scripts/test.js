@@ -9,10 +9,13 @@ import { relative } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const args = process.argv
-
-const stopOnCrashIndex = args.indexOf('stopOnFail')
-global.stopOnCrash = stopOnCrashIndex != -1
+const args = process.argv.filter((arg) => {
+  if (arg === 'stopOnFail') {
+    global.stopOnCrash = true
+    return false
+  }
+  return true
+})
 
 const repeat = args[2] && /^\d+$/.test(args[2]) ? Number(args[2]) : 1
 const match = args

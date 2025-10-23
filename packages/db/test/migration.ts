@@ -24,21 +24,39 @@ await test('migration', async (t) => {
       },
       person: {
         email: 'string',
+        user: {
+          ref: 'user',
+          prop: 'persons1',
+        },
+        users: {
+          items: {
+            ref: 'user',
+            prop: 'persons2',
+          },
+        },
       },
     },
   })
 
   let i = 10
+  const _users = []
   while (i--) {
-    db.create('user', {
-      firstName: 'John' + i,
-      lastName: 'Doe' + i,
-      email: 'johndoe' + i + '@example.com',
-      age: i + 20,
-      uniqueViews: ['a', 'b', 'c'],
-    })
+    _users.push(
+      db.create('user', {
+        firstName: 'John' + i,
+        lastName: 'Doe' + i,
+        email: 'johndoe' + i + '@example.com',
+        age: i + 20,
+        uniqueViews: ['a', 'b', 'c'],
+      }),
+    )
+  }
+  i = _users.length
+  while (i--) {
     db.create('person', {
       email: 'person' + i + '@example.com',
+      user: _users[i],
+      users: _users,
     })
   }
 
@@ -72,6 +90,16 @@ await test('migration', async (t) => {
         },
         person: {
           email: 'string',
+          user: {
+            ref: 'user',
+            prop: 'persons1',
+          },
+          users: {
+            items: {
+              ref: 'user',
+              prop: 'persons2',
+            },
+          },
         },
       },
       migrations: [
@@ -103,6 +131,16 @@ await test('migration', async (t) => {
         person: {
           email: 'string',
           emailPrimary: 'string',
+          user: {
+            ref: 'user',
+            prop: 'persons1',
+          },
+          users: {
+            items: {
+              ref: 'user',
+              prop: 'persons2',
+            },
+          },
         },
       },
       migrations: [
@@ -138,7 +176,7 @@ await test('migration', async (t) => {
   }
 
   const users = await db.query('user').get().toObject()
-  const people = await db.query('person').get().toObject()
+  const people = await db.query('person').include('*', '**').get().toObject()
 
   equal(users.length, 10)
   equal(people.length, 10)
@@ -221,51 +259,71 @@ await test('migration', async (t) => {
       id: 1,
       email: 'person9@example.com',
       emailPrimary: 'person9@example.com',
+      user: users.at(-1),
+      users,
     },
     {
       id: 2,
       email: 'person8@example.com',
       emailPrimary: 'person8@example.com',
+      user: users.at(-2),
+      users,
     },
     {
       id: 3,
       email: 'person7@example.com',
       emailPrimary: 'person7@example.com',
+      user: users.at(-3),
+      users,
     },
     {
       id: 4,
       email: 'person6@example.com',
       emailPrimary: 'person6@example.com',
+      user: users.at(-4),
+      users,
     },
     {
       id: 5,
       email: 'person5@example.com',
       emailPrimary: 'person5@example.com',
+      user: users.at(-5),
+      users,
     },
     {
       id: 6,
       email: 'person4@example.com',
       emailPrimary: 'person4@example.com',
+      user: users.at(-6),
+      users,
     },
     {
       id: 7,
       email: 'person3@example.com',
       emailPrimary: 'person3@example.com',
+      user: users.at(-7),
+      users,
     },
     {
       id: 8,
       email: 'person2@example.com',
       emailPrimary: 'person2@example.com',
+      user: users.at(-8),
+      users,
     },
     {
       id: 9,
       email: 'person1@example.com',
       emailPrimary: 'person1@example.com',
+      user: users.at(-9),
+      users,
     },
     {
       id: 10,
       email: 'person0@example.com',
       emailPrimary: 'person0@example.com',
+      user: users.at(-10),
+      users,
     },
   ])
 

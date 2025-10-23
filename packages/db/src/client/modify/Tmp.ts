@@ -39,18 +39,18 @@ export const rejectTmp = (tmp: Tmp) => {
 export class Tmp implements Promise<number> {
   constructor(ctx: Ctx) {
     ctx.batch.count ??= 0
-    this._schema = ctx.schema
+    this.#schema = ctx.schema
     this.batch = ctx.batch
     this.tmpId = ctx.batch.count++
   }
   [Symbol.toStringTag]: 'ModifyPromise'
-  _schema: SchemaTypeDef
-  _id: number
+  #schema: SchemaTypeDef
+  #id: number
   #err: number
   get error(): Error {
     if (this.batch.ready && !this.id) {
       if (this.#err in errorMap) {
-        return new errorMap[this.#err](this)
+        return new errorMap[this.#err](this.#id, this.#schema)
       }
       return this.batch.error || Error('Modify error')
     }
@@ -58,11 +58,10 @@ export class Tmp implements Promise<number> {
   get id(): number {
     if (this.batch.res) {
       this.#err ??= this.batch.res[this.tmpId * 5 + 4]
-      this._id ??= readUint32(this.batch.res, this.tmpId * 5)
-      return this.#err ? 0 : this._id
+      this.#id ??= readUint32(this.batch.res, this.tmpId * 5)
+      return this.#err ? 0 : this.#id
     }
   }
-
   tmpId: number
   batch: Ctx['batch']
   promise?: Promise<number>
