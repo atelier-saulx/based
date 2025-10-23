@@ -6,7 +6,7 @@ const getFields = @import("../include.zig").getFields;
 const queryTypes = @import("../types.zig");
 const types = @import("../../../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
-const selva = @import("../../../selva.zig");
+const selva = @import("../../../selva.zig").c;
 const std = @import("std");
 
 pub fn sortedReferences(

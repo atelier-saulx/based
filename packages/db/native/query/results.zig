@@ -1,11 +1,11 @@
-const c = @import("../c.zig");
+const c = @import("../c.zig").c;
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const QueryCtx = @import("./types.zig").QueryCtx;
 const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const std = @import("std");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 
 const copy = utils.copy;
 const read = utils.read;

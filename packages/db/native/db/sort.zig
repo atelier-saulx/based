@@ -1,7 +1,7 @@
 const db = @import("./db.zig");
 const decompressFirstBytes = @import("./decompress.zig").decompressFirstBytes;
-const selva = @import("../selva.zig");
-const c = @import("../c.zig");
+const selva = @import("../selva.zig").c;
+const c = @import("../c.zig").c;
 const std = @import("std");
 const napi = @import("../napi.zig");
 const utils = @import("../utils.zig");
@@ -84,7 +84,7 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
     }
 }
 
-pub fn createSortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn createSortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return createSortIndexNodeInternal(env, info) catch return null;
 }
 
@@ -115,7 +115,7 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
     return externalNapi;
 }
 
-pub fn destroySortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn destroySortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return destroySortIndexNodeInternal(env, info) catch return null;
 }
 

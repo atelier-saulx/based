@@ -1,26 +1,26 @@
-const c = @import("../c.zig");
+const c = @import("../c.zig").c;
 const db = @import("../db/db.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const napi = @import("../napi.zig");
 const utils = @import("../utils.zig");
 const std = @import("std");
 const errors = @import("../errors.zig");
 
-pub fn setSchemaType(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn setSchemaType(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return setSchemaTypeInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn setSchemaIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn setSchemaIds(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return setSchemaIdsInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getSchemaIds(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getSchemaIds(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return getSchemaIdsInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;

@@ -1,4 +1,4 @@
-const selva = @import("../../selva.zig");
+const selva = @import("../../selva.zig").c;
 const std = @import("std");
 const db = @import("../../db/db.zig");
 const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
@@ -30,7 +30,7 @@ fn comptimeCb(
             b: [*c]const u8,
             dictSize: usize,
             dataSize: usize,
-        ) callconv(.C) c_int {
+        ) callconv(.c) c_int {
             const buf: [*c]u8 = @constCast(b);
             const ctx: *Ctx(DataType) = @ptrCast(@alignCast(ctxC.?));
             var value: []u8 = undefined;

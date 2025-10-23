@@ -1,6 +1,6 @@
 const std = @import("std");
-const c = @import("c.zig");
-const selva = @import("selva.zig");
+const c = @import("c.zig").c;
+const selva = @import("selva.zig").c;
 const dump = @import("./db/dump.zig");
 const info = @import("./db/info.zig");
 const errors = @import("errors.zig");
@@ -16,6 +16,7 @@ const dbthrow = errors.mdb;
 const colvecTest = @import("./colvec.zig").colvec;
 const dbCtx = @import("./db/ctx.zig");
 
+const strerror_zig = @import("selva.zig").strerror_zig;
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
 
@@ -26,7 +27,7 @@ pub fn registerFunction(
     comptime function: fn (
         env: c.napi_env,
         info: c.napi_callback_info,
-    ) callconv(.C) c.napi_value,
+    ) callconv(.c) c.napi_value,
 ) !void {
     var napi_function: c.napi_value = undefined;
     if (c.napi_create_function(env, null, 0, function, null, &napi_function) != c.napi_ok) {
@@ -39,11 +40,11 @@ pub fn registerFunction(
     }
 }
 
-fn externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.C) c.napi_value {
+fn externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.c) c.napi_value {
     return _externalFromInt(napi_env, inf) catch return null;
 }
 
-fn intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.C) c.napi_value {
+fn intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.c) c.napi_value {
     return _intFromExternal(napi_env, inf) catch return null;
 }
 
@@ -71,12 +72,12 @@ fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_val
     return result;
 }
 
-fn membarSyncRead(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+fn membarSyncRead(_: c.napi_env, _: c.napi_callback_info) callconv(.c) c.napi_value {
     selva.membar_sync_read();
     return null;
 }
 
-fn membarSyncWrite(_: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+fn membarSyncWrite(_: c.napi_env, _: c.napi_callback_info) callconv(.c) c.napi_value {
     selva.membar_sync_write();
     return null;
 }
@@ -86,13 +87,13 @@ fn _selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) !c.napi_value
     const err = try napi.get(i32, napi_env, args[0]);
     var result: c.napi_value = undefined;
     var copied: selva.bool = undefined;
-    const str = selva.strerror_zig(err);
+    const str = strerror_zig(err);
     // std.debug.print("{any} {any} {any} \n", .{ result, copied, str });
     _ = c.node_api_create_external_string_latin1(napi_env, @constCast(str.ptr), str.len, null, null, &result, &copied);
     return result;
 }
 
-fn selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) callconv(.C) c.napi_value {
+fn selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) callconv(.c) c.napi_value {
     return _selvaStrerror(napi_env, nfo) catch return null;
 }
 

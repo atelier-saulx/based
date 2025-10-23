@@ -1,24 +1,20 @@
 const std = @import("std");
-const c = @import("./c.zig");
+const c = @import("./c.zig").c;
 const napi = @import("./napi.zig");
-const selva = @import("./selva.zig");
+const selva = @import("./selva.zig").c;
 const db = @import("./db/db.zig");
 
 pub const Type = db.Type;
 pub const FieldSchema = db.FieldSchema;
 
-pub fn colvec(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn colvec(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return colvecInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-const query = [_]f32{
-    2311.0, 5054.0, 2713.0,
-    8280.0, 8651.0, 7474.0,
-    4173.0, 7261.0
-};
+const query = [_]f32{ 2311.0, 5054.0, 2713.0, 8280.0, 8651.0, 7474.0, 4173.0, 7261.0 };
 
 fn cb(_: selva.node_id_t, vec: ?*anyopaque, arg: ?*anyopaque) callconv(.c) void {
     const fvec: [*c]f32 = @alignCast(@ptrCast(vec));
@@ -73,7 +69,7 @@ fn colvecInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     native_foreach(typeEntry, fs, nodeId, len, &res);
 
     var napi_res: c.napi_value = undefined;
-    _  = c.napi_create_double(env, res, &napi_res);
+    _ = c.napi_create_double(env, res, &napi_res);
 
     return napi_res;
 }
