@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
+import { deepEqual, equal, throws } from './shared/assert.js'
 
 await test('update with payload.id', async (t) => {
   const db = new BasedDb({
@@ -268,11 +268,10 @@ await test('update', async (t) => {
 
   const nonExistingId = snurpId + 10
 
-  // should throw!
-  const r = await db.update('snurp', nonExistingId, {
+  throws(() => db.update('snurp', nonExistingId, {
     a: nonExistingId,
     name: 'mr snurp ' + nonExistingId,
-  })
+  }))
 })
 
 await test('await updates', async (t) => {
@@ -296,8 +295,6 @@ await test('await updates', async (t) => {
   })
 
   const total = 1e4
-
-  var d = Date.now()
 
   for (let i = 0; i < total; i++) {
     db.create('user', {
