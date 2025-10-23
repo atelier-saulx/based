@@ -48,13 +48,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     while (i < batch.len) {
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
-        // std.debug.print("op: {any}\n", .{op});
         switch (op) {
             types.ModOp.PADDING => {
                 i = i + 1;
             },
             types.ModOp.SWITCH_FIELD => {
-                // Wrongly here.. lets find it...
                 ctx.field = operation[0];
                 i = i + 3;
                 ctx.fieldSchema = try db.getFieldSchema(ctx.typeEntry.?, ctx.field);
@@ -80,7 +78,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             types.ModOp.DELETE_NODE => {
                 if (ctx.node) |node| {
                     db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
-                    // no other side handled
                     ctx.node = null;
                 }
                 i = i + 1;

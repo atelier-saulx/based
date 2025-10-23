@@ -1,6 +1,7 @@
 import { readUint32 } from '@based/utils'
 import { Ctx } from './Ctx.js'
-import { errors } from './error.js'
+import { errorMap, errors } from './error.js'
+import { SchemaTypeDef } from '@based/schema/def'
 
 const promisify = (tmp: Tmp) => {
   if (!tmp.promise) {
@@ -38,26 +39,30 @@ export const rejectTmp = (tmp: Tmp) => {
 export class Tmp implements Promise<number> {
   constructor(ctx: Ctx) {
     ctx.batch.count ??= 0
-    this.type = ctx.cursor.type
+    this._schema = ctx.schema
     this.batch = ctx.batch
     this.tmpId = ctx.batch.count++
   }
   [Symbol.toStringTag]: 'ModifyPromise'
-  #id: number
+  _schema: SchemaTypeDef
+  _id: number
   #err: number
   get error(): Error {
     if (this.batch.ready && !this.id) {
-      return Error(errors[this.#err] || this.batch.error || 'Modify error')
+      if (this.#err in errorMap) {
+        return new errorMap[this.#err](this)
+      }
+      return this.batch.error || Error('Modify error')
     }
   }
   get id(): number {
     if (this.batch.res) {
       this.#err ??= this.batch.res[this.tmpId * 5 + 4]
-      this.#id ??= !this.#err && readUint32(this.batch.res, this.tmpId * 5)
-      return this.#id
+      this._id ??= readUint32(this.batch.res, this.tmpId * 5)
+      return this.#err ? 0 : this._id
     }
   }
-  type: number
+
   tmpId: number
   batch: Ctx['batch']
   promise?: Promise<number>

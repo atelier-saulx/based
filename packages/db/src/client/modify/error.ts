@@ -102,5 +102,13 @@ export const handleError = (
 }
 
 export const errors = {
-  1: 'Target does not exist',
+  NotExists: class extends Error {
+    constructor(tmp: Tmp) {
+      super(`Target ${tmp._schema.type}:${tmp._id} does not exist`)
+    }
+  },
+} as const
+
+export const errorMap = {
+  1: errors.NotExists,
 }
