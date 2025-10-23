@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, throws } from './shared/assert.js'
 
 await test('delete', async (t) => {
   const db = new BasedDb({
@@ -116,12 +116,12 @@ await test('non existing 1', async (t) => {
   ])
 
   // this can be handled in js
-  await db.delete('nurp', 213123123)
+  throws(() => db.delete('nurp', 213123123))
 
-  await db.delete('user', simple)
+  throws(() => db.delete('user', simple))
 
   // this has to be ignored in C
-  await db.delete('user', simple)
+  throws(() => db.delete('user', simple))
 })
 
 await test('non existing 2', async (t) => {
@@ -158,7 +158,7 @@ await test('non existing 2', async (t) => {
 
   deepEqual((await db.query('user').get()).toObject(), [])
 
-  const nurp = db.create('nurp', {})
+  db.create('nurp', {})
 
   await db.drain()
 
@@ -170,12 +170,12 @@ await test('non existing 2', async (t) => {
   ])
 
   // this can be handled in js
-  await db.delete('nurp', 213123123)
+  throws (() => db.delete('nurp', 213123123))
 
-  await db.delete('user', simple)
+  throws(() => db.delete('user', simple))
 
   // this has to be ignored in C
-  await db.delete('user', simple)
+  throws(() => db.delete('user', simple))
 })
 
 await test('save', async (t) => {
