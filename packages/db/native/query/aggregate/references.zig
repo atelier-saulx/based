@@ -184,6 +184,7 @@ pub inline fn aggregateRefsDefault(
     defer selva.selva_string_free(hllAccumulator);
 
     if (isEdge) {
+        utils.debugPrint("[references]: edges detected!", .{});
         //later
     } else {
         const fieldSchema = db.getFieldSchema(originalType, refField) catch {

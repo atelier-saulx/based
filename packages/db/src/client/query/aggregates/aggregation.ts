@@ -2,6 +2,7 @@ import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
 import { PropDef, UINT32, SchemaPropTree } from '@based/schema/def'
+import { createOrGetEdgeRefQueryDef } from '../include/utils.js'
 import {
   aggregationFieldDoesNotExist,
   validateStepRange,
@@ -188,48 +189,75 @@ export const addAggregate = (
         if (p[0] == '$') {
           const edgeProp = t[path[i - 1]].edges[p]
           if (edgeProp) {
-            edgeNotImplemented(def, field)
-            return
+            const edgeDef = createOrGetEdgeRefQueryDef(
+              query.db,
+              query.def,
+              edgeProp,
+            )
+
+            if (!aggregates.get(edgeProp)) {
+              aggregates.set(edgeProp, [])
+              def.aggregate.size += 3 // field + fieldAggSize
+            }
+            const aggregateField = aggregates.get(edgeProp)
+            aggregateField.push({
+              propDef: edgeProp,
+              type,
+              resultPos: def.aggregate.totalResultsSize,
+              accumulatorPos: def.aggregate.totalAccumulatorSize,
+            })
+
+            const specificSizes = aggregateTypeMap.get(type)
+            if (specificSizes) {
+              def.aggregate.totalResultsSize += specificSizes.resultsSize
+              def.aggregate.totalAccumulatorSize +=
+                specificSizes.accumulatorSize
+            } else {
+              def.aggregate.totalResultsSize += 8
+              def.aggregate.totalAccumulatorSize += 8
+            }
+            // needs to add an extra field WRITE TO
+            def.aggregate.size += 8
           } else {
             aggregationFieldDoesNotExist(def, field)
             return
           }
         }
       }
-    }
-
-    if (fieldDef.hooks?.aggregate) {
-      hookFields ??= new Set(fields)
-      fieldDef.hooks.aggregate(query, hookFields)
-    }
-
-    if (!aggregates.get(fieldDef.prop)) {
-      aggregates.set(fieldDef.prop, [])
-      def.aggregate.size += 3 // fielp-[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[defrd + fieldAggSize
-    }
-
-    const aggregateField = aggregates.get(fieldDef.prop)
-    aggregateField.push({
-      propDef: fieldDef,
-      type,
-      resultPos: def.aggregate.totalResultsSize,
-      accumulatorPos: def.aggregate.totalAccumulatorSize,
-    })
-
-    const specificSizes = aggregateTypeMap.get(type)
-    if (specificSizes) {
-      def.aggregate.totalResultsSize += specificSizes.resultsSize
-      def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
     } else {
-      def.aggregate.totalResultsSize += 8
-      def.aggregate.totalAccumulatorSize += 8
-    }
-    // needs to add an extra field WRITE TO
-    def.aggregate.size += 8 // aggType + propType + start + resultPos + accumulatorPos
-  }
+      if (fieldDef.hooks?.aggregate) {
+        hookFields ??= new Set(fields)
+        fieldDef.hooks.aggregate(query, hookFields)
+      }
 
-  if (def.schema.hooks?.aggregate) {
-    def.schema.hooks.aggregate(query, hookFields || new Set(fields))
+      if (!aggregates.get(fieldDef.prop)) {
+        aggregates.set(fieldDef.prop, [])
+        def.aggregate.size += 3 // field + fieldAggSize
+      }
+
+      const aggregateField = aggregates.get(fieldDef.prop)
+      aggregateField.push({
+        propDef: fieldDef,
+        type,
+        resultPos: def.aggregate.totalResultsSize,
+        accumulatorPos: def.aggregate.totalAccumulatorSize,
+      })
+
+      const specificSizes = aggregateTypeMap.get(type)
+      if (specificSizes) {
+        def.aggregate.totalResultsSize += specificSizes.resultsSize
+        def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
+      } else {
+        def.aggregate.totalResultsSize += 8
+        def.aggregate.totalAccumulatorSize += 8
+      }
+      // needs to add an extra field WRITE TO
+      def.aggregate.size += 8 // aggType + propType + start + resultPos + accumulatorPos
+    }
+
+    if (def.schema.hooks?.aggregate) {
+      def.schema.hooks.aggregate(query, hookFields || new Set(fields))
+    }
   }
 }
 
