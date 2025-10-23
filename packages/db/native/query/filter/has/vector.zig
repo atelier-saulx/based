@@ -1,4 +1,4 @@
-const selva = @import("../../../selva.zig");
+const selva = @import("../../../selva.zig").c;
 const Fn = @import("../types.zig").VectorFn;
 const std = @import("std");
 const MaxVectorScore = @import("../types.zig").MaxVectorScore;

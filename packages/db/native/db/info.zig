@@ -1,10 +1,10 @@
-const c = @import("../c.zig");
+const c = @import("../c.zig").c;
 const db = @import("db.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const napi = @import("../napi.zig");
 const copy = @import("../utils.zig").copy;
 
-pub fn ofType(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn ofType(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     const args = napi.getArgs(2, env, info) catch return null;
     const typeId = napi.get(u16, env, args[0]) catch {
         return null;
@@ -34,7 +34,7 @@ pub fn ofType(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     return arr;
 }
 
-pub fn nodeRangeHash(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn nodeRangeHash(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     const args = napi.getArgs(5, env, info) catch return null;
     const typeId = napi.get(u16, env, args[0]) catch return null;
     const start = napi.get(u32, env, args[1]) catch return null;

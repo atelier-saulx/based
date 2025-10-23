@@ -1,12 +1,13 @@
-const c = @import("../c.zig");
+const c = @import("../c.zig").c;
 const db = @import("db.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const std = @import("std");
 const copy = @import("../utils.zig").copy;
+const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 
-pub fn saveCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn saveCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     const args = napi.getArgs(2, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
@@ -22,7 +23,7 @@ pub fn saveCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     return res;
 }
 
-pub fn saveBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn saveBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     const args = napi.getArgs(6, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const typeCode = napi.get(u16, napi_env, args[1]) catch return null;
@@ -38,7 +39,7 @@ pub fn saveBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) 
         return res;
     }
 
-    var hash: selva.SelvaHash128 = 0;
+    var hash: SelvaHash128 = 0;
     const rc = selva.selva_dump_save_block(ctx.selva, te, sdb_filename.ptr, start, &hash);
     _ = c.napi_create_int32(napi_env, rc, &res);
     const hp: [*]u8 = @ptrCast(&hash);
@@ -47,7 +48,7 @@ pub fn saveBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) 
     return res;
 }
 
-pub fn loadCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn loadCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     const args = napi.getArgs(3, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
@@ -71,7 +72,7 @@ pub fn loadCommon(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C)
     return res;
 }
 
-pub fn loadBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn loadBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     const args = napi.getArgs(3, napi_env, info) catch return null;
     const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
     const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
@@ -83,7 +84,7 @@ pub fn loadBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) 
     return res;
 }
 
-pub fn delBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn delBlock(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     const args = napi.getArgs(3, napi_env, info) catch return null;
     const ctx = napi.get(*db.DbCtx, napi_env, args[0]) catch return null;
     const typeId = napi.get(u16, napi_env, args[1]) catch return null;

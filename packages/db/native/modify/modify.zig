@@ -1,7 +1,7 @@
 const assert = std.debug.assert;
 const std = @import("std");
-const c = @import("../c.zig");
-const selva = @import("../selva.zig");
+const c = @import("../c.zig").c;
+const selva = @import("../selva.zig").c;
 const types = @import("../types.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
@@ -26,7 +26,7 @@ const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 
-pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     var result: c.napi_value = undefined;
     var resCount: u32 = 0;
     modifyInternal(env, info, &resCount) catch undefined;

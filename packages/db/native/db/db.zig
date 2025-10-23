@@ -1,15 +1,16 @@
 const assert = std.debug.assert;
-const c = @import("../c.zig");
+const c = @import("../c.zig").c;
 const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const modifyCtx = @import("../modify/ctx.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
 pub const DbCtx = @import("./ctx.zig").DbCtx;
+const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 
 const read = utils.read;
 const move = utils.move;
@@ -467,7 +468,7 @@ pub fn preallocReferences(ctx: *modifyCtx.ModifyCtx, len: u64) void {
     _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
 }
 
-pub fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
+pub fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.c) void {
     const mctx: *modifyCtx.ModifyCtx = @ptrCast(@alignCast(ctx));
     modifyCtx.markDirtyRange(mctx, typeId, nodeId);
 }
@@ -529,7 +530,7 @@ pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
 
-pub fn getNodeRangeHash(db: *DbCtx, typeEntry: Type, start: u32, end: u32) !selva.SelvaHash128 {
+pub fn getNodeRangeHash(db: *DbCtx, typeEntry: Type, start: u32, end: u32) !SelvaHash128 {
     var hash: u128 = undefined;
     try errors.selva(selva.selva_node_hash_range(db.selva, typeEntry, start, end, &hash));
     return hash;
