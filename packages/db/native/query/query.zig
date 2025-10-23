@@ -1,4 +1,4 @@
-const c = @import("../c.zig");
+const c = @import("../c.zig").c;
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
@@ -27,7 +27,7 @@ const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
 const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
 
-pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return getQueryBufInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
@@ -49,7 +49,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     const len = q.len - 8;
 
     var ctx: QueryCtx = .{
-        .results = std.ArrayList(results.Result).init(allocator),
+        .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
         .size = 0,
         .totalResults = 0,
