@@ -27,14 +27,19 @@ import {
   UINT32,
   UINT8,
   VECTOR,
-  WEAK_REFERENCE,
-  WEAK_REFERENCES,
   JSON as SCHEMA_JSON,
 } from '@based/schema/def'
 import { readDoubleLE, readUint32 } from '@based/utils'
 import {AggregateType} from '@based/protocol/db-read'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+const defaultDataPath = resolve(join(__dirname, '../tmp'))
+let dataPath = defaultDataPath
+
+if (process.argv.length >= 3) {
+  dataPath = process.argv[process.argv.length - 1]
+}
+console.log(`path: ${dataPath}`)
 
 const typeIndex2Align = {}
 typeIndex2Align[NULL] = 'l'
@@ -53,8 +58,6 @@ typeIndex2Align[STRING] = 'l'
 typeIndex2Align[TEXT] = 'l'
 typeIndex2Align[REFERENCE] = 'l'
 typeIndex2Align[REFERENCES] = 'l'
-typeIndex2Align[WEAK_REFERENCE] = 'l'
-typeIndex2Align[WEAK_REFERENCES] = 'l'
 typeIndex2Align[MICRO_BUFFER] = 'l'
 typeIndex2Align[ALIAS] = 'l'
 typeIndex2Align[ALIASES] = 'l'
@@ -161,7 +164,7 @@ function initializeContext(context) {
   }
 
   const db = new BasedDb({
-    path: resolve(join(__dirname, '../tmp')),
+    path: dataPath,
   })
   db.start({})
   Object.defineProperty(context, 'db', {
@@ -179,6 +182,12 @@ r.defineCommand('savedb', {
   action() {
     this.context.db.save().then(() => this.displayPrompt())
   },
+})
+r.defineCommand('schema', {
+  help: 'Print the current schema',
+  action() {
+    console.dir(this.context.db.server?.schema?.types, { depth: 100 })
+  }
 })
 r.on('reset', initializeContext)
 initializeContext(r.context)
