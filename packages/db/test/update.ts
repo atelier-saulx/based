@@ -316,17 +316,17 @@ await test('await updates', async (t) => {
     totalAlias++
   }
 
-  const start = Date.now()
-  let lastMeasure = Date.now()
+  const start = performance.now()
+  //let lastMeasure = performance.now()
   for (let i = 0; i < 100000; i++) {
     await updateAlias()
     if (!(i % 500)) {
-      const opsPerS = totalAlias / ((Date.now() - lastMeasure) / 1e3)
+      //const opsPerS = totalAlias / ((performance.now() - lastMeasure) / 1e3)
       // console.log(`${~~opsPerS} per sec`)
-      lastMeasure = Date.now()
+      //lastMeasure = performance.now()
       totalAlias = 0
     }
   }
 
-  equal(Date.now() - start < 3e3, true, 'should be smaller then 5s')
+  equal(performance.now() - start < 3e3, true, 'should be smaller then 5s')
 })

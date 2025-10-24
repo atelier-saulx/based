@@ -135,9 +135,9 @@ const test = async (
         } catch (err) {}
       })
 
-      d = Date.now()
+      d = performance.now()
       await newDb.start()
-      console.log(styleText('gray', `started from backup ${Date.now() - d} ms`))
+      console.log(styleText('gray', `started from backup ${performance.now() - d} ms`))
 
       const [backupChecksums, b, c] = await make(newDb)
       // console.dir(b, { depth: null })

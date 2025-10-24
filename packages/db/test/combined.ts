@@ -276,7 +276,7 @@ await test('E-commerce Simulation', async (t) => {
             .catch(catchNotExists)
         }
       } else if (entityType < 0.8) {
-        var d = Date.now()
+        var d = performance.now()
         // Update User (Name/Email via Upsert)
         const oldEmail = `user${getRandom(userIds)}@example.com`
         if (oldEmail) {
@@ -287,8 +287,8 @@ await test('E-commerce Simulation', async (t) => {
           })
         }
         totalAliasUpdate++
-        totalAliasUpdateTime += Date.now() - d
-        // console.log(Date.now() - d, 'ms')
+        totalAliasUpdateTime += performance.now() - d
+        // console.log(performance.now() - d, 'ms')
       } else {
         // Update Category Description
         const catId = getRandom(categoryIds)
@@ -426,7 +426,7 @@ await test('E-commerce Simulation', async (t) => {
 
   // make util for this
   let testErr: Error
-  let measure = Date.now()
+  let measure = performance.now()
   let lastOperations = operationsCount
   intervalId = setInterval(async () => {
     if (inProgress > maxInProgress) {
@@ -434,7 +434,7 @@ await test('E-commerce Simulation', async (t) => {
     }
     inProgress += concurrency
     if (operationsCount % 500 === 0) {
-      const x = Date.now()
+      const x = performance.now()
       const n = operationsCount - lastOperations
       const opsPerS = n / ((x - measure) / 1e3)
       measure = x
