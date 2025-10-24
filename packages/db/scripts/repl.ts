@@ -184,9 +184,16 @@ r.defineCommand('savedb', {
   },
 })
 r.defineCommand('schema', {
-  help: 'Print the current schema',
-  action() {
-    console.dir(this.context.db.server?.schema?.types, { depth: 100 })
+    help: 'Print the current schema (args: [\'short\'])',
+  action(arg) {
+    const types = this.context.db.server?.schema?.types
+    if (arg === 'short') {
+      for (const name of Object.keys(types)) {
+        console.log(`${name}: ${types[name].id}`)
+      }
+    } else {
+      console.dir(types, { depth: 100 })
+    }
   }
 })
 r.on('reset', initializeContext)
