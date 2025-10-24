@@ -82,7 +82,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
             } else {
-                try db.writeField(slice, ctx.node.?, ctx.fieldSchema.?);
+                try db.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
             }
             return len;
         },

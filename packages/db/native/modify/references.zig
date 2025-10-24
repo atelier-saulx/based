@@ -52,8 +52,8 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         const index: i32 = if (hasIndex) read(i32, data, i + 5) else -1;
 
         var ref: db.ReferenceAny = undefined;
-        if (db.getNode(refTypeEntry, id)) |node| {
-            ref = try db.insertReference(ctx, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
+        if (db.getNode(refTypeEntry, id)) |dstNode| {
+            ref = try db.insertReference(ctx, ctx.node.?, ctx.fieldSchema.?, dstNode, index, hasIndex);
         } else {
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
@@ -144,9 +144,9 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
     try db.putReferences(
         ctx,
-        u32ids,
         ctx.node.?,
         ctx.fieldSchema.?,
+        u32ids,
     );
 
     return len;

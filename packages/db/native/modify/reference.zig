@@ -37,8 +37,8 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     if (ref == null) {
-        if (db.getNode(refTypeEntry, id)) |node| {
-            ref = try db.writeReference(ctx, node, ctx.node.?, ctx.fieldSchema.?);
+        if (db.getNode(refTypeEntry, id)) |dst| {
+            ref = try db.writeReference(ctx,  ctx.node.?, ctx.fieldSchema.?, dst);
         } else {
             return 5; //TODO WARN errors.SelvaError.SELVA_ENOENT
         }
