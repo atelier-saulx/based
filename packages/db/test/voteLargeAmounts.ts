@@ -4,6 +4,7 @@ import { SchemaProp, SchemaType } from '@based/schema'
 import { clientWorker } from './shared/startWorker.js'
 import { allCountryCodes } from './shared/examples.js'
 import { wait } from '@based/utils'
+import assert from 'node:assert'
 
 const NR_VOTES = 7.5e6
 const NR_WORKERS = 15
@@ -127,33 +128,44 @@ await test('schema with many uint8 fields', async (t) => {
   const s = countryCodesArray.map((v) => 'countries.' + v)
 
   const timeActions = async () => {
-    console.log('\n------ Status ------')
+    //console.log('\n------ Status ------')
     // await db.query('vote').count().get().inspect()
     // await db.query('payment').count().get().inspect()
     const d = performance.now()
     await db.save()
-    console.log('took', (performance.now() - d).toFixed(2), 'ms to save')
+    const tSave = performance.now() - d
+    //console.log('took', tSave.toFixed(2), 'ms to save')
 
-    await db.query('vote').count().get().inspect()
+    const cnt = await db.query('vote').count().get()
+    assert(tSave < 1e3) // TODO better assert
+    assert(cnt.execTime < 5)
 
-    await db
-      .query('payment')
-      .include('id')
-      .filter('status', '=', 'Requested')
+    //await db
+    //  .query('payment')
+    //  .include('id')
+    //  .filter('status', '=', 'Requested')
+    //  .get()
+    //  .inspect()
+
+    //console.log(
+    //  'group by on all',
+    //  (
+    //    await db
+    //      .query('vote')
+    //      .groupBy('fromCountry')
+    //      .sum(...s)
+    //      .get()
+    //  ).execTime.toFixed(2),
+    //  'ms',
+    //)
+    const n = cnt.toObject().count
+    const grp = await db
+      .query('vote')
+      .groupBy('fromCountry')
+      .sum(...s)
       .get()
-      .inspect()
-
-    console.log(
-      'group by on all',
-      (
-        await db
-          .query('vote')
-          .groupBy('fromCountry')
-          .sum(...s)
-          .get()
-      ).execTime.toFixed(2),
-      'ms',
-    )
+    assert(grp.execTime < 0.0001115533404 * n + 50)
+    process.stderr.write('.')
   }
 
   let stopped = false
@@ -219,4 +231,5 @@ await test('schema with many uint8 fields', async (t) => {
 
   await timeActions()
   await wait(1000)
+  process.stderr.write('\n')
 })
