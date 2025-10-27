@@ -1776,17 +1776,17 @@ struct SelvaNode *selva_fields_ensure_ref_meta(
         } else if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
             struct SelvaNodeReferences refs;
             node_id_t src_node_id = node->node_id;
+            ssize_t i;
 
             memcpy(&refs, nfo2p(dst_fields, dst_nfo), sizeof(refs));
             assert(refs.size == SELVA_NODE_REFERENCE_LARGE);
-            /* FIXME Use fast search */
-            for (size_t i = 0; i < refs.nr_refs; i++) {
-                node_id_t tmp = refs.large[i].dst;
-                if (tmp == src_node_id) {
-                    refs.large[i].meta = ref->meta;
-                    break;
-                }
+
+            i = fast_linear_search_references_large(refs.large, refs.nr_refs, src_node_id);
+            if (unlikely(i < 0)) {
+                db_panic("src not found in dst");
             }
+
+            refs.large[i].meta = ref->meta;
         } else {
             db_panic("Invalid inverse field type: %d", fs_dst->type);
         }
