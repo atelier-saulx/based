@@ -33,10 +33,29 @@ pub fn checkId(
     }
 }
 
+const nonMarked: @Vector(vectorLen, u8) = @splat(255);
+
 pub fn stage(
     ctx: *ModifyCtx,
     comptime op: Op,
 ) void {
+    if (ctx.subTypes) |typeSubs| {
+        var i: u32 = 0;
+
+        // what you want ehre is to loop trough the bytes check if its all 255 or 0 (think 0 is easier)
+        // 0 means ITS MARKED 1 means its not marked
+        // then if there is a non marked one you loop trough the bits
+        while (i < typeSubs.multiSubsSizeBits) : (i += vectorLen) {
+            const vec: @Vector(vectorLen, u8) = typeSubs.multiSubsStageMarked[i..][0..vectorLen].*;
+            // bitmask technique
+            // @bitMa
+            if (@reduce(.Or, vec == nonMarked)) {
+                typeSubs.multiSubsStageMarked[i] = 0;
+                // std.mem.doNotOptimizeAway(i);
+            }
+        }
+    }
+
     if (op != Op.create and op != Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
             var i: u32 = 0;
@@ -44,6 +63,8 @@ pub fn stage(
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
             f[vectorLen - 1] = @intFromEnum(subTypes.SubStatus.all);
             while (i < idSubs.len) : (i += size) {
+                // can make a 8 byte loop (control + index)
+                // this is also nice that you can check for all seperate (potentialy)
                 if (idSubs[i + 8] == @intFromEnum(subTypes.SubStatus.marked)) {
                     continue;
                 }
@@ -55,6 +76,11 @@ pub fn stage(
                             ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE * 8,
                         ) catch &.{};
                     }
+
+                    // use bit set to write the staged ones
+                    // this can correspond to an index
+                    // does this make sense?
+
                     utils.writeInt(
                         u32,
                         ctx.db.subscriptions.singleIdMarked,

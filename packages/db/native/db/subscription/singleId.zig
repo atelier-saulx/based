@@ -86,7 +86,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     var idDoesNotExist = true;
     var subIndex: usize = 0;
 
-    if (typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
+    if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
         if (typeSubs.idSubs.getEntry(id)) |entry| {
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
@@ -133,7 +133,7 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
     const typeId = utils.read(u16, value, 8);
 
     if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
-        if (typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
+        if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
             if (typeSubs.idSubs.getEntry(id)) |subsEntry| {
                 const subs = subsEntry.value_ptr.*;
 

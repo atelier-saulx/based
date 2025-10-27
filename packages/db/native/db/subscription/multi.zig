@@ -20,18 +20,19 @@ pub fn addMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
     const ctx = try napi.get(*DbCtx, env, args[0]);
     const value = try napi.get([]u8, env, args[1]);
     const typeId = utils.read(u16, value, 0);
-    const subId = utils.read(u32, value, 2);
+    // const subId = utils.read(u32, value, 2);
 
     var typeSubs = try upsertSubType(ctx, typeId);
 
     typeSubs.multiSubsSize += 1;
+    typeSubs.multiSubsSizeBits = (typeSubs.multiSubsSize + 8 - 1) / 8; // TODO in zig 0.15 replace with @divCeil
 
     typeSubs.multiSubsStageMarked = try std.heap.raw_c_allocator.realloc(
         typeSubs.multiSubsStageMarked,
-        typeSubs.multiSubsSize,
+        typeSubs.multiSubsSizeBits,
     );
 
-    typeSubs.multiSubsStageMarked[typeSubs.multiSubsSize - 1] = 0;
+    // typeSubs.multiSubsStageMarked[typeSubs.multiSubsSize - 1] = 0;
 
     typeSubs.multiSubs = try std.heap.raw_c_allocator.realloc(
         typeSubs.multiSubs,
@@ -39,10 +40,10 @@ pub fn addMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
     );
 
     // utils.read(u32, idSubs, i + 4)
-    utils.writeInt(u32, typeSubs.multiSubs, typeSubs.multiSubsSize * types.SUB_SIZE + 4, subId);
+    // utils.writeInt(u32, typeSubs.multiSubs, typeSubs.multiSubsSize * types.SUB_SIZE + 4, subId);
     // typeSubs.multiSubs[]
 
-    std.debug.print("DERP typeId: {any} subId: {any} \n", .{ typeId, subId });
+    // std.debug.print("DERP typeId: {any} subId: {any} \n", .{ typeId, subId });
 
     return null;
 }

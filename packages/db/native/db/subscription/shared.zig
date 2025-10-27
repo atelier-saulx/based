@@ -20,9 +20,10 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
 
         // multi id
         typeSubs.multiSubsSize = 0;
+        typeSubs.multiSubsSizeBits = 0;
         typeSubs.multiSubs = try std.heap.raw_c_allocator.alloc(u8, 0); // re-alloc sporadicly (8 bytes)
-        typeSubs.multiSubsStageMarked = try std.heap.raw_c_allocator.alloc(u1, 0);
-        @memset(typeSubs.multiSubsStageMarked, 0);
+        typeSubs.multiSubsStageMarked = try std.heap.raw_c_allocator.alloc(u8, 0);
+        @memset(typeSubs.multiSubsStageMarked, 255);
 
         try ctx.subscriptions.types.put(typeId, typeSubs);
     } else {

@@ -124,11 +124,14 @@ await test('subscriptionIds', async (t) => {
 
   // [type][type]
   // [subId][subId][subId][subId]
-  const multiSubscription = new Uint8Array(6)
-  const typeId = server.schemaTypesParsed['user'].id
-  writeUint16(multiSubscription, typeId, 0)
-  writeUint32(multiSubscription, 777, 2)
-  native.addMultiSubscription(server.dbCtxExternal, multiSubscription)
+  // ofc we have to divide per core e.g. 1e6 / 16 (62.5k)
+  for (let i = 0; i < 62e3; i++) {
+    const multiSubscription = new Uint8Array(6)
+    const typeId = server.schemaTypesParsed['user'].id
+    writeUint16(multiSubscription, typeId, 0)
+    writeUint32(multiSubscription, 777 + i, 2)
+    native.addMultiSubscription(server.dbCtxExternal, multiSubscription)
+  }
 
   console.log('ZIG ZAGx', Date.now() - BLA, 'ms')
 
