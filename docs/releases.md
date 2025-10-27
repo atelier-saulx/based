@@ -143,12 +143,7 @@ Note that version numbers may change due to nightly releases.
   - Monitoring of function performance and calls
   - Searchable log storage
   - Installation and handling of Based functions
-- User-sortable _references_ as an option on the schema
 - A Max len option for _references_ and _types_
-- Partial loading of large databases (Experimental) better memory and concurrency management
-- Parquet exporter
-- Filter engine working for partials - automatically loads and unloads blocks when visiting
-- JS function support for include, filter, and aggregate, allowing users to create custom query functions
 - Graceful handling of incompatible dumps
 - Refresh `.expire()`
 - Improved load/save speed for references
@@ -159,6 +154,11 @@ Note that version numbers may change due to nightly releases.
 
 - Fully automated partial loading & offloading of large databases
 - Sorted results and Range on aggregations
+- User-sortable _references_ as an option on the schema
+- Partial loading of large databases (Experimental) better memory and concurrency management
+- Filter engine working for partials - automatically loads and unloads blocks when visiting
+- JS function support for include, filter, and aggregate, allowing users to create custom query functions
+- Parquet exporter
 - Automatic testing for Linux (all the tests in CI/CD setup)
 - Cloud v.1 nightly
   - Orchestrator working on new Based Db
