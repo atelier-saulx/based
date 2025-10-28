@@ -153,7 +153,7 @@ export function schemaToSelvaBuffer(schema: {
       nrFields, // u8 nrFields
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
-      0, // u8 spare1
+      5, // u8 spare1
       ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,

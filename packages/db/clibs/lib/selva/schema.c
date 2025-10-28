@@ -24,7 +24,7 @@
 #define SCHEMA_OFF_NR_FIELDS            4 /*!< u8 */
 #define SCHEMA_OFF_NR_FIXED_FIELDS      5 /*!< u8 */
 #define SCHEMA_OFF_NR_VIRTUAL_FIELDS    6 /*!< u8 */
-#define SCHEMA_OFF_SPARE1               7 /*!< u8 */
+#define SCHEMA_OFF_VERSION              7 /*!< u8 */
 
 struct schemabuf_parser_ctx {
     struct SelvaTypeEntry *te;
@@ -32,6 +32,7 @@ struct schemabuf_parser_ctx {
     size_t len;
     size_t alias_index;
     size_t colvec_index;
+    unsigned version;
 };
 
 static int type2fs_reserved(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *, field_t)
@@ -43,22 +44,30 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     uint16_t len;
+    size_t off = 1;
 
     if (ctx->len < 1 + sizeof(len)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&len, ctx->buf + 1, sizeof(len));
+    memcpy(&len, ctx->buf + off, sizeof(len));
+    off += sizeof(len);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
         .smb = {
             .len = len,
+            .default_off = 0,
         },
     };
 
-    return 1 + sizeof(len);
+    if (ctx->version >= 6) {
+        fs->smb.default_off = off;
+        off += len;
+    }
+
+    return off;
 }
 
 static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
@@ -271,39 +280,65 @@ int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len)
     return 0;
 }
 
-static void make_field_map_template(struct SelvaFieldsSchema *fields_schema)
+static void make_field_map_template(struct SelvaFieldsSchema *schema)
 {
-    const size_t nr_fields = fields_schema->nr_fields - fields_schema->nr_virtual_fields;
-    const size_t nr_fixed_fields = fields_schema->nr_fixed_fields;
+    const size_t nr_fields = schema->nr_fields - schema->nr_virtual_fields;
+    const size_t nr_fixed_fields = schema->nr_fixed_fields;
     struct SelvaFieldInfo *nfo = selva_malloc(nr_fields * sizeof(struct SelvaFieldInfo));
     size_t fixed_field_off = 0;
 
-    for (size_t i = 0; i < nr_fields; i++) {
-        if (i < nr_fixed_fields) {
-            const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(fields_schema, i);
+    /*
+     * Field order:
+     * 1. fixed fields are
+     * 2. dynamic fields
+     * 3. virtual fields
+     */
+    for (size_t i = 0; i < nr_fixed_fields; i++) {
+        const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
 
-            assert(fs);
+        assert(fs);
 
-            if ((fixed_field_off & ~(size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << SELVA_FIELDS_OFF))) != 0) {
-                db_panic("Invalid fixed field offset: %zu", fixed_field_off);
-            }
+        if ((fixed_field_off & ~(size_t)((((1 << bitsizeof(struct SelvaFieldInfo, off)) - 1) << SELVA_FIELDS_OFF))) != 0) {
+            db_panic("Invalid fixed field offset: %zu", fixed_field_off);
+        }
 
-            nfo[i] = (struct SelvaFieldInfo){
-                .in_use = true,
-                .off = fixed_field_off >> SELVA_FIELDS_OFF,
-            };
-            fixed_field_off += ALIGNED_SIZE(selva_fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
-        } else {
-            nfo[i] = (struct SelvaFieldInfo){
-                .in_use = false,
-                .off = 0,
-            };
+        nfo[i] = (struct SelvaFieldInfo){
+            .in_use = true,
+            .off = fixed_field_off >> SELVA_FIELDS_OFF,
+        };
+
+        fixed_field_off += ALIGNED_SIZE(selva_fields_get_data_size(fs), SELVA_FIELDS_DATA_ALIGN);
+    }
+    for (size_t i = nr_fixed_fields; i < nr_fields; i++) {
+        nfo[i] = (struct SelvaFieldInfo){
+            .in_use = false,
+            .off = 0,
+        };
+    }
+
+    schema->template.field_map_buf = nfo;
+    schema->template.field_map_len = nr_fields * sizeof(struct SelvaFieldInfo);
+    schema->template.fixed_data_len = ALIGNED_SIZE(fixed_field_off, SELVA_FIELDS_DATA_ALIGN);
+}
+
+/**
+ * Set fixed field defaults
+ */
+static void make_fixed_fields_template(struct SelvaFieldsSchema *schema, const uint8_t *schema_buf)
+{
+    uint8_t *fixed_data_buf = selva_calloc(1, schema->template.fixed_data_len);
+    struct SelvaFieldInfo *nfo = schema->template.field_map_buf;
+    const size_t nr_fixed_fields = schema->nr_fixed_fields;
+
+    for (size_t i = 0; i < nr_fixed_fields; i++) {
+        const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
+
+        if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) {
+            memcpy(fixed_data_buf + (nfo[i].off << SELVA_FIELDS_OFF), schema_buf + fs->smb.default_off, fs->smb.len);
         }
     }
 
-    fields_schema->field_map_template.buf = nfo;
-    fields_schema->field_map_template.len = nr_fields * sizeof(struct SelvaFieldInfo);
-    fields_schema->field_map_template.fixed_data_size = ALIGNED_SIZE(fixed_field_off, SELVA_FIELDS_DATA_ALIGN);
+    schema->template.fixed_data_buf = fixed_data_buf;
 }
 
 static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fields_schema, const uint8_t *buf, size_t len)
@@ -334,9 +369,13 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
         field_idx++;
     }
 
-    /* TODO Better error handling */
-    assert(field_idx == fields_schema->nr_fields);
+    /* TODO Fix memory leak */
+    if (field_idx != fields_schema->nr_fields) {
+        return SELVA_EINVAL;
+    }
+
     make_field_map_template(fields_schema);
+    make_fixed_fields_template(fields_schema, buf);
 
     return 0;
 }
@@ -359,6 +398,7 @@ int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t le
     }
 
     /* We just assume that fields_schema is allocated properly. */
+    ctx.version = buf[SCHEMA_OFF_VERSION];
     fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
     fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
 
@@ -371,7 +411,8 @@ int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t le
 
 void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema)
 {
-    selva_free(schema->field_map_template.buf);
+    selva_free(schema->template.field_map_buf);
+    selva_free(schema->template.fixed_data_buf);
 }
 
 __constructor static void schemabuf_parsers_init(void)

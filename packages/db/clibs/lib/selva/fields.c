@@ -1983,9 +1983,15 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
 static void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
 {
     fields->nr_fields = schema->nr_fields - schema->nr_virtual_fields;
-    fields->data_len = schema->field_map_template.fixed_data_size;
-    fields->data = (fields->data_len > 0) ? selva_calloc(1, fields->data_len) : nullptr;
-    memcpy(fields->fields_map, schema->field_map_template.buf, schema->field_map_template.len);
+    if (schema->template.fixed_data_len > 0) {
+        fields->data_len = schema->template.fixed_data_len;
+        fields->data = selva_malloc(fields->data_len);
+        memcpy(fields->data, schema->template.fixed_data_buf, schema->template.fixed_data_len);
+    } else {
+        fields->data_len = 0;
+        fields->data = nullptr;
+    }
+    memcpy(fields->fields_map, schema->template.field_map_buf, schema->template.field_map_len);
 }
 
 void selva_fields_init_node(struct SelvaDb *, struct SelvaTypeEntry *te, struct SelvaNode *node)
