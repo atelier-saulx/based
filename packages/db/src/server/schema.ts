@@ -43,7 +43,7 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
     const type = server.schemaTypesParsed[types[i]]
     maxTid = Math.max(maxTid, type.id)
     try {
-      native.setSchemaType(type.id, new Uint8Array(s[i]), server.dbCtxExternal)
+      native.setSchemaType(server.dbCtxExternal, type.id, new Uint8Array(s[i]))
     } catch (err) {
       throw new Error(
         `Cannot update schema on selva (native) ${type.type} ${err.message}`,
