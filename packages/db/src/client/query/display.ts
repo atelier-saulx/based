@@ -415,7 +415,7 @@ export const inspectData = (
   } else if (top) {
     str += '\n' + prefix + ']'
   } else {
-    str += ']'
+    str += ']' + '\n'
   }
   return str
 }
