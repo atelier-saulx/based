@@ -42,11 +42,12 @@ static int type2fs_reserved(struct schemabuf_parser_ctx *, struct SelvaFieldsSch
 
 static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     uint16_t len;
     size_t off = 1;
+    const size_t min_buf_len = 1 + (ctx->version >= 6) + sizeof(len);
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
 
-    if (ctx->len < 1 + sizeof(len)) {
+    if (ctx->len < min_buf_len) {
         return SELVA_EINVAL;
     }
 
@@ -63,8 +64,14 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
     };
 
     if (ctx->version >= 6) {
-        fs->smb.default_off = off;
-        off += len;
+        if (ctx->buf[off++]) {
+            if (ctx->len < min_buf_len + len) {
+                return SELVA_EINVAL;
+            }
+
+            fs->smb.default_off = off;
+            off += len;
+        }
     }
 
     return off;
@@ -321,24 +328,42 @@ static void make_field_map_template(struct SelvaFieldsSchema *schema)
     schema->template.fixed_data_len = ALIGNED_SIZE(fixed_field_off, SELVA_FIELDS_DATA_ALIGN);
 }
 
-/**
- * Set fixed field defaults
- */
-static void make_fixed_fields_template(struct SelvaFieldsSchema *schema, const uint8_t *schema_buf)
+static bool has_defaults(struct SelvaFieldsSchema *schema)
 {
-    uint8_t *fixed_data_buf = selva_calloc(1, schema->template.fixed_data_len);
-    struct SelvaFieldInfo *nfo = schema->template.field_map_buf;
     const size_t nr_fixed_fields = schema->nr_fixed_fields;
 
     for (size_t i = 0; i < nr_fixed_fields; i++) {
         const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
 
         if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) {
-            memcpy(fixed_data_buf + (nfo[i].off << SELVA_FIELDS_OFF), schema_buf + fs->smb.default_off, fs->smb.len);
+            return true;
         }
     }
+    return false;
+}
 
-    schema->template.fixed_data_buf = fixed_data_buf;
+/**
+ * Set fixed field defaults
+ */
+static void make_fixed_fields_template(struct SelvaFieldsSchema *schema, const uint8_t *schema_buf)
+{
+    if (has_defaults(schema)) {
+        uint8_t *fixed_data_buf = selva_calloc(1, schema->template.fixed_data_len);
+        struct SelvaFieldInfo *nfo = schema->template.field_map_buf;
+        const size_t nr_fixed_fields = schema->nr_fixed_fields;
+
+        for (size_t i = 0; i < nr_fixed_fields; i++) {
+            const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
+
+            if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) {
+                memcpy(fixed_data_buf + (nfo[i].off << SELVA_FIELDS_OFF), schema_buf + fs->smb.default_off, fs->smb.len);
+            }
+        }
+
+        schema->template.fixed_data_buf = fixed_data_buf;
+    } else {
+        schema->template.fixed_data_buf = nullptr;
+    }
 }
 
 static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fields_schema, const uint8_t *buf, size_t len)
