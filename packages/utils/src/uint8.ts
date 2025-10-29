@@ -265,12 +265,12 @@ export const writeDoubleLE = (
   val: number,
   offset: number,
 ) => {
-  const dV = new DataView(dest.buffer, offset)
+  const dV = new DataView(dest.buffer, offset, 8)
   dV.setFloat64(0, val, true)
 }
 
 export const writeFloatLE = (dest: Uint8Array, val: number, offset: number) => {
-  const dV = new DataView(dest.buffer, offset)
+  const dV = new DataView(dest.buffer, offset, 4)
   dV.setFloat32(0, val, true)
 }
 
