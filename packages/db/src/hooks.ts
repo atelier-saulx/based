@@ -35,6 +35,14 @@ export const getDefaultHooks = (
       onData: (res: Uint8Array) => void,
       onError: OnError,
     ) {
+      // completely different
+      // very annoying to read the query info
+      // may need to send the array of subs to this
+      // array has to be send[] // or do it smaller then the queryDef
+      // or make a different thing out of the query buf?
+
+      // new format
+
       let timer: ReturnType<typeof setTimeout>
       let killed = false
       const poll = async () => {

@@ -44,22 +44,22 @@ pub fn stage(
 ) void {
 
     // multi check dont want this per field probably...
-    if (ctx.subTypes) |typeSubs| {
-        var i: u32 = 0;
+    // if (ctx.subTypes) |typeSubs| {
+    //     var i: u32 = 0;
 
-        // what you want ehre is to loop trough the bytes check if its all 255 or 0 (think 0 is easier)
-        // 0 means ITS MARKED 1 means its not marked
-        // then if there is a non marked one you loop trough the bits
-        while (i < typeSubs.multiSubsSizeBits) : (i += vectorLen) {
-            const vec: @Vector(vectorLen, u8) = typeSubs.multiSubsStageMarked[i..][0..vectorLen].*;
-            // bitmask technique
-            // @bitMa
-            if (@reduce(.Or, vec == nonMarked)) {
-                typeSubs.multiSubsStageMarked[i] = 0;
-                // std.mem.doNotOptimizeAway(i);
-            }
-        }
-    }
+    //     // what you want ehre is to loop trough the bytes check if its all 255 or 0 (think 0 is easier)
+    //     // 0 means ITS MARKED 1 means its not marked
+    //     // then if there is a non marked one you loop trough the bits
+    //     while (i < typeSubs.multiSubsSizeBits) : (i += vectorLen) {
+    //         const vec: @Vector(vectorLen, u8) = typeSubs.multiSubsStageMarked[i..][0..vectorLen].*;
+    //         // bitmask technique
+    //         // @bitMa
+    //         if (@reduce(.Or, vec == nonMarked)) {
+    //             typeSubs.multiSubsStageMarked[i] = 0;
+    //             // std.mem.doNotOptimizeAway(i);
+    //         }
+    //     }
+    // }
 
     if (op != Op.create and op != Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
