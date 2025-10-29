@@ -33,12 +33,17 @@ pub fn checkId(
     }
 }
 
+// type switch
+// then make 3 different type of multi subs
+
 const nonMarked: @Vector(vectorLen, u8) = @splat(255);
 
 pub fn stage(
     ctx: *ModifyCtx,
     comptime op: Op,
 ) void {
+
+    // multi check dont want this per field probably...
     if (ctx.subTypes) |typeSubs| {
         var i: u32 = 0;
 

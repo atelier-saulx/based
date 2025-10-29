@@ -204,9 +204,11 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
 
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
-                // RFE shouldn't we technically unset .id and .node now?
 
                 ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
+                if (ctx.subTypes) |st| {
+                    st.typeModified = true;
+                }
 
                 i = i + 3;
             },

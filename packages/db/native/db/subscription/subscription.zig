@@ -32,6 +32,8 @@ fn getMarkedSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !
         return result;
     }
 
+    // get types bit wasteful
+
     return null;
 }
 
