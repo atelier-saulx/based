@@ -75,11 +75,12 @@ const propDefBuffer = (
   const selvaType = selvaTypeMap[type]
 
   if (prop.len && (type === MICRO_BUFFER || type === VECTOR)) {
-    const buf = new Uint8Array(3)
+    const buf = new Uint8Array(4)
     const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
     view.setUint16(1, prop.len, true)
+    buf[3] = 0 // has default
     return [...buf]
   } else if (prop.len && type === COLVEC) {
     const buf = new Uint8Array(5)
@@ -153,7 +154,7 @@ export function schemaToSelvaBuffer(schema: {
       nrFields, // u8 nrFields
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
-      5, // u8 spare1
+      6, // u8 version (generally follows the sdb version)
       ...propDefBuffer(schema, {
         ...EMPTY_MICRO_BUFFER,
         len: t.mainLen === 0 ? 1 : t.mainLen,
