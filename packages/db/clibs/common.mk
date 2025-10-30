@@ -21,7 +21,7 @@ CC += -fdiagnostics-color=always
 
 # CFLAGS shared with all compilation units.
 CFLAGS := -std=gnu23 -pthread -O2 -MMD -fstack-protector \
-		  -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes \
+		  -Wall -Wextra -Wimplicit-fallthrough -Wpointer-arith -Wdate-time -Wmissing-prototypes \
 		  -DDCACHE_LINESIZE=64
 
 LDFLAGS += -pthread
