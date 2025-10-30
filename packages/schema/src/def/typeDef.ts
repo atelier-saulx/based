@@ -140,6 +140,16 @@ const createSchemaTypeDef = (
           typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
       }
     }
+    if (result.ringMaxIds == 0) {
+      if ('ringMaxIds' in type) {
+        if (
+          typeof type.ringMaxIds !== 'number' ||
+          type.ringMaxIds < 0) {
+          throw new Error('Invalid ringMaxIds')
+        }
+        result.ringMaxIds = type.ringMaxIds
+      }
+    }
     if (result.insertOnly == false && 'insertOnly' in type) {
       result.insertOnly = !!type.insertOnly
     }

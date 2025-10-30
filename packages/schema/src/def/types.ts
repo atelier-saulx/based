@@ -162,9 +162,10 @@ export type SchemaTypeDef = {
   checksum: number
   type: string
   blockCapacity: number
-  mainLen: number
+  ringMaxIds: number // Maximum number of nodes in the type. This creates a circularly collected type.
   insertOnly: boolean // delete not allowed
   partial: boolean // only active block(s) should be loaded in-mem
+  mainLen: number
   buf: Uint8Array
   propNames: Uint8Array
   props: {
