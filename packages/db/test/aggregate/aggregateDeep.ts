@@ -4,6 +4,7 @@ import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
 import { throws, deepEqual } from '../shared/assert.js'
 import { fastPrng } from '@based/utils'
+import { debug } from 'node:console'
 
 await test('sum branched includes', async (t) => {
   const db = new BasedDb({
@@ -716,6 +717,59 @@ await test('group by reference ids', async (t) => {
   )
 })
 
+await test('nested references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          strong: 'uint16',
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const bob = db.create('user', {
+    name: 'bob',
+    strong: 1,
+  })
+
+  const marie = db.create('user', {
+    name: 'marie',
+    strong: 2,
+  })
+
+  const john = db.create('user', {
+    name: 'john',
+    friends: [bob, marie],
+    strong: 4,
+  })
+
+  await db.query('user').include('*', '**').get().inspect(10)
+
+  deepEqual(
+    await db.query('user').sum('friends.strong').get(),
+    {
+      strong: {
+        sum: 7,
+      },
+    },
+    'nested references access with dot sintax',
+  )
+})
+
 await test('edges aggregation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -738,6 +792,7 @@ await test('edges aggregation', async (t) => {
       },
       actor: {
         name: 'string',
+        strong: 'uint16',
         movies: {
           items: {
             ref: 'movie',
@@ -750,9 +805,11 @@ await test('edges aggregation', async (t) => {
 
   const a1 = db.create('actor', {
     name: 'Uma Thurman',
+    strong: 10,
   })
   const a2 = db.create('actor', {
     name: 'Jonh Travolta',
+    strong: 5,
   })
 
   const m1 = await db.create('movie', {
@@ -780,12 +837,28 @@ await test('edges aggregation', async (t) => {
 
   // await db
   //   .query('movie')
-  //   .include('name')
-  //   .include('actors.$rating')
-  //   .include('actors.name')
+  //   .include('*', '**')
+  //   // .include('actors.$rating')
+  //   // .include('actors.name')
   //   .get()
-  //   .inspect(10)
+  //   .inspect()
+
+  await db.query('movie').sum('actors.strong').get().inspect(10)
 
   // edges still not implemented
-  await db.query('movie').max('actors.$rating').get().inspect(10)
+  // await db.query('movie').max('actors.$rating').get().inspect(10)
+
+  await db
+    .query('movie')
+    .include((q) =>
+      q('actors')
+        //
+        // .max('$rating'),
+        .max('strong'),
+    )
+    .get()
+    .inspect(10)
+
+  // this can't crash
+  await db.query('actor').max('$rating').get().inspect(10)
 })
