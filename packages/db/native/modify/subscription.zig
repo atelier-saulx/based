@@ -67,6 +67,7 @@ pub fn stage(
             const size = subTypes.SUB_SIZE;
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
             f[vectorLen - 1] = @intFromEnum(subTypes.SubStatus.all);
+
             while (i < idSubs.len) : (i += size) {
                 // can make a 8 byte loop (control + index)
                 // this is also nice that you can check for all seperate (potentialy)
@@ -74,6 +75,9 @@ pub fn stage(
                     continue;
                 }
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;
+
+                std.debug.print("hello {any} {any} \n", .{ f, vec });
+
                 if (@reduce(.Or, vec == f)) {
                     if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 8) {
                         ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
@@ -92,12 +96,14 @@ pub fn stage(
                         ctx.db.subscriptions.lastIdMarked,
                         utils.read(u32, idSubs, i + 4),
                     );
+
                     utils.writeInt(
                         u32,
                         ctx.db.subscriptions.singleIdMarked,
                         ctx.db.subscriptions.lastIdMarked + 4,
                         ctx.id,
                     );
+
                     ctx.db.subscriptions.lastIdMarked += 8;
                     idSubs[i + 8] = @intFromEnum(subTypes.SubStatus.marked);
                 }
