@@ -43,6 +43,7 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_ALIAS = 8,
     SELVA_FIELD_TYPE_ALIASES = 9,
     SELVA_FIELD_TYPE_COLVEC = 10,
+    SELVA_FIELD_TYPE_REFERENCES_CIRCULAR = 11,
 } __packed;
 
 struct EdgeFieldConstraint {

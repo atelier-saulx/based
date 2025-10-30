@@ -70,6 +70,13 @@ static_assert(offsetof(struct SelvaNodeReferences, any) == offsetof(struct Selva
 static_assert(offsetof(struct SelvaNodeReferences, any) == offsetof(struct SelvaNodeReferences, large));
 static_assert(offsetof(struct SelvaNodeReferences, small) == offsetof(struct SelvaNodeReferences, large));
 
+struct SelvaNodeReferencesCircular {
+    struct SelvaNodeReferences refs;
+    uint32_t head;
+    uint32_t tail;
+};
+static_assert(offsetof(struct SelvaNodeReferencesCircular, refs) == 0);
+
 struct SelvaFieldsPointer {
     uint8_t *ptr;
     size_t off;
