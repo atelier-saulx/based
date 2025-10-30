@@ -199,6 +199,16 @@ static void save_field_references(struct selva_io *io, struct SelvaNodeReference
     }
 }
 
+static void save_field_references_circular(struct selva_io *io, struct SelvaNodeReferencesCircular *refs)
+{
+    const sdb_nr_nodes_t head = refs->head;
+    const sdb_nr_nodes_t tail = refs->tail;
+
+    io->sdb_write(&head, sizeof(head), 1, io);
+    io->sdb_write(&tail, sizeof(tail), 1, io);
+    save_field_references(io, &refs->refs);
+}
+
 __attribute__((nonnull))
 static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema *schema, struct SelvaNode *node)
 {
@@ -233,6 +243,9 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
             break;
         case SELVA_FIELD_TYPE_REFERENCES:
             save_field_references(io, selva_fields_nfo2p(fields, nfo));
+            break;
+        case SELVA_FIELD_TYPE_REFERENCES_CIRCULAR:
+            save_field_references_circular(io, selva_fields_nfo2p(fields, nfo));
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof(uint8_t), fs->smb.len, io);
@@ -753,6 +766,25 @@ static int load_field_references_v4(struct selva_io *io, struct SelvaDb *db, str
     return err;
 }
 
+static void load_refs_struct(struct selva_io *io, struct SelvaNodeReferences *refs, sdb_arr_len_t nr_refs)
+{
+    refs->nr_refs = nr_refs;
+    refs->offset = 0;
+
+    switch (refs->size) {
+    case SELVA_NODE_REFERENCE_SMALL:
+        io->sdb_read(refs->small, sizeof(refs->small[0]), nr_refs, io);
+        break;
+    case SELVA_NODE_REFERENCE_LARGE:
+        io->sdb_read(refs->large, sizeof(refs->large[0]), nr_refs, io);
+        break;
+    default:
+        db_panic("Invalid ref type: %d", refs->size);
+    }
+
+    io->sdb_read(refs->index, sizeof(refs->index[0]), nr_refs, io);
+}
+
 __attribute__((warn_unused_result))
 static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
@@ -770,21 +802,36 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
         return SELVA_ENOENT;
     }
 
-    refs->nr_refs = nr_refs;
-    refs->offset = 0;
+    load_refs_struct(io, refs, nr_refs);
 
-    switch (refs->size) {
-    case SELVA_NODE_REFERENCE_SMALL:
-        io->sdb_read(refs->small, sizeof(refs->small[0]), nr_refs, io);
-        break;
-    case SELVA_NODE_REFERENCE_LARGE:
-        io->sdb_read(refs->large, sizeof(refs->large[0]), nr_refs, io);
-        break;
-    default:
-        db_panic("Invalid ref type: %d", refs->size);
+    return err;
+}
+
+__attribute__((warn_unused_result))
+static int load_field_references_circular(struct selva_io *io, struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+{
+    sdb_nr_nodes_t head;
+    sdb_nr_nodes_t tail;
+    sdb_arr_len_t nr_refs;
+    int err = 0;
+
+    io->sdb_read(&head, sizeof(head), 1, io);
+    io->sdb_read(&tail, sizeof(tail), 1, io);
+    io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
+    if (nr_refs == 0) {
+        return 0;
     }
 
-    io->sdb_read(refs->index, sizeof(refs->index[0]), nr_refs, io);
+    (void)selva_fields_prealloc_refs(db, node, fs, nr_refs);
+    struct SelvaNodeReferences *refs = selva_fields_get_references(node, fs);
+    if (!refs) {
+        return SELVA_ENOENT;
+    }
+
+    struct SelvaNodeReferencesCircular *crefs = containerof(refs, typeof(*crefs), refs);
+    crefs->head = head;
+    crefs->tail = tail;
+    load_refs_struct(io, refs, nr_refs);
 
     return err;
 }
@@ -856,6 +903,9 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
             } else {
                 err = load_field_references(io, db, node, fs);
             }
+            break;
+        case SELVA_FIELD_TYPE_REFERENCES_CIRCULAR:
+            err = load_field_references_circular(io, db, node, fs);
             break;
         case SELVA_FIELD_TYPE_WEAK_REFERENCE: // < v4 compat
             err = load_field_weak_reference_v3(io, db, node, fs);

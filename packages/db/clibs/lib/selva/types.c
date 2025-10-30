@@ -15,6 +15,7 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
     case SELVA_FIELD_TYPE_REFERENCES:
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
+    case SELVA_FIELD_TYPE_REFERENCES_CIRCULAR:
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_ALIASES:
@@ -38,6 +39,8 @@ const char *selva_str_field_type(enum SelvaFieldType ftype)
         return (const char *)"reference";
     case SELVA_FIELD_TYPE_REFERENCES:
         return (const char *)"references";
+    case SELVA_FIELD_TYPE_REFERENCES_CIRCULAR:
+        return (const char *)"references circular";
     case SELVA_FIELD_TYPE_WEAK_REFERENCE:
         return (const char *)"weak reference";
     case SELVA_FIELD_TYPE_WEAK_REFERENCES:
