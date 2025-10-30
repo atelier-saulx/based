@@ -843,22 +843,42 @@ await test('edges aggregation', async (t) => {
   //   .get()
   //   .inspect()
 
-  await db.query('movie').sum('actors.strong').get().inspect(10)
+  /*---------------------------*/
+  /*       NESTED SINTAX       */
+  /*---------------------------*/
 
-  // edges still not implemented
+  // before: NOK: crash
+  // after:
+  // await db.query('movie').sum('actors.strong').get().inspect(10)
+
+  // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
+  // after: NOK: crash
   // await db.query('movie').max('actors.$rating').get().inspect(10)
 
-  await db
-    .query('movie')
-    .include((q) =>
-      q('actors')
-        //
-        // .max('$rating'),
-        .max('strong'),
-    )
-    .get()
-    .inspect(10)
+  /*----------------------------*/
+  /*       BRANCHED QUERY       */
+  /*----------------------------*/
 
-  // this can't crash
-  await db.query('actor').max('$rating').get().inspect(10)
+  // before: OK: working
+  // after:
+  // await db
+  //   .query('movie')
+  //   .include((q) => q('actors').max('strong'))
+  //   .get()
+  //   .inspect(10)
+
+  // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
+  // after: NOK: crash
+  // await db
+  //   .query('movie')
+  //   .include((q) => q('actors').max('$rating'))
+  //   .get()
+  //   .inspect(10)
+
+  /*------------------------*/
+  /*          OTHER         */
+  /*------------------------*/
+  // before: OK: error in js: Cannot read properties of undefined (reading 'edges')
+  // after: NOK: crash
+  // await db.query('actor').max('$rating').get().inspect(10)
 })
