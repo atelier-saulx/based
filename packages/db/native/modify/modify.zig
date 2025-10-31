@@ -33,6 +33,15 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     return result;
 }
 
+fn writeoutPrevNodeId(ctx: *ModifyCtx, batch: []u8, resCount: *u32) void {
+    if (ctx.id != 0) {
+        writeInt(u32, batch, resCount.* * 5, ctx.id);
+        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+        ctx.err = errors.ClientError.null;
+        resCount.* += 1;
+    }
+}
+
 fn newNode(ctx: *ModifyCtx) !void {
     const id = ctx.db.ids[ctx.typeId - 1] + 1;
 
@@ -111,22 +120,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i = i + 2;
             },
             types.ModOp.SWITCH_ID_CREATE => {
-                if (ctx.id != 0) {
-                    writeInt(u32, batch, resCount.* * 5, ctx.id);
-                    writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
-                    ctx.err = errors.ClientError.null;
-                    resCount.* += 1;
-                }
-                try newNode(ctx);
+                writeoutPrevNodeId(&ctx, batch, resCount);
+                try newNode(&ctx);
                 i = i + 1;
             },
             types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
-                if (ctx.id != 0) {
-                    writeInt(u32, batch, resCount.* * 5, ctx.id);
-                    writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
-                    ctx.err = errors.ClientError.null;
-                    resCount.* += 1;
-                }
+                writeoutPrevNodeId(&ctx, batch, resCount);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
@@ -138,12 +137,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             types.ModOp.SWITCH_ID_UPDATE => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
-                    if (ctx.id != 0) {
-                        writeInt(u32, batch, resCount.* * 5, ctx.id);
-                        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
-                        ctx.err = errors.ClientError.null;
-                        resCount.* += 1;
-                    }
+                    writeoutPrevNodeId(&ctx, batch, resCount);
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
                     ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
@@ -248,10 +242,5 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     assert(newDirtyRanges.len < dirtyRanges.len);
     _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     dirtyRanges[newDirtyRanges.len] = 0.0;
-    if (ctx.id != 0) {
-        writeInt(u32, batch, resCount.* * 5, ctx.id);
-        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
-        ctx.err = errors.ClientError.null;
-        resCount.* += 1;
-    }
+    writeoutPrevNodeId(&ctx, batch, resCount);
 }
