@@ -51,6 +51,21 @@ fn newNode(ctx: *ModifyCtx) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, id);
 }
 
+fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
+    const nextId = ctx.db.ids[ctx.typeId - 1] % maxId + 1;
+    ctx.node = db.getNode(ctx.typeEntry.?, nextId);
+
+    if (ctx.node) |oldNode| {
+        db.flushNode(ctx, ctx.typeEntry.?, oldNode);
+    } else {
+        ctx.node = try db.upsertNode(ctx, ctx.typeEntry.?, nextId);
+    }
+
+    ctx.id = nextId;
+    ctx.db.ids[ctx.typeId - 1] = nextId;
+    Modify.markDirtyRange(ctx, ctx.typeId, nextId);
+}
+
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
@@ -123,6 +138,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 writeoutPrevNodeId(&ctx, batch, resCount);
                 try newNode(&ctx);
                 i = i + 1;
+            },
+            types.ModOp.SWITCH_ID_CREATE_RING => {
+                writeoutPrevNodeId(&ctx, batch, resCount);
+                const maxNodeId = read(u32, operation, 0);
+                try newNodeRing(&ctx, maxNodeId);
+                i = i + 5;
             },
             types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
                 writeoutPrevNodeId(&ctx, batch, resCount);

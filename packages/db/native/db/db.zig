@@ -48,6 +48,10 @@ pub inline fn getBlockCapacity(ctx: *DbCtx, typeId: TypeId) u64 {
     return selva.selva_get_block_capacity(selva.selva_get_type_by_index(ctx.selva, typeId));
 }
 
+pub inline fn getNodeCount(te: Type) usize {
+    return selva.selva_node_count(te);
+}
+
 pub inline fn getNodeTypeId(node: Node) TypeId {
     return selva.selva_get_node_type(node);
 }
@@ -462,6 +466,10 @@ pub fn getRefTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
 
 pub fn deleteNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, node: Node) !void {
     selva.selva_del_node(ctx.db.selva, typeEntry, node, markDirtyCb, ctx);
+}
+
+pub fn flushNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, node: Node) void {
+    selva.selva_flush_node(ctx.db.selva, typeEntry, node, markDirtyCb, ctx);
 }
 
 pub fn upsertNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, id: u32) !Node {

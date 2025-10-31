@@ -282,6 +282,9 @@ SELVA_EXPORT
 void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx) __attribute__((nonnull(1, 2, 3)));
 
 SELVA_EXPORT
+void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
+
+SELVA_EXPORT
 void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start);
 
 /**

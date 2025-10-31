@@ -2009,6 +2009,40 @@ void selva_fields_init_node(struct SelvaDb *, struct SelvaTypeEntry *te, struct 
     }
 }
 
+void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+{
+    const struct SelvaNodeSchema *ns = selva_get_ns_by_te(selva_get_type_by_node(db, node));
+    const field_t nr_fields = node->fields.nr_fields;
+    struct SelvaFields *fields = &node->fields;
+
+    for (field_t field = 0; field < nr_fields; field++) {
+        if (fields->fields_map[field].in_use) {
+            const struct SelvaFieldSchema *fs;
+            int err;
+
+            fs = selva_get_fs_by_ns_field(ns, field);
+            if (unlikely(!fs)) {
+                db_panic("No field schema found");
+            }
+
+            err = fields_del(db, node, fields, fs, false, dirty_cb, dirty_ctx);
+            if (unlikely(err)) {
+                db_panic("Failed to remove a field: %s", selva_strerror(err));
+            }
+        }
+    }
+
+    /*
+     * Reset the defaults for fixed fields.
+     */
+    const struct SelvaFieldsSchema *schema = &ns->fields_schema;
+    size_t data_len = schema->template.fixed_data_len;
+    assert(fields->data);
+    if (data_len > 0 && schema->template.fixed_data_buf) {
+        memcpy(fields->data, schema->template.fixed_data_buf, data_len);
+    }
+}
+
 static inline void fields_destroy(struct SelvaDb *db, struct SelvaNode *node, bool unload, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
     const struct SelvaNodeSchema *ns = selva_get_ns_by_te(selva_get_type_by_node(db, node));
@@ -2029,7 +2063,6 @@ static inline void fields_destroy(struct SelvaDb *db, struct SelvaNode *node, bo
             if (unlikely(err)) {
                 db_panic("Failed to remove a field: %s", selva_strerror(err));
             }
-
         }
     }
 
