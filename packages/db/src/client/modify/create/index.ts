@@ -208,9 +208,6 @@ export const writeCreate = (
     writeMainCursor(ctx)
   }
   writeCreateTs(ctx, payload)
-  if (!ctx.cursor.main && !ctx.schema.mainEmptyAllZeroes) {
-    writeMainBuffer(ctx)
-  }
   writeDefaults(ctx)
   writeSortable(ctx)
   writeSortableText(ctx)

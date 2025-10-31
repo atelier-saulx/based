@@ -94,8 +94,8 @@ const native = {
     db.delBlock(dbCtx, typeId, block)
   },
 
-  setSchemaType: (prefix: number, buf: Uint8Array, dbCtx: any) => {
-    return db.setSchemaType(prefix, buf, dbCtx)
+  setSchemaType: (dbCtx: any, prefix: number, buf: Uint8Array) => {
+    return db.setSchemaType(dbCtx, prefix, buf)
   },
 
   setSchemaIds: (ids: Uint32Array, dbCtx: any) => {

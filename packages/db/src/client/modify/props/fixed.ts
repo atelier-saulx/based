@@ -15,7 +15,7 @@ import {
   UINT32,
   UINT8,
 } from '@based/schema/def'
-import { convertToTimestamp, ENCODER } from '@based/utils'
+import { convertToTimestamp, ENCODER, writeDoubleLE } from '@based/utils'
 import { getBuffer } from './binary.js'
 import { reserve } from '../resize.js'
 import { writeU16, writeU32, writeU64, writeU8, writeU8Array } from '../uint.js'
@@ -74,13 +74,8 @@ map[ENUM] = (ctx, val, def) => {
 map[NUMBER] = (ctx, val, def) => {
   val ??= def.default
   validate(def, val)
-  const view = new DataView(
-    ctx.array.buffer,
-    ctx.array.byteOffset + ctx.index,
-    8,
-  )
   reserve(ctx, 8)
-  view.setFloat64(0, val, true)
+  writeDoubleLE(ctx.array, val, ctx.array.byteOffset + ctx.index)
   ctx.index += 8
 }
 
