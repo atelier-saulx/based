@@ -40,7 +40,21 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     const dirtyRanges = try napi.get([]f64, env, args[2]);
 
     var i: usize = 0;
-    var ctx: ModifyCtx = .{ .field = undefined, .typeId = 0, .id = 0, .currentSortIndex = null, .typeSortIndex = null, .node = null, .typeEntry = null, .fieldSchema = null, .fieldType = types.Prop.NULL, .db = dbCtx, .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator), .batch = batch, .err = errors.ClientError.null };
+    var ctx: ModifyCtx = .{
+        .field = undefined,
+        .typeId = 0,
+        .id = 0,
+        .currentSortIndex = null,
+        .typeSortIndex = null,
+        .node = null,
+        .typeEntry = null,
+        .fieldSchema = null,
+        .fieldType = types.Prop.NULL,
+        .db = dbCtx,
+        .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
+        .batch = batch,
+        .err = errors.ClientError.null
+    };
 
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
