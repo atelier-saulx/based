@@ -716,6 +716,59 @@ await test('group by reference ids', async (t) => {
   )
 })
 
+await test('nested references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          strong: 'uint16',
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const bob = db.create('user', {
+    name: 'bob',
+    strong: 1,
+  })
+
+  const marie = db.create('user', {
+    name: 'marie',
+    strong: 2,
+  })
+
+  const john = db.create('user', {
+    name: 'john',
+    friends: [bob, marie],
+    strong: 4,
+  })
+
+  // await db.query('user').include('*', '**').get().inspect(10)
+
+  deepEqual(
+    await db.query('user').sum('friends.strong').get(),
+    {
+      strong: {
+        sum: 7,
+      },
+    },
+    'nested references access with dot sintax',
+  )
+})
+
 await test('edges aggregation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
