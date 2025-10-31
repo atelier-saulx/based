@@ -468,6 +468,10 @@ pub fn deleteNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, node: Node) !void 
     selva.selva_del_node(ctx.db.selva, typeEntry, node, markDirtyCb, ctx);
 }
 
+pub fn flushNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, node: Node) void {
+    selva.selva_flush_node(ctx.db.selva, typeEntry, node, markDirtyCb, ctx);
+}
+
 pub fn upsertNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, id: u32) !Node {
     const node = selva.selva_upsert_node(ctx.db.selva, typeEntry, id);
     if (node == null) {

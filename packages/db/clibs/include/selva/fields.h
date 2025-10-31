@@ -317,6 +317,8 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
 void selva_fields_init_node(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
     __attribute__((nonnull));
 
+void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
+
 /**
  * Destroy all fields of a node.
  */

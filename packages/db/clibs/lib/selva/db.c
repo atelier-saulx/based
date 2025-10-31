@@ -473,6 +473,16 @@ static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, stru
     del_node(db, type, node, true, selva_faux_dirty_cb, nullptr);
 }
 
+void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+{
+    if (dirty_cb) {
+        dirty_cb(dirty_ctx, node->type, node->node_id);
+    }
+
+    selva_remove_all_aliases(type, node->node_id);
+    selva_fields_flush(db, node, dirty_cb, dirty_ctx);
+}
+
 struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     if (unlikely(node_id == 0)) {

@@ -53,11 +53,14 @@ fn newNode(ctx: *ModifyCtx) !void {
 
 fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     const nextId = ctx.db.ids[ctx.typeId - 1] % maxId + 1;
+    ctx.node = db.getNode(ctx.typeEntry.?, nextId);
 
-    if (db.getNode(ctx.typeEntry.?, nextId)) |delNode| {
-        try db.deleteNode(ctx, ctx.typeEntry.?, delNode);
+    if (ctx.node) |oldNode| {
+        db.flushNode(ctx, ctx.typeEntry.?, oldNode);
+    } else {
+        ctx.node = try db.upsertNode(ctx, ctx.typeEntry.?, nextId);
     }
-    ctx.node = try db.upsertNode(ctx, ctx.typeEntry.?, nextId);
+
     ctx.id = nextId;
     ctx.db.ids[ctx.typeId - 1] = nextId;
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
