@@ -2031,6 +2031,16 @@ void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node, selva_dirty_
             }
         }
     }
+
+    /*
+     * Reset the defaults for fixed fields.
+     */
+    const struct SelvaFieldsSchema *schema = &ns->fields_schema;
+    size_t data_len = schema->template.fixed_data_len;
+    assert(fields->data);
+    if (data_len > 0 && schema->template.fixed_data_buf) {
+        memcpy(fields->data, schema->template.fixed_data_buf, data_len);
+    }
 }
 
 static inline void fields_destroy(struct SelvaDb *db, struct SelvaNode *node, bool unload, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
