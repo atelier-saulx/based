@@ -13,6 +13,13 @@ export class Ctx {
   }
   start: number
   index: number = 8
+  // set index(val) {
+  //   this._index = val
+  //   console.trace({ val })
+  // }
+  // get index() {
+  //   return this._index
+  // }
   schema: SchemaTypeDef
   array: Uint8Array<ArrayBufferLike>
   max: number

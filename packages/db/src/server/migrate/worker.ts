@@ -12,6 +12,7 @@ import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 import { MigrateRange } from './index.js'
 import { DbSchema, deSerialize } from '@based/schema'
 import { wait } from '@based/utils'
+import { setTimeout } from 'node:timers/promises'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -97,10 +98,14 @@ if (isMainThread) {
             .query(type)
             .range(leafData.start - 1, leafData.end)
             .include(include)
+
           for (const rawProp of includeRaw) {
             query.include(rawProp, { raw: true })
           }
+
           const nodes = query._getSync(fromCtx)
+
+          console.log(nodes)
 
           if (typeTransformFn) {
             for (const node of nodes) {
@@ -116,13 +121,15 @@ if (isMainThread) {
             }
           } else if (type in toDb.server.schemaTypesParsed) {
             for (const node of nodes) {
-              toDb.create(type, node, { unsafe: true })
+              console.log('create:', type, node)
+              await toDb.create(type, node, { unsafe: true })
             }
           }
         }
 
         await toDb.drain()
         native.membarSyncWrite()
+        await setTimeout(500) // FOR DEBUG ONLY
         setToSleep(workerState)
       }
     } catch (e) {

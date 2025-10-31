@@ -173,6 +173,7 @@ export const migrate = async (
 
   server.verifTree.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
+    if (server.schemaTypesParsedById[typeId].type[0] === '_') return
     const def = server.schemaTypesParsedById[typeId]
     const end = start + def.blockCapacity - 1
     rangesToMigrate.push({ typeId, start, end })

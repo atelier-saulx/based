@@ -234,6 +234,7 @@ export function create(
     schedule(db, ctx)
     return tmp
   } catch (e) {
+    console.log('CREATE ERROR')
     return handleError(db, ctx, create, arguments, e)
   }
 }

@@ -31,8 +31,7 @@ export const drain = (db: DbClient, ctx: Ctx) => {
     const { batch } = ctx
     const payload = consume(ctx)
     let start: number
-
-    ctx.draining = db.hooks
+    const current = db.hooks
       .flushModify(payload)
       .then((res) => {
         if (res === null) {
@@ -40,6 +39,7 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         }
         batch.res = res
       })
+
       .catch((e) => {
         batch.error = e
       })
@@ -53,9 +53,13 @@ export const drain = (db: DbClient, ctx: Ctx) => {
       })
       .then(() => {
         if (start && start !== ctx.index) {
-          return drain(db, ctx)
+          const next = drain(db, ctx)
+          if (next !== current) {
+            return next
+          }
         }
       })
+    ctx.draining = current
   }
   return ctx.draining
 }
@@ -68,6 +72,7 @@ export const schedule = (db: DbClient, ctx: Ctx) => {
     if (db.flushTime === 0) {
       process.nextTick(() => {
         ctx.scheduled = null
+
         resolve(drain(db, ctx))
       })
     } else {

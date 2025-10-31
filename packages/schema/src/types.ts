@@ -524,7 +524,7 @@ type GenericSchema<isStrict = false> = {
   version?: string
   types?: SchemaTypes<isStrict>
   props?: SchemaPropsOneWay<isStrict>
-  locales?: Partial<SchemaLocales>
+  locales?: SchemaLocales
   defaultTimezone?: string
   migrations?: {
     version: string
@@ -536,13 +536,15 @@ export type StrictSchema = GenericSchema<true>
 export type NonStrictSchema = GenericSchema<false>
 export type Schema = NonStrictSchema | StrictSchema
 
-export type SchemaLocales = Record<
-  LangName,
-  | true
-  | {
-      required?: boolean
-      fallback?: LangName // not multiple - 1 is enough else it becomes too complex
-    }
+export type SchemaLocales = Partial<
+  Record<
+    LangName,
+    | true
+    | {
+        required?: boolean
+        fallback?: LangName // not multiple - 1 is enough else it becomes too complex
+      }
+  >
 >
 
 export type SchemaPropTypeMap = {

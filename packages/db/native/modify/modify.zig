@@ -48,6 +48,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     while (i < batch.len) {
         const op: types.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
+        // std.debug.print("op: {any}\n", .{op});
         switch (op) {
             types.ModOp.PADDING => {
                 i = i + 1;

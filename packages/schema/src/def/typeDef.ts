@@ -13,7 +13,6 @@ import {
   TYPE_INDEX_MAP,
   REFERENCES,
   REFERENCE,
-  SchemaTypesParsed,
   NUMBER,
   BLOCK_CAPACITY_MAX,
   BLOCK_CAPACITY_DEFAULT,
@@ -68,7 +67,6 @@ export const updateTypeDefs = (schema: StrictSchema) => {
         if (!prop.__isEdge && !prop.inversePropName) {
           prop.__isEdge = true
         }
-
         if (!prop.__isEdge) {
           // Update inverseProps in references
           const dstType: SchemaTypeDef = schemaTypesParsed[prop.inverseTypeName]
