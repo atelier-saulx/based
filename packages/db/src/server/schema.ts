@@ -1,4 +1,4 @@
-import { schemaToSelvaBuffer, updateTypeDefs } from '@based/schema/def'
+import { updateTypeDefs } from '@based/schema/def'
 import { DbSchema, serialize } from '@based/schema'
 import { DbServer } from './index.js'
 import { join } from 'node:path'
@@ -9,6 +9,7 @@ import { saveSync } from './save.js'
 import { writeCreate } from '../client/modify/create/index.js'
 import { Ctx } from '../client/modify/Ctx.js'
 import { consume } from '../client/modify/drain.js'
+import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
 
 export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
@@ -43,7 +44,7 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
     const type = server.schemaTypesParsed[types[i]]
     maxTid = Math.max(maxTid, type.id)
     try {
-      native.setSchemaType(type.id, new Uint8Array(s[i]), server.dbCtxExternal)
+      native.setSchemaType(server.dbCtxExternal, type.id, new Uint8Array(s[i]))
     } catch (err) {
       throw new Error(
         `Cannot update schema on selva (native) ${type.type} ${err.message}`,

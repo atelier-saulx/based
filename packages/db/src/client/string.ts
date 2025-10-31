@@ -47,7 +47,7 @@ export const write = (
     }
   } else {
     buf[offset + 1] = NOT_COMPRESSED
-    writeUint32(buf, crc, offset + l + 2)
+    writeUint32(buf, crc, offset + 2 + l)
     return l + 6
   }
 }
