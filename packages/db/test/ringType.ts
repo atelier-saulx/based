@@ -66,9 +66,6 @@ await test('ring type', async (t) => {
     { id: 3, temperature: -40, humidity: 1 },
   ])
 
-
-
-
   db.create('meas', {
     temperature: -50,
     humidity: 1,
