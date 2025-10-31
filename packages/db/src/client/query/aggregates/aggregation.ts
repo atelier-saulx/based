@@ -1,7 +1,15 @@
 import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
-import { PropDef, UINT32, SchemaPropTree } from '@based/schema/def'
+import {
+  PropDef,
+  UINT32,
+  SchemaPropTree,
+  REFERENCE,
+  REFERENCES,
+  PropDefEdge,
+  isPropDef,
+} from '@based/schema/def'
 import {
   aggregationFieldDoesNotExist,
   validateStepRange,
@@ -147,6 +155,49 @@ export const groupBy = (
   }
 }
 
+const updateAggregateDefs = (
+  def: QueryDef,
+  propDef: PropDef | PropDefEdge,
+  aggType: AggregateType,
+) => {
+  const aggregates = def.aggregate.aggregates
+  if (!aggregates.get(propDef.prop)) {
+    aggregates.set(propDef.prop, [])
+    def.aggregate.size += 3 // field + fieldAggSize
+  }
+
+  const aggregateField = aggregates.get(propDef.prop)
+  aggregateField.push({
+    type: aggType,
+    propDef: propDef,
+    resultPos: def.aggregate.totalResultsSize,
+    accumulatorPos: def.aggregate.totalAccumulatorSize,
+  })
+
+  const specificSizes = aggregateTypeMap.get(aggType)
+  if (specificSizes) {
+    def.aggregate.totalResultsSize += specificSizes.resultsSize
+    def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
+  } else {
+    def.aggregate.totalResultsSize += 8
+    def.aggregate.totalAccumulatorSize += 8
+  }
+  // needs to add an extra field WRITE TO
+  def.aggregate.size += 8 // aggType + propType + start + resultPos + accumulatorPos
+}
+
+const isCount = (propString: string, aggType: AggregateType) => {
+  return propString === 'count' || aggType === AggregateType.COUNT
+}
+
+const isEdge = (propString) => {
+  return propString.startsWith('$')
+}
+
+const isReferenceOrReferences = (typeIndex) => {
+  return typeIndex === REFERENCE || typeIndex === REFERENCES
+}
+
 export const addAggregate = (
   query: QueryBranch<any>,
   type: AggregateType,
@@ -155,6 +206,8 @@ export const addAggregate = (
 ) => {
   const def = query.def
   let hookFields: Set<string>
+  let edgeProp: PropDef
+  let fieldDef: PropDef
 
   ensureAggregate(def)
 
@@ -164,72 +217,70 @@ export const addAggregate = (
 
   const aggregates = def.aggregate.aggregates
   for (const field of fields) {
-    const fieldDef: PropDef =
-      type === AggregateType.COUNT
-        ? {
-            prop: 255,
-            path: [field],
-            __isPropDef: true,
-            len: 4,
-            start: 0,
-            typeIndex: UINT32,
-            separate: true,
-            validation: () => true,
-            default: 0,
-          }
-        : def.schema.props[field]
+    if (Array.isArray(field)) {
+      addAggregate(query, type, field, option)
+    } else {
+      const prop = def.schema.props[field]
+      const path = field.split('.')
 
-    const path = field.split('.')
-    if (!fieldDef) {
-      let t: PropDef | SchemaPropTree = def.schema.tree
-      for (let i = 0; i < path.length; i++) {
-        let p = path[i]
-
-        if (p[0] == '$') {
-          const edgeProp = t[path[i - 1]].edges[p]
-          if (edgeProp) {
-            edgeNotImplemented(def, field)
-            return
+      if (!prop && !isCount(field, type)) {
+        let t: PropDef | SchemaPropTree = def.schema.tree
+        for (let i = 0; i < path.length; i++) {
+          const p = path[i]
+          if (p[0] === '$') {
+            // edgeProp = t[parent].edges[p]
+            continue
           } else {
-            aggregationFieldDoesNotExist(def, field)
-            return
+            t = t[p]
+            if (!t) {
+              return
+            }
+            if (isPropDef(t) && isReferenceOrReferences(t.typeIndex)) {
+              const f = path.slice(i + 1).join('.')
+              if (isEdge(f)) {
+              } else {
+                addAggregate(query, type, [f], option)
+              }
+            }
           }
         }
       }
+
+      if (edgeProp) {
+        fieldDef = edgeProp
+        continue
+      } else {
+        fieldDef =
+          type === AggregateType.COUNT
+            ? {
+                prop: 255,
+                path: [field],
+                __isPropDef: true,
+                len: 4,
+                start: 0,
+                typeIndex: UINT32,
+                separate: true,
+                validation: () => true,
+                default: 0,
+              }
+            : def.schema.props[field]
+      }
+
+      if (fieldDef) {
+        if (fieldDef.hooks?.aggregate) {
+          hookFields ??= new Set(fields)
+          fieldDef.hooks.aggregate(query, hookFields)
+        }
+        updateAggregateDefs(def, fieldDef, type)
+      } else {
+        aggregationFieldDoesNotExist(def, field)
+        return
+      }
+
+      if (def.schema.hooks?.aggregate) {
+        def.schema.hooks.aggregate(query, hookFields || new Set(fields))
+      }
     }
-
-    if (fieldDef.hooks?.aggregate) {
-      hookFields ??= new Set(fields)
-      fieldDef.hooks.aggregate(query, hookFields)
-    }
-
-    if (!aggregates.get(fieldDef.prop)) {
-      aggregates.set(fieldDef.prop, [])
-      def.aggregate.size += 3 // fielp-[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[defrd + fieldAggSize
-    }
-
-    const aggregateField = aggregates.get(fieldDef.prop)
-    aggregateField.push({
-      propDef: fieldDef,
-      type,
-      resultPos: def.aggregate.totalResultsSize,
-      accumulatorPos: def.aggregate.totalAccumulatorSize,
-    })
-
-    const specificSizes = aggregateTypeMap.get(type)
-    if (specificSizes) {
-      def.aggregate.totalResultsSize += specificSizes.resultsSize
-      def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
-    } else {
-      def.aggregate.totalResultsSize += 8
-      def.aggregate.totalAccumulatorSize += 8
-    }
-    // needs to add an extra field WRITE TO
-    def.aggregate.size += 8 // aggType + propType + start + resultPos + accumulatorPos
-  }
-
-  if (def.schema.hooks?.aggregate) {
-    def.schema.hooks.aggregate(query, hookFields || new Set(fields))
   }
 }
 
