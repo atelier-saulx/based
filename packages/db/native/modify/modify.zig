@@ -33,6 +33,15 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     return result;
 }
 
+fn newNode(ctx: *ModifyCtx) !void {
+    const id = ctx.db.ids[ctx.typeId - 1] + 1;
+
+    ctx.node = try db.upsertNode(ctx, ctx.typeEntry.?, id);
+    ctx.id = id;
+    ctx.db.ids[ctx.typeId - 1] = id;
+    Modify.markDirtyRange(ctx, ctx.typeId, id);
+}
+
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
@@ -108,10 +117,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     ctx.err = errors.ClientError.null;
                     resCount.* += 1;
                 }
-                ctx.id = dbCtx.ids[ctx.typeId - 1] + 1;
-                dbCtx.ids[ctx.typeId - 1] = ctx.id;
-                ctx.node = try db.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
-                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                try newNode(ctx);
                 i = i + 1;
             },
             types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
