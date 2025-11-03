@@ -45,8 +45,7 @@
     "@based/schema": "5.0.4",
     "@based/utils": "1.1.1",
     "@based/protocol": "0.0.5",
-    "exit-hook": "^4.0.0",
-    "picocolors": "^1.1.0"
+    "exit-hook": "^4.0.0"
   },
   "optionalDependencies": {
     "@based/locale-x86-64-gnu": "*"
