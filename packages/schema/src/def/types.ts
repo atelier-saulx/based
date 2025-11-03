@@ -162,7 +162,7 @@ export type SchemaTypeDef = {
   checksum: number
   type: string
   blockCapacity: number
-  ringMaxIds: number // Maximum number of nodes in the type. This creates a circularly collected type.
+  capped: number // Maximum number of nodes in the type. This creates a circularly collected type.
   insertOnly: boolean // delete not allowed
   partial: boolean // only active block(s) should be loaded in-mem
   mainLen: number

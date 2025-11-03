@@ -12,7 +12,7 @@ await test('ring type', async (t) => {
   await db.setSchema({
     types: {
       meas: {
-        ringMaxIds: 3,
+        capped: 3,
         props: {
           temperature: 'number',
           humidity: 'number',

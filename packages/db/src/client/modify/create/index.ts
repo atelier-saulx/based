@@ -199,9 +199,9 @@ export const writeCreate = (
     } else {
       throw 'Invalid payload. "id" not allowed'
     }
-  } else if (schema.ringMaxIds) {
+  } else if (schema.capped) {
       writeU8(ctx, SWITCH_ID_CREATE_RING)
-      writeU32(ctx, schema.ringMaxIds)
+      writeU32(ctx, schema.capped)
   } else {
     writeU8(ctx, SWITCH_ID_CREATE)
   }

@@ -140,14 +140,14 @@ const createSchemaTypeDef = (
           typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
       }
     }
-    if (result.ringMaxIds == 0) {
-      if ('ringMaxIds' in type) {
+    if (result.capped == 0) {
+      if ('capped' in type) {
         if (
-          typeof type.ringMaxIds !== 'number' ||
-          type.ringMaxIds < 0) {
-          throw new Error('Invalid ringMaxIds')
+          typeof type.capped !== 'number' ||
+          type.capped < 0) {
+          throw new Error('Invalid capped')
         }
-        result.ringMaxIds = type.ringMaxIds
+        result.capped = type.capped
       }
     }
     if (result.insertOnly == false && 'insertOnly' in type) {

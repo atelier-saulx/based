@@ -9,7 +9,7 @@ export const createEmptyDef = (
   return {
     cnt: 0,
     blockCapacity: 0,
-    ringMaxIds: 0,
+    capped: 0,
     insertOnly: false,
     partial: false,
     checksum: hashObjectIgnoreKeyOrder(type),
