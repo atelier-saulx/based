@@ -31,16 +31,12 @@ await test('aliasFilter', async (t) => {
     age: 20,
   })
 
-  const a = await db
-    .query('plot', { slug: 'kavel-omval-naast-de-poort' })
-    .get()
-    .toObject()
+  const a = await db.query('plot', { slug: 'kavel-omval-naast-de-poort' }).get()
 
   const b = await db
     .query('plot', { slug: 'kavel-omval-naast-de-poort' })
     .filter('age', '>', 10)
     .get()
-    .toObject()
 
   deepEqual(a, b)
 })

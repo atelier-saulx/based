@@ -508,7 +508,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   }
 
   reset() {
-    this.id = undefined
+    this.queryId = undefined
     this.buffer = undefined
     this.def = undefined
   }
@@ -569,7 +569,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   }
 
   // if !id not initialized yet
-  id: number
+  queryId: number
 
   get(): GetPromise {
     return new GetPromise(this.#getInternal)

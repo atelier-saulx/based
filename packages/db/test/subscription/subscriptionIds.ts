@@ -201,7 +201,7 @@ await test('subscriptionIds', async (t) => {
 
   const x = def.def
 
-  console.log(x.target)
+  console.log(x.target, 'queryId', x.queryId)
 
   if ('id' in x.target && typeof x.target.id === 'number') {
     // for id queries the id will be the hash of the actual?
@@ -209,10 +209,10 @@ await test('subscriptionIds', async (t) => {
     // this id has to be WITHOUT the actual sub id
     // and then we need an extra one for sub id
 
-    if (!subsReverse[def.id]) {
+    if (!subsReverse[def.queryId]) {
       subId++
-      subsReverse[def.id] = subId
-      subs[subId] = def.id
+      subsReverse[def.queryId] = subId
+      subs[subId] = def.queryId
     }
 
     let fCount = x.include.main.len != 0 ? 1 : 0

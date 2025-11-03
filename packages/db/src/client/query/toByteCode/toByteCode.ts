@@ -4,12 +4,13 @@ import { includeToBuffer } from '../include/toByteCode.js'
 import { filterToBuffer } from '../query.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
-import { ENCODER, writeUint64 } from '@based/utils'
+import { ENCODER, writeUint16, writeUint32, writeUint64 } from '@based/utils'
 import {
   aggregateToBuffer,
   isRootCountOnly,
 } from '../aggregates/aggregation.js'
 import { defaultQuery } from './default.js'
+import { ALIAS, ID } from './constants.js'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
@@ -127,33 +128,25 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
       const alias = def.target.resolvedAlias
       const aliasStr = ENCODER.encode(alias.value)
       const aliasLen = aliasStr.byteLength
-      const buf = new Uint8Array(8 + filterSize + aliasLen)
-      buf[0] = QueryType.alias
-      buf[1] = def.schema.idUint8[0]
-      buf[2] = def.schema.idUint8[1]
-      buf[3] = alias.def.prop
-      buf[4] = aliasLen
-      buf[5] = aliasLen >>> 8
-      buf.set(aliasStr, 6)
-      buf[6 + aliasLen] = filterSize
-      buf[7 + aliasLen] = filterSize >>> 8
+      const buf = new Uint8Array(ALIAS.size + filterSize + aliasLen)
+      buf[ALIAS.queryType] = QueryType.alias
+      writeUint16(buf, def.schema.id, ALIAS.type)
+      buf[ALIAS.prop] = alias.def.prop
+      writeUint16(buf, aliasLen, ALIAS.aliasSize)
+      buf.set(aliasStr, ALIAS.aliasValue)
+      writeUint16(buf, filterSize, ALIAS.filterSize + aliasLen)
       if (filterSize) {
-        buf.set(filterToBuffer(def.filter), 8 + aliasLen)
+        buf.set(filterToBuffer(def.filter), ALIAS.filter + aliasLen)
       }
       result.push(buf)
     } else if (typeof def.target.id === 'number') {
-      const buf = new Uint8Array(9 + filterSize)
-      buf[0] = QueryType.id
-      buf[1] = def.schema.idUint8[0]
-      buf[2] = def.schema.idUint8[1]
-      buf[3] = def.target.id
-      buf[4] = def.target.id >>> 8
-      buf[5] = def.target.id >>> 16
-      buf[6] = def.target.id >>> 24
-      buf[7] = filterSize
-      buf[8] = filterSize >>> 8
+      const buf = new Uint8Array(ID.size + filterSize)
+      buf[ID.queryType] = QueryType.id
+      writeUint16(buf, def.schema.id, ID.type)
+      writeUint32(buf, def.target.id, ID.id)
+      writeUint16(buf, filterSize, ID.filterSize)
       if (filterSize) {
-        buf.set(filterToBuffer(def.filter), 9)
+        buf.set(filterToBuffer(def.filter), ID.filter)
       }
       result.push(buf)
     } else {

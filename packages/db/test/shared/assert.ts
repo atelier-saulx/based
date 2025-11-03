@@ -9,6 +9,9 @@ export const deepEqual = (a, b, msg?: string) => {
   if (a instanceof BasedQueryResponse) {
     a = a.toObject()
   }
+  if (b instanceof BasedQueryResponse) {
+    b = b.toObject()
+  }
   if (!uDeepEqual(a, b)) {
     const m = `${msg || ``}
 ------------------ EXPECTED ----------------------

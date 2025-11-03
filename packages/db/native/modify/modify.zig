@@ -47,7 +47,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
     const dirtyRanges = try napi.get([]f64, env, args[2]);
 
-    var timer = try std.time.Timer.start();
+    // var timer = try std.time.Timer.start();
 
     var i: usize = 0;
 
@@ -259,13 +259,13 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
         resCount.* += 1;
     }
 
-    std.debug.print("DRAIN {any} {any} byteSize {any} \n", .{
-        std.fmt.fmtDuration(timer.read()),
-        resCount.*,
-        batch.len,
-    });
+    // std.debug.print("DRAIN {any} {any} byteSize {any} \n", .{
+    //     std.fmt.fmtDuration(timer.read()),
+    //     resCount.*,
+    //     batch.len,
+    // });
 
-    if (ctx.subTypes) |_| {
-        std.debug.print("  subs: {any} \n", .{dbCtx.subscriptions.lastIdMarked / 8});
-    }
+    // if (ctx.subTypes) |_| {
+    //     std.debug.print("  subs: {any} \n", .{dbCtx.subscriptions.lastIdMarked / 8});
+    // }
 }

@@ -76,7 +76,7 @@ pub fn stage(
                 }
                 const vec: @Vector(vectorLen, u8) = idSubs[i..][0..vectorLen].*;
 
-                std.debug.print("hello {any} {any} \n", .{ f, vec });
+                // std.debug.print("hello {any} {any} \n", .{ f, vec });
 
                 if (@reduce(.Or, vec == f)) {
                     if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 8) {

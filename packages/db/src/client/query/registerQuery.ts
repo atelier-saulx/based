@@ -7,9 +7,10 @@ import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'
 import { includeField } from './query.js'
 import { convertToReaderSchema } from './queryDefToReadSchema.js'
+import { ID } from './toByteCode/constants.js'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
-  if (!q.id) {
+  if (!q.queryId) {
     const commands = q.queryCommands
     q.queryCommands = null
     const def = createQueryDef(
@@ -30,20 +31,15 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     q.queryCommands = commands
     const b = defToBuffer(q.db, q.def)
     const buf = concatUint8Arr(b)
-    let id = native.crc32(buf)
-    q.id = id
-    def.queryId = q.id
-    q.buffer = buf
 
-    // console.log('--------------------------------------------------')
-    // console.dir(convertToReaderSchema(q.def), { depth: 100 })
-    // const c = convertToReaderSchema(q.def)
-    // const s = serialize(c)
-    // console.log(deSerializeSchema(s))
-    // q.def.readSchema = deSerializeSchema(
-    //   serialize(convertToReaderSchema(q.def)),
-    // )
-    // console.log('--------------------------------------------------')
+    if ('id' in q.def.target) {
+      q.queryId = native.crc32(buf.subarray(ID.id + 4, buf.byteLength))
+    } else {
+      q.queryId = native.crc32(buf)
+    }
+
+    def.queryId = q.queryId
+    q.buffer = buf
 
     q.def.readSchema = convertToReaderSchema(q.def)
     handleErrors(q.def)
