@@ -119,8 +119,8 @@ await test('json type edge', async (t) => {
       workspaces: [
         {
           id: 1,
-          $permissionJson: '{"key":"value"}',
           $permissionsString: '{"key":"value"}',
+          $permissionsJson: { key: 'value' },
         },
       ],
     },
