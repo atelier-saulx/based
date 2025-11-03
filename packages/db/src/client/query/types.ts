@@ -130,7 +130,7 @@ export interface aggPropDef extends PropDef {
 export type LangFallback = LangName | false
 
 export type QueryDefShared = {
-  queryId?: number
+  queryId?: Uint8Array
   schemaChecksum?: number
   errors: QueryError[]
   lang: { lang: LangCode; fallback: LangCode[] }

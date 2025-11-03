@@ -1,5 +1,5 @@
 import native from '../../native.js'
-import { concatUint8Arr } from '@based/utils'
+import { concatUint8Arr, writeUint32 } from '@based/utils'
 import { BasedDbQuery } from './BasedDbQuery.js'
 import { defToBuffer } from './toByteCode/toByteCode.js'
 import { handleErrors } from './validation.js'
@@ -7,10 +7,9 @@ import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'
 import { includeField } from './query.js'
 import { convertToReaderSchema } from './queryDefToReadSchema.js'
-import { ID } from './toByteCode/constants.js'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
-  if (!q.queryId) {
+  if (!q.buffer) {
     const commands = q.queryCommands
     q.queryCommands = null
     const def = createQueryDef(
@@ -32,13 +31,6 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     const b = defToBuffer(q.db, q.def)
     const buf = concatUint8Arr(b)
 
-    if ('id' in q.def.target) {
-      q.queryId = native.crc32(buf.subarray(ID.id + 4, buf.byteLength))
-    } else {
-      q.queryId = native.crc32(buf)
-    }
-
-    def.queryId = q.queryId
     q.buffer = buf
 
     q.def.readSchema = convertToReaderSchema(q.def)

@@ -12,6 +12,7 @@ import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
 import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { ALIAS } from '@based/schema/prop-types'
+import { ID } from '../../src/client/query/toByteCode/constants.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -196,12 +197,17 @@ await test('subscriptionIds', async (t) => {
 
   // maybe make create fire things as well?
   const def = clients[0].query('user', 1).include('name', 'x')
+  const def2 = clients[0].query('user', 2).include('name', 'x')
 
   registerQuery(def)
+  registerQuery(def2)
 
   const x = def.def
+  const queryId = native.crc32(
+    def.buffer.subarray(ID.id + 4, def.buffer.byteLength),
+  )
 
-  console.log(x.target, 'queryId', x.queryId)
+  console.log(x.target, 'queryId', queryId)
 
   if ('id' in x.target && typeof x.target.id === 'number') {
     // for id queries the id will be the hash of the actual?
@@ -209,10 +215,11 @@ await test('subscriptionIds', async (t) => {
     // this id has to be WITHOUT the actual sub id
     // and then we need an extra one for sub id
 
-    if (!subsReverse[def.queryId]) {
+    if (!subsReverse[queryId]) {
+      // just add the fns to handle the queries here like a listener map (if id)
       subId++
-      subsReverse[def.queryId] = subId
-      subs[subId] = def.queryId
+      subsReverse[queryId] = subId
+      subs[subId] = queryId
     }
 
     let fCount = x.include.main.len != 0 ? 1 : 0
