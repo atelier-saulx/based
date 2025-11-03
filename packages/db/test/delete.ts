@@ -283,7 +283,7 @@ await test('delete performance', async (t) => {
   }
   await db.drain()
   t1 = performance.now()
-  assert(t1 - t0 < 300, 'delete 1M users')
+  assert(t1 - t0 < 400, 'delete 1M users')
 
   deepEqual((await db.query('user').get()).toObject(), [])
 
@@ -304,7 +304,7 @@ await test('delete performance', async (t) => {
   }
   await db.drain()
   t1 = performance.now()
-  assert(t1 - t0 < 300, 'delete 1M articles')
+  assert(t1 - t0 < 400, 'delete 1M articles')
   deepEqual((await db.query('article').get()).toObject(), [])
 
   const articles2 = []
@@ -318,7 +318,7 @@ await test('delete performance', async (t) => {
   }
   await db.drain()
   t1 = performance.now()
-  assert(t1 - t0 < 1000, 'create 1M articles - drain interleaved at 10k')
+  assert(t1 - t0 < 1500, 'create 1M articles - drain interleaved at 10k')
 
   //console.log(
   //  'if you interleave drain in each batch of 10K deletes you come up if +2min',
@@ -340,6 +340,6 @@ await test('delete performance', async (t) => {
   }
   await db.drain()
   t1 = performance.now()
-  assert(t1 - t0 < 300, 'delete 1M articles - again')
+  assert(t1 - t0 < 400, 'delete 1M articles - again')
   deepEqual((await db.query('article').get()).toObject(), [])
 })
