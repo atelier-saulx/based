@@ -18,7 +18,7 @@ export const writeSeparateEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (edge.typeIndex === BINARY) {
     writeBinaryEdge(ctx, edge, val)
   } else if (edge.typeIndex == JSONProp) {
-    writeBinaryEdge(ctx, edge, JSON.stringify(val))
+    writeBinaryEdge(ctx, edge, val === null ? null : JSON.stringify(val))
   } else if (edge.typeIndex === STRING) {
     writeStringEdge(ctx, edge, val)
   } else if (edge.typeIndex === REFERENCE) {
