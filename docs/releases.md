@@ -144,6 +144,7 @@ Note that version numbers may change due to nightly releases.
   - Searchable log storage
   - Installation and handling of Based functions
 - A Max len option for _references_ and _types_
+- Capped types (limit the number of nodes and overwrite the oldest first)
 - Graceful handling of incompatible dumps
 - Refresh `.expire()`
 - Improved load/save speed for references
