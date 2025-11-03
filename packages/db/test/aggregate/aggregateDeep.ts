@@ -791,6 +791,7 @@ await test('edges aggregation', async (t) => {
       },
       actor: {
         name: 'string',
+        strong: 'uint16',
         movies: {
           items: {
             ref: 'movie',
@@ -803,9 +804,11 @@ await test('edges aggregation', async (t) => {
 
   const a1 = db.create('actor', {
     name: 'Uma Thurman',
+    strong: 10,
   })
   const a2 = db.create('actor', {
     name: 'Jonh Travolta',
+    strong: 5,
   })
 
   const m1 = await db.create('movie', {
@@ -849,17 +852,17 @@ await test('edges aggregation', async (t) => {
 
   // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
   // after: NOK: zeroing
-  // console.log(await db.query('movie').sum('actors.$rating').get().toObject())
+  console.log(await db.query('movie').max('actors.$rating').get().toObject())
 
   /*----------------------------*/
   /*       BRANCHED QUERY       */
   /*----------------------------*/
 
   // before: OK: working
-  // after: NOK: unreachable
+  // after: OK: working
   // await db
   //   .query('movie')
-  //   .include((q) => q('actors').max('strong'))
+  //   .include((q) => q('actors').sum('strong'))
   //   .get()
   //   .inspect(10)
 
