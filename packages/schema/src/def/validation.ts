@@ -199,7 +199,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     if (value === null) {
       return true
     }
-    const arr = prop.enum
+    const arr = prop.enum || []
     for (let i = 0; i < arr.length; i++) {
       if (value === arr[i]) {
         return true

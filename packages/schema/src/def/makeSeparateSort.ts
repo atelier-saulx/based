@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SchemaTypeDef, STRING, ALIAS, CARDINALITY } from './types.js'
 
 export function makeSeparateSort(result: Partial<SchemaTypeDef>) {

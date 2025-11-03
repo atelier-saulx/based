@@ -4,21 +4,14 @@ import { parse } from '@based/schema'
 
 await test('string', () => {
   parse({
-    props: {
-      myString: {
-        type: 'string',
+    types: {
+      youzi: {
+        props: {
+          myString: {
+            type: 'string',
+          },
+        },
       },
     },
   })
-
-  throws(() => {
-    parse({
-      props: {
-        // @ts-expect-error
-        myEnum: {
-          enum: [{ invalidObj: true }],
-        },
-      },
-    })
-  }, 'should throw with non primitive enum')
 })

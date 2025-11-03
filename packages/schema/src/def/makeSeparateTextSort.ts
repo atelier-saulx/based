@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { langCodesMap } from '../lang.js'
 import { SchemaTypeDef, TEXT } from './types.js'
 

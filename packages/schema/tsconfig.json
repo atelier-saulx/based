@@ -5,8 +5,9 @@
     "outDir": "dist",
     "rootDir": "src",
     "declarationMap": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "strictNullChecks": true
   },
   "include": ["src"],
-  "exclude": ["dist"]
+  "exclude": ["dist", "src/_parse"]
 }

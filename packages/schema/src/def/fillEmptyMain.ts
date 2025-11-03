@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { convertToTimestamp, writeInt64 } from '@based/utils'
 import {
   BINARY,

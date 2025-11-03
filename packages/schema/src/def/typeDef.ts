@@ -1,8 +1,7 @@
+// @ts-nocheck
 import {
-  isPropType,
   SchemaObject,
   StrictSchemaType,
-  getPropType,
   SchemaLocales,
   SchemaHooks,
 } from '../index.js'
@@ -158,7 +157,7 @@ const createSchemaTypeDef = (
     // Create prop def
     const schemaProp = target[key]
     const propPath = [...path, key]
-    const propType = getPropType(schemaProp)
+    const propType = schemaProp.type //getPropType(schemaProp)
     if (propType === 'object') {
       createSchemaTypeDef(
         typeName,
@@ -173,9 +172,9 @@ const createSchemaTypeDef = (
 
     const len = getPropLen(schemaProp)
     if (
-      isPropType('string', schemaProp) ||
-      isPropType('alias', schemaProp) ||
-      isPropType('cardinality', schemaProp)
+      schemaProp === 'string' ||
+      schemaProp === 'alias' ||
+      schemaProp === 'cardinality'
     ) {
       if (typeof schemaProp === 'object') {
         if (
@@ -187,9 +186,9 @@ const createSchemaTypeDef = (
       } else {
         result.separateSortProps++
       }
-    } else if (isPropType('text', schemaProp)) {
+    } else if (schemaProp === 'text') {
       result.separateSortText++
-    } else if (isPropType('colvec', schemaProp)) {
+    } else if (schemaProp === 'colvec') {
       if (!result.insertOnly) {
         throw new Error('colvec requires insertOnly')
       }
@@ -247,13 +246,13 @@ const createSchemaTypeDef = (
       prop.cardinalityPrecision ??= schemaProp.precision ??= prec
     }
 
-    if (isPropType('enum', schemaProp)) {
+    if (schemaProp === 'enum') {
       prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
       prop.reverseEnum = {}
       for (let i = 0; i < prop.enum.length; i++) {
         prop.reverseEnum[prop.enum[i]] = i
       }
-    } else if (isPropType('references', schemaProp)) {
+    } else if (schemaProp === 'references') {
       if (result.partial) {
         throw new Error('references is not supported with partial')
       }
@@ -262,7 +261,7 @@ const createSchemaTypeDef = (
       prop.inverseTypeName = schemaProp.items.ref
       prop.dependent = schemaProp.items.dependent
       addEdges(prop, schemaProp.items)
-    } else if (isPropType('reference', schemaProp)) {
+    } else if (schemaProp === 'reference') {
       if (result.partial) {
         throw new Error('reference is not supported with partial')
       }
@@ -272,12 +271,12 @@ const createSchemaTypeDef = (
       prop.dependent = schemaProp.dependent
       addEdges(prop, schemaProp)
     } else if (typeof schemaProp === 'object') {
-      if (isPropType('string', schemaProp) || isPropType('text', schemaProp)) {
+      if (schemaProp === 'string' || schemaProp === 'text') {
         prop.compression =
           'compression' in schemaProp && schemaProp.compression === 'none'
             ? 0
             : 1
-      } else if (isPropType('timestamp', schemaProp) && 'on' in schemaProp) {
+      } else if (schemaProp === 'timestamp' && 'on' in schemaProp) {
         if (schemaProp.on[0] === 'c') {
           result.createTs ??= []
           result.createTs.push(prop)

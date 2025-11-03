@@ -1,4 +1,5 @@
-import { getPropType, SchemaReference } from '../index.js'
+// @ts-nocheck
+import { SchemaReference } from '../index.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { fillEmptyMain } from './fillEmptyMain.js'
 import {
@@ -30,10 +31,11 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         prop.edgesSeperateCnt = 0
       }
       const edgeProp = refProp[key]
-      const edgeType = getPropType(edgeProp)
+      const edgeType = edgeProp.type //getPropType(edgeProp)
       const len = getPropLen(edgeProp)
       const separate = isSeparate(edgeProp, len)
       if (separate) {
+        prop.edgesSeperateCnt ??= 0
         prop.edgesSeperateCnt++
       }
       const typeIndex = TYPE_INDEX_MAP[edgeType]
@@ -46,7 +48,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       const edge: PropDefEdge = {
         __isPropDef: true,
         __isEdge: true,
-        prop: separate ? prop.edgesSeperateCnt : 0,
+        prop: (separate && prop.edgesSeperateCnt) || 0,
         validation:
           edgeProp.validation ?? VALIDATION_MAP[typeIndex] ?? defaultValidation,
         name: key,

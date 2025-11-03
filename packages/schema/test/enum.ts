@@ -4,28 +4,55 @@ import { parse } from '@based/schema'
 
 await test('enum', () => {
   parse({
-    props: {
-      myEnum: {
-        enum: ['published', 'draft'],
-        default: 'published',
+    types: {
+      youzi: {
+        props: {
+          myEnum: {
+            enum: ['published', 'draft'],
+            default: 'published',
+          },
+        },
       },
     },
   })
 
   parse({
-    props: {
-      myEnum: ['published', 'draft'],
+    types: {
+      youzi: {
+        props: {
+          myEnum: ['published', 'draft'],
+        },
+      },
     },
   })
 
   throws(() => {
     parse({
-      props: {
-        myEnum: {
-          enum: ['published', 'draft'],
-          default: 'blurdo',
+      types: {
+        youzi: {
+          props: {
+            myEnum: {
+              enum: ['published', 'draft'],
+              default: 'blurdo',
+            },
+          },
         },
       },
     })
   }, 'disallow non defined default')
+
+  throws(() => {
+    parse({
+      types: {
+        youzi: {
+          props: {
+            // @ts-expect-error
+            myEnum: {
+              enum: [{ invalidObj: true }],
+            },
+          },
+        },
+      },
+    })
+  }, 'should throw with non primitive enum')
 })

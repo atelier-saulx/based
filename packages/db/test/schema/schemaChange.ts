@@ -32,10 +32,10 @@ await test('set schema dont migrate', async (t) => {
   // deepEqual(migrates, 0, '0 migrates')
 
   await db.setSchema({
-    props: {
-      coolguy: 'string',
-      badguy: 'boolean',
-    },
+    // props: {
+    //   coolguy: 'string',
+    //   badguy: 'boolean',
+    // },
     types: {
       yes: {
         name: 'string',
@@ -66,11 +66,11 @@ await test('set schema dont migrate', async (t) => {
   // deepEqual(migrates, 1, '1 migrates')
 
   await db.setSchema({
-    props: {
-      badguy: 'boolean',
-      coolguy: 'string',
-      okguy: 'boolean',
-    },
+    // props: {
+    //   badguy: 'boolean',
+    //   coolguy: 'string',
+    //   okguy: 'boolean',
+    // },
     types: {
       nope: {
         name: 'string',
@@ -100,16 +100,16 @@ await test('set schema dont migrate', async (t) => {
   })
 
   await db.setSchema({
-    props: {
-      badguy: 'boolean',
-      coolguy: 'string',
-      okguy: 'boolean',
-      excludesNopes: {
-        items: {
-          ref: 'nope',
-        },
-      },
-    },
+    // props: {
+    //   badguy: 'boolean',
+    //   coolguy: 'string',
+    //   okguy: 'boolean',
+    //   excludesNopes: {
+    //     items: {
+    //       ref: 'nope',
+    //     },
+    //   },
+    // },
     types: {
       nope: {
         name: 'string',
