@@ -1,8 +1,8 @@
+import { styleText } from 'node:util'
 import { Schema, SchemaProps, SchemaType, StrictSchema } from '../types.js'
 import { INVALID_KEY, INVALID_VALUE, UNKNOWN_PROP } from './errors.js'
 import { getPropType } from './utils.js'
 import propParsers from './props.js'
-import pc from 'picocolors'
 import {
   expectArray,
   expectBoolean,
@@ -184,7 +184,7 @@ export const print = (schema: Schema, path: string[]) => {
         key in obj
           ? `${key}: ${typeof v === 'object' && v !== null && !Array.isArray(v) ? `{..}` : JSON.stringify(v)}`
           : key
-      return `${prefix}${'--'.repeat(lvl - 1)}> ${pc.red(err)}`
+      return `${prefix}${'--'.repeat(lvl - 1)}> ${styleText('red', err)}`
     }
     obj = v
     return `${prefix}${padding}${key}: {`
