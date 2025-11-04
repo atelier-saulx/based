@@ -202,6 +202,7 @@ static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldS
     struct selva_string *s;
 
     assert(len >= 2 + sizeof(uint32_t));
+    assume(len >= 2 + sizeof(uint32_t));
 
     if (fs->string.fixed_len && len > fs->string.fixed_len) {
         return SELVA_ENOBUFS;
@@ -330,6 +331,7 @@ static void write_refs(struct SelvaNode * restrict node, const struct SelvaField
 
     memcpy(&refs, vp, sizeof(refs));
     assert(index >= -1);
+    assume(index >= -1);
 
     if (refs.offset > 0) {
         if (index == 0) {
@@ -391,6 +393,7 @@ static void write_refs(struct SelvaNode * restrict node, const struct SelvaField
     if ((size_t)index + 1 < new_len) {
         /* Move old refs to the right to make space. */
         assert(index + 1 + (new_len - 1 - index) <= new_len);
+        assume(index + 1 + (new_len - 1 - index) <= new_len);
         switch (refs.size) {
         case SELVA_NODE_REFERENCE_SMALL:
             memmove(refs.small + index + 1, refs.small + index, (new_len - 1 - index) * sizeof(*refs.small));
@@ -404,6 +407,7 @@ static void write_refs(struct SelvaNode * restrict node, const struct SelvaField
     } else if (new_len - refs.nr_refs > 1) {
         /* Clear the gap created. */
         assert(refs.nr_refs + (new_len - refs.nr_refs) <= new_len);
+        assume(refs.nr_refs + (new_len - refs.nr_refs) <= new_len);
         switch (refs.size) {
         case SELVA_NODE_REFERENCE_SMALL:
             memset(refs.small + refs.nr_refs, 0, (new_len - refs.nr_refs) * sizeof(*refs.small));
@@ -466,7 +470,9 @@ static void write_ref_2way(
         struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst)
 {
     assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+    assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
     assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
+    assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
 #if 0
     assert(fs_src->edge_constraint.dst_node_type == dst->type);
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
@@ -607,6 +613,7 @@ static node_id_t del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, c
     refs->nr_refs--;
 
     assert(id_set_len == refs->nr_refs);
+    assume(id_set_len == refs->nr_refs);
 
     if  ((efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT) && refs->nr_refs == 0) {
         selva_expire_node(db, src_node->type, src_node->node_id, 0, SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
@@ -696,6 +703,8 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
             assert(fs_dst->field < fields_dst->nr_fields);
 #endif
             assert(fs_dst->field < fields_dst->nr_fields);
+            assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+            assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
 
             nfo_dst = &fields_dst->fields_map[fs_dst->field];
             if (nfo_dst->in_use) {
@@ -951,6 +960,7 @@ int selva_fields_set_text(
         size_t len)
 {
     assert(len >= 2 + sizeof(uint32_t));
+    assume(len >= 2 + sizeof(uint32_t));
 
     enum selva_lang_code lang = str[0];
     struct ensure_text_field tf;
@@ -1267,6 +1277,7 @@ int selva_fields_reference_set(
 #if 0
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
 #endif
+    assume(fs_dst->edge_constraint.dst_node_type == src->type);
 
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES && !add_to_refs_index(db, src, dst, fs_src, fs_dst)) {
         return SELVA_EEXIST;
@@ -1439,6 +1450,7 @@ static void selva_fields_references_insert_tail_insert_refs(
 #if 0
     assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
 #endif
+    assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
     write_ref_2way(src, fs_src, -1, dst, fs_dst);
 }
 
@@ -1454,6 +1466,7 @@ static void selva_fields_references_insert_tail_insert_ref(
 #if 0
     assert (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE);
 #endif
+    assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE);
     (void)remove_reference(db, dst, fs_dst, 0, -1, false, dirty_cb, dirty_ctx);
     write_ref_2way(src, fs_src, -1, dst, fs_dst);
 }
