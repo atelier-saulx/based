@@ -3,7 +3,12 @@ import { QueryDef, QueryDefType, QueryType, includeOp } from '../types.js'
 import { includeToBuffer } from '../include/toByteCode.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
-import { concatUint8Arr, writeUint32, writeUint64 } from '@based/utils'
+import {
+  concatUint8Arr,
+  writeUint16,
+  writeUint32,
+  writeUint64,
+} from '@based/utils'
 import { defaultQuery } from './default.js'
 import { idQuery } from './id.js'
 import { aliasQuery } from './alias.js'
@@ -114,8 +119,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   if (edges) {
     const metaEdgeBuffer = new Uint8Array(3)
     metaEdgeBuffer[0] = includeOp.EDGE
-    metaEdgeBuffer[1] = edgesSize
-    metaEdgeBuffer[2] = edgesSize >>> 8
+    writeUint16(metaEdgeBuffer, edgesSize, 1)
     result.push(metaEdgeBuffer, ...edges)
   }
 

@@ -28,7 +28,6 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     q.queryCommands = commands
 
     const buf = queryToBuffer(q)
-
     q.buffer = buf
 
     q.def.readSchema = convertToReaderSchema(q.def)

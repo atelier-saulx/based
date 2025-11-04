@@ -402,7 +402,7 @@ export class DbServer extends DbShared {
       resolve(new Error('Query queue exceeded'))
       return
     }
-    const schemaChecksum = readUint64(buf, buf.byteLength - 8)
+    const schemaChecksum = readUint64(buf, buf.byteLength - 12)
     if (schemaChecksum !== this.schema?.hash) {
       return Promise.resolve(new Uint8Array(1))
     }
