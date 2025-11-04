@@ -1022,4 +1022,9 @@ await test('reference to a non-existing node', async (t) => {
   })
   // RFE Is this the correct behavior
   deepEqual(await db.query('user', mrSnurp).include('**').get(), { id: 1, articles: [] })
+
+  const article = await db.create('article')
+  deepEqual(article, 1)
+
+  deepEqual(await db.query('user', mrSnurp).include('**').get(), { id: 1, articles: [] })
 })
