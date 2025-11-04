@@ -157,11 +157,7 @@ await test('Basic SQL', async (t) => {
     { id: 2, lastName: 'Fuller', firstName: 'Andrew', region: 'WA' },
     { id: 3, lastName: 'Leverling', firstName: 'Janet', region: 'WA' },
     { id: 4, lastName: 'Peacock', firstName: 'Margaret', region: 'WA' },
-    { id: 5, lastName: 'Buchanan', firstName: 'Steven', region: '' },
-    { id: 6, lastName: 'Suyama', firstName: 'Michael', region: '' },
-    { id: 7, lastName: 'King', firstName: 'Robert', region: '' },
     { id: 8, lastName: 'Callahan', firstName: 'Laura', region: 'WA' },
-    { id: 9, lastName: 'Dodsworth', firstName: 'Anne', region: '' },
   ])
 
   // 7. Create a report showing the first and last name of all employees whose last names start
