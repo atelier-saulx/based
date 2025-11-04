@@ -189,9 +189,9 @@ await test('Basic SQL', async (t) => {
     .query('employees')
     .include('firstName', 'lastName', 'title', 'city')
     .filter('title', '=', 'Sales Representative')
-    .filter('region', '=', 'WA')
+    .filter('region', '!=', '')
     .or((f) => {
-      f.filter('city', '=', 'Seattle').or('city', '=', 'London')
+      f.filter('city', '=', 'Seattle').or('city', '=', 'Redmond')
     })
     .get()
   deepEqual(r9, [
@@ -203,13 +203,6 @@ await test('Basic SQL', async (t) => {
       city: 'Seattle',
     },
     {
-      id: 3,
-      lastName: 'Leverling',
-      firstName: 'Janet',
-      title: 'Sales Representative',
-      city: 'Kirkland',
-    },
-    {
       id: 4,
       lastName: 'Peacock',
       firstName: 'Margaret',
@@ -217,39 +210,11 @@ await test('Basic SQL', async (t) => {
       city: 'Redmond',
     },
     {
-      id: 5,
-      lastName: 'Buchanan',
-      firstName: 'Steven',
-      title: 'Sales Manager',
-      city: 'London',
-    },
-    {
-      id: 6,
-      lastName: 'Suyama',
-      firstName: 'Michael',
-      title: 'Sales Representative',
-      city: 'London',
-    },
-    {
-      id: 7,
-      lastName: 'King',
-      firstName: 'Robert',
-      title: 'Sales Representative',
-      city: 'London',
-    },
-    {
       id: 8,
       lastName: 'Callahan',
       firstName: 'Laura',
       title: 'Inside Sales Coordinator',
       city: 'Seattle',
-    },
-    {
-      id: 9,
-      lastName: 'Dodsworth',
-      firstName: 'Anne',
-      title: 'Sales Representative',
-      city: 'London',
     },
   ])
 
