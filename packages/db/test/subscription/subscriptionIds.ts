@@ -13,6 +13,7 @@ import native from '../../src/native.js'
 import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { ALIAS } from '@based/schema/prop-types'
 import { ID } from '../../src/client/query/toByteCode/offsets.js'
+import { getSubscription } from '../../src/client/query/subscription/byteCode/getSubscription.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -201,6 +202,8 @@ await test('subscriptionIds', async (t) => {
 
   registerQuery(def)
   registerQuery(def2)
+
+  getSubscription(def.buffer)
 
   const x = def.def
   const queryId = native.crc32(
