@@ -11,8 +11,15 @@ export const getSubscription = (
   query: Uint8Array,
 ): SubscriptionId | SubscriptionMulti => {
   const queryType: QueryType = readUint8(query, 0)
+  const queryId = readUint32(query, query.byteLength - 4)
 
-  console.info(queryType)
+  if (queryType === QueryType.id) {
+    const id = readUint32(query, ID.id)
+
+    console.log('this is a ID', queryId, id)
+  } else {
+    console.info('its something else!')
+  }
 
   return {} as any
 }
