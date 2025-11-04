@@ -1,7 +1,5 @@
-import native from '../../native.js'
-import { concatUint8Arr, writeUint32 } from '@based/utils'
 import { BasedDbQuery } from './BasedDbQuery.js'
-import { defToBuffer } from './toByteCode/toByteCode.js'
+import { queryToBuffer } from './toByteCode/toByteCode.js'
 import { handleErrors } from './validation.js'
 import { createQueryDef } from './queryDef.js'
 import { QueryDefType } from './types.js'
@@ -28,8 +26,8 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
       includeField(q.def, { field: '*' })
     }
     q.queryCommands = commands
-    const b = defToBuffer(q.db, q.def)
-    const buf = concatUint8Arr(b)
+
+    const buf = queryToBuffer(q)
 
     q.buffer = buf
 

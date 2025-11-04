@@ -203,87 +203,89 @@ await test('subscriptionIds', async (t) => {
   registerQuery(def)
   registerQuery(def2)
 
+  // add crc32 to query buffer
+
   getSubscription(def.buffer)
 
-  const x = def.def
-  const queryId = native.crc32(
-    def.buffer.subarray(ID.id + 4, def.buffer.byteLength),
-  )
+  // const x = def.def
+  // const queryId = native.crc32(
+  //   def.buffer.subarray(ID.id + 4, def.buffer.byteLength),
+  // )
 
-  console.log(x.target, 'queryId', queryId)
+  // console.log(x.target, 'queryId', queryId)
 
-  if ('id' in x.target && typeof x.target.id === 'number') {
-    // for id queries the id will be the hash of the actual?
+  // if ('id' in x.target && typeof x.target.id === 'number') {
+  //   // for id queries the id will be the hash of the actual?
 
-    // this id has to be WITHOUT the actual sub id
-    // and then we need an extra one for sub id
+  //   // this id has to be WITHOUT the actual sub id
+  //   // and then we need an extra one for sub id
 
-    if (!subsReverse[queryId]) {
-      // just add the fns to handle the queries here like a listener map (if id)
-      subId++
-      subsReverse[queryId] = subId
-      subs[subId] = queryId
-    }
+  //   if (!subsReverse[queryId]) {
+  //     // just add the fns to handle the queries here like a listener map (if id)
+  //     subId++
+  //     subsReverse[queryId] = subId
+  //     subs[subId] = queryId
+  //   }
 
-    let fCount = x.include.main.len != 0 ? 1 : 0
-    fCount += x.include.props.size
-    const fields = new Uint8Array(fCount)
-    // if alias as well!
-    let i = 0
-    if (x.include.main.len != 0) {
-      fields[i] = 0
-      i++
-    }
+  //   let fCount = x.include.main.len != 0 ? 1 : 0
+  //   fCount += x.include.props.size
+  //   const fields = new Uint8Array(fCount)
+  //   // if alias as well!
+  //   let i = 0
+  //   if (x.include.main.len != 0) {
+  //     fields[i] = 0
+  //     i++
+  //   }
 
-    for (const y of x.include.props.values()) {
-      fields[i] = y.def.prop
-      i++
-    }
+  //   for (const y of x.include.props.values()) {
+  //     fields[i] = y.def.prop
+  //     i++
+  //   }
 
-    if (x.references.size) {
-      console.log('HANDLE REFS')
-    }
+  //   if (x.references.size) {
+  //     console.log('HANDLE REFS')
+  //   }
 
-    const typeId = x.schema.id
-    const val = createSingleSubscriptionBuffer(
-      subId,
-      typeId,
-      fields,
-      x.target.id,
-    )
+  //   const typeId = x.schema.id
+  //   const val = createSingleSubscriptionBuffer(
+  //     subId,
+  //     typeId,
+  //     fields,
+  //     x.target.id,
+  //   )
 
-    console.log(fields)
+  //   console.log(fields)
 
-    native.addIdSubscription(server.dbCtxExternal, val)
-  }
+  //   native.addIdSubscription(server.dbCtxExternal, val)
+  // }
 
-  // 200 has to be different
-  const int = setInterval(() => {
-    const markedSubsR = native.getMarkedSubscriptions(server.dbCtxExternal)
-    console.log({ markedSubsR })
+  // // 200 has to be different
+  // const int = setInterval(() => {
+  //   const markedSubsR = native.getMarkedSubscriptions(server.dbCtxExternal)
+  //   console.log({ markedSubsR })
 
-    if (markedSubsR) {
-      const x = new Uint8Array(markedSubsR)
-      let i = 0
+  //   if (markedSubsR) {
+  //     const x = new Uint8Array(markedSubsR)
+  //     let i = 0
 
-      for (; i < markedSubsR.byteLength; i += 8) {
-        const subId = readUint32(x, i)
-        const id = readUint32(x, i + 4)
-        console.log('subId', subId, id)
-      }
+  //     for (; i < markedSubsR.byteLength; i += 8) {
+  //       const subId = readUint32(x, i)
+  //       const id = readUint32(x, i + 4)
+  //       console.log('subId', subId, id)
+  //     }
 
-      // need to
-      // do stuff
-    }
-  }, 200)
+  //     // need to
+  //     // do stuff
+  //   }
+  // }, 200)
 
-  await wait(200)
+  // await wait(200)
 
-  await clients[0].update('user', 1, {
-    name: 'MR FLAP!',
-  })
+  // await clients[0].update('user', 1, {
+  //   name: 'MR FLAP!',
+  // })
 
-  await wait(1000)
+  // await wait(1000)
 
-  clearInterval(int)
+  // clearInterval(int)
 })

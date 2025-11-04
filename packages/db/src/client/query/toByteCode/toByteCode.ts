@@ -3,7 +3,7 @@ import { QueryDef, QueryDefType, QueryType, includeOp } from '../types.js'
 import { includeToBuffer } from '../include/toByteCode.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
-import { writeUint64 } from '@based/utils'
+import { concatUint8Arr, writeUint32, writeUint64 } from '@based/utils'
 import { defaultQuery } from './default.js'
 import { idQuery } from './id.js'
 import { aliasQuery } from './alias.js'
@@ -11,11 +11,20 @@ import { idsQuery } from './ids.js'
 import { referencesQuery } from './references.js'
 import { referenceQuery } from './reference.js'
 import { aggregatesQuery } from './aggregates.js'
+import { BasedDbQuery } from '../BasedDbQuery.js'
+import native from '../../../native.js'
+import { ID } from './offsets.js'
 
 const byteSize = (arr: Uint8Array[]) => {
   return arr.reduce((a, b) => {
     return a + b.byteLength
   }, 0)
+}
+
+const schemaChecksum = (def: QueryDef) => {
+  const checksum = new Uint8Array(8)
+  writeUint64(checksum, def.schemaChecksum ?? 0, 0)
+  return checksum
 }
 
 export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
@@ -49,9 +58,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     result.push(aggregatesQuery(def))
 
     if (def.type === QueryDefType.Root) {
-      const checksum = new Uint8Array(8)
-      writeUint64(checksum, def.schemaChecksum ?? 0, 0)
-      result.push(checksum)
+      result.push(schemaChecksum(def))
     }
 
     return result
@@ -113,10 +120,27 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   }
 
   if (def.type === QueryDefType.Root) {
-    const checksum = new Uint8Array(8)
-    writeUint64(checksum, def.schemaChecksum ?? 0, 0)
-    result.push(checksum)
+    result.push(schemaChecksum(def))
   }
 
   return result
+}
+
+export const queryToBuffer = (query: BasedDbQuery) => {
+  const b = defToBuffer(query.db, query.def)
+  const crc32 = new Uint8Array(4)
+  b.push(crc32)
+  const buf = concatUint8Arr(b)
+
+  if (query.def.queryType === QueryType.id) {
+    writeUint32(
+      buf,
+      native.crc32(buf.subarray(ID.id + 4, buf.byteLength - 4)),
+      buf.byteLength - 4,
+    )
+  } else {
+    writeUint32(buf, native.crc32(buf), buf.byteLength - 4)
+  }
+
+  return buf
 }

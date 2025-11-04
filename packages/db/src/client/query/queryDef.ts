@@ -8,6 +8,7 @@ import {
   QueryDefRest,
   QueryDefShared,
   QueryDefType,
+  QueryType,
   Target,
 } from './types.js'
 import {
@@ -75,12 +76,16 @@ export function createQueryDef<T extends QueryDefType>(
     if (type === QueryDefType.Root) {
       if (t.id) {
         t.id = validateId(q, t.id)
+        q.queryType = QueryType.id
       } else if (t.ids) {
+        q.queryType = QueryType.ids
         t.ids = validateIds(q, t.ids)
         q.range.limit = t.ids.length
       } else if (t.alias) {
+        q.queryType = QueryType.alias
         t.resolvedAlias = validateAlias(q, t.alias)
       } else {
+        q.queryType = QueryType.default
         q.range.limit = DEF_RANGE_PROP_LIMIT
       }
     } else if (type === QueryDefType.References) {
