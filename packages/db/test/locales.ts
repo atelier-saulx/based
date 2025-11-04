@@ -1,4 +1,6 @@
+import assert from 'node:assert'
 import { BasedDb } from '../src/index.js'
+import native from '../src/native.js'
 import test from './shared/test.js'
 import { langCodesMap, Schema } from '@based/schema'
 
@@ -70,4 +72,17 @@ await test('locales', async (t) => {
       }
     }
   }
+})
+
+await test('locales sanity check', async (t) => {
+  // prettier-ignore
+  const missingOnDarwin = new Set([ 'aa', 'ab', 'ak', 'sq', 'an', 'as', 'ae', 'ay', 'az', 'bn', 'bi', 'bs', 'br', 'my', 'km', 'ce', 'cv', 'kw', 'co', 'dv', 'dz', 'fo', 'ff', 'gd', 'gl', 'kl', 'gu', 'ht', 'ha', 'hi', 'ig', 'id', 'ia', 'iu', 'ik', 'ga', 'kn', 'ks', 'rw', 'ku', 'ky', 'lo', 'la', 'lv', 'lb', 'li', 'ln', 'mk', 'mg', 'ms', 'ml', 'mt', 'gv', 'mi', 'mn', 'ne', 'se', 'no', 'nb', 'nn', 'oc', 'or', 'om', 'os', 'pa', 'ps', 'fa', 'qu', 'rm', 'sm', 'sa', 'sc', 'sr', 'sd', 'si', 'so', 'st', 'nr', 'sw', 'ss', 'tl', 'tg', 'ta', 'tt', 'te', 'th', 'bo', 'ti', 'to', 'ts', 'tn', 'tk', 'ug', 'ur', 'uz', 've', 'vi', 'wa', 'cy', 'fy', 'wo', 'xh', 'yi', 'yo', 'zu', 'ka', 'cnr' ])
+  const selvaLangs = new Set(native.selvaLangAll().split('\n'))
+
+  langCodesMap.forEach((value, key) => {
+    if (value === 0) return
+    if (process.platform === 'darwin' && !missingOnDarwin.has(key)) {
+      assert(selvaLangs.has(key), `Lang '${key}' is found in selva`)
+    }
+  })
 })

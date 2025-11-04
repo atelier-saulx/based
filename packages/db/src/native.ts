@@ -174,6 +174,10 @@ const native = {
     return db.selvaStrerror(err)
   },
 
+  selvaLangAll: (): string => {
+    return db.selvaLangAll()
+  },
+
   colvecTest: (
     dbCtx: any,
     typeId: number,
