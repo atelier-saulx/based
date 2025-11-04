@@ -45,25 +45,6 @@ export const REFERENCE = {
   prop: 5,
 }
 
-export const AGGREGATES = {
-  baseSize: 16, // queryType(1) + type(2) + offset(4) + limit(4) + filterSize(2) + aggregateSize(2) + aggregate(1)
-  queryType: 0,
-  type: 1,
-  offset: 3,
-  limit: 7,
-  filterSize: 11,
-  filter: 13,
-}
-
-export const REFERENCES_AGGREGATION = {
-  baseSize: 13, // includeOp(1) + size(2) + filterSize(2) + offset(4) + type(2) + prop(1) + aggregate(1)
-  includeOp: 0,
-  size: 1,
-  filterSize: 3,
-  offset: 5,
-  filter: 9,
-}
-
 export const DEFAULT = {
   baseSize: 18, // queryType(1) + type(2) + offset(4) + limit(4) + filterSize(2) + isSimple(1) + sortSize(2) + searchSize(2)
 }
