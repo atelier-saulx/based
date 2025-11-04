@@ -5,6 +5,7 @@ import {
   isRootCountOnly,
 } from '../aggregates/aggregation.js'
 import { writeUint16, writeUint32 } from '@based/utils'
+import { REFERENCES_AGGREGATION, AGGREGATES } from './offsets.js'
 
 export const aggregatesQuery = (def: QueryDef) => {
   const filterSize = def.filter.size || 0
@@ -14,40 +15,47 @@ export const aggregatesQuery = (def: QueryDef) => {
   }
 
   if (def.type === QueryDefType.References) {
-    const buf = new Uint8Array(13 + filterSize + aggregateSize)
+    const buf = new Uint8Array(
+      REFERENCES_AGGREGATION.baseSize + filterSize + aggregateSize,
+    )
     const sz = 10 + filterSize + aggregateSize
 
-    buf[0] = includeOp.REFERENCES_AGGREGATION
-    writeUint16(buf, sz, 1)
-    writeUint16(buf, filterSize, 3)
-    writeUint32(buf, def.range.offset, 5)
+    buf[REFERENCES_AGGREGATION.includeOp] = includeOp.REFERENCES_AGGREGATION
+    writeUint16(buf, sz, REFERENCES_AGGREGATION.size)
+    writeUint16(buf, filterSize, REFERENCES_AGGREGATION.filterSize)
+    writeUint32(buf, def.range.offset, REFERENCES_AGGREGATION.offset)
 
     if (filterSize) {
-      buf.set(filterToBuffer(def.filter), 9)
+      buf.set(filterToBuffer(def.filter), REFERENCES_AGGREGATION.filter)
     }
 
     // required to get typeEntry and fieldSchema
-    writeUint16(buf, def.schema.id, 9 + filterSize)
-    buf[9 + 2 + filterSize] = (def.target as any).propDef.prop
+    writeUint16(buf, def.schema.id, REFERENCES_AGGREGATION.typeId + filterSize)
+    buf[REFERENCES_AGGREGATION.prop + filterSize] = (
+      def.target as any
+    ).propDef.prop
     const aggregateBuffer = aggregateToBuffer(def.aggregate)
-    buf.set(aggregateBuffer, 9 + 3 + filterSize)
+    buf.set(
+      aggregateBuffer,
+      REFERENCES_AGGREGATION.aggregateBuffer + filterSize,
+    )
 
     return buf
   }
 
-  const buf = new Uint8Array(16 + filterSize + aggregateSize)
-  buf[0] = isRootCountOnly(def, filterSize)
+  const buf = new Uint8Array(AGGREGATES.baseSize + filterSize + aggregateSize)
+  buf[AGGREGATES.queryType] = isRootCountOnly(def, filterSize)
     ? QueryType.aggregatesCountType
     : QueryType.aggregates
-  writeUint16(buf, def.schema.id, 1)
-  writeUint32(buf, def.range.offset, 3)
-  writeUint32(buf, def.range.limit, 7)
-  writeUint16(buf, filterSize, 11)
+  writeUint16(buf, def.schema.id, AGGREGATES.type)
+  writeUint32(buf, def.range.offset, AGGREGATES.offset)
+  writeUint32(buf, def.range.limit, AGGREGATES.limit)
+  writeUint16(buf, filterSize, AGGREGATES.filterSize)
   if (filterSize) {
-    buf.set(filterToBuffer(def.filter), 13)
+    buf.set(filterToBuffer(def.filter), AGGREGATES.filter)
   }
   const aggregateBuffer = aggregateToBuffer(def.aggregate)
-  writeUint16(buf, aggregateSize, 14 + filterSize)
-  buf.set(aggregateBuffer, 16 + filterSize)
+  writeUint16(buf, aggregateSize, AGGREGATES.aggregateSize + filterSize)
+  buf.set(aggregateBuffer, AGGREGATES.aggregateBuffer + filterSize)
   return buf
 }

@@ -1,6 +1,6 @@
 import { QueryDef, includeOp } from '../types.js'
 import { writeUint16 } from '@based/utils'
-import { REFERENCE } from './constants.js'
+import { REFERENCE } from './offsets.js'
 
 export const referenceQuery = (def: QueryDef, size: number) => {
   const buf = new Uint8Array(REFERENCE.baseSize)

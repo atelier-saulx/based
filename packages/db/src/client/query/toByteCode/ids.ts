@@ -3,7 +3,7 @@ import { QueryDef, QueryType } from '../types.js'
 import { searchToBuffer } from '../search/index.js'
 import { createSortBuffer } from '../sort.js'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { IDS } from './constants.js'
+import { IDS } from './offsets.js'
 
 export const idsQuery = (def: QueryDef) => {
   const filterSize = def.filter.size || 0

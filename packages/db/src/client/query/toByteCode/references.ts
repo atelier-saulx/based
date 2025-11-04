@@ -2,7 +2,7 @@ import { filterToBuffer } from '../query.js'
 import { QueryDef, includeOp } from '../types.js'
 import { createSortBuffer } from '../sort.js'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { REFERENCES } from './constants.js'
+import { REFERENCES } from './offsets.js'
 
 export const referencesQuery = (def: QueryDef, size: number) => {
   const filterSize = def.filter.size || 0

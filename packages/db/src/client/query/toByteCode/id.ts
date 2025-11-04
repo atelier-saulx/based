@@ -1,7 +1,7 @@
 import { filterToBuffer } from '../query.js'
 import { QueryDef, QueryType } from '../types.js'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { ID } from './constants.js'
+import { ID } from './offsets.js'
 
 export const idQuery = (def: QueryDef) => {
   const filterSize = def.filter.size || 0

@@ -12,7 +12,7 @@ import { getDefaultHooks } from '../../src/hooks.js'
 import native from '../../src/native.js'
 import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { ALIAS } from '@based/schema/prop-types'
-import { ID } from '../../src/client/query/toByteCode/constants.js'
+import { ID } from '../../src/client/query/toByteCode/offsets.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({

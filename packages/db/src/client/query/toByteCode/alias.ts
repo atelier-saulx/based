@@ -1,7 +1,7 @@
 import { filterToBuffer } from '../query.js'
 import { QueryDef, QueryType } from '../types.js'
 import { ENCODER, writeUint16 } from '@based/utils'
-import { ALIAS } from './constants.js'
+import { ALIAS } from './offsets.js'
 
 export const aliasQuery = (def: QueryDef) => {
   const filterSize = def.filter.size || 0

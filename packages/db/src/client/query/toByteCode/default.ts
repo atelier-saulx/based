@@ -1,7 +1,7 @@
 import { filterToBuffer, isSimpleMainFilter } from '../query.js'
 import { QueryDef, QueryType } from '../types.js'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { DEFAULT } from './constants.js'
+import { DEFAULT } from './offsets.js'
 
 export const defaultQuery = (
   def: QueryDef,
