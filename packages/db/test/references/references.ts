@@ -984,3 +984,42 @@ await test('single2many - update refs', async (t) => {
     { id: 3, rating: 3, product: { id: 2 } },
   ])
 })
+
+await test('reference to a non-existing node', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  t.after(() => t.backup(db))
+  await db.start({ clean: true })
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          articles: {
+            items: {
+              ref: 'article',
+              prop: 'contributors',
+            },
+          },
+        },
+      },
+      article: {
+        props: {
+          contributors: {
+            items: {
+              ref: 'user',
+              prop: 'articles',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const mrSnurp = await db.create('user', {
+    articles: [ 1 ],
+  })
+  // RFE Is this the correct behavior
+  deepEqual(await db.query('user', mrSnurp).include('**').get(), { id: 1, articles: [] })
+})
