@@ -1,5 +1,4 @@
 import { BasedQueryResponse } from '../BasedQueryResponse.js'
-import { BasedDbQuery } from '../BasedDbQuery.js'
 
 export type OnData = (res: BasedQueryResponse) => any
 

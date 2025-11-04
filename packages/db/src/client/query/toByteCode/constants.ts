@@ -1,5 +1,5 @@
 export const ID = {
-  size: 9,
+  baseSize: 9, // queryType(1) + type(2) + id(4) + filterSize(2)
   queryType: 0,
   type: 1,
   id: 3,
@@ -8,7 +8,7 @@ export const ID = {
 }
 
 export const ALIAS = {
-  size: 8,
+  baseSize: 8, // queryType(1) + type(2) + prop(1) + aliasSize(2) + filterSize(2)
   queryType: 0,
   type: 1,
   prop: 3,
@@ -18,4 +18,52 @@ export const ALIAS = {
   filter: 8,
 }
 
-// maybe just split this up in functions and put the numbers in the function directly prob better
+export const IDS = {
+  baseSize: 21, // queryType(1) + type(2) + idsSize(4) + offset(4) + limit(4) + filterSize(2) + sortSize(2) + searchSize(2)
+  queryType: 0,
+  type: 1,
+  idsSize: 3,
+  idsValue: 7,
+}
+
+export const REFERENCES = {
+  baseSize: 18, // includeOp(1) + size(2) + filterSize(2) + sortSize(2) + offset(4) + limit(4) + type(2) + prop(1)
+  includeOp: 0,
+  size: 1,
+  filterSize: 3,
+  sortSize: 5,
+  offset: 7,
+  limit: 11,
+  filter: 15,
+}
+
+export const REFERENCE = {
+  baseSize: 6, // includeOp(1) + size(2) + type(2) + prop(1)
+  includeOp: 0,
+  sizeOffset: 1,
+  type: 3,
+  prop: 5,
+}
+
+export const AGGREGATES = {
+  baseSize: 16, // queryType(1) + type(2) + offset(4) + limit(4) + filterSize(2) + aggregateSize(2) + aggregate(1)
+  queryType: 0,
+  type: 1,
+  offset: 3,
+  limit: 7,
+  filterSize: 11,
+  filter: 13,
+}
+
+export const REFERENCES_AGGREGATION = {
+  baseSize: 13, // includeOp(1) + size(2) + filterSize(2) + offset(4) + type(2) + prop(1) + aggregate(1)
+  includeOp: 0,
+  size: 1,
+  filterSize: 3,
+  offset: 5,
+  filter: 9,
+}
+
+export const DEFAULT = {
+  baseSize: 18, // queryType(1) + type(2) + offset(4) + limit(4) + filterSize(2) + isSimple(1) + sortSize(2) + searchSize(2)
+}
