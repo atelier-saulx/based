@@ -146,12 +146,13 @@ await test('Basic SQL', async (t) => {
     },
   ])
 
-  // 6. Create a report showing the first and last names of all employees who have a region specified.
-  deepEqual(await db
+  // 6a. Create a report showing the first and last names of all employees who have a region specified.
+  const r6a = await db
     .query('employees')
     .include('firstName', 'lastName', 'region')
     .filter('region', '!=', '')
-    .get(), [
+    .get()
+  deepEqual(r6a, [
     { id: 1, lastName: 'Davolio', firstName: 'Nancy', region: 'WA' },
     { id: 2, lastName: 'Fuller', firstName: 'Andrew', region: 'WA' },
     { id: 3, lastName: 'Leverling', firstName: 'Janet', region: 'WA' },
@@ -160,11 +161,12 @@ await test('Basic SQL', async (t) => {
   ])
 
   // 6b. Create a report showing the first and last names of all employees who don't have a region specified.
-  deepEqual(await db
+  const r6b = await db
     .query('employees')
     .include('firstName', 'lastName', 'region')
     .filter('region', '=', '')
-    .get(), [
+    .get()
+  deepEqual(r6b, [
     { id: 5, lastName: 'Buchanan', firstName: 'Steven', region: '' },
     { id: 6, lastName: 'Suyama', firstName: 'Michael', region: '' },
     { id: 7, lastName: 'King', firstName: 'Robert', region: '' },
