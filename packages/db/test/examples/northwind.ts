@@ -147,18 +147,30 @@ await test('Basic SQL', async (t) => {
   ])
 
   // 6. Create a report showing the first and last names of all employees who have a region specified.
-  const r6 = await db
+  deepEqual(await db
     .query('employees')
     .include('firstName', 'lastName', 'region')
     .filter('region', '!=', '')
-    .get()
-  deepEqual(r6, [
+    .get(), [
     { id: 1, lastName: 'Davolio', firstName: 'Nancy', region: 'WA' },
     { id: 2, lastName: 'Fuller', firstName: 'Andrew', region: 'WA' },
     { id: 3, lastName: 'Leverling', firstName: 'Janet', region: 'WA' },
     { id: 4, lastName: 'Peacock', firstName: 'Margaret', region: 'WA' },
     { id: 8, lastName: 'Callahan', firstName: 'Laura', region: 'WA' },
   ])
+
+  // 6b. Create a report showing the first and last names of all employees who don't have a region specified.
+  deepEqual(await db
+    .query('employees')
+    .include('firstName', 'lastName', 'region')
+    .filter('region', '=', '')
+    .get(), [
+    { id: 5, lastName: 'Buchanan', firstName: 'Steven', region: '' },
+    { id: 6, lastName: 'Suyama', firstName: 'Michael', region: '' },
+    { id: 7, lastName: 'King', firstName: 'Robert', region: '' },
+    { id: 9, lastName: 'Dodsworth', firstName: 'Anne', region: '' },
+  ])
+
 
   // 7. Create a report showing the first and last name of all employees whose last names start
   // with a letter in the last half of the alphabet.
