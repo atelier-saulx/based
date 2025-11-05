@@ -1,8 +1,20 @@
-import type { LangName } from './lang.js'
 import type { Validation } from './def/validation.js'
 import { scope, type } from 'arktype'
 
-export const stringFormats = [
+const shared = {
+  '+': 'reject',
+  'required?': 'boolean',
+  'title?': 'string | Record<string, string>',
+  'description?': 'string | Record<string, string>',
+  'validation?': 'Function' as type.cast<Validation>,
+  'hooks?': {
+    'create?': 'Function' as type.cast<
+      (value: any, payload: Record<string, any>) => any
+    >,
+  },
+} as const satisfies Parameters<type>[0]
+const numbers = '"number"|"int8"|"int16"|"int32"|"uint8"|"uint16"|"uint32"'
+const format = type.enumerated(
   'alpha',
   'alphaLocales',
   'alphanumeric',
@@ -74,613 +86,195 @@ export const stringFormats = [
   'URL',
   'UUID',
   'VAT',
+)
 
-  // TODO: for discussion
-  'multiline',
-] as const
-
-type Role = 'title' | 'source' | 'media' | string
-
-const base = type({
-  '+': 'reject',
-  'required?': 'boolean',
-  'title?': 'string | Record<string, string>',
-  'description?': 'string | Record<string, string>',
-  'validation?': 'Function' as type.cast<Validation>,
-  'hooks?': {
-    'create?': 'Function' as type.cast<
-      (value: any, payload: Record<string, any>) => any
-    >,
+const schemaProps = scope({
+  EnumItem: 'string|number|boolean',
+  Enum: [
+    'EnumItem',
+    '|',
+    {
+      'type?': '"enum"',
+      'default?': 'EnumItem',
+      enum: 'EnumItem[]',
+    },
+  ],
+  Boolean: [
+    '"boolean"',
+    '|',
+    {
+      ...shared,
+      type: '"boolean"',
+      'default?': 'boolean',
+    },
+  ],
+  Number: [
+    numbers,
+    '|',
+    {
+      ...shared,
+      type: numbers,
+      'default?': 'number',
+      'min?': 'number',
+      'max?': 'number',
+      'step?': 'number|"any"',
+    },
+  ],
+  Binary: [
+    '"binary"',
+    '|',
+    {
+      ...shared,
+      type: '"binary"',
+      'default?': 'TypedArray.Uint8',
+      'maxBytes?': 'number',
+      'format?': format,
+    },
+  ],
+  String: [
+    '"string"',
+    '|',
+    {
+      type: '"string"',
+      'default?': 'string',
+      'maxBytes?': 'number',
+      'max?': 'number',
+      'min?': 'number',
+      'compression?': '"none"|"deflate"',
+      'format?': format,
+    },
+  ],
+  Text: [
+    '"text"',
+    '|',
+    {
+      type: '"text"',
+      'default?': 'Record<string, string>',
+      'compression?': '"none"|"deflate"',
+      'format?': format,
+    },
+  ],
+  Json: [
+    '"json"',
+    '|',
+    {
+      ...shared,
+      type: '"json"',
+      'default?': 'Record<string, unknown> | null',
+    },
+  ],
+  Cardinality: [
+    '"cardinality"',
+    '|',
+    {
+      ...shared,
+      type: '"cardinality"',
+      'maxBytes?': 'number',
+      'precision?': 'number',
+      'mode?': '"sparse"|"dense"',
+    },
+  ],
+  Vector: [
+    '"vector"|"colvec"',
+    '|',
+    {
+      ...shared,
+      type: '"vector"|"colvec"',
+      size: 'number',
+      'default?':
+        'TypedArray.Int8|TypedArray.Int16|TypedArray.Int32|TypedArray.Uint8|TypedArray.Uint16|TypedArray.Uint32|TypedArray.Float32|TypedArray.Float64',
+      'baseType?':
+        '"number"|"int8"|"int16"|"int32"|"uint8"|"uint16"|"uint32"|"float32"|"float64"',
+    },
+  ],
+  Timestamp: [
+    '"timestamp"',
+    '|',
+    {
+      ...shared,
+      type: '"timestamp"',
+      'default?': 'number|Date|string',
+      'on?': '"create"|"update"',
+    },
+  ],
+  References: {
+    ...shared,
+    'type?': '"references"',
+    'default?': 'number[]',
+    items: 'Reference',
   },
-})
-
-const boolean = base.merge({
-  type: '"boolean"',
-  'default?': 'boolean',
-})
-
-const number = base.merge({
-  type: '"number"|"int8"|"int16"|"int32"|"uint8"|"uint16"|"uint32"',
-  'default?': 'number',
-  'min?': 'number',
-  'max?': 'number',
-  'step?': 'number|"any"',
-})
-
-const string = base.merge({
-  type: '"string"',
-  'default?': 'string',
-  'maxBytes?': 'number',
-  'max?': 'number',
-  'min?': 'number',
-  'format?': type.enumerated(...stringFormats),
-  'compression?': '"none"|"deflate"',
-})
-
-const binary = base.merge({
-  type: '"binary"',
-  'default?': 'TypedArray.Uint8',
-  'maxBytes?': 'number',
-  'format?': type.enumerated(...stringFormats),
-})
-
-const json = base.merge({
-  type: '"json"',
-  'default?': 'Record<string, unknown> | null',
-})
-
-const cardinality = base.merge({
-  type: '"cardinality"',
-  'maxBytes?': 'number',
-  'precision?': 'number',
-  'mode?': '"sparse"|"dense"',
-})
-
-const vector = base.merge({
-  type: '"vector"|"colvec"',
-  size: 'number',
-  'default?':
-    'TypedArray.Int8|TypedArray.Int16|TypedArray.Int32|TypedArray.Uint8|TypedArray.Uint16|TypedArray.Uint32|TypedArray.Float32|TypedArray.Float64',
-  'baseType?':
-    '"number"|"int8"|"int16"|"int32"|"uint8"|"uint16"|"uint32"|"float32"|"float64"',
-})
-
-const timestamp = number.merge({
-  type: '"timestamp"',
-  'default?': 'number|Date|string',
-  'on?': '"create"|"update"',
-})
-
-const reference = base.merge({
-  'type?': '"reference"',
-  'default?': 'number',
-  ref: 'string',
-  prop: 'string',
-  'dependent?': 'boolean',
-  '[/^\\$/]': 'Reference',
-})
-
-const types = scope({
   Reference: {
+    ...shared,
     'type?': '"reference"',
-    'default?': 'number',
-    ref: 'string',
+    'default?': 'number.integer',
+    ref: [
+      'string',
+      ':',
+      (ref, ctx) => {
+        // @ts-ignore
+        const { types } = ctx.root
+        return (
+          ref in types ||
+          ctx.reject(
+            new Intl.ListFormat('en', {
+              style: 'short',
+              type: 'disjunction',
+            }).format(Object.keys(types)),
+          )
+        )
+      },
+    ],
     prop: 'string',
     'dependent?': 'boolean',
-    '[/^\\$/]': 'Reference',
+    '[/^\\$/]': 'Prop',
+  },
+  Prop: 'Enum|Boolean|Number|String|Binary|Json|Cardinality|Vector|Timestamp|References|Reference|Text',
+})
+
+const schema = type({
+  types: {
+    '[string]': schemaProps
+      .type({
+        props: {
+          '[string]': 'Prop',
+        },
+      })
+      .or({
+        'props?': 'never',
+        '[string]': 'Prop',
+      }),
   },
 })
 
-const test: typeof reference.infer = {
-  ref: 'haha',
-  prop: 'yoyo',
-  $user: { type: 'timestamp' },
+const s: typeof schema.infer = {
+  types: {
+    youzi: {
+      name: { type: 'string' },
+      ballz: 'string',
+    },
+    james: {
+      name: 'string',
+    },
+    success: {
+      props: {
+        ding: {
+          items: {
+            ref: 'youzi',
+            prop: 'lullo',
+            $ballz: 'string',
+          },
+        },
+      },
+    },
+  },
 }
 
-const res = reference({
-  ref: 'haha',
-  prop: 'yoyo',
-  user: true,
-})
-
-// const mySchema = {
-//   types: {
-//     user: {
-//       name: 'string',
-//       books: {
-//         items: {
-//           ref: 'book',
-//           prop: 'user',
-//         },
-//       },
-//     },
-//     $user_book: {
-//       $rating: 'number',
-//       $role: {
-//         ref: 'role',
-//         prop: 'userBookEdges',
-//       },
-//     },
-//     book: {
-//       name: 'string',
-//     },
-//     role: {
-//       name: 'string',
-//     },
-//   },
-// }
-// @ts-ignore
-// {
-//   books: [{
-//     $rating:
-//   }]
-// }
-
-console.log(res)
-
-export const numberDisplays = [
-  'short',
-  'human',
-  'ratio',
-  'bytes',
-  'euro',
-  'dollar',
-  'pound',
-  'meter',
-] as const
-
-export const dateDisplays = [
-  'date',
-  'date-time',
-  'date-time-text',
-  'date-time-human',
-  'date-time-human-short',
-  'time',
-  'time-precise',
-] as const
-
-type DateDisplay = (typeof dateDisplays)[number]
-type NumberDisplay = (typeof numberDisplays)[number] | `round-${number}`
-type StringFormat = (typeof stringFormats)[number]
-
-type MimeString =
-  | 'text/html'
-  | 'text/plain'
-  | 'text/markdown'
-  | 'image/png'
-  | 'image/jpeg'
-  | 'video/mp4'
-  | 'video/quicktime'
-  | 'image/*'
-  | 'video/*'
-  | 'audio/*'
-  | '*/*'
-  | `${string}/${string}` // this is overriding the previous
-
-type Mime = MimeString | MimeString[]
-
-type Letter =
-  | 'A'
-  | 'B'
-  | 'C'
-  | 'D'
-  | 'E'
-  | 'F'
-  | 'G'
-  | 'H'
-  | 'I'
-  | 'J'
-  | 'K'
-  | 'L'
-  | 'M'
-  | 'N'
-  | 'O'
-  | 'P'
-  | 'Q'
-  | 'R'
-  | 'S'
-  | 'T'
-  | 'U'
-  | 'V'
-  | 'W'
-  | 'X'
-  | 'Y'
-  | 'Z'
-  | 'a'
-  | 'b'
-  | 'c'
-  | 'd'
-  | 'e'
-  | 'f'
-  | 'g'
-  | 'h'
-  | 'i'
-  | 'j'
-  | 'k'
-  | 'l'
-  | 'm'
-  | 'n'
-  | 'o'
-  | 'p'
-  | 'q'
-  | 'r'
-  | 's'
-  | 't'
-  | 'u'
-  | 'v'
-  | 'w'
-  | 'x'
-  | 'y'
-  | 'z'
-
-type AllowedKey = `${Letter}${string}`
-type QueryFn = Function
-type PropValues = {
-  type?: string
-  default?: any
-  validation?: Validation
-}
-type Prop<V extends PropValues> = {
-  required?: boolean
-  title?: string | Record<string, string>
-  description?: string | Record<string, string>
-  path?: string
-  query?: QueryFn
-  role?: Role
-  readOnly?: boolean
-  examples?: string[]
-  validation?: Validation
-  hooks?: SchemaPropHooks
-} & V
-
-type EnumItem = string | number | boolean
-type NeverInItems = { required?: never }
-
-export type SchemaReferences = Prop<{
-  type?: 'references'
-  default?: number[]
-  items: SchemaReference & NeverInItems
-}>
-
-export type SchemaReferencesOneWay = Prop<{
-  type?: 'references'
-  default?: number[]
-  items: SchemaReferenceOneWay & NeverInItems
-}>
-
-export type SchemaText = Prop<{
-  type: 'text'
-  default?: Record<string, string>
-  format?: StringFormat
-  compression?: 'none' | 'deflate'
-}>
-
-type NumberType =
-  | 'number'
-  | 'int8'
-  | 'uint8'
-  | 'int16'
-  | 'uint16'
-  | 'int32'
-  | 'uint32'
-
-export type SchemaNumber = Prop<{
-  type: NumberType
-  default?: number
-  min?: number
-  max?: number
-  step?: number | 'any'
-  display?: NumberDisplay
-  // history?: {
-  //   interval: 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second'
-  // }
-}>
-
-export type SchemaString = Prop<{
-  type: 'string'
-  default?: string
-  maxBytes?: number
-  max?: number
-  min?: number
-  mime?: Mime
-  format?: StringFormat
-  compression?: 'none' | 'deflate'
-}>
-
-export type SchemaBinary = Prop<{
-  type: 'binary'
-  default?: Uint8Array
-  maxBytes?: number
-  mime?: Mime
-  format?: StringFormat
-}>
-
-export type SchemaJson = Prop<{
-  type: 'json'
-  default?: Record<string, any> | null
-}>
-
-export type SchemaBoolean = Prop<{
-  type: 'boolean'
-  default?: boolean
-}>
-
-export type HLLRegisterRepresentation = 'sparse' | 'dense'
-
-export type SchemaCardinality = Prop<{
-  type: 'cardinality'
-  maxBytes?: number
-  precision?: number
-  mode?: HLLRegisterRepresentation
-}>
-
-type VectorDefaultType =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
-export type SchemaVectorBaseType = NumberType | 'float32' | 'float64'
-
-export type SchemaVector = Prop<{
-  type: 'vector'
-  default?: VectorDefaultType
-  /**
-   * Number of elements in the vector.
-   */
-  size: number
-  /**
-   * Base type of the vector.
-   * float64 == number
-   */
-  baseType?: SchemaVectorBaseType
-}>
-
-export type SchemaColvec = Prop<{
-  type: 'colvec'
-  default?: VectorDefaultType
-  /**
-   * Number of elements in the vector.
-   */
-  size: number
-  /**
-   * Base type of the vector.
-   * float64 == number
-   */
-  baseType?: SchemaVectorBaseType
-}>
-
-export type SchemaTimestamp = Prop<{
-  type: 'timestamp'
-  default?: number | Date | string
-  on?: 'create' | 'update'
-  display?: DateDisplay
-  min?: number | string
-  max?: number | string
-  step?: number | 'any' | string
-}>
-
-export type SchemaReferenceOneWay = Prop<{
-  type?: 'reference'
-  default?: number
-  ref: string
-  mime?: Mime
-}>
-
-export type SchemaReference = Prop<{
-  type?: 'reference'
-  default?: number
-  ref: string
-  prop: string
-  dependent?: boolean
-  mime?: Mime
-}> &
-  Record<`$${string}`, SchemaPropOneWay>
-
-export type SchemaObject = Prop<{
-  type?: 'object'
-  props: SchemaProps
-}>
-
-export type SchemaObjectOneWay = Prop<{
-  type?: 'object'
-  props: SchemaPropsOneWay
-}>
-
-export type SchemaEnum = Prop<{
-  type?: 'enum'
-  default?: EnumItem | undefined
-  enum: EnumItem[]
-}>
-
-export type SchemaAlias = Omit<SchemaString, 'type'> & { type: 'alias' }
-
-export type SchemaPropShorthand =
-  | 'timestamp'
-  | 'binary'
-  | 'boolean'
-  | 'string'
-  | 'alias'
-  | 'text'
-  | 'json'
-  | 'cardinality'
-  | NumberType
-  | EnumItem[]
-
-type NonRefSchemaProps =
-  | SchemaTimestamp
-  | SchemaBoolean
-  | SchemaNumber
-  | SchemaString
-  | SchemaAlias
-  | SchemaText
-  | SchemaEnum
-  | SchemaJson
-  | SchemaBinary
-  | SchemaCardinality
-  | SchemaVector
-  | SchemaColvec
-  | SchemaPropShorthand
-
-export type SchemaProp =
-  | NonRefSchemaProps
-  | SchemaReferences
-  | SchemaReference
-  | SchemaObject
-  | SchemaBinary
-
-type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>
-
-export type StrictSchemaProp = RequiredFields<
-  Exclude<SchemaProp, SchemaPropShorthand>,
-  'type'
->
-
-export type SchemaPropOneWay =
-  | SchemaReferencesOneWay
-  | SchemaReferenceOneWay
-  | SchemaObjectOneWay
-  | NonRefSchemaProps
-
-export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
-export type SchemaProps<isStrict = false> = Record<
-  AllowedKey,
-  isStrict extends true ? StrictSchemaProp : SchemaProp
-> & { id?: never }
-
-// TODO: export these types in a pkg (not db => circular!)
-type BasedDbQuery = any
-type Operator = string
-
-export type SchemaHooks = {
-  create?: (payload: Record<string, any>) => void | Record<string, any>
-  update?: (payload: Record<string, any>) => void | Record<string, any>
-  read?: (result: Record<string, any>) => void | null | Record<string, any>
-  search?: (query: BasedDbQuery, fields: Set<string>) => void
-  include?: (
-    query: BasedDbQuery,
-    fields: Map<
-      string,
-      {
-        field: string
-        opts?: any // temp this type
-      }
-    >,
-  ) => void
-  filter?: (
-    query: BasedDbQuery,
-    field: string,
-    operator: Operator,
-    value: any,
-  ) => void
-  groupBy?: (query: BasedDbQuery, field: string) => void
-  aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
+const parse = (s) => {
+  const out = schema(s)
+  if (out instanceof type.errors) {
+    throw out.summary
+  }
+  return out
 }
 
-export type SchemaPropHooks = {
-  create?: (value: any, payload: Record<string, any>) => any
-  update?: (value: any, payload: Record<string, any>) => any
-  read?: (value: any, result: Record<string, any>) => any
-  aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
-  search?: (query: BasedDbQuery, fields: Set<string>) => void
-  groupBy?: (query: BasedDbQuery, field: string) => void
-  filter?: (
-    query: BasedDbQuery,
-    field: string,
-    operator: Operator,
-    value: any,
-  ) => void
-  include?: (
-    query: BasedDbQuery,
-    fields: Map<
-      string,
-      {
-        field: string
-        opts?: any // temp this type
-      }
-    >,
-  ) => void
-}
-
-type GenericSchemaType<isStrict = false> = {
-  hooks?: SchemaHooks
-  id?: number
-  blockCapacity?: number
-  insertOnly?: boolean
-  partial?: boolean
-  props: SchemaProps<isStrict>
-}
-
-export type StrictSchemaType = GenericSchemaType<true>
-export type SchemaType<isStrict = false> = isStrict extends true
-  ? StrictSchemaType
-  :
-      | StrictSchemaType
-      | GenericSchemaType<false>
-      | (SchemaProps & { props?: never })
-
-export type SchemaTypeName = Exclude<string, '_root'>
-export type SchemaTypes<isStrict = false> = Record<
-  SchemaTypeName,
-  SchemaType<isStrict>
-> & { _root?: never }
-
-export type SchemaPropsOneWay = Record<AllowedKey, SchemaPropOneWay> & {
-  id?: never
-}
-
-type MigrateFn = (
-  node: Record<string, any>,
-) => Record<string, any> | [string, Record<string, any>]
-
-export type MigrateFns = Record<string, MigrateFn>
-
-type GenericSchema<isStrict = false> = {
-  version?: string
-  types?: SchemaTypes<isStrict>
-  locales?: SchemaLocales
-  defaultTimezone?: string
-  migrations?: {
-    version: string
-    migrate: MigrateFns
-  }[]
-}
-
-export type StrictSchema = GenericSchema<true>
-export type NonStrictSchema = GenericSchema<false>
-export type Schema = NonStrictSchema | StrictSchema
-
-export type SchemaLocales = Partial<
-  Record<
-    LangName,
-    | true
-    | {
-        required?: boolean
-        fallback?: LangName // not multiple - 1 is enough else it becomes too complex
-      }
-  >
->
-
-export type SchemaPropTypeMap = {
-  references: SchemaReferences
-  timestamp: SchemaTimestamp
-  reference: SchemaReference
-  boolean: SchemaBoolean
-  string: SchemaString
-  object: SchemaObject
-  alias: SchemaAlias
-  enum: SchemaEnum
-  text: SchemaText
-  json: SchemaJson
-  binary: SchemaBinary
-  cardinality: SchemaCardinality
-  vector: SchemaVector
-  colvec: SchemaColvec
-} & Record<NumberType, SchemaNumber>
-
-export type SchemaPropTypes = keyof SchemaPropTypeMap
-export const MAX_ID = 4294967295
-export const MIN_ID = 1
+console.log(parse(s))
