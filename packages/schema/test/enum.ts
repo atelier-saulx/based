@@ -34,4 +34,17 @@ await test('enum', () => {
       },
     })
   }, 'disallow non defined default')
+
+  throws(() => {
+    parse({
+      types: {
+        test: {
+          // @ts-expect-error
+          myEnum: {
+            enum: [{ invalidObj: true }],
+          },
+        },
+      },
+    })
+  }, 'should throw with non primitive enum')
 })

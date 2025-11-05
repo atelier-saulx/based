@@ -1,7 +1,7 @@
 import type { LangName } from './lang.js'
 import type { Validation } from './def/validation.js'
 
-type Role = 'title' | 'source' | 'media' | string
+// type Role = 'title' | 'source' | 'media' | string
 export const stringFormats = [
   'alpha',
   'alphaLocales',
@@ -240,7 +240,7 @@ export type SchemaString = Prop<{
   maxBytes?: number
   max?: number
   min?: number
-  mime?: Mime
+  // mime?: Mime
   format?: StringFormat
   compression?: 'none' | 'deflate'
 }>
@@ -540,5 +540,6 @@ export type SchemaPropTypeMap = {
 } & Record<NumberType, SchemaNumber>
 
 export type SchemaPropTypes = keyof SchemaPropTypeMap
+export const propTypes = new Set([])
 export const MAX_ID = 4294967295
 export const MIN_ID = 1

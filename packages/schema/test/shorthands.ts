@@ -16,9 +16,6 @@ await test('shorthands', () => {
           },
         },
       },
-      props: {
-        myText: 'text',
-      },
     }).schema,
     {
       locales: { en: {} },
@@ -28,12 +25,9 @@ await test('shorthands', () => {
             myText: { type: 'text' },
             myString: { type: 'string' },
             myNumber: { type: 'number' },
-            myEnum: { enum: [1, 2, 3] },
+            myEnum: { type: 'enum', enum: [1, 2, 3] },
           },
         },
-      },
-      props: {
-        myText: { type: 'text' },
       },
     },
   )

@@ -1,7 +1,6 @@
-import { inverseLangMap, langCodesMap } from './lang.js'
+import { langCodesMap } from './lang.js'
 import { inspect } from 'node:util'
 import {
-  SchemaLocales,
   stringFormats,
   type Schema,
   type SchemaProp,
@@ -11,7 +10,7 @@ import {
   type StrictSchemaType,
 } from './types.js'
 
-const parseProp = (input: SchemaProp): StrictSchemaProp => {
+const getProp = (input: SchemaProp): StrictSchemaProp => {
   if (typeof input === 'string') {
     return { type: input }
   }
@@ -44,26 +43,27 @@ const parseType = (
   }
   if (isObj(props)) {
     for (const k in props) {
-      const prop = parseProp(props[k])
-      if (prop.type === 'text') {
-        if (!keys(schema.locales).length) {
-          errors.push(
-            Error('Property type "text" required "locales" to be defined'),
-          )
-          continue
-        }
-        if (!validText(prop)) {
-          errors.push(Error('Invalid property type "text": ' + inspect(prop)))
-          continue
-        }
-      } else if (prop.type === 'boolean') {
-        if (!validBool(prop)) {
-          errors.push(
-            Error('Invalid property type "boolean": ' + inspect(prop)),
-          )
-          continue
-        }
+      const prop = getProp(props[k])
+      if (!(prop.type in propDefs)) {
+        errors.push(
+          Error(`Invalid property type "${prop.type}": ${inspect(prop)}`),
+        )
+        continue
       }
+
+      if (!valid(prop, propDefs[prop.type])) {
+        errors.push(Error(`Invalid property "${prop.type}": ${inspect(prop)}`))
+        continue
+      }
+
+      // additional checks
+      if (prop.type === 'text' && !keys(schema.locales).length) {
+        errors.push(
+          Error('Property type "text" required "locales" to be defined'),
+        )
+        continue
+      }
+
       type.props[k] = prop
     }
   } else {
@@ -72,45 +72,6 @@ const parseType = (
 
   return type
 }
-
-// const validateProp = (prop: StrictSchemaProp, ...path: string[]) => {
-//   if (prop.type === 'boolean') {
-//     if ('default' in prop && typeof prop.default !== 'boolean') {
-//       throw Error(`Expected boolean (${path.join('.')}.default)`)
-//     }
-//   } else if (prop.type === 'enum') {
-//     if (
-//       prop.enum.find(
-//         (v) =>
-//           typeof v !== 'string' &&
-//           typeof v !== 'number' &&
-//           typeof v !== 'boolean',
-//       )
-//     ) {
-//     }
-//     if (prop.default !== undefined && !prop.enum.includes(prop.default)) {
-//       throw Error(`Unexpected value (${path.join('.')}.default)`)
-//     }
-//   }
-// }
-
-// export const validate = ({
-//   version,
-//   types,
-//   locales,
-//   migrations,
-//   defaultTimezone,
-// }: StrictSchema) => {
-//   for (const type in types) {
-//     for (const k in types[type].props) {
-//       validateProp(types[type].props[k], type, k)
-//     }
-//   }
-
-//   if (defaultTimezone) {
-//     Intl.DateTimeFormat(undefined, { timeZone: defaultTimezone })
-//   }
-// }
 
 export const parse = ({
   version,
@@ -121,11 +82,28 @@ export const parse = ({
 }: Schema): { schema: StrictSchema; errors: Error[] } => {
   const errors = []
   const schema: StrictSchema = {
-    version,
     locales: {},
     types: {},
-    migrations,
-    defaultTimezone,
+  }
+
+  // TODO validate!
+  if (version) {
+    schema.version = version
+  }
+
+  // TODO validate!
+  if (migrations) {
+    schema.migrations = migrations
+  }
+
+  // TODO validate!
+  if (defaultTimezone) {
+    try {
+      Intl.DateTimeFormat(undefined, { timeZone: defaultTimezone })
+      schema.defaultTimezone = defaultTimezone
+    } catch (e) {
+      errors.push(e)
+    }
   }
 
   if (isObj(locales)) {
@@ -157,14 +135,22 @@ export const parse = ({
 
 type Validator =
   | ((v: any) => boolean)
+  | false
   | {
       [key: string]: Validator
     }
 
 const valid = (val: unknown, ...options: Validator[]): boolean => {
   options: for (const option of options) {
-    if (typeof option === 'function' && option(val)) {
+    if (option === false) {
       return true
+    }
+
+    if (typeof option === 'function') {
+      if (option(val)) {
+        return true
+      }
+      continue
     }
 
     if (isObj(val) && isObj(option)) {
@@ -196,47 +182,53 @@ const valid = (val: unknown, ...options: Validator[]): boolean => {
   return false
 }
 
-const validProp = (val: unknown, option: Record<string, Validator>): boolean =>
-  valid(val, {
-    ...option,
-    'required?': isBool,
-    'title?': isString,
-    'description?': isString,
-    'validation?': isFn,
-    'hooks?': {
-      'create?': isFn,
-      'update?': isFn,
-      'read?': isFn,
-      'aggregate?': isFn,
-      'search?': isFn,
-      'groupBy?': isFn,
-      'filter?': isFn,
-      'include?': isFn,
-    },
-  })
+const isFn = (v: unknown): v is Function => typeof v === 'function'
+const isBool = (v: unknown): v is boolean => typeof v === 'boolean'
+const isString = (v: unknown): v is string => typeof v === 'string'
+const isObj = (v: unknown): v is object => v !== null && typeof v === 'object'
+const keys = (v: unknown) => (isObj(v) ? Object.keys(v) : [])
+const baseProp = {
+  type: false,
+  'required?': isBool,
+  'title?': isString,
+  'description?': isString,
+  'validation?': isFn,
+  'hooks?': {
+    'create?': isFn,
+    'update?': isFn,
+    'read?': isFn,
+    'aggregate?': isFn,
+    'search?': isFn,
+    'groupBy?': isFn,
+    'filter?': isFn,
+    'include?': isFn,
+  },
+} as const
+
+const propDefs: Record<string, Record<string, Validator>> = {
+  text: {
+    ...baseProp,
+    'default?': (v) => isObj(v) && Object.values(v).every(isString),
+    'format?': (v) => stringFormats.includes(v),
+    'compression?': (v) => v === 'none' || v === 'deflate',
+  },
+  string: {
+    ...baseProp,
+    'default?': isString,
+    'maxBytes?': (v) => v > 0,
+    'max?': (v) => v > 0,
+    'min?': (v) => v > 0,
+    'format?': (v) => stringFormats.includes(v),
+    'compression?': (v) => v === 'none' || v === 'deflate',
+  },
+  boolean: {
+    ...baseProp,
+    'default?': isBool,
+  },
+}
 
 const validLocale = (val: unknown): boolean =>
   valid(val, isBool, {
     'required?': isBool,
     'fallback?': (v) => langCodesMap.has(v),
   })
-
-const validText = (val: unknown): boolean =>
-  validProp(val, {
-    type: (v) => v === 'text',
-    'default?': (v) => isObj(v) && Object.values(v).every(isString),
-    'format?': (v) => stringFormats.includes(v),
-    'compression?': (v) => v === 'none' || v === 'deflate',
-  })
-
-const validBool = (val: unknown): boolean =>
-  validProp(val, {
-    type: (v) => v === 'boolean',
-    'default?': isBool,
-  })
-
-const isFn = (v: unknown): v is Function => typeof v === 'function'
-const isBool = (v: unknown): v is boolean => typeof v === 'boolean'
-const isString = (v: unknown): v is string => typeof v === 'string'
-const isObj = (v: unknown): v is object => v !== null && typeof v === 'object'
-const keys = (v: unknown) => (isObj(v) ? Object.keys(v) : [])
