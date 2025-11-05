@@ -9,6 +9,7 @@ import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
 import picocolors from 'picocolors'
 import { displayTarget } from './client/query/display.js'
+import { registerSubscription } from './server/subscription.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -32,54 +33,18 @@ export const getDefaultHooks = (
   return {
     subscribe(
       q: BasedDbQuery,
-
       // Subscription buffer use query def its easier
       // For "now" we need to do something special anyways
-
       onData: (res: Uint8Array) => void,
       onError: OnError,
     ) {
-      // completely different
-      // very annoying to read the query info
-      // may need to send the array of subs to this
-      // array has to be send[] // or do it smaller then the queryDef
-      // or make a different thing out of the query buf?
-
-      // new format
-      // first byte in query isSubscription?
-      // make a separate thing for subs?
-
-      let timer: ReturnType<typeof setTimeout>
-      let killed = false
-      const poll = async () => {
-        // subArray in server
-        const res = await server.getQueryBuf(q.buffer)
-        if (killed) {
-          return
-        }
-        if (res.byteLength >= 4) {
-          onData(res)
-        } else if (res.byteLength === 1 && res[0] === 0) {
-          server.emit(
-            'info',
-            `[${displayTarget(q.def)}] Subscribe schema mismatch - should resolve after update`,
-          )
-          return
-        } else {
-          const def = q.def
-          let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
-          name += `  Incorrect buffer received in subscription (maybe server not started ${res.byteLength}) bytes\n`
-          onError(new Error(name))
-        }
-        timer = setTimeout(poll, subInterval)
-      }
-
-      void poll()
-
-      return () => {
-        clearTimeout(timer)
-        killed = true
-      }
+      return registerSubscription(
+        server,
+        q.buffer,
+        q.subscriptionBuffer,
+        onData,
+        onError,
+      )
     },
     setSchema(schema: StrictSchema, transformFns) {
       return server.setSchema(schema, transformFns)

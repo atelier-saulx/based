@@ -3,13 +3,18 @@ import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
 import { QueryDef, QueryType } from '../types.js'
+import { REFERENCE } from '@based/schema/prop-types'
+import { SubscriptionType } from './types.js'
 
 export const collectFields = (def: QueryDef) => {
   const fields: Set<number> = new Set()
   if (def.include.main.len > 0) {
     fields.add(0)
   }
+
+  console.dir(def.include, { depth: 10 })
   for (const prop of def.include.props.values()) {
+    // if (prop.def.typeIndex === REFERENCE )
     fields.add(prop.def.prop)
   }
   if (def.filter.size > 0) {
@@ -32,13 +37,16 @@ export const registerSubscription = (query: BasedDbQuery) => {
     )
     // @ts-ignore
     const id = query.def.target.id
-    const headerLen = 10
+    const headerLen = 11
     const buffer = new Uint8Array(headerLen + fields.size)
-    writeUint32(buffer, subId, 0)
-    writeUint16(buffer, typeId, 4)
-    writeUint32(buffer, id, 6)
-    for (let i = 0; i < fields.size; i++) {
-      buffer[i + headerLen] = fields[i]
+    buffer[0] = SubscriptionType.singleId
+    writeUint32(buffer, subId, 1)
+    writeUint16(buffer, typeId, 5)
+    writeUint32(buffer, id, 7)
+    let i = 0
+    for (const field of fields) {
+      buffer[i + headerLen] = field
+      i++
     }
     query.subscriptionBuffer = buffer
   }

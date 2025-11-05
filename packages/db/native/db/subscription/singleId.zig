@@ -75,10 +75,10 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
-    const headerLen = 10;
-    const subId = utils.read(u32, value, 0);
-    const typeId = utils.read(u16, value, 4);
-    const id = utils.read(u32, value, 6);
+    const headerLen = 11;
+    const subId = utils.read(u32, value, 1);
+    const typeId = utils.read(u16, value, 5);
+    const id = utils.read(u32, value, 7);
     const fields = value[headerLen..value.len];
     var typeSubs = try upsertSubType(ctx, typeId);
 
@@ -113,6 +113,8 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
 
     utils.writeInt(u32, subs, subIndex + 4, subId);
 
+    std.debug.print("F: {any}\n", .{fields});
+
     if (fields.len > vectorLen) {
         // If too many fields just fire for each
         @memset(subs[subIndex + 8 .. subIndex + types.SUB_SIZE], @intFromEnum(types.SubStatus.all));
@@ -128,9 +130,9 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
     const ctx = try napi.get(*DbCtx, env, args[0]);
     const value = try napi.get([]u8, env, args[1]);
 
-    const id = utils.read(u32, value, 0);
-    const subId = utils.read(u32, value, 4);
-    const typeId = utils.read(u16, value, 8);
+    const subId = utils.read(u32, value, 1);
+    const typeId = utils.read(u16, value, 5);
+    const id = utils.read(u32, value, 7);
 
     if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
         if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {

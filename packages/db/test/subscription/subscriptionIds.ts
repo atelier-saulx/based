@@ -194,24 +194,38 @@ await test('subscriptionIds', async (t) => {
 
   let subId = 0
 
-  clients[0].create('user', { name: 'mr poop' })
+  const id = await clients[0].create('user', { name: 'mr poop' })
+  console.log('derp[')
+  // // maybe make create fire things as well?
+  // const def = clients[0].query('user', 1).include('name', 'x')
+  // const def2 = clients[0].query('user', 2).include('name', 'x')
 
-  // maybe make create fire things as well?
-  const def = clients[0].query('user', 1).include('name', 'x')
-  const def2 = clients[0].query('user', 2).include('name', 'x')
-
-  registerQuery(def)
-  registerQuery(def2)
+  // registerQuery(def)
+  // registerQuery(def2)
 
   // add crc32 to query buffer
 
   const close = clients[0]
-    .query('user', 1)
-    .include('name', 'x')
-    .filter('date', '>', 'now')
+    .query('user', id)
+    .include('name')
+    // .filter('date', '>', 'now')
     .subscribe((d) => {
       console.log('derp', d)
     })
+  console.log('doinki')
+
+  console.log('update ???')
+
+  await clients[0].update('user', 1, {
+    name: 'MR FLAP!',
+  })
+
+  await wait(10)
+  console.log('update ??? 2')
+
+  await clients[1].update('user', 1, {
+    name: 'MR FLAP!222',
+  })
 
   // const x = def.def
   // const queryId = native.crc32(
