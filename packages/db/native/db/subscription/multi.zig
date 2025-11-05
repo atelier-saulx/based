@@ -18,8 +18,10 @@ pub fn addMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
 
     const args = try napi.getArgs(2, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
-    const value = try napi.get([]u8, env, args[1]);
-    const typeId = utils.read(u16, value, 1);
+    // const value = try napi.get([]u8, env, args[1]);
+    // const typeId = utils.read(u16, value, 1);
+    const typeId = try napi.get(u16, env, args[1]);
+
     // const subId = utils.read(u32, value, 2);
 
     var typeSubs = try upsertSubType(ctx, typeId);
@@ -51,10 +53,9 @@ pub fn addMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
 pub fn removeMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
-    const value = try napi.get([]u8, env, args[1]);
-    // const subId = utils.read(u64, value, 0);
-    const typeId = utils.read(u16, value, 1);
-
+    const typeId = try napi.get(u16, env, args[1]);
+    // typeId subId = utils.read(u64, value, 0);
+    // const typeId = utils.read(u16, value, 1);
     if (ctx.subscriptions.types.get(typeId)) |st| {
         st.multiSubsSize -= 1;
         removeSubTypeIfEmpty(ctx, typeId, st);

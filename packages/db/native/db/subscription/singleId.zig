@@ -75,11 +75,13 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
-    const headerLen = 11;
+    const headerLen = 14;
     const subId = utils.read(u32, value, 1);
     const typeId = utils.read(u16, value, 5);
     const id = utils.read(u32, value, 7);
-    const fields = value[headerLen..value.len];
+    const fieldsLen = value[11];
+
+    const fields = value[headerLen .. fieldsLen + headerLen];
     var typeSubs = try upsertSubType(ctx, typeId);
 
     var subs: []u8 = undefined;

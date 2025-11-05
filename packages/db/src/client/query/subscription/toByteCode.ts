@@ -3,7 +3,6 @@ import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
 import { QueryDef, QueryType } from '../types.js'
-import { REFERENCE } from '@based/schema/prop-types'
 import { SubscriptionType } from './types.js'
 
 export const collectFields = (def: QueryDef) => {
@@ -11,21 +10,41 @@ export const collectFields = (def: QueryDef) => {
   if (def.include.main.len > 0) {
     fields.add(0)
   }
-
-  console.dir(def.include, { depth: 10 })
   for (const prop of def.include.props.values()) {
-    // if (prop.def.typeIndex === REFERENCE )
     fields.add(prop.def.prop)
   }
   if (def.filter.size > 0) {
     for (const prop of def.filter.conditions.keys()) {
       fields.add(prop)
     }
-    // handle NOW
-    console.log('HANDLE FILTER HANDLE REFS!!')
+    console.log('HANDLE FILTER HANDLE REFS!! & HANDLE NOW REFS!')
     console.dir(def.filter, { depth: 10 })
   }
+  for (const prop of def.references.keys()) {
+    // if (prop.def.typeIndex === REFERENCE )
+    console.log('INCLUDE REF FIELD', prop)
+    fields.add(prop)
+  }
   return fields
+}
+
+// add handle single id here
+
+// add handle multi id here (for refs)
+
+// for each refs collect types for now (just go trough whole tree and give all schema types)
+// there get added in an array
+
+export const collectTypes = (def: QueryDef, types: Set<number> = new Set()) => {
+  // handle edges
+  for (const ref of def.references.values()) {
+    types.add(ref.schema.id)
+    collectTypes(ref, types)
+  }
+
+  // for const in edges
+
+  return types
 }
 
 export const registerSubscription = (query: BasedDbQuery) => {
@@ -37,25 +56,45 @@ export const registerSubscription = (query: BasedDbQuery) => {
     )
     // @ts-ignore
     const id = query.def.target.id
-    const headerLen = 11
-    const buffer = new Uint8Array(headerLen + fields.size)
+    const headerLen = 14
+
+    const types = collectTypes(query.def)
+    const typeLen = types.size
+
+    console.log('collected types', types)
+
+    const buffer = new Uint8Array(headerLen + fields.size + typeLen * 2)
     buffer[0] = SubscriptionType.singleId
     writeUint32(buffer, subId, 1)
     writeUint16(buffer, typeId, 5)
     writeUint32(buffer, id, 7)
+    buffer[11] = fields.size
+    writeUint16(buffer, typeLen, 12)
+
     let i = 0
     for (const field of fields) {
       buffer[i + headerLen] = field
       i++
     }
+
+    for (const type of types) {
+      writeUint16(buffer, type, i + headerLen)
+      i += 2
+    }
+
     query.subscriptionBuffer = buffer
   } else {
     const typeId = query.def.schema.id
+
+    const types = collectTypes(query.def)
+    const typeLen = types.has(typeId) ? types.size - 1 : types.size
+    if (typeLen) {
+      console.log('MULTI: collected types', typeLen, types)
+    }
+
     const buffer = new Uint8Array(3)
     buffer[0] = SubscriptionType.fullType
     writeUint16(buffer, typeId, 1)
-
-    console.log('YO YO YO', buffer)
 
     query.subscriptionBuffer = buffer
   }

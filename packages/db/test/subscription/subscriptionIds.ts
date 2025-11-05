@@ -31,6 +31,10 @@ await test('subscriptionIds', async (t) => {
   await clients[0].setSchema({
     types: {
       user: {
+        friend: {
+          ref: 'user',
+          prop: 'friend',
+        },
         date: 'timestamp',
         x: 'uint8',
         derp: 'uint32',
@@ -52,17 +56,17 @@ await test('subscriptionIds', async (t) => {
 
   const close = clients[1]
     .query('user', id)
-    .include('name')
+    .include('name', 'friend.name')
     .subscribe((d) => {
       console.log('SINGLE ID', d)
     })
 
-  const close2 = clients[0]
-    .query('user')
-    .include('name')
-    .subscribe((d) => {
-      console.log('MULTI ID', d)
-    })
+  // const close2 = clients[0]
+  //   .query('user')
+  //   // .include('name')
+  //   .subscribe((d) => {
+  //     console.log('MULTI ID', d)
+  //   })
 
   await clients[0].update('user', 1, {
     name: 'MR FLAP!',
@@ -75,7 +79,11 @@ await test('subscriptionIds', async (t) => {
     name: 'MR FLAP!222',
   })
 
-  await wait(1000)
+  await wait(300)
+  console.log('CREATE DURK')
+  const durk = await clients[0].create('user', { name: 'mr durk', friend: id })
+
+  await wait(300)
   close()
-  close2()
+  // close2()
 })

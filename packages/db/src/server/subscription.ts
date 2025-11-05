@@ -14,7 +14,9 @@ export type SubscriptionFullType = {
 }
 
 export type SubscriptionId = {
+  types?: Uint16Array
   ids: Map<number, Set<() => void>>
+  typesListener?: () => void
 }
 
 export type Subscriptions = {
@@ -70,6 +72,43 @@ export const startUpdateHandler = (server: DbServer) => {
   server.subscriptions.updateHandler = setTimeout(scheduleUpdate, 200)
 }
 
+const addToMultiSub = (
+  server: DbServer,
+  typeId: number,
+  runQuery: () => void,
+) => {
+  let fullType: SubscriptionFullType
+  let listeners: Set<() => void>
+  if (!server.subscriptions.fullType.has(typeId)) {
+    listeners = new Set()
+    fullType = {
+      listeners,
+    }
+    server.subscriptions.fullType.set(typeId, fullType)
+    native.addMultiSubscription(server.dbCtxExternal, typeId)
+  } else {
+    fullType = server.subscriptions.fullType.get(typeId)
+    listeners = fullType.listeners
+  }
+  listeners.add(runQuery)
+}
+
+const removeFromMultiSub = (
+  server: DbServer,
+  typeId: number,
+  runQuery: () => void,
+) => {
+  const typeSub = server.subscriptions.fullType.get(typeId)
+  if (!typeSub) {
+    return
+  }
+  typeSub.listeners.delete(runQuery)
+  if (typeSub.listeners.size === 0) {
+    native.removeMultiSubscription(server.dbCtxExternal, typeId)
+    server.subscriptions.fullType.delete(typeId)
+  }
+}
+
 export const registerSubscription = (
   server: DbServer,
   query: Uint8Array,
@@ -93,6 +132,8 @@ export const registerSubscription = (
           onData(res)
         }
       })
+    } else {
+      console.log('Allready fired block')
     }
   }
 
@@ -106,13 +147,31 @@ export const registerSubscription = (
     if (!server.subscriptions.ids.get(subId)) {
       subContainer = { ids: new Map() }
       server.subscriptions.ids.set(subId, subContainer)
+      const typesLen = readUint16(sub, 12)
+      if (typesLen > 0) {
+        const fLen = sub[11]
+        subContainer.types = new Uint16Array(
+          sub.buffer,
+          sub.byteOffset + 14 + fLen,
+          typesLen,
+        )
+        subContainer.typesListener = () => {
+          for (const set of subContainer.ids.values()) {
+            for (const fn of set) {
+              fn()
+            }
+          }
+        }
+        for (const typeId of subContainer.types) {
+          addToMultiSub(server, typeId, subContainer.typesListener)
+        }
+      }
     } else {
       subContainer = server.subscriptions.ids.get(subId)
     }
     if (!subContainer.ids.has(id)) {
       listeners = new Set()
       subContainer.ids.set(id, listeners)
-      // later will be added where it gets the first result (and keep it up to date)
       native.addIdSubscription(server.dbCtxExternal, sub)
     } else {
       listeners = subContainer.ids.get(id)
@@ -130,45 +189,36 @@ export const registerSubscription = (
         subContainer.ids.delete(id)
       }
       if (subContainer.ids.size === 0) {
-        //  here we remove the full type attachments
+        if (subContainer.types) {
+          for (const typeId of subContainer.types) {
+            removeFromMultiSub(server, typeId, subContainer.typesListener)
+          }
+        }
         server.subscriptions.ids.delete(subId)
       }
       server.subscriptions.active--
       if (server.subscriptions.active === 0) {
         clearTimeout(server.subscriptions.updateHandler)
         server.subscriptions.updateHandler = null
+        console.log(server.subscriptions, 'SHOULD BE EMPTY')
       }
     }
   } else if (sub[0] === SubscriptionType.fullType) {
     const typeId = readUint16(sub, 1)
-    let fullType: SubscriptionFullType
-    let listeners: Set<() => void>
-    if (!server.subscriptions.fullType.has(typeId)) {
-      listeners = new Set()
-      fullType = {
-        listeners,
-      }
-      server.subscriptions.fullType.set(typeId, fullType)
-      native.addMultiSubscription(server.dbCtxExternal, sub)
-    } else {
-      fullType = server.subscriptions.fullType.get(typeId)
-      listeners = fullType.listeners
-    }
-    listeners.add(runQuery)
+
+    addToMultiSub(server, typeId, runQuery)
+
     process.nextTick(() => {
       runQuery()
     })
     return () => {
       killed = true
-      listeners.delete(runQuery)
-      if (listeners.size === 0) {
-        native.removeMultiSubscription(server.dbCtxExternal, sub)
-        server.subscriptions.fullType.delete(typeId)
-      }
+      removeFromMultiSub(server, typeId, runQuery)
       server.subscriptions.active--
       if (server.subscriptions.active === 0) {
         clearTimeout(server.subscriptions.updateHandler)
         server.subscriptions.updateHandler = null
+        console.log(server.subscriptions, 'SHOULD BE EMPTY')
       }
     }
   } else {
