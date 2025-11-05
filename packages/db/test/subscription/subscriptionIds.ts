@@ -35,6 +35,10 @@ await test('subscriptionIds', async (t) => {
           ref: 'user',
           prop: 'friend',
         },
+        control: {
+          ref: 'control',
+          prop: 'boy',
+        },
         date: 'timestamp',
         x: 'uint8',
         derp: 'uint32',
@@ -61,12 +65,12 @@ await test('subscriptionIds', async (t) => {
       console.log('SINGLE ID', d)
     })
 
-  // const close2 = clients[0]
-  //   .query('user')
-  //   // .include('name')
-  //   .subscribe((d) => {
-  //     console.log('MULTI ID', d)
-  //   })
+  const close2 = clients[0]
+    .query('user')
+    .include('control.location')
+    .subscribe((d) => {
+      console.log('MULTI ID', d)
+    })
 
   await clients[0].update('user', 1, {
     name: 'MR FLAP!',
@@ -84,6 +88,18 @@ await test('subscriptionIds', async (t) => {
   const durk = await clients[0].create('user', { name: 'mr durk', friend: id })
 
   await wait(300)
+  const control = clients[0].create('control', {
+    location: 'Controled',
+    boy: [durk],
+  })
+
+  // clients[0].update('user', durk, {
+  //   control,
+  // })
+
+  console.log('set dat control!')
+
+  await wait(300)
   close()
-  // close2()
+  close2()
 })

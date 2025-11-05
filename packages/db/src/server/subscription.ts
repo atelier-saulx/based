@@ -148,7 +148,7 @@ export const registerSubscription = (
       subContainer = { ids: new Map() }
       server.subscriptions.ids.set(subId, subContainer)
       const typesLen = readUint16(sub, 12)
-      if (typesLen > 0) {
+      if (typesLen != 0) {
         const fLen = sub[11]
         subContainer.types = new Uint16Array(
           sub.buffer,
@@ -200,13 +200,21 @@ export const registerSubscription = (
       if (server.subscriptions.active === 0) {
         clearTimeout(server.subscriptions.updateHandler)
         server.subscriptions.updateHandler = null
-        console.log(server.subscriptions, 'SHOULD BE EMPTY')
+        console.log('SUBS', server.subscriptions, 'SHOULD BE EMPTY')
       }
     }
   } else if (sub[0] === SubscriptionType.fullType) {
     const typeId = readUint16(sub, 1)
-
     addToMultiSub(server, typeId, runQuery)
+    const typesLen = readUint16(sub, 3)
+    let types: Uint16Array
+    if (typesLen != 0) {
+      console.log(sub, typesLen)
+      types = new Uint16Array(sub.buffer, sub.byteOffset + 6, typesLen)
+      for (const typeId of types) {
+        addToMultiSub(server, typeId, runQuery)
+      }
+    }
 
     process.nextTick(() => {
       runQuery()
@@ -214,11 +222,16 @@ export const registerSubscription = (
     return () => {
       killed = true
       removeFromMultiSub(server, typeId, runQuery)
+      if (types) {
+        for (const typeId of types) {
+          removeFromMultiSub(server, typeId, runQuery)
+        }
+      }
       server.subscriptions.active--
       if (server.subscriptions.active === 0) {
         clearTimeout(server.subscriptions.updateHandler)
         server.subscriptions.updateHandler = null
-        console.log(server.subscriptions, 'SHOULD BE EMPTY')
+        console.log('SUBS', server.subscriptions, 'SHOULD BE EMPTY')
       }
     }
   } else {
