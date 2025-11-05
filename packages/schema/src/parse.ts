@@ -1,6 +1,9 @@
 import { langCodesMap } from './lang.js'
 import { inspect } from 'node:util'
 import {
+  dateDisplays,
+  numberDisplays,
+  SchemaObject,
   stringFormats,
   type Schema,
   type SchemaProp,
@@ -9,6 +12,7 @@ import {
   type StrictSchemaProp,
   type StrictSchemaType,
 } from './types.js'
+import { isTypedArray } from 'node:util/types'
 
 const getProp = (input: SchemaProp): StrictSchemaProp => {
   if (typeof input === 'string') {
@@ -33,7 +37,7 @@ const getProp = (input: SchemaProp): StrictSchemaProp => {
 }
 
 const parseType = (
-  input: SchemaType,
+  input: SchemaType | SchemaObject,
   schema: StrictSchema,
   errors: Error[],
 ): StrictSchemaType => {
@@ -44,6 +48,11 @@ const parseType = (
   if (isObj(props)) {
     for (const k in props) {
       const prop = getProp(props[k])
+      if (prop.type === 'object') {
+        type.props[k] = parseType(prop, schema, errors)
+        continue
+      }
+
       if (!(prop.type in propDefs)) {
         errors.push(
           Error(`Invalid property type "${prop.type}": ${inspect(prop)}`),
@@ -51,7 +60,7 @@ const parseType = (
         continue
       }
 
-      if (!valid(prop, propDefs[prop.type])) {
+      if (!valid(schema, prop, propDefs[prop.type])) {
         errors.push(Error(`Invalid property "${prop.type}": ${inspect(prop)}`))
         continue
       }
@@ -108,7 +117,12 @@ export const parse = ({
 
   if (isObj(locales)) {
     for (const k in locales) {
-      if (validLocale(locales[k])) {
+      if (
+        valid(schema, locales[k], isBool, {
+          'required?': isBool,
+          'fallback?': (v) => langCodesMap.has(v),
+        })
+      ) {
         schema.locales[k] = locales[k]
       } else {
         errors.push(Error('Invalid value for locale: ' + inspect(locales[k])))
@@ -134,20 +148,24 @@ export const parse = ({
 }
 
 type Validator =
-  | ((v: any) => boolean)
+  | ((v: any, schema: StrictSchema) => boolean)
   | false
   | {
       [key: string]: Validator
     }
 
-const valid = (val: unknown, ...options: Validator[]): boolean => {
+const valid = (
+  schema: StrictSchema,
+  val: unknown,
+  ...options: Validator[]
+): boolean => {
   options: for (const option of options) {
     if (option === false) {
       return true
     }
 
     if (typeof option === 'function') {
-      if (option(val)) {
+      if (option(val, schema)) {
         return true
       }
       continue
@@ -158,7 +176,7 @@ const valid = (val: unknown, ...options: Validator[]): boolean => {
         const optional = optionKey.at(-1) === '?'
         const key = optional ? optionKey.slice(0, -1) : optionKey
         if (key in val) {
-          if (valid(val[key], option[optionKey])) {
+          if (valid(schema, val[key], option[optionKey])) {
             continue
           }
           continue options
@@ -182,10 +200,30 @@ const valid = (val: unknown, ...options: Validator[]): boolean => {
   return false
 }
 
+const isNumberType = (v: unknown): v is string => {
+  switch (v) {
+    case 'number':
+    case 'int8':
+    case 'uint8':
+    case 'int16':
+    case 'uint16':
+    case 'uint32':
+      return true
+  }
+}
+
+const isVectorBAseType = (v: unknown): v is string =>
+  isNumberType(v) || v === 'float32' || v === 'float64'
+
+const isPositiveInt = (v: unknown): v is number =>
+  isNumber(v) && v > 0 && Number.isInteger(v)
 const isFn = (v: unknown): v is Function => typeof v === 'function'
 const isBool = (v: unknown): v is boolean => typeof v === 'boolean'
+const isNumber = (v: unknown): v is number => typeof v === 'number'
 const isString = (v: unknown): v is string => typeof v === 'string'
 const isObj = (v: unknown): v is object => v !== null && typeof v === 'object'
+const isDate = (v: unknown) => !isNaN(new Date(v as number).getTime())
+const isEnumVal = (v: unknown) => isNumber(v) || isString(v) || isBool(v)
 const keys = (v: unknown) => (isObj(v) ? Object.keys(v) : [])
 const baseProp = {
   type: false,
@@ -215,9 +253,9 @@ const propDefs: Record<string, Record<string, Validator>> = {
   string: {
     ...baseProp,
     'default?': isString,
-    'maxBytes?': (v) => v > 0,
-    'max?': (v) => v > 0,
-    'min?': (v) => v > 0,
+    'maxBytes?': isPositiveInt,
+    'max?': isPositiveInt,
+    'min?': isPositiveInt,
     'format?': (v) => stringFormats.includes(v),
     'compression?': (v) => v === 'none' || v === 'deflate',
   },
@@ -225,10 +263,64 @@ const propDefs: Record<string, Record<string, Validator>> = {
     ...baseProp,
     'default?': isBool,
   },
+  timestamp: {
+    ...baseProp,
+    'default?': isDate,
+    'on?': (v) => v === 'create' || v === 'update',
+    'display?': (v) => dateDisplays.includes(v),
+    'min?': isDate,
+    'max?': isDate,
+    'step?': (v) => v === 'any' || isDate(v),
+  },
+  colvec: {
+    ...baseProp,
+    'default?': isTypedArray,
+    size: isPositiveInt,
+    'baseType?': isVectorBAseType,
+  },
+  reference: {
+    ...baseProp,
+    'default?': isPositiveInt,
+    ref: isString,
+    prop: isString,
+    'dependent?': isBool,
+  },
+  number: {
+    ...baseProp,
+    'default?': isNumber,
+    'min?': isNumber,
+    'max?': isNumber,
+    'step?': (v) => v === 'any' && isNumber(v),
+    'display?': (v) =>
+      numberDisplays.some((d) => d === v || `round-${d}` === v),
+  },
+  enum: {
+    ...baseProp,
+    enum: (v) => Array.isArray(v) && v.every(isEnumVal),
+    'default?': isEnumVal,
+  },
+  cardinality: {
+    ...baseProp,
+    'maxBytes?': isPositiveInt,
+    'precision?': isPositiveInt,
+    'mode?': (v) => v === 'sparse' || v === 'dense',
+  },
+  binary: {
+    ...baseProp,
+    'default?': (v) => v instanceof Uint8Array,
+    'maxBytes?': isPositiveInt,
+    'format?': (v) => stringFormats.includes(v),
+  },
+  json: {
+    ...baseProp,
+    'default?': (v) => typeof v === 'object',
+  },
 }
 
-const validLocale = (val: unknown): boolean =>
-  valid(val, isBool, {
-    'required?': isBool,
-    'fallback?': (v) => langCodesMap.has(v),
-  })
+propDefs.alias = propDefs.string
+propDefs.vector = propDefs.colvec
+propDefs.references = {
+  ...baseProp,
+  'default?': (v) => Array.isArray(v) && v.every(isPositiveInt),
+  items: propDefs.reference,
+}

@@ -203,11 +203,11 @@ export type SchemaReferences = Prop<{
   items: SchemaReference & NeverInItems
 }>
 
-export type SchemaReferencesOneWay = Prop<{
-  type?: 'references'
-  default?: number[]
-  items: SchemaReferenceOneWay & NeverInItems
-}>
+// export type SchemaReferencesOneWay = Prop<{
+//   type?: 'references'
+//   default?: number[]
+//   items: SchemaReferenceOneWay & NeverInItems
+// }>
 
 export type SchemaText = Prop<{
   type: 'text'
@@ -249,7 +249,7 @@ export type SchemaBinary = Prop<{
   type: 'binary'
   default?: Uint8Array
   maxBytes?: number
-  mime?: Mime
+  // mime?: Mime
   format?: StringFormat
 }>
 
@@ -321,12 +321,12 @@ export type SchemaTimestamp = Prop<{
   step?: number | 'any' | string
 }>
 
-export type SchemaReferenceOneWay = Prop<{
-  type?: 'reference'
-  default?: number
-  ref: string
-  mime?: Mime
-}>
+// export type SchemaReferenceOneWay = Prop<{
+//   type?: 'reference'
+//   default?: number
+//   ref: string
+//   mime?: Mime
+// }>
 
 export type SchemaReference = Prop<{
   type?: 'reference'
@@ -334,19 +334,18 @@ export type SchemaReference = Prop<{
   ref: string
   prop: string
   dependent?: boolean
-  mime?: Mime
-}> &
-  Record<`$${string}`, SchemaPropOneWay>
+  // mime?: Mime
+}> & { [key: `$${string}`]: SchemaProp }
 
 export type SchemaObject = Prop<{
   type?: 'object'
   props: SchemaProps
 }>
 
-export type SchemaObjectOneWay = Prop<{
-  type?: 'object'
-  props: SchemaPropsOneWay
-}>
+// export type SchemaObjectOneWay = Prop<{
+//   type?: 'object'
+//   props: SchemaPropsOneWay
+// }>
 
 export type SchemaEnum = Prop<{
   type?: 'enum'
@@ -397,13 +396,13 @@ export type StrictSchemaProp = RequiredFields<
   'type'
 >
 
-export type SchemaPropOneWay =
-  | SchemaReferencesOneWay
-  | SchemaReferenceOneWay
-  | SchemaObjectOneWay
-  | NonRefSchemaProps
+// export type SchemaPropOneWay =
+//   | SchemaReferencesOneWay
+//   | SchemaReferenceOneWay
+//   | SchemaObjectOneWay
+//   | NonRefSchemaProps
 
-export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
+// export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaProps<isStrict = false> = Record<
   AllowedKey,
   isStrict extends true ? StrictSchemaProp : SchemaProp
@@ -486,9 +485,9 @@ export type SchemaTypes<isStrict = false> = Record<
   SchemaType<isStrict>
 > & { _root?: never }
 
-export type SchemaPropsOneWay = Record<AllowedKey, SchemaPropOneWay> & {
-  id?: never
-}
+// export type SchemaPropsOneWay = Record<AllowedKey, SchemaPropOneWay> & {
+//   id?: never
+// }
 
 type MigrateFn = (
   node: Record<string, any>,
