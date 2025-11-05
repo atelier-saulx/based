@@ -41,6 +41,7 @@ const selvaFieldType: Readonly<Record<string, number>> = {
   ALIAS: 8,
   ALIASES: 9,
   COLVEC: 10,
+  REFERENCES_CIRCULAR: 11,
 }
 
 const selvaTypeMap = new Uint8Array(32) // 1.2x faster than JS array
@@ -111,15 +112,18 @@ const propDefBuffer = (
     view.setUint16(3, baseSize, true) // element size
     return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
-    const buf = new Uint8Array(7)
+    const buf = new Uint8Array(11)
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
+    const capped = (selvaFieldType.REFERENCES && prop.referencesCapped > 0) ? prop.referencesCapped : 0
 
-    buf[0] = selvaType // field type
+    console.log('typ', capped ? selvaFieldType.REFERENCES_CIRCULAR : selvaType);
+    buf[0] = capped ? selvaFieldType.REFERENCES_CIRCULAR : selvaType // field type
     buf[1] = makeEdgeConstraintFlags(prop) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
     buf[4] = prop.inversePropNumber // inverse_field
     view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // meta_node_type
+    view.setUint32(7, capped)
 
     return [...buf]
   } else if (
@@ -192,12 +196,6 @@ export function schemaToSelvaBuffer(schema: {
               break
             case NUMBER:
               writeDoubleLE(buf, f.default, f.start)
-              //const view = new DataView(
-              //  buf.buffer,
-              //  f.start,
-              //  8,
-              //)
-              //view.setFloat64(0, f.default, true)
               break
             case TIMESTAMP:
               writeUint64(buf, f.default, f.start)
@@ -226,7 +224,7 @@ export function schemaToSelvaBuffer(schema: {
       nrFields, // u8 nrFields
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
-      6, // u8 version (generally follows the sdb version)
+      7, // u8 version (generally follows the sdb version)
       ...propDefBuffer(schema, main),
       ...rest.map((f) => propDefBuffer(schema, f)).flat(1),
     ]).buffer

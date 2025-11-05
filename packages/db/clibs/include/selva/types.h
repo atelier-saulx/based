@@ -53,6 +53,7 @@ struct EdgeFieldConstraint {
     field_t inverse_field;
     node_type_t dst_node_type;
     node_type_t meta_node_type;
+    uint32_t circular_limit; /*!< Used for SELVA_FIELD_TYPE_REFERENCES_CIRCULAR. */
 };
 
 struct SelvaFieldSchema {

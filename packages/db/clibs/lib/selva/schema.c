@@ -131,7 +131,9 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
 
     static_assert(sizeof(constraints) == 7);
 
-    if (len < sizeof(constraints)) {
+    if (len < sizeof(constraints) +
+        ((ctx->version >= 7) * sizeof(uint32_t)) /* capped */
+       ) {
         return SELVA_EINVAL;
     }
 
@@ -152,6 +154,15 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         },
     };
 
+    if (ctx->version >= 7) {
+        typeof(fs->edge_constraint.circular_limit) *capped = &fs->edge_constraint.circular_limit;
+        static_assert(sizeof(*capped) == sizeof(uint32_t));
+
+        memcpy(capped, buf, sizeof(*capped));
+        buf += sizeof(*capped);
+        len -= sizeof(*capped);
+    }
+
     return orig_len - len;
 }
 
@@ -163,6 +174,11 @@ static int type2fs_reference(struct schemabuf_parser_ctx *ctx, struct SelvaField
 static int type2fs_references(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     return type2fs_refs(ctx, schema, field, SELVA_FIELD_TYPE_REFERENCES);
+}
+
+static int type2fs_references_circular(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
+{
+    return type2fs_refs(ctx, schema, field, SELVA_FIELD_TYPE_REFERENCES_CIRCULAR);
 }
 
 static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
@@ -247,6 +263,10 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_REFERENCES] = {
         .type = SELVA_FIELD_TYPE_REFERENCES,
         .type2fs = type2fs_references,
+    },
+    [SELVA_FIELD_TYPE_REFERENCES_CIRCULAR] = {
+        .type = SELVA_FIELD_TYPE_REFERENCES_CIRCULAR,
+        .type2fs = type2fs_references_circular,
     },
     [SELVA_FIELD_TYPE_ALIAS] = {
         .type = SELVA_FIELD_TYPE_ALIAS,

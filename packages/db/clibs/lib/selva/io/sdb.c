@@ -80,9 +80,12 @@
  *
  * **6**
  * - Add support for default value in micro buffers
+ *
+ * **7**
+ * - Add support for SELVA_FIELD_TYPE_REFERENCES_CIRCULAR
  */
 
-#define SDB_VERSION 6 /*!< Bump this if the serialization format changes. */
+#define SDB_VERSION 7 /*!< Bump this if the serialization format changes. */
 #define SDB_COMPRESSION_LEVEL 1
 #define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
