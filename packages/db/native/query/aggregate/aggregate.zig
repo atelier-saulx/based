@@ -31,6 +31,8 @@ inline fn execAgg(
         j += 2;
         const accumulatorPos = read(u16, aggPropDef, j);
         j += 2;
+        // isEdge
+        j += 1;
 
         if (aggType == aggregateTypes.AggType.COUNT) {
             writeInt(u32, accumulatorField, accumulatorPos, read(u32, accumulatorField, accumulatorPos) + 1);
@@ -96,7 +98,6 @@ inline fn execAgg(
 }
 
 pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8, hllAccumulator: anytype, hadAccumulated: *bool, ctx: *db.DbCtx, edgeRef: ?incTypes.RefStruct) void {
-    const isEdge = false;
     if (agg.len == 0) {
         return;
     }
@@ -108,6 +109,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
         i += 2;
         const aggPropDef = agg[i .. i + fieldAggsSize];
         const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
+        const isEdge: bool = aggPropDef[8] == 1;
         var value: []u8 = undefined;
 
         if (field != aggregateTypes.IsId) {

@@ -107,7 +107,7 @@ export type Aggregation = {
   propDef: PropDef | PropDefEdge
   resultPos: number
   accumulatorPos: number
-  // add result field
+  isEdge: boolean
 }
 
 export type QueryDefAggregation = {

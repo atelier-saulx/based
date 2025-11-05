@@ -176,14 +176,15 @@ pub inline fn aggregateRefsDefault(
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
     defer selva.selva_string_free(hllAccumulator);
     var fieldSchema: db.FieldSchema = undefined;
+    const aggPropDefSize = 10;
 
     fieldSchema = db.getFieldSchema(originalType, refField) catch {
-        return 10;
+        return aggPropDefSize;
     };
     edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
     const references = db.getReferences(node, fieldSchema);
     if (references == null) {
-        return 10;
+        return aggPropDefSize;
     }
 
     refs = .{ .refs = references.?, .fs = fieldSchema };

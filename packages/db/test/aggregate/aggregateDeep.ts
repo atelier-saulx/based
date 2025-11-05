@@ -870,7 +870,7 @@ await test('edges aggregation', async (t) => {
   // after: NOK: feature not implemented
   await db
     .query('movie')
-    .include((q) => q('actors').sum('$rating'))
+    .include((q) => q('actors').max('$rating'))
     .get()
     .inspect(10)
 
