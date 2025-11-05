@@ -17,6 +17,7 @@ export * from './client/query/BasedDbQuery.js'
 export * from './client/query/BasedQueryResponse.js'
 export * from './server/save.js'
 export * from './hooks.js'
+export * from './server/subscription.js'
 
 export { getDefaultHooks, BasedDbOpts }
 
