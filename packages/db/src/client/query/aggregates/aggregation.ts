@@ -22,6 +22,7 @@ import {
 } from '../aggregates/types.js'
 import { QueryBranch } from '../BasedDbQuery.js'
 import { AggregateType } from '@based/protocol/db-read'
+import { createOrGetEdgeRefQueryDef } from '../include/utils.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -217,7 +218,6 @@ const getPropDefinition = (
       default: 0,
     } as PropDef
   }
-
   return resolvedPropDef || def.schema.props[propName]
 }
 
@@ -237,8 +237,15 @@ const processPropPath = (
     const propName = path[i]
 
     if (isEdge(propName)) {
-      edgeNotImplemented(query.def, propName)
-      return
+      // @ts-ignore
+      const edgePropDef = query.def.target?.propDef?.edges[propName]
+      if (edgePropDef) {
+        // query.def = createOrGetEdgeRefQueryDef(query.db, query.def, edgePropDef) // MV
+        return edgePropDef
+      } else {
+        edgeNotImplemented(query.def, propName)
+        return undefined
+      }
     }
     if (!t) {
       return undefined // end

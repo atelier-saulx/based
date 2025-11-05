@@ -8,6 +8,7 @@ const writeInt = utils.writeIntExact;
 const aggregateTypes = @import("../aggregate/types.zig");
 const copy = utils.copy;
 const microbufferToF64 = @import("./utils.zig").microbufferToF64;
+const incTypes = @import("../include/types.zig");
 
 inline fn execAgg(
     aggPropDef: []u8,
@@ -94,7 +95,8 @@ inline fn execAgg(
     }
 }
 
-pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8, hllAccumulator: anytype, hadAccumulated: *bool) void {
+pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8, hllAccumulator: anytype, hadAccumulated: *bool, ctx: *db.DbCtx, edgeRef: ?incTypes.RefStruct) void {
+    const isEdge = false;
     if (agg.len == 0) {
         return;
     }
@@ -131,7 +133,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, hllAccumulator, hllValue);
                 hadAccumulated.* = true;
             } else {
-                value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
+                value = if (isEdge and edgeRef != null) db.getEdgeProp(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
                 if (value.len == 0) {
                     i += fieldAggsSize;
                     continue;

@@ -840,7 +840,7 @@ await test('edges aggregation', async (t) => {
   //   // .include('actors.$rating')
   //   // .include('actors.name')
   //   .get()
-  //   .inspect()
+  //   .inspect(10, true)
 
   /*---------------------------*/
   /*       NESTED SINTAX       */
@@ -852,7 +852,7 @@ await test('edges aggregation', async (t) => {
 
   // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
   // after: NOK: zeroing
-  // console.log(await db.query('movie').max('actors.$rating').get().toObject())
+  // console.log(await db.query('movie').sum('actors.$rating').get().toObject())
 
   /*----------------------------*/
   /*       BRANCHED QUERY       */
@@ -870,14 +870,15 @@ await test('edges aggregation', async (t) => {
   // after: NOK: feature not implemented
   await db
     .query('movie')
-    .include((q) => q('actors').max('$rating'))
+    .include((q) => q('actors').sum('$rating'))
     .get()
     .inspect(10)
 
-  /*------------------------*/
-  /*          OTHER         */
-  /*------------------------*/
+  /*-----------------------------------*/
+  /*          STRAIGHT ON TYPE         */
+  /*-----------------------------------*/
   // before: OK: error in js: Cannot read properties of undefined (reading 'edges')
   // after: NOK: feature not implemented
   // await db.query('actor').max('$rating').get().inspect(10)
+  // await db.query('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
 })
