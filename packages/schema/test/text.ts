@@ -13,18 +13,37 @@ await test('text', () => {
         fallback: 'en',
       },
     },
-    props: {
-      myText: {
-        type: 'text',
+    types: {
+      test: {
+        props: {
+          myText: {
+            type: 'text',
+          },
+        },
       },
     },
   })
 
   throws(() => {
     parse({
-      props: {
-        myText: {
-          type: 'text',
+      locales: {
+        en: {
+          // @ts-expect-error
+          required: 1,
+        },
+      },
+    })
+  }, 'invalid locales')
+
+  throws(() => {
+    parse({
+      types: {
+        test: {
+          props: {
+            myText: {
+              type: 'text',
+            },
+          },
         },
       },
     })
@@ -39,4 +58,27 @@ await test('text', () => {
       },
     })
   }, 'type text requires locales to be defined 2')
+
+  throws(() => {
+    parse({
+      locales: {
+        en: {
+          required: true,
+        },
+        de: {},
+        nl: {
+          fallback: 'en',
+        },
+      },
+      types: {
+        product: {
+          description: {
+            type: 'text',
+            // @ts-expect-error
+            non: true,
+          },
+        },
+      },
+    })
+  }, 'type text wrong property')
 })

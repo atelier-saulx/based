@@ -3,45 +3,55 @@ import { parse } from '@based/schema'
 
 await test('cardinality', () => {
   parse({
-    props: {
-      myUniqueValuesCount: {
-        type: 'cardinality',
+    types: {
+      test: {
+        myUniqueValuesCount: {
+          type: 'cardinality',
+        },
       },
     },
   })
 
   parse({
-    props: {
-      myUniqueValuesCount: 'cardinality',
+    types: {
+      test: {
+        myUniqueValuesCount: 'cardinality',
+      },
     },
   })
 })
 
 await test('cardinality props', () => {
   parse({
-    props: {
-      myUniqueValuesCountDense: {
-        type: 'cardinality',
-        mode: 'dense',
-        precision: 12,
+    types: {
+      test: {
+        myUniqueValuesCountDense: {
+          type: 'cardinality',
+          mode: 'dense',
+          precision: 12,
+        },
       },
     },
   })
 
   parse({
-    props: {
-      myUniqueValuesCountSparse: {
-        type: 'cardinality',
-        mode: 'sparse',
+    types: {
+      test: {
+        myUniqueValuesCountSparse: {
+          type: 'cardinality',
+          mode: 'sparse',
+        },
       },
     },
   })
 
   parse({
-    props: {
-      myUniqueValuesCountSparse: {
-        type: 'cardinality',
-        precision: 2,
+    types: {
+      test: {
+        myUniqueValuesCountSparse: {
+          type: 'cardinality',
+          precision: 2,
+        },
       },
     },
   })

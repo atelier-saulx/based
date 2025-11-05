@@ -1,10 +1,9 @@
 import {
-  isPropType,
   SchemaObject,
   StrictSchemaType,
-  getPropType,
   SchemaLocales,
   SchemaHooks,
+  StrictSchemaProp,
 } from '../index.js'
 import { setByPath } from '@based/utils'
 import {
@@ -142,9 +141,7 @@ const createSchemaTypeDef = (
     }
     if (result.capped == 0) {
       if ('capped' in type) {
-        if (
-          typeof type.capped !== 'number' ||
-          type.capped < 0) {
+        if (typeof type.capped !== 'number' || type.capped < 0) {
           throw new Error('Invalid capped')
         }
         result.capped = type.capped
@@ -167,11 +164,9 @@ const createSchemaTypeDef = (
   const target = type.props
 
   for (const key in target) {
-    // Create prop def
-    const schemaProp = target[key]
+    const schemaProp: StrictSchemaProp = target[key]
     const propPath = [...path, key]
-    const propType = getPropType(schemaProp)
-    if (propType === 'object') {
+    if (schemaProp.type === 'object') {
       createSchemaTypeDef(
         typeName,
         schemaProp as SchemaObject,
@@ -185,9 +180,9 @@ const createSchemaTypeDef = (
 
     const len = getPropLen(schemaProp)
     if (
-      isPropType('string', schemaProp) ||
-      isPropType('alias', schemaProp) ||
-      isPropType('cardinality', schemaProp)
+      schemaProp.type === 'string' ||
+      schemaProp.type === 'alias' ||
+      schemaProp.type === 'cardinality'
     ) {
       if (typeof schemaProp === 'object') {
         if (
@@ -199,15 +194,15 @@ const createSchemaTypeDef = (
       } else {
         result.separateSortProps++
       }
-    } else if (isPropType('text', schemaProp)) {
+    } else if (schemaProp.type === 'text') {
       result.separateSortText++
-    } else if (isPropType('colvec', schemaProp)) {
+    } else if (schemaProp.type === 'colvec') {
       if (!result.insertOnly) {
         throw new Error('colvec requires insertOnly')
       }
     }
     const isseparate = isSeparate(schemaProp, len)
-    const typeIndex = TYPE_INDEX_MAP[propType]
+    const typeIndex = TYPE_INDEX_MAP[schemaProp.type]
     const prop: PropDef = {
       typeIndex,
       __isPropDef: true,
@@ -217,7 +212,8 @@ const createSchemaTypeDef = (
       validation:
         schemaProp.validation ?? VALIDATION_MAP[typeIndex] ?? defaultValidation,
       len,
-      default: schemaProp.default ?? DEFAULT_MAP[typeIndex],
+      default:
+        'default' in schemaProp ? schemaProp.default : DEFAULT_MAP[typeIndex],
       prop: isseparate ? ++result.cnt : 0,
     }
 
@@ -230,42 +226,43 @@ const createSchemaTypeDef = (
       }
     }
 
-    if (schemaProp.max !== undefined) {
+    if ('max' in schemaProp) {
       prop.max = parseMinMaxStep(schemaProp.max)
     }
 
-    if (schemaProp.min !== undefined) {
+    if ('min' in schemaProp) {
       prop.min = parseMinMaxStep(schemaProp.min)
     }
 
-    if (schemaProp.step !== undefined) {
+    if ('step' in schemaProp) {
       prop.step = parseMinMaxStep(schemaProp.step)
     }
 
     if (prop.typeIndex !== NUMBER && prop.step === undefined) {
       prop.step = 1
     }
+
     if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
       prop.vectorBaseType = schemaVectorBaseTypeToEnum(
-        schemaProp.baseType ?? 'number',
+        'baseType' in schemaProp ? schemaProp.baseType : 'number',
       )
     }
 
     if (prop.typeIndex === CARDINALITY) {
-      prop.cardinalityMode ??= cardinalityModeToEnum(
-        (schemaProp.mode ??= 'sparse'),
+      prop.cardinalityMode = cardinalityModeToEnum(
+        'mode' in schemaProp ? schemaProp.mode : 'sparse',
       )
-      const prec = typeName == '_root' ? 14 : 8
-      prop.cardinalityPrecision ??= schemaProp.precision ??= prec
+      prop.cardinalityPrecision =
+        'precision' in schemaProp ? schemaProp.precision : 8
     }
 
-    if (isPropType('enum', schemaProp)) {
+    if (schemaProp.type === 'enum') {
       prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
       prop.reverseEnum = {}
       for (let i = 0; i < prop.enum.length; i++) {
         prop.reverseEnum[prop.enum[i]] = i
       }
-    } else if (isPropType('references', schemaProp)) {
+    } else if (schemaProp.type === 'references') {
       if (result.partial) {
         throw new Error('references is not supported with partial')
       }
@@ -274,7 +271,7 @@ const createSchemaTypeDef = (
       prop.inverseTypeName = schemaProp.items.ref
       prop.dependent = schemaProp.items.dependent
       addEdges(prop, schemaProp.items)
-    } else if (isPropType('reference', schemaProp)) {
+    } else if (schemaProp.type === 'reference') {
       if (result.partial) {
         throw new Error('reference is not supported with partial')
       }
@@ -283,22 +280,18 @@ const createSchemaTypeDef = (
       prop.inverseTypeName = schemaProp.ref
       prop.dependent = schemaProp.dependent
       addEdges(prop, schemaProp)
-    } else if (typeof schemaProp === 'object') {
-      if (isPropType('string', schemaProp) || isPropType('text', schemaProp)) {
-        prop.compression =
-          'compression' in schemaProp && schemaProp.compression === 'none'
-            ? 0
-            : 1
-      } else if (isPropType('timestamp', schemaProp) && 'on' in schemaProp) {
-        if (schemaProp.on[0] === 'c') {
-          result.createTs ??= []
-          result.createTs.push(prop)
-        } else if (schemaProp.on[0] === 'u') {
-          result.createTs ??= []
-          result.createTs.push(prop)
-          result.updateTs ??= []
-          result.updateTs.push(prop)
-        }
+    } else if (schemaProp.type === 'string' || schemaProp.type === 'text') {
+      prop.compression =
+        'compression' in schemaProp && schemaProp.compression === 'none' ? 0 : 1
+    } else if ('on' in schemaProp) {
+      if (schemaProp.on === 'create') {
+        result.createTs ??= []
+        result.createTs.push(prop)
+      } else if (schemaProp.on === 'update') {
+        result.createTs ??= []
+        result.createTs.push(prop)
+        result.updateTs ??= []
+        result.updateTs.push(prop)
       }
     }
     result.props[propPath.join('.')] = prop

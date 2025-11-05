@@ -4,21 +4,25 @@ import { parse } from '@based/schema'
 
 await test('boolean', () => {
   parse({
-    props: {
-      myBoolean: {
-        type: 'boolean',
-        default: true,
+    types: {
+      test: {
+        myBoolean: {
+          type: 'boolean',
+          default: true,
+        },
       },
     },
   })
 
   throws(() => {
     parse({
-      props: {
-        myBoolean: {
-          type: 'boolean',
-          // @ts-ignore
-          default: 'hello',
+      types: {
+        test: {
+          // @ts-expect-error
+          myBoolean: {
+            type: 'boolean',
+            default: 'hello',
+          },
         },
       },
     })

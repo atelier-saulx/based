@@ -1,4 +1,4 @@
-import { getPropType, SchemaReference } from '../index.js'
+import { SchemaReference } from '../index.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { fillEmptyMain } from './fillEmptyMain.js'
 import {
@@ -30,13 +30,12 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         prop.edgesSeperateCnt = 0
       }
       const edgeProp = refProp[key]
-      const edgeType = getPropType(edgeProp)
       const len = getPropLen(edgeProp)
       const separate = isSeparate(edgeProp, len)
       if (separate) {
         prop.edgesSeperateCnt++
       }
-      const typeIndex = TYPE_INDEX_MAP[edgeType]
+      const typeIndex = TYPE_INDEX_MAP[edgeProp.type]
 
       if (edgeProp.default !== undefined) {
         prop.hasDefaultEdges = true

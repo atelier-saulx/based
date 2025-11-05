@@ -4,19 +4,23 @@ import { parse } from '@based/schema'
 
 await test('string', () => {
   parse({
-    props: {
-      myString: {
-        type: 'string',
+    types: {
+      test: {
+        myString: {
+          type: 'string',
+        },
       },
     },
   })
 
   throws(() => {
     parse({
-      props: {
-        // @ts-expect-error
-        myEnum: {
-          enum: [{ invalidObj: true }],
+      types: {
+        test: {
+          // @ts-expect-error
+          myEnum: {
+            enum: [{ invalidObj: true }],
+          },
         },
       },
     })

@@ -1,28 +1,7 @@
-import { getPropType } from './parse/utils.js'
 import type { LangName } from './lang.js'
 import type { Validation } from './def/validation.js'
 
 type Role = 'title' | 'source' | 'media' | string
-
-export const numberDisplays = [
-  'short',
-  'human',
-  'ratio',
-  'bytes',
-  'euro',
-  'dollar',
-  'pound',
-  'meter',
-] as const
-export const dateDisplays = [
-  'date',
-  'date-time',
-  'date-time-text',
-  'date-time-human',
-  'date-time-human-short',
-  'time',
-  'time-precise',
-] as const
 export const stringFormats = [
   'alpha',
   'alphaLocales',
@@ -98,6 +77,27 @@ export const stringFormats = [
 
   // TODO: for discussion
   'multiline',
+] as const
+
+export const numberDisplays = [
+  'short',
+  'human',
+  'ratio',
+  'bytes',
+  'euro',
+  'dollar',
+  'pound',
+  'meter',
+] as const
+
+export const dateDisplays = [
+  'date',
+  'date-time',
+  'date-time-text',
+  'date-time-human',
+  'date-time-human-short',
+  'time',
+  'time-precise',
 ] as const
 
 type DateDisplay = (typeof dateDisplays)[number]
@@ -183,13 +183,13 @@ type PropValues = {
 }
 type Prop<V extends PropValues> = {
   required?: boolean
-  title?: string | Record<string, string>
-  description?: string | Record<string, string>
-  path?: string
-  query?: QueryFn
-  role?: Role
-  readOnly?: boolean
-  examples?: string[]
+  title?: string
+  description?: string
+  // path?: string
+  // query?: QueryFn
+  // role?: Role
+  // readOnly?: boolean
+  // examples?: string[]
   validation?: Validation
   hooks?: SchemaPropHooks
 } & V
@@ -232,9 +232,6 @@ export type SchemaNumber = Prop<{
   max?: number
   step?: number | 'any'
   display?: NumberDisplay
-  history?: {
-    interval: 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second'
-  }
 }>
 
 export type SchemaString = Prop<{
@@ -351,13 +348,6 @@ export type SchemaObjectOneWay = Prop<{
   props: SchemaPropsOneWay
 }>
 
-export type SchemaReferenceWithQuery = SchemaReferenceOneWay & {
-  query: QueryFn
-}
-export type SchemaReferencesWithQuery = SchemaReferencesOneWay & {
-  query: QueryFn
-}
-
 export type SchemaEnum = Prop<{
   type?: 'enum'
   default?: EnumItem | undefined
@@ -378,23 +368,7 @@ export type SchemaPropShorthand =
   | NumberType
   | EnumItem[]
 
-type SetItems<isStrict = false> =
-  | SchemaTimestamp
-  | SchemaBoolean
-  | SchemaNumber
-  | SchemaString
-  | SchemaEnum
-  | (isStrict extends true
-      ? never
-      : 'timestamp' | 'binary' | 'boolean' | 'string' | NumberType | EnumItem[])
-
-export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
-  type?: 'set'
-  default?: ItemsType extends { default } ? ItemsType['default'][] : undefined
-  items: ItemsType & NeverInItems
-}>
-
-type NonRefSchemaProps<isStrict = false> =
+type NonRefSchemaProps =
   | SchemaTimestamp
   | SchemaBoolean
   | SchemaNumber
@@ -407,29 +381,32 @@ type NonRefSchemaProps<isStrict = false> =
   | SchemaCardinality
   | SchemaVector
   | SchemaColvec
-  | (isStrict extends true
-      ? SchemaSet<SetItems<true>>
-      : SchemaPropShorthand | SchemaSet)
+  | SchemaPropShorthand
 
-export type SchemaProp<isStrict = false> =
-  | SchemaReferencesWithQuery
-  | SchemaReferenceWithQuery
-  | NonRefSchemaProps<isStrict>
+export type SchemaProp =
+  | NonRefSchemaProps
   | SchemaReferences
   | SchemaReference
   | SchemaObject
   | SchemaBinary
 
-export type SchemaPropOneWay<isStrict = false> =
+type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>
+
+export type StrictSchemaProp = RequiredFields<
+  Exclude<SchemaProp, SchemaPropShorthand>,
+  'type'
+>
+
+export type SchemaPropOneWay =
   | SchemaReferencesOneWay
   | SchemaReferenceOneWay
   | SchemaObjectOneWay
-  | NonRefSchemaProps<isStrict>
+  | NonRefSchemaProps
 
 export type SchemaAnyProp = SchemaPropOneWay | SchemaProp
 export type SchemaProps<isStrict = false> = Record<
   AllowedKey,
-  SchemaProp<isStrict>
+  isStrict extends true ? StrictSchemaProp : SchemaProp
 > & { id?: never }
 
 // TODO: export these types in a pkg (not db => circular!)
@@ -490,7 +467,6 @@ type GenericSchemaType<isStrict = false> = {
   hooks?: SchemaHooks
   id?: number
   blockCapacity?: number
-  capped?: number
   insertOnly?: boolean
   partial?: boolean
   props: SchemaProps<isStrict>
@@ -510,10 +486,9 @@ export type SchemaTypes<isStrict = false> = Record<
   SchemaType<isStrict>
 > & { _root?: never }
 
-export type SchemaPropsOneWay<isStrict = false> = Record<
-  AllowedKey,
-  SchemaPropOneWay<isStrict>
-> & { id?: never }
+export type SchemaPropsOneWay = Record<AllowedKey, SchemaPropOneWay> & {
+  id?: never
+}
 
 type MigrateFn = (
   node: Record<string, any>,
@@ -524,8 +499,7 @@ export type MigrateFns = Record<string, MigrateFn>
 type GenericSchema<isStrict = false> = {
   version?: string
   types?: SchemaTypes<isStrict>
-  props?: SchemaPropsOneWay<isStrict>
-  locales?: Partial<SchemaLocales>
+  locales?: SchemaLocales
   defaultTimezone?: string
   migrations?: {
     version: string
@@ -537,13 +511,15 @@ export type StrictSchema = GenericSchema<true>
 export type NonStrictSchema = GenericSchema<false>
 export type Schema = NonStrictSchema | StrictSchema
 
-export type SchemaLocales = Record<
-  LangName,
-  | true
-  | {
-      required?: boolean
-      fallback?: LangName // not multiple - 1 is enough else it becomes too complex
-    }
+export type SchemaLocales = Partial<
+  Record<
+    LangName,
+    | true
+    | {
+        required?: boolean
+        fallback?: LangName // not multiple - 1 is enough else it becomes too complex
+      }
+  >
 >
 
 export type SchemaPropTypeMap = {
@@ -557,7 +533,6 @@ export type SchemaPropTypeMap = {
   enum: SchemaEnum
   text: SchemaText
   json: SchemaJson
-  set: SchemaSet
   binary: SchemaBinary
   cardinality: SchemaCardinality
   vector: SchemaVector
@@ -565,13 +540,5 @@ export type SchemaPropTypeMap = {
 } & Record<NumberType, SchemaNumber>
 
 export type SchemaPropTypes = keyof SchemaPropTypeMap
-
-export const isPropType = <T extends SchemaPropTypes>(
-  type: T,
-  prop: SchemaProp,
-): prop is SchemaPropTypeMap[T] => {
-  return getPropType(prop) === type
-}
-
 export const MAX_ID = 4294967295
 export const MIN_ID = 1

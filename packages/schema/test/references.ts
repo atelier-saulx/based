@@ -27,13 +27,6 @@ await test('references', (t) => {
   })
 
   parse({
-    props: {
-      articles: {
-        items: {
-          ref: 'article',
-        },
-      },
-    },
     types: {
       article: {
         name: 'string',
@@ -142,18 +135,6 @@ await test('references', (t) => {
       },
     })
   }, 'Disallow missing type for ref')
-
-  throws(() => {
-    parse({
-      props: {
-        myRefs: {
-          items: {
-            ref: 'user',
-          },
-        },
-      },
-    })
-  }, 'Disallow missing type for refs')
 
   throws(() => {
     parse({

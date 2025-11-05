@@ -4,26 +4,30 @@ import { parse } from '@based/schema'
 
 await test('number', () => {
   parse({
-    props: {
-      myNumber: {
-        type: 'number',
-        default: 11,
-        min: 10,
-        max: 100,
-        step: 0.5,
+    types: {
+      test: {
+        myNumber: {
+          type: 'number',
+          default: 11,
+          min: 10,
+          max: 100,
+          step: 0.5,
+        },
       },
     },
   })
 
   throws(() => {
     parse({
-      props: {
-        myNumber: {
-          type: 'number',
-          default: 200,
-          min: 10,
-          max: 100,
-          step: 0.5,
+      types: {
+        test: {
+          myNumber: {
+            type: 'number',
+            default: 200,
+            min: 10,
+            max: 100,
+            step: 0.5,
+          },
         },
       },
     })
@@ -31,13 +35,15 @@ await test('number', () => {
 
   throws(() => {
     parse({
-      props: {
-        myNumber: {
-          type: 'number',
-          default: 110,
-          min: 10,
-          max: 100,
-          step: 0.7,
+      types: {
+        test: {
+          myNumber: {
+            type: 'number',
+            default: 110,
+            min: 10,
+            max: 100,
+            step: 0.7,
+          },
         },
       },
     })

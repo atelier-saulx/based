@@ -16,7 +16,7 @@ await test('basic', () => {
           timestamp: { type: 'timestamp' },
           enum: { type: 'enum', enum: ['foo', 'bar', 'baz'] },
           text: { type: 'text' },
-          set: { type: 'set', items: { type: 'string' } },
+          // set: { type: 'set', items: { type: 'string' } },
           object: {
             type: 'object',
             props: {

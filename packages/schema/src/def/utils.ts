@@ -21,19 +21,15 @@ import {
 } from './types.js'
 
 import {
-  SchemaProp,
+  StrictSchemaProp,
   SchemaVectorBaseType,
-  isPropType,
   HLLRegisterRepresentation,
 } from '../types.js'
-import { getPropType } from '../parse/utils.js'
 import { convertToTimestamp } from '@based/utils'
 
-export function isSeparate(schemaProp: SchemaProp, len: number) {
+export function isSeparate(schemaProp: StrictSchemaProp, len: number) {
   return (
-    len === 0 ||
-    isPropType('vector', schemaProp) ||
-    isPropType('colvec', schemaProp)
+    len === 0 || schemaProp.type === 'vector' || schemaProp.type === 'colvec'
   )
 }
 
@@ -92,23 +88,21 @@ export const cardinalityModeToEnum = (mode: HLLRegisterRepresentation) => {
   else 0
 }
 
-export function getPropLen(schemaProp: SchemaProp) {
-  let len = SIZE_MAP[getPropType(schemaProp)]
+export function getPropLen(schemaProp: StrictSchemaProp) {
+  let len = SIZE_MAP[schemaProp.type]
   if (
-    isPropType('string', schemaProp) ||
-    isPropType('alias', schemaProp) ||
-    isPropType('cardinality', schemaProp)
+    schemaProp.type === 'string' ||
+    schemaProp.type === 'alias' ||
+    schemaProp.type === 'cardinality'
   ) {
-    if (typeof schemaProp === 'object') {
-      if (schemaProp.maxBytes < 61) {
-        len = schemaProp.maxBytes + 1
-      } else if ('max' in schemaProp && schemaProp.max < 31) {
-        len = schemaProp.max * 2 + 1
-      }
+    if (schemaProp.maxBytes < 61) {
+      len = schemaProp.maxBytes + 1
+    } else if ('max' in schemaProp && schemaProp.max < 31) {
+      len = schemaProp.max * 2 + 1
     }
-  } else if (isPropType('vector', schemaProp)) {
+  } else if (schemaProp.type === 'vector') {
     len = 4 * schemaProp.size
-  } else if (isPropType('colvec', schemaProp)) {
+  } else if (schemaProp.type === 'colvec') {
     len =
       schemaProp.size *
       VECTOR_BASE_TYPE_SIZE_MAP[
