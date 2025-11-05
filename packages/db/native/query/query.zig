@@ -45,8 +45,8 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
 
     var q = try napi.get([]u8, env, args[1]);
 
-    // len without the schema checksum space, and without the crc32 of the query
-    const len = q.len - 12;
+    // len without the schema checksum space
+    const len = q.len - 8;
 
     var ctx: QueryCtx = .{
         .results = std.ArrayList(results.Result).init(allocator),

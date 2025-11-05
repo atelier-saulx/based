@@ -405,6 +405,19 @@ export class QueryBranch<T> {
     return this
   }
 
+  // first() {
+  //   if (this.queryCommands) {
+  //     this.queryCommands.push({ method: 'first', args: [] })
+  //   } else {
+  //     const offset = 0
+  //     const limit = 1
+  //     this.def.range.offset = offset
+  //     this.def.range.limit = limit
+  //   }
+  //   // @ts-ignore
+  //   return this
+  // }
+
   include(
     ...fields: (
       | string
@@ -508,6 +521,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   }
 
   reset() {
+    this.subscriptionBuffer = undefined
     this.buffer = undefined
     this.def = undefined
   }
@@ -571,7 +585,8 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     return new GetPromise(this.#getInternal)
   }
 
-  buffer: Uint8Array
+  buffer?: Uint8Array
+  subscriptionBuffer?: Uint8Array
 
   register() {
     registerQuery(this)

@@ -13,7 +13,6 @@ import native from '../../src/native.js'
 import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { ALIAS } from '@based/schema/prop-types'
 import { ID } from '../../src/client/query/toByteCode/offsets.js'
-import { getSubscription } from '../../src/client/query/subscription/byteCode/getSubscription.js'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -206,13 +205,13 @@ await test('subscriptionIds', async (t) => {
 
   // add crc32 to query buffer
 
-  getSubscription(def.buffer)
-
   const close = clients[0]
-    .query('user', 2)
+    .query('user', 1)
     .include('name', 'x')
-    .filter('date', '>', 'now')
-    .subscribe(() => {})
+    // .filter('date', '>', 'now')
+    .subscribe((d) => {
+      console.log('derp', d)
+    })
 
   // const x = def.def
   // const queryId = native.crc32(

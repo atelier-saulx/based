@@ -1,6 +1,7 @@
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { BasedQueryResponse } from '../BasedQueryResponse.js'
 import { registerQuery } from '../registerQuery.js'
+import { registerSubscription } from './toByteCode.js'
 import { OnData, OnError, OnClose } from './types.js'
 
 // exec
@@ -45,6 +46,7 @@ export class SubStore {
           if (!killed) {
             try {
               registerQuery(q)
+              registerSubscription(q)
               this.onClose = q.db.hooks.subscribe(q, onData, onError)
             } catch (err) {
               onError(err)
@@ -60,9 +62,7 @@ export class SubStore {
     } else {
       try {
         registerQuery(q)
-
-        // ----- fi
-
+        registerSubscription(q)
         this.onClose = q.db.hooks.subscribe(q, onData, onError)
       } catch (err) {
         onError(err)

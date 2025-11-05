@@ -46,10 +46,13 @@ export const getDefaultHooks = (
       // or make a different thing out of the query buf?
 
       // new format
+      // first byte in query isSubscription?
+      // make a separate thing for subs?
 
       let timer: ReturnType<typeof setTimeout>
       let killed = false
       const poll = async () => {
+        // subArray in server
         const res = await server.getQueryBuf(q.buffer)
         if (killed) {
           return
