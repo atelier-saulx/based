@@ -21,7 +21,7 @@ export class QueryWorker extends DbWorker {
   }
 
   getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
-    const schemaChecksum = readUint64(buf, buf.byteLength - 12)
+    const schemaChecksum = readUint64(buf, buf.byteLength - 8)
     if (schemaChecksum !== this.db.schema?.hash) {
       return Promise.resolve(new Uint8Array(1))
     }

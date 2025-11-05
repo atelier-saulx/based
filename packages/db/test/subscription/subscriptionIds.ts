@@ -208,7 +208,7 @@ await test('subscriptionIds', async (t) => {
   const close = clients[0]
     .query('user', 1)
     .include('name', 'x')
-    // .filter('date', '>', 'now')
+    .filter('date', '>', 'now')
     .subscribe((d) => {
       console.log('derp', d)
     })
