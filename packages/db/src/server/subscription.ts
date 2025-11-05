@@ -1,11 +1,11 @@
-import { readUint16, readUint32, writeUint32 } from '@based/utils'
+import { readUint16, readUint32 } from '@based/utils'
 import {
   OnError,
   SubscriptionType,
 } from '../client/query/subscription/types.js'
 import { DbServer } from '../index.js'
 import native from '../native.js'
-import { ID } from '../client/query/toByteCode/offsets.js'
+import { MAX_ID } from '@based/schema'
 
 type OnData = (res: Uint8Array) => void
 
@@ -14,12 +14,11 @@ export type SubscriptionFullType = {
 }
 
 export type SubscriptionId = {
-  query: Uint8Array
-  sub: Uint8Array
-  ids: Map<number, Set<OnData>>
+  ids: Map<number, Set<() => void>>
 }
 
 export type Subscriptions = {
+  updateId: number
   active: number
   updateHandler: ReturnType<typeof setTimeout>
   ids: Map<number, SubscriptionId>
@@ -29,6 +28,10 @@ export type Subscriptions = {
 export const startUpdateHandler = (server: DbServer) => {
   // combine this with handled modify
   const scheduleUpdate = () => {
+    server.subscriptions.updateId++
+    if (server.subscriptions.updateId > MAX_ID) {
+      server.subscriptions.updateId = 1
+    }
     // can do seperate timing for id / type
     // scince multi queries are much heavier ofc
     const markedIdSubs = native.getMarkedIdSubscriptions(server.dbCtxExternal)
@@ -38,15 +41,12 @@ export const startUpdateHandler = (server: DbServer) => {
         const subId = readUint32(buffer, i)
         const id = readUint32(buffer, i + 4)
         const subContainer = server.subscriptions.ids.get(subId)
-        writeUint32(subContainer.query, id, ID.id)
-        server.getQueryBuf(subContainer.query).then((res) => {
-          const ids = subContainer.ids.get(id)
-          if (ids) {
-            for (const fn of ids) {
-              fn(res)
-            }
+        const ids = subContainer.ids.get(id)
+        if (ids) {
+          for (const fn of ids) {
+            fn()
           }
-        })
+        }
       }
     }
 
@@ -57,12 +57,8 @@ export const startUpdateHandler = (server: DbServer) => {
       const buffer = new Uint8Array(markedMultiSubs)
       for (let i = 0; i < buffer.byteLength; i += 2) {
         const typeId = readUint16(buffer, i)
-
-        console.log('FLAP', typeId, server.subscriptions.fullType)
-
         const subs = server.subscriptions.fullType.get(typeId)
         if (subs) {
-          console.log('DERP')
           for (const fn of subs.listeners) {
             fn()
           }
@@ -87,29 +83,32 @@ export const registerSubscription = (
     startUpdateHandler(server)
   }
 
+  let lastUpdated = 0
+
+  const runQuery = () => {
+    if (lastUpdated !== server.subscriptions.updateId) {
+      lastUpdated = server.subscriptions.updateId
+      server.getQueryBuf(query).then((res) => {
+        if (!killed) {
+          onData(res)
+        }
+      })
+    }
+  }
+
   server.subscriptions.active++
 
   if (sub[0] === SubscriptionType.singleId) {
-    console.log('ADD ID SUB')
-
     const subId = readUint32(sub, 1)
     const id = readUint32(sub, 7)
-
     let subContainer: SubscriptionId
-    let listeners: Set<OnData>
-
+    let listeners: Set<() => void>
     if (!server.subscriptions.ids.get(subId)) {
-      // copy query?
-      subContainer = {
-        query,
-        sub,
-        ids: new Map(),
-      }
+      subContainer = { ids: new Map() }
       server.subscriptions.ids.set(subId, subContainer)
     } else {
       subContainer = server.subscriptions.ids.get(subId)
     }
-
     if (!subContainer.ids.has(id)) {
       listeners = new Set()
       subContainer.ids.set(id, listeners)
@@ -118,25 +117,14 @@ export const registerSubscription = (
     } else {
       listeners = subContainer.ids.get(id)
     }
-
-    listeners.add(onData)
-
+    listeners.add(runQuery)
     // has to be wrapped in next tick preferebly - optmize later ofc
     process.nextTick(() => {
-      // here we can handle things like read the id etc
-      // and then do first registration when its here
-      server.getQueryBuf(query).then((res) => {
-        // make this different!
-        if (killed) {
-          return
-        }
-        onData(res)
-      })
+      runQuery()
     })
-
     return () => {
       killed = true
-      listeners.delete(onData)
+      listeners.delete(runQuery)
       if (listeners.size === 0) {
         native.removeIdSubscription(server.dbCtxExternal, sub)
         subContainer.ids.delete(id)
@@ -152,16 +140,6 @@ export const registerSubscription = (
       }
     }
   } else if (sub[0] === SubscriptionType.fullType) {
-    console.log('ADD FULL TYPE SUB')
-
-    const runQuery = () => {
-      server.getQueryBuf(query).then((res) => {
-        if (!killed) {
-          onData(res)
-        }
-      })
-    }
-
     const typeId = readUint16(sub, 1)
     let fullType: SubscriptionFullType
     let listeners: Set<() => void>
@@ -176,11 +154,10 @@ export const registerSubscription = (
       fullType = server.subscriptions.fullType.get(typeId)
       listeners = fullType.listeners
     }
-
     listeners.add(runQuery)
-
-    runQuery()
-
+    process.nextTick(() => {
+      runQuery()
+    })
     return () => {
       killed = true
       listeners.delete(runQuery)

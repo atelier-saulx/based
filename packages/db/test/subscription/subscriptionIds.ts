@@ -24,6 +24,10 @@ await test('subscriptionIds', async (t) => {
   const clientsN = 2
   const { clients, server } = await start(t, clientsN)
 
+  // single REF
+  // multi REFERENCES
+  // EDGE + REFERENS (2 types)
+
   await clients[0].setSchema({
     types: {
       user: {
