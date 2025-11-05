@@ -33,10 +33,10 @@ pub const TypeSubscriptionCtx = struct {
     bitSetRatio: u32,
     // multi
     // multiSubsStore: MultiSubsStore, // iterator seems very expensive
-    multiSubsSizeBits: u32,
+    // multiSubsSizeBits: u32,
     multiSubsSize: u32, // if 0 faster check
-    multiSubs: []u8, //types.SUB_SIZE // lets add 100k of these will not be fast im affraid
-    multiSubsStageMarked: []u8, // then simd check // just increases in size never gets de-alloc
+    // multiSubs: []u8, //types.SUB_SIZE // lets add 100k of these will not be fast im affraid
+    // multiSubsStageMarked: []u8, // then simd check // just increases in size never gets de-alloc
     // ^ can scan if it makes sense (true not staged, not true)
     // what about u8 in there and having more
     // what can we put in a byte to help?

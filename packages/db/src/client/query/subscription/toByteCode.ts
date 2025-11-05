@@ -49,5 +49,14 @@ export const registerSubscription = (query: BasedDbQuery) => {
       i++
     }
     query.subscriptionBuffer = buffer
+  } else {
+    const typeId = query.def.schema.id
+    const buffer = new Uint8Array(3)
+    buffer[0] = SubscriptionType.fullType
+    writeUint16(buffer, typeId, 1)
+
+    console.log('YO YO YO', buffer)
+
+    query.subscriptionBuffer = buffer
   }
 }

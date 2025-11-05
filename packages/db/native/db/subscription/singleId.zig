@@ -203,7 +203,9 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                     const idCount = typeSubs.idSubs.count();
                     const range = typeSubs.maxId - typeSubs.minId;
 
-                    if (range / idCount > 1000) {
+                    if (idCount == 0) {
+                        // remove
+                    } else if (range / idCount > 1000) {
                         if (id == typeSubs.maxId) {
                             var keyIterator = typeSubs.idSubs.keyIterator();
                             while (keyIterator.next()) |k| {
@@ -220,7 +222,7 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                             }
                             try sizeBitSet(typeSubs);
                         }
-                    } else if (idCount != 0) {
+                    } else {
                         if (id == typeSubs.maxId) {
                             var j: u32 = typeSubs.maxId;
                             const min = typeSubs.minId;

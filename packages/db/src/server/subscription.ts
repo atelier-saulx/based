@@ -1,4 +1,4 @@
-import { readUint32, writeUint32 } from '@based/utils'
+import { readUint16, readUint32, writeUint32 } from '@based/utils'
 import {
   OnError,
   SubscriptionType,
@@ -10,47 +10,65 @@ import { ID } from '../client/query/toByteCode/offsets.js'
 type OnData = (res: Uint8Array) => void
 
 export type SubscriptionFullType = {
-  query: Uint8Array
   listeners: Set<() => void>
 }
 
 export type SubscriptionId = {
   query: Uint8Array
-  // nested: ,
+  sub: Uint8Array
   ids: Map<number, Set<OnData>>
-  //   fullType: Set<number>
 }
 
 export type Subscriptions = {
   active: number
   updateHandler: ReturnType<typeof setTimeout>
   ids: Map<number, SubscriptionId>
-  fullType: Map<number, Map<number, SubscriptionFullType>>
+  fullType: Map<number, SubscriptionFullType>
 }
 
 export const startUpdateHandler = (server: DbServer) => {
   // combine this with handled modify
   const scheduleUpdate = () => {
-    const markedSubsR = native.getMarkedSubscriptions(server.dbCtxExternal)
-    console.log('DERP', { markedSubsR })
-    if (markedSubsR) {
-      const x = new Uint8Array(markedSubsR)
-      let i = 0
-      for (; i < markedSubsR.byteLength; i += 8) {
-        const subId = readUint32(x, i)
-        const id = readUint32(x, i + 4)
+    // can do seperate timing for id / type
+    // scince multi queries are much heavier ofc
+    const markedIdSubs = native.getMarkedIdSubscriptions(server.dbCtxExternal)
+    if (markedIdSubs) {
+      const buffer = new Uint8Array(markedIdSubs)
+      for (let i = 0; i < buffer.byteLength; i += 8) {
+        const subId = readUint32(buffer, i)
+        const id = readUint32(buffer, i + 4)
         const subContainer = server.subscriptions.ids.get(subId)
         writeUint32(subContainer.query, id, ID.id)
-        console.info('???????????????', subContainer)
         server.getQueryBuf(subContainer.query).then((res) => {
           const ids = subContainer.ids.get(id)
           if (ids) {
-            ids.forEach((fn) => fn(res))
+            for (const fn of ids) {
+              fn(res)
+            }
           }
         })
       }
     }
-    // did modify ? yes schedule or something
+
+    const markedMultiSubs = native.getMarkedMultiSubscriptions(
+      server.dbCtxExternal,
+    )
+    if (markedMultiSubs) {
+      const buffer = new Uint8Array(markedMultiSubs)
+      for (let i = 0; i < buffer.byteLength; i += 2) {
+        const typeId = readUint16(buffer, i)
+
+        console.log('FLAP', typeId, server.subscriptions.fullType)
+
+        const subs = server.subscriptions.fullType.get(typeId)
+        if (subs) {
+          console.log('DERP')
+          for (const fn of subs.listeners) {
+            fn()
+          }
+        }
+      }
+    }
     server.subscriptions.updateHandler = setTimeout(scheduleUpdate, 200)
   }
   server.subscriptions.updateHandler = setTimeout(scheduleUpdate, 200)
@@ -72,10 +90,10 @@ export const registerSubscription = (
   server.subscriptions.active++
 
   if (sub[0] === SubscriptionType.singleId) {
+    console.log('ADD ID SUB')
+
     const subId = readUint32(sub, 1)
     const id = readUint32(sub, 7)
-
-    //   at the end of the sub we will store nested full type subs
 
     let subContainer: SubscriptionId
     let listeners: Set<OnData>
@@ -84,6 +102,7 @@ export const registerSubscription = (
       // copy query?
       subContainer = {
         query,
+        sub,
         ids: new Map(),
       }
       server.subscriptions.ids.set(subId, subContainer)
@@ -94,7 +113,7 @@ export const registerSubscription = (
     if (!subContainer.ids.has(id)) {
       listeners = new Set()
       subContainer.ids.set(id, listeners)
-      console.log('add dat sub', sub)
+      // later will be added where it gets the first result (and keep it up to date)
       native.addIdSubscription(server.dbCtxExternal, sub)
     } else {
       listeners = subContainer.ids.get(id)
@@ -104,8 +123,9 @@ export const registerSubscription = (
 
     // has to be wrapped in next tick preferebly - optmize later ofc
     process.nextTick(() => {
+      // here we can handle things like read the id etc
+      // and then do first registration when its here
       server.getQueryBuf(query).then((res) => {
-        console.log('yo???', res, query)
         // make this different!
         if (killed) {
           return
@@ -115,26 +135,66 @@ export const registerSubscription = (
     })
 
     return () => {
-      console.log('close dat shit')
       killed = true
       listeners.delete(onData)
-
       if (listeners.size === 0) {
         native.removeIdSubscription(server.dbCtxExternal, sub)
         subContainer.ids.delete(id)
       }
-
       if (subContainer.ids.size === 0) {
+        //  here we remove the full type attachments
         server.subscriptions.ids.delete(subId)
       }
-
       server.subscriptions.active--
       if (server.subscriptions.active === 0) {
         clearTimeout(server.subscriptions.updateHandler)
         server.subscriptions.updateHandler = null
       }
     }
-  }
+  } else if (sub[0] === SubscriptionType.fullType) {
+    console.log('ADD FULL TYPE SUB')
 
-  return () => {}
+    const runQuery = () => {
+      server.getQueryBuf(query).then((res) => {
+        if (!killed) {
+          onData(res)
+        }
+      })
+    }
+
+    const typeId = readUint16(sub, 1)
+    let fullType: SubscriptionFullType
+    let listeners: Set<() => void>
+    if (!server.subscriptions.fullType.has(typeId)) {
+      listeners = new Set()
+      fullType = {
+        listeners,
+      }
+      server.subscriptions.fullType.set(typeId, fullType)
+      native.addMultiSubscription(server.dbCtxExternal, sub)
+    } else {
+      fullType = server.subscriptions.fullType.get(typeId)
+      listeners = fullType.listeners
+    }
+
+    listeners.add(runQuery)
+
+    runQuery()
+
+    return () => {
+      killed = true
+      listeners.delete(runQuery)
+      if (listeners.size === 0) {
+        native.removeMultiSubscription(server.dbCtxExternal, sub)
+        server.subscriptions.fullType.delete(typeId)
+      }
+      server.subscriptions.active--
+      if (server.subscriptions.active === 0) {
+        clearTimeout(server.subscriptions.updateHandler)
+        server.subscriptions.updateHandler = null
+      }
+    }
+  } else {
+    throw new Error('Unhandled subscription!')
+  }
 }
