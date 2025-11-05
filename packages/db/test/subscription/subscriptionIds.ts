@@ -53,6 +53,7 @@ await test('subscriptionIds', async (t) => {
   await clients[0].setSchema({
     types: {
       user: {
+        date: 'timestamp',
         x: 'uint8',
         derp: 'uint32',
         location: 'string',
@@ -207,6 +208,12 @@ await test('subscriptionIds', async (t) => {
 
   getSubscription(def.buffer)
 
+  const close = clients[0]
+    .query('user', 2)
+    .include('name', 'x')
+    .filter('date', '>', 'now')
+    .subscribe(() => {})
+
   // const x = def.def
   // const queryId = native.crc32(
   //   def.buffer.subarray(ID.id + 4, def.buffer.byteLength),
@@ -285,7 +292,7 @@ await test('subscriptionIds', async (t) => {
   //   name: 'MR FLAP!',
   // })
 
-  // await wait(1000)
-
+  await wait(1000)
+  close()
   // clearInterval(int)
 })

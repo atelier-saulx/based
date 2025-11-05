@@ -32,6 +32,10 @@ export const getDefaultHooks = (
   return {
     subscribe(
       q: BasedDbQuery,
+
+      // Subscription buffer use query def its easier
+      // For "now" we need to do something special anyways
+
       onData: (res: Uint8Array) => void,
       onError: OnError,
     ) {

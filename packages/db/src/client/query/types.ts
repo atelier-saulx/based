@@ -1,6 +1,6 @@
 import { LangCode, LangName } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
-import { FilterOpts } from './filter/types.js'
+import { FilterOpts, Operator } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
 import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
@@ -60,7 +60,12 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
   )
 }
 
-export type FilterCondition = Uint8Array
+export type FilterCondition = {
+  buffer: Uint8Array
+  subscriptionMeta?: {
+    now?: { prop: number; operator: Operator; value: string[] }
+  }
+}
 
 export type QueryDefFilter = {
   size: number

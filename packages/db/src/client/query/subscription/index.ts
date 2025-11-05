@@ -60,6 +60,9 @@ export class SubStore {
     } else {
       try {
         registerQuery(q)
+
+        // ----- fi
+
         this.onClose = q.db.hooks.subscribe(q, onData, onError)
       } catch (err) {
         onError(err)

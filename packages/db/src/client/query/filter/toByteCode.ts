@@ -22,9 +22,9 @@ const writeConditions = (
   lastWritten += 2
   let conditionSize = 0
   for (const condition of conditions) {
-    conditionSize += condition.byteLength
-    result.set(condition, lastWritten)
-    lastWritten += condition.byteLength
+    conditionSize += condition.buffer.byteLength
+    result.set(condition.buffer, lastWritten)
+    lastWritten += condition.buffer.byteLength
   }
   writeUint16(result, conditionSize, sizeIndex)
   return lastWritten - offset
