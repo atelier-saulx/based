@@ -786,6 +786,7 @@ await test('edges aggregation', async (t) => {
             ref: 'actor',
             prop: 'movies',
             $rating: 'uint16',
+            // $hating: 'uint16',
           },
         },
       },
@@ -817,6 +818,7 @@ await test('edges aggregation', async (t) => {
       {
         id: a1,
         $rating: 55,
+        // $hating: 5,
       },
     ],
   })
@@ -826,10 +828,12 @@ await test('edges aggregation', async (t) => {
       {
         id: a1,
         $rating: 63,
+        // $hating: 7,
       },
       {
         id: a2,
         $rating: 77,
+        // $hating: 3,
       },
     ],
   })
@@ -848,31 +852,59 @@ await test('edges aggregation', async (t) => {
 
   // before: NOK: crash
   // after: NOK: unreacheable
-  // await db.query('movie').sum('actors.strong').get().inspect(10)
+  // console.log(
+  //   JSON.stringify(
+  //     await db.query('movie').include('actors.strong').get().toObject(),
+  //   ),
+  // )
 
   // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
   // after: NOK: zeroing
-  // console.log(await db.query('movie').sum('actors.$rating').get().toObject())
+  // await db.query('movie').include('actors.$rating').get().inspect(10)
 
   /*----------------------------*/
   /*       BRANCHED QUERY       */
   /*----------------------------*/
 
-  // before: OK: working
-  // after: OK: working
   // await db
   //   .query('movie')
-  //   .include((q) => q('actors').sum('strong'))
+  //   .include((q) => q('actors').max('strong'))
   //   .get()
   //   .inspect(10)
 
-  // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
-  // after: NOK: feature not implemented
-  await db
-    .query('movie')
-    .include((q) => q('actors').max('$rating'))
-    .get()
-    .inspect(10)
+  deepEqual(
+    await db
+      .query('movie')
+      .include((q) => q('actors').max('$rating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+        },
+      },
+    ],
+    'single edge aggregation,  branched query',
+  )
+
+  // mutiples edges
+  // NOK: crashing
+  // await db
+  // .query('movie')
+  // .include((q) => q('actors').max('$rating').sum('$hating'))
+  // .get()
+  // .inspect(10)
 
   /*-----------------------------------*/
   /*          STRAIGHT ON TYPE         */
