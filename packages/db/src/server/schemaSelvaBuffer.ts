@@ -123,7 +123,7 @@ const propDefBuffer = (
     view.setUint16(2, dstType.id, true) // dst_node_type
     buf[4] = prop.inversePropNumber // inverse_field
     view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // meta_node_type
-    view.setUint32(7, capped)
+    view.setUint32(7, capped, true)
 
     return [...buf]
   } else if (
