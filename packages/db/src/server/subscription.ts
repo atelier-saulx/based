@@ -6,6 +6,7 @@ import {
 import { DbServer } from '../index.js'
 import native from '../native.js'
 import { MAX_ID } from '@based/schema'
+import { styleText } from 'util'
 
 type OnData = (res: Uint8Array) => void
 
@@ -114,7 +115,7 @@ export const registerSubscription = (
   query: Uint8Array,
   sub: Uint8Array,
   onData: OnData,
-  onError?: OnError,
+  onError: OnError,
 ) => {
   let killed = false
 
@@ -128,8 +129,21 @@ export const registerSubscription = (
     if (lastUpdated !== server.subscriptions.updateId) {
       lastUpdated = server.subscriptions.updateId
       server.getQueryBuf(query).then((res) => {
-        if (!killed) {
+        if (killed) {
+          return
+        }
+        if (res.byteLength >= 4) {
           onData(res)
+        } else if (res.byteLength === 1 && res[0] === 0) {
+          server.emit(
+            'info',
+            `Subscribe schema mismatch - should resolve after update`,
+          )
+          return
+        } else {
+          let name = styleText('red', `QueryError[]\n`)
+          name += `  Incorrect buffer received in subscription (maybe server not started ${res.byteLength}) bytes\n`
+          onError(new Error(name))
         }
       })
     } else {
