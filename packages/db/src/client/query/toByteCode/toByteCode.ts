@@ -144,13 +144,18 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   let offset = 0
   for (let i = 0; i < bufs.length; i++) {
     const intermediateResult = bufs[i]
-    if (intermediateResult.needsMetaResolve) {
-      if (intermediateResult.def.filter.hasSubMeta) {
-        resolveMetaIndexes(intermediateResult.def.filter, offset)
+    if (intermediateResult instanceof Uint8Array) {
+      res.set(intermediateResult, offset)
+      offset += intermediateResult.byteLength
+    } else {
+      if (intermediateResult.needsMetaResolve) {
+        if (intermediateResult.def.filter.hasSubMeta) {
+          resolveMetaIndexes(intermediateResult.def.filter, offset)
+        }
       }
+      res.set(intermediateResult.buffer, offset)
+      offset += intermediateResult.buffer.byteLength
     }
-    res.set(intermediateResult.buffer, offset)
-    offset += intermediateResult.buffer.byteLength
   }
   return res
 }

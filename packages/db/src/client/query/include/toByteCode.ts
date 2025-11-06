@@ -1,7 +1,6 @@
 import { MICRO_BUFFER, STRING, TEXT, JSON, BINARY } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import {
-  IncludeOpts,
   IntermediateByteCode,
   QueryDef,
   QueryDefType,
@@ -18,7 +17,7 @@ export const includeToBuffer = (
   db: DbClient,
   def: QueryDef,
 ): IntermediateByteCode[] => {
-  const result: IntermediateByteCode[] = []
+  const result: Uint8Array[] = []
 
   if (
     !def.include.stringFields.size &&
@@ -78,20 +77,20 @@ export const includeToBuffer = (
 
   if (mainBuffer) {
     if (mainBuffer.byteLength !== 0) {
-      const buffer = new Uint8Array(5)
-      buffer[0] = includeOp.PARTIAL
-      buffer[1] = 0 // field name 0
-      buffer[2] = MICRO_BUFFER
-      buffer[3] = mainBuffer.byteLength
-      buffer[4] = mainBuffer.byteLength >>> 8
-      result.push({ buffer, def }, { buffer: mainBuffer, def })
+      const buf = new Uint8Array(5)
+      buf[0] = includeOp.PARTIAL
+      buf[1] = 0 // field name 0
+      buf[2] = MICRO_BUFFER
+      buf[3] = mainBuffer.byteLength
+      buf[4] = mainBuffer.byteLength >>> 8
+      result.push(buf, mainBuffer)
     } else {
-      const buffer = new Uint8Array(4)
-      buffer[0] = includeOp.DEFAULT
-      buffer[1] = 0 // field name 0
-      buffer[2] = MICRO_BUFFER
-      buffer[3] = 0 // opts len
-      result.push({ buffer, def })
+      const buf = new Uint8Array(4)
+      buf[0] = includeOp.DEFAULT
+      buf[1] = 0 // field name 0
+      buf[2] = MICRO_BUFFER
+      buf[3] = 0 // opts len
+      result.push(buf)
     }
   }
 
@@ -103,30 +102,30 @@ export const includeToBuffer = (
           if (propDef.opts.codes.has(0)) {
             // TODO use locales for 0 make this NICE
             for (const code in def.schema.locales) {
-              const buffer = new Uint8Array(4)
-              buffer[0] = includeOp.META
-              buffer[1] = prop
-              buffer[2] = typeIndex
-              buffer[3] = langCodesMap.get(code)
-              result.push({ buffer, def })
+              const buf = new Uint8Array(4)
+              buf[0] = includeOp.META
+              buf[1] = prop
+              buf[2] = typeIndex
+              buf[3] = langCodesMap.get(code)
+              result.push(buf)
             }
           } else {
             for (const code of propDef.opts.codes) {
-              const buffer = new Uint8Array(4)
-              buffer[0] = includeOp.META
-              buffer[1] = prop
-              buffer[2] = typeIndex
-              buffer[3] = code
-              result.push({ buffer, def })
+              const buf = new Uint8Array(4)
+              buf[0] = includeOp.META
+              buf[1] = prop
+              buf[2] = typeIndex
+              buf[3] = code
+              result.push(buf)
             }
           }
         } else {
-          const buffer = new Uint8Array(4)
-          buffer[0] = includeOp.META
-          buffer[1] = prop
-          buffer[2] = typeIndex
-          buffer[3] = 0
-          result.push({ buffer, def })
+          const buf = new Uint8Array(4)
+          buf[0] = includeOp.META
+          buf[1] = prop
+          buf[2] = typeIndex
+          buf[3] = 0
+          result.push(buf)
         }
       }
 
@@ -149,7 +148,7 @@ export const includeToBuffer = (
             } else {
               b[3] = 0 // opts len
             }
-            result.push({ buffer: b, def })
+            result.push(b)
           } else {
             for (const code of codes) {
               const fallBackSize = propDef.opts.fallBacks.length
@@ -178,7 +177,7 @@ export const includeToBuffer = (
                 b[i] = fallback
                 i++
               }
-              result.push({ buffer: b, def })
+              result.push(b)
             }
           }
         } else {
@@ -197,7 +196,7 @@ export const includeToBuffer = (
           } else {
             buf[3] = 0 // opts len
           }
-          result.push({ buffer: buf, def })
+          result.push(buf)
         }
       }
     }
