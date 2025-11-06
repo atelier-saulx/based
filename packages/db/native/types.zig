@@ -180,7 +180,7 @@ pub const ReadOp = enum(u8) {
     EDGE = 252,
     REFERENCES = 253,
     REFERENCE = 254,
-    REFERENCES_AGGREGATION = 250,
+    AGGREGATION = 250,
     META = 249,
 };
 
