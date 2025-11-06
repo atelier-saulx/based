@@ -4,7 +4,6 @@ import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
 import { QueryDef, QueryType } from '../types.js'
 import { SubscriptionType } from './types.js'
-import { writeU16 } from '../../modify/uint.js'
 
 export const collectFields = (def: QueryDef) => {
   const fields: Set<number> = new Set()
@@ -62,8 +61,6 @@ export const registerSubscription = (query: BasedDbQuery) => {
     const types = collectTypes(query.def)
     const typeLen = types.size
 
-    console.log('collected types', types)
-
     const buffer = new Uint8Array(headerLen + fields.size + typeLen * 2)
     buffer[0] = SubscriptionType.singleId
     writeUint32(buffer, subId, 1)
@@ -86,13 +83,8 @@ export const registerSubscription = (query: BasedDbQuery) => {
     query.subscriptionBuffer = buffer
   } else {
     const typeId = query.def.schema.id
-
     const types = collectTypes(query.def)
     const typeLen = types.has(typeId) ? types.size - 1 : types.size
-    if (typeLen) {
-      console.log('MULTI: collected types', typeLen, types)
-    }
-
     const buffer = new Uint8Array(6 + typeLen * 2)
     buffer[0] = SubscriptionType.fullType
     writeUint16(buffer, typeId, 1)
@@ -104,7 +96,6 @@ export const registerSubscription = (query: BasedDbQuery) => {
         i += 2
       }
     }
-
     query.subscriptionBuffer = buffer
   }
 }

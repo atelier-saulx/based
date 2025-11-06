@@ -209,7 +209,6 @@ export const registerSubscription = (
     const typesLen = readUint16(sub, 3)
     let types: Uint16Array
     if (typesLen != 0) {
-      console.log(sub, typesLen)
       types = new Uint16Array(sub.buffer, sub.byteOffset + 6, typesLen)
       for (const typeId of types) {
         addToMultiSub(server, typeId, runQuery)
