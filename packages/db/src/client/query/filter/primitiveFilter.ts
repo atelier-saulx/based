@@ -74,6 +74,10 @@ export const primitiveFilter = (
     bufferMap.set(fieldIndexChar, arr)
   }
   size += parsedCondition.buffer.byteLength
+
+  if ('subscriptionMeta' in parsedCondition) {
+    conditions.hasSubMeta = true
+  }
   arr.push(parsedCondition)
   return size
 }

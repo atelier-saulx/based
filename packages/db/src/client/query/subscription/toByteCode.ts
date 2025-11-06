@@ -1,9 +1,46 @@
-import { writeUint16, writeUint32 } from '@based/utils'
+import { readFloatLE, readInt64, writeUint16, writeUint32 } from '@based/utils'
 import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
-import { QueryDef, QueryDefFilter, QueryType } from '../types.js'
+import { FilterMetaNow, QueryDef, QueryDefFilter, QueryType } from '../types.js'
 import { SubscriptionType } from './types.js'
+
+export const collectFilters = (
+  filter: QueryDefFilter,
+  fields: Set<number>,
+  nowQueries: FilterMetaNow[] = [],
+) => {
+  if (filter.hasSubMeta) {
+    for (const [prop, conditions] of filter.conditions) {
+      fields.add(prop)
+      for (const condition of conditions) {
+        if (condition.subscriptionMeta) {
+          if (condition.subscriptionMeta.now) {
+            nowQueries.push(...condition.subscriptionMeta.now)
+          }
+        }
+      }
+    }
+  } else {
+    for (const prop of filter.conditions.keys()) {
+      fields.add(prop)
+    }
+    if (filter.or) {
+      collectFilters(filter.or, fields, nowQueries)
+    }
+    if (filter.and) {
+      collectFilters(filter.and, fields, nowQueries)
+    }
+  }
+
+  if (filter.references) {
+    for (const prop of filter.references.keys()) {
+      fields.add(prop)
+    }
+  }
+
+  return nowQueries
+}
 
 export const collectFields = (def: QueryDef) => {
   const fields: Set<number> = new Set()
@@ -14,33 +51,13 @@ export const collectFields = (def: QueryDef) => {
     fields.add(prop.def.prop)
   }
   if (def.filter.size > 0) {
-    for (const prop of def.filter.conditions.keys()) {
-      fields.add(prop)
-    }
-
-    if (def.filter.references) {
-      for (const prop of def.filter.references.keys()) {
-        fields.add(prop)
-      }
-    }
-
-    console.log('HANDLE FILTER HANDLE REFS!! & HANDLE NOW REFS!')
-    console.dir(def.filter, { depth: 10 })
+    collectFilters(def.filter, fields)
   }
   for (const prop of def.references.keys()) {
-    // if (prop.def.typeIndex === REFERENCE )
-    console.log('INCLUDE REF FIELD', prop)
     fields.add(prop)
   }
   return fields
 }
-
-// add handle single id here
-
-// add handle multi id here (for refs)
-
-// for each refs collect types for now (just go trough whole tree and give all schema types)
-// there get added in an array
 
 export const collectTypes = (
   def: QueryDef | QueryDefFilter,
@@ -55,6 +72,7 @@ export const collectTypes = (
   }
 
   if ('filter' in def && 'references' in def.filter) {
+    // TODO: also need to check for NOW FIELD
     for (const ref of def.filter.references.values()) {
       types.add(ref.schema.id)
       collectTypes(ref)
@@ -101,6 +119,20 @@ export const registerSubscription = (query: BasedDbQuery) => {
   } else {
     const typeId = query.def.schema.id
     const types = collectTypes(query.def)
+
+    // fields will be different....
+    if (query.def.filter.size > 0) {
+      // later need fields ofc...
+      const nowQueries = collectFilters(query.def.filter, new Set())
+
+      console.log(
+        nowQueries,
+        query.buffer,
+        query.buffer.subarray(25, 25 + 8),
+        readInt64(query.buffer.subarray(25, 25 + 8), 0),
+      )
+    }
+
     const typeLen = types.has(typeId) ? types.size - 1 : types.size
     const buffer = new Uint8Array(6 + typeLen * 2)
     buffer[0] = SubscriptionType.fullType

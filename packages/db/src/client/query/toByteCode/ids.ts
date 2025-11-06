@@ -1,11 +1,11 @@
 import { filterToBuffer } from '../query.js'
-import { QueryDef, QueryType } from '../types.js'
+import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
 import { searchToBuffer } from '../search/index.js'
 import { createSortBuffer } from '../sort.js'
 import { writeUint16, writeUint32 } from '@based/utils'
 import { IDS } from './offsets.js'
 
-export const idsQuery = (def: QueryDef) => {
+export const idsQuery = (def: QueryDef): IntermediateByteCode => {
   const filterSize = def.filter.size || 0
 
   let sort: Uint8Array
@@ -23,41 +23,41 @@ export const idsQuery = (def: QueryDef) => {
   }
 
   const idsSize = (def.target as any).ids.length * 4
-  const buf = new Uint8Array(
+  const buffer = new Uint8Array(
     IDS.baseSize + idsSize + filterSize + sortSize + searchSize,
   )
 
   let index = 0
-  buf[IDS.queryType] = QueryType.ids
-  writeUint16(buf, def.schema.id, IDS.type)
-  writeUint32(buf, idsSize, IDS.idsSize)
-  buf.set(new Uint8Array((def.target as any).ids.buffer), IDS.idsValue)
+  buffer[IDS.queryType] = QueryType.ids
+  writeUint16(buffer, def.schema.id, IDS.type)
+  writeUint32(buffer, idsSize, IDS.idsSize)
+  buffer.set(new Uint8Array((def.target as any).ids.buffer), IDS.idsValue)
 
   index = IDS.idsValue + idsSize
-  writeUint32(buf, def.range.offset, index)
+  writeUint32(buffer, def.range.offset, index)
   index += 4
-  writeUint32(buf, def.range.limit, index)
+  writeUint32(buffer, def.range.limit, index)
   index += 4
 
-  writeUint16(buf, filterSize, index)
+  writeUint16(buffer, filterSize, index)
   index += 2
   if (filterSize) {
-    buf.set(filterToBuffer(def.filter), index)
+    buffer.set(filterToBuffer(def.filter, index), index)
     index += filterSize
   }
 
-  writeUint16(buf, sortSize, index)
+  writeUint16(buffer, sortSize, index)
   index += 2
   if (sortSize) {
-    buf.set(sort, index)
+    buffer.set(sort, index)
     index += sortSize
   }
 
-  writeUint16(buf, searchSize, index)
+  writeUint16(buffer, searchSize, index)
   index += 2
   if (searchSize) {
-    buf.set(search, index)
+    buffer.set(search, index)
   }
 
-  return buf
+  return { buffer, def }
 }

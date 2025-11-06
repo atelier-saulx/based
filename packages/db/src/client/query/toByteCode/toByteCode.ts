@@ -1,9 +1,14 @@
 import { createSortBuffer } from '../sort.js'
-import { QueryDef, QueryDefType, includeOp } from '../types.js'
+import {
+  IntermediateByteCode,
+  QueryDef,
+  QueryDefType,
+  includeOp,
+} from '../types.js'
 import { includeToBuffer } from '../include/toByteCode.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
-import { concatUint8Arr, writeUint16, writeUint64 } from '@based/utils'
+import { writeUint16, writeUint64 } from '@based/utils'
 import { defaultQuery } from './default.js'
 import { idQuery } from './id.js'
 import { aliasQuery } from './alias.js'
@@ -12,21 +17,26 @@ import { referencesQuery } from './references.js'
 import { referenceQuery } from './reference.js'
 import { aggregatesQuery } from './aggregates.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
+import { resolveMetaIndexes } from '../query.js'
+import { off } from 'process'
 
-const byteSize = (arr: Uint8Array[]) => {
+const byteSize = (arr: IntermediateByteCode[]) => {
   return arr.reduce((a, b) => {
-    return a + b.byteLength
+    return a + b.buffer.byteLength
   }, 0)
 }
 
-const schemaChecksum = (def: QueryDef) => {
+const schemaChecksum = (def: QueryDef): IntermediateByteCode => {
   const checksum = new Uint8Array(8)
   writeUint64(checksum, def.schemaChecksum ?? 0, 0)
-  return checksum
+  return { buffer: checksum, def }
 }
 
-export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
-  const result: Uint8Array[] = []
+export function defToBuffer(
+  db: DbClient,
+  def: QueryDef,
+): IntermediateByteCode[] {
+  const result: IntermediateByteCode[] = []
   const include = includeToBuffer(db, def)
 
   def.references.forEach((ref) => {
@@ -36,7 +46,7 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
     }
   })
 
-  let edges: Uint8Array[]
+  let edges: IntermediateByteCode[]
   let edgesSize = 0
 
   if (def.edges) {
@@ -110,9 +120,9 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
   result.push(...include)
 
   if (edges) {
-    const metaEdgeBuffer = new Uint8Array(3)
+    const metaEdgeBuffer = { buffer: new Uint8Array(3), def }
     metaEdgeBuffer[0] = includeOp.EDGE
-    writeUint16(metaEdgeBuffer, edgesSize, 1)
+    writeUint16(metaEdgeBuffer.buffer, edgesSize, 1)
     result.push(metaEdgeBuffer, ...edges)
   }
 
@@ -124,5 +134,25 @@ export function defToBuffer(db: DbClient, def: QueryDef): Uint8Array[] {
 }
 
 export const queryToBuffer = (query: BasedDbQuery) => {
-  return concatUint8Arr(defToBuffer(query.db, query.def))
+  const bufs = defToBuffer(query.db, query.def)
+
+  let totalByteLength = bufs.reduce(
+    (acc, cur) => acc + cur.buffer.byteLength,
+    0,
+  )
+  const res = new Uint8Array(totalByteLength)
+  let offset = 0
+  for (let i = 0; i < bufs.length; i++) {
+    const intermediateResult = bufs[i]
+
+    if (intermediateResult.needsMetaResolve) {
+      if (intermediateResult.def.filter.hasSubMeta) {
+        resolveMetaIndexes(intermediateResult.def.filter, offset)
+      }
+    }
+
+    res.set(intermediateResult.buffer, offset)
+    offset += intermediateResult.buffer.byteLength
+  }
+  return res
 }

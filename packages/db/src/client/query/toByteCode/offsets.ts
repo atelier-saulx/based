@@ -49,7 +49,7 @@ export const DEFAULT = {
   baseSize: 18, // queryType(1) + type(2) + offset(4) + limit(4) + filterSize(2) + isSimple(1) + sortSize(2) + searchSize(2)
 }
 
-export const REFERENCES_AGGREGATION = {
+export const REFS_AGGREGATION = {
   baseSize: 13,
   includeOp: 0,
   size: 1,

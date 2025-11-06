@@ -72,13 +72,13 @@ await test('subscriptionIds', async (t) => {
   const close2 = clients[0]
     .query('user')
     .include('name')
-    // .filter('date', '>', 'now + 1s')
+    .filter('date', '>', 'now + 1s')
     // has to be handled very different - store index of the timestamp (to updated when re - exec the query)
 
     // add support for this
     // .filter('control.boys[0].name', '=', 'mr durk')
 
-    .filter('control.flap.name', '=', 'mr durk')
+    // .filter('control.flap.name', '=', 'mr durk')
     .subscribe((d) => {
       console.log('MULTI ID', d)
     })

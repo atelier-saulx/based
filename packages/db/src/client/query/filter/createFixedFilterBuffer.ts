@@ -90,6 +90,8 @@ export const createFixedFilterBuffer = (
       }
     } else {
       for (let i = 0; i < len; i++) {
+        // add now
+
         writeFixed(
           prop,
           buffer,
@@ -99,6 +101,7 @@ export const createFixedFilterBuffer = (
         )
       }
     }
+
     return { buffer }
   } else {
     const buffer = new Uint8Array(8 + size)
@@ -108,7 +111,35 @@ export const createFixedFilterBuffer = (
     writeUint16(buffer, size, 3)
     writeUint16(buffer, start, 5)
     buffer[7] = ctx.operation
-    writeFixed(prop, buffer, parseFilterValue(prop, value), size, 8)
+
+    const parsedValue = parseFilterValue(prop, value)
+    writeFixed(prop, buffer, parsedValue, size, 8)
+
+    // step 1 single
+    if (
+      prop.typeIndex === TIMESTAMP &&
+      typeof value === 'string' &&
+      value.includes('now') &&
+      parsedValue !== 0
+    ) {
+      // can add filter CTX
+      return {
+        buffer,
+        subscriptionMeta: {
+          now: [
+            {
+              byteIndex: 8,
+              value: value,
+              offset: parsedValue - Date.now(),
+              resolvedByteIndex: 0,
+              buf: buffer.subarray(8, 16),
+              parsedValue,
+            },
+          ],
+        },
+      }
+    }
+
     return { buffer }
   }
 }

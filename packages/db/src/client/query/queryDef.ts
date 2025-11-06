@@ -22,7 +22,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
   const q: Partial<QueryDefShared> = {
     errors: [],
     skipValidation,
-    filter: { conditions: new Map(), size: 0 },
+    filter: { conditions: new Map(), size: 0, hasSubMeta: false },
     range: { offset: 0, limit: 0 },
     lang: {
       lang: langCodesMap.get('none'),
