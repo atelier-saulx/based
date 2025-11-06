@@ -37,7 +37,7 @@ await test('subscriptionIds', async (t) => {
         },
         control: {
           ref: 'control',
-          prop: 'boy',
+          prop: 'boys',
         },
         date: 'timestamp',
         x: 'uint8',
@@ -75,6 +75,9 @@ await test('subscriptionIds', async (t) => {
     // .filter('date', '>', 'now + 1s')
     // has to be handled very different - store index of the timestamp (to updated when re - exec the query)
 
+    // add support for this
+    // .filter('control.boys[0].name', '=', 'mr durk')
+
     .filter('control.flap.name', '=', 'mr durk')
     .subscribe((d) => {
       console.log('MULTI ID', d)
@@ -100,7 +103,7 @@ await test('subscriptionIds', async (t) => {
   await wait(300)
   const control = clients[0].create('control', {
     location: 'Controled',
-    boy: [durk],
+    boys: [durk],
     flap: durk,
   })
 
