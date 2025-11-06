@@ -631,7 +631,8 @@ static const struct SelvaFieldSchema *get_edge_dst_fs(
     struct SelvaTypeEntry *type_dst;
 
     if (fs_src->type != SELVA_FIELD_TYPE_REFERENCE &&
-        fs_src->type != SELVA_FIELD_TYPE_REFERENCES) {
+        fs_src->type != SELVA_FIELD_TYPE_REFERENCES &&
+        fs_src->type != SELVA_FIELD_TYPE_REFERENCES_CIRCULAR) {
         return nullptr;
     }
 
