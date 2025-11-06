@@ -90,8 +90,7 @@ export const createFixedFilterBuffer = (
       }
     } else {
       for (let i = 0; i < len; i++) {
-        // add now
-
+        // TODO add now
         writeFixed(
           prop,
           buffer,
@@ -122,7 +121,6 @@ export const createFixedFilterBuffer = (
       value.includes('now') &&
       parsedValue !== 0
     ) {
-      // can add filter CTX
       return {
         buffer,
         subscriptionMeta: {
@@ -132,8 +130,9 @@ export const createFixedFilterBuffer = (
               value: value,
               offset: parsedValue - Date.now(),
               resolvedByteIndex: 0,
-              buf: buffer.subarray(8, 16),
               parsedValue,
+              ctx,
+              prop,
             },
           ],
         },

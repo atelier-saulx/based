@@ -135,7 +135,7 @@ export function defToBuffer(
 
 export const queryToBuffer = (query: BasedDbQuery) => {
   const bufs = defToBuffer(query.db, query.def)
-
+  // allow both uint8 and def
   let totalByteLength = bufs.reduce(
     (acc, cur) => acc + cur.buffer.byteLength,
     0,
@@ -144,13 +144,11 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   let offset = 0
   for (let i = 0; i < bufs.length; i++) {
     const intermediateResult = bufs[i]
-
     if (intermediateResult.needsMetaResolve) {
       if (intermediateResult.def.filter.hasSubMeta) {
         resolveMetaIndexes(intermediateResult.def.filter, offset)
       }
     }
-
     res.set(intermediateResult.buffer, offset)
     offset += intermediateResult.buffer.byteLength
   }

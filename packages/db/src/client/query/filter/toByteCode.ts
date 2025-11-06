@@ -159,7 +159,6 @@ export const resolveMetaIndexes = (
 
   for (const conditions of defFilter.conditions.values()) {
     for (const condition of conditions) {
-      console.log(condition)
       if (condition.subscriptionMeta) {
         if (condition.subscriptionMeta.now) {
           for (const now of condition.subscriptionMeta.now) {

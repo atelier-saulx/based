@@ -1,4 +1,4 @@
-import { readUint16, readUint32 } from '@based/utils'
+import { readInt64, readUint16, readUint32, writeInt64 } from '@based/utils'
 import {
   OnError,
   SubscriptionType,
@@ -14,6 +14,12 @@ export type SubscriptionFullType = {
   listeners: Set<() => void>
 }
 
+export type SubscriptionNow = {
+  lastEval: number
+  next: number
+  listeners: Set<() => void>
+}
+
 export type SubscriptionId = {
   types?: Uint16Array
   ids: Map<number, Set<() => void>>
@@ -26,6 +32,7 @@ export type Subscriptions = {
   updateHandler: ReturnType<typeof setTimeout>
   ids: Map<number, SubscriptionId>
   fullType: Map<number, SubscriptionFullType>
+  now: { listeners: Set<() => void>; lastUpdated: number }
 }
 
 export const startUpdateHandler = (server: DbServer) => {
@@ -68,6 +75,17 @@ export const startUpdateHandler = (server: DbServer) => {
         }
       }
     }
+
+    if (
+      server.subscriptions.updateId - server.subscriptions.now.lastUpdated >
+      4
+    ) {
+      server.subscriptions.now.lastUpdated = server.subscriptions.updateId
+      for (const fn of server.subscriptions.now.listeners) {
+        fn()
+      }
+    }
+
     server.subscriptions.updateHandler = setTimeout(scheduleUpdate, 200)
   }
   server.subscriptions.updateHandler = setTimeout(scheduleUpdate, 200)
@@ -110,6 +128,15 @@ const removeFromMultiSub = (
   }
 }
 
+const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
+  const dateNow = Date.now()
+  for (let i = 0; i < now.byteLength; i += 14) {
+    const offset = readInt64(now, i + 2)
+    const byteIndex = readUint32(now, i + 10)
+    writeInt64(query, dateNow + offset, byteIndex)
+  }
+}
+
 export const registerSubscription = (
   server: DbServer,
   query: Uint8Array,
@@ -119,15 +146,21 @@ export const registerSubscription = (
 ) => {
   let killed = false
 
+  // now maybe just once per second? (for now)
+
   if (server.subscriptions.active === 0) {
     startUpdateHandler(server)
   }
 
   let lastUpdated = 0
+  let now: Uint8Array
 
   const runQuery = () => {
     if (lastUpdated !== server.subscriptions.updateId) {
       lastUpdated = server.subscriptions.updateId
+      if (now) {
+        replaceNowValues(query, now)
+      }
       server.getQueryBuf(query).then((res) => {
         if (killed) {
           return
@@ -164,6 +197,7 @@ export const registerSubscription = (
       const typesLen = readUint16(sub, 12)
       if (typesLen != 0) {
         const fLen = sub[11]
+        // double check if this is alignet correct with the byteOffset else copy
         subContainer.types = new Uint16Array(
           sub.buffer,
           sub.byteOffset + 14 + fLen,
@@ -191,12 +225,23 @@ export const registerSubscription = (
       listeners = subContainer.ids.get(id)
     }
     listeners.add(runQuery)
+
+    // if (readUint16(sub, 5) != 0) {
+    //   now = sub.subarray(headerLen + typesLen * 2)
+    //   server.subscriptions.now.add(runQuery)
+    // }
+
     // has to be wrapped in next tick preferebly - optmize later ofc
     process.nextTick(() => {
       runQuery()
     })
     return () => {
       killed = true
+
+      if (now) {
+        server.subscriptions.now.listeners.delete(runQuery)
+      }
+
       listeners.delete(runQuery)
       if (listeners.size === 0) {
         native.removeIdSubscription(server.dbCtxExternal, sub)
@@ -218,23 +263,37 @@ export const registerSubscription = (
       }
     }
   } else if (sub[0] === SubscriptionType.fullType) {
+    const headerLen = 8
     const typeId = readUint16(sub, 1)
     addToMultiSub(server, typeId, runQuery)
     const typesLen = readUint16(sub, 3)
     let types: Uint16Array
     if (typesLen != 0) {
-      types = new Uint16Array(sub.buffer, sub.byteOffset + 6, typesLen)
+      // double check if this is alignet correct with the byteOffset else copy
+      types = new Uint16Array(sub.buffer, sub.byteOffset + headerLen, typesLen)
       for (const typeId of types) {
         addToMultiSub(server, typeId, runQuery)
       }
     }
 
+    if (readUint16(sub, 5) != 0) {
+      now = sub.slice(headerLen + typesLen * 2)
+      server.subscriptions.now.listeners.add(runQuery)
+    }
+
     process.nextTick(() => {
       runQuery()
     })
+
     return () => {
       killed = true
+
+      if (now) {
+        server.subscriptions.now.listeners.delete(runQuery)
+      }
+
       removeFromMultiSub(server, typeId, runQuery)
+
       if (types) {
         for (const typeId of types) {
           removeFromMultiSub(server, typeId, runQuery)

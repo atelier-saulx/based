@@ -64,5 +64,5 @@ export const aggregatesQuery = (def: QueryDef): IntermediateByteCode => {
   const aggregateBuffer = aggregateToBuffer(def.aggregate)
   writeUint16(buffer, aggregateSize, AGGREGATES.aggregateSize + filterSize)
   buffer.set(aggregateBuffer, AGGREGATES.aggregateBuffer + filterSize)
-  return { buffer, def }
+  return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }
 }

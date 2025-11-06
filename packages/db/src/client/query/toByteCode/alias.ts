@@ -19,5 +19,5 @@ export const aliasQuery = (def: QueryDef): IntermediateByteCode => {
   if (filterSize) {
     buffer.set(filterToBuffer(def.filter, filterIndex), filterIndex)
   }
-  return { buffer, def }
+  return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }
 }

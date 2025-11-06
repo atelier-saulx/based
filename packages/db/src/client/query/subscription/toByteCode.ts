@@ -1,4 +1,10 @@
-import { readFloatLE, readInt64, writeUint16, writeUint32 } from '@based/utils'
+import {
+  readInt64,
+  writeInt64,
+  writeUint16,
+  writeUint32,
+  writeUint64,
+} from '@based/utils'
 import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
@@ -25,12 +31,14 @@ export const collectFilters = (
     for (const prop of filter.conditions.keys()) {
       fields.add(prop)
     }
-    if (filter.or) {
-      collectFilters(filter.or, fields, nowQueries)
-    }
-    if (filter.and) {
-      collectFilters(filter.and, fields, nowQueries)
-    }
+  }
+
+  if (filter.or) {
+    collectFilters(filter.or, fields, nowQueries)
+  }
+
+  if (filter.and) {
+    collectFilters(filter.and, fields, nowQueries)
   }
 
   if (filter.references) {
@@ -115,36 +123,42 @@ export const registerSubscription = (query: BasedDbQuery) => {
       i += 2
     }
 
+    // here we want the total offset for now queries
+    // do this later - we want to fire it specificly
+
     query.subscriptionBuffer = buffer
   } else {
     const typeId = query.def.schema.id
     const types = collectTypes(query.def)
 
-    // fields will be different....
-    if (query.def.filter.size > 0) {
-      // later need fields ofc...
-      const nowQueries = collectFilters(query.def.filter, new Set())
-
-      console.log(
-        nowQueries,
-        query.buffer,
-        query.buffer.subarray(25, 25 + 8),
-        readInt64(query.buffer.subarray(25, 25 + 8), 0),
-      )
-    }
+    const nowQueries = collectFilters(query.def.filter, new Set())
 
     const typeLen = types.has(typeId) ? types.size - 1 : types.size
-    const buffer = new Uint8Array(6 + typeLen * 2)
+    const headerLen = 8
+    const buffer = new Uint8Array(
+      headerLen + typeLen * 2 + nowQueries.length * 14,
+    )
     buffer[0] = SubscriptionType.fullType
     writeUint16(buffer, typeId, 1)
     writeUint16(buffer, typeLen, 3)
-    let i = 6
+    writeUint16(buffer, nowQueries.length, 5) // hopefully you dont have more then 255 now filters...
+
+    let i = headerLen
     for (const typeIdIt of types) {
       if (typeIdIt !== typeId) {
         writeUint16(buffer, typeIdIt, i)
         i += 2
       }
     }
+
+    for (const now of nowQueries) {
+      buffer[i] = now.prop.prop
+      buffer[i + 1] = now.ctx.operation
+      writeInt64(buffer, now.offset, i + 2)
+      writeUint32(buffer, now.resolvedByteIndex, i + 10)
+      i += 14
+    }
+
     query.subscriptionBuffer = buffer
   }
 }

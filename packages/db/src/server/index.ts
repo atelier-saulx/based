@@ -50,6 +50,7 @@ export class DbServer extends DbShared {
     ids: new Map(),
     fullType: new Map(),
     updateId: 1,
+    now: { listeners: new Set(), lastUpdated: 1 },
   }
   migrating: number = null
   saveInProgress: boolean = false

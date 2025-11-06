@@ -13,5 +13,5 @@ export const idQuery = (def: QueryDef): IntermediateByteCode => {
   if (filterSize) {
     buffer.set(filterToBuffer(def.filter, ID.filter), ID.filter)
   }
-  return { buffer, def }
+  return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }
 }

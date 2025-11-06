@@ -60,7 +60,10 @@ await test('subscriptionIds', async (t) => {
     },
   })
 
-  const id = await clients[0].create('user', { name: 'mr poop' })
+  const id = await clients[0].create('user', {
+    name: 'mr poop',
+    date: 'now + 3s',
+  })
 
   // const close = clients[1]
   //   .query('user', id)
@@ -72,7 +75,7 @@ await test('subscriptionIds', async (t) => {
   const close2 = clients[0]
     .query('user')
     .include('name')
-    .filter('date', '>', 'now + 1s')
+    .filter('date', '<', 'now - 3s')
     // has to be handled very different - store index of the timestamp (to updated when re - exec the query)
 
     // add support for this
@@ -98,7 +101,11 @@ await test('subscriptionIds', async (t) => {
 
   await wait(300)
   console.log('CREATE DURK')
-  const durk = await clients[0].create('user', { name: 'mr durk', friend: id })
+  const durk = await clients[0].create('user', {
+    name: 'mr durk',
+    friend: id,
+    date: 'now + 3s',
+  })
 
   await wait(300)
   const control = clients[0].create('control', {
@@ -115,7 +122,16 @@ await test('subscriptionIds', async (t) => {
 
   console.log('set dat control!')
 
-  await wait(300)
+  await wait(6000)
+
+  console.log(
+    await clients[0]
+      .query('user')
+      .include('name')
+      .filter('date', '<', 'now - 3s')
+      .get(),
+  )
+
   // close()
   close2()
 })

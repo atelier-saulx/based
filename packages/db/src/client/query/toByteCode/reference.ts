@@ -12,5 +12,5 @@ export const referenceQuery = (
   writeUint16(buffer, sz, REFERENCE.sizeOffset)
   writeUint16(buffer, def.schema.id, REFERENCE.type)
   buffer[REFERENCE.prop] = (def.target as any).propDef.prop
-  return { buffer, def }
+  return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }
 }

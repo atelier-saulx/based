@@ -59,5 +59,5 @@ export const idsQuery = (def: QueryDef): IntermediateByteCode => {
     buffer.set(search, index)
   }
 
-  return { buffer, def }
+  return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }
 }
