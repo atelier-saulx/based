@@ -270,7 +270,7 @@ const createSchemaTypeDef = (
       prop.inversePropName = schemaProp.items.prop
       prop.inverseTypeName = schemaProp.items.ref
       prop.dependent = schemaProp.items.dependent
-      prop.referencesCapped = schemaProp.capped
+      prop.referencesCapped = schemaProp.capped ?? 0
       addEdges(prop, schemaProp.items)
     } else if (isPropType('reference', schemaProp)) {
       if (result.partial) {
