@@ -36,6 +36,8 @@ export type Subscriptions = {
 }
 
 export const startUpdateHandler = (server: DbServer) => {
+  // skip next if queries are sitll in progress can add a number for each staged sub
+
   // combine this with handled modify
   const scheduleUpdate = () => {
     server.subscriptions.updateId++
@@ -78,7 +80,7 @@ export const startUpdateHandler = (server: DbServer) => {
 
     if (
       server.subscriptions.updateId - server.subscriptions.now.lastUpdated >
-      4
+      4 // 1 time per second
     ) {
       server.subscriptions.now.lastUpdated = server.subscriptions.updateId
       for (const fn of server.subscriptions.now.listeners) {
@@ -130,9 +132,9 @@ const removeFromMultiSub = (
 
 const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
   const dateNow = Date.now()
-  for (let i = 0; i < now.byteLength; i += 14) {
-    const offset = readInt64(now, i + 2)
-    const byteIndex = readUint32(now, i + 10)
+  for (let i = 0; i < now.byteLength; i += 16) {
+    const offset = readInt64(now, i + 4)
+    const byteIndex = readUint32(now, i + 12)
     writeInt64(query, dateNow + offset, byteIndex)
   }
 }

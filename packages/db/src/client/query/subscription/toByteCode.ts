@@ -13,12 +13,14 @@ import { SubscriptionType } from './types.js'
 
 export const collectFilters = (
   filter: QueryDefFilter,
-  fields: Set<number>,
+  fields?: Set<number>,
   nowQueries: FilterMetaNow[] = [],
 ) => {
   if (filter.hasSubMeta) {
     for (const [prop, conditions] of filter.conditions) {
-      fields.add(prop)
+      if (fields) {
+        fields.add(prop)
+      }
       for (const condition of conditions) {
         if (condition.subscriptionMeta) {
           if (condition.subscriptionMeta.now) {
@@ -29,7 +31,9 @@ export const collectFilters = (
     }
   } else {
     for (const prop of filter.conditions.keys()) {
-      fields.add(prop)
+      if (fields) {
+        fields.add(prop)
+      }
     }
   }
 
@@ -42,8 +46,11 @@ export const collectFilters = (
   }
 
   if (filter.references) {
-    for (const prop of filter.references.keys()) {
-      fields.add(prop)
+    for (const [prop, ref] of filter.references) {
+      if (fields) {
+        fields.add(prop)
+      }
+      collectFilters(ref, undefined, nowQueries)
     }
   }
 
@@ -136,7 +143,7 @@ export const registerSubscription = (query: BasedDbQuery) => {
     const typeLen = types.has(typeId) ? types.size - 1 : types.size
     const headerLen = 8
     const buffer = new Uint8Array(
-      headerLen + typeLen * 2 + nowQueries.length * 14,
+      headerLen + typeLen * 2 + nowQueries.length * 16,
     )
     buffer[0] = SubscriptionType.fullType
     writeUint16(buffer, typeId, 1)
@@ -154,9 +161,10 @@ export const registerSubscription = (query: BasedDbQuery) => {
     for (const now of nowQueries) {
       buffer[i] = now.prop.prop
       buffer[i + 1] = now.ctx.operation
-      writeInt64(buffer, now.offset, i + 2)
-      writeUint32(buffer, now.resolvedByteIndex, i + 10)
-      i += 14
+      writeUint16(buffer, now.typeId, i + 2)
+      writeInt64(buffer, now.offset, i + 4)
+      writeUint32(buffer, now.resolvedByteIndex, i + 12)
+      i += 16
     }
 
     query.subscriptionBuffer = buffer

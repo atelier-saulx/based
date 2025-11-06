@@ -68,6 +68,7 @@ export type FilterMetaNow = {
   offset: number
   ctx: FilterCtx
   prop: PropDef | PropDefEdge
+  typeId?: number
 }
 
 export type FilterCondition = {

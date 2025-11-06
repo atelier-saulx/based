@@ -62,7 +62,7 @@ await test('subscriptionIds', async (t) => {
 
   const id = await clients[0].create('user', {
     name: 'mr poop',
-    date: 'now + 3s',
+    date: 'now',
   })
 
   // const close = clients[1]
@@ -72,10 +72,24 @@ await test('subscriptionIds', async (t) => {
   //     console.log('SINGLE ID', d)
   //   })
 
+  // const close2 = clients[0]
+  //   .query('user')
+  //   .include('name')
+  //   .filter('date', '<', 'now - 1s')
+  //   // has to be handled very different - store index of the timestamp (to updated when re - exec the query)
+
+  //   // add support for this
+  //   // .filter('control.boys[0].name', '=', 'mr durk')
+
+  //   // .filter('control.flap.name', '=', 'mr durk')
+  //   .subscribe((d) => {
+  //     console.log('MULTI ID', d)
+  //   })
+
   const close2 = clients[0]
-    .query('user')
-    .include('name')
-    .filter('date', '<', 'now - 3s')
+    .query('control')
+    .include('location')
+    .filter('flap.date', '<', 'now - 1s')
     // has to be handled very different - store index of the timestamp (to updated when re - exec the query)
 
     // add support for this
@@ -99,15 +113,13 @@ await test('subscriptionIds', async (t) => {
   //   name: 'MR FLAP!222',
   // })
 
-  await wait(300)
   console.log('CREATE DURK')
   const durk = await clients[0].create('user', {
     name: 'mr durk',
     friend: id,
-    date: 'now + 3s',
+    date: 'now',
   })
 
-  await wait(300)
   const control = clients[0].create('control', {
     location: 'Controled',
     boys: [durk],
@@ -122,15 +134,24 @@ await test('subscriptionIds', async (t) => {
 
   console.log('set dat control!')
 
-  await wait(6000)
+  await wait(1100)
 
   console.log(
+    'after tick',
     await clients[0]
-      .query('user')
-      .include('name')
-      .filter('date', '<', 'now - 3s')
+      .query('control')
+      .include('location')
+      .filter('flap.date', '<', 'now - 1s')
       .get(),
   )
+
+  // single sub ID + NOW
+  // handle refs + NOW
+
+  // alias as a system
+  // ADD STATIC to schema
+
+  // extra function find NEXT time to start
 
   // close()
   close2()

@@ -163,6 +163,7 @@ export const resolveMetaIndexes = (
         if (condition.subscriptionMeta.now) {
           for (const now of condition.subscriptionMeta.now) {
             now.resolvedByteIndex += offset
+            now.typeId = defFilter.schema?.id
           }
         }
       }
