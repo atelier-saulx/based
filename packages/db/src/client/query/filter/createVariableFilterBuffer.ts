@@ -146,6 +146,7 @@ export const createVariableFilterBuffer = (
               operation: EQUAL_CRC32,
               type: ctx.type,
               opts: ctx.opts,
+              typeId: ctx.typeId,
             },
             val,
             false,

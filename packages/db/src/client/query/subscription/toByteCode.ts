@@ -161,7 +161,7 @@ export const registerSubscription = (query: BasedDbQuery) => {
     for (const now of nowQueries) {
       buffer[i] = now.prop.prop
       buffer[i + 1] = now.ctx.operation
-      writeUint16(buffer, now.typeId, i + 2)
+      writeUint16(buffer, now.ctx.typeId, i + 2)
       writeInt64(buffer, now.offset, i + 4)
       writeUint32(buffer, now.resolvedByteIndex, i + 12)
       i += 16
