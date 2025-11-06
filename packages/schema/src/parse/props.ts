@@ -361,6 +361,11 @@ p.references = propParser<SchemaReferences>(
         throw new Error(INVALID_VALUE)
       }
     },
+    capped(val) {
+      if (typeof val !== 'number' || val < 0 || !Number.isInteger(val)) {
+        throw Error(INVALID_VALUE)
+      }
+    },
   },
   {
     default(val, prop, ctx) {

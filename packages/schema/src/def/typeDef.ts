@@ -14,7 +14,6 @@ import {
   TYPE_INDEX_MAP,
   REFERENCES,
   REFERENCE,
-  SchemaTypesParsed,
   NUMBER,
   BLOCK_CAPACITY_MAX,
   BLOCK_CAPACITY_DEFAULT,
@@ -271,6 +270,7 @@ const createSchemaTypeDef = (
       prop.inversePropName = schemaProp.items.prop
       prop.inverseTypeName = schemaProp.items.ref
       prop.dependent = schemaProp.items.dependent
+      prop.referencesCapped = schemaProp.capped
       addEdges(prop, schemaProp.items)
     } else if (isPropType('reference', schemaProp)) {
       if (result.partial) {
