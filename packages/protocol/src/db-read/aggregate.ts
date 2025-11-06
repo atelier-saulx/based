@@ -153,6 +153,13 @@ export const readAggregate = (
       }
       if (agg.type === AggregateType.COUNT) {
         setByPath(results, agg.path, val)
+      } else if (agg.path.length > 1 && agg.path[1][0] == '$') {
+        // MV: make it better
+        setByPath(
+          results,
+          [agg.path[1], AggregateType[agg.type].toLowerCase()],
+          val,
+        )
       } else {
         setByPath(
           results,

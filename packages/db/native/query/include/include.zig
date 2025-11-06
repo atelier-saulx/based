@@ -77,7 +77,7 @@ pub fn getFields(
                     idIsSet = true;
                     size += try addIdOnly(ctx, id, score);
                 }
-                size += try aggregateRefsFields(ctx, multiRefs, node, typeEntry, isEdge);
+                size += try aggregateRefsFields(ctx, multiRefs, node, typeEntry);
                 return size;
             },
             t.IncludeOp.partial => {

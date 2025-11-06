@@ -22,6 +22,7 @@ import {
 } from '../aggregates/types.js'
 import { QueryBranch } from '../BasedDbQuery.js'
 import { AggregateType } from '@based/protocol/db-read'
+import { createOrGetEdgeRefQueryDef } from '../include/utils.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -73,6 +74,8 @@ export const aggregateToBuffer = (
       i += 2
       writeUint16(aggBuffer, agg.accumulatorPos, i)
       i += 2
+      aggBuffer[i] = agg.propDef.__isEdge ? 1 : 0
+      i += 1
       size += i - startI
     }
     writeUint16(aggBuffer, size, sizeIndex)
@@ -172,6 +175,7 @@ const updateAggregateDefs = (
     propDef: propDef,
     resultPos: def.aggregate.totalResultsSize,
     accumulatorPos: def.aggregate.totalAccumulatorSize,
+    isEdge: isEdge(propDef.path[0]),
   })
 
   const specificSizes = aggregateTypeMap.get(aggType)
@@ -183,7 +187,7 @@ const updateAggregateDefs = (
     def.aggregate.totalAccumulatorSize += 8
   }
   // needs to add an extra field WRITE TO
-  def.aggregate.size += 8 // aggType + propType + start + resultPos + accumulatorPos
+  def.aggregate.size += 9 // aggType + propType + start + resultPos + accumulatorPos + isEdge
 }
 
 const isCount = (propString: string, aggType: AggregateType) => {
@@ -217,7 +221,6 @@ const getPropDefinition = (
       default: 0,
     } as PropDef
   }
-
   return resolvedPropDef || def.schema.props[propName]
 }
 
@@ -237,8 +240,14 @@ const processPropPath = (
     const propName = path[i]
 
     if (isEdge(propName)) {
-      edgeNotImplemented(query.def, propName)
-      return
+      // @ts-ignore
+      const edgePropDef = query.def.target?.propDef?.edges[propName]
+      if (edgePropDef) {
+        return edgePropDef
+      } else {
+        edgeNotImplemented(query.def, propName)
+        return undefined
+      }
     }
     if (!t) {
       return undefined // end

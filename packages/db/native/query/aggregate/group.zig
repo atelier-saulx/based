@@ -71,6 +71,8 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
             j += 2;
             const accumulatorPos = read(u16, aggPropDef, j);
             j += 2;
+            // isEdge
+            j += 1;
 
             if (aggType == aggregateTypes.AggType.COUNT) {
                 copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
