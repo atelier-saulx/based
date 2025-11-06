@@ -786,13 +786,14 @@ await test('edges aggregation', async (t) => {
             ref: 'actor',
             prop: 'movies',
             $rating: 'uint16',
-            // $hating: 'uint16',
+            $hating: 'uint16',
           },
         },
       },
       actor: {
         name: 'string',
         strong: 'uint16',
+        strong2: 'uint16',
         movies: {
           items: {
             ref: 'movie',
@@ -806,10 +807,12 @@ await test('edges aggregation', async (t) => {
   const a1 = db.create('actor', {
     name: 'Uma Thurman',
     strong: 10,
+    strong2: 80,
   })
   const a2 = db.create('actor', {
     name: 'Jonh Travolta',
     strong: 5,
+    strong2: 40,
   })
 
   const m1 = await db.create('movie', {
@@ -818,7 +821,7 @@ await test('edges aggregation', async (t) => {
       {
         id: a1,
         $rating: 55,
-        // $hating: 5,
+        $hating: 5,
       },
     ],
   })
@@ -828,12 +831,12 @@ await test('edges aggregation', async (t) => {
       {
         id: a1,
         $rating: 63,
-        // $hating: 7,
+        $hating: 7,
       },
       {
         id: a2,
         $rating: 77,
-        // $hating: 3,
+        $hating: 3,
       },
     ],
   })
@@ -868,7 +871,7 @@ await test('edges aggregation', async (t) => {
 
   // await db
   //   .query('movie')
-  //   .include((q) => q('actors').max('strong'))
+  //   .include((q) => q('actors').max('strong').sum('strong2'))
   //   .get()
   //   .inspect(10)
 
@@ -895,16 +898,72 @@ await test('edges aggregation', async (t) => {
         },
       },
     ],
-    'single edge aggregation,  branched query',
+    'single edge aggregation, branched query',
   )
 
-  // mutiples edges
-  // NOK: crashing
-  // await db
-  // .query('movie')
-  // .include((q) => q('actors').max('$rating').sum('$hating'))
-  // .get()
-  // .inspect(10)
+  deepEqual(
+    await db
+      .query('movie')
+      .include((q) => q('actors').max('$rating').sum('$hating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+          $hating: {
+            sum: 5,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+          $hating: {
+            sum: 10,
+          },
+        },
+      },
+    ],
+    'multiple edges with multiple agg functions, branched query',
+  )
+
+  deepEqual(
+    await db
+      .query('movie')
+      .include((q) => q('actors').max('$rating', '$hating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+          $hating: {
+            max: 5,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+          $hating: {
+            max: 7,
+          },
+        },
+      },
+    ],
+    'multiple edges on same agg function, branched query',
+  )
 
   /*-----------------------------------*/
   /*          STRAIGHT ON TYPE         */
