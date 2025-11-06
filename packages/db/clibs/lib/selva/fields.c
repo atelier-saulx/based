@@ -1426,7 +1426,7 @@ static void selva_fields_references_insert_tail_nonempty_src_field(
             continue; /* ignore */
         }
 
-        dst = selva_upsert_node(db, te_dst, dst_id);
+        dst = selva_find_node(te_dst, dst_id);
         if (!dst) {
             continue;
         }
