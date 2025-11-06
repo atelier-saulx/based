@@ -52,36 +52,46 @@ await test('subscriptionIds', async (t) => {
         derp: 'uint32',
         location: 'string',
         lang: 'string',
+        flap: {
+          ref: 'user',
+          prop: 'flapControl',
+        },
       },
     },
   })
 
   const id = await clients[0].create('user', { name: 'mr poop' })
 
-  const close = clients[1]
-    .query('user', id)
-    .include('name', 'friend.name')
-    .subscribe((d) => {
-      console.log('SINGLE ID', d)
-    })
+  // const close = clients[1]
+  //   .query('user', id)
+  //   .include('name', 'friend.name')
+  //   .subscribe((d) => {
+  //     console.log('SINGLE ID', d)
+  //   })
 
   const close2 = clients[0]
     .query('user')
-    .include('control.location')
+    .include('name')
+    // .filter('date', '>', 'now + 1s')
+    // has to be handled very different - store index of the timestamp (to updated when re - exec the query)
+
+    .filter('control.flap.name', '=', 'mr durk')
     .subscribe((d) => {
       console.log('MULTI ID', d)
     })
 
-  await clients[0].update('user', 1, {
-    name: 'MR FLAP!',
-  })
+  // moves up
 
-  await wait(10)
-  console.log('Single update 2')
+  // await clients[0].update('user', 1, {
+  //   name: 'MR FLAP!',
+  // })
 
-  await clients[1].update('user', 1, {
-    name: 'MR FLAP!222',
-  })
+  // await wait(10)
+  // console.log('Single update 2')
+
+  // await clients[1].update('user', 1, {
+  //   name: 'MR FLAP!222',
+  // })
 
   await wait(300)
   console.log('CREATE DURK')
@@ -91,15 +101,18 @@ await test('subscriptionIds', async (t) => {
   const control = clients[0].create('control', {
     location: 'Controled',
     boy: [durk],
+    flap: durk,
   })
 
   // clients[0].update('user', durk, {
   //   control,
   // })
 
+  // --> add filter in sub
+
   console.log('set dat control!')
 
   await wait(300)
-  close()
+  // close()
   close2()
 })

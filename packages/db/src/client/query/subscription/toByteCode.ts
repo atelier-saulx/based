@@ -2,7 +2,7 @@ import { writeUint16, writeUint32 } from '@based/utils'
 import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
-import { QueryDef, QueryType } from '../types.js'
+import { QueryDef, QueryDefFilter, QueryType } from '../types.js'
 import { SubscriptionType } from './types.js'
 
 export const collectFields = (def: QueryDef) => {
@@ -17,6 +17,13 @@ export const collectFields = (def: QueryDef) => {
     for (const prop of def.filter.conditions.keys()) {
       fields.add(prop)
     }
+
+    if (def.filter.references) {
+      for (const prop of def.filter.references.keys()) {
+        fields.add(prop)
+      }
+    }
+
     console.log('HANDLE FILTER HANDLE REFS!! & HANDLE NOW REFS!')
     console.dir(def.filter, { depth: 10 })
   }
@@ -35,14 +42,24 @@ export const collectFields = (def: QueryDef) => {
 // for each refs collect types for now (just go trough whole tree and give all schema types)
 // there get added in an array
 
-export const collectTypes = (def: QueryDef, types: Set<number> = new Set()) => {
-  // handle edges
-  for (const ref of def.references.values()) {
-    types.add(ref.schema.id)
-    collectTypes(ref, types)
+export const collectTypes = (
+  def: QueryDef | QueryDefFilter,
+  types: Set<number> = new Set(),
+) => {
+  if ('references' in def) {
+    // handle edges
+    for (const ref of def.references.values()) {
+      types.add(ref.schema.id)
+      collectTypes(ref, types)
+    }
   }
 
-  // for const in edges
+  if ('filter' in def && 'references' in def.filter) {
+    for (const ref of def.filter.references.values()) {
+      types.add(ref.schema.id)
+      collectTypes(ref)
+    }
+  }
 
   return types
 }
