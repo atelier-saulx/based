@@ -228,7 +228,7 @@ export const httpHandler = (
 
   // add extra leeway here
   if (
-    method === 'post' &&
+    (method === 'post' || method === 'put' || method === 'patch') &&
     ctx.session.headers['content-length'] === undefined
   ) {
     // Zero allowed, but not for streams
