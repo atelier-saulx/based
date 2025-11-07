@@ -5,12 +5,10 @@ import {
   check,
   custom,
   date,
-  email,
   instance,
   integer,
   lazy,
   literal,
-  maxValue,
   minValue,
   never,
   number,
@@ -261,7 +259,16 @@ const reference: GenericSchema<
   ),
 )
 
-const references = object({
+const references: GenericSchema<
+  InferInput<typeof base> & {
+    type?: 'references'
+    items: {
+      ref: string
+      prop: string
+      [key: `$${string}`]: SchemaProp
+    }
+  }
+> = object({
   ...base.entries,
   type: optional(literal('references'), 'references'),
   items: reference,
@@ -383,35 +390,35 @@ export const p = (input: Schema): { schema: StrictSchema } => {
 //   },
 // })
 
-const schema1 = {
-  types: {
-    user: {
-      email: [string(), email()],
-      name: string(),
-      age: [number(), integer(), minValue(0), maxValue(100)],
-    },
-  },
-}
+// const schema1 = {
+//   types: {
+//     user: {
+//       email: [string(), email()],
+//       name: string(),
+//       age: [number(), integer(), minValue(0), maxValue(100)],
+//     },
+//   },
+// }
 
-const schema2 = {
-  types: {
-    user: {
-      email: pipe(string(), email()),
-      name: string(),
-      age: pipe(number(), integer(), minValue(0), maxValue(100)),
-    },
-  },
-}
+// const schema2 = {
+//   types: {
+//     user: {
+//       email: pipe(string(), email()),
+//       name: string(),
+//       age: pipe(number(), integer(), minValue(0), maxValue(100)),
+//     },
+//   },
+// }
 
-const schema3 = {
-  types: {
-    user: {
-      email: optional(pipe(string(), email())),
-      name: optional(string()),
-      age: optional(pipe(number(), integer(), minValue(0), maxValue(100))),
-    },
-  },
-}
+// const schema3 = {
+//   types: {
+//     user: {
+//       email: optional(pipe(string(), email())),
+//       name: optional(string()),
+//       age: optional(pipe(number(), integer(), minValue(0), maxValue(100))),
+//     },
+//   },
+// }
 
 const schema4 = {
   types: {
