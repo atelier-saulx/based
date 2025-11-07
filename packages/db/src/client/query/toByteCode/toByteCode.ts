@@ -8,7 +8,7 @@ import {
 import { includeToBuffer } from '../include/toByteCode.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
-import { writeUint16, writeUint64 } from '@based/utils'
+import { writeUint64 } from '@based/utils'
 import { defaultQuery } from './default.js'
 import { idQuery } from './id.js'
 import { aliasQuery } from './alias.js'

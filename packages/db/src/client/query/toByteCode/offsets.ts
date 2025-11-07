@@ -7,17 +7,6 @@ export const ID = {
   filter: 9,
 }
 
-export const ALIAS = {
-  baseSize: 8, // queryType(1) + type(2) + prop(1) + aliasSize(2) + filterSize(2)
-  queryType: 0,
-  type: 1,
-  prop: 3,
-  aliasSize: 4,
-  aliasValue: 6,
-  filterSize: 6,
-  filter: 8,
-}
-
 export const IDS = {
   baseSize: 21, // queryType(1) + type(2) + idsSize(4) + offset(4) + limit(4) + filterSize(2) + sortSize(2) + searchSize(2)
   queryType: 0,
