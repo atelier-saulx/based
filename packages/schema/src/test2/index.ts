@@ -5,10 +5,12 @@ import {
   check,
   custom,
   date,
+  email,
   instance,
   integer,
   lazy,
   literal,
+  maxValue,
   minValue,
   never,
   number,
@@ -380,3 +382,74 @@ export const p = (input: Schema): { schema: StrictSchema } => {
 //     },
 //   },
 // })
+
+const schema1 = {
+  types: {
+    user: {
+      email: [string(), email()],
+      name: string(),
+      age: [number(), integer(), minValue(0), maxValue(100)],
+    },
+  },
+}
+
+const schema2 = {
+  types: {
+    user: {
+      email: pipe(string(), email()),
+      name: string(),
+      age: pipe(number(), integer(), minValue(0), maxValue(100)),
+    },
+  },
+}
+
+const schema3 = {
+  types: {
+    user: {
+      email: optional(pipe(string(), email())),
+      name: optional(string()),
+      age: optional(pipe(number(), integer(), minValue(0), maxValue(100))),
+    },
+  },
+}
+
+const schema4 = {
+  types: {
+    user: {
+      email: 'string.email',
+      name: 'string',
+      age: 'uint8.max(120): User age has to be smaller than 120',
+      friends: 'references.user.friends',
+      bff: 'reference.user.bff',
+    },
+  },
+}
+
+const schema5: Schema = {
+  types: {
+    user: {
+      email: {
+        type: 'string',
+        validation: () => true,
+      },
+      name: {
+        type: 'string',
+        validation: () => true,
+      },
+      age: {
+        type: 'uint8',
+        min: 18,
+      },
+      friends: {
+        items: {
+          ref: 'user',
+          prop: 'friends',
+        },
+      },
+      bff: {
+        ref: 'user',
+        prop: 'bff',
+      },
+    },
+  },
+}
