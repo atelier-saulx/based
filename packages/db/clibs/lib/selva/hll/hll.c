@@ -229,8 +229,9 @@ uint8_t *hll_count(struct selva_string *hllss)
     double raw_estimate = 0.0;
     double zero_count = 0.0;
 
-#if __ARM_NEON
     assert(num_registers % 4 == 0);
+    assume(num_registers % 4 == 0);
+#if __ARM_NEON
     for (size_t i = 0; i < num_registers; i += 4) {
         float32x4_t b = {
             (float)registers[i],

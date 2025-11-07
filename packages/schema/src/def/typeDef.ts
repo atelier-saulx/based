@@ -140,6 +140,16 @@ const createSchemaTypeDef = (
           typeName === '_root' ? BLOCK_CAPACITY_MAX : BLOCK_CAPACITY_DEFAULT
       }
     }
+    if (result.capped == 0) {
+      if ('capped' in type) {
+        if (
+          typeof type.capped !== 'number' ||
+          type.capped < 0) {
+          throw new Error('Invalid capped')
+        }
+        result.capped = type.capped
+      }
+    }
     if (result.insertOnly == false && 'insertOnly' in type) {
       result.insertOnly = !!type.insertOnly
     }

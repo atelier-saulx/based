@@ -71,9 +71,18 @@
  * **3**
  * - ref save logic moved completely to flags given from the schema package
  * - meta/edge fields is now a *type*
+ *
+ * **4**
+ * - Remove weak reference(s)
+ *
+ * **5**
+ * - Remove EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP and always save both sides of refs
+ *
+ * **6**
+ * - Add support for default value in micro buffers
  */
 
-#define SDB_VERSION 4 /*!< Bump this if the serialization format changes. */
+#define SDB_VERSION 6 /*!< Bump this if the serialization format changes. */
 #define SDB_COMPRESSION_LEVEL 1
 #define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)

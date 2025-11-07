@@ -242,6 +242,10 @@
 #define speculation_safe_value(x) x
 #endif
 
+#ifndef assume
+#define assume(expr) __attribute__((assume(expr)))
+#endif
+
 #define same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 
 /**

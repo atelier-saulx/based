@@ -615,14 +615,13 @@ await test.skip('cardinality on references', async (t) => {
     booths: [bg, stp],
   })
 
-  // await db.query('fair').include('*', '**').get().inspect()
   await db.query('fair').include('booths.badgesScanned').get().inspect()
-  // await db
-  //   .query('fair')
-  //   .cardinality('booths.badgesScanned')
-  //   .groupBy('day')
-  //   .get()
-  // //   .inspect()
+  await db
+    .query('fair')
+    .cardinality('booths.badgesScanned')
+    .groupBy('day')
+    .get()
+    .inspect()
 })
 
 await test('group by reference ids', async (t) => {
@@ -717,7 +716,60 @@ await test('group by reference ids', async (t) => {
   )
 })
 
-await test.skip('edges agregation', async (t) => {
+await test('nested references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          strong: 'uint16',
+          friends: {
+            items: {
+              ref: 'user',
+              prop: 'friends',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const bob = db.create('user', {
+    name: 'bob',
+    strong: 1,
+  })
+
+  const marie = db.create('user', {
+    name: 'marie',
+    strong: 2,
+  })
+
+  const john = db.create('user', {
+    name: 'john',
+    friends: [bob, marie],
+    strong: 4,
+  })
+
+  // await db.query('user').include('*', '**').get().inspect(10)
+
+  deepEqual(
+    await db.query('user').sum('friends.strong').get(),
+    {
+      strong: {
+        sum: 7,
+      },
+    },
+    'nested references access with dot sintax',
+  )
+})
+
+await test('edges aggregation', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -732,17 +784,20 @@ await test.skip('edges agregation', async (t) => {
         actors: {
           items: {
             ref: 'actor',
-            prop: 'actors',
+            prop: 'movies',
             $rating: 'uint16',
+            $hating: 'uint16',
           },
         },
       },
       actor: {
         name: 'string',
+        strong: 'uint16',
+        strong2: 'uint16',
         movies: {
           items: {
             ref: 'movie',
-            prop: 'movies',
+            prop: 'actors',
           },
         },
       },
@@ -751,9 +806,13 @@ await test.skip('edges agregation', async (t) => {
 
   const a1 = db.create('actor', {
     name: 'Uma Thurman',
+    strong: 10,
+    strong2: 80,
   })
   const a2 = db.create('actor', {
     name: 'Jonh Travolta',
+    strong: 5,
+    strong2: 40,
   })
 
   const m1 = await db.create('movie', {
@@ -762,6 +821,7 @@ await test.skip('edges agregation', async (t) => {
       {
         id: a1,
         $rating: 55,
+        $hating: 5,
       },
     ],
   })
@@ -771,22 +831,145 @@ await test.skip('edges agregation', async (t) => {
       {
         id: a1,
         $rating: 63,
+        $hating: 7,
       },
       {
         id: a2,
         $rating: 77,
+        $hating: 3,
       },
     ],
   })
 
   // await db
   //   .query('movie')
-  //   .include('name')
-  //   .include('actors.$rating')
-  //   .include('actors.name')
+  //   .include('*', '**')
+  //   // .include('actors.$rating')
+  //   // .include('actors.name')
+  //   .get()
+  //   .inspect(10, true)
+
+  /*---------------------------*/
+  /*       NESTED SINTAX       */
+  /*---------------------------*/
+
+  // before: NOK: crash
+  // after: NOK: unreacheable
+  // console.log(
+  //   JSON.stringify(
+  //     await db.query('movie').include('actors.strong').get().toObject(),
+  //   ),
+  // )
+
+  // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
+  // after: NOK: zeroing
+  // await db.query('movie').include('actors.$rating').get().inspect(10)
+
+  /*----------------------------*/
+  /*       BRANCHED QUERY       */
+  /*----------------------------*/
+
+  // await db
+  //   .query('movie')
+  //   .include((q) => q('actors').max('strong').sum('strong2'))
   //   .get()
   //   .inspect(10)
 
-  // edges unreacheable
-  //db.query('movie').max('actors.$rating').get().inspect(10)
+  deepEqual(
+    await db
+      .query('movie')
+      .include((q) => q('actors').max('$rating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+        },
+      },
+    ],
+    'single edge aggregation, branched query',
+  )
+
+  deepEqual(
+    await db
+      .query('movie')
+      .include((q) => q('actors').max('$rating').sum('$hating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+          $hating: {
+            sum: 5,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+          $hating: {
+            sum: 10,
+          },
+        },
+      },
+    ],
+    'multiple edges with multiple agg functions, branched query',
+  )
+
+  deepEqual(
+    await db
+      .query('movie')
+      .include((q) => q('actors').max('$rating', '$hating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+          $hating: {
+            max: 5,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+          $hating: {
+            max: 7,
+          },
+        },
+      },
+    ],
+    'multiple edges on same agg function, branched query',
+  )
+
+  /*-----------------------------------*/
+  /*          STRAIGHT ON TYPE         */
+  /*-----------------------------------*/
+  // before: OK: error in js: Cannot read properties of undefined (reading 'edges')
+  // after: NOK: feature not implemented
+  // await db.query('actor').max('$rating').get().inspect(10)
+  // await db.query('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
 })

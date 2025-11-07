@@ -5,6 +5,7 @@ import {
   REFERENCE,
   REFERENCES,
   CARDINALITY,
+  JSON as JSONProp,
 } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeBinaryEdge } from './binary.js'
@@ -16,6 +17,8 @@ import { writeCardinalityEdge } from './cardinality.js'
 export const writeSeparateEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (edge.typeIndex === BINARY) {
     writeBinaryEdge(ctx, edge, val)
+  } else if (edge.typeIndex == JSONProp) {
+    writeBinaryEdge(ctx, edge, val === null ? null : JSON.stringify(val))
   } else if (edge.typeIndex === STRING) {
     writeStringEdge(ctx, edge, val)
   } else if (edge.typeIndex === REFERENCE) {

@@ -46,15 +46,15 @@ fn setSchemaIdsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_val
 // TODO olli: add binary protocol here
 fn setSchemaTypeInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(3, env, info);
-    const typeId = try napi.get(u16, env, args[0]);
-    const schema = try napi.get([]u8, env, args[1]);
-    const ctx = try napi.get(*db.DbCtx, env, args[2]);
+    const ctx = try napi.get(*db.DbCtx, env, args[0]);
+    const typeId = try napi.get(u16, env, args[1]);
+    const schema = try napi.get([]u8, env, args[2]);
 
     if (ctx.selva == null) {
         return errors.SelvaError.DB_NOT_CREATED;
     }
 
-    try errors.selva(selva.selva_db_create_type(ctx.selva, typeId, schema.ptr, schema.len));
+    try db.createType(ctx, typeId, schema);
 
     return null;
 }

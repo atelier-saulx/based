@@ -71,7 +71,7 @@ pub fn createResultsBuffer(
 
         switch (item.type) {
             t.ResultType.aggregate => {
-                data[i] = @intFromEnum((t.ReadOp.REFERENCES_AGGREGATION));
+                data[i] = @intFromEnum((t.ReadOp.AGGREGATION));
                 data[i + 1] = item.prop;
                 writeInt(u32, data, i + 2, item.value.len);
                 copy(data[i + 6 .. i + 6 + item.value.len], item.value);

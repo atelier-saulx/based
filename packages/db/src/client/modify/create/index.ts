@@ -20,6 +20,7 @@ import {
   ModifyOpts,
   PADDING,
   SWITCH_ID_CREATE,
+  SWITCH_ID_CREATE_RING,
   SWITCH_ID_CREATE_UNSAFE,
 } from '../types.js'
 import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
@@ -198,6 +199,9 @@ export const writeCreate = (
     } else {
       throw 'Invalid payload. "id" not allowed'
     }
+  } else if (schema.capped) {
+      writeU8(ctx, SWITCH_ID_CREATE_RING)
+      writeU32(ctx, schema.capped)
   } else {
     writeU8(ctx, SWITCH_ID_CREATE)
   }
@@ -208,9 +212,6 @@ export const writeCreate = (
     writeMainCursor(ctx)
   }
   writeCreateTs(ctx, payload)
-  if (!ctx.cursor.main && !ctx.schema.mainEmptyAllZeroes) {
-    writeMainBuffer(ctx)
-  }
   writeDefaults(ctx)
   writeSortable(ctx)
   writeSortableText(ctx)

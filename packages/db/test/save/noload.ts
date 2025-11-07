@@ -1,10 +1,10 @@
 import assert from 'node:assert'
 import { fastPrng } from '@based/utils'
-import { BasedDb } from '../src/index.js'
-import { deepEqual } from './shared/assert.js'
-import test from './shared/test.js'
-import NAMES from './shared/names.js'
-import { makeTreeKey, VerifBlock } from '../src/server/tree.js'
+import { BasedDb } from '../../src/index.js'
+import { deepEqual } from '../shared/assert.js'
+import test from '../shared/test.js'
+import NAMES from '../shared/names.js'
+import { makeTreeKey, VerifBlock } from '../../src/server/tree.js'
 
 function makeEmployee(i: number) {
   const name = NAMES[i % NAMES.length]
@@ -58,6 +58,12 @@ await test('noLoadDumps', async (t) => {
       { id: 2, name: 'doug', email: 'doug@yari.yo' },
     ],
   )
+  deepEqual(
+    (await db.query('employee', 2).include('subordinates').get().toObject())
+      .subordinates.length,
+    750,
+  )
+  deepEqual(await db.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
   await db.drain()
   await db.save()
@@ -85,12 +91,12 @@ await test('noLoadDumps', async (t) => {
       { id: 2, name: 'doug', email: 'doug@yari.yo' },
     ],
   )
-  // deepEqual(await db2.query('employee', 2).count('subordinates').get().toObject(), 750 TODO
   deepEqual(
     (await db2.query('employee', 2).include('subordinates').get().toObject())
       .subordinates.length,
-    750,
+    511,
   )
+  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
   deepEqual(getBlock1().inmem, true)
   deepEqual(getBlock2().inmem, false)
@@ -102,11 +108,12 @@ await test('noLoadDumps', async (t) => {
       .subordinates.length,
     750,
   )
+  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
   await db2.server.unloadBlock('employee', 1100)
   deepEqual(getBlock2().inmem, false)
-  // FIXME refs shouldn't probably disappear on unload
-  //deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 750)
+  deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 511)
+  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
   // for (const type of db2.server.verifTree.types()) {
   //   for (const block of db2.server.verifTree.blocks(type)) {

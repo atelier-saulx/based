@@ -48,12 +48,6 @@ enum SelvaFieldType {
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
         EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01,
-        /**
-         * Skip saving this field while dumping.
-         * If the field is of type SELVA_FIELD_TYPE_REFERENCES it's saved
-         * regardless of this flag to preserve the original order of references.
-         */
-        EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80,
     } __packed flags;
     field_t inverse_field;
     node_type_t dst_node_type;
@@ -69,7 +63,8 @@ struct SelvaFieldSchema {
         } string; /*!< SELVA_FIELD_TYPE_STRING */
         struct EdgeFieldConstraint edge_constraint; /*!< SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_REFERENCES, SELVA_FIELD_TYPE_WEAK_REFERENCE, and SELVA_FIELD_TYPE_WEAK_REFERENCES. */
         struct {
-            uint16_t len;
+            uint16_t len; /*!< Size of the smb. */
+            uint32_t default_off; /*!< Offset to the default in  the raw schema buffer. */
         } smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
         size_t alias_index; /*!< Index in aliases for SELVA_FIELD_TYPE_ALIAS and SELVA_FIELD_TYPE_ALIASES. */
         struct {
@@ -88,10 +83,11 @@ struct SelvaFieldsSchema {
      * Template for fields->fields_map.
      */
     struct {
-        void *buf;
-        size_t len;
-        size_t fixed_data_size;
-    } field_map_template;
+        void *field_map_buf;
+        size_t field_map_len;
+        void *fixed_data_buf;
+        size_t fixed_data_len;
+    } template;
     struct SelvaFieldSchema field_schemas[SELVA_FIELDS_MAX];
 };
 

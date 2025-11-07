@@ -156,6 +156,7 @@ pub const ModOp = enum(u8) {
     ADD_EMPTY_SORT = 7,
     SWITCH_ID_CREATE_UNSAFE = 8,
     SWITCH_ID_CREATE = 9,
+    SWITCH_ID_CREATE_RING = 19,
     DELETE_NODE = 10,
     DELETE = 11,
     INCREMENT = 12,
@@ -179,7 +180,7 @@ pub const ReadOp = enum(u8) {
     EDGE = 252,
     REFERENCES = 253,
     REFERENCE = 254,
-    REFERENCES_AGGREGATION = 250,
+    AGGREGATION = 250,
     META = 249,
 };
 

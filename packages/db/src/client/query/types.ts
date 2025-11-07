@@ -118,10 +118,10 @@ export type QueryDefSort = {
 
 export type Aggregation = {
   type: AggregateType
-  propDef: PropDef // PropDefEdge |
+  propDef: PropDef | PropDefEdge
   resultPos: number
   accumulatorPos: number
-  // add result field
+  isEdge: boolean
 }
 
 export type QueryDefAggregation = {

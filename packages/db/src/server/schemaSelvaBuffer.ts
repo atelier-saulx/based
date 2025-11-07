@@ -1,3 +1,4 @@
+import { convertToTimestamp, ENCODER, writeDoubleLE, writeFloatLE, writeUint16, writeUint32, writeUint64 } from '@based/utils'
 import {
   SchemaTypeDef,
   PropDef,
@@ -16,8 +17,19 @@ import {
   JSON,
   COLVEC,
   VECTOR_BASE_TYPE_SIZE_MAP,
-} from './types.js'
-import RefSet from './refSet.js'
+  INT8,
+  UINT8,
+  BOOLEAN,
+  INT16,
+  UINT16,
+  INT32,
+  UINT32,
+  NUMBER,
+  TIMESTAMP,
+  ENUM,
+} from '@based/schema/def'
+import { NOT_COMPRESSED } from '@based/protocol'
+import native from '../native.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -46,7 +58,6 @@ selvaTypeMap[ALIASES] = selvaFieldType.ALIASES
 selvaTypeMap[COLVEC] = selvaFieldType.COLVEC
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
-const EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP = 0x80
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
@@ -60,33 +71,16 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
 }
 
 function makeEdgeConstraintFlags(
-  refSet: RefSet,
-  nodeTypeId: number,
   prop: PropDef,
-  dstNodeTypeId: number,
-  inverseProp: PropDef,
 ): number {
   let flags = 0
 
   flags |= prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00
-  flags |=
-    prop.typeIndex === REFERENCE &&
-    inverseProp &&
-    inverseProp.typeIndex === REFERENCES
-      ? EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
-      : 0x00
-
-  if (inverseProp) {
-    const x = refSet.add(nodeTypeId, prop.prop, dstNodeTypeId, inverseProp.prop)
-    flags |= x ? 0x00 : EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP
-  }
 
   return flags
 }
 
 const propDefBuffer = (
-  refSet: RefSet,
-  nodeTypeId: number,
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
 ): number[] => {
@@ -94,12 +88,18 @@ const propDefBuffer = (
   const selvaType = selvaTypeMap[type]
 
   if (prop.len && (type === MICRO_BUFFER || type === VECTOR)) {
-    const buf = new Uint8Array(3)
+    const buf = new Uint8Array(4)
     const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
     view.setUint16(1, prop.len, true)
-    return [...buf]
+    if (prop.default) {
+      buf[3] = 1 // has default
+      return [...buf, ...prop.default]
+    } else {
+      buf[3] = 0 // has default
+      return [...buf]
+    }
   } else if (prop.len && type === COLVEC) {
     const buf = new Uint8Array(5)
     const view = new DataView(buf.buffer)
@@ -116,13 +116,7 @@ const propDefBuffer = (
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
 
     buf[0] = selvaType // field type
-    buf[1] = makeEdgeConstraintFlags(
-      refSet,
-      nodeTypeId,
-      prop,
-      dstType.id,
-      dstType.props[prop.inversePropName],
-    ) // flags
+    buf[1] = makeEdgeConstraintFlags(prop) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
     buf[4] = prop.inversePropNumber // inverse_field
     view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // meta_node_type
@@ -145,8 +139,6 @@ const propDefBuffer = (
 export function schemaToSelvaBuffer(schema: {
   [key: string]: SchemaTypeDef
 }): ArrayBuffer[] {
-  const refSet = new RefSet()
-
   return Object.values(schema).map((t) => {
     const props = Object.values(t.props)
     const rest: PropDef[] = []
@@ -156,6 +148,11 @@ export function schemaToSelvaBuffer(schema: {
 
     if (nrFields >= 250) {
       throw new Error('Too many fields')
+    }
+
+    const main = {
+      ...EMPTY_MICRO_BUFFER,
+      len: t.mainLen === 0 ? 1 : t.mainLen,
     }
 
     for (const f of props) {
@@ -171,6 +168,55 @@ export function schemaToSelvaBuffer(schema: {
           virtualFields++
         }
         rest.push(f)
+      } else {
+        if (f.default) {
+          if (!main.default) {
+            main.default = new Uint8Array(main.len)
+          }
+          const buf = main.default as Uint8Array
+
+          switch (f.typeIndex) {
+            case INT8:
+            case UINT8:
+            case BOOLEAN:
+            case ENUM:
+              main.default[f.start] = f.default
+              break
+            case INT16:
+            case UINT16:
+              writeUint16(buf, f.default, f.start)
+              break
+            case INT32:
+            case UINT32:
+              writeUint32(buf, f.default, f.start)
+              break
+            case NUMBER:
+              writeDoubleLE(buf, f.default, f.start)
+              //const view = new DataView(
+              //  buf.buffer,
+              //  f.start,
+              //  8,
+              //)
+              //view.setFloat64(0, f.default, true)
+              break
+            case TIMESTAMP:
+              writeUint64(buf, f.default, f.start)
+              break
+            case BINARY:
+            case STRING:
+              if (f.default instanceof Uint8Array) {
+                buf.set(f.default, f.start)
+              } else {
+                const value = f.default.normalize('NFKD')
+                buf[f.start] = 0 // lang
+                buf[f.start + 1] = NOT_COMPRESSED
+                const { written: l } = ENCODER.encodeInto(value, buf.subarray(f.start + 2))
+                let crc = native.crc32(buf.subarray(f.start + 2, f.start + 2 + l))
+                writeUint32(buf, crc, f.start + 2 + l)
+              }
+              break
+          }
+        }
       }
     }
 
@@ -180,12 +226,9 @@ export function schemaToSelvaBuffer(schema: {
       nrFields, // u8 nrFields
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
-      0, // u8 spare1
-      ...propDefBuffer(refSet, t.id, schema, {
-        ...EMPTY_MICRO_BUFFER,
-        len: t.mainLen === 0 ? 1 : t.mainLen,
-      }),
-      ...rest.map((f) => propDefBuffer(refSet, t.id, schema, f)).flat(1),
+      6, // u8 version (generally follows the sdb version)
+      ...propDefBuffer(schema, main),
+      ...rest.map((f) => propDefBuffer(schema, f)).flat(1),
     ]).buffer
   })
 }

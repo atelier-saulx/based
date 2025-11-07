@@ -59,8 +59,9 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
 
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
     defer selva.selva_string_free(hllAccumulator);
-
+    var y: usize = 0;
     checkItem: while (ctx.totalResults < limit) {
+        y += 1;
         if (first) {
             first = false;
         } else {
@@ -70,8 +71,7 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             if (hasFilter and !filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
-            hadAccumulated = true;
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated, undefined, null);
         } else {
             break :checkItem;
         }
@@ -131,7 +131,7 @@ pub fn group(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
                 ctx.size += 2 + resultKeyLen + groupCtx.resultsSize;
                 ctx.totalResults += 1;
             }
-            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated);
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated, undefined, null);
         } else {
             break :checkItem;
         }

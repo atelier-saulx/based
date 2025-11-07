@@ -97,6 +97,14 @@ fn selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) callconv(.C) c
     return _selvaStrerror(napi_env, nfo) catch return null;
 }
 
+fn selvaLangAll(napi_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+    var result: c.napi_value = undefined;
+    var copied: selva.bool = undefined;
+
+    _ = c.node_api_create_external_string_latin1(napi_env, @constCast(selva.selva_lang_all_str), selva.selva_lang_all_len, null, null, &result, &copied);
+    return result;
+}
+
 export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
@@ -137,6 +145,8 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "membarSyncWrite", membarSyncWrite) catch return null;
 
     registerFunction(env, exports, "selvaStrerror", selvaStrerror) catch return null;
+
+    registerFunction(env, exports, "selvaLangAll", selvaLangAll) catch return null;
 
     registerFunction(env, exports, "colvecTest", colvecTest) catch return null;
 

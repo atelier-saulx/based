@@ -206,7 +206,7 @@ await test('has compressed', async (t) => {
         .include('id')
         .range(0, 1e3)
         .get()
-    ).inspect().length,
+    ).toObject().length,
     1,
   )
 })
@@ -257,7 +257,7 @@ await test('has uncompressed', async (t) => {
         .include('id')
         .range(0, 1e3)
         .get()
-    ).inspect().length,
+    ).toObject().length,
     0,
   )
 
@@ -269,7 +269,7 @@ await test('has uncompressed', async (t) => {
         .include('id')
         .range(0, 1e3)
         .get()
-    ).inspect().length,
+    ).toObject().length,
     0,
   )
 

@@ -4,7 +4,6 @@ const Modify = @import("./ctx.zig");
 const std = @import("std");
 const types = @import("../types.zig");
 const ModifyCtx = Modify.ModifyCtx;
-const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
 const references = @import("./references.zig");
 const subs = @import("./subscription.zig");
@@ -91,9 +90,9 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         if (ctx.fieldType == types.Prop.REFERENCE) {
             const fs = ctx.fieldSchema.?;
             const dstType = try db.getRefDstType(ctx.db, fs);
-            const oldRefDst = db.getNodeFromReference(dstType, db.getSingleReference(ctx.db, ctx.node.?, fs));
+            const oldRefDst = db.getNodeFromReference(dstType, db.getSingleReference(ctx.node.?, fs));
             if (oldRefDst) |dstNode| {
-                Modify.markDirtyRange(ctx, selva.selva_get_node_type(dstNode), db.getNodeId(dstNode));
+                Modify.markDirtyRange(ctx, db.getNodeTypeId(dstNode), db.getNodeId(dstNode));
             }
         }
         try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);

@@ -6,7 +6,6 @@ const runCondition = @import("./conditions.zig").runConditions;
 const QueryCtx = @import("../types.zig").QueryCtx;
 const db = @import("../../db/db.zig");
 const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
-const selva = @import("../../selva.zig");
 const types = @import("../include/types.zig");
 const std = @import("std");
 const Prop = @import("../../types.zig").Prop;
@@ -91,12 +90,12 @@ pub fn filter(
             const fieldSchema = db.getFieldSchema(typeEntry, refField) catch {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
-            const selvaRef = db.getSingleReference(ctx, node, fieldSchema);
+            const selvaRef = db.getSingleReference(node, fieldSchema);
             const dstType = db.getRefDstType(ctx, fieldSchema) catch {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             };
             const refNode: ?db.Node = db.getNodeFromReference(dstType, selvaRef);
-            const edgeConstraint: db.EdgeFieldConstraint = selva.selva_get_edge_field_constraint(fieldSchema);
+            const edgeConstraint: db.EdgeFieldConstraint = db.getEdgeFieldConstraint(fieldSchema);
             if (refNode == null) {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
@@ -154,7 +153,7 @@ pub fn filter(
                     const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
-                    const refs = db.getReferences(ctx, node, fs);
+                    const refs = db.getReferences(node, fs);
                     if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -165,7 +164,7 @@ pub fn filter(
                     const dstType = db.getRefDstType(ctx, fs) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
-                    const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(ctx, node, fs));
+                    const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(node, fs));
                     if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -251,7 +250,7 @@ pub fn filter(
                         const dstType = db.getRefDstType(ctx, fs) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(ctx, node, fs));
+                        const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(node, fs));
                         // -----------
                         if (checkRef) |r| {
                             value = db.getNodeIdAsSlice(r);
@@ -263,7 +262,7 @@ pub fn filter(
                         const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const refs = db.getReferences(ctx, node, fs);
+                        const refs = db.getReferences(node, fs);
                         if (refs) |r| {
                             if (r.nr_refs != 0) {
                                 const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));

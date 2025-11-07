@@ -18,12 +18,14 @@
 #define FORALL_LANGS(apply) \
     apply(af, af_ZA) \
     apply(am, am_ET) \
+    apply(ar, ar_AE) \
     apply(be, be_BY) \
     apply(bg, bg_BG) \
     apply(ca, ca_ES) \
     apply(cs, cs_CZ) \
     apply(da, da_DK) \
     apply(de, de_DE) \
+    apply(gsw, de_CH) \
     apply(el, el_GR) \
     apply(en, en_GB) \
     apply(es, es_ES) \
@@ -35,6 +37,7 @@
     apply(hr, hr_HR) \
     apply(hu, hu_HU) \
     apply(hy, hy_AM) \
+    apply(av, ru_RU) /* TODO missing locale */ \
     apply(is, is_IS) \
     apply(it, it_IT) \
     apply(ja, ja_JP) \
@@ -208,6 +211,9 @@
 #define COUNT_LANGS(lang, loc_lang) \
     + 1
 
+#define LANG_CODE_SZLF(lang, loc_lang) \
+    #lang "\n"
+
 #define LANG_ENTRY(lang, loc_lang) \
     [selva_lang_ ## lang] = { \
         .code = selva_lang_ ## lang, \
@@ -243,6 +249,9 @@ static struct selva_langs {
         FORALL_LANGS(LANG_ENTRY)
     },
 };
+
+const char selva_lang_all_str[] = FORALL_LANGS(LANG_CODE_SZLF);
+const size_t selva_lang_all_len = sizeof(selva_lang_all_str) - 1;
 
 static int lang_compare(const struct selva_lang *a, const struct selva_lang *b)
 {

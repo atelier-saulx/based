@@ -1,5 +1,4 @@
-import { inspect } from 'node:util'
-import picocolors from 'picocolors'
+import { inspect, styleText } from 'node:util'
 import { DbServer } from './server/index.js'
 
 export const debugMode = (target, getInfo = null) => {
@@ -23,7 +22,7 @@ export const debugMode = (target, getInfo = null) => {
     'blueBright',
     'magentaBright',
     'cyanBright',
-  ]
+  ] as const
   let colorKey = 0
   for (const key of keys) {
     const fn = target[key]
@@ -31,7 +30,7 @@ export const debugMode = (target, getInfo = null) => {
       let cnt = 0
       const color = colors[colorKey++ % colors.length]
       target[key] = function () {
-        const arr = [picocolors[color](`[${key}:${++cnt}]`)]
+        const arr = [styleText(color, `[${key}:${++cnt}]`)]
         const add = getInfo?.(key)
         if (add) arr.push(add)
         arr.push(...arguments)

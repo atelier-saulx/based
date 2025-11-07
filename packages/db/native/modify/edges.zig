@@ -71,14 +71,14 @@ pub fn writeEdges(
                 }
             } else {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
-                try db.writeField(edgeData, edgeNode, edgeFieldSchema);
+                try db.writeField(edgeNode, edgeFieldSchema, edgeData);
             }
         } else if (t == p.REFERENCE) {
             len = 4;
             offset = 0;
             const dstId = read(u32, data, i + offset);
-            if (db.getNode(dstId, try db.getRefDstType(ctx.db, edgeFieldSchema))) |dstNode| {
-                _ = try db.writeReference(ctx, dstNode, edgeNode, edgeFieldSchema);
+            if (db.getNode(try db.getRefDstType(ctx.db, edgeFieldSchema), dstId)) |dstNode| {
+                _ = try db.writeReference(ctx, edgeNode, edgeFieldSchema, dstNode);
             } else {
                 return errors.SelvaError.SELVA_ENOENT;
             }
@@ -87,7 +87,7 @@ pub fn writeEdges(
             offset = 4;
             const edgeData = data[i + offset .. i + offset + len];
 
-            try  db.putReferences(ctx, utils.realign(u32, edgeData), edgeNode, edgeFieldSchema);
+            try  db.putReferences(ctx, edgeNode, edgeFieldSchema, utils.realign(u32, edgeData));
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;
@@ -103,7 +103,7 @@ pub fn writeEdges(
             len = read(u32, data, i);
             offset = 4;
             const edgeData = data[i + offset .. i + offset + len];
-            try db.writeField(edgeData, edgeNode, edgeFieldSchema);
+            try db.writeField(edgeNode, edgeFieldSchema, edgeData);
         }
 
         i += offset + len;

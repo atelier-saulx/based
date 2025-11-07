@@ -4,6 +4,7 @@ import {
   PropDefEdge,
   REVERSE_TYPE_INDEX_MAP,
   SchemaPropTree,
+  SchemaTypeDef,
 } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { create } from './create/index.js'
@@ -99,4 +100,16 @@ export const handleError = (
   }
 
   throw e
+}
+
+export const errors = {
+  NotExists: class extends Error {
+    constructor(id: number, schema: SchemaTypeDef) {
+      super(`Target ${schema.type}:${id} does not exist`)
+    }
+  },
+} as const
+
+export const errorMap = {
+  1: errors.NotExists,
 }

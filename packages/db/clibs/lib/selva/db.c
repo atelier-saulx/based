@@ -20,6 +20,8 @@
 
 #define NODEPOOL_SLAB_SIZE 2097152
 
+static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
+
 static inline int node_id_cmp(node_id_t a, node_id_t b)
 {
     return a < b ? -1 : a > b ? 1 : 0;
@@ -67,18 +69,6 @@ RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
 RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
 RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
 
-void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts)
-{
-    struct SelvaDbExpireToken *token = selva_calloc(1, sizeof(*token));
-
-    token->token.expire = ts;
-    token->db = db;
-    token->type = type;
-    token->node_id = node_id;
-
-    selva_expire_insert(&db->expiring, &token->token);
-}
-
 static bool node_expire_cmp(struct SelvaExpireToken *tok, selva_expire_cmp_arg_t arg)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
@@ -86,6 +76,38 @@ static bool node_expire_cmp(struct SelvaExpireToken *tok, selva_expire_cmp_arg_t
     node_id_t node_id = (uint32_t)(arg.v & 0xFFFFFFFF);
 
     return type == token->type && node_id == token->node_id;
+}
+
+static bool node_expire_exists(struct SelvaDb *db, node_type_t type, node_id_t node_id)
+{
+    return selva_expire_exists(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
+}
+
+void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts, enum selva_expire_node_strategy stg)
+{
+    struct SelvaDbExpireToken *token;
+
+    switch (stg) {
+    case SELVA_EXPIRE_NODE_STRATEGY_IGNORE:
+        break;
+    case SELVA_EXPIRE_NODE_STRATEGY_CANCEL:
+        if (node_expire_exists(db, type, node_id)) {
+            return;
+        }
+        break;
+    case SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD:
+        /* TODO This will currently only cancel one previous hit. */
+        selva_expire_node_cancel(db, type, node_id);
+        break;
+    }
+
+    token = selva_calloc(1, sizeof(*token));
+    token->token.expire = ts;
+    token->db = db;
+    token->type = type;
+    token->node_id = node_id;
+
+    selva_expire_insert(&db->expiring, &token->token);
 }
 
 void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id)
@@ -168,15 +190,19 @@ struct SelvaDb *selva_db_create(void)
  * Delete all nodes of a block.
  * Pretty safe as long as block_i is within the range.
  */
-static void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i)
+static inline void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, bool unload)
 {
     struct SelvaNodeIndex *nodes = &te->blocks->blocks[block_i].nodes;
     struct SelvaNode *node;
     struct SelvaNode *tmp;
 
     RB_FOREACH_SAFE(node, SelvaNodeIndex, nodes, tmp) {
-        /* Presumably dirty_cb is not needed here. */
-        selva_del_node(db, te, node, nullptr, nullptr);
+        if (unload) {
+            selva_unl_node(db, te, node);
+        } else {
+            /* Presumably dirty_cb is not needed here. */
+            selva_del_node(db, te, node, selva_faux_dirty_cb, nullptr);
+        }
     }
 }
 
@@ -184,7 +210,7 @@ void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t st
 {
     const size_t block_i = selva_node_id2block_i(te->blocks, start);
 
-    selva_del_block_unsafe(db, te, block_i);
+    selva_del_block_unsafe(db, te, block_i, true);
 }
 
 /**
@@ -196,7 +222,7 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
     block_id_t blocks_len = blocks->len;
 
     for (block_id_t block_i = 0; block_i < blocks_len; block_i++) {
-        selva_del_block_unsafe(db, te, block_i);
+        selva_del_block_unsafe(db, te, block_i, false);
     }
 }
 
@@ -406,10 +432,14 @@ extern inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(
 
 extern inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
 
-void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, bool unload, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
     struct SelvaTypeBlock *block = selva_get_block(type->blocks, node->node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
+
+    if (dirty_cb) {
+        dirty_cb(dirty_ctx, node->type, node->node_id);
+    }
 
     selva_remove_all_aliases(type, node->node_id);
     RB_REMOVE(SelvaNodeIndex, nodes, node);
@@ -420,13 +450,37 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
         type->max_node = selva_max_node(type);
     }
 
-    selva_fields_destroy(db, node, dirty_cb, dirty_ctx);
+    if (unload) {
+        selva_fields_unload(db, node);
+    } else {
+        selva_fields_destroy(db, node, dirty_cb, dirty_ctx);
+    }
 #if 0
     memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.fields_schema.nr_fields));
 #endif
     mempool_return(&type->nodepool, node);
     block->nr_nodes_in_block--;
     type->nr_nodes--;
+}
+
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+{
+    del_node(db, type, node, false, dirty_cb, dirty_ctx);
+}
+
+static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
+{
+    del_node(db, type, node, true, selva_faux_dirty_cb, nullptr);
+}
+
+void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+{
+    if (dirty_cb) {
+        dirty_cb(dirty_ctx, node->type, node->node_id);
+    }
+
+    selva_remove_all_aliases(type, node->node_id);
+    selva_fields_flush(db, node, dirty_cb, dirty_ctx);
 }
 
 struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
@@ -455,7 +509,7 @@ struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_i
     return RB_NFIND(SelvaNodeIndex, nodes, &find);
 }
 
-struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNode *selva_upsert_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id)
 {
     if (unlikely(node_id == 0)) {
         return nullptr;
@@ -484,7 +538,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         }
     }
 
-    selva_fields_init_node(type, node);
+    selva_fields_init_node(db, type, node);
 
     block->nr_nodes_in_block++;
     type->nr_nodes++;
@@ -631,7 +685,7 @@ selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry
 
     selva_hash_reset(tmp_hash_state);
     selva_hash_update(tmp_hash_state, &node->node_id, sizeof(node->node_id));
-    selva_fields_hash_update(tmp_hash_state, db, &type->ns.fields_schema, &node->fields);
+    selva_fields_hash_update(tmp_hash_state, db, &type->ns.fields_schema, node);
     hash_aliases(tmp_hash_state, type, node->node_id);
     hash_col_fields(type, node->node_id, tmp_hash_state);
     res = selva_hash_digest(tmp_hash_state);

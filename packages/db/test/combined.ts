@@ -1,3 +1,4 @@
+import { errors } from '../src/client/modify/error.js'
 import { BasedDb } from '../src/index.js'
 import { throws, equal, isSorted } from './shared/assert.js'
 import test from './shared/test.js'
@@ -7,6 +8,11 @@ const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100
 const randomStock = () => Math.floor(Math.random() * 500)
 const getRandom = (nr: number) => {
   return Math.ceil(Math.random() * nr)
+}
+
+const catchNotExists = (err: Error) => {
+  if (err instanceof errors.NotExists) return
+  throw err
 }
 
 await test('E-commerce Simulation', async (t) => {
@@ -174,8 +180,6 @@ await test('E-commerce Simulation', async (t) => {
   await db.drain()
 
   // --- Simulation Loop ---
-  const startTime = Date.now()
-
   let totalAliasUpdate = 0
   let totalAliasUpdateTime = 0
 
@@ -245,31 +249,35 @@ await test('E-commerce Simulation', async (t) => {
         // Update Product (Price/Stock)
         const productId = getRandom(productIds)
         if (productId) {
-          await db.update('product', productId, {
-            price: randomPrice(),
-            stock: { increment: Math.random() > 0.5 ? 1 : -1 }, // Increment or decrement stock
-          })
+          await db
+            .update('product', productId, {
+              price: randomPrice(),
+              stock: { increment: Math.random() > 0.5 ? 1 : -1 }, // Increment or decrement stock
+            })
+            .catch(catchNotExists)
         }
       } else if (entityType < 0.6) {
         // Update User (Simulate view)
         const userId = getRandom(userIds)
         const productId = getRandom(productIds)
         if (userId && productId) {
-          await db.update('user', userId, {
-            lastLogin: Date.now(),
-            viewedProducts: {
-              update: [
-                {
-                  id: productId,
-                  $viewCount: { increment: 1 }, //CRASHES!
-                  $lastViewed: 'now',
-                },
-              ],
-            },
-          })
+          await db
+            .update('user', userId, {
+              lastLogin: Date.now(),
+              viewedProducts: {
+                update: [
+                  {
+                    id: productId,
+                    $viewCount: { increment: 1 }, //CRASHES!
+                    $lastViewed: 'now',
+                  },
+                ],
+              },
+            })
+            .catch(catchNotExists)
         }
       } else if (entityType < 0.8) {
-        var d = Date.now()
+        var d = performance.now()
         // Update User (Name/Email via Upsert)
         const oldEmail = `user${getRandom(userIds)}@example.com`
         if (oldEmail) {
@@ -280,15 +288,17 @@ await test('E-commerce Simulation', async (t) => {
           })
         }
         totalAliasUpdate++
-        totalAliasUpdateTime += Date.now() - d
-        // console.log(Date.now() - d, 'ms')
+        totalAliasUpdateTime += performance.now() - d
+        // console.log(performance.now() - d, 'ms')
       } else {
         // Update Category Description
         const catId = getRandom(categoryIds)
         if (catId) {
-          await db.update('category', catId, {
-            description: { de: `Aktualisiert ${randomString(10)}` },
-          })
+          await db
+            .update('category', catId, {
+              description: { de: `Aktualisiert ${randomString(10)}` },
+            })
+            .catch(catchNotExists)
         }
       }
     } else if (action < 0.8 && totalItemsCreated > 100) {
@@ -298,21 +308,21 @@ await test('E-commerce Simulation', async (t) => {
         const idx = Math.floor(Math.random() * productIdsArr.length)
         const productId = productIdsArr[idx]
         if (productId) {
-          await db.delete('product', productId)
+          await db.delete('product', productId).catch(catchNotExists)
           productIdsArr.splice(idx, 1)
         }
       } else if (entityType < 0.6 && userIdsArr.length > 50) {
         const idx = Math.floor(Math.random() * userIdsArr.length)
         const userId = userIdsArr[idx]
         if (userId) {
-          await db.delete('user', userId)
+          await db.delete('user', userId).catch(catchNotExists)
           userIdsArr.splice(idx, 1)
         }
       } else if (reviewIdsArr.length > 10) {
         const idx = Math.floor(Math.random() * reviewIdsArr.length)
         const reviewId = reviewIdsArr[idx]
         if (reviewId) {
-          await db.delete('review', reviewId)
+          await db.delete('review', reviewId).catch(catchNotExists)
           reviewIdsArr.splice(idx, 1)
         }
       }
@@ -419,7 +429,7 @@ await test('E-commerce Simulation', async (t) => {
 
   // make util for this
   let testErr: Error
-  let measure = Date.now()
+  let measure = performance.now()
   let lastOperations = operationsCount
   intervalId = setInterval(async () => {
     if (inProgress > maxInProgress) {
@@ -427,7 +437,7 @@ await test('E-commerce Simulation', async (t) => {
     }
     inProgress += concurrency
     if (operationsCount % 500 === 0) {
-      const x = Date.now()
+      const x = performance.now()
       const n = operationsCount - lastOperations
       const opsPerS = n / ((x - measure) / 1e3)
       measure = x

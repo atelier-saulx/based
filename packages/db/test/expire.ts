@@ -1,5 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import { equal } from './shared/assert.js'
+import { deepEqual } from '@based/utils'
 import test from './shared/test.js'
 import { setTimeout } from 'node:timers/promises'
 
@@ -70,4 +71,32 @@ await test('expire', async (t) => {
     0,
     '0 tokens after expiry',
   )
+})
+
+await test('refresh', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+        },
+      },
+    },
+  })
+
+  const id1 = await db.create('user', {
+    name: 'dude',
+  })
+  await db.expire('user', id1, 1)
+  await db.drain()
+  await db.expire('user', id1, 3)
+  await db.drain()
+  await setTimeout(1100)
+  deepEqual(await db.query('user', id1).get(), { id: 1, name: 'dude' })
 })

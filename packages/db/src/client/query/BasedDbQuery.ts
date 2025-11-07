@@ -175,15 +175,15 @@ export class QueryBranch<T> {
     return this
   }
 
-  count(field: string = 'count'): T {
+  count(): T {
+    const fields: string[] = ['count']
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'count',
-        args: [field],
+        args: fields,
       })
     } else {
-      const p = field.split('.')
-      addAggregate(this, AggregateType.COUNT, p)
+      addAggregate(this, AggregateType.COUNT, fields)
     }
     // @ts-ignore
     return this
@@ -206,18 +206,18 @@ export class QueryBranch<T> {
     return this
   }
 
-  cardinality(field: string): T {
-    if (field.length === 0) {
+  cardinality(...fields: string[]): T {
+    if (fields.length === 0) {
       throw new Error('Empty cardinality() called')
     }
 
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'cardinality',
-        args: [field],
+        args: fields,
       })
     } else {
-      addAggregate(this, AggregateType.CARDINALITY, [field])
+      addAggregate(this, AggregateType.CARDINALITY, fields)
     }
     // @ts-ignore
     return this

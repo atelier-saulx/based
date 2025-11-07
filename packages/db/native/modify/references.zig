@@ -50,8 +50,22 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         }
 
         const index: i32 = if (hasIndex) read(i32, data, i + 5) else -1;
-        const node = try db.upsertNode(id, refTypeEntry);
-        const ref = try db.insertReference(ctx, node, ctx.node.?, ctx.fieldSchema.?, index, hasIndex);
+
+        var ref: db.ReferenceAny = undefined;
+        if (db.getNode(refTypeEntry, id)) |dstNode| {
+            ref = try db.insertReference(ctx, ctx.node.?, ctx.fieldSchema.?, dstNode, index, hasIndex);
+        } else {
+            if (hasEdgeData) {
+                const sizepos = if (hasIndex) i + 9 else i + 5;
+                const edgelen = read(u32, data, sizepos);
+                const edgepos = sizepos + 4;
+                const edges = data[edgepos .. edgepos + edgelen];
+                i += edges.len + 4;
+            }
+            i += 4;
+            // TODO WARN errors.SelvaError.SELVA_ENOENT
+            continue;
+        }
 
         if (hasEdgeData) {
             const sizepos = if (hasIndex) i + 9 else i + 5;
@@ -72,14 +86,14 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn clearReferences(ctx: *ModifyCtx) void {
-    const refs = db.getReferences(ctx.db, ctx.node.?, ctx.fieldSchema.?);
+    const refs = db.getReferences(ctx.node.?, ctx.fieldSchema.?);
     if (refs) |r| {
         if (r.nr_refs == 0) {
             // Is empty already
             return;
         } else {
             const refsIndex = r.index[0..r.nr_refs];
-            const edgeConstraint = selva.selva_get_edge_field_constraint(ctx.fieldSchema);
+            const edgeConstraint = db.getEdgeFieldConstraint(ctx.fieldSchema.?);
             Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
         }
         db.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
@@ -130,9 +144,9 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
     try db.putReferences(
         ctx,
-        u32ids,
         ctx.node.?,
         ctx.fieldSchema.?,
+        u32ids,
     );
 
     return len;

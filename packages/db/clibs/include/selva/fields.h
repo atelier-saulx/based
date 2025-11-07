@@ -98,8 +98,9 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 #endif
 void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
 
-SELVA_EXPORT
-struct SelvaFields *selva_fields_node2fields(struct SelvaNode *node);
+struct SelvaNodeLargeReference *selva_fields_ensure_reference(
+        struct SelvaNode *node,
+        const struct SelvaFieldSchema *fs);
 
 SELVA_EXPORT
 struct SelvaNode *selva_fields_ensure_ref_meta(
@@ -109,6 +110,9 @@ struct SelvaNode *selva_fields_ensure_ref_meta(
         struct SelvaNodeLargeReference *ref,
         node_id_t meta_id,
         selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
+
+SELVA_EXPORT
+void selva_faux_dirty_cb(void *, node_type_t, node_id_t);
 
 SELVA_EXPORT
 int selva_fields_get_mutable_string(
@@ -144,6 +148,10 @@ int selva_fields_reference_set(
         void *dirty_ctx);
 
 enum selva_fields_references_insert_flags {
+    /**
+     * Reorder existing reference to the new index.
+     * The reference is either inserted or moved to the given index.
+     */
     SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER = 0x01,
     SELVA_FIELDS_REFERENCES_INSERT_FLAGS_IGNORE_SRC_DEPENDENT = 0x02,
 };
@@ -173,7 +181,7 @@ SELVA_EXPORT
 size_t selva_fields_prealloc_refs(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t nr_refs_min);
 
 SELVA_EXPORT
-int selva_fields_references_insert_tail_wupsert(
+int selva_fields_references_insert_tail(
         struct SelvaDb *db,
         struct SelvaNode * restrict node,
         const struct SelvaFieldSchema *fs,
@@ -264,29 +272,18 @@ int selva_fields_get_text(
         size_t *len);
 
 SELVA_EXPORT
-int selva_fields_set_micro_buffer(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, const void *value, size_t len);
+int selva_fields_set_micro_buffer(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
 
 SELVA_EXPORT
-int selva_fields_set_micro_buffer2(struct SelvaNode *node, const struct SelvaFieldSchema *fs, const void *value, size_t len);
-
-SELVA_EXPORT
-struct SelvaNodeReferenceAny selva_fields_get_reference(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+struct SelvaNodeLargeReference *selva_fields_get_reference(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT
-struct SelvaNodeReferences *selva_fields_get_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull));
-
-SELVA_EXPORT
-struct selva_string *selva_fields_get_selva_string2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+struct SelvaNodeReferences *selva_fields_get_references(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT
 struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
-    __attribute__((nonnull));
-
-SELVA_EXPORT
-struct SelvaFieldsPointer selva_fields_get_raw2(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
     __attribute__((nonnull));
 
 SELVA_EXPORT
@@ -317,12 +314,10 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
 /**
  * Init the fields struct of a node or edge.
  */
-SELVA_EXPORT
-void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
+void selva_fields_init_node(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
     __attribute__((nonnull));
 
-void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
-    __attribute__((nonnull));
+void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
 
 /**
  * Destroy all fields of a node.
@@ -331,8 +326,16 @@ SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
     __attribute__((nonnull(1, 2)));
 
+/**
+ * Unload node fields.
+ * Same as selva_fields_destroy() but only clears references from one side.
+ */
 SELVA_EXPORT
-void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
+void selva_fields_unload(struct SelvaDb *db, struct SelvaNode *node)
+    __attribute__((nonnull));
 
 SELVA_EXPORT
-selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaFields *fields);
+void selva_fields_hash_update(struct XXH3_state_s *hash_state, struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaNode *node);
+
+SELVA_EXPORT
+selva_hash128_t selva_fields_hash(struct SelvaDb *db, const struct SelvaFieldsSchema *schema, const struct SelvaNode *node);

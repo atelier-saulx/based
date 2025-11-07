@@ -36,10 +36,38 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     return result;
 }
 
-// have to add comptime var here
-// and call update sub
-// can even make 1 thread for MULTI and 1 thread for single ID
-// i tihnk thats nice so add a comptime enum
+fn writeoutPrevNodeId(ctx: *ModifyCtx, batch: []u8, resCount: *u32) void {
+    if (ctx.id != 0) {
+        writeInt(u32, batch, resCount.* * 5, ctx.id);
+        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+        ctx.err = errors.ClientError.null;
+        resCount.* += 1;
+    }
+}
+
+fn newNode(ctx: *ModifyCtx) !void {
+    const id = ctx.db.ids[ctx.typeId - 1] + 1;
+
+    ctx.node = try db.upsertNode(ctx, ctx.typeEntry.?, id);
+    ctx.id = id;
+    ctx.db.ids[ctx.typeId - 1] = id;
+    Modify.markDirtyRange(ctx, ctx.typeId, id);
+}
+
+fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
+    const nextId = ctx.db.ids[ctx.typeId - 1] % maxId + 1;
+    ctx.node = db.getNode(ctx.typeEntry.?, nextId);
+
+    if (ctx.node) |oldNode| {
+        db.flushNode(ctx, ctx.typeEntry.?, oldNode);
+    } else {
+        ctx.node = try db.upsertNode(ctx, ctx.typeEntry.?, nextId);
+    }
+
+    ctx.id = nextId;
+    ctx.db.ids[ctx.typeId - 1] = nextId;
+    Modify.markDirtyRange(ctx, ctx.typeId, nextId);
+}
 
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
@@ -50,23 +78,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     // var timer = try std.time.Timer.start();
 
     var i: usize = 0;
-
-    var ctx: ModifyCtx = .{
-        .field = undefined,
-        .typeId = 0,
-        .id = 0,
-        .currentSortIndex = null,
-        .typeSortIndex = null,
-        .node = null,
-        .typeEntry = null,
-        .fieldSchema = null,
-        .fieldType = types.Prop.NULL,
-        .db = dbCtx,
-        .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
-        .batch = batch,
-        .idSubs = null,
-        .subTypes = null,
-    };
+    var ctx: ModifyCtx = .{ .field = undefined, .typeId = 0, .id = 0, .currentSortIndex = null, .typeSortIndex = null, .node = null, .typeEntry = null, .fieldSchema = null, .fieldType = types.Prop.NULL, .db = dbCtx, .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator), .batch = batch, .idSubs = null, .subTypes = null, .err = errors.ClientError.null };
 
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
@@ -79,7 +91,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i = i + 1;
             },
             types.ModOp.SWITCH_FIELD => {
-                // Wrongly here.. lets find it...
                 ctx.field = operation[0];
                 i = i + 3;
                 ctx.fieldSchema = try db.getFieldSchema(ctx.typeEntry.?, ctx.field);
@@ -106,7 +117,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 if (ctx.node) |node| {
                     subs.stage(&ctx, subs.Op.deleteNode);
                     db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
-                    // no other side handled
                     ctx.node = null;
                 }
                 i = i + 1;
@@ -118,40 +128,36 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i = i + 2;
             },
             types.ModOp.SWITCH_ID_CREATE => {
-                if (ctx.id != 0) {
-                    writeInt(u32, batch, resCount.* * 5, ctx.id);
-                    resCount.* += 1;
-                }
-                ctx.id = dbCtx.ids[ctx.typeId - 1] + 1;
-                dbCtx.ids[ctx.typeId - 1] = ctx.id;
-                ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
-                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+                writeoutPrevNodeId(&ctx, batch, resCount);
+                try newNode(&ctx);
                 i = i + 1;
             },
+            types.ModOp.SWITCH_ID_CREATE_RING => {
+                writeoutPrevNodeId(&ctx, batch, resCount);
+                const maxNodeId = read(u32, operation, 0);
+                try newNodeRing(&ctx, maxNodeId);
+                i = i + 5;
+            },
             types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
-                if (ctx.id != 0) {
-                    writeInt(u32, batch, resCount.* * 5, ctx.id);
-                    resCount.* += 1;
-                }
+                writeoutPrevNodeId(&ctx, batch, resCount);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
                 }
-                ctx.node = try db.upsertNode(ctx.id, ctx.typeEntry.?);
+                ctx.node = try db.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
             types.ModOp.SWITCH_ID_UPDATE => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
-                    if (ctx.id != 0) {
-                        writeInt(u32, batch, resCount.* * 5, ctx.id);
-                        resCount.* += 1;
-                    }
-                    // if its zero than we don't want to switch (for upsert)
+                    writeoutPrevNodeId(&ctx, batch, resCount);
+                    // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
-                    ctx.node = db.getNode(ctx.id, ctx.typeEntry.?);
-                    if (ctx.node != null) {
+                    ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
+                    if (ctx.node == null) {
+                        ctx.err = errors.ClientError.nx;
+                    } else {
                         try subs.checkId(&ctx);
                         // It would be even better if we'd mark it dirty only in the case
                         // something was actually changed.
@@ -191,6 +197,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = db.getNodeId(node);
                         writeInt(u32, batch, resCount.* * 5, id);
+                        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(errors.ClientError.null));
                         resCount.* += 1;
                         nextIndex = endIndex;
                         break;
@@ -202,14 +209,15 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             types.ModOp.SWITCH_TYPE => {
                 ctx.typeId = read(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
-
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
-
                 ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
                 if (ctx.subTypes) |st| {
                     st.typeModified = true;
                 }
-
+                // RFE shouldn't we technically unset .id and .node now?
+                ctx.node = null;
+                // TODO This can't be reset because it's used just at the end of the function.
+                //ctx.id = 0;
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
@@ -237,8 +245,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i += try increment(&ctx, operation, op) + 1;
             },
             types.ModOp.EXPIRE => {
-                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
-                selva.selva_expire_node(dbCtx.selva, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
+                db.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
                 i += 5;
             },
             else => {
@@ -268,4 +275,5 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     // if (ctx.subTypes) |_| {
     //     std.debug.print("  subs: {any} \n", .{dbCtx.subscriptions.lastIdMarked / 8});
     // }
+    writeoutPrevNodeId(&ctx, batch, resCount);
 }

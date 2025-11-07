@@ -490,6 +490,7 @@ type GenericSchemaType<isStrict = false> = {
   hooks?: SchemaHooks
   id?: number
   blockCapacity?: number
+  capped?: number
   insertOnly?: boolean
   partial?: boolean
   props: SchemaProps<isStrict>

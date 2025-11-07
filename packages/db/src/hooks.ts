@@ -7,8 +7,6 @@ import {
 import type { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
-import picocolors from 'picocolors'
-import { displayTarget } from './client/query/display.js'
 import { registerSubscription } from './server/subscription.js'
 
 export type DbClientHooks = {

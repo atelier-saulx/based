@@ -69,4 +69,7 @@ await test('rootProps', async (t) => {
     .toObject()
 
   deepEqual(rootRes, rootRes2)
+
+  await db.update('_root', 1, { myBoolean: false })
+  deepEqual(await db.query('_root', 1).include('myBoolean').get().toObject(), { myBoolean: false })
 })

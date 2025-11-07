@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <stddef.h>
 #if defined(__APPLE__) && __MACH__
 #include <xlocale.h>
 #endif
@@ -17,6 +18,12 @@
 
 struct libdeflate_decompressor;
 struct libdeflate_block_state;
+
+SELVA_EXPORT
+extern const char selva_lang_all_str[];
+
+SELVA_EXPORT
+extern const size_t selva_lang_all_len;
 
 int selva_lang_set_fallback(const char *lang_str, size_t lang_len);
 

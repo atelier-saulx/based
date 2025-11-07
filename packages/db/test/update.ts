@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
+import { deepEqual, equal, throws } from './shared/assert.js'
 
 await test('update with payload.id', async (t) => {
   const db = new BasedDb({
@@ -268,11 +268,10 @@ await test('update', async (t) => {
 
   const nonExistingId = snurpId + 10
 
-  // should throw!
-  const r = await db.update('snurp', nonExistingId, {
+  throws(() => db.update('snurp', nonExistingId, {
     a: nonExistingId,
     name: 'mr snurp ' + nonExistingId,
-  })
+  }))
 })
 
 await test('await updates', async (t) => {
@@ -297,8 +296,6 @@ await test('await updates', async (t) => {
 
   const total = 1e4
 
-  var d = Date.now()
-
   for (let i = 0; i < total; i++) {
     db.create('user', {
       externalId: i + '-alias',
@@ -319,17 +316,17 @@ await test('await updates', async (t) => {
     totalAlias++
   }
 
-  const start = Date.now()
-  let lastMeasure = Date.now()
+  const start = performance.now()
+  //let lastMeasure = performance.now()
   for (let i = 0; i < 100000; i++) {
     await updateAlias()
     if (!(i % 500)) {
-      const opsPerS = totalAlias / ((Date.now() - lastMeasure) / 1e3)
+      //const opsPerS = totalAlias / ((performance.now() - lastMeasure) / 1e3)
       // console.log(`${~~opsPerS} per sec`)
-      lastMeasure = Date.now()
+      //lastMeasure = performance.now()
       totalAlias = 0
     }
   }
 
-  equal(Date.now() - start < 3e3, true, 'should be smaller then 5s')
+  equal(performance.now() - start < 3e3, true, 'should be smaller then 5s')
 })

@@ -37,7 +37,7 @@ pub fn sort(
     const fieldSchema = try db.getFieldSchema(typeEntry, sortField);
     sortItem: while (i < ids.len) : (i += 4) {
         const id = read(u32, ids, i);
-        const node = db.getNode(id, typeEntry);
+        const node = db.getNode(typeEntry, id);
         if (node == null) {
             continue :sortItem;
         }
@@ -91,7 +91,7 @@ pub fn default(
     var i: u32 = 0;
     checkItem: while (i < ids.len) : (i += 4) {
         const id = read(u32, ids, i);
-        const node = db.getNode(id, typeEntry);
+        const node = db.getNode(typeEntry, id);
         if (node == null) {
             continue :checkItem;
         }
@@ -131,7 +131,7 @@ pub fn search(
     var searchCtxC = s.createSearchCtx(isVector, 0);
     checkItem: while (i < ids.len) : (i += 4) {
         const id = read(u32, ids, i);
-        const node = db.getNode(id, typeEntry);
+        const node = db.getNode(typeEntry, id);
         if (node == null) {
             break :checkItem;
         }
