@@ -61,10 +61,9 @@ await test('sort by id', async (t) => {
     })
   }
 
-  await db
-    .query('user')
-    .include('name', 'friends.name')
-    .range(0, 1)
-    .get()
-    .inspect()
+  isSorted(
+    await db.query('user').include('name', 'friends.name').range(0, 1).get(),
+    'id',
+    'asc',
+  )
 })
