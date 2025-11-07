@@ -10,6 +10,7 @@ import {
   ALIGNMENT_NOT_SET,
   EQUAL,
   FilterCtx,
+  isNumerical,
   MODE_AND_FIXED,
   MODE_DEFAULT,
   MODE_OR_FIXED,
@@ -22,7 +23,34 @@ import {
   writeUint16,
   writeUint32,
 } from '@based/utils'
-import { FilterCondition } from '../types.js'
+import { FilterCondition, FilterMetaNow } from '../types.js'
+
+const isNowQuery = (
+  prop: PropDef | PropDefEdge,
+  value: any,
+  ctx: FilterCtx,
+) => {
+  return (
+    prop.typeIndex === TIMESTAMP &&
+    typeof value === 'string' &&
+    value.includes('now') &&
+    isNumerical(ctx.operation)
+  )
+}
+
+const createNowMeta = (
+  prop: PropDef | PropDefEdge,
+  parsedValue: number,
+  ctx: FilterCtx,
+): FilterMetaNow => {
+  return {
+    byteIndex: 8,
+    offset: parsedValue - Date.now(),
+    resolvedByteIndex: 0,
+    ctx,
+    prop,
+  }
+}
 
 export const writeFixed = (
   prop: PropDef | PropDefEdge,
@@ -71,6 +99,7 @@ export const createFixedFilterBuffer = (
     const len = value.length
     // Add 8 extra bytes for alignment
     const buffer = new Uint8Array(18 + len * size)
+    const result: FilterCondition = { buffer }
     buffer[0] = ctx.type
     buffer[1] =
       prop.typeIndex === REFERENCES && ctx.operation === EQUAL
@@ -90,18 +119,22 @@ export const createFixedFilterBuffer = (
       }
     } else {
       for (let i = 0; i < len; i++) {
-        // TODO add now
-        writeFixed(
-          prop,
-          buffer,
-          parseFilterValue(prop, value[i]),
-          size,
-          18 + i * size,
-        )
+        const parsedValue = parseFilterValue(prop, value[i])
+        if (isNowQuery(prop, value, ctx)) {
+          if (!result.subscriptionMeta) {
+            result.subscriptionMeta = {}
+          }
+          if (!result.subscriptionMeta.now) {
+            result.subscriptionMeta = { now: [] }
+          }
+          result.subscriptionMeta.now.push(
+            createNowMeta(prop, parsedValue, ctx),
+          )
+        }
+        writeFixed(prop, buffer, parsedValue, size, 18 + i * size)
       }
     }
-
-    return { buffer }
+    return result
   } else {
     const buffer = new Uint8Array(8 + size)
     buffer[0] = ctx.type
@@ -110,35 +143,17 @@ export const createFixedFilterBuffer = (
     writeUint16(buffer, size, 3)
     writeUint16(buffer, start, 5)
     buffer[7] = ctx.operation
-
     const parsedValue = parseFilterValue(prop, value)
     writeFixed(prop, buffer, parsedValue, size, 8)
-
-    // step 1 single
-    if (
-      prop.typeIndex === TIMESTAMP &&
-      typeof value === 'string' &&
-      value.includes('now') &&
-      parsedValue !== 0
-    ) {
+    if (isNowQuery(prop, value, ctx)) {
       return {
         buffer,
         subscriptionMeta: {
-          now: [
-            {
-              byteIndex: 8,
-              value: value,
-              offset: parsedValue - Date.now(),
-              resolvedByteIndex: 0,
-              parsedValue,
-              ctx,
-              prop,
-            },
-          ],
+          now: [createNowMeta(prop, parsedValue, ctx)],
         },
       }
+    } else {
+      return { buffer }
     }
-
-    return { buffer }
   }
 }

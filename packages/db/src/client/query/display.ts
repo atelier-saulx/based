@@ -1,6 +1,7 @@
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import {
+  ALIAS,
   BINARY,
   CARDINALITY,
   NUMBER,
@@ -78,7 +79,7 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
     )
   }
 
-  if (type === STRING || type === TEXT) {
+  if (type === STRING || type === TEXT || type === ALIAS) {
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
       const chars = picocolors.italic(
@@ -89,10 +90,13 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
         picocolors.dim('...') +
         '" ' +
         chars
-      return `"${v}`
-    } else {
-      return `"${v}"`
     }
+
+    if (type === ALIAS) {
+      return `"${v}" ${picocolors.italic(picocolors.dim('alias'))}`
+    }
+
+    return `"${v}"`
   }
 
   if (type === CARDINALITY) {
@@ -255,7 +259,7 @@ const inspectObject = (
           }
           str += prettyPrintVal(v, def.typeIndex)
         }
-      } else if (def.typeIndex === STRING) {
+      } else if (def.typeIndex === STRING || def.typeIndex === ALIAS) {
         if (v === undefined) {
           return ''
         }

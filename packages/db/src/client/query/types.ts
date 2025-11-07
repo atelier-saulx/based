@@ -63,8 +63,6 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
 export type FilterMetaNow = {
   byteIndex: number
   resolvedByteIndex: number
-  parsedValue: number
-  value: string
   offset: number
   ctx: FilterCtx
   prop: PropDef | PropDefEdge

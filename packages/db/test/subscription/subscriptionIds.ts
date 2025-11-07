@@ -86,18 +86,19 @@ await test('subscriptionIds', async (t) => {
   //     console.log('MULTI ID', d)
   //   })
 
-  const close2 = clients[0]
-    .query('control')
-    .include('location')
-    .filter('flap.date', '<', 'now - 1s')
-    // has to be handled very different - store index of the timestamp (to updated when re - exec the query)
+  // const close2 = clients[0]
+  //   .query('control')
+  //   .include('location')
+  //   .filter('flap.date', '<', 'now - 1s')
+  //   .subscribe((d) => {
+  //     console.log('MULTI ID', d)
+  //   })
 
-    // add support for this
-    // .filter('control.boys[0].name', '=', 'mr durk')
-
-    // .filter('control.flap.name', '=', 'mr durk')
+  const close = clients[0]
+    .query('user', id)
+    .filter('date', '<', 'now - 1s')
     .subscribe((d) => {
-      console.log('MULTI ID', d)
+      console.log('single ID', d)
     })
 
   // moves up
@@ -126,6 +127,8 @@ await test('subscriptionIds', async (t) => {
     flap: durk,
   })
 
+  // now
+
   // clients[0].update('user', durk, {
   //   control,
   // })
@@ -138,11 +141,7 @@ await test('subscriptionIds', async (t) => {
 
   console.log(
     'after tick',
-    await clients[0]
-      .query('control')
-      .include('location')
-      .filter('flap.date', '<', 'now - 1s')
-      .get(),
+    await clients[0].query('user', id).filter('date', '<', 'now - 1s').get(),
   )
 
   // single sub ID + NOW
@@ -153,6 +152,13 @@ await test('subscriptionIds', async (t) => {
 
   // extra function find NEXT time to start
 
-  // close()
-  close2()
+  close()
+  // close2()
 })
+
+// multi query?
+// clients[0]
+//  .query('user', id).include('creditcard')
+//  .query('payment', flappayment).filter('cards', '=', 1)
+//  .query('derp', derpid)
+//  .subscribe()
