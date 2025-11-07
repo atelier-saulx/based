@@ -39,8 +39,6 @@ await test('subscription', async (t) => {
     derp: 1,
   })
 
-  console.log('created user', x)
-
   let cnt = 0
 
   const close = clients[1]
@@ -52,13 +50,9 @@ await test('subscription', async (t) => {
 
   let setCnt = 0
   let interval = setInterval(async () => {
-    console.log('derop ??????')
-
     await clients[0].update('user', x, {
       derp: { increment: 1 },
     })
-    console.log('derop succes!')
-
     setCnt++
   }, 200)
 
