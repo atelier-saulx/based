@@ -18,11 +18,11 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@based/errors": "1.5.1",
+    "@based/errors": "1.6.0",
     "@based/hash": "1.1.0"
   },
   "devDependencies": {
-    "@based/client": "8.2.3",
+    "@based/client": "8.3.0",
     "@saulx/tsconfig": "^1.1.0",
     "@types/react": "^18.0.29",
     "esbuild": "^0.25.9",

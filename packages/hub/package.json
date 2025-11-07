@@ -1,5 +1,6 @@
 {
   "name": "@based/hub",
+  "version": "0.2.0",
   "scripts": {
     "build": "tsc -b",
     "watch": "tsc -b --watch",
@@ -13,18 +14,17 @@
   "main": "./dist/index.js",
   "source": "src/index.ts",
   "dependencies": {
-    "@based/client": "8.2.3",
-    "@based/db": "0.1.5",
+    "@based/client": "8.3.0",
+    "@based/db": "0.2.0",
     "@based/hash": "1.1.0",
-    "@based/s3": "*",
-    "@based/schema": "5.0.4",
-    "@based/server": "10.2.4",
-    "@based/utils": "1.1.1",
+    "@based/s3": "1.1.0",
+    "@based/schema": "5.1.0",
+    "@based/server": "10.3.0",
+    "@based/utils": "1.2.0",
     "arktype": "^2.1.20",
     "nodemailer": "^7.0.5"
   },
   "devDependencies": {
     "@types/nodemailer": "^6.4.17"
-  },
-  "version": "0.1.1"
+  }
 }
