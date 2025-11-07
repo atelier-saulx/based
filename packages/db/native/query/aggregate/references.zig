@@ -207,6 +207,7 @@ pub inline fn aggregateRefsDefault(
                         continue :checkItem;
                     }
                 }
+                utils.debugPrint("👁️", .{});
                 aggregate(agg, typeEntry, refNode, accumulatorField, hllAccumulator, &hadAccumulated, ctx.db, refStruct);
             }
         }

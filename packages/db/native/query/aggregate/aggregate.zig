@@ -117,7 +117,8 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 i += fieldAggsSize;
                 continue;
             }
-            const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
+            utils.debugPrint("field = {d}, node = {d}\n", .{ field, db.getNodeId(node) });
+            const fieldSchema = db.getFieldSchema(typeEntry, 1) catch { // MV: 👹👹👹 hardcoded field just to test
                 std.log.err("Cannot get fieldschema {any} \n", .{field});
                 i += fieldAggsSize;
                 continue;
@@ -135,8 +136,20 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, hllAccumulator, hllValue);
                 hadAccumulated.* = true;
             } else {
-                value = if (isEdge and edgeRef != null) db.getEdgeProp(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
-                if (value.len == 0) {
+                if (isEdge) {
+                    const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
+                    const references = db.getReferences(node, fieldSchema);
+                    // MV: Add error handling
+                    const refs: incTypes.Refs = .{ .refs = references.?, .fs = fieldSchema };
+                    _ = edgeRef; // ugly
+                    const refStruct = incTypes.RefResult(refs, edgeConstraint, 0);
+                    utils.debugPrint("refStruct = {any}\n", .{refStruct});
+
+                    value = db.getEdgeProp(ctx, refStruct.?.edgeConstraint, refStruct.?.largeReference.?, fieldSchema);
+                } else {
+                    value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
+                }
+                if (value.len == 0) { // MV: This should check for specific sizes since microbuffer can be any
                     i += fieldAggsSize;
                     continue;
                 }

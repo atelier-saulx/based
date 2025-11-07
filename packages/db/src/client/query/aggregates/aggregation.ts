@@ -260,7 +260,7 @@ const processPropPath = (
       const remainingPath = path.slice(i + 1).join('.')
 
       if (isEdge(remainingPath)) {
-        return t // let the calling handle it
+        return t.edges[remainingPath] //MV: r👹👹👹emember this is just a test // let the calling handle it
       }
 
       if (remainingPath) {
