@@ -79,7 +79,6 @@ await test('schema problems save', async (t) => {
   }, 10)
 
   const int = setInterval(async () => {
-    console.log('stop')
     let d = db
     db = null
     await d.save()
