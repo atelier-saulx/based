@@ -49,7 +49,6 @@ export class Tmp implements Promise<number> {
   #err: number
   get error(): Error {
     if (this.batch.ready && !this.id) {
-      console.log('error?', this.#err)
       if (this.#err in errorMap) {
         return new errorMap[this.#err](this.#id, this.#schema)
       }
