@@ -38,6 +38,8 @@ import {
   LangCode,
   langCodesMap,
   MAX_ID,
+  SchemaProp,
+  Validation,
 } from '@based/schema'
 import { StepInput } from './aggregates/types.js'
 
@@ -182,7 +184,7 @@ export const validateRange = (def: QueryDef, offset: number, limit: number) => {
 export const validateVal = (
   def: QueryDef,
   f: Filter,
-  validate: (v: any, p: PropDef | PropDefEdge) => boolean,
+  validate: Validation,
 ): boolean => {
   if (def.skipValidation) {
     return false
@@ -190,12 +192,12 @@ export const validateVal = (
   const value = f[2]
   if (Array.isArray(value)) {
     for (const v of value) {
-      if (!validate(v, f[2])) {
+      if (validate(v, f[2].schema) !== true) {
         def.errors.push({ code: ERR_FILTER_INVALID_VAL, payload: f })
         return true
       }
     }
-  } else if (!validate(value, f[2])) {
+  } else if (validate(value, f[2].schema) !== true) {
     def.errors.push({
       code: ERR_FILTER_INVALID_VAL,
       payload: f,
@@ -562,6 +564,7 @@ export const handleErrors = (def: QueryDef) => {
 }
 
 export const EMPTY_ALIAS_PROP_DEF: PropDef = {
+  schema: null,
   prop: 1,
   typeIndex: ALIAS,
   __isPropDef: true,
@@ -574,6 +577,7 @@ export const EMPTY_ALIAS_PROP_DEF: PropDef = {
 }
 
 export const ERROR_STRING: PropDef = {
+  schema: null,
   prop: 1,
   typeIndex: STRING,
   __isPropDef: true,
@@ -586,6 +590,7 @@ export const ERROR_STRING: PropDef = {
 }
 
 export const ERROR_VECTOR: PropDef = {
+  schema: null,
   prop: 1,
   typeIndex: VECTOR,
   __isPropDef: true,

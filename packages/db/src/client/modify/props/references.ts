@@ -71,7 +71,7 @@ const putReferences = (
   let index = 0
   for (const id of val) {
     if (typeof id === 'number') {
-      validate(def, id)
+      validate(id, def)
       writeU32(ctx, id)
       index++
       continue
@@ -80,7 +80,7 @@ const putReferences = (
       if (hasEdgeOrIndex(def, id)) {
         return index
       }
-      validate(def, id.id)
+      validate(id.id, def)
       writeU32(ctx, id.id)
       index++
       continue
@@ -119,7 +119,7 @@ const updateReferences = (
     }
 
     if (typeof id === 'number') {
-      validate(def, id)
+      validate(id, def)
       writeU8(ctx, NOEDGE_NOINDEX_REALID)
       writeU32(ctx, id)
       continue
@@ -130,7 +130,7 @@ const updateReferences = (
 
     if (typeof id.then === 'function') {
       if (id.id) {
-        validate(def, id.id)
+        validate(id.id, def)
         writeU8(ctx, NOEDGE_NOINDEX_REALID)
         writeU32(ctx, id.id)
         continue
@@ -144,7 +144,7 @@ const updateReferences = (
     }
 
     if (typeof id.id === 'number') {
-      validate(def, id.id)
+      validate(id.id, def)
       writeReferenceObj(ctx, def, id.id, id, false)
       continue
     }
@@ -155,7 +155,7 @@ const updateReferences = (
 
     if (typeof id.id.then === 'function') {
       if (id.id.id) {
-        validate(def, id.id.id)
+        validate(id.id.id, def)
         writeReferenceObj(ctx, def, id.id.id, id, false)
         continue
       }
@@ -243,7 +243,7 @@ const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
   writeU8(ctx, REF_OP_DELETE)
   for (const id of val) {
     if (typeof id === 'number') {
-      validate(def, id)
+      validate(id, def)
       writeU32(ctx, id)
       continue
     }

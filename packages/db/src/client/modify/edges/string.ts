@@ -6,6 +6,7 @@ import { reserve } from '../resize.js'
 import { RANGE_ERR } from '../types.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
+import { validate } from '../validate.js'
 
 export const writeStringEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (val === null) {
@@ -14,9 +15,7 @@ export const writeStringEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
     writeU32(ctx, 0)
     return
   }
-  if (!edge.validation(val, edge)) {
-    throw [val, edge]
-  }
+  validate(val, edge)
   const maxSize =
     val instanceof Uint8Array
       ? val.byteLength

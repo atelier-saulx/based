@@ -1,18 +1,18 @@
 import { PropDefEdge, STRING } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
-import { reserve, resize } from '../resize.js'
+import { reserve } from '../resize.js'
 import { getBuffer, writeBinaryRaw } from '../props/binary.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 import { PROP_CURSOR_SIZE } from '../cursor.js'
+import { validate } from '../validate.js'
 
 export const writeBinaryEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   let size = 0
   if (val !== null) {
     const buf = getBuffer(val)
-    if (!buf || !edge.validation(buf, edge)) {
-      throw [edge, val]
-    }
+    if (!buf) throw [edge, val]
+    validate(buf, edge)
     size = buf.byteLength
     val = buf
   }

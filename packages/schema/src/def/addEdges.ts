@@ -44,6 +44,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
 
       // add default
       const edge: PropDefEdge = {
+        schema: edgeProp,
         __isPropDef: true,
         __isEdge: true,
         prop: separate ? prop.edgesSeperateCnt : 0,

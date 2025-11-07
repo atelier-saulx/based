@@ -14,7 +14,7 @@ export const writeAlias = (ctx: Ctx, def: PropDef, val: any) => {
     return
   }
 
-  validate(def, val)
+  validate(val, def)
 
   const buf = ENCODER.encode(val)
   if (buf.byteLength === 0) {

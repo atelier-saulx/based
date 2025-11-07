@@ -22,7 +22,6 @@ import {
 } from '../aggregates/types.js'
 import { QueryBranch } from '../BasedDbQuery.js'
 import { AggregateType } from '@based/protocol/db-read'
-import { createOrGetEdgeRefQueryDef } from '../include/utils.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -210,6 +209,7 @@ const getPropDefinition = (
 ): PropDef | PropDefEdge | undefined => {
   if (isCount(propName, type)) {
     return {
+      schema: null,
       prop: 255,
       path: [propName],
       __isPropDef: true,

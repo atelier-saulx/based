@@ -48,7 +48,7 @@ export const writeString = (
     return
   }
 
-  validate(def, val)
+  validate(val, def)
   let size = isUint8 ? val.byteLength : ENCODER.encode(val).byteLength + 6
   reserve(ctx, FULL_CURSOR_SIZE + 11 + size)
   writePropCursor(ctx, def)

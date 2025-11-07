@@ -18,8 +18,8 @@ await test('query', async (t) => {
           countryCode: { type: 'string', maxBytes: 2 },
           location: {
             props: {
-              long: { type: 'number', min: 0, max: 100, step: 'any' },
-              lat: { type: 'number', min: 0, max: 100, step: 'any' },
+              long: { type: 'number', min: 0, max: 100 },
+              lat: { type: 'number', min: 0, max: 100 },
             },
           },
         },

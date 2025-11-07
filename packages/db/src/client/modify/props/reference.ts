@@ -42,7 +42,7 @@ export const writeReference = (
   }
 
   if (typeof val === 'number') {
-    validate(def, val)
+    validate(val, def)
     if (def.hasDefaultEdges) {
       writeReferenceId(ctx, def, val, EDGE_NOINDEX_REALID)
       writeEdges(ctx, def, {}, true)
@@ -68,7 +68,7 @@ export const writeReference = (
     }
 
     if (typeof val.id === 'number') {
-      validate(def, val.id)
+      validate(val.id, def)
       if (!def.edges || val instanceof Tmp || val instanceof Promise) {
         writeReferenceId(ctx, def, val.id, NOEDGE_NOINDEX_REALID)
       } else {

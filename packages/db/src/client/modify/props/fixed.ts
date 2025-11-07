@@ -28,7 +28,7 @@ const map: Record<
 
 map[BINARY] = (ctx, val, def) => {
   val = getBuffer(val)
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, val.byteLength + 1)
   writeU8(ctx, val.byteLength)
   writeU8Array(ctx, val)
@@ -40,7 +40,7 @@ map[STRING] = (ctx, val, def) => {
   if (size + 1 > def.len) {
     throw [def, val, `max length of ${def.len - 1},`]
   }
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, size + 1)
   const fullSize = def.len - 1
   ctx.array[ctx.index] = size
@@ -53,13 +53,13 @@ map[STRING] = (ctx, val, def) => {
 
 map[BOOLEAN] = (ctx, val, def) => {
   val ??= def.default
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, 1)
   writeU8(ctx, val ? 1 : 0)
 }
 
 map[ENUM] = (ctx, val, def) => {
-  validate(def, val)
+  validate(val, def)
   if (val === null) {
     reserve(ctx, 1)
     writeU8(ctx, def.default)
@@ -73,7 +73,7 @@ map[ENUM] = (ctx, val, def) => {
 
 map[NUMBER] = (ctx, val, def) => {
   val ??= def.default
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, 8)
   writeDoubleLE(ctx.array, val, ctx.array.byteOffset + ctx.index)
   ctx.index += 8
@@ -82,42 +82,42 @@ map[NUMBER] = (ctx, val, def) => {
 map[TIMESTAMP] = (ctx, val, def) => {
   val ??= def.default
   const parsedValue = convertToTimestamp(val)
-  validate(def, parsedValue)
+  validate(parsedValue, def)
   reserve(ctx, 8)
   writeU64(ctx, parsedValue)
 }
 
 map[UINT32] = (ctx, val, def) => {
   val ??= def.default
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, 4)
   writeU32(ctx, val)
 }
 
 map[UINT16] = (ctx, val, def) => {
   val ??= def.default
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, 2)
   writeU16(ctx, val)
 }
 
 map[UINT8] = map[INT8] = (ctx, val, def) => {
   val ??= def.default
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, 1)
   writeU8(ctx, val)
 }
 
 map[INT32] = (ctx, val, def) => {
   val ??= def.default
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, 4)
   writeU32(ctx, val)
 }
 
 map[INT16] = (ctx, val, def) => {
   val ??= def.default
-  validate(def, val)
+  validate(val, def)
   reserve(ctx, 2)
   writeU16(ctx, val)
 }

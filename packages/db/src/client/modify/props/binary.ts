@@ -49,7 +49,7 @@ export const writeBinary = (
     throw [def, val]
   }
   if (!validated) {
-    validate(def, buf)
+    validate(buf, def)
   }
   if (!buf.byteLength) {
     deleteProp(ctx, def)

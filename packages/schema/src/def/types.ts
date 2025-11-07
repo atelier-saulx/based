@@ -2,6 +2,7 @@ import type {
   LangCode,
   SchemaHooks,
   SchemaLocales,
+  SchemaProp,
   SchemaPropHooks,
 } from '../index.js'
 import { Validation } from './validation.js'
@@ -79,6 +80,7 @@ export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
 
 export type PropDef = {
   __isPropDef: true
+  schema: SchemaProp<true>
   prop: number // (0-250)
   typeIndex: TypeIndex
   separate: boolean
@@ -129,6 +131,7 @@ export type PropDef = {
 export type PropDefEdge = Partial<PropDef> & {
   __isPropDef: true
   typeIndex: TypeIndex
+  schema: SchemaProp<true>
   len: number
   prop: number // (0-250)
   name: string
@@ -260,6 +263,7 @@ export const REVERSE_TYPE_INDEX_MAP: Record<TypeIndex, InternalSchemaProp> =
   reverseMap
 
 export const ID_FIELD_DEF: PropDef = {
+  schema: null,
   typeIndex: NULL,
   separate: true,
   path: ['id'],
@@ -272,6 +276,7 @@ export const ID_FIELD_DEF: PropDef = {
 }
 
 export const EMPTY_MICRO_BUFFER: PropDef = {
+  schema: null,
   typeIndex: MICRO_BUFFER,
   separate: true,
   path: [''],

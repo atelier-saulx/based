@@ -142,9 +142,7 @@ const createSchemaTypeDef = (
     }
     if (result.capped == 0) {
       if ('capped' in type) {
-        if (
-          typeof type.capped !== 'number' ||
-          type.capped < 0) {
+        if (typeof type.capped !== 'number' || type.capped < 0) {
           throw new Error('Invalid capped')
         }
         result.capped = type.capped
@@ -209,6 +207,7 @@ const createSchemaTypeDef = (
     const isseparate = isSeparate(schemaProp, len)
     const typeIndex = TYPE_INDEX_MAP[propType]
     const prop: PropDef = {
+      schema: schemaProp,
       typeIndex,
       __isPropDef: true,
       separate: isseparate,

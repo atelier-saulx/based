@@ -3,6 +3,7 @@ import { Ctx } from '../Ctx.js'
 import { reserve } from '../resize.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
+import { validate } from '../validate.js'
 
 export const writeReferenceEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (val === null) {
@@ -19,9 +20,7 @@ export const writeReferenceEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
     }
   }
   if (typeof val === 'number') {
-    if (!edge.validation(val, edge)) {
-      throw [edge, val]
-    }
+    validate(val, edge)
     reserve(ctx, 3 + 4)
     writeEdgeHeader(ctx, edge, REFERENCE)
     writeU32(ctx, val)

@@ -2,28 +2,28 @@ import { getPropType } from './parse/utils.js'
 import type { LangName } from './lang.js'
 import type { Validation } from './def/validation.js'
 
-type Role = 'title' | 'source' | 'media' | string
+// type Role = 'title' | 'source' | 'media' | string
 
-export const numberDisplays = [
-  'short',
-  'human',
-  'ratio',
-  'bytes',
-  'euro',
-  'dollar',
-  'pound',
-  'meter',
-] as const
-export const dateDisplays = [
-  'date',
-  'date-time',
-  'date-time-text',
-  'date-time-human',
-  'date-time-human-short',
-  'time',
-  'time-precise',
-] as const
-export const stringFormats = [
+// const numberDisplays = [
+//   'short',
+//   'human',
+//   'ratio',
+//   'bytes',
+//   'euro',
+//   'dollar',
+//   'pound',
+//   'meter',
+// ] as const
+// const dateDisplays = [
+//   'date',
+//   'date-time',
+//   'date-time-text',
+//   'date-time-human',
+//   'date-time-human-short',
+//   'time',
+//   'time-precise',
+// ] as const
+const stringFormats = [
   'alpha',
   'alphaLocales',
   'alphanumeric',
@@ -95,13 +95,8 @@ export const stringFormats = [
   'URL',
   'UUID',
   'VAT',
-
-  // TODO: for discussion
-  'multiline',
 ] as const
 
-type DateDisplay = (typeof dateDisplays)[number]
-type NumberDisplay = (typeof numberDisplays)[number] | `round-${number}`
 type StringFormat = (typeof stringFormats)[number]
 
 type MimeString =
@@ -185,10 +180,10 @@ type Prop<V extends PropValues> = {
   required?: boolean
   title?: string | Record<string, string>
   description?: string | Record<string, string>
-  path?: string
-  query?: QueryFn
-  role?: Role
-  readOnly?: boolean
+  // path?: string
+  // query?: QueryFn
+  // role?: Role
+  // readOnly?: boolean
   examples?: string[]
   validation?: Validation
   hooks?: SchemaPropHooks
@@ -230,11 +225,7 @@ export type SchemaNumber = Prop<{
   default?: number
   min?: number
   max?: number
-  step?: number | 'any'
-  display?: NumberDisplay
-  history?: {
-    interval: 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second'
-  }
+  step?: number
 }>
 
 export type SchemaString = Prop<{
@@ -314,14 +305,13 @@ export type SchemaColvec = Prop<{
   baseType?: SchemaVectorBaseType
 }>
 
-export type SchemaTimestamp = Prop<{
+export type SchemaTimestamp<isStrict = false> = Prop<{
   type: 'timestamp'
   default?: number | Date | string
   on?: 'create' | 'update'
-  display?: DateDisplay
   min?: number | string
   max?: number | string
-  step?: number | 'any' | string
+  step?: isStrict extends true ? number : number | string
 }>
 
 export type SchemaReferenceOneWay = Prop<{
@@ -378,24 +368,8 @@ export type SchemaPropShorthand =
   | NumberType
   | EnumItem[]
 
-type SetItems<isStrict = false> =
-  | SchemaTimestamp
-  | SchemaBoolean
-  | SchemaNumber
-  | SchemaString
-  | SchemaEnum
-  | (isStrict extends true
-      ? never
-      : 'timestamp' | 'binary' | 'boolean' | 'string' | NumberType | EnumItem[])
-
-export type SchemaSet<ItemsType extends SetItems = SetItems> = Prop<{
-  type?: 'set'
-  default?: ItemsType extends { default } ? ItemsType['default'][] : undefined
-  items: ItemsType & NeverInItems
-}>
-
 type NonRefSchemaProps<isStrict = false> =
-  | SchemaTimestamp
+  | SchemaTimestamp<isStrict>
   | SchemaBoolean
   | SchemaNumber
   | SchemaString
@@ -407,9 +381,7 @@ type NonRefSchemaProps<isStrict = false> =
   | SchemaCardinality
   | SchemaVector
   | SchemaColvec
-  | (isStrict extends true
-      ? SchemaSet<SetItems<true>>
-      : SchemaPropShorthand | SchemaSet)
+  | (isStrict extends true ? never : SchemaPropShorthand)
 
 export type SchemaProp<isStrict = false> =
   | SchemaReferencesWithQuery
@@ -557,7 +529,6 @@ export type SchemaPropTypeMap = {
   enum: SchemaEnum
   text: SchemaText
   json: SchemaJson
-  set: SchemaSet
   binary: SchemaBinary
   cardinality: SchemaCardinality
   vector: SchemaVector

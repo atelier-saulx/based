@@ -1,9 +1,10 @@
 import { isValidId, PropDef, PropDefEdge } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 
-export const validate = (def: PropDef | PropDefEdge, val: any) => {
-  if (!def.validation(val, def)) {
-    throw [def, val]
+export const validate = (val: any, def: PropDef | PropDefEdge) => {
+  const msg = def.validation(val, def.schema)
+  if (msg !== true) {
+    throw [def, val, msg]
   }
 }
 
