@@ -99,47 +99,49 @@ export const collectTypes = (
 
 export const registerSubscription = (query: BasedDbQuery) => {
   if (query.def.queryType === QueryType.id) {
+    // @ts-ignore
+    const id = query.def.target.id
     const fields = collectFields(query.def)
     const typeId = query.def.schema.id
     const subId = native.crc32(
       query.buffer.subarray(ID.id + 4, query.buffer.byteLength - 4),
     )
-    // @ts-ignore
-    const id = query.def.target.id
-    const headerLen = 14
-
+    const headerLen = 16
     const types = collectTypes(query.def)
     const typeLen = types.size
-
-    const buffer = new Uint8Array(headerLen + fields.size + typeLen * 2)
+    const nowQueries = collectFilters(query.def.filter, new Set())
+    const buffer = new Uint8Array(
+      headerLen + fields.size + typeLen * 2 + nowQueries.length * 16,
+    )
     buffer[0] = SubscriptionType.singleId
     writeUint32(buffer, subId, 1)
     writeUint16(buffer, typeId, 5)
     writeUint32(buffer, id, 7)
     buffer[11] = fields.size
     writeUint16(buffer, typeLen, 12)
-
+    writeUint16(buffer, nowQueries.length, 14) // hopefully you dont have more then 255 now filters...
     let i = 0
     for (const field of fields) {
       buffer[i + headerLen] = field
       i++
     }
-
     for (const type of types) {
       writeUint16(buffer, type, i + headerLen)
       i += 2
     }
-
-    // here we want the total offset for now queries
-    // do this later - we want to fire it specificly
-
+    for (const now of nowQueries) {
+      buffer[i] = now.prop.prop
+      buffer[i + 1] = now.ctx.operation
+      writeUint16(buffer, now.ctx.typeId, i + 2)
+      writeInt64(buffer, now.offset, i + 4)
+      writeUint32(buffer, now.resolvedByteIndex, i + 12)
+      i += 16
+    }
     query.subscriptionBuffer = buffer
   } else {
     const typeId = query.def.schema.id
     const types = collectTypes(query.def)
-
     const nowQueries = collectFilters(query.def.filter, new Set())
-
     const typeLen = types.has(typeId) ? types.size - 1 : types.size
     const headerLen = 8
     const buffer = new Uint8Array(
@@ -149,7 +151,6 @@ export const registerSubscription = (query: BasedDbQuery) => {
     writeUint16(buffer, typeId, 1)
     writeUint16(buffer, typeLen, 3)
     writeUint16(buffer, nowQueries.length, 5) // hopefully you dont have more then 255 now filters...
-
     let i = headerLen
     for (const typeIdIt of types) {
       if (typeIdIt !== typeId) {
@@ -157,7 +158,6 @@ export const registerSubscription = (query: BasedDbQuery) => {
         i += 2
       }
     }
-
     for (const now of nowQueries) {
       buffer[i] = now.prop.prop
       buffer[i + 1] = now.ctx.operation
@@ -166,7 +166,6 @@ export const registerSubscription = (query: BasedDbQuery) => {
       writeUint32(buffer, now.resolvedByteIndex, i + 12)
       i += 16
     }
-
     query.subscriptionBuffer = buffer
   }
 }

@@ -101,6 +101,11 @@ await test('subscriptionIds', async (t) => {
       console.log('single ID', d)
     })
 
+  // get date value
+  // may be nice to just parse the now queries that you pass
+
+  // re-eval when now is (date - 1s) + 1s (not inclusive)
+
   // moves up
 
   // await clients[0].update('user', 1, {

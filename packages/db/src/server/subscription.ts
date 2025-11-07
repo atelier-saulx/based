@@ -191,20 +191,33 @@ export const registerSubscription = (
   if (sub[0] === SubscriptionType.singleId) {
     const subId = readUint32(sub, 1)
     const id = readUint32(sub, 7)
+    const headerLen = 16
     let subContainer: SubscriptionId
     let listeners: Set<() => void>
     if (!server.subscriptions.ids.get(subId)) {
       subContainer = { ids: new Map() }
       server.subscriptions.ids.set(subId, subContainer)
       const typesLen = readUint16(sub, 12)
+      const nowLen = readUint16(sub, 14)
+
       if (typesLen != 0) {
         const fLen = sub[11]
         // double check if this is alignet correct with the byteOffset else copy
-        subContainer.types = new Uint16Array(
-          sub.buffer,
-          sub.byteOffset + 14 + fLen,
-          typesLen,
-        )
+        const byteOffset = sub.byteOffset + headerLen + fLen
+        console.log(sub.byteOffset + headerLen + fLen, sub)
+
+        if (byteOffset % 2 === 0) {
+          subContainer.types = new Uint16Array(sub.buffer, byteOffset, typesLen)
+        } else {
+          console.log(
+            'derp?',
+            sub.buffer.slice(byteOffset, byteOffset + typesLen * 2),
+          )
+          subContainer.types = new Uint16Array(
+            sub.buffer.slice(byteOffset, byteOffset + typesLen * 2),
+          )
+        }
+
         subContainer.typesListener = () => {
           for (const set of subContainer.ids.values()) {
             for (const fn of set) {
@@ -215,6 +228,11 @@ export const registerSubscription = (
         for (const typeId of subContainer.types) {
           addToMultiSub(server, typeId, subContainer.typesListener)
         }
+      }
+
+      if (nowLen != 0) {
+        now = sub.slice(headerLen + typesLen * 2)
+        server.subscriptions.now.listeners.add(subContainer.typesListener)
       }
     } else {
       subContainer = server.subscriptions.ids.get(subId)
@@ -228,21 +246,12 @@ export const registerSubscription = (
     }
     listeners.add(runQuery)
 
-    // if (readUint16(sub, 5) != 0) {
-    //   now = sub.subarray(headerLen + typesLen * 2)
-    //   server.subscriptions.now.add(runQuery)
-    // }
-
-    // has to be wrapped in next tick preferebly - optmize later ofc
     process.nextTick(() => {
       runQuery()
     })
+
     return () => {
       killed = true
-
-      if (now) {
-        server.subscriptions.now.listeners.delete(runQuery)
-      }
 
       listeners.delete(runQuery)
       if (listeners.size === 0) {
@@ -254,6 +263,9 @@ export const registerSubscription = (
           for (const typeId of subContainer.types) {
             removeFromMultiSub(server, typeId, subContainer.typesListener)
           }
+        }
+        if (now) {
+          server.subscriptions.now.listeners.delete(subContainer.typesListener)
         }
         server.subscriptions.ids.delete(subId)
       }
