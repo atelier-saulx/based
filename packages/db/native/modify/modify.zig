@@ -10,6 +10,7 @@ const createField = @import("./create.zig").createField;
 const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
 const deleteField = @import("./delete.zig").deleteField;
 const deleteTextLang = @import("./delete.zig").deleteTextLang;
+const subs = @import("./subscription.zig");
 
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
@@ -25,12 +26,9 @@ const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 
-const subs = @import("./subscription.zig");
-
 pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
     var result: c.napi_value = undefined;
     var resCount: u32 = 0;
-
     modifyInternal(env, info, &resCount) catch undefined;
     _ = c.napi_create_uint32(env, resCount * 5, &result);
     return result;
@@ -75,10 +73,24 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
     const dirtyRanges = try napi.get([]f64, env, args[2]);
 
-    // var timer = try std.time.Timer.start();
-
     var i: usize = 0;
-    var ctx: ModifyCtx = .{ .field = undefined, .typeId = 0, .id = 0, .currentSortIndex = null, .typeSortIndex = null, .node = null, .typeEntry = null, .fieldSchema = null, .fieldType = types.Prop.NULL, .db = dbCtx, .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator), .batch = batch, .idSubs = null, .subTypes = null, .err = errors.ClientError.null };
+    var ctx: ModifyCtx = .{
+        .field = undefined,
+        .typeId = 0,
+        .id = 0,
+        .currentSortIndex = null,
+        .typeSortIndex = null,
+        .node = null,
+        .typeEntry = null,
+        .fieldSchema = null,
+        .fieldType = types.Prop.NULL,
+        .db = dbCtx,
+        .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
+        .batch = batch,
+        .err = errors.ClientError.null,
+        .idSubs = null,
+        .subTypes = null,
+    };
 
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
@@ -122,7 +134,6 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i = i + 1;
             },
             types.ModOp.DELETE_TEXT_FIELD => {
-                // check for subs!
                 const lang: types.LangCode = @enumFromInt(operation[0]);
                 deleteTextLang(&ctx, lang);
                 i = i + 2;
@@ -210,10 +221,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 ctx.typeId = read(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
+
                 ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
                 if (ctx.subTypes) |st| {
                     st.typeModified = true;
                 }
+
                 // RFE shouldn't we technically unset .id and .node now?
                 ctx.node = null;
                 // TODO This can't be reset because it's used just at the end of the function.
@@ -261,19 +274,5 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     assert(newDirtyRanges.len < dirtyRanges.len);
     _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     dirtyRanges[newDirtyRanges.len] = 0.0;
-    if (ctx.id != 0) {
-        writeInt(u32, batch, resCount.* * 5, ctx.id);
-        resCount.* += 1;
-    }
-
-    // std.debug.print("DRAIN {any} {any} byteSize {any} \n", .{
-    //     std.fmt.fmtDuration(timer.read()),
-    //     resCount.*,
-    //     batch.len,
-    // });
-
-    // if (ctx.subTypes) |_| {
-    //     std.debug.print("  subs: {any} \n", .{dbCtx.subscriptions.lastIdMarked / 8});
-    // }
     writeoutPrevNodeId(&ctx, batch, resCount);
 }

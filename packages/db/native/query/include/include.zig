@@ -28,14 +28,10 @@ pub fn getFields(
     var idIsSet: bool = isEdge;
 
     while (i < include.len) {
-        std.debug.print("FLAP {any} \n", .{include[i]});
-
         const op: t.IncludeOp = @enumFromInt(include[i]);
         i += 1;
         switch (op) {
             t.IncludeOp.edge => {
-                std.debug.print("EDGE {any} \n", .{include[i]});
-
                 const edgeSize = read(u16, include, i);
                 i += 2;
                 const operation = include[i .. i + edgeSize];
@@ -51,8 +47,6 @@ pub fn getFields(
                 i += edgeSize + 2;
             },
             t.IncludeOp.references => {
-                std.debug.print("references {any} \n", .{include[i]});
-
                 const operation = include[i..];
                 const refSize = read(u16, operation, 0);
                 const multiRefs = operation[2 .. 2 + refSize];

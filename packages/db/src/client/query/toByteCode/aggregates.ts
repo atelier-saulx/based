@@ -42,7 +42,6 @@ export const aggregatesQuery = (def: QueryDef): IntermediateByteCode => {
     buf[9 + 2 + filterSize] = def.target.propDef.prop // refField
     const aggregateBuffer = aggregateToBuffer(def.aggregate)
     buf.set(aggregateBuffer, 9 + 3 + filterSize)
-
     return { buffer: buf, def, needsMetaResolve: def.filter.hasSubMeta }
   } else {
     const buf = new Uint8Array(16 + filterSize + aggregateSize)
