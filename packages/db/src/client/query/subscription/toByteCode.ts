@@ -116,13 +116,11 @@ export const registerSubscription = (query: BasedDbQuery) => {
       buffer[i] = now.prop.prop
       buffer[i + 1] = now.ctx.operation
       writeUint16(buffer, now.ctx.typeId, i + 2)
-      console.log('OFFSET', now.offset)
       writeInt64(buffer, now.offset, i + 4)
       writeUint32(buffer, now.resolvedByteIndex, i + 12)
       i += 16
     }
     query.subscriptionBuffer = buffer
-    console.log({ buffer })
   } else {
     const typeId = query.def.schema.id
     const types = collectTypes(query.def)

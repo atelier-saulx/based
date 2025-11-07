@@ -63,16 +63,16 @@ await test('subscriptionIds', async (t) => {
 
   const close = clients[0]
     .query('user', id)
-    .filter('date', '<', 'now - 3s')
+    .filter('date', '<', 'now - 2s')
     .subscribe((d) => {
       console.log('single ID', d)
     })
 
-  await wait(1100)
+  await wait(2100)
 
   console.log(
     'after 1s tick run Q:',
-    await clients[0].query('user', id).filter('date', '<', 'now - 3s').get(),
+    await clients[0].query('user', id).filter('date', '<', 'now - 2s').get(),
   )
 
   close()

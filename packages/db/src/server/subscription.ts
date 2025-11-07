@@ -133,15 +133,9 @@ const removeFromMultiSub = (
 
 const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
   const dateNow = Date.now()
-
-  console.log('YO YO YO', query)
-
   for (let i = 0; i < now.byteLength; i += 16) {
     const offset = readInt64(now, i + 4)
     const byteIndex = readUint32(now, i + 12)
-
-    console.log(' ->', now, offset)
-
     writeInt64(query, dateNow + offset, byteIndex)
   }
 }

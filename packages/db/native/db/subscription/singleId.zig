@@ -115,8 +115,6 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
 
     utils.writeInt(u32, subs, subIndex + 4, subId);
 
-    std.debug.print("F: {any}\n", .{fields});
-
     if (fields.len > vectorLen) {
         // If too many fields just fire for each
         @memset(subs[subIndex + 8 .. subIndex + types.SUB_SIZE], @intFromEnum(types.SubStatus.all));
