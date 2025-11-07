@@ -42,6 +42,7 @@ export const getDefaultHooks = (
         q.subscriptionBuffer,
         onData,
         onError,
+        subInterval,
       )
     },
     setSchema(schema: StrictSchema, transformFns) {

@@ -39,7 +39,7 @@ pub inline fn removeSubTypeIfEmpty(
 ) void {
     if (typeSubs.idSubs.count() == 0 and typeSubs.multiSubsSize == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-            std.debug.print("REMOVE SUB TYPE... \n", .{});
+            // std.debug.print("REMOVE SUB TYPE... \n", .{});
             removed_entry.value.idSubs.deinit();
             std.heap.raw_c_allocator.free(removed_entry.value.idBitSet);
 

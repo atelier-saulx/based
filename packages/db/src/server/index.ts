@@ -45,6 +45,7 @@ export class DbServer extends DbShared {
   modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
   subscriptions: Subscriptions = {
+    subInterval: 200,
     active: 0,
     updateHandler: null,
     ids: new Map(),
@@ -496,6 +497,8 @@ export class DbServer extends DbShared {
     if (this.stopped) {
       return
     }
+    clearTimeout(this.subscriptions.updateHandler)
+    this.subscriptions.updateHandler = null
     this.stopped = true
     this.unlistenExit()
     if (this.cleanupTimer) {

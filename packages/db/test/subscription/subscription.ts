@@ -6,14 +6,14 @@ import { equal } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
 import { getDefaultHooks } from '../../src/hooks.js'
 
-const start = async (t, clientsN = 2) => {
+const start = async (t, clientsN = 2, subTime = 100) => {
   const server = new DbServer({
     path: t.tmp,
   })
   const clients = Array.from({ length: clientsN }).map(
     () =>
       new DbClient({
-        hooks: getDefaultHooks(server, 100),
+        hooks: getDefaultHooks(server, subTime),
       }),
   )
   await server.start({ clean: true })
@@ -164,7 +164,7 @@ await test('subscription error', async (t) => {
 
 await test('subscribe to refs', async (t) => {
   const clientsN = 2
-  const { clients } = await start(t, clientsN)
+  const { clients } = await start(t, clientsN, 200)
 
   await clients[0].setSchema({
     types: {
@@ -195,7 +195,6 @@ await test('subscribe to refs', async (t) => {
     .subscribe((q) => {
       updatesReceived++
       const res = q.toObject()
-      console.log(res.items.length)
       size = res.items.length
       const n = performance.now()
       console.log(updatesReceived, 'update received after', n - d)
@@ -205,19 +204,10 @@ await test('subscribe to refs', async (t) => {
 
   for (let i = 0; i < 1e6; i++) {
     await clients[0].create('queueItem', { data: `Item-${i}`, queue: queueId })
+    // if (i % 100000) {
+    //   await wait(10)
+    // }
   }
-
-  // console.log(
-  //   await clients[1]
-  //     .query('queue', queueId)
-  //     .include('items')
-  //     .count('items')
-  //     .get()
-  //     // .inspect(),
-  //   .toObject(),
-  // )
-
-  // { items: 1 }
 
   await wait(700)
 

@@ -34,6 +34,7 @@ export type Subscriptions = {
   ids: Map<number, SubscriptionId>
   fullType: Map<number, SubscriptionFullType>
   now: { listeners: Set<() => void>; lastUpdated: number }
+  subInterval: number // can change based on load
 }
 
 export const startUpdateHandler = (server: DbServer) => {
@@ -41,6 +42,9 @@ export const startUpdateHandler = (server: DbServer) => {
 
   // combine this with handled modify
   const scheduleUpdate = () => {
+    if (server.stopped) {
+      return
+    }
     server.subscriptions.updateId++
     if (server.subscriptions.updateId > MAX_ID) {
       server.subscriptions.updateId = 1
@@ -81,7 +85,7 @@ export const startUpdateHandler = (server: DbServer) => {
 
     if (
       server.subscriptions.updateId - server.subscriptions.now.lastUpdated >
-      4 // 1 time per second
+      Math.max(1000 / server.subscriptions.subInterval, 1) // 1 time per second
     ) {
       server.subscriptions.now.lastUpdated = server.subscriptions.updateId
       for (const fn of server.subscriptions.now.listeners) {
@@ -89,9 +93,15 @@ export const startUpdateHandler = (server: DbServer) => {
       }
     }
 
-    server.subscriptions.updateHandler = setTimeout(scheduleUpdate, 200)
+    server.subscriptions.updateHandler = setTimeout(
+      scheduleUpdate,
+      server.subscriptions.subInterval,
+    )
   }
-  server.subscriptions.updateHandler = setTimeout(scheduleUpdate, 200)
+  server.subscriptions.updateHandler = setTimeout(
+    scheduleUpdate,
+    server.subscriptions.subInterval,
+  )
 }
 
 const addToMultiSub = (
@@ -146,7 +156,13 @@ export const registerSubscription = (
   sub: Uint8Array,
   onData: OnData,
   onError: OnError,
+  subInterval?: number,
 ) => {
+  // this can change dynamicly
+  if (subInterval) {
+    server.subscriptions.subInterval = subInterval
+  }
+
   let killed = false
 
   // now maybe just once per second? (for now)
@@ -223,9 +239,16 @@ export const registerSubscription = (
         }
       }
       if (nowLen != 0) {
+        // when this is the case do a completely different strategy
+        // keep track of last update on sub id container
+        // and get the date allways (as a seperate query)
+        // when getting the date mark next in line
+
         // have to make a copy (subArray is weak)
         now = sub.slice(headerLen + fLen + typesLen * 2)
         subContainer.nowListener = () => {
+          // per id want to have a last eval and needs next eval
+
           for (const set of subContainer.ids.values()) {
             for (const fn of set) {
               fn()
@@ -272,7 +295,6 @@ export const registerSubscription = (
       if (server.subscriptions.active === 0) {
         clearTimeout(server.subscriptions.updateHandler)
         server.subscriptions.updateHandler = null
-        console.log('SUBS', server.subscriptions, 'SHOULD BE EMPTY')
       }
     }
   } else if (sub[0] === SubscriptionType.fullType) {
@@ -322,7 +344,6 @@ export const registerSubscription = (
       if (server.subscriptions.active === 0) {
         clearTimeout(server.subscriptions.updateHandler)
         server.subscriptions.updateHandler = null
-        console.log('SUBS', server.subscriptions, 'SHOULD BE EMPTY')
       }
     }
   } else {

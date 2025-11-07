@@ -3,6 +3,7 @@ import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
 import { getDefaultHooks } from '../../src/hooks.js'
+import { equal } from 'assert'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -19,10 +20,9 @@ const start = async (t, clientsN = 2) => {
   return { clients, server }
 }
 
-// make a tool to test subs
-await test('subscriptionIds', async (t) => {
+await test('subscriptionNow', async (t) => {
   const clientsN = 2
-  const { clients, server } = await start(t, clientsN)
+  const { clients } = await start(t, clientsN)
 
   await clients[0].setSchema({
     types: {
@@ -41,7 +41,7 @@ await test('subscriptionIds', async (t) => {
         location: 'string',
         lang: 'string',
         name: 'string',
-        email: 'alias', // handle alias (from the other side...)
+        email: 'alias',
       },
       control: {
         x: 'uint8',
@@ -61,27 +61,32 @@ await test('subscriptionIds', async (t) => {
     date: 'now',
   })
 
+  var multiCounter = 0
+  var idCounter = 0
+  var totalLen = 0
+
   const close = clients[0]
     .query('user', id)
     .filter('date', '<', 'now - 2s')
     .subscribe((d) => {
-      console.log('single ID', d)
+      totalLen += d.length
+      multiCounter++
     })
 
-  await wait(2100)
+  const close2 = clients[0]
+    .query('user')
+    .filter('date', '<', 'now - 2s')
+    .subscribe((d) => {
+      totalLen += d.length
+      idCounter++
+    })
 
-  console.log(
-    'after 1s tick run Q:',
-    await clients[0].query('user', id).filter('date', '<', 'now - 2s').get(),
-  )
+  await wait(3000)
+
+  equal(multiCounter, 2)
+  equal(idCounter, 2)
+  equal(totalLen, 2)
 
   close()
-  // close2()
+  close2()
 })
-
-// multi query?
-// clients[0]
-//  .query('user', id).include('creditcard')
-//  .query('payment', flappayment).filter('cards', '=', 1)
-//  .query('derp', derpid)
-//  .subscribe()
