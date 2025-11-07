@@ -595,7 +595,7 @@ await test('simple references', async (t) => {
     },
   })
 
-  deepEqual(await db.query('phase').include('scenarios').get().inspect(), [
+  deepEqual(await db.query('phase').include('scenarios').get(), [
     { id: 1, scenarios: [{ id: scenarioId1, name: 'scenario' }] },
   ])
 })
