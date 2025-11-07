@@ -2,6 +2,7 @@ import { BasedServer } from '../../server.js'
 import { HttpSession, Context, BasedRouteComplete } from '@based/functions'
 import { readBody } from './readBody.js'
 import payloadParser from './payloadParser.js'
+import { SchemaType } from '../../../../schema/dist/types.js'
 
 export const handleRequest = (
   server: BasedServer,
@@ -16,3 +17,8 @@ export const handleRequest = (
     ready(payloadParser(ctx, route))
   }
 }
+
+// export type UiSchemaType = SchemaType & {
+//   leadIcon: boolean
+//   trialIcon: boolean
+// }
