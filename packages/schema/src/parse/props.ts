@@ -9,7 +9,6 @@ import {
   SchemaNumber,
   SchemaReferenceOneWay,
   SchemaReference,
-  SchemaSet,
   SchemaString,
   SchemaTimestamp,
   SchemaText,
@@ -18,8 +17,6 @@ import {
   SchemaReferences,
   SchemaAlias,
   stringFormats,
-  dateDisplays,
-  numberDisplays,
   SchemaVector,
   SchemaJson,
   SchemaColvec,
@@ -47,10 +44,8 @@ import type { SchemaParser } from './index.js'
 import { getPropType } from './utils.js'
 import { DEFAULT_MAP } from '../def/defaultMap.js'
 import { parseMinMaxStep } from '../def/utils.js'
-let stringFormatsSet: Set<string>
-let numberDisplaysSet: Set<string>
-let dateDisplaysSet: Set<string>
 
+let stringFormatsSet: Set<string>
 type PropsFns<PropType> = Record<
   string,
   (val: any, prop: PropType, ctx: SchemaParser, key?: string) => void
@@ -93,9 +88,6 @@ const shared: PropsFns<SchemaAnyProp> = {
   },
   description(val) {
     expectString(val)
-  },
-  readOnly(val) {
-    expectBoolean(val)
   },
   examples(val) {
     expectString(val)
@@ -179,6 +171,7 @@ export const isDefault = (val, prop, ctx) => {
 
   const validation = prop.validation || VALIDATION_MAP[typeIndex]
   const propDef: PropDef = {
+    schema: prop,
     typeIndex,
     __isPropDef: true,
     start: 0,
@@ -255,7 +248,6 @@ p.vector = propParser<SchemaVector>(
         ![
           'number',
           'int8',
-          ,
           'uint8',
           'int16',
           'uint16',
@@ -329,21 +321,16 @@ p.enum = propParser<SchemaEnum>(
 )
 
 const numberOpts = {
-  display(val: any) {
-    expectString(val)
-    numberDisplaysSet ??= new Set(numberDisplays)
-    numberDisplaysSet.has(val)
-  },
-  min(val: any) {
+  min(val: any, prop, ctx, key) {
     expectNumber(val)
   },
-  max(val: any, prop: any) {
+  max(val: any, prop, ctx, key) {
     expectNumber(val)
     if (prop.min > val) {
       throw Error(MIN_MAX)
     }
   },
-  step(val: any) {
+  step(val: any, prop, ctx, key) {
     if (typeof val !== 'number' && val !== 'any') {
       throw Error(INVALID_VALUE)
     }
@@ -368,37 +355,6 @@ p.object = propParser<SchemaObject | SchemaObjectOneWay>(
     },
   },
   {},
-)
-
-p.set = propParser<SchemaSet>(
-  {
-    items(items, prop, ctx) {
-      expectObject(items)
-      const itemsType = getPropType(items)
-      if (
-        itemsType === 'string' ||
-        itemsType === 'number' ||
-        itemsType === 'timestamp' ||
-        itemsType === 'boolean'
-      ) {
-        ctx.inQuery = 'query' in prop
-        ctx.isItems = true
-        p[itemsType](items, ctx)
-        ctx.inQuery = false
-        ctx.isItems = false
-      } else {
-        throw new Error(INVALID_VALUE)
-      }
-    },
-  },
-  {
-    default(val, prop) {
-      console.warn('TODO SET DEFAULT VALUE')
-      // if (typeof val === 'object') {
-      //   throwErr(ERRORS.EXPECTED_PRIMITIVE, prop, 'default')
-      // }
-    },
-  },
 )
 
 p.references = propParser<SchemaReferences>(
@@ -491,11 +447,6 @@ p.text = propParser<SchemaText>(
 p.timestamp = propParser<SchemaTimestamp>(
   STUB,
   {
-    display(val) {
-      expectString(val)
-      dateDisplaysSet ??= new Set(dateDisplays)
-      dateDisplaysSet.has(val)
-    },
     min(val) {
       if (typeof val !== 'string' && typeof val !== 'number') {
         throw Error(INVALID_VALUE)
@@ -559,7 +510,6 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
           for (let i = 3; i < lvl; i += 2) {
             prop += prop ? `.${path[i]}` : path[i]
           }
-          targetProp.readOnly = true
           targetProp.items = {
             ref,
             prop,
@@ -604,14 +554,15 @@ p.reference = propParser<SchemaReference & SchemaReferenceOneWay>(
         let t: any = ctx.schema.types[prop.ref].props[prop.prop]
         t = t.items || t
 
-        if (t[key] && t !== prop) {
-          throw Error('Edge can not be defined on both props')
-        }
-
-        const edgePropType = getPropType(val)
+        // if (t[key] && t !== prop) {
+        //   throw Error('Edge can not be defined on both props')
+        // }
+        // @ts-ignore
+        const edgePropType = getPropType(val, prop, key)
         const inType = ctx.type
         ctx.type = null
         p[edgePropType](val, ctx)
+        t[key] = prop[key]
         ctx.type = inType
         return
       }

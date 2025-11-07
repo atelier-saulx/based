@@ -93,14 +93,16 @@ type InferSchemaTypes<T> = {
   [K in keyof T]: InferSchemaType<T[K], T>
 }
 
-type InferSchema<T extends Schema> = T extends { types: infer Types }
+type InferSchema<T extends Schema> = T extends {
+  types: infer Types
+}
   ? Types extends Record<string, any>
     ? InferSchemaTypes<Types>
     : never
   : never
 
 // Utility type for getting the inferred type
-export type Infer<T> = InferSchema<T>
+export type Infer<T extends Schema> = InferSchema<T>
 
 // Main inference function, returns the inferred schema
 export const infer = <T extends { types: Record<string, any> }>(

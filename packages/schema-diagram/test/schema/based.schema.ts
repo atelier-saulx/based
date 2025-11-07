@@ -180,22 +180,19 @@ export default {
         votingText: { type: 'text' },
         votingLegal: { type: 'text' },
         overseasTerritories: {
-          readOnly: true,
           items: { ref: 'country', prop: 'isTerritoryOf' },
         },
         votingRounds: {
-          readOnly: true,
           items: { ref: 'round', prop: 'canVote' },
         },
         contestants: {
-          readOnly: true,
           items: { ref: 'contestant', prop: 'country' },
         },
       },
     },
     sequence: {
       props: {
-        name: { type: 'alias', readOnly: true },
+        name: { type: 'alias' },
         displayName: { type: 'string' },
         goLiveTime: { type: 'timestamp' },
         recapVideo: { ref: 'file', prop: 'sequenceRecapVideo' },
@@ -225,7 +222,6 @@ export default {
         votes: { items: { ref: 'vote', prop: 'round' } },
         createdBy: { ref: 'user', prop: 'createdRounds' },
         sequences: {
-          readOnly: true,
           items: { ref: 'sequence', prop: 'round' },
         },
       },
@@ -241,7 +237,6 @@ export default {
         video: { ref: 'file', prop: 'contestant_video' },
         thankYouVideos: { items: { ref: 'file', prop: 'contestant_ty_video' } },
         rounds: {
-          readOnly: true,
           items: { ref: 'round', prop: 'contestants' },
         },
       },
@@ -261,7 +256,6 @@ export default {
         invitedBy: { ref: 'user', prop: 'invited' },
         inactive: { type: 'boolean' },
         createdRounds: {
-          readOnly: true,
           items: { ref: 'round', prop: 'createdBy' },
         },
       },
@@ -282,24 +276,19 @@ export default {
         hls: { type: 'string', format: 'URL' },
         dash: { type: 'string', format: 'URL' },
         videoPreview: { type: 'string', format: 'URL' },
-        selvaId: { type: 'alias', readOnly: true },
+        selvaId: { type: 'alias' },
         sequenceRecapVideo: {
-          readOnly: true,
           items: { ref: 'sequence', prop: 'recapVideo' },
         },
         contestant_image: {
-          readOnly: true,
           items: { ref: 'contestant', prop: 'image' },
         },
         contestant_video: {
-          readOnly: true,
           items: { ref: 'contestant', prop: 'video' },
         },
         contestant_ty_video: {
-          readOnly: true,
           items: { ref: 'contestant', prop: 'thankYouVideos' },
-        },
-        avatarOf: { readOnly: true, items: { ref: 'user', prop: 'avatar' } },
+        }, items: { ref: 'user', prop: 'avatar' } },
       },
     },
     language: {

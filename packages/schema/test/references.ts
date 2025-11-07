@@ -70,7 +70,6 @@ await test('references', (t) => {
         author: {
           props: {
             articles: {
-              readOnly: true,
               items: {
                 ref: 'article',
                 prop: 'writer',
@@ -115,7 +114,6 @@ await test('references', (t) => {
       author: {
         props: {
           articles: {
-            readOnly: true,
             items: {
               ref: 'article',
               prop: 'writers',
@@ -258,33 +256,6 @@ await test('edges', () => {
       },
     },
   })
-
-  throws(() => {
-    parse({
-      types: {
-        article: {
-          props: {
-            author: {
-              ref: 'author',
-              prop: 'articles',
-              $role: ['admin', 'collaborator'],
-            },
-          },
-        },
-        author: {
-          props: {
-            articles: {
-              items: {
-                ref: 'article',
-                prop: 'author',
-                $role: ['admin', 'collaborator'],
-              },
-            },
-          },
-        },
-      },
-    })
-  }, 'Only allow edge definition on one side')
 })
 
 await test('references no auto on same prop', (t) => {

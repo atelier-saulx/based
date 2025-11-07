@@ -64,15 +64,15 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       }
 
       if (edgeProp.max !== undefined) {
-        edge.max = parseMinMaxStep(edgeProp.max)
+        edgeProp.max = edge.max = parseMinMaxStep(edgeProp.max)
       }
 
       if (edgeProp.min !== undefined) {
-        edge.min = parseMinMaxStep(edgeProp.min)
+        edgeProp.min = edge.min = parseMinMaxStep(edgeProp.min)
       }
 
       if (edgeProp.step !== undefined) {
-        edge.step = parseMinMaxStep(edgeProp.step)
+        edgeProp.step = edge.step = parseMinMaxStep(edgeProp.step)
       }
 
       if (edge.typeIndex !== NUMBER && edge.step === undefined) {

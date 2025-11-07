@@ -1,8 +1,6 @@
 import { convertToTimestamp } from '@based/utils'
 import {
   TypeIndex,
-  PropDef,
-  PropDefEdge,
   ALIAS,
   BINARY,
   JSON,
@@ -28,80 +26,24 @@ import {
   COLVEC,
   NULL,
   OBJECT,
+  TYPE_INDEX_MAP,
 } from './types.js'
 import {
   MAX_ID,
   MIN_ID,
   SchemaEnum,
   SchemaNumber,
+  SchemaObject,
   SchemaProp,
+  SchemaProps,
   SchemaString,
   SchemaTimestamp,
+  SchemaType,
   StrictSchema,
 } from '../types.js'
-import {
-  isEmail,
-  isURL,
-  isMACAddress,
-  isIP,
-  isIPRange,
-  isFQDN,
-  isIBAN,
-  isBIC,
-  isAlpha,
-  isAlphaLocales,
-  isAlphanumeric,
-  isAlphanumericLocales,
-  isPassportNumber,
-  isPort,
-  isLowercase,
-  isUppercase,
-  isAscii,
-  isSemVer,
-  isSurrogatePair,
-  isIMEI,
-  isHexadecimal,
-  isOctal,
-  isHexColor,
-  isRgbColor,
-  isHSL,
-  isISRC,
-  isMD5,
-  isJWT,
-  isUUID,
-  isLuhnNumber,
-  isCreditCard,
-  isIdentityCard,
-  isEAN,
-  isISIN,
-  isISBN,
-  isISSN,
-  isMobilePhone,
-  isMobilePhoneLocales,
-  isPostalCode,
-  isPostalCodeLocales,
-  isEthereumAddress,
-  isCurrency,
-  isBtcAddress,
-  isISO6391,
-  isISO8601,
-  isRFC3339,
-  isISO31661Alpha2,
-  isISO31661Alpha3,
-  isISO4217,
-  isBase32,
-  isBase58,
-  isBase64,
-  isDataURI,
-  isMagnetURI,
-  isMimeType,
-  isLatLong,
-  isSlug,
-  isStrongPassword,
-  isTaxID,
-  isLicensePlate,
-  isVAT,
-} from 'validator'
+import v from 'validator'
+import { getPropType } from '../parse/index.js'
+import { Infer } from '../infer.js'
 
 export type Validation = (
   payload: any,
@@ -109,67 +51,67 @@ export type Validation = (
 ) => boolean | string
 const EPSILON = 1e-9 // Small tolerance for floating point comparisons
 const validators: Record<SchemaString['format'], (str: string) => boolean> = {
-  email: isEmail,
-  URL: isURL,
-  MACAddress: isMACAddress,
-  IP: isIP,
-  IPRange: isIPRange,
-  FQDN: isFQDN,
-  IBAN: isIBAN,
-  BIC: isBIC,
-  alpha: isAlpha,
-  alphaLocales: isAlphaLocales,
-  alphanumeric: isAlphanumeric,
-  alphanumericLocales: isAlphanumericLocales,
-  passportNumber: isPassportNumber,
-  port: isPort,
-  lowercase: isLowercase,
-  uppercase: isUppercase,
-  ascii: isAscii,
-  semVer: isSemVer,
-  surrogatePair: isSurrogatePair,
-  IMEI: isIMEI,
-  hexadecimal: isHexadecimal,
-  octal: isOctal,
-  hexColor: isHexColor,
-  rgbColor: isRgbColor,
-  HSL: isHSL,
-  ISRC: isISRC,
-  MD5: isMD5,
-  JWT: isJWT,
-  UUID: isUUID,
-  luhnNumber: isLuhnNumber,
-  creditCard: isCreditCard,
-  identityCard: isIdentityCard,
-  EAN: isEAN,
-  ISIN: isISIN,
-  ISBN: isISBN,
-  ISSN: isISSN,
-  mobilePhone: isMobilePhone,
-  mobilePhoneLocales: isMobilePhoneLocales,
-  postalCode: isPostalCode,
-  postalCodeLocales: isPostalCodeLocales,
-  ethereumAddress: isEthereumAddress,
-  currency: isCurrency,
-  btcAddress: isBtcAddress,
-  ISO6391: isISO6391,
-  ISO8601: isISO8601,
-  RFC3339: isRFC3339,
-  ISO31661Alpha2: isISO31661Alpha2,
-  ISO31661Alpha3: isISO31661Alpha3,
-  ISO4217: isISO4217,
-  base32: isBase32,
-  base58: isBase58,
-  base64: isBase64,
-  dataURI: isDataURI,
-  magnetURI: isMagnetURI,
-  mimeType: isMimeType,
-  latLong: isLatLong,
-  slug: isSlug,
-  password: isStrongPassword,
-  taxID: isTaxID,
-  licensePlate: isLicensePlate,
-  VAT: isVAT,
+  email: v.isEmail,
+  URL: v.isURL,
+  MACAddress: v.isMACAddress,
+  IP: v.isIP,
+  IPRange: v.isIPRange,
+  FQDN: v.isFQDN,
+  IBAN: v.isIBAN,
+  BIC: v.isBIC,
+  alpha: v.isAlpha,
+  alphaLocales: v.isAlphaLocales,
+  alphanumeric: v.isAlphanumeric,
+  alphanumericLocales: v.isAlphanumericLocales,
+  passportNumber: v.isPassportNumber,
+  port: v.isPort,
+  lowercase: v.isLowercase,
+  uppercase: v.isUppercase,
+  ascii: v.isAscii,
+  semVer: v.isSemVer,
+  surrogatePair: v.isSurrogatePair,
+  IMEI: v.isIMEI,
+  hexadecimal: v.isHexadecimal,
+  octal: v.isOctal,
+  hexColor: v.isHexColor,
+  rgbColor: v.isRgbColor,
+  HSL: v.isHSL,
+  ISRC: v.isISRC,
+  MD5: v.isMD5,
+  JWT: v.isJWT,
+  UUID: v.isUUID,
+  luhnNumber: v.isLuhnNumber,
+  creditCard: v.isCreditCard,
+  identityCard: v.isIdentityCard,
+  EAN: v.isEAN,
+  ISIN: v.isISIN,
+  ISBN: v.isISBN,
+  ISSN: v.isISSN,
+  mobilePhone: v.isMobilePhone,
+  mobilePhoneLocales: v.isMobilePhoneLocales,
+  postalCode: v.isPostalCode,
+  postalCodeLocales: v.isPostalCodeLocales,
+  ethereumAddress: v.isEthereumAddress,
+  currency: v.isCurrency,
+  btcAddress: v.isBtcAddress,
+  ISO6391: v.isISO6391,
+  ISO8601: v.isISO8601,
+  RFC3339: v.isRFC3339,
+  ISO31661Alpha2: v.isISO31661Alpha2,
+  ISO31661Alpha3: v.isISO31661Alpha3,
+  ISO4217: v.isISO4217,
+  base32: v.isBase32,
+  base58: v.isBase58,
+  base64: v.isBase64,
+  dataURI: v.isDataURI,
+  magnetURI: v.isMagnetURI,
+  mimeType: v.isMimeType,
+  latLong: v.isLatLong,
+  slug: v.isSlug,
+  password: v.isStrongPassword,
+  taxID: v.isTaxID,
+  licensePlate: v.isLicensePlate,
+  VAT: v.isVAT,
   code: () => true,
   javascript: () => true,
   typescript: () => true,
@@ -210,11 +152,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     )
   },
   [TIMESTAMP]: (value, t: SchemaTimestamp<true>) => {
-    if (typeof value !== 'number') {
-      return false
-    }
-    const step = t.step || 0
-    if (value % step !== 0) {
+    if (
+      typeof value !== 'number' ||
+      (t.step && value % t.step !== 0) ||
+      isNaN(value)
+    ) {
       return false
     }
     if (t.min !== undefined) {
@@ -238,7 +180,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [INT16]: (value, t: SchemaNumber) => {
-    if (typeof value !== 'number' || value % t.step !== 0) {
+    if (
+      typeof value !== 'number' ||
+      (t.step && value % t.step !== 0) ||
+      isNaN(value)
+    ) {
       return false
     }
     if (value > 32767 || value < -32768) {
@@ -253,7 +199,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [INT32]: (value, t: SchemaNumber) => {
-    if (typeof value !== 'number' || value % t.step !== 0) {
+    if (
+      typeof value !== 'number' ||
+      (t.step && value % t.step !== 0) ||
+      isNaN(value)
+    ) {
       return false
     }
     if (value > 2147483647 || value < -2147483648) {
@@ -269,7 +219,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   },
   [INT8]: (value, t: SchemaNumber) => {
     // use % for steps size
-    if (typeof value !== 'number' || value % t.step !== 0) {
+    if (
+      typeof value !== 'number' ||
+      (t.step && value % t.step !== 0) ||
+      isNaN(value)
+    ) {
       return false
     }
     if (value > 127 || value < -128) {
@@ -284,7 +238,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [UINT8]: (value, t: SchemaNumber) => {
-    if (typeof value !== 'number' || value % t.step !== 0) {
+    if (
+      typeof value !== 'number' ||
+      (t.step && value % t.step !== 0) ||
+      isNaN(value)
+    ) {
       return false
     }
     if (value > 255 || value < 0) {
@@ -299,7 +257,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [UINT16]: (value, t: SchemaNumber) => {
-    if (typeof value !== 'number' || value % t.step !== 0) {
+    if (
+      typeof value !== 'number' ||
+      (t.step && value % t.step !== 0) ||
+      isNaN(value)
+    ) {
       return false
     }
     if (value > 65535 || value < 0) {
@@ -314,7 +276,11 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   [UINT32]: (value, t: SchemaNumber) => {
-    if (typeof value !== 'number' || value % t.step !== 0) {
+    if (
+      typeof value !== 'number' ||
+      (t.step && value % t.step !== 0) ||
+      isNaN(value)
+    ) {
       return false
     }
     if (value > 4294967295 || value < 0) {
@@ -451,11 +417,68 @@ export const isValidString = (v: any) => {
   return isVal
 }
 
-export function validate<S extends StrictSchema>(
+type ValidationErrors = { path: string[]; value: unknown; error: string }[]
+
+const validateObj = (
+  value: unknown,
+  props: SchemaProps<true> | SchemaObject<true>,
+  errors: ValidationErrors,
+  path: string[],
+  required: boolean,
+) => {
+  if (!props) {
+    errors.push({ path, value, error: 'Unexpected property' })
+    return
+  }
+
+  if (value === null || typeof value !== 'object') {
+    if (required) {
+      errors.push({ path, value, error: 'Missing required value' })
+      return
+    }
+  } else {
+    for (const key in value) {
+      if (!(key in props)) {
+        errors.push({
+          path: [...path, key],
+          value: value[key],
+          error: 'Unexpected property',
+        })
+      }
+    }
+  }
+
+  for (const key in props) {
+    const val = value?.[key]
+    const prop = props[key]
+    if ('props' in prop) {
+      validateObj(val, prop.props, errors, [...path, key], prop.required)
+    } else if (val !== undefined) {
+      const test = VALIDATION_MAP[TYPE_INDEX_MAP[getPropType(prop)]]
+      const msg = test(val, prop)
+      if (msg !== true) {
+        errors.push({
+          path: [...path, key],
+          value: val,
+          error: typeof msg === 'string' ? msg : 'Invalid value',
+        })
+      }
+    }
+  }
+}
+
+export function validate<S extends StrictSchema = StrictSchema>(
   schema: S,
   type: keyof S['types'],
   payload: unknown,
-) {
-  if (payload === null || typeof payload !== 'object') {
+): {
+  valid: boolean
+  errors: ValidationErrors
+} {
+  const errors = []
+  validateObj(payload, schema?.types?.[type as string]?.props, errors, [], true)
+  return {
+    valid: !errors.length,
+    errors,
   }
 }

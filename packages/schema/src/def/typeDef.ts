@@ -92,9 +92,8 @@ export const updateTypeDefs = (schema: StrictSchema) => {
           // Update edgeNodeTypeId
           if (!prop.edgeNodeTypeId) {
             if (prop.edges) {
-              const edgeTypeName = `_${schema.type}:${prop.path.join('.')}`
+              const edgeTypeName = `_${[`${schema.type}.${prop.path.join('.')}`, `${dstType.type}.${dstType.props[prop.inversePropName].path.join('.')}`].sort().join(':')}`
               const edgeType = schemaTypesParsed[edgeTypeName]
-
               prop.edgeNodeTypeId = edgeType.id
               dstType.props[prop.inversePropName].edgeNodeTypeId = edgeType.id
             } else {
@@ -230,15 +229,15 @@ const createSchemaTypeDef = (
     }
 
     if (schemaProp.max !== undefined) {
-      prop.max = parseMinMaxStep(schemaProp.max)
+      schemaProp.max = prop.max = parseMinMaxStep(schemaProp.max)
     }
 
     if (schemaProp.min !== undefined) {
-      prop.min = parseMinMaxStep(schemaProp.min)
+      schemaProp.min = prop.min = parseMinMaxStep(schemaProp.min)
     }
 
     if (schemaProp.step !== undefined) {
-      prop.step = parseMinMaxStep(schemaProp.step)
+      schemaProp.step = prop.step = parseMinMaxStep(schemaProp.step)
     }
 
     if (prop.typeIndex !== NUMBER && prop.step === undefined) {

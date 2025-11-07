@@ -2,28 +2,7 @@ import { getPropType } from './parse/utils.js'
 import type { LangName } from './lang.js'
 import type { Validation } from './def/validation.js'
 
-// type Role = 'title' | 'source' | 'media' | string
-
-// const numberDisplays = [
-//   'short',
-//   'human',
-//   'ratio',
-//   'bytes',
-//   'euro',
-//   'dollar',
-//   'pound',
-//   'meter',
-// ] as const
-// const dateDisplays = [
-//   'date',
-//   'date-time',
-//   'date-time-text',
-//   'date-time-human',
-//   'date-time-human-short',
-//   'time',
-//   'time-precise',
-// ] as const
-const stringFormats = [
+export const stringFormats = [
   'alpha',
   'alphaLocales',
   'alphanumeric',
@@ -331,9 +310,9 @@ export type SchemaReference = Prop<{
 }> &
   Record<`$${string}`, SchemaPropOneWay>
 
-export type SchemaObject = Prop<{
+export type SchemaObject<isStrict = false> = Prop<{
   type?: 'object'
-  props: SchemaProps
+  props: SchemaProps<isStrict>
 }>
 
 export type SchemaObjectOneWay = Prop<{

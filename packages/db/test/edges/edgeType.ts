@@ -51,7 +51,7 @@ await test('single reference', async (t) => {
   })
 
   await db.query('article').include('*', '**').get().inspect()
-  await db.query('_article:author').include('*').get().inspect()
+  await db.query('_article.author:user.articles').include('*').get().inspect()
   deepEqual(
     [...db.server.verifTree.types()].map((type) => type.typeId),
     [2, 3, 4],

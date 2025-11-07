@@ -38,11 +38,7 @@ await test('dependency', () => {
             required: true,
             type: 'text',
           },
-          set: {
-            required: true,
-            type: 'set',
-            items: { type: 'string' },
-          },
+
           object: {
             required: true,
             type: 'object',

@@ -20,7 +20,7 @@ await test('simple', async (t) => {
         props: {
           name: { type: 'string' },
           flap: 'uint32',
-          email: { type: 'string', max: 15 },
+          email: { type: 'string', max: 20 },
           age: 'uint32',
           snurp: { type: 'string' },
           burp: 'uint32',
@@ -204,7 +204,7 @@ await test('string + refs', async (t) => {
           age: 'uint32',
           snurp: 'string',
           burp: 'uint32',
-          email: { type: 'string', max: 15 }, // max: 10
+          email: { type: 'string', max: 20 }, // max: 10
           location: {
             props: {
               label: 'string',

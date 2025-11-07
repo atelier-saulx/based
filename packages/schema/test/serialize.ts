@@ -69,7 +69,6 @@ test('serialize and deserialize basic schema', () => {
       other: {
         props: {
           backref: {
-            readOnly: true,
             items: {
               ref: 'thing',
               prop: 'ref',
