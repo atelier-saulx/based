@@ -72,7 +72,7 @@ await test('textFallback', async (t) => {
 
   // local second argument
   // false (block all fallbacks) or lang fallback
-  await db.query('project').locale('nl').get().inspect(10)
+  // await db.query('project').locale('nl').get().inspect(10)
 
   deepEqual(
     await db
