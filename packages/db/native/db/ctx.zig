@@ -6,6 +6,7 @@ const config = @import("config");
 const c = @import("../c.zig");
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
+const subs = @import("./subscription/types.zig");
 
 const rand = std.crypto.random;
 
@@ -27,6 +28,7 @@ pub const DbCtx = struct {
     threadCtx: [42]ThreadCtx,
     sortIndexes: sort.TypeSortIndexes,
     selva: ?*selva.SelvaDb,
+    subscriptions: subs.SubscriptionCtx,
     ids: []u32,
     pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
         self.arena.deinit();
@@ -54,6 +56,12 @@ pub fn createDbCtx() !*DbCtx {
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const b = try allocator.create(DbCtx);
+    const subscriptions = try allocator.create(subs.SubscriptionCtx);
+    subscriptions.*.types = subs.TypeSubMap.init(allocator);
+
+    subscriptions.*.lastIdMarked = 0;
+    subscriptions.*.singleIdMarked = try std.heap.c_allocator.alloc(u8, subs.BLOCK_SIZE * 8);
+
     errdefer {
         arena.deinit();
         db_backing_allocator.destroy(arena);
@@ -66,6 +74,7 @@ pub fn createDbCtx() !*DbCtx {
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
         .selva = null,
+        .subscriptions = subscriptions.*,
         .ids = &[_]u32{},
     };
     for (&b.*.threadCtx) |*tctx| {

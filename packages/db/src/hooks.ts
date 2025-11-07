@@ -1,4 +1,3 @@
-import { styleText } from 'node:util'
 import {
   StrictSchema,
   MigrateFns,
@@ -8,7 +7,7 @@ import {
 import type { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
-import { displayTarget } from './client/query/display.js'
+import { registerSubscription } from './server/subscription.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -35,36 +34,14 @@ export const getDefaultHooks = (
       onData: (res: Uint8Array) => void,
       onError: OnError,
     ) {
-      let timer: ReturnType<typeof setTimeout>
-      let killed = false
-      const poll = async () => {
-        const res = await server.getQueryBuf(q.buffer)
-        if (killed) {
-          return
-        }
-        if (res.byteLength >= 4) {
-          onData(res)
-        } else if (res.byteLength === 1 && res[0] === 0) {
-          server.emit(
-            'info',
-            `[${displayTarget(q.def)}] Subscribe schema mismatch - should resolve after update`,
-          )
-          return
-        } else {
-          const def = q.def
-          let name = styleText('red', `QueryError[${displayTarget(def)}]\n`)
-          name += `  Incorrect buffer received in subscription (maybe server not started ${res.byteLength}) bytes\n`
-          onError(new Error(name))
-        }
-        timer = setTimeout(poll, subInterval)
-      }
-
-      void poll()
-
-      return () => {
-        clearTimeout(timer)
-        killed = true
-      }
+      return registerSubscription(
+        server,
+        q.buffer,
+        q.subscriptionBuffer,
+        onData,
+        onError,
+        subInterval,
+      )
     },
     setSchema(schema: StrictSchema, transformFns) {
       return server.setSchema(schema, transformFns)

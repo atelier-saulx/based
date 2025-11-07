@@ -146,6 +146,7 @@ export type FilterCtx = {
   operation: OPERATOR
   type: FILTER_TYPE
   opts: FilterOpts
+  typeId: number
 }
 
 export const VECTOR_DOT_PRODUCT = 0
@@ -176,6 +177,7 @@ export const toFilterCtx = (
       operation: EQUAL,
       type: op === '!=' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
+      typeId: def.schema.id,
     }
   }
 
@@ -184,6 +186,7 @@ export const toFilterCtx = (
       operation: EXISTS,
       type: op === '!exists' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
+      typeId: def.schema.id,
     }
   }
 
@@ -192,27 +195,53 @@ export const toFilterCtx = (
       operation: opts.lowerCase ? INCLUDES_TO_LOWER_CASE : INCLUDES,
       type: op === '!includes' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
+      typeId: def.schema.id,
     }
   }
 
   if (op === '>') {
-    return { operation: GREATER_THAN, opts, type: TYPE_DEFAULT }
+    return {
+      operation: GREATER_THAN,
+      opts,
+      type: TYPE_DEFAULT,
+      typeId: def.schema.id,
+    }
   }
 
   if (op === '<') {
-    return { operation: SMALLER_THAN, opts, type: TYPE_DEFAULT }
+    return {
+      operation: SMALLER_THAN,
+      opts,
+      type: TYPE_DEFAULT,
+      typeId: def.schema.id,
+    }
   }
 
   if (op === '>=') {
-    return { operation: GREATER_THAN_INCLUSIVE, opts, type: TYPE_DEFAULT }
+    return {
+      operation: GREATER_THAN_INCLUSIVE,
+      opts,
+      type: TYPE_DEFAULT,
+      typeId: def.schema.id,
+    }
   }
 
   if (op === '<=') {
-    return { operation: SMALLER_THAN_INCLUSIVE, opts, type: TYPE_DEFAULT }
+    return {
+      operation: SMALLER_THAN_INCLUSIVE,
+      opts,
+      type: TYPE_DEFAULT,
+      typeId: def.schema.id,
+    }
   }
 
   if (op === 'like') {
-    return { operation: LIKE, opts, type: TYPE_DEFAULT }
+    return {
+      operation: LIKE,
+      opts,
+      type: TYPE_DEFAULT,
+      typeId: def.schema.id,
+    }
   }
 
   filterOperatorDoesNotExist(def, op)

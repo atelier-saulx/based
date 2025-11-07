@@ -1,6 +1,11 @@
 import { MICRO_BUFFER, STRING, TEXT, JSON, BINARY } from '@based/schema/def'
 import { DbClient } from '../../index.js'
-import { IncludeOpts, QueryDef, QueryDefType, includeOp } from '../types.js'
+import {
+  IntermediateByteCode,
+  QueryDef,
+  QueryDefType,
+  includeOp,
+} from '../types.js'
 import { walkDefs } from './walk.js'
 import { langCodesMap } from '@based/schema'
 import { writeUint32 } from '@based/utils'
@@ -8,7 +13,10 @@ import { getEnd } from './utils.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
 
-export const includeToBuffer = (db: DbClient, def: QueryDef): Uint8Array[] => {
+export const includeToBuffer = (
+  db: DbClient,
+  def: QueryDef,
+): IntermediateByteCode[] => {
   const result: Uint8Array[] = []
 
   if (

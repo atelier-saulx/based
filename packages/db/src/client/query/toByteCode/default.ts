@@ -1,5 +1,7 @@
 import { filterToBuffer, isSimpleMainFilter } from '../query.js'
-import { QueryDef, QueryType } from '../types.js'
+import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
+import { writeUint16, writeUint32 } from '@based/utils'
+import { DEFAULT } from './offsets.js'
 
 export const defaultQuery = (
   def: QueryDef,
@@ -8,42 +10,40 @@ export const defaultQuery = (
   searchSize: number,
   sort: Uint8Array,
   search: Uint8Array,
-) => {
-  const buf = new Uint8Array(18 + filterSize + sortSize + searchSize)
+): IntermediateByteCode => {
+  const buffer = new Uint8Array(
+    DEFAULT.baseSize + filterSize + sortSize + searchSize,
+  )
   let index = 0
-  buf[index++] = QueryType.default
-  buf[index++] = def.schema.idUint8[0]
-  buf[index++] = def.schema.idUint8[1]
-  buf[index++] = def.range.offset
-  buf[index++] = def.range.offset >>> 8
-  buf[index++] = def.range.offset >>> 16
-  buf[index++] = def.range.offset >>> 24
-  buf[index++] = def.range.limit
-  buf[index++] = def.range.limit >>> 8
-  buf[index++] = def.range.limit >>> 16
-  buf[index++] = def.range.limit >>> 24
+  buffer[index++] = QueryType.default
+  writeUint16(buffer, def.schema.id, index)
+  index += 2
+  writeUint32(buffer, def.range.offset, index)
+  index += 4
+  writeUint32(buffer, def.range.limit, index)
+  index += 4
 
-  buf[index++] = filterSize
-  buf[index++] = filterSize >>> 8
-  buf[index++] = filterSize && isSimpleMainFilter(def.filter) ? 1 : 0
+  writeUint16(buffer, filterSize, index)
+  index += 2
+  buffer[index++] = filterSize && isSimpleMainFilter(def.filter) ? 1 : 0
 
   if (filterSize) {
-    buf.set(filterToBuffer(def.filter), index)
+    buffer.set(filterToBuffer(def.filter, index), index)
     index += filterSize
   }
 
-  buf[index++] = sortSize
-  buf[index++] = sortSize >>> 8
+  writeUint16(buffer, sortSize, index)
+  index += 2
   if (sortSize) {
-    buf.set(sort, index)
+    buffer.set(sort, index)
     index += sortSize
   }
 
-  buf[index++] = searchSize
-  buf[index++] = searchSize >>> 8
+  writeUint16(buffer, searchSize, index)
+  index += 2
   if (searchSize) {
-    buf.set(search, index)
-    index += searchSize
+    buffer.set(search, index)
   }
-  return buf
+
+  return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }
 }

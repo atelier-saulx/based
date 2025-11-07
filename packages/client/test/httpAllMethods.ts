@@ -21,6 +21,9 @@ test('http methods', async (t: T) => {
           type: 'function',
           fn: async (based, payload, ctx) => {
             if (isHttpContext(ctx)) {
+              if (payload) {
+                return 'derp-' + ctx.session.method + '-' + payload
+              }
               return 'derp-' + ctx.session.method
             }
             return 'derp'
@@ -45,8 +48,24 @@ test('http methods', async (t: T) => {
   )
 
   t.is(
-    await (await fetch(t.context.http + '/bla', { method: 'post' })).text(),
-    'derp-post',
+    await (
+      await fetch(t.context.http + '/bla', { method: 'post', body: 'body' })
+    ).text(),
+    'derp-post-body',
+  )
+
+  t.is(
+    await (
+      await fetch(t.context.http + '/bla', { method: 'put', body: 'body' })
+    ).text(),
+    'derp-put-body',
+  )
+
+  t.is(
+    await (
+      await fetch(t.context.http + '/bla', { method: 'patch', body: 'body' })
+    ).text(),
+    'derp-patch-body',
   )
 
   t.is(

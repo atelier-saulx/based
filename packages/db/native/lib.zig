@@ -15,6 +15,7 @@ const jsThrow = errors.jsThrow;
 const dbthrow = errors.mdb;
 const colvecTest = @import("./colvec.zig").colvec;
 const dbCtx = @import("./db/ctx.zig");
+const subscriptions = @import("./db/subscription/subscription.zig");
 
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
@@ -148,6 +149,14 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "selvaLangAll", selvaLangAll) catch return null;
 
     registerFunction(env, exports, "colvecTest", colvecTest) catch return null;
+
+    // subscriptions
+    registerFunction(env, exports, "addMultiSubscription", subscriptions.addMultiSubscription) catch return null;
+    registerFunction(env, exports, "removeMultiSubscription", subscriptions.removeMultiSubscription) catch return null;
+    registerFunction(env, exports, "addIdSubscription", subscriptions.addIdSubscription) catch return null;
+    registerFunction(env, exports, "removeIdSubscription", subscriptions.removeIdSubscription) catch return null;
+    registerFunction(env, exports, "getMarkedIdSubscriptions", subscriptions.getMarkedIdSubscriptions) catch return null;
+    registerFunction(env, exports, "getMarkedMultiSubscriptions", subscriptions.getMarkedMultiSubscriptions) catch return null;
 
     return exports;
 }

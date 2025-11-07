@@ -1,6 +1,6 @@
 import { LangCode, LangName } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
-import { FilterOpts } from './filter/types.js'
+import { FilterCtx, FilterOpts, Operator } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
 import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
@@ -60,7 +60,20 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
   )
 }
 
-export type FilterCondition = Uint8Array
+export type FilterMetaNow = {
+  byteIndex: number
+  resolvedByteIndex: number
+  offset: number
+  ctx: FilterCtx
+  prop: PropDef | PropDefEdge
+}
+
+export type FilterCondition = {
+  buffer: Uint8Array
+  subscriptionMeta?: {
+    now?: FilterMetaNow[]
+  }
+}
 
 export type QueryDefFilter = {
   size: number
@@ -73,6 +86,7 @@ export type QueryDefFilter = {
   or?: QueryDefFilter
   // Make this work
   and?: QueryDefFilter
+  hasSubMeta: boolean
 }
 
 export type QueryDefSearch =
@@ -130,7 +144,8 @@ export interface aggPropDef extends PropDef {
 export type LangFallback = LangName | false
 
 export type QueryDefShared = {
-  queryId?: number
+  // getFirst: boolean
+  queryType: QueryType
   schemaChecksum?: number
   errors: QueryError[]
   lang: { lang: LangCode; fallback: LangCode[] }
@@ -202,10 +217,19 @@ export const isAlias = (
 
 export const enum includeOp {
   DEFAULT = 1,
-  REFERENCES_AGGREGATION = 2,
+  REFS_AGGREGATION = 2,
   EDGE = 3,
   REFERENCES = 4,
   REFERENCE = 5,
   META = 6, // this can be a small buffer as well
   PARTIAL = 7,
 }
+
+// allow UINT8ARRAY
+export type IntermediateByteCode =
+  | {
+      buffer: Uint8Array
+      def: QueryDef
+      needsMetaResolve?: boolean
+    }
+  | Uint8Array

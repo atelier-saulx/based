@@ -26,6 +26,8 @@ test('ctx on close', async (t: T) => {
         derp: {
           type: 'function',
           fn: async (based, payload, ctx) => {
+            // based.geo()
+
             if (isClientContext(ctx) && !ctx.session.state?.handled) {
               ctx.session.state = {}
               ctx.session.state.handled = true

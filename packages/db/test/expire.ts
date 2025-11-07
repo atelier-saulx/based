@@ -98,5 +98,5 @@ await test('refresh', async (t) => {
   await db.expire('user', id1, 3)
   await db.drain()
   await setTimeout(1100)
-  deepEqual(await db.query('user', id1).get().inspect(), { id: 1, name: 'dude' });
+  deepEqual(await db.query('user', id1).get(), { id: 1, name: 'dude' })
 })

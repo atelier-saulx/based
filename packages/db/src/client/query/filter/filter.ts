@@ -66,6 +66,7 @@ const referencesFilter = (
           fromRef: t,
           schema,
           size: 0,
+          hasSubMeta: false,
         }
         conditions.references.set(t.prop, refConditions)
       }
@@ -77,6 +78,11 @@ const referencesFilter = (
         refConditions,
         def, // incorrect...
       )
+
+      if (refConditions.hasSubMeta) {
+        conditions.hasSubMeta = true
+      }
+
       return size
     }
   }
@@ -153,6 +159,7 @@ export const filterOr = (
     conditions.or = {
       size: 0,
       conditions: new Map(),
+      hasSubMeta: false,
     }
   } else {
     const r = filterOr(db, def, filterAst, conditions.or)
@@ -161,5 +168,10 @@ export const filterOr = (
   }
   filter(db, def, filterAst, conditions.or)
   conditions.size += conditions.or.size
+
+  if (conditions.or.hasSubMeta) {
+    conditions.hasSubMeta = true
+  }
+
   return conditions.or
 }

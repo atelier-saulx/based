@@ -2,34 +2,17 @@ import { deepEqual as uDeepEqual } from '@based/utils'
 import { styleText } from 'node:util'
 import util from 'node:util'
 import { BasedQueryResponse } from '../../src/client/query/BasedQueryResponse.js'
-import * as jsondiffpatch from 'jsondiffpatch'
-import * as c from 'jsondiffpatch/formatters/console'
-import { hash } from '@based/hash'
-import { REVERSE_TYPE_INDEX_MAP, TIMESTAMP } from '@based/schema/def'
-
-const diffpatcher = jsondiffpatch.create({
-  // objectHash: function (obj) {
-  //   return String(hash(obj))
-  // },
-})
+import { REVERSE_TYPE_INDEX_MAP } from '@based/schema/def'
 
 // add fn
 export const deepEqual = (a, b, msg?: string) => {
   if (a instanceof BasedQueryResponse) {
     a = a.toObject()
   }
-
+  if (b instanceof BasedQueryResponse) {
+    b = b.toObject()
+  }
   if (!uDeepEqual(a, b)) {
-    //     if (typeof a === 'object' && typeof b === 'object') {
-    //       const delta = diffpatcher.diff(a, b)
-    //       const output = c.format(delta)
-    //       const m = `${msg || ``}
-    // ------------------ DIFF ----------------------
-    // ${output}
-    // --------------------------------------------------`
-    //       const error = new Error(m)
-    //       throw error
-    //     } else {
     const m = `${msg || ``}
 ------------------ EXPECTED ----------------------
 ${util.inspect(b, { depth: 10, maxStringLength: 60 })}
@@ -38,7 +21,6 @@ ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
 --------------------------------------------------`
     const error = new Error(m)
     throw error
-    // }
   }
 }
 

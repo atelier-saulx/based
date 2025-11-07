@@ -10,7 +10,7 @@ export const handleRequest = (
   route: BasedRouteComplete,
   ready: (payload?: any) => void,
 ) => {
-  if (method === 'post') {
+  if (method === 'post' || method === 'put' || method === 'patch') {
     readBody(server, ctx, ready, route)
   } else {
     ready(payloadParser(ctx, route))

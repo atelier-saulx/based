@@ -6,6 +6,7 @@ const types = @import("../types.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const utils = @import("../utils.zig");
 const references = @import("./references.zig");
+const subs = @import("./subscription.zig");
 
 // TODO: can optmize this greatly, espcialy text
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
@@ -53,6 +54,9 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.node == null) {
         return 0;
     }
+
+    subs.stage(ctx, subs.Op.deleteField);
+
     if (ctx.typeSortIndex != null) {
         if (ctx.currentSortIndex != null) {
             const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
@@ -108,6 +112,9 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
 
     // If !empty
     if (t.len >= 6) {
+        // +lang
+        subs.stage(ctx, subs.Op.deleteFieldLang);
+
         const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
         if (sortIndex) |sI| {
             sort.remove(ctx.db, sI, t, ctx.node.?);
