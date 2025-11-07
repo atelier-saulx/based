@@ -455,7 +455,7 @@ const validateObj = (
     if ('props' in prop) {
       validateObj(val, prop.props, errors, [...path, key], prop.required)
     } else if (val !== undefined) {
-      const test = VALIDATION_MAP[TYPE_INDEX_MAP[getPropType(prop)]]
+      const test = getValidator(prop)
       const msg = test(val, prop)
       if (msg !== true) {
         errors.push({
@@ -468,11 +468,13 @@ const validateObj = (
   }
 }
 
-export const getValidator = (def: PropDef | PropDefEdge): Validation => {
-  const validator = VALIDATION_MAP[def.typeIndex] ?? defaultValidation
-  if (def.validation) {
+export const getValidator = (prop: SchemaProp<true>): Validation => {
+  const validator =
+    VALIDATION_MAP[TYPE_INDEX_MAP[getPropType(prop)]] ?? defaultValidation
+  const custom = prop.validation
+  if (custom) {
     return (a, b) => {
-      const msg = def.validation(a, b)
+      const msg = custom(a, b)
       return msg === true ? validator(a, b) : msg
     }
   }

@@ -4,7 +4,7 @@ import { parse } from '@based/schema'
 import { validate } from '../src/index.js'
 
 await test('validate', () => {
-  const s = {
+  const { schema } = parse({
     types: {
       user: {
         name: 'string',
@@ -22,10 +22,13 @@ await test('validate', () => {
             },
           },
         },
+        badValidator: {
+          type: 'number',
+          validation: () => true,
+        },
       },
     },
-  } as const
-  const { schema } = parse(s)
+  })
 
   equal(
     validate(schema, 'user', {
@@ -42,5 +45,13 @@ await test('validate', () => {
       name: 1,
     }).valid,
     false,
+  )
+
+  equal(
+    validate(schema, 'user', {
+      badValidator: 'snurk',
+    }).valid,
+    false,
+    'Also checks default validation',
   )
 })
