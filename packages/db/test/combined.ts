@@ -27,6 +27,7 @@ await test('E-commerce Simulation', async (t) => {
   t.after(() => {
     clearInterval(intervalId)
   })
+
   t.after(async () => t.backup(db))
 
   await db.setSchema({
@@ -317,6 +318,7 @@ await test('E-commerce Simulation', async (t) => {
       }
     } else {
       // --- QUERY ---
+      // const queryType = 0.3
       const queryType = Math.random()
       if (queryType < 0.1) {
         isSorted(
@@ -340,6 +342,7 @@ await test('E-commerce Simulation', async (t) => {
         // Get user's viewed products with analytics
         const userId = getRandom(userIds)
         if (userId) {
+          // console.log({ userId })
           await db
             .query('user', userId)
             .include(
@@ -479,4 +482,8 @@ await test('E-commerce Simulation', async (t) => {
     true,
     'Should have products left after simulation',
   )
+
+  await wait(1000)
+
+  console.log('GOT HERE!')
 })
