@@ -1,4 +1,4 @@
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, equal } from './shared/assert.js'
 import test from './shared/test.js'
 import { start } from './shared/multi.js'
 import { BasedDb } from '../src/index.js'
@@ -88,8 +88,8 @@ await test('upsert no alias', async (t) => {
     path: t.tmp,
   })
   await db.start()
-  // t.after(() => db.destroy())
-  t.after(() => db.stop())
+  t.after(() => db.destroy())
+  // t.after(() => db.stop())
 
   await db.setSchema({
     types: {
@@ -104,19 +104,31 @@ await test('upsert no alias', async (t) => {
 
   // await db.drain()
 
-  await db.query('lala').include('*').get().inspect()
+  equal(
+    (await db.query('lala').include('*').get().toObject()).length,
+    0,
+    'before upsert',
+  )
 
   await db.upsert('lala', {
     lele: 'lulu',
     lili: 813,
   })
 
-  await db.query('lala').include('*').get().inspect()
+  equal(
+    (await db.query('lala').include('*').get().toObject()).length,
+    1,
+    'after upsert',
+  )
 
   await db.upsert('lala', {
     lele: 'lulu',
     lili: 813,
   })
 
-  // await db.query('lala').include('*').get().inspect()
+  equal(
+    (await db.query('lala').include('*').get().toObject()).length,
+    2,
+    'upsert no alias should insert',
+  )
 })
