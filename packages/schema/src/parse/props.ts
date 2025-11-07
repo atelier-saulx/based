@@ -1,6 +1,6 @@
 import { convertToTimestamp } from '@based/utils'
 import { NUMBER, PropDef, TYPE_INDEX_MAP, TypeIndex } from '../def/types.js'
-import { VALIDATION_MAP } from '../def/validation.js'
+import { getValidator, VALIDATION_MAP } from '../def/validation.js'
 import {
   SchemaAnyProp,
   SchemaBoolean,
@@ -169,23 +169,12 @@ export const isDefault = (val, prop, ctx) => {
     val = convertToTimestamp(val)
   }
 
-  const validation = prop.validation || VALIDATION_MAP[typeIndex]
-  const propDef: PropDef = {
-    schema: prop,
-    typeIndex,
-    __isPropDef: true,
-    start: 0,
-    path: [],
-    prop: 0,
-    len: 0,
-    separate: false,
-    enum: prop.enum,
-    validation,
-    default: DEFAULT_MAP[typeIndex],
+  const validation = getValidator(prop)
+  const tmpProp = Object.assign({}, prop, {
     step: parseMinMaxStep((prop.step ?? typeIndex === NUMBER) ? 0 : 1),
     max: parseMinMaxStep(prop.max),
     min: parseMinMaxStep(prop.min),
-  }
+  })
 
   if (prop.type === 'text') {
     if (typeof val === 'object') {
@@ -194,12 +183,12 @@ export const isDefault = (val, prop, ctx) => {
           throw new Error(`Incorrect default for type "text" lang "${key}"`)
         }
 
-        if (!validation(val[key], propDef)) {
+        if (!validation(val[key], tmpProp)) {
           throw new Error(`Incorrect default for type "text" lang "${key}"`)
         }
       }
     } else {
-      if (!validation(val, propDef)) {
+      if (!validation(val, tmpProp)) {
         throw new Error(`Incorrect default for type "text"`)
       }
       val = {}
@@ -211,7 +200,7 @@ export const isDefault = (val, prop, ctx) => {
     return val
   }
 
-  if (!validation(val, propDef)) {
+  if (!validation(val, tmpProp)) {
     throw new Error(`Incorrect default for type "${prop.type ?? 'enum'}"`)
   }
   if ('enum' in prop) {

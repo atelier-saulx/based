@@ -27,6 +27,8 @@ import {
   NULL,
   OBJECT,
   TYPE_INDEX_MAP,
+  PropDef,
+  PropDefEdge,
 } from './types.js'
 import {
   MAX_ID,
@@ -43,7 +45,6 @@ import {
 } from '../types.js'
 import v from 'validator'
 import { getPropType } from '../parse/index.js'
-import { Infer } from '../infer.js'
 
 export type Validation = (
   payload: any,
@@ -465,6 +466,17 @@ const validateObj = (
       }
     }
   }
+}
+
+export const getValidator = (def: PropDef | PropDefEdge): Validation => {
+  const validator = VALIDATION_MAP[def.typeIndex] ?? defaultValidation
+  if (def.validation) {
+    return (a, b) => {
+      const msg = def.validation(a, b)
+      return msg === true ? validator(a, b) : msg
+    }
+  }
+  return validator
 }
 
 export function validate<S extends StrictSchema = StrictSchema>(

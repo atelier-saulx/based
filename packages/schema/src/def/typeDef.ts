@@ -5,6 +5,7 @@ import {
   getPropType,
   SchemaLocales,
   SchemaHooks,
+  getValidator,
 } from '../index.js'
 import { setByPath } from '@based/utils'
 import {
@@ -212,8 +213,7 @@ const createSchemaTypeDef = (
       separate: isseparate,
       path: propPath,
       start: 0,
-      validation:
-        schemaProp.validation ?? VALIDATION_MAP[typeIndex] ?? defaultValidation,
+      validation: getValidator(schemaProp),
       len,
       default: schemaProp.default ?? DEFAULT_MAP[typeIndex],
       prop: isseparate ? ++result.cnt : 0,

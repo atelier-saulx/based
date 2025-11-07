@@ -1,4 +1,4 @@
-import { getPropType, SchemaReference } from '../index.js'
+import { getPropType, getValidator, SchemaReference } from '../index.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { fillEmptyMain } from './fillEmptyMain.js'
 import {
@@ -48,8 +48,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         __isPropDef: true,
         __isEdge: true,
         prop: separate ? prop.edgesSeperateCnt : 0,
-        validation:
-          edgeProp.validation ?? VALIDATION_MAP[typeIndex] ?? defaultValidation,
+        validation: getValidator(edgeProp),
         name: key,
         typeIndex,
         len,
