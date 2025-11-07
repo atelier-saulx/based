@@ -12,7 +12,6 @@ import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
 import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
-import { setTimeout } from 'node:timers/promises'
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
@@ -28,6 +27,7 @@ import {
 } from './schema.js'
 import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.js'
 import { loadBlock, unloadBlock } from './blocks.js'
+import { Subscriptions } from './subscription.js'
 
 const emptyUint8Array = new Uint8Array(0)
 
@@ -44,7 +44,15 @@ class SortIndex {
 export class DbServer extends DbShared {
   modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
-
+  subscriptions: Subscriptions = {
+    subInterval: 200,
+    active: 0,
+    updateHandler: null,
+    ids: new Map(),
+    fullType: new Map(),
+    updateId: 1,
+    now: { listeners: new Set(), lastUpdated: 1 },
+  }
   migrating: number = null
   saveInProgress: boolean = false
   fileSystemPath: string
@@ -489,32 +497,28 @@ export class DbServer extends DbShared {
     if (this.stopped) {
       return
     }
-
+    clearTimeout(this.subscriptions.updateHandler)
+    this.subscriptions.updateHandler = null
     this.stopped = true
     this.unlistenExit()
-
     if (this.cleanupTimer) {
       clearTimeout(this.cleanupTimer)
       this.cleanupTimer = null
     }
-
     if (this.saveInterval) {
       clearInterval(this.saveInterval)
       this.saveInterval = null
     }
-
     try {
       if (!noSave) {
         await this.save()
       }
-
       await this.ioWorker.terminate()
       this.ioWorker = null
       await Promise.all(this.workers.map((worker) => worker.terminate()))
       this.workers = []
       native.stop(this.dbCtxExternal)
       this.dbCtxExternal = null
-      await setTimeout(100)
     } catch (e) {
       this.stopped = false
       throw e

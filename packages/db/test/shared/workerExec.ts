@@ -1,5 +1,7 @@
 import { workerData } from 'node:worker_threads'
 import { DbClient, DbClientHooks } from '../../src/index.js'
+import native from '../../src/native.js'
+import * as utils from '@based/utils'
 
 const fn = await import(workerData.file)
 
@@ -74,6 +76,6 @@ const client = new DbClient({
 channel.postMessage('started')
 
 // await client.schemaIsSet()
-await fn.default(client, workerData.data)
+await fn.default(client, workerData.data, { native, utils })
 
 channel.postMessage('done')

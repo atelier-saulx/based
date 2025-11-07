@@ -1,5 +1,4 @@
 import { BasedQueryResponse } from '../BasedQueryResponse.js'
-import { BasedDbQuery } from '../BasedDbQuery.js'
 
 export type OnData = (res: BasedQueryResponse) => any
 
@@ -9,11 +8,9 @@ export type OnClose = () => any
 
 export type OnSubscription = (res: any, err?: Error) => void
 
-// export type Subscription = {
-//   query: BasedDbQuery
-//   subs: Set<OnSubscription>
-//   res?: BasedQueryResponse
-//   closed: boolean
-//   inProgress: boolean // dont need to check
-//   // filter - realy nice to add
-// }
+export enum SubscriptionType {
+  fullType = 0,
+  singleId = 1,
+  timeBasedSingleId = 2, // If any time in there just put it as 200ms for now...
+  timeBasedMulti = 3,
+}

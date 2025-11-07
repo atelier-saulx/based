@@ -14,6 +14,7 @@ const writeConditions = (
   k: number,
   offset: number,
   conditions: FilterCondition[],
+  metaOffset: number,
 ) => {
   let lastWritten = offset
   result[lastWritten] = k
@@ -22,9 +23,16 @@ const writeConditions = (
   lastWritten += 2
   let conditionSize = 0
   for (const condition of conditions) {
-    conditionSize += condition.byteLength
-    result.set(condition, lastWritten)
-    lastWritten += condition.byteLength
+    conditionSize += condition.buffer.byteLength
+    result.set(condition.buffer, lastWritten)
+    if ('subscriptionMeta' in condition) {
+      if ('now' in condition.subscriptionMeta) {
+        for (const n of condition.subscriptionMeta.now) {
+          n.resolvedByteIndex = n.byteIndex + lastWritten + metaOffset
+        }
+      }
+    }
+    lastWritten += condition.buffer.byteLength
   }
   writeUint16(result, conditionSize, sizeIndex)
   return lastWritten - offset
@@ -34,6 +42,7 @@ export const fillConditionsBuffer = (
   result: Uint8Array,
   conditions: QueryDefFilter,
   offset: number,
+  metaOffset: number,
 ) => {
   let lastWritten = offset
   let orJumpIndex = 0
@@ -47,7 +56,7 @@ export const fillConditionsBuffer = (
   }
 
   conditions.conditions.forEach((v, k) => {
-    lastWritten += writeConditions(result, k, lastWritten, v)
+    lastWritten += writeConditions(result, k, lastWritten, v, metaOffset)
   })
 
   if (conditions.references) {
@@ -60,7 +69,12 @@ export const fillConditionsBuffer = (
       lastWritten += 2
       const sizeIndex = lastWritten
       lastWritten += 2
-      const size = fillConditionsBuffer(result, refConditions, lastWritten)
+      const size = fillConditionsBuffer(
+        result,
+        refConditions,
+        lastWritten,
+        metaOffset,
+      )
       writeUint16(result, size, sizeIndex)
       lastWritten += size
     }
@@ -72,14 +86,19 @@ export const fillConditionsBuffer = (
       lastWritten++
       let sizeIndex = lastWritten
       lastWritten += 2
-      const size = writeConditions(result, k, lastWritten, v)
+      const size = writeConditions(result, k, lastWritten, v, metaOffset)
       lastWritten += size
       writeUint16(result, size, sizeIndex)
     })
   }
 
   if (conditions.or && conditions.or.size != 0) {
-    const size = fillConditionsBuffer(result, conditions.or, lastWritten)
+    const size = fillConditionsBuffer(
+      result,
+      conditions.or,
+      lastWritten,
+      metaOffset,
+    )
     writeUint16(result, size, orJumpIndex)
     writeUint32(result, lastWritten, orJumpIndex + 2)
     lastWritten += size
@@ -115,14 +134,52 @@ export const isSimpleMainFilter = (conditions: QueryDefFilter) => {
   return false
 }
 
-export const filterToBuffer = (conditions: QueryDefFilter): Uint8Array => {
+export const filterToBuffer = (
+  conditions: QueryDefFilter,
+  metaOffset: number,
+): Uint8Array => {
   // add extra byte IS SINGLE CONDITION
   let result: Uint8Array
   if (conditions.size > 0) {
     result = new Uint8Array(conditions.size)
-    fillConditionsBuffer(result, conditions, 0)
+    fillConditionsBuffer(result, conditions, 0, metaOffset)
   } else {
     result = new Uint8Array(0)
   }
   return result
+}
+
+export const resolveMetaIndexes = (
+  defFilter: QueryDefFilter,
+  offset: number,
+) => {
+  if (!defFilter.hasSubMeta) {
+    return
+  }
+
+  for (const conditions of defFilter.conditions.values()) {
+    for (const condition of conditions) {
+      if (condition.subscriptionMeta) {
+        if (condition.subscriptionMeta.now) {
+          for (const now of condition.subscriptionMeta.now) {
+            now.resolvedByteIndex += offset
+          }
+        }
+      }
+    }
+  }
+
+  if (defFilter.and) {
+    resolveMetaIndexes(defFilter.and, offset)
+  }
+
+  if (defFilter.or) {
+    resolveMetaIndexes(defFilter.or, offset)
+  }
+
+  if (defFilter.references) {
+    for (const ref of defFilter.references.values()) {
+      resolveMetaIndexes(ref, offset)
+    }
+  }
 }

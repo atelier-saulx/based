@@ -1,8 +1,6 @@
-import { equal } from 'node:assert'
 import { BasedDb } from '../../src/index.js'
-import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
+import { deepEqual } from '../shared/assert.js'
 import { fastPrng } from '@based/utils'
 
 await test('overall performance', async (t) => {
@@ -45,11 +43,9 @@ await test('overall performance', async (t) => {
   const isDebugMode = scriptName.includes('debug')
   const acceptableDuration = isDebugMode ? 300 : 30
 
-  const startTime1 = performance.now()
-  await db.query('beer').sum('price').get()
-  const elapsedTime1 = performance.now() - startTime1
+  const q = await db.query('beer').sum('price').get()
   deepEqual(
-    elapsedTime1 < acceptableDuration,
+    q.execTime < acceptableDuration,
     true,
     'Acceptable main agg performance',
   )

@@ -10,22 +10,22 @@ export const createReferenceFilter = (
 ): FilterCondition => {
   const isArray = Array.isArray(value)
   const len = isArray ? value.length : 1
-  const buf = new Uint8Array(11 + (isArray ? 8 : 0) + len * 4)
-  buf[0] = ctx.type
-  buf[1] = MODE_REFERENCE
-  buf[2] = prop.typeIndex
-  writeUint16(buf, 4, 3) // size (4)
-  writeUint16(buf, len, 5)
-  buf[7] = ctx.operation
-  buf[8] = 0
-  writeUint16(buf, prop.inverseTypeId, 9)
+  const buffer = new Uint8Array(11 + (isArray ? 8 : 0) + len * 4)
+  buffer[0] = ctx.type
+  buffer[1] = MODE_REFERENCE
+  buffer[2] = prop.typeIndex
+  writeUint16(buffer, 4, 3) // size (4)
+  writeUint16(buffer, len, 5)
+  buffer[7] = ctx.operation
+  buffer[8] = 0
+  writeUint16(buffer, prop.inverseTypeId, 9)
   if (isArray) {
-    buf[11] = ALIGNMENT_NOT_SET
+    buffer[11] = ALIGNMENT_NOT_SET
     for (let i = 0; i < len; i++) {
-      writeUint32(buf, value[i], 19 + i * 4)
+      writeUint32(buffer, value[i], 19 + i * 4)
     }
   } else {
-    writeUint32(buf, value, 11)
+    writeUint32(buffer, value, 11)
   }
-  return buf
+  return { buffer }
 }

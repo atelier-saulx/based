@@ -37,10 +37,6 @@ export class BasedQueryResponse {
     return readId(this.def.readSchema, this.result)
   }
 
-  get queryId() {
-    return this.def.queryId
-  }
-
   get version() {
     return readVersion(this.result)
   }

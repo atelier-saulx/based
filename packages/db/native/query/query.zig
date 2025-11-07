@@ -120,7 +120,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
         const valueSize = read(u16, q, 4);
         const value = q[6 .. 6 + valueSize];
         const filterSize = read(u16, q, valueSize + 6);
-        const filterBuf = q[8 .. 8 + filterSize];
+        const filterBuf = q[8 + valueSize .. 8 + valueSize + filterSize];
         const include = q[8 + filterSize + valueSize .. len];
         try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
     } else if (queryType == QueryType.aggregates) {

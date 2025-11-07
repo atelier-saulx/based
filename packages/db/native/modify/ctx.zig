@@ -5,6 +5,7 @@ const errors = @import("../errors.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
+const subs = @import("../db/subscription/types.zig");
 
 pub const ModifyCtx = struct {
     field: u8,
@@ -18,6 +19,8 @@ pub const ModifyCtx = struct {
     fieldType: types.Prop,
     db: *db.DbCtx,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
+    subTypes: ?*subs.TypeSubscriptionCtx,
+    idSubs: ?[]u8,
     batch: []u8,
     err: errors.ClientError,
 };

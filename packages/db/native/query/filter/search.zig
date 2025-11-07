@@ -189,10 +189,12 @@ fn resultMatcher(
     const l = value.len;
     const result = @select(u8, matches, indexes, nulls);
     const index: usize = @reduce(.Min, result) + i;
+
     if (index + ql > l) {
         return d;
     }
-    if (index == 1 or index > 0 and isSeparator(value[index - 1])) {
+
+    if (index == 0 or index > 0 and isSeparator(value[index - 1])) {
         const nd = hamming(value, index, query);
         if (nd < minDist) {
             return nd;
@@ -228,6 +230,7 @@ pub fn strSearch(
     const q1 = query[0];
     const q2 = query[0] - 32;
     var d: u8 = 10;
+
     if (l < vectorLen) {
         while (i < l) : (i += 1) {
             // needs to start at 0...
@@ -251,6 +254,7 @@ pub fn strSearch(
     while (i <= (l - vectorLen)) : (i += vectorLen) {
         const h: @Vector(vectorLen, u8) = value[i..][0..vectorLen].*;
         var matches = h == queryVector;
+
         if (@reduce(.Or, matches)) {
             d = resultMatcher(d, matches, i, value, query);
             if (d < minDist) {
@@ -258,6 +262,7 @@ pub fn strSearch(
             }
         }
         matches = h == queryVectorCapital;
+
         if (@reduce(.Or, matches)) {
             d = resultMatcher(d, matches, i, value, query);
             if (d < minDist) {

@@ -25,7 +25,6 @@ export class QueryWorker extends DbWorker {
     if (schemaChecksum !== this.db.schema?.hash) {
       return Promise.resolve(new Uint8Array(1))
     }
-
     return this.call(buf)
   }
 }

@@ -641,17 +641,17 @@ await test('upsert calls create and/or update hooks', async (t) => {
       user: {
         hooks: {
           create(payload) {
-            payload.createdString = new Date().toJSON()
+            payload.createdString = performance.now()
           },
           update(payload) {
-            payload.updatedString = new Date().toJSON()
+            payload.updatedString = performance.now()
           },
         },
         props: {
           name: 'alias',
           age: 'uint8',
-          createdString: 'string',
-          updatedString: 'string',
+          createdString: 'number',
+          updatedString: 'number',
         },
       },
     },
@@ -665,8 +665,9 @@ await test('upsert calls create and/or update hooks', async (t) => {
   const results1 = await db.query('user').get().toObject()
 
   equal(results1.length, 1)
-  equal(results1[0].createdString.length > 1, true)
-  equal(results1[0].updatedString.length > 1, true)
+
+  equal(results1[0].createdString != 0, true)
+  equal(results1[0].updatedString != 0, true)
 
   await wait(1)
   await db.upsert('user', {
@@ -676,8 +677,8 @@ await test('upsert calls create and/or update hooks', async (t) => {
 
   const results2 = await db.query('user').get().toObject()
   equal(results2.length, 1)
-  equal(results2[0].createdString.length > 1, true)
-  equal(results2[0].updatedString.length > 1, true)
+  equal(results2[0].createdString != 0, true)
+  equal(results2[0].updatedString != 0, true)
   equal(results1[0].createdString, results2[0].createdString)
   notEqual(results1[0].updatedString, results2[0].updatedString)
 })

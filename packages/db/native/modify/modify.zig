@@ -10,6 +10,7 @@ const createField = @import("./create.zig").createField;
 const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
 const deleteField = @import("./delete.zig").deleteField;
 const deleteTextLang = @import("./delete.zig").deleteTextLang;
+const subs = @import("./subscription.zig");
 
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
@@ -86,7 +87,9 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
         .db = dbCtx,
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
         .batch = batch,
-        .err = errors.ClientError.null
+        .err = errors.ClientError.null,
+        .idSubs = null,
+        .subTypes = null,
     };
 
     defer ctx.dirtyRanges.deinit();
@@ -124,6 +127,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             },
             types.ModOp.DELETE_NODE => {
                 if (ctx.node) |node| {
+                    subs.stage(&ctx, subs.Op.deleteNode);
                     db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
                     ctx.node = null;
                 }
@@ -165,6 +169,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     if (ctx.node == null) {
                         ctx.err = errors.ClientError.nx;
                     } else {
+                        try subs.checkId(&ctx);
                         // It would be even better if we'd mark it dirty only in the case
                         // something was actually changed.
                         Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
@@ -216,6 +221,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 ctx.typeId = read(u16, operation, 0);
                 ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
                 ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
+
+                ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
+                if (ctx.subTypes) |st| {
+                    st.typeModified = true;
+                }
+
                 // RFE shouldn't we technically unset .id and .node now?
                 ctx.node = null;
                 // TODO This can't be reset because it's used just at the end of the function.

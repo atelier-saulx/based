@@ -31,7 +31,6 @@ export const drain = (db: DbClient, ctx: Ctx) => {
     const { batch } = ctx
     const payload = consume(ctx)
     let start: number
-
     ctx.draining = db.hooks
       .flushModify(payload)
       .then((res) => {

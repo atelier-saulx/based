@@ -10,6 +10,7 @@ import {
   ALIGNMENT_NOT_SET,
   EQUAL,
   FilterCtx,
+  isNumerical,
   MODE_AND_FIXED,
   MODE_DEFAULT,
   MODE_OR_FIXED,
@@ -22,7 +23,34 @@ import {
   writeUint16,
   writeUint32,
 } from '@based/utils'
-import { FilterCondition } from '../types.js'
+import { FilterCondition, FilterMetaNow } from '../types.js'
+
+const isNowQuery = (
+  prop: PropDef | PropDefEdge,
+  value: any,
+  ctx: FilterCtx,
+) => {
+  return (
+    prop.typeIndex === TIMESTAMP &&
+    typeof value === 'string' &&
+    value.includes('now') &&
+    isNumerical(ctx.operation)
+  )
+}
+
+const createNowMeta = (
+  prop: PropDef | PropDefEdge,
+  parsedValue: number,
+  ctx: FilterCtx,
+): FilterMetaNow => {
+  return {
+    byteIndex: 8,
+    offset: parsedValue - Date.now(),
+    resolvedByteIndex: 0,
+    ctx,
+    prop,
+  }
+}
 
 export const writeFixed = (
   prop: PropDef | PropDefEdge,
@@ -70,45 +98,62 @@ export const createFixedFilterBuffer = (
   if (Array.isArray(value)) {
     const len = value.length
     // Add 8 extra bytes for alignment
-    const buf = new Uint8Array(18 + len * size)
-    buf[0] = ctx.type
-    buf[1] =
+    const buffer = new Uint8Array(18 + len * size)
+    const result: FilterCondition = { buffer }
+    buffer[0] = ctx.type
+    buffer[1] =
       prop.typeIndex === REFERENCES && ctx.operation === EQUAL
         ? MODE_AND_FIXED
         : MODE_OR_FIXED
-    buf[2] = prop.typeIndex
-    writeUint16(buf, size, 3)
-    writeUint16(buf, start, 5)
-    buf[7] = ctx.operation
-    writeUint16(buf, len, 8)
-    buf[10] = ALIGNMENT_NOT_SET
+    buffer[2] = prop.typeIndex
+    writeUint16(buffer, size, 3)
+    writeUint16(buffer, start, 5)
+    buffer[7] = ctx.operation
+    writeUint16(buffer, len, 8)
+    buffer[10] = ALIGNMENT_NOT_SET
     if (sort) {
       value = new Uint32Array(value.map((v) => parseFilterValue(prop, v)))
       value.sort()
       for (let i = 0; i < len; i++) {
-        writeUint32(buf, value[i], 18 + i * size)
+        writeUint32(buffer, value[i], 18 + i * size)
       }
     } else {
       for (let i = 0; i < len; i++) {
-        writeFixed(
-          prop,
-          buf,
-          parseFilterValue(prop, value[i]),
-          size,
-          18 + i * size,
-        )
+        const parsedValue = parseFilterValue(prop, value[i])
+        if (isNowQuery(prop, value, ctx)) {
+          if (!result.subscriptionMeta) {
+            result.subscriptionMeta = {}
+          }
+          if (!result.subscriptionMeta.now) {
+            result.subscriptionMeta = { now: [] }
+          }
+          result.subscriptionMeta.now.push(
+            createNowMeta(prop, parsedValue, ctx),
+          )
+        }
+        writeFixed(prop, buffer, parsedValue, size, 18 + i * size)
       }
     }
-    return buf
+    return result
   } else {
-    const buf = new Uint8Array(8 + size)
-    buf[0] = ctx.type
-    buf[1] = MODE_DEFAULT
-    buf[2] = prop.typeIndex
-    writeUint16(buf, size, 3)
-    writeUint16(buf, start, 5)
-    buf[7] = ctx.operation
-    writeFixed(prop, buf, parseFilterValue(prop, value), size, 8)
-    return buf
+    const buffer = new Uint8Array(8 + size)
+    buffer[0] = ctx.type
+    buffer[1] = MODE_DEFAULT
+    buffer[2] = prop.typeIndex
+    writeUint16(buffer, size, 3)
+    writeUint16(buffer, start, 5)
+    buffer[7] = ctx.operation
+    const parsedValue = parseFilterValue(prop, value)
+    writeFixed(prop, buffer, parsedValue, size, 8)
+    if (isNowQuery(prop, value, ctx)) {
+      return {
+        buffer,
+        subscriptionMeta: {
+          now: [createNowMeta(prop, parsedValue, ctx)],
+        },
+      }
+    } else {
+      return { buffer }
+    }
   }
 }

@@ -1,0 +1,7 @@
+MIT:
+= https://spdx.org/licenses/MIT
+- git https://github.com/jwhear/roaring-zig
+
+Unspecified:
+- This
+- system_lib c

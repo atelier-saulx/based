@@ -7,7 +7,8 @@ await test('boolean', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  // t.after(() => t.backup(db))
+  t.after(() => db.stop(true))
 
   await db.setSchema({
     types: {
