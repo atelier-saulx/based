@@ -1,10 +1,4 @@
-import {
-  readInt64,
-  writeInt64,
-  writeUint16,
-  writeUint32,
-  writeUint64,
-} from '@based/utils'
+import { writeInt64, writeUint16, writeUint32 } from '@based/utils'
 import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
@@ -36,15 +30,12 @@ export const collectFilters = (
       }
     }
   }
-
   if (filter.or) {
     collectFilters(filter.or, fields, nowQueries)
   }
-
   if (filter.and) {
     collectFilters(filter.and, fields, nowQueries)
   }
-
   if (filter.references) {
     for (const [prop, ref] of filter.references) {
       if (fields) {
@@ -53,7 +44,6 @@ export const collectFilters = (
       collectFilters(ref, undefined, nowQueries)
     }
   }
-
   return nowQueries
 }
 
@@ -64,9 +54,6 @@ export const collectFields = (def: QueryDef) => {
   }
   for (const prop of def.include.props.values()) {
     fields.add(prop.def.prop)
-  }
-  if (def.filter.size > 0) {
-    collectFilters(def.filter, fields)
   }
   for (const prop of def.references.keys()) {
     fields.add(prop)
@@ -79,21 +66,18 @@ export const collectTypes = (
   types: Set<number> = new Set(),
 ) => {
   if ('references' in def) {
-    // handle edges
     for (const ref of def.references.values()) {
       types.add(ref.schema.id)
+      // TODO Now queries here...
       collectTypes(ref, types)
     }
   }
-
   if ('filter' in def && 'references' in def.filter) {
-    // TODO: also need to check for NOW FIELD
     for (const ref of def.filter.references.values()) {
       types.add(ref.schema.id)
       collectTypes(ref)
     }
   }
-
   return types
 }
 
@@ -108,36 +92,37 @@ export const registerSubscription = (query: BasedDbQuery) => {
     )
     const headerLen = 16
     const types = collectTypes(query.def)
-    const typeLen = types.size
-    const nowQueries = collectFilters(query.def.filter, new Set())
+    const nowQueries = collectFilters(query.def.filter, fields)
     const buffer = new Uint8Array(
-      headerLen + fields.size + typeLen * 2 + nowQueries.length * 16,
+      headerLen + fields.size + types.size * 2 + nowQueries.length * 16,
     )
     buffer[0] = SubscriptionType.singleId
     writeUint32(buffer, subId, 1)
     writeUint16(buffer, typeId, 5)
     writeUint32(buffer, id, 7)
     buffer[11] = fields.size
-    writeUint16(buffer, typeLen, 12)
-    writeUint16(buffer, nowQueries.length, 14) // hopefully you dont have more then 255 now filters...
-    let i = 0
+    writeUint16(buffer, types.size, 12)
+    writeUint16(buffer, nowQueries.length, 14)
+    let i = headerLen
     for (const field of fields) {
-      buffer[i + headerLen] = field
+      buffer[i] = field
       i++
     }
     for (const type of types) {
-      writeUint16(buffer, type, i + headerLen)
+      writeUint16(buffer, type, i)
       i += 2
     }
     for (const now of nowQueries) {
       buffer[i] = now.prop.prop
       buffer[i + 1] = now.ctx.operation
       writeUint16(buffer, now.ctx.typeId, i + 2)
+      console.log('OFFSET', now.offset)
       writeInt64(buffer, now.offset, i + 4)
       writeUint32(buffer, now.resolvedByteIndex, i + 12)
       i += 16
     }
     query.subscriptionBuffer = buffer
+    console.log({ buffer })
   } else {
     const typeId = query.def.schema.id
     const types = collectTypes(query.def)

@@ -24,10 +24,6 @@ await test('subscriptionIds', async (t) => {
   const clientsN = 2
   const { clients, server } = await start(t, clientsN)
 
-  // single REF
-  // multi REFERENCES
-  // EDGE + REFERENS (2 types)
-
   await clients[0].setSchema({
     types: {
       user: {
@@ -65,97 +61,19 @@ await test('subscriptionIds', async (t) => {
     date: 'now',
   })
 
-  // const close = clients[1]
-  //   .query('user', id)
-  //   .include('name', 'friend.name')
-  //   .subscribe((d) => {
-  //     console.log('SINGLE ID', d)
-  //   })
-
-  // const close2 = clients[0]
-  //   .query('user')
-  //   .include('name')
-  //   .filter('date', '<', 'now - 1s')
-  //   // has to be handled very different - store index of the timestamp (to updated when re - exec the query)
-
-  //   // add support for this
-  //   // .filter('control.boys[0].name', '=', 'mr durk')
-
-  //   // .filter('control.flap.name', '=', 'mr durk')
-  //   .subscribe((d) => {
-  //     console.log('MULTI ID', d)
-  //   })
-
-  // const close2 = clients[0]
-  //   .query('control')
-  //   .include('location')
-  //   .filter('flap.date', '<', 'now - 1s')
-  //   .subscribe((d) => {
-  //     console.log('MULTI ID', d)
-  //   })
-
   const close = clients[0]
     .query('user', id)
-    .filter('date', '<', 'now - 1s')
+    .filter('date', '<', 'now - 3s')
     .subscribe((d) => {
       console.log('single ID', d)
     })
 
-  // get date value
-  // may be nice to just parse the now queries that you pass
-
-  // re-eval when now is (date - 1s) + 1s (not inclusive)
-
-  // moves up
-
-  // await clients[0].update('user', 1, {
-  //   name: 'MR FLAP!',
-  // })
-
-  // await wait(10)
-  // console.log('Single update 2')
-
-  // await clients[1].update('user', 1, {
-  //   name: 'MR FLAP!222',
-  // })
-
-  console.log('CREATE DURK')
-  const durk = await clients[0].create('user', {
-    name: 'mr durk',
-    friend: id,
-    date: 'now',
-  })
-
-  const control = clients[0].create('control', {
-    location: 'Controled',
-    boys: [durk],
-    flap: durk,
-  })
-
-  // now
-
-  // clients[0].update('user', durk, {
-  //   control,
-  // })
-
-  // --> add filter in sub
-
-  console.log('set dat control!')
-
   await wait(1100)
 
   console.log(
-    'after tick',
-    await clients[0].query('user', id).filter('date', '<', 'now - 1s').get(),
+    'after 1s tick run Q:',
+    await clients[0].query('user', id).filter('date', '<', 'now - 3s').get(),
   )
-
-  // single sub ID + NOW
-  // handle refs + NOW
-
-  // alias as a system
-  // ADD STATIC to schema
-
-  // extra function find NEXT time to start
 
   close()
   // close2()

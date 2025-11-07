@@ -75,7 +75,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
-    const headerLen = 14;
+    const headerLen = 16;
     const subId = utils.read(u32, value, 1);
     const typeId = utils.read(u16, value, 5);
     const id = utils.read(u32, value, 7);
@@ -131,7 +131,7 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
     const args = try napi.getArgs(2, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
     const value = try napi.get([]u8, env, args[1]);
-
+    // headerLen = 16
     const subId = utils.read(u32, value, 1);
     const typeId = utils.read(u16, value, 5);
     const id = utils.read(u32, value, 7);

@@ -24,6 +24,7 @@ export type SubscriptionId = {
   types?: Uint16Array
   ids: Map<number, Set<() => void>>
   typesListener?: () => void
+  nowListener?: () => void
 }
 
 export type Subscriptions = {
@@ -132,9 +133,15 @@ const removeFromMultiSub = (
 
 const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
   const dateNow = Date.now()
+
+  console.log('YO YO YO', query)
+
   for (let i = 0; i < now.byteLength; i += 16) {
     const offset = readInt64(now, i + 4)
     const byteIndex = readUint32(now, i + 12)
+
+    console.log(' ->', now, offset)
+
     writeInt64(query, dateNow + offset, byteIndex)
   }
 }
@@ -199,25 +206,17 @@ export const registerSubscription = (
       server.subscriptions.ids.set(subId, subContainer)
       const typesLen = readUint16(sub, 12)
       const nowLen = readUint16(sub, 14)
-
+      const fLen = sub[11]
       if (typesLen != 0) {
-        const fLen = sub[11]
-        // double check if this is alignet correct with the byteOffset else copy
+        // double check if this is alignment correct with the byteOffset else copy
         const byteOffset = sub.byteOffset + headerLen + fLen
-        console.log(sub.byteOffset + headerLen + fLen, sub)
-
         if (byteOffset % 2 === 0) {
           subContainer.types = new Uint16Array(sub.buffer, byteOffset, typesLen)
         } else {
-          console.log(
-            'derp?',
-            sub.buffer.slice(byteOffset, byteOffset + typesLen * 2),
-          )
           subContainer.types = new Uint16Array(
-            sub.buffer.slice(byteOffset, byteOffset + typesLen * 2),
+            sub.slice(headerLen + fLen, headerLen + fLen + typesLen * 2),
           )
         }
-
         subContainer.typesListener = () => {
           for (const set of subContainer.ids.values()) {
             for (const fn of set) {
@@ -229,10 +228,17 @@ export const registerSubscription = (
           addToMultiSub(server, typeId, subContainer.typesListener)
         }
       }
-
       if (nowLen != 0) {
-        now = sub.slice(headerLen + typesLen * 2)
-        server.subscriptions.now.listeners.add(subContainer.typesListener)
+        // have to make a copy (subArray is weak)
+        now = sub.slice(headerLen + fLen + typesLen * 2)
+        subContainer.nowListener = () => {
+          for (const set of subContainer.ids.values()) {
+            for (const fn of set) {
+              fn()
+            }
+          }
+        }
+        server.subscriptions.now.listeners.add(subContainer.nowListener)
       }
     } else {
       subContainer = server.subscriptions.ids.get(subId)
@@ -252,7 +258,6 @@ export const registerSubscription = (
 
     return () => {
       killed = true
-
       listeners.delete(runQuery)
       if (listeners.size === 0) {
         native.removeIdSubscription(server.dbCtxExternal, sub)
@@ -265,7 +270,7 @@ export const registerSubscription = (
           }
         }
         if (now) {
-          server.subscriptions.now.listeners.delete(subContainer.typesListener)
+          server.subscriptions.now.listeners.delete(subContainer.nowListener)
         }
         server.subscriptions.ids.delete(subId)
       }
@@ -283,14 +288,20 @@ export const registerSubscription = (
     const typesLen = readUint16(sub, 3)
     let types: Uint16Array
     if (typesLen != 0) {
-      // double check if this is alignet correct with the byteOffset else copy
-      types = new Uint16Array(sub.buffer, sub.byteOffset + headerLen, typesLen)
+      // double check if this is alignment correct with the byteOffset else copy
+      const byteOffset = sub.byteOffset + headerLen
+      if (byteOffset % 2 === 0) {
+        types = new Uint16Array(sub.buffer, byteOffset, typesLen)
+      } else {
+        types = new Uint16Array(sub.slice(headerLen, headerLen + typesLen * 2))
+      }
       for (const typeId of types) {
         addToMultiSub(server, typeId, runQuery)
       }
     }
 
     if (readUint16(sub, 5) != 0) {
+      // have to make a copy (subArray is weak)
       now = sub.slice(headerLen + typesLen * 2)
       server.subscriptions.now.listeners.add(runQuery)
     }
