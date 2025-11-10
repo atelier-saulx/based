@@ -18,7 +18,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@based/errors": "1.6.0",
+    "@based/errors": "1.6.1",
     "@based/hash": "1.1.0"
   },
   "devDependencies": {
