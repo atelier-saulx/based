@@ -41,7 +41,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@based/errors": "1.6.0",
+    "@based/errors": "1.6.1",
     "@based/fetch": "2.1.0",
     "@based/hash": "1.1.0",
     "@based/opts": "^1.1.0",
