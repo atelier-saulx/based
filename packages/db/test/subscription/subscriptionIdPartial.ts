@@ -54,6 +54,7 @@ await test('subscriptionIdPartial', async (t) => {
     })
 
   const interval = setInterval(() => {
+    // should be flagged as partial as well...
     clients[0].update('user', id, {
       date: { increment: 1000 },
     })

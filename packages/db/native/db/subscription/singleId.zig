@@ -79,12 +79,16 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const subId = utils.read(u32, value, 1);
     const typeId = utils.read(u16, value, 5);
     const id = utils.read(u32, value, 7);
-    const fieldsLen = value[11];
 
+    const fieldsLen = value[11];
     const fields = value[headerLen .. fieldsLen + headerLen];
+
+    // const partialLen = value[11]
+    // const patialFields = value[11]
+
     var typeSubs = try upsertSubType(ctx, typeId);
 
-    var subs: []u8 = undefined;
+    var subs: []types.IdSubsItem = undefined;
     var idDoesNotExist = true;
     var subIndex: usize = 0;
 
@@ -93,14 +97,13 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
-            subs = try std.heap.raw_c_allocator.realloc(subs, types.SUB_SIZE + subs.len);
+            subs = try std.heap.raw_c_allocator.realloc(subs, subs.len + 1);
             entry.value_ptr.* = subs;
         }
     }
 
     if (idDoesNotExist) {
-        subs = try std.heap.c_allocator.alloc(u8, types.SUB_SIZE);
-        @memset(subs, @intFromEnum(types.SubStatus.all));
+        subs = try std.heap.c_allocator.alloc(types.IdSubsItem, 1);
         try typeSubs.idSubs.put(id, subs);
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
@@ -112,13 +115,14 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
-    utils.writeInt(u32, subs, subIndex + 4, subId);
+    subs[subIndex].marked = types.SubStatus.all;
+    subs[subIndex].subId = subId;
+    subs[subIndex].id = id;
 
     if (fields.len > vectorLen) {
-        // If too many fields just fire for each
-        @memset(subs[subIndex + 8 .. subIndex + types.SUB_SIZE], @intFromEnum(types.SubStatus.all));
+        subs[subIndex].fields = types.allFieldsVector;
     } else {
-        utils.copy(subs[subIndex + 8 ..], fields);
+        subs[subIndex].fields = fields[0..vectorLen].*;
     }
 
     return null;
@@ -142,10 +146,10 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                 var idRemoved = false;
 
                 while (i < subs.len) {
-                    if (utils.read(u32, subs, i + 4) == subId) {
+                    if (subs[i].subId == subId) {
                         break;
                     } else {
-                        i += types.SUB_SIZE;
+                        i += 1;
                     }
                 }
 
@@ -153,11 +157,11 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                     std.heap.raw_c_allocator.free(subs);
                     idRemoved = true;
                 } else {
-                    const newLen = subs.len - types.SUB_SIZE;
+                    const newLen = subs.len - 1;
                     if (i != newLen) {
-                        const dest = subs[i .. i + types.SUB_SIZE];
+                        const dest = subs[i .. i + 1];
                         const src = subs[newLen..];
-                        utils.copy(dest, src);
+                        utils.copyType(types.IdSubsItem, dest, src);
                     }
                     const newSubs = try std.heap.raw_c_allocator.realloc(subs, newLen);
                     subsEntry.value_ptr.* = newSubs;

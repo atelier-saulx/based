@@ -32,8 +32,6 @@ pub fn checkId(
     }
 }
 
-const nonMarked: @Vector(vectorLen, u8) = @splat(255);
-
 pub fn stage(
     ctx: *ModifyCtx,
     comptime op: Op,
@@ -42,7 +40,7 @@ pub fn stage(
     if (op == Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
             while (i < idSubs.len) : (i += subTypes.SUB_SIZE) {
-                if (idSubs[i] == @intFromEnum(subTypes.SubStatus.marked)) {
+                if (idSubs[i].marked == subTypes.SubStatus.marked) {
                     continue;
                 }
 
@@ -53,40 +51,30 @@ pub fn stage(
                     ) catch &.{};
                 }
 
-                utils.writeInt(u64, ctx.db.subscriptions.singleIdMarked, ctx.db.subscriptions.lastIdMarked, @intFromPtr(idSubs.ptr));
-                utils.writeInt(u32, ctx.db.subscriptions.singleIdMarked, ctx.db.subscriptions.lastIdMarked + 8, i);
-                utils.writeInt(u32, ctx.db.subscriptions.singleIdMarked, ctx.db.subscriptions.lastIdMarked + 12, ctx.id);
-                ctx.db.subscriptions.lastIdMarked += 16;
+                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
+                ctx.db.subscriptions.lastIdMarked += 1;
 
-                idSubs[i] = @intFromEnum(subTypes.SubStatus.marked);
+                idSubs[i].marked = subTypes.SubStatus.marked;
             }
         }
     } else if (op != Op.create) {
         if (ctx.idSubs) |idSubs| {
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
             f[vectorLen - 1] = @intFromEnum(subTypes.SubStatus.all);
-            while (i < idSubs.len) : (i += subTypes.SUB_SIZE) {
-                if (idSubs[i] == @intFromEnum(subTypes.SubStatus.marked)) {
+            while (i < idSubs.len) : (i += 1) {
+                if (idSubs[i].marked == subTypes.SubStatus.marked) {
                     continue;
                 }
-
-                const vec: @Vector(vectorLen, u8) = idSubs[i + 8 ..][0..vectorLen].*;
-
-                if (@reduce(.Or, vec == f)) {
-                    if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 16) {
+                if (@reduce(.Or, idSubs[i].fields == f)) {
+                    if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
                         ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                             ctx.db.subscriptions.singleIdMarked,
-                            ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE * 16,
+                            ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE,
                         ) catch &.{};
                     }
-
-                    utils.writeInt(u64, ctx.db.subscriptions.singleIdMarked, ctx.db.subscriptions.lastIdMarked, @intFromPtr(idSubs.ptr));
-                    utils.writeInt(u32, ctx.db.subscriptions.singleIdMarked, ctx.db.subscriptions.lastIdMarked + 8, i);
-                    utils.writeInt(u32, ctx.db.subscriptions.singleIdMarked, ctx.db.subscriptions.lastIdMarked + 12, ctx.id);
-
-                    ctx.db.subscriptions.lastIdMarked += 16;
-
-                    idSubs[i] = @intFromEnum(subTypes.SubStatus.marked);
+                    ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
+                    ctx.db.subscriptions.lastIdMarked += 1;
+                    idSubs[i].marked = subTypes.SubStatus.marked;
                 }
             }
         }

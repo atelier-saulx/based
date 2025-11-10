@@ -252,9 +252,12 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i += try updateField(&ctx, operation) + offset;
             },
             types.ModOp.UPDATE_PARTIAL => {
+                // fires too often!
+                // std.debug.print("PARTIAL TIMES! \n", .{});
                 i += try updatePartialField(&ctx, operation) + offset;
             },
             types.ModOp.INCREMENT, types.ModOp.DECREMENT => {
+                // std.debug.print("INCREMENT TIMES! \n", .{});
                 i += try increment(&ctx, operation, op) + 1;
             },
             types.ModOp.EXPIRE => {

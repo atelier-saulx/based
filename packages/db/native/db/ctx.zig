@@ -60,7 +60,10 @@ pub fn createDbCtx() !*DbCtx {
     subscriptions.*.types = subs.TypeSubMap.init(allocator);
 
     subscriptions.*.lastIdMarked = 0;
-    subscriptions.*.singleIdMarked = try std.heap.raw_c_allocator.alloc(u8, subs.BLOCK_SIZE * 8);
+    subscriptions.*.singleIdMarked = try std.heap.raw_c_allocator.alloc(
+        *subs.IdSubsItem,
+        subs.BLOCK_SIZE,
+    );
 
     errdefer {
         arena.deinit();

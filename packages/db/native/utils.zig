@@ -55,6 +55,14 @@ pub inline fn copy(dest: []u8, source: []const u8) void {
     }
 }
 
+pub inline fn copyType(T: type, dest: []T, source: []const T) void {
+    if (builtin.link_libc) {
+        _ = memcpy(dest.ptr, source.ptr, source.len);
+    } else {
+        @memcpy(dest[0..source.len], source);
+    }
+}
+
 pub inline fn move(dest: []u8, source: []const u8) void {
     _ = memmove(dest.ptr, source.ptr, source.len);
 }

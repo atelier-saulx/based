@@ -1,7 +1,17 @@
 const std = @import("std");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 
-pub const IdSubs = std.AutoHashMap(u32, []u8); // [types.SUB_SIZE] [24] [24] [4 4] [16 bytes]
+pub const IdSubsItem = packed struct {
+    marked: SubStatus, // offset +0
+    _padding: u24,
+    subId: u32,
+    id: u32,
+    fields: @Vector(vectorLen, u8),
+};
+
+pub const SUB_SIZE = @sizeOf(IdSubsItem);
+
+pub const IdSubs = std.AutoHashMap(u32, []IdSubsItem); // [types.SUB_SIZE] [24] [24] [4 4] [16 bytes]
 
 // can make a multi sub thing here
 pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
@@ -21,6 +31,13 @@ pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
 
 // significant filter (will make field more important)
 // the max / min id
+
+// kinda like this can store thing as vectors
+// const MarkedItem = packed struct {
+//     subBytesPtr: u64, // offset +0
+//     index: u32, // offset +8
+//     dataValue: u32, // offset +12
+// };
 
 pub const TypeSubscriptionCtx = struct {
     typeModified: bool,
@@ -46,13 +63,11 @@ pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
 
 pub const SubscriptionCtx = struct {
     types: TypeSubMap,
-    singleIdMarked: []u8,
+    singleIdMarked: []*IdSubsItem,
     lastIdMarked: u32,
 };
 
 pub const BLOCK_SIZE = 100_000;
-
-pub const SUB_SIZE = vectorLen + 8;
 
 pub const MAX_BIT_SET_SIZE = 10_000_000; // 5mb
 
@@ -60,3 +75,5 @@ pub const SubStatus = enum(u8) {
     all = 255,
     marked = 254,
 };
+
+pub const allFieldsVector: @Vector(vectorLen, u8) = @splat(@intFromEnum(SubStatus.all));
