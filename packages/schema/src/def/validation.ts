@@ -456,13 +456,61 @@ const validateObj = (
       validateObj(val, prop.props, errors, [...path, key], prop.required)
     } else if (val !== undefined) {
       const test = getValidator(prop)
-      const msg = test(val, prop)
-      if (msg !== true) {
-        errors.push({
-          path: [...path, key],
-          value: val,
-          error: typeof msg === 'string' ? msg : 'Invalid value',
-        })
+      if ('items' in prop) {
+        if (typeof val !== 'object' || val === null) {
+          errors.push({
+            path: [...path, key],
+            value: val,
+            error: 'Invalid value',
+          })
+        }
+        let arr = val
+        if (!Array.isArray(val)) {
+          arr = []
+          for (const i in val) {
+            if (i === 'add') {
+              arr.push(...val.add)
+            } else if (i === 'update') {
+              arr.push(...val.update)
+            } else if (i === 'delete') {
+              arr.push(...val.delete)
+            } else {
+              arr = []
+              break
+            }
+          }
+          if (!arr.length) {
+            errors.push({
+              path: [...path, key],
+              value: arr,
+              error: 'Invalid value',
+            })
+          }
+        }
+
+        for (const val of arr) {
+          const msg =
+            typeof val === 'object' ? test(val?.id, prop) : test(val, prop)
+          if (msg !== true) {
+            errors.push({
+              path: [...path, key],
+              value: val,
+              error: typeof msg === 'string' ? msg : 'Invalid value',
+            })
+          }
+        }
+      } else {
+        const msg =
+          getPropType(prop) === 'reference' && typeof val === 'object'
+            ? test(val?.id, prop)
+            : test(val, prop)
+        if (msg !== true) {
+          errors.push({
+            path: [...path, key],
+            value: val,
+            error: typeof msg === 'string' ? msg : 'Invalid value',
+          })
+        }
       }
     }
   }
