@@ -40,13 +40,18 @@ await test('subscriptionId', async (t) => {
   })
 
   var idCounter = 0
-  var totalLen = 0
+  var idFieldCounter = 0
 
   const close = clients[0].query('user', id).subscribe((d) => {
-    console.log(d)
-    totalLen += d.length
     idCounter++
   })
+
+  const close2 = clients[0]
+    .query('user', id)
+    .include('name')
+    .subscribe((d) => {
+      idFieldCounter++
+    })
 
   const interval = setInterval(() => {
     clients[0].update('user', id, {
@@ -58,9 +63,21 @@ await test('subscriptionId', async (t) => {
     clearInterval(interval)
   })
 
-  await wait(100)
+  await wait(10)
+  clients[0].update('user', id, {
+    name: 'SnurtMcGurt',
+  })
+
+  await wait(10)
+  clients[0].update('user', id, {
+    name: 'SnurtMcGurt!!!',
+  })
+
+  await wait(80)
 
   equal(idCounter, 10)
+  equal(idFieldCounter, 3)
+
   clearInterval(interval)
 
   close()
