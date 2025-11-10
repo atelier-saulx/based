@@ -57,7 +57,7 @@ await test('subscriptionNow', async (t) => {
   })
 
   const id = await clients[0].create('user', {
-    name: 'mr poop',
+    name: 'mr flap',
     date: 'now',
   })
 

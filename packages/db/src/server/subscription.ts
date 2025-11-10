@@ -55,8 +55,8 @@ export const startUpdateHandler = (server: DbServer) => {
     if (markedIdSubs) {
       const buffer = new Uint8Array(markedIdSubs)
       for (let i = 0; i < buffer.byteLength; i += 8) {
-        const subId = readUint32(buffer, i)
-        const id = readUint32(buffer, i + 4)
+        const id = readUint32(buffer, i)
+        const subId = readUint32(buffer, i + 4)
         const subContainer = server.subscriptions.ids.get(subId)
         const ids = subContainer.ids.get(id)
         if (ids) {

@@ -100,8 +100,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
 
     if (idDoesNotExist) {
         subs = try std.heap.c_allocator.alloc(u8, types.SUB_SIZE);
-        // 254 means no match
-        @memset(subs, @intFromEnum(types.SubStatus.noMatch));
+        @memset(subs, @intFromEnum(types.SubStatus.all));
         try typeSubs.idSubs.put(id, subs);
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
