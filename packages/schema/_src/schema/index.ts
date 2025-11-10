@@ -1,9 +1,11 @@
 import assert from 'assert'
 import { parseReference, SchemaReference } from './reference.js'
-import { SchemaString } from './string.js'
+import { parseString, SchemaString } from './string.js'
 import { isRecord } from './shared.js'
+import { parseReferences, type SchemaReferences } from './references.js'
 
 export type SchemaProp<strict = true> =
+  | SchemaReferences<strict>
   | SchemaReference<strict>
   | SchemaString<strict>
 export type SchemaProps<strict = true> = Record<string, SchemaProp<strict>>
@@ -14,13 +16,8 @@ export type SchemaTypes<strict = true> = Record<string, SchemaType<strict>>
 export type Schema<strict = false> = {
   types: SchemaTypes<strict>
 }
-export type ParseProp<P extends SchemaProp<true>> = (
-  def: unknown,
-  schema: Schema,
-) => P
-
-export const parseProp: ParseProp<SchemaProp> = (def, schema) => {
-  for (const parse of [parseReference]) {
+export const parseProp = (def: unknown, schema: Schema): SchemaProp => {
+  for (const parse of [parseString, parseReference, parseReferences]) {
     try {
       const parsed = parse(def, schema)
       // TODO: here we have to parse default!

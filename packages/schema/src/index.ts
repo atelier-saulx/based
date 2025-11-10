@@ -1,8 +1,16 @@
-export * from './types.js'
-export * from './dbSchema.js'
-export * from './parse/index.js'
-export * from './lang.js'
-export * from './def/validation.js'
-export * from './serialize.js'
-export * from './infer.js'
-export * as semver from './parse/semver/mod.js'
+import { safeParse, type InferInput, type InferOutput } from 'valibot'
+import { schema } from './schema.js'
+
+type In = InferInput<typeof schema>
+type Out = InferOutput<typeof schema>
+
+export type Schema = In
+export const parse = (def: In): Out => {
+  const { output, success, issues } = safeParse(schema, def)
+  if (success) {
+    return output
+  } else {
+    console.info(issues)
+    throw 'err!!'
+  }
+}
