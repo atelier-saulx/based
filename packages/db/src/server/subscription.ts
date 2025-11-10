@@ -213,7 +213,7 @@ export const registerSubscription = (
         }
       })
     } else {
-      console.log('Allready fired block')
+      // console.log('Allready fired block')
     }
   }
 
