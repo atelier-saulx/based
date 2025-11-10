@@ -714,3 +714,47 @@ await test('includes and neq', async (t) => {
     ],
   )
 })
+
+await test('empty string', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          potato: 'string',
+        },
+      },
+    },
+  })
+
+  const user1 = db.create('user', {
+    potato: 'cool',
+  })
+
+  const user2 = db.create('user', {})
+
+  const user3 = db.create('user', { potato: '' })
+
+  console.log(await db.query('user').filter('patato', '=', '').get())
+
+  deepEqual(
+    await db.query('user').filter('patato', '=', '').get(),
+    [
+      {
+        id: 2,
+        potato: '',
+      },
+      {
+        id: 3,
+        potato: '',
+      },
+    ],
+    'Empty string filter',
+  )
+})
