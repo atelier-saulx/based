@@ -229,7 +229,6 @@ pub inline fn orFixed(
             j += 1;
         }
         return .{ next, false };
-        // ---------
     } else if (op == Op.equal) {
         const value = v[start .. start + valueSize];
         if (!batch.equalsOr(valueSize, value, query)) {
