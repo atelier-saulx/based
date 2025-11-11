@@ -105,14 +105,26 @@ async function getNpmPackageInfo(packageName: string): Promise<any> {
   return new Promise((resolve, reject) => {
     https
       .get(`https://registry.npmjs.org/${packageName}`, (res) => {
-        if (res.statusCode === 404) return resolve(null)
-        if (res.statusCode !== 200)
+        if (res.statusCode === 404) {
+          res.resume()
+          return resolve(null)
+        }
+        if (res.statusCode !== 200) {
+          res.resume()
           return reject(
             new Error(`NPM request failed with status ${res.statusCode}`),
           )
+        }
         let data = ''
         res.on('data', (chunk) => (data += chunk))
-        res.on('end', () => resolve(JSON.parse(data)))
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data))
+          } catch (e) {
+            reject(new Error(`Failed to parse NPM JSON response: ${e.message}`))
+          }
+        })
+        res.on('error', reject)
       })
       .on('error', reject)
   })
