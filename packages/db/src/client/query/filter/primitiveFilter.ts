@@ -5,9 +5,17 @@ import {
   REFERENCE,
   REFERENCES,
   REVERSE_SIZE_MAP,
+  REVERSE_TYPE_INDEX_MAP,
+  STRING,
 } from '@based/schema/def'
 import { FilterCondition, QueryDef, QueryDefFilter } from '../types.js'
-import { EQUAL, EXISTS, isNumerical, TYPE_NEGATE } from './types.js'
+import {
+  EQUAL,
+  EXISTS,
+  isNumerical,
+  TYPE_NEGATE,
+  TYPE_DEFAULT,
+} from './types.js'
 import { Filter } from './types.js'
 import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
@@ -30,14 +38,28 @@ export const primitiveFilter = (
   const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
 
   if (ctx.operation === EXISTS) {
-    if (!conditions.exists) {
-      conditions.exists = []
+    if (!prop.separate) {
+      if (prop.typeIndex === STRING) {
+        ctx.operation = EQUAL
+        ctx.type = ctx.type === TYPE_NEGATE ? TYPE_DEFAULT : TYPE_NEGATE
+        value = ''
+      } else {
+        console.error(
+          'MISSING EXIST / !EXIST FILTER FOR',
+          prop.path,
+          REVERSE_TYPE_INDEX_MAP[prop.typeIndex],
+        )
+      }
+    } else {
+      if (!conditions.exists) {
+        conditions.exists = []
+      }
+      conditions.exists.push({
+        prop: prop,
+        negate: filter[1].type === TYPE_NEGATE,
+      })
+      return 4
     }
-    conditions.exists.push({
-      prop: prop,
-      negate: filter[1].type === TYPE_NEGATE,
-    })
-    return 4
   }
 
   let size = 0

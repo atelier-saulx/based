@@ -15,8 +15,8 @@ await test.skip('filter references shortcut', async (t) => {
           name: 'string',
           friends: {
             items: {
-              ref: 'friends',
-              prop: 'users',
+              ref: 'user',
+              prop: 'friends',
             },
           },
         },
@@ -24,35 +24,5 @@ await test.skip('filter references shortcut', async (t) => {
     },
   })
 
-  for (let w = 1; w <= 1000; w++) {
-    const wkspc = db.create('workspace', { name: `Workspace ${w}` })
-    if (w == 500 || w == 750) {
-      db.create('user', { name: 'User A', workspaces: [wkspc] })
-    }
-    for (let d = 0; d < 1000; d++) {
-      db.create('drone', { workspace: wkspc, name: `Drone ${d}` })
-    }
-  }
-
-  const user = 1
-
-  const drones = await db
-    .query('user')
-    .include((s) =>
-      s('workspaces').include(
-        (s) =>
-          s('drones').include('*').filter('workspace.users', 'includes', user),
-        // .range(0, 1),
-      ),
-    )
-    .include('*')
-    .get()
-
-  const drones2 = await db
-    .query('drone')
-    .filter('workspace.users', 'includes', user)
-    .get()
-
-  drones.inspect()
-  drones2.inspect()
+  // lets add some functionality
 })

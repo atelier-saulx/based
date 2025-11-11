@@ -55,10 +55,10 @@ export const convertFilter = (
   ) {
     if (value === '' && operator === '=') {
       return [[field, toFilterCtx(def, '!exists', opts), undefined]]
+    } else if (value === '' && operator === '!=') {
+      return [[field, toFilterCtx(def, 'exists', opts), undefined]]
     }
-    // console.log('DERP!??xxx')
 
-    // not great...
     return
   }
   if (operator === '!..') {
