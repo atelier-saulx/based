@@ -53,7 +53,7 @@ export const convertFilter = (
     !(operator === 'exists' || operator === '!exists') &&
     (value === '' || value === undefined)
   ) {
-    if (value === '') {
+    if (value === '' && operator === '=') {
       return [[field, toFilterCtx(def, '!exists', opts), undefined]]
     }
     // console.log('DERP!??xxx')

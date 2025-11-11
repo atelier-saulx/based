@@ -1,7 +1,7 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
 
-await test('filter references drones', async (t) => {
+await test('filter references shortcut', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -10,28 +10,14 @@ await test('filter references drones', async (t) => {
 
   await db.setSchema({
     types: {
-      workspace: {
-        props: {
-          name: 'string',
-        },
-      },
       user: {
         props: {
           name: 'string',
-          workspaces: {
+          friends: {
             items: {
-              ref: 'workspace',
+              ref: 'friends',
               prop: 'users',
             },
-          },
-        },
-      },
-      drone: {
-        props: {
-          name: 'string',
-          workspace: {
-            ref: 'workspace',
-            prop: 'drones',
           },
         },
       },
@@ -53,8 +39,10 @@ await test('filter references drones', async (t) => {
   const drones = await db
     .query('user')
     .include((s) =>
-      s('workspaces').include((s) =>
-        s('drones').include('*').filter('workspace.users', 'includes', user),
+      s('workspaces').include(
+        (s) =>
+          s('drones').include('*').filter('workspace.users', 'includes', user),
+        // .range(0, 1),
       ),
     )
     .include('*')
@@ -65,7 +53,6 @@ await test('filter references drones', async (t) => {
     .filter('workspace.users', 'includes', user)
     .get()
 
-  // add tests
   drones.inspect()
   drones2.inspect()
 })
