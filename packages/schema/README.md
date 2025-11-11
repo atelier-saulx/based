@@ -2,8 +2,6 @@
 
 ## Display & format WIP
 
-Using `display` will not validate or transform and will purely change how the value is shown in UI and API.
-
 Use `format` to specify in which format the value has to represented and modified. This may impose some validation and will influence how the UI shows the value.
 
 ### For example
@@ -15,62 +13,18 @@ Use `format` to specify in which format the value has to represented and modifie
             props: {
                 price: {
                     type: 'int32',
-                    display: 'euro',
                 },
                 authorEmail: {
                     type: 'string',
                     format: 'email',
-                    display: 'lowercase',
                 },
                 lastModified: {
                     type: 'timestamp',
-                    display: 'date-time'
                 }
             }
         }
     }
 }
-```
-
-### Display options
-
-#### Timestamp
-
-```
-'date',
-'date-time',
-'date-time-text',
-'human',
-'time',
-'time-precise',
-```
-
-#### Number
-
-```
-'short',
-'human',
-'ratio',
-'bytes',
-'euro',
-'dollar',
-'pound',
-
-'round-short',
-'round-human',
-'round-ratio',
-'round-bytes',
-'round-euro',
-'round-dollar',
-'round-pound',
-```
-
-#### String
-
-```
-'lowercase',
-'uppercase',
-'capitalize',
 ```
 
 ### Format options
@@ -135,7 +89,7 @@ Use `format` to specify in which format the value has to represented and modifie
 'mimeType',
 'latLong',
 'slug',
-'strongPassword',
+'password',
 'taxID',
 'licensePlate',
 'VAT',
