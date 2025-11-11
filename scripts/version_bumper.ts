@@ -25,6 +25,7 @@ const LOG_PREFIX = '[Version Bumper]'
 const WORKSPACE_ROOT = process.cwd() + '/../'
 const TEMP_DIR = path.join(WORKSPACE_ROOT, '.tmp-version-bumper')
 const SDK_PACKAGE_NAME = 'sdk'
+const IGNORE_PATTERNS = new Set(['dist', 'tmp', '.tmp', 'node_modules'])
 
 function log(...args: any[]) {
   console.log(LOG_PREFIX, ...args)
@@ -148,6 +149,9 @@ function getAllFiles(dirPath: string, arrayOfFiles: string[] = []): string[] {
   const files = fs.readdirSync(dirPath)
 
   files.forEach(function (file) {
+    if (IGNORE_PATTERNS.has(file)) {
+      return
+    }
     const fullPath = path.join(dirPath, file)
     if (fs.statSync(fullPath).isDirectory()) {
       arrayOfFiles = getAllFiles(fullPath, arrayOfFiles)
