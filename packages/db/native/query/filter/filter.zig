@@ -88,7 +88,7 @@ pub fn filter(
             // const refTypePrefix = read(u16, conditions, i + 2);
             const size = read(u16, conditions, i + 4);
 
-            std.debug.print("flap \n", .{});
+            std.debug.print("REFERENCES NESTED NOT IMPLEMENTED \n", .{});
             // const fieldSchema = db.getFieldSchema(typeEntry, refField) catch {
             //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             // };

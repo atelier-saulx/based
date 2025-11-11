@@ -58,7 +58,7 @@ const referencesFilter = (
     }
 
     if (isPropDef(t) && t.typeIndex === REFERENCES) {
-      console.info('derp derp')
+      console.info('REFERENCES NESTED NOT IMPLEMENTED')
       conditions.references ??= new Map()
 
       return 0
