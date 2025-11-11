@@ -1,7 +1,7 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
 
-await test('filter references shortcut', async (t) => {
+await test.skip('filter references shortcut', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

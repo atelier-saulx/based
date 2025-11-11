@@ -276,6 +276,24 @@ static ssize_t refs_find_node_i(struct SelvaNodeReferences *refs, node_id_t node
     }
 }
 
+static const struct SelvaFieldSchema *get_edge_dst_fs(
+        const struct SelvaDb *db,
+        const struct SelvaFieldSchema *fs_src)
+{
+    const struct EdgeFieldConstraint *efc = &fs_src->edge_constraint;
+    struct SelvaTypeEntry *type_dst;
+
+    if (fs_src->type != SELVA_FIELD_TYPE_REFERENCE &&
+        fs_src->type != SELVA_FIELD_TYPE_REFERENCES) {
+        return nullptr;
+    }
+
+    type_dst = selva_get_type_by_index(db, efc->dst_node_type);
+    assert(type_dst->type == efc->dst_node_type);
+
+    return selva_get_fs_by_te_field(type_dst, efc->inverse_field);
+}
+
 static void remove_refs_offset(struct SelvaNodeReferences *refs)
 {
     if (refs->offset > 0) {
@@ -462,35 +480,6 @@ out:
     memcpy(vp, &refs, sizeof(refs));
 }
 
-/*
- * add_to_refs_index() must be called before this function.
- */
-static void write_ref_2way(
-        struct SelvaNode * restrict src, const struct SelvaFieldSchema *fs_src, ssize_t index,
-        struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst)
-{
-    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
-    assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
-    assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
-    assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
-#if 0
-    assert(fs_src->edge_constraint.dst_node_type == dst->type);
-    assert(fs_dst->edge_constraint.dst_node_type == src->type);
-#endif
-
-    if (fs_src->type == SELVA_FIELD_TYPE_REFERENCE) {
-        write_ref(src, fs_src, dst, nullptr);
-    } else {
-        write_refs(src, fs_src, index, dst, nullptr);
-    }
-
-    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-        write_ref(dst, fs_dst, src, nullptr);
-    } else {
-        write_refs(dst, fs_dst, -1, src, nullptr);
-    }
-}
-
 /**
  * Clear single ref value.
  * A helper for remove_reference().
@@ -622,22 +611,86 @@ static node_id_t del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, c
     return dst_id;
 }
 
-static const struct SelvaFieldSchema *get_edge_dst_fs(
-        const struct SelvaDb *db,
-        const struct SelvaFieldSchema *fs_src)
+/**
+ * One-side ref removal.
+ */
+static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_src, node_id_t dst_node_id, node_id_t src_node_id, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
-    const struct EdgeFieldConstraint *efc = &fs_src->edge_constraint;
-    struct SelvaTypeEntry *type_dst;
-
-    if (fs_src->type != SELVA_FIELD_TYPE_REFERENCE &&
-        fs_src->type != SELVA_FIELD_TYPE_REFERENCES) {
-        return nullptr;
+    if (dst_node_id == 0) {
+        return;
     }
 
-    type_dst = selva_get_type_by_index(db, efc->dst_node_type);
-    assert(type_dst->type == efc->dst_node_type);
+    struct SelvaTypeEntry *dst_type = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
+    assert(dst_type);
 
-    return selva_get_fs_by_te_field(type_dst, efc->inverse_field);
+    struct SelvaNode *dst = selva_find_node(dst_type, dst_node_id);
+    if (!dst) {
+        return;
+    }
+
+    const struct SelvaFieldSchema *fs_dst;
+    fs_dst = get_edge_dst_fs(db, fs_src);
+    if (!fs_dst) {
+        db_panic("field schema not found");
+    }
+
+    struct SelvaFields *fields_dst = &dst->fields;
+    struct SelvaFieldInfo *nfo_dst;
+
+    assert(fs_dst->field < fields_dst->nr_fields);
+    assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+    assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
+
+    nfo_dst = &fields_dst->fields_map[fs_dst->field];
+    if (!nfo_dst->in_use) {
+        return;
+    }
+
+    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+        node_id_t removed;
+
+        removed = del_single_ref(db, dst, &fs_dst->edge_constraint, fields_dst, nfo_dst, false, dirty_cb, dirty_ctx);
+        assert(removed == src_node_id);
+    } else if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
+        struct SelvaNodeReferences *refs = nfo2p(fields_dst, nfo_dst);
+
+        if (!node_id_set_has(refs->index, refs->nr_refs, src_node_id)) {
+            return;
+        }
+
+        ssize_t i = refs_find_node_i(refs, src_node_id);
+        assert(i >= 0);
+        (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i, dirty_cb, dirty_ctx);
+    }
+}
+
+/*
+ * add_to_refs_index() must be called before this function.
+ */
+static void write_ref_2way(
+        struct SelvaNode * restrict src, const struct SelvaFieldSchema *fs_src, ssize_t index,
+        struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst)
+{
+    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+    assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+    assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
+    assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
+#if 0
+    assert(fs_src->edge_constraint.dst_node_type == dst->type);
+    assert(fs_dst->edge_constraint.dst_node_type == src->type);
+#endif
+
+    if (fs_src->type == SELVA_FIELD_TYPE_REFERENCE) {
+        write_ref(src, fs_src, dst, nullptr);
+    } else {
+        write_refs(src, fs_src, index, dst, nullptr);
+    }
+
+    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
+        write_ref(dst, fs_dst, src, nullptr);
+    } else {
+        write_refs(dst, fs_dst, -1, src, nullptr);
+    }
 }
 
 /**
@@ -666,7 +719,7 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
             struct SelvaNodeReferences *refs = nfo2p(fields_src, nfo_src);
 
             if (refs->size == SELVA_NODE_REFERENCE_NULL) {
-                goto out;
+                return 0;
             }
 
             ssize_t i = (idx >= 0) ? idx : refs_find_node_i(refs, orig_dst);
@@ -680,58 +733,9 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
      * Clear from the other end.
      */
     if (dst_node_id != 0) {
-        struct SelvaNode *dst = selva_find_node(dst_type, dst_node_id);
-        if (dst) {
-            const struct SelvaFieldSchema *fs_dst;
-            struct SelvaFields *fields_dst = &dst->fields;
-            struct SelvaFieldInfo *nfo_dst;
-
-            fs_dst = get_edge_dst_fs(db, fs_src);
-            if (!fs_dst) {
-                db_panic("field schema not found");
-            }
-
-#if 0
-            assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
-            assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
-            assert(selva_get_fs_by_node(db, src, fs_src->field) == fs_src);
-            assert(selva_get_fs_by_node(db, dst, fs_dst->field) == fs_dst);
-            assert(fs_src->edge_constraint.dst_node_type == dst->type);
-            assert(fs_src->edge_constraint.inverse_field == fs_dst->field);
-            assert(fs_dst->edge_constraint.dst_node_type == src->type);
-            assert(fs_dst->edge_constraint.inverse_field == fs_src->field);
-            assert(fs_dst->field < fields_dst->nr_fields);
-#endif
-            assert(fs_dst->field < fields_dst->nr_fields);
-            assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
-            assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
-
-            nfo_dst = &fields_dst->fields_map[fs_dst->field];
-            if (nfo_dst->in_use) {
-                if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-                    node_id_t removed;
-
-#if 0
-                    assert(fs_dst->edge_constraint.dst_node_type == src->type);
-#endif
-                    removed = del_single_ref(db, dst, &fs_dst->edge_constraint, fields_dst, nfo_dst, false, dirty_cb, dirty_ctx);
-                    assert(removed == src->node_id);
-                } else if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
-                    struct SelvaNodeReferences *refs = nfo2p(fields_dst, nfo_dst);
-
-                    if (!node_id_set_has(refs->index, refs->nr_refs, src->node_id)) {
-                        goto out;
-                    }
-
-                    ssize_t i = refs_find_node_i(refs, src->node_id);
-                    assert(i >= 0);
-                    (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i, dirty_cb, dirty_ctx);
-                }
-            }
-        }
+        clear_ref_dst(db, fs_src, dst_node_id, src->node_id, dirty_cb, dirty_ctx);
     }
 
-out:
     return dst_node_id;
 }
 
