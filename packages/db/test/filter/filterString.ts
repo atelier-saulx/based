@@ -741,10 +741,10 @@ await test('empty string', async (t) => {
 
   const user3 = db.create('user', { potato: '' })
 
-  console.log(await db.query('user').filter('patato', '=', '').get())
+  console.log(await db.query('user').filter('potato', '=', '').get())
 
   deepEqual(
-    await db.query('user').filter('patato', '=', '').get(),
+    await db.query('user').filter('potato', '=', '').get(),
     [
       {
         id: 2,

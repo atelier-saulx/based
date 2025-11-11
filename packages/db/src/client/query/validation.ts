@@ -38,7 +38,6 @@ import {
   LangCode,
   langCodesMap,
   MAX_ID,
-  SchemaProp,
   Validation,
 } from '@based/schema'
 import { StepInput } from './aggregates/types.js'
