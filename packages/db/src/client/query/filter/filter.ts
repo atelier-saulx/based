@@ -59,6 +59,8 @@ const referencesFilter = (
 
     if (isPropDef(t) && t.typeIndex === REFERENCES) {
       console.info('derp derp')
+      conditions.references ??= new Map()
+
       return 0
     } else if (isPropDef(t) && t.typeIndex === REFERENCE) {
       conditions.references ??= new Map()
