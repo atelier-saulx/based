@@ -58,6 +58,7 @@ export const collectFields = (def: QueryDef) => {
     // for (let def.include.main) {
     // }
     // fields.main.add(0)
+    fields.separate.add(0)
   }
 
   for (const prop of def.include.props.values()) {
