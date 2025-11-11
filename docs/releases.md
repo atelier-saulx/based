@@ -99,57 +99,68 @@ Note that version numbers may change due to nightly releases.
 
 ## v0.2.\* (Oct 1st 2025)
 
-- Database Documentation
-- High performance DB subscriptions
-  - Integration in the modify core
-  - Subscriptions tracking
-    - Id based subscriptions + include
-    - Filters based subscriptions - check if conditions pass / change after updates
-    - Sort (integrated within the seperate sort command)
 - Optimized Server client integration
-  - Complete protocol package for each format of based server / client e.g. response formats - support full js object including Set and Map
-  - Improved performance by refactoring buffer loading to allow sending and receiving chunks on the client, avoiding memory copies
+  - Complete protocol package for each format of based server / client e.g. response formats
 - Improved reliability of client-server communication by replacing the current get and set processes with atomic upserting
 - Improved reference(s) implementation (step 1 of partial)
-  - space requirement improvements
   - edge relations as true node types
-  - support all property types in edges
   - update reference upsert behavior to support defaults & hooks
 - New result type for aggregations
 - Aggregation with multiple distinct function types
-- Option to include data from the session context in basedQueries
-- Expose function 'entrypoint' on context
+- Fixed first letter bug in text search
+- Fixed bug with edges on both sides
+- Optimized and reimplemented DB read protocol for browser (40% smaller and fast)
+- Implemented REST fallback protocol (excluding channels) (based/server)
+- Added onClose option on context.session in the db
+- Added support for all http methods in (based/server)
+- Option to bind data from the session context in basedQueries (based/server)
 - "Insert" option for upsert (only create if alias does not exist)
 - Cardinality property migration fix
+- Cardinality resource consumption optimization
+- Improved Cardinality API - Precision and sparse/dense mode selection
 - Order main buffer for better alignment
-- Use SIMD for improved accumulation on aggregate functions when with ARM Neon CPUs
 - Complete schema infer type
-- Improved db hook system
-  - Property hooks
-  - Guard against side effect
-- Allows array payloads for create and upsert (improves developer experience)
+- Improved db hook system: Property hooks
+- Implemented individual response protocol for modify operations (returning a response per modify)
+- Meta information for last-ids (in zig, stored in common instead of schema)
 - Fix regression: migrate should skip incompatible values
+- Fix: load from dump with node using schema.dependent
+- Fix: Incorrectly including drain time in query exec time measurement in .inspect()
+- Unified @based/sdk acting as a single point for all other @based packages. Consumers only need to install and import a single package @based/sdk.
+- New centralized versioning system
+  - Automatic cohesive updates across all suite of packages
+  - Start of CI/CD
 
-## v0.3.\* (Nov 1st 2025)
+## v0.3.\* (Nov 7th 2025)
 
-- CLI v.1 nightly
-  - Enabling strong typed db query responses with automatic inference
-  - Added a feature-rich logging system that presents all relevant information about the environment
-  - Feature complete local development environment
-  - Improved bundling and deployment performance
-  - Hooks should build external function
-  - In-memory DB (no persistence)
-- Env-hub v.1
-  - Monitoring of function performance and calls
-  - Searchable log storage
-  - Installation and handling of Based functions
-- A Max len option for _references_ and _types_
-- Capped types (limit the number of nodes and overwrite the oldest first)
+- Handover from October plan
+- Expose function 'entrypoint' on context
+- server - client integration: Improved performance by refactoring buffer loading to allow sending and receiving chunks on the client, avoiding memory copies
+- High performance DB subscriptions
+- Integration in the modify core
+- Subscriptions tracking
+  - Id based subscriptions + include
+  - Filters based subscriptions - check if conditions pass / change after updates
+  - Sort (integrated within the separate sort command)
+  - Time based subscriptions - evaluate "now" syntax
+  - Greedy type subscriptions
+- Improved reference(s) implementation (step 2 of partial)
+  - space requirement improvements
+  - support all property types in edges
+- Added edge aggregation capabilities by using branched queries
+- Added capped option for circular ids for nodes per type
+- Partial loading of large databases (Experimental) better memory and concurrency management
+- Filter engine working for partials - automatically loads and unloads blocks when visiting
 - Graceful handling of incompatible dumps
-- Refresh `.expire()`
-- Improved load/save speed for references
-- Removed weak references support
-- Fixed an issue where edge props were not always saved properly
+- Adds 'date-time-human-short' to schema
+- Modify individual errors
+- Custom validators on schema
+- Dedicated validate function to validate payloads
+- Fixed issues with one-sided edges
+- Fixed bug with alias + filter queries
+- Handle body data correctly for PUT and PATCH http methods
+- Fixed bug with expire syntax + dependent
+- Fixed bug with edges and migrations
 
 ## v0.4.\* (Dec 1st 2025)
 

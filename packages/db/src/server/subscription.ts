@@ -55,8 +55,8 @@ export const startUpdateHandler = (server: DbServer) => {
     if (markedIdSubs) {
       const buffer = new Uint8Array(markedIdSubs)
       for (let i = 0; i < buffer.byteLength; i += 8) {
-        const subId = readUint32(buffer, i)
-        const id = readUint32(buffer, i + 4)
+        const id = readUint32(buffer, i)
+        const subId = readUint32(buffer, i + 4)
         const subContainer = server.subscriptions.ids.get(subId)
         const ids = subContainer.ids.get(id)
         if (ids) {
@@ -150,6 +150,10 @@ const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
   }
 }
 
+let total = 0
+let exectime = 0
+let int
+
 export const registerSubscription = (
   server: DbServer,
   query: Uint8Array,
@@ -162,6 +166,13 @@ export const registerSubscription = (
   if (subInterval) {
     server.subscriptions.subInterval = subInterval
   }
+  if (!int)
+    int = setInterval(() => {
+      console.log('EXECED', total, exectime / total, 'ms exec time')
+      if (server.stopped) {
+        clearInterval(int)
+      }
+    }, 1e3)
 
   let killed = false
 
@@ -180,10 +191,13 @@ export const registerSubscription = (
       if (now) {
         replaceNowValues(query, now)
       }
+      let d = Date.now()
       server.getQueryBuf(query).then((res) => {
         if (killed) {
           return
         }
+        total++
+        exectime += Date.now() - d
         if (res.byteLength >= 4) {
           onData(res)
         } else if (res.byteLength === 1 && res[0] === 0) {
@@ -199,7 +213,7 @@ export const registerSubscription = (
         }
       })
     } else {
-      console.log('Allready fired block')
+      // console.log('Allready fired block')
     }
   }
 

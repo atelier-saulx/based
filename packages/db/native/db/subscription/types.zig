@@ -59,5 +59,4 @@ pub const MAX_BIT_SET_SIZE = 10_000_000; // 5mb
 pub const SubStatus = enum(u8) {
     all = 255,
     marked = 254,
-    noMatch = 253,
 };

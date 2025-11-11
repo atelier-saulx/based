@@ -14,16 +14,26 @@ fn getMarkedIdSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info)
     if (ctx.subscriptions.lastIdMarked > 0) {
         var resultBuffer: ?*anyopaque = undefined;
         var result: c.napi_value = undefined;
-        const size = ctx.subscriptions.lastIdMarked;
+        const len = ctx.subscriptions.lastIdMarked / 16;
+        const size = (len) * 8;
         if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
             return null;
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
-        utils.copy(data, ctx.subscriptions.singleIdMarked[0..size]);
-        ctx.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
-            ctx.subscriptions.singleIdMarked,
-            types.BLOCK_SIZE * 8,
-        ) catch &.{};
+
+        // Reset
+        var i: usize = 0;
+        while (i < len) {
+            const markedIndex = i * 16;
+            const index = utils.read(u32, ctx.subscriptions.singleIdMarked, markedIndex + 8);
+            const subBytes: [*]u8 = @ptrFromInt(utils.read(u64, ctx.subscriptions.singleIdMarked, markedIndex));
+            subBytes[index] = @intFromEnum(types.SubStatus.all);
+            const newDataIndex = i * 8;
+            utils.writeInt(u32, data, newDataIndex, utils.read(u32, ctx.subscriptions.singleIdMarked, markedIndex + 12));
+            utils.copy(data[newDataIndex + 4 .. newDataIndex + 8], subBytes[index + 4 .. index + 8]);
+            i += 1;
+        }
+
         ctx.subscriptions.lastIdMarked = 0;
         return result;
     }

@@ -12,7 +12,7 @@ const start = async (t, clientsN = 2) => {
   const clients = Array.from({ length: clientsN }).map(
     () =>
       new DbClient({
-        hooks: getDefaultHooks(server, 100),
+        hooks: getDefaultHooks(server, 1),
       }),
   )
   await server.start({ clean: true })
@@ -20,38 +20,16 @@ const start = async (t, clientsN = 2) => {
   return { clients, server }
 }
 
-await test('subscriptionNow', async (t) => {
+await test('subscriptionId', async (t) => {
   const clientsN = 2
   const { clients } = await start(t, clientsN)
 
   await clients[0].setSchema({
     types: {
       user: {
-        friend: {
-          ref: 'user',
-          prop: 'friend',
-        },
-        control: {
-          ref: 'control',
-          prop: 'boys',
-        },
         date: 'timestamp',
         x: 'uint8',
-        derp: 'uint32',
-        location: 'string',
-        lang: 'string',
         name: 'string',
-        email: 'alias',
-      },
-      control: {
-        x: 'uint8',
-        derp: 'uint32',
-        location: 'string',
-        lang: 'string',
-        flap: {
-          ref: 'user',
-          prop: 'flapControl',
-        },
       },
     },
   })
@@ -61,32 +39,46 @@ await test('subscriptionNow', async (t) => {
     date: 'now',
   })
 
-  var multiCounter = 0
   var idCounter = 0
-  var totalLen = 0
+  var idFieldCounter = 0
 
-  const close = clients[0]
-    .query('user', id)
-    .filter('date', '<', 'now - 2s')
-    .subscribe((d) => {
-      totalLen += d.length
-      multiCounter++
-    })
+  const close = clients[0].query('user', id).subscribe((d) => {
+    idCounter++
+  })
 
   const close2 = clients[0]
-    .query('user')
-    .filter('date', '<', 'now - 2s')
+    .query('user', id)
+    .include('name')
     .subscribe((d) => {
-      totalLen += d.length
-      idCounter++
+      idFieldCounter++
     })
 
-  await wait(3000)
+  const interval = setInterval(() => {
+    clients[0].update('user', id, {
+      x: { increment: 1 },
+    })
+  }, 10)
 
-  equal(multiCounter, 2)
-  equal(idCounter, 2)
-  equal(totalLen, 2)
+  t.after(() => {
+    clearInterval(interval)
+  })
+
+  await wait(10)
+  clients[0].update('user', id, {
+    name: 'SnurtMcGurt',
+  })
+
+  await wait(10)
+  clients[0].update('user', id, {
+    name: 'SnurtMcGurt!!!',
+  })
+
+  await wait(80)
+
+  equal(idCounter, 10)
+  equal(idFieldCounter, 3)
+
+  clearInterval(interval)
 
   close()
-  close2()
 })
