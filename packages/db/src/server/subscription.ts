@@ -150,9 +150,9 @@ const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
   }
 }
 
-let total = 0
-let exectime = 0
-let int
+// let total = 0
+// let exectime = 0
+// let int
 
 export const registerSubscription = (
   server: DbServer,
@@ -166,13 +166,13 @@ export const registerSubscription = (
   if (subInterval) {
     server.subscriptions.subInterval = subInterval
   }
-  if (!int)
-    int = setInterval(() => {
-      console.log('EXECED', total, exectime / total, 'ms exec time')
-      if (server.stopped) {
-        clearInterval(int)
-      }
-    }, 1e3)
+  // if (!int)
+  //   int = setInterval(() => {
+  //     console.log('EXECED', total, exectime / total, 'ms exec time')
+  //     if (server.stopped) {
+  //       clearInterval(int)
+  //     }
+  //   }, 1e3)
 
   let killed = false
 
@@ -196,8 +196,8 @@ export const registerSubscription = (
         if (killed) {
           return
         }
-        total++
-        exectime += Date.now() - d
+        // total++
+        // exectime += Date.now() - d
         if (res.byteLength >= 4) {
           onData(res)
         } else if (res.byteLength === 1 && res[0] === 0) {
