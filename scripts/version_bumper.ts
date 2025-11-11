@@ -25,7 +25,7 @@ const LOG_PREFIX = '[Version Bumper]'
 const WORKSPACE_ROOT = process.cwd() + '/../'
 const TEMP_DIR = path.join(WORKSPACE_ROOT, '.tmp-version-bumper')
 const SDK_PACKAGE_NAME = 'sdk'
-const IGNORE_PATTERNS = new Set(['dist', 'tmp', '.tmp', 'node_modules'])
+const IGNORE_PATTERNS = new Set(['tmp', '.tmp', 'node_modules'])
 
 function log(...args: any[]) {
   console.log(LOG_PREFIX, ...args)
