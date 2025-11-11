@@ -134,7 +134,6 @@ pub inline fn aggregateRefsGroup(
             if (hash_map_entry.is_new) {
                 resultsSize += 2 + resultKeyLen + groupCtx.resultsSize;
             }
-
             aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated, undefined, null);
         }
     }
@@ -207,7 +206,6 @@ pub inline fn aggregateRefsDefault(
                         continue :checkItem;
                     }
                 }
-                utils.debugPrint("👁️", .{});
                 aggregate(agg, typeEntry, refNode, accumulatorField, hllAccumulator, &hadAccumulated, ctx.db, refStruct);
             }
         }

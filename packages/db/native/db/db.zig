@@ -331,7 +331,6 @@ fn getMetaNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge) ?Node 
     if (ref.*.meta == 0) {
         return null;
     }
-
     const meta_type = selva.selva_get_type_by_index(db.selva, efc.*.meta_node_type);
     return selva.selva_find_node(meta_type, ref.*.meta);
 }
@@ -346,6 +345,7 @@ pub fn getEdgeProp(
     ref: ReferenceLarge,
     fieldSchema: FieldSchema,
 ) []u8 {
+    utils.debugPrint("getEdgeProp 🥸", .{});
     const meta_node = getMetaNode(db, efc, ref);
     if (meta_node == null) {
         return emptySlice;

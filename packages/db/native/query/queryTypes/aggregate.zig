@@ -71,7 +71,8 @@ pub fn default(env: c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, c
             if (hasFilter and !filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
-            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated, undefined, null);
+            utils.debugPrint("👀", .{});
+            aggregate(agg, typeEntry, n, accumulatorField, hllAccumulator, &hadAccumulated, ctx.db, null);
         } else {
             break :checkItem;
         }
