@@ -58,10 +58,11 @@ pub inline fn defaultVar(decompressor: *LibdeflateDecompressor, blockState: *Lib
     const start = read(u16, q, i + 2);
     const mainLen = read(u16, q, i + 4);
     var valueSize = read(u32, q, i + 6);
+
     const isText: bool = prop == Prop.TEXT;
     const op: Op = @enumFromInt(q[i + 10]);
-    const next = i + 10 + valueSize;
-    var query = q[i + 11 .. next + 1];
+    const next = 11 + valueSize;
+    var query = q[i + 11 .. i + next];
     var value: []u8 = undefined;
     var pass = true;
     if (mainLen != 0) {

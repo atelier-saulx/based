@@ -719,10 +719,8 @@ await test('empty string', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start({ clean: true })
   t.after(() => t.backup(db))
-
   await db.setSchema({
     types: {
       user: {
@@ -732,17 +730,11 @@ await test('empty string', async (t) => {
       },
     },
   })
-
   const user1 = db.create('user', {
     potato: 'cool',
   })
-
   const user2 = db.create('user', {})
-
   const user3 = db.create('user', { potato: '' })
-
-  console.log(await db.query('user').filter('potato', '=', '').get())
-
   deepEqual(
     await db.query('user').filter('potato', '=', '').get(),
     [
@@ -756,5 +748,60 @@ await test('empty string', async (t) => {
       },
     ],
     'Empty string filter',
+  )
+})
+
+await test('empty string fixed', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          region: { type: 'string', maxBytes: 15 },
+          potato: { type: 'string', maxBytes: 15 },
+          city: { type: 'string', maxBytes: 15 },
+        },
+      },
+    },
+  })
+  const user1 = db.create('user', {
+    potato: 'cool',
+    region: 'AA',
+  })
+  const user2 = db.create('user', { region: 'XX', city: 'Amsterdam' })
+  const user3 = db.create('user', { potato: 'flap', city: 'Rome' })
+  deepEqual(
+    await db.query('user').filter('potato', '!=', '').get(),
+    [
+      { id: 1, region: 'AA', potato: 'cool', city: '' },
+      { id: 3, region: '', potato: 'flap', city: 'Rome' },
+    ],
+    '!Empty string filter',
+  )
+
+  deepEqual(
+    await db
+      .query('user')
+      .filter('potato', '!=', '')
+      .filter('region', '!=', '')
+      .get(),
+    [{ id: 1, region: 'AA', potato: 'cool', city: '' }],
+    'Empty string filter + region',
+  )
+
+  const user4 = db.create('user', { region: 'YY', city: 'Denver' })
+  deepEqual(
+    await db
+      .query('user')
+      .filter('potato', '=', '')
+      .filter('region', '!=', '')
+      .filter('city', '=', 'Amsterdam')
+      .get(),
+    [{ id: 2, region: 'XX', potato: '', city: 'Amsterdam' }],
+    'Empty string filter + region + city',
   )
 })

@@ -107,44 +107,48 @@ await test('Basic SQL', async (t) => {
     .include('title', 'firstName', 'lastName')
     .filter('title', '=', 'Sales Representative')
     .get()
-  deepEqual(r5, [
-    {
-      id: 1,
-      lastName: 'Davolio',
-      firstName: 'Nancy',
-      title: 'Sales Representative',
-    },
-    {
-      id: 3,
-      lastName: 'Leverling',
-      firstName: 'Janet',
-      title: 'Sales Representative',
-    },
-    {
-      id: 4,
-      lastName: 'Peacock',
-      firstName: 'Margaret',
-      title: 'Sales Representative',
-    },
-    {
-      id: 6,
-      lastName: 'Suyama',
-      firstName: 'Michael',
-      title: 'Sales Representative',
-    },
-    {
-      id: 7,
-      lastName: 'King',
-      firstName: 'Robert',
-      title: 'Sales Representative',
-    },
-    {
-      id: 9,
-      lastName: 'Dodsworth',
-      firstName: 'Anne',
-      title: 'Sales Representative',
-    },
-  ])
+  deepEqual(
+    r5,
+    [
+      {
+        id: 1,
+        lastName: 'Davolio',
+        firstName: 'Nancy',
+        title: 'Sales Representative',
+      },
+      {
+        id: 3,
+        lastName: 'Leverling',
+        firstName: 'Janet',
+        title: 'Sales Representative',
+      },
+      {
+        id: 4,
+        lastName: 'Peacock',
+        firstName: 'Margaret',
+        title: 'Sales Representative',
+      },
+      {
+        id: 6,
+        lastName: 'Suyama',
+        firstName: 'Michael',
+        title: 'Sales Representative',
+      },
+      {
+        id: 7,
+        lastName: 'King',
+        firstName: 'Robert',
+        title: 'Sales Representative',
+      },
+      {
+        id: 9,
+        lastName: 'Dodsworth',
+        firstName: 'Anne',
+        title: 'Sales Representative',
+      },
+    ],
+    '5. Create a report showing the title and the first and last name of all sales representatives',
+  )
 
   // 6a. Create a report showing the first and last names of all employees who have a region specified.
   const r6a = await db
@@ -152,13 +156,17 @@ await test('Basic SQL', async (t) => {
     .include('firstName', 'lastName', 'region')
     .filter('region', '!=', '')
     .get()
-  deepEqual(r6a, [
-    { id: 1, lastName: 'Davolio', firstName: 'Nancy', region: 'WA' },
-    { id: 2, lastName: 'Fuller', firstName: 'Andrew', region: 'WA' },
-    { id: 3, lastName: 'Leverling', firstName: 'Janet', region: 'WA' },
-    { id: 4, lastName: 'Peacock', firstName: 'Margaret', region: 'WA' },
-    { id: 8, lastName: 'Callahan', firstName: 'Laura', region: 'WA' },
-  ])
+  deepEqual(
+    r6a,
+    [
+      { id: 1, lastName: 'Davolio', firstName: 'Nancy', region: 'WA' },
+      { id: 2, lastName: 'Fuller', firstName: 'Andrew', region: 'WA' },
+      { id: 3, lastName: 'Leverling', firstName: 'Janet', region: 'WA' },
+      { id: 4, lastName: 'Peacock', firstName: 'Margaret', region: 'WA' },
+      { id: 8, lastName: 'Callahan', firstName: 'Laura', region: 'WA' },
+    ],
+    '6a. Create a report showing the first and last names of all employees who have a region specified.',
+  )
 
   // 6b. Create a report showing the first and last names of all employees who don't have a region specified.
   const r6b = await db
@@ -166,13 +174,16 @@ await test('Basic SQL', async (t) => {
     .include('firstName', 'lastName', 'region')
     .filter('region', '=', '')
     .get()
-  deepEqual(r6b, [
-    { id: 5, lastName: 'Buchanan', firstName: 'Steven', region: '' },
-    { id: 6, lastName: 'Suyama', firstName: 'Michael', region: '' },
-    { id: 7, lastName: 'King', firstName: 'Robert', region: '' },
-    { id: 9, lastName: 'Dodsworth', firstName: 'Anne', region: '' },
-  ])
-
+  deepEqual(
+    r6b,
+    [
+      { id: 5, lastName: 'Buchanan', firstName: 'Steven', region: '' },
+      { id: 6, lastName: 'Suyama', firstName: 'Michael', region: '' },
+      { id: 7, lastName: 'King', firstName: 'Robert', region: '' },
+      { id: 9, lastName: 'Dodsworth', firstName: 'Anne', region: '' },
+    ],
+    "6b. Create a report showing the first and last names of all employees who don't have a region specified.",
+  )
 
   // 7. Create a report showing the first and last name of all employees whose last names start
   // with a letter in the last half of the alphabet.
@@ -189,36 +200,38 @@ await test('Basic SQL', async (t) => {
   // TODO Impossible to OR
   const r9 = await db
     .query('employees')
-    .include('firstName', 'lastName', 'title', 'city')
+    .include('firstName', 'lastName', 'title', 'city', 'region')
     .filter('title', '=', 'Sales Representative')
     .filter('region', '!=', '')
-    .or((f) => {
-      f.filter('city', '=', 'Seattle').or('city', '=', 'Redmond')
-    })
+    .filter('city', '=', ['Seattle', 'Redmond'])
     .get()
-  deepEqual(r9, [
-    {
-      id: 1,
-      lastName: 'Davolio',
-      firstName: 'Nancy',
-      title: 'Sales Representative',
-      city: 'Seattle',
-    },
-    {
-      id: 4,
-      lastName: 'Peacock',
-      firstName: 'Margaret',
-      title: 'Sales Representative',
-      city: 'Redmond',
-    },
-    {
-      id: 8,
-      lastName: 'Callahan',
-      firstName: 'Laura',
-      title: 'Inside Sales Coordinator',
-      city: 'Seattle',
-    },
-  ])
+  deepEqual(
+    r9,
+    [
+      {
+        id: 1,
+        lastName: 'Davolio',
+        firstName: 'Nancy',
+        title: 'Sales Representative',
+        city: 'Seattle',
+      },
+      {
+        id: 4,
+        lastName: 'Peacock',
+        firstName: 'Margaret',
+        title: 'Sales Representative',
+        city: 'Redmond',
+      },
+      {
+        id: 8,
+        lastName: 'Callahan',
+        firstName: 'Laura',
+        title: 'Inside Sales Coordinator',
+        city: 'Seattle',
+      },
+    ],
+    '9. Create a report showing the first and last name of all sales representatives who are from ( Seattle or Redmond.)',
+  )
 
   // 10. Create a report that shows the company name, contact title, city and country of all
   // customers in Mexico or in any city in Spain except Madrid.
@@ -230,57 +243,61 @@ await test('Basic SQL', async (t) => {
     .filter('country', 'includes', ['Mexico', 'Spain'])
     .filter('city', '!=', 'Madrid')
     .get()
-  deepEqual(r10, [
-    {
-      id: 2,
-      companyName: 'Ana Trujillo Emparedados y helados',
-      contactTitle: 'Owner',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      id: 3,
-      companyName: 'Antonio Moreno Taquería',
-      contactTitle: 'Owner',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      id: 13,
-      companyName: 'Centro comercial Moctezuma',
-      contactTitle: 'Marketing Manager',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      id: 29,
-      companyName: 'Galería del gastrónomo',
-      contactTitle: 'Marketing Manager',
-      city: 'Barcelona',
-      country: 'Spain',
-    },
-    {
-      id: 30,
-      companyName: 'Godos Cocina Típica',
-      contactTitle: 'Sales Manager',
-      city: 'Sevilla',
-      country: 'Spain',
-    },
-    {
-      id: 58,
-      companyName: 'Pericles Comidas clásicas',
-      contactTitle: 'Sales Representative',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      id: 80,
-      companyName: 'Tortuga Restaurante',
-      contactTitle: 'Owner',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-  ])
+  deepEqual(
+    r10,
+    [
+      {
+        id: 2,
+        companyName: 'Ana Trujillo Emparedados y helados',
+        contactTitle: 'Owner',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        id: 3,
+        companyName: 'Antonio Moreno Taquería',
+        contactTitle: 'Owner',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        id: 13,
+        companyName: 'Centro comercial Moctezuma',
+        contactTitle: 'Marketing Manager',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        id: 29,
+        companyName: 'Galería del gastrónomo',
+        contactTitle: 'Marketing Manager',
+        city: 'Barcelona',
+        country: 'Spain',
+      },
+      {
+        id: 30,
+        companyName: 'Godos Cocina Típica',
+        contactTitle: 'Sales Manager',
+        city: 'Sevilla',
+        country: 'Spain',
+      },
+      {
+        id: 58,
+        companyName: 'Pericles Comidas clásicas',
+        contactTitle: 'Sales Representative',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        id: 80,
+        companyName: 'Tortuga Restaurante',
+        contactTitle: 'Owner',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+    ],
+    '10. Create a report that shows the company name, contact title, city and country of all',
+  )
 
   // 11. If the cost of freight is greater than or equal to $500.00, it will now be taxed by 10%.
   // Create a report that shows the order id, freight cost, freight cost with this tax for all orders of
