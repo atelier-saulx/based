@@ -15,12 +15,14 @@ await test.skip('filter references shortcut', async (t) => {
           name: 'string',
           friends: {
             items: {
-              ref: 'friends',
-              prop: 'users',
+              ref: 'user',
+              prop: 'friends',
             },
           },
         },
       },
     },
   })
+
+  // lets add some functionality
 })
