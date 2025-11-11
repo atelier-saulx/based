@@ -92,8 +92,6 @@ pub fn stage(
                     continue;
                 }
                 if (@reduce(.Or, idSubs[i].fields == f)) {
-                    std.debug.print("YO YO STAGE FIELDS: \n", .{});
-
                     if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
                         ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                             ctx.db.subscriptions.singleIdMarked,
