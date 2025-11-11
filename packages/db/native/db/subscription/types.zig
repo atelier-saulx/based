@@ -7,6 +7,8 @@ pub const IdSubsItem = packed struct {
     subId: u32,
     id: u32,
     fields: @Vector(vectorLen, u8),
+    mainPartial: @Vector(vectorLen, u16),
+    // going to get MAIN filter as well...
 };
 
 pub const SUB_SIZE = @sizeOf(IdSubsItem);
@@ -31,13 +33,6 @@ pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
 
 // significant filter (will make field more important)
 // the max / min id
-
-// kinda like this can store thing as vectors
-// const MarkedItem = packed struct {
-//     subBytesPtr: u64, // offset +0
-//     index: u32, // offset +8
-//     dataValue: u32, // offset +12
-// };
 
 pub const TypeSubscriptionCtx = struct {
     typeModified: bool,

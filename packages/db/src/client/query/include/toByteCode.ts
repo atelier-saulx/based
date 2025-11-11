@@ -8,7 +8,7 @@ import {
 } from '../types.js'
 import { walkDefs } from './walk.js'
 import { langCodesMap } from '@based/schema'
-import { writeUint32 } from '@based/utils'
+import { writeUint16, writeUint32 } from '@based/utils'
 import { getEnd } from './utils.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
@@ -43,32 +43,26 @@ export const includeToBuffer = (
         : def.schema.mainLen
 
     if (def.include.main.len === len) {
-      // GET ALL MAIN FIELDS
+      // Get all main fields
       mainBuffer = EMPTY_BUFFER
       let i = 2
-      for (const key in def.include.main.include) {
-        const v = def.include.main.include[key]
-        v[0] = v[1].start
+      for (const value of def.include.main.include.values()) {
+        value[0] = value[1].start
         i += 4
       }
     } else {
-      // GET SOME MAIN FIELDS
-      const size = Object.keys(def.include.main.include).length
+      const size = def.include.main.include.size
       mainBuffer = new Uint8Array(size * 4 + 2)
-      mainBuffer[0] = def.include.main.len
-      mainBuffer[1] = def.include.main.len >>> 8
+      writeUint16(mainBuffer, def.include.main.len, 0)
       let i = 2
       let m = 0
-      for (const key in def.include.main.include) {
-        const v = def.include.main.include[key]
-        mainBuffer[i] = v[1].start
-        mainBuffer[i + 1] = v[1].start >>> 8
-        const len = v[1].len
-        v[0] = m
-        mainBuffer[i + 2] = len
-        mainBuffer[i + 3] = len >>> 8
+      for (const value of def.include.main.include.values()) {
+        const propDef = value[1]
+        writeUint16(mainBuffer, propDef.start, i)
+        writeUint16(mainBuffer, propDef.len, i + 2)
+        value[0] = m
         i += 4
-        m += len
+        m += propDef.len
       }
     }
   }
@@ -81,8 +75,7 @@ export const includeToBuffer = (
       buf[0] = includeOp.PARTIAL
       buf[1] = 0 // field name 0
       buf[2] = MICRO_BUFFER
-      buf[3] = mainBuffer.byteLength
-      buf[4] = mainBuffer.byteLength >>> 8
+      writeUint16(buf, mainBuffer.byteLength, 3)
       result.push(buf, mainBuffer)
     } else {
       const buf = new Uint8Array(4)

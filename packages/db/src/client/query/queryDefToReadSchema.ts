@@ -154,8 +154,7 @@ export const convertToReaderSchema = (
       readerSchema.props[k] = createReaderPropDef(v.def, locales, v.opts)
     }
     readerSchema.main.len = q.include.main.len
-    for (const k in q.include.main.include) {
-      const [start, p, opts] = q.include.main.include[k]
+    for (const [start, p, opts] of q.include.main.include.values()) {
       readerSchema.main.props[start] = createReaderPropDef(p, locales, opts)
     }
     for (const [k, v] of q.references.entries()) {

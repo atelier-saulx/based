@@ -5,15 +5,17 @@ import { ID } from '../toByteCode/offsets.js'
 import { FilterMetaNow, QueryDef, QueryDefFilter, QueryType } from '../types.js'
 import { SubscriptionType } from './types.js'
 
+type Fields = { separate: Set<number>; main: Set<number> }
+
 export const collectFilters = (
   filter: QueryDefFilter,
-  fields?: Set<number>,
+  fields?: Fields,
   nowQueries: FilterMetaNow[] = [],
 ) => {
   if (filter.hasSubMeta) {
     for (const [prop, conditions] of filter.conditions) {
       if (fields) {
-        fields.add(prop)
+        fields.separate.add(prop)
       }
       for (const condition of conditions) {
         if (condition.subscriptionMeta) {
@@ -23,13 +25,12 @@ export const collectFilters = (
         }
       }
     }
-  } else {
+  } else if (fields) {
     for (const prop of filter.conditions.keys()) {
-      if (fields) {
-        fields.add(prop)
-      }
+      fields.separate.add(prop)
     }
   }
+
   if (filter.or) {
     collectFilters(filter.or, fields, nowQueries)
   }
@@ -39,7 +40,7 @@ export const collectFilters = (
   if (filter.references) {
     for (const [prop, ref] of filter.references) {
       if (fields) {
-        fields.add(prop)
+        fields.separate.add(prop)
       }
       collectFilters(ref, undefined, nowQueries)
     }
@@ -48,15 +49,22 @@ export const collectFilters = (
 }
 
 export const collectFields = (def: QueryDef) => {
-  const fields: Set<number> = new Set()
-  if (def.include.main.len > 0) {
-    fields.add(0)
+  const fields: Fields = {
+    separate: new Set(),
+    main: new Set(),
   }
+
+  if (def.include.main.len > 0) {
+    // for (let def.include.main) {
+    // }
+    // fields.main.add(0)
+  }
+
   for (const prop of def.include.props.values()) {
-    fields.add(prop.def.prop)
+    fields.separate.add(prop.def.prop)
   }
   for (const prop of def.references.keys()) {
-    fields.add(prop)
+    fields.separate.add(prop)
   }
   return fields
 }
@@ -94,17 +102,20 @@ export const registerSubscription = (query: BasedDbQuery) => {
     const types = collectTypes(query.def)
     const nowQueries = collectFilters(query.def.filter, fields)
     const buffer = new Uint8Array(
-      headerLen + fields.size + types.size * 2 + nowQueries.length * 16,
+      headerLen +
+        fields.separate.size +
+        types.size * 2 +
+        nowQueries.length * 16,
     )
     buffer[0] = SubscriptionType.singleId
     writeUint32(buffer, subId, 1)
     writeUint16(buffer, typeId, 5)
     writeUint32(buffer, id, 7)
-    buffer[11] = fields.size
+    buffer[11] = fields.separate.size
     writeUint16(buffer, types.size, 12)
     writeUint16(buffer, nowQueries.length, 14)
     let i = headerLen
-    for (const field of fields) {
+    for (const field of fields.separate) {
       buffer[i] = field
       i++
     }
@@ -124,7 +135,10 @@ export const registerSubscription = (query: BasedDbQuery) => {
   } else {
     const typeId = query.def.schema.id
     const types = collectTypes(query.def)
-    const nowQueries = collectFilters(query.def.filter, new Set())
+    const nowQueries = collectFilters(query.def.filter, {
+      separate: new Set(),
+      main: new Set(),
+    })
     const typeLen = types.has(typeId) ? types.size - 1 : types.size
     const headerLen = 8
     const buffer = new Uint8Array(

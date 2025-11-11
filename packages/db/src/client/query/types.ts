@@ -20,7 +20,7 @@ export type IncludeField = {
   opts?: IncludeOpts
 }
 
-export type MainIncludes = { [start: string]: [number, PropDef, IncludeOpts] }
+export type MainIncludes = Map<number, [number, PropDef, IncludeOpts]>
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
 
