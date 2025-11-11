@@ -7,6 +7,7 @@ import {
   ID_FIELD_DEF,
   TEXT,
   REFERENCE,
+  REFERENCES,
 } from '@based/schema/def'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './types.js'
@@ -55,7 +56,11 @@ const referencesFilter = (
       }
       return size
     }
-    if (isPropDef(t) && t.typeIndex === REFERENCE) {
+
+    if (isPropDef(t) && t.typeIndex === REFERENCES) {
+      console.info('derp derp')
+      return 0
+    } else if (isPropDef(t) && t.typeIndex === REFERENCE) {
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
@@ -78,11 +83,9 @@ const referencesFilter = (
         refConditions,
         def, // incorrect...
       )
-
       if (refConditions.hasSubMeta) {
         conditions.hasSubMeta = true
       }
-
       return size
     }
   }

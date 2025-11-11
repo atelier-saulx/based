@@ -134,12 +134,14 @@ export const META_EXISTS = 251
 export const META_EDGE = 252
 export const META_OR_BRANCH = 253
 export const META_REFERENCE = 254
+export const META_REFERENCES = 250
 
 export type FILTER_META =
   | typeof META_EDGE
   | typeof META_OR_BRANCH
   | typeof META_REFERENCE
   | typeof META_EXISTS
+  | typeof META_REFERENCES
 // -------------------------------------------
 
 export type FilterCtx = {

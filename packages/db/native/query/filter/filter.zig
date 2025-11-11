@@ -83,6 +83,44 @@ pub fn filter(
             } else {
                 return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
             }
+        } else if (meta == Meta.references) {
+            // const refField: u8 = conditions[i + 1];
+            // const refTypePrefix = read(u16, conditions, i + 2);
+            const size = read(u16, conditions, i + 4);
+
+            std.debug.print("flap \n", .{});
+            // const fieldSchema = db.getFieldSchema(typeEntry, refField) catch {
+            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            // };
+            // const selvaRef = db.getSingleReference(node, fieldSchema);
+            // const dstType = db.getRefDstType(ctx, fieldSchema) catch {
+            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            // };
+            // const refNode: ?db.Node = db.getNodeFromReference(dstType, selvaRef);
+            // const edgeConstraint: db.EdgeFieldConstraint = db.getEdgeFieldConstraint(fieldSchema);
+            // if (refNode == null) {
+            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            // }
+            // const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
+            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            // };
+            // if (!filter(
+            //     ctx,
+            //     refNode.?,
+            //     refTypeEntry,
+            //     conditions[0 .. i + 6 + size],
+            //     .{
+            //         .smallReference = null,
+            //         .largeReference = @ptrCast(selvaRef.?),
+            //         .edgeConstraint = edgeConstraint,
+            //     },
+            //     null,
+            //     i + 6,
+            //     false,
+            // )) {
+            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            // }
+            i += size + 6;
         } else if (meta == Meta.reference) {
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = read(u16, conditions, i + 2);
@@ -258,7 +296,6 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (prop == Prop.REFERENCES) {
-                        // if edge different
                         const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };

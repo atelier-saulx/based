@@ -42,6 +42,7 @@ pub const Mode = enum(u8) {
 };
 
 pub const Meta = enum(u8) {
+    references = 250,
     exists = 251,
     edge = 252,
     orBranch = 253,
