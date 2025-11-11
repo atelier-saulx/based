@@ -1,5 +1,6 @@
 const std = @import("std");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
+const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 
 pub const IdSubsItem = packed struct {
     marked: SubStatus, // offset +0
@@ -7,11 +8,8 @@ pub const IdSubsItem = packed struct {
     subId: u32,
     id: u32,
     fields: @Vector(vectorLen, u8),
-    mainPartial: @Vector(vectorLen, u16),
-    // going to get MAIN filter as well...
+    partial: @Vector(vectorLenU16, u16),
 };
-
-pub const SUB_SIZE = @sizeOf(IdSubsItem);
 
 pub const IdSubs = std.AutoHashMap(u32, []IdSubsItem); // [types.SUB_SIZE] [24] [24] [4 4] [16 bytes]
 
@@ -69,6 +67,14 @@ pub const MAX_BIT_SET_SIZE = 10_000_000; // 5mb
 pub const SubStatus = enum(u8) {
     all = 255,
     marked = 254,
+    none = 253,
+};
+
+pub const SubPartialStatus = enum(u16) {
+    all = 255 * 255,
+    none = 255 * 255 - 1,
 };
 
 pub const allFieldsVector: @Vector(vectorLen, u8) = @splat(@intFromEnum(SubStatus.all));
+pub const noPartialMatch: @Vector(vectorLenU16, u16) = @splat(@intFromEnum(SubPartialStatus.none));
+pub const allPartialMatch: @Vector(vectorLenU16, u16) = @splat(@intFromEnum(SubPartialStatus.all));

@@ -9,6 +9,7 @@ const upsertSubType = @import("./shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
 const selva = @import("../../selva.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
+const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 
 pub inline fn getNewBitSize(size: u32) u32 {
     var n: u32 = size;
@@ -75,16 +76,19 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
-    const headerLen = 16;
+    const headerLen = 18;
     const subId = utils.read(u32, value, 1);
     const typeId = utils.read(u16, value, 5);
     const id = utils.read(u32, value, 7);
-
     const fieldsLen = value[11];
-    const fields = value[headerLen .. fieldsLen + headerLen];
+    const partialLen = utils.read(u16, value, 12);
 
-    // const partialLen = value[11]
-    // const patialFields = value[11]
+    const fields = value[headerLen .. fieldsLen + headerLen];
+    const partialFields = value[fieldsLen + headerLen .. fieldsLen + headerLen + partialLen * 2];
+    // const partialFields = utils.realign(
+    //     u16,
+    //     value[fieldsLen + headerLen .. fieldsLen + headerLen + partialLen * 2],
+    // );
 
     var typeSubs = try upsertSubType(ctx, typeId);
 
@@ -119,10 +123,27 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     subs[subIndex].subId = subId;
     subs[subIndex].id = id;
 
-    if (fields.len > vectorLen) {
-        subs[subIndex].fields = types.allFieldsVector;
+    subs[subIndex].partial = @splat(@intFromEnum(types.SubPartialStatus.none));
+    subs[subIndex].fields = @splat(@intFromEnum(types.SubStatus.marked));
+
+    if (partialLen > vectorLenU16) {
+        subs[subIndex].partial = @splat(@intFromEnum(types.SubPartialStatus.all));
     } else {
-        subs[subIndex].fields = fields[0..vectorLen].*;
+        var j: usize = 0;
+        while (j < partialLen) {
+            subs[subIndex].partial[j] = utils.read(u16, partialFields, j * 2);
+            j += 1;
+        }
+    }
+
+    if (fields.len > vectorLen) {
+        subs[subIndex].fields = @splat(@intFromEnum(types.SubStatus.all));
+    } else {
+        var j: usize = 0;
+        while (j < fieldsLen) {
+            subs[subIndex].fields[j] = fields[j];
+            j += 1;
+        }
     }
 
     return null;
@@ -153,7 +174,7 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                     }
                 }
 
-                if (subs.len == types.SUB_SIZE) {
+                if (subs.len == 1) {
                     std.heap.raw_c_allocator.free(subs);
                     idRemoved = true;
                 } else {

@@ -53,14 +53,13 @@ export const collectFields = (def: QueryDef) => {
     separate: new Set(),
     main: new Set(),
   }
-
   if (def.include.main.len > 0) {
-    // for (let def.include.main) {
-    // }
-    // fields.main.add(0)
+    for (const [, propDef] of def.include.main.include.values()) {
+      fields.main.add(propDef.start)
+    }
+    // Add 0
     fields.separate.add(0)
   }
-
   for (const prop of def.include.props.values()) {
     fields.separate.add(prop.def.prop)
   }
@@ -99,26 +98,36 @@ export const registerSubscription = (query: BasedDbQuery) => {
     const subId = native.crc32(
       query.buffer.subarray(ID.id + 4, query.buffer.byteLength - 4),
     )
-    const headerLen = 16
+    const headerLen = 18
     const types = collectTypes(query.def)
     const nowQueries = collectFilters(query.def.filter, fields)
     const buffer = new Uint8Array(
       headerLen +
         fields.separate.size +
         types.size * 2 +
-        nowQueries.length * 16,
+        nowQueries.length * 16 +
+        fields.main.size * 2,
     )
     buffer[0] = SubscriptionType.singleId
     writeUint32(buffer, subId, 1)
     writeUint16(buffer, typeId, 5)
     writeUint32(buffer, id, 7)
     buffer[11] = fields.separate.size
-    writeUint16(buffer, types.size, 12)
-    writeUint16(buffer, nowQueries.length, 14)
+    writeUint16(buffer, fields.main.size, 12)
+    writeUint16(buffer, types.size, 14)
+    writeUint16(buffer, nowQueries.length, 16)
+
     let i = headerLen
+    // i + 1
+    // i += 8
     for (const field of fields.separate) {
       buffer[i] = field
       i++
+    }
+    // i += 2
+    for (const offset of fields.main) {
+      writeUint16(buffer, offset, i)
+      i += 2
     }
     for (const type of types) {
       writeUint16(buffer, type, i)

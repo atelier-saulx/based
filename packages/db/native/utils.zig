@@ -70,6 +70,8 @@ pub inline fn move(dest: []u8, source: []const u8) void {
 pub inline fn realign(comptime T: type, data: []u8) []T {
     const address = @intFromPtr(data.ptr);
     const offset = (@alignOf(T) - (address & (@alignOf(T) - 1))) & @alignOf(T);
+    std.debug.print("flap {any} {any} \n", .{ address, offset });
+
     const aligned: []u8 align(@alignOf(T)) = @alignCast(data[offset .. data.len - (@alignOf(T) - 1) + offset]);
     if (offset != 0) {
         move(aligned, data[0 .. data.len - (@alignOf(T) - 1)]);

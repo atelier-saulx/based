@@ -222,23 +222,28 @@ export const registerSubscription = (
   if (sub[0] === SubscriptionType.singleId) {
     const subId = readUint32(sub, 1)
     const id = readUint32(sub, 7)
-    const headerLen = 16
+    const headerLen = 18
     let subContainer: SubscriptionId
     let listeners: Set<() => void>
     if (!server.subscriptions.ids.get(subId)) {
       subContainer = { ids: new Map() }
       server.subscriptions.ids.set(subId, subContainer)
-      const typesLen = readUint16(sub, 12)
-      const nowLen = readUint16(sub, 14)
       const fLen = sub[11]
+      const mainLen = readUint16(sub, 12) * 2
+      const typesLen = readUint16(sub, 14)
+      const nowLen = readUint16(sub, 16)
+
       if (typesLen != 0) {
         // double check if this is alignment correct with the byteOffset else copy
-        const byteOffset = sub.byteOffset + headerLen + fLen
+        const byteOffset = sub.byteOffset + headerLen + fLen + mainLen
         if (byteOffset % 2 === 0) {
           subContainer.types = new Uint16Array(sub.buffer, byteOffset, typesLen)
         } else {
           subContainer.types = new Uint16Array(
-            sub.slice(headerLen + fLen, headerLen + fLen + typesLen * 2),
+            sub.slice(
+              headerLen + fLen + mainLen,
+              headerLen + fLen + mainLen + typesLen * 2,
+            ),
           )
         }
         subContainer.typesListener = () => {
@@ -259,7 +264,7 @@ export const registerSubscription = (
         // when getting the date mark next in line
 
         // have to make a copy (subArray is weak)
-        now = sub.slice(headerLen + fLen + typesLen * 2)
+        now = sub.slice(headerLen + fLen + mainLen + typesLen * 2)
         subContainer.nowListener = () => {
           // per id want to have a last eval and needs next eval
 
