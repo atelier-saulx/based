@@ -13,10 +13,7 @@ export const collectFilters = (
   nowQueries: FilterMetaNow[] = [],
 ) => {
   if (filter.hasSubMeta) {
-    for (const [prop, conditions] of filter.conditions) {
-      if (fields) {
-        fields.separate.add(prop)
-      }
+    for (const [, conditions] of filter.conditions) {
       for (const condition of conditions) {
         if (condition.subscriptionMeta) {
           if (condition.subscriptionMeta.now) {
@@ -25,9 +22,16 @@ export const collectFilters = (
         }
       }
     }
-  } else if (fields) {
-    for (const prop of filter.conditions.keys()) {
+  }
+
+  if (fields) {
+    for (const [prop, conditions] of filter.conditions) {
       fields.separate.add(prop)
+      if (prop === 0) {
+        for (const condition of conditions) {
+          fields.main.add(condition.propDef.start)
+        }
+      }
     }
   }
 
@@ -37,9 +41,10 @@ export const collectFilters = (
   if (filter.and) {
     collectFilters(filter.and, fields, nowQueries)
   }
+
   if (filter.references) {
-    for (const [prop, ref] of filter.references) {
-      if (fields) {
+    for (const ref of filter.references.values()) {
+      for (const prop of filter.conditions.keys()) {
         fields.separate.add(prop)
       }
       collectFilters(ref, undefined, nowQueries)
@@ -116,15 +121,11 @@ export const registerSubscription = (query: BasedDbQuery) => {
     writeUint16(buffer, fields.main.size, 12)
     writeUint16(buffer, types.size, 14)
     writeUint16(buffer, nowQueries.length, 16)
-
     let i = headerLen
-    // i + 1
-    // i += 8
     for (const field of fields.separate) {
       buffer[i] = field
       i++
     }
-    // i += 2
     for (const offset of fields.main) {
       writeUint16(buffer, offset, i)
       i += 2

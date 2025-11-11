@@ -99,7 +99,7 @@ export const createFixedFilterBuffer = (
     const len = value.length
     // Add 8 extra bytes for alignment
     const buffer = new Uint8Array(18 + len * size)
-    const result: FilterCondition = { buffer }
+    const result: FilterCondition = { buffer, propDef: prop }
     buffer[0] = ctx.type
     buffer[1] =
       prop.typeIndex === REFERENCES && ctx.operation === EQUAL
@@ -148,12 +148,13 @@ export const createFixedFilterBuffer = (
     if (isNowQuery(prop, value, ctx)) {
       return {
         buffer,
+        propDef: prop,
         subscriptionMeta: {
           now: [createNowMeta(prop, parsedValue, ctx)],
         },
       }
     } else {
-      return { buffer }
+      return { buffer, propDef: prop }
     }
   }
 }

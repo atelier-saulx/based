@@ -70,6 +70,7 @@ export type FilterMetaNow = {
 
 export type FilterCondition = {
   buffer: Uint8Array
+  propDef: PropDef | PropDefEdge
   subscriptionMeta?: {
     now?: FilterMetaNow[]
   }

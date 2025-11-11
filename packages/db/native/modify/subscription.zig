@@ -53,9 +53,6 @@ pub fn stagePartial(ctx: *ModifyCtx, start: u16) void {
                 ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
                 ctx.db.subscriptions.lastIdMarked += 1;
                 idSubs[i].marked = subTypes.SubStatus.marked;
-                // std.debug.print("STAGE! s: {any} \n", .{start});
-            } else {
-                // std.debug.print("NA BRUH STAGE! s: {any} \n", .{start});
             }
         }
     }
@@ -95,6 +92,8 @@ pub fn stage(
                     continue;
                 }
                 if (@reduce(.Or, idSubs[i].fields == f)) {
+                    std.debug.print("YO YO STAGE FIELDS: \n", .{});
+
                     if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
                         ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                             ctx.db.subscriptions.singleIdMarked,
