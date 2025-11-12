@@ -1,6 +1,6 @@
 {
   "name": "@based/errors",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "license": "MIT",
   "type": "module",
   "main": "./dist/src/index.js",
@@ -35,7 +35,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@based/functions": "3.4.2"
+    "@based/functions": "3.4.3"
   },
   "devDependencies": {
     "ts-node": "10.9.1",
