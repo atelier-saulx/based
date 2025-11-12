@@ -671,10 +671,6 @@ static void write_ref_2way(
         struct SelvaNode * restrict src, const struct SelvaFieldSchema *fs_src, ssize_t index,
         struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst)
 {
-    assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
-    assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE || fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
-    assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
-    assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE || fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
 #if 0
     assert(fs_src->edge_constraint.dst_node_type == dst->type);
     assert(fs_dst->edge_constraint.dst_node_type == src->type);
@@ -683,12 +679,20 @@ static void write_ref_2way(
     if (fs_src->type == SELVA_FIELD_TYPE_REFERENCE) {
         write_ref(src, fs_src, dst, nullptr);
     } else {
+#if 0
+        assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
+#endif
+        assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
         write_refs(src, fs_src, index, dst, nullptr);
     }
 
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         write_ref(dst, fs_dst, src, nullptr);
     } else {
+#if 0
+        assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
+#endif
+        assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
         write_refs(dst, fs_dst, -1, src, nullptr);
     }
 }
