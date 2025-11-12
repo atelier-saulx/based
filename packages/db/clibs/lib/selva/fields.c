@@ -667,9 +667,10 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
 /*
  * add_to_refs_index() must be called before this function.
  */
-static void write_ref_2way(
+static inline void write_ref_2way(
         struct SelvaNode * restrict src, const struct SelvaFieldSchema *fs_src, ssize_t index,
-        struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst)
+        struct SelvaNode * restrict dst, const struct SelvaFieldSchema *fs_dst,
+        struct SelvaNodeReferenceAny *ref_out)
 {
 #if 0
     assert(fs_src->edge_constraint.dst_node_type == dst->type);
@@ -677,13 +678,13 @@ static void write_ref_2way(
 #endif
 
     if (fs_src->type == SELVA_FIELD_TYPE_REFERENCE) {
-        write_ref(src, fs_src, dst, nullptr);
+        write_ref(src, fs_src, dst,  ref_out ? &ref_out->large : nullptr);
     } else {
 #if 0
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
 #endif
         assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
-        write_refs(src, fs_src, index, dst, nullptr);
+        write_refs(src, fs_src, index, dst, ref_out);
     }
 
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
@@ -1193,16 +1194,8 @@ int selva_fields_references_insert(
             (void)remove_reference(db, dst, fs_dst, 0, -1, ignore_src_dependent, dirty_cb, dirty_ctx);
         }
 
-        /*
-         * Two-way write.
-         * See: write_ref_2way()
-         */
-        write_refs(node, fs, index, dst, ref_out);
-        if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-            write_ref(dst, fs_dst, node, nullptr);
-        } else {
-            write_refs(dst, fs_dst, -1, node, nullptr);
-        }
+        assume(fs->type == SELVA_FIELD_TYPE_REFERENCES);
+        write_ref_2way(node, fs, index, dst, fs_dst, ref_out);
 
         return 0;
     } else if (reorder) {
@@ -1311,21 +1304,8 @@ int selva_fields_reference_set(
         }
     }
 
-    /*
-     * Two-way write.
-     * See: write_ref_2way()
-     */
-    if (ref_out) {
-        ref_out->type = SELVA_NODE_REFERENCE_LARGE;
-        write_ref(src, fs_src, dst, &ref_out->large);
-    } else {
-        write_ref(src, fs_src, dst, nullptr);
-    }
-    if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
-        write_ref(dst, fs_dst, src, nullptr);
-    } else {
-        write_refs(dst, fs_dst, -1, src, nullptr);
-    }
+    assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE);
+    write_ref_2way(src, fs_src, -1, dst, fs_dst, ref_out);
 
     return 0;
 }
@@ -1459,7 +1439,7 @@ static void selva_fields_references_insert_tail_insert_refs(
     assert(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
 #endif
     assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCES);
-    write_ref_2way(src, fs_src, -1, dst, fs_dst);
+    write_ref_2way(src, fs_src, -1, dst, fs_dst, nullptr);
 }
 
 static void selva_fields_references_insert_tail_insert_ref(
@@ -1476,7 +1456,7 @@ static void selva_fields_references_insert_tail_insert_ref(
 #endif
     assume(fs_dst->type == SELVA_FIELD_TYPE_REFERENCE);
     (void)remove_reference(db, dst, fs_dst, 0, -1, false, dirty_cb, dirty_ctx);
-    write_ref_2way(src, fs_src, -1, dst, fs_dst);
+    write_ref_2way(src, fs_src, -1, dst, fs_dst, nullptr);
 }
 
 int selva_fields_references_insert_tail(
