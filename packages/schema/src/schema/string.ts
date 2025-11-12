@@ -1,5 +1,6 @@
-import type { Schema } from './index.js'
-import { isString, isNatural, getValidate } from './shared.js'
+import { isString, isNatural, isRecord, assert } from './shared.js'
+import { parseBase, type Base } from './base.js'
+
 export const stringFormats = [
   'alpha',
   'alphaLocales',
@@ -75,8 +76,7 @@ export const stringFormats = [
 ] as const
 export const stringCompressions = ['none', 'deflate']
 
-type StringFormat = (typeof stringFormats)[number]
-type Compression = (typeof stringCompressions)[number]
+export type StringCompression = (typeof stringCompressions)[number]
 type KnownMimeTypes =
   | 'text/html'
   | 'text/plain'
@@ -91,12 +91,23 @@ type KnownMimeTypes =
   | '*/*'
 type GeneralMimeType = `${string}/${string}`
 type MimeString = KnownMimeTypes | (GeneralMimeType & {})
-type Mime = MimeString | MimeString[]
+
+export type StringFormat = (typeof stringFormats)[number]
+export type Mime = MimeString | MimeString[]
 
 const isMimeString = (v: unknown): v is MimeString =>
   isString(v) && v.includes('/')
 
-type SchemaStringObj = {
+export const isMime = (v: unknown): v is Mime =>
+  Array.isArray(v) ? v.every(isMimeString) : isMimeString(v)
+
+export const isFormat = (v: unknown): v is StringFormat =>
+  stringFormats.includes(v as any)
+
+export const isCompression = (v: unknown): v is StringCompression =>
+  stringCompressions.includes(v as any)
+
+export type SchemaString = Base & {
   type: 'string'
   default?: string
   maxBytes?: number
@@ -104,31 +115,28 @@ type SchemaStringObj = {
   max?: number
   mime?: Mime
   format?: StringFormat
-  compression?: Compression
+  compression?: StringCompression
 }
 
-export type SchemaString<strict = true> = strict extends true
-  ? SchemaStringObj
-  : 'string' | SchemaStringObj
+export const parseString = (def: unknown): SchemaString => {
+  assert(isRecord(def))
+  assert(def.type === 'string')
+  assert(def.default === undefined || isString(def.default))
+  assert(def.maxBytes === undefined || isNatural(def.maxBytes))
+  assert(def.min === undefined || isNatural(def.min))
+  assert(def.max === undefined || isNatural(def.max))
+  assert(def.mime === undefined || isMime(def.mime))
+  assert(def.format === undefined || isFormat(def.format))
+  assert(def.compression === undefined || isCompression(def.compression))
 
-const validate = getValidate<SchemaStringObj, SchemaString<true>>(
-  {
-    type: 'string',
-  },
-  {
-    default: isString,
-    maxBytes: isNatural,
-    min: isNatural,
-    max: isNatural,
-    mime: (v) => (Array.isArray(v) ? v.every(isMimeString) : isMimeString(v)),
-    format: (v) => stringCompressions.includes(v as any),
-    compression: (v) => stringCompressions.includes(v as any),
-  },
-)
-
-export const parseString = (def: unknown, schema: Schema): SchemaString => {
-  if (def === 'string') {
-    return { type: 'string' }
-  }
-  return validate(def)
+  return parseBase<SchemaString>(def, {
+    type: def.type,
+    default: def.default,
+    maxBytes: def.maxBytes,
+    min: def.min,
+    max: def.max,
+    mime: def.mime,
+    format: def.format,
+    compression: def.compression,
+  })
 }

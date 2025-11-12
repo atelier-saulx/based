@@ -12,3 +12,5 @@ const shorthand = pipe(
 )
 
 export const alias = union([shorthand, schema])
+
+// export const alias =

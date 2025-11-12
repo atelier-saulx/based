@@ -24,4 +24,4 @@ const shorthand = pipe(
   transform((type) => ({ type })),
 )
 
-export const text = union([shorthand, schema])
+export const text = union([schema, shorthand])

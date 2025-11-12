@@ -3,11 +3,12 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
+    "noEmit": true,
     "declarationMap": true,
     "esModuleInterop": true,
     "strictNullChecks": true
   },
-  "include": ["src"],
+  "include": ["src", "test"],
   "exclude": ["dist"]
 }
