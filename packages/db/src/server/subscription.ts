@@ -52,16 +52,19 @@ export const startUpdateHandler = (server: DbServer) => {
     // can do seperate timing for id / type
     // scince multi queries are much heavier ofc
     const markedIdSubs = native.getMarkedIdSubscriptions(server.dbCtxExternal)
+
     if (markedIdSubs) {
       const buffer = new Uint8Array(markedIdSubs)
       for (let i = 0; i < buffer.byteLength; i += 8) {
         const id = readUint32(buffer, i)
         const subId = readUint32(buffer, i + 4)
         const subContainer = server.subscriptions.ids.get(subId)
-        const ids = subContainer.ids.get(id)
-        if (ids) {
-          for (const fn of ids) {
-            fn()
+        if (subContainer) {
+          const ids = subContainer.ids.get(id)
+          if (ids) {
+            for (const fn of ids) {
+              fn()
+            }
           }
         }
       }

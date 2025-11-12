@@ -86,7 +86,7 @@ await test('subscriptionIdRemove', async (t) => {
     }
   }, 1)
 
-  // Randomly remove subscriptions and update random users
+  // Randomly remove subscriptions and immediately update those users
   const removeInterval = setInterval(() => {
     if (!running || totalRemoved >= amount) {
       if (totalRemoved >= amount) {
@@ -114,9 +114,20 @@ await test('subscriptionIdRemove', async (t) => {
 
       const user = users.get(userId)
       if (user && user.active) {
+        // Close the subscription
         user.subscription()
         user.active = false
         totalRemoved++
+
+        // Immediately update the user after closing subscription to test if it crashes
+        clients[0].update('user', user.id, {
+          x: { increment: 1 },
+        })
+
+        // Update again to really stress test
+        clients[0].update('user', user.id, {
+          name: `Removed User ${userId}`,
+        })
       }
     }
   }, 1)

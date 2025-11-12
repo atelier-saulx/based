@@ -85,10 +85,6 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
 
     const fields = value[headerLen .. fieldsLen + headerLen];
     const partialFields = value[fieldsLen + headerLen .. fieldsLen + headerLen + partialLen * 2];
-    // const partialFields = utils.realign(
-    //     u16,
-    //     value[fieldsLen + headerLen .. fieldsLen + headerLen + partialLen * 2],
-    // );
 
     var typeSubs = try upsertSubType(ctx, typeId);
 
