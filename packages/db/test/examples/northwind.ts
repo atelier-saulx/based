@@ -388,7 +388,7 @@ await test('Basic SQL', async (t) => {
       'orderDate',
       'requiredDate',
     )
-    .filter('orderDate', '>=', new Date('January 1, 1998'))
+    .filter('orderDate', '>=', new Date('1/1/1998 00:00+00'))
     .filter('shippedDate', '>', 'requiredDate')
     .sort('orderDate', 'asc')
     .range(0, 3)
