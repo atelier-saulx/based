@@ -149,6 +149,7 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
             .inverse_field = constraints.inverse_field,
             .dst_node_type = constraints.dst_node_type,
             .meta_node_type = constraints.meta_node_type,
+            .limit = 0,
         },
     };
 
