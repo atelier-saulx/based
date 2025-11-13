@@ -87,17 +87,17 @@ export type PropDef = {
   path: string[]
   start: number
   len: number // bytes or count
-  inverseTypeName?: string
-  inversePropName?: string
-  // 0 == none , 1 == standard deflate
-  compression?: 0 | 1
-  inverseTypeId?: number
-  inversePropNumber?: number
+  compression?: 0 | 1 // 0 == none , 1 == standard deflate
   enum?: any[]
   dependent?: boolean
   // default here?
   validation: Validation
   default: any
+  // references
+  inverseTypeName?: string
+  inversePropName?: string
+  inverseTypeId?: number
+  inversePropNumber?: number
   // vectors
   vectorBaseType?: VectorBaseType
   vectorSize?: number
