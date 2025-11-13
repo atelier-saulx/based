@@ -111,7 +111,7 @@ const propDefBuffer = (
     view.setUint16(3, baseSize, true) // element size
     return [...buf]
   } else if (type === REFERENCE || type === REFERENCES) {
-    const buf = new Uint8Array(7)
+    const buf = new Uint8Array(11)
     const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
 
@@ -120,6 +120,7 @@ const propDefBuffer = (
     view.setUint16(2, dstType.id, true) // dst_node_type
     buf[4] = prop.inversePropNumber // inverse_field
     view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // meta_node_type
+    view.setUint32(7, prop.referencesCapped ?? 0, true)
 
     return [...buf]
   } else if (
@@ -220,7 +221,7 @@ export function schemaToSelvaBuffer(schema: {
       nrFields, // u8 nrFields
       1 + refFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
-      6, // u8 version (generally follows the sdb version)
+      7, // u8 version (generally follows the sdb version)
       ...propDefBuffer(schema, main),
       ...rest.map((f) => propDefBuffer(schema, f)).flat(1),
     ]).buffer

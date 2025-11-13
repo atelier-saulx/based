@@ -98,6 +98,7 @@ export type PropDef = {
   inversePropName?: string
   inverseTypeId?: number
   inversePropNumber?: number
+  referencesCapped?: number
   // vectors
   vectorBaseType?: VectorBaseType
   vectorSize?: number
