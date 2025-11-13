@@ -1,19 +1,44 @@
 import assert from 'assert'
-import { parseReference, SchemaReference } from './reference.js'
-import { parseString, SchemaString } from './string.js'
 import { isRecord, isString } from './shared.js'
-import { parseReferences, type SchemaReferences } from './references.js'
-import { parseAlias, type SchemaAlias } from './alias.js'
-import { parseBinary, type SchemaBinary } from './binary.js'
-import { parseBoolean, type SchemaBoolean } from './boolean.js'
-import { parseCardinality, type SchemaCardinality } from './cardinality.js'
-import { parseEnum, type SchemaEnum } from './enum.js'
-import { parseJson, type SchemaJson } from './json.js'
-import { parseText, type SchemaText } from './text.js'
-import { parseTimestamp, type SchemaTimestamp } from './timestamp.js'
-import { parseNumber, type SchemaNumber } from './number.js'
+import {
+  numberTypes,
+  parseAlias,
+  parseBinary,
+  parseBoolean,
+  parseCardinality,
+  parseEnum,
+  parseJson,
+  parseNumber,
+  parseReference,
+  parseReferences,
+  parseString,
+  parseText,
+  parseTimestamp,
+  parseVector,
+  type SchemaAlias,
+  type SchemaBinary,
+  type SchemaBoolean,
+  type SchemaCardinality,
+  type SchemaEnum,
+  type SchemaJson,
+  type SchemaNumber,
+  type SchemaReference,
+  type SchemaReferences,
+  type SchemaString,
+  type SchemaText,
+  type SchemaTimestamp,
+  type SchemaVector,
+} from './props/index.js'
 
-export type SchemaProp<strict = true> =
+type SchemaProps<strict = true> = Record<string, SchemaProp<strict>>
+type SchemaType<strict = true> =
+  | { props: SchemaProps<strict> }
+  | ({ props: never } & SchemaProps<strict>)
+type SchemaTypes<strict = true> = Record<string, SchemaType<strict>>
+type Schema<strict = false> = {
+  types: SchemaTypes<strict>
+}
+type SchemaProp<strict = true> =
   | SchemaAlias
   | SchemaBinary
   | SchemaBoolean
@@ -26,17 +51,9 @@ export type SchemaProp<strict = true> =
   | SchemaString
   | SchemaText
   | SchemaTimestamp
+  | SchemaVector
 
-export type SchemaProps<strict = true> = Record<string, SchemaProp<strict>>
-export type SchemaType<strict = true> =
-  | { props: SchemaProps<strict> }
-  | ({ props: never } & SchemaProps<strict>)
-export type SchemaTypes<strict = true> = Record<string, SchemaType<strict>>
-export type Schema<strict = false> = {
-  types: SchemaTypes<strict>
-}
-
-export const parseProp = (def: unknown, schema: Schema): SchemaProp<true> => {
+const parseProp = (def: unknown, schema: Schema): SchemaProp<true> => {
   if (isString(def)) {
     def = { type: def }
   } else if (Array.isArray(def)) {
@@ -45,40 +62,42 @@ export const parseProp = (def: unknown, schema: Schema): SchemaProp<true> => {
 
   assert(isRecord(def))
 
-  // const type =
-  //   def.type || 'enum' in def
-  //     ? 'enum'
-  //     : 'ref' in def
-  //       ? 'reference'
-  //       : 'items' in def
-  //         ? 'references'
-  //         : undefined
+  let type = def.type
+  type ??=
+    'enum' in def
+      ? 'enum'
+      : 'ref' in def
+        ? 'reference'
+        : 'items' in def
+          ? 'references'
+          : undefined
 
-  switch (def.type) {
-    case 'alias':
-      return parseAlias(def)
-    case 'binary':
-      return parseBinary(def)
-    case 'boolean':
-      return parseBoolean(def)
-    case 'cardinality':
-      return parseCardinality(def)
-    case 'enum':
-      return parseEnum(def)
-    case 'json':
-      return parseJson(def)
-    case 'number':
-      return parseNumber(def)
-    case 'reference':
-      return parseReference(def, schema)
-    case 'references':
-      return parseReferences(def, schema)
-    case 'string':
-      return parseString(def)
-    case 'text':
-      return parseText(def)
-    case 'timestamp':
-      return parseTimestamp(def)
+  if (type === 'alias') {
+    return parseAlias(def)
+  } else if (type === 'binary') {
+    return parseBinary(def)
+  } else if (type === 'boolean') {
+    return parseBoolean(def)
+  } else if (type === 'cardinality') {
+    return parseCardinality(def)
+  } else if (type === 'enum') {
+    return parseEnum(def)
+  } else if (type === 'json') {
+    return parseJson(def)
+  } else if (type === 'reference') {
+    return parseReference(def, schema)
+  } else if (type === 'references') {
+    return parseReferences(def, schema)
+  } else if (type === 'string') {
+    return parseString(def)
+  } else if (type === 'text') {
+    return parseText(def)
+  } else if (type === 'timestamp') {
+    return parseTimestamp(def)
+  } else if (type === 'vector' || type === 'colvec') {
+    return parseVector(def)
+  } else if (numberTypes.includes(type as string)) {
+    return parseNumber(def)
   }
 
   throw 'error'
@@ -97,7 +116,7 @@ const parseType = (type: unknown, schema: Schema): SchemaType<true> => {
   }
 }
 
-export const parseSchema = (schema: Schema): Schema<true> => {
+const parseSchema = (schema: Schema): Schema<true> => {
   assert(isRecord(schema?.types))
   const types: SchemaTypes<true> = {}
   for (const key in types) {
@@ -106,4 +125,26 @@ export const parseSchema = (schema: Schema): Schema<true> => {
   return {
     types,
   }
+}
+
+export {
+  parseSchema,
+  type SchemaAlias,
+  type SchemaBinary,
+  type SchemaBoolean,
+  type SchemaCardinality,
+  type SchemaEnum,
+  type SchemaJson,
+  type SchemaNumber,
+  type SchemaReference,
+  type SchemaReferences,
+  type SchemaString,
+  type SchemaText,
+  type SchemaTimestamp,
+  type SchemaVector,
+  type SchemaProp,
+  type SchemaProps,
+  type SchemaType,
+  type SchemaTypes,
+  type Schema,
 }
