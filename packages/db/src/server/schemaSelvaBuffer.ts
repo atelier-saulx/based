@@ -192,12 +192,6 @@ export function schemaToSelvaBuffer(schema: {
               break
             case NUMBER:
               writeDoubleLE(buf, f.default, f.start)
-              //const view = new DataView(
-              //  buf.buffer,
-              //  f.start,
-              //  8,
-              //)
-              //view.setFloat64(0, f.default, true)
               break
             case TIMESTAMP:
               writeUint64(buf, f.default, f.start)
