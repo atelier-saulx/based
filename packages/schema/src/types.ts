@@ -442,7 +442,6 @@ type GenericSchemaType<isStrict = false> = {
   id?: number
   blockCapacity?: number
   capped?: number
-  insertOnly?: boolean
   partial?: boolean
   props: SchemaProps<isStrict>
 }

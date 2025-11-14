@@ -6,8 +6,8 @@ import {
   EXPECTED_OBJ,
   EXPECTED_STR,
 } from './errors.js'
-import { parse } from './semver/parse.js'
-import { SemVer } from './semver/types.js'
+import { parse } from '../semver/parse.js'
+import { SemVer } from '../semver/types.js'
 
 export const expectVersion = (obj: any): SemVer => {
   try {

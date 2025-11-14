@@ -1,4 +1,4 @@
-import { assert, isBoolean, isNumber, isRecord, isString } from '../shared.js'
+import { assert, isRecord } from './shared.js'
 import { parseBase, type Base } from './base.js'
 
 export type SchemaJson = Base & {

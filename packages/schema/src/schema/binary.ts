@@ -1,5 +1,5 @@
 import { isFormat, isMime, type Mime, type StringFormat } from './string.js'
-import { assert, isNatural, isRecord } from '../shared.js'
+import { assert, isNatural, isRecord } from './shared.js'
 import { parseBase, type Base } from './base.js'
 
 export type SchemaBinary = Base & {

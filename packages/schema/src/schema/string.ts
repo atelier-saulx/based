@@ -1,4 +1,4 @@
-import { isString, isNatural, isRecord, assert } from '../shared.js'
+import { isString, isNatural, isRecord, assert } from './shared.js'
 import { parseBase, type Base } from './base.js'
 
 export const stringFormats = [

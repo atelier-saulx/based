@@ -1,4 +1,4 @@
-import { assert, isNatural, isRecord } from '../shared.js'
+import { assert, isNatural, isRecord } from './shared.js'
 import { parseBase, type Base } from './base.js'
 
 export type SchemaCardinality = Base & {

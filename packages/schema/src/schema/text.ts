@@ -1,4 +1,4 @@
-import { assert, isRecord, isString } from '../shared.js'
+import { assert, isRecord, isString } from './shared.js'
 import { parseBase, type Base } from './base.js'
 import type { StringCompression, StringFormat } from './string.js'
 

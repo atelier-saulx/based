@@ -1,7 +1,7 @@
 import { parseBase, type Base } from './base.js'
 import { parseReference, type SchemaReference } from './reference.js'
-import { assert, isRecord, type RequiredIfStrict } from '../shared.js'
-import type { Schema } from '../index.js'
+import { assert, isRecord, type RequiredIfStrict } from './shared.js'
+import type { Schema } from './schema.js'
 
 export type SchemaReferences<strict = true> = Base & {
   type: RequiredIfStrict<'references', strict>

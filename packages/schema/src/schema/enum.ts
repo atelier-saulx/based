@@ -5,7 +5,7 @@ import {
   isRecord,
   isString,
   type RequiredIfStrict,
-} from '../shared.js'
+} from './shared.js'
 import { parseBase, type Base } from './base.js'
 
 type EnumItem = string | number | boolean

@@ -1,4 +1,4 @@
-import { assert, isNatural, isNumber, isRecord, isString } from '../shared.js'
+import { assert, isNumber, isRecord, isString } from './shared.js'
 import { parseBase, type Base } from './base.js'
 
 export const numberTypes = [
