@@ -24,14 +24,17 @@ const match = args
 
 const testsToRun = []
 
-const p = join(__dirname, '../dist/test')
+const p = join(__dirname, '../test')
 
 const walk = async (dir = p) => {
   const files = await fs.readdir(dir)
   const promises = []
   for (const f of files) {
-    if (f.endsWith('.js')) {
+    if (f.endsWith('.ts')) {
       const path = join(dir, f)
+
+      if (path.includes('shared')) continue
+
       if (match.length > 0) {
         const relPath = relative(p, path)
         for (const test of match) {
@@ -97,8 +100,8 @@ for (let i = 0; i < repeat; i++) {
     }
 
     global._currentTestPath = fullPath
-      .replace('/dist/', '/')
-      .replace('.js', '.ts')
+    // .replace('/dist/', '/')
+    // .replace('.js', '.ts')
 
     await import(fullPath + `?_=${++cnt}`)
       .catch((err) => {
