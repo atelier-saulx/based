@@ -6,7 +6,12 @@
     "allowJs": true,
     "noPropertyAccessFromIndexSignature": false,
     "rootDir": "./",
-    "composite": true
+    "composite": true,
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+    "target": "esnext",
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["./src", "./test"],
   "exclude": ["./dist"]
