@@ -88,38 +88,51 @@ pub fn filter(
             // const refTypePrefix = read(u16, conditions, i + 2);
             const size = read(u16, conditions, i + 4);
 
-            std.debug.print("REFERENCES NESTED NOT IMPLEMENTED \n", .{});
-            // const fieldSchema = db.getFieldSchema(typeEntry, refField) catch {
-            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-            // };
-            // const selvaRef = db.getSingleReference(node, fieldSchema);
-            // const dstType = db.getRefDstType(ctx, fieldSchema) catch {
-            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-            // };
-            // const refNode: ?db.Node = db.getNodeFromReference(dstType, selvaRef);
-            // const edgeConstraint: db.EdgeFieldConstraint = db.getEdgeFieldConstraint(fieldSchema);
-            // if (refNode == null) {
-            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-            // }
-            // const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
-            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-            // };
-            // if (!filter(
-            //     ctx,
-            //     refNode.?,
-            //     refTypeEntry,
-            //     conditions[0 .. i + 6 + size],
-            //     .{
-            //         .smallReference = null,
-            //         .largeReference = @ptrCast(selvaRef.?),
-            //         .edgeConstraint = edgeConstraint,
-            //     },
-            //     null,
-            //     i + 6,
-            //     false,
-            // )) {
-            //     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-            // }
+            if (isEdge) {
+                std.debug.print("zig: EDGE REFERENCES NESTED NOT IMPLEMENTED \n", .{});
+                i += size + 6;
+                continue;
+            }
+            const refField: u8 = conditions[i + 1];
+            const refTypePrefix = read(u16, conditions, i + 2);
+            const fieldSchema = db.getFieldSchema(typeEntry, refField) catch {
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            };
+
+            const edgeConstraint: db.EdgeFieldConstraint = db.getEdgeFieldConstraint(fieldSchema);
+            const references = db.getReferences(node, fieldSchema);
+            if (references == null) {
+                // default empty size - this should never happen
+                return false;
+            }
+
+            const refTypeEntry = db.getType(ctx, refTypePrefix) catch {
+                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+            };
+
+            const refs: types.Refs = .{ .refs = references.?, .fs = fieldSchema };
+
+            var j: usize = offset;
+            const refsCnt = refs.refs.nr_refs;
+
+            while (j < refsCnt) : (j += 1) {
+                if (types.resolveRefsNode(ctx, refs, i)) |refNode| {
+                    const refStruct = types.RefResult(refs, edgeConstraint, i);
+                    if (!filter(
+                        ctx,
+                        refNode,
+                        refTypeEntry,
+                        conditions[0 .. i + 6 + size],
+                        refStruct,
+                        null,
+                        i + 6,
+                        false,
+                    )) {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
+                }
+            }
+
             i += size + 6;
         } else if (meta == Meta.reference) {
             const refField: u8 = conditions[i + 1];

@@ -5,9 +5,11 @@ import {
   META_EXISTS,
   META_OR_BRANCH,
   META_REFERENCE,
+  META_REFERENCES,
   TYPE_DEFAULT,
   TYPE_NEGATE,
 } from './types.js'
+import { REFERENCES } from '@based/schema/prop-types'
 
 const writeConditions = (
   result: Uint8Array,
@@ -61,17 +63,20 @@ export const fillConditionsBuffer = (
 
   if (conditions.references) {
     for (const [refField, refConditions] of conditions.references) {
-      result[lastWritten] = META_REFERENCE
+      result[lastWritten] =
+        refConditions.prop.typeIndex === REFERENCES
+          ? META_REFERENCES
+          : META_REFERENCE
       lastWritten++
       result[lastWritten] = refField
       lastWritten++
-      writeUint16(result, refConditions.schema.id, lastWritten)
+      writeUint16(result, refConditions.conditions.schema.id, lastWritten)
       lastWritten += 2
       const sizeIndex = lastWritten
       lastWritten += 2
       const size = fillConditionsBuffer(
         result,
-        refConditions,
+        refConditions.conditions,
         lastWritten,
         metaOffset,
       )
@@ -179,7 +184,7 @@ export const resolveMetaIndexes = (
 
   if (defFilter.references) {
     for (const ref of defFilter.references.values()) {
-      resolveMetaIndexes(ref, offset)
+      resolveMetaIndexes(ref.conditions, offset)
     }
   }
 }

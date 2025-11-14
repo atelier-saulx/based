@@ -1,5 +1,6 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
+import { deepEqual } from '../shared/assert.js'
 
 await test('filter references shortcut', async (t) => {
   const db = new BasedDb({
@@ -31,16 +32,35 @@ await test('filter references shortcut', async (t) => {
     friends: [db.create('user', { name: 'Mr b', age: 25 })],
   })
 
-  // await db.create('user', {
-  //   name: 'Mr c',
-  //   friends: [db.create('user', { name: 'Mr d', age: 99 })],
-  // })
+  deepEqual(
+    await db
+      .query('user')
+      .include('name', 'age', 'friends')
+      .filter('friends.age', '<', 40)
+      .get(),
+    [
+      {
+        id: 2,
+        age: 50,
+        name: 'Mr a',
+        friends: [{ id: 1, age: 25, name: 'Mr b' }],
+      },
+    ],
+  )
 
-  await db
-    .query('user')
-    .include('name', 'age', 'friends')
-    .filter('friends.age', '>', 40)
-    .get()
-    .inspect()
-  // lets add some functionality
+  deepEqual(
+    await db
+      .query('user')
+      .include('name', 'age', 'friends')
+      .filter('friends.age', '>', 40)
+      .get(),
+    [
+      {
+        id: 1,
+        age: 25,
+        name: 'Mr b',
+        friends: [{ id: 2, age: 50, name: 'Mr a' }],
+      },
+    ],
+  )
 })

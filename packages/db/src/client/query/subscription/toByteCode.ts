@@ -47,7 +47,7 @@ export const collectFilters = (
       for (const prop of filter.conditions.keys()) {
         fields.separate.add(prop)
       }
-      collectFilters(ref, undefined, nowQueries)
+      collectFilters(ref.conditions, undefined, nowQueries)
     }
   }
   return nowQueries
@@ -80,15 +80,19 @@ export const collectTypes = (
 ) => {
   if ('references' in def) {
     for (const ref of def.references.values()) {
-      types.add(ref.schema.id)
-      // TODO Now queries here...
-      collectTypes(ref, types)
+      if ('schema' in ref) {
+        types.add(ref.schema.id)
+        collectTypes(ref, types)
+      } else {
+        types.add(ref.conditions.schema.id)
+        collectTypes(ref.conditions, types)
+      }
     }
   }
   if ('filter' in def && 'references' in def.filter) {
     for (const ref of def.filter.references.values()) {
-      types.add(ref.schema.id)
-      collectTypes(ref)
+      types.add(ref.conditions.schema.id)
+      collectTypes(ref.conditions)
     }
   }
   return types

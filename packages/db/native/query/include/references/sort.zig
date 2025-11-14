@@ -43,7 +43,7 @@ pub fn sortedReferences(
     };
     const refsCnt = refs.refs.nr_refs;
     checkItem: while (i < refsCnt) : (i += 1) {
-        if (queryTypes.resolveRefsNode(ctx, refs, i)) |refNode| {
+        if (queryTypes.resolveRefsNode(ctx.db, refs, i)) |refNode| {
             if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
                 continue :checkItem;
             }

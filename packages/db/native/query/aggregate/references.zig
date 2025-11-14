@@ -101,7 +101,7 @@ pub inline fn aggregateRefsGroup(
     defer selva.selva_string_free(hllAccumulator);
 
     checkItem: while (i < refsCnt) : (i += 1) {
-        if (incTypes.resolveRefsNode(ctx, refs.?, i)) |n| {
+        if (incTypes.resolveRefsNode(ctx.db, refs.?, i)) |n| {
             if (hasFilter) {
                 const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
                 if (!filter(ctx.db, n, typeEntry, filterArr.?, refStruct, null, 0, false)) {
@@ -200,7 +200,7 @@ pub inline fn aggregateRefsDefault(
     } else {
         var i: usize = offset;
         checkItem: while (i < refsCnt) : (i += 1) {
-            if (incTypes.resolveRefsNode(ctx, refs.?, i)) |refNode| {
+            if (incTypes.resolveRefsNode(ctx.db, refs.?, i)) |refNode| {
                 const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
                 if (hasFilter) {
                     if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {

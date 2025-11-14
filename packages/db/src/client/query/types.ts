@@ -80,7 +80,10 @@ export type QueryDefFilter = {
   size: number
   conditions: Map<number, FilterCondition[]>
   exists?: { prop: PropDef | PropDefEdge; negate: boolean }[]
-  references?: Map<number, QueryDefFilter>
+  references?: Map<
+    number,
+    { conditions: QueryDefFilter; prop: PropDef | PropDefEdge }
+  >
   fromRef?: PropDef
   schema?: SchemaTypeDef
   edges?: Map<number, FilterCondition[]>

@@ -12,11 +12,11 @@ pub const RefStruct = struct {
 };
 
 pub inline fn resolveRefsNode(
-    ctx: *QueryCtx,
+    ctx: *db.DbCtx,
     refs: Refs,
     i: usize,
 ) ?db.Node {
-    const dstType = db.getRefDstType(ctx.db, refs.fs) catch {
+    const dstType = db.getRefDstType(ctx, refs.fs) catch {
         return null;
     };
 

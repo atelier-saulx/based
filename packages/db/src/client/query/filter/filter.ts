@@ -57,23 +57,24 @@ const referencesFilter = (
       return size
     }
 
-    if (isPropDef(t) && t.typeIndex === REFERENCES) {
-      console.info('REFERENCES NESTED NOT IMPLEMENTED')
-      conditions.references ??= new Map()
-
-      return 0
-    } else if (isPropDef(t) && t.typeIndex === REFERENCE) {
+    if (
+      isPropDef(t) &&
+      (t.typeIndex === REFERENCE || t.typeIndex === REFERENCES)
+    ) {
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
         const schema = db.schemaTypesParsed[t.inverseTypeName]
         size += 6
         refConditions = {
-          conditions: new Map(),
-          fromRef: t,
-          schema,
-          size: 0,
-          hasSubMeta: false,
+          conditions: {
+            conditions: new Map(),
+            fromRef: t,
+            schema,
+            size: 0,
+            hasSubMeta: false,
+          },
+          prop: t,
         }
         conditions.references.set(t.prop, refConditions)
       }
@@ -81,11 +82,11 @@ const referencesFilter = (
       size += filterRaw(
         db,
         [path.slice(i + 1).join('.'), ctx, value],
-        refConditions.schema,
-        refConditions,
+        refConditions.conditions.schema,
+        refConditions.conditions,
         def, // incorrect...
       )
-      if (refConditions.hasSubMeta) {
+      if (refConditions.conditions.hasSubMeta) {
         conditions.hasSubMeta = true
       }
       return size
