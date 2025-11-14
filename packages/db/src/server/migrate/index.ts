@@ -12,7 +12,7 @@ import {
   writeSchemaFile,
 } from '../schema.ts'
 import { setToAwake, waitUntilSleeping } from './utils.ts'
-import { DbSchema, MigrateFns, serialize } from '@based/schema'
+import type { DbSchema, MigrateFns, serialize } from '@based/schema'
 import { semver } from '@based/schema'
 const { satisfies, parseRange, parse } = semver
 

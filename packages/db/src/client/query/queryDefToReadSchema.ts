@@ -1,6 +1,6 @@
 // import type { IncludeOpts, QueryDef, Target } from '@based/db'
 import { inverseLangMap, langCodesMap } from '@based/schema'
-import {
+import type {
   PropDef,
   PropDefEdge,
   COLVEC,

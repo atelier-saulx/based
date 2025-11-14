@@ -1,5 +1,5 @@
 import { Ctx } from '../Ctx.ts'
-import { PropDef } from '@based/schema/def'
+import type { PropDef } from '@based/schema/def'
 import { reserve } from '../resize.ts'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'
 import { writeU32, writeU8 } from '../uint.ts'
@@ -7,7 +7,7 @@ import { Tmp } from '../Tmp.ts'
 import { validate } from '../validate.ts'
 import { writeEdges } from '../edges/index.ts'
 import { writeUint32 } from '@based/utils'
-import {
+import type {
   DELETE,
   EDGE_INDEX_REALID,
   EDGE_INDEX_TMPID,

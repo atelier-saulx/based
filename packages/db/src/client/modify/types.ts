@@ -1,4 +1,4 @@
-import { LangName } from '@based/schema'
+import type { LangName } from '@based/schema'
 
 export const CREATE = 3
 export const UPDATE = 6

@@ -1,6 +1,6 @@
 import { DbWorker } from './workers/DbWorker.ts'
 import { DbServer } from './index.ts'
-import { IoJob } from './workers/io_worker_types.ts'
+import type { IoJob } from './workers/io_worker_types.ts'
 import { DECODER, readInt32 } from '@based/utils'
 import native from '../native.ts'
 

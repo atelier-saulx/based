@@ -1,5 +1,5 @@
 import picocolors from 'picocolors'
-import {
+import type {
   ALIAS,
   BINARY,
   BOOLEAN,
@@ -32,7 +32,7 @@ import { Filter } from './query.ts'
 import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.ts'
 import { QueryByAliasObj, QueryDef } from './types.ts'
 import { displayTarget, safeStringify } from './display.ts'
-import {
+import type {
   isValidId,
   isValidString,
   LangCode,

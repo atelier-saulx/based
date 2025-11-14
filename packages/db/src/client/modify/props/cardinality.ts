@@ -1,4 +1,4 @@
-import { PropDef, PropDefEdge } from '@based/schema/def'
+import type { PropDef, PropDefEdge } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { deleteProp } from './delete.ts'
 import { writeU32, writeU8, writeU8Array } from '../uint.ts'

@@ -1,4 +1,4 @@
-import { MICRO_BUFFER, PropDefEdge } from '@based/schema/def'
+import type { MICRO_BUFFER, PropDefEdge } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { UPDATE, UPDATE_PARTIAL } from '../types.ts'
 

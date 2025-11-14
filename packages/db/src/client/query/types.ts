@@ -1,4 +1,4 @@
-import { LangCode, LangName } from '@based/schema'
+import type { LangCode, LangName } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
 import { FilterCtx, FilterOpts, Operator } from './filter/types.ts'
 import { QueryError } from './validation.ts'

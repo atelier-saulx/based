@@ -1,5 +1,5 @@
 import { SchemaTypeDef } from '@based/schema/def'
-import { DbSchema } from '@based/schema'
+import type { DbSchema } from '@based/schema'
 import { Emitter } from './Emitter.ts'
 
 export type EventMap = {

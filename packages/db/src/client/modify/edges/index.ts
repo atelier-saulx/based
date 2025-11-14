@@ -1,4 +1,4 @@
-import { PropDef, PropDefEdge } from '@based/schema/def'
+import type { PropDef, PropDefEdge } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { writeSeparateEdge } from './separate.ts'
 import { DECREMENT, INCREMENT, UPDATE } from '../types.ts'

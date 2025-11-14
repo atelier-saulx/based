@@ -1,4 +1,4 @@
-import { PropDef } from '@based/schema/def'
+import type { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { Tmp } from '../Tmp.ts'
 import { reserve } from '../resize.ts'

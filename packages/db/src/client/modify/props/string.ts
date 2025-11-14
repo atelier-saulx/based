@@ -1,6 +1,6 @@
-import { PropDef } from '@based/schema/def'
+import type { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
-import { LangCode } from '@based/schema'
+import type { LangCode } from '@based/schema'
 import {
   CREATE,
   DELETE,

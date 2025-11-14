@@ -1,6 +1,6 @@
 import { PROP_CURSOR_SIZE, writeMainCursor } from '../cursor.ts'
 import { writeU16, writeU8 } from '../uint.ts'
-import { PropDef } from '@based/schema/def'
+import type { PropDef } from '@based/schema/def'
 import { reserve } from '../resize.ts'
 import { writeFixed } from './fixed.ts'
 import { Ctx } from '../Ctx.ts'

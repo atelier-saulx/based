@@ -1,5 +1,5 @@
-import { updateTypeDefs } from '@based/schema/def'
-import { DbSchema } from '@based/schema'
+import type { updateTypeDefs } from '@based/schema/def'
+import type { DbSchema } from '@based/schema'
 import { DbClient } from '../index.ts'
 import { cancel } from './modify/drain.ts'
 import { Ctx } from './modify/Ctx.ts'

@@ -1,7 +1,7 @@
 import { writeU16, writeU32, writeU8, writeU8Array } from '../uint.ts'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'
 import { validate } from '../validate.ts'
-import { BINARY, PropDef } from '@based/schema/def'
+import type { BINARY, PropDef } from '@based/schema/def'
 import native from '../../../native.ts'
 import { reserve } from '../resize.ts'
 import { markDefaults } from '../create/mark.ts'

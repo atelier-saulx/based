@@ -1,10 +1,10 @@
 import native from '../native.ts'
 import { join } from 'node:path'
-import { SchemaTypeDef } from '@based/schema/def'
+import type { SchemaTypeDef } from '@based/schema/def'
 import { bufToHex, equals, readInt32 } from '@based/utils'
 import { VerifTree, destructureTreeKey, makeTreeKey } from './tree.ts'
 import { DbServer } from './index.ts'
-import { IoJobSave } from './workers/io_worker_types.ts'
+import type { IoJobSave } from './workers/io_worker_types.ts'
 
 const SELVA_ENOENT = -8
 

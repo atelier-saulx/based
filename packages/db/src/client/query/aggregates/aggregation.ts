@@ -1,5 +1,5 @@
 import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
-import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.ts'
+import type { QueryDef, QueryDefAggregation, QueryDefType } from '../types.ts'
 import {
   GroupBy,
   Interval,
@@ -8,7 +8,7 @@ import {
   aggFnOptions,
   setMode,
 } from './types.ts'
-import {
+import type {
   PropDef,
   UINT32,
   SchemaPropTree,

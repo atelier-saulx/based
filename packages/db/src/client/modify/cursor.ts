@@ -1,4 +1,4 @@
-import { MICRO_BUFFER, PropDef } from '@based/schema/def'
+import type { MICRO_BUFFER, PropDef } from '@based/schema/def'
 import { Ctx } from './Ctx.ts'
 import { SWITCH_TYPE, SWITCH_FIELD } from './types.ts'
 import { writeU8, writeU8Array } from './uint.ts'

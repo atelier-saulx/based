@@ -10,7 +10,7 @@ import { setSchemaOnServer } from '../schema.ts'
 import { setToSleep } from './utils.ts'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.ts'
 import { MigrateRange } from './index.ts'
-import { DbSchema, deSerialize } from '@based/schema'
+import type { DbSchema, deSerialize } from '@based/schema'
 import { wait } from '@based/utils'
 
 if (isMainThread) {

@@ -1,7 +1,7 @@
-import { PropDef } from '@based/schema/def'
+import type { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { CREATE } from '../types.ts'
-import { LangCode } from '@based/schema'
+import type { LangCode } from '@based/schema'
 
 export const markString = (ctx: Ctx, def: PropDef) => {
   if (ctx.operation === CREATE) {

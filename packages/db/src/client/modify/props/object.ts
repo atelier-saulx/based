@@ -1,4 +1,4 @@
-import { PropDef, SchemaTypeDef, isPropDef } from '@based/schema/def'
+import type { PropDef, SchemaTypeDef, isPropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { writeSeparate } from './separate.ts'
 import { writeMainValue } from './main.ts'

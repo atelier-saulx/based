@@ -1,4 +1,4 @@
-import {
+import type {
   PropDefEdge,
   BINARY,
   STRING,

@@ -1,4 +1,4 @@
-import { PropDefEdge, STRING } from '@based/schema/def'
+import type { PropDefEdge, STRING } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { reserve } from '../resize.ts'
 import { getBuffer, writeBinaryRaw } from '../props/binary.ts'

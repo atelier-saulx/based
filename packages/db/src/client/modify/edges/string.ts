@@ -1,4 +1,4 @@
-import { PropDefEdge, STRING } from '@based/schema/def'
+import type { PropDefEdge, STRING } from '@based/schema/def'
 import { ENCODER } from '@based/utils'
 import { write } from '../../string.ts'
 import { Ctx } from '../Ctx.ts'

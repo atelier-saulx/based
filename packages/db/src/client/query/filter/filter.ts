@@ -1,5 +1,5 @@
 import { QueryDef, QueryDefFilter } from '../types.ts'
-import {
+import type {
   isPropDef,
   SchemaTypeDef,
   SchemaPropTree,

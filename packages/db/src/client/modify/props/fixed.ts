@@ -1,5 +1,5 @@
 import { Ctx } from '../Ctx.ts'
-import {
+import type {
   BINARY,
   BOOLEAN,
   ENUM,

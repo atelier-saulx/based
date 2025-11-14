@@ -1,5 +1,5 @@
 import { updateTypeDefs } from '@based/schema/def'
-import { DbSchema, serialize } from '@based/schema'
+import type { DbSchema, serialize } from '@based/schema'
 import { DbServer } from './index.ts'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'

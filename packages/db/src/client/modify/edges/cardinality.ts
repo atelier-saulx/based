@@ -1,4 +1,4 @@
-import { PropDefEdge, CARDINALITY } from '@based/schema/def'
+import type { PropDefEdge, CARDINALITY } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { reserve } from '../resize.ts'
 import { writeU32 } from '../uint.ts'

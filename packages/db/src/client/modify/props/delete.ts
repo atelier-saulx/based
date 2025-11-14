@@ -1,5 +1,5 @@
 import { Ctx } from '../Ctx.ts'
-import { PropDef } from '@based/schema/def'
+import type { PropDef } from '@based/schema/def'
 import { DELETE, UPDATE } from '../types.ts'
 import { reserve } from '../resize.ts'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'

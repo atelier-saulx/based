@@ -1,6 +1,6 @@
-import { ALIAS, isPropDef, SchemaPropTree } from '@based/schema/def'
+import type { ALIAS, isPropDef, SchemaPropTree } from '@based/schema/def'
 import { DbClient } from '../../../index.ts'
-import { INSERT, ModifyOpts, UPSERT } from '../types.ts'
+import type { INSERT, ModifyOpts, UPSERT } from '../types.ts'
 import { getValidSchema } from '../validate.ts'
 import { writeU32, writeU8, writeU8Array } from '../uint.ts'
 import { reserve } from '../resize.ts'

@@ -1,4 +1,4 @@
-import { PropDefEdge, REFERENCES } from '@based/schema/def'
+import type { PropDefEdge, REFERENCES } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { reserve } from '../resize.ts'
 import { writePadding, writeU32 } from '../uint.ts'

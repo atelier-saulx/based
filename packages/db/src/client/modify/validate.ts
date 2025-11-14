@@ -1,4 +1,4 @@
-import { isValidId, PropDef, PropDefEdge } from '@based/schema/def'
+import type { isValidId, PropDef, PropDefEdge } from '@based/schema/def'
 import { DbClient } from '../../index.ts'
 
 export const validate = (val: any, def: PropDef | PropDefEdge) => {

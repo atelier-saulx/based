@@ -1,5 +1,5 @@
 import { Ctx } from '../Ctx.ts'
-import {
+import type {
   ModifyOpts,
   SWITCH_ID_UPDATE,
   UPDATE,
@@ -22,7 +22,7 @@ import { getByPath, writeUint32 } from '@based/utils'
 import { writeU16, writeU32, writeU8 } from '../uint.ts'
 import { writeFixed } from '../props/fixed.ts'
 import { schedule } from '../drain.ts'
-import { SchemaTypeDef } from '@based/schema/def'
+import type { SchemaTypeDef } from '@based/schema/def'
 
 const writeUpdateTs = (ctx: Ctx, payload: any) => {
   if (ctx.schema.updateTs) {

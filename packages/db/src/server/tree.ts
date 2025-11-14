@@ -1,5 +1,5 @@
 import createDbHash from './dbHash.ts'
-import { SchemaTypeDef } from '@based/schema/def'
+import type { SchemaTypeDef } from '@based/schema/def'
 
 export const destructureTreeKey = (key: number) => [
   (key / 4294967296) | 0, // typeId

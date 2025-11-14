@@ -7,7 +7,7 @@ import {
   writeUint32,
   writeUint64,
 } from '@based/utils'
-import {
+import type {
   SchemaTypeDef,
   PropDef,
   PropDefEdge,

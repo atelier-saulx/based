@@ -1,4 +1,4 @@
-import {
+import type {
   PropDef,
   PropDefEdge,
   BINARY,
@@ -23,7 +23,7 @@ import {
   writeUint16,
   writeUint32,
 } from '@based/utils'
-import { FilterCondition, FilterMetaNow } from '../types.ts'
+import type { FilterCondition, FilterMetaNow } from '../types.ts'
 
 const isNowQuery = (
   prop: PropDef | PropDefEdge,
