@@ -54,7 +54,7 @@ pub fn writeEdges(
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
             const mainBufferOffset = len - totalMainBufferLen;
-            const val = db.getEdgeProp(ctx.db, edgeConstraint, ref, edgeFieldSchema);
+            const val = db.getField(null, edgeNode, edgeFieldSchema, t);
 
             if (!isMainEmpty(val)) {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
