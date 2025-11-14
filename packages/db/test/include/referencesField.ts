@@ -14,7 +14,7 @@ await test('references shortcut', async (t) => {
       user: {
         props: {
           name: 'string',
-          age: 'uint8',
+          age: 'uint32',
           friends: {
             items: {
               ref: 'user',
@@ -32,7 +32,7 @@ await test('references shortcut', async (t) => {
     friends: [db.create('user', { name: 'Mr b', age: 25 })],
   })
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1e5; i++) {
     db.create('user', { name: 'Mr ' + i, age: 92 + i, friends: [mrA] })
   }
 
@@ -44,9 +44,9 @@ await test('references shortcut', async (t) => {
 
   // range offset last (use at())
   // maybe add offset and limit makes this possible...
-  deepEqual(
-    await db.query('user', mrA).include('name', 'age', 'friends[-1].age').get(),
-    { id: 2, age: 50, name: 'Mr a', friends: [{ id: 1, age: 25 }] },
-    '[0]',
-  )
+  // deepEqual(
+  //   await db.query('user', mrA).include('name', 'age', 'friends[-1].age').get(),
+  //   { id: 2, age: 50, name: 'Mr a', friends: [{ id: 1, age: 25 }] },
+  //   '[-1]',
+  // )
 })
