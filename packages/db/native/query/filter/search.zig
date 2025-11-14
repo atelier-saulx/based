@@ -359,7 +359,7 @@ pub fn search(
             };
             var score: u8 = 255;
             if (field == MAIN_PROP) {
-                const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+                const value = db.getField(typeEntry, node, fieldSchema, prop);
                 const start = read(u16, ctx.fields, j + 3);
                 const len = value[start];
                 if (len < query.len) {
@@ -375,7 +375,7 @@ pub fn search(
                     }
                 }
             } else {
-                const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+                const value = db.getField(typeEntry, node, fieldSchema, prop);
                 if (value.len == 0) {
                     continue :fieldLoop;
                 }
@@ -438,7 +438,7 @@ pub fn searchVector(
     const fieldSchema = db.getFieldSchema(typeEntry, ctx.field) catch {
         return MaxVectorScore;
     };
-    const value = db.getField(typeEntry, ctx.field, node, fieldSchema, Prop.VECTOR);
+    const value = db.getField(typeEntry, node, fieldSchema, Prop.VECTOR);
     if (value.len == 0) {
         return MaxVectorScore;
     }

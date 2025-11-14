@@ -50,7 +50,7 @@ pub fn sortedReferences(
             const fs = db.getFieldSchema(typeEntry, sortField) catch {
                 return result;
             };
-            const value = db.getField(typeEntry, 0, refNode, fs, sortProp);
+            const value = db.getField(typeEntry, refNode, fs, sortProp);
             dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
         }
     }

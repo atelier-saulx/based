@@ -108,7 +108,7 @@ pub inline fn aggregateRefsGroup(
                     continue :checkItem;
                 }
             }
-            const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
+            const groupValue = db.getField(typeEntry, n, groupCtx.fieldSchema, groupCtx.propType);
             const key: []u8 = if (groupValue.len > 0)
                 if (groupCtx.propType == types.Prop.STRING)
                     if (groupCtx.field == 0)
