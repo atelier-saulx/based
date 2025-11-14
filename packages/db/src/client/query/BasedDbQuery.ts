@@ -520,6 +520,20 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     this.target = target
   }
 
+  at(index: number): BasedDbQuery {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'at',
+        args: [index],
+      })
+    } else {
+      this.def.selectFirstResult = true
+      this.def.range.limit = 1
+      this.def.range.offset = index
+    }
+    return this
+  }
+
   reset() {
     this.subscriptionBuffer = undefined
     this.buffer = undefined

@@ -42,11 +42,15 @@ await test('references shortcut', async (t) => {
     '[0]',
   )
 
-  // range offset last (use at())
-  // maybe add offset and limit makes this possible...
-  // deepEqual(
-  //   await db.query('user', mrA).include('name', 'age', 'friends[-1].age').get(),
-  //   { id: 2, age: 50, name: 'Mr a', friends: [{ id: 1, age: 25 }] },
-  //   '[-1]',
-  // )
+  deepEqual(
+    await db.query('user').at(0).get(),
+    { id: 1, age: 25, name: 'Mr b' },
+    '.at(0)',
+  )
+
+  deepEqual(
+    await db.query('user').at(3).get(),
+    { id: 4, age: 93, name: 'Mr 1' },
+    '.at(3)',
+  )
 })

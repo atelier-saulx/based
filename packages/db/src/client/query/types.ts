@@ -186,7 +186,7 @@ export interface aggPropDef extends PropDef {
 export type LangFallback = LangName | false
 
 export type QueryDefShared = {
-  // getFirst: boolean
+  selectFirstResult: boolean
   queryType: QueryType
   schemaChecksum?: number
   errors: QueryError[]
