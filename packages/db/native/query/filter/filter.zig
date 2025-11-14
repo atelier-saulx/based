@@ -165,11 +165,22 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
+                        const te = db.getType(ctx, r.edgeConstraint.meta_node_type) catch {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        };
                         const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstraint, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const value = db.getEdgeProp(ctx, r.edgeConstraint, r.largeReference.?, edgeFieldSchema);
-                        if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+                        const edgeType = db.getType(ctx, r.edgeConstraint.meta_node_type) catch {
+                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                        };
+
+                        if (db.getNode(edgeType, r.largeReference.?.meta)) |edgeNode| {
+                            const value = db.getField(te, edgeNode, edgeFieldSchema, prop);
+                            if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+                                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                            }
+                        } else {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     }
