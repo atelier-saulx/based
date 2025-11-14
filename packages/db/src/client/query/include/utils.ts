@@ -6,8 +6,14 @@ import {
 } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { createQueryDef } from '../queryDef.js'
-import { IncludeOpts, QueryDef, QueryDefType } from '../types.js'
+import {
+  IncludeOpts,
+  QueryDef,
+  QueryDefType,
+  ReferenceSelectValue,
+} from '../types.js'
 import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
+import { ref } from 'node:process'
 
 export const getAllFieldFromObject = (
   tree: SchemaPropTree | PropDef,
@@ -28,6 +34,7 @@ const createRefQueryDef = (
   db: DbClient,
   def: QueryDef,
   t: PropDef | PropDefEdge,
+  refSelect?: ReferenceSelectValue,
 ) => {
   const defRef = createQueryDef(
     db,
@@ -49,11 +56,13 @@ export const createOrGetRefQueryDef = (
   db: DbClient,
   def: QueryDef,
   t: PropDef | PropDefEdge,
+  refSelect?: ReferenceSelectValue,
 ) => {
-  if (!def.references.has(t.prop)) {
-    return createRefQueryDef(db, def, t)
+  let refDef = def.references.get(t.prop)
+  if (!refDef) {
+    refDef = createRefQueryDef(db, def, t, refSelect)
   }
-  return def.references.get(t.prop)
+  return refDef
 }
 
 export const createOrGetEdgeRefQueryDef = (
