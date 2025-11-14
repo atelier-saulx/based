@@ -80,6 +80,9 @@
  *
  * **6**
  * - Add support for default value in micro buffers
+ *
+ * **7**
+ * - Capped references
  */
 
 #define SDB_VERSION 6 /*!< Bump this if the serialization format changes. */
