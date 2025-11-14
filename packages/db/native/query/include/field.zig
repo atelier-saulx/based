@@ -17,7 +17,6 @@ pub const ResultType = enum(u8) {
 
 pub inline fn get(
     ctx: *QueryCtx,
-    id: u32,
     node: db.Node,
     field: u8,
     prop: t.Prop,
@@ -49,7 +48,7 @@ pub inline fn get(
         };
     } else {
         fieldSchema = try db.getFieldSchema(typeEntry, field);
-        value = db.getField(typeEntry, id, node, fieldSchema, prop);
+        value = db.getField(typeEntry, node, fieldSchema, prop);
         if (value.len == 0) {
             return null;
         }

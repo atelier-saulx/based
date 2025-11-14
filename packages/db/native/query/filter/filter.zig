@@ -200,7 +200,7 @@ pub fn filter(
                     const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
-                    const value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+                    const value = db.getField(typeEntry, node, fieldSchema, prop);
 
                     if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
@@ -235,7 +235,7 @@ pub fn filter(
                 };
                 const prop: Prop = @enumFromInt(conditions[i + 5]);
                 if (prop == Prop.TEXT) {
-                    value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+                    value = db.getField(typeEntry, node, fieldSchema, prop);
                     if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -301,7 +301,7 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
-                        value = db.getField(typeEntry, 0, node, fieldSchema, prop);
+                        value = db.getField(typeEntry, node, fieldSchema, prop);
                     }
                     if (value.len == 0 or !runCondition(tctx.decompressor.?, &tctx.libdeflateBlockState, query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);

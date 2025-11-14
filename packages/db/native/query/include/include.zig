@@ -85,7 +85,7 @@ pub fn getFields(
                 const field: u8 = include[i];
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
                 i += 2;
-                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.fixed);
+                result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.fixed);
                 const includeSize = read(u16, include, i);
                 i += 2 + includeSize;
                 if (result) |r| {
@@ -100,7 +100,7 @@ pub fn getFields(
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
                 const langCode: t.LangCode = @enumFromInt(include[i + 2]);
                 i += 3;
-                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.meta);
+                result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.meta);
                 if (result) |r| {
                     switch (prop) {
                         t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON, t.Prop.ALIAS => {
@@ -131,7 +131,7 @@ pub fn getFields(
                 const prop: t.Prop = @enumFromInt(include[i + 1]);
                 const optsSize = include[i + 2];
                 i += 3;
-                result = try f.get(ctx, id, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.default);
+                result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.default);
                 if (result) |r| {
                     switch (prop) {
                         t.Prop.BINARY,

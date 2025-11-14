@@ -83,7 +83,7 @@ pub fn defaultSimpleFilter(
         if (node == null) {
             break :checkItem;
         }
-        const value = db.getField(typeEntry, 0, node.?, fieldSchema, t.Prop.MICRO_BUFFER);
+        const value = db.getField(typeEntry, node.?, fieldSchema, t.Prop.MICRO_BUFFER);
         if (value.len == 0 or !runConditions(tctx.decompressor.?, &tctx.libdeflateBlockState, query, value)) {
             continue :checkItem;
         }

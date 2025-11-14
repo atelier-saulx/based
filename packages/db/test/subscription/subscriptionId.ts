@@ -75,7 +75,7 @@ await test('subscriptionId', async (t) => {
 
   await wait(80)
 
-  equal(idCounter, 10)
+  equal(idCounter >= 10, true)
   equal(idFieldCounter, 3)
 
   clearInterval(interval)

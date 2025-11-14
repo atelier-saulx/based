@@ -123,13 +123,12 @@ pub fn getCardinalityReference(ctx: *DbCtx, efc: EdgeFieldConstraint, ref: Refer
 
 pub fn getField(
     typeEntry: ?Type,
-    id: u32,
     node: Node,
     fieldSchema: FieldSchema,
     fieldType: types.Prop,
 ) []u8 {
     if (fieldType == types.Prop.ALIAS) {
-        const target = if (id == 0) getNodeId(node) else id;
+        const target = getNodeId(node);
         const typeAliases = selva.selva_get_aliases(typeEntry, fieldSchema.field);
         const alias = selva.selva_get_alias_by_dest(typeAliases, target);
         if (alias == null) {
@@ -141,7 +140,7 @@ pub fn getField(
     } else if (fieldType == types.Prop.CARDINALITY) {
         return getCardinalityField(node, fieldSchema) orelse emptySlice;
     } else if (fieldType == types.Prop.COLVEC) {
-        const nodeId = if (id == 0) getNodeId(node) else id;
+        const nodeId = getNodeId(node);
         const vec = selva.colvec_get_vec(typeEntry, nodeId, fieldSchema);
         const len = fieldSchema.*.unnamed_0.colvec.vec_len * fieldSchema.*.unnamed_0.colvec.comp_size;
         return @as([*]u8, @ptrCast(vec))[0..len];
@@ -636,14 +635,13 @@ pub inline fn textIterator(
 
 pub inline fn getText(
     typeEntry: ?Type,
-    id: u32,
     node: Node,
     fieldSchema: FieldSchema,
     fieldType: types.Prop,
     langCode: types.LangCode,
 ) []u8 {
     // fallbacks
-    const data = getField(typeEntry, id, node, fieldSchema, fieldType);
+    const data = getField(typeEntry, node, fieldSchema, fieldType);
     return getTextFromValue(data, langCode);
 }
 

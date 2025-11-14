@@ -174,6 +174,7 @@ type NeverInItems = { required?: never }
 export type SchemaReferences = Prop<{
   type?: 'references'
   default?: number[]
+  capped?: number
   items: SchemaReference & NeverInItems
 }>
 

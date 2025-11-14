@@ -229,14 +229,12 @@ pub fn createSortIndex(
         }
         const data = if (prop == types.Prop.TEXT) db.getText(
             typeEntry,
-            db.getNodeId(node.?),
             node.?,
             fieldSchema,
             prop,
             lang,
         ) else db.getField(
             typeEntry,
-            db.getNodeId(node.?),
             node.?,
             fieldSchema,
             prop,
