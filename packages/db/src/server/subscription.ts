@@ -2,7 +2,7 @@ import { readInt64, readUint16, readUint32, writeInt64 } from '@based/utils'
 import {
   OnError,
   SubscriptionType,
-} from '../client/query/subscription/types.js'
+} from '../client/query/subscription/types.ts'
 import { DbServer } from '../index.ts'
 import native from '../native.ts'
 import { MAX_ID } from '@based/schema'

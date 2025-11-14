@@ -7,7 +7,7 @@ import {
   PROP_CURSOR_SIZE,
   writeMainCursor,
   writeTypeCursor,
-} from '../cursor.js'
+} from '../cursor.ts'
 import { getByPath, writeUint16 } from '@based/utils'
 import { writeMainBuffer, writeMainValue } from '../props/main.ts'
 import { Tmp } from '../Tmp.ts'
@@ -22,7 +22,7 @@ import {
   SWITCH_ID_CREATE,
   SWITCH_ID_CREATE_RING,
   SWITCH_ID_CREATE_UNSAFE,
-} from '../types.js'
+} from '../types.ts'
 import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 import { writeSeparate } from '../props/separate.ts'
 import { writeString } from '../props/string.ts'

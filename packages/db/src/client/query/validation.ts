@@ -27,7 +27,7 @@ import {
   LIKE,
   operatorReverseMap,
   VECTOR_FNS,
-} from './filter/types.js'
+} from './filter/types.ts'
 import { Filter } from './query.ts'
 import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.ts'
 import { QueryByAliasObj, QueryDef } from './types.ts'

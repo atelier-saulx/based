@@ -6,7 +6,7 @@ import {
   NODE_CURSOR_SIZE,
   TYPE_CURSOR_SIZE,
   writeTypeCursor,
-} from '../cursor.js'
+} from '../cursor.ts'
 import { EXPIRE, SWITCH_ID_UPDATE } from '../types.ts'
 import { schedule } from '../drain.ts'
 import { Tmp } from '../Tmp.ts'

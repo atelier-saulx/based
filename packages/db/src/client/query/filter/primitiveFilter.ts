@@ -15,7 +15,7 @@ import {
   isNumerical,
   TYPE_NEGATE,
   TYPE_DEFAULT,
-} from './types.js'
+} from './types.ts'
 import { Filter } from './types.ts'
 import { createVariableFilterBuffer } from './createVariableFilterBuffer.ts'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.ts'

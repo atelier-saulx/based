@@ -7,7 +7,7 @@ import {
   META_REFERENCE,
   TYPE_DEFAULT,
   TYPE_NEGATE,
-} from './types.js'
+} from './types.ts'
 
 const writeConditions = (
   result: Uint8Array,

@@ -4,7 +4,7 @@ import {
   QueryDef,
   QueryDefType,
   includeOp,
-} from '../types.js'
+} from '../types.ts'
 import { includeToBuffer } from '../include/toByteCode.ts'
 import { searchToBuffer } from '../search/index.ts'
 import { DbClient } from '../../index.ts'

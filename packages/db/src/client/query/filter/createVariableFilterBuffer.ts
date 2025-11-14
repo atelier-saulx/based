@@ -10,7 +10,7 @@ import {
   MODE_OR_VAR,
   FilterCtx,
   getVectorFn,
-} from './types.js'
+} from './types.ts'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.ts'
 import { crc32 } from '../../crc32.ts'
 import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'

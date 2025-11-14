@@ -7,12 +7,12 @@ import {
   DELETE_TEXT_FIELD,
   RANGE_ERR,
   UPDATE,
-} from '../types.js'
+} from '../types.ts'
 import {
   FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
   writePropCursor,
-} from '../cursor.js'
+} from '../cursor.ts'
 import { reserve } from '../resize.ts'
 import { ENCODER, writeUint32 } from '@based/utils'
 import { write } from '../../string.ts'

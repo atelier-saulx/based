@@ -5,7 +5,7 @@ import {
   QueryDef,
   QueryDefType,
   includeOp,
-} from '../types.js'
+} from '../types.ts'
 import { walkDefs } from './walk.ts'
 import { langCodesMap } from '@based/schema'
 import { writeUint16, writeUint32 } from '@based/utils'

@@ -8,7 +8,7 @@ import {
   EDGE_NOINDEX_TMPID,
   NOEDGE_NOINDEX_REALID,
   NOEDGE_NOINDEX_TMPID,
-} from '../types.js'
+} from '../types.ts'
 import { writeEdges } from '../edges/index.ts'
 import { deleteProp } from './delete.ts'
 import { writeU32, writeU8 } from '../uint.ts'

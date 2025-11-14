@@ -21,8 +21,8 @@ import {
   aggregationFieldDoesNotExist,
   validateStepRange,
   edgeNotImplemented,
-} from '../validation.js'
-import { aggregateTypeMap } from '../aggregates/types.js'
+} from '../validation.ts'
+import { aggregateTypeMap } from '../aggregates/types.ts'
 import { QueryBranch } from '../BasedDbQuery.ts'
 import { AggregateType } from '@based/protocol/db-read'
 

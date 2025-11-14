@@ -10,13 +10,13 @@ import {
   QueryDefType,
   QueryType,
   Target,
-} from './types.js'
+} from './types.ts'
 import {
   validateAlias,
   validateId,
   validateIds,
   validateType,
-} from './validation.js'
+} from './validation.ts'
 
 const createEmptySharedDef = (skipValidation: boolean) => {
   const q: Partial<QueryDefShared> = {

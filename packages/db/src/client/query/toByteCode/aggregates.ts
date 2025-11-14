@@ -5,11 +5,11 @@ import {
   QueryType,
   includeOp,
   IntermediateByteCode,
-} from '../types.js'
+} from '../types.ts'
 import {
   aggregateToBuffer,
   isRootCountOnly,
-} from '../aggregates/aggregation.js'
+} from '../aggregates/aggregation.ts'
 
 export const aggregatesQuery = (def: QueryDef): IntermediateByteCode => {
   const aggregateSize = def.aggregate.size || 0

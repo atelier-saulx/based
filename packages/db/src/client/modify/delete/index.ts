@@ -5,14 +5,14 @@ import {
   writeMainCursor,
   writePropCursor,
   writeTypeCursor,
-} from '../cursor.js'
+} from '../cursor.ts'
 import { reserve } from '../resize.ts'
 import {
   DELETE_NODE,
   DELETE_SORT_INDEX,
   SWITCH_ID_UPDATE,
   UPDATE,
-} from '../types.js'
+} from '../types.ts'
 import { writeU32, writeU8 } from '../uint.ts'
 import { handleError } from '../error.ts'
 import { Tmp } from '../Tmp.ts'

@@ -103,4 +103,4 @@ export const subscribe = (
   }
 }
 
-export * from './types.js'
+export * from './types.ts'

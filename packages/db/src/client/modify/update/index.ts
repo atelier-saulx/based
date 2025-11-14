@@ -4,7 +4,7 @@ import {
   SWITCH_ID_UPDATE,
   UPDATE,
   UPDATE_PARTIAL,
-} from '../types.js'
+} from '../types.ts'
 import { DbClient } from '../../../index.ts'
 import { getValidSchema, validateId, validatePayload } from '../validate.ts'
 import { langCodesMap } from '@based/schema'
@@ -17,7 +17,7 @@ import {
   PROP_CURSOR_SIZE,
   writeMainCursor,
   writeTypeCursor,
-} from '../cursor.js'
+} from '../cursor.ts'
 import { getByPath, writeUint32 } from '@based/utils'
 import { writeU16, writeU32, writeU8 } from '../uint.ts'
 import { writeFixed } from '../props/fixed.ts'

@@ -1,5 +1,5 @@
 // @ts-ignore
-import db from '../../../basedDbNative.cjs'
+import db from '../../basedDbNative.cjs'
 import { bufToHex } from '@based/utils'
 
 export default function createHash() {

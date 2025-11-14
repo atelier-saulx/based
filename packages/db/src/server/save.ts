@@ -8,7 +8,7 @@ import {
   foreachBlock,
   foreachDirtyBlock,
   saveBlocks,
-} from './blocks.js'
+} from './blocks.ts'
 import { DbServer } from './index.ts'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@based/utils'

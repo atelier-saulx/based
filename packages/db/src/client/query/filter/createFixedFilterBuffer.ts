@@ -14,7 +14,7 @@ import {
   MODE_AND_FIXED,
   MODE_DEFAULT,
   MODE_OR_FIXED,
-} from './types.js'
+} from './types.ts'
 import { parseFilterValue } from './parseFilterValue.ts'
 import {
   ENCODER,

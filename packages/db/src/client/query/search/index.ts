@@ -6,7 +6,7 @@ import {
   searchDoesNotExist,
   searchIncorrecQueryValue,
   searchIncorrectType,
-} from '../validation.js'
+} from '../validation.ts'
 import { ENCODER, concatUint8Arr } from '@based/utils'
 import { QueryBranch } from '../BasedDbQuery.ts'
 

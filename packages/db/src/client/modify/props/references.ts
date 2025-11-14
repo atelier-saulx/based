@@ -23,7 +23,7 @@ import {
   REF_OP_PUT_OVERWRITE,
   REF_OP_UPDATE,
   RefOp,
-} from '../types.js'
+} from '../types.ts'
 
 const clearReferences = (ctx: Ctx, def: PropDef) => {
   reserve(ctx, PROP_CURSOR_SIZE + 1)

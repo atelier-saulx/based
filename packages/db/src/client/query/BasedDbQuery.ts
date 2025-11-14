@@ -11,7 +11,7 @@ import {
   groupBy,
   LangFallback,
   IncludeOpts,
-} from './query.js'
+} from './query.ts'
 import { BasedQueryResponse } from './BasedQueryResponse.ts'
 import { FilterBranch } from './filter/FilterBranch.ts'
 import { search, Search, vectorSearch } from './search/index.ts'
