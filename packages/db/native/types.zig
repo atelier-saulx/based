@@ -103,6 +103,12 @@ pub const RefOp = enum(u8) {
     _,
 };
 
+pub const ReferencesSelect = enum(u8) {
+    index = 1,
+    any = 2,
+    all = 3,
+};
+
 pub const RefEdgeOp = enum(u8) {
     noEdgeNoIndexRealId = 0,
     edgeNoIndexRealId = 1,

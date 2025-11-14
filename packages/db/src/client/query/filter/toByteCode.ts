@@ -1,4 +1,4 @@
-import { writeUint16, writeUint32 } from '@based/utils'
+import { writeInt32, writeUint16, writeUint32 } from '@based/utils'
 import { QueryDefFilter, FilterCondition } from '../types.js'
 import {
   META_EDGE,
@@ -63,15 +63,20 @@ export const fillConditionsBuffer = (
 
   if (conditions.references) {
     for (const [refField, refConditions] of conditions.references) {
-      result[lastWritten] =
-        refConditions.prop.typeIndex === REFERENCES
-          ? META_REFERENCES
-          : META_REFERENCE
-      lastWritten++
+      const isReferences = refConditions.select.prop.typeIndex === REFERENCES
+      result[lastWritten] = isReferences ? META_REFERENCES : META_REFERENCE
+      lastWritten += 1
       result[lastWritten] = refField
-      lastWritten++
+      lastWritten += 1
       writeUint16(result, refConditions.conditions.schema.id, lastWritten)
       lastWritten += 2
+      if (isReferences) {
+        result[lastWritten] = refConditions.select.type
+        lastWritten += 1
+        writeInt32(result, refConditions.select.index ?? 0, lastWritten)
+        lastWritten += 4
+        // 13
+      }
       const sizeIndex = lastWritten
       lastWritten += 2
       const size = fillConditionsBuffer(
@@ -88,7 +93,7 @@ export const fillConditionsBuffer = (
   if (conditions.edges) {
     conditions.edges.forEach((v, k) => {
       result[lastWritten] = META_EDGE
-      lastWritten++
+      lastWritten += 1
       let sizeIndex = lastWritten
       lastWritten += 2
       const size = writeConditions(result, k, lastWritten, v, metaOffset)
