@@ -38,9 +38,10 @@ export const MOD_OPS_TO_STRING: Record<ModifyOp, 'create' | 'update'> = {
   [EXPIRE]: 'update',
 }
 
-export const enum SIZE {
-  DEFAULT_CURSOR = 11,
-}
+export const SIZE = {
+  DEFAULT_CURSOR: 11,
+} as const
+export type SIZE = (typeof SIZE)[keyof typeof SIZE]
 
 export type ModifyOpts = {
   unsafe?: boolean

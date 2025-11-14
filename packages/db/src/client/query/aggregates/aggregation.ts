@@ -1,6 +1,13 @@
 import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
-import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
-import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
+import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.ts'
+import {
+  GroupBy,
+  Interval,
+  IntervalString,
+  StepInput,
+  aggFnOptions,
+  setMode,
+} from './types.ts'
 import {
   PropDef,
   UINT32,
@@ -15,12 +22,8 @@ import {
   validateStepRange,
   edgeNotImplemented,
 } from '../validation.js'
-import {
-  aggregateTypeMap,
-  Interval,
-  IntervalString,
-} from '../aggregates/types.js'
-import { QueryBranch } from '../BasedDbQuery.js'
+import { aggregateTypeMap } from '../aggregates/types.js'
+import { QueryBranch } from '../BasedDbQuery.ts'
 import { AggregateType } from '@based/protocol/db-read'
 
 export const aggregateToBuffer = (

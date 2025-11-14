@@ -1,17 +1,17 @@
 import { AggregateType } from '@based/protocol/db-read'
 
-export const enum AccumulatorSize {
-  // comptime
-  SUM = 8,
-  COUNT = 4,
-  CARDINALITY = 4,
-  STDDEV = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
-  AVERAGE = 16, // count (u64) + sum (f64) = 16
-  VARIANCE = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
-  MAX = 8,
-  MIN = 8,
-  HMEAN = 16,
-}
+export const AccumulatorSize = {
+  SUM: 8,
+  COUNT: 4,
+  CARDINALITY: 4,
+  STDDEV: 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
+  AVERAGE: 16, // count (u64) + sum (f64) = 16
+  VARIANCE: 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
+  MAX: 8,
+  MIN: 8,
+  HMEAN: 16,
+} as const
+type AccumulatorSize = (typeof AccumulatorSize)[keyof typeof AccumulatorSize]
 
 export const aggregateTypeMap = new Map<
   AggregateType,
@@ -44,30 +44,31 @@ export const aggregateTypeMap = new Map<
   // Othe types like MAX, MIN, SUM fall in the else case in aggregation.ts 8/8
 ])
 
-export const enum GroupBy {
-  NONE = 0,
-  HAS_GROUP = 255,
-}
+export const GroupBy = {
+  NONE: 0,
+  HAS_GROUP: 255,
+} as const
+export type GroupBy = (typeof GroupBy)[keyof typeof GroupBy]
 
-export enum Interval {
-  none = 0,
-  epoch = 1,
-  hour = 2,
+export const Interval = {
+  none: 0,
+  epoch: 1,
+  hour: 2,
   // minute = 3,
   // second = 4,
   // microseconds = 5,
-  day = 6, // The day of the month (1–31); for interval values, the number of days
-  doy = 7, // The day of the year (0–365)
-  dow = 8, // The day of the week as Sunday (0) to Saturday (6)
-  isoDOW = 9, // The day of the week as Monday (1) to Sunday (7). This matches the ISO 8601 day of the week numbering.
+  day: 6, // The day of the month (1–31); for interval values, the number of days
+  doy: 7, // The day of the year (0–365)
+  dow: 8, // The day of the week as Sunday (0) to Saturday (6)
+  isoDOW: 9, // The day of the week as Monday (1) to Sunday (7). This matches the ISO 8601 day of the week numbering.
   // week = 10, // The number of the ISO 8601 week-numbering week of the year
-  month = 11, // The number of the month within the year (0–11);
+  month: 11, // The number of the month within the year (0–11);
   // isoMonth = 12, // The number of the month within the year (1–12);
   // quarter = 13, // The quarter of the year (1–4) that the date is in
-  year = 14,
+  year: 14,
   // timeZone = 15, // ? seconds? or string?
-}
-
+} as const
+export type Interval = (typeof Interval)[keyof typeof Interval]
 export type IntervalString = keyof typeof Interval
 
 export type StepObject = {
@@ -80,16 +81,13 @@ export type StepShorthand = number | IntervalString
 
 export type StepInput = StepObject | StepShorthand
 
-export type NormalizedStepObject = {
-  step: number | Interval
-}
+export const setMode = {
+  sample: 0,
+  population: 1,
+} as const
 
-export enum setMode {
-  'sample',
-  'population',
-}
-
-export type setModeString = 'sample' | 'population'
+export type setModeString = keyof typeof setMode
+export type setModeValues = (typeof setMode)[keyof typeof setMode]
 
 export type aggFnOptions = {
   mode?: setModeString

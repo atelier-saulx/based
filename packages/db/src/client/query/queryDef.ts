@@ -43,19 +43,20 @@ const createEmptySharedDef = (skipValidation: boolean) => {
   return q
 }
 
-type CreateQueryDefReturn<T extends QueryDefType> = T extends QueryDefType.Edge
-  ? QueryDefEdges
-  : T extends
-        | QueryDefType.Root
-        | QueryDefType.Reference
-        | QueryDefType.References
-    ? QueryDefRest
-    : QueryDef
+type CreateQueryDefReturn<T extends QueryDefType> =
+  T extends typeof QueryDefType.Edge
+    ? QueryDefEdges
+    : T extends
+          | typeof QueryDefType.Root
+          | typeof QueryDefType.Reference
+          | typeof QueryDefType.References
+      ? QueryDefRest
+      : QueryDef
 
 export function createQueryDef<T extends QueryDefType>(
   db: DbClient,
   type: T,
-  target: T extends QueryDefType.Edge ? EdgeTarget : Target,
+  target: T extends typeof QueryDefType.Edge ? EdgeTarget : Target,
   skipValidation: boolean,
 ): CreateQueryDefReturn<T> {
   const queryDef = createEmptySharedDef(skipValidation)

@@ -298,7 +298,7 @@ await test('cardinality with dates', async (t) => {
   // console.log('Total Meals: ', meals)
   deepEqual(meals, 31, 'Total Meals')
 
-  enum months {
+  const months = [
     'Jan',
     'Feb',
     'Mar',
@@ -311,7 +311,7 @@ await test('cardinality with dates', async (t) => {
     'Oct',
     'Nov',
     'Dec',
-  }
+  ]
 
   const groupByMonth = await db
     .query('lunch')

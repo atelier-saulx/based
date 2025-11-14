@@ -1,8 +1,8 @@
 import { LangCode, LangName } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
-import { FilterCtx, FilterOpts, Operator } from './filter/types.js'
-import { QueryError } from './validation.js'
-import { Interval, aggFnOptions } from './aggregates/types.js'
+import { FilterCtx, FilterOpts, Operator } from './filter/types.ts'
+import { QueryError } from './validation.ts'
+import { Interval, aggFnOptions } from './aggregates/types.ts'
 import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
 
 export type IncludeOpts = {
@@ -24,21 +24,23 @@ export type MainIncludes = Map<number, [number, PropDef, IncludeOpts]>
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
 
-export enum QueryType {
-  id = 0,
-  ids = 1,
-  default = 2,
-  alias = 3,
-  aggregates = 4,
-  aggregatesCountType = 5,
-}
+export const QueryType = {
+  id: 0,
+  ids: 1,
+  default: 2,
+  alias: 3,
+  aggregates: 4,
+  aggregatesCountType: 5,
+} as const
+export type QueryType = (typeof QueryType)[keyof typeof QueryType]
 
-enum QueryDefType {
-  Edge = 1,
-  Reference = 2,
-  References = 3,
-  Root = 4,
-}
+const QueryDefType = {
+  Edge: 1,
+  Reference: 2,
+  References: 3,
+  Root: 4,
+} as const
+type QueryDefType = (typeof QueryDefType)[keyof typeof QueryDefType]
 
 export type EdgeTarget = {
   ref: PropDef | PropDefEdge | null
@@ -173,14 +175,17 @@ export type QueryDefShared = {
 }
 
 export type QueryDefEdges = {
-  type: QueryDefType.Edge
+  type: typeof QueryDefType.Edge
   target: EdgeTarget
   schema: null
   props: PropDef['edges']
 } & QueryDefShared
 
 export type QueryDefRest = {
-  type: QueryDefType.References | QueryDefType.Reference | QueryDefType.Root
+  type:
+    | typeof QueryDefType.References
+    | typeof QueryDefType.Reference
+    | typeof QueryDefType.Root
   target: Target
   schema: SchemaTypeDef | null
   props: SchemaTypeDef['props'] | PropDef['edges']
@@ -216,15 +221,16 @@ export const isAlias = (
   )
 }
 
-export const enum includeOp {
-  DEFAULT = 1,
-  REFS_AGGREGATION = 2,
-  EDGE = 3,
-  REFERENCES = 4,
-  REFERENCE = 5,
-  META = 6, // this can be a small buffer as well
-  PARTIAL = 7,
-}
+export const includeOp = {
+  DEFAULT: 1,
+  REFS_AGGREGATION: 2,
+  EDGE: 3,
+  REFERENCES: 4,
+  REFERENCE: 5,
+  META: 6, // this can be a small buffer as well
+  PARTIAL: 7,
+} as const
+export type includeOp = (typeof includeOp)[keyof typeof includeOp]
 
 // allow UINT8ARRAY
 export type IntermediateByteCode =
