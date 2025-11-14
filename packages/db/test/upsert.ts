@@ -1,7 +1,7 @@
-import { deepEqual, equal } from './shared/assert.js'
-import test from './shared/test.js'
-import { start } from './shared/multi.js'
-import { BasedDb } from '../src/index.js'
+import { deepEqual, equal } from './shared/assert.ts'
+import test from './shared/test.ts'
+import { start } from './shared/multi.ts'
+import { BasedDb } from '../src/index.ts'
 
 await test('upsert', async (t) => {
   const {

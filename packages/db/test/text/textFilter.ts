@@ -1,7 +1,7 @@
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
+import { BasedDb } from '../../src/index.ts'
+import test from '../shared/test.ts'
 import { join } from 'path'
-import { deepEqual } from '../shared/assert.js'
+import { deepEqual } from '../shared/assert.ts'
 
 await test('textFilter', async (t) => {
   const db = new BasedDb({

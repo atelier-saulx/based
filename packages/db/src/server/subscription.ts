@@ -3,8 +3,8 @@ import {
   OnError,
   SubscriptionType,
 } from '../client/query/subscription/types.js'
-import { DbServer } from '../index.js'
-import native from '../native.js'
+import { DbServer } from '../index.ts'
+import native from '../native.ts'
 import { MAX_ID } from '@based/schema'
 import { styleText } from 'util'
 

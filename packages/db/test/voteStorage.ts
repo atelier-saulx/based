@@ -1,7 +1,7 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
 import { SchemaProp, SchemaType } from '@based/schema'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual } from './shared/assert.ts'
 import { inspect } from 'util'
 
 const countrySchema: SchemaType = {

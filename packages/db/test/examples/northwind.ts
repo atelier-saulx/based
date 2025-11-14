@@ -1,10 +1,10 @@
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/index.ts'
 // import { mermaid } from '@based/schema-diagram'
 import { deepCopy } from '@based/utils'
 import { Schema } from '@based/schema'
-import test from '../shared/test.js'
-import createNorthwindDb, { defaultSchema } from '../shared/northwindDb.js'
-import { deepEqual } from '../shared/assert.js'
+import test from '../shared/test.ts'
+import createNorthwindDb, { defaultSchema } from '../shared/northwindDb.ts'
+import { deepEqual } from '../shared/assert.ts'
 
 await test('Basic SQL', async (t) => {
   const db = new BasedDb({

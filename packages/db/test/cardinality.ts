@@ -1,6 +1,6 @@
-import { BasedDb, xxHash64 } from '../src/index.js'
-import test from './shared/test.js'
-import { deepEqual } from './shared/assert.js'
+import { BasedDb, xxHash64 } from '../src/index.ts'
+import test from './shared/test.ts'
+import { deepEqual } from './shared/assert.ts'
 
 const ENCODER = new TextEncoder()
 

@@ -1,5 +1,5 @@
-import { filterToBuffer } from '../query.js'
-import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
+import { filterToBuffer } from '../query.ts'
+import { QueryDef, QueryType, IntermediateByteCode } from '../types.ts'
 import { ENCODER, writeUint16 } from '@based/utils'
 
 export const aliasQuery = (def: QueryDef): IntermediateByteCode => {

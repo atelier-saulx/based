@@ -1,4 +1,4 @@
-import { MigrationState } from './types.js'
+import { MigrationState } from './types.ts'
 
 export const waitUntilSleeping = async (workerState: Int32Array) => {
   await Atomics.waitAsync(workerState, 0, MigrationState.AWAKE).value

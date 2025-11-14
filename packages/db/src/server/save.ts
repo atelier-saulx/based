@@ -1,18 +1,18 @@
-import native from '../native.js'
+import native from '../native.ts'
 import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { VerifTree, destructureTreeKey } from './tree.js'
+import { VerifTree, destructureTreeKey } from './tree.ts'
 import {
   saveBlock,
   foreachBlock,
   foreachDirtyBlock,
   saveBlocks,
 } from './blocks.js'
-import { DbServer } from './index.js'
+import { DbServer } from './index.ts'
 import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@based/utils'
-import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
+import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.ts'
 
 type RangeDump = {
   file: string

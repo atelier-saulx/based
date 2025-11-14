@@ -1,7 +1,7 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb } from '../src/index.ts'
 import { Sema } from 'async-sema'
-import test from './shared/test.js'
-import { start as startMulti } from './shared/multi.js'
+import test from './shared/test.ts'
+import { start as startMulti } from './shared/multi.ts'
 import assert from 'node:assert'
 
 const N = 1e7 // Nodes
@@ -62,7 +62,9 @@ await test('test embedded', async (t) => {
   await Promise.all(
     Array.from({ length: N3 }).map(async (_, i) => {
       await s.acquire()
-      db.query('test', i + 1).get().then(() => s.release())
+      db.query('test', i + 1)
+        .get()
+        .then(() => s.release())
     }),
   )
   await s.drain()

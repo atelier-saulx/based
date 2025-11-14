@@ -1,8 +1,8 @@
-import { BasedDbQuery } from '../BasedDbQuery.js'
-import { BasedQueryResponse } from '../BasedQueryResponse.js'
-import { registerQuery } from '../registerQuery.js'
-import { registerSubscription } from './toByteCode.js'
-import { OnData, OnError, OnClose } from './types.js'
+import { BasedDbQuery } from '../BasedDbQuery.ts'
+import { BasedQueryResponse } from '../BasedQueryResponse.ts'
+import { registerQuery } from '../registerQuery.ts'
+import { registerSubscription } from './toByteCode.ts'
+import { OnData, OnError, OnClose } from './types.ts'
 
 // exec
 // subscription thing

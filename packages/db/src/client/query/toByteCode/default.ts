@@ -1,7 +1,7 @@
-import { filterToBuffer, isSimpleMainFilter } from '../query.js'
-import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
+import { filterToBuffer, isSimpleMainFilter } from '../query.ts'
+import { QueryDef, QueryType, IntermediateByteCode } from '../types.ts'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { DEFAULT } from './offsets.js'
+import { DEFAULT } from './offsets.ts'
 
 export const defaultQuery = (
   def: QueryDef,

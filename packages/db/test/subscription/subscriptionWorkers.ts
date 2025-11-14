@@ -1,8 +1,8 @@
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
+import { BasedDb } from '../../src/index.ts'
+import test from '../shared/test.ts'
 import { SchemaProp, SchemaType } from '@based/schema'
-import { clientWorker } from '../shared/startWorker.js'
-import { allCountryCodes } from '../shared/examples.js'
+import { clientWorker } from '../shared/startWorker.ts'
+import { allCountryCodes } from '../shared/examples.ts'
 
 const countrySchema: SchemaType = {
   props: {

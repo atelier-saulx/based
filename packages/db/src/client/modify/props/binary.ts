@@ -1,13 +1,13 @@
-import { writeU16, writeU32, writeU8, writeU8Array } from '../uint.js'
-import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
-import { validate } from '../validate.js'
+import { writeU16, writeU32, writeU8, writeU8Array } from '../uint.ts'
+import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'
+import { validate } from '../validate.ts'
 import { BINARY, PropDef } from '@based/schema/def'
-import native from '../../../native.js'
-import { reserve } from '../resize.js'
-import { markDefaults } from '../create/mark.js'
-import { deleteProp } from './delete.js'
+import native from '../../../native.ts'
+import { reserve } from '../resize.ts'
+import { markDefaults } from '../create/mark.ts'
+import { deleteProp } from './delete.ts'
 import { ENCODER } from '@based/utils'
-import { Ctx } from '../Ctx.js'
+import { Ctx } from '../Ctx.ts'
 
 export const getBuffer = (val: any): Uint8Array => {
   if (typeof val === 'string') {

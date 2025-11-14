@@ -1,5 +1,5 @@
 import { writeUint16, writeUint32 } from '@based/utils'
-import { QueryDefFilter, FilterCondition } from '../types.js'
+import { QueryDefFilter, FilterCondition } from '../types.ts'
 import {
   META_EDGE,
   META_EXISTS,

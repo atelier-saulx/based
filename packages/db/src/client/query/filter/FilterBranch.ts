@@ -1,9 +1,9 @@
-import { DbClient } from '../../index.js'
-import { QueryDefFilter, QueryDef } from '../types.js'
-import { filter, filterOr } from './filter.js'
-import { convertFilter } from './convertFilter.js'
-import { FilterOpts, Operator } from './types.js'
-import { FilterBranchFn } from './types.js'
+import { DbClient } from '../../index.ts'
+import { QueryDefFilter, QueryDef } from '../types.ts'
+import { filter, filterOr } from './filter.ts'
+import { convertFilter } from './convertFilter.ts'
+import { FilterOpts, Operator } from './types.ts'
+import { FilterBranchFn } from './types.ts'
 
 export class FilterBranch {
   constructor(db: DbClient, filterBranch: QueryDefFilter, def: QueryDef) {

@@ -1,8 +1,8 @@
-import { IncludeOpts } from '../types.js'
-import { BranchInclude, QueryBranch } from '../BasedDbQuery.js'
-import { includeField } from './props.js'
+import { IncludeOpts } from '../types.ts'
+import { BranchInclude, QueryBranch } from '../BasedDbQuery.ts'
+import { includeField } from './props.ts'
 import { REFERENCE, REFERENCES } from '@based/schema/def'
-import { createOrGetEdgeRefQueryDef, createOrGetRefQueryDef } from './utils.js'
+import { createOrGetEdgeRefQueryDef, createOrGetRefQueryDef } from './utils.ts'
 
 export const include = (
   query: QueryBranch<any>,

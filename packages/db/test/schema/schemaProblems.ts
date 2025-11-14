@@ -1,7 +1,7 @@
-import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
-import { clientWorker } from '../shared/startWorker.js'
-import { equal } from '../shared/assert.js'
+import test from '../shared/test.ts'
+import { BasedDb } from '../../src/index.ts'
+import { clientWorker } from '../shared/startWorker.ts'
+import { equal } from '../shared/assert.ts'
 
 await test.skip('schema problems', async (t) => {
   const db = new BasedDb({

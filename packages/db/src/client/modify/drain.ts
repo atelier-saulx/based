@@ -1,6 +1,6 @@
-import { DbClient } from '../../index.js'
-import { Ctx } from './Ctx.js'
-import { rejectTmp, resolveTmp } from './Tmp.js'
+import { DbClient } from '../../index.ts'
+import { Ctx } from './Ctx.ts'
+import { rejectTmp, resolveTmp } from './Tmp.ts'
 
 export const reset = (ctx: Ctx) => {
   ctx.index = 8

@@ -1,7 +1,7 @@
-import { filterToBuffer } from '../query.js'
-import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
+import { filterToBuffer } from '../query.ts'
+import { QueryDef, QueryType, IntermediateByteCode } from '../types.ts'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { ID } from './offsets.js'
+import { ID } from './offsets.ts'
 
 export const idQuery = (def: QueryDef): IntermediateByteCode => {
   const filterSize = def.filter.size || 0

@@ -1,7 +1,7 @@
 import { convertToTimestamp } from '@based/utils'
-import { BasedDb } from '../../src/index.js'
-import { throws } from '../shared/assert.js'
-import test from '../shared/test.js'
+import { BasedDb } from '../../src/index.ts'
+import { throws } from '../shared/assert.ts'
+import test from '../shared/test.ts'
 
 await test('simple min / max validation', async (t) => {
   const db = new BasedDb({

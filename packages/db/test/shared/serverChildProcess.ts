@@ -1,9 +1,9 @@
 import { fork } from 'node:child_process'
 import { parentPort, Worker, workerData } from 'node:worker_threads'
-import { DbServer } from '../../src/index.js'
+import { DbServer } from '../../src/index.ts'
 import { fileURLToPath } from 'node:url'
-import { DbShared } from '../../src/shared/DbBase.js'
-import { Emitter } from '../../src/shared/Emitter.js'
+import { DbShared } from '../../src/shared/DbBase.ts'
+import { Emitter } from '../../src/shared/Emitter.ts'
 import { readdir } from 'node:fs/promises'
 
 const lazyParse = (val: any) => {

@@ -1,8 +1,8 @@
 import repl from 'node:repl'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb, BasedQueryResponse } from '../dist/src/index.js'
-import { formatTable } from '../dist/src/table.js'
+import { BasedDb, BasedQueryResponse } from '../dist/src/index.ts'
+import { formatTable } from '../dist/src/table.ts'
 import {
   ALIAS,
   ALIASES,
@@ -30,7 +30,7 @@ import {
   JSON as SCHEMA_JSON,
 } from '@based/schema/def'
 import { readDoubleLE, readUint32 } from '@based/utils'
-import {AggregateType} from '@based/protocol/db-read'
+import { AggregateType } from '@based/protocol/db-read'
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const defaultDataPath = resolve(join(__dirname, '../tmp'))
@@ -184,7 +184,7 @@ r.defineCommand('savedb', {
   },
 })
 r.defineCommand('schema', {
-    help: 'Print the current schema (args: [\'short\'])',
+  help: "Print the current schema (args: ['short'])",
   action(arg) {
     const types = this.context.db.server?.schema?.types
     if (arg === 'short') {
@@ -194,7 +194,7 @@ r.defineCommand('schema', {
     } else {
       console.dir(types, { depth: 100 })
     }
-  }
+  },
 })
 r.on('reset', initializeContext)
 initializeContext(r.context)

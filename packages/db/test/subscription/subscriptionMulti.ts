@@ -1,8 +1,8 @@
 import { wait } from '@based/utils'
-import { DbClient } from '../../src/client/index.js'
-import { DbServer } from '../../src/server/index.js'
-import test from '../shared/test.js'
-import { getDefaultHooks } from '../../src/hooks.js'
+import { DbClient } from '../../src/client/index.ts'
+import { DbServer } from '../../src/server/index.ts'
+import test from '../shared/test.ts'
+import { getDefaultHooks } from '../../src/hooks.ts'
 import { clearInterval } from 'node:timers'
 
 const start = async (t, clientsN = 2, subTime = 100) => {

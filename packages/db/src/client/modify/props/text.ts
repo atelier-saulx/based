@@ -1,8 +1,8 @@
 import { PropDef } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { deleteString, writeString } from './string.js'
+import { Ctx } from '../Ctx.ts'
+import { deleteString, writeString } from './string.ts'
 import { LangCode } from '@based/schema'
-import { markTextValue, markTextObj } from '../create/mark.js'
+import { markTextValue, markTextObj } from '../create/mark.ts'
 
 export const writeText = (ctx: Ctx, def: PropDef, val: any): void => {
   if (val === null) {

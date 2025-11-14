@@ -1,6 +1,6 @@
 import { wait } from '@based/utils'
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { Worker } from 'node:worker_threads'

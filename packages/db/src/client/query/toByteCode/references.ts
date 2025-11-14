@@ -1,8 +1,8 @@
-import { filterToBuffer } from '../query.js'
-import { QueryDef, includeOp, IntermediateByteCode } from '../types.js'
-import { createSortBuffer } from '../sort.js'
+import { filterToBuffer } from '../query.ts'
+import { QueryDef, includeOp, IntermediateByteCode } from '../types.ts'
+import { createSortBuffer } from '../sort.ts'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { REFERENCES } from './offsets.js'
+import { REFERENCES } from './offsets.ts'
 
 export const referencesQuery = (
   def: QueryDef,

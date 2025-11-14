@@ -1,15 +1,15 @@
 import { updateTypeDefs } from '@based/schema/def'
 import { DbSchema, serialize } from '@based/schema'
-import { DbServer } from './index.js'
+import { DbServer } from './index.ts'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
-import native from '../native.js'
-import { SCHEMA_FILE } from '../types.js'
-import { saveSync } from './save.js'
-import { writeCreate } from '../client/modify/create/index.js'
-import { Ctx } from '../client/modify/Ctx.js'
-import { consume } from '../client/modify/drain.js'
-import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
+import native from '../native.ts'
+import { SCHEMA_FILE } from '../types.ts'
+import { saveSync } from './save.ts'
+import { writeCreate } from '../client/modify/create/index.ts'
+import { Ctx } from '../client/modify/Ctx.ts'
+import { consume } from '../client/modify/drain.ts'
+import { schemaToSelvaBuffer } from './schemaSelvaBuffer.ts'
 
 export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)

@@ -11,10 +11,10 @@ import {
   FilterCtx,
   getVectorFn,
 } from './types.js'
-import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
-import { crc32 } from '../../crc32.js'
+import { createFixedFilterBuffer } from './createFixedFilterBuffer.ts'
+import { crc32 } from '../../crc32.ts'
 import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'
-import { FilterCondition, QueryDef } from '../types.js'
+import { FilterCondition, QueryDef } from '../types.ts'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 

@@ -1,5 +1,5 @@
 import { writeInt64, writeUint16, writeUint32 } from '@based/utils'
-import { Ctx } from './Ctx.js'
+import { Ctx } from './Ctx.ts'
 
 export const writeU64 = (ctx: Ctx, val: number) => {
   writeInt64(ctx.array, val, ctx.index)

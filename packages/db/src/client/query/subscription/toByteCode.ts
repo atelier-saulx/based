@@ -1,9 +1,9 @@
 import { writeInt64, writeUint16, writeUint32 } from '@based/utils'
-import native from '../../../native.js'
-import { BasedDbQuery } from '../BasedDbQuery.js'
-import { ID } from '../toByteCode/offsets.js'
-import { FilterMetaNow, QueryDef, QueryDefFilter, QueryType } from '../types.js'
-import { SubscriptionType } from './types.js'
+import native from '../../../native.ts'
+import { BasedDbQuery } from '../BasedDbQuery.ts'
+import { ID } from '../toByteCode/offsets.ts'
+import { FilterMetaNow, QueryDef, QueryDefFilter, QueryType } from '../types.ts'
+import { SubscriptionType } from './types.ts'
 
 type Fields = { separate: Set<number>; main: Set<number> }
 

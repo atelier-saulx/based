@@ -8,7 +8,7 @@ import {
   REVERSE_TYPE_INDEX_MAP,
   STRING,
 } from '@based/schema/def'
-import { FilterCondition, QueryDef, QueryDefFilter } from '../types.js'
+import { FilterCondition, QueryDef, QueryDefFilter } from '../types.ts'
 import {
   EQUAL,
   EXISTS,
@@ -16,11 +16,11 @@ import {
   TYPE_NEGATE,
   TYPE_DEFAULT,
 } from './types.js'
-import { Filter } from './types.js'
-import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
-import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
-import { createReferenceFilter } from './createReferenceFilter.js'
-import { validateFilter } from '../validation.js'
+import { Filter } from './types.ts'
+import { createVariableFilterBuffer } from './createVariableFilterBuffer.ts'
+import { createFixedFilterBuffer } from './createFixedFilterBuffer.ts'
+import { createReferenceFilter } from './createReferenceFilter.ts'
+import { validateFilter } from '../validation.ts'
 
 export const primitiveFilter = (
   def: QueryDef,

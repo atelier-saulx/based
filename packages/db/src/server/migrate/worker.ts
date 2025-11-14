@@ -3,13 +3,13 @@ import {
   receiveMessageOnPort,
   workerData,
 } from 'node:worker_threads'
-import native from '../../native.js'
-import { BasedDb } from '../../index.js'
+import native from '../../native.ts'
+import { BasedDb } from '../../index.ts'
 import { CARDINALITY, REFERENCE, REFERENCES } from '@based/schema/def'
-import { setSchemaOnServer } from '../schema.js'
-import { setToSleep } from './utils.js'
-import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
-import { MigrateRange } from './index.js'
+import { setSchemaOnServer } from '../schema.ts'
+import { setToSleep } from './utils.ts'
+import { setLocalClientSchema } from '../../client/setLocalClientSchema.ts'
+import { MigrateRange } from './index.ts'
 import { DbSchema, deSerialize } from '@based/schema'
 import { wait } from '@based/utils'
 

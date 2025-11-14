@@ -1,6 +1,6 @@
 import { isMainThread, parentPort, workerData } from 'node:worker_threads'
 import { nextTick } from 'node:process'
-import native from '../../native.js'
+import native from '../../native.ts'
 
 let dbCtx: any
 

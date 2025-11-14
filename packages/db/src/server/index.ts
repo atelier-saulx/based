@@ -1,4 +1,4 @@
-import native from '../native.js'
+import native from '../native.ts'
 import { rm } from 'node:fs/promises'
 import {
   StrictSchema,
@@ -9,25 +9,25 @@ import {
   strictSchemaToDbSchema,
 } from '@based/schema'
 import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
-import { start, StartOpts } from './start.js'
-import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
-import { save } from './save.js'
-import { migrate } from './migrate/index.js'
+import { start, StartOpts } from './start.ts'
+import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.ts'
+import { save } from './save.ts'
+import { migrate } from './migrate/index.ts'
 import exitHook from 'exit-hook'
-import { debugServer } from '../utils.js'
+import { debugServer } from '../utils.ts'
 import { readUint16, readUint32, readUint64, writeUint32 } from '@based/utils'
-import { QueryType } from '../client/query/types.js'
-import { IoWorker } from './IoWorker.js'
-import { QueryWorker } from './QueryWorker.js'
-import { DbShared } from '../shared/DbBase.js'
+import { QueryType } from '../client/query/types.ts'
+import { IoWorker } from './IoWorker.ts'
+import { QueryWorker } from './QueryWorker.ts'
+import { DbShared } from '../shared/DbBase.ts'
 import {
   setNativeSchema,
   setSchemaOnServer,
   writeSchemaFile,
-} from './schema.js'
-import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.js'
-import { loadBlock, unloadBlock } from './blocks.js'
-import { Subscriptions } from './subscription.js'
+} from './schema.ts'
+import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.ts'
+import { loadBlock, unloadBlock } from './blocks.ts'
+import { Subscriptions } from './subscription.ts'
 
 const emptyUint8Array = new Uint8Array(0)
 

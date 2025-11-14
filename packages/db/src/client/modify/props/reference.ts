@@ -1,18 +1,18 @@
 import { PropDef } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { Tmp } from '../Tmp.js'
-import { reserve } from '../resize.js'
-import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
+import { Ctx } from '../Ctx.ts'
+import { Tmp } from '../Tmp.ts'
+import { reserve } from '../resize.ts'
+import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'
 import {
   EDGE_NOINDEX_REALID,
   EDGE_NOINDEX_TMPID,
   NOEDGE_NOINDEX_REALID,
   NOEDGE_NOINDEX_TMPID,
 } from '../types.js'
-import { writeEdges } from '../edges/index.js'
-import { deleteProp } from './delete.js'
-import { writeU32, writeU8 } from '../uint.js'
-import { validate } from '../validate.js'
+import { writeEdges } from '../edges/index.ts'
+import { deleteProp } from './delete.ts'
+import { writeU32, writeU8 } from '../uint.ts'
+import { validate } from '../validate.ts'
 
 const writeReferenceId = (
   ctx: Ctx,

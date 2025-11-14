@@ -1,6 +1,6 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
-import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
+import { deepEqual, equal, notEqual, throws } from './shared/assert.ts'
 import { wait } from '@based/utils'
 
 await test('hooks - undefined values', async (t) => {

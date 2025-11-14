@@ -1,4 +1,4 @@
-import native from '../native.js'
+import native from '../native.ts'
 
 export const xxHash64 = (
   buf: Uint8Array,

@@ -1,23 +1,23 @@
-import { createSortBuffer } from '../sort.js'
+import { createSortBuffer } from '../sort.ts'
 import {
   IntermediateByteCode,
   QueryDef,
   QueryDefType,
   includeOp,
 } from '../types.js'
-import { includeToBuffer } from '../include/toByteCode.js'
-import { searchToBuffer } from '../search/index.js'
-import { DbClient } from '../../index.js'
+import { includeToBuffer } from '../include/toByteCode.ts'
+import { searchToBuffer } from '../search/index.ts'
+import { DbClient } from '../../index.ts'
 import { writeUint64 } from '@based/utils'
-import { defaultQuery } from './default.js'
-import { idQuery } from './id.js'
-import { aliasQuery } from './alias.js'
-import { idsQuery } from './ids.js'
-import { referencesQuery } from './references.js'
-import { referenceQuery } from './reference.js'
-import { aggregatesQuery } from './aggregates.js'
-import { BasedDbQuery } from '../BasedDbQuery.js'
-import { resolveMetaIndexes } from '../query.js'
+import { defaultQuery } from './default.ts'
+import { idQuery } from './id.ts'
+import { aliasQuery } from './alias.ts'
+import { idsQuery } from './ids.ts'
+import { referencesQuery } from './references.ts'
+import { referenceQuery } from './reference.ts'
+import { aggregatesQuery } from './aggregates.ts'
+import { BasedDbQuery } from '../BasedDbQuery.ts'
+import { resolveMetaIndexes } from '../query.ts'
 
 const byteSize = (arr: IntermediateByteCode[]) => {
   return arr.reduce((a, b) => {

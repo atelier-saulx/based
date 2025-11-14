@@ -1,10 +1,10 @@
-import { BasedDbQuery } from './BasedDbQuery.js'
-import { queryToBuffer } from './toByteCode/toByteCode.js'
-import { handleErrors } from './validation.js'
-import { createQueryDef } from './queryDef.js'
-import { QueryDefType } from './types.js'
-import { includeField } from './query.js'
-import { convertToReaderSchema } from './queryDefToReadSchema.js'
+import { BasedDbQuery } from './BasedDbQuery.ts'
+import { queryToBuffer } from './toByteCode/toByteCode.ts'
+import { handleErrors } from './validation.ts'
+import { createQueryDef } from './queryDef.ts'
+import { QueryDefType } from './types.ts'
+import { includeField } from './query.ts'
+import { convertToReaderSchema } from './queryDefToReadSchema.ts'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.buffer) {

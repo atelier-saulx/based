@@ -1,9 +1,9 @@
-import { serverChildProcess } from '../shared/serverChildProcess.js'
-import { DbClient, DbClientHooks, DbServer } from '../../src/index.js'
-import test from '../shared/test.js'
+import { serverChildProcess } from '../shared/serverChildProcess.ts'
+import { DbClient, DbClientHooks, DbServer } from '../../src/index.ts'
+import test from '../shared/test.ts'
 import { deepCopy, deepMerge, wait } from '@based/utils'
 import { copy, emptyDir } from 'fs-extra/esm'
-import { deepEqual, equal } from '../shared/assert.js'
+import { deepEqual, equal } from '../shared/assert.ts'
 
 const cleanProps = (props) => {
   for (const i in props) {

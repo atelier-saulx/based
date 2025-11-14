@@ -1,6 +1,6 @@
 import { readUint32 } from '@based/utils'
-import { Ctx } from './Ctx.js'
-import { errorMap, errors } from './error.js'
+import { Ctx } from './Ctx.ts'
+import { errorMap, errors } from './error.ts'
 import { SchemaTypeDef } from '@based/schema/def'
 
 const promisify = (tmp: Tmp) => {

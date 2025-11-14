@@ -1,8 +1,8 @@
 import { writeUint64 } from '@based/utils'
 import type { SchemaTypeDef, PropDef } from '@based/schema/def'
 import type { LangCode } from '@based/schema'
-import { type ModifyOp } from './types.js'
-import type { Tmp } from './Tmp.js'
+import { type ModifyOp } from './types.ts'
+import type { Tmp } from './Tmp.ts'
 
 export class Ctx {
   constructor(schemaChecksum: number, array: Uint8Array<ArrayBufferLike>) {

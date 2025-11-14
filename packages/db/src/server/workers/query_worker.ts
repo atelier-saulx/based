@@ -1,4 +1,4 @@
-import { registerMsgHandler } from './worker.js'
-import native from '../../native.js'
+import { registerMsgHandler } from './worker.ts'
+import native from '../../native.ts'
 
 registerMsgHandler((dbCtx: any, msg: any) => native.getQueryBuf(msg, dbCtx))

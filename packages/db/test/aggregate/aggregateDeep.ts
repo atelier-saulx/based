@@ -1,8 +1,8 @@
 import { equal } from 'node:assert'
-import { BasedDb } from '../../src/index.js'
-import { allCountryCodes } from '../shared/examples.js'
-import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
+import { BasedDb } from '../../src/index.ts'
+import { allCountryCodes } from '../shared/examples.ts'
+import test from '../shared/test.ts'
+import { throws, deepEqual } from '../shared/assert.ts'
 import { fastPrng } from '@based/utils'
 
 await test('sum branched includes', async (t) => {

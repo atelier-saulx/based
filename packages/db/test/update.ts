@@ -1,6 +1,6 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
-import { deepEqual, equal, throws } from './shared/assert.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
+import { deepEqual, equal, throws } from './shared/assert.ts'
 
 await test('update with payload.id', async (t) => {
   const db = new BasedDb({
@@ -268,10 +268,12 @@ await test('update', async (t) => {
 
   const nonExistingId = snurpId + 10
 
-  throws(() => db.update('snurp', nonExistingId, {
-    a: nonExistingId,
-    name: 'mr snurp ' + nonExistingId,
-  }))
+  throws(() =>
+    db.update('snurp', nonExistingId, {
+      a: nonExistingId,
+      name: 'mr snurp ' + nonExistingId,
+    }),
+  )
 })
 
 await test('await updates', async (t) => {

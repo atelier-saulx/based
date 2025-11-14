@@ -18,7 +18,7 @@ import {
   DEFAULT_MAP,
   ID_FIELD_DEF,
 } from '@based/schema/def'
-import { DbClient } from '../index.js'
+import { DbClient } from '../index.ts'
 import {
   EQUAL,
   EXISTS,
@@ -28,10 +28,10 @@ import {
   operatorReverseMap,
   VECTOR_FNS,
 } from './filter/types.js'
-import { Filter } from './query.js'
-import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.js'
-import { QueryByAliasObj, QueryDef } from './types.js'
-import { displayTarget, safeStringify } from './display.js'
+import { Filter } from './query.ts'
+import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.ts'
+import { QueryByAliasObj, QueryDef } from './types.ts'
+import { displayTarget, safeStringify } from './display.ts'
 import {
   isValidId,
   isValidString,
@@ -40,7 +40,7 @@ import {
   MAX_ID,
   Validation,
 } from '@based/schema'
-import { StepInput } from './aggregates/types.js'
+import { StepInput } from './aggregates/types.ts'
 
 export type QueryError = {
   code: number

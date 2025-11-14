@@ -1,4 +1,4 @@
-import { Ctx } from '../Ctx.js'
+import { Ctx } from '../Ctx.ts'
 import {
   BINARY,
   BOOLEAN,
@@ -16,10 +16,10 @@ import {
   UINT8,
 } from '@based/schema/def'
 import { convertToTimestamp, ENCODER, writeDoubleLE } from '@based/utils'
-import { getBuffer } from './binary.js'
-import { reserve } from '../resize.js'
-import { writeU16, writeU32, writeU64, writeU8, writeU8Array } from '../uint.js'
-import { validate } from '../validate.js'
+import { getBuffer } from './binary.ts'
+import { reserve } from '../resize.ts'
+import { writeU16, writeU32, writeU64, writeU8, writeU8Array } from '../uint.ts'
+import { validate } from '../validate.ts'
 
 const map: Record<
   number,

@@ -2,9 +2,9 @@ import { equal, notEqual } from 'node:assert'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
-import { deepEqual } from '../shared/assert.js'
+import { BasedDb } from '../../src/index.ts'
+import test from '../shared/test.ts'
+import { deepEqual } from '../shared/assert.ts'
 
 const f = (v) => v.map((r) => r.hash)
 const sha1 = async (path: string) =>

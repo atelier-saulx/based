@@ -8,7 +8,7 @@ import {
   BINARY,
   TEXT,
 } from '@based/schema/def'
-import { crc32 } from '../../crc32.js'
+import { crc32 } from '../../crc32.ts'
 import { convertToTimestamp, ENCODER, writeUint32 } from '@based/utils'
 // -------------------------------------------
 // conditions normal

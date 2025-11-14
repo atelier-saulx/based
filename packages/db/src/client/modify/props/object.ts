@@ -1,9 +1,9 @@
 import { PropDef, SchemaTypeDef, isPropDef } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { writeSeparate } from './separate.js'
-import { writeMainValue } from './main.js'
-import { writeIncrement } from './increment.js'
-import { CREATE } from '../types.js'
+import { Ctx } from '../Ctx.ts'
+import { writeSeparate } from './separate.ts'
+import { writeMainValue } from './main.ts'
+import { writeIncrement } from './increment.ts'
+import { CREATE } from '../types.ts'
 
 const writeProp = (ctx: Ctx, def: PropDef, val: any) => {
   if (def.separate) {

@@ -1,8 +1,8 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb } from '../src/index.ts'
 import { crc32c } from '@based/hash'
-import test from './shared/test.js'
-import { equal } from './shared/assert.js'
-import { crc32 as nativeCrc32 } from '../src/index.js'
+import test from './shared/test.ts'
+import { equal } from './shared/assert.ts'
+import { crc32 as nativeCrc32 } from '../src/index.ts'
 import { langCodesMap } from '@based/schema'
 
 const ENCODER = new TextEncoder()

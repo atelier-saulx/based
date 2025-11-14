@@ -6,16 +6,16 @@ import {
   SchemaPropTree,
   SchemaTypeDef,
 } from '@based/schema/def'
-import { DbClient } from '../../index.js'
-import { create } from './create/index.js'
-import { Ctx } from './Ctx.js'
-import { del } from './delete/index.js'
-import { drain } from './drain.js'
-import { expire } from './expire/index.js'
-import { Tmp } from './Tmp.js'
-import { RANGE_ERR } from './types.js'
-import { update } from './update/index.js'
-import { upsert } from './upsert/index.js'
+import { DbClient } from '../../index.ts'
+import { create } from './create/index.ts'
+import { Ctx } from './Ctx.ts'
+import { del } from './delete/index.ts'
+import { drain } from './drain.ts'
+import { expire } from './expire/index.ts'
+import { Tmp } from './Tmp.ts'
+import { RANGE_ERR } from './types.ts'
+import { update } from './update/index.ts'
+import { upsert } from './upsert/index.ts'
 
 const MAGIC_KEY = Math.random().toString(36).substring(2)
 const MAGIC_REG = RegExp(`("${MAGIC_KEY}|${MAGIC_KEY}")`, 'g')

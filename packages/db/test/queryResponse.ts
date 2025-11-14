@@ -1,6 +1,6 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
-import { equal } from './shared/assert.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
+import { equal } from './shared/assert.ts'
 import { notEqual } from 'assert'
 import { extractNumber } from '@based/utils'
 

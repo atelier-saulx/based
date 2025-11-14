@@ -1,15 +1,15 @@
 import { MICRO_BUFFER, STRING, TEXT, JSON, BINARY } from '@based/schema/def'
-import { DbClient } from '../../index.js'
+import { DbClient } from '../../index.ts'
 import {
   IntermediateByteCode,
   QueryDef,
   QueryDefType,
   includeOp,
 } from '../types.js'
-import { walkDefs } from './walk.js'
+import { walkDefs } from './walk.ts'
 import { langCodesMap } from '@based/schema'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { getEnd } from './utils.js'
+import { getEnd } from './utils.ts'
 
 const EMPTY_BUFFER = new Uint8Array(0)
 

@@ -1,8 +1,8 @@
 import { readdir } from 'node:fs/promises'
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
-import { italy } from '../shared/examples.js'
-import { deepEqual, equal } from '../shared/assert.js'
+import { BasedDb } from '../../src/index.ts'
+import test from '../shared/test.ts'
+import { italy } from '../shared/examples.ts'
+import { deepEqual, equal } from '../shared/assert.ts'
 import { equals } from '@based/utils'
 
 await test('save simple range', async (t) => {

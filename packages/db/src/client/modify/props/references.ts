@@ -1,11 +1,11 @@
-import { Ctx } from '../Ctx.js'
+import { Ctx } from '../Ctx.ts'
 import { PropDef } from '@based/schema/def'
-import { reserve } from '../resize.js'
-import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
-import { writeU32, writeU8 } from '../uint.js'
-import { Tmp } from '../Tmp.js'
-import { validate } from '../validate.js'
-import { writeEdges } from '../edges/index.js'
+import { reserve } from '../resize.ts'
+import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'
+import { writeU32, writeU8 } from '../uint.ts'
+import { Tmp } from '../Tmp.ts'
+import { validate } from '../validate.ts'
+import { writeEdges } from '../edges/index.ts'
 import { writeUint32 } from '@based/utils'
 import {
   DELETE,

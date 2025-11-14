@@ -1,17 +1,17 @@
-import { BasedDb, save } from '../../index.js'
+import { BasedDb, save } from '../../index.ts'
 import { dirname, join } from 'path'
 import { Worker, MessageChannel } from 'node:worker_threads'
-import native from '../../native.js'
-import { destructureTreeKey } from '../tree.js'
-import { foreachDirtyBlock } from '../blocks.js'
-import { DbServer } from '../index.js'
+import native from '../../native.ts'
+import { destructureTreeKey } from '../tree.ts'
+import { foreachDirtyBlock } from '../blocks.ts'
+import { DbServer } from '../index.ts'
 import { fileURLToPath } from 'url'
 import {
   setNativeSchema,
   setSchemaOnServer,
   writeSchemaFile,
 } from '../schema.js'
-import { setToAwake, waitUntilSleeping } from './utils.js'
+import { setToAwake, waitUntilSleeping } from './utils.ts'
 import { DbSchema, MigrateFns, serialize } from '@based/schema'
 import { semver } from '@based/schema'
 const { satisfies, parseRange, parse } = semver

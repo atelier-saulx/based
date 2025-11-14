@@ -6,13 +6,13 @@ import {
   SchemaPropTree,
   TEXT,
 } from '@based/schema/def'
-import { createQueryDef } from '../queryDef.js'
-import { IncludeField, isRefDef, QueryDef, QueryDefType } from '../types.js'
-import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
-import { includeProp, includeAllProps, includeField } from './props.js'
-import { DbClient } from '../../index.js'
+import { createQueryDef } from '../queryDef.ts'
+import { IncludeField, isRefDef, QueryDef, QueryDefType } from '../types.ts'
+import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.ts'
+import { includeProp, includeAllProps, includeField } from './props.ts'
+import { DbClient } from '../../index.ts'
 import { langCodesMap } from '@based/schema'
-import { includeDoesNotExist, includeLangDoesNotExist } from '../validation.js'
+import { includeDoesNotExist, includeLangDoesNotExist } from '../validation.ts'
 
 export const walkDefs = (
   db: DbClient,

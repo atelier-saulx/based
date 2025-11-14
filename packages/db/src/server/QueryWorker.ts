@@ -1,5 +1,5 @@
-import { DbWorker } from './workers/DbWorker.js'
-import { DbServer } from './index.js'
+import { DbWorker } from './workers/DbWorker.ts'
+import { DbServer } from './index.ts'
 import { readUint64 } from '@based/utils'
 
 export class QueryWorker extends DbWorker {

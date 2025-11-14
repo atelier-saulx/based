@@ -1,7 +1,7 @@
-import { errors } from '../src/client/modify/error.js'
-import { BasedDb } from '../src/index.js'
-import { throws, equal, isSorted } from './shared/assert.js'
-import test from './shared/test.js'
+import { errors } from '../src/client/modify/error.ts'
+import { BasedDb } from '../src/index.ts'
+import { throws, equal, isSorted } from './shared/assert.ts'
+import test from './shared/test.ts'
 import { randomString, wait } from '@based/utils'
 
 const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100

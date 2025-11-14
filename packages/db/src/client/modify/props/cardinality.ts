@@ -1,14 +1,14 @@
 import { PropDef, PropDefEdge } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { deleteProp } from './delete.js'
-import { writeU32, writeU8, writeU8Array } from '../uint.js'
-import { validate } from '../validate.js'
-import { xxHash64 } from '../../xxHash64.js'
+import { Ctx } from '../Ctx.ts'
+import { deleteProp } from './delete.ts'
+import { writeU32, writeU8, writeU8Array } from '../uint.ts'
+import { validate } from '../validate.ts'
+import { xxHash64 } from '../../xxHash64.ts'
 import { ENCODER } from '@based/utils'
-import { reserve } from '../resize.js'
-import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
-import { CREATE } from '../types.js'
-import { writeBinary } from './binary.js'
+import { reserve } from '../resize.ts'
+import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'
+import { CREATE } from '../types.ts'
+import { writeBinary } from './binary.ts'
 
 export const writeCardinalityRaw = (
   ctx: Ctx,

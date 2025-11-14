@@ -1,6 +1,6 @@
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
-import { deepEqual } from '../shared/assert.js'
+import { BasedDb } from '../../src/index.ts'
+import test from '../shared/test.ts'
+import { deepEqual } from '../shared/assert.ts'
 
 // Text is currently not supported in edge props: FDN-1713 FDN-730
 await test.skip('text in an edge prop', async (t) => {

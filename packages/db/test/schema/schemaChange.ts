@@ -1,8 +1,8 @@
-import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.ts'
+import { BasedDb } from '../../src/index.ts'
 import { deepCopy } from '@based/utils'
 import { Schema } from '@based/schema'
-import { deepEqual } from '../shared/assert.js'
+import { deepEqual } from '../shared/assert.ts'
 
 await test('set schema dont migrate', async (t) => {
   const db = new BasedDb({

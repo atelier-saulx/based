@@ -1,5 +1,5 @@
-import { Ctx } from './Ctx.js'
-import { RANGE_ERR } from './types.js'
+import { Ctx } from './Ctx.ts'
+import { RANGE_ERR } from './types.ts'
 
 export const resize = (ctx: Ctx, size: number) => {
   if (size > ctx.max) {

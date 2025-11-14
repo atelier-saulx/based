@@ -1,7 +1,7 @@
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
-import { italy } from '../shared/examples.js'
-import { deepEqual } from '../shared/assert.js'
+import { BasedDb } from '../../src/index.ts'
+import test from '../shared/test.ts'
+import { italy } from '../shared/examples.ts'
+import { deepEqual } from '../shared/assert.ts'
 import { notEqual } from 'node:assert'
 import { wait } from '@based/utils'
 

@@ -1,5 +1,5 @@
 import { Schema } from '@based/schema'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/index.ts'
 
 const schCompanyName = { type: 'string', maxBytes: 40 } as const
 const schContactName = { type: 'string', maxBytes: 30 } as const

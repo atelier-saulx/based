@@ -1,7 +1,7 @@
 import { SchemaTypeDef, TEXT } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { writeObject } from '../props/object.js'
-import { reserve } from '../resize.js'
+import { Ctx } from '../Ctx.ts'
+import { writeObject } from '../props/object.ts'
+import { reserve } from '../resize.ts'
 import {
   FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
@@ -9,10 +9,10 @@ import {
   writeTypeCursor,
 } from '../cursor.js'
 import { getByPath, writeUint16 } from '@based/utils'
-import { writeMainBuffer, writeMainValue } from '../props/main.js'
-import { Tmp } from '../Tmp.js'
-import { DbClient } from '../../../index.js'
-import { schedule } from '../drain.js'
+import { writeMainBuffer, writeMainValue } from '../props/main.ts'
+import { Tmp } from '../Tmp.ts'
+import { DbClient } from '../../../index.ts'
+import { schedule } from '../drain.ts'
 import {
   ADD_EMPTY_SORT,
   ADD_EMPTY_SORT_TEXT,
@@ -24,11 +24,11 @@ import {
   SWITCH_ID_CREATE_UNSAFE,
 } from '../types.js'
 import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
-import { writeSeparate } from '../props/separate.js'
-import { writeString } from '../props/string.js'
-import { writeU32, writeU8 } from '../uint.js'
-import { getValidSchema, validatePayload } from '../validate.js'
-import { handleError } from '../error.js'
+import { writeSeparate } from '../props/separate.ts'
+import { writeString } from '../props/string.ts'
+import { writeU32, writeU8 } from '../uint.ts'
+import { getValidSchema, validatePayload } from '../validate.ts'
+import { handleError } from '../error.ts'
 
 const writeDefaults = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateDefaults) {
@@ -200,8 +200,8 @@ export const writeCreate = (
       throw 'Invalid payload. "id" not allowed'
     }
   } else if (schema.capped) {
-      writeU8(ctx, SWITCH_ID_CREATE_RING)
-      writeU32(ctx, schema.capped)
+    writeU8(ctx, SWITCH_ID_CREATE_RING)
+    writeU32(ctx, schema.capped)
   } else {
     writeU8(ctx, SWITCH_ID_CREATE)
   }

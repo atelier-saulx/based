@@ -17,7 +17,7 @@ import {
   ReaderSchema,
   ReaderSchemaEnum,
 } from '@based/protocol/db-read'
-import { IncludeOpts, QueryDef, Target } from './types.js'
+import { IncludeOpts, QueryDef, Target } from './types.ts'
 
 const createReaderPropDef = (
   p: PropDef | PropDefEdge,

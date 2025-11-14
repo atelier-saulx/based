@@ -1,14 +1,14 @@
 import { langCodesMap } from '@based/schema'
 import { STRING, TEXT, VECTOR } from '@based/schema/def'
-import { QueryDefSearch, QueryDef } from '../types.js'
-import { FilterOpts, getVectorFn } from '../filter/types.js'
+import { QueryDefSearch, QueryDef } from '../types.ts'
+import { FilterOpts, getVectorFn } from '../filter/types.ts'
 import {
   searchDoesNotExist,
   searchIncorrecQueryValue,
   searchIncorrectType,
 } from '../validation.js'
 import { ENCODER, concatUint8Arr } from '@based/utils'
-import { QueryBranch } from '../BasedDbQuery.js'
+import { QueryBranch } from '../BasedDbQuery.ts'
 
 export type Search =
   | string[]

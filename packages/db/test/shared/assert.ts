@@ -1,7 +1,7 @@
 import { deepEqual as uDeepEqual } from '@based/utils'
 import { styleText } from 'node:util'
 import util from 'node:util'
-import { BasedQueryResponse } from '../../src/client/query/BasedQueryResponse.js'
+import { BasedQueryResponse } from '../../src/client/query/BasedQueryResponse.ts'
 import { REVERSE_TYPE_INDEX_MAP } from '@based/schema/def'
 
 // add fn

@@ -1,5 +1,5 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
 
 await test('votesEdges', async (t) => {
   const db = new BasedDb({

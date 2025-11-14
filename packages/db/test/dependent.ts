@@ -1,6 +1,6 @@
-import { equal } from './shared/assert.js'
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { equal } from './shared/assert.ts'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
 
 await test('dependent', async (t) => {
   const db = new BasedDb({

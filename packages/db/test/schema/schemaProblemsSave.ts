@@ -1,5 +1,5 @@
-import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.ts'
+import { BasedDb } from '../../src/index.ts'
 import { randomString, wait } from '@based/utils'
 import { Schema } from '@based/schema'
 

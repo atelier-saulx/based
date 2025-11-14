@@ -7,12 +7,12 @@ import {
   CARDINALITY,
   JSON as JSONProp,
 } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { writeBinaryEdge } from './binary.js'
-import { writeStringEdge } from './string.js'
-import { writeReferenceEdge } from './reference.js'
-import { writeReferencesEdge } from './references.js'
-import { writeCardinalityEdge } from './cardinality.js'
+import { Ctx } from '../Ctx.ts'
+import { writeBinaryEdge } from './binary.ts'
+import { writeStringEdge } from './string.ts'
+import { writeReferenceEdge } from './reference.ts'
+import { writeReferencesEdge } from './references.ts'
+import { writeCardinalityEdge } from './cardinality.ts'
 
 export const writeSeparateEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (edge.typeIndex === BINARY) {

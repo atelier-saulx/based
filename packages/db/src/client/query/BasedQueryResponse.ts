@@ -1,8 +1,8 @@
 import { inspect } from 'node:util'
 import picocolors from 'picocolors'
-import { QueryDef } from './types.js'
-import { debug } from './query.js'
-import { size, time, inspectData, defHasId, displayTarget } from './display.js'
+import { QueryDef } from './types.ts'
+import { debug } from './query.ts'
+import { size, time, inspectData, defHasId, displayTarget } from './display.ts'
 import { readFloatLE, readUint32 } from '@based/utils'
 import {
   resultToObject,

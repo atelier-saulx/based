@@ -1,16 +1,16 @@
-import { getValidSchema, validateId } from '../validate.js'
-import { handleError } from '../error.js'
-import { DbClient } from '../../../index.js'
-import { reserve } from '../resize.js'
+import { getValidSchema, validateId } from '../validate.ts'
+import { handleError } from '../error.ts'
+import { DbClient } from '../../../index.ts'
+import { reserve } from '../resize.ts'
 import {
   NODE_CURSOR_SIZE,
   TYPE_CURSOR_SIZE,
   writeTypeCursor,
 } from '../cursor.js'
-import { EXPIRE, SWITCH_ID_UPDATE } from '../types.js'
-import { schedule } from '../drain.js'
-import { Tmp } from '../Tmp.js'
-import { writeU32, writeU8 } from '../uint.js'
+import { EXPIRE, SWITCH_ID_UPDATE } from '../types.ts'
+import { schedule } from '../drain.ts'
+import { Tmp } from '../Tmp.ts'
+import { writeU32, writeU8 } from '../uint.ts'
 
 export function expire(
   db: DbClient,

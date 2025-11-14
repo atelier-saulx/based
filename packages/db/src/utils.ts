@@ -1,5 +1,5 @@
 import { inspect, styleText } from 'node:util'
-import { DbServer } from './server/index.js'
+import { DbServer } from './server/index.ts'
 
 export const debugMode = (target, getInfo = null) => {
   const opts = { showHidden: false, depth: null, colors: true }

@@ -1,6 +1,6 @@
 import { PropDef } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { CREATE } from '../types.js'
+import { Ctx } from '../Ctx.ts'
+import { CREATE } from '../types.ts'
 import { LangCode } from '@based/schema'
 
 export const markString = (ctx: Ctx, def: PropDef) => {

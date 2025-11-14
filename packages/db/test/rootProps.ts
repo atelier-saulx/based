@@ -1,7 +1,7 @@
 import { BLOCK_CAPACITY_MAX } from '@based/schema/def'
-import { BasedDb } from '../src/index.js'
-import { deepEqual } from './shared/assert.js'
-import test from './shared/test.js'
+import { BasedDb } from '../src/index.ts'
+import { deepEqual } from './shared/assert.ts'
+import test from './shared/test.ts'
 
 await test('rootProps', async (t) => {
   const db = new BasedDb({
@@ -71,5 +71,7 @@ await test('rootProps', async (t) => {
   deepEqual(rootRes, rootRes2)
 
   await db.update('_root', 1, { myBoolean: false })
-  deepEqual(await db.query('_root', 1).include('myBoolean').get().toObject(), { myBoolean: false })
+  deepEqual(await db.query('_root', 1).include('myBoolean').get().toObject(), {
+    myBoolean: false,
+  })
 })

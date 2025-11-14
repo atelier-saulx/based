@@ -1,6 +1,6 @@
-import { BasedDb, groupBy } from '../../src/index.js'
-import test from '../shared/test.js'
-import { deepEqual } from '../shared/assert.js'
+import { BasedDb, groupBy } from '../../src/index.ts'
+import test from '../shared/test.ts'
+import { deepEqual } from '../shared/assert.ts'
 
 await test('dev', async (t) => {
   const db = new BasedDb({

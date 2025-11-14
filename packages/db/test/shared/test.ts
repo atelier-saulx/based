@@ -1,10 +1,10 @@
 import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb } from '../../src/index.js'
-import { deepEqual } from './assert.js'
+import { BasedDb } from '../../src/index.ts'
+import { deepEqual } from './assert.ts'
 import { wait, bufToHex } from '@based/utils'
-import { destructureTreeKey, VerifTree } from '../../src/server/tree.js'
+import { destructureTreeKey, VerifTree } from '../../src/server/tree.ts'
 import fs from 'node:fs/promises'
 
 export const counts = {
@@ -137,7 +137,9 @@ const test = async (
 
       d = performance.now()
       await newDb.start()
-      console.log(styleText('gray', `started from backup ${performance.now() - d} ms`))
+      console.log(
+        styleText('gray', `started from backup ${performance.now() - d} ms`),
+      )
 
       const [backupChecksums, b, c] = await make(newDb)
       // console.dir(b, { depth: null })

@@ -1,9 +1,9 @@
 import { wait } from '@based/utils'
-import { DbClient } from '../../src/client/index.js'
-import { BasedDb, getDefaultHooks } from '../../src/index.js'
-import { DbServer } from '../../src/server/index.js'
-import test from '../shared/test.js'
-import { deepEqual, equal } from '../shared/assert.js'
+import { DbClient } from '../../src/client/index.ts'
+import { BasedDb, getDefaultHooks } from '../../src/index.ts'
+import { DbServer } from '../../src/server/index.ts'
+import test from '../shared/test.ts'
+import { deepEqual, equal } from '../shared/assert.ts'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({

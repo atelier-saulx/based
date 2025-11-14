@@ -1,8 +1,8 @@
 import { fastPrng, wait } from '@based/utils'
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
-import { deepEqual, equal } from './shared/assert.js'
-import { euobserver } from './shared/examples.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
+import { deepEqual, equal } from './shared/assert.ts'
+import { euobserver } from './shared/examples.ts'
 
 const ENCODER = new TextEncoder()
 

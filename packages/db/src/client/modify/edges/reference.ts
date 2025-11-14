@@ -1,9 +1,9 @@
 import { PropDefEdge, REFERENCE } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { reserve } from '../resize.js'
-import { writeU32 } from '../uint.js'
-import { writeEdgeHeader } from './header.js'
-import { validate } from '../validate.js'
+import { Ctx } from '../Ctx.ts'
+import { reserve } from '../resize.ts'
+import { writeU32 } from '../uint.ts'
+import { writeEdgeHeader } from './header.ts'
+import { validate } from '../validate.ts'
 
 export const writeReferenceEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (val === null) {

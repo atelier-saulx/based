@@ -1,7 +1,7 @@
-import { registerMsgHandler } from './worker.js'
-import { IoJob } from './io_worker_types.js'
+import { registerMsgHandler } from './worker.ts'
+import { IoJob } from './io_worker_types.ts'
 import { writeInt32 } from '@based/utils'
-import native from '../../native.js'
+import native from '../../native.ts'
 
 function loadBlock(dbCtx: any, filepath: string): null | ArrayBuffer {
   native.loadBlock(filepath, dbCtx)

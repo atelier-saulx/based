@@ -1,6 +1,6 @@
 import { numberTypes } from '@based/schema/def'
-import { BasedDb, xxHash64 } from '../../src/index.js'
-import test from '../shared/test.js'
+import { BasedDb, xxHash64 } from '../../src/index.ts'
+import test from '../shared/test.ts'
 import { deepEqual, equal } from 'node:assert'
 
 const ENCODER = new TextEncoder()

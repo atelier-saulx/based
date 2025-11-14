@@ -1,6 +1,6 @@
 import { langCodesMap } from '@based/schema'
-import { DbClient } from '../index.js'
-import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
+import { DbClient } from '../index.ts'
+import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.ts'
 import {
   EdgeTarget,
   QueryDef,

@@ -1,7 +1,7 @@
-import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.ts'
+import { BasedDb } from '../../src/index.ts'
 import { setTimeout } from 'node:timers/promises'
-import { deepEqual, throws } from '../shared/assert.js'
+import { deepEqual, throws } from '../shared/assert.ts'
 await test('support many fields on root', async (t) => {
   const db = new BasedDb({
     path: t.tmp,

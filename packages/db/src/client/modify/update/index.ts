@@ -1,17 +1,17 @@
-import { Ctx } from '../Ctx.js'
+import { Ctx } from '../Ctx.ts'
 import {
   ModifyOpts,
   SWITCH_ID_UPDATE,
   UPDATE,
   UPDATE_PARTIAL,
 } from '../types.js'
-import { DbClient } from '../../../index.js'
-import { getValidSchema, validateId, validatePayload } from '../validate.js'
+import { DbClient } from '../../../index.ts'
+import { getValidSchema, validateId, validatePayload } from '../validate.ts'
 import { langCodesMap } from '@based/schema'
-import { handleError } from '../error.js'
-import { Tmp } from '../Tmp.js'
-import { writeObject } from '../props/object.js'
-import { reserve } from '../resize.js'
+import { handleError } from '../error.ts'
+import { Tmp } from '../Tmp.ts'
+import { writeObject } from '../props/object.ts'
+import { reserve } from '../resize.ts'
 import {
   FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
@@ -19,9 +19,9 @@ import {
   writeTypeCursor,
 } from '../cursor.js'
 import { getByPath, writeUint32 } from '@based/utils'
-import { writeU16, writeU32, writeU8 } from '../uint.js'
-import { writeFixed } from '../props/fixed.js'
-import { schedule } from '../drain.js'
+import { writeU16, writeU32, writeU8 } from '../uint.ts'
+import { writeFixed } from '../props/fixed.ts'
+import { schedule } from '../drain.ts'
 import { SchemaTypeDef } from '@based/schema/def'
 
 const writeUpdateTs = (ctx: Ctx, payload: any) => {

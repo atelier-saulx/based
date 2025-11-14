@@ -1,9 +1,9 @@
 import { get } from 'http'
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
 import { wait } from '@based/utils'
 import { SchemaProp } from '@based/schema'
-import { allCountryCodes } from './shared/examples.js'
+import { allCountryCodes } from './shared/examples.ts'
 import { clearTimeout } from 'timers'
 
 await test('schema with many uint8 fields', async (t) => {

@@ -1,7 +1,7 @@
 import { notEqual } from 'assert'
-import { BasedDb } from '../../src/index.js'
-import { deepEqual } from '../shared/assert.js'
-import test from '../shared/test.js'
+import { BasedDb } from '../../src/index.ts'
+import { deepEqual } from '../shared/assert.ts'
+import test from '../shared/test.ts'
 
 await test('simple', async (t) => {
   const db = new BasedDb({

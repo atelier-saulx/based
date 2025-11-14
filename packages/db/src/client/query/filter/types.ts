@@ -1,6 +1,6 @@
-import { QueryDef } from '../types.js'
-import { filterOperatorDoesNotExist } from '../validation.js'
-import { FilterBranch } from './FilterBranch.js'
+import { QueryDef } from '../types.ts'
+import { filterOperatorDoesNotExist } from '../validation.ts'
+import { FilterBranch } from './FilterBranch.ts'
 
 export type Filter = [fieldStr: string, ctx: FilterCtx, value: any]
 

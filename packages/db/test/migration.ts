@@ -1,7 +1,7 @@
 import { NonStrictSchema } from '@based/schema'
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
-import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
+import { deepEqual, equal, notEqual, throws } from './shared/assert.ts'
 
 await test('migration', async (t) => {
   const db = new BasedDb({

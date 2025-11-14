@@ -1,6 +1,6 @@
-import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
-import { clientWorker } from '../shared/startWorker.js'
+import test from '../shared/test.ts'
+import { BasedDb } from '../../src/index.ts'
+import { clientWorker } from '../shared/startWorker.ts'
 
 await test('schema problems modify', async (t) => {
   const db = new BasedDb({

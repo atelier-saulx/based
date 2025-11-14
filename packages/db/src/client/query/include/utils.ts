@@ -4,9 +4,9 @@ import {
   REFERENCE,
   SchemaPropTree,
 } from '@based/schema/def'
-import { DbClient } from '../../index.js'
-import { createQueryDef } from '../queryDef.js'
-import { IncludeOpts, QueryDef, QueryDefType } from '../types.js'
+import { DbClient } from '../../index.ts'
+import { createQueryDef } from '../queryDef.ts'
+import { IncludeOpts, QueryDef, QueryDefType } from '../types.ts'
 import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 
 export const getAllFieldFromObject = (

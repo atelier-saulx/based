@@ -1,6 +1,6 @@
-import { BasedDb, filter } from '../../src/index.js'
-import { deepEqual, equal } from '../shared/assert.js'
-import test from '../shared/test.js'
+import { BasedDb, filter } from '../../src/index.ts'
+import { deepEqual, equal } from '../shared/assert.ts'
+import test from '../shared/test.ts'
 import { setTimeout } from 'node:timers/promises'
 
 await test('simple', async (t) => {

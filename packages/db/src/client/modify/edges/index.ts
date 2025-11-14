@@ -1,13 +1,13 @@
 import { PropDef, PropDefEdge } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { writeSeparateEdge } from './separate.js'
-import { DECREMENT, INCREMENT, UPDATE } from '../types.js'
-import { writeEdgeHeaderMain, writeEdgeHeaderPartial } from './header.js'
-import { writeU16, writeU32 } from '../uint.js'
-import { writeFixed } from '../props/fixed.js'
+import { Ctx } from '../Ctx.ts'
+import { writeSeparateEdge } from './separate.ts'
+import { DECREMENT, INCREMENT, UPDATE } from '../types.ts'
+import { writeEdgeHeaderMain, writeEdgeHeaderPartial } from './header.ts'
+import { writeU16, writeU32 } from '../uint.ts'
+import { writeFixed } from '../props/fixed.ts'
 import { writeUint16, writeUint32 } from '@based/utils'
-import { reserve } from '../resize.js'
-import { PROP_CURSOR_SIZE } from '../cursor.js'
+import { reserve } from '../resize.ts'
+import { PROP_CURSOR_SIZE } from '../cursor.ts'
 
 const setDefaultEdges = (def: PropDef, val: Record<string, any>) => {
   if (def.hasDefaultEdges) {

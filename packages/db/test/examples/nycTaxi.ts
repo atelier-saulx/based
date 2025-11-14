@@ -1,11 +1,11 @@
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
+import { BasedDb } from '../../src/index.ts'
+import test from '../shared/test.ts'
 import { join } from 'path'
 import { readdir, readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { gunzip as _gunzip } from 'zlib'
 import { Sema } from 'async-sema'
-import { logMemoryUsage } from '../shared/index.js'
+import { logMemoryUsage } from '../shared/index.ts'
 
 const gunzip = promisify(_gunzip)
 
@@ -657,7 +657,8 @@ await test.skip('taxi', async (t) => {
   console.log(
     Object.keys(day2enum).reduce(
       (prev, key) => (
-        (prev[day2enum[key]] = rh1[key].count / rh2[key].count), prev
+        (prev[day2enum[key]] = rh1[key].count / rh2[key].count),
+        prev
       ),
       {},
     ),

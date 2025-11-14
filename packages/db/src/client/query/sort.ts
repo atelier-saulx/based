@@ -1,5 +1,5 @@
-import { QueryDef, QueryDefSort } from './types.js'
-import { validateSort } from './validation.js'
+import { QueryDef, QueryDefSort } from './types.ts'
+import { validateSort } from './validation.ts'
 
 export const createSortBuffer = (sort: QueryDefSort) => {
   const buf = new Uint8Array(8)

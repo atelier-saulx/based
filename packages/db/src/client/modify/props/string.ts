@@ -1,5 +1,5 @@
 import { PropDef } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
+import { Ctx } from '../Ctx.ts'
 import { LangCode } from '@based/schema'
 import {
   CREATE,
@@ -13,12 +13,12 @@ import {
   PROP_CURSOR_SIZE,
   writePropCursor,
 } from '../cursor.js'
-import { reserve } from '../resize.js'
+import { reserve } from '../resize.ts'
 import { ENCODER, writeUint32 } from '@based/utils'
-import { write } from '../../string.js'
-import { writeU8, writeU8Array } from '../uint.js'
-import { markString } from '../create/mark.js'
-import { validate } from '../validate.js'
+import { write } from '../../string.ts'
+import { writeU8, writeU8Array } from '../uint.ts'
+import { markString } from '../create/mark.ts'
+import { validate } from '../validate.ts'
 
 export const deleteString = (ctx: Ctx, def: PropDef, lang: LangCode): void => {
   if (ctx.operation !== UPDATE) {

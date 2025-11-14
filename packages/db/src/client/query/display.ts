@@ -1,5 +1,5 @@
 import picocolors from 'picocolors'
-import { QueryDef } from './types.js'
+import { QueryDef } from './types.ts'
 import {
   ALIAS,
   BINARY,
@@ -14,7 +14,7 @@ import {
   TIMESTAMP,
   TypeIndex,
 } from '@based/schema/def'
-import { BasedQueryResponse } from './BasedQueryResponse.js'
+import { BasedQueryResponse } from './BasedQueryResponse.ts'
 import { ENCODER } from '@based/utils'
 import { AggregateType } from '@based/protocol/db-read'
 

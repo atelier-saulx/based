@@ -1,7 +1,7 @@
-import { QueryBranch } from '../BasedDbQuery.js'
-import { Operator } from './filter.js'
-import { FilterBranch } from './FilterBranch.js'
-import { FilterOpts, FilterAst, toFilterCtx } from './types.js'
+import { QueryBranch } from '../BasedDbQuery.ts'
+import { Operator } from './filter.ts'
+import { FilterBranch } from './FilterBranch.ts'
+import { FilterOpts, FilterAst, toFilterCtx } from './types.ts'
 
 const normalizeNeedle = (s: string): string => {
   return s

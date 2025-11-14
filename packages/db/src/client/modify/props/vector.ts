@@ -1,10 +1,10 @@
-import { Ctx } from '../Ctx.js'
+import { Ctx } from '../Ctx.ts'
 import { PropDef } from '@based/schema/def'
-import { deleteProp } from './delete.js'
-import { validate } from '../validate.js'
-import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
-import { reserve } from '../resize.js'
-import { writeU8 } from '../uint.js'
+import { deleteProp } from './delete.ts'
+import { validate } from '../validate.ts'
+import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'
+import { reserve } from '../resize.ts'
+import { writeU8 } from '../uint.ts'
 
 export const writeVector = (ctx: Ctx, def: PropDef, val: any) => {
   if (val === null) {

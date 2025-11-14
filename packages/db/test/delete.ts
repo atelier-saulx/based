@@ -1,6 +1,6 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
-import { deepEqual, throws } from './shared/assert.js'
+import { BasedDb } from '../src/index.ts'
+import test from './shared/test.ts'
+import { deepEqual, throws } from './shared/assert.ts'
 import assert from 'node:assert'
 
 await test('delete', async (t) => {
@@ -171,7 +171,7 @@ await test('non existing 2', async (t) => {
   ])
 
   // this can be handled in js
-  throws (() => db.delete('nurp', 213123123))
+  throws(() => db.delete('nurp', 213123123))
 
   throws(() => db.delete('user', simple))
 

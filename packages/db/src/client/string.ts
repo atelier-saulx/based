@@ -1,9 +1,9 @@
 import type { LangCode } from '@based/schema'
-import native from '../native.js'
+import native from '../native.ts'
 import { makeTmpBuffer, ENCODER, writeUint32 } from '@based/utils'
 import { COMPRESSED, NOT_COMPRESSED } from '@based/protocol/db-read'
-import { Ctx } from './modify/Ctx.js'
-import { resize } from './modify/resize.js'
+import { Ctx } from './modify/Ctx.ts'
+import { resize } from './modify/resize.ts'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 

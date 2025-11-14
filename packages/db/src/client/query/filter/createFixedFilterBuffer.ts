@@ -15,7 +15,7 @@ import {
   MODE_DEFAULT,
   MODE_OR_FIXED,
 } from './types.js'
-import { parseFilterValue } from './parseFilterValue.js'
+import { parseFilterValue } from './parseFilterValue.ts'
 import {
   ENCODER,
   writeDoubleLE,
@@ -23,7 +23,7 @@ import {
   writeUint16,
   writeUint32,
 } from '@based/utils'
-import { FilterCondition, FilterMetaNow } from '../types.js'
+import { FilterCondition, FilterMetaNow } from '../types.ts'
 
 const isNowQuery = (
   prop: PropDef | PropDefEdge,

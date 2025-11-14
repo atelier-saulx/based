@@ -1,8 +1,8 @@
 import { updateTypeDefs } from '@based/schema/def'
 import { DbSchema } from '@based/schema'
-import { DbClient } from '../index.js'
-import { cancel } from './modify/drain.js'
-import { Ctx } from './modify/Ctx.js'
+import { DbClient } from '../index.ts'
+import { cancel } from './modify/drain.ts'
+import { Ctx } from './modify/Ctx.ts'
 
 export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
   if (client.schema && client.schema.hash === schema.hash) {

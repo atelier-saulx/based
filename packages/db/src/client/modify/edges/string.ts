@@ -1,12 +1,12 @@
 import { PropDefEdge, STRING } from '@based/schema/def'
 import { ENCODER } from '@based/utils'
-import { write } from '../../string.js'
-import { Ctx } from '../Ctx.js'
-import { reserve } from '../resize.js'
-import { RANGE_ERR } from '../types.js'
-import { writeU32 } from '../uint.js'
-import { writeEdgeHeader } from './header.js'
-import { validate } from '../validate.js'
+import { write } from '../../string.ts'
+import { Ctx } from '../Ctx.ts'
+import { reserve } from '../resize.ts'
+import { RANGE_ERR } from '../types.ts'
+import { writeU32 } from '../uint.ts'
+import { writeEdgeHeader } from './header.ts'
+import { validate } from '../validate.ts'
 
 export const writeStringEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (val === null) {

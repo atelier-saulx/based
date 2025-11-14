@@ -1,12 +1,12 @@
 import { PropDef } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { deleteProp } from './delete.js'
-import { validate } from '../validate.js'
+import { Ctx } from '../Ctx.ts'
+import { deleteProp } from './delete.ts'
+import { validate } from '../validate.ts'
 import { ENCODER } from '@based/utils'
-import { reserve } from '../resize.js'
-import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
-import { writeU32, writeU8, writeU8Array } from '../uint.js'
-import { markString } from '../create/mark.js'
+import { reserve } from '../resize.ts'
+import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.ts'
+import { writeU32, writeU8, writeU8Array } from '../uint.ts'
+import { markString } from '../create/mark.ts'
 
 export const writeAlias = (ctx: Ctx, def: PropDef, val: any) => {
   if (val === null) {

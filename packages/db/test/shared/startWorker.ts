@@ -3,9 +3,9 @@ import fs from 'node:fs/promises'
 import { hash } from '@based/hash'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
-import { DbClient } from '../../src/client/index.js'
-import { BasedDb } from '../../src/index.js'
-import native from '../../src/native.js'
+import { DbClient } from '../../src/client/index.ts'
+import { BasedDb } from '../../src/index.ts'
+import native from '../../src/native.ts'
 import * as utils from '@based/utils'
 
 const exists = async (path: string) => await fs.stat(path).catch((e) => false)

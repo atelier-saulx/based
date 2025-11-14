@@ -1,9 +1,9 @@
 import { setTimeout } from 'node:timers/promises'
-import { DbClient } from '../../src/client/index.js'
-import { DbServer } from '../../src/server/index.js'
-import { deepEqual } from '../shared/assert.js'
-import test from '../shared/test.js'
-import { BasedDb, getDefaultHooks } from '../../src/index.js'
+import { DbClient } from '../../src/client/index.ts'
+import { DbServer } from '../../src/server/index.ts'
+import { deepEqual } from '../shared/assert.ts'
+import test from '../shared/test.ts'
+import { BasedDb, getDefaultHooks } from '../../src/index.ts'
 import { wait } from '@based/utils'
 
 await test('client server schema updates', async (t) => {

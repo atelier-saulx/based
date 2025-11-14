@@ -1,4 +1,4 @@
-import test from './test.js'
+import test from './test.ts'
 export * from './assert.js'
 export * from './examples.js'
 export * from './examples.js'

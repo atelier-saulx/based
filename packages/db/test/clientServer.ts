@@ -1,6 +1,6 @@
-import { deepEqual } from './shared/assert.js'
-import test from './shared/test.js'
-import { start } from './shared/multi.js'
+import { deepEqual } from './shared/assert.ts'
+import test from './shared/test.ts'
+import { start } from './shared/multi.ts'
 
 await test('client server basic', async (t) => {
   const {

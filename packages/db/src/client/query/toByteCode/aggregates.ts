@@ -1,4 +1,4 @@
-import { filterToBuffer } from '../query.js'
+import { filterToBuffer } from '../query.ts'
 import {
   QueryDef,
   QueryDefType,

@@ -1,7 +1,7 @@
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
-import { deepEqual, equal, isSorted } from '../shared/assert.js'
-import { text } from '../shared/examples.js'
+import { BasedDb } from '../../src/index.ts'
+import test from '../shared/test.ts'
+import { deepEqual, equal, isSorted } from '../shared/assert.ts'
+import { text } from '../shared/examples.ts'
 import { randomString } from '@based/utils'
 
 await test('compression / large strings', async (t) => {

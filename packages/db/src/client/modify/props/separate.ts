@@ -11,17 +11,17 @@ import {
   COLVEC,
   JSON,
 } from '@based/schema/def'
-import { Ctx } from '../Ctx.js'
-import { writeReference } from './reference.js'
-import { writeString } from './string.js'
-import { writeText } from './text.js'
-import { writeReferences } from './references.js'
-import { writeBinary } from './binary.js'
-import { writeAlias } from './alias.js'
-import { writeCardinality } from './cardinality.js'
-import { writeVector } from './vector.js'
-import { writeJson } from './json.js'
-import { markDefaults } from '../create/mark.js'
+import { Ctx } from '../Ctx.ts'
+import { writeReference } from './reference.ts'
+import { writeString } from './string.ts'
+import { writeText } from './text.ts'
+import { writeReferences } from './references.ts'
+import { writeBinary } from './binary.ts'
+import { writeAlias } from './alias.ts'
+import { writeCardinality } from './cardinality.ts'
+import { writeVector } from './vector.ts'
+import { writeJson } from './json.ts'
+import { markDefaults } from '../create/mark.ts'
 
 export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex

@@ -1,10 +1,10 @@
 import { wait } from '@based/utils'
-import { DbClient } from '../../src/client/index.js'
-import { DbServer } from '../../src/server/index.js'
-import test from '../shared/test.js'
-import { equal } from '../shared/assert.js'
-import { italy } from '../shared/examples.js'
-import { getDefaultHooks } from '../../src/hooks.js'
+import { DbClient } from '../../src/client/index.ts'
+import { DbServer } from '../../src/server/index.ts'
+import test from '../shared/test.ts'
+import { equal } from '../shared/assert.ts'
+import { italy } from '../shared/examples.ts'
+import { getDefaultHooks } from '../../src/hooks.ts'
 
 const start = async (t, clientsN = 2, subTime = 100) => {
   const server = new DbServer({

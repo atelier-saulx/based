@@ -1,6 +1,6 @@
-import { QueryDef, includeOp, IntermediateByteCode } from '../types.js'
+import { QueryDef, includeOp, IntermediateByteCode } from '../types.ts'
 import { writeUint16 } from '@based/utils'
-import { REFERENCE } from './offsets.js'
+import { REFERENCE } from './offsets.ts'
 
 export const referenceQuery = (
   def: QueryDef,

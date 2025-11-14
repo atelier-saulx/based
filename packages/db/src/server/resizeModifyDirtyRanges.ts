@@ -1,5 +1,5 @@
-import native from '../native.js'
-import { DbServer } from './index.js'
+import native from '../native.ts'
+import { DbServer } from './index.ts'
 
 export const resizeModifyDirtyRanges = (server: DbServer) => {
   let maxNrChanges = 0

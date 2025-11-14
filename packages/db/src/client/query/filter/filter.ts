@@ -1,4 +1,4 @@
-import { QueryDef, QueryDefFilter } from '../types.js'
+import { QueryDef, QueryDefFilter } from '../types.ts'
 import {
   isPropDef,
   SchemaTypeDef,
@@ -9,12 +9,12 @@ import {
   REFERENCE,
   REFERENCES,
 } from '@based/schema/def'
-import { primitiveFilter } from './primitiveFilter.js'
-import { Operator } from './types.js'
-import { Filter, FilterAst, IsFilter } from './types.js'
-import { DbClient } from '../../index.js'
+import { primitiveFilter } from './primitiveFilter.ts'
+import { Operator } from './types.ts'
+import { Filter, FilterAst, IsFilter } from './types.ts'
+import { DbClient } from '../../index.ts'
 import { langCodesMap } from '@based/schema'
-import { filterFieldDoesNotExist, filterInvalidLang } from '../validation.js'
+import { filterFieldDoesNotExist, filterInvalidLang } from '../validation.ts'
 
 export { Operator, Filter }
 
