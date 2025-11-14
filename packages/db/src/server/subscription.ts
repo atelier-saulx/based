@@ -153,10 +153,6 @@ const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
   }
 }
 
-// let total = 0
-// let exectime = 0
-// let int
-
 export const registerSubscription = (
   server: DbServer,
   query: Uint8Array,
@@ -165,21 +161,10 @@ export const registerSubscription = (
   onError: OnError,
   subInterval?: number,
 ) => {
-  // this can change dynamicly
   if (subInterval) {
     server.subscriptions.subInterval = subInterval
   }
-  // if (!int)
-  //   int = setInterval(() => {
-  //     console.log('EXECED', total, exectime / total, 'ms exec time')
-  //     if (server.stopped) {
-  //       clearInterval(int)
-  //     }
-  //   }, 1e3)
-
   let killed = false
-
-  // now maybe just once per second? (for now)
 
   if (server.subscriptions.active === 0) {
     startUpdateHandler(server)
@@ -350,13 +335,10 @@ export const registerSubscription = (
 
     return () => {
       killed = true
-
       if (now) {
         server.subscriptions.now.listeners.delete(runQuery)
       }
-
       removeFromMultiSub(server, typeId, runQuery)
-
       if (types) {
         for (const typeId of types) {
           removeFromMultiSub(server, typeId, runQuery)
