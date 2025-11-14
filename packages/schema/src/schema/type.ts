@@ -1,7 +1,8 @@
 import type { BasedDbQuery, Operator } from '@based/db'
-import { assert, isNatural, isRecord } from './shared.js'
-import { parseProp, type SchemaProp } from './prop.js'
 import type { Schema } from './schema.js'
+import { assert, isBoolean, isNatural, isRecord } from './shared.js'
+import { parseProp, type SchemaProp } from './prop.js'
+import { isHooks } from './hooks.js'
 
 type SchemaHooks = {
   create?: (payload: Record<string, any>) => void | Record<string, any>
@@ -41,22 +42,32 @@ export type SchemaType<strict = false> = strict extends true
   ? SchemaTypeObj<strict>
   : SchemaTypeObj<strict> | ({ props: never } & SchemaProps<strict>)
 
-export const parseType = (type: unknown, schema: Schema): SchemaType<true> => {
-  assert(isRecord(type))
-  let typeProps: unknown
-  if (type.props) {
-    typeProps = type.props
-    assert(type.hooks === undefined || isRecord(type.hooks))
-    assert(type.blockCapacity === undefined || isNatural(type.blockCapacity))
-  } else {
-    typeProps = type
-  }
+const parseProps = (typeProps: unknown, schema: Schema) => {
   assert(isRecord(typeProps))
   const props: SchemaProps<true> = {}
   for (const key in typeProps) {
     props[key] = parseProp(typeProps[key], schema)
   }
+  return props
+}
+
+export const parseType = (type: unknown, schema: Schema): SchemaType<true> => {
+  assert(isRecord(type))
+
+  if (type.props === undefined) {
+    return { props: parseProps(type, schema) }
+  }
+
+  assert(type.hooks === undefined || isHooks<SchemaHooks>(type.hooks))
+  assert(type.blockCapacity === undefined || isNatural(type.blockCapacity))
+  assert(type.capped === undefined || isNatural(type.capped))
+  assert(type.partial === undefined || isBoolean(type.partial))
+
   return {
-    props,
+    hooks: type.hooks,
+    blockCapacity: type.blockCapacity,
+    capped: type.capped,
+    partial: type.partial,
+    props: parseProps(type.props, schema),
   }
 }

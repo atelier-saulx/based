@@ -3,17 +3,17 @@ import { assert, isRecord, isString, RequiredIfStrict } from './shared.js'
 import { parseProp, type SchemaProp } from './prop.js'
 import type { Schema } from './schema.js'
 
-export type SchemaReference<strict = true> = Base & {
+export type SchemaReference<strict = false> = Base & {
   type: RequiredIfStrict<'reference', strict>
   ref: string
   prop: string
-  [edge: `$${string}`]: SchemaProp
+  [edge: `$${string}`]: SchemaProp<strict>
 }
 
 export const parseReference = (
   def: unknown,
   schema: Schema,
-): SchemaReference => {
+): SchemaReference<true> => {
   assert(isRecord(def))
   assert(def.type === undefined || def.type === 'reference')
   assert(isString(def.ref))
@@ -21,7 +21,7 @@ export const parseReference = (
   assert(isString(def.prop))
   assert(isRecord(schema.types[def.ref]))
 
-  const result: SchemaReference = {
+  const result: SchemaReference<true> = {
     type: 'reference',
     ref: def.ref,
     prop: def.prop,
@@ -33,5 +33,5 @@ export const parseReference = (
     }
   }
 
-  return parseBase<SchemaReference>(def, result)
+  return parseBase<SchemaReference<true>>(def, result)
 }

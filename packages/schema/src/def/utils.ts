@@ -26,7 +26,7 @@ import {
   isPropType,
   HLLRegisterRepresentation,
 } from '../types.js'
-import { getPropType } from '../parse/utils.js'
+import { getPropType } from '../_parse/utils.js'
 import { convertToTimestamp } from '@based/utils'
 
 export function isSeparate(schemaProp: SchemaProp, len: number) {

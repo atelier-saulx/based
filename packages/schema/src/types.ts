@@ -1,4 +1,4 @@
-import { getPropType } from './parse/utils.js'
+import { getPropType } from './_parse/utils.js'
 import type { LangName } from './lang.js'
 import type { Validation } from './def/validation.js'
 

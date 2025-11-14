@@ -72,7 +72,7 @@ export const parseProp = (def: unknown, schema: Schema): SchemaProp<true> => {
     return parseTimestamp(def)
   } else if (type === 'vector' || type === 'colvec') {
     return parseVector(def)
-  } else if (numberTypes.includes(type as string)) {
+  } else if (numberTypes.includes(type as any)) {
     return parseNumber(def)
   }
 

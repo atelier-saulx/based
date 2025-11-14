@@ -44,7 +44,7 @@ import {
   StrictSchema,
 } from '../types.js'
 import v from 'validator'
-import { getPropType } from '../parse/index.js'
+import { getPropType } from '../_parse/index.js'
 
 export type Validation = (
   payload: any,

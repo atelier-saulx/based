@@ -1,5 +1,5 @@
 import { hash } from '@based/hash'
-import { getPropType } from './parse/utils.js'
+import { getPropType } from './_parse/utils.js'
 import {
   SchemaPropOneWay,
   SchemaProps,
