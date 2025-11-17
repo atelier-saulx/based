@@ -56,8 +56,15 @@ pub inline fn getNodeTypeId(node: Node) TypeId {
     return selva.selva_get_node_type(node);
 }
 
-pub fn getRefDstType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
-    return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type);
+pub fn getRefDstType(ctx: *DbCtx, sch: anytype) !Type {
+    if (comptime @TypeOf(sch) == FieldSchema) {
+        return getType(ctx, selva.selva_get_edge_field_constraint(sch).*.dst_node_type);
+    } else if (comptime @TypeOf(sch) == EdgeFieldConstraint) {
+        return getType(ctx, sch.*.dst_node_type);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(sch));
+        @compileError("Invalid type");
+    }
 }
 
 pub fn getRefMetaType(ctx: *DbCtx, sch: anytype) !Type {
