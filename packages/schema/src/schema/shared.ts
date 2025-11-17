@@ -11,12 +11,10 @@ export const isInteger = (v: unknown): v is number =>
 export const isNatural = (v: unknown): v is number => isInteger(v) && v > 0
 
 export function assert(condition: unknown, msg?: string): asserts condition {
-  if (!condition) throw msg || 'unexpected error'
+  if (!condition) throw Error(msg || 'unexpected error')
 }
 
-export type RequiredIfStrict<value, strict> = strict extends true
-  ? value
-  : value | undefined
+export type RequiredIfStrict<T, strict> = strict extends true ? T : Partial<T>
 
 export const deleteUndefined = (obj: Record<string, unknown>): void => {
   for (const key in obj) {

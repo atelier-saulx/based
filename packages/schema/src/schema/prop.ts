@@ -3,9 +3,14 @@ import { parseAlias, type SchemaAlias } from './alias.ts'
 import { parseBinary, type SchemaBinary } from './binary.ts'
 import { parseBoolean, type SchemaBoolean } from './boolean.ts'
 import { parseCardinality, type SchemaCardinality } from './cardinality.ts'
-import { parseEnum, type SchemaEnum } from './enum.ts'
+import { parseEnum, type EnumItem, type SchemaEnum } from './enum.ts'
 import { parseJson, type SchemaJson } from './json.ts'
-import { numberTypes, parseNumber, type SchemaNumber } from './number.ts'
+import {
+  numberTypes,
+  parseNumber,
+  type NumberType,
+  type SchemaNumber,
+} from './number.ts'
 import { parseReferences, type SchemaReferences } from './references.ts'
 import { parseReference, type SchemaReference } from './reference.ts'
 import { parseString, type SchemaString } from './string.ts'
@@ -15,7 +20,7 @@ import { parseVector, type SchemaVector } from './vector.ts'
 import type { Schema } from './schema.ts'
 import { parseObject, type SchemaObject } from './object.ts'
 
-export type SchemaProp<strict = true> =
+type SchemaPropObj<strict = false> =
   | SchemaAlias
   | SchemaBinary
   | SchemaBoolean
@@ -31,7 +36,23 @@ export type SchemaProp<strict = true> =
   | SchemaVector
   | SchemaObject<strict>
 
-export const parseProp = (def: unknown, schema: Schema): SchemaProp<true> => {
+type SchemaPropShorthand =
+  | 'timestamp'
+  | 'binary'
+  | 'boolean'
+  | 'string'
+  | 'alias'
+  | 'text'
+  | 'json'
+  | 'cardinality'
+  | NumberType
+  | EnumItem[]
+
+export type SchemaProp<strict = false> =
+  | SchemaPropObj<strict>
+  | (strict extends true ? never : SchemaPropShorthand)
+
+export const parseProp = (def: unknown): SchemaProp<true> => {
   if (isString(def)) {
     def = { type: def }
   } else if (Array.isArray(def)) {
@@ -55,7 +76,7 @@ export const parseProp = (def: unknown, schema: Schema): SchemaProp<true> => {
   }
 
   if (type === 'object') {
-    return parseObject(def, schema)
+    return parseObject(def)
   } else if (type === 'alias') {
     return parseAlias(def)
   } else if (type === 'binary') {
@@ -69,9 +90,9 @@ export const parseProp = (def: unknown, schema: Schema): SchemaProp<true> => {
   } else if (type === 'json') {
     return parseJson(def)
   } else if (type === 'reference') {
-    return parseReference(def, schema)
+    return parseReference(def)
   } else if (type === 'references') {
-    return parseReferences(def, schema)
+    return parseReferences(def)
   } else if (type === 'string') {
     return parseString(def)
   } else if (type === 'text') {
@@ -84,5 +105,5 @@ export const parseProp = (def: unknown, schema: Schema): SchemaProp<true> => {
     return parseNumber(def)
   }
 
-  throw 'error'
+  throw Error('error')
 }

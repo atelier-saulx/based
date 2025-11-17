@@ -4,15 +4,15 @@ import type { SchemaString } from './string.ts'
 import type { SchemaType } from './type.ts'
 import type { SchemaVector } from './vector.ts'
 
-type PropDef = Omit<SchemaProp<true>, 'props'> & {
+type PropDef = SchemaProp<true> & {
   propId: number
   typeId: number
   // seperate => propId === 0
   path: string[]
   start: number
   len: number // rename to size?
-  refProp?: PropDef // this replaces inverseTypeName, inversePropName, inversePropNumber
-  props?: Record<string, PropDef>
+  props: Record<string, PropDef>
+  inverse?: PropDef // this replaces inverseTypeName, inversePropName, inversePropNumber
 }
 
 type TypeDef = Omit<SchemaType<true>, 'props'> & {
@@ -27,79 +27,113 @@ const stringLen = ({ maxBytes = Infinity, max = Infinity }: SchemaString) =>
 const numberLen = (type?: string) =>
   (type && Number(type.replace(/[^0-9]/g, '')) / 4) || 8
 
-const types: Record<
-  SchemaProp<true>['type'],
-  {
-    id: number
-    len?: number | ((propSchema: SchemaProp<true>) => number)
-  }
-> = {
-  alias: { id: 18, len: stringLen },
-  binary: { id: 25, len: stringLen },
-  boolean: { id: 9, len: 1 },
-  cardinality: { id: 5, len: stringLen },
-  colvec: {
-    id: 30,
-    len: ({ size, baseType }: SchemaVector) => size * numberLen(baseType),
-  },
-  enum: { id: 10, len: 1 },
-  int16: { id: 21, len: 2 },
-  int32: { id: 23, len: 4 },
-  int8: { id: 20, len: 1 },
-  json: { id: 28 },
-  number: { id: 4, len: 8 },
-  object: { id: 29 },
-  reference: { id: 13 },
-  references: { id: 14 },
-  string: {
-    id: 11,
-    len: stringLen,
-  },
-  text: { id: 12 },
-  timestamp: { id: 1, len: 8 },
-  uint8: { id: 6, len: 1 },
-  uint16: { id: 22, len: 2 },
-  uint32: { id: 7, len: 4 },
-  vector: { id: 27, len: ({ size }: SchemaVector) => size * 4 },
+const typeIds: Record<SchemaProp<true>['type'], number> = {
+  alias: 18,
+  binary: 25,
+  boolean: 9,
+  cardinality: 5,
+  colvec: 30,
+  enum: 10,
+  int16: 21,
+  int32: 23,
+  int8: 20,
+  json: 28,
+  number: 4,
+  object: 29,
+  reference: 13,
+  references: 14,
+  string: 11,
+  text: 12,
+  timestamp: 1,
+  uint8: 6,
+  uint16: 22,
+  uint32: 7,
+  vector: 27,
 } as const
+
+const typeLengths: Partial<
+  Record<
+    SchemaProp<true>['type'],
+    number | ((propSchema: SchemaProp<true>) => number)
+  >
+> = {
+  boolean: 1,
+  enum: 1,
+  int8: 1,
+  uint8: 1,
+  int16: 2,
+  uint16: 2,
+  int32: 4,
+  uint32: 4,
+  number: 8,
+  timestamp: 8,
+
+  alias: stringLen,
+  binary: stringLen,
+  string: stringLen,
+  cardinality: stringLen,
+  colvec: ({ size, baseType }: SchemaVector) => size * numberLen(baseType),
+  vector: ({ size }: SchemaVector) => size * 4,
+}
 
 export const schemaToDefs = (schema: Schema<true>): Defs => {
   const defs: Defs = {}
+  // init loop
   for (const type in schema.types) {
     const typeSchema = schema.types[type]
-    let propId = 1
+    const typeProps = {}
+    let mainLen = 0
+    let propIdCnt = 1
 
     const parseProps = (
       props: Record<string, SchemaProp<true>>,
-      path = [],
+      path: string[],
+      propDefs: Record<string, PropDef>,
     ): Record<string, PropDef> => {
-      const defs = {}
       for (const prop in props) {
         const propSchema = props[prop]
-        const { id, len } = types[propSchema.type]
+        const len = typeLengths[propSchema.type]
         const propLen = typeof len === 'function' ? len(propSchema) : len || 0
+        const propPath = [...path, prop]
         const propDef: PropDef = {
           ...propSchema,
-          propId: propLen ? 0 : propId++,
-          typeId: id,
-          path: [...path, prop],
-          start: propLen && typeDef.mainLen,
+          propId: propLen ? 0 : propIdCnt++,
+          typeId: typeIds[propSchema.type],
+          path: propPath,
+          start: propLen && mainLen,
           len: propLen,
-          props: 'props' in propSchema ? parseProps(propSchema.props) : {},
+          props:
+            'props' in propSchema
+              ? parseProps(propSchema.props, propPath, {})
+              : {},
         }
 
-        defs[prop] = propDef
+        mainLen += propLen
+        propDefs[prop] = propDef
+        if (propPath.length > 1) {
+          typeProps[propPath.join('.')] = propDef
+        }
       }
-      return defs
+      return propDefs
     }
 
     const typeDef: TypeDef = {
       ...typeSchema,
-      props: parseProps(typeSchema.props),
-      mainLen: 0,
+      props: parseProps(typeSchema.props, [], typeProps),
+      mainLen,
     }
 
     defs[type] = typeDef
+  }
+
+  // post parse
+  for (const type in defs) {
+    for (const prop in defs[type].props) {
+      const propDef = defs[type].props[prop]
+      if (propDef.type === 'reference') {
+        propDef.inverse = defs[propDef.ref].props[propDef.prop]
+      }
+    }
   }
 
   return defs

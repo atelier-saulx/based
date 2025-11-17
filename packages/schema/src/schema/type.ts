@@ -46,7 +46,7 @@ type SchemaTypeObj<strict = false> = {
 
 export type SchemaType<strict = false> = strict extends true
   ? SchemaTypeObj<strict>
-  : SchemaTypeObj<strict> | ({ props: never } & SchemaProps<strict>)
+  : SchemaTypeObj<strict> | ({ props?: never } & SchemaProps<strict>)
 
 const parseProps = (typeProps: unknown, schema: Schema) => {
   assert(isRecord(typeProps))

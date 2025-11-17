@@ -1,24 +1,20 @@
 import { assert, isRecord, type RequiredIfStrict } from './shared.ts'
 import { parseBase, type Base } from './base.ts'
 import { parseProp, type SchemaProp } from './prop.ts'
-import type { Schema } from './schema.ts'
 
 export type SchemaObject<strict = false> = Base & {
-  type: RequiredIfStrict<'object', strict>
-  props: Record<string, SchemaProp>
-}
+  props: Record<string, SchemaProp<strict>>
+} & RequiredIfStrict<{ type: 'object' }, strict>
 
-export const parseObject = (
-  def: unknown,
-  schema: Schema,
-): SchemaObject<true> => {
+export const parseObject = (def: unknown): SchemaObject<true> => {
   assert(isRecord(def))
-  assert(def.type === 'object')
+  assert(def.type === undefined || def.type === 'object')
   assert(isRecord(def.props))
 
   const props = {}
   for (const prop in def.props) {
-    props[prop] = parseProp(def.props[prop], schema)
+    console.log('here we go', def.props[prop])
+    props[prop] = parseProp(def.props[prop])
   }
 
   return parseBase<SchemaObject<true>>(def, {

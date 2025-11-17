@@ -1,9 +1,9 @@
-import assert from 'assert'
-import { isBoolean, isFunction, isRecord, isString } from './shared.ts'
+import { assert, isBoolean, isFunction, isRecord, isString } from './shared.ts'
 import { parseType, type SchemaType } from './type.ts'
 import { langCodesMap, type LangName } from './lang.ts'
+import type { SchemaProp } from './prop.ts'
 
-type SchemaTypes<strict = true> = Record<string, SchemaType<strict>>
+type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 type SchemaLocales = Partial<
   Record<
     LangName,
@@ -58,9 +58,40 @@ export const parseSchema = (v: unknown): Schema<true> => {
   assert(v.migrations === undefined || isMigrations(v.migrations))
   assert(v.defaultTimezone === undefined || isString(v.defaultTimezone))
 
-  const types = {}
+  const types: SchemaTypes<true> = {}
   for (const key in v.types) {
     types[key] = parseType(v.types[key], v as Schema)
+  }
+
+  // handle references here now
+  for (const type in types) {
+    const parseRefs = (prop: SchemaProp<true>, path: string[]) => {
+      if (prop.type === 'reference') {
+        let inverse: any = types[prop.ref]
+        for (const key of prop.prop.split('.')) {
+          let next = 'props' in inverse ? inverse.props?.[key] : inverse[key]
+          if (!next) {
+            inverse.props ??= {}
+            next = inverse.props[key] = {}
+          }
+          inverse = next
+        }
+        const dotPath = path.join('.')
+        inverse.ref ??= type
+        inverse.prop ??= dotPath
+        assert(inverse.ref === type)
+        assert(inverse.prop === dotPath)
+      } else if ('items' in prop) {
+        parseRefs(prop.items, path)
+      } else if ('props' in prop) {
+        for (const k in prop.props) {
+          parseRefs(prop.props[k], [...path, k])
+        }
+      }
+    }
+    for (const k in types[type].props) {
+      parseRefs(types[type].props[k], [k])
+    }
   }
 
   return {

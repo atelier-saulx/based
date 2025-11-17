@@ -8,7 +8,7 @@ export type SchemaBoolean = Base & {
 
 export const parseBoolean = (def: unknown): SchemaBoolean => {
   assert(isRecord(def))
-  assert(def.type === 'binary')
+  assert(def.type === 'boolean')
   assert(def.default === undefined || isBoolean(def.default))
 
   return parseBase<SchemaBoolean>(def, {
