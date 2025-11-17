@@ -297,13 +297,10 @@ pub fn filter(
                     }
                 } else {
                     if (prop == Prop.REFERENCE) {
-                        const fs = db.getFieldSchemaByNode(ctx, actNode, field) catch {
+                        const dstType = db.getRefDstType(ctx, fieldSchema) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const dstType = db.getRefDstType(ctx, fs) catch {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        };
-                        const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(actNode, fs));
+                        const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(actNode, fieldSchema));
                         // -----------
                         if (checkRef) |r| {
                             value = db.getNodeIdAsSlice(r);
@@ -311,10 +308,7 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (prop == Prop.REFERENCES) {
-                        const fs = db.getFieldSchemaByNode(ctx, actNode, field) catch {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        };
-                        const refs = db.getReferences(actNode, fs);
+                        const refs = db.getReferences(actNode, fieldSchema);
                         if (refs) |r| {
                             if (r.nr_refs != 0) {
                                 const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
