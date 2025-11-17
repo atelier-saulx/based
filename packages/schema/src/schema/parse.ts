@@ -1,7 +1,7 @@
-import type { SchemaProp } from './prop.js'
-import type { SchemaReference } from './reference.js'
-import { parseSchema, type Schema } from './schema.js'
-import type { SchemaType } from './type.js'
+import type { SchemaProp } from './prop.ts'
+import type { SchemaReference } from './reference.ts'
+import { parseSchema, type Schema } from './schema.ts'
+import type { SchemaType } from './type.ts'
 
 const test: any = {
   types: {
@@ -52,6 +52,22 @@ const getRef = (prop: SchemaProp<true>): SchemaReference<true> | false =>
 //   }
 //   return branch
 // }
+
+const tree = {
+  user: {
+    id: 0,
+    props: {
+      name: {
+        id: 1,
+        type: 'string',
+      },
+      age: {
+        id: 0,
+        type: 'uint8',
+      },
+    },
+  },
+}
 
 export const parse = (input: Schema): { schema: Schema<true> } => {
   const schema = parseSchema(input)

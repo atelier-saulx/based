@@ -1,6 +1,6 @@
-import { isFormat, isMime, type Mime, type StringFormat } from './string.js'
-import { assert, isNatural, isRecord } from './shared.js'
-import { parseBase, type Base } from './base.js'
+import { isFormat, isMime, type Mime, type StringFormat } from './string.ts'
+import { assert, isNatural, isRecord } from './shared.ts'
+import { parseBase, type Base } from './base.ts'
 
 export type SchemaBinary = Base & {
   type: 'binary'

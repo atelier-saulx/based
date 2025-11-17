@@ -1,5 +1,5 @@
-import { isString, isNatural, isRecord, assert } from './shared.js'
-import { parseBase, type Base } from './base.js'
+import { isString, isNatural, isRecord, assert } from './shared.ts'
+import { parseBase, type Base } from './base.ts'
 
 export const stringFormats = [
   'alpha',

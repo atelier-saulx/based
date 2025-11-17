@@ -17,3 +17,11 @@ export function assert(condition: unknown, msg?: string): asserts condition {
 export type RequiredIfStrict<value, strict> = strict extends true
   ? value
   : value | undefined
+
+export const deleteUndefined = (obj: Record<string, unknown>): void => {
+  for (const key in obj) {
+    if (obj[key] === undefined) {
+      delete obj[key]
+    }
+  }
+}

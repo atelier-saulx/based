@@ -1,5 +1,5 @@
-import { assert, isRecord } from './shared.js'
-import { parseString, type SchemaString } from './string.js'
+import { assert, isRecord } from './shared.ts'
+import { parseString, type SchemaString } from './string.ts'
 
 export type SchemaAlias = Omit<SchemaString, 'type'> & {
   type: 'alias'

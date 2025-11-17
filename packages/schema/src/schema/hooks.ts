@@ -1,5 +1,5 @@
 import type { BasedDbQuery, Operator } from '@based/db'
-import { isFunction, isRecord } from './shared.js'
+import { isFunction, isRecord } from './shared.ts'
 
 export type SchemaHooks = {
   create?: (payload: Record<string, any>) => void | Record<string, any>

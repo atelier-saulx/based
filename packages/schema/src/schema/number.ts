@@ -1,5 +1,5 @@
-import { assert, isNumber, isRecord, isString } from './shared.js'
-import { parseBase, type Base } from './base.js'
+import { assert, isNumber, isRecord, isString } from './shared.ts'
+import { parseBase, type Base } from './base.ts'
 
 export const numberTypes = [
   'number',

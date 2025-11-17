@@ -1,4 +1,4 @@
-import { getPropType, getValidator, SchemaReference } from '../index.js'
+import { getValidator, SchemaReference } from '../index.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { fillEmptyMain } from './fillEmptyMain.js'
 import {
@@ -16,7 +16,6 @@ import {
   parseMinMaxStep,
   sortMainProps,
 } from './utils.js'
-import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   const mainEdges: PropDefEdge[] = []

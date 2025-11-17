@@ -1,7 +1,7 @@
 import assert from 'assert'
-import { isBoolean, isFunction, isRecord, isString } from './shared.js'
-import { parseType, type SchemaType } from './type.js'
-import { langCodesMap, type LangName } from './lang.js'
+import { isBoolean, isFunction, isRecord, isString } from './shared.ts'
+import { parseType, type SchemaType } from './type.ts'
+import { langCodesMap, type LangName } from './lang.ts'
 
 type SchemaTypes<strict = true> = Record<string, SchemaType<strict>>
 type SchemaLocales = Partial<

@@ -1,7 +1,13 @@
-import { assert, isBoolean, isFunction, isString } from './shared.js'
-import type { SchemaProp } from './prop.js'
-import type { SchemaPropHooks } from '../index.js'
-import { isHooks } from './hooks.js'
+import {
+  assert,
+  deleteUndefined,
+  isBoolean,
+  isFunction,
+  isString,
+} from './shared.ts'
+import type { SchemaProp } from './prop.ts'
+import type { SchemaPropHooks } from '../index.ts'
+import { isHooks } from './hooks.ts'
 
 type Validation = (payload: any, schema: SchemaProp<true>) => boolean | string
 
@@ -41,5 +47,6 @@ export const parseBase = <T extends Base>(
     'Unexpected key',
   )
 
+  deleteUndefined(result)
   return result
 }

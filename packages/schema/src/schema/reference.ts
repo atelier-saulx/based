@@ -1,7 +1,7 @@
-import { parseBase, type Base } from './base.js'
-import { assert, isRecord, isString, RequiredIfStrict } from './shared.js'
-import { parseProp, type SchemaProp } from './prop.js'
-import type { Schema } from './schema.js'
+import { parseBase, type Base } from './base.ts'
+import { assert, isRecord, isString, type RequiredIfStrict } from './shared.ts'
+import { parseProp, type SchemaProp } from './prop.ts'
+import type { Schema } from './schema.ts'
 
 export type SchemaReference<strict = false> = Base & {
   type: RequiredIfStrict<'reference', strict>

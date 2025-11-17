@@ -1,8 +1,14 @@
 import type { BasedDbQuery, Operator } from '@based/db'
-import type { Schema } from './schema.js'
-import { assert, isBoolean, isNatural, isRecord } from './shared.js'
-import { parseProp, type SchemaProp } from './prop.js'
-import { isHooks } from './hooks.js'
+import type { Schema } from './schema.ts'
+import {
+  assert,
+  deleteUndefined,
+  isBoolean,
+  isNatural,
+  isRecord,
+} from './shared.ts'
+import { parseProp, type SchemaProp } from './prop.ts'
+import { isHooks } from './hooks.ts'
 
 type SchemaHooks = {
   create?: (payload: Record<string, any>) => void | Record<string, any>
@@ -63,11 +69,15 @@ export const parseType = (type: unknown, schema: Schema): SchemaType<true> => {
   assert(type.capped === undefined || isNatural(type.capped))
   assert(type.partial === undefined || isBoolean(type.partial))
 
-  return {
+  const result = {
     hooks: type.hooks,
     blockCapacity: type.blockCapacity,
     capped: type.capped,
     partial: type.partial,
     props: parseProps(type.props, schema),
   }
+
+  deleteUndefined(result)
+
+  return result
 }
