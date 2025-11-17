@@ -229,24 +229,38 @@ pub fn filter(
                 if (value.len == 0 or !runCondition(tctx.decompressor.?, &tctx.libdeflateBlockState, query, value)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
-            } else if (isEdge) {
-                const edgeFieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstraint, field) catch {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                };
-                value = db.getEdgeProp(ctx, ref.?.edgeConstraint, ref.?.largeReference.?, edgeFieldSchema);
-                if (value.len == 0 or !runCondition(tctx.decompressor.?, &tctx.libdeflateBlockState, query, value)) {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                }
             } else {
                 if (i + 5 > end) {
                     break;
                 }
-                const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
-                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                };
+
+                var te: db.Type = undefined;
+                var actNode: db.Node = undefined;
+                var fieldSchema: db.FieldSchema = undefined;
+
+                if (isEdge) {
+                    te = db.getRefMetaType(ctx, ref.?.edgeConstraint) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
+                    if (db.getNode(te, ref.?.largeReference.?.meta)) |n| {
+                        actNode = n;
+                    } else {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    }
+                    fieldSchema = db.getEdgeFieldSchema(ctx, ref.?.edgeConstraint, field) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
+                } else {
+                    te = typeEntry;
+                    actNode = node;
+                    fieldSchema = db.getFieldSchema(te, field) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
+                }
+
                 const prop: Prop = @enumFromInt(conditions[i + 5]);
                 if (prop == Prop.TEXT) {
-                    value = db.getField(typeEntry, node, fieldSchema, prop);
+                    value = db.getField(te, actNode, fieldSchema, prop);
                     if (value.len == 0) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     }
@@ -283,13 +297,13 @@ pub fn filter(
                     }
                 } else {
                     if (prop == Prop.REFERENCE) {
-                        const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
+                        const fs = db.getFieldSchemaByNode(ctx, actNode, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
                         const dstType = db.getRefDstType(ctx, fs) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(node, fs));
+                        const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(actNode, fs));
                         // -----------
                         if (checkRef) |r| {
                             value = db.getNodeIdAsSlice(r);
@@ -297,10 +311,10 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else if (prop == Prop.REFERENCES) {
-                        const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
+                        const fs = db.getFieldSchemaByNode(ctx, actNode, field) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
-                        const refs = db.getReferences(node, fs);
+                        const refs = db.getReferences(actNode, fs);
                         if (refs) |r| {
                             if (r.nr_refs != 0) {
                                 const arr: [*]u8 = @ptrCast(@alignCast(r.*.index));
@@ -309,10 +323,10 @@ pub fn filter(
                                 value = EMPTY_SLICE;
                             }
                         } else {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                            return fail(ctx, actNode, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
-                        value = db.getField(typeEntry, node, fieldSchema, prop);
+                        value = db.getField(te, actNode, fieldSchema, prop);
                     }
                     if (value.len == 0 or !runCondition(tctx.decompressor.?, &tctx.libdeflateBlockState, query, value)) {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);

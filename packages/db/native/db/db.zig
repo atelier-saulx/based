@@ -60,8 +60,15 @@ pub fn getRefDstType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
     return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type);
 }
 
-pub fn getRefMetaType(ctx: *DbCtx, fieldSchema: FieldSchema) !Type {
-    return getType(ctx, selva.selva_get_edge_field_constraint(fieldSchema).*.meta_node_type);
+pub fn getRefMetaType(ctx: *DbCtx, sch: anytype) !Type {
+    if (comptime @TypeOf(sch) == FieldSchema) {
+        return getType(ctx, selva.selva_get_edge_field_constraint(sch).*.meta_node_type);
+    } else if (comptime @TypeOf(sch) == EdgeFieldConstraint) {
+        return getType(ctx, sch.*.meta_node_type);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(sch));
+        @compileError("Invalid type");
+    }
 }
 
 pub fn getFieldSchema(typeEntry: ?Type, field: u8) !FieldSchema {
