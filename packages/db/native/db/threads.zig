@@ -97,7 +97,6 @@ pub const Threads = struct {
 
                 self.mutex.lock();
                 self.pendingWork -= 1;
-
                 if (self.pendingWork == 0) {
                     self.queryDone.signal(); // or broadcast() if multiple listeners
                 }
