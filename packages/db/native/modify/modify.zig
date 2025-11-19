@@ -34,10 +34,25 @@ pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_v
     return result;
 }
 
-fn writeoutPrevNodeId(ctx: *ModifyCtx, batch: []u8, resCount: *u32) void {
-    if (ctx.id != 0) {
-        writeInt(u32, batch, resCount.* * 5, ctx.id);
-        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
+    ctx.typeId = typeId;
+    ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
+    ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
+
+    ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
+    if (ctx.subTypes) |st| {
+        st.typeModified = true;
+    }
+
+    ctx.node = null;
+    // TODO This can't be reset because it's still used.
+    //ctx.id = 0;
+}
+
+fn writeoutPrevNodeId(ctx: *ModifyCtx, resCount: *u32, prevNodeId: u32) void {
+    if (prevNodeId != 0) {
+        writeInt(u32, ctx.batch, resCount.* * 5, prevNodeId);
+        writeInt(u8, ctx.batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
         ctx.err = errors.ClientError.null;
         resCount.* += 1;
     }
@@ -139,18 +154,18 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i = i + 2;
             },
             types.ModOp.SWITCH_ID_CREATE => {
-                writeoutPrevNodeId(&ctx, batch, resCount);
+                writeoutPrevNodeId(&ctx, resCount, ctx.id);
                 try newNode(&ctx);
                 i = i + 1;
             },
             types.ModOp.SWITCH_ID_CREATE_RING => {
-                writeoutPrevNodeId(&ctx, batch, resCount);
+                writeoutPrevNodeId(&ctx, resCount, ctx.id);
                 const maxNodeId = read(u32, operation, 0);
                 try newNodeRing(&ctx, maxNodeId);
                 i = i + 5;
             },
             types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
-                writeoutPrevNodeId(&ctx, batch, resCount);
+                writeoutPrevNodeId(&ctx, resCount, ctx.id);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
@@ -162,7 +177,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             types.ModOp.SWITCH_ID_UPDATE => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
-                    writeoutPrevNodeId(&ctx, batch, resCount);
+                    writeoutPrevNodeId(&ctx, resCount, ctx.id);
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
                     ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
@@ -218,19 +233,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i = i + nextIndex + 1;
             },
             types.ModOp.SWITCH_TYPE => {
-                ctx.typeId = read(u16, operation, 0);
-                ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
-                ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
-
-                ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
-                if (ctx.subTypes) |st| {
-                    st.typeModified = true;
-                }
-
-                // RFE shouldn't we technically unset .id and .node now?
-                ctx.node = null;
-                // TODO This can't be reset because it's used just at the end of the function.
-                //ctx.id = 0;
+                try switchType(&ctx, read(u16, operation, 0));
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
@@ -277,5 +280,5 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
     assert(newDirtyRanges.len < dirtyRanges.len);
     _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     dirtyRanges[newDirtyRanges.len] = 0.0;
-    writeoutPrevNodeId(&ctx, batch, resCount);
+    writeoutPrevNodeId(&ctx, resCount, ctx.id);
 }
