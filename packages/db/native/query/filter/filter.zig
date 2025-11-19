@@ -165,7 +165,7 @@ pub fn filter(
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         }
                     } else {
-                        const edgeType = db.getRefMetaType(ctx, r.edgeConstraint) catch {
+                        const edgeType = db.getEdgeType(ctx, r.edgeConstraint) catch {
                             return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                         };
                         const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstraint, field) catch {
@@ -236,7 +236,7 @@ pub fn filter(
                 var fieldSchema: db.FieldSchema = undefined;
 
                 if (isEdge) {
-                    te = db.getRefMetaType(ctx, ref.?.edgeConstraint) catch {
+                    te = db.getEdgeType(ctx, ref.?.edgeConstraint) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
                     if (db.getNode(te, ref.?.largeReference.?.meta)) |n| {

@@ -67,7 +67,7 @@ pub fn getRefDstType(ctx: *DbCtx, sch: anytype) !Type {
     }
 }
 
-pub fn getRefMetaType(ctx: *DbCtx, sch: anytype) !Type {
+pub fn getEdgeType(ctx: *DbCtx, sch: anytype) !Type {
     if (comptime @TypeOf(sch) == FieldSchema) {
         return getType(ctx, selva.selva_get_edge_field_constraint(sch).*.meta_node_type);
     } else if (comptime @TypeOf(sch) == EdgeFieldConstraint) {
