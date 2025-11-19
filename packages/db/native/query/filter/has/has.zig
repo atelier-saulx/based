@@ -57,7 +57,7 @@ inline fn hasInner(
             if (!decompress(libdeflateDecompressor, blockState, void, orCompare(isOr, compare).func, query, value, undefined)) {
                 return false;
             }
-        } else if (!orCompare(isOr, compare).func(value[2..value.len - 4], query)) {
+        } else if (!orCompare(isOr, compare).func(value[2 .. value.len - 4], query)) {
             return false;
         }
     } else if (!orCompare(isOr, compare).func(value, query)) {

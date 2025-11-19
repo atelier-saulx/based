@@ -4,6 +4,7 @@ const Thread = std.Thread;
 const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const utils = @import("../utils.zig");
+const getQueryThreaded = @import("../query/thread/queryThread.zig").getQueryThreaded;
 
 pub const DbThread = struct {
     thread: Thread,
@@ -41,7 +42,7 @@ pub const Threads = struct {
 
     // modify
 
-    fn worker(self: *Threads, threadCtx: *DbThread) !void {
+    fn worker(self: *Threads, _: *DbThread) !void {
         while (true) {
             var queryBuf: ?[]u8 = null;
 
@@ -68,17 +69,9 @@ pub const Threads = struct {
                 }
             }
 
-            if (queryBuf) |_| {
-                const x = try self.ctx.allocator.alloc(u8, 8);
-
-                utils.writeInt(u64, x, 0, threadCtx.id);
-
-                // std.debug.print(
-                // "go call query! {any} this is my threadCtx {any} x: {any} \n",
-                // .{ q, threadCtx.id, x },
-                // );
-
-                self.ctx.queryCallback.call(x);
+            if (queryBuf) |q| {
+                const result = try getQueryThreaded(self.ctx, q);
+                self.ctx.queryCallback.call(result);
             }
         }
     }
@@ -98,7 +91,7 @@ pub const Threads = struct {
         };
 
         for (self.threads, 0..) |*t, id| {
-            std.debug.print("threadid: {any} \n", .{id});
+            // std.debug.print("threadid: {any} \n", .{id});
             // check if that CTX is ok...
             const threadCtx = try allocator.create(DbThread);
             threadCtx.*.id = id;

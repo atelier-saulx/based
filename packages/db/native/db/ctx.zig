@@ -79,7 +79,7 @@ pub fn createDbCtx(env: c.napi_env, info: c.napi_callback_info) !*DbCtx {
     }
 
     b.* = .{
-        .threads = try threads.Threads.init(allocator, 4, b),
+        .threads = try threads.Threads.init(allocator, try std.Thread.getCpuCount() - 1, b),
         .id = rand.int(u32),
         .arena = arena,
         .allocator = allocator,

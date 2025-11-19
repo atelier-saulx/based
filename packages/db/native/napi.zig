@@ -188,25 +188,15 @@ pub const Call = *const fn (data: []u8) anyerror!void;
 
 pub const CallResult = struct {
     data: []u8,
-    allocator: std.mem.Allocator,
+    // allocator: std.mem.Allocator,
 };
-
-fn finalize(env: c.napi_env, data: ?*anyopaque, hint: ?*anyopaque) callconv(.C) void {
-    _ = env;
-    std.debug.print("Try memory free by JS GC!\n", .{});
-    const data_ptr = @as([*]u8, @ptrCast(@alignCast(data.?)));
-    const result = @as(*CallResult, @ptrCast(@alignCast(hint.?)));
-    const payload = data_ptr[0..result.data.len];
-    result.allocator.free(payload);
-    result.allocator.destroy(result);
-    std.debug.print("Zig memory freed by JS GC!\n", .{});
-}
 
 fn callJsCallback(env: c.napi_env, js_callback: c.napi_value, _: ?*anyopaque, data: ?*anyopaque) callconv(.C) void {
     const result = @as(*CallResult, @ptrCast(@alignCast(data.?)));
 
     var jsBufferValue: c.napi_value = undefined;
-    const status = c.napi_create_external_buffer(env, result.data.len, @ptrCast(result.data.ptr), finalize, data, &jsBufferValue);
+    // finalize, data,
+    const status = c.napi_create_external_buffer(env, result.data.len, @ptrCast(result.data.ptr), null, null, &jsBufferValue);
 
     if (status != c.napi_ok) {
         // very wrong...
@@ -220,6 +210,10 @@ fn callJsCallback(env: c.napi_env, js_callback: c.napi_value, _: ?*anyopaque, da
 
     // can check status...
     _ = c.napi_call_function(env, undefined_val, js_callback, 1, &args, null);
+
+    // im rdy! send back to thread and let the thread clean it then
+    std.heap.raw_c_allocator.free(result.data);
+    std.heap.raw_c_allocator.destroy(result);
 }
 
 pub const NapiCallback = struct {
@@ -269,10 +263,10 @@ pub const NapiCallback = struct {
     }
 
     pub fn call(self: *NapiCallback, data: []u8) void {
-        const result = self.allocator.create(CallResult) catch return;
+        const result = std.heap.raw_c_allocator.create(CallResult) catch return;
         // add allocator as well so js can ask to lcose this
         // make this the entire CTX including allocator
-        result.* = .{ .data = data, .allocator = self.allocator };
+        result.* = .{ .data = data }; //  .allocator = self.allocator
         _ = c.napi_call_threadsafe_function(self.tsfn, result, c.napi_tsfn_blocking);
     }
 };

@@ -22,7 +22,7 @@ await test('include', async (t) => {
   })
 
   const id = await db.create('user', {
-    nr: 2,
+    nr: 1,
   })
 
   const q = db.query('user', id)
@@ -31,11 +31,46 @@ await test('include', async (t) => {
 
   const buf = q.buffer
 
+  await q.get().inspect()
+
   console.log({ id, buf })
 
-  for (let i = 0; i < 4; i++) {
+  var cnt = 0
+  let totalTime = 0
+  var d = Date.now()
+
+  const collector = () => {
+    if (native.cnt === 1e6) {
+      console.log('TOOK', Date.now() - d, '+/- 100ms')
+    } else {
+      setTimeout(collector, 100)
+    }
+  }
+
+  collector()
+
+  var d = Date.now()
+  for (let i = 0; i < 1e6; i++) {
     native.getQueryBufThread(buf, db.server.dbCtxExternal)
   }
+  console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
+
+  // await wait(100)
+  // console.log(native.cnt)
+  // await wait(100)
+  // console.log(native.cnt)
+  // await wait(100)
+  // console.log(native.cnt)
+  // await wait(100)
+  // console.log(native.cnt)
+  // const cnter = () => {
+  //   cnt++
+  // }
+  // // var d = Date.now()
+  // for (let i = 0; i < 1e6; i++) {
+  //   db.server.getQueryBuf(buf).then(cnter)
+  // }
+  // console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
 
   await wait(10000)
 })

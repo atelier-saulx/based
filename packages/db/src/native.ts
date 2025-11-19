@@ -13,6 +13,7 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
 }
 
 const native = {
+  cnt: 0,
   addMultiSubscription: (dbCtx: any, typeId: number): void => {
     return db.addMultiSubscription(dbCtx, typeId)
   },
@@ -78,7 +79,8 @@ const native = {
 
   start: () => {
     return db.start((xxx) => {
-      console.log('im a little derp', xxx)
+      native.cnt++
+      // console.log('im a little derp', new Uint8Array(xxx))
     })
   },
 
