@@ -122,7 +122,7 @@ pub fn selvaStringDestroy(str: ?selva.selva_string) void {
 }
 
 pub fn getCardinalityReference(ctx: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge, fieldSchema: FieldSchema) []u8 {
-    const meta_node = getMetaNode(ctx, efc, ref);
+    const meta_node = getEdgeNode(ctx, efc, ref);
     if (meta_node == null) {
         return emptySlice;
     }
@@ -340,7 +340,7 @@ pub fn swapReference(
     try errors.selva(selva.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
-fn getMetaNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge) ?Node {
+fn getEdgeNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge) ?Node {
     if (ref.*.meta == 0) {
         return null;
     }
@@ -351,24 +351,6 @@ fn getMetaNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge) ?Node 
 
 pub inline fn getEdgeFieldConstraint(fieldSchema: FieldSchema) EdgeFieldConstraint {
     return selva.selva_get_edge_field_constraint(fieldSchema);
-}
-
-pub fn getEdgeProp(
-    db: *DbCtx,
-    efc: EdgeFieldConstraint,
-    ref: ReferenceLarge,
-    fieldSchema: FieldSchema,
-) []u8 {
-    const meta_node = getMetaNode(db, efc, ref);
-    if (meta_node == null) {
-        return emptySlice;
-    }
-
-    const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(
-        meta_node,
-        fieldSchema,
-    );
-    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
 pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstraint: EdgeFieldConstraint, field: u8) !FieldSchema {
@@ -383,23 +365,22 @@ pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstraint: EdgeFieldConstraint, field
 }
 
 // TODO This should be going away
-pub fn getEdgeReferences(
+pub fn getEdgeProp(
     db: *DbCtx,
     efc: EdgeFieldConstraint,
     ref: ReferenceLarge,
-    field: u8,
-) ?References {
-    const meta_node = getMetaNode(db, efc, ref);
+    fieldSchema: FieldSchema,
+) []u8 {
+    const meta_node = getEdgeNode(db, efc, ref);
     if (meta_node == null) {
-        return null;
+        return emptySlice;
     }
 
-    const fs = getEdgeFieldSchema(db, efc, field) catch null;
-    if (fs == null) {
-        return null;
-    }
-
-    return selva.selva_fields_get_references(meta_node, fs);
+    const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(
+        meta_node,
+        fieldSchema,
+    );
+    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
 pub fn getEdgeReference(
@@ -408,7 +389,7 @@ pub fn getEdgeReference(
     ref: ReferenceLarge,
     field: u8,
 ) ?ReferenceLarge {
-    const meta_node = getMetaNode(db, efc, ref);
+    const meta_node = getEdgeNode(db, efc, ref);
     if (meta_node == null) {
         return null;
     }
@@ -419,6 +400,26 @@ pub fn getEdgeReference(
     }
 
     return selva.selva_fields_get_reference(meta_node, fs);
+}
+
+// TODO This should be going away
+pub fn getEdgeReferences(
+    db: *DbCtx,
+    efc: EdgeFieldConstraint,
+    ref: ReferenceLarge,
+    field: u8,
+) ?References {
+    const meta_node = getEdgeNode(db, efc, ref);
+    if (meta_node == null) {
+        return null;
+    }
+
+    const fs = getEdgeFieldSchema(db, efc, field) catch null;
+    if (fs == null) {
+        return null;
+    }
+
+    return selva.selva_fields_get_references(meta_node, fs);
 }
 
 // TODO This is now hll specific but we might want to change it.
