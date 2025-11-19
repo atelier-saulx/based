@@ -304,6 +304,7 @@ const createSchemaTypeDef = (
       result.separate.push(prop)
     }
   }
+
   if (top) {
     // Put top level together
     const vals = Object.values(result.props)
