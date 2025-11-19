@@ -104,8 +104,11 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     }
 
     for (&ctx.threadCtx) |*tctx| {
-        selva.libdeflate_block_state_deinit(&tctx.*.libdeflateBlockState);
-        selva.libdeflate_free_decompressor(tctx.*.decompressor);
+        selva.membar_sync_read();
+        if (tctx.*.threadId != 0) {
+            selva.libdeflate_block_state_deinit(&tctx.*.libdeflateBlockState);
+            selva.libdeflate_free_decompressor(tctx.*.decompressor);
+        }
     }
 
     selva.selva_db_destroy(ctx.selva);
