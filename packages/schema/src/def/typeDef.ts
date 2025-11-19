@@ -299,7 +299,7 @@ const createSchemaTypeDef = (
         }
       }
     }
-    result.props[propPath.join('_')] = prop
+    result.props[propPath.join('.')] = prop
     if (isseparate) {
       result.separate.push(prop)
     }
