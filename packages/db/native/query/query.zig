@@ -51,28 +51,36 @@ pub fn getQueryResults(env: c.napi_env, info: c.napi_callback_info) callconv(.C)
 pub fn getQueryBufInternalResults(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(1, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-    // const q = try napi.get([]u8, env, args[1]);
 
-    // var i: u32 = 0;
-
-    // while (i < q.len) {
-    //     try dbCtx.threads.query(q[i .. i + 21]);
-
-    //     i += 21; // tmp
+    dbCtx.threads.waitForAll();
+    // if (dbCtx.threads.pendingWork > 0) {
+    //     return null;
     // }
 
-    for (dbCtx.threads.threads, 0..) |_, index| {
-        std.debug.print("got some results... {any} \n", .{dbCtx.threads.threads[index].lastQueryResultIndex});
+    // if (dbCtx.threads.queryQueue.items.len > 0) {
+    //     return null;
+    // }
 
-        // dbCtx.threads.threads[index].lastQueryResultIndex = 0;
+    var js_array: c.napi_value = undefined;
+    _ = c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &js_array);
+    for (dbCtx.threads.threads, 0..) |thread, index| {
+        // if (thread.inProgress) {
+        //     // std.debug.print("In progress! WRONG\n", .{});
+        //     continue;
+        // } else {
+        var array_buffer: c.napi_value = undefined;
+        _ = c.napi_create_external_arraybuffer(env, thread.queryResults.ptr, // Pointer to data
+            thread.lastQueryResultIndex, // Size in bytes
+            null, // Function to call on GC
+            null, // Hint (our context struct) passed to finalizer
+            &array_buffer // Result
+        );
+        _ = c.napi_set_element(env, js_array, @truncate(index), array_buffer);
+        thread.*.lastQueryResultIndex = 0;
+        // }
     }
 
-    //   and dealloc ofc
-    // const status = c.napi_create_external_buffer(env, result.data.len, @ptrCast(result.data.ptr), null, null, &jsBufferValue);
-
-    // try dbCtx.threads.query(q);
-    // std.debug.print("YO YO YO{any} \n", .{dbCtx});
-    return null;
+    return js_array;
 }
 
 pub fn getQueryBufInternalThread(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {

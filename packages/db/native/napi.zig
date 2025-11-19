@@ -212,7 +212,7 @@ fn callJsCallback(env: c.napi_env, js_callback: c.napi_value, _: ?*anyopaque, da
     _ = c.napi_call_function(env, undefined_val, js_callback, 1, &args, null);
 
     // im rdy! send back to thread and let the thread clean it then
-    std.heap.raw_c_allocator.free(result.data);
+    // std.heap.raw_c_allocator.free(result.data);
     std.heap.raw_c_allocator.destroy(result);
 }
 

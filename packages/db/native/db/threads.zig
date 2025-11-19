@@ -10,16 +10,17 @@ pub const DbThread = struct {
     thread: Thread,
     id: usize,
     queryResults: []u8,
-    lastQueryResultIndex: u32,
+    lastQueryResultIndex: usize,
+    // inProgress: bool,
     // decompressor:
     // subscriptions:
 };
 
 pub const Threads = struct {
     mutex: Mutex = .{},
-    threads: []DbThread,
+    threads: []*DbThread,
     cond: Condition = .{},
-
+    pendingWork: usize = 0,
     queryDone: Condition = .{},
 
     shutdown: bool = false,
@@ -27,6 +28,16 @@ pub const Threads = struct {
     queryQueue: std.ArrayList([]u8),
     modifyQueue: std.ArrayList([]u8),
     allocator: std.mem.Allocator,
+
+    pub fn waitForAll(self: *Threads) void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        // std.debug.print("wait ?{any} \n", .{self.pendingWork});
+        while (self.pendingWork > 0) {
+            self.queryDone.wait(&self.mutex);
+        }
+        // std.debug.print(". DONE ?{any} \n", .{self.pendingWork});
+    }
 
     pub fn query(
         self: *Threads,
@@ -36,15 +47,15 @@ pub const Threads = struct {
         defer self.mutex.unlock();
         // problem if node decides to de-alloc the query buffer
         try self.queryQueue.append(queryBuffer);
+        self.pendingWork += 1;
 
-        // this is the problem heavy!
-        self.cond.signal(); // Wake up one thread - we prop want to batch this is a heavy operation!
+        // if modifyInProgress WAIT
+        // then send signal
+        // set state to HANDLING MODIFY
+        // and set state to HANDELING QUERY
 
-        // self.ctx.queryCallback.call(&.{});
-        // t.func(t.ctx);
+        self.cond.signal(); // Wake up one thread - we prop want to batch this is a heavy operation! might be able to make this better
     }
-
-    // modify
 
     fn worker(self: *Threads, threadCtx: *DbThread) !void {
         while (true) {
@@ -57,38 +68,40 @@ pub const Threads = struct {
                 while (true) {
                     if (self.shutdown) return;
 
-                    // modify times...
-                    // if (self.queryQueue[thread_id].items.len > 0) {
-                    //     queryBuf = self.local_queues[thread_id].orderedRemove(0);
-                    //     break;
-                    // }
-
                     if (self.queryQueue.items.len > 0) {
+                        // orderedRemove
                         queryBuf = self.queryQueue.swapRemove(0);
+                        // threadCtx.*.inProgress = true;
                         break;
                     }
+
+                    // threadCtx.*.inProgress = false;
+                    // self.pendingWork -= 1;
+                    // if (self.pendingWork == 0) {
+                    //     self.queryDone.signal(); // or broadcast() if multiple listeners
+                    // }
 
                     // 3. Nothing to do? Sleep.
                     self.cond.wait(&self.mutex);
                 }
             }
 
-            if (queryBuf) |_| {
+            if (queryBuf) |q| {
                 // const result = try getQueryThreaded(self.ctx, q);
                 // this has to return the query
                 // const r = try std.heap.raw_c_allocator.alloc(u8, 20);
+                // threadCtx.*.inProgress = true;
+                try getQueryThreaded(self.ctx, q, threadCtx);
 
-                if (threadCtx.queryResults.len < threadCtx.lastQueryResultIndex + 20) {
-                    threadCtx.queryResults = try std.heap.raw_c_allocator.realloc(
-                        threadCtx.queryResults,
-                        threadCtx.queryResults.len + 1_000_000,
-                    );
+                // threadCtx.*.inProgress = false;
+
+                self.mutex.lock();
+                self.pendingWork -= 1;
+
+                if (self.pendingWork == 0) {
+                    self.queryDone.signal(); // or broadcast() if multiple listeners
                 }
-
-                threadCtx.*.lastQueryResultIndex = threadCtx.*.lastQueryResultIndex + 20;
-                // std.debug.print("yo yo yo {any} \n", .{threadCtx.*.lastQueryResultIndex});
-
-                // self.ctx.queryCallback.call(result);
+                self.mutex.unlock();
             }
         }
     }
@@ -101,7 +114,7 @@ pub const Threads = struct {
         const self = try allocator.create(Threads);
         self.* = .{
             .allocator = allocator,
-            .threads = try allocator.alloc(DbThread, threadAmount),
+            .threads = try allocator.alloc(*DbThread, threadAmount),
             .queryQueue = std.ArrayList([]u8).init(allocator),
             .modifyQueue = std.ArrayList([]u8).init(allocator),
             .ctx = ctx,
@@ -112,10 +125,11 @@ pub const Threads = struct {
             // check if that CTX is ok...
             const threadCtx = try allocator.create(DbThread);
             threadCtx.*.id = id;
+            // threadCtx.*.inProgress = false;
             threadCtx.*.lastQueryResultIndex = 0;
             threadCtx.*.queryResults = try std.heap.raw_c_allocator.alloc(u8, 0);
             threadCtx.*.thread = try Thread.spawn(.{}, worker, .{ self, threadCtx });
-            t.* = threadCtx.*;
+            t.* = threadCtx;
         }
 
         return self;
@@ -129,6 +143,7 @@ pub const Threads = struct {
         for (self.threads) |t| {
             // see if this is enough...
             t.thread.join();
+            self.allocator.destroy(t);
             // or t.detach
         }
         self.queryQueue.deinit();

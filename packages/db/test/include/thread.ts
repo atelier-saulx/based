@@ -1,4 +1,4 @@
-import { wait } from '@based/utils'
+import { readUint32, wait } from '@based/utils'
 import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { BasedDb } from '../../src/index.js'
 import native from '../../src/native.js'
@@ -16,13 +16,20 @@ await test('include', async (t) => {
       user: {
         props: {
           nr: 'uint32',
+          // flap: { type: 'string', compression: 'none' },
         },
       },
     },
   })
 
+  let x = []
+  for (let i = 0; i < 100; i++) {
+    x.push('xxw qweudhweiofh')
+  }
+
   const id = await db.create('user', {
     nr: 1,
+    // flap: x.join(' '),
   })
 
   const q = db.query('user', id)
@@ -33,39 +40,76 @@ await test('include', async (t) => {
 
   await q.get().inspect()
 
-  console.log({ id, buf })
-
   var cnt = 0
   let totalTime = 0
+
+  const getAll = (arr: ArrayBuffer[] | null) => {
+    if (!arr) {
+      // console.log('wairing?')
+      return 0
+    }
+    let cnt = 0
+    for (const buf of arr) {
+      if (!buf) {
+        console.log('thread has no response :(', cnt)
+        continue
+      } else {
+        const v = new Uint8Array(buf)
+
+        // console.log('heloo', v)
+        for (let i = 0; i < v.byteLength; ) {
+          const size = readUint32(v, i)
+          cnt++
+
+          // then we need the QueryId in the query itself (4 bytes for now)
+
+          i += size
+        }
+      }
+    }
+    return cnt
+  }
+
+  let readyTime
+  var isRdy = new Promise((resolve) => {
+    readyTime = resolve
+  })
+
+  const amount = 1e6
   var d = Date.now()
 
   const collector = () => {
-    if (native.cnt === 1e6) {
-      console.log('TOOK', Date.now() - d, '+/- 100ms')
+    cnt += getAll(native.getQueryResults(db.server.dbCtxExternal))
+    // console.log('check?', cnt)
+    if (cnt === amount) {
+      console.log('TOOK', Date.now() - d, '+/- 18ms')
+      readyTime()
     } else {
       setTimeout(collector, 100)
     }
   }
 
-  collector()
+  setTimeout(collector, 100)
 
-  var d = Date.now()
-  // const x = []
+  // var d = Date.now()
+  // // // const x = []
 
-  // const bufSize = 1e6 * buf.byteLength
-  // const x = new Uint8Array(bufSize)
-  for (let i = 0; i < 1e6; i++) {
+  // // const bufSize = 1e6 * buf.byteLength
+  // // const x = new Uint8Array(bufSize)
+  for (let i = 0; i < amount; i++) {
     // x.set(buf, i * buf.byteLength)
 
     // x.push(buf)
     native.getQueryBufThread(buf, db.server.dbCtxExternal)
   }
-  // native.getQueryBufThreadBatch(x, db.server.dbCtxExternal)
+  // // native.getQueryBufThreadBatch(x, db.server.dbCtxExternal)
 
-  console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
+  // console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
 
-  await wait(1000)
-  native.getQueryResults(db.server.dbCtxExternal)
+  // await wait(1000)
+  // console.log(getAll(native.getQueryResults(db.server.dbCtxExternal)))
+
+  // console.log(native.getQueryResults(db.server.dbCtxExternal))
 
   // await wait(100)
   // console.log(native.cnt)
@@ -74,15 +118,15 @@ await test('include', async (t) => {
   // await wait(100)
   // console.log(native.cnt)
   // await wait(100)
-  // console.log(native.cnt)
+  // // console.log(native.cnt)
   // const cnter = () => {
   //   cnt++
   // }
-  // // var d = Date.now()
-  // for (let i = 0; i < 1e6; i++) {
+  // var d = Date.now()
+  // for (let i = 0; i < amount; i++) {
   //   db.server.getQueryBuf(buf).then(cnter)
   // }
   // console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
 
-  await wait(10000)
+  await isRdy
 })

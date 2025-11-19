@@ -77,9 +77,10 @@ const native = {
     return x
   },
 
-  getQueryResults(dbCtx: any) {
+  getQueryResults(dbCtx: any): ArrayBuffer[] {
     // what to return?
     const x = db.getQueryResults(dbCtx)
+    return x
   },
 
   start: () => {

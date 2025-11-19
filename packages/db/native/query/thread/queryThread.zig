@@ -26,7 +26,11 @@ const defaultProtocol = @import("../protocol/default.zig").defaultProtocol;
 
 const results = @import("./results.zig");
 
-pub fn getQueryThreaded(dbCtx: *db.DbCtx, q: []u8) ![]u8 {
+pub fn getQueryThreaded(
+    dbCtx: *db.DbCtx,
+    q: []u8,
+    threadCtx: *db.DbThread,
+) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
     defer arena.deinit();
 
@@ -59,5 +63,6 @@ pub fn getQueryThreaded(dbCtx: *db.DbCtx, q: []u8) ![]u8 {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
 
-    return results.createResultsBuffer(&ctx);
+    try results.createResultsBuffer(&ctx, threadCtx);
+    // return d;
 }

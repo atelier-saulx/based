@@ -44,11 +44,29 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
 
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
-) ![]u8 {
-    var data = try std.heap.raw_c_allocator.alloc(u8, ctx.size + 8);
-    // std.debug.print("SIZE {any}: \n", .{ctx.size});
+    threadCtx: *db.DbThread,
+) !void {
+    const size = ctx.size + 8;
 
-    // @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 8];
+    const realSize = size + 8;
+    if (threadCtx.queryResults.len < threadCtx.lastQueryResultIndex + realSize) {
+        var increasedSize: usize = 1_000_000;
+        if (realSize > 1_000_000) {
+            increasedSize = (@divTrunc(realSize, increasedSize) + 1) * increasedSize;
+        }
+        threadCtx.queryResults = try std.heap.raw_c_allocator.realloc(
+            threadCtx.queryResults,
+            threadCtx.queryResults.len + increasedSize, // or if query is larger add more..
+        );
+    }
+    // write some stuff
+    var data = threadCtx.queryResults[threadCtx.lastQueryResultIndex + 8 .. threadCtx.lastQueryResultIndex + realSize]; // try std.heap.raw_c_allocator.alloc(u8, ctx.size + 8);
+
+    // space of 4 for extra
+    writeInt(u32, threadCtx.queryResults, threadCtx.lastQueryResultIndex, realSize);
+
+    threadCtx.*.lastQueryResultIndex = threadCtx.lastQueryResultIndex + realSize;
+
     var i: usize = 4;
 
     writeInt(u32, data, 0, ctx.totalResults);
@@ -157,5 +175,5 @@ pub fn createResultsBuffer(
 
     // std.debug.print("flap {any}: \n", .{data});
 
-    return data;
+    // return data;
 }
