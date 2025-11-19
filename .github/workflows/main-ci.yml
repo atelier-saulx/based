@@ -1,0 +1,49 @@
+name: CI/CD & Discord Notification
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '22.21.1'
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+
+jobs:
+  ci_build_test:
+    name: Build, Test, and Notify Discord
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Build Command (npm run build)
+        run: npm run build
+
+      - name: Run Test Command (npm run test)
+        run: npm run test-fast
+
+      - name: Send Discord Notification
+        uses: dta-archive/discord-webhook-action@v1.1.2
+        if: always()
+        with:
+          webhook: ${{ env.DISCORD_WEBHOOK_URL }}
+          status: ${{ job.status }}
+          title: |
+            ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
+          description: |
+            **Repository:** `${{ github.repository }}`
+            **Branch:** `main`
+            **Commit:** `${{ github.sha }}`
+            **Author:** `${{ github.actor }}`
+            **Action Link:** [View Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
