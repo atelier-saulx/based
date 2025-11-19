@@ -66,7 +66,6 @@ export const walkDefs = (
         }
         return
       }
-
       t = t[p]
       if (!t) {
         if (include.field != 'id') {
