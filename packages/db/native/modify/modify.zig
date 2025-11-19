@@ -82,6 +82,59 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
 }
 
+fn getLargeRef(node: db.Node, fs: db.FieldSchema, dstId: u32) ?db.ReferenceLarge {
+    if (dstId == 0) { // assume reference
+        return db.getSingleReference(node, fs);
+    } else { // references
+        const refs = db.getReferences(node, fs);
+        const any = db.referencesGet(refs, dstId);
+        if (any.type == selva.SELVA_NODE_REFERENCE_LARGE) {
+            return any.p.large;
+        } else {
+            return null;
+        }
+    }
+}
+
+fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
+    var prevNodeId: u32 = 0;
+
+    if (srcId == 0 or ctx.node == null) {
+        return 0;
+    }
+
+    const fs = db.getFieldSchema(ctx.typeEntry, refField) catch {
+        return 0;
+    };
+    ctx.fieldSchema = fs;
+
+    if (getLargeRef(ctx.node.?, fs, dstId)) |ref| {
+        const efc = db.getEdgeFieldConstraint(fs);
+        switchType(ctx, efc.meta_node_type) catch {
+            return 0;
+        };
+        const edgeNode = db.ensureRefEdgeNode(ctx, ctx.node.?, efc, ref) catch {
+            return 0;
+        };
+        const edgeId = ref.*.meta;
+
+        // if its zero then we don't want to switch (for upsert)
+        prevNodeId = ctx.id;
+        ctx.id = edgeId;
+        ctx.node = edgeNode;
+        if (ctx.node == null) {
+            ctx.err = errors.ClientError.nx;
+        } else {
+            try subs.checkId(ctx);
+            // It would be even better if we'd mark it dirty only in the case
+            // something was actually changed.
+            Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+        }
+    }
+
+    return prevNodeId;
+}
+
 fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
@@ -191,6 +244,14 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     }
                 }
                 i = i + 5;
+            },
+            types.ModOp.SWITCH_EDGE_ID => {
+                const srcId = read(u32, operation, 0);
+                const dstId = read(u32, operation, 4);
+                const refField = read(u8, operation, 8);
+                const prevNodeId = try switchEdgeId(&ctx, srcId, dstId, refField);
+                writeoutPrevNodeId(&ctx, resCount, prevNodeId);
+                i = i + 10;
             },
             types.ModOp.UPSERT => {
                 const writeIndex = read(u32, operation, 0);

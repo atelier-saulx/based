@@ -221,6 +221,18 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
     modifyCtx.markDirtyRange(ctx, dstType, id);
 }
 
+pub fn referencesHas(refs: References, dstNodeId: u32) bool {
+    if (refs.len == 0) {
+        return false;
+    }
+
+    return selva.node_id_set_bsearch(refs.*.index, refs.*.refs, dstNodeId) != -1;
+}
+
+pub fn referencesGet(refs: ?References, dstNodeId: u32) ReferenceAny {
+    return selva.selva_fields_references_get(refs.?, dstNodeId);
+}
+
 pub fn writeField(node: Node, fieldSchema: FieldSchema, data: []u8) !void {
     try errors.selva(switch (fieldSchema.*.type) {
         selva.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.selva_fields_set_micro_buffer(node, fieldSchema, data.ptr, data.len),

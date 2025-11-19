@@ -1137,6 +1137,37 @@ int selva_fields_set_micro_buffer(struct SelvaNode *node, const struct SelvaFiel
     return 0;
 }
 
+struct SelvaNodeReferenceAny selva_fields_references_get(const struct SelvaNodeReferences *refs, node_id_t dst_node_id)
+{
+    ssize_t i;
+    struct SelvaNodeReferenceAny any = (struct SelvaNodeReferenceAny){
+        .type = SELVA_NODE_REFERENCE_NULL,
+    };
+
+    if (refs && (refs->nr_refs < 100 || node_id_set_bsearch(refs->index, refs->nr_refs, dst_node_id) != -1)) {
+        switch (refs->size) {
+        case SELVA_NODE_REFERENCE_NULL:
+            break;
+        case SELVA_NODE_REFERENCE_SMALL:
+            i = fast_linear_search_references_small(refs->small, refs->nr_refs, dst_node_id);
+            if (i != -1) {
+                any.type = SELVA_NODE_REFERENCE_SMALL;
+                any.small = &refs->small[i];
+            }
+            break;
+        case SELVA_NODE_REFERENCE_LARGE:
+            i = fast_linear_search_references_large(refs->large, refs->nr_refs, dst_node_id);
+            if (i != -1) {
+                any.type = SELVA_NODE_REFERENCE_LARGE;
+                any.large = &refs->large[i];
+            }
+            break;
+        }
+    }
+
+    return any;
+}
+
 /**
  * @returns false if NOK
  */

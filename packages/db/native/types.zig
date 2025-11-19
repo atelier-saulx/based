@@ -163,6 +163,7 @@ pub const ModOp = enum(u8) {
     SWITCH_ID_CREATE_UNSAFE = 8,
     SWITCH_ID_CREATE = 9,
     SWITCH_ID_CREATE_RING = 19,
+    SWITCH_EDGE_ID = 20,
     DELETE_NODE = 10,
     DELETE = 11,
     INCREMENT = 12,
