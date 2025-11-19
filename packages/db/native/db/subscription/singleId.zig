@@ -159,9 +159,7 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
         if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
             if (typeSubs.idSubs.getEntry(id)) |subsEntry| {
                 const subs = subsEntry.value_ptr.*;
-
                 var i: usize = 0;
-
                 while (i < subs.len) {
                     if (subs[i].subId == subId) {
                         if (subs[i].marked != types.SubStatus.marked) {
@@ -181,7 +179,6 @@ pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
                         i += 1;
                     }
                 }
-
                 if (subs.len > 1) {
                     const newLen = subs.len - 1;
                     if (i != newLen) {
@@ -201,10 +198,10 @@ pub fn removeSubscriptionMarked(ctx: *db.DbCtx, sub: *types.IdSubsItem) !void {
 
     if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
         if (typeSubs.idSubs.getEntry(id)) |idSub| {
-            const subs = idSub.value_ptr;
+            const subs = idSub.value_ptr.*;
             if (subs.len == 1) {
-                _ = typeSubs.idSubs.remove(id);
                 std.heap.raw_c_allocator.free(idSub.value_ptr.*);
+                _ = typeSubs.idSubs.remove(id);
 
                 // dont do this here need top be in marked
                 if (id > typeSubs.bitSetSize) {
@@ -290,12 +287,14 @@ pub fn removeSubscriptionMarked(ctx: *db.DbCtx, sub: *types.IdSubsItem) !void {
                         try sizeBitSet(typeSubs);
                     }
                 }
-            } else {
+            } else if (subs.len != 0) {
                 const newSubs = try std.heap.raw_c_allocator.realloc(
                     idSub.value_ptr.*,
                     idSub.value_ptr.len - 1,
                 );
                 idSub.value_ptr.* = newSubs;
+            } else {
+                std.debug.print("Weird subs len is 0 \n", .{});
             }
         }
 
