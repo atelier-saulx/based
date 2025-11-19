@@ -2,7 +2,7 @@ const std = @import("std");
 const db = @import("../db.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
-const c = @import("../../c.zig");
+const c = @import("../../c.zig").c;
 const utils = @import("../../utils.zig");
 const singleId = @import("./singleId.zig");
 const multi = @import("./multi.zig");
@@ -75,42 +75,42 @@ fn getMarkedMultiSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_in
 }
 
 // ---------------------------------
-pub fn getMarkedIdSubscriptions(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getMarkedIdSubscriptions(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return getMarkedIdSubscriptionsInternal(napi_env, info) catch |err| {
         std.log.err("getMarkedIdSubscriptions {any} \n", .{err});
         return null;
     };
 }
 
-pub fn getMarkedMultiSubscriptions(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getMarkedMultiSubscriptions(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return getMarkedMultiSubscriptionsInternal(napi_env, info) catch |err| {
         std.log.err("getMarkedMultiSubscriptions {any} \n", .{err});
         return null;
     };
 }
 
-pub fn removeIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn removeIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return singleId.removeIdSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("removeIdSubscription err {any} \n", .{err});
         return null;
     };
 }
 
-pub fn addIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn addIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return singleId.addIdSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("addIdSubscription err {any} \n", .{err});
         return null;
     };
 }
 
-pub fn addMultiSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn addMultiSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return multi.addMultiSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("addMultiSubscription err {any} \n", .{err});
         return null;
     };
 }
 
-pub fn removeMultiSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn removeMultiSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
     return multi.removeMultiSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("removeMultiSubscription err {any} \n", .{err});
         return null;

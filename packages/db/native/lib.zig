@@ -98,7 +98,7 @@ fn selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) callconv(.c) c
     return _selvaStrerror(napi_env, nfo) catch return null;
 }
 
-fn selvaLangAll(napi_env: c.napi_env, _: c.napi_callback_info) callconv(.C) c.napi_value {
+fn selvaLangAll(napi_env: c.napi_env, _: c.napi_callback_info) callconv(.c) c.napi_value {
     var result: c.napi_value = undefined;
     var copied: selva.bool = undefined;
 
