@@ -12,6 +12,8 @@ pub fn jsThrow(env: c.napi_env, message: [:0]const u8) c.napi_value {
 }
 
 pub const Napi = error{
+    BufferCreationError,
+    CallFailed,
     CannotGetBuffer,
     CannotInitCtx,
     CannotGetString,

@@ -184,20 +184,95 @@ pub fn getArgs(comptime totalArgs: comptime_int, env: c.napi_env, info: c.napi_c
     return argv;
 }
 
-pub fn getString(env: c.napi_env, value: c.napi_value) ![]u8 {
-    var size: usize = undefined;
-    if (c.napi_get_value_string_utf8(env, value, null, 0, @ptrCast(&size)) != c.napi_ok) {
-        jsThrow(env, "Cannot get size for string");
-        return errors.Napi.CannotGetString;
-    }
+pub const Call = *const fn (data: []u8) anyerror!void;
 
-    var buffer: [*]u8 = undefined;
+pub const CallResult = struct {
+    data: []u8,
+    allocator: std.mem.Allocator,
+};
 
-    // utf16...
-    if (c.napi_get_value_string_utf8(env, value, @ptrCast(&buffer), size, null) != c.napi_ok) {
-        jsThrow(env, "Cannot get fixed length string for variable");
-        return errors.Napi.CannotGetString;
-    }
-
-    return buffer[0..size];
+fn finalize(env: c.napi_env, data: ?*anyopaque, hint: ?*anyopaque) callconv(.C) void {
+    _ = env;
+    std.debug.print("Try memory free by JS GC!\n", .{});
+    const data_ptr = @as([*]u8, @ptrCast(@alignCast(data.?)));
+    const result = @as(*CallResult, @ptrCast(@alignCast(hint.?)));
+    const payload = data_ptr[0..result.data.len];
+    result.allocator.free(payload);
+    result.allocator.destroy(result);
+    std.debug.print("Zig memory freed by JS GC!\n", .{});
 }
+
+fn callJsCallback(env: c.napi_env, js_callback: c.napi_value, _: ?*anyopaque, data: ?*anyopaque) callconv(.C) void {
+    const result = @as(*CallResult, @ptrCast(@alignCast(data.?)));
+
+    var jsBufferValue: c.napi_value = undefined;
+    const status = c.napi_create_external_buffer(env, result.data.len, @ptrCast(result.data.ptr), finalize, data, &jsBufferValue);
+
+    if (status != c.napi_ok) {
+        // very wrong...
+        return;
+    }
+
+    var undefined_val: c.napi_value = undefined;
+    _ = c.napi_get_undefined(env, &undefined_val);
+
+    var args = [_]c.napi_value{jsBufferValue};
+
+    // can check status...
+    _ = c.napi_call_function(env, undefined_val, js_callback, 1, &args, null);
+}
+
+pub const NapiCallback = struct {
+    env: c.napi_env,
+    allocator: std.mem.Allocator,
+    tsfn: c.napi_threadsafe_function,
+
+    // option to take CONTROL of callback
+    pub fn init(
+        allocator: std.mem.Allocator,
+        env: c.napi_env,
+        js_func: c.napi_value,
+    ) !*NapiCallback {
+        const self = try allocator.create(NapiCallback);
+
+        var name: c.napi_value = undefined;
+        _ = c.napi_create_string_utf8(env, "ZigThreadSafeNapiCallback", c.NAPI_AUTO_LENGTH, &name);
+
+        var tsfn: c.napi_threadsafe_function = undefined;
+
+        _ = c.napi_create_threadsafe_function(
+            env,
+            js_func,
+            null,
+            name,
+            0, // Max queue size (0 = unlimited)
+            1, // Initial thread count
+            null, // Thread finalize data
+            null, // Thread finalize cb
+            null, // Context
+            callJsCallback, // <--- THE BRIDGE FUNCTION
+            &tsfn,
+        );
+
+        self.* = .{
+            .allocator = allocator,
+            .env = env,
+            .tsfn = tsfn,
+        };
+
+        return self;
+    }
+
+    pub fn deinit(self: *NapiCallback) void {
+        _ = c.napi_release_threadsafe_function(self.tsfn, c.napi_tsfn_release);
+        self.allocator.destroy(self);
+    }
+
+    pub fn call(self: *NapiCallback, data: []u8) void {
+        const result = self.allocator.create(CallResult) catch return;
+        // add allocator as well so js can ask to lcose this
+        // make this the entire CTX including allocator
+        result.* = .{ .data = data, .allocator = self.allocator };
+        _ = c.napi_call_threadsafe_function(self.tsfn, result, c.napi_tsfn_blocking);
+    }
+};

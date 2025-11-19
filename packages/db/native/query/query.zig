@@ -44,8 +44,11 @@ pub fn getQueryBufThread(env: c.napi_env, info: c.napi_callback_info) callconv(.
 pub fn getQueryBufInternalThread(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+    const q = try napi.get([]u8, env, args[1]);
 
-    std.debug.print("YO YO YO{any} \n", .{dbCtx});
+    try dbCtx.threads.query(q);
+
+    // std.debug.print("YO YO YO{any} \n", .{dbCtx});
     return null;
 }
 

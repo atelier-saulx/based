@@ -3,6 +3,7 @@ const DbCtx = @import("./ctx.zig").DbCtx;
 const Thread = std.Thread;
 const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
+const utils = @import("../utils.zig");
 
 pub const DbThread = struct {
     thread: Thread,
@@ -15,6 +16,9 @@ pub const Threads = struct {
     mutex: Mutex = .{},
     threads: []DbThread,
     cond: Condition = .{},
+
+    queryDone: Condition = .{},
+
     shutdown: bool = false,
     ctx: *DbCtx,
     queryQueue: std.ArrayList([]u8),
@@ -30,11 +34,14 @@ pub const Threads = struct {
 
         try self.queryQueue.append(queryBuffer);
         self.cond.signal(); // Wake up one thread
+
+        // self.ctx.queryCallback.call(&.{});
+        // t.func(t.ctx);
     }
 
     // modify
 
-    fn worker(self: *Threads, threadCtx: *DbThread) void {
+    fn worker(self: *Threads, threadCtx: *DbThread) !void {
         while (true) {
             var queryBuf: ?[]u8 = null;
 
@@ -61,9 +68,17 @@ pub const Threads = struct {
                 }
             }
 
-            if (queryBuf) |q| {
-                std.debug.print("go call query! {any} this is my threadCtx {any} \n", .{ q, threadCtx });
-                // t.func(t.ctx);
+            if (queryBuf) |_| {
+                const x = try self.ctx.allocator.alloc(u8, 8);
+
+                utils.writeInt(u64, x, 0, threadCtx.id);
+
+                // std.debug.print(
+                // "go call query! {any} this is my threadCtx {any} x: {any} \n",
+                // .{ q, threadCtx.id, x },
+                // );
+
+                self.ctx.queryCallback.call(x);
             }
         }
     }
@@ -95,22 +110,17 @@ pub const Threads = struct {
     }
 
     pub fn deinit(self: *Threads) void {
-        {
-            self.mutex.lock();
-            defer self.mutex.unlock();
-            self.shutdown = true;
-            self.cond.broadcast();
-        }
-
+        self.mutex.lock();
+        self.shutdown = true;
+        self.cond.broadcast();
+        self.mutex.unlock();
         for (self.threads) |t| {
             // see if this is enough...
-            t.join();
+            t.thread.join();
             // or t.detach
         }
         self.queryQueue.deinit();
         self.modifyQueue.deinit();
-        self.allocator.free(self.queryQueue);
-        self.allocator.free(self.modifyQueue);
-        self.allocator.destroy(self);
+        // self.allocator.free(self.modifyQueue);
     }
 };

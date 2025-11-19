@@ -1,4 +1,7 @@
+import { wait } from '@based/utils'
+import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { BasedDb } from '../../src/index.js'
+import native from '../../src/native.js'
 import test from '../shared/test.js'
 
 await test('include', async (t) => {
@@ -22,7 +25,17 @@ await test('include', async (t) => {
     nr: 2,
   })
 
-  db.query('user', id)
+  const q = db.query('user', id)
+  registerQuery(q)
+  // maybe expose regisrer query on class
 
-  console.log({ id })
+  const buf = q.buffer
+
+  console.log({ id, buf })
+
+  for (let i = 0; i < 4; i++) {
+    native.getQueryBufThread(buf, db.server.dbCtxExternal)
+  }
+
+  await wait(10000)
 })

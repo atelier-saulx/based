@@ -70,8 +70,16 @@ const native = {
     return x
   },
 
+  getQueryBufThread: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
+    // will return bool
+    const x = db.getQueryBufThread(dbCtx, q)
+    return x
+  },
+
   start: () => {
-    return db.start()
+    return db.start((xxx) => {
+      console.log('im a little derp', xxx)
+    })
   },
 
   stop: (dbCtx: any) => {

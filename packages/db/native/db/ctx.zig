@@ -30,6 +30,7 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
     subscriptions: subs.SubscriptionCtx,
     ids: []u32,
+    queryCallback: *napi.NapiCallback,
     threads: *threads.Threads,
     pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
         self.arena.deinit();
@@ -51,7 +52,7 @@ pub fn init() void {
     }
 }
 
-pub fn createDbCtx() !*DbCtx {
+pub fn createDbCtx(env: c.napi_env, info: c.napi_callback_info) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
@@ -66,10 +67,17 @@ pub fn createDbCtx() !*DbCtx {
         subs.BLOCK_SIZE,
     );
 
+    // const cb = try napi.NapiCallback.init(std.heap.raw_c_allocator, env, args[0]);
+    // defer cb.deinit();
+    // try cb.call(&.{});
+
+    const args = try napi.getArgs(1, env, info);
+
     errdefer {
         arena.deinit();
         db_backing_allocator.destroy(arena);
     }
+
     b.* = .{
         .threads = try threads.Threads.init(allocator, 4, b),
         .id = rand.int(u32),
@@ -81,7 +89,9 @@ pub fn createDbCtx() !*DbCtx {
         .selva = null,
         .subscriptions = subscriptions.*,
         .ids = &[_]u32{},
+        .queryCallback = try napi.NapiCallback.init(allocator, env, args[0]),
     };
+
     for (&b.*.threadCtx) |*tctx| {
         tctx.* = .{ .threadId = 0, .decompressor = null, .libdeflateBlockState = undefined };
     }
@@ -92,6 +102,8 @@ pub fn createDbCtx() !*DbCtx {
 
 pub fn destroyDbCtx(ctx: *DbCtx) void {
     ctx.initialized = false;
+    ctx.queryCallback.deinit();
+    ctx.threads.deinit();
 
     var it = ctx.sortIndexes.iterator();
     while (it.next()) |index| {
