@@ -141,13 +141,12 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                     const references = db.getReferences(node, fieldSchema);
                     // MV: Add error handling
                     const refs: incTypes.Refs = .{ .refs = references.?, .fs = fieldSchema };
-                    const refsCnt = refs.refs.*.nr_refs;
-                    while (i < refsCnt) : (i += 1) {
-                        const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
-                        value = db.getEdgeProp(ctx, refStruct.?.edgeConstraint, refStruct.?.largeReference.?, fieldSchema);
-                    }
+                    _ = edgeRef; // ugly
+                    const refStruct = incTypes.RefResult(refs, edgeConstraint, 0);
+                    utils.debugPrint("refStruct = {any}\n", .{refStruct});
+
+                    value = db.getEdgeProp(ctx, refStruct.?.edgeConstraint, refStruct.?.largeReference.?, fieldSchema);
                 } else {
-                    value = if (isEdge and edgeRef != null) db.getEdgeProp(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
                     value = db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
                 }
                 if (value.len == 0) { // MV: This should check for specific sizes since microbuffer can be any
