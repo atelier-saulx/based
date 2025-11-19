@@ -4,7 +4,7 @@ import type {
   DbSchema,
   SchemaChecksum,
 } from '@based/schema'
-import type { BasedDbQuery } from './client/query/BasedDbQuery.ts'
+import { BasedDbQuery } from './client/query/BasedDbQuery.ts'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.ts'
 import { DbServer } from './server/index.ts'
 import { registerSubscription } from './server/subscription.ts'

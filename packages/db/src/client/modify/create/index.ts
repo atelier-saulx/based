@@ -1,4 +1,4 @@
-import type { SchemaTypeDef, TEXT } from '@based/schema/def'
+import { type SchemaTypeDef, TEXT } from '@based/schema/def'
 import { Ctx } from '../Ctx.ts'
 import { writeObject } from '../props/object.ts'
 import { reserve } from '../resize.ts'
@@ -13,17 +13,17 @@ import { writeMainBuffer, writeMainValue } from '../props/main.ts'
 import { Tmp } from '../Tmp.ts'
 import { DbClient } from '../../../index.ts'
 import { schedule } from '../drain.ts'
-import type {
+import {
   ADD_EMPTY_SORT,
   ADD_EMPTY_SORT_TEXT,
   CREATE,
-  ModifyOpts,
+  type ModifyOpts,
   PADDING,
   SWITCH_ID_CREATE,
   SWITCH_ID_CREATE_RING,
   SWITCH_ID_CREATE_UNSAFE,
 } from '../types.ts'
-import type { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
+import { inverseLangMap, type LangCode, langCodesMap } from '@based/schema'
 import { writeSeparate } from '../props/separate.ts'
 import { writeString } from '../props/string.ts'
 import { writeU32, writeU8 } from '../uint.ts'

@@ -1,11 +1,5 @@
-import type {
-  PropDef,
-  PropDefEdge,
-  BINARY,
-  STRING,
-  REFERENCES,
-  TIMESTAMP,
-} from '@based/schema/def'
+import type { PropDef, PropDefEdge } from '@based/schema/def'
+import { TIMESTAMP, BINARY, STRING, REFERENCES } from '@based/schema/def'
 import {
   ALIGNMENT_NOT_SET,
   EQUAL,

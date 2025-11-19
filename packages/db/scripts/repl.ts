@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
 import { BasedDb, BasedQueryResponse } from '../dist/src/index.ts'
 import { formatTable } from '../dist/src/table.ts'
-import type {
+import {
   ALIAS,
   ALIASES,
   BINARY,

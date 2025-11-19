@@ -1,22 +1,13 @@
 import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
-import type { QueryDef, QueryDefAggregation, QueryDefType } from '../types.ts'
 import {
-  GroupBy,
-  Interval,
-  IntervalString,
-  StepInput,
-  aggFnOptions,
-  setMode,
-} from './types.ts'
-import type {
-  PropDef,
-  UINT32,
-  SchemaPropTree,
-  REFERENCE,
-  REFERENCES,
-  PropDefEdge,
-  isPropDef,
-} from '@based/schema/def'
+  type QueryDef,
+  QueryDefType,
+  type QueryDefAggregation,
+} from '../types.ts'
+import type { IntervalString, StepInput } from './types.ts'
+import { aggFnOptions, GroupBy, Interval, setMode } from './types.ts'
+import type { PropDef, SchemaPropTree, PropDefEdge } from '@based/schema/def'
+import { REFERENCE, REFERENCES, isPropDef } from '@based/schema/def'
 import {
   aggregationFieldDoesNotExist,
   validateStepRange,

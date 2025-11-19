@@ -1,5 +1,6 @@
 import type { PropDef, PropDefEdge } from '@based/schema/def'
-import type { ALIGNMENT_NOT_SET, FilterCtx, MODE_REFERENCE } from './types.ts'
+import type { FilterCtx } from './types.ts'
+import { ALIGNMENT_NOT_SET, MODE_REFERENCE } from './types.ts'
 import type { FilterCondition } from '../types.ts'
 import { writeUint16, writeUint32 } from '@based/utils'
 
