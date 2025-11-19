@@ -87,7 +87,7 @@ pub fn writeEdges(
             offset = 4;
             const edgeData = data[i + offset .. i + offset + len];
 
-            try db.putReferences(ctx, utils.realign(u32, edgeData), edgeNode, edgeFieldSchema);
+            try db.putReferences(ctx, edgeNode, edgeFieldSchema, utils.realign(u32, edgeData));
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;
