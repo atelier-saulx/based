@@ -71,14 +71,13 @@ pub inline fn aggregateRefsGroup(
     filterArr: ?[]u8,
 ) !usize {
     const typeEntry = try db.getType(ctx.db, typeId);
-    var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     const emptyKey = &[_]u8{};
     const fieldSchema = db.getFieldSchema(originalType, refField) catch {
         return 0;
     };
-    edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
+    const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
     const references = db.getReferences(node, fieldSchema);
     if (references == null) {
         return 0;
@@ -169,7 +168,6 @@ pub inline fn aggregateRefsDefault(
     const accumulatorField = try ctx.allocator.alloc(u8, accumulatorSize);
     @memset(accumulatorField, 0);
     const typeEntry = try db.getType(ctx.db, typeId);
-    var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     var hadAccumulated: bool = false;
@@ -181,7 +179,7 @@ pub inline fn aggregateRefsDefault(
     fieldSchema = db.getFieldSchema(originalType, refField) catch {
         return aggPropDefSize;
     };
-    edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
+    const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
     const references = db.getReferences(node, fieldSchema);
     if (references == null) {
         return aggPropDefSize;

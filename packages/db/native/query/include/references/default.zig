@@ -11,7 +11,7 @@ pub fn defaultReferences(
     ctx: *QueryCtx,
     include: []u8,
     typeEntry: db.Type,
-    edgeConstraint: ?db.EdgeFieldConstraint,
+    edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,

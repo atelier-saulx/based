@@ -15,7 +15,7 @@ pub fn sortedReferences(
     include: []u8,
     sortBuffer: []u8,
     typeEntry: db.Type,
-    edgeConstraint: ?db.EdgeFieldConstraint,
+    edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,
