@@ -1,3 +1,4 @@
+const c = @import("../../c.zig").c;
 const errors = @import("../../errors.zig");
 const napi = @import("../../napi.zig");
 const read = @import("../../utils.zig").read;
