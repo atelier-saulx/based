@@ -50,10 +50,22 @@ await test('include', async (t) => {
   collector()
 
   var d = Date.now()
+  // const x = []
+
+  // const bufSize = 1e6 * buf.byteLength
+  // const x = new Uint8Array(bufSize)
   for (let i = 0; i < 1e6; i++) {
+    // x.set(buf, i * buf.byteLength)
+
+    // x.push(buf)
     native.getQueryBufThread(buf, db.server.dbCtxExternal)
   }
+  // native.getQueryBufThreadBatch(x, db.server.dbCtxExternal)
+
   console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
+
+  await wait(1000)
+  native.getQueryResults(db.server.dbCtxExternal)
 
   // await wait(100)
   // console.log(native.cnt)

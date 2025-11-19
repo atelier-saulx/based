@@ -41,13 +41,45 @@ pub fn getQueryBufThread(env: c.napi_env, info: c.napi_callback_info) callconv(.
     };
 }
 
+pub fn getQueryResults(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryBufInternalResults(env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryBufInternalResults(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(1, env, info);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+    // const q = try napi.get([]u8, env, args[1]);
+
+    // var i: u32 = 0;
+
+    // while (i < q.len) {
+    //     try dbCtx.threads.query(q[i .. i + 21]);
+
+    //     i += 21; // tmp
+    // }
+
+    for (dbCtx.threads.threads, 0..) |_, index| {
+        std.debug.print("got some results... {any} \n", .{dbCtx.threads.threads[index].lastQueryResultIndex});
+
+        // dbCtx.threads.threads[index].lastQueryResultIndex = 0;
+    }
+
+    //   and dealloc ofc
+    // const status = c.napi_create_external_buffer(env, result.data.len, @ptrCast(result.data.ptr), null, null, &jsBufferValue);
+
+    // try dbCtx.threads.query(q);
+    // std.debug.print("YO YO YO{any} \n", .{dbCtx});
+    return null;
+}
+
 pub fn getQueryBufInternalThread(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const q = try napi.get([]u8, env, args[1]);
-
     try dbCtx.threads.query(q);
-
     // std.debug.print("YO YO YO{any} \n", .{dbCtx});
     return null;
 }

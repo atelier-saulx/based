@@ -263,6 +263,7 @@ pub const NapiCallback = struct {
     }
 
     pub fn call(self: *NapiCallback, data: []u8) void {
+        // will get rid of this result
         const result = std.heap.raw_c_allocator.create(CallResult) catch return;
         // add allocator as well so js can ask to lcose this
         // make this the entire CTX including allocator

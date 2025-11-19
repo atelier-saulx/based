@@ -9,6 +9,8 @@ const getQueryThreaded = @import("../query/thread/queryThread.zig").getQueryThre
 pub const DbThread = struct {
     thread: Thread,
     id: usize,
+    queryResults: []u8,
+    lastQueryResultIndex: u32,
     // decompressor:
     // subscriptions:
 };
@@ -32,9 +34,11 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-
+        // problem if node decides to de-alloc the query buffer
         try self.queryQueue.append(queryBuffer);
-        self.cond.signal(); // Wake up one thread
+
+        // this is the problem heavy!
+        self.cond.signal(); // Wake up one thread - we prop want to batch this is a heavy operation!
 
         // self.ctx.queryCallback.call(&.{});
         // t.func(t.ctx);
@@ -42,7 +46,7 @@ pub const Threads = struct {
 
     // modify
 
-    fn worker(self: *Threads, _: *DbThread) !void {
+    fn worker(self: *Threads, threadCtx: *DbThread) !void {
         while (true) {
             var queryBuf: ?[]u8 = null;
 
@@ -60,7 +64,7 @@ pub const Threads = struct {
                     // }
 
                     if (self.queryQueue.items.len > 0) {
-                        queryBuf = self.queryQueue.orderedRemove(0);
+                        queryBuf = self.queryQueue.swapRemove(0);
                         break;
                     }
 
@@ -69,9 +73,22 @@ pub const Threads = struct {
                 }
             }
 
-            if (queryBuf) |q| {
-                const result = try getQueryThreaded(self.ctx, q);
-                self.ctx.queryCallback.call(result);
+            if (queryBuf) |_| {
+                // const result = try getQueryThreaded(self.ctx, q);
+                // this has to return the query
+                // const r = try std.heap.raw_c_allocator.alloc(u8, 20);
+
+                if (threadCtx.queryResults.len < threadCtx.lastQueryResultIndex + 20) {
+                    threadCtx.queryResults = try std.heap.raw_c_allocator.realloc(
+                        threadCtx.queryResults,
+                        threadCtx.queryResults.len + 1_000_000,
+                    );
+                }
+
+                threadCtx.*.lastQueryResultIndex = threadCtx.*.lastQueryResultIndex + 20;
+                // std.debug.print("yo yo yo {any} \n", .{threadCtx.*.lastQueryResultIndex});
+
+                // self.ctx.queryCallback.call(result);
             }
         }
     }
@@ -95,6 +112,8 @@ pub const Threads = struct {
             // check if that CTX is ok...
             const threadCtx = try allocator.create(DbThread);
             threadCtx.*.id = id;
+            threadCtx.*.lastQueryResultIndex = 0;
+            threadCtx.*.queryResults = try std.heap.raw_c_allocator.alloc(u8, 0);
             threadCtx.*.thread = try Thread.spawn(.{}, worker, .{ self, threadCtx });
             t.* = threadCtx.*;
         }

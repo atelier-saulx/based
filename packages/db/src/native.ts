@@ -77,6 +77,11 @@ const native = {
     return x
   },
 
+  getQueryResults(dbCtx: any) {
+    // what to return?
+    const x = db.getQueryResults(dbCtx)
+  },
+
   start: () => {
     return db.start((xxx) => {
       native.cnt++
