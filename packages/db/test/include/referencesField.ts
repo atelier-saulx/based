@@ -53,4 +53,12 @@ await test('references shortcut', async (t) => {
     { id: 4, age: 93, name: 'Mr 1' },
     '.at(3)',
   )
+
+  // await db.query('user').range(-10, -1).get().inspect()
+
+  // deepEqual(
+  //   await db.query('user').range(-10, -1).get(),
+  //   { id: 4, age: 93, name: 'Mr 1' },
+  //   '.at(3)',
+  // )
 })

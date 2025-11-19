@@ -7,7 +7,7 @@ const c = @import("../c.zig");
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
 const subs = @import("./subscription/types.zig");
-
+const threads = @import("./threads.zig");
 const rand = std.crypto.random;
 
 const ThreadCtx = struct {
@@ -30,6 +30,7 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
     subscriptions: subs.SubscriptionCtx,
     ids: []u32,
+    threads: *threads.Threads,
     pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
         self.arena.deinit();
         backing_allocator.destroy(self.arena);
@@ -70,6 +71,7 @@ pub fn createDbCtx() !*DbCtx {
         db_backing_allocator.destroy(arena);
     }
     b.* = .{
+        .threads = try threads.Threads.init(allocator, 4, b),
         .id = rand.int(u32),
         .arena = arena,
         .allocator = allocator,

@@ -34,6 +34,21 @@ pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.n
     };
 }
 
+pub fn getQueryBufThread(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+    return getQueryBufInternalThread(env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+
+pub fn getQueryBufInternalThread(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    const args = try napi.getArgs(2, env, info);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+
+    std.debug.print("YO YO YO{any} \n", .{dbCtx});
+    return null;
+}
+
 pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);

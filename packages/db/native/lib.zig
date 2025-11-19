@@ -122,6 +122,9 @@ export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi
     registerFunction(env, exports, "setSchemaIds", schema.setSchemaIds) catch return null;
     registerFunction(env, exports, "getSchemaIds", schema.getSchemaIds) catch return null;
     registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
+
+    registerFunction(env, exports, "getQueryBufThread", Query.getQueryBufThread) catch return null;
+
     registerFunction(env, exports, "modify", modify) catch return null;
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
     registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;
