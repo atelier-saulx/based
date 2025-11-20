@@ -1,4 +1,4 @@
-import { benchmark } from '../utils'
+import { benchmark } from '../benchmarks/utils.js'
 
 benchmark('create 1m items with an alias', async (db) => {
   await db.setSchema({

@@ -62,7 +62,9 @@ await test('test embedded', async (t) => {
   await Promise.all(
     Array.from({ length: N3 }).map(async (_, i) => {
       await s.acquire()
-      db.query('test', i + 1).get().then(() => s.release())
+      db.query('test', i + 1)
+        .get()
+        .then(() => s.release())
     }),
   )
   await s.drain()

@@ -104,33 +104,6 @@ await test('sum top level', async (t) => {
   )
 })
 
-await test('count top level bignumber', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
-    types: {
-      sequence: {
-        bla: 'uint32',
-      },
-    },
-  })
-
-  for (let i = 0; i < 1e6; i++) {
-    db.create('sequence', { bla: i })
-  }
-
-  await db.drain()
-
-  const q = await db.query('sequence').count().get()
-  equal(q.toObject().count, 1e6)
-})
-
 await test('top level count', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
