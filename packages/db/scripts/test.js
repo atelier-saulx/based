@@ -37,9 +37,17 @@ const walk = async (dir = p) => {
         const relPath = relative(p, path)
         for (const test of match) {
           if (
-            !args.includes('--with-perf') &&
+            // default: no IGNORE_PATTERNS
+            !args.includes('--perf') &&
+            !args.includes('--all') &&
             [...IGNORE_PATTERNS].some((pattern) => f.includes(pattern)) &&
             [...IGNORE_PATTERNS].some((pattern) => !test.includes(pattern))
+          ) {
+            continue
+          } else if (
+            // .perf only
+            args.includes('--perf') &&
+            [...IGNORE_PATTERNS].some((pattern) => !f.includes('.perf'))
           ) {
             continue
           }
