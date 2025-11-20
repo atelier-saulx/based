@@ -169,7 +169,9 @@ await test('include', async (t) => {
   // for (let i = 0; i < amount; i++) {
   //   db.server.getQueryBuf(buf).then(cnter)
   // }
-  // console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
+  console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
 
   await isRdy
+
+  console.log('done')
 })

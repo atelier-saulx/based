@@ -3,7 +3,7 @@ const selva = @import("selva.zig").c;
 const dump = @import("./db/dump.zig");
 const info = @import("./db/info.zig");
 const errors = @import("errors.zig");
-const Query = @import("./query/query.zig");
+const query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig");
 const lifeTime = @import("./db/lifeTime.zig");
 const schema = @import("./schema/schema.zig");
@@ -121,11 +121,12 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
 
     // registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
 
-    registerFunction(env, exports, "getQueryBufThread", Query.getQueryBufThread) catch return null;
+    registerFunction(env, exports, "getQueryBufThread", query.getQueryBufThread) catch return null;
     registerFunction(env, exports, "modifyThread", modify.modifyThread) catch return null;
 
     // this is temp will be called on callback
-    registerFunction(env, exports, "getQueryResults", Query.getQueryResults) catch return null;
+    registerFunction(env, exports, "getQueryResults", query.getQueryResults) catch return null;
+    registerFunction(env, exports, "getModifyResults", modify.getModifyResults) catch return null;
 
     // registerFunction(env, exports, "modify", modify.modify) catch return null;
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;

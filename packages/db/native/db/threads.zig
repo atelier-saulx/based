@@ -26,12 +26,12 @@ pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id
             );
         }
         writeInt(u32, thread.queryResults, thread.queryResultsIndex, paddedSize);
-        writeInt(u32, thread.queryResults, thread.queryResultsIndex, id);
-        thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
+        writeInt(u32, thread.queryResults, thread.queryResultsIndex + 4, id);
         const data = thread.queryResults[thread.queryResultsIndex + 8 .. thread.queryResultsIndex + paddedSize];
+        thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
         return data;
     } else {
-        if (thread.modifyResults.len < thread.modifyResults + paddedSize) {
+        if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
             var increasedSize: usize = 100_000;
             if (paddedSize > 100_000) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
@@ -42,9 +42,9 @@ pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id
             );
         }
         writeInt(u32, thread.modifyResults, thread.modifyResultsIndex, paddedSize);
-        writeInt(u32, thread.modifyResults, thread.modifyResultsIndex, id);
-        thread.*.modifyResults = thread.modifyResultsIndex + paddedSize;
-        const data = thread.queryResults[thread.modifyResultsIndex + 8 .. thread.modifyResultsIndex + paddedSize];
+        writeInt(u32, thread.modifyResults, thread.modifyResultsIndex + 4, id);
+        const data = thread.modifyResults[thread.modifyResultsIndex + 8 .. thread.modifyResultsIndex + paddedSize];
+        thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;
         return data;
     }
 }
@@ -164,13 +164,12 @@ pub const Threads = struct {
                 self.mutex.lock();
                 self.pendingQueries -= 1;
                 if (self.pendingQueries == 0) {
+                    std.debug.print("QEURY ready and broadcast! start mod \n", .{});
                     self.queryDone.signal();
-
                     // prob want to call with the call thing
                     self.ctx.queryCallback.call(&.{});
 
                     if (self.nextModifyQueue.items.len > 0) {
-                        std.debug.print("QEURY ready and broadcast! start mod \n", .{});
                         const prevModifyQueue = self.modifyQueue;
                         self.modifyQueue = self.nextModifyQueue;
                         self.nextModifyQueue = prevModifyQueue;
@@ -187,16 +186,19 @@ pub const Threads = struct {
                     // std.debug.print("Go run mod on thread! \n", .{});
                     var res: u32 = 0;
                     // add dirty ranfges on db ctx
-                    try modifyInternal(threadCtx, m, self.ctx, &.{}, &res);
+                    try modifyInternal(threadCtx, m, self.ctx, &res);
                     // check how we want to do this to send back information
 
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
-                    // std.debug.print(" -------> {any} m {any} \n", .{ self.pendingModifies, m });
 
                     if (self.pendingModifies == 0) {
+                        std.debug.print(" ------->  m {any} \n", .{m});
                         self.modifyDone.signal();
+
+                        self.ctx.modifyCallback.call(&.{});
+
                         if (self.nextQueryQueue.items.len > 0) {
                             std.debug.print("MODIFY ready and broadcast! start query \n", .{});
                             const prevQueryQueue = self.queryQueue;

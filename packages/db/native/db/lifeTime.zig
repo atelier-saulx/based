@@ -29,10 +29,11 @@ fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     // does this make double things with valgrind? Ask marco
     dbCtx.init();
 
-    const args = try napi.getArgs(1, env, info);
-    const jsCallback = try napi.Callback.init(env, args[0]);
+    const args = try napi.getArgs(2, env, info);
+    const queryCallback = try napi.Callback.init(env, args[0]);
+    const modifyCallback = try napi.Callback.init(env, args[1]);
 
-    const ctx = try dbCtx.createDbCtx(jsCallback);
+    const ctx = try dbCtx.createDbCtx(queryCallback, modifyCallback);
     ctx.selva = selva.selva_db_create();
     var externalNapi: napi.Value = undefined;
     ctx.initialized = true;

@@ -125,7 +125,7 @@ pub inline fn get(comptime T: type, env: Env, value: Value) !T {
 
     if (T == []u8) {
         var buffer: [*]u8 = undefined;
-        var arrayType: TypedArrayType  = undefined;
+        var arrayType: TypedArrayType = undefined;
         var arrayLen: usize = undefined;
         if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != Ok) {
             return errors.Napi.CannotGetBuffer;

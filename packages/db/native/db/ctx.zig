@@ -20,6 +20,7 @@ pub const DbCtx = struct {
     subscriptions: subs.SubscriptionCtx,
     ids: []u32,
     queryCallback: *napi.Callback,
+    modifyCallback: *napi.Callback,
     threads: *threads.Threads,
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
@@ -43,7 +44,10 @@ pub fn init() void {
     }
 }
 
-pub fn createDbCtx(queryCallback: *napi.Callback) !*DbCtx {
+pub fn createDbCtx(
+    queryCallback: *napi.Callback,
+    modifyCallback: *napi.Callback,
+) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
@@ -74,6 +78,7 @@ pub fn createDbCtx(queryCallback: *napi.Callback) !*DbCtx {
         .subscriptions = subscriptions.*,
         .ids = &[_]u32{},
         .queryCallback = queryCallback,
+        .modifyCallback = modifyCallback,
         .decompressor = deflate.createDecompressor(),
         .libdeflateBlockState = deflate.initBlockState(305000),
     };

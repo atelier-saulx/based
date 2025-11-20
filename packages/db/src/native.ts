@@ -76,17 +76,30 @@ const native = {
     return x
   },
 
-  start: () => {
-    let x = db.start((xxx) => {
-      // native.cnt++
-      // console.log('im a little derp', new Uint8Array(xxx), x)
-      if (x) {
-        // can be a bit nicer
-        const r = native.getQueryResults(x)
+  getModifyResults(dbCtx: any): ArrayBuffer {
+    // what to return?
+    const x = db.getModifyResults(dbCtx)
+    return x
+  },
 
-        // console.log(native.getQueryResults(x))
-      }
-    })
+  start: () => {
+    let x = db.start(
+      (xxx) => {
+        // native.cnt++
+        // console.log('im a little derp', new Uint8Array(xxx), x)
+        if (x) {
+          // can be a bit nicer
+          const r = native.getQueryResults(x)
+          console.log('QUERY RESULTS')
+
+          // console.log(native.getQueryResults(x))
+        }
+      },
+      (buf) => {
+        const r = native.getModifyResults(x)
+        console.log('MODIFY RESULTS', new Uint8Array(r))
+      },
+    )
     return x
   },
 

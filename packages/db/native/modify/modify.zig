@@ -26,8 +26,6 @@ const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 const getResultSlice = @import("../db/threads.zig").getResultSlice;
 
-extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
-
 //  ----------NAPI-------------
 pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     modifyInternalThread(
@@ -53,22 +51,18 @@ pub fn getModifyResultsInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(1, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     dbCtx.threads.waitForModify();
-    var jsArray: napi.Value = undefined;
-    _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
-    for (dbCtx.threads.threads, 0..) |thread, index| {
-        var arrayBuffer: napi.Value = undefined;
-        _ = napi.c.napi_create_external_arraybuffer(
-            env,
-            thread.modifyResults.ptr,
-            thread.modifyResultsIndex,
-            null,
-            null,
-            &arrayBuffer,
-        );
-        _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
-        thread.*.modifyResultsIndex = 0;
-    }
-    return jsArray;
+    const thread = dbCtx.threads.threads[0];
+    var arrayBuffer: napi.Value = undefined;
+    _ = napi.c.napi_create_external_arraybuffer(
+        env,
+        thread.modifyResults.ptr,
+        thread.modifyResultsIndex,
+        null,
+        null,
+        &arrayBuffer,
+    );
+    thread.*.modifyResultsIndex = 0;
+    return arrayBuffer;
 }
 //  -----------------------
 
@@ -382,10 +376,16 @@ pub fn modifyInternal(
     const newDirtyRanges = ctx.dirtyRanges.values();
 
     // pass id later..
-    const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 666);
+    const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 4);
 
-    _ = memcpy(data.ptr, newDirtyRanges.ptr, data.len);
-    // _ = napi.c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
+    const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
+
+    utils.copy(data, newDirtySlice);
+
+    // std.debug.print("----> x{any} => {any} d {any} - {any} index {d} \n", .{ data, newDirtySlice, data.len, threadCtx.modifyResults, threadCtx.modifyResultsIndex });
+
+    // _ = memcpy(data.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
+    // _ = napi.c.memcpy(data.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     // dirtyRanges[newDirtyRanges.len] = 0.0;
     // writeoutPrevNodeId(&ctx, resCount, ctx.id);
 }
