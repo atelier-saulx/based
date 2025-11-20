@@ -6,7 +6,7 @@ const Condition = std.Thread.Condition;
 const utils = @import("../utils.zig");
 const getQueryThreaded = @import("../query/thread/queryThread.zig").getQueryThreaded;
 const modifyInternal = @import("../modify/modify.zig").modifyInternal;
-
+const selva = @import("../selva.zig").c;
 const Queue = std.array_list.Managed([]u8);
 
 pub const DbThread = struct {
@@ -14,8 +14,8 @@ pub const DbThread = struct {
     id: usize,
     queryResults: []u8,
     lastQueryResultIndex: usize,
-    // decompressor:
-    // subscriptions:
+    decompressor: ?*selva.libdeflate_decompressor,
+    libdeflateBlockState: selva.libdeflate_block_state,
 };
 
 pub const Threads = struct {
@@ -196,14 +196,13 @@ pub const Threads = struct {
         };
 
         for (self.threads, 0..) |*t, id| {
-            // std.debug.print("threadid: {any} \n", .{id});
-            // check if that CTX is ok...
             const threadCtx = try allocator.create(DbThread);
             threadCtx.*.id = id;
-            // threadCtx.*.inProgress = false;
             threadCtx.*.lastQueryResultIndex = 0;
             threadCtx.*.queryResults = try std.heap.raw_c_allocator.alloc(u8, 0);
             threadCtx.*.thread = try Thread.spawn(.{}, worker, .{ self, threadCtx });
+            threadCtx.*.decompressor = selva.libdeflate_alloc_decompressor().?; // never fails
+            threadCtx.*.libdeflateBlockState = selva.libdeflate_block_state_init(305000);
             t.* = threadCtx;
         }
 
