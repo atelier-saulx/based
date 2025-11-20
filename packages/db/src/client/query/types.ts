@@ -1,5 +1,10 @@
-import { LangCode, LangName } from '@based/schema'
-import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
+import type {
+  DbPropDef,
+  LangCode,
+  LangName,
+  PropDef,
+  TypeDef,
+} from '@based/schema'
 import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
@@ -42,7 +47,7 @@ export enum ReferenceSelect {
 export type ReferenceSelectValue = {
   type: ReferenceSelect
   index?: number
-  prop: PropDef | PropDefEdge
+  prop: PropDef
 }
 
 export type ReferenceSelectOperator = '*' | '*?' | number
@@ -76,14 +81,14 @@ enum QueryDefType {
 }
 
 export type EdgeTarget = {
-  ref: PropDef | PropDefEdge | null
+  ref: PropDef | null
 }
 
 export type Target = {
   type: string
   id?: number | void | Promise<number>
   ids?: Uint32Array | void
-  propDef?: PropDef | PropDefEdge
+  propDef?: PropDef
   alias?: QueryByAliasObj
   // This can just instantly be added
   resolvedAlias?: { def: PropDef; value: string }
@@ -100,12 +105,12 @@ export type FilterMetaNow = {
   resolvedByteIndex: number
   offset: number
   ctx: FilterCtx
-  prop: PropDef | PropDefEdge
+  prop: PropDef
 }
 
 export type FilterCondition = {
   buffer: Uint8Array
-  propDef: PropDef | PropDefEdge
+  propDef: PropDef
   subscriptionMeta?: {
     now?: FilterMetaNow[]
   }
@@ -114,7 +119,7 @@ export type FilterCondition = {
 export type QueryDefFilter = {
   size: number
   conditions: Map<number, FilterCondition[]>
-  exists?: { prop: PropDef | PropDefEdge; negate: boolean }[]
+  exists?: { prop: DbPropDef; negate: boolean }[]
   references?: Map<
     number,
     {
@@ -123,7 +128,7 @@ export type QueryDefFilter = {
     }
   >
   fromRef?: PropDef
-  schema?: SchemaTypeDef
+  schema?: TypeDef
   edges?: Map<number, FilterCondition[]>
   or?: QueryDefFilter
   // Make this work
@@ -153,14 +158,14 @@ export type QueryDefSearch =
     }
 
 export type QueryDefSort = {
-  prop: PropDefEdge | PropDef
+  prop: PropDef
   order: 0 | 1
   lang: LangCode
 }
 
 export type Aggregation = {
   type: AggregateType
-  propDef: PropDef | PropDefEdge
+  propDef: DbPropDef
   resultPos: number
   accumulatorPos: number
   isEdge: boolean
@@ -168,7 +173,7 @@ export type Aggregation = {
 
 export type QueryDefAggregation = {
   size: number
-  groupBy?: aggPropDef
+  groupBy?: AggPropDef
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
   option?: aggFnOptions
@@ -176,7 +181,7 @@ export type QueryDefAggregation = {
   totalAccumulatorSize: number
 }
 
-export interface aggPropDef extends PropDef {
+export type AggPropDef = DbPropDef & {
   stepType?: Interval
   stepRange?: number
   tz?: number
@@ -202,7 +207,7 @@ export type QueryDefShared = {
   }
   include: {
     stringFields: Map<string, IncludeField>
-    props: Map<number, { def: PropDef | PropDefEdge; opts?: IncludeOpts }>
+    props: Map<number, { def: PropDef; opts?: IncludeOpts }>
     main: {
       include: MainIncludes
       len: number
@@ -217,14 +222,14 @@ export type QueryDefEdges = {
   type: QueryDefType.Edge
   target: EdgeTarget
   schema: null
-  props: PropDef['edges']
+  props: Record<string, PropDef>
 } & QueryDefShared
 
 export type QueryDefRest = {
   type: QueryDefType.References | QueryDefType.Reference | QueryDefType.Root
   target: Target
-  schema: SchemaTypeDef | null
-  props: SchemaTypeDef['props'] | PropDef['edges']
+  schema: TypeDef | null
+  props: Record<string, PropDef>
 } & QueryDefShared
 
 export type QueryDef = QueryDefEdges | QueryDefRest

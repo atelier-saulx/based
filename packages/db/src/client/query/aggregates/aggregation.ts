@@ -2,15 +2,6 @@ import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
 import {
-  PropDef,
-  UINT32,
-  SchemaPropTree,
-  REFERENCE,
-  REFERENCES,
-  PropDefEdge,
-  isPropDef,
-} from '@based/schema/def'
-import {
   aggregationFieldDoesNotExist,
   validateStepRange,
   edgeNotImplemented,
@@ -22,6 +13,12 @@ import {
 } from '../aggregates/types.js'
 import { QueryBranch } from '../BasedDbQuery.js'
 import { AggregateType } from '@based/protocol/db-read'
+import {
+  typeMap,
+  type DbPropDef,
+  type PropDef,
+  type TypeDef,
+} from '@based/schema'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -31,13 +28,14 @@ export const aggregateToBuffer = (
   if (aggregates.groupBy) {
     aggBuffer[i] = GroupBy.HAS_GROUP
     i += 1
-    aggBuffer[i] = aggregates.groupBy.prop
+    aggBuffer[i] = aggregates.groupBy.id
     i += 1
-    aggBuffer[i] = aggregates.groupBy.typeIndex
+    aggBuffer[i] = aggregates.groupBy.typeEnum
     i += 1
-    writeUint16(aggBuffer, aggregates.groupBy.start, i)
+    // TODO does it only get here for main fields?
+    writeUint16(aggBuffer, aggregates.groupBy.main?.start || 0, i)
     i += 2
-    writeUint16(aggBuffer, aggregates.groupBy.len, i)
+    writeUint16(aggBuffer, aggregates.groupBy.main?.size || 0, i)
     i += 2
     aggBuffer[i] = aggregates.groupBy.stepType || 0
     i += 1
@@ -65,15 +63,15 @@ export const aggregateToBuffer = (
       let startI = i
       aggBuffer[i] = agg.type
       i += 1
-      aggBuffer[i] = agg.propDef.typeIndex
+      aggBuffer[i] = agg.propDef.typeEnum
       i += 1
-      writeUint16(aggBuffer, agg.propDef.start, i)
+      writeUint16(aggBuffer, agg.propDef.main?.start || 0, i)
       i += 2
       writeUint16(aggBuffer, agg.resultPos, i)
       i += 2
       writeUint16(aggBuffer, agg.accumulatorPos, i)
       i += 2
-      aggBuffer[i] = agg.propDef.__isEdge ? 1 : 0
+      aggBuffer[i] = agg.propDef.typeDef.edge ? 1 : 0
       i += 1
       size += i - startI
     }
@@ -101,8 +99,9 @@ export const groupBy = (
 ) => {
   const def = q.def
   const fieldDef = def.schema.props[field]
-  if (!fieldDef) {
+  if (!fieldDef || fieldDef.type === 'object') {
     aggregationFieldDoesNotExist(def, field)
+    return
   }
   const groupByPropHook = fieldDef.hooks?.groupBy
   if (groupByPropHook) {
@@ -159,16 +158,16 @@ export const groupBy = (
 
 const updateAggregateDefs = (
   def: QueryDef,
-  propDef: PropDef | PropDefEdge,
+  propDef: DbPropDef,
   aggType: AggregateType,
 ) => {
   const aggregates = def.aggregate.aggregates
-  if (!aggregates.get(propDef.prop)) {
-    aggregates.set(propDef.prop, [])
+  if (!aggregates.get(propDef.id)) {
+    aggregates.set(propDef.id, [])
     def.aggregate.size += 3 // field + fieldAggSize
   }
 
-  const aggregateField = aggregates.get(propDef.prop)
+  const aggregateField = aggregates.get(propDef.id)
   aggregateField.push({
     type: aggType,
     propDef: propDef,
@@ -198,28 +197,34 @@ const isEdge = (propString) => {
 }
 
 const isReferenceOrReferences = (typeIndex) => {
-  return typeIndex === REFERENCE || typeIndex === REFERENCES
+  return typeIndex === typeMap.reference || typeIndex === typeMap.references
 }
 
 const getPropDefinition = (
   def: QueryDef,
   propName: string,
   type: AggregateType,
-  resolvedPropDef: PropDef | PropDefEdge | undefined,
-): PropDef | PropDefEdge | undefined => {
+  resolvedPropDef: PropDef | undefined,
+): DbPropDef | undefined => {
   if (isCount(propName, type)) {
     return {
-      schema: null,
-      prop: 255,
-      path: [propName],
-      __isPropDef: true,
-      len: 4,
-      start: 0,
-      typeIndex: 1,
-      separate: true,
-      validation: () => true,
-      default: 0,
-    } as PropDef
+      id: 255,
+      typeEnum: 1,
+      main: {
+        start: 0,
+        size: 4,
+      },
+      // schema: null,
+      // prop: 255,
+      // path: [propName],
+      // __isPropDef: true,
+      // len: 4,
+      // start: 0,
+      // typeIndex: 1,
+      // separate: true,
+      // validation: () => true,
+      // default: 0,
+    }
   }
   return resolvedPropDef || def.schema.props[propName]
 }
@@ -233,13 +238,14 @@ const processPropPath = (
   path: string[],
   originalPropName: string,
   type: AggregateType,
-): PropDef | PropDefEdge | undefined | typeof IN_RECURSION => {
-  let t: PropDef | SchemaPropTree = query.def.schema.tree
+): DbPropDef | undefined | typeof IN_RECURSION => {
+  let t: PropDef | TypeDef = query.def.schema
 
   for (let i = 0; i < path.length; i++) {
     const propName = path[i]
 
     if (isEdge(propName)) {
+      // TODO what to do here?
       // @ts-ignore
       const edgePropDef = query.def.target?.propDef?.edges[propName]
       if (edgePropDef) {
@@ -249,14 +255,16 @@ const processPropPath = (
         return undefined
       }
     }
-    if (!t) {
-      return undefined // end
+
+    if ('props' in t) {
+      t = t.props[propName]
     }
-    t = t[propName]
+
     if (!t) {
       return undefined // path nor exist
     }
-    if (isPropDef(t) && isReferenceOrReferences(t.typeIndex)) {
+
+    if ('target' in t) {
       const remainingPath = path.slice(i + 1).join('.')
 
       if (isEdge(remainingPath)) {
@@ -270,7 +278,8 @@ const processPropPath = (
       return IN_RECURSION
     }
   }
-  return isPropDef(t) ? (t as PropDef) : undefined
+
+  return 'typeEnum' in t ? t : undefined
 }
 
 export const addAggregate = (

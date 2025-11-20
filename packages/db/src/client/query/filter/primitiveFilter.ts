@@ -1,13 +1,3 @@
-import {
-  CARDINALITY,
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  REVERSE_SIZE_MAP,
-  REVERSE_TYPE_INDEX_MAP,
-  STRING,
-} from '@based/schema/def'
 import { FilterCondition, QueryDef, QueryDefFilter } from '../types.js'
 import {
   EQUAL,
@@ -21,10 +11,11 @@ import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { createReferenceFilter } from './createReferenceFilter.js'
 import { validateFilter } from '../validation.js'
+import type { DbPropDef } from '@based/schema'
 
 export const primitiveFilter = (
   def: QueryDef,
-  prop: PropDef | PropDefEdge,
+  prop: DbPropDef,
   filter: Filter,
   conditions: QueryDefFilter,
   lang: QueryDef['lang'],
@@ -34,26 +25,20 @@ export const primitiveFilter = (
   }
   let [, ctx, value] = filter
   let parsedCondition: FilterCondition
-  const fieldIndexChar = prop.prop
-  const bufferMap = prop.__isEdge ? conditions.edges : conditions.conditions
+  const fieldIndexChar = prop.id
+  const bufferMap = prop.typeDef.edge ? conditions.edges : conditions.conditions
 
   if (ctx.operation === EXISTS) {
-    if (!prop.separate) {
-      if (prop.typeIndex === STRING) {
+    if (prop.main) {
+      if (prop.type === 'string') {
         ctx.operation = EQUAL
         ctx.type = ctx.type === TYPE_NEGATE ? TYPE_DEFAULT : TYPE_NEGATE
         value = ''
       } else {
-        console.error(
-          'MISSING EXIST / !EXIST FILTER FOR',
-          prop.path,
-          REVERSE_TYPE_INDEX_MAP[prop.typeIndex],
-        )
+        console.error('MISSING EXIST / !EXIST FILTER FOR', prop.path, prop.type)
       }
     } else {
-      if (!conditions.exists) {
-        conditions.exists = []
-      }
+      conditions.exists ??= []
       conditions.exists.push({
         prop: prop,
         negate: filter[1].type === TYPE_NEGATE,
@@ -67,10 +52,10 @@ export const primitiveFilter = (
   if (isArray && value.length === 1) {
     value = value[0]
   }
-  const propSize = REVERSE_SIZE_MAP[prop.typeIndex]
-  if (prop.typeIndex === REFERENCE) {
+  const propSize = prop.main?.size || 0
+  if (prop.type === 'reference') {
     parsedCondition = createReferenceFilter(prop, ctx, value)
-  } else if (prop.typeIndex === REFERENCES) {
+  } else if (prop.type === 'references') {
     if (ctx.operation === EQUAL && !isArray) {
       value = [value]
     }
@@ -81,7 +66,7 @@ export const primitiveFilter = (
       value,
       !isNumerical(ctx.operation),
     )
-  } else if (prop.typeIndex === CARDINALITY) {
+  } else if (prop.type === 'cardinality') {
     parsedCondition = createFixedFilterBuffer(prop, 4, ctx, value, false)
   } else if (propSize) {
     parsedCondition = createFixedFilterBuffer(prop, propSize, ctx, value, false)
@@ -100,6 +85,7 @@ export const primitiveFilter = (
   if ('subscriptionMeta' in parsedCondition) {
     conditions.hasSubMeta = true
   }
+
   arr.push(parsedCondition)
   return size
 }

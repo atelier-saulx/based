@@ -1,4 +1,3 @@
-import type { BasedDbQuery, Operator } from '@based/db'
 import type { Schema } from './schema.js'
 import {
   assert,
@@ -9,6 +8,9 @@ import {
 } from './shared.js'
 import { parseProp, type SchemaProp } from './prop.js'
 import { isHooks } from './hooks.js'
+
+type BasedDbQuery = any
+type Operator = any
 
 type SchemaHooks = {
   create?: (payload: Record<string, any>) => void | Record<string, any>

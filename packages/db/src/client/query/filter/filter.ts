@@ -5,17 +5,6 @@ import {
   ReferenceSelect,
   ReferenceSelectValue,
 } from '../types.js'
-import {
-  isPropDef,
-  SchemaTypeDef,
-  SchemaPropTree,
-  PropDef,
-  ID_FIELD_DEF,
-  TEXT,
-  REFERENCE,
-  REFERENCES,
-  PropDefEdge,
-} from '@based/schema/def'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './types.js'
 import { Filter, FilterAst, IsFilter } from './types.js'

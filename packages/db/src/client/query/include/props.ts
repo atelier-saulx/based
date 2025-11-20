@@ -1,10 +1,4 @@
-import {
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  TEXT,
-} from '@based/schema/def'
+import { getAllProps, type DbPropDef } from '@based/schema'
 import { IncludeField, IncludeOpts, QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (
@@ -14,7 +8,7 @@ export const getAll = (
   const fields: IncludeField[] = []
   for (const key in props) {
     const prop = props[key]
-    if (prop.typeIndex !== REFERENCE && prop.typeIndex !== REFERENCES) {
+    if (prop.type !== 'reference' && prop.type !== 'references') {
       fields.push({ field: prop.path.join('.'), opts })
     }
   }
@@ -29,7 +23,7 @@ export const getAllRefs = (
   const fields: IncludeField[] = []
   for (const key in props) {
     const prop = props[key]
-    if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+    if (prop.type === 'reference' || prop.type === 'references') {
       const refPath = prop.path.join('.') + affix
       fields.push({ field: refPath, opts })
 
@@ -51,7 +45,7 @@ export const includeField = (def: QueryDef, include: IncludeField) => {
       def.type === QueryDefType.References
     ) {
       const fields: IncludeField[] = []
-      if (def.target.propDef.edges) {
+      if ('target' in def.target.propDef && def.target.propDef.edges) {
         for (const edge in def.target.propDef.edges) {
           fields.push({ field: edge, opts })
         }
@@ -75,26 +69,23 @@ export const includeFields = (def: QueryDef, fields: IncludeField[]) => {
 }
 
 export const includeAllProps = (def: QueryDef, opts?: IncludeOpts) => {
-  for (const key in def.props) {
-    const prop = def.props[key]
-    if (prop.typeIndex !== REFERENCE && prop.typeIndex !== REFERENCES) {
-      includeProp(def, prop, opts)
-    }
+  for (const prop of getAllProps(def.schema)) {
+    includeProp(def, prop, opts)
   }
 }
 
 export const includeProp = (
   def: QueryDef,
-  prop: PropDef | PropDefEdge,
+  prop: DbPropDef,
   opts?: IncludeOpts,
 ) => {
-  if (!prop || prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+  if (!prop || prop.type === 'reference' || prop.type === 'references') {
     return false
   }
 
-  if (prop.typeIndex === TEXT) {
-    if (!def.include.props.has(prop.prop)) {
-      def.include.props.set(prop.prop, {
+  if (prop.type === 'text') {
+    if (!def.include.props.has(prop.id)) {
+      def.include.props.set(prop.id, {
         def: prop,
         opts: {
           codes: new Set(),
@@ -105,7 +96,7 @@ export const includeProp = (
       })
     }
 
-    const langs = def.include.props.get(prop.prop).opts
+    const langs = def.include.props.get(prop.id).opts
     if (def.lang.fallback.length > 0) {
       for (const fallback of def.lang.fallback) {
         if (!langs.fallBacks.includes(fallback)) {
@@ -118,14 +109,12 @@ export const includeProp = (
     if (langCode === 0 || langs.codes.size > 1) {
       langs.fallBacks = []
     }
+  } else if (prop.main) {
+    def.include.main.len += prop.main.size
+    def.include.main.include.set(prop.main.start, [0, prop, opts])
+    return true
   } else {
-    if (prop.separate) {
-      def.include.props.set(prop.prop, { def: prop, opts })
-    } else {
-      def.include.main.len += prop.len
-      def.include.main.include.set(prop.start, [0, prop as PropDef, opts])
-      return true
-    }
+    def.include.props.set(prop.id, { def: prop, opts })
   }
   return false
 }

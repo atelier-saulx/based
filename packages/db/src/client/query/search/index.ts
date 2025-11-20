@@ -1,5 +1,4 @@
 import { langCodesMap } from '@based/schema'
-import { STRING, TEXT, VECTOR } from '@based/schema/def'
 import { QueryDefSearch, QueryDef } from '../types.js'
 import { FilterOpts, getVectorFn } from '../filter/types.js'
 import {
@@ -28,7 +27,7 @@ export const vectorSearch = (
   if (!prop) {
     prop = searchDoesNotExist(def, field, true)
   }
-  if (prop.typeIndex !== VECTOR) {
+  if (prop.type !== 'vector') {
     searchIncorrectType(def, prop)
   }
   let size = 17
@@ -36,7 +35,7 @@ export const vectorSearch = (
   size += vec.byteLength
   def.search = {
     size: size,
-    prop: prop.prop,
+    prop: prop.id,
     query: vec,
     isVector: true,
     opts,

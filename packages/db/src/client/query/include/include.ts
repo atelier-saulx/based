@@ -1,7 +1,6 @@
 import { IncludeOpts } from '../types.js'
 import { BranchInclude, QueryBranch } from '../BasedDbQuery.js'
 import { includeField } from './props.js'
-import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { createOrGetEdgeRefQueryDef, createOrGetRefQueryDef } from './utils.js'
 
 export const include = (
@@ -10,10 +9,8 @@ export const include = (
 ) => {
   for (let i = 0; i < fields.length; i++) {
     const f = fields[i]
-    const opts =
-      typeof fields[i + 1] === 'object' && typeof fields[i + 1] !== 'function'
-        ? (fields[i + 1] as IncludeOpts)
-        : undefined
+    const next = fields[i + 1]
+    const opts = typeof next === 'object' ? (next as IncludeOpts) : undefined
 
     if (opts) {
       i++
@@ -24,14 +21,12 @@ export const include = (
     } else if (typeof f === 'function') {
       f((field: string) => {
         if (field[0] === '$') {
-          // @ts-ignore
           const prop = query.def.target?.propDef?.edges[field]
           if (
             prop &&
-            (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
+            (prop.type === 'reference' || prop.type === 'references')
           ) {
             const refDef = createOrGetEdgeRefQueryDef(query.db, query.def, prop)
-            // @ts-ignore
             return new QueryBranch(query.db, refDef)
           }
           throw new Error(
@@ -41,10 +36,9 @@ export const include = (
           const prop = query.def.props[field]
           if (
             prop &&
-            (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
+            (prop.type === 'reference' || prop.type === 'references')
           ) {
             const refDef = createOrGetRefQueryDef(query.db, query.def, prop)
-            // @ts-ignore
             return new QueryBranch(query.db, refDef)
           }
           throw new Error(`No reference or references field named "${field}"`)

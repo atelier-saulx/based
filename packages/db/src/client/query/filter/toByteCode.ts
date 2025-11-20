@@ -9,7 +9,6 @@ import {
   TYPE_DEFAULT,
   TYPE_NEGATE,
 } from './types.js'
-import { REFERENCES } from '@based/schema/prop-types'
 
 const writeConditions = (
   result: Uint8Array,
@@ -63,7 +62,7 @@ export const fillConditionsBuffer = (
 
   if (conditions.references) {
     for (const [refField, refConditions] of conditions.references) {
-      const isReferences = refConditions.select.prop.typeIndex === REFERENCES
+      const isReferences = refConditions.select.prop.type === 'references'
       result[lastWritten] = isReferences ? META_REFERENCES : META_REFERENCE
       lastWritten += 1
       result[lastWritten] = refField
@@ -116,14 +115,10 @@ export const fillConditionsBuffer = (
 
   if (conditions.exists) {
     for (const exists of conditions.exists) {
-      result[lastWritten] = META_EXISTS
-      lastWritten++
-      result[lastWritten] = exists.prop.prop
-      lastWritten++
-      result[lastWritten] = exists.negate ? TYPE_NEGATE : TYPE_DEFAULT
-      lastWritten++
-      result[lastWritten] = exists.prop.typeIndex
-      lastWritten++
+      result[lastWritten++] = META_EXISTS
+      result[lastWritten++] = exists.prop.id
+      result[lastWritten++] = exists.negate ? TYPE_NEGATE : TYPE_DEFAULT
+      result[lastWritten++] = exists.prop.typeEnum
     }
   }
 

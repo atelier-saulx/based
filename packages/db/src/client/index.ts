@@ -1,9 +1,9 @@
-import {} from '@based/schema' // MigrateFns,
-// parse,
-// Schema,
-// StrictSchema,
-// SchemaChecksum,
-
+import {
+  parse,
+  type Schema,
+  type SchemaIn,
+  type SchemaOut,
+} from '@based/schema'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { debugMode } from '../utils.js'
 import { SubStore } from './query/subscription/index.js'
@@ -74,13 +74,13 @@ export class DbClient extends DbShared {
   }
 
   async setSchema(
-    schema: Schema,
-    transformFns?: MigrateFns,
-  ): Promise<SchemaChecksum> {
+    schema: SchemaIn,
+    transformFns?: SchemaIn['migrations'][0]['migrate'],
+  ): Promise<SchemaOut['hash']> {
     const strictSchema = parse(schema).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
-      strictSchema as StrictSchema,
+      strictSchema as Schema<true>,
       transformFns,
     )
     if (this.stopped) {

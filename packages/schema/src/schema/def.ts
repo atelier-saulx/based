@@ -1,14 +1,15 @@
+import type { SchemaEnum } from './enum.js'
 import type { SchemaObject } from './object.js'
 import type { SchemaProp } from './prop.js'
 import type { SchemaReference } from './reference.js'
 import type { SchemaReferences } from './references.js'
-import type { Schema } from './schema.js'
+import type { SchemaOut } from './schema.js'
 import type { SchemaString } from './string.js'
 import type { SchemaProps, SchemaType } from './type.js'
 import type { SchemaVector } from './vector.js'
 
 type BaseProp = {
-  root: TypeDef
+  typeDef: TypeDef
   path: string[]
 }
 
@@ -21,24 +22,28 @@ type DbProp = BaseProp & {
   }
 }
 
+type EnumPropDef = DbProp &
+  SchemaEnum<true> & {
+    enumMap: Record<string, number>
+  }
+
 type RefLike = SchemaReference<true> | SchemaReferences<true>
-type Obj = SchemaObject<true>
 
-type PropDefRef = RefLike &
-  DbProp & {
-    target: PropDef
-  }
+type PropDefRest = Exclude<
+  SchemaProp<true>,
+  RefLike | SchemaObject<true> | SchemaEnum<true>
+> &
+  DbProp
 
-type PropDefObj = Obj &
-  BaseProp & {
-    props: Record<string, PropDef>
-  }
-
-type PropDefRest = Exclude<Exclude<SchemaProp<true>, RefLike>, Obj> & DbProp
-type PropDef = PropDefRef | PropDefObj | PropDefRest
-
-type TypeDef = Omit<SchemaType<true>, 'props'> & {
+export type ObjPropDef = SchemaObject<true> &
+  BaseProp & { props: Record<string, PropDef> }
+export type RefPropDef = RefLike &
+  DbProp & { target: PropDef; edges?: Record<string, PropDef> }
+export type DbPropDef = RefPropDef | PropDefRest | EnumPropDef
+export type PropDef = ObjPropDef | DbPropDef
+export type TypeDef = Omit<SchemaType<true>, 'props'> & {
   id: number
+  name: string
   size: number
   props: Record<string, PropDef>
   edge?: true
@@ -102,12 +107,12 @@ const propMainSizes: Partial<
   vector: ({ size }: SchemaVector) => size * 4,
 }
 
-export const schemaToDefs = (schema: Schema<true>): Defs => {
+export const schemaToDefs = (schema: SchemaOut): Defs => {
   const defs: Defs = {}
   let idCnt = 0
 
   for (const type in schema.types) {
-    defs[type] = parseType(schema.types[type])
+    defs[type] = parseType(type, schema.types[type])
   }
 
   for (const type in defs) {
@@ -121,19 +126,20 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
 
   return defs
 
-  function parseType(typeSchema: SchemaType<true>) {
+  function parseType(name: string, typeSchema: SchemaType<true>) {
     const typeProps = {}
     let propIdCnt = 1
 
-    const root = {
+    const typeDef = {
       id: idCnt++,
+      name,
       size: 0,
       ...typeSchema,
     } as TypeDef
 
-    root.props = parseProps(typeSchema.props, [], typeProps)
+    typeDef.props = parseProps(typeSchema.props, [], typeProps)
 
-    return root
+    return typeDef
 
     function parseProps(
       props: Record<string, SchemaProp<true>>,
@@ -153,7 +159,7 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
           propDef = {
             type: propType,
             path: propPath,
-            root,
+            typeDef,
             ...rest,
             props: parseProps(propSchema.props, propPath, {}),
           }
@@ -162,17 +168,23 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
             id: mainSize ? 0 : propIdCnt++,
             type: propType,
             typeEnum: propTypeEnums[propType],
-            root,
+            typeDef,
             path: propPath,
             ...rest,
           } as PropDef
-        }
 
-        if (mainSize) {
-          root.size += mainSize
-          ;(propDef as PropDefRest).main = {
-            start: mainSize && root.size,
-            size: mainSize,
+          if ('enum' in propDef) {
+            propDef.enumMap = Object.fromEntries(
+              propDef.enum.map((val, index) => [val, index + 1]),
+            )
+          }
+
+          if (mainSize) {
+            typeDef.size += mainSize
+            ;(propDef as PropDefRest).main = {
+              start: mainSize && typeDef.size,
+              size: mainSize,
+            }
           }
         }
 
@@ -185,18 +197,14 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
     }
   }
 
-  function parseRefLike(type: string, prop: string, refDef: PropDefRef) {
+  function parseRefLike(type: string, prop: string, refDef: RefPropDef) {
     const refSchema = 'items' in refDef ? refDef.items : refDef
     const refType = refSchema.ref
-    const targetDef = defs[refType].props[refSchema.prop]
+    const target = defs[refType].props[refSchema.prop] as RefPropDef
 
-    // add target props
-    refDef.target = targetDef
+    refDef.target = target
 
-    if (type > refType) {
-      // we'll handle the edges from the other side
-      return
-    }
+    if (type > refType) return
 
     let edges: SchemaProps<true> | undefined
     for (const key in refSchema) {
@@ -206,26 +214,21 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
       }
     }
 
-    if (!edges) {
-      return
-    }
+    if (!edges) return
 
-    const targetSchema = 'items' in targetDef ? targetDef.items : targetDef
-    const edgeType = parseType({ props: edges })
+    const targetSchema = 'items' in target ? target.items : target
+    const edgeTypeName = `$${type}_${prop}`
+    const edgeType = parseType(edgeTypeName, { props: edges })
 
     for (const key in edges) {
       const edgeProp = edgeType.props[key]
-      // // add dot path on both types
-      // defs[type].props[`${prop}.${key}`] = edgeProp
-      // defs[refType].props[`${targetDef.path.join('.')}.${key}`] = edgeProp
-
-      // add ref on both sides
       refSchema[key] = edgeProp
       targetSchema[key] = edgeProp
+      refDef.edges = edgeType.props
+      target.edges = edgeType.props
     }
 
-    // only need to store this on one side
-    defs[`$${type}_${prop}`] = edgeType
+    defs[edgeTypeName] = edgeType
     edgeType.edge = true
   }
 }

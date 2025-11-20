@@ -11,8 +11,8 @@ import {
   DECODER,
 } from '@based/utils'
 import { stringFormats } from './schema/string.js'
-import type { Schema } from './schema/schema.js'
 import { reverseTypeMap, typeMap } from './enums.js'
+import { Schema } from './schema/schema.js'
 
 const UINT8 = 245
 const FALSE = 246

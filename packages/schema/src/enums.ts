@@ -41,3 +41,5 @@ export const typeMap = {
 } as const
 
 export const reverseTypeMap = reverseMap(typeMap)
+export type Type = keyof typeof typeMap
+export type TypeEnum = keyof typeof reverseTypeMap

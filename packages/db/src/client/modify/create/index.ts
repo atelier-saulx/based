@@ -1,4 +1,3 @@
-import { SchemaTypeDef, TEXT } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeObject } from '../props/object.js'
 import { reserve } from '../resize.js'
@@ -23,7 +22,12 @@ import {
   SWITCH_ID_CREATE_RING,
   SWITCH_ID_CREATE_UNSAFE,
 } from '../types.js'
-import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
+import {
+  inverseLangMap,
+  LangCode,
+  langCodesMap,
+  type TypeDef,
+} from '@based/schema'
 import { writeSeparate } from '../props/separate.js'
 import { writeString } from '../props/string.js'
 import { writeU32, writeU8 } from '../uint.js'
@@ -36,13 +40,12 @@ const writeDefaults = (ctx: Ctx) => {
   }
   if (ctx.defaults !== ctx.schema.separateDefaults.props.size) {
     for (const def of ctx.schema.separateDefaults.props.values()) {
-      const type = def.typeIndex
       if (ctx.schema.separateDefaults.bufferTmp[def.prop] === 0) {
         writeSeparate(ctx, def, def.default)
         continue
       }
 
-      if (type !== TEXT) {
+      if (def.type !== 'text') {
         continue
       }
 
@@ -143,7 +146,7 @@ const writeCreateTs = (ctx: Ctx, payload: any) => {
 
 export const writeCreate = (
   ctx: Ctx,
-  schema: SchemaTypeDef,
+  schema: TypeDef,
   payload: any,
   opts: ModifyOpts,
 ) => {

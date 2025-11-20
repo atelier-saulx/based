@@ -5,10 +5,12 @@ import {
   isFunction,
   isRecord,
   isString,
+  type RequiredIfStrict,
 } from './shared.js'
 import { parseType, type SchemaType } from './type.js'
 import { langCodesMap, type LangName } from './lang.js'
 import type { SchemaProp } from './prop.js'
+import { hash } from '@based/hash'
 
 type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 type SchemaLocales = Partial<
@@ -36,7 +38,10 @@ export type Schema<strict = false> = {
   defaultTimezone?: string
   locales?: SchemaLocales
   migrations?: Migrations
-}
+} & RequiredIfStrict<{ hash: number }, strict>
+
+export type SchemaIn = Schema<false>
+export type SchemaOut = Schema<true>
 
 const isMigrations = (v: unknown): v is Migrations =>
   isRecord(v) &&
@@ -109,7 +114,7 @@ const parseRefs = (
   }
 }
 
-export const parseSchema = (v: unknown): Schema<true> => {
+export const parseSchema = (v: unknown): SchemaOut => {
   assert(isRecord(v))
   assert(isRecord(v.types))
   assert(v.version === undefined || isString(v.version))
@@ -129,11 +134,16 @@ export const parseSchema = (v: unknown): Schema<true> => {
     }
   }
 
-  return deleteUndefined({
+  const clean = deleteUndefined({
     version: v.version,
     locales: v.locales,
     defaultTimezone: v.defaultTimezone,
     migrations: v.migrations,
     types,
   })
+
+  return {
+    ...clean,
+    hash: hash(clean),
+  }
 }
