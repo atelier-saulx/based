@@ -4,7 +4,7 @@ import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
 import NAMES from '../shared/names.js'
-import { makeTreeKey, VerifBlock } from '../../src/server/tree.js'
+import { makeTreeKey, Block } from '../../src/server/blockMap.js'
 
 function makeEmployee(i: number) {
   const name = NAMES[i % NAMES.length]
@@ -74,11 +74,11 @@ await test('noLoadDumps', async (t) => {
   t.after(() => db2.destroy())
 
   const getBlock1 = () =>
-    db2.server.verifTree.getBlock(
+    db2.server.blockMap.getBlock(
       makeTreeKey(db2.client.schema.types['employee'].id, 1),
     )
   const getBlock2 = () =>
-    db2.server.verifTree.getBlock(
+    db2.server.blockMap.getBlock(
       makeTreeKey(db2.client.schema.types['employee'].id, 1200),
     )
 
@@ -115,8 +115,8 @@ await test('noLoadDumps', async (t) => {
   deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 511)
   deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
-  // for (const type of db2.server.verifTree.types()) {
-  //   for (const block of db2.server.verifTree.blocks(type)) {
+  // for (const type of db2.server.blockMap.types()) {
+  //   for (const block of db2.server.blockMap.blocks(type)) {
   //     console.log(block)
   //   }
   // }
@@ -176,8 +176,8 @@ await test('references', async (t) => {
   }
 
   await reload()
-  for (const type of db.server.verifTree.types()) {
-    for (const block of db.server.verifTree.blocks(type)) {
+  for (const type of db.server.blockMap.types()) {
+    for (const block of db.server.blockMap.blocks(type)) {
       deepEqual(block.inmem, false)
     }
   }
@@ -186,9 +186,9 @@ await test('references', async (t) => {
   // the same hash as it originally had when the type was fully loaded.
   // There is no assert for that directly because loadBlock would throw.
   const p = db.server.loadBlock('employee', 1)
-  let block1: VerifBlock
-  for (const type of db.server.verifTree.types()) {
-    for (const block of db.server.verifTree.blocks(type)) {
+  let block1: Block
+  for (const type of db.server.blockMap.types()) {
+    for (const block of db.server.blockMap.blocks(type)) {
       if (block.key === 8589934593) {
         assert(block.loadPromise)
         deepEqual(block.inmem, false)

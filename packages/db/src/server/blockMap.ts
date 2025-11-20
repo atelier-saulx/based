@@ -1,3 +1,4 @@
+import {DbServer} from '../index.js'
 import createDbHash from './dbHash.js'
 import { SchemaTypeDef } from '@based/schema/def'
 
@@ -31,7 +32,7 @@ const HASH_SIZE = 16
  * Block state.
  * Type and a node id range.
  */
-export type VerifBlock = {
+export type Block = {
   /**
    * key = typeId + startNodeId
    * Made with makeTreeKey(t, i) and can be destructured with destructureTreeKey(k).
@@ -48,6 +49,10 @@ export type VerifBlock = {
    */
   inmem: boolean
   /**
+   * The block needs to be saved.
+   */
+  dirty: boolean
+  /**
    * If set, the block is being loaded and it can be awaited with this promise.
    */
   loadPromise: null | Promise<void>
@@ -56,25 +61,25 @@ export type VerifBlock = {
 /**
  * Container for a whole type.
  */
-type VerifType = {
+type Type = {
   typeId: number /*!< typeId as in the schema. */
   blockCapacity: number /*!< Max number of nodes per block. */
-  blocks: VerifBlock[]
+  blocks: Block[]
 }
 
 /**
  * An object that keeps track of all blocks of nodes existing in the database.
  */
-export class VerifTree {
-  #types: { [key: number]: VerifType }
+export class BlockMap {
+  #types: { [key: number]: Type }
   #h = createDbHash()
 
   constructor(schemaTypesParsed: Record<string, SchemaTypeDef>) {
-    this.#types = VerifTree.#makeTypes(schemaTypesParsed)
+    this.#types = BlockMap.#makeTypes(schemaTypesParsed)
   }
 
   static #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): {
-    [key: number]: VerifType
+    [key: number]: Type
   } {
     return Object.preventExtensions(
       Object.keys(schemaTypesParsed)
@@ -84,9 +89,9 @@ export class VerifTree {
         )
         .reduce(
           (
-            obj: { [key: number]: VerifType },
+            obj: { [key: number]: Type },
             key: string,
-          ): { [key: number]: VerifType } => {
+          ): { [key: number]: Type } => {
             const def = schemaTypesParsed[key]
             const typeId = def.id
             obj[typeId] = {
@@ -107,20 +112,48 @@ export class VerifTree {
     }
   }
 
-  *blocks(type: VerifType) {
+  *blocks(type: Type) {
     const { blocks } = type
     for (const block of blocks) {
       yield block
     }
   }
 
-  foreachBlock(cb: (block: VerifBlock) => void): void {
+  updateDirtyBlocks(dirtyBlocks: Float64Array) {
+    for (const key of dirtyBlocks) {
+      this.getBlock(key).dirty = true
+    }
+  }
+
+  foreachBlock(cb: (block: Block) => void): void {
     for (const k of Object.keys(this.#types)) {
       const { blocks } = this.#types[k]
       for (let block of blocks) {
         if (block) cb(block)
       }
     }
+  }
+
+  get isDirty() {
+    let dirty = 0
+    this.foreachBlock((block) => dirty |= ~~block.dirty)
+    return !!dirty
+  }
+
+  /**
+   * Execute cb() for each dirty block.
+   * A dirty block is one that is changed in memory but not yet persisted in the
+   * file system.
+   */
+  foreachDirtyBlock(cb: (typeId: number, start: number, end: number, block: Block) => void) {
+    this.foreachBlock((block) => {
+      if (block.dirty) {
+        const [typeId, start] = destructureTreeKey(block.key)
+        const t = this.#types[typeId]
+        const end = start + t.blockCapacity - 1
+        cb(typeId, start, end, block)
+      }
+    })
   }
 
   get hash() {
@@ -143,6 +176,7 @@ export class VerifTree {
         key,
         hash,
         inmem,
+        dirty: false,
         loadPromise: null,
       }))
     block.hash = hash
@@ -173,19 +207,19 @@ export class VerifTree {
     return type.blocks[blockI]
   }
 
-  getBlockFile(block: VerifBlock) {
+  getBlockFile(block: Block) {
     const [typeId, start] = destructureTreeKey(block.key)
     const type = this.#types[typeId]
     if (!type) {
       throw new Error(`type ${typeId} not found`)
     }
     const end = start + type.blockCapacity - 1
-    return VerifTree.blockSdbFile(typeId, start, end)
+    return BlockMap.blockSdbFile(typeId, start, end)
   }
 
   updateTypes(schemaTypesParsed: Record<string, SchemaTypeDef>) {
     const oldTypes = this.#types
-    const newTypes = VerifTree.#makeTypes(schemaTypesParsed)
+    const newTypes = BlockMap.#makeTypes(schemaTypesParsed)
 
     for (const k of Object.keys(oldTypes)) {
       const oldType = oldTypes[k]

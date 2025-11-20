@@ -2,8 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { throws } from './shared/assert.js'
-import { wait } from '@based/utils'
-import {makeTreeKey} from '../src/server/tree.js'
+import { makeTreeKey } from '../src/server/blockMap.js'
 
 await test('partial', async (t) => {
   const db = new BasedDb({
@@ -70,7 +69,7 @@ await test('partial', async (t) => {
       { id: i + 8, extId: 100 },
       { id: i + 9, extId: 100 },
     ])
-    //db2.server.verifTree.foreachBlock((block) => console.log(block))
+    //db2.server.blockMap.foreachBlock((block) => console.log(block))
 
     await db2.server.unloadBlock('event', i)
     const events3 = await db2
@@ -153,7 +152,7 @@ await test('simple load/unload', async (t) => {
   await db2.start({ noLoadDumps: true })
   t.after(() => db2.destroy())
 
-  db2.server.verifTree.foreachBlock((block) => deepEqual(block.inmem, false))
+  db2.server.blockMap.foreachBlock((block) => deepEqual(block.inmem, false))
 
   await db2.server.loadBlock('product', 1)
 
@@ -167,10 +166,10 @@ await test('simple load/unload', async (t) => {
   deepEqual(d1.length, 100_000, 'first query')
 
   await db2.server.unloadBlock('product', 1)
-  db2.server.verifTree.foreachBlock((block) => deepEqual(block.inmem, false))
+  db2.server.blockMap.foreachBlock((block) => deepEqual(block.inmem, false))
 
   await db2.server.loadBlock('product', 100_001)
-  deepEqual(db.server.verifTree.getBlock(makeTreeKey(db.server.schemaTypesParsed['product'].id, 100_001)).inmem, true)
+  deepEqual(db.server.blockMap.getBlock(makeTreeKey(db.server.schemaTypesParsed['product'].id, 100_001)).inmem, true)
 
   const d2 = await db2
     .query('product')

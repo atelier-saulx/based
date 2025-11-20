@@ -64,7 +64,7 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
     server.modify(buf)
   }
 
-  server.verifTree.updateTypes(server.schemaTypesParsed)
+  server.blockMap.updateTypes(server.schemaTypesParsed)
   if (server.fileSystemPath) {
     saveSync(server, { skipDirtyCheck: true })
   }

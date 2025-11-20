@@ -1,8 +1,8 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { bufToHex, equals, readInt32 } from '@based/utils'
-import { VerifTree, destructureTreeKey, makeTreeKey } from './tree.js'
+import { equals, readInt32 } from '@based/utils'
+import { BlockMap, makeTreeKey } from './blockMap.js'
 import { DbServer } from './index.js'
 import { IoJobSave } from './workers/io_worker_types.js'
 
@@ -19,20 +19,20 @@ export function saveBlock(
 ): void {
   const hash = new Uint8Array(16)
   const mtKey = makeTreeKey(typeId, start)
-  const file = VerifTree.blockSdbFile(typeId, start, end)
+  const file = BlockMap.blockSdbFile(typeId, start, end)
   const path = join(db.fileSystemPath, file)
   const err = native.saveBlock(path, typeId, start, db.dbCtxExternal, hash)
   if (err == SELVA_ENOENT) {
     // Generally we don't nor can't remove blocks from verifTree before we
     // attempt to access them.
-    db.verifTree.remove(mtKey)
+    db.blockMap.remove(mtKey)
   } else if (err) {
     db.emit(
       'error',
       `Save ${typeId}:${start}-${end} failed: ${native.selvaStrerror(err)}`,
     )
   } else {
-    db.verifTree.update(mtKey, hash)
+    db.blockMap.update(mtKey, hash)
   }
 }
 
@@ -54,14 +54,14 @@ export async function saveBlocks(
     if (err === SELVA_ENOENT) {
       // Generally we don't nor can't remove blocks from verifTree before we
       // attempt to access them.
-      db.verifTree.remove(key)
+      db.blockMap.remove(key)
     } else if (err) {
       db.emit(
         'error',
         `Save ${block.typeId}:${block.start} failed: ${native.selvaStrerror(err)}`,
       )
     } else {
-      db.verifTree.update(key, hash)
+      db.blockMap.update(key, hash)
     }
   }
 }
@@ -75,7 +75,7 @@ export async function loadBlock(
   start: number,
 ) {
   const key = makeTreeKey(def.id, start)
-  const block = db.verifTree.getBlock(key)
+  const block = db.blockMap.getBlock(key)
   if (!block) {
     throw new Error(`No such block: ${key}`)
   }
@@ -85,7 +85,7 @@ export async function loadBlock(
   }
 
   const prevHash = block.hash
-  const filename = db.verifTree.getBlockFile(block)
+  const filename = db.blockMap.getBlockFile(block)
 
   const p = db.ioWorker.loadBlock(join(db.fileSystemPath, filename))
   block.loadPromise = p
@@ -104,7 +104,7 @@ export async function loadBlock(
   )
   if (res) {
     const key = makeTreeKey(def.id, start)
-    db.verifTree.update(key, hash)
+    db.blockMap.update(key, hash)
     if (!equals(prevHash, hash)) {
       throw new Error('Block hash mismatch')
     }
@@ -122,22 +122,22 @@ export async function unloadBlock(
   const typeId = def.id
   const end = start + def.blockCapacity - 1
   const key = makeTreeKey(typeId, start)
-  const block = db.verifTree.getBlock(key)
+  const block = db.blockMap.getBlock(key)
   if (!block) {
     throw new Error(`No such block: ${key}`)
   }
 
   const filepath = join(
     db.fileSystemPath,
-    VerifTree.blockSdbFile(typeId, start, end),
+    BlockMap.blockSdbFile(typeId, start, end),
   )
   try {
     const hash = await db.ioWorker.unloadBlock(filepath, typeId, start)
     native.delBlock(db.dbCtxExternal, typeId, start)
-    db.verifTree.update(key, hash, false)
+    db.blockMap.update(key, hash, false)
   } catch (e) {
     // TODO Proper logging
-    // TODO SELVA_ENOENT => db.verifTree.remove(key) ??
+    // TODO SELVA_ENOENT => db.blockMap.remove(key) ??
     console.error(`Save ${typeId}:${start}-${end} failed`)
     console.error(e)
   }
@@ -169,28 +169,5 @@ export function foreachBlock(
     if (res || includeEmptyBlocks) {
       cb(start, end, hash)
     }
-  }
-}
-
-/**
- * Execute cb() for each dirty block.
- * A dirty block is one that is changed in memory but not yet persisted in the
- * file system.
- */
-export function foreachDirtyBlock(
-  db: DbServer,
-  cb: (mtKey: number, typeId: number, start: number, end: number) => void,
-) {
-  const typeIdMap: { [key: number]: SchemaTypeDef } = {}
-  for (const typeName in db.schemaTypesParsed) {
-    const type = db.schemaTypesParsed[typeName]
-    const typeId = type.id
-    typeIdMap[typeId] = type
-  }
-
-  for (const mtKey of db.dirtyRanges) {
-    const [typeId, start] = destructureTreeKey(mtKey)
-    const end = start + typeIdMap[typeId].blockCapacity - 1
-    cb(mtKey, typeId, start, end)
   }
 }
