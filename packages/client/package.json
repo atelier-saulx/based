@@ -54,7 +54,7 @@
   },
   "devDependencies": {
     "@based/client-old": "npm:@based/client@6.11.2",
-    "@based/db": "0.2.5",
+    "@based/db": "0.2.6",
     "@based/functions": "3.4.5",
     "ava": "5.3.1",
     "cross-fetch": "4.0.0",

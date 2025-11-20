@@ -46,7 +46,7 @@
   "dependencies": {
     "@based/bundle": "^0.4.15",
     "@based/client": "8.3.5",
-    "@based/db": "0.2.5",
+    "@based/db": "0.2.6",
     "@based/functions": "3.4.5",
     "@based/hash": "1.1.0",
     "@based/i18n": "^0.3.1",
