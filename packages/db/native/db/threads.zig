@@ -58,6 +58,7 @@ pub const DbThread = struct {
     modifyResultsIndex: usize,
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
+    pendingModifies: usize,
 };
 
 pub const Threads = struct {
@@ -148,8 +149,13 @@ pub const Threads = struct {
         } else {
             try self.modifyQueue.append(modifyBuffer);
             self.pendingModifies += 1;
+
+            for (self.threads) |thread| {
+                thread.*.pendingModifies += 1;
+            }
+
             // std.debug.print("stage modify! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
-            self.wakeup.signal();
+            self.wakeup.broadcast();
         }
     }
 
@@ -157,27 +163,31 @@ pub const Threads = struct {
         while (true) {
             var queryBuf: ?[]u8 = null;
             var modifyBuf: ?[]u8 = null;
+            var modIndex: usize = 0;
 
             {
                 self.mutex.lock();
-                defer self.mutex.unlock();
 
-                while (true) {
-                    if (self.shutdown) return;
+                if (self.shutdown) {
+                    self.mutex.unlock();
+                    return;
+                }
 
-                    // if modify is active dont do this
-                    if (self.queryQueue.items.len > 0) {
-                        queryBuf = self.queryQueue.swapRemove(0);
-                        break;
-                    }
-
-                    if (self.modifyQueue.items.len > 0) {
-                        modifyBuf = self.modifyQueue.items[0];
-                        break;
-                    }
-
+                // if modify is active dont do this
+                if (self.queryQueue.items.len > 0) {
+                    // std.debug.print("    QUERY DO {any} {any} \n", .{ threadCtx.id, self.queryQueue.items.len });
+                    queryBuf = self.queryQueue.swapRemove(0);
+                } else if (self.modifyQueue.items.len > 0 and threadCtx.pendingModifies > 0) {
+                    // store last handled
+                    // std.debug.print("    MOD DO {any} {any} \n", .{ threadCtx.id, self.modifyQueue.items.len });
+                    modifyBuf = self.modifyQueue.items[0];
+                    modIndex = self.modifyQueue.items.len;
+                } else {
+                    // std.debug.print("    SLEEP {any} \n", .{threadCtx.id});
                     self.wakeup.wait(&self.mutex);
                 }
+
+                self.mutex.unlock();
             }
 
             if (queryBuf) |q| {
@@ -190,7 +200,7 @@ pub const Threads = struct {
 
                     // prob want to call with the call thing
 
-                    std.debug.print("    QUERY DONE\n", .{});
+                    // std.debug.print("    QUERY DONE\n", .{});
                     self.queryDone.signal();
                     self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
 
@@ -199,6 +209,9 @@ pub const Threads = struct {
                         self.modifyQueue = self.nextModifyQueue;
                         self.nextModifyQueue = prevModifyQueue;
                         self.pendingModifies = self.modifyQueue.items.len;
+                        for (self.threads) |thread| {
+                            thread.*.pendingModifies = self.modifyQueue.items.len;
+                        }
                         self.wakeup.broadcast();
                     }
                 }
@@ -217,27 +230,75 @@ pub const Threads = struct {
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
+                    threadCtx.pendingModifies -= 1;
 
+                    // this is slightly different
                     if (self.pendingModifies == 0) {
-                        // std.debug.print("mod done \n", .{});
+                        var bla = false;
+                        for (self.threads) |thread| {
+                            if (thread.pendingModifies != 0) {
+                                bla = true;
+                                break;
+                            }
+                        }
 
-                        // prob want to call with the call thing
-                        // just use the bridge with id to select the correct stuff
-                        std.debug.print("    MOD DONE\n", .{});
+                        if (!bla) {
+                            // std.debug.print("mod done \n", .{});
 
-                        self.modifyDone.signal();
-                        self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+                            // prob want to call with the call thing
+                            // just use the bridge with id to select the correct stuff
+                            // std.debug.print("    MOD DONE\n", .{});
 
-                        if (self.nextQueryQueue.items.len > 0) {
-                            const prevQueryQueue = self.queryQueue;
-                            self.queryQueue = self.nextQueryQueue;
-                            self.nextQueryQueue = prevQueryQueue;
-                            self.pendingQueries = self.queryQueue.items.len;
-                            self.wakeup.broadcast();
+                            self.modifyDone.signal();
+                            self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+                            if (self.nextQueryQueue.items.len > 0) {
+                                const prevQueryQueue = self.queryQueue;
+                                self.queryQueue = self.nextQueryQueue;
+                                self.nextQueryQueue = prevQueryQueue;
+                                self.pendingQueries = self.queryQueue.items.len;
+                                self.wakeup.broadcast();
+                            }
                         }
                     }
                     self.mutex.unlock();
                 } else {
+                    self.mutex.lock();
+                    threadCtx.pendingModifies -= 1;
+                    if (self.pendingModifies == 0) {
+                        var bla = false;
+                        for (self.threads) |thread| {
+                            if (thread.pendingModifies != 0) {
+                                bla = true;
+                                break;
+                            }
+                        }
+
+                        if (!bla) {
+                            // std.debug.print("mod done \n", .{});
+
+                            // prob want to call with the call thing
+                            // just use the bridge with id to select the correct stuff
+                            // std.debug.print("    MOD DONE\n", .{});
+
+                            self.modifyDone.signal();
+                            self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+                            if (self.nextQueryQueue.items.len > 0) {
+                                const prevQueryQueue = self.queryQueue;
+                                self.queryQueue = self.nextQueryQueue;
+                                self.nextQueryQueue = prevQueryQueue;
+                                self.pendingQueries = self.queryQueue.items.len;
+                                self.wakeup.broadcast();
+                            }
+                        }
+                    }
+                    self.mutex.unlock();
+
+                    // self.mutex.lock();
+
+                    // threadCtx.modIndex =
+                    // self.pendingModifies == 0
+                    // self.mutex.unlock();
+
                     // add comtime and check for SUBS
                 }
             }
@@ -281,6 +342,7 @@ pub const Threads = struct {
             threadCtx.*.thread = try Thread.spawn(.{}, worker, .{ self, threadCtx });
             threadCtx.*.decompressor = deflate.createDecompressor();
             threadCtx.*.libdeflateBlockState = deflate.initBlockState(305000);
+            threadCtx.*.pendingModifies = 0;
             t.* = threadCtx;
         }
 

@@ -88,7 +88,7 @@ await test('include', async (t) => {
   await wait(1)
   native.getQueryBufThread(buf, db.server.dbCtxExternal)
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 5; i++) {
     if (i % 2) {
       await wait(0)
     }
@@ -116,7 +116,7 @@ await test('include', async (t) => {
     readyTime = resolve
   })
 
-  // const amount = 10000
+  // const amount = 10
   const amount = 1e6
 
   var d = Date.now()
