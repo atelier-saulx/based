@@ -196,7 +196,7 @@ await test('reference changes', async (t) => {
   )
   await db.drain()
   let dirties = 0
-  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(() => dirties++)
   equal(
     dirties,
     1,
@@ -209,7 +209,7 @@ await test('reference changes', async (t) => {
   })
   await db.drain()
   dirties = 0
-  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(() => dirties++)
   equal(
     dirties,
     2,
@@ -227,7 +227,7 @@ await test('reference changes', async (t) => {
   })
   await db.drain()
   dirties = 0
-  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(() => dirties++)
   equal(dirties, 1, 'creating docs makes the range dirty')
   await db.save()
   equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
@@ -238,7 +238,7 @@ await test('reference changes', async (t) => {
 
   await db.drain()
   dirties = 0
-  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(() => dirties++)
   equal(dirties, 2, 'Linking a user to doc makes both dirty')
   await db.save()
   equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
@@ -247,7 +247,7 @@ await test('reference changes', async (t) => {
   db.update('doc', doc3, { creator: users[2] })
   await db.drain()
   dirties = 0
-  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(() => dirties++)
   equal(dirties, 2, 'Linking a doc to user makes both dirty')
   await db.save()
   equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')

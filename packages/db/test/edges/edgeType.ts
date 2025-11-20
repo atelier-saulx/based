@@ -57,7 +57,7 @@ await test('single reference', async (t) => {
     [2, 3, 4],
   )
   let dirties = 0
-  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(() => dirties++)
   deepEqual(dirties, 3)
 })
 

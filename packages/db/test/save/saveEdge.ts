@@ -42,7 +42,7 @@ await test('save edge', async (t) => {
   })
 
   const A = new Set()
-  db.server.blockMap.foreachDirtyBlock(db.server, (k) => A.add(k))
+  db.server.blockMap.foreachDirtyBlock((k) => A.add(k))
   deepEqual(A.symmetricDifference(new Set([makeTreeKey(2, 1), makeTreeKey(3, 1)])).size, 0)
 
   deepEqual(await db.query('user', user2).include('**').get(), {

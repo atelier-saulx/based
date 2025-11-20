@@ -145,21 +145,12 @@ export class BlockMap {
    * A dirty block is one that is changed in memory but not yet persisted in the
    * file system.
    */
-  foreachDirtyBlock(
-    db: DbServer,
-    cb: (typeId: number, start: number, end: number, block: Block) => void,
-  ) {
-    const typeIdMap: { [key: number]: SchemaTypeDef } = {}
-    for (const typeName in db.schemaTypesParsed) {
-      const type = db.schemaTypesParsed[typeName]
-      const typeId = type.id
-      typeIdMap[typeId] = type
-    }
-
+  foreachDirtyBlock(cb: (typeId: number, start: number, end: number, block: Block) => void) {
     this.foreachBlock((block) => {
       if (block.dirty) {
         const [typeId, start] = destructureTreeKey(block.key)
-        const end = start + typeIdMap[typeId].blockCapacity - 1
+        const t = this.#types[typeId]
+        const end = start + t.blockCapacity - 1
         cb(typeId, start, end, block)
       }
     })
