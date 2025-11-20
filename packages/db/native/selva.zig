@@ -1,4 +1,3 @@
-// advanced zig ⚡️
 pub const c = @cImport({
     @cDefine("__zig", "1");
 
@@ -32,19 +31,11 @@ pub const c = @cImport({
     @cInclude("selva/membar.h");
     @cInclude("selva/mblen.h");
 });
-
-const selvaError = @cImport({
-    @cDefine("__zig", "1");
-
-    @cInclude("cdefs.h");
-    @cInclude("selva_error.h");
-});
-
 const std = @import("std");
 
 pub const SelvaHash128 = u128;
 
 pub fn strerror_zig(err: i32) [:0]const u8 {
-    const s = selvaError.selva_strerror(err);
+    const s = c.selva_strerror(err);
     return s[0..std.mem.len(s) :0];
 }
