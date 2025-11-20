@@ -24,8 +24,8 @@ export const makeTreeKeyFromNodeId = (
   return typeId * 4294967296 + ((tmp / blockCapacity) | 0) * blockCapacity + 1
 }
 
-type Hash = Uint8Array
-const HASH_SIZE = 16
+export type BlockHash = Uint8Array
+export const BLOCK_HASH_SIZE = 16
 
 /**
  * The states imply:
@@ -48,7 +48,7 @@ export type Block = {
    * Last acquired hash of the block.
    * This is normally updated at load and save time but never during read/modify ops.
    */
-  hash: Hash
+  hash: BlockHash
   status: BlockStatus
   /**
    * If set, the block is being loaded and it can be awaited with this promise.
@@ -161,7 +161,7 @@ export class BlockMap {
     return this.#h.digest() as Uint8Array
   }
 
-  updateBlock(key: number, hash: Hash, status: BlockStatus = 'inmem') {
+  updateBlock(key: number, hash: BlockHash, status: BlockStatus = 'inmem') {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]
     if (!type) {

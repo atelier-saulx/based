@@ -2,7 +2,7 @@ import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
 import { equals, readInt32 } from '@based/utils'
-import { BlockMap, makeTreeKey } from './blockMap.js'
+import { BLOCK_HASH_SIZE, BlockHash, BlockMap, makeTreeKey } from './blockMap.js'
 import { DbServer } from './index.js'
 import { IoJobSave } from './workers/io_worker_types.js'
 
@@ -17,7 +17,7 @@ export function saveBlock(
   start: number,
   end: number,
 ): void {
-  const hash = new Uint8Array(16)
+  const hash: BlockHash = new Uint8Array(BLOCK_HASH_SIZE)
   const mtKey = makeTreeKey(typeId, start)
   const file = BlockMap.blockSdbFile(typeId, start, end)
   const path = join(db.fileSystemPath, file)
@@ -49,7 +49,7 @@ export async function saveBlocks(
     const block = blocks[i]
     const key = makeTreeKey(block.typeId, block.start)
     const err = readInt32(res, i * 20)
-    const hash = new Uint8Array(res.buffer, i * 20 + 4, 16)
+    const hash: BlockHash = new Uint8Array(res.buffer, i * 20 + 4, BLOCK_HASH_SIZE)
 
     if (err === SELVA_ENOENT) {
       // Generally we don't nor can't remove blocks from verifTree before we
@@ -93,7 +93,7 @@ export async function loadBlock(
   block.loadPromise = null
 
   // Update and verify the hash
-  const hash = new Uint8Array(16)
+  const hash: BlockHash = new Uint8Array(BLOCK_HASH_SIZE)
   const end = start + def.blockCapacity - 1
   const res = native.getNodeRangeHash(
     def.id,
@@ -149,7 +149,7 @@ export async function unloadBlock(
 export function foreachBlock(
   db: DbServer,
   def: SchemaTypeDef,
-  cb: (start: number, end: number, hash: Uint8Array) => void,
+  cb: (start: number, end: number, hash: BlockHash) => void,
   includeEmptyBlocks: boolean = false,
 ) {
   const step = def.blockCapacity
@@ -157,7 +157,7 @@ export function foreachBlock(
 
   for (let start = 1; start <= lastId; start += step) {
     const end = start + step - 1
-    const hash = new Uint8Array(16)
+    const hash: BlockHash = new Uint8Array(BLOCK_HASH_SIZE)
     const res = native.getNodeRangeHash(
       def.id,
       start,
