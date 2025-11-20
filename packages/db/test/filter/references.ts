@@ -66,9 +66,9 @@ await test('filter references drones', async (t) => {
     .filter('workspace.users', 'includes', user)
     .get()
 
-  // add tests
-  drones.inspect()
-  drones2.inspect()
+  // TODO: add tests
+  // drones.inspect()
+  // drones2.inspect()
 
   const dronesResult = []
   for (let i = 0; i < 1000; i++) {
