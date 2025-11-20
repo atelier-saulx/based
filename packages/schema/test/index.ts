@@ -53,5 +53,5 @@ await test('testings', () => {
   console.dir(schema, { depth: null })
   const defs = schemaToDefs(schema)
   console.log('-- schema defs')
-  console.dir(defs, { depth: null })
+  console.dir(defs, { depth: 6 })
 })
