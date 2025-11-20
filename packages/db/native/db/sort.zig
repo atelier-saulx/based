@@ -1,5 +1,5 @@
 const db = @import("./db.zig");
-const decompress = @import("./decompress.zig");
+const deflate = @import("../deflate.zig");
 const selva = @import("../selva.zig").c;
 const std = @import("std");
 const napi = @import("../napi.zig");
@@ -193,7 +193,7 @@ fn getOrCreateFromCtx(
 
 pub fn createSortIndex(
     dbCtx: *db.DbCtx,
-    decompressor: *decompress.LibdeflateDecompressor,
+    decompressor: *deflate.Decompressor,
     typeId: db.TypeId,
     field: u8,
     start: u16,
@@ -296,7 +296,7 @@ pub fn getTypeSortIndexes(
     return dbCtx.sortIndexes.get(typeId);
 }
 
-inline fn parseString(decompressor: *decompress.LibdeflateDecompressor, data: []u8, out: []u8) [*]u8 {
+inline fn parseString(decompressor: *deflate.Decompressor, data: []u8, out: []u8) [*]u8 {
     if (data.len <= 6) {
         return out.ptr;
     } else if (data.len < SIZE + 6) {
@@ -309,7 +309,7 @@ inline fn parseString(decompressor: *decompress.LibdeflateDecompressor, data: []
         const slice = data[2 .. SIZE + 2];
         return slice.ptr;
     } else {
-        const res = decompress.decompressFirstBytes(decompressor, data, out) catch out;
+        const res = deflate.decompressFirstBytes(decompressor, data, out) catch out;
         return res.ptr;
     }
 }
@@ -335,7 +335,7 @@ inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, nod
 }
 
 pub fn remove(
-    decompressor: *decompress.LibdeflateDecompressor,
+    decompressor: *deflate.Decompressor,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -386,7 +386,7 @@ inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: d
 }
 
 pub fn insert(
-    decompressor: *decompress.LibdeflateDecompressor,
+    decompressor: *deflate.Decompressor,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,

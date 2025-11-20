@@ -3913,8 +3913,9 @@ libdeflate_alloc_compressor2(int compression_level, const void *shared_dict)
     struct libdeflate_compressor *c;
     size_t size = offsetof(struct libdeflate_compressor, p);
 
-    if (compression_level < 0 || compression_level > 12)
+    if (compression_level < 0 || compression_level > 12) {
         return NULL;
+    }
 
 #if SUPPORT_NEAR_OPTIMAL_PARSING
     if (compression_level >= 10)
@@ -3928,9 +3929,7 @@ libdeflate_alloc_compressor2(int compression_level, const void *shared_dict)
             size += sizeof(c->p.f);
     }
 
-    c= selva_aligned_alloc(MATCHFINDER_MEM_ALIGNMENT, size);
-    if (!c)
-        return NULL;
+    c = selva_aligned_alloc(MATCHFINDER_MEM_ALIGNMENT, size);
 
     c->compression_level = compression_level;
 

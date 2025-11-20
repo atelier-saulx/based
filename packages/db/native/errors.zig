@@ -66,23 +66,6 @@ pub fn selva(rc: c_int) SelvaError!void {
     };
 }
 
-pub const DeflateError = error{
-    BAD_DATA,
-    SHORT_OUTPUT,
-    INSUFFICIENT_SPACE,
-};
-
-pub fn deflate(rc: selvaLib.libdeflate_result) DeflateError!void {
-    try switch (rc) {
-        selvaLib.LIBDEFLATE_SUCCESS => {},
-        selvaLib.LIBDEFLATE_BAD_DATA => DeflateError.BAD_DATA,
-        selvaLib.LIBDEFLATE_SHORT_OUTPUT => DeflateError.SHORT_OUTPUT,
-        selvaLib.LIBDEFLATE_INSUFFICIENT_SPACE => DeflateError.INSUFFICIENT_SPACE,
-        selvaLib.LIBDEFLATE_MORE => {},
-        else => {},
-    };
-}
-
 pub const DbError = error{
     SHARD_NOT_CREATED,
     WRONG_SORTFIELD_TYPE,

@@ -1,6 +1,5 @@
 const db = @import("../../db/db.zig");
-const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
-const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
+const deflate = @import("../../deflate.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;

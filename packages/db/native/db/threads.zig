@@ -8,15 +8,15 @@ const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
 const modifyInternal = @import("../modify/modify.zig").modifyInternal;
 const selva = @import("../selva.zig").c;
 const Queue = std.array_list.Managed([]u8);
-const deflate = @import("./decompress.zig");
+const deflate = @import("../deflate.zig");
 
 pub const DbThread = struct {
     thread: Thread,
     id: usize,
     queryResults: []u8,
     lastQueryResultIndex: usize,
-    decompressor: *deflate.LibdeflateDecompressor,
-    libdeflateBlockState: deflate.LibdeflateBlockState,
+    decompressor: *deflate.Decompressor,
+    libdeflateBlockState: deflate.BlockState,
 };
 
 pub const Threads = struct {
@@ -206,8 +206,8 @@ pub const Threads = struct {
             threadCtx.*.lastQueryResultIndex = 0;
             threadCtx.*.queryResults = try std.heap.raw_c_allocator.alloc(u8, 0);
             threadCtx.*.thread = try Thread.spawn(.{}, worker, .{ self, threadCtx });
-            threadCtx.*.decompressor = selva.libdeflate_alloc_decompressor().?; // never fails
-            threadCtx.*.libdeflateBlockState = selva.libdeflate_block_state_init(305000);
+            threadCtx.*.decompressor = deflate.createDecompressor();
+            threadCtx.*.libdeflateBlockState = deflate.initBlockState(305000);
             t.* = threadCtx;
         }
 

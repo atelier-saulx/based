@@ -14,8 +14,7 @@ const MaxVectorScore = @import("./types.zig").MaxVectorScore;
 const vectorScore = @import("./has/vector.zig").vec;
 const move = @import("../../utils.zig").move;
 const Compression = @import("../../types.zig").Compression;
-const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
-const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
+const deflate = @import("../../deflate.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
@@ -305,8 +304,8 @@ pub fn strSearchCompressed(
 }
 
 inline fn getScore(
-    decompressor: *LibdeflateDecompressor,
-    blockState: *LibdeflateBlockState,
+    decompressor: *deflate.Decompressor,
+    blockState: *deflate.BlockState,
     value: []u8,
     query: []u8,
     score: *u8,
@@ -333,8 +332,8 @@ inline fn getScore(
 }
 
 pub fn search(
-    decompressor: *LibdeflateDecompressor,
-    blockState: *LibdeflateBlockState,
+    decompressor: *deflate.Decompressor,
+    blockState: *deflate.BlockState,
     node: db.Node,
     typeEntry: db.Type,
     ctx: *const SearchCtx(false),
