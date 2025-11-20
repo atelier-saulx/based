@@ -1,5 +1,5 @@
 // advanced zig ⚡️
-pub usingnamespace @cImport({
+pub const c = @cImport({
     @cDefine("__zig", "1");
 
     @cDefine("true", "(_Bool)1");

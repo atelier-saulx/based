@@ -1,9 +1,8 @@
 const std = @import("std");
 const sort = @import("./sort.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
-const c = @import("../c.zig");
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
 const subs = @import("./subscription/types.zig");
@@ -30,7 +29,7 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
     subscriptions: subs.SubscriptionCtx,
     ids: []u32,
-    queryCallback: *napi.NapiCallback,
+    queryCallback: *napi.Callback,
     threads: *threads.Threads,
     pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
         self.arena.deinit();
@@ -52,7 +51,7 @@ pub fn init() void {
     }
 }
 
-pub fn createDbCtx(env: c.napi_env, info: c.napi_callback_info) !*DbCtx {
+pub fn createDbCtx(queryCallback: *napi.Callback) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
@@ -66,12 +65,6 @@ pub fn createDbCtx(env: c.napi_env, info: c.napi_callback_info) !*DbCtx {
         *subs.IdSubsItem,
         subs.BLOCK_SIZE,
     );
-
-    // const cb = try napi.NapiCallback.init(std.heap.raw_c_allocator, env, args[0]);
-    // defer cb.deinit();
-    // try cb.call(&.{});
-
-    const args = try napi.getArgs(1, env, info);
 
     errdefer {
         arena.deinit();
@@ -89,7 +82,7 @@ pub fn createDbCtx(env: c.napi_env, info: c.napi_callback_info) !*DbCtx {
         .selva = null,
         .subscriptions = subscriptions.*,
         .ids = &[_]u32{},
-        .queryCallback = try napi.NapiCallback.init(allocator, env, args[0]),
+        .queryCallback = queryCallback,
     };
 
     for (&b.*.threadCtx) |*tctx| {
@@ -118,8 +111,11 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     }
 
     for (&ctx.threadCtx) |*tctx| {
-        selva.libdeflate_block_state_deinit(&tctx.*.libdeflateBlockState);
-        selva.libdeflate_free_decompressor(tctx.*.decompressor);
+        selva.membar_sync_read();
+        if (tctx.*.threadId != 0) {
+            selva.libdeflate_block_state_deinit(&tctx.*.libdeflateBlockState);
+            selva.libdeflate_free_decompressor(tctx.*.decompressor);
+        }
     }
 
     selva.selva_db_destroy(ctx.selva);

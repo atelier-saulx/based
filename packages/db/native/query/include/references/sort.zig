@@ -6,7 +6,7 @@ const getFields = @import("../include.zig").getFields;
 const queryTypes = @import("../types.zig");
 const types = @import("../../../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
-const selva = @import("../../../selva.zig");
+const selva = @import("../../../selva.zig").c;
 const std = @import("std");
 
 pub fn sortedReferences(
@@ -15,7 +15,7 @@ pub fn sortedReferences(
     include: []u8,
     sortBuffer: []u8,
     typeEntry: db.Type,
-    edgeConstraint: ?db.EdgeFieldConstraint,
+    edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,

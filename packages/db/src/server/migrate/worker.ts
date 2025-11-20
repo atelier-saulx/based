@@ -11,7 +11,6 @@ import { setToSleep } from './utils.js'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 import { MigrateRange } from './index.js'
 import { DbSchema, deSerialize } from '@based/schema'
-import { wait } from '@based/utils'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -92,6 +91,7 @@ if (isMainThread) {
         while ((msg = receiveMessageOnPort(channel))) {
           const leafData: MigrateRange = msg.message
           const { type, include, includeRaw } = map[leafData.typeId]
+
           const typeTransformFn = transformFns[type]
           const query = fromDb
             .query(type)
@@ -101,13 +101,13 @@ if (isMainThread) {
             query.include(rawProp, { raw: true })
           }
           const nodes = query._getSync(fromCtx)
-
           if (typeTransformFn) {
             for (const node of nodes) {
               const res = typeTransformFn(node)
               if (res === null) {
                 continue
               }
+
               if (Array.isArray(res)) {
                 toDb.create(res[0], res[1] || node, { unsafe: true })
               } else {

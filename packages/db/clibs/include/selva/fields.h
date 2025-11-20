@@ -30,7 +30,7 @@ struct SelvaNodeSmallReference {
 
 struct SelvaNodeLargeReference {
     node_id_t dst;
-    node_id_t meta;
+    node_id_t edge;
 };
 
 enum SelvaNodeReferenceType {
@@ -103,12 +103,12 @@ struct SelvaNodeLargeReference *selva_fields_ensure_reference(
         const struct SelvaFieldSchema *fs);
 
 SELVA_EXPORT
-struct SelvaNode *selva_fields_ensure_ref_meta(
+struct SelvaNode *selva_fields_ensure_ref_edge(
         struct SelvaDb *db,
         struct SelvaNode *node,
         const struct EdgeFieldConstraint *efc,
         struct SelvaNodeLargeReference *ref,
-        node_id_t meta_id,
+        node_id_t edge_id,
         selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
 
 SELVA_EXPORT
@@ -133,6 +133,9 @@ struct selva_string *selva_fields_ensure_string(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs,
         size_t initial_len);
+
+SELVA_EXPORT
+struct SelvaNodeReferenceAny selva_fields_references_get(const struct SelvaNodeReferences *refs, node_id_t dst_node_id);
 
 /**
  * Set reference to fields.

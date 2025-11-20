@@ -19,16 +19,15 @@ function _makeEdgeTypes(
 ): void {
   type EdgeProps = Record<`$${string}`, SchemaPropOneWay>
   const putEdgeProps = (
-    from: `${string}.${string}`,
-    to: `${string}.${string}`,
+    from: `${string}_${string}`,
+    to: `${string}_${string}`,
     edgeProps: EdgeProps,
   ) => (newTypes[`_${[from, to].sort().join(':')}`] = { props: edgeProps })
 
   for (const propName in props) {
     const prop = props[propName]
     const propType = getPropType(prop)
-    const nextPropPrefix = propPrefix ? `${propPrefix}.${propName}` : propName
-
+    const nextPropPrefix = propPrefix ? `${propPrefix}_${propName}` : propName
     if (propType === 'object') {
       _makeEdgeTypes(newTypes, typeName, prop.props, nextPropPrefix)
     } else if (propType === 'reference') {
@@ -39,8 +38,8 @@ function _makeEdgeTypes(
 
       if (Object.keys(edgeProps).length > 0) {
         putEdgeProps(
-          `${typeName}.${nextPropPrefix}`,
-          `${prop.ref}.${prop.prop}`,
+          `${typeName}_${nextPropPrefix}`,
+          `${prop.ref}_${prop.prop}`,
           edgeProps,
         )
       }
@@ -53,8 +52,8 @@ function _makeEdgeTypes(
 
       if (Object.keys(edgeProps).length > 0) {
         putEdgeProps(
-          `${typeName}.${nextPropPrefix}`,
-          `${prop.items.ref}.${prop.items.prop}`,
+          `${typeName}_${nextPropPrefix}`,
+          `${prop.items.ref}_${prop.items.prop}`,
           edgeProps,
         )
       }

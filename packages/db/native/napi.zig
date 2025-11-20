@@ -1,8 +1,17 @@
-const c = @import("c.zig");
 const errors = @import("errors.zig");
 const std = @import("std");
 
-pub fn jsThrow(env: c.napi_env, message: [:0]const u8) void {
+pub const c = @cImport({
+    @cDefine("NAPI_VERSION", "10");
+    @cInclude("node_api.h");
+    @cInclude("string.h");
+});
+
+pub const Value = c.napi_value;
+pub const Env = c.napi_env;
+pub const Info = c.napi_info;
+
+pub fn jsThrow(env: Env, message: [:0]const u8) void {
     const result = c.napi_throw_error(env, null, message);
     switch (result) {
         c.napi_ok, c.napi_pending_exception => {},
@@ -191,43 +200,45 @@ pub const CallResult = struct {
     // allocator: std.mem.Allocator,
 };
 
-fn callJsCallback(env: c.napi_env, js_callback: c.napi_value, _: ?*anyopaque, data: ?*anyopaque) callconv(.C) void {
+fn callJsCallback(env: Env, jsCallback: Value, _: ?*anyopaque, data: ?*anyopaque) callconv(.c) void {
     const result = @as(*CallResult, @ptrCast(@alignCast(data.?)));
 
-    var jsBufferValue: c.napi_value = undefined;
-    // finalize, data,
-    const status = c.napi_create_external_buffer(env, result.data.len, @ptrCast(result.data.ptr), null, null, &jsBufferValue);
+    var jsBufferValue: Value = undefined;
+
+    const status = c.napi_create_external_buffer(
+        env,
+        result.data.len,
+        @ptrCast(result.data.ptr),
+        null,
+        null,
+        &jsBufferValue,
+    );
 
     if (status != c.napi_ok) {
         // very wrong...
         return;
     }
 
-    var undefined_val: c.napi_value = undefined;
-    _ = c.napi_get_undefined(env, &undefined_val);
+    var undefinedVal: Value = undefined;
+    _ = c.napi_get_undefined(env, &undefinedVal);
 
     var args = [_]c.napi_value{jsBufferValue};
 
-    // can check status...
-    _ = c.napi_call_function(env, undefined_val, js_callback, 1, &args, null);
+    _ = c.napi_call_function(env, undefinedVal, jsCallback, 1, &args, null);
 
-    // im rdy! send back to thread and let the thread clean it then
-    // std.heap.raw_c_allocator.free(result.data);
     std.heap.raw_c_allocator.destroy(result);
 }
 
-pub const NapiCallback = struct {
+pub const Callback = struct {
     env: c.napi_env,
-    allocator: std.mem.Allocator,
     tsfn: c.napi_threadsafe_function,
 
     // option to take CONTROL of callback
     pub fn init(
-        allocator: std.mem.Allocator,
         env: c.napi_env,
-        js_func: c.napi_value,
-    ) !*NapiCallback {
-        const self = try allocator.create(NapiCallback);
+        jsFunc: c.napi_value,
+    ) !*Callback {
+        const self = try std.heap.raw_c_allocator.create(Callback);
 
         var name: c.napi_value = undefined;
         _ = c.napi_create_string_utf8(env, "ZigThreadSafeNapiCallback", c.NAPI_AUTO_LENGTH, &name);
@@ -236,7 +247,7 @@ pub const NapiCallback = struct {
 
         _ = c.napi_create_threadsafe_function(
             env,
-            js_func,
+            jsFunc,
             null,
             name,
             0, // Max queue size (0 = unlimited)
@@ -249,7 +260,6 @@ pub const NapiCallback = struct {
         );
 
         self.* = .{
-            .allocator = allocator,
             .env = env,
             .tsfn = tsfn,
         };
@@ -257,12 +267,12 @@ pub const NapiCallback = struct {
         return self;
     }
 
-    pub fn deinit(self: *NapiCallback) void {
+    pub fn deinit(self: *Callback) void {
         _ = c.napi_release_threadsafe_function(self.tsfn, c.napi_tsfn_release);
-        self.allocator.destroy(self);
+        std.heap.raw_c_allocator.destroy(self);
     }
 
-    pub fn call(self: *NapiCallback, data: []u8) void {
+    pub fn call(self: *Callback, data: []u8) void {
         // will get rid of this result
         const result = std.heap.raw_c_allocator.create(CallResult) catch return;
         // add allocator as well so js can ask to lcose this

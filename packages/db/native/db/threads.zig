@@ -25,8 +25,8 @@ pub const Threads = struct {
 
     shutdown: bool = false,
     ctx: *DbCtx,
-    queryQueue: std.ArrayList([]u8),
-    modifyQueue: std.ArrayList([]u8),
+    queryQueue: std.array_list.Managed([]u8),
+    modifyQueue: std.array_list.Managed([]u8),
     allocator: std.mem.Allocator,
 
     pub fn waitForAll(self: *Threads) void {
@@ -114,8 +114,8 @@ pub const Threads = struct {
         self.* = .{
             .allocator = allocator,
             .threads = try allocator.alloc(*DbThread, threadAmount),
-            .queryQueue = std.ArrayList([]u8).init(allocator),
-            .modifyQueue = std.ArrayList([]u8).init(allocator),
+            .queryQueue = std.array_list.Managed([]u8).init(allocator),
+            .modifyQueue = std.array_list.Managed([]u8).init(allocator),
             .ctx = ctx,
         };
 

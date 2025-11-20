@@ -1,4 +1,3 @@
-const c = @import("../../c.zig");
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const utils = @import("../../utils.zig");
@@ -171,7 +170,7 @@ pub fn createResultsBuffer(
         }
     }
 
-    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
+    writeInt(u32, data, data.len - 4, selva.c.crc32c(4, data.ptr, data.len - 4));
 
     // std.debug.print("flap {any}: \n", .{data});
 

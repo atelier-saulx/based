@@ -1,4 +1,4 @@
-const selva = @import("../../selva.zig");
+const selva = @import("../../selva.zig").c;
 const db = @import("../../db/db.zig");
 const QueryCtx = @import("../types.zig").QueryCtx;
 const std = @import("std");
@@ -36,24 +36,24 @@ pub const RefsResult = struct {
 
 pub inline fn RefResult(
     refs: ?Refs,
-    edgeConstraint: ?db.EdgeFieldConstraint,
+    edgeConstraint: db.EdgeFieldConstraint,
     i: usize,
 ) ?RefStruct {
     if (refs.?.refs.size == selva.SELVA_NODE_REFERENCE_SMALL) {
         return .{
             .smallReference = @ptrCast(&refs.?.refs.unnamed_0.small[i]),
             .largeReference = null,
-            .edgeConstraint = edgeConstraint.?,
+            .edgeConstraint = edgeConstraint,
         };
     } else if (refs.?.refs.size == selva.SELVA_NODE_REFERENCE_LARGE) {
         return .{
             .smallReference = null,
             .largeReference = @ptrCast(&refs.?.refs.unnamed_0.large[i]),
-            .edgeConstraint = edgeConstraint.?,
+            .edgeConstraint = edgeConstraint,
         };
     } else {
         return std.mem.zeroInit(RefStruct, .{
-            .edgeConstraint = edgeConstraint.?,
+            .edgeConstraint = edgeConstraint,
         });
     }
 }

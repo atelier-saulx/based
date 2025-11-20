@@ -1,7 +1,7 @@
 const db = @import("../db/db.zig");
 const utils = @import("../utils.zig");
 const Modify = @import("./ctx.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
 const types = @import("../types.zig");
 const update = @import("./update.zig");
@@ -28,8 +28,8 @@ pub fn writeEdges(
     var i: usize = 0;
     const edgeConstraint = db.getEdgeFieldConstraint(ctx.fieldSchema.?);
     const edgeNode = try db.ensureRefEdgeNode(ctx, ctx.node.?, edgeConstraint, ref);
-    const edgeId = ref.*.meta;
-    const edgeTypeId = edgeConstraint.*.meta_node_type;
+    const edgeId = ref.*.edge;
+    const edgeTypeId = edgeConstraint.*.edge_node_type;
     if (edgeId > ctx.db.ids[edgeTypeId - 1]) {
         ctx.db.ids[edgeTypeId - 1] = edgeId;
     }
@@ -86,8 +86,16 @@ pub fn writeEdges(
             len = read(u32, data, i);
             offset = 4;
             const edgeData = data[i + offset .. i + offset + len];
-
-            try  db.putReferences(ctx, edgeNode, edgeFieldSchema, utils.realign(u32, edgeData));
+            // fix start
+            const address = @intFromPtr(edgeData.ptr);
+            const delta: u8 = @truncate(address % 4);
+            const d = if (delta == 0) 0 else 4 - delta;
+            const aligned = edgeData[d .. edgeData.len - 3 + d];
+            if (d != 0) {
+                utils.move(aligned, edgeData[0 .. edgeData.len - 3]);
+            }
+            const u32ids = read([]u32, aligned, 0);
+            try db.putReferences(ctx, edgeNode, edgeFieldSchema, u32ids);
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;

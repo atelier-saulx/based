@@ -35,5 +35,6 @@ export const writeReferencesEdge = (ctx: Ctx, edge: PropDefEdge, vals: any) => {
     }
     throw [edge, vals]
   }
+
   writePadding(ctx, 3)
 }

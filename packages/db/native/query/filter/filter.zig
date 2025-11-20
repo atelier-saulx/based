@@ -152,70 +152,50 @@ pub fn filter(
             const negate: Type = @enumFromInt(conditions[i + 2]);
             const prop: Prop = @enumFromInt(conditions[i + 3]);
 
+            var te: db.Type = undefined;
+            var fs: db.FieldSchema = undefined;
+
             if (isEdge) {
                 if (ref) |r| {
-                    if (prop == Prop.REFERENCES) {
-                        const refs = db.getEdgeReferences(ctx, r.edgeConstraint, r.largeReference.?, field);
-                        if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        }
-                    } else if (prop == Prop.REFERENCE) {
-                        const checkRef = db.getEdgeReference(ctx, r.edgeConstraint, r.largeReference.?, field);
-                        if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        }
-                    } else {
-                        const te = db.getType(ctx, r.edgeConstraint.meta_node_type) catch {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        };
-                        const edgeFieldSchema = db.getEdgeFieldSchema(ctx, r.edgeConstraint, field) catch {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        };
-                        const edgeType = db.getType(ctx, r.edgeConstraint.meta_node_type) catch {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        };
-
-                        if (db.getNode(edgeType, r.largeReference.?.meta)) |edgeNode| {
-                            const value = db.getField(te, edgeNode, edgeFieldSchema, prop);
-                            if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
-                                return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                            }
-                        } else {
-                            return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                        }
-                    }
+                    te = db.getEdgeType(ctx, r.edgeConstraint) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
+                    fs = db.getEdgeFieldSchema(ctx, r.edgeConstraint, field) catch {
+                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                    };
                 } else if (negate == Type.default) {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                } else {
+                    return true;
+                }
+            } else {
+                te = typeEntry;
+                fs = db.getFieldSchemaByNode(ctx, node, field) catch {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                };
+            }
+
+            if (prop == Prop.REFERENCES) {
+                const refs = db.getReferences(node, fs);
+                if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                }
+            } else if (prop == Prop.REFERENCE) {
+                const dstType = db.getRefDstType(ctx, fs) catch {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                };
+                const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(node, fs));
+                if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
                     return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
-                if (prop == Prop.REFERENCES) {
-                    const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                    };
-                    const refs = db.getReferences(node, fs);
-                    if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                    }
-                } else if (prop == Prop.REFERENCE) {
-                    const fs = db.getFieldSchemaByNode(ctx, node, field) catch {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                    };
-                    const dstType = db.getRefDstType(ctx, fs) catch {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                    };
-                    const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(node, fs));
-                    if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                    }
-                } else {
-                    const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                    };
-                    const value = db.getField(typeEntry, node, fieldSchema, prop);
+                const fieldSchema = db.getFieldSchema(te, field) catch {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
+                };
+                const value = db.getField(te, node, fieldSchema, prop);
 
-                    if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
-                        return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
-                    }
+                if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+                    return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                 }
             }
             i += 4;
@@ -239,10 +219,10 @@ pub fn filter(
                 var fieldSchema: db.FieldSchema = undefined;
 
                 if (isEdge) {
-                    te = db.getRefMetaType(ctx, ref.?.edgeConstraint) catch {
+                    te = db.getEdgeType(ctx, ref.?.edgeConstraint) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
-                    if (db.getNode(te, ref.?.largeReference.?.meta)) |n| {
+                    if (db.getNode(te, ref.?.largeReference.?.edge)) |n| {
                         actNode = n;
                     } else {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);

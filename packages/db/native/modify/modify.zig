@@ -1,7 +1,6 @@
 const assert = std.debug.assert;
 const std = @import("std");
-const c = @import("../c.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const types = @import("../types.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
@@ -26,18 +25,33 @@ const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 
-pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
-    var result: c.napi_value = undefined;
+pub fn modify(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+    var result: napi.c.napi_value = undefined;
     var resCount: u32 = 0;
     modifyInternal(env, info, &resCount) catch undefined;
-    _ = c.napi_create_uint32(env, resCount * 5, &result);
+    _ = napi.c.napi_create_uint32(env, resCount * 5, &result);
     return result;
 }
 
-fn writeoutPrevNodeId(ctx: *ModifyCtx, batch: []u8, resCount: *u32) void {
-    if (ctx.id != 0) {
-        writeInt(u32, batch, resCount.* * 5, ctx.id);
-        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
+    ctx.typeId = typeId;
+    ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
+    ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
+
+    ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
+    if (ctx.subTypes) |st| {
+        st.typeModified = true;
+    }
+
+    ctx.node = null;
+    // TODO This can't be reset because it's still used.
+    //ctx.id = 0;
+}
+
+fn writeoutPrevNodeId(ctx: *ModifyCtx, resCount: *u32, prevNodeId: u32) void {
+    if (prevNodeId != 0) {
+        writeInt(u32, ctx.batch, resCount.* * 5, prevNodeId);
+        writeInt(u8, ctx.batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
         ctx.err = errors.ClientError.null;
         resCount.* += 1;
     }
@@ -67,7 +81,60 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
 }
 
-fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !void {
+fn getLargeRef(node: db.Node, fs: db.FieldSchema, dstId: u32) ?db.ReferenceLarge {
+    if (dstId == 0) { // assume reference
+        return db.getSingleReference(node, fs);
+    } else { // references
+        const refs = db.getReferences(node, fs);
+        const any = db.referencesGet(refs, dstId);
+        if (any.type == selva.SELVA_NODE_REFERENCE_LARGE) {
+            return any.p.large;
+        } else {
+            return null;
+        }
+    }
+}
+
+fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
+    var prevNodeId: u32 = 0;
+
+    if (srcId == 0 or ctx.node == null) {
+        return 0;
+    }
+
+    const fs = db.getFieldSchema(ctx.typeEntry, refField) catch {
+        return 0;
+    };
+    ctx.fieldSchema = fs;
+
+    if (getLargeRef(ctx.node.?, fs, dstId)) |ref| {
+        const efc = db.getEdgeFieldConstraint(fs);
+        switchType(ctx, efc.edge_node_type) catch {
+            return 0;
+        };
+        const edgeNode = db.ensureRefEdgeNode(ctx, ctx.node.?, efc, ref) catch {
+            return 0;
+        };
+        const edgeId = ref.*.edge;
+
+        // if its zero then we don't want to switch (for upsert)
+        prevNodeId = ctx.id;
+        ctx.id = edgeId;
+        ctx.node = edgeNode;
+        if (ctx.node == null) {
+            ctx.err = errors.ClientError.nx;
+        } else {
+            try subs.checkId(ctx);
+            // It would be even better if we'd mark it dirty only in the case
+            // something was actually changed.
+            Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+        }
+    }
+
+    return prevNodeId;
+}
+
+fn modifyInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
@@ -139,18 +206,18 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i = i + 2;
             },
             types.ModOp.SWITCH_ID_CREATE => {
-                writeoutPrevNodeId(&ctx, batch, resCount);
+                writeoutPrevNodeId(&ctx, resCount, ctx.id);
                 try newNode(&ctx);
                 i = i + 1;
             },
             types.ModOp.SWITCH_ID_CREATE_RING => {
-                writeoutPrevNodeId(&ctx, batch, resCount);
+                writeoutPrevNodeId(&ctx, resCount, ctx.id);
                 const maxNodeId = read(u32, operation, 0);
                 try newNodeRing(&ctx, maxNodeId);
                 i = i + 5;
             },
             types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
-                writeoutPrevNodeId(&ctx, batch, resCount);
+                writeoutPrevNodeId(&ctx, resCount, ctx.id);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
@@ -162,7 +229,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
             types.ModOp.SWITCH_ID_UPDATE => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
-                    writeoutPrevNodeId(&ctx, batch, resCount);
+                    writeoutPrevNodeId(&ctx, resCount, ctx.id);
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
                     ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
@@ -176,6 +243,14 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                     }
                 }
                 i = i + 5;
+            },
+            types.ModOp.SWITCH_EDGE_ID => {
+                const srcId = read(u32, operation, 0);
+                const dstId = read(u32, operation, 4);
+                const refField = read(u8, operation, 8);
+                const prevNodeId = try switchEdgeId(&ctx, srcId, dstId, refField);
+                writeoutPrevNodeId(&ctx, resCount, prevNodeId);
+                i = i + 10;
             },
             types.ModOp.UPSERT => {
                 const writeIndex = read(u32, operation, 0);
@@ -218,19 +293,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
                 i = i + nextIndex + 1;
             },
             types.ModOp.SWITCH_TYPE => {
-                ctx.typeId = read(u16, operation, 0);
-                ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
-                ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
-
-                ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
-                if (ctx.subTypes) |st| {
-                    st.typeModified = true;
-                }
-
-                // RFE shouldn't we technically unset .id and .node now?
-                ctx.node = null;
-                // TODO This can't be reset because it's used just at the end of the function.
-                //ctx.id = 0;
+                try switchType(&ctx, read(u16, operation, 0));
                 i = i + 3;
             },
             types.ModOp.ADD_EMPTY_SORT => {
@@ -275,7 +338,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
 
     const newDirtyRanges = ctx.dirtyRanges.values();
     assert(newDirtyRanges.len < dirtyRanges.len);
-    _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
+    _ = napi.c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     dirtyRanges[newDirtyRanges.len] = 0.0;
-    writeoutPrevNodeId(&ctx, batch, resCount);
+    writeoutPrevNodeId(&ctx, resCount, ctx.id);
 }

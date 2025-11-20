@@ -2,7 +2,7 @@ const assert = std.debug.assert;
 const db = @import("../db/db.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./ctx.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
 const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
@@ -29,9 +29,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         const hasEdgeData = RefEdgeOp.hasEdges(op);
         const hasIndex = RefEdgeOp.hasIndex(op);
         const isTmpId = RefEdgeOp.isTmpId(op);
-
         var id = read(u32, data, i + 1);
-
         if (isTmpId) {
             id = Modify.resolveTmpId(ctx, id);
         }
@@ -58,9 +56,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
                 const edgelen = read(u32, data, sizepos);
-                const edgepos = sizepos + 4;
-                const edges = data[edgepos .. edgepos + edgelen];
-                i += edges.len + 4;
+                i += edgelen;
             }
             i += 4;
             // TODO WARN errors.SelvaError.SELVA_ENOENT
@@ -75,7 +71,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
             if (ref.type == selva.SELVA_NODE_REFERENCE_LARGE) {
                 try edge.writeEdges(ctx, ref.p.large, edges);
             }
-            i += edges.len + 4;
+            i += edgelen + 4;
         }
         if (hasIndex) {
             i += 4;

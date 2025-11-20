@@ -39,7 +39,7 @@ pub fn getQueryThreaded(
     // len without the schema checksum space
     const len = q.len - 8;
     var ctx: QueryCtx = .{
-        .results = std.ArrayList(results.Result).init(allocator),
+        .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
         .size = 0,
         .totalResults = 0,

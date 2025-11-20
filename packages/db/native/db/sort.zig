@@ -1,7 +1,6 @@
 const db = @import("./db.zig");
 const decompressFirstBytes = @import("./decompress.zig").decompressFirstBytes;
-const selva = @import("../selva.zig");
-const c = @import("../c.zig");
+const selva = @import("../selva.zig").c;
 const std = @import("std");
 const napi = @import("../napi.zig");
 const utils = @import("../utils.zig");
@@ -84,11 +83,11 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
     }
 }
 
-pub fn createSortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn createSortIndexNode(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return createSortIndexNodeInternal(env, info) catch return null;
 }
 
-inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+inline fn createSortIndexNodeInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const buf = try napi.get([]u8, env, args[1]);
@@ -110,16 +109,16 @@ inline fn createSortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_inf
         true,
         false,
     );
-    var externalNapi: c.napi_value = undefined;
-    _ = c.napi_create_external(env, index, null, null, &externalNapi);
+    var externalNapi: napi.c.napi_value = undefined;
+    _ = napi.c.napi_create_external(env, index, null, null, &externalNapi);
     return externalNapi;
 }
 
-pub fn destroySortIndexNode(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn destroySortIndexNode(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return destroySortIndexNodeInternal(env, info) catch return null;
 }
 
-pub fn destroySortIndexNodeInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn destroySortIndexNodeInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const buf = try napi.get([]u8, env, args[1]);

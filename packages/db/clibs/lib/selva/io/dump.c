@@ -166,7 +166,7 @@ static void save_field_reference(struct selva_io *io, struct SelvaNodeLargeRefer
     if (ref->dst) {
         io->sdb_write(&((sdb_arr_len_t){ 1 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
         io->sdb_write(&ref->dst, sizeof(ref->dst), 1, io);
-        io->sdb_write(&ref->meta, sizeof(ref->meta), 1, io);
+        io->sdb_write(&ref->edge, sizeof(ref->edge), 1, io);
     } else {
         io->sdb_write(&((sdb_arr_len_t){ 0 }), sizeof(sdb_arr_len_t), 1, io); /* nr_refs */
     }
@@ -692,12 +692,12 @@ static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode
     /*
      * Load meta.
      */
-    node_id_t meta;
-    io->sdb_read(&meta, sizeof(meta), 1, io); /* Always read. */
-    if (meta) {
+    node_id_t edge;
+    io->sdb_read(&edge, sizeof(edge), 1, io); /* Always read. */
+    if (edge) {
         switch (ref.type) {
         case SELVA_NODE_REFERENCE_LARGE:
-            (void)selva_fields_ensure_ref_meta(db, node, &fs->edge_constraint, ref.large, meta, nullptr, nullptr);
+            (void)selva_fields_ensure_ref_edge(db, node, &fs->edge_constraint, ref.large, edge, nullptr, nullptr);
             break;
         case SELVA_NODE_REFERENCE_NULL:
         case SELVA_NODE_REFERENCE_SMALL:
@@ -728,7 +728,7 @@ static int load_field_reference(struct selva_io *io, struct SelvaNode *node, con
         struct SelvaNodeLargeReference *ref = selva_fields_ensure_reference(node, fs);
 
         io->sdb_read(&ref->dst, sizeof(ref->dst), 1, io);
-        io->sdb_read(&ref->meta, sizeof(ref->meta), 1, io);
+        io->sdb_read(&ref->edge, sizeof(ref->edge), 1, io);
     }
 
     return 0;

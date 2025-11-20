@@ -1,4 +1,3 @@
-const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
@@ -27,37 +26,37 @@ const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
 const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
 
-pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getQueryBuf(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return getQueryBufInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getQueryBufThread(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getQueryBufThread(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return getQueryBufInternalThread(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getQueryResults(env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getQueryResults(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return getQueryBufInternalResults(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getQueryBufInternalResults(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn getQueryBufInternalResults(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     // prob dont want this from ZIG
     const args = try napi.getArgs(1, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     dbCtx.threads.waitForAll();
-    var js_array: c.napi_value = undefined;
-    _ = c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &js_array);
+    var js_array: napi.c.napi_value = undefined;
+    _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &js_array);
     for (dbCtx.threads.threads, 0..) |thread, index| {
-        var array_buffer: c.napi_value = undefined;
-        _ = c.napi_create_external_arraybuffer(
+        var array_buffer: napi.c.napi_value = undefined;
+        _ = napi.c.napi_create_external_arraybuffer(
             env,
             thread.queryResults.ptr,
             thread.lastQueryResultIndex,
@@ -65,13 +64,13 @@ pub fn getQueryBufInternalResults(env: c.napi_env, info: c.napi_callback_info) !
             null,
             &array_buffer,
         );
-        _ = c.napi_set_element(env, js_array, @truncate(index), array_buffer);
+        _ = napi.c.napi_set_element(env, js_array, @truncate(index), array_buffer);
         thread.*.lastQueryResultIndex = 0;
     }
     return js_array;
 }
 
-pub fn getQueryBufInternalThread(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn getQueryBufInternalThread(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const q = try napi.get([]u8, env, args[1]);
@@ -80,7 +79,7 @@ pub fn getQueryBufInternalThread(env: c.napi_env, info: c.napi_callback_info) !c
     return null;
 }
 
-pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn getQueryBufInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
 
@@ -95,7 +94,7 @@ pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_
     const len = q.len - 8;
 
     var ctx: QueryCtx = .{
-        .results = std.ArrayList(results.Result).init(allocator),
+        .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
         .size = 0,
         .totalResults = 0,

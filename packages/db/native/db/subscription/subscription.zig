@@ -2,20 +2,19 @@ const std = @import("std");
 const db = @import("../db.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
-const c = @import("../../c.zig");
 const utils = @import("../../utils.zig");
 const singleId = @import("./singleId.zig");
 const multi = @import("./multi.zig");
 const types = @import("./types.zig");
 
-fn getMarkedIdSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+fn getMarkedIdSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(1, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
     if (ctx.subscriptions.lastIdMarked > 0) {
         var resultBuffer: ?*anyopaque = undefined;
-        var result: c.napi_value = undefined;
+        var result: napi.c.napi_value = undefined;
         const size = (ctx.subscriptions.lastIdMarked) * 8;
-        if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
+        if (napi.c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != napi.c.napi_ok) {
             return null;
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
@@ -25,9 +24,15 @@ fn getMarkedIdSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info)
         while (i < ctx.subscriptions.lastIdMarked) {
             const sub = ctx.subscriptions.singleIdMarked[i];
             const newDataIndex = i * 8;
-            utils.writeInt(u32, data, newDataIndex, sub.id);
-            utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
-            sub.*.marked = types.SubStatus.all;
+            const id = sub.id;
+            if (sub.isRemoved) {
+                // can make
+                try singleId.removeSubscriptionMarked(ctx, sub);
+            } else {
+                utils.writeInt(u32, data, newDataIndex, id);
+                utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
+                sub.*.marked = types.SubStatus.all;
+            }
             i += 1;
         }
 
@@ -37,7 +42,7 @@ fn getMarkedIdSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info)
     return null;
 }
 
-fn getMarkedMultiSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+fn getMarkedMultiSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(1, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
     var size: usize = 0;
@@ -51,8 +56,8 @@ fn getMarkedMultiSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_in
         return null;
     }
     var resultBuffer: ?*anyopaque = undefined;
-    var result: c.napi_value = undefined;
-    if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
+    var result: napi.c.napi_value = undefined;
+    if (napi.c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != napi.c.napi_ok) {
         return null;
     }
     iterator = ctx.subscriptions.types.iterator();
@@ -69,42 +74,42 @@ fn getMarkedMultiSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_in
 }
 
 // ---------------------------------
-pub fn getMarkedIdSubscriptions(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getMarkedIdSubscriptions(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return getMarkedIdSubscriptionsInternal(napi_env, info) catch |err| {
         std.log.err("getMarkedIdSubscriptions {any} \n", .{err});
         return null;
     };
 }
 
-pub fn getMarkedMultiSubscriptions(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn getMarkedMultiSubscriptions(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return getMarkedMultiSubscriptionsInternal(napi_env, info) catch |err| {
         std.log.err("getMarkedMultiSubscriptions {any} \n", .{err});
         return null;
     };
 }
 
-pub fn removeIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn removeIdSubscription(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return singleId.removeIdSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("removeIdSubscription err {any} \n", .{err});
         return null;
     };
 }
 
-pub fn addIdSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn addIdSubscription(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return singleId.addIdSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("addIdSubscription err {any} \n", .{err});
         return null;
     };
 }
 
-pub fn addMultiSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn addMultiSubscription(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return multi.addMultiSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("addMultiSubscription err {any} \n", .{err});
         return null;
     };
 }
 
-pub fn removeMultiSubscription(napi_env: c.napi_env, info: c.napi_callback_info) callconv(.C) c.napi_value {
+pub fn removeMultiSubscription(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return multi.removeMultiSubscriptionInternal(napi_env, info) catch |err| {
         std.log.err("removeMultiSubscription err {any} \n", .{err});
         return null;
