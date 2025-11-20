@@ -118,13 +118,13 @@ export async function start(db: DbServer, opts: StartOpts) {
 
     foreachBlock(db, def, (start, _end, hash) => {
       const mtKey = makeTreeKey(def.id, start)
-      db.blockMap.update(mtKey, hash)
+      db.blockMap.updateBlock(mtKey, hash)
     })
   }
 
   // Insert partials to make the hash match
   for (const [key, hash] of partials) {
-    db.blockMap.update(key, hash, false)
+    db.blockMap.updateBlock(key, hash, 'fs')
   }
 
   if (writelog?.hash) {

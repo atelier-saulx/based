@@ -98,11 +98,11 @@ await test('noLoadDumps', async (t) => {
   )
   deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
-  deepEqual(getBlock1().inmem, true)
-  deepEqual(getBlock2().inmem, false)
+  deepEqual(getBlock1().status , 'inmem')
+  deepEqual(getBlock2().status === 'inmem', false)
 
   await db2.server.loadBlock('employee', 1100)
-  deepEqual(getBlock2().inmem, true)
+  deepEqual(getBlock2().status, 'inmem')
   deepEqual(
     (await db2.query('employee', 2).include('subordinates').get().toObject())
       .subordinates.length,
@@ -111,7 +111,7 @@ await test('noLoadDumps', async (t) => {
   deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
   await db2.server.unloadBlock('employee', 1100)
-  deepEqual(getBlock2().inmem, false)
+  deepEqual(getBlock2().status === 'inmem', false)
   deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 511)
   deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
 
@@ -178,7 +178,7 @@ await test('references', async (t) => {
   await reload()
   for (const type of db.server.blockMap.types()) {
     for (const block of db.server.blockMap.blocks(type)) {
-      deepEqual(block.inmem, false)
+      deepEqual(block.status === 'inmem', false)
     }
   }
 
@@ -191,12 +191,12 @@ await test('references', async (t) => {
     for (const block of db.server.blockMap.blocks(type)) {
       if (block.key === 8589934593) {
         assert(block.loadPromise)
-        deepEqual(block.inmem, false)
+        deepEqual(block.status === 'inmem', false)
         block1 = block
       }
     }
   }
   await p
   assert(!block1.loadPromise)
-  deepEqual(block1.inmem, true)
+  deepEqual(block1.status, 'inmem')
 })

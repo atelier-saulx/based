@@ -1,4 +1,3 @@
-import {DbServer} from '../index.js'
 import createDbHash from './dbHash.js'
 import { SchemaTypeDef } from '@based/schema/def'
 
@@ -25,8 +24,15 @@ export const makeTreeKeyFromNodeId = (
   return typeId * 4294967296 + ((tmp / blockCapacity) | 0) * blockCapacity + 1
 }
 
-type Hash = Uint8Array
-const HASH_SIZE = 16
+export type BlockHash = Uint8Array
+export const BLOCK_HASH_SIZE = 16
+
+/**
+ * The states imply:
+ * - 'inmem' = 'fs' | 'inmem'.
+ * - 'dirty' = 'fs' | 'inmem' & 'dirty'
+ */
+export type BlockStatus = 'fs' | 'inmem' | 'dirty'
 
 /**
  * Block state.
@@ -42,16 +48,8 @@ export type Block = {
    * Last acquired hash of the block.
    * This is normally updated at load and save time but never during read/modify ops.
    */
-  hash: Hash
-  /**
-   * If false the block is offloaded to fs;
-   * true doesn't necessarily mean that the block still exists because it could have been deleted.
-   */
-  inmem: boolean
-  /**
-   * The block needs to be saved.
-   */
-  dirty: boolean
+  hash: BlockHash
+  status: BlockStatus
   /**
    * If set, the block is being loaded and it can be awaited with this promise.
    */
@@ -119,9 +117,9 @@ export class BlockMap {
     }
   }
 
-  updateDirtyBlocks(dirtyBlocks: Float64Array) {
+  setDirtyBlocks(dirtyBlocks: Float64Array) {
     for (const key of dirtyBlocks) {
-      this.getBlock(key).dirty = true
+      this.getBlock(key).status = 'dirty'
     }
   }
 
@@ -136,7 +134,7 @@ export class BlockMap {
 
   get isDirty() {
     let dirty = 0
-    this.foreachBlock((block) => dirty |= ~~block.dirty)
+    this.foreachBlock((block) => dirty |= ~~(block.status === 'dirty'))
     return !!dirty
   }
 
@@ -147,7 +145,7 @@ export class BlockMap {
    */
   foreachDirtyBlock(cb: (typeId: number, start: number, end: number, block: Block) => void) {
     this.foreachBlock((block) => {
-      if (block.dirty) {
+      if (block.status === 'dirty') {
         const [typeId, start] = destructureTreeKey(block.key)
         const t = this.#types[typeId]
         const end = start + t.blockCapacity - 1
@@ -163,7 +161,7 @@ export class BlockMap {
     return this.#h.digest() as Uint8Array
   }
 
-  update(key: number, hash: Hash, inmem: boolean = true) {
+  updateBlock(key: number, hash: BlockHash, status: BlockStatus = 'inmem') {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]
     if (!type) {
@@ -175,15 +173,14 @@ export class BlockMap {
       (type.blocks[blockI] = Object.preventExtensions({
         key,
         hash,
-        inmem,
-        dirty: false,
+        status,
         loadPromise: null,
       }))
     block.hash = hash
-    block.inmem = inmem
+    block.status = status
   }
 
-  remove(key: number) {
+  removeBlock(key: number) {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]
     if (!type) {

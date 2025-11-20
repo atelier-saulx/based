@@ -136,9 +136,8 @@ export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
         )
       }
     } else {
-      db.blockMap.foreachDirtyBlock((typeId, start, end, block) => {
+      db.blockMap.foreachDirtyBlock((typeId, start, end) => {
         saveBlock(db, typeId, start, end)
-        block.dirty = false
       }
       )
     }
@@ -206,7 +205,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
         )
       }
     } else {
-      db.blockMap.foreachDirtyBlock((typeId, start, end, block) => {
+      db.blockMap.foreachDirtyBlock((typeId, start, end) => {
         const file = BlockMap.blockSdbFile(typeId, start, end)
         const filepath = join(db.fileSystemPath, file)
         blocks.push({
@@ -214,7 +213,6 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
           typeId,
           start,
         })
-        block.dirty = false // TODO Should this happen after the save is actually verified?
       })
     }
     await saveBlocks(db, blocks)

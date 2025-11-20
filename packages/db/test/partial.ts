@@ -152,7 +152,7 @@ await test('simple load/unload', async (t) => {
   await db2.start({ noLoadDumps: true })
   t.after(() => db2.destroy())
 
-  db2.server.blockMap.foreachBlock((block) => deepEqual(block.inmem, false))
+  db2.server.blockMap.foreachBlock((block) => deepEqual(block.status === 'inmem', false))
 
   await db2.server.loadBlock('product', 1)
 
@@ -166,10 +166,10 @@ await test('simple load/unload', async (t) => {
   deepEqual(d1.length, 100_000, 'first query')
 
   await db2.server.unloadBlock('product', 1)
-  db2.server.blockMap.foreachBlock((block) => deepEqual(block.inmem, false))
+  db2.server.blockMap.foreachBlock((block) => deepEqual(block.status === 'inmem', false))
 
   await db2.server.loadBlock('product', 100_001)
-  deepEqual(db.server.blockMap.getBlock(makeTreeKey(db.server.schemaTypesParsed['product'].id, 100_001)).inmem, true)
+  deepEqual(db.server.blockMap.getBlock(makeTreeKey(db.server.schemaTypesParsed['product'].id, 100_001)).status, 'inmem')
 
   const d2 = await db2
     .query('product')
