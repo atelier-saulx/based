@@ -2,7 +2,7 @@ import { BasedDb, save } from '../../index.js'
 import { dirname, join } from 'path'
 import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
-import { destructureTreeKey } from '../tree.js'
+import { destructureTreeKey } from '../blockMap.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
 import {
@@ -170,7 +170,7 @@ export const migrate = async (
 
   await save(server, { skipMigrationCheck: true })
 
-  server.verifTree.foreachBlock((block) => {
+  server.blockMap.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
     const def = server.schemaTypesParsedById[typeId]
     const end = start + def.blockCapacity - 1
@@ -192,10 +192,10 @@ export const migrate = async (
     server.activeReaders--
     server.onQueryEnd()
     if (i === rangesToMigrate.length) {
-      if (server.verifTree.isDirty) {
+      if (server.blockMap.isDirty) {
         rangesToMigrate = []
         i = 0
-        server.verifTree.foreachDirtyBlock(server, (_mtKey, typeId, start, end, block) => {
+        server.blockMap.foreachDirtyBlock(server, (_mtKey, typeId, start, end, block) => {
           rangesToMigrate.push({
             typeId,
             start,

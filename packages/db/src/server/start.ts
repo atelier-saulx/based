@@ -5,7 +5,7 @@ import { IoWorker } from './IoWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { VerifTree, makeTreeKey } from './tree.js'
+import { BlockMap, makeTreeKey } from './blockMap.js'
 import { foreachBlock } from './blocks.js'
 import exitHook from 'exit-hook'
 import { save, saveSync, Writelog } from './save.js'
@@ -86,7 +86,7 @@ export async function start(db: DbServer, opts: StartOpts) {
           const fname = dump.file
           if (fname?.length > 0) {
             try {
-              // Can't use loadBlock() yet because verifTree is not avail
+              // Can't use loadBlock() yet because blockMap is not avail
               native.loadBlock(join(path, fname), db.dbCtxExternal)
             } catch (e) {
               console.error(e.message)
@@ -107,9 +107,9 @@ export async function start(db: DbServer, opts: StartOpts) {
     }
   }
 
-  db.verifTree = new VerifTree(db.schemaTypesParsed)
+  db.blockMap = new BlockMap(db.schemaTypesParsed)
 
-  for (const { typeId } of db.verifTree.types()) {
+  for (const { typeId } of db.blockMap.types()) {
     const def = db.schemaTypesParsedById[typeId]
     def.blockCapacity =
       writelog?.types[def.id]?.blockCapacity ||
@@ -118,18 +118,18 @@ export async function start(db: DbServer, opts: StartOpts) {
 
     foreachBlock(db, def, (start, _end, hash) => {
       const mtKey = makeTreeKey(def.id, start)
-      db.verifTree.update(mtKey, hash)
+      db.blockMap.update(mtKey, hash)
     })
   }
 
   // Insert partials to make the hash match
   for (const [key, hash] of partials) {
-    db.verifTree.update(key, hash, false)
+    db.blockMap.update(key, hash, false)
   }
 
   if (writelog?.hash) {
     const oldHash = hexToBuf(writelog.hash)
-    const newHash = db.verifTree.hash
+    const newHash = db.blockMap.hash
 
     if (!equals(oldHash, newHash)) {
       console.error(

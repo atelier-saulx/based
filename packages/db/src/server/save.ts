@@ -2,7 +2,7 @@ import native from '../native.js'
 import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { VerifTree, destructureTreeKey } from './tree.js'
+import { BlockMap, destructureTreeKey } from './blockMap.js'
 import {
   saveBlock,
   foreachBlock,
@@ -51,7 +51,7 @@ function inhibitSave(
 ): boolean {
   // RFE isMainThread needed??
   if (
-    !(isMainThread && (skipDirtyCheck || db.verifTree.isDirty || forceFullDump))
+    !(isMainThread && (skipDirtyCheck || db.blockMap.isDirty || forceFullDump))
   ) {
     return true
   }
@@ -83,12 +83,12 @@ function makeWritelog(db: DbServer, ts: number): Writelog {
     rangeDumps[id] = []
   }
 
-  db.verifTree.foreachBlock((block) => {
+  db.blockMap.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
     const def = db.schemaTypesParsedById[typeId]
     const end = start + def.blockCapacity - 1
     const data: RangeDump = {
-      file: db.verifTree.getBlockFile(block),
+      file: db.blockMap.getBlockFile(block),
       hash: bufToHex(block.hash),
       start,
       end,
@@ -102,7 +102,7 @@ function makeWritelog(db: DbServer, ts: number): Writelog {
     types,
     commonDump: COMMON_SDB_FILE,
     rangeDumps,
-    hash: bufToHex(db.verifTree.hash), // TODO `hash('hex')`
+    hash: bufToHex(db.blockMap.hash), // TODO `hash('hex')`
   }
 }
 
@@ -125,18 +125,18 @@ export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
 
     if (opts.forceFullDump) {
       // reset the state just in case
-      db.verifTree = new VerifTree(db.schemaTypesParsed)
+      db.blockMap = new BlockMap(db.schemaTypesParsed)
 
-      // We use db.verifTree.types instead of db.schemaTypesParsed because it's
+      // We use db.blockMap.types instead of db.schemaTypesParsed because it's
       // ordered.
-      for (const { typeId } of db.verifTree.types()) {
+      for (const { typeId } of db.blockMap.types()) {
         const def = db.schemaTypesParsedById[typeId]
         foreachBlock(db, def, (start: number, end: number, _hash: Uint8Array) =>
           saveBlock(db, def.id, start, end),
         )
       }
     } else {
-      db.verifTree.foreachDirtyBlock(db, (_mtKey, typeId, start, end, block) => {
+      db.blockMap.foreachDirtyBlock(db, (_mtKey, typeId, start, end, block) => {
         saveBlock(db, typeId, start, end)
         block.dirty = false
       }
@@ -183,19 +183,19 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
 
     if (opts.forceFullDump) {
       // reset the state just in case
-      db.verifTree = new VerifTree(db.schemaTypesParsed)
+      db.blockMap = new BlockMap(db.schemaTypesParsed)
 
-      // We use db.verifTree.types instead of db.schemaTypesParsed because it's
+      // We use db.blockMap.types instead of db.schemaTypesParsed because it's
       // ordered.
 
-      for (const { typeId } of db.verifTree.types()) {
+      for (const { typeId } of db.blockMap.types()) {
         const def = db.schemaTypesParsedById[typeId]
         foreachBlock(
           db,
           def,
           (start: number, end: number, _hash: Uint8Array) => {
             const typeId = def.id
-            const file = VerifTree.blockSdbFile(typeId, start, end)
+            const file = BlockMap.blockSdbFile(typeId, start, end)
             const filepath = join(db.fileSystemPath, file)
             blocks.push({
               filepath,
@@ -206,8 +206,8 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
         )
       }
     } else {
-      db.verifTree.foreachDirtyBlock(db, (_mtKey, typeId, start, end, block) => {
-        const file = VerifTree.blockSdbFile(typeId, start, end)
+      db.blockMap.foreachDirtyBlock(db, (_mtKey, typeId, start, end, block) => {
+        const file = BlockMap.blockSdbFile(typeId, start, end)
         const filepath = join(db.fileSystemPath, file)
         blocks.push({
           filepath,
@@ -220,9 +220,9 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
     await saveBlocks(db, blocks)
 
     try {
-      // Note that we assume here that verifTree didn't change before we call
+      // Note that we assume here that blockMap didn't change before we call
       // makeWritelog(). This is true as long as db.saveInProgress protects
-      // the verifTree from changes.
+      // the blockMap from changes.
       const data = makeWritelog(db, ts)
       await writeFile(
         join(db.fileSystemPath, WRITELOG_FILE),

@@ -4,7 +4,7 @@ import { join, dirname, resolve } from 'path'
 import { BasedDb } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '@based/utils'
-import { destructureTreeKey, VerifTree } from '../../src/server/tree.js'
+import { destructureTreeKey, BlockMap } from '../../src/server/blockMap.js'
 import fs from 'node:fs/promises'
 
 export const counts = {
@@ -111,8 +111,8 @@ const test = async (
       }
       const oldBlocks: MyBlockMap = {}
       const newBlocks: MyBlockMap = {}
-      const putBlocks = (verifTree: VerifTree, m: MyBlockMap) =>
-        verifTree.foreachBlock(
+      const putBlocks = (blockMap: BlockMap, m: MyBlockMap) =>
+        blockMap.foreachBlock(
           (block) =>
             (m[block.key] = {
               key: block.key,
@@ -121,7 +121,7 @@ const test = async (
               hash: bufToHex(block.hash),
             }),
         )
-      putBlocks(db.server.verifTree, oldBlocks)
+      putBlocks(db.server.blockMap, oldBlocks)
 
       await db.stop()
 
@@ -167,7 +167,7 @@ const test = async (
       }
 
       deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
-      putBlocks(newDb.server.verifTree, newBlocks)
+      putBlocks(newDb.server.blockMap, newBlocks)
       for (const k in oldBlocks) {
         deepEqual(oldBlocks[k], newBlocks[k])
       }

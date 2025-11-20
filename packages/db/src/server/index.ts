@@ -10,7 +10,7 @@ import {
 } from '@based/schema'
 import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
-import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
+import { BlockMap, destructureTreeKey, makeTreeKeyFromNodeId } from './blockMap.js'
 import { save } from './save.js'
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
@@ -54,7 +54,7 @@ export class DbServer extends DbShared {
   migrating: number = null
   saveInProgress: boolean = false
   fileSystemPath: string
-  verifTree: VerifTree // should be updated only when saving/loading
+  blockMap: BlockMap
   ioWorker: IoWorker
   workers: QueryWorker[] = []
   availableWorkerIndex: number = -1
@@ -123,7 +123,7 @@ export class DbServer extends DbShared {
     const key = makeTreeKeyFromNodeId(typeId, def.blockCapacity, nodeId)
     const [, start] = destructureTreeKey(key)
 
-    const block = this.verifTree.getBlock(key)
+    const block = this.blockMap.getBlock(key)
     if (!block) {
       throw new Error('Block not found')
     }

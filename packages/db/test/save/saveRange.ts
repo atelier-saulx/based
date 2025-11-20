@@ -54,7 +54,7 @@ await test('save simple range', async (t) => {
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
-  const firstHash = db.server.verifTree.hash
+  const firstHash = db.server.blockMap.hash
 
   db.update('user', 1, {
     age: 1337,
@@ -73,7 +73,7 @@ await test('save simple range', async (t) => {
   const save2_start = performance.now()
   await db.stop()
   const save2_end = performance.now()
-  const secondHash = db.server.verifTree.hash
+  const secondHash = db.server.blockMap.hash
 
   equal(save2_end - save2_start < save1_end - save1_start, true)
   equal(equals(firstHash, secondHash), false)
@@ -99,7 +99,7 @@ await test('save simple range', async (t) => {
   t.after(() => newDb.destroy())
 
   const load_end = performance.now()
-  const thirdHash = db.server.verifTree.hash
+  const thirdHash = db.server.blockMap.hash
 
   equal(equals(firstHash, secondHash), false)
   equal(equals(secondHash, thirdHash), true)
@@ -196,7 +196,7 @@ await test('reference changes', async (t) => {
   )
   await db.drain()
   let dirties = 0
-  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
   equal(
     dirties,
     1,
@@ -209,7 +209,7 @@ await test('reference changes', async (t) => {
   })
   await db.drain()
   dirties = 0
-  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
   equal(
     dirties,
     2,
@@ -217,7 +217,7 @@ await test('reference changes', async (t) => {
   )
 
   await db.save()
-  equal(db.server.verifTree.isDirty, false, 'saving clears the dirty set')
+  equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
 
   const doc2 = db.create('doc', {
     title: 'The Slops of AI',
@@ -227,10 +227,10 @@ await test('reference changes', async (t) => {
   })
   await db.drain()
   dirties = 0
-  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
   equal(dirties, 1, 'creating docs makes the range dirty')
   await db.save()
-  equal(db.server.verifTree.isDirty, false, 'saving clears the dirty set')
+  equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
 
   // Link user -> doc
 
@@ -238,19 +238,19 @@ await test('reference changes', async (t) => {
 
   await db.drain()
   dirties = 0
-  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
   equal(dirties, 2, 'Linking a user to doc makes both dirty')
   await db.save()
-  equal(db.server.verifTree.isDirty, false, 'saving clears the dirty set')
+  equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
 
   // Link doc -> user
   db.update('doc', doc3, { creator: users[2] })
   await db.drain()
   dirties = 0
-  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  db.server.blockMap.foreachDirtyBlock(db.server, () => dirties++)
   equal(dirties, 2, 'Linking a doc to user makes both dirty')
   await db.save()
-  equal(db.server.verifTree.isDirty, false, 'saving clears the dirty set')
+  equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
 })
 
 await test('ref block moves', async (t) => {

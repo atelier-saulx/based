@@ -1,5 +1,5 @@
 import { BasedDb } from '../../src/index.js'
-import { makeTreeKey } from '../../src/server/tree.js'
+import { makeTreeKey } from '../../src/server/blockMap.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
 
@@ -42,7 +42,7 @@ await test('save edge', async (t) => {
   })
 
   const A = new Set()
-  db.server.verifTree.foreachDirtyBlock(db.server, (k) => A.add(k))
+  db.server.blockMap.foreachDirtyBlock(db.server, (k) => A.add(k))
   deepEqual(A.symmetricDifference(new Set([makeTreeKey(2, 1), makeTreeKey(3, 1)])).size, 0)
 
   deepEqual(await db.query('user', user2).include('**').get(), {
