@@ -21,7 +21,7 @@ pub inline fn writeIntExact(comptime T: type, buffer: []u8, offset: usize, value
 
 pub inline fn toSlice(comptime T: type, value: []u8) []T {
     const size = if (T == f32 or T == u32 or T == i32) 4 else if (T == f64 or T == u64 or T == i64) 8 else if (T == u16 or T == i16) 2;
-    const x: []T = @as([*]T, @alignCast(@ptrCast(value.ptr)))[0..@divFloor(value.len, size)];
+    const x: []T = @as([*]T, @ptrCast(@alignCast(value.ptr)))[0..@divFloor(value.len, size)];
     return x;
 }
 
@@ -33,7 +33,7 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
             else => @compileError("Expected pointer type"),
         };
         const s = if (X == f32 or X == u32 or X == i32) 4 else if (X == f64 or X == u64 or X == i64) 8 else if (X == u16 or X == i16) 2;
-        const x: T = @as([*]X, @alignCast(@ptrCast(buffer.ptr)))[0..@divFloor(buffer.len, s)];
+        const x: T = @as([*]X, @ptrCast(@alignCast(buffer.ptr)))[0..@divFloor(buffer.len, s)];
         return x;
     }
     const size = if (T == f32 or T == u32 or T == i32) 4 else if (T == f64 or T == u64 or T == i64) 8 else if (T == u16 or T == i16) 2 else if (T == u8 or T == i8) 1;
@@ -47,6 +47,7 @@ pub fn debugPrint(comptime format: []const u8, args: anytype) void {
     }
 }
 
+// TODO MERGE these 2
 pub inline fn copy(dest: []u8, source: []const u8) void {
     if (builtin.link_libc) {
         _ = memcpy(dest.ptr, source.ptr, source.len);

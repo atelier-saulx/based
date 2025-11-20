@@ -46,6 +46,7 @@ pub fn getQueryThreaded(
         .aggResult = null,
         .allocator = allocator,
     };
+
     var index: usize = 0;
     const queryType: QueryType = @enumFromInt(q[index]);
     index += 1;

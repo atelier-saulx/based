@@ -51,7 +51,7 @@ pub fn getQueryBufInternalResults(env: napi.c.napi_env, info: napi.c.napi_callba
     // prob dont want this from ZIG
     const args = try napi.getArgs(1, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-    dbCtx.threads.waitForAll();
+    dbCtx.threads.waitForQueries();
     var js_array: napi.c.napi_value = undefined;
     _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &js_array);
     for (dbCtx.threads.threads, 0..) |thread, index| {
