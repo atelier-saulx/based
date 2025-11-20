@@ -11,7 +11,6 @@ pub const c = @cImport({
     @cDefine("false", "(_Bool)0");
 
     @cInclude("cdefs.h");
-
     @cInclude("selva/db.h");
     @cInclude("selva/fields.h");
     @cInclude("selva/node_id_set.h");
@@ -25,18 +24,12 @@ pub const c = @cImport({
     @cInclude("selva/hll.h");
     @cInclude("selva/colvec.h");
     @cInclude("selva/gmtime.h");
-
-    @cInclude("libdeflate.h");
-
     @cInclude("selva_lang_code.h");
     @cInclude("selva/selva_lang.h");
-
     @cInclude("selva/strsearch.h");
     @cInclude("selva/vector.h");
-
     @cInclude("selva/thread.h");
     @cInclude("selva/membar.h");
-
     @cInclude("selva/mblen.h");
 });
 

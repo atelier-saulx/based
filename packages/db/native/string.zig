@@ -1,4 +1,5 @@
 const napi = @import("./napi.zig");
+const deflate = @import("./deflate.zig");
 const std = @import("std");
 const selva = @import("./selva.zig").c;
 const writeInt = @import("./utils.zig").writeInt;
@@ -50,24 +51,24 @@ pub fn crc32(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
 }
 
 fn compressor_finalize(_: napi.Env, compressor: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
-    selva.libdeflate_free_compressor(@ptrCast(compressor));
+    deflate.destroyCompressor(@ptrCast(compressor));
 }
 
 // return queryId
 pub fn createCompressor(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
-    const compressor: *selva.libdeflate_compressor = selva.libdeflate_alloc_compressor(3).?;
+    const compressor = deflate.createCompressor(3) catch return null;
     var externalNapi: napi.Value = undefined;
     _ = napi.c.napi_create_external(napi_env, compressor, compressor_finalize, null, &externalNapi);
     return externalNapi;
 }
 
 fn decompressor_finalize(_: napi.Env, decompressor: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
-    selva.libdeflate_free_decompressor(@ptrCast(decompressor));
+    deflate.destroyDecompressor(@ptrCast(decompressor));
 }
 
 // var decompressor: ?*selva.libdeflate_decompressor = null;
 pub fn createDecompressor(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
-    const decompressor: *selva.libdeflate_decompressor = selva.libdeflate_alloc_decompressor().?;
+    const decompressor = deflate.createDecompressor();
     var externalNapi: napi.Value = undefined;
     _ = napi.c.napi_create_external(napi_env, decompressor, decompressor_finalize, null, &externalNapi);
     return externalNapi;
@@ -77,68 +78,32 @@ pub fn compress(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(4, env, info) catch {
         return null;
     };
-
-    // const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-
-    const compressor = napi.get(?*selva.libdeflate_compressor, env, args[0]) catch {
+    const compressor = napi.get(?*deflate.Compressor, env, args[0]) catch {
         return null;
     };
-
-    const output = napi.get([]u8, env, args[1]) catch {
-        return null;
-    };
-    const offset = napi.get(u32, env, args[2]) catch {
-        return null;
-    };
-    const stringSize = napi.get(u32, env, args[3]) catch {
-        return null;
-    };
+    const output = napi.get([]u8, env, args[1]) catch return null;
+    const offset = napi.get(u32, env, args[2]) catch return null;
+    const stringSize = napi.get(u32, env, args[3]) catch return null;
     const input: []u8 = output[offset + stringSize .. offset + stringSize * 2];
-    const o = selva.libdeflate_compress(
+
+    const o = deflate.compress(
         compressor.?,
-        @ptrCast(input.ptr),
-        input.len,
-        @ptrCast(output[offset..output.len].ptr),
-        output.len,
+        input,
+        output[offset..output.len],
     );
     var result: napi.Value = null;
     _ = napi.c.napi_create_uint32(env, @intCast(o), &result);
     return result;
 }
 
-// libdeflate_decompress(struct libdeflate_decompressor *decompressor,
-// const void *in, size_t in_nbytes,
-// void *out, size_t out_nbytes_avail,
-// size_t *actual_out_nbytes_ret);
-
-// compressor has to be per ctx else multi core unsafe
 pub fn decompress(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    const args = napi.getArgs(5, env, info) catch {
-        return null;
-    };
-    const decompressor = napi.get(?*selva.libdeflate_decompressor, env, args[0]) catch {
-        return null;
-    };
-    const input = napi.get([]u8, env, args[1]) catch {
-        return null;
-    };
-    const output = napi.get([]u8, env, args[2]) catch {
-        return null;
-    };
-    const offset = napi.get(u32, env, args[3]) catch {
-        return null;
-    };
-    const len = napi.get(u32, env, args[4]) catch {
-        return null;
-    };
-    _ = selva.libdeflate_decompress(
-        decompressor,
-        @ptrCast(input[offset .. offset + len].ptr),
-        len,
-        @ptrCast(output.ptr),
-        output.len,
-        null,
-    );
+    const args = napi.getArgs(5, env, info) catch return null;
+    const decompressor = napi.get(?*deflate.Decompressor, env, args[0]) catch return null;
+    const input = napi.get([]u8, env, args[1]) catch return null;
+    const output = napi.get([]u8, env, args[2]) catch return null;
+    const offset = napi.get(u32, env, args[3]) catch return null;
+    const len = napi.get(u32, env, args[4]) catch return null;
+    deflate.decompress(decompressor.?, input[offset .. offset + len], output) catch return null;
     return null;
 }
 

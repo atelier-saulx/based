@@ -7,7 +7,7 @@ const selva = @import("../../selva.zig").c;
 const results = @import("../results.zig");
 const errors = @import("../../errors.zig");
 const utils = @import("../../utils.zig");
-const decompressFirstBytes = @import("../../db/decompress.zig").decompressFirstBytes;
+const decompressFirstBytes = @import("../../deflate.zig").decompressFirstBytes;
 
 pub const IncludeOpts = struct { end: u32, isChars: bool };
 

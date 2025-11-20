@@ -1,6 +1,5 @@
 const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
-const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
-const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
+const deflate = @import("../../deflate.zig");
 const read = @import("../../utils.zig").read;
 const createSearchCtx = @import("../filter/search.zig").createSearchCtx;
 const isVectorSearch = @import("../filter/search.zig").isVectorSearch;

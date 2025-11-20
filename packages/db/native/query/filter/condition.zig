@@ -10,11 +10,10 @@ const Op = t.Operator;
 const Type = t.Type;
 const ConditionsResult = t.ConditionsResult;
 const Prop = @import("../../types.zig").Prop;
-const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
-const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
+const deflate = @import("../../deflate.zig");
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
-pub inline fn orVar(decompressor: *LibdeflateDecompressor, blockState: *LibdeflateBlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn orVar(decompressor: *deflate.Decompressor, blockState: *deflate.BlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
     const prop: Prop = @enumFromInt(q[2]);
     const valueSize = read(u32, q, i + 6);
     const next = 11 + valueSize;
@@ -53,7 +52,7 @@ pub inline fn orVar(decompressor: *LibdeflateDecompressor, blockState: *Libdefla
     return .{ next, false };
 }
 
-pub inline fn defaultVar(decompressor: *LibdeflateDecompressor, blockState: *LibdeflateBlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
+pub inline fn defaultVar(decompressor: *deflate.Decompressor, blockState: *deflate.BlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
     const prop: Prop = @enumFromInt(q[2]);
     const start = read(u16, q, i + 2);
     const mainLen = read(u16, q, i + 4);

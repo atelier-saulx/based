@@ -6,7 +6,7 @@ const t = @import("../../types.zig");
 const results = @import("../results.zig");
 const errors = @import("../../errors.zig");
 const utils = @import("../../utils.zig");
-const decompressFirstBytes = @import("../../db/decompress.zig").decompressFirstBytes;
+const decompressFirstBytes = @import("../../deflate.zig").decompressFirstBytes;
 const o = @import("./opts.zig");
 
 pub const ResultType = enum(u8) {

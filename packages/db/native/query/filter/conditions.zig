@@ -6,12 +6,11 @@ const Type = t.Type;
 const ConditionsResult = t.ConditionsResult;
 const c = @import("./condition.zig");
 const std = @import("std");
-const LibdeflateDecompressor = @import("../../db/decompress.zig").LibdeflateDecompressor;
-const LibdeflateBlockState = @import("../../db/decompress.zig").LibdeflateBlockState;
+const deflate = @import("../../deflate.zig");
 
 inline fn condition(
-    decompressor: *LibdeflateDecompressor,
-    blockState: *LibdeflateBlockState,
+    decompressor: *deflate.Decompressor,
+    blockState: *deflate.BlockState,
     mode: Mode,
     q: []u8,
     v: []u8,
@@ -28,8 +27,8 @@ inline fn condition(
 }
 
 pub inline fn runConditions(
-    decompressor: *LibdeflateDecompressor,
-    blockState: *LibdeflateBlockState,
+    decompressor: *deflate.Decompressor,
+    blockState: *deflate.BlockState,
     q: []u8,
     v: []u8,
 ) bool {

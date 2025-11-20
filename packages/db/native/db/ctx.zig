@@ -1,6 +1,7 @@
 const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig").c;
+const deflate = @import("../deflate.zig");
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
 const napi = @import("../napi.zig");
@@ -8,7 +9,6 @@ const SelvaError = @import("../errors.zig").SelvaError;
 const subs = @import("./subscription/types.zig");
 const threads = @import("./threads.zig");
 const rand = std.crypto.random;
-const deflate = @import("./decompress.zig");
 
 pub const DbCtx = struct {
     id: u32,
@@ -21,8 +21,8 @@ pub const DbCtx = struct {
     ids: []u32,
     queryCallback: *napi.Callback,
     threads: *threads.Threads,
-    decompressor: *deflate.LibdeflateDecompressor,
-    libdeflateBlockState: deflate.LibdeflateBlockState,
+    decompressor: *deflate.Decompressor,
+    libdeflateBlockState: deflate.BlockState,
     pub fn deinit(self: *DbCtx, backing_allocator: std.mem.Allocator) void {
         self.arena.deinit();
         backing_allocator.destroy(self.arena);
@@ -74,8 +74,8 @@ pub fn createDbCtx(queryCallback: *napi.Callback) !*DbCtx {
         .subscriptions = subscriptions.*,
         .ids = &[_]u32{},
         .queryCallback = queryCallback,
-        .decompressor = selva.libdeflate_alloc_decompressor().?, // never fails
-        .libdeflateBlockState = selva.libdeflate_block_state_init(305000),
+        .decompressor = deflate.createDecompressor(),
+        .libdeflateBlockState = deflate.initBlockState(305000),
     };
 
     return b;
