@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
-import { setTimeout as setTimeoutAsync } from 'timers/promises'
 import test from './shared/test.js'
 import { italy } from './shared/examples.js'
+import { setTimeout as setTimeoutAsync } from 'timers/promises'
 
 await test('concurrency', async (t) => {
   const db = new BasedDb({
@@ -81,32 +81,41 @@ await test('concurrency', async (t) => {
     `Received # of items ${len} processed ${queriesParsed} size ${size / 1e3 / 1e3}mb`,
   )
 })
-
 await test('many instances', async (t) => {
-  const dbs = await Promise.all(Array.from({ length: 20 }).map(async () => {
-    const db = new BasedDb({
-      path: t.tmp,
-    })
-    await db.start({ clean: true })
-    t.after(() => t.backup(db))
-    return db
-  }))
+  const dbs = await Promise.all(
+    Array.from({ length: 20 }).map(async () => {
+      const db = new BasedDb({
+        path: t.tmp,
+      })
+      await db.start({ clean: true })
+      t.after(() => t.backup(db))
+      return db
+    }),
+  )
 
-  await Promise.all(dbs.map(async (db) => db.setSchema({
-    types: {
-      t: {
-        props: {
-          i: 'number',
-          s: { type: 'string', compression: 'deflate' },
+  await Promise.all(
+    dbs.map(async (db) =>
+      db.setSchema({
+        types: {
+          t: {
+            props: {
+              i: 'number',
+              s: { type: 'string', compression: 'deflate' },
+            },
+          },
         },
-      },
-    },
-  })))
+      }),
+    ),
+  )
 
   const s = italy.slice(0, 1024)
   for (let i = 0; i < 10_000; i++) {
     dbs.map((db) => db.create('t', { i, s }))
   }
-  await Promise.all(dbs.map((db) => db.query('t').search('contribution', 's').include('i').get()))
+  await Promise.all(
+    dbs.map((db) =>
+      db.query('t').search('contribution', 's').include('i').get(),
+    ),
+  )
   await Promise.all(dbs.map((db) => db.drain()))
 })
