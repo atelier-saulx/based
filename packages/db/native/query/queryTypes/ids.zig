@@ -44,7 +44,7 @@ pub fn sort(
         if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
             continue :sortItem;
         }
-        const value = db.getField(typeEntry, id, node.?, fieldSchema, sortProp);
+        const value = db.getField(typeEntry, node.?, fieldSchema, sortProp);
         dbSort.insert(ctx.db, &metaSortIndex, value, node.?);
     }
     // ------------------------------

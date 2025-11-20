@@ -4,9 +4,6 @@ import { registerQuery } from '../registerQuery.js'
 import { registerSubscription } from './toByteCode.js'
 import { OnData, OnError, OnClose } from './types.js'
 
-// exec
-// subscription thing
-
 export class SubStore {
   listeners: Map<OnData, OnError>
   onClose: OnClose
@@ -92,13 +89,14 @@ export const subscribe = (
     const store = q.db.subs.get(q)
     store.listeners.set(onData, onError)
   }
-
   return () => {
     const store = q.db.subs.get(q)
-    store.listeners.delete(onData)
-    if (!store.listeners.size) {
-      q.db.subs.delete(q)
-      store.onClose()
+    if (store) {
+      store.listeners.delete(onData)
+      if (!store.listeners.size) {
+        q.db.subs.delete(q)
+        store.onClose()
+      }
     }
   }
 }

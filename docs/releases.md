@@ -4,7 +4,7 @@ This document provides a high-level overview of our database release plan.
 It highlights the major planned evolutions and key milestones, without getting into extensive technical details.
 Note that version numbers may change due to nightly releases.
 
-## v0.1.1 (Sep 2025)
+## SDK v0.1.0 (DB v0.1.1) (Sep 2025)
 
 **Include**
 
@@ -97,7 +97,7 @@ Note that version numbers may change due to nightly releases.
 - The _BasedQueryResponse_ now uses _id_ for node IDs, as opposed to the _queryId_
 - Setting a string to _text_ properties without a _locale_ is no longer allowed
 
-## v0.2.\* (Oct 1st 2025)
+## SDK v1.0.0 (DB v0.1.5) (Oct 1st 2025)
 
 - Optimized Server client integration
   - Complete protocol package for each format of based server / client e.g. response formats
@@ -131,7 +131,7 @@ Note that version numbers may change due to nightly releases.
   - Automatic cohesive updates across all suite of packages
   - Start of CI/CD
 
-## v0.3.\* (Nov 7th 2025)
+## SDK v1.1.2 (DB v0.2.2) (Nov 7th 2025)
 
 - Handover from October plan
 - Expose function 'entrypoint' on context
@@ -162,7 +162,7 @@ Note that version numbers may change due to nightly releases.
 - Fixed bug with expire syntax + dependent
 - Fixed bug with edges and migrations
 
-## v0.4.\* (Dec 1st 2025)
+## SDK 1.v0.4.\* (Dec 1st 2025)
 
 - Fully automated partial loading & offloading of large databases
 - Sorted results and Range on aggregations

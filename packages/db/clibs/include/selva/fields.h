@@ -134,6 +134,9 @@ struct selva_string *selva_fields_ensure_string(
         const struct SelvaFieldSchema *fs,
         size_t initial_len);
 
+SELVA_EXPORT
+struct SelvaNodeReferenceAny selva_fields_references_get(const struct SelvaNodeReferences *refs, node_id_t dst_node_id);
+
 /**
  * Set reference to fields.
  */

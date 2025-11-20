@@ -52,16 +52,19 @@ export const startUpdateHandler = (server: DbServer) => {
     // can do seperate timing for id / type
     // scince multi queries are much heavier ofc
     const markedIdSubs = native.getMarkedIdSubscriptions(server.dbCtxExternal)
+
     if (markedIdSubs) {
       const buffer = new Uint8Array(markedIdSubs)
       for (let i = 0; i < buffer.byteLength; i += 8) {
         const id = readUint32(buffer, i)
         const subId = readUint32(buffer, i + 4)
         const subContainer = server.subscriptions.ids.get(subId)
-        const ids = subContainer.ids.get(id)
-        if (ids) {
-          for (const fn of ids) {
-            fn()
+        if (subContainer) {
+          const ids = subContainer.ids.get(id)
+          if (ids) {
+            for (const fn of ids) {
+              fn()
+            }
           }
         }
       }
@@ -150,10 +153,6 @@ const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
   }
 }
 
-let total = 0
-let exectime = 0
-let int
-
 export const registerSubscription = (
   server: DbServer,
   query: Uint8Array,
@@ -162,21 +161,10 @@ export const registerSubscription = (
   onError: OnError,
   subInterval?: number,
 ) => {
-  // this can change dynamicly
   if (subInterval) {
     server.subscriptions.subInterval = subInterval
   }
-  if (!int)
-    int = setInterval(() => {
-      console.log('EXECED', total, exectime / total, 'ms exec time')
-      if (server.stopped) {
-        clearInterval(int)
-      }
-    }, 1e3)
-
   let killed = false
-
-  // now maybe just once per second? (for now)
 
   if (server.subscriptions.active === 0) {
     startUpdateHandler(server)
@@ -196,8 +184,8 @@ export const registerSubscription = (
         if (killed) {
           return
         }
-        total++
-        exectime += Date.now() - d
+        // total++
+        // exectime += Date.now() - d
         if (res.byteLength >= 4) {
           onData(res)
         } else if (res.byteLength === 1 && res[0] === 0) {
@@ -222,23 +210,28 @@ export const registerSubscription = (
   if (sub[0] === SubscriptionType.singleId) {
     const subId = readUint32(sub, 1)
     const id = readUint32(sub, 7)
-    const headerLen = 16
+    const headerLen = 18
     let subContainer: SubscriptionId
     let listeners: Set<() => void>
     if (!server.subscriptions.ids.get(subId)) {
       subContainer = { ids: new Map() }
       server.subscriptions.ids.set(subId, subContainer)
-      const typesLen = readUint16(sub, 12)
-      const nowLen = readUint16(sub, 14)
       const fLen = sub[11]
+      const mainLen = readUint16(sub, 12) * 2
+      const typesLen = readUint16(sub, 14)
+      const nowLen = readUint16(sub, 16)
+
       if (typesLen != 0) {
         // double check if this is alignment correct with the byteOffset else copy
-        const byteOffset = sub.byteOffset + headerLen + fLen
+        const byteOffset = sub.byteOffset + headerLen + fLen + mainLen
         if (byteOffset % 2 === 0) {
           subContainer.types = new Uint16Array(sub.buffer, byteOffset, typesLen)
         } else {
           subContainer.types = new Uint16Array(
-            sub.slice(headerLen + fLen, headerLen + fLen + typesLen * 2),
+            sub.slice(
+              headerLen + fLen + mainLen,
+              headerLen + fLen + mainLen + typesLen * 2,
+            ),
           )
         }
         subContainer.typesListener = () => {
@@ -259,7 +252,7 @@ export const registerSubscription = (
         // when getting the date mark next in line
 
         // have to make a copy (subArray is weak)
-        now = sub.slice(headerLen + fLen + typesLen * 2)
+        now = sub.slice(headerLen + fLen + mainLen + typesLen * 2)
         subContainer.nowListener = () => {
           // per id want to have a last eval and needs next eval
 
@@ -342,13 +335,10 @@ export const registerSubscription = (
 
     return () => {
       killed = true
-
       if (now) {
         server.subscriptions.now.listeners.delete(runQuery)
       }
-
       removeFromMultiSub(server, typeId, runQuery)
-
       if (types) {
         for (const typeId of types) {
           removeFromMultiSub(server, typeId, runQuery)

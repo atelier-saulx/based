@@ -71,14 +71,13 @@ pub inline fn aggregateRefsGroup(
     filterArr: ?[]u8,
 ) !usize {
     const typeEntry = try db.getType(ctx.db, typeId);
-    var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     const emptyKey = &[_]u8{};
     const fieldSchema = db.getFieldSchema(originalType, refField) catch {
         return 0;
     };
-    edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
+    const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
     const references = db.getReferences(node, fieldSchema);
     if (references == null) {
         return 0;
@@ -101,14 +100,14 @@ pub inline fn aggregateRefsGroup(
     defer selva.selva_string_free(hllAccumulator);
 
     checkItem: while (i < refsCnt) : (i += 1) {
-        if (incTypes.resolveRefsNode(ctx, refs.?, i)) |n| {
+        if (incTypes.resolveRefsNode(ctx.db, refs.?, i)) |n| {
             if (hasFilter) {
                 const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
                 if (!filter(ctx.db, n, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                     continue :checkItem;
                 }
             }
-            const groupValue = db.getField(typeEntry, db.getNodeId(n), n, groupCtx.fieldSchema, groupCtx.propType);
+            const groupValue = db.getField(typeEntry, n, groupCtx.fieldSchema, groupCtx.propType);
             const key: []u8 = if (groupValue.len > 0)
                 if (groupCtx.propType == types.Prop.STRING)
                     if (groupCtx.field == 0)
@@ -169,7 +168,6 @@ pub inline fn aggregateRefsDefault(
     const accumulatorField = try ctx.allocator.alloc(u8, accumulatorSize);
     @memset(accumulatorField, 0);
     const typeEntry = try db.getType(ctx.db, typeId);
-    var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?incTypes.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     var hadAccumulated: bool = false;
@@ -181,7 +179,7 @@ pub inline fn aggregateRefsDefault(
     fieldSchema = db.getFieldSchema(originalType, refField) catch {
         return aggPropDefSize;
     };
-    edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
+    const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
     const references = db.getReferences(node, fieldSchema);
     if (references == null) {
         return aggPropDefSize;
@@ -200,7 +198,7 @@ pub inline fn aggregateRefsDefault(
     } else {
         var i: usize = offset;
         checkItem: while (i < refsCnt) : (i += 1) {
-            if (incTypes.resolveRefsNode(ctx, refs.?, i)) |refNode| {
+            if (incTypes.resolveRefsNode(ctx.db, refs.?, i)) |refNode| {
                 const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
                 if (hasFilter) {
                     if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {

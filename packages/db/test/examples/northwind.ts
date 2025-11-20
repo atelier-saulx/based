@@ -107,44 +107,48 @@ await test('Basic SQL', async (t) => {
     .include('title', 'firstName', 'lastName')
     .filter('title', '=', 'Sales Representative')
     .get()
-  deepEqual(r5, [
-    {
-      id: 1,
-      lastName: 'Davolio',
-      firstName: 'Nancy',
-      title: 'Sales Representative',
-    },
-    {
-      id: 3,
-      lastName: 'Leverling',
-      firstName: 'Janet',
-      title: 'Sales Representative',
-    },
-    {
-      id: 4,
-      lastName: 'Peacock',
-      firstName: 'Margaret',
-      title: 'Sales Representative',
-    },
-    {
-      id: 6,
-      lastName: 'Suyama',
-      firstName: 'Michael',
-      title: 'Sales Representative',
-    },
-    {
-      id: 7,
-      lastName: 'King',
-      firstName: 'Robert',
-      title: 'Sales Representative',
-    },
-    {
-      id: 9,
-      lastName: 'Dodsworth',
-      firstName: 'Anne',
-      title: 'Sales Representative',
-    },
-  ])
+  deepEqual(
+    r5,
+    [
+      {
+        id: 1,
+        lastName: 'Davolio',
+        firstName: 'Nancy',
+        title: 'Sales Representative',
+      },
+      {
+        id: 3,
+        lastName: 'Leverling',
+        firstName: 'Janet',
+        title: 'Sales Representative',
+      },
+      {
+        id: 4,
+        lastName: 'Peacock',
+        firstName: 'Margaret',
+        title: 'Sales Representative',
+      },
+      {
+        id: 6,
+        lastName: 'Suyama',
+        firstName: 'Michael',
+        title: 'Sales Representative',
+      },
+      {
+        id: 7,
+        lastName: 'King',
+        firstName: 'Robert',
+        title: 'Sales Representative',
+      },
+      {
+        id: 9,
+        lastName: 'Dodsworth',
+        firstName: 'Anne',
+        title: 'Sales Representative',
+      },
+    ],
+    '5. Create a report showing the title and the first and last name of all sales representatives',
+  )
 
   // 6a. Create a report showing the first and last names of all employees who have a region specified.
   const r6a = await db
@@ -152,13 +156,17 @@ await test('Basic SQL', async (t) => {
     .include('firstName', 'lastName', 'region')
     .filter('region', '!=', '')
     .get()
-  deepEqual(r6a, [
-    { id: 1, lastName: 'Davolio', firstName: 'Nancy', region: 'WA' },
-    { id: 2, lastName: 'Fuller', firstName: 'Andrew', region: 'WA' },
-    { id: 3, lastName: 'Leverling', firstName: 'Janet', region: 'WA' },
-    { id: 4, lastName: 'Peacock', firstName: 'Margaret', region: 'WA' },
-    { id: 8, lastName: 'Callahan', firstName: 'Laura', region: 'WA' },
-  ])
+  deepEqual(
+    r6a,
+    [
+      { id: 1, lastName: 'Davolio', firstName: 'Nancy', region: 'WA' },
+      { id: 2, lastName: 'Fuller', firstName: 'Andrew', region: 'WA' },
+      { id: 3, lastName: 'Leverling', firstName: 'Janet', region: 'WA' },
+      { id: 4, lastName: 'Peacock', firstName: 'Margaret', region: 'WA' },
+      { id: 8, lastName: 'Callahan', firstName: 'Laura', region: 'WA' },
+    ],
+    '6a. Create a report showing the first and last names of all employees who have a region specified.',
+  )
 
   // 6b. Create a report showing the first and last names of all employees who don't have a region specified.
   const r6b = await db
@@ -166,13 +174,16 @@ await test('Basic SQL', async (t) => {
     .include('firstName', 'lastName', 'region')
     .filter('region', '=', '')
     .get()
-  deepEqual(r6b, [
-    { id: 5, lastName: 'Buchanan', firstName: 'Steven', region: '' },
-    { id: 6, lastName: 'Suyama', firstName: 'Michael', region: '' },
-    { id: 7, lastName: 'King', firstName: 'Robert', region: '' },
-    { id: 9, lastName: 'Dodsworth', firstName: 'Anne', region: '' },
-  ])
-
+  deepEqual(
+    r6b,
+    [
+      { id: 5, lastName: 'Buchanan', firstName: 'Steven', region: '' },
+      { id: 6, lastName: 'Suyama', firstName: 'Michael', region: '' },
+      { id: 7, lastName: 'King', firstName: 'Robert', region: '' },
+      { id: 9, lastName: 'Dodsworth', firstName: 'Anne', region: '' },
+    ],
+    "6b. Create a report showing the first and last names of all employees who don't have a region specified.",
+  )
 
   // 7. Create a report showing the first and last name of all employees whose last names start
   // with a letter in the last half of the alphabet.
@@ -189,36 +200,41 @@ await test('Basic SQL', async (t) => {
   // TODO Impossible to OR
   const r9 = await db
     .query('employees')
-    .include('firstName', 'lastName', 'title', 'city')
-    .filter('title', '=', 'Sales Representative')
+    .include('firstName', 'lastName', 'title', 'city', 'region')
+    .filter('title', 'includes', 'Sales')
     .filter('region', '!=', '')
-    .or((f) => {
-      f.filter('city', '=', 'Seattle').or('city', '=', 'Redmond')
-    })
+    .filter('city', '=', ['Seattle', 'Redmond'])
     .get()
-  deepEqual(r9, [
-    {
-      id: 1,
-      lastName: 'Davolio',
-      firstName: 'Nancy',
-      title: 'Sales Representative',
-      city: 'Seattle',
-    },
-    {
-      id: 4,
-      lastName: 'Peacock',
-      firstName: 'Margaret',
-      title: 'Sales Representative',
-      city: 'Redmond',
-    },
-    {
-      id: 8,
-      lastName: 'Callahan',
-      firstName: 'Laura',
-      title: 'Inside Sales Coordinator',
-      city: 'Seattle',
-    },
-  ])
+  deepEqual(
+    r9,
+    [
+      {
+        id: 1,
+        firstName: 'Nancy',
+        lastName: 'Davolio',
+        title: 'Sales Representative',
+        city: 'Seattle',
+        region: 'WA',
+      },
+      {
+        id: 4,
+        firstName: 'Margaret',
+        lastName: 'Peacock',
+        title: 'Sales Representative',
+        city: 'Redmond',
+        region: 'WA',
+      },
+      {
+        id: 8,
+        firstName: 'Laura',
+        lastName: 'Callahan',
+        title: 'Inside Sales Coordinator',
+        city: 'Seattle',
+        region: 'WA',
+      },
+    ],
+    '9. Create a report showing the first and last name of all sales representatives who are from ( Seattle or Redmond.)',
+  )
 
   // 10. Create a report that shows the company name, contact title, city and country of all
   // customers in Mexico or in any city in Spain except Madrid.
@@ -230,57 +246,61 @@ await test('Basic SQL', async (t) => {
     .filter('country', 'includes', ['Mexico', 'Spain'])
     .filter('city', '!=', 'Madrid')
     .get()
-  deepEqual(r10, [
-    {
-      id: 2,
-      companyName: 'Ana Trujillo Emparedados y helados',
-      contactTitle: 'Owner',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      id: 3,
-      companyName: 'Antonio Moreno Taquería',
-      contactTitle: 'Owner',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      id: 13,
-      companyName: 'Centro comercial Moctezuma',
-      contactTitle: 'Marketing Manager',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      id: 29,
-      companyName: 'Galería del gastrónomo',
-      contactTitle: 'Marketing Manager',
-      city: 'Barcelona',
-      country: 'Spain',
-    },
-    {
-      id: 30,
-      companyName: 'Godos Cocina Típica',
-      contactTitle: 'Sales Manager',
-      city: 'Sevilla',
-      country: 'Spain',
-    },
-    {
-      id: 58,
-      companyName: 'Pericles Comidas clásicas',
-      contactTitle: 'Sales Representative',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      id: 80,
-      companyName: 'Tortuga Restaurante',
-      contactTitle: 'Owner',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-  ])
+  deepEqual(
+    r10,
+    [
+      {
+        id: 2,
+        companyName: 'Ana Trujillo Emparedados y helados',
+        contactTitle: 'Owner',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        id: 3,
+        companyName: 'Antonio Moreno Taquería',
+        contactTitle: 'Owner',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        id: 13,
+        companyName: 'Centro comercial Moctezuma',
+        contactTitle: 'Marketing Manager',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        id: 29,
+        companyName: 'Galería del gastrónomo',
+        contactTitle: 'Marketing Manager',
+        city: 'Barcelona',
+        country: 'Spain',
+      },
+      {
+        id: 30,
+        companyName: 'Godos Cocina Típica',
+        contactTitle: 'Sales Manager',
+        city: 'Sevilla',
+        country: 'Spain',
+      },
+      {
+        id: 58,
+        companyName: 'Pericles Comidas clásicas',
+        contactTitle: 'Sales Representative',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        id: 80,
+        companyName: 'Tortuga Restaurante',
+        contactTitle: 'Owner',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+    ],
+    '10. Create a report that shows the company name, contact title, city and country of all',
+  )
 
   // 11. If the cost of freight is greater than or equal to $500.00, it will now be taxed by 10%.
   // Create a report that shows the order id, freight cost, freight cost with this tax for all orders of
@@ -293,17 +313,25 @@ await test('Basic SQL', async (t) => {
     .filter('product', '=', 3)
     .count()
     .get()
-  deepEqual(r12, { count: 12 })
+  deepEqual(
+    r12,
+    { count: 12 },
+    '12. Find the Total Number of Units Ordered of Product ID 3',
+  )
 
   // 13. Retrieve the number of employees in each city
   const r13 = await db.query('employees').groupBy('city').count().get()
-  deepEqual(r13, {
-    Seattle: { count: 2 },
-    Redmond: { count: 1 },
-    London: { count: 4 },
-    Kirkland: { count: 1 },
-    Tacoma: { count: 1 },
-  })
+  deepEqual(
+    r13,
+    {
+      Seattle: { count: 2 },
+      Redmond: { count: 1 },
+      London: { count: 4 },
+      Kirkland: { count: 1 },
+      Tacoma: { count: 1 },
+    },
+    '13. Retrieve the number of employees in each city',
+  )
 
   // 14. Find the number of sales representatives in each city that contains at least 2 sales
   // representatives. Order by the number of employees.
@@ -320,23 +348,27 @@ await test('Basic SQL', async (t) => {
     .sort('orderDate', 'asc')
     .range(0, 3)
     .get()
-  deepEqual(r15, [
-    {
-      id: 10402,
-      orderDate: 852163200000,
-      customer: { id: 20, companyName: 'Ernst Handel' },
-    },
-    {
-      id: 10404,
-      orderDate: 852249600000,
-      customer: { id: 49, companyName: 'Magazzini Alimentari Riuniti' },
-    },
-    {
-      id: 10403,
-      orderDate: 852249600000,
-      customer: { id: 20, companyName: 'Ernst Handel' },
-    },
-  ])
+  deepEqual(
+    r15,
+    [
+      {
+        id: 10402,
+        orderDate: 852163200000,
+        customer: { id: 20, companyName: 'Ernst Handel' },
+      },
+      {
+        id: 10404,
+        orderDate: 852249600000,
+        customer: { id: 49, companyName: 'Magazzini Alimentari Riuniti' },
+      },
+      {
+        id: 10403,
+        orderDate: 852249600000,
+        customer: { id: 20, companyName: 'Ernst Handel' },
+      },
+    ],
+    '15. Find the Companies (the CompanyName) that placed orders in 1997',
+  )
 
   // 16. Create a report showing employee orders.
   // TODO
@@ -356,37 +388,41 @@ await test('Basic SQL', async (t) => {
       'orderDate',
       'requiredDate',
     )
-    .filter('orderDate', '>=', new Date('January 1, 1998'))
+    .filter('orderDate', '>=', new Date('1/1/1998 00:00+00'))
     .filter('shippedDate', '>', 'requiredDate')
     .sort('orderDate', 'asc')
     .range(0, 3)
     .get()
-  deepEqual(r17, [
-    {
-      id: 10810,
-      shippedDate: 884131200000,
-      requiredDate: 886032000000,
-      orderDate: 883612800000,
-      customer: { id: 42, companyName: 'Laughing Bacchus Wine Cellars' },
-      employee: { id: 2, lastName: 'Fuller', firstName: 'Andrew' },
-    },
-    {
-      id: 10809,
-      shippedDate: 884131200000,
-      requiredDate: 886032000000,
-      orderDate: 883612800000,
-      customer: { id: 88, companyName: 'Wellington Importadora' },
-      employee: { id: 7, lastName: 'King', firstName: 'Robert' },
-    },
-    {
-      id: 10808,
-      shippedDate: 884304000000,
-      requiredDate: 886032000000,
-      orderDate: 883612800000,
-      customer: { id: 55, companyName: 'Old World Delicatessen' },
-      employee: { id: 2, lastName: 'Fuller', firstName: 'Andrew' },
-    },
-  ])
+  deepEqual(
+    r17,
+    [
+      {
+        id: 10810,
+        shippedDate: 884131200000,
+        requiredDate: 886032000000,
+        orderDate: 883612800000,
+        customer: { id: 42, companyName: 'Laughing Bacchus Wine Cellars' },
+        employee: { id: 2, lastName: 'Fuller', firstName: 'Andrew' },
+      },
+      {
+        id: 10809,
+        shippedDate: 884131200000,
+        requiredDate: 886032000000,
+        orderDate: 883612800000,
+        customer: { id: 88, companyName: 'Wellington Importadora' },
+        employee: { id: 7, lastName: 'King', firstName: 'Robert' },
+      },
+      {
+        id: 10808,
+        shippedDate: 884304000000,
+        requiredDate: 886032000000,
+        orderDate: 883612800000,
+        customer: { id: 55, companyName: 'Old World Delicatessen' },
+        employee: { id: 2, lastName: 'Fuller', firstName: 'Andrew' },
+      },
+    ],
+    '17. Create a report showing the Order ID, the name of the company that placed the order',
+  )
 
   // 18. Create a report that shows the total quantity of products (from the Order_Details table)
   // ordered. Only show records for products for which the quantity ordered is fewer than 200.
@@ -395,580 +431,598 @@ await test('Basic SQL', async (t) => {
   // SELECT * FROM Customers
   // WHERE country='Mexico';
   const r19 = await db.query('customers').filter('country', '=', 'Mexico').get()
-  deepEqual(r19, [
-    {
-      id: 2,
-      companyName: 'Ana Trujillo Emparedados y helados',
-      contactName: 'Ana Trujillo',
-      contactTitle: 'Owner',
-      address: 'Avda. de la Constitución 2222',
-      city: 'México D.F.',
-      region: '',
-      postalCode: '05021',
-      country: 'Mexico',
-      phone: '(5) 555-4729',
-      fax: '(5) 555-3745',
-      customerId: 'ANATR',
-    },
-    {
-      id: 3,
-      companyName: 'Antonio Moreno Taquería',
-      contactName: 'Antonio Moreno',
-      contactTitle: 'Owner',
-      address: 'Mataderos  2312',
-      city: 'México D.F.',
-      region: '',
-      postalCode: '05023',
-      country: 'Mexico',
-      phone: '(5) 555-3932',
-      fax: '',
-      customerId: 'ANTON',
-    },
-    {
-      id: 13,
-      companyName: 'Centro comercial Moctezuma',
-      contactName: 'Francisco Chang',
-      contactTitle: 'Marketing Manager',
-      address: 'Sierras de Granada 9993',
-      city: 'México D.F.',
-      region: '',
-      postalCode: '05022',
-      country: 'Mexico',
-      phone: '(5) 555-3392',
-      fax: '(5) 555-7293',
-      customerId: 'CENTC',
-    },
-    {
-      id: 58,
-      companyName: 'Pericles Comidas clásicas',
-      contactName: 'Guillermo Fernández',
-      contactTitle: 'Sales Representative',
-      address: 'Calle Dr. Jorge Cash 321',
-      city: 'México D.F.',
-      region: '',
-      postalCode: '05033',
-      country: 'Mexico',
-      phone: '(5) 552-3745',
-      fax: '(5) 545-3745',
-      customerId: 'PERIC',
-    },
-    {
-      id: 80,
-      companyName: 'Tortuga Restaurante',
-      contactName: 'Miguel Angel Paolino',
-      contactTitle: 'Owner',
-      address: 'Avda. Azteca 123',
-      city: 'México D.F.',
-      region: '',
-      postalCode: '05033',
-      country: 'Mexico',
-      phone: '(5) 555-2933',
-      fax: '',
-      customerId: 'TORTU',
-    },
-  ])
+  deepEqual(
+    r19,
+    [
+      {
+        id: 2,
+        companyName: 'Ana Trujillo Emparedados y helados',
+        contactName: 'Ana Trujillo',
+        contactTitle: 'Owner',
+        address: 'Avda. de la Constitución 2222',
+        city: 'México D.F.',
+        region: '',
+        postalCode: '05021',
+        country: 'Mexico',
+        phone: '(5) 555-4729',
+        fax: '(5) 555-3745',
+        customerId: 'ANATR',
+      },
+      {
+        id: 3,
+        companyName: 'Antonio Moreno Taquería',
+        contactName: 'Antonio Moreno',
+        contactTitle: 'Owner',
+        address: 'Mataderos  2312',
+        city: 'México D.F.',
+        region: '',
+        postalCode: '05023',
+        country: 'Mexico',
+        phone: '(5) 555-3932',
+        fax: '',
+        customerId: 'ANTON',
+      },
+      {
+        id: 13,
+        companyName: 'Centro comercial Moctezuma',
+        contactName: 'Francisco Chang',
+        contactTitle: 'Marketing Manager',
+        address: 'Sierras de Granada 9993',
+        city: 'México D.F.',
+        region: '',
+        postalCode: '05022',
+        country: 'Mexico',
+        phone: '(5) 555-3392',
+        fax: '(5) 555-7293',
+        customerId: 'CENTC',
+      },
+      {
+        id: 58,
+        companyName: 'Pericles Comidas clásicas',
+        contactName: 'Guillermo Fernández',
+        contactTitle: 'Sales Representative',
+        address: 'Calle Dr. Jorge Cash 321',
+        city: 'México D.F.',
+        region: '',
+        postalCode: '05033',
+        country: 'Mexico',
+        phone: '(5) 552-3745',
+        fax: '(5) 545-3745',
+        customerId: 'PERIC',
+      },
+      {
+        id: 80,
+        companyName: 'Tortuga Restaurante',
+        contactName: 'Miguel Angel Paolino',
+        contactTitle: 'Owner',
+        address: 'Avda. Azteca 123',
+        city: 'México D.F.',
+        region: '',
+        postalCode: '05033',
+        country: 'Mexico',
+        phone: '(5) 555-2933',
+        fax: '',
+        customerId: 'TORTU',
+      },
+    ],
+    '18. Create a report that shows the total quantity of products (from the Order_Details table)',
+  )
 
-  // SELECT * FROM products
-  // ORDER BY price;
+  // SELECT * FROM products ORDER BY price;
   const r20 = await db
     .query('products')
     .sort('unitPrice', 'desc')
     .range(0, 4)
     .get()
-  deepEqual(r20, [
-    {
-      id: 38,
-      unitPrice: 263.5,
-      discontinued: 0,
-      productName: 'Côte de Blaye',
-      quantityPerUnit: '12 - 75 cl bottles',
-      unitsInStock: 17,
-      unitsOnOrder: 0,
-      reorderLevel: 15,
-    },
-    {
-      id: 29,
-      unitPrice: 123.79,
-      discontinued: 1,
-      productName: 'Thüringer Rostbratwurst',
-      quantityPerUnit: '50 bags x 30 sausgs.',
-      unitsInStock: 0,
-      unitsOnOrder: 0,
-      reorderLevel: 0,
-    },
-    {
-      id: 9,
-      unitPrice: 97,
-      discontinued: 1,
-      productName: 'Mishi Kobe Niku',
-      quantityPerUnit: '18 - 500 g pkgs.',
-      unitsInStock: 29,
-      unitsOnOrder: 0,
-      reorderLevel: 0,
-    },
-    {
-      id: 20,
-      unitPrice: 81,
-      discontinued: 0,
-      productName: "Sir Rodney's Marmalade",
-      quantityPerUnit: '30 gift boxes',
-      unitsInStock: 40,
-      unitsOnOrder: 0,
-      reorderLevel: 0,
-    },
-  ])
+  deepEqual(
+    r20,
+    [
+      {
+        id: 38,
+        unitPrice: 263.5,
+        discontinued: 0,
+        productName: 'Côte de Blaye',
+        quantityPerUnit: '12 - 75 cl bottles',
+        unitsInStock: 17,
+        unitsOnOrder: 0,
+        reorderLevel: 15,
+      },
+      {
+        id: 29,
+        unitPrice: 123.79,
+        discontinued: 1,
+        productName: 'Thüringer Rostbratwurst',
+        quantityPerUnit: '50 bags x 30 sausgs.',
+        unitsInStock: 0,
+        unitsOnOrder: 0,
+        reorderLevel: 0,
+      },
+      {
+        id: 9,
+        unitPrice: 97,
+        discontinued: 1,
+        productName: 'Mishi Kobe Niku',
+        quantityPerUnit: '18 - 500 g pkgs.',
+        unitsInStock: 29,
+        unitsOnOrder: 0,
+        reorderLevel: 0,
+      },
+      {
+        id: 20,
+        unitPrice: 81,
+        discontinued: 0,
+        productName: "Sir Rodney's Marmalade",
+        quantityPerUnit: '30 gift boxes',
+        unitsInStock: 40,
+        unitsOnOrder: 0,
+        reorderLevel: 0,
+      },
+    ],
+    'SELECT * FROM products ORDER BY price;',
+  )
 
-  // SELECT * FROM products
-  // ORDER BY price;
+  // SELECT * FROM products ORDER BY price;
   const r21 = await db
     .query('products')
     .sort('unitPrice', 'desc')
     .range(0, 3)
     .get()
-  deepEqual(r21, [
-    {
-      id: 38,
-      unitPrice: 263.5,
-      discontinued: 0,
-      productName: 'Côte de Blaye',
-      quantityPerUnit: '12 - 75 cl bottles',
-      unitsInStock: 17,
-      unitsOnOrder: 0,
-      reorderLevel: 15,
-    },
-    {
-      id: 29,
-      unitPrice: 123.79,
-      discontinued: 1,
-      productName: 'Thüringer Rostbratwurst',
-      quantityPerUnit: '50 bags x 30 sausgs.',
-      unitsInStock: 0,
-      unitsOnOrder: 0,
-      reorderLevel: 0,
-    },
-    {
-      id: 9,
-      unitPrice: 97,
-      discontinued: 1,
-      productName: 'Mishi Kobe Niku',
-      quantityPerUnit: '18 - 500 g pkgs.',
-      unitsInStock: 29,
-      unitsOnOrder: 0,
-      reorderLevel: 0,
-    },
-  ])
+  deepEqual(
+    r21,
+    [
+      {
+        id: 38,
+        unitPrice: 263.5,
+        discontinued: 0,
+        productName: 'Côte de Blaye',
+        quantityPerUnit: '12 - 75 cl bottles',
+        unitsInStock: 17,
+        unitsOnOrder: 0,
+        reorderLevel: 15,
+      },
+      {
+        id: 29,
+        unitPrice: 123.79,
+        discontinued: 1,
+        productName: 'Thüringer Rostbratwurst',
+        quantityPerUnit: '50 bags x 30 sausgs.',
+        unitsInStock: 0,
+        unitsOnOrder: 0,
+        reorderLevel: 0,
+      },
+      {
+        id: 9,
+        unitPrice: 97,
+        discontinued: 1,
+        productName: 'Mishi Kobe Niku',
+        quantityPerUnit: '18 - 500 g pkgs.',
+        unitsInStock: 29,
+        unitsOnOrder: 0,
+        reorderLevel: 0,
+      },
+    ],
+    'SELECT * FROM products ORDER BY price;',
+  )
 
-  // SELECT * FROM customers
-  // WHERE country IN ('Germany', 'France', 'UK');
+  // SELECT * FROM customers WHERE country IN ('Germany', 'France', 'UK');
   const r22 = await db
     .query('customers')
     .filter('country', '=', ['Germany', 'France', 'UK'])
     .range(0, 3)
     .get()
-  deepEqual(r22, [
-    {
-      id: 1,
-      companyName: 'Alfreds Futterkiste',
-      contactName: 'Maria Anders',
-      contactTitle: 'Sales Representative',
-      address: 'Obere Str. 57',
-      city: 'Berlin',
-      region: '',
-      postalCode: '12209',
-      country: 'Germany',
-      phone: '030-0074321',
-      fax: '030-0076545',
-      customerId: 'ALFKI',
-    },
-    {
-      id: 4,
-      companyName: 'Around the Horn',
-      contactName: 'Thomas Hardy',
-      contactTitle: 'Sales Representative',
-      address: '120 Hanover Sq.',
-      city: 'London',
-      region: '',
-      postalCode: 'WA1 1DP',
-      country: 'UK',
-      phone: '(171) 555-7788',
-      fax: '(171) 555-6750',
-      customerId: 'AROUT',
-    },
-    {
-      id: 6,
-      companyName: 'Blauer See Delikatessen',
-      contactName: 'Hanna Moos',
-      contactTitle: 'Sales Representative',
-      address: 'Forsterstr. 57',
-      city: 'Mannheim',
-      region: '',
-      postalCode: '68306',
-      country: 'Germany',
-      phone: '0621-08460',
-      fax: '0621-08924',
-      customerId: 'BLAUS',
-    },
-  ])
+  deepEqual(
+    r22,
+    [
+      {
+        id: 1,
+        companyName: 'Alfreds Futterkiste',
+        contactName: 'Maria Anders',
+        contactTitle: 'Sales Representative',
+        address: 'Obere Str. 57',
+        city: 'Berlin',
+        region: '',
+        postalCode: '12209',
+        country: 'Germany',
+        phone: '030-0074321',
+        fax: '030-0076545',
+        customerId: 'ALFKI',
+      },
+      {
+        id: 4,
+        companyName: 'Around the Horn',
+        contactName: 'Thomas Hardy',
+        contactTitle: 'Sales Representative',
+        address: '120 Hanover Sq.',
+        city: 'London',
+        region: '',
+        postalCode: 'WA1 1DP',
+        country: 'UK',
+        phone: '(171) 555-7788',
+        fax: '(171) 555-6750',
+        customerId: 'AROUT',
+      },
+      {
+        id: 6,
+        companyName: 'Blauer See Delikatessen',
+        contactName: 'Hanna Moos',
+        contactTitle: 'Sales Representative',
+        address: 'Forsterstr. 57',
+        city: 'Mannheim',
+        region: '',
+        postalCode: '68306',
+        country: 'Germany',
+        phone: '0621-08460',
+        fax: '0621-08924',
+        customerId: 'BLAUS',
+      },
+    ],
+    "SELECT * FROM customers WHERE country IN ('Germany', 'France', 'UK')",
+  )
 
-  // SELECT * FROM products
-  // WHERE unitPrice BETWEEN 10 AND 20
-  // ORDER BY price;
+  // SELECT * FROM products WHERE unitPrice BETWEEN 10 AND 20 ORDER BY price;
   const r23 = await db
     .query('products')
     .filter('unitPrice', '..', [10, 20])
     .sort('unitPrice', 'desc')
     .get()
-  deepEqual(r23, [
-    {
-      id: 57,
-      unitPrice: 19.5,
-      discontinued: 0,
-      productName: 'Ravioli Angelo',
-      quantityPerUnit: '24 - 250 g pkgs.',
-      unitsInStock: 36,
-      unitsOnOrder: 0,
-      reorderLevel: 20,
-    },
-    {
-      id: 44,
-      unitPrice: 19.45,
-      discontinued: 0,
-      productName: 'Gula Malacca',
-      quantityPerUnit: '20 - 2 kg bags',
-      unitsInStock: 27,
-      unitsOnOrder: 0,
-      reorderLevel: 15,
-    },
-    {
-      id: 2,
-      unitPrice: 19,
-      discontinued: 1,
-      productName: 'Chang',
-      quantityPerUnit: '24 - 12 oz bottles',
-      unitsInStock: 17,
-      unitsOnOrder: 40,
-      reorderLevel: 25,
-    },
-    {
-      id: 36,
-      unitPrice: 19,
-      discontinued: 0,
-      productName: 'Inlagd Sill',
-      quantityPerUnit: '24 - 250 g  jars',
-      unitsInStock: 112,
-      unitsOnOrder: 0,
-      reorderLevel: 20,
-    },
-    {
-      id: 40,
-      unitPrice: 18.4,
-      discontinued: 0,
-      productName: 'Boston Crab Meat',
-      quantityPerUnit: '24 - 4 oz tins',
-      unitsInStock: 123,
-      unitsOnOrder: 0,
-      reorderLevel: 30,
-    },
-    {
-      id: 1,
-      unitPrice: 18,
-      discontinued: 1,
-      productName: 'Chai',
-      quantityPerUnit: '10 boxes x 30 bags',
-      unitsInStock: 39,
-      unitsOnOrder: 0,
-      reorderLevel: 10,
-    },
-    {
-      id: 35,
-      unitPrice: 18,
-      discontinued: 0,
-      productName: 'Steeleye Stout',
-      quantityPerUnit: '24 - 12 oz bottles',
-      unitsInStock: 20,
-      unitsOnOrder: 0,
-      reorderLevel: 15,
-    },
-    {
-      id: 39,
-      unitPrice: 18,
-      discontinued: 0,
-      productName: 'Chartreuse verte',
-      quantityPerUnit: '750 cc per bottle',
-      unitsInStock: 69,
-      unitsOnOrder: 0,
-      reorderLevel: 5,
-    },
-    {
-      id: 76,
-      unitPrice: 18,
-      discontinued: 0,
-      productName: 'Lakkalikööri',
-      quantityPerUnit: '500 ml',
-      unitsInStock: 57,
-      unitsOnOrder: 0,
-      reorderLevel: 20,
-    },
-    {
-      id: 16,
-      unitPrice: 17.45,
-      discontinued: 0,
-      productName: 'Pavlova',
-      quantityPerUnit: '32 - 500 g boxes',
-      unitsInStock: 29,
-      unitsOnOrder: 0,
-      reorderLevel: 10,
-    },
-    {
-      id: 66,
-      unitPrice: 17,
-      discontinued: 0,
-      productName: 'Louisiana Hot Spiced Okra',
-      quantityPerUnit: '24 - 8 oz jars',
-      unitsInStock: 4,
-      unitsOnOrder: 100,
-      reorderLevel: 20,
-    },
-    {
-      id: 50,
-      unitPrice: 16.25,
-      discontinued: 0,
-      productName: 'Valkoinen suklaa',
-      quantityPerUnit: '12 - 100 g bars',
-      unitsInStock: 65,
-      unitsOnOrder: 0,
-      reorderLevel: 30,
-    },
-    {
-      id: 70,
-      unitPrice: 15,
-      discontinued: 0,
-      productName: 'Outback Lager',
-      quantityPerUnit: '24 - 355 ml bottles',
-      unitsInStock: 15,
-      unitsOnOrder: 10,
-      reorderLevel: 30,
-    },
-    {
-      id: 73,
-      unitPrice: 15,
-      discontinued: 0,
-      productName: 'Röd Kaviar',
-      quantityPerUnit: '24 - 150 g jars',
-      unitsInStock: 101,
-      unitsOnOrder: 0,
-      reorderLevel: 5,
-    },
-    {
-      id: 25,
-      unitPrice: 14,
-      discontinued: 0,
-      productName: 'NuNuCa Nuß-Nougat-Creme',
-      quantityPerUnit: '20 - 450 g glasses',
-      unitsInStock: 76,
-      unitsOnOrder: 0,
-      reorderLevel: 30,
-    },
-    {
-      id: 34,
-      unitPrice: 14,
-      discontinued: 0,
-      productName: 'Sasquatch Ale',
-      quantityPerUnit: '24 - 12 oz bottles',
-      unitsInStock: 111,
-      unitsOnOrder: 0,
-      reorderLevel: 15,
-    },
-    {
-      id: 42,
-      unitPrice: 14,
-      discontinued: 1,
-      productName: 'Singaporean Hokkien Fried Mee',
-      quantityPerUnit: '32 - 1 kg pkgs.',
-      unitsInStock: 26,
-      unitsOnOrder: 0,
-      reorderLevel: 0,
-    },
-    {
-      id: 67,
-      unitPrice: 14,
-      discontinued: 0,
-      productName: 'Laughing Lumberjack Lager',
-      quantityPerUnit: '24 - 12 oz bottles',
-      unitsInStock: 52,
-      unitsOnOrder: 0,
-      reorderLevel: 10,
-    },
-    {
-      id: 58,
-      unitPrice: 13.25,
-      discontinued: 0,
-      productName: 'Escargots de Bourgogne',
-      quantityPerUnit: '24 pieces',
-      unitsInStock: 62,
-      unitsOnOrder: 0,
-      reorderLevel: 20,
-    },
-    {
-      id: 15,
-      unitPrice: 13,
-      discontinued: 0,
-      productName: 'Genen Shouyu',
-      quantityPerUnit: '24 - 250 ml bottles',
-      unitsInStock: 39,
-      unitsOnOrder: 0,
-      reorderLevel: 5,
-    },
-    {
-      id: 77,
-      unitPrice: 13,
-      discontinued: 0,
-      productName: 'Original Frankfurter grüne Soße',
-      quantityPerUnit: '12 boxes',
-      unitsInStock: 32,
-      unitsOnOrder: 0,
-      reorderLevel: 15,
-    },
-    {
-      id: 48,
-      unitPrice: 12.75,
-      discontinued: 0,
-      productName: 'Chocolade',
-      quantityPerUnit: '10 pkgs.',
-      unitsInStock: 15,
-      unitsOnOrder: 70,
-      reorderLevel: 25,
-    },
-    {
-      id: 31,
-      unitPrice: 12.5,
-      discontinued: 0,
-      productName: 'Gorgonzola Telino',
-      quantityPerUnit: '12 - 100 g pkgs',
-      unitsInStock: 0,
-      unitsOnOrder: 70,
-      reorderLevel: 20,
-    },
-    {
-      id: 68,
-      unitPrice: 12.5,
-      discontinued: 0,
-      productName: 'Scottish Longbreads',
-      quantityPerUnit: '10 boxes x 8 pieces',
-      unitsInStock: 6,
-      unitsOnOrder: 10,
-      reorderLevel: 15,
-    },
-    {
-      id: 46,
-      unitPrice: 12,
-      discontinued: 0,
-      productName: 'Spegesild',
-      quantityPerUnit: '4 - 450 g glasses',
-      unitsInStock: 95,
-      unitsOnOrder: 0,
-      reorderLevel: 0,
-    },
-  ])
+  deepEqual(
+    r23,
+    [
+      {
+        id: 57,
+        unitPrice: 19.5,
+        discontinued: 0,
+        productName: 'Ravioli Angelo',
+        quantityPerUnit: '24 - 250 g pkgs.',
+        unitsInStock: 36,
+        unitsOnOrder: 0,
+        reorderLevel: 20,
+      },
+      {
+        id: 44,
+        unitPrice: 19.45,
+        discontinued: 0,
+        productName: 'Gula Malacca',
+        quantityPerUnit: '20 - 2 kg bags',
+        unitsInStock: 27,
+        unitsOnOrder: 0,
+        reorderLevel: 15,
+      },
+      {
+        id: 2,
+        unitPrice: 19,
+        discontinued: 1,
+        productName: 'Chang',
+        quantityPerUnit: '24 - 12 oz bottles',
+        unitsInStock: 17,
+        unitsOnOrder: 40,
+        reorderLevel: 25,
+      },
+      {
+        id: 36,
+        unitPrice: 19,
+        discontinued: 0,
+        productName: 'Inlagd Sill',
+        quantityPerUnit: '24 - 250 g  jars',
+        unitsInStock: 112,
+        unitsOnOrder: 0,
+        reorderLevel: 20,
+      },
+      {
+        id: 40,
+        unitPrice: 18.4,
+        discontinued: 0,
+        productName: 'Boston Crab Meat',
+        quantityPerUnit: '24 - 4 oz tins',
+        unitsInStock: 123,
+        unitsOnOrder: 0,
+        reorderLevel: 30,
+      },
+      {
+        id: 1,
+        unitPrice: 18,
+        discontinued: 1,
+        productName: 'Chai',
+        quantityPerUnit: '10 boxes x 30 bags',
+        unitsInStock: 39,
+        unitsOnOrder: 0,
+        reorderLevel: 10,
+      },
+      {
+        id: 35,
+        unitPrice: 18,
+        discontinued: 0,
+        productName: 'Steeleye Stout',
+        quantityPerUnit: '24 - 12 oz bottles',
+        unitsInStock: 20,
+        unitsOnOrder: 0,
+        reorderLevel: 15,
+      },
+      {
+        id: 39,
+        unitPrice: 18,
+        discontinued: 0,
+        productName: 'Chartreuse verte',
+        quantityPerUnit: '750 cc per bottle',
+        unitsInStock: 69,
+        unitsOnOrder: 0,
+        reorderLevel: 5,
+      },
+      {
+        id: 76,
+        unitPrice: 18,
+        discontinued: 0,
+        productName: 'Lakkalikööri',
+        quantityPerUnit: '500 ml',
+        unitsInStock: 57,
+        unitsOnOrder: 0,
+        reorderLevel: 20,
+      },
+      {
+        id: 16,
+        unitPrice: 17.45,
+        discontinued: 0,
+        productName: 'Pavlova',
+        quantityPerUnit: '32 - 500 g boxes',
+        unitsInStock: 29,
+        unitsOnOrder: 0,
+        reorderLevel: 10,
+      },
+      {
+        id: 66,
+        unitPrice: 17,
+        discontinued: 0,
+        productName: 'Louisiana Hot Spiced Okra',
+        quantityPerUnit: '24 - 8 oz jars',
+        unitsInStock: 4,
+        unitsOnOrder: 100,
+        reorderLevel: 20,
+      },
+      {
+        id: 50,
+        unitPrice: 16.25,
+        discontinued: 0,
+        productName: 'Valkoinen suklaa',
+        quantityPerUnit: '12 - 100 g bars',
+        unitsInStock: 65,
+        unitsOnOrder: 0,
+        reorderLevel: 30,
+      },
+      {
+        id: 70,
+        unitPrice: 15,
+        discontinued: 0,
+        productName: 'Outback Lager',
+        quantityPerUnit: '24 - 355 ml bottles',
+        unitsInStock: 15,
+        unitsOnOrder: 10,
+        reorderLevel: 30,
+      },
+      {
+        id: 73,
+        unitPrice: 15,
+        discontinued: 0,
+        productName: 'Röd Kaviar',
+        quantityPerUnit: '24 - 150 g jars',
+        unitsInStock: 101,
+        unitsOnOrder: 0,
+        reorderLevel: 5,
+      },
+      {
+        id: 25,
+        unitPrice: 14,
+        discontinued: 0,
+        productName: 'NuNuCa Nuß-Nougat-Creme',
+        quantityPerUnit: '20 - 450 g glasses',
+        unitsInStock: 76,
+        unitsOnOrder: 0,
+        reorderLevel: 30,
+      },
+      {
+        id: 34,
+        unitPrice: 14,
+        discontinued: 0,
+        productName: 'Sasquatch Ale',
+        quantityPerUnit: '24 - 12 oz bottles',
+        unitsInStock: 111,
+        unitsOnOrder: 0,
+        reorderLevel: 15,
+      },
+      {
+        id: 42,
+        unitPrice: 14,
+        discontinued: 1,
+        productName: 'Singaporean Hokkien Fried Mee',
+        quantityPerUnit: '32 - 1 kg pkgs.',
+        unitsInStock: 26,
+        unitsOnOrder: 0,
+        reorderLevel: 0,
+      },
+      {
+        id: 67,
+        unitPrice: 14,
+        discontinued: 0,
+        productName: 'Laughing Lumberjack Lager',
+        quantityPerUnit: '24 - 12 oz bottles',
+        unitsInStock: 52,
+        unitsOnOrder: 0,
+        reorderLevel: 10,
+      },
+      {
+        id: 58,
+        unitPrice: 13.25,
+        discontinued: 0,
+        productName: 'Escargots de Bourgogne',
+        quantityPerUnit: '24 pieces',
+        unitsInStock: 62,
+        unitsOnOrder: 0,
+        reorderLevel: 20,
+      },
+      {
+        id: 15,
+        unitPrice: 13,
+        discontinued: 0,
+        productName: 'Genen Shouyu',
+        quantityPerUnit: '24 - 250 ml bottles',
+        unitsInStock: 39,
+        unitsOnOrder: 0,
+        reorderLevel: 5,
+      },
+      {
+        id: 77,
+        unitPrice: 13,
+        discontinued: 0,
+        productName: 'Original Frankfurter grüne Soße',
+        quantityPerUnit: '12 boxes',
+        unitsInStock: 32,
+        unitsOnOrder: 0,
+        reorderLevel: 15,
+      },
+      {
+        id: 48,
+        unitPrice: 12.75,
+        discontinued: 0,
+        productName: 'Chocolade',
+        quantityPerUnit: '10 pkgs.',
+        unitsInStock: 15,
+        unitsOnOrder: 70,
+        reorderLevel: 25,
+      },
+      {
+        id: 31,
+        unitPrice: 12.5,
+        discontinued: 0,
+        productName: 'Gorgonzola Telino',
+        quantityPerUnit: '12 - 100 g pkgs',
+        unitsInStock: 0,
+        unitsOnOrder: 70,
+        reorderLevel: 20,
+      },
+      {
+        id: 68,
+        unitPrice: 12.5,
+        discontinued: 0,
+        productName: 'Scottish Longbreads',
+        quantityPerUnit: '10 boxes x 8 pieces',
+        unitsInStock: 6,
+        unitsOnOrder: 10,
+        reorderLevel: 15,
+      },
+      {
+        id: 46,
+        unitPrice: 12,
+        discontinued: 0,
+        productName: 'Spegesild',
+        quantityPerUnit: '4 - 450 g glasses',
+        unitsInStock: 95,
+        unitsOnOrder: 0,
+        reorderLevel: 0,
+      },
+    ],
+    'SELECT * FROM products WHERE unitPrice BETWEEN 10 AND 20 ORDER BY price;',
+  )
 
-  // SELECT customer_id AS ID, company_name AS customer
-  // FROM customers;
+  // SELECT customer_id AS ID, company_name AS customer FROM customers;
   const r24 = (
     await db.query('customers').include('companyName').get().toObject()
   ).map((r) => ({ id: r.id, customer: r.companyName }))
-  deepEqual(r24, [
-    { id: 1, customer: 'Alfreds Futterkiste' },
-    { id: 2, customer: 'Ana Trujillo Emparedados y helados' },
-    { id: 3, customer: 'Antonio Moreno Taquería' },
-    { id: 4, customer: 'Around the Horn' },
-    { id: 5, customer: 'Berglunds snabbköp' },
-    { id: 6, customer: 'Blauer See Delikatessen' },
-    { id: 7, customer: 'Blondesddsl père et fils' },
-    { id: 8, customer: 'Bólido Comidas preparadas' },
-    { id: 9, customer: "Bon app'" },
-    { id: 10, customer: 'Bottom-Dollar Markets' },
-    { id: 11, customer: "B's Beverages" },
-    { id: 12, customer: 'Cactus Comidas para llevar' },
-    { id: 13, customer: 'Centro comercial Moctezuma' },
-    { id: 14, customer: 'Chop-suey Chinese' },
-    { id: 15, customer: 'Comércio Mineiro' },
-    { id: 16, customer: 'Consolidated Holdings' },
-    { id: 17, customer: 'Drachenblut Delikatessen' },
-    { id: 18, customer: 'Du monde entier' },
-    { id: 19, customer: 'Eastern Connection' },
-    { id: 20, customer: 'Ernst Handel' },
-    { id: 21, customer: 'Familia Arquibaldo' },
-    { id: 22, customer: 'FISSA Fabrica Inter. Salchichas S.A.' },
-    { id: 23, customer: 'Folies gourmandes' },
-    { id: 24, customer: 'Folk och fä HB' },
-    { id: 25, customer: 'Frankenversand' },
-    { id: 26, customer: 'France restauration' },
-    { id: 27, customer: 'Franchi S.p.A.' },
-    { id: 28, customer: 'Furia Bacalhau e Frutos do Mar' },
-    { id: 29, customer: 'Galería del gastrónomo' },
-    { id: 30, customer: 'Godos Cocina Típica' },
-    { id: 31, customer: 'Gourmet Lanchonetes' },
-    { id: 32, customer: 'Great Lakes Food Market' },
-    { id: 33, customer: 'GROSELLA-Restaurante' },
-    { id: 34, customer: 'Hanari Carnes' },
-    { id: 35, customer: 'HILARION-Abastos' },
-    { id: 36, customer: 'Hungry Coyote Import Store' },
-    { id: 37, customer: 'Hungry Owl All-Night Grocers' },
-    { id: 38, customer: 'Island Trading' },
-    { id: 39, customer: 'Königlich Essen' },
-    { id: 40, customer: "La corne d'abondance" },
-    { id: 41, customer: "La maison d'Asie" },
-    { id: 42, customer: 'Laughing Bacchus Wine Cellars' },
-    { id: 43, customer: 'Lazy K Kountry Store' },
-    { id: 44, customer: 'Lehmanns Marktstand' },
-    { id: 45, customer: "Let's Stop N Shop" },
-    { id: 46, customer: 'LILA-Supermercado' },
-    { id: 47, customer: 'LINO-Delicateses' },
-    { id: 48, customer: 'Lonesome Pine Restaurant' },
-    { id: 49, customer: 'Magazzini Alimentari Riuniti' },
-    { id: 50, customer: 'Maison Dewey' },
-    { id: 51, customer: 'Mère Paillarde' },
-    { id: 52, customer: 'Morgenstern Gesundkost' },
-    { id: 53, customer: 'North/South' },
-    { id: 54, customer: 'Océano Atlántico Ltda.' },
-    { id: 55, customer: 'Old World Delicatessen' },
-    { id: 56, customer: 'Ottilies Käseladen' },
-    { id: 57, customer: 'Paris spécialités' },
-    { id: 58, customer: 'Pericles Comidas clásicas' },
-    { id: 59, customer: 'Piccolo und mehr' },
-    { id: 60, customer: 'Princesa Isabel Vinhos' },
-    { id: 61, customer: 'Que Delícia' },
-    { id: 62, customer: 'Queen Cozinha' },
-    { id: 63, customer: 'QUICK-Stop' },
-    { id: 64, customer: 'Rancho grande' },
-    { id: 65, customer: 'Rattlesnake Canyon Grocery' },
-    { id: 66, customer: 'Reggiani Caseifici' },
-    { id: 67, customer: 'Ricardo Adocicados' },
-    { id: 68, customer: 'Richter Supermarkt' },
-    { id: 69, customer: 'Romero y tomillo' },
-    { id: 70, customer: 'Santé Gourmet' },
-    { id: 71, customer: 'Save-a-lot Markets' },
-    { id: 72, customer: 'Seven Seas Imports' },
-    { id: 73, customer: 'Simons bistro' },
-    { id: 74, customer: 'Spécialités du monde' },
-    { id: 75, customer: 'Split Rail Beer & Ale' },
-    { id: 76, customer: 'Suprêmes délices' },
-    { id: 77, customer: 'The Big Cheese' },
-    { id: 78, customer: 'The Cracker Box' },
-    { id: 79, customer: 'Toms Spezialitäten' },
-    { id: 80, customer: 'Tortuga Restaurante' },
-    { id: 81, customer: 'Tradição Hipermercados' },
-    { id: 82, customer: "Trail's Head Gourmet Provisioners" },
-    { id: 83, customer: 'Vaffeljernet' },
-    { id: 84, customer: 'Victuailles en stock' },
-    { id: 85, customer: 'Vins et alcools Chevalier' },
-    { id: 86, customer: 'Die Wandernde Kuh' },
-    { id: 87, customer: 'Wartian Herkku' },
-    { id: 88, customer: 'Wellington Importadora' },
-    { id: 89, customer: 'White Clover Markets' },
-    { id: 90, customer: 'Wilman Kala' },
-    { id: 91, customer: 'Wolski  Zajazd' },
-  ])
+  deepEqual(
+    r24,
+    [
+      { id: 1, customer: 'Alfreds Futterkiste' },
+      { id: 2, customer: 'Ana Trujillo Emparedados y helados' },
+      { id: 3, customer: 'Antonio Moreno Taquería' },
+      { id: 4, customer: 'Around the Horn' },
+      { id: 5, customer: 'Berglunds snabbköp' },
+      { id: 6, customer: 'Blauer See Delikatessen' },
+      { id: 7, customer: 'Blondesddsl père et fils' },
+      { id: 8, customer: 'Bólido Comidas preparadas' },
+      { id: 9, customer: "Bon app'" },
+      { id: 10, customer: 'Bottom-Dollar Markets' },
+      { id: 11, customer: "B's Beverages" },
+      { id: 12, customer: 'Cactus Comidas para llevar' },
+      { id: 13, customer: 'Centro comercial Moctezuma' },
+      { id: 14, customer: 'Chop-suey Chinese' },
+      { id: 15, customer: 'Comércio Mineiro' },
+      { id: 16, customer: 'Consolidated Holdings' },
+      { id: 17, customer: 'Drachenblut Delikatessen' },
+      { id: 18, customer: 'Du monde entier' },
+      { id: 19, customer: 'Eastern Connection' },
+      { id: 20, customer: 'Ernst Handel' },
+      { id: 21, customer: 'Familia Arquibaldo' },
+      { id: 22, customer: 'FISSA Fabrica Inter. Salchichas S.A.' },
+      { id: 23, customer: 'Folies gourmandes' },
+      { id: 24, customer: 'Folk och fä HB' },
+      { id: 25, customer: 'Frankenversand' },
+      { id: 26, customer: 'France restauration' },
+      { id: 27, customer: 'Franchi S.p.A.' },
+      { id: 28, customer: 'Furia Bacalhau e Frutos do Mar' },
+      { id: 29, customer: 'Galería del gastrónomo' },
+      { id: 30, customer: 'Godos Cocina Típica' },
+      { id: 31, customer: 'Gourmet Lanchonetes' },
+      { id: 32, customer: 'Great Lakes Food Market' },
+      { id: 33, customer: 'GROSELLA-Restaurante' },
+      { id: 34, customer: 'Hanari Carnes' },
+      { id: 35, customer: 'HILARION-Abastos' },
+      { id: 36, customer: 'Hungry Coyote Import Store' },
+      { id: 37, customer: 'Hungry Owl All-Night Grocers' },
+      { id: 38, customer: 'Island Trading' },
+      { id: 39, customer: 'Königlich Essen' },
+      { id: 40, customer: "La corne d'abondance" },
+      { id: 41, customer: "La maison d'Asie" },
+      { id: 42, customer: 'Laughing Bacchus Wine Cellars' },
+      { id: 43, customer: 'Lazy K Kountry Store' },
+      { id: 44, customer: 'Lehmanns Marktstand' },
+      { id: 45, customer: "Let's Stop N Shop" },
+      { id: 46, customer: 'LILA-Supermercado' },
+      { id: 47, customer: 'LINO-Delicateses' },
+      { id: 48, customer: 'Lonesome Pine Restaurant' },
+      { id: 49, customer: 'Magazzini Alimentari Riuniti' },
+      { id: 50, customer: 'Maison Dewey' },
+      { id: 51, customer: 'Mère Paillarde' },
+      { id: 52, customer: 'Morgenstern Gesundkost' },
+      { id: 53, customer: 'North/South' },
+      { id: 54, customer: 'Océano Atlántico Ltda.' },
+      { id: 55, customer: 'Old World Delicatessen' },
+      { id: 56, customer: 'Ottilies Käseladen' },
+      { id: 57, customer: 'Paris spécialités' },
+      { id: 58, customer: 'Pericles Comidas clásicas' },
+      { id: 59, customer: 'Piccolo und mehr' },
+      { id: 60, customer: 'Princesa Isabel Vinhos' },
+      { id: 61, customer: 'Que Delícia' },
+      { id: 62, customer: 'Queen Cozinha' },
+      { id: 63, customer: 'QUICK-Stop' },
+      { id: 64, customer: 'Rancho grande' },
+      { id: 65, customer: 'Rattlesnake Canyon Grocery' },
+      { id: 66, customer: 'Reggiani Caseifici' },
+      { id: 67, customer: 'Ricardo Adocicados' },
+      { id: 68, customer: 'Richter Supermarkt' },
+      { id: 69, customer: 'Romero y tomillo' },
+      { id: 70, customer: 'Santé Gourmet' },
+      { id: 71, customer: 'Save-a-lot Markets' },
+      { id: 72, customer: 'Seven Seas Imports' },
+      { id: 73, customer: 'Simons bistro' },
+      { id: 74, customer: 'Spécialités du monde' },
+      { id: 75, customer: 'Split Rail Beer & Ale' },
+      { id: 76, customer: 'Suprêmes délices' },
+      { id: 77, customer: 'The Big Cheese' },
+      { id: 78, customer: 'The Cracker Box' },
+      { id: 79, customer: 'Toms Spezialitäten' },
+      { id: 80, customer: 'Tortuga Restaurante' },
+      { id: 81, customer: 'Tradição Hipermercados' },
+      { id: 82, customer: "Trail's Head Gourmet Provisioners" },
+      { id: 83, customer: 'Vaffeljernet' },
+      { id: 84, customer: 'Victuailles en stock' },
+      { id: 85, customer: 'Vins et alcools Chevalier' },
+      { id: 86, customer: 'Die Wandernde Kuh' },
+      { id: 87, customer: 'Wartian Herkku' },
+      { id: 88, customer: 'Wellington Importadora' },
+      { id: 89, customer: 'White Clover Markets' },
+      { id: 90, customer: 'Wilman Kala' },
+      { id: 91, customer: 'Wolski  Zajazd' },
+    ],
+    'SELECT customer_id AS ID, company_name AS customer FROM customers;',
+  )
 
   // Union
   // SELECT 'customer' AS Type, contact_name, city, country
@@ -992,36 +1046,40 @@ await test('Basic SQL', async (t) => {
     ...r25unionA.map((r) => ({ type: 'customer', ...r })),
     ...r25unionB.map((r) => ({ type: 'supplier', ...r })),
   ]
-  deepEqual(r25union, [
-    {
-      type: 'customer',
-      id: 1,
-      contactName: 'Maria Anders',
-      city: 'Berlin',
-      country: 'Germany',
-    },
-    {
-      type: 'customer',
-      id: 2,
-      contactName: 'Ana Trujillo',
-      city: 'México D.F.',
-      country: 'Mexico',
-    },
-    {
-      type: 'supplier',
-      id: 1,
-      contactName: 'Charlotte Cooper',
-      city: 'London',
-      country: 'UK',
-    },
-    {
-      type: 'supplier',
-      id: 2,
-      contactName: 'Shelley Burke',
-      city: 'New Orleans',
-      country: 'USA',
-    },
-  ])
+  deepEqual(
+    r25union,
+    [
+      {
+        type: 'customer',
+        id: 1,
+        contactName: 'Maria Anders',
+        city: 'Berlin',
+        country: 'Germany',
+      },
+      {
+        type: 'customer',
+        id: 2,
+        contactName: 'Ana Trujillo',
+        city: 'México D.F.',
+        country: 'Mexico',
+      },
+      {
+        type: 'supplier',
+        id: 1,
+        contactName: 'Charlotte Cooper',
+        city: 'London',
+        country: 'UK',
+      },
+      {
+        type: 'supplier',
+        id: 2,
+        contactName: 'Shelley Burke',
+        city: 'New Orleans',
+        country: 'USA',
+      },
+    ],
+    'Union',
+  )
 
   // union all
   // SELECT City, Country FROM Customers
@@ -1046,14 +1104,18 @@ await test('Basic SQL', async (t) => {
     ...r26unionAllA.map(({ city, country }) => ({ city, country })),
     ...r26unionAllB.map(({ city, country }) => ({ city, country })),
   ].sort((a, b) => a.city.localeCompare(b.city))
-  deepEqual(r26unionAll, [
-    { city: 'Ann Arbor', country: 'USA' },
-    { city: 'Berlin', country: 'Germany' },
-    { city: 'London', country: 'UK' },
-    { city: 'México D.F.', country: 'Mexico' },
-    { city: 'México D.F.', country: 'Mexico' },
-    { city: 'New Orleans', country: 'USA' },
-  ])
+  deepEqual(
+    r26unionAll,
+    [
+      { city: 'Ann Arbor', country: 'USA' },
+      { city: 'Berlin', country: 'Germany' },
+      { city: 'London', country: 'UK' },
+      { city: 'México D.F.', country: 'Mexico' },
+      { city: 'México D.F.', country: 'Mexico' },
+      { city: 'New Orleans', country: 'USA' },
+    ],
+    'union all',
+  )
 })
 
 await test('insert and update', async (t) => {

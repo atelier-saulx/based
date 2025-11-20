@@ -1,6 +1,6 @@
 {
   "name": "@based/schema-diagram",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "files": [
     "dist",
@@ -30,7 +30,7 @@
     "vite": "^6.3.2"
   },
   "dependencies": {
-    "@based/schema": "5.1.0",
+    "@based/schema": "5.1.3",
     "@based/utils": "1.2.0"
   }
 }

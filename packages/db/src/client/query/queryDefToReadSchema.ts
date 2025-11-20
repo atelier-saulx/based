@@ -81,7 +81,8 @@ export const convertToReaderSchema = (
   }
   const t = q.type
   const isRoot = t === 4 // QueryDefType.Root (cant import type enum ofc)
-  const isSingle = isRoot && ('id' in q.target || 'alias' in q.target)
+  const isSingle =
+    (isRoot && ('id' in q.target || 'alias' in q.target)) || q.selectFirstResult
   const isEdge = t === 1 // QueryDefType.Edge (cant import type enum ofc)
   const readerSchema: ReaderSchema = {
     readId: 0,
@@ -154,8 +155,7 @@ export const convertToReaderSchema = (
       readerSchema.props[k] = createReaderPropDef(v.def, locales, v.opts)
     }
     readerSchema.main.len = q.include.main.len
-    for (const k in q.include.main.include) {
-      const [start, p, opts] = q.include.main.include[k]
+    for (const [start, p, opts] of q.include.main.include.values()) {
       readerSchema.main.props[start] = createReaderPropDef(p, locales, opts)
     }
     for (const [k, v] of q.references.entries()) {

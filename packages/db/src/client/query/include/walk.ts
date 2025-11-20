@@ -7,7 +7,14 @@ import {
   TEXT,
 } from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
-import { IncludeField, isRefDef, QueryDef, QueryDefType } from '../types.js'
+import {
+  getReferenceSelect,
+  IncludeField,
+  isRefDef,
+  QueryDef,
+  QueryDefType,
+  ReferenceSelectValue,
+} from '../types.js'
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
@@ -21,13 +28,30 @@ export const walkDefs = (
 ) => {
   const prop = def.props[include.field]
   const path = include.field.split('.')
+  let referencesSelect: ReferenceSelectValue | void
 
   if (!prop) {
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
       let p = path[i]
+      referencesSelect = getReferenceSelect(p, def)
+      if (referencesSelect) {
+        const refDef = createOrGetRefQueryDef(db, def, referencesSelect.prop)
 
-      if (isRefDef(def) && p[0] == '$') {
+        if (referencesSelect.index > -1) {
+          refDef.range.limit = 1
+          refDef.range.offset = referencesSelect.index
+        }
+        // range at the end (start at end)
+
+        const f = path.slice(i + 1).join('.')
+        if (!f) {
+          includeAllProps(refDef, include.opts)
+        } else if (!includeProp(refDef, refDef.props[f], include.opts)) {
+          includeField(refDef, { field: f, opts: include.opts })
+        }
+        return
+      } else if (isRefDef(def) && p[0] == '$') {
         if (!def.edges) {
           def.edges = createQueryDef(
             db,
@@ -66,7 +90,6 @@ export const walkDefs = (
         }
         return
       }
-
       t = t[p]
       if (!t) {
         if (include.field != 'id') {

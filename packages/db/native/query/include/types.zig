@@ -12,11 +12,11 @@ pub const RefStruct = struct {
 };
 
 pub inline fn resolveRefsNode(
-    ctx: *QueryCtx,
+    ctx: *db.DbCtx,
     refs: Refs,
     i: usize,
 ) ?db.Node {
-    const dstType = db.getRefDstType(ctx.db, refs.fs) catch {
+    const dstType = db.getRefDstType(ctx, refs.fs) catch {
         return null;
     };
 
@@ -36,24 +36,24 @@ pub const RefsResult = struct {
 
 pub inline fn RefResult(
     refs: ?Refs,
-    edgeConstraint: ?db.EdgeFieldConstraint,
+    edgeConstraint: db.EdgeFieldConstraint,
     i: usize,
 ) ?RefStruct {
     if (refs.?.refs.size == selva.SELVA_NODE_REFERENCE_SMALL) {
         return .{
             .smallReference = @ptrCast(&refs.?.refs.unnamed_0.small[i]),
             .largeReference = null,
-            .edgeConstraint = edgeConstraint.?,
+            .edgeConstraint = edgeConstraint,
         };
     } else if (refs.?.refs.size == selva.SELVA_NODE_REFERENCE_LARGE) {
         return .{
             .smallReference = null,
             .largeReference = @ptrCast(&refs.?.refs.unnamed_0.large[i]),
-            .edgeConstraint = edgeConstraint.?,
+            .edgeConstraint = edgeConstraint,
         };
     } else {
         return std.mem.zeroInit(RefStruct, .{
-            .edgeConstraint = edgeConstraint.?,
+            .edgeConstraint = edgeConstraint,
         });
     }
 }

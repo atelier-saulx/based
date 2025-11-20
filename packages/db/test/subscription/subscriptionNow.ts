@@ -20,9 +20,9 @@ const start = async (t, clientsN = 2) => {
   return { clients, server }
 }
 
-await test('subscriptionNow', async (t) => {
+await test('simple', async (t) => {
   const clientsN = 2
-  const { clients } = await start(t, clientsN)
+  const { clients, server } = await start(t, clientsN)
 
   await clients[0].setSchema({
     types: {
@@ -89,4 +89,57 @@ await test('subscriptionNow', async (t) => {
 
   close()
   close2()
+
+  equal(server.subscriptions.active, 0, 'Removed all active subs')
+  equal(server.subscriptions.now.listeners.size, 0, 'Remove all now listeners')
+})
+
+await test('multiFilter', async (t) => {
+  const clientsN = 2
+  const { clients, server } = await start(t, clientsN)
+
+  await clients[0].setSchema({
+    types: {
+      edition: {},
+      sequence: {
+        edition: { ref: 'edition', prop: 'sequence' },
+        startTime: 'timestamp',
+      },
+    },
+  })
+
+  const edition = await clients[0].create('edition', {})
+
+  var total = 0
+
+  const close = clients[0]
+    .query('sequence')
+    .locale('en')
+    .filter('edition', '=', edition)
+    .filter('startTime', '!=', 0)
+    .filter('startTime', '<', 'now')
+    .sort('startTime', 'desc')
+    .subscribe((d) => {
+      total += d.length
+    })
+
+  const sequence = await clients[0].create('sequence', {
+    edition,
+    startTime: 'now + 1y',
+  })
+
+  await wait(1000)
+
+  await clients[0].update('sequence', sequence, {
+    startTime: 'now + 1s',
+  })
+
+  await wait(3000)
+
+  equal(total, 1)
+
+  close()
+
+  equal(server.subscriptions.active, 0, 'Removed all active subs')
+  equal(server.subscriptions.now.listeners.size, 0, 'Remove all now listeners')
 })

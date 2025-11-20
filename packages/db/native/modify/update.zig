@@ -107,7 +107,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     var it = ctx.typeSortIndex.?.main.iterator();
                     while (it.next()) |entry| {
                         if (currentData == null) {
-                            currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                            currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                         }
                         const sI = entry.value_ptr.*;
                         sort.remove(ctx.db, sI, currentData.?, ctx.node.?);
@@ -115,7 +115,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
-                const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                 sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
@@ -125,12 +125,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     const lang: types.LangCode = @enumFromInt(slice[0]);
                     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
                     if (sIndex) |sortIndex| {
-                        const currentData: []u8 = db.getText(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType, lang);
+                        const currentData: []u8 = db.getText(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType, lang);
                         sort.remove(ctx.db, sortIndex, currentData, ctx.node.?);
                         sort.insert(ctx.db, sortIndex, slice, ctx.node.?);
                     }
                 }
-                try db.setText( ctx.node.?, ctx.fieldSchema.?, slice);
+                try db.setText(ctx.node.?, ctx.fieldSchema.?, slice);
             } else if (ctx.fieldType == types.Prop.ALIAS) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
@@ -160,10 +160,8 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
         return len;
     }
 
-    subs.stage(ctx, subs.Op.update);
-
     const slice = data[4 .. len + 4];
-    var currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+    var currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     if (currentData.len != 0) {
         var j: usize = 0;
         while (j < len) {
@@ -171,6 +169,8 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
             const start = read(u16, operation, 0);
             const l = read(u16, operation, 2);
             if (ctx.field == 0) {
+                subs.stagePartial(ctx, start);
+
                 if (ctx.typeSortIndex != null) {
                     const sI = ctx.typeSortIndex.?.main.get(start);
                     if (sI != null) {
@@ -187,8 +187,10 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                 sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
                 copy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                subs.stage(ctx, subs.Op.update);
             } else {
                 copy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                subs.stage(ctx, subs.Op.update);
             }
             j += 4 + l;
         }
@@ -306,11 +308,9 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
         return propSize + 3;
     }
 
-    subs.stage(ctx, subs.Op.update);
-
     const addition = data[3 .. 3 + propSize];
 
-    const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+    const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     const start = read(u16, data, 1);
     const value = currentData[start .. start + propSize];
 
@@ -327,14 +327,18 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
 
     const size = incrementBuffer(op, fieldType, value, addition);
     if (ctx.field == 0) {
+        subs.stagePartial(ctx, start);
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);
             if (sI != null) {
                 sort.insert(ctx.db, sI.?, currentData, ctx.node.?);
             }
         }
-    } else if (ctx.currentSortIndex != null) {
-        sort.insert(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
+    } else {
+        subs.stage(ctx, subs.Op.update);
+        if (ctx.currentSortIndex != null) {
+            sort.insert(ctx.db, ctx.currentSortIndex.?, value, ctx.node.?);
+        }
     }
 
     return size + 3;

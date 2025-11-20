@@ -17,9 +17,9 @@ const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 pub inline fn orVar(decompressor: *LibdeflateDecompressor, blockState: *LibdeflateBlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
     const prop: Prop = @enumFromInt(q[2]);
     const valueSize = read(u32, q, i + 6);
-    const next = i + 10 + valueSize;
+    const next = 11 + valueSize;
     const mainLen = read(u16, q, i + 4);
-    const query = q[i + 11 .. next + 1];
+    const query = q[i + 11 .. next + i];
     const op: Op = @enumFromInt(q[i + 10]);
     const start = read(u16, q, i + 2);
     var value: []u8 = undefined;
@@ -58,10 +58,11 @@ pub inline fn defaultVar(decompressor: *LibdeflateDecompressor, blockState: *Lib
     const start = read(u16, q, i + 2);
     const mainLen = read(u16, q, i + 4);
     var valueSize = read(u32, q, i + 6);
+
     const isText: bool = prop == Prop.TEXT;
     const op: Op = @enumFromInt(q[i + 10]);
-    const next = i + 10 + valueSize;
-    var query = q[i + 11 .. next + 1];
+    const next = 11 + valueSize;
+    var query = q[i + 11 .. i + next];
     var value: []u8 = undefined;
     var pass = true;
     if (mainLen != 0) {
@@ -228,7 +229,6 @@ pub inline fn orFixed(
             j += 1;
         }
         return .{ next, false };
-        // ---------
     } else if (op == Op.equal) {
         const value = v[start .. start + valueSize];
         if (!batch.equalsOr(valueSize, value, query)) {

@@ -123,7 +123,7 @@ export const includeProp = (
       def.include.props.set(prop.prop, { def: prop, opts })
     } else {
       def.include.main.len += prop.len
-      def.include.main.include[prop.start] = [0, prop as PropDef, opts]
+      def.include.main.include.set(prop.start, [0, prop as PropDef, opts])
       return true
     }
   }

@@ -22,12 +22,12 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
         var it = ctx.typeSortIndex.?.main.iterator();
         while (it.next()) |entry| {
             if (currentData == null) {
-                currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             }
             sort.remove(ctx.db, entry.value_ptr.*, currentData.?, ctx.node.?);
         }
     } else if (ctx.currentSortIndex != null) {
-        const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+        const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
         sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
     } else if (ctx.fieldType == types.Prop.TEXT) {
         var it = ctx.typeSortIndex.?.text.iterator();
@@ -37,7 +37,6 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
                 // Extra slow...
                 const t = db.getText(
                     ctx.typeEntry,
-                    ctx.id,
                     ctx.node.?,
                     ctx.fieldSchema.?,
                     ctx.fieldType,
@@ -59,7 +58,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 
     if (ctx.typeSortIndex != null) {
         if (ctx.currentSortIndex != null) {
-            const currentData = db.getField(ctx.typeEntry, ctx.id, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+            const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
             sort.insert(ctx.db, ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
         } else if (ctx.fieldType == types.Prop.TEXT) {
@@ -69,7 +68,6 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
                 if (sortIndex.field == ctx.field) {
                     const t = db.getText(
                         ctx.typeEntry,
-                        ctx.id,
                         ctx.node.?,
                         ctx.fieldSchema.?,
                         ctx.fieldType,
@@ -103,7 +101,6 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
     const t = db.getText(
         ctx.typeEntry,
-        ctx.id,
         ctx.node.?,
         ctx.fieldSchema.?,
         ctx.fieldType,

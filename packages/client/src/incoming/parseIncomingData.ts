@@ -33,5 +33,7 @@ export const parseIncomingData = (contentType: number, buf: Uint8Array) => {
     const result = buf.subarray(schemaLen + 4)
     return resultToObject(schema, result, result.byteLength)
   }
-  throw new Error('Invalid contentType received')
+  throw new Error(
+    `Invalid contentType received - probably using an incorrect version of the @based/client`,
+  )
 }

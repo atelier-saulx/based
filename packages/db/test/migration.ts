@@ -15,6 +15,9 @@ await test('migration', async (t) => {
   await db.setSchema({
     version: '1.0.0',
     types: {
+      role: {
+        name: 'string',
+      },
       user: {
         firstName: 'string',
         lastName: 'string',
@@ -27,22 +30,33 @@ await test('migration', async (t) => {
         user: {
           ref: 'user',
           prop: 'persons1',
+          $relation: ['buddy', 'bff'],
         },
         users: {
           items: {
             ref: 'user',
             prop: 'persons2',
+            $rating: 'uint8',
+            $roles: {
+              items: {
+                ref: 'role',
+              },
+            },
           },
         },
       },
     },
   })
 
+  const role = await db.create('role', {
+    name: 'xxx',
+  })
+
   let i = 10
   const _users = []
   while (i--) {
     _users.push(
-      db.create('user', {
+      await db.create('user', {
         firstName: 'John' + i,
         lastName: 'Doe' + i,
         email: 'johndoe' + i + '@example.com',
@@ -53,12 +67,27 @@ await test('migration', async (t) => {
   }
   i = _users.length
   while (i--) {
-    db.create('person', {
+    const payload = {
       email: 'person' + i + '@example.com',
-      user: _users[i],
-      users: _users,
-    })
+      user: {
+        id: _users[i],
+        $relation: 'buddy',
+      },
+      users: _users.map((user) => {
+        return {
+          id: user,
+          $rating: 5,
+          $roles: [role],
+        }
+      }),
+    }
+    // console.dir(payload, { depth: null })
+    await db.create('person', payload)
   }
+
+  // console.dir(await db.query('person').include('*', '**').get().toObject(), {
+  //   depth: null,
+  // })
 
   await db.drain()
 
@@ -79,6 +108,9 @@ await test('migration', async (t) => {
     {
       version: '2.0.0',
       types: {
+        role: {
+          name: 'string',
+        },
         user: {
           props: {
             fullName: 'string',
@@ -93,11 +125,18 @@ await test('migration', async (t) => {
           user: {
             ref: 'user',
             prop: 'persons1',
+            $relation: ['buddy', 'bff'],
           },
           users: {
             items: {
               ref: 'user',
               prop: 'persons2',
+              $rating: 'uint8',
+              $roles: {
+                items: {
+                  ref: 'role',
+                },
+              },
             },
           },
         },
@@ -119,6 +158,9 @@ await test('migration', async (t) => {
     {
       version: '3.0.0',
       types: {
+        role: {
+          name: 'string',
+        },
         user: {
           props: {
             name: 'string',
@@ -134,11 +176,18 @@ await test('migration', async (t) => {
           user: {
             ref: 'user',
             prop: 'persons1',
+            $relation: ['buddy', 'bff'],
           },
           users: {
             items: {
               ref: 'user',
               prop: 'persons2',
+              $rating: 'uint8',
+              $roles: {
+                items: {
+                  ref: 'role',
+                },
+              },
             },
           },
         },
@@ -259,71 +308,161 @@ await test('migration', async (t) => {
       id: 1,
       email: 'person9@example.com',
       emailPrimary: 'person9@example.com',
-      user: users.at(-1),
-      users,
+      user: {
+        ...users.at(-1),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 2,
       email: 'person8@example.com',
       emailPrimary: 'person8@example.com',
-      user: users.at(-2),
-      users,
+      user: {
+        ...users.at(-2),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 3,
       email: 'person7@example.com',
       emailPrimary: 'person7@example.com',
-      user: users.at(-3),
-      users,
+      user: {
+        ...users.at(-3),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 4,
       email: 'person6@example.com',
       emailPrimary: 'person6@example.com',
-      user: users.at(-4),
-      users,
+      user: {
+        ...users.at(-4),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 5,
       email: 'person5@example.com',
       emailPrimary: 'person5@example.com',
-      user: users.at(-5),
-      users,
+      user: {
+        ...users.at(-5),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 6,
       email: 'person4@example.com',
       emailPrimary: 'person4@example.com',
-      user: users.at(-6),
-      users,
+      user: {
+        ...users.at(-6),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 7,
       email: 'person3@example.com',
       emailPrimary: 'person3@example.com',
-      user: users.at(-7),
-      users,
+      user: {
+        ...users.at(-7),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 8,
       email: 'person2@example.com',
       emailPrimary: 'person2@example.com',
-      user: users.at(-8),
-      users,
+      user: {
+        ...users.at(-8),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 9,
       email: 'person1@example.com',
       emailPrimary: 'person1@example.com',
-      user: users.at(-9),
-      users,
+      user: {
+        ...users.at(-9),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
     {
       id: 10,
       email: 'person0@example.com',
       emailPrimary: 'person0@example.com',
-      user: users.at(-10),
-      users,
+      user: {
+        ...users.at(-10),
+        $relation: 'buddy',
+      },
+      users: users.map((user) => {
+        return {
+          ...user,
+          $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
+        }
+      }),
     },
   ])
 

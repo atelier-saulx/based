@@ -14,7 +14,6 @@ import {
   TYPE_INDEX_MAP,
   REFERENCES,
   REFERENCE,
-  SchemaTypesParsed,
   NUMBER,
   BLOCK_CAPACITY_MAX,
   BLOCK_CAPACITY_DEFAULT,
@@ -39,7 +38,6 @@ import {
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
-import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const updateTypeDefs = (schema: StrictSchema) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -93,7 +91,7 @@ export const updateTypeDefs = (schema: StrictSchema) => {
           // Update edgeNodeTypeId
           if (!prop.edgeNodeTypeId) {
             if (prop.edges) {
-              const edgeTypeName = `_${[`${schema.type}.${prop.path.join('.')}`, `${dstType.type}.${dstType.props[prop.inversePropName].path.join('.')}`].sort().join(':')}`
+              const edgeTypeName = `_${[`${schema.type}_${prop.path.join('_')}`, `${dstType.type}_${dstType.props[prop.inversePropName].path.join('_')}`].sort().join(':')}`
               const edgeType = schemaTypesParsed[edgeTypeName]
               prop.edgeNodeTypeId = edgeType.id
               dstType.props[prop.inversePropName].edgeNodeTypeId = edgeType.id
@@ -271,6 +269,7 @@ const createSchemaTypeDef = (
       prop.inversePropName = schemaProp.items.prop
       prop.inverseTypeName = schemaProp.items.ref
       prop.dependent = schemaProp.items.dependent
+      prop.referencesCapped = schemaProp.capped ?? 0
       addEdges(prop, schemaProp.items)
     } else if (isPropType('reference', schemaProp)) {
       if (result.partial) {
@@ -304,6 +303,7 @@ const createSchemaTypeDef = (
       result.separate.push(prop)
     }
   }
+
   if (top) {
     // Put top level together
     const vals = Object.values(result.props)

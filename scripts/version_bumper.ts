@@ -25,6 +25,7 @@ const LOG_PREFIX = '[Version Bumper]'
 const WORKSPACE_ROOT = process.cwd() + '/../'
 const TEMP_DIR = path.join(WORKSPACE_ROOT, '.tmp-version-bumper')
 const SDK_PACKAGE_NAME = 'sdk'
+const IGNORE_PATTERNS = new Set(['tmp', '.tmp', 'node_modules'])
 
 function log(...args: any[]) {
   console.log(LOG_PREFIX, ...args)
@@ -105,14 +106,26 @@ async function getNpmPackageInfo(packageName: string): Promise<any> {
   return new Promise((resolve, reject) => {
     https
       .get(`https://registry.npmjs.org/${packageName}`, (res) => {
-        if (res.statusCode === 404) return resolve(null)
-        if (res.statusCode !== 200)
+        if (res.statusCode === 404) {
+          res.resume()
+          return resolve(null)
+        }
+        if (res.statusCode !== 200) {
+          res.resume()
           return reject(
             new Error(`NPM request failed with status ${res.statusCode}`),
           )
+        }
         let data = ''
         res.on('data', (chunk) => (data += chunk))
-        res.on('end', () => resolve(JSON.parse(data)))
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data))
+          } catch (e) {
+            reject(new Error(`Failed to parse NPM JSON response: ${e.message}`))
+          }
+        })
+        res.on('error', reject)
       })
       .on('error', reject)
   })
@@ -136,6 +149,9 @@ function getAllFiles(dirPath: string, arrayOfFiles: string[] = []): string[] {
   const files = fs.readdirSync(dirPath)
 
   files.forEach(function (file) {
+    if (IGNORE_PATTERNS.has(file)) {
+      return
+    }
     const fullPath = path.join(dirPath, file)
     if (fs.statSync(fullPath).isDirectory()) {
       arrayOfFiles = getAllFiles(fullPath, arrayOfFiles)
@@ -276,6 +292,33 @@ function calculateNextVersion(
   return nextVersion
 }
 
+function buildDependentsGraph(
+  packages: Map<string, WorkspacePackage>,
+): Map<string, Set<string>> {
+  log('Building dependents graph...')
+  const graph = new Map<string, Set<string>>()
+  const allPackageNames = new Set(packages.keys())
+
+  for (const [name, pkg] of packages.entries()) {
+    const allDeps = [
+      ...Object.keys(pkg.json.dependencies || {}),
+      ...Object.keys(pkg.json.devDependencies || {}),
+    ]
+
+    for (const depName of allDeps) {
+      if (allPackageNames.has(depName)) {
+        if (!graph.has(depName)) {
+          graph.set(depName, new Set())
+        }
+        graph.get(depName)!.add(name)
+        log(`  - ${name} depends on ${depName}`)
+      }
+    }
+  }
+  log('Dependents graph built.')
+  return graph
+}
+
 async function main() {
   const { releaseType, changeType, packageNames, all, force } = parseArgs()
   log(
@@ -289,8 +332,9 @@ async function main() {
   const packagesToProcess = all
     ? Array.from(workspacePackages.keys())
     : packageNames
-  const newVersions = new Map<string, string>()
 
+  const directlyChanged = new Set<string>()
+  log('\nChecking for direct changes...')
   for (const name of packagesToProcess) {
     if (name === SDK_PACKAGE_NAME) continue
     const pkg = workspacePackages.get(name)
@@ -304,69 +348,90 @@ async function main() {
       : await packageHasChanged(name, pkg.path, releaseType)
     if (hasChanged) {
       log(`[${name}] Change detected.`)
-      const npmInfo = await getNpmPackageInfo(name)
-      const alphaVersion = npmInfo?.['dist-tags']?.alpha
-      const releaseVersion = npmInfo?.['dist-tags']?.latest
-
-      const isPromotion =
-        releaseType === 'release' &&
-        !!alphaVersion &&
-        alphaVersion.split('-')[0] > (releaseVersion || '0.0.0')
-
-      let baseVersion = isPromotion
-        ? alphaVersion
-        : releaseType === 'alpha'
-          ? alphaVersion
-          : releaseVersion
-
-      if (!baseVersion) {
-        log(
-          `[${name}] No valid NPM tag found. Using local package version '${pkg.json.version}' as the baseline.`,
-        )
-        baseVersion = pkg.json.version
-      }
-
-      const canPromote = isPromotion && baseVersion === alphaVersion
-
-      const nextVersion = calculateNextVersion(
-        baseVersion,
-        changeType,
-        releaseType,
-        canPromote,
-      )
-      newVersions.set(name, nextVersion)
+      directlyChanged.add(name)
     } else {
       log(`[${name}] No changes detected.`)
     }
   }
 
-  const sdkPackage = workspacePackages.get(SDK_PACKAGE_NAME)
-  if (sdkPackage && newVersions.size > 0) {
-    log(`Bumping SDK package: ${sdkPackage.json.name}`)
-    const npmInfo = await getNpmPackageInfo(sdkPackage.json.name)
-    const baseVersion =
-      releaseType === 'alpha'
-        ? npmInfo?.['dist-tags']?.alpha
-        : npmInfo?.['dist-tags']?.latest
-    const nextVersion = calculateNextVersion(
-      baseVersion,
-      changeType,
-      releaseType,
-      false,
-    )
-    newVersions.set(sdkPackage.json.name, nextVersion)
+  log('\nPropagating changes to dependents...')
+  const dependentsGraph = buildDependentsGraph(workspacePackages)
+  const packagesToBump = new Set<string>(directlyChanged)
+  const queue = [...directlyChanged]
+
+  while (queue.length > 0) {
+    const changedDep = queue.shift()!
+    const dependents = dependentsGraph.get(changedDep) || new Set()
+
+    for (const dependentName of dependents) {
+      if (!packagesToBump.has(dependentName)) {
+        log(
+          `  - Marking [${dependentName}] for bump (it depends on ${changedDep})`,
+        )
+        packagesToBump.add(dependentName)
+        queue.push(dependentName)
+      }
+    }
   }
 
-  if (newVersions.size === 0) {
+  const sdkPackage = workspacePackages.get(SDK_PACKAGE_NAME)
+  if (sdkPackage && packagesToBump.size > 0) {
+    log(`Bumping SDK package as other packafes have changed.`)
+    packagesToBump.add(SDK_PACKAGE_NAME)
+  }
+
+  if (packagesToBump.size === 0) {
     log('\nNo packages needed a version bump. Exiting.')
     cleanup()
     return
   }
 
+  log('\nCalculating new versions...')
+  const newVersions = new Map<string, string>()
+
+  const versionPromises = Array.from(packagesToBump).map(async (name) => {
+    const pkg = workspacePackages.get(name)!
+    const npmInfo = await getNpmPackageInfo(name)
+    const alphaVersion = npmInfo?.['dist-tags']?.alpha
+    const releaseVersion = npmInfo?.['dist-tags']?.latest
+
+    const isPromotion =
+      releaseType === 'release' &&
+      !!alphaVersion &&
+      alphaVersion.split('-')[0] > (releaseVersion || '0.0.0')
+
+    let baseVersion = isPromotion
+      ? alphaVersion
+      : releaseType === 'alpha'
+        ? alphaVersion
+        : releaseVersion
+
+    if (!baseVersion) {
+      log(
+        `  - [${name}] No valid NPM tag found. Using local package version '${pkg.json.version}' as baseline.`,
+      )
+      baseVersion = pkg.json.version
+    }
+
+    const canPromote = isPromotion && baseVersion === alphaVersion
+
+    const nextVersion = calculateNextVersion(
+      baseVersion,
+      changeType,
+      releaseType,
+      canPromote,
+    )
+    log(`  - [${name}] New version: ${nextVersion}`)
+    return [name, nextVersion] as [string, string]
+  })
+
+  const versionEntries = await Promise.all(versionPromises)
+  versionEntries.forEach(([name, version]) => newVersions.set(name, version))
+
   log('\nApplying version updates...')
   for (const [name, pkg] of workspacePackages.entries()) {
     let wasModified = false
-    const newPkgJson = { ...pkg.json }
+    const newPkgJson = JSON.parse(JSON.stringify(pkg.json)) // diffently
 
     if (newVersions.has(name)) {
       log(`  - ${name}: ${pkg.json.version} -> ${newVersions.get(name)}`)
@@ -380,6 +445,7 @@ async function main() {
           if (newVersions.has(depName)) {
             const newVersion = newVersions.get(depName)!
             if (newPkgJson[depType]![depName] !== newVersion) {
+              log(`  - ${name}: updated ${depName} dependency to ${newVersion}`)
               newPkgJson[depType]![depName] = newVersion
               wasModified = true
             }

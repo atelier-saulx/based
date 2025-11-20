@@ -17,7 +17,6 @@ pub const ResultType = enum(u8) {
 
 pub inline fn get(
     ctx: *QueryCtx,
-    id: u32,
     node: db.Node,
     field: u8,
     prop: t.Prop,
@@ -26,41 +25,44 @@ pub inline fn get(
     comptime isEdge: bool,
     comptime subType: ResultType,
 ) !?*results.Result {
+    var actNode: db.Node = node;
     var value: []u8 = undefined;
     var fieldSchema: db.FieldSchema = undefined;
     var result: results.Result = undefined;
+
     if (isEdge) {
-        fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeRef.?.edgeConstraint, field);
-        if (prop == t.Prop.CARDINALITY) {
-            // make this in getEdgeProp
-            value = db.getCardinalityReference(ctx.db, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema);
+        const edgeConstraint = edgeRef.?.edgeConstraint;
+        fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeConstraint, field);
+        if (db.getNode(try db.getEdgeType(ctx.db, edgeConstraint), edgeRef.?.largeReference.?.meta)) |edgeNode| {
+            actNode = edgeNode;
         } else {
-            value = db.getEdgeProp(ctx.db, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema);
-        }
-        if (value.len == 0) {
             return null;
         }
-        result = .{
-            .type = if (subType == ResultType.meta) t.ResultType.metaEdge else if (subType == ResultType.fixed) t.ResultType.edgeFixed else t.ResultType.edge,
-            .id = 0,
-            .score = null,
-            .prop = field,
-            .value = value,
-        };
     } else {
         fieldSchema = try db.getFieldSchema(typeEntry, field);
-        value = db.getField(typeEntry, id, node, fieldSchema, prop);
-        if (value.len == 0) {
-            return null;
-        }
-        result = .{
-            .type = if (subType == ResultType.meta) t.ResultType.meta else if (subType == ResultType.fixed) t.ResultType.fixed else t.ResultType.default,
-            .id = 0,
-            .score = null,
-            .prop = field,
-            .value = value,
-        };
     }
+
+    value = db.getField(typeEntry, actNode, fieldSchema, prop);
+    if (value.len == 0) {
+        return null;
+    }
+
+    var rt: t.ResultType = undefined;
+
+    if (isEdge) {
+        rt = if (subType == ResultType.meta) t.ResultType.metaEdge else if (subType == ResultType.fixed) t.ResultType.edgeFixed else t.ResultType.edge;
+    } else {
+        rt = if (subType == ResultType.meta) t.ResultType.meta else if (subType == ResultType.fixed) t.ResultType.fixed else t.ResultType.default;
+    }
+
+    result = .{
+        .type = rt,
+        .id = 0,
+        .score = null,
+        .prop = field,
+        .value = value,
+    };
+
     return &result;
 }
 

@@ -46,7 +46,7 @@ export class BasedQueryResponse {
   }
 
   [inspect.custom](depth: number) {
-    const hasId = defHasId(this.def)
+    const hasId = defHasId(this.def) || this.def.selectFirstResult
     const target = displayTarget(this.def)
     let str = ''
     str += '\n  execTime: ' + time(this.execTime)
@@ -68,6 +68,8 @@ export class BasedQueryResponse {
     debug(this.result, 0, this.end)
     return this
   }
+
+  //
 
   node(index: number = 0): any {
     // get id as well

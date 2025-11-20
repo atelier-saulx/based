@@ -1,6 +1,6 @@
 import { LangCode, LangName } from '@based/schema'
 import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
-import { FilterCtx, FilterOpts, Operator } from './filter/types.js'
+import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
 import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
@@ -20,7 +20,7 @@ export type IncludeField = {
   opts?: IncludeOpts
 }
 
-export type MainIncludes = { [start: string]: [number, PropDef, IncludeOpts] }
+export type MainIncludes = Map<number, [number, PropDef, IncludeOpts]>
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
 
@@ -31,6 +31,41 @@ export enum QueryType {
   alias = 3,
   aggregates = 4,
   aggregatesCountType = 5,
+}
+
+export enum ReferenceSelect {
+  Index = 1,
+  Any = 2,
+  All = 3,
+}
+
+export type ReferenceSelectValue = {
+  type: ReferenceSelect
+  index?: number
+  prop: PropDef | PropDefEdge
+}
+
+export type ReferenceSelectOperator = '*' | '*?' | number
+
+export const getReferenceSelect = (
+  p: string,
+  def: QueryDef,
+): ReferenceSelectValue | void => {
+  if (p[p.length - 1] === ']') {
+    const [refsField, indexNotation] = p.split('[')
+    const index = indexNotation.slice(0, -1)
+    const ref = def.schema.props[refsField]
+    if (index === '*') {
+      return { type: ReferenceSelect.All, prop: ref }
+    }
+    if (index === '*?') {
+      return { type: ReferenceSelect.Any, prop: ref }
+    }
+    if (isNaN(Number(index))) {
+      return
+    }
+    return { type: ReferenceSelect.Index, index: Number(index), prop: ref }
+  }
 }
 
 enum QueryDefType {
@@ -70,6 +105,7 @@ export type FilterMetaNow = {
 
 export type FilterCondition = {
   buffer: Uint8Array
+  propDef: PropDef | PropDefEdge
   subscriptionMeta?: {
     now?: FilterMetaNow[]
   }
@@ -79,7 +115,13 @@ export type QueryDefFilter = {
   size: number
   conditions: Map<number, FilterCondition[]>
   exists?: { prop: PropDef | PropDefEdge; negate: boolean }[]
-  references?: Map<number, QueryDefFilter>
+  references?: Map<
+    number,
+    {
+      conditions: QueryDefFilter
+      select: ReferenceSelectValue
+    }
+  >
   fromRef?: PropDef
   schema?: SchemaTypeDef
   edges?: Map<number, FilterCondition[]>
@@ -144,7 +186,7 @@ export interface aggPropDef extends PropDef {
 export type LangFallback = LangName | false
 
 export type QueryDefShared = {
-  // getFirst: boolean
+  selectFirstResult: boolean
   queryType: QueryType
   schemaChecksum?: number
   errors: QueryError[]

@@ -33,7 +33,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
       props: new Map(),
       main: {
         len: 0,
-        include: {},
+        include: new Map(),
       },
     },
     aggregate: null,

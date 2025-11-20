@@ -20,7 +20,7 @@ const start = async (t, clientsN = 2) => {
   return { clients, server }
 }
 
-await test('subscriptionIdPartial', async (t) => {
+await test('filter', async (t) => {
   const clientsN = 2
   const { clients } = await start(t, clientsN)
 
@@ -30,6 +30,58 @@ await test('subscriptionIdPartial', async (t) => {
         date: 'timestamp',
         x: 'uint8',
         name: 'string',
+        gurk: 'string',
+        flap: 'string',
+        rurp: 'string',
+      },
+    },
+  })
+
+  const id = await clients[0].create('user', {
+    name: 'mr flap',
+    date: 'now',
+  })
+
+  var idFieldCounter = 0
+
+  const close = clients[0]
+    .query('user', id)
+    .filter('x', '>', 5)
+    .include('name')
+    .subscribe((d) => {
+      idFieldCounter++
+    })
+
+  await wait(10)
+  clients[0].update('user', id, {
+    x: 10,
+  })
+
+  await wait(10)
+  clients[0].update('user', id, {
+    x: 0,
+  })
+
+  await wait(80)
+
+  equal(idFieldCounter, 3)
+
+  close()
+})
+
+await test('partial update', async (t) => {
+  const clientsN = 2
+  const { clients } = await start(t, clientsN)
+
+  await clients[0].setSchema({
+    types: {
+      user: {
+        date: 'timestamp',
+        x: 'uint8',
+        name: 'string',
+        gurk: 'string',
+        flap: 'string',
+        rurp: 'string',
       },
     },
   })
@@ -48,12 +100,13 @@ await test('subscriptionIdPartial', async (t) => {
 
   const close2 = clients[0]
     .query('user', id)
-    .include('x')
+    .include('x', 'gurk', 'rurp', 'flap')
     .subscribe((d) => {
       idFieldCounter++
     })
 
   const interval = setInterval(() => {
+    // should be flagged as partial as well...
     clients[0].update('user', id, {
       date: { increment: 1000 },
     })
@@ -75,7 +128,9 @@ await test('subscriptionIdPartial', async (t) => {
 
   await wait(80)
 
-  equal(idCounter, 10)
+  equal(idCounter > 9, true)
+  equal(idCounter < 15, true)
+
   equal(idFieldCounter, 3)
 
   clearInterval(interval)

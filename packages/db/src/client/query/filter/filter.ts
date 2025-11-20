@@ -1,4 +1,10 @@
-import { QueryDef, QueryDefFilter } from '../types.js'
+import {
+  getReferenceSelect,
+  QueryDef,
+  QueryDefFilter,
+  ReferenceSelect,
+  ReferenceSelectValue,
+} from '../types.js'
 import {
   isPropDef,
   SchemaTypeDef,
@@ -7,6 +13,8 @@ import {
   ID_FIELD_DEF,
   TEXT,
   REFERENCE,
+  REFERENCES,
+  PropDefEdge,
 } from '@based/schema/def'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './types.js'
@@ -27,12 +35,16 @@ const referencesFilter = (
   const [fieldStr, ctx, value] = filter
   var size = 0
   const path = fieldStr.split('.')
-  let t: PropDef | SchemaPropTree = schema.tree
+  let t: PropDef | PropDefEdge | SchemaPropTree = schema.tree
+  let referencesSelect: ReferenceSelectValue | void
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
     t = t[p]
     if (!t) {
-      if (p[0] === '$') {
+      referencesSelect = getReferenceSelect(p, def)
+      if (referencesSelect) {
+        t = referencesSelect.prop
+      } else if (p[0] === '$') {
         let edges = conditions.fromRef && conditions.fromRef.edges
         if (!edges && 'propDef' in def.target) {
           edges = def.target.propDef.edges
@@ -53,39 +65,51 @@ const referencesFilter = (
         filterFieldDoesNotExist(def, fieldStr)
         return 0
       }
-      return size
+
+      if (!t) {
+        return size
+      }
     }
-    if (isPropDef(t) && t.typeIndex === REFERENCE) {
+
+    if (
+      isPropDef(t) &&
+      (t.typeIndex === REFERENCE || t.typeIndex === REFERENCES)
+    ) {
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
         const schema = db.schemaTypesParsed[t.inverseTypeName]
-        size += 6
+        size += t.typeIndex === REFERENCES ? 11 : 6
         refConditions = {
-          conditions: new Map(),
-          fromRef: t,
-          schema,
-          size: 0,
-          hasSubMeta: false,
+          conditions: {
+            conditions: new Map(),
+            fromRef: t,
+            schema,
+            size: 0,
+            hasSubMeta: false,
+          },
+          select: referencesSelect || {
+            type: ReferenceSelect.Any,
+            prop: t,
+          },
         }
         conditions.references.set(t.prop, refConditions)
       }
-      // more nested
       size += filterRaw(
         db,
         [path.slice(i + 1).join('.'), ctx, value],
-        refConditions.schema,
-        refConditions,
-        def, // incorrect...
+        refConditions.conditions.schema,
+        refConditions.conditions,
+        def,
       )
 
-      if (refConditions.hasSubMeta) {
+      if (refConditions.conditions.hasSubMeta) {
         conditions.hasSubMeta = true
       }
-
       return size
     }
   }
+
   if (!def) {
     filterFieldDoesNotExist(def, fieldStr)
     return 0

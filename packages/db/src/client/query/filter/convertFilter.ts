@@ -53,7 +53,12 @@ export const convertFilter = (
     !(operator === 'exists' || operator === '!exists') &&
     (value === '' || value === undefined)
   ) {
-    // not great...
+    if (value === '' && operator === '=') {
+      return [[field, toFilterCtx(def, '!exists', opts), undefined]]
+    } else if (value === '' && operator === '!=') {
+      return [[field, toFilterCtx(def, 'exists', opts), undefined]]
+    }
+
     return
   }
   if (operator === '!..') {

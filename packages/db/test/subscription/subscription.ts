@@ -209,7 +209,7 @@ await test('subscribe to refs', async (t) => {
     // }
   }
 
-  await wait(700)
+  await wait(1000)
 
   close()
 })

@@ -15,7 +15,7 @@ pub fn sortedReferences(
     include: []u8,
     sortBuffer: []u8,
     typeEntry: db.Type,
-    edgeConstraint: ?db.EdgeFieldConstraint,
+    edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,
@@ -43,14 +43,14 @@ pub fn sortedReferences(
     };
     const refsCnt = refs.refs.nr_refs;
     checkItem: while (i < refsCnt) : (i += 1) {
-        if (queryTypes.resolveRefsNode(ctx, refs, i)) |refNode| {
+        if (queryTypes.resolveRefsNode(ctx.db, refs, i)) |refNode| {
             if (hasFilter and !filter(ctx.db, refNode, typeEntry, filterArr, null, null, 0, false)) {
                 continue :checkItem;
             }
             const fs = db.getFieldSchema(typeEntry, sortField) catch {
                 return result;
             };
-            const value = db.getField(typeEntry, 0, refNode, fs, sortProp);
+            const value = db.getField(typeEntry, refNode, fs, sortProp);
             dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
         }
     }

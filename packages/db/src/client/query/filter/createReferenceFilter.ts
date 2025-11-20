@@ -27,5 +27,5 @@ export const createReferenceFilter = (
   } else {
     writeUint32(buffer, value, 11)
   }
-  return { buffer }
+  return { buffer, propDef: prop }
 }

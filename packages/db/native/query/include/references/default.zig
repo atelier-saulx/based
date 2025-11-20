@@ -11,7 +11,7 @@ pub fn defaultReferences(
     ctx: *QueryCtx,
     include: []u8,
     typeEntry: db.Type,
-    edgeConstraint: ?db.EdgeFieldConstraint,
+    edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,
@@ -22,7 +22,7 @@ pub fn defaultReferences(
     const refsCnt = refs.refs.nr_refs;
 
     checkItem: while (i < refsCnt and result.cnt < limit) : (i += 1) {
-        if (types.resolveRefsNode(ctx, refs, i)) |refNode| {
+        if (types.resolveRefsNode(ctx.db, refs, i)) |refNode| {
             const refStruct = types.RefResult(refs, edgeConstraint, i);
             if (hasFilter and !filter(
                 ctx.db,

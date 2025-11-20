@@ -1,5 +1,6 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
+import { deepEqual } from '../shared/assert.js'
 
 await test('filter references drones', async (t) => {
   const db = new BasedDb({
@@ -53,10 +54,8 @@ await test('filter references drones', async (t) => {
   const drones = await db
     .query('user')
     .include((s) =>
-      s('workspaces').include(
-        (s) =>
-          s('drones').include('*').filter('workspace.users', 'includes', user),
-        // .range(0, 1),
+      s('workspaces').include((s) =>
+        s('drones').include('*').filter('workspace.users', 'includes', user),
       ),
     )
     .include('*')
@@ -67,6 +66,28 @@ await test('filter references drones', async (t) => {
     .filter('workspace.users', 'includes', user)
     .get()
 
+  // add tests
   drones.inspect()
   drones2.inspect()
+
+  const dronesResult = []
+  for (let i = 0; i < 1000; i++) {
+    dronesResult.push({ id: i + 499001, name: 'Drone ' + i })
+  }
+
+  deepEqual(drones, [
+    {
+      id: 1,
+      name: 'User A',
+      workspaces: [
+        {
+          id: 500,
+          drones: dronesResult,
+        },
+      ],
+    },
+    { id: 2, name: 'User A', workspaces: [{ id: 750, drones: [] }] },
+  ])
+
+  deepEqual(drones2, dronesResult)
 })

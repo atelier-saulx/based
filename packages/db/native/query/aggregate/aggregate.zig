@@ -135,7 +135,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, hllAccumulator, hllValue);
                 hadAccumulated.* = true;
             } else {
-                value = if (isEdge and edgeRef != null) db.getEdgeProp(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(typeEntry, db.getNodeId(node), node, fieldSchema, types.Prop.MICRO_BUFFER);
+                value = if (isEdge and edgeRef != null) db.getEdgeProp(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(typeEntry, node, fieldSchema, types.Prop.MICRO_BUFFER);
                 if (value.len == 0) {
                     i += fieldAggsSize;
                     continue;

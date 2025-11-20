@@ -14,8 +14,7 @@ fn getMarkedIdSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info)
     if (ctx.subscriptions.lastIdMarked > 0) {
         var resultBuffer: ?*anyopaque = undefined;
         var result: c.napi_value = undefined;
-        const len = ctx.subscriptions.lastIdMarked / 16;
-        const size = (len) * 8;
+        const size = (ctx.subscriptions.lastIdMarked) * 8;
         if (c.napi_create_arraybuffer(env, size, &resultBuffer, &result) != c.napi_ok) {
             return null;
         }
@@ -23,14 +22,18 @@ fn getMarkedIdSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info)
 
         // Reset
         var i: usize = 0;
-        while (i < len) {
-            const markedIndex = i * 16;
-            const index = utils.read(u32, ctx.subscriptions.singleIdMarked, markedIndex + 8);
-            const subBytes: [*]u8 = @ptrFromInt(utils.read(u64, ctx.subscriptions.singleIdMarked, markedIndex));
-            subBytes[index] = @intFromEnum(types.SubStatus.all);
+        while (i < ctx.subscriptions.lastIdMarked) {
+            const sub = ctx.subscriptions.singleIdMarked[i];
             const newDataIndex = i * 8;
-            utils.writeInt(u32, data, newDataIndex, utils.read(u32, ctx.subscriptions.singleIdMarked, markedIndex + 12));
-            utils.copy(data[newDataIndex + 4 .. newDataIndex + 8], subBytes[index + 4 .. index + 8]);
+            const id = sub.id;
+            if (sub.isRemoved) {
+                // can make
+                try singleId.removeSubscriptionMarked(ctx, sub);
+            } else {
+                utils.writeInt(u32, data, newDataIndex, id);
+                utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
+                sub.*.marked = types.SubStatus.all;
+            }
             i += 1;
         }
 

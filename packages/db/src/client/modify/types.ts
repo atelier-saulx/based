@@ -22,6 +22,7 @@ export const SWITCH_ID_CREATE = 9
 export const SWITCH_ID_CREATE_RING = 19
 export const SWITCH_ID_CREATE_UNSAFE = 8
 export const SWITCH_ID_UPDATE = 1
+export const SWITCH_EDGE_ID = 20
 export const UPSERT = 17
 export const INSERT = 18
 

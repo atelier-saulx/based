@@ -103,6 +103,12 @@ pub const RefOp = enum(u8) {
     _,
 };
 
+pub const ReferencesSelect = enum(u8) {
+    index = 1,
+    any = 2,
+    all = 3,
+};
+
 pub const RefEdgeOp = enum(u8) {
     noEdgeNoIndexRealId = 0,
     edgeNoIndexRealId = 1,
@@ -157,6 +163,7 @@ pub const ModOp = enum(u8) {
     SWITCH_ID_CREATE_UNSAFE = 8,
     SWITCH_ID_CREATE = 9,
     SWITCH_ID_CREATE_RING = 19,
+    SWITCH_EDGE_ID = 20,
     DELETE_NODE = 10,
     DELETE = 11,
     INCREMENT = 12,
