@@ -17,7 +17,6 @@ import { parseString, type SchemaString } from './string.ts'
 import { parseText, type SchemaText } from './text.ts'
 import { parseTimestamp, type SchemaTimestamp } from './timestamp.ts'
 import { parseVector, type SchemaVector } from './vector.ts'
-import type { Schema } from './schema.ts'
 import { parseObject, type SchemaObject } from './object.ts'
 
 type SchemaPropObj<strict = false> =

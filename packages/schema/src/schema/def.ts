@@ -1,23 +1,42 @@
+import type { SchemaObject } from './object.ts'
 import type { SchemaProp } from './prop.ts'
+import type { SchemaReference } from './reference.ts'
+import type { SchemaReferences } from './references.ts'
 import type { Schema } from './schema.ts'
 import type { SchemaString } from './string.ts'
-import type { SchemaType } from './type.ts'
+import type { SchemaProps, SchemaType } from './type.ts'
 import type { SchemaVector } from './vector.ts'
 
-type PropDef = SchemaProp<true> & {
-  propId: number
-  typeId: number
-  // seperate => propId === 0
+type PropDefBase = {
+  id: number
+  typeEnum: number
   path: string[]
-  start: number
-  len: number // rename to size?
-  props: Record<string, PropDef>
-  inverse?: PropDef // this replaces inverseTypeName, inversePropName, inversePropNumber
+  main?: {
+    start: number
+    size: number
+  }
 }
+
+type Obj = Omit<SchemaObject<true>, 'props'>
+type PropDefObj = Obj &
+  PropDefBase & {
+    props?: Record<string, PropDef>
+  }
+
+type RefLike = SchemaReference<true> | SchemaReferences<true>
+type PropDefRefLike = RefLike &
+  PropDefBase & {
+    inverse?: PropDef // this replaces inverseTypeName, inversePropName, inversePropNumber
+  }
+
+type PropDefRest = Exclude<Exclude<SchemaProp<true>, RefLike>, Obj> &
+  PropDefBase
+
+type PropDef = PropDefObj | PropDefRefLike | PropDefRest
 
 type TypeDef = Omit<SchemaType<true>, 'props'> & {
   props: Record<string, PropDef>
-  mainLen: number
+  size: number
 }
 
 type Defs = Record<string | number, TypeDef>
@@ -27,7 +46,7 @@ const stringLen = ({ maxBytes = Infinity, max = Infinity }: SchemaString) =>
 const numberLen = (type?: string) =>
   (type && Number(type.replace(/[^0-9]/g, '')) / 4) || 8
 
-const typeIds: Record<SchemaProp<true>['type'], number> = {
+const propTypeEnums: Record<SchemaProp<true>['type'], number> = {
   alias: 18,
   binary: 25,
   boolean: 9,
@@ -51,7 +70,7 @@ const typeIds: Record<SchemaProp<true>['type'], number> = {
   vector: 27,
 } as const
 
-const typeLengths: Partial<
+const propMainSizes: Partial<
   Record<
     SchemaProp<true>['type'],
     number | ((propSchema: SchemaProp<true>) => number)
@@ -78,63 +97,110 @@ const typeLengths: Partial<
 
 export const schemaToDefs = (schema: Schema<true>): Defs => {
   const defs: Defs = {}
-  // init loop
+  let idCnt = 0
+
   for (const type in schema.types) {
-    const typeSchema = schema.types[type]
-    const typeProps = {}
-    let mainLen = 0
-    let propIdCnt = 1
-
-    const parseProps = (
-      props: Record<string, SchemaProp<true>>,
-      path: string[],
-      propDefs: Record<string, PropDef>,
-    ): Record<string, PropDef> => {
-      for (const prop in props) {
-        const propSchema = props[prop]
-        const len = typeLengths[propSchema.type]
-        const propLen = typeof len === 'function' ? len(propSchema) : len || 0
-        const propPath = [...path, prop]
-        const propDef: PropDef = {
-          ...propSchema,
-          propId: propLen ? 0 : propIdCnt++,
-          typeId: typeIds[propSchema.type],
-          path: propPath,
-          start: propLen && mainLen,
-          len: propLen,
-          props:
-            'props' in propSchema
-              ? parseProps(propSchema.props, propPath, {})
-              : {},
-        }
-
-        mainLen += propLen
-        propDefs[prop] = propDef
-        if (propPath.length > 1) {
-          typeProps[propPath.join('.')] = propDef
-        }
-      }
-      return propDefs
-    }
-
-    const typeDef: TypeDef = {
-      ...typeSchema,
-      props: parseProps(typeSchema.props, [], typeProps),
-      mainLen,
-    }
-
-    defs[type] = typeDef
+    defs[type] = parseType(schema.types[type])
   }
 
-  // post parse
   for (const type in defs) {
     for (const prop in defs[type].props) {
       const propDef = defs[type].props[prop]
       if (propDef.type === 'reference') {
         propDef.inverse = defs[propDef.ref].props[propDef.prop]
+        addEdgeType(type, prop, propDef)
+      } else if (propDef.type === 'references') {
+        propDef.inverse = defs[propDef.items.ref].props[propDef.items.prop]
+        addEdgeType(type, prop, propDef.items)
       }
     }
   }
 
   return defs
+
+  function parseType(typeSchema: SchemaType<true>) {
+    const typeProps = {}
+    let size = 0
+    let propIdCnt = 1
+
+    const props = parseProps(typeSchema.props, [], typeProps)
+
+    return {
+      id: idCnt++,
+      size,
+      ...typeSchema,
+      props,
+    }
+
+    function parseProps(
+      props: Record<string, SchemaProp<true>>,
+      path: string[],
+      propDefs: Record<string, PropDef>,
+    ): Record<string, PropDef> {
+      for (const prop in props) {
+        const propSchema = props[prop]
+        const { type: propType, ...rest } = propSchema
+        const getSize = propMainSizes[propType]
+        const mainSize =
+          typeof getSize === 'function' ? getSize(propSchema) : getSize || 0
+        const propDef = {
+          id: mainSize ? 0 : propIdCnt++,
+          type: propType,
+          typeEnum: propTypeEnums[propType],
+          path: [...path, prop],
+          ...rest,
+        } as PropDef
+
+        if (mainSize) {
+          size += mainSize
+          propDef.main = {
+            start: mainSize && size,
+            size: mainSize,
+          }
+        }
+
+        if (propType === 'object') {
+          ;(propDef as PropDefObj).props = parseProps(
+            propSchema.props,
+            propDef.path,
+            {},
+          )
+        }
+
+        propDefs[prop] = propDef
+        if (propDef.path.length > 1) {
+          typeProps[propDef.path.join('.')] = propDef
+        }
+      }
+      return propDefs
+    }
+  }
+
+  function addEdgeType(
+    type: string,
+    prop: string,
+    refSchema: SchemaReference<true>,
+  ) {
+    const refType = refSchema.ref
+    if (type > refType) {
+      // we'll add it from the other side
+      return
+    }
+
+    let edges: SchemaProps<true> | undefined
+    for (const key in refSchema) {
+      if (key[0] === '$') {
+        edges ??= {}
+        edges[key] = refSchema[key]
+      }
+    }
+
+    if (!edges) {
+      return
+    }
+
+    defs[`$${type}_${prop}_${refType}`] = parseType({
+      props: edges,
+    })
+  }
 }

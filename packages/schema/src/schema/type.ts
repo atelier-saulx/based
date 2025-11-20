@@ -35,7 +35,7 @@ type SchemaHooks = {
   aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
 }
 
-type SchemaProps<strict = true> = Record<string, SchemaProp<strict>>
+export type SchemaProps<strict = true> = Record<string, SchemaProp<strict>>
 type SchemaTypeObj<strict = false> = {
   hooks?: SchemaHooks
   blockCapacity?: number
@@ -48,20 +48,20 @@ export type SchemaType<strict = false> = strict extends true
   ? SchemaTypeObj<strict>
   : SchemaTypeObj<strict> | ({ props?: never } & SchemaProps<strict>)
 
-const parseProps = (typeProps: unknown, schema: Schema) => {
+const parseProps = (typeProps: unknown) => {
   assert(isRecord(typeProps))
   const props: SchemaProps<true> = {}
   for (const key in typeProps) {
-    props[key] = parseProp(typeProps[key], schema)
+    props[key] = parseProp(typeProps[key])
   }
   return props
 }
 
-export const parseType = (type: unknown, schema: Schema): SchemaType<true> => {
+export const parseType = (type: unknown): SchemaType<true> => {
   assert(isRecord(type))
 
   if (type.props === undefined) {
-    return { props: parseProps(type, schema) }
+    return { props: parseProps(type) }
   }
 
   assert(type.hooks === undefined || isHooks<SchemaHooks>(type.hooks))
@@ -74,10 +74,8 @@ export const parseType = (type: unknown, schema: Schema): SchemaType<true> => {
     blockCapacity: type.blockCapacity,
     capped: type.capped,
     partial: type.partial,
-    props: parseProps(type.props, schema),
+    props: parseProps(type.props),
   }
 
-  deleteUndefined(result)
-
-  return result
+  return deleteUndefined(result)
 }

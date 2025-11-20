@@ -3,44 +3,55 @@ import { parseSchema, type Schema } from '../src/schema/schema.ts'
 import { schemaToDefs } from '../src/schema/def.ts'
 
 await test('testings', () => {
-  const schema = parseSchema({
+  const input: Schema = {
     types: {
+      role: {
+        name: 'string',
+      },
       author: {
         name: 'string',
+        age: 'uint8',
         articles: {
           ref: 'article',
           prop: 'author',
         },
       },
       article: {
-        props: {
-          // externalId: {
-          //   type: 'alias',
-          // },
-          // friendlyUrl: {
-          //   type: 'alias',
-          // },
-          // body: {
-          //   type: 'string',
-          // },
-          // age: 'number',
-          // coolGuy: 'boolean',
-          // address: {
-          //   type: 'object',
-          //   props: {
-          //     street: 'string',
-          //   },
-          // },
-          author: {
+        address: {
+          props: {
+            street: 'string',
+          },
+        },
+        author: {
+          ref: 'author',
+          prop: 'articles',
+          $durt: {
             ref: 'author',
-            prop: 'articles',
+          },
+        },
+        collaborators: {
+          items: {
+            ref: 'author',
+            prop: 'collaborations',
+            $role: ['owner', 'reader'],
+            $roles: {
+              items: {
+                ref: 'role',
+                // prop: 'ballz',
+                // $test: 'string',
+              },
+            },
           },
         },
       },
     },
-  } as Schema)
+  }
+  console.log('-- input')
+  console.dir(input, { depth: null })
+  const schema = parseSchema(input)
+  console.log('-- strict schema')
   console.dir(schema, { depth: null })
   const defs = schemaToDefs(schema)
-
+  console.log('-- schema defs')
   console.dir(defs, { depth: null })
 })

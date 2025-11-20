@@ -1,12 +1,19 @@
 import { parseBase, type Base } from './base.ts'
 import { assert, isRecord, isString, type RequiredIfStrict } from './shared.ts'
 import { parseProp, type SchemaProp } from './prop.ts'
+import type { SchemaReferences } from './references.ts'
 
-export type SchemaReference<strict = false> = Base & {
-  ref: string
-  prop: string
-  [edge: `$${string}`]: SchemaProp<strict>
-} & RequiredIfStrict<{ type: 'reference' }, strict>
+export type SchemaReference<strict = false> = Base &
+  RequiredIfStrict<{ type: 'reference' }, strict> & {
+    ref: string
+  } & {
+    prop: string
+    [edge: `$${string}`]:
+      | Exclude<SchemaProp<strict>, SchemaReferences<strict>>
+      | (Omit<SchemaReferences<strict>, 'items'> & {
+          items: Omit<SchemaReference<strict>, 'prop' | `$${string}`>
+        })
+  }
 
 export const parseReference = (def: unknown): SchemaReference<true> => {
   assert(isRecord(def))
@@ -22,7 +29,7 @@ export const parseReference = (def: unknown): SchemaReference<true> => {
 
   for (const key in def) {
     if (key.startsWith('$')) {
-      result[key] = parseProp(result[key])
+      result[key] = parseProp(def[key])
     }
   }
 

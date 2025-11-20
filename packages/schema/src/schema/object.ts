@@ -13,7 +13,6 @@ export const parseObject = (def: unknown): SchemaObject<true> => {
 
   const props = {}
   for (const prop in def.props) {
-    console.log('here we go', def.props[prop])
     props[prop] = parseProp(def.props[prop])
   }
 

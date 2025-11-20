@@ -47,6 +47,5 @@ export const parseBase = <T extends Base>(
     'Unexpected key',
   )
 
-  deleteUndefined(result)
-  return result
+  return deleteUndefined(result)
 }

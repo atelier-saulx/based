@@ -1,4 +1,11 @@
-import { assert, isBoolean, isFunction, isRecord, isString } from './shared.ts'
+import {
+  assert,
+  deleteUndefined,
+  isBoolean,
+  isFunction,
+  isRecord,
+  isString,
+} from './shared.ts'
 import { parseType, type SchemaType } from './type.ts'
 import { langCodesMap, type LangName } from './lang.ts'
 import type { SchemaProp } from './prop.ts'
@@ -50,6 +57,45 @@ const isLocales = (v: unknown): v is SchemaLocales =>
     }
   })
 
+const parseRefs = (
+  types: SchemaTypes<true>,
+  type: keyof SchemaTypes<true>,
+  prop: SchemaProp<true>,
+  path: string[],
+) => {
+  if (prop.type === 'reference') {
+    let inverse: any = types[prop.ref]
+    for (const key of prop.prop.split('.')) {
+      let next = 'props' in inverse ? inverse.props?.[key] : inverse[key]
+      if (!next) {
+        inverse.props ??= {}
+        next = inverse.props[key] = {}
+      }
+      inverse = next
+    }
+    const dotPath = path.join('.')
+    if (!inverse.type) {
+      inverse.type = 'references'
+      inverse.items = {
+        type: 'reference',
+        ref: type,
+        prop: dotPath,
+      }
+    }
+    if (inverse.items) {
+      inverse = inverse.items
+    }
+    assert(inverse.ref === type)
+    assert(inverse.prop === dotPath)
+  } else if ('items' in prop) {
+    parseRefs(types, type, prop.items, path)
+  } else if ('props' in prop) {
+    for (const k in prop.props) {
+      parseRefs(types, type, prop.props[k], [...path, k])
+    }
+  }
+}
+
 export const parseSchema = (v: unknown): Schema<true> => {
   assert(isRecord(v))
   assert(isRecord(v.types))
@@ -60,45 +106,21 @@ export const parseSchema = (v: unknown): Schema<true> => {
 
   const types: SchemaTypes<true> = {}
   for (const key in v.types) {
-    types[key] = parseType(v.types[key], v as Schema)
+    types[key] = parseType(v.types[key])
   }
 
   // handle references here now
   for (const type in types) {
-    const parseRefs = (prop: SchemaProp<true>, path: string[]) => {
-      if (prop.type === 'reference') {
-        let inverse: any = types[prop.ref]
-        for (const key of prop.prop.split('.')) {
-          let next = 'props' in inverse ? inverse.props?.[key] : inverse[key]
-          if (!next) {
-            inverse.props ??= {}
-            next = inverse.props[key] = {}
-          }
-          inverse = next
-        }
-        const dotPath = path.join('.')
-        inverse.ref ??= type
-        inverse.prop ??= dotPath
-        assert(inverse.ref === type)
-        assert(inverse.prop === dotPath)
-      } else if ('items' in prop) {
-        parseRefs(prop.items, path)
-      } else if ('props' in prop) {
-        for (const k in prop.props) {
-          parseRefs(prop.props[k], [...path, k])
-        }
-      }
-    }
     for (const k in types[type].props) {
-      parseRefs(types[type].props[k], [k])
+      parseRefs(types, type, types[type].props[k], [k])
     }
   }
 
-  return {
+  return deleteUndefined({
     version: v.version,
     locales: v.locales,
     defaultTimezone: v.defaultTimezone,
     migrations: v.migrations,
     types,
-  }
+  })
 }
