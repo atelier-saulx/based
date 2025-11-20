@@ -2,10 +2,10 @@ const napi = @import("napi.zig");
 const std = @import("std");
 const selvaLib = @import("selva.zig").c;
 
-pub fn jsThrow(env: napi.c.napi_env, message: [:0]const u8) napi.c.napi_value {
+pub fn jsThrow(env: napi.Env, message: [:0]const u8) napi.Value {
     const result = napi.c.napi_throw_error(env, null, message);
     switch (result) {
-        napi.c.napi_ok, napi.c.napi_pending_exception => {},
+        napi.Ok, napi.c.napi_pending_exception => {},
         else => unreachable,
     }
     return null;

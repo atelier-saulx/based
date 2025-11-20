@@ -6,7 +6,7 @@ const db = @import("./db/db.zig");
 pub const Type = db.Type;
 pub const FieldSchema = db.FieldSchema;
 
-pub fn colvec(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn colvec(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return colvecInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
@@ -52,7 +52,7 @@ fn native_foreach(te: Type, fs: FieldSchema, nodeId: selva.node_id_t, len: u32, 
     }
 }
 
-fn colvecInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+fn colvecInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(5, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const typeId = try napi.get(u16, env, args[1]);
@@ -67,7 +67,7 @@ fn colvecInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c
     //_ = selva.colvec_foreach(typeEntry, fs, nodeId, len, &cb, &res);
     native_foreach(typeEntry, fs, nodeId, len, &res);
 
-    var napi_res: napi.c.napi_value = undefined;
+    var napi_res: napi.Value = undefined;
     _ = napi.c.napi_create_double(env, res, &napi_res);
 
     return napi_res;

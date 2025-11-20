@@ -4,26 +4,26 @@ const selva = @import("./selva.zig").c;
 const writeInt = @import("./utils.zig").writeInt;
 const copy = @import("./utils.zig").copy;
 
-pub fn napi_finalize_hash(_: napi.c.napi_env, finalize_data: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+pub fn napi_finalize_hash(_: napi.Env, finalize_data: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
     _ = selva.selva_hash_free_state(@ptrCast(finalize_data));
 }
 
-pub fn hashCreate(env: napi.c.napi_env, _: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn hashCreate(env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
     const state = selva.selva_hash_create_state();
-    var externalNapi: napi.c.napi_value = undefined;
+    var externalNapi: napi.Value = undefined;
     _ = selva.selva_hash_reset(state);
     _ = napi.c.napi_create_external(env, state, napi_finalize_hash, null, &externalNapi);
     return externalNapi;
 }
 
-pub fn hashReset(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn hashReset(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(1, env, info) catch return null;
     const state = napi.get(*selva.selva_hash_state_t, env, args[0]) catch return null;
     _ = selva.selva_hash_reset(state);
     return null;
 }
 
-pub fn hashUpdate(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn hashUpdate(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(2, env, info) catch return null;
     const state = napi.get(*selva.selva_hash_state_t, env, args[0]) catch return null;
     const buf = napi.get([]u8, env, args[1]) catch return null;
@@ -31,7 +31,7 @@ pub fn hashUpdate(env: napi.c.napi_env, info: napi.c.napi_callback_info) callcon
     return null;
 }
 
-pub fn hashDigest(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn hashDigest(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(2, env, info) catch return null;
     const state = napi.get(*selva.selva_hash_state_t, env, args[0]) catch return null;
     const buf = napi.get([]u8, env, args[1]) catch return null;
@@ -40,40 +40,40 @@ pub fn hashDigest(env: napi.c.napi_env, info: napi.c.napi_callback_info) callcon
     return null;
 }
 
-pub fn crc32(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn crc32(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(1, env, info) catch return null;
     const buf = napi.get([]u8, env, args[0]) catch return null;
     const value: u32 = selva.crc32c(0, buf.ptr, buf.len);
-    var v: napi.c.napi_value = undefined;
+    var v: napi.Value = undefined;
     _ = napi.c.napi_create_uint32(env, value, &v);
     return v;
 }
 
-fn compressor_finalize(_: napi.c.napi_env, compressor: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+fn compressor_finalize(_: napi.Env, compressor: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
     selva.libdeflate_free_compressor(@ptrCast(compressor));
 }
 
 // return queryId
-pub fn createCompressor(napi_env: napi.c.napi_env, _: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn createCompressor(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
     const compressor: *selva.libdeflate_compressor = selva.libdeflate_alloc_compressor(3).?;
-    var externalNapi: napi.c.napi_value = undefined;
+    var externalNapi: napi.Value = undefined;
     _ = napi.c.napi_create_external(napi_env, compressor, compressor_finalize, null, &externalNapi);
     return externalNapi;
 }
 
-fn decompressor_finalize(_: napi.c.napi_env, decompressor: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+fn decompressor_finalize(_: napi.Env, decompressor: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
     selva.libdeflate_free_decompressor(@ptrCast(decompressor));
 }
 
 // var decompressor: ?*selva.libdeflate_decompressor = null;
-pub fn createDecompressor(napi_env: napi.c.napi_env, _: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn createDecompressor(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
     const decompressor: *selva.libdeflate_decompressor = selva.libdeflate_alloc_decompressor().?;
-    var externalNapi: napi.c.napi_value = undefined;
+    var externalNapi: napi.Value = undefined;
     _ = napi.c.napi_create_external(napi_env, decompressor, decompressor_finalize, null, &externalNapi);
     return externalNapi;
 }
 
-pub fn compress(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn compress(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(4, env, info) catch {
         return null;
     };
@@ -101,7 +101,7 @@ pub fn compress(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(
         @ptrCast(output[offset..output.len].ptr),
         output.len,
     );
-    var result: napi.c.napi_value = null;
+    var result: napi.Value = null;
     _ = napi.c.napi_create_uint32(env, @intCast(o), &result);
     return result;
 }
@@ -112,7 +112,7 @@ pub fn compress(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(
 // size_t *actual_out_nbytes_ret);
 
 // compressor has to be per ctx else multi core unsafe
-pub fn decompress(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn decompress(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(5, env, info) catch {
         return null;
     };
@@ -142,7 +142,7 @@ pub fn decompress(env: napi.c.napi_env, info: napi.c.napi_callback_info) callcon
     return null;
 }
 
-pub fn xxHash64(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn xxHash64(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(3, env, info) catch return null;
     const buf = napi.get([]u8, env, args[0]) catch return null;
     const target = napi.get([]u8, env, args[1]) catch return null;
@@ -152,7 +152,7 @@ pub fn xxHash64(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(
     return null;
 }
 
-inline fn calcTypedArraySize(arrayType: napi.c.napi_typedarray_type, arrayLen: usize) usize {
+inline fn calcTypedArraySize(arrayType: napi.TypedArrayType, arrayLen: usize) usize {
     var size: usize = arrayLen;
     // TODO zig can't properly parse the enum napi.c.napi_typedarray_type
     switch (arrayType) {
@@ -180,7 +180,7 @@ inline fn calcTypedArraySize(arrayType: napi.c.napi_typedarray_type, arrayLen: u
     return size;
 }
 
-pub fn equals(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn equals(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(2, env, info) catch return null;
     const a = napi.get([]u8, env, args[0]) catch return null;
     const b = napi.get([]u8, env, args[1]) catch return null;

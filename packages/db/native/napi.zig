@@ -7,19 +7,22 @@ pub const c = @cImport({
     @cInclude("string.h");
 });
 
-pub const Value = c.napi_value;
 pub const Env = c.napi_env;
-pub const Info = c.napi_info;
+pub const Info = c.napi_callback_info;
+pub const Value = c.napi_value;
+pub const ValueType = c.napi_value_type;
+pub const TypedArrayType = c.napi_typedarray_type;
+pub const Ok = c.napi_ok;
 
 pub fn jsThrow(env: Env, message: [:0]const u8) void {
     const result = c.napi_throw_error(env, null, message);
     switch (result) {
-        c.napi_ok, c.napi_pending_exception => {},
+        Ok, c.napi_pending_exception => {},
         else => unreachable,
     }
 }
 
-inline fn calcTypedArraySize(arrayType: c.napi_typedarray_type, arrayLen: usize) usize {
+inline fn calcTypedArraySize(arrayType: TypedArrayType, arrayLen: usize) usize {
     var size: usize = arrayLen;
     // TODO zig can't properly parse the enum c.napi_typedarray_type
     switch (arrayType) {
@@ -46,12 +49,12 @@ inline fn calcTypedArraySize(arrayType: c.napi_typedarray_type, arrayLen: usize)
     return size;
 }
 
-pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
+pub inline fn get(comptime T: type, env: Env, value: Value) !T {
     var res: T = undefined;
 
     if (T == u8) {
         var x: u32 = undefined;
-        if (c.napi_get_value_uint32(env, value, @ptrCast(&x)) != c.napi_ok) {
+        if (c.napi_get_value_uint32(env, value, @ptrCast(&x)) != Ok) {
             return errors.Napi.CannotGetInt;
         }
         res = @truncate(x);
@@ -60,7 +63,7 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == i8) {
         var x: i32 = undefined;
-        if (c.napi_get_value_int32(env, value, @ptrCast(&x)) != c.napi_ok) {
+        if (c.napi_get_value_int32(env, value, @ptrCast(&x)) != Ok) {
             return errors.Napi.CannotGetInt;
         }
         res = @truncate(x);
@@ -69,7 +72,7 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == u16) {
         var x: u32 = undefined;
-        if (c.napi_get_value_uint32(env, value, @ptrCast(&x)) != c.napi_ok) {
+        if (c.napi_get_value_uint32(env, value, @ptrCast(&x)) != Ok) {
             return errors.Napi.CannotGetInt;
         }
         res = @truncate(x);
@@ -77,21 +80,21 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
     }
 
     if (T == i16) {
-        if (c.napi_get_value_int16(env, value, @ptrCast(&res)) != c.napi_ok) {
+        if (c.napi_get_value_int16(env, value, @ptrCast(&res)) != Ok) {
             return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == u32) {
-        if (c.napi_get_value_uint32(env, value, @ptrCast(&res)) != c.napi_ok) {
+        if (c.napi_get_value_uint32(env, value, @ptrCast(&res)) != Ok) {
             return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == i32) {
-        if (c.napi_get_value_int32(env, value, @ptrCast(&res)) != c.napi_ok) {
+        if (c.napi_get_value_int32(env, value, @ptrCast(&res)) != Ok) {
             return errors.Napi.CannotGetInt;
         }
         return res;
@@ -99,7 +102,7 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == u64) {
         var tmp: bool = undefined;
-        if (c.napi_get_value_bigint_uint64(env, value, @ptrCast(&res), &tmp) != c.napi_ok) {
+        if (c.napi_get_value_bigint_uint64(env, value, @ptrCast(&res), &tmp) != Ok) {
             return errors.Napi.CannotGetInt;
         }
         return res;
@@ -107,14 +110,14 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == i64) {
         var tmp: bool = undefined;
-        if (c.napi_get_value_bigint_int64(env, value, @ptrCast(&res), &tmp) != c.napi_ok) {
+        if (c.napi_get_value_bigint_int64(env, value, @ptrCast(&res), &tmp) != Ok) {
             return errors.Napi.CannotGetInt;
         }
         return res;
     }
 
     if (T == bool) {
-        if (c.napi_get_value_bool(env, value, @ptrCast(&res)) != c.napi_ok) {
+        if (c.napi_get_value_bool(env, value, @ptrCast(&res)) != Ok) {
             return errors.Napi.CannotGetBool;
         }
         return res;
@@ -122,9 +125,9 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == []u8) {
         var buffer: [*]u8 = undefined;
-        var arrayType: c.napi_typedarray_type = undefined;
+        var arrayType: TypedArrayType  = undefined;
         var arrayLen: usize = undefined;
-        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != c.napi_ok) {
+        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != Ok) {
             return errors.Napi.CannotGetBuffer;
         }
         const size: usize = calcTypedArraySize(arrayType, arrayLen);
@@ -133,9 +136,9 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == []u32) {
         var buffer: [*]u32 = undefined;
-        var arrayType: c.napi_typedarray_type = undefined;
+        var arrayType: TypedArrayType = undefined;
         var arrayLen: usize = undefined;
-        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != c.napi_ok) {
+        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != Ok) {
             return errors.Napi.CannotGetBuffer;
         }
         const size: usize = calcTypedArraySize(arrayType, arrayLen);
@@ -144,9 +147,9 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == []u64) {
         var buffer: [*]u64 = undefined;
-        var arrayType: c.napi_typedarray_type = undefined;
+        var arrayType: TypedArrayType = undefined;
         var arrayLen: usize = undefined;
-        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != c.napi_ok) {
+        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != Ok) {
             return errors.Napi.CannotGetBuffer;
         }
         const size: usize = calcTypedArraySize(arrayType, arrayLen);
@@ -155,9 +158,9 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     if (T == []f64) {
         var buffer: [*]f64 = undefined;
-        var arrayType: c.napi_typedarray_type = undefined;
+        var arrayType: TypedArrayType = undefined;
         var arrayLen: usize = undefined;
-        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != c.napi_ok) {
+        if (c.napi_get_typedarray_info(env, value, &arrayType, &arrayLen, @ptrCast(&buffer), null, null) != Ok) {
             return errors.Napi.CannotGetBuffer;
         }
         const size: usize = calcTypedArraySize(arrayType, arrayLen);
@@ -166,16 +169,16 @@ pub inline fn get(comptime T: type, env: c.napi_env, value: c.napi_value) !T {
 
     var external: ?*anyopaque = undefined;
     const x = c.napi_get_value_external(env, value, &external);
-    if (x != c.napi_ok) {
+    if (x != Ok) {
         return errors.Napi.CannotGetExternal;
     }
     return @as(T, @ptrCast(@alignCast(external)));
 }
 
-pub fn getType(env: c.napi_env, value: c.napi_value) !c.napi_valuetype {
-    var t: c.napi_valuetype = undefined;
+pub fn getType(env: Env, value: Value) !ValueType {
+    var t: ValueType = undefined;
 
-    if (c.napi_typeof(env, value, &t) != c.napi_ok) {
+    if (c.napi_typeof(env, value, &t) != Ok) {
         jsThrow(env, "Failed to get args.");
         return errors.Napi.CannotGetType;
     }
@@ -183,10 +186,10 @@ pub fn getType(env: c.napi_env, value: c.napi_value) !c.napi_valuetype {
     return t;
 }
 
-pub fn getArgs(comptime totalArgs: comptime_int, env: c.napi_env, info: c.napi_callback_info) ![totalArgs]c.napi_value {
-    var argv: [totalArgs]c.napi_value = undefined;
+pub fn getArgs(comptime totalArgs: comptime_int, env: Env, info: Info) ![totalArgs]Value {
+    var argv: [totalArgs]Value = undefined;
     var size: usize = totalArgs;
-    if (c.napi_get_cb_info(env, info, &size, &argv, null, null) != c.napi_ok) {
+    if (c.napi_get_cb_info(env, info, &size, &argv, null, null) != Ok) {
         jsThrow(env, "Failed to get args.");
         return errors.Napi.CannotGetBuffer;
     }
@@ -214,7 +217,7 @@ fn callJsCallback(env: Env, jsCallback: Value, _: ?*anyopaque, data: ?*anyopaque
         &jsBufferValue,
     );
 
-    if (status != c.napi_ok) {
+    if (status != Ok) {
         // very wrong...
         return;
     }
@@ -222,7 +225,7 @@ fn callJsCallback(env: Env, jsCallback: Value, _: ?*anyopaque, data: ?*anyopaque
     var undefinedVal: Value = undefined;
     _ = c.napi_get_undefined(env, &undefinedVal);
 
-    var args = [_]c.napi_value{jsBufferValue};
+    var args = [_]Value{jsBufferValue};
 
     _ = c.napi_call_function(env, undefinedVal, jsCallback, 1, &args, null);
 
@@ -230,17 +233,17 @@ fn callJsCallback(env: Env, jsCallback: Value, _: ?*anyopaque, data: ?*anyopaque
 }
 
 pub const Callback = struct {
-    env: c.napi_env,
+    env: Env,
     tsfn: c.napi_threadsafe_function,
 
     // option to take CONTROL of callback
     pub fn init(
-        env: c.napi_env,
-        jsFunc: c.napi_value,
+        env: Env,
+        jsFunc: Value,
     ) !*Callback {
         const self = try std.heap.raw_c_allocator.create(Callback);
 
-        var name: c.napi_value = undefined;
+        var name: Value = undefined;
         _ = c.napi_create_string_utf8(env, "ZigThreadSafeNapiCallback", c.NAPI_AUTO_LENGTH, &name);
 
         var tsfn: c.napi_threadsafe_function = undefined;
