@@ -147,7 +147,7 @@ export class BlockMap {
    */
   foreachDirtyBlock(
     db: DbServer,
-    cb: (mtKey: number, typeId: number, start: number, end: number, block: Block) => void,
+    cb: (typeId: number, start: number, end: number, block: Block) => void,
   ) {
     const typeIdMap: { [key: number]: SchemaTypeDef } = {}
     for (const typeName in db.schemaTypesParsed) {
@@ -158,10 +158,9 @@ export class BlockMap {
 
     this.foreachBlock((block) => {
       if (block.dirty) {
-        const mtKey = block.key
-        const [typeId, start] = destructureTreeKey(mtKey)
+        const [typeId, start] = destructureTreeKey(block.key)
         const end = start + typeIdMap[typeId].blockCapacity - 1
-        cb(mtKey, typeId, start, end, block)
+        cb(typeId, start, end, block)
       }
     })
   }

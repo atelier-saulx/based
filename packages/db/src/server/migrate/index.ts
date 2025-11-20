@@ -195,7 +195,7 @@ export const migrate = async (
       if (server.blockMap.isDirty) {
         rangesToMigrate = []
         i = 0
-        server.blockMap.foreachDirtyBlock(server, (_mtKey, typeId, start, end, block) => {
+        server.blockMap.foreachDirtyBlock(server, (typeId, start, end, block) => {
           rangesToMigrate.push({
             typeId,
             start,

@@ -136,7 +136,7 @@ export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
         )
       }
     } else {
-      db.blockMap.foreachDirtyBlock(db, (_mtKey, typeId, start, end, block) => {
+      db.blockMap.foreachDirtyBlock(db, (typeId, start, end, block) => {
         saveBlock(db, typeId, start, end)
         block.dirty = false
       }
@@ -206,7 +206,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
         )
       }
     } else {
-      db.blockMap.foreachDirtyBlock(db, (_mtKey, typeId, start, end, block) => {
+      db.blockMap.foreachDirtyBlock(db, (typeId, start, end, block) => {
         const file = BlockMap.blockSdbFile(typeId, start, end)
         const filepath = join(db.fileSystemPath, file)
         blocks.push({
