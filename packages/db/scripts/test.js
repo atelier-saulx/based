@@ -8,7 +8,7 @@ import { printSummary } from '../dist/test/shared/test.js'
 import { relative } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const IGNORE_PATTERNS = new Set(['.perf'])
+const IGNORE_PATTERNS = new Set(['.perf', 'scenarios/'])
 
 const args = process.argv.filter((arg) => {
   if (arg === 'stopOnFail') {
@@ -40,6 +40,7 @@ const walk = async (dir = p) => {
             // default: no IGNORE_PATTERNS
             !args.includes('--perf') &&
             !args.includes('--all') &&
+            !args.includes('--scn') &&
             [...IGNORE_PATTERNS].some((pattern) => f.includes(pattern)) &&
             [...IGNORE_PATTERNS].some((pattern) => !test.includes(pattern))
           ) {
@@ -51,6 +52,13 @@ const walk = async (dir = p) => {
           ) {
             continue
           }
+          // else if (
+          //   // scenarios only
+          //   args.includes('--scn') &&
+          //   [...IGNORE_PATTERNS].some((pattern) => !f.includes('scenarios/'))
+          // ) {
+          //   continue
+          // }
           if (test.includes(':')) {
             const [a, b] = test.split(':')
             if (relPath.toLowerCase().includes(a.slice(1).toLowerCase())) {
@@ -68,6 +76,21 @@ const walk = async (dir = p) => {
           }
         }
       } else {
+        if (
+          // default: no IGNORE_PATTERNS
+          !args.includes('--perf') &&
+          !args.includes('--all') &&
+          !args.includes('--scn') &&
+          [...IGNORE_PATTERNS].some((pattern) => f.includes(pattern))
+        ) {
+          continue
+        } else if (
+          // .perf only
+          args.includes('--perf') &&
+          [...IGNORE_PATTERNS].some((pattern) => !f.includes('.perf'))
+        ) {
+          continue
+        }
         testsToRun.push([path])
       }
     } else if (!f.includes('.') && f !== 'shared' && f !== 'tmp') {
