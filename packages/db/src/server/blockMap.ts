@@ -135,9 +135,9 @@ export class BlockMap {
   }
 
   get isDirty() {
-    let dirty = false
-    this.foreachBlock((block) => dirty = dirty || block.dirty)
-    return dirty
+    let dirty = 0
+    this.foreachBlock((block) => dirty |= ~~block.dirty)
+    return !!dirty
   }
 
   /**
