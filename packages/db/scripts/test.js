@@ -8,7 +8,7 @@ import { printSummary } from '../dist/test/shared/test.js'
 import { relative } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const IGNORE_PATTERNS = new Set(['.perf', 'scenarios/'])
+const IGNORE_PATTERNS = new Set(['.perf'])
 
 const args = process.argv.filter((arg) => {
   if (arg === 'stopOnFail') {
@@ -21,6 +21,7 @@ const args = process.argv.filter((arg) => {
 const repeat = args[2] && /^\d+$/.test(args[2]) ? Number(args[2]) : 1
 const match = args
   .slice(repeat == 1 ? 2 : 3)
+  .filter((a) => !['--perf', '--all', '--scn'].includes(a))
   .map((t) => t.replace('.ts', '.js'))
 
 const testsToRun = []
@@ -42,7 +43,8 @@ const walk = async (dir = p) => {
             !args.includes('--all') &&
             !args.includes('--scn') &&
             [...IGNORE_PATTERNS].some((pattern) => f.includes(pattern)) &&
-            [...IGNORE_PATTERNS].some((pattern) => !test.includes(pattern))
+            [...IGNORE_PATTERNS].some((pattern) => !test.includes(pattern)) &&
+            relPath.includes('scenarios/')
           ) {
             continue
           } else if (
@@ -51,14 +53,13 @@ const walk = async (dir = p) => {
             [...IGNORE_PATTERNS].some((pattern) => !f.includes('.perf'))
           ) {
             continue
+          } else if (
+            // scenarios only
+            args.includes('--scn') &&
+            !relPath.includes('scenarios/')
+          ) {
+            continue
           }
-          // else if (
-          //   // scenarios only
-          //   args.includes('--scn') &&
-          //   [...IGNORE_PATTERNS].some((pattern) => !f.includes('scenarios/'))
-          // ) {
-          //   continue
-          // }
           if (test.includes(':')) {
             const [a, b] = test.split(':')
             if (relPath.toLowerCase().includes(a.slice(1).toLowerCase())) {
@@ -77,17 +78,24 @@ const walk = async (dir = p) => {
         }
       } else {
         if (
-          // default: no IGNORE_PATTERNS
+          // default: no IGNORE_PATTERNS and scenarios
           !args.includes('--perf') &&
           !args.includes('--all') &&
           !args.includes('--scn') &&
-          [...IGNORE_PATTERNS].some((pattern) => f.includes(pattern))
+          [...IGNORE_PATTERNS].some((pattern) => f.includes(pattern)) &&
+          relative(p, path).includes('scenarios/')
         ) {
           continue
         } else if (
           // .perf only
           args.includes('--perf') &&
           [...IGNORE_PATTERNS].some((pattern) => !f.includes('.perf'))
+        ) {
+          continue
+        } else if (
+          // scenarios only
+          args.includes('--scn') &&
+          !relative(p, path).includes('scenarios/')
         ) {
           continue
         }
@@ -97,7 +105,6 @@ const walk = async (dir = p) => {
       promises.push(walk(join(dir, f)).catch(() => {}))
     }
   }
-
   return Promise.all(promises)
 }
 
