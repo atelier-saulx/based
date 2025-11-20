@@ -28,8 +28,8 @@ pub fn writeEdges(
     var i: usize = 0;
     const edgeConstraint = db.getEdgeFieldConstraint(ctx.fieldSchema.?);
     const edgeNode = try db.ensureRefEdgeNode(ctx, ctx.node.?, edgeConstraint, ref);
-    const edgeId = ref.*.meta;
-    const edgeTypeId = edgeConstraint.*.meta_node_type;
+    const edgeId = ref.*.edge;
+    const edgeTypeId = edgeConstraint.*.edge_node_type;
     if (edgeId > ctx.db.ids[edgeTypeId - 1]) {
         ctx.db.ids[edgeTypeId - 1] = edgeId;
     }

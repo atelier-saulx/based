@@ -33,7 +33,7 @@ pub inline fn get(
     if (isEdge) {
         const edgeConstraint = edgeRef.?.edgeConstraint;
         fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeConstraint, field);
-        if (db.getNode(try db.getEdgeType(ctx.db, edgeConstraint), edgeRef.?.largeReference.?.meta)) |edgeNode| {
+        if (db.getNode(try db.getEdgeType(ctx.db, edgeConstraint), edgeRef.?.largeReference.?.edge)) |edgeNode| {
             actNode = edgeNode;
         } else {
             return null;

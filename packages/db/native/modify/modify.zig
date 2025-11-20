@@ -110,13 +110,13 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
 
     if (getLargeRef(ctx.node.?, fs, dstId)) |ref| {
         const efc = db.getEdgeFieldConstraint(fs);
-        switchType(ctx, efc.meta_node_type) catch {
+        switchType(ctx, efc.edge_node_type) catch {
             return 0;
         };
         const edgeNode = db.ensureRefEdgeNode(ctx, ctx.node.?, efc, ref) catch {
             return 0;
         };
-        const edgeId = ref.*.meta;
+        const edgeId = ref.*.edge;
 
         // if its zero then we don't want to switch (for upsert)
         prevNodeId = ctx.id;
