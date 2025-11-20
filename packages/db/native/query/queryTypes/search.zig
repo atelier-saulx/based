@@ -58,7 +58,7 @@ pub fn addToScore(
     searchCtx: *const searchMethods.SearchCtx(isVector),
 ) void {
     const dbCtx = queryCtx.db;
-    if (!filter(dbCtx, node, typeEntry, conditions, null, null, 0, false)) {
+    if (!filter(dbCtx, node, queryCtx.threadCtx, typeEntry, conditions, null, null, 0, false)) {
         return;
     }
     if (ctx.correctedForOffset != 0) {

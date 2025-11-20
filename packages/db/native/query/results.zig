@@ -42,16 +42,28 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
 
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
-    env: napi.Env,
-) !napi.Value {
-    var resultBuffer: ?*anyopaque = undefined;
-    var result: napi.Value = undefined;
+) !void {
+    const size = ctx.size + 8;
 
-    if (napi.c.napi_create_arraybuffer(env, ctx.size + HEADER_SIZE, &resultBuffer, &result) != napi.Ok) {
-        return null;
+    const realSize = size + 8;
+    if (ctx.threadCtx.queryResults.len < ctx.threadCtx.lastQueryResultIndex + realSize) {
+        var increasedSize: usize = 1_000_000;
+        if (realSize > 1_000_000) {
+            increasedSize = (@divTrunc(realSize, increasedSize) + 1) * increasedSize;
+        }
+        ctx.threadCtx.queryResults = try std.heap.raw_c_allocator.realloc(
+            ctx.threadCtx.queryResults,
+            ctx.threadCtx.queryResults.len + increasedSize, // or if query is larger add more..
+        );
     }
+    // write some stuff
+    var data = ctx.threadCtx.queryResults[ctx.threadCtx.lastQueryResultIndex + 8 .. ctx.threadCtx.lastQueryResultIndex + realSize]; // try std.heap.raw_c_allocator.alloc(u8, ctx.size + 8);
 
-    var data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 8];
+    // space of 4 for extra
+    writeInt(u32, ctx.threadCtx.queryResults, ctx.threadCtx.lastQueryResultIndex, realSize);
+
+    ctx.threadCtx.*.lastQueryResultIndex = ctx.threadCtx.lastQueryResultIndex + realSize;
+
     var i: usize = 4;
 
     writeInt(u32, data, 0, ctx.totalResults);
@@ -157,5 +169,8 @@ pub fn createResultsBuffer(
     }
 
     writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
-    return result;
+
+    // std.debug.print("flap {any}: \n", .{data});
+
+    // return data;
 }

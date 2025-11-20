@@ -122,10 +122,13 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "setSchemaType", schema.setSchemaType) catch return null;
     registerFunction(env, exports, "setSchemaIds", schema.setSchemaIds) catch return null;
     registerFunction(env, exports, "getSchemaIds", schema.getSchemaIds) catch return null;
-    registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
+
+    // registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
 
     registerFunction(env, exports, "getQueryBufThread", Query.getQueryBufThread) catch return null;
     registerFunction(env, exports, "modifyThread", modify.modifyThread) catch return null;
+
+    // this is temp will be called on callback
     registerFunction(env, exports, "getQueryResults", Query.getQueryResults) catch return null;
 
     registerFunction(env, exports, "modify", modify.modify) catch return null;

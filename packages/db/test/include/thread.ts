@@ -38,7 +38,7 @@ await test('include', async (t) => {
 
   const buf = q.buffer
 
-  await q.get().inspect()
+  // await q.get().inspect()
 
   var cnt = 0
   let totalTime = 0
@@ -109,7 +109,7 @@ await test('include', async (t) => {
     'execed query items',
   )
 
-  await db.query('user').get().inspect()
+  // await db.query('user').get().inspect()
 
   let readyTime
   var isRdy = new Promise((resolve) => {

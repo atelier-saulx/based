@@ -103,7 +103,7 @@ pub inline fn aggregateRefsGroup(
         if (incTypes.resolveRefsNode(ctx.db, refs.?, i)) |n| {
             if (hasFilter) {
                 const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
-                if (!filter(ctx.db, n, typeEntry, filterArr.?, refStruct, null, 0, false)) {
+                if (!filter(ctx.db, n, ctx.threadCtx, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                     continue :checkItem;
                 }
             }
@@ -117,7 +117,7 @@ pub inline fn aggregateRefsGroup(
                 else if (groupCtx.propType == types.Prop.TIMESTAMP)
                     @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
                 else if (groupCtx.propType == types.Prop.REFERENCE)
-                    db.getReferenceNodeId(@alignCast(@ptrCast(groupValue.ptr)))
+                    db.getReferenceNodeId(@ptrCast(@alignCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
@@ -201,7 +201,7 @@ pub inline fn aggregateRefsDefault(
             if (incTypes.resolveRefsNode(ctx.db, refs.?, i)) |refNode| {
                 const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
                 if (hasFilter) {
-                    if (!filter(ctx.db, refNode, typeEntry, filterArr.?, refStruct, null, 0, false)) {
+                    if (!filter(ctx.db, refNode, ctx.threadCtx, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                         continue :checkItem;
                     }
                 }

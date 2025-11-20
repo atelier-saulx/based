@@ -7,6 +7,7 @@ const std = @import("std");
 pub fn filteReferencesMode(
     comptime refsSelectType: ReferencesSelect,
     ctx: *db.DbCtx,
+    threadCtx: *db.DbThread,
     conditions: []u8,
     edgeConstraint: db.EdgeFieldConstraint,
     refs: types.Refs,
@@ -23,6 +24,7 @@ pub fn filteReferencesMode(
                 if (filter(
                     ctx,
                     refNode,
+                    threadCtx,
                     refTypeEntry,
                     conditions,
                     refStruct,
@@ -44,6 +46,7 @@ pub fn filteReferencesMode(
                 if (!filter(
                     ctx,
                     refNode,
+                    threadCtx,
                     refTypeEntry,
                     conditions,
                     refStruct,
@@ -72,6 +75,7 @@ pub fn filteReferencesMode(
             if (filter(
                 ctx,
                 refNode,
+                threadCtx,
                 refTypeEntry,
                 conditions,
                 refStruct,
@@ -91,6 +95,7 @@ pub fn filteReferencesMode(
 pub inline fn filterReferences(
     refsSelectType: ReferencesSelect,
     ctx: *db.DbCtx,
+    threadCtx: *db.DbThread,
     conditions: []u8,
     edgeConstraint: db.EdgeFieldConstraint,
     refs: types.Refs,
@@ -101,6 +106,7 @@ pub inline fn filterReferences(
         ReferencesSelect.all => filteReferencesMode(
             ReferencesSelect.all,
             ctx,
+            threadCtx,
             conditions,
             edgeConstraint,
             refs,
@@ -110,6 +116,7 @@ pub inline fn filterReferences(
         ReferencesSelect.any => filteReferencesMode(
             ReferencesSelect.any,
             ctx,
+            threadCtx,
             conditions,
             edgeConstraint,
             refs,
@@ -119,6 +126,7 @@ pub inline fn filterReferences(
         ReferencesSelect.index => filteReferencesMode(
             ReferencesSelect.index,
             ctx,
+            threadCtx,
             conditions,
             edgeConstraint,
             refs,

@@ -27,6 +27,7 @@ pub fn defaultReferences(
             if (hasFilter and !filter(
                 ctx.db,
                 refNode,
+                ctx.threadCtx,
                 typeEntry,
                 filterArr,
                 refStruct,

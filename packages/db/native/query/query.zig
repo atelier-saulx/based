@@ -26,13 +26,6 @@ const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
 const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
 
-pub fn getQueryBuf(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    return getQueryBufInternal(env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
 pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return getQueryBufInternalThread(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
@@ -74,22 +67,19 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const q = try napi.get([]u8, env, args[1]);
     try dbCtx.threads.query(q);
-    // std.debug.print("YO YO YO{any} \n", .{dbCtx});
     return null;
 }
 
-pub fn getQueryBufInternal(env: napi.Env, info: napi.Info) !napi.Value {
-    const args = try napi.getArgs(2, env, info);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-
+pub fn getQueryThreaded(
+    dbCtx: *db.DbCtx,
+    q: []u8,
+    threadCtx: *db.DbThread,
+) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
-
     defer arena.deinit();
+
     const allocator = arena.allocator();
 
-    var q = try napi.get([]u8, env, args[1]);
-
-    // len without the schema checksum space
     const len = q.len - 8;
 
     var ctx: QueryCtx = .{
@@ -99,7 +89,9 @@ pub fn getQueryBufInternal(env: napi.Env, info: napi.Info) !napi.Value {
         .totalResults = 0,
         .aggResult = null,
         .allocator = allocator,
+        .threadCtx = threadCtx,
     };
+
     var index: usize = 0;
     const queryType: QueryType = @enumFromInt(q[index]);
     index += 1;
@@ -168,27 +160,28 @@ pub fn getQueryBufInternal(env: napi.Env, info: napi.Info) !napi.Value {
         const include = q[8 + filterSize + valueSize .. len];
         try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
     } else if (queryType == QueryType.aggregates) {
-        var i: usize = 7; // queryType + typeId + offset
-        const limit = read(u32, q, i);
-        i += 4;
-        const filterSize = read(u16, q, i);
-        i += 2;
-        const filterBuf = q[i .. i + filterSize];
-        i += 1 + filterSize; // isSimpleFilter + filterSize
-        const aggSize = read(u16, q, i);
-        i += 2;
-        const agg: []u8 = q[i .. i + aggSize];
-        const groupBy: aggregateTypes.GroupedBy = @enumFromInt(agg[0]);
-        if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
-            return try AggDefault.group(env, &ctx, limit, typeId, filterBuf, agg);
-        } else {
-            return try AggDefault.default(env, &ctx, limit, typeId, filterBuf, agg);
-        }
+        // var i: usize = 7; // queryType + typeId + offset
+        // const limit = read(u32, q, i);
+        // i += 4;
+        // const filterSize = read(u16, q, i);
+        // i += 2;
+        // const filterBuf = q[i .. i + filterSize];
+        // i += 1 + filterSize; // isSimpleFilter + filterSize
+        // const aggSize = read(u16, q, i);
+        // i += 2;
+        // const agg: []u8 = q[i .. i + aggSize];
+        // const groupBy: aggregateTypes.GroupedBy = @enumFromInt(agg[0]);
+        // if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
+        //     return try AggDefault.group(env, &ctx, limit, typeId, filterBuf, agg);
+        // } else {
+        //     return try AggDefault.default(env, &ctx, limit, typeId, filterBuf, agg);
+        // }
     } else if (queryType == QueryType.aggregatesCountType) {
-        return try AggDefault.countType(env, &ctx, typeId);
+        // return try AggDefault.countType(env, &ctx, typeId);
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
 
-    return results.createResultsBuffer(&ctx, env);
+    try results.createResultsBuffer(&ctx);
+    // return d;
 }

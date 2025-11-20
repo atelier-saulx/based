@@ -10,6 +10,7 @@ pub const QueryCtx = struct {
     aggResult: ?u32,
     allocator: std.mem.Allocator,
     db: *db.DbCtx,
+    threadCtx: *db.DbThread,
 };
 
 pub const FilterType = enum(u8) {

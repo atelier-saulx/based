@@ -57,7 +57,7 @@ pub fn default(
         } else {
             node = @ptrCast(selva.selva_sort_foreach(sI.index, &it));
         }
-        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
+        if (!filter(ctx.db, node, ctx.threadCtx, typeEntry, conditions, null, null, 0, false)) {
             continue :checkItem;
         }
         if (correctedForOffset != 0) {
@@ -95,7 +95,7 @@ pub fn idDesc(
             node = db.getPrevNode(typeEntry, node.?);
         }
         if (node) |n| {
-            if (!filter(ctx.db, n, typeEntry, conditions, null, null, 0, false)) {
+            if (!filter(ctx.db, n, ctx.threadCtx, typeEntry, conditions, null, null, 0, false)) {
                 continue :checkItem;
             }
             if (correctedForOffset != 0) {

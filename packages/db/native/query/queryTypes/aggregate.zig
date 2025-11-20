@@ -112,7 +112,7 @@ pub fn group(env: napi.Env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, condi
                 else if (groupCtx.propType == types.Prop.TIMESTAMP)
                     @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
                 else if (groupCtx.propType == types.Prop.REFERENCE)
-                    db.getReferenceNodeId(@alignCast(@ptrCast(groupValue.ptr)))
+                    db.getReferenceNodeId(@ptrCast(@alignCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else

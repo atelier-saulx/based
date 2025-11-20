@@ -36,7 +36,7 @@ pub fn default(
 
         // Todo measure if this optmizes things
         if (filterType == FilterType.default) {
-            if (!filter(ctx.db, node.?, typeEntry, conditions, null, null, 0, false)) {
+            if (!filter(ctx.db, node.?, ctx.threadCtx, typeEntry, conditions, null, null, 0, false)) {
                 node = db.getNextNode(typeEntry, node.?);
                 continue :checkItem;
             }
