@@ -1,6 +1,7 @@
 import test from 'node:test'
 import { parseSchema, type Schema } from '../src/schema/schema.ts'
 import { schemaToDefs } from '../src/schema/def.ts'
+import { infer } from '../src/infer.ts'
 
 await test('testings', () => {
   const input: Schema = {
@@ -45,7 +46,7 @@ await test('testings', () => {
         },
       },
     },
-  }
+  } as const satisfies Schema
   console.log('-- input')
   console.dir(input, { depth: null })
   const schema = parseSchema(input)
@@ -54,4 +55,6 @@ await test('testings', () => {
   const defs = schemaToDefs(schema)
   console.log('-- schema defs')
   console.dir(defs, { depth: 6 })
+
+  // types.user = { name: 'string' }
 })
