@@ -3,7 +3,6 @@ const sort = @import("./sort.zig");
 const selva = @import("../selva.zig").c;
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
-const c = @import("../c.zig").c;
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
 const subs = @import("./subscription/types.zig");

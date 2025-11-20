@@ -1,4 +1,3 @@
-const c = @import("../c.zig").c;
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const std = @import("std");
@@ -27,14 +26,14 @@ const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
 const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
 
-pub fn getQueryBuf(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
+pub fn getQueryBuf(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return getQueryBufInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getQueryBufInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn getQueryBufInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
 

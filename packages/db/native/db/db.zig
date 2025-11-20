@@ -1,5 +1,4 @@
 const assert = std.debug.assert;
-const c = @import("../c.zig").c;
 const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");

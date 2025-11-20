@@ -1,6 +1,5 @@
 const assert = std.debug.assert;
 const std = @import("std");
-const c = @import("../c.zig").c;
 const selva = @import("../selva.zig").c;
 const types = @import("../types.zig");
 const napi = @import("../napi.zig");
@@ -26,11 +25,11 @@ const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 
-pub fn modify(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
-    var result: c.napi_value = undefined;
+pub fn modify(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+    var result: napi.c.napi_value = undefined;
     var resCount: u32 = 0;
     modifyInternal(env, info, &resCount) catch undefined;
-    _ = c.napi_create_uint32(env, resCount * 5, &result);
+    _ = napi.c.napi_create_uint32(env, resCount * 5, &result);
     return result;
 }
 
@@ -135,7 +134,7 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
     return prevNodeId;
 }
 
-fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !void {
+fn modifyInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
@@ -339,7 +338,7 @@ fn modifyInternal(env: c.napi_env, info: c.napi_callback_info, resCount: *u32) !
 
     const newDirtyRanges = ctx.dirtyRanges.values();
     assert(newDirtyRanges.len < dirtyRanges.len);
-    _ = c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
+    _ = napi.c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     dirtyRanges[newDirtyRanges.len] = 0.0;
     writeoutPrevNodeId(&ctx, resCount, ctx.id);
 }

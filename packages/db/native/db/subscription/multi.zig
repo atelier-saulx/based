@@ -2,7 +2,6 @@ const std = @import("std");
 const db = @import("../db.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
-const c = @import("../../c.zig").c;
 const utils = @import("../../utils.zig");
 const types = @import("./types.zig");
 const t = @import("../../types.zig");
@@ -11,7 +10,7 @@ const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
 const selva = @import("../../selva.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 
-pub fn addMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn addMultiSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
 
     // [type][type]
     // [subId][subId][subId][subId]
@@ -50,7 +49,7 @@ pub fn addMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info)
     return null;
 }
 
-pub fn removeMultiSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn removeMultiSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
     const typeId = try napi.get(u16, env, args[1]);

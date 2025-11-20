@@ -1,5 +1,4 @@
 const std = @import("std");
-const c = @import("c.zig").c;
 const selva = @import("selva.zig").c;
 const dump = @import("./db/dump.zig");
 const info = @import("./db/info.zig");
@@ -22,91 +21,91 @@ const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
 
 pub fn registerFunction(
-    env: c.napi_env,
-    exports: c.napi_value,
+    env: napi.c.napi_env,
+    exports: napi.c.napi_value,
     comptime name: [:0]const u8,
     comptime function: fn (
-        env: c.napi_env,
-        info: c.napi_callback_info,
-    ) callconv(.c) c.napi_value,
+        env: napi.c.napi_env,
+        info: napi.c.napi_callback_info,
+    ) callconv(.c) napi.c.napi_value,
 ) !void {
-    var napi_function: c.napi_value = undefined;
-    if (c.napi_create_function(env, null, 0, function, null, &napi_function) != c.napi_ok) {
+    var napi_function: napi.c.napi_value = undefined;
+    if (napi.c.napi_create_function(env, null, 0, function, null, &napi_function) != napi.c.napi_ok) {
         _ = jsThrow(env, "Failed to create function " ++ name ++ "().");
         return NapiError.NapiError;
     }
-    if (c.napi_set_named_property(env, exports, name, napi_function) != c.napi_ok) {
+    if (napi.c.napi_set_named_property(env, exports, name, napi_function) != napi.c.napi_ok) {
         _ = jsThrow(env, "Failed to add " ++ name ++ "() to exports.");
         return NapiError.NapiError;
     }
 }
 
-fn externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.c) c.napi_value {
+fn externalFromInt(napi_env: napi.c.napi_env, inf: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return _externalFromInt(napi_env, inf) catch return null;
 }
 
-fn intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) callconv(.c) c.napi_value {
+fn intFromExternal(napi_env: napi.c.napi_env, inf: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return _intFromExternal(napi_env, inf) catch return null;
 }
 
-fn _intFromExternal(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_value {
+fn _intFromExternal(napi_env: napi.c.napi_env, inf: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(1, napi_env, inf);
     const external = try napi.get(*DbCtx, napi_env, args[0]);
-    var result: c.napi_value = undefined;
-    if (c.napi_create_bigint_uint64(napi_env, @intFromPtr(external), &result) != c.napi_ok) {
+    var result: napi.c.napi_value = undefined;
+    if (napi.c.napi_create_bigint_uint64(napi_env, @intFromPtr(external), &result) != napi.c.napi_ok) {
         return null;
     }
     return result;
 }
 
-fn _externalFromInt(napi_env: c.napi_env, inf: c.napi_callback_info) !c.napi_value {
+fn _externalFromInt(napi_env: napi.c.napi_env, inf: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(1, napi_env, inf);
     var address: u64 = undefined;
-    var result: c.napi_value = undefined;
+    var result: napi.c.napi_value = undefined;
     var lossless: bool = undefined;
-    if (c.napi_get_value_bigint_uint64(napi_env, args[0], &address, &lossless) != c.napi_ok) {
+    if (napi.c.napi_get_value_bigint_uint64(napi_env, args[0], &address, &lossless) != napi.c.napi_ok) {
         return errors.Napi.CannotGetInt;
     }
-    if (c.napi_create_external(napi_env, @ptrFromInt(@as(usize, address)), null, null, &result) != c.napi_ok) {
+    if (napi.c.napi_create_external(napi_env, @ptrFromInt(@as(usize, address)), null, null, &result) != napi.c.napi_ok) {
         return null;
     }
     return result;
 }
 
-fn membarSyncRead(_: c.napi_env, _: c.napi_callback_info) callconv(.c) c.napi_value {
+fn membarSyncRead(_: napi.c.napi_env, _: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     selva.membar_sync_read();
     return null;
 }
 
-fn membarSyncWrite(_: c.napi_env, _: c.napi_callback_info) callconv(.c) c.napi_value {
+fn membarSyncWrite(_: napi.c.napi_env, _: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     selva.membar_sync_write();
     return null;
 }
 
-fn _selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) !c.napi_value {
+fn _selvaStrerror(napi_env: napi.c.napi_env, nfo: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(1, napi_env, nfo);
     const err = try napi.get(i32, napi_env, args[0]);
-    var result: c.napi_value = undefined;
+    var result: napi.c.napi_value = undefined;
     var copied: selva.bool = undefined;
     const str = strerror_zig(err);
     // std.debug.print("{any} {any} {any} \n", .{ result, copied, str });
-    _ = c.node_api_create_external_string_latin1(napi_env, @constCast(str.ptr), str.len, null, null, &result, &copied);
+    _ = napi.c.node_api_create_external_string_latin1(napi_env, @constCast(str.ptr), str.len, null, null, &result, &copied);
     return result;
 }
 
-fn selvaStrerror(napi_env: c.napi_env, nfo: c.napi_callback_info) callconv(.c) c.napi_value {
+fn selvaStrerror(napi_env: napi.c.napi_env, nfo: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return _selvaStrerror(napi_env, nfo) catch return null;
 }
 
-fn selvaLangAll(napi_env: c.napi_env, _: c.napi_callback_info) callconv(.c) c.napi_value {
-    var result: c.napi_value = undefined;
+fn selvaLangAll(napi_env: napi.c.napi_env, _: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+    var result: napi.c.napi_value = undefined;
     var copied: selva.bool = undefined;
 
-    _ = c.node_api_create_external_string_latin1(napi_env, @constCast(selva.selva_lang_all_str), selva.selva_lang_all_len, null, null, &result, &copied);
+    _ = napi.c.node_api_create_external_string_latin1(napi_env, @constCast(selva.selva_lang_all_str), selva.selva_lang_all_len, null, null, &result, &copied);
     return result;
 }
 
-export fn napi_register_module_v1(env: c.napi_env, exports: c.napi_value) c.napi_value {
+export fn napi_register_module_v1(env: napi.c.napi_env, exports: napi.c.napi_value) napi.c.napi_value {
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
     registerFunction(env, exports, "getThreadId", lifeTime.getThreadId) catch return null;

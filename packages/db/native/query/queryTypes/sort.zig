@@ -1,4 +1,3 @@
-const c = @import("../../c.zig").c;
 const errors = @import("../../errors.zig");
 const db = @import("../../db/db.zig");
 const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;

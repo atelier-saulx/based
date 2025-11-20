@@ -1,5 +1,4 @@
 const db = @import("../db/db.zig");
-const c = @import("../c.zig").c;
 const types = @import("../types.zig");
 const errors = @import("../errors.zig");
 const sort = @import("../db/sort.zig");

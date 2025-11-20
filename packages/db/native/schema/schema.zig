@@ -1,4 +1,3 @@
-const c = @import("../c.zig").c;
 const db = @import("../db/db.zig");
 const selva = @import("../selva.zig").c;
 const napi = @import("../napi.zig");
@@ -6,36 +5,36 @@ const utils = @import("../utils.zig");
 const std = @import("std");
 const errors = @import("../errors.zig");
 
-pub fn setSchemaType(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
+pub fn setSchemaType(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return setSchemaTypeInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn setSchemaIds(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
+pub fn setSchemaIds(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return setSchemaIdsInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getSchemaIds(env: c.napi_env, info: c.napi_callback_info) callconv(.c) c.napi_value {
+pub fn getSchemaIds(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
     return getSchemaIdsInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-fn getSchemaIdsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+fn getSchemaIdsInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(1, env, info);
     const ctx = try napi.get(*db.DbCtx, env, args[0]);
-    var result: c.napi_value = undefined;
-    _ = c.napi_create_external_arraybuffer(env, ctx.ids.ptr, ctx.ids.len * 4, null, null, &result);
+    var result: napi.c.napi_value = undefined;
+    _ = napi.c.napi_create_external_arraybuffer(env, ctx.ids.ptr, ctx.ids.len * 4, null, null, &result);
     return result;
 }
 
-fn setSchemaIdsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+fn setSchemaIdsInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const ids = try napi.get([]u32, env, args[0]);
     const ctx = try napi.get(*db.DbCtx, env, args[1]);
@@ -44,7 +43,7 @@ fn setSchemaIdsInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_val
 }
 
 // TODO olli: add binary protocol here
-fn setSchemaTypeInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+fn setSchemaTypeInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(3, env, info);
     const ctx = try napi.get(*db.DbCtx, env, args[0]);
     const typeId = try napi.get(u16, env, args[1]);

@@ -1,4 +1,3 @@
-const c = @import("../c.zig").c;
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const QueryCtx = @import("./types.zig").QueryCtx;
@@ -43,12 +42,12 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
 
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
-    env: c.napi_env,
-) !c.napi_value {
+    env: napi.c.napi_env,
+) !napi.c.napi_value {
     var resultBuffer: ?*anyopaque = undefined;
-    var result: c.napi_value = undefined;
+    var result: napi.c.napi_value = undefined;
 
-    if (c.napi_create_arraybuffer(env, ctx.size + HEADER_SIZE, &resultBuffer, &result) != c.napi_ok) {
+    if (napi.c.napi_create_arraybuffer(env, ctx.size + HEADER_SIZE, &resultBuffer, &result) != napi.c.napi_ok) {
         return null;
     }
 
