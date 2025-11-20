@@ -49,10 +49,9 @@ const native = {
   modify: (
     data: Uint8Array,
     dbCtx: any,
-    dirtyBlocksOut: Float64Array,
   ): number | null => {
     console.dir(data, { depth: 10 })
-    return db.modify(data, dbCtx, dirtyBlocksOut)
+    return db.modify(data, dbCtx)
   },
 
   getQueryBuf: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {

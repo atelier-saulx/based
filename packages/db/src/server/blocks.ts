@@ -171,26 +171,3 @@ export function foreachBlock(
     }
   }
 }
-
-/**
- * Execute cb() for each dirty block.
- * A dirty block is one that is changed in memory but not yet persisted in the
- * file system.
- */
-export function foreachDirtyBlock(
-  db: DbServer,
-  cb: (mtKey: number, typeId: number, start: number, end: number) => void,
-) {
-  const typeIdMap: { [key: number]: SchemaTypeDef } = {}
-  for (const typeName in db.schemaTypesParsed) {
-    const type = db.schemaTypesParsed[typeName]
-    const typeId = type.id
-    typeIdMap[typeId] = type
-  }
-
-  for (const mtKey of db.dirtyRanges) {
-    const [typeId, start] = destructureTreeKey(mtKey)
-    const end = start + typeIdMap[typeId].blockCapacity - 1
-    cb(mtKey, typeId, start, end)
-  }
-}

@@ -195,8 +195,10 @@ await test('reference changes', async (t) => {
     }),
   )
   await db.drain()
+  let dirties = 0
+  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
   equal(
-    db.server.dirtyRanges.size,
+    dirties,
     1,
     'creating new users creates a dirty range',
   )
@@ -206,14 +208,16 @@ await test('reference changes', async (t) => {
     creator: users[0],
   })
   await db.drain()
+  dirties = 0
+  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
   equal(
-    db.server.dirtyRanges.size,
+    dirties,
     2,
     'creating nodes in two types makes both dirty',
   )
 
   await db.save()
-  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+  equal(db.server.verifTree.isDirty, false, 'saving clears the dirty set')
 
   const doc2 = db.create('doc', {
     title: 'The Slops of AI',
@@ -222,25 +226,31 @@ await test('reference changes', async (t) => {
     title: 'The Hype of AI',
   })
   await db.drain()
-  equal(db.server.dirtyRanges.size, 1, 'creating docs makes the range dirty')
+  dirties = 0
+  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  equal(dirties, 1, 'creating docs makes the range dirty')
   await db.save()
-  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+  equal(db.server.verifTree.isDirty, false, 'saving clears the dirty set')
 
   // Link user -> doc
 
   db.update('user', users[1], { docs: [doc2] })
 
   await db.drain()
-  equal(db.server.dirtyRanges.size, 2, 'Linking a user to doc makes both dirty')
+  dirties = 0
+  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  equal(dirties, 2, 'Linking a user to doc makes both dirty')
   await db.save()
-  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+  equal(db.server.verifTree.isDirty, false, 'saving clears the dirty set')
 
   // Link doc -> user
   db.update('doc', doc3, { creator: users[2] })
   await db.drain()
-  equal(db.server.dirtyRanges.size, 2, 'Linking a doc to user makes both dirty')
+  dirties = 0
+  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  equal(dirties, 2, 'Linking a doc to user makes both dirty')
   await db.save()
-  equal(db.server.dirtyRanges.size, 0, 'saving clears the dirty set')
+  equal(db.server.verifTree.isDirty, false, 'saving clears the dirty set')
 })
 
 await test('ref block moves', async (t) => {

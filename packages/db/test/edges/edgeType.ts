@@ -56,7 +56,9 @@ await test('single reference', async (t) => {
     [...db.server.verifTree.types()].map((type) => type.typeId),
     [2, 3, 4],
   )
-  deepEqual(db.server.dirtyRanges.size, 3)
+  let dirties = 0
+  db.server.verifTree.foreachDirtyBlock(db.server, () => dirties++)
+  deepEqual(dirties, 3)
 })
 
 await test('json type edge', async (t) => {

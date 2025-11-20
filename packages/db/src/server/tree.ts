@@ -1,3 +1,4 @@
+import {DbServer} from '../index.js'
 import createDbHash from './dbHash.js'
 import { SchemaTypeDef } from '@based/schema/def'
 
@@ -47,6 +48,10 @@ export type VerifBlock = {
    * true doesn't necessarily mean that the block still exists because it could have been deleted.
    */
   inmem: boolean
+  /**
+   * The block needs to be saved.
+   */
+  dirty: boolean
   /**
    * If set, the block is being loaded and it can be awaited with this promise.
    */
@@ -114,6 +119,12 @@ export class VerifTree {
     }
   }
 
+  updateDirtyBlocks(dirtyBlocks: Float64Array) {
+    for (const key of dirtyBlocks) {
+      this.getBlock(key).dirty = true
+    }
+  }
+
   foreachBlock(cb: (block: VerifBlock) => void): void {
     for (const k of Object.keys(this.#types)) {
       const { blocks } = this.#types[k]
@@ -121,6 +132,38 @@ export class VerifTree {
         if (block) cb(block)
       }
     }
+  }
+
+  get isDirty() {
+    let dirty = false
+    this.foreachBlock((block) => dirty = dirty || block.dirty)
+    return dirty
+  }
+
+  /**
+   * Execute cb() for each dirty block.
+   * A dirty block is one that is changed in memory but not yet persisted in the
+   * file system.
+   */
+  foreachDirtyBlock(
+    db: DbServer,
+    cb: (mtKey: number, typeId: number, start: number, end: number, block: VerifBlock) => void,
+  ) {
+    const typeIdMap: { [key: number]: SchemaTypeDef } = {}
+    for (const typeName in db.schemaTypesParsed) {
+      const type = db.schemaTypesParsed[typeName]
+      const typeId = type.id
+      typeIdMap[typeId] = type
+    }
+
+    this.foreachBlock((block) => {
+      if (block.dirty) {
+        const mtKey = block.key
+        const [typeId, start] = destructureTreeKey(mtKey)
+        const end = start + typeIdMap[typeId].blockCapacity - 1
+        cb(mtKey, typeId, start, end, block)
+      }
+    })
   }
 
   get hash() {
@@ -143,6 +186,7 @@ export class VerifTree {
         key,
         hash,
         inmem,
+        dirty: false,
         loadPromise: null,
       }))
     block.hash = hash

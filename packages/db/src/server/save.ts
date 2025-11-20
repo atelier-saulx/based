@@ -6,7 +6,6 @@ import { VerifTree, destructureTreeKey } from './tree.js'
 import {
   saveBlock,
   foreachBlock,
-  foreachDirtyBlock,
   saveBlocks,
 } from './blocks.js'
 import { DbServer } from './index.js'
@@ -52,7 +51,7 @@ function inhibitSave(
 ): boolean {
   // RFE isMainThread needed??
   if (
-    !(isMainThread && (skipDirtyCheck || db.dirtyRanges.size || forceFullDump))
+    !(isMainThread && (skipDirtyCheck || db.verifTree.isDirty || forceFullDump))
   ) {
     return true
   }
@@ -137,12 +136,12 @@ export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
         )
       }
     } else {
-      foreachDirtyBlock(db, (_mtKey, typeId, start, end) =>
-        saveBlock(db, typeId, start, end),
+      db.verifTree.foreachDirtyBlock(db, (_mtKey, typeId, start, end, block) => {
+        saveBlock(db, typeId, start, end)
+        block.dirty = false
+      }
       )
     }
-
-    db.dirtyRanges.clear()
 
     const data = makeWritelog(db, ts)
     const content = JSON.stringify(data)
@@ -207,7 +206,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
         )
       }
     } else {
-      foreachDirtyBlock(db, (_mtKey, typeId, start, end) => {
+      db.verifTree.foreachDirtyBlock(db, (_mtKey, typeId, start, end, block) => {
         const file = VerifTree.blockSdbFile(typeId, start, end)
         const filepath = join(db.fileSystemPath, file)
         blocks.push({
@@ -215,9 +214,9 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
           typeId,
           start,
         })
+        block.dirty = false // TODO Should this happen after the save is actually verified?
       })
     }
-    db.dirtyRanges.clear()
     await saveBlocks(db, blocks)
 
     try {

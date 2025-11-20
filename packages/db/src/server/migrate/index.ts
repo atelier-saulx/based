@@ -3,7 +3,6 @@ import { dirname, join } from 'path'
 import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
 import { destructureTreeKey } from '../tree.js'
-import { foreachDirtyBlock } from '../blocks.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
 import {
@@ -193,17 +192,17 @@ export const migrate = async (
     server.activeReaders--
     server.onQueryEnd()
     if (i === rangesToMigrate.length) {
-      if (server.dirtyRanges.size) {
+      if (server.verifTree.isDirty) {
         rangesToMigrate = []
         i = 0
-        foreachDirtyBlock(server, (_mtKey, typeId, start, end) => {
+        server.verifTree.foreachDirtyBlock(server, (_mtKey, typeId, start, end, block) => {
           rangesToMigrate.push({
             typeId,
             start,
             end,
           })
+          block.dirty = false
         })
-        server.dirtyRanges.clear()
       }
     }
   }

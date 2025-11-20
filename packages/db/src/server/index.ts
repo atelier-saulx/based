@@ -15,7 +15,7 @@ import { save } from './save.js'
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import { readUint16, readUint32, readUint64, writeUint32 } from '@based/utils'
+import { readUint16, readUint64 } from '@based/utils'
 import { QueryType } from '../client/query/types.js'
 import { IoWorker } from './IoWorker.js'
 import { QueryWorker } from './QueryWorker.js'
@@ -25,7 +25,6 @@ import {
   setSchemaOnServer,
   writeSchemaFile,
 } from './schema.js'
-import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.js'
 import { loadBlock, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
 
@@ -42,7 +41,6 @@ class SortIndex {
 }
 
 export class DbServer extends DbShared {
-  modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
   subscriptions: Subscriptions = {
     subInterval: 200,
@@ -57,7 +55,6 @@ export class DbServer extends DbShared {
   saveInProgress: boolean = false
   fileSystemPath: string
   verifTree: VerifTree // should be updated only when saving/loading
-  dirtyRanges = new Set<number>()
   ioWorker: IoWorker
   workers: QueryWorker[] = []
   availableWorkerIndex: number = -1
@@ -380,29 +377,16 @@ export class DbServer extends DbShared {
       })
     }
 
-    resizeModifyDirtyRanges(this)
     const content = payload.subarray(8)
     const len = native.modify(
       content,
       this.dbCtxExternal,
-      this.modifyDirtyRanges,
     )
-    for (const key of this.modifyDirtyRanges) {
-      if (key === 0) {
-        break
-      }
-      this.dirtyRanges.add(key)
-    }
     return content.subarray(0, len)
   }
 
   #expire() {
-    resizeModifyDirtyRanges(this)
-    native.modify(emptyUint8Array, this.dbCtxExternal, this.modifyDirtyRanges)
-    for (const key of this.modifyDirtyRanges) {
-      if (key === 0) break
-      this.dirtyRanges.add(key)
-    }
+    native.modify(emptyUint8Array, this.dbCtxExternal)
   }
 
   addToQueryQueue(resolve, buf) {
