@@ -138,7 +138,6 @@ export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
     } else {
       db.blockMap.foreachDirtyBlock((typeId, start, end, block) => {
         saveBlock(db, typeId, start, end)
-        block.dirty = false
       }
       )
     }
@@ -214,7 +213,6 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
           typeId,
           start,
         })
-        block.dirty = false // TODO Should this happen after the save is actually verified?
       })
     }
     await saveBlocks(db, blocks)

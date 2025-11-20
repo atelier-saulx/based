@@ -124,7 +124,7 @@ export async function start(db: DbServer, opts: StartOpts) {
 
   // Insert partials to make the hash match
   for (const [key, hash] of partials) {
-    db.blockMap.updateBlock(key, hash, false)
+    db.blockMap.updateBlock(key, hash, 'fs')
   }
 
   if (writelog?.hash) {

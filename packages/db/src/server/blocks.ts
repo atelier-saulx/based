@@ -134,7 +134,7 @@ export async function unloadBlock(
   try {
     const hash = await db.ioWorker.unloadBlock(filepath, typeId, start)
     native.delBlock(db.dbCtxExternal, typeId, start)
-    db.blockMap.updateBlock(key, hash, false)
+    db.blockMap.updateBlock(key, hash, 'fs')
   } catch (e) {
     // TODO Proper logging
     // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??

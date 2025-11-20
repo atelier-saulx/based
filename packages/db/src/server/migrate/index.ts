@@ -201,7 +201,7 @@ export const migrate = async (
             start,
             end,
           })
-          block.dirty = false
+          block.status = 'inmem'
         })
       }
     }
