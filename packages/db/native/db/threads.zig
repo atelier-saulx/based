@@ -9,12 +9,53 @@ const modifyInternal = @import("../modify/modify.zig").modifyInternal;
 const selva = @import("../selva.zig").c;
 const Queue = std.array_list.Managed([]u8);
 const deflate = @import("../deflate.zig");
+const writeInt = @import("../utils.zig").writeInt;
+const napi = @import("../napi.zig");
+
+pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id: u32) ![]u8 {
+    const paddedSize = size + 8;
+    if (isQuery) {
+        if (thread.queryResults.len < thread.queryResultsIndex + paddedSize) {
+            var increasedSize: usize = 1_000_000;
+            if (paddedSize > 1_000_000) {
+                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
+            }
+            thread.queryResults = try std.heap.raw_c_allocator.realloc(
+                thread.queryResults,
+                thread.queryResults.len + increasedSize,
+            );
+        }
+        writeInt(u32, thread.queryResults, thread.queryResultsIndex, paddedSize);
+        writeInt(u32, thread.queryResults, thread.queryResultsIndex, id);
+        thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
+        const data = thread.queryResults[thread.queryResultsIndex + 8 .. thread.queryResultsIndex + paddedSize];
+        return data;
+    } else {
+        if (thread.modifyResults.len < thread.modifyResults + paddedSize) {
+            var increasedSize: usize = 100_000;
+            if (paddedSize > 100_000) {
+                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
+            }
+            thread.modifyResults = try std.heap.raw_c_allocator.realloc(
+                thread.modifyResults,
+                thread.modifyResults.len + increasedSize,
+            );
+        }
+        writeInt(u32, thread.modifyResults, thread.modifyResultsIndex, paddedSize);
+        writeInt(u32, thread.modifyResults, thread.modifyResultsIndex, id);
+        thread.*.modifyResults = thread.modifyResultsIndex + paddedSize;
+        const data = thread.queryResults[thread.modifyResultsIndex + 8 .. thread.modifyResultsIndex + paddedSize];
+        return data;
+    }
+}
 
 pub const DbThread = struct {
     thread: Thread,
     id: usize,
     queryResults: []u8,
-    lastQueryResultIndex: usize,
+    queryResultsIndex: usize,
+    modifyResults: []u8,
+    modifyResultsIndex: usize,
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
 };
@@ -203,8 +244,10 @@ pub const Threads = struct {
         for (self.threads, 0..) |*t, id| {
             const threadCtx = try allocator.create(DbThread);
             threadCtx.*.id = id;
-            threadCtx.*.lastQueryResultIndex = 0;
+            threadCtx.*.queryResultsIndex = 0;
             threadCtx.*.queryResults = try std.heap.raw_c_allocator.alloc(u8, 0);
+            threadCtx.*.modifyResultsIndex = 0;
+            threadCtx.*.modifyResults = try std.heap.raw_c_allocator.alloc(u8, 0);
             threadCtx.*.thread = try Thread.spawn(.{}, worker, .{ self, threadCtx });
             threadCtx.*.decompressor = deflate.createDecompressor();
             threadCtx.*.libdeflateBlockState = deflate.initBlockState(305000);
@@ -223,6 +266,7 @@ pub const Threads = struct {
             // see if this is enough...
             t.thread.join();
             std.heap.raw_c_allocator.free(t.queryResults);
+            std.heap.raw_c_allocator.free(t.modifyResults);
             self.allocator.destroy(t);
         }
         self.modifyQueue.*.deinit();

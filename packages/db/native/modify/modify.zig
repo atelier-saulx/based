@@ -24,8 +24,11 @@ const config = @import("config");
 const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
+const getResultSlice = @import("../db/threads.zig").getResultSlice;
 
-//  -----------------------
+extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
+
+//  ----------NAPI-------------
 pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     modifyInternalThread(
         env,
@@ -38,6 +41,34 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
     try dbCtx.threads.modify(batch);
+}
+
+pub fn getModifyResults(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
+    return getModifyResultsInternal(env, info) catch |err| {
+        napi.jsThrow(env, @errorName(err));
+        return null;
+    };
+}
+pub fn getModifyResultsInternal(env: napi.Env, info: napi.Info) !napi.Value {
+    const args = try napi.getArgs(1, env, info);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+    dbCtx.threads.waitForModify();
+    var jsArray: napi.Value = undefined;
+    _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
+    for (dbCtx.threads.threads, 0..) |thread, index| {
+        var arrayBuffer: napi.Value = undefined;
+        _ = napi.c.napi_create_external_arraybuffer(
+            env,
+            thread.modifyResults.ptr,
+            thread.modifyResultsIndex,
+            null,
+            null,
+            &arrayBuffer,
+        );
+        _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
+        thread.*.modifyResultsIndex = 0;
+    }
+    return jsArray;
 }
 //  -----------------------
 
@@ -143,10 +174,10 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
 }
 
 pub fn modifyInternal(
+    // comptime isSubscriptionWorker: bool,
     threadCtx: *db.DbThread,
     batch: []u8,
     dbCtx: *db.DbCtx,
-    _: []f64,
     resCount: *u32,
 ) !void {
     var i: usize = 0;
@@ -346,9 +377,15 @@ pub fn modifyInternal(
 
     db.expire(&ctx);
 
-    // const newDirtyRanges = ctx.dirtyRanges.values();
-    // assert(newDirtyRanges.len < dirtyRanges.len);
+    // std.debug.print();
+
+    const newDirtyRanges = ctx.dirtyRanges.values();
+
+    // pass id later..
+    const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 666);
+
+    _ = memcpy(data.ptr, newDirtyRanges.ptr, data.len);
     // _ = napi.c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     // dirtyRanges[newDirtyRanges.len] = 0.0;
-    writeoutPrevNodeId(&ctx, resCount, ctx.id);
+    // writeoutPrevNodeId(&ctx, resCount, ctx.id);
 }

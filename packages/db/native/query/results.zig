@@ -5,6 +5,7 @@ const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const std = @import("std");
 const selva = @import("../selva.zig").c;
+const getResultSlice = @import("../db/threads.zig").getResultSlice;
 
 const copy = utils.copy;
 const read = utils.read;
@@ -45,26 +46,10 @@ pub fn createResultsBuffer(
 ) !void {
     const size = ctx.size + 8;
 
-    const realSize = size + 8;
-    if (ctx.threadCtx.queryResults.len < ctx.threadCtx.lastQueryResultIndex + realSize) {
-        var increasedSize: usize = 1_000_000;
-        if (realSize > 1_000_000) {
-            increasedSize = (@divTrunc(realSize, increasedSize) + 1) * increasedSize;
-        }
-        ctx.threadCtx.queryResults = try std.heap.raw_c_allocator.realloc(
-            ctx.threadCtx.queryResults,
-            ctx.threadCtx.queryResults.len + increasedSize, // or if query is larger add more..
-        );
-    }
-    // write some stuff
-    var data = ctx.threadCtx.queryResults[ctx.threadCtx.lastQueryResultIndex + 8 .. ctx.threadCtx.lastQueryResultIndex + realSize]; // try std.heap.raw_c_allocator.alloc(u8, ctx.size + 8);
-
-    // space of 4 for extra
-    writeInt(u32, ctx.threadCtx.queryResults, ctx.threadCtx.lastQueryResultIndex, realSize);
-
-    ctx.threadCtx.*.lastQueryResultIndex = ctx.threadCtx.lastQueryResultIndex + realSize;
-
     var i: usize = 4;
+
+    // add correct id later
+    const data = try getResultSlice(true, ctx.threadCtx, size, 67);
 
     writeInt(u32, data, 0, ctx.totalResults);
 

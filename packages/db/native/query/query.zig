@@ -47,17 +47,17 @@ pub fn getQueryBufInternalResults(env: napi.Env, info: napi.Info) !napi.Value {
     var jsArray: napi.Value = undefined;
     _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
     for (dbCtx.threads.threads, 0..) |thread, index| {
-        var array_buffer: napi.Value = undefined;
+        var arrayBuffer: napi.Value = undefined;
         _ = napi.c.napi_create_external_arraybuffer(
             env,
             thread.queryResults.ptr,
-            thread.lastQueryResultIndex,
+            thread.queryResultsIndex,
             null,
             null,
-            &array_buffer,
+            &arrayBuffer,
         );
-        _ = napi.c.napi_set_element(env, jsArray, @truncate(index), array_buffer);
-        thread.*.lastQueryResultIndex = 0;
+        _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
+        thread.*.queryResultsIndex = 0;
     }
     return jsArray;
 }
