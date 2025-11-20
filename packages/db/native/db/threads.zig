@@ -63,7 +63,7 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        std.debug.print("stage query! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
+        // std.debug.print("stage query! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
         if (self.pendingModifies > 0) {
             try self.nextQueryQueue.append(queryBuffer);
         } else {
@@ -79,12 +79,10 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        std.debug.print("stage modify! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
+        // std.debug.print("stage modify! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
         if (self.pendingQueries > 0) {
             try self.nextModifyQueue.append(modifyBuffer);
         } else {
-            // std.debug.print("GO GO mod {any} q {any} {any} \n", .{ self.pendingModifies, self.pendingQueries, modifyBuffer });
-
             try self.modifyQueue.append(modifyBuffer);
             self.pendingModifies += 1;
             self.wakeup.signal();
@@ -140,14 +138,14 @@ pub const Threads = struct {
             if (modifyBuf) |m| {
                 if (threadCtx.id == 0) {
                     // time measurement?
-                    std.debug.print("Go run mod on thread! \n", .{});
+                    // std.debug.print("Go run mod on thread! \n", .{});
                     var res: u32 = 0;
                     // add dirty ranfges on db ctx
                     try modifyInternal(m, self.ctx, &.{}, &res);
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
-                    std.debug.print(" -------> {any} m {any} \n", .{ self.pendingModifies, m });
+                    // std.debug.print(" -------> {any} m {any} \n", .{ self.pendingModifies, m });
 
                     if (self.pendingModifies == 0) {
                         self.modifyDone.signal();

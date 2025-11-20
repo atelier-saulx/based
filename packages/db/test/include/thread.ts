@@ -88,9 +88,22 @@ await test('include', async (t) => {
   await wait(1)
   native.getQueryBufThread(buf, db.server.dbCtxExternal)
 
+  for (let i = 0; i < 100; i++) {
+    if (i % 2) {
+      await wait(0)
+    }
+    if (Math.random() < 0.5) {
+      callMod()
+      native.getQueryBufThread(buf, db.server.dbCtxExternal)
+    } else {
+      native.getQueryBufThread(buf, db.server.dbCtxExternal)
+      callMod()
+    }
+  }
+
   callMod()
 
-  await wait(1000)
+  await wait(1)
   console.log(
     getAll(native.getQueryResults(db.server.dbCtxExternal)),
     'execed query items',
