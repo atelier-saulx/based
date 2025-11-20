@@ -2,6 +2,7 @@ import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 import { fastPrng } from '@based/utils'
+import { equal } from 'node:assert'
 
 await test('overall performance', async (t) => {
   const db = new BasedDb({
