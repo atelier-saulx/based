@@ -124,6 +124,10 @@ pub const Threads = struct {
                 self.pendingQueries -= 1;
                 if (self.pendingQueries == 0) {
                     self.queryDone.signal();
+
+                    // prob want to call with the call thing
+                    self.ctx.queryCallback.call(&.{});
+
                     if (self.nextModifyQueue.items.len > 0) {
                         std.debug.print("QEURY ready and broadcast! start mod \n", .{});
                         const prevModifyQueue = self.modifyQueue;
@@ -143,6 +147,8 @@ pub const Threads = struct {
                     var res: u32 = 0;
                     // add dirty ranfges on db ctx
                     try modifyInternal(threadCtx, m, self.ctx, &.{}, &res);
+                    // check how we want to do this to send back information
+
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;

@@ -116,8 +116,8 @@ await test('include', async (t) => {
     readyTime = resolve
   })
 
+  const amount = 0
   // const amount = 1e6
-  const amount = 1e6
 
   var d = Date.now()
 

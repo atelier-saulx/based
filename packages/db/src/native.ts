@@ -77,10 +77,17 @@ const native = {
   },
 
   start: () => {
-    return db.start((xxx) => {
-      native.cnt++
-      // console.log('im a little derp', new Uint8Array(xxx))
+    let x = db.start((xxx) => {
+      // native.cnt++
+      // console.log('im a little derp', new Uint8Array(xxx), x)
+      if (x) {
+        // can be a bit nicer
+        const r = native.getQueryResults(x)
+
+        // console.log(native.getQueryResults(x))
+      }
     })
+    return x
   },
 
   stop: (dbCtx: any) => {
