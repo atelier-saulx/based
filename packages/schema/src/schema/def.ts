@@ -7,10 +7,14 @@ import type { SchemaString } from './string.ts'
 import type { SchemaProps, SchemaType } from './type.ts'
 import type { SchemaVector } from './vector.ts'
 
-type DefBase = {
+type BaseProp = {
+  typeDef: TypeDef
+  path: string[]
+}
+
+type DbProp = BaseProp & {
   id: number
   typeEnum: number
-  path: string[]
   main?: {
     start: number
     size: number
@@ -21,19 +25,23 @@ type RefLike = SchemaReference<true> | SchemaReferences<true>
 type Obj = SchemaObject<true>
 
 type PropDefRef = RefLike &
-  DefBase & {
+  DbProp & {
     inverse: PropDef
   }
-type PropDefObj = Obj & {
-  path: string[]
-  props: Record<string, PropDef>
-}
-type PropDefRest = Exclude<Exclude<SchemaProp<true>, RefLike>, Obj> & DefBase
+
+type PropDefObj = Obj &
+  BaseProp & {
+    props: Record<string, PropDef>
+  }
+
+type PropDefRest = Exclude<Exclude<SchemaProp<true>, RefLike>, Obj> & DbProp
 type PropDef = PropDefRef | PropDefObj | PropDefRest
 
 type TypeDef = Omit<SchemaType<true>, 'props'> & {
-  props: Record<string, PropDef>
+  id: number
   size: number
+  props: Record<string, PropDef>
+  edges?: true
 }
 
 type Defs = Record<string | number, TypeDef>
@@ -105,12 +113,8 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
   for (const type in defs) {
     for (const prop in defs[type].props) {
       const propDef = defs[type].props[prop]
-      if (propDef.type === 'reference') {
-        propDef.inverse = defs[propDef.ref].props[propDef.prop]
-        parseEdges(type, prop, propDef)
-      } else if (propDef.type === 'references') {
-        propDef.inverse = defs[propDef.items.ref].props[propDef.items.prop]
-        parseEdges(type, prop, propDef.items)
+      if (propDef.type === 'reference' || propDef.type === 'references') {
+        parseRefLike(type, prop, propDef)
       }
     }
   }
@@ -122,14 +126,15 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
     let size = 0
     let propIdCnt = 1
 
-    const props = parseProps(typeSchema.props, [], typeProps)
-
-    return {
+    const typeDef = {
       id: idCnt++,
-      size,
+      size: 0,
       ...typeSchema,
-      props,
-    }
+    } as TypeDef
+
+    typeDef.props = parseProps(typeSchema.props, [], typeProps)
+
+    return typeDef
 
     function parseProps(
       props: Record<string, SchemaProp<true>>,
@@ -149,6 +154,7 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
           propDef = {
             type: propType,
             path: propPath,
+            typeDef,
             ...rest,
             props: parseProps(propSchema.props, propPath, {}),
           }
@@ -157,6 +163,7 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
             id: mainSize ? 0 : propIdCnt++,
             type: propType,
             typeEnum: propTypeEnums[propType],
+            typeDef,
             path: propPath,
             ...rest,
           } as PropDef
@@ -179,14 +186,16 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
     }
   }
 
-  function parseEdges(
-    type: string,
-    prop: string,
-    refSchema: SchemaReference<true>,
-  ) {
+  function parseRefLike(type: string, prop: string, refDef: PropDefRef) {
+    const refSchema = 'items' in refDef ? refDef.items : refDef
     const refType = refSchema.ref
+    const inverseDef = defs[refType].props[refSchema.prop]
+
+    // add inverse props
+    refDef.inverse = inverseDef
+
     if (type > refType) {
-      // we'll add it from the other side
+      // we'll handle the edges from the other side
       return
     }
 
@@ -202,15 +211,21 @@ export const schemaToDefs = (schema: Schema<true>): Defs => {
       return
     }
 
-    const edgeType = parseType({
-      props: edges,
-    })
+    const inverseSchema = 'items' in inverseDef ? inverseDef.items : inverseDef
+    const edgeType = parseType({ props: edges })
 
     for (const key in edges) {
-      // also add the paths on both sides for queries
-      defs[type][`${prop}.${key}`] = edgeType.props[key]
+      const edgeProp = edgeType.props[key]
+      // add dot path on both types
+      defs[type][`${prop}.${key}`] = edgeProp
+      defs[refType][`${inverseDef.path.join('.')}.${key}`] = edgeProp
+      // add ref on both sides
+      refSchema[key] = edgeProp
+      inverseSchema[key] = edgeProp
     }
 
+    // only need to store this on one side
     defs[`$${type}_${prop}`] = edgeType
+    edgeType.edges = true
   }
 }

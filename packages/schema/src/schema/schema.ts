@@ -85,6 +85,19 @@ const parseRefs = (
     if (inverse.items) {
       inverse = inverse.items
     }
+
+    for (const key in inverse) {
+      if (key[0] === '$') {
+        prop[key] = inverse[key]
+      }
+    }
+
+    for (const key in prop) {
+      if (key[0] === '$') {
+        inverse[key] = prop[key]
+      }
+    }
+
     assert(inverse.ref === type)
     assert(inverse.prop === dotPath)
   } else if ('items' in prop) {
