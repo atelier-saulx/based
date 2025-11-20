@@ -42,9 +42,8 @@ const walk = async (dir = p) => {
             !args.includes('--perf') &&
             !args.includes('--all') &&
             !args.includes('--scn') &&
-            [...IGNORE_PATTERNS].some((pattern) => f.includes(pattern)) &&
-            [...IGNORE_PATTERNS].some((pattern) => !test.includes(pattern)) &&
-            relPath.includes('scenarios/')
+            ([...IGNORE_PATTERNS].some((pattern) => test.includes(pattern)) ||
+              relPath.includes('scenarios/'))
           ) {
             continue
           } else if (
@@ -78,12 +77,12 @@ const walk = async (dir = p) => {
         }
       } else {
         if (
-          // default: no IGNORE_PATTERNS and scenarios
+          // default: no files containing IGNORE_PATTERNS and no scenarios/* files
           !args.includes('--perf') &&
           !args.includes('--all') &&
           !args.includes('--scn') &&
-          [...IGNORE_PATTERNS].some((pattern) => f.includes(pattern)) &&
-          relative(p, path).includes('scenarios/')
+          ([...IGNORE_PATTERNS].some((pattern) => f.includes(pattern)) ||
+            relative(p, path).includes('scenarios/'))
         ) {
           continue
         } else if (
