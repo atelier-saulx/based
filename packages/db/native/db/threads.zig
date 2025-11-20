@@ -80,6 +80,10 @@ pub const Threads = struct {
 
     shutdown: bool = false,
 
+    jsQueryBridgeStaged: bool = false,
+
+    jsModifyBridgeStaged: bool = false,
+
     ctx: *DbCtx,
 
     allocator: std.mem.Allocator,
@@ -149,11 +153,9 @@ pub const Threads = struct {
         } else {
             try self.modifyQueue.append(modifyBuffer);
             self.pendingModifies += 1;
-
             for (self.threads) |thread| {
                 thread.*.pendingModifies += 1;
             }
-
             // std.debug.print("stage modify! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
             self.wakeup.broadcast();
         }
@@ -200,9 +202,13 @@ pub const Threads = struct {
 
                     // prob want to call with the call thing
 
-                    // std.debug.print("    QUERY DONE\n", .{});
                     self.queryDone.signal();
-                    self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
+
+                    if (!self.jsQueryBridgeStaged) {
+                        // std.debug.print("    QUERY DONE call js bridge\n", .{});
+                        self.jsQueryBridgeStaged = true;
+                        self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
+                    }
 
                     if (self.nextModifyQueue.items.len > 0) {
                         const prevModifyQueue = self.modifyQueue;
@@ -213,7 +219,7 @@ pub const Threads = struct {
                             thread.*.pendingModifies = self.modifyQueue.items.len;
                         }
                         self.wakeup.broadcast();
-                    }
+                    } else {}
                 }
                 self.mutex.unlock();
             }
@@ -243,14 +249,13 @@ pub const Threads = struct {
                         }
 
                         if (!bla) {
-                            // std.debug.print("mod done \n", .{});
-
-                            // prob want to call with the call thing
-                            // just use the bridge with id to select the correct stuff
-                            // std.debug.print("    MOD DONE\n", .{});
-
                             self.modifyDone.signal();
-                            self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+
+                            if (!self.jsModifyBridgeStaged) {
+                                self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+                                self.jsModifyBridgeStaged = true;
+                            }
+
                             if (self.nextQueryQueue.items.len > 0) {
                                 const prevQueryQueue = self.queryQueue;
                                 self.queryQueue = self.nextQueryQueue;
@@ -274,14 +279,13 @@ pub const Threads = struct {
                         }
 
                         if (!bla) {
-                            // std.debug.print("mod done \n", .{});
-
-                            // prob want to call with the call thing
-                            // just use the bridge with id to select the correct stuff
-                            // std.debug.print("    MOD DONE\n", .{});
-
                             self.modifyDone.signal();
-                            self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+
+                            if (!self.jsModifyBridgeStaged) {
+                                self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+                                self.jsModifyBridgeStaged = true;
+                            }
+
                             if (self.nextQueryQueue.items.len > 0) {
                                 const prevQueryQueue = self.queryQueue;
                                 self.queryQueue = self.nextQueryQueue;

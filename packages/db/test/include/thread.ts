@@ -116,14 +116,15 @@ await test('include', async (t) => {
     readyTime = resolve
   })
 
-  // const amount = 10
-  const amount = 1e6
+  const amount = 1_000_000
+  // const amount = 1_000_000
 
+  await wait(100)
   var d = Date.now()
 
   const collector = () => {
     // console.log('check?', cnt)
-    if (native.cnt >= amount) {
+    if (native.cnt == amount) {
       console.log('TOOK', Date.now() - d, '+/- 18ms')
       readyTime()
     } else {
@@ -131,6 +132,7 @@ await test('include', async (t) => {
     }
   }
 
+  native.cnt = 0
   collector()
 
   // setTimeout(collector, 18)
@@ -153,4 +155,5 @@ await test('include', async (t) => {
   await isRdy
 
   console.log('done')
+  // await wait(100)
 })

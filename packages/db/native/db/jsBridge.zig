@@ -19,6 +19,12 @@ fn callJsCallback(
     const responseFn = @as(*BridgeResponse, @ptrCast(@alignCast(data.?)));
     const dbCtx = @as(*db.DbCtx, @ptrCast(@alignCast(ctx.?)));
 
+    if (dbCtx.selva == null) {
+        std.debug.print("REMOVED {any} \n", .{responseFn});
+        return;
+    }
+    std.debug.print("query here {any} \n", .{responseFn});
+
     switch (responseFn.*) {
         BridgeResponse.modify => {
             dbCtx.threads.waitForModify();
@@ -34,13 +40,13 @@ fn callJsCallback(
                 &arrayBuffer,
             );
             thread.*.modifyResultsIndex = 0;
-
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.*), &fnResponse);
             var args = [_]napi.Value{ fnResponse, arrayBuffer };
             var undefinedVal: napi.Value = undefined;
             _ = napi.c.napi_get_undefined(env, &undefinedVal);
             _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
+            dbCtx.threads.jsModifyBridgeStaged = false;
             dbCtx.threads.mutex.unlock();
         },
         BridgeResponse.query => {
@@ -48,7 +54,6 @@ fn callJsCallback(
             var jsArray: napi.Value = undefined;
             _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
             dbCtx.threads.mutex.lock();
-
             for (dbCtx.threads.threads, 0..) |thread, index| {
                 var arrayBuffer: napi.Value = undefined;
                 _ = napi.c.napi_create_external_arraybuffer(
@@ -60,7 +65,9 @@ fn callJsCallback(
                     &arrayBuffer,
                 );
                 _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
+                // dbCtx.threads.mutex.lock();
                 thread.*.queryResultsIndex = 0;
+                // dbCtx.threads.mutex.unlock();
             }
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.*), &fnResponse);
@@ -68,6 +75,7 @@ fn callJsCallback(
             var undefinedVal: napi.Value = undefined;
             _ = napi.c.napi_get_undefined(env, &undefinedVal);
             _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
+            dbCtx.threads.jsQueryBridgeStaged = false;
             dbCtx.threads.mutex.unlock();
         },
     }
@@ -114,6 +122,7 @@ pub const Callback = struct {
     }
 
     pub fn deinit(self: *Callback) void {
+        std.debug.print("REMOVE JS BRIDGE \n", .{});
         _ = napi.c.napi_release_threadsafe_function(self.tsfn, napi.c.napi_tsfn_release);
         std.heap.raw_c_allocator.destroy(self);
     }
