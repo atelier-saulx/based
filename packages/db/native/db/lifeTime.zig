@@ -28,11 +28,8 @@ fn getOptPath(
 fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     // does this make double things with valgrind? Ask marco
     dbCtx.init();
-
     const args = try napi.getArgs(2, env, info);
-    const jsBridge = try napi.Callback.init(env, args[0]);
-
-    const ctx = try dbCtx.createDbCtx(jsBridge);
+    const ctx = try dbCtx.createDbCtx(env, args[0]);
     ctx.selva = selva.selva_db_create();
     var externalNapi: napi.Value = undefined;
     ctx.initialized = true;

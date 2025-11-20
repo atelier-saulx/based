@@ -10,12 +10,7 @@ const selva = @import("../selva.zig").c;
 const Queue = std.array_list.Managed([]u8);
 const deflate = @import("../deflate.zig");
 const writeInt = @import("../utils.zig").writeInt;
-const napi = @import("../napi.zig");
-
-const jsResponseFunctions = enum(u32) {
-    query = 1,
-    modify = 2,
-};
+const jsBridge = @import("./jsBridge.zig");
 
 pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id: u32) ![]u8 {
     const paddedSize = size + 8;
@@ -88,24 +83,42 @@ pub const Threads = struct {
 
     allocator: std.mem.Allocator,
 
+    pub fn waitForQuery(self: *Threads) void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        while (self.pendingQueries > 0) {
+            std.debug.print("wait for q\n", .{});
+            self.queryDone.wait(&self.mutex);
+            std.debug.print(" wait for q done\n", .{});
+        }
+    }
+
     pub fn waitForModify(self: *Threads) void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        std.debug.print("waiting mod \n", .{});
         while (self.pendingModifies > 0) {
+            std.debug.print("wait for m\n", .{});
             self.modifyDone.wait(&self.mutex);
+            std.debug.print(" wait for m done\n", .{});
         }
-        std.debug.print("  waiting mod done \n", .{});
     }
 
-    pub fn waitForQueries(self: *Threads) void {
+    pub fn modifyIsReady(self: *Threads) bool {
         self.mutex.lock();
         defer self.mutex.unlock();
-        std.debug.print("waiting q \n", .{});
-        while (self.pendingQueries > 0) {
-            self.queryDone.wait(&self.mutex);
+        if (self.pendingModifies > 0) {
+            return false;
         }
-        std.debug.print("  waiting q done \n", .{});
+        return true;
+    }
+
+    pub fn queryIsReady(self: *Threads) bool {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        if (self.pendingQueries > 0) {
+            return false;
+        }
+        return true;
     }
 
     pub fn query(
@@ -114,12 +127,12 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        // std.debug.print("stage query! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
         if (self.pendingModifies > 0) {
             try self.nextQueryQueue.append(queryBuffer);
         } else {
             try self.queryQueue.append(queryBuffer);
             self.pendingQueries += 1;
+            // std.debug.print("stage query! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
             self.wakeup.signal();
         }
     }
@@ -130,12 +143,12 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        // std.debug.print("stage modify! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
         if (self.pendingQueries > 0) {
             try self.nextModifyQueue.append(modifyBuffer);
         } else {
             try self.modifyQueue.append(modifyBuffer);
             self.pendingModifies += 1;
+            // std.debug.print("stage modify! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
             self.wakeup.signal();
         }
     }
@@ -173,9 +186,14 @@ pub const Threads = struct {
                 self.mutex.lock();
                 self.pendingQueries -= 1;
                 if (self.pendingQueries == 0) {
-                    self.queryDone.signal();
+                    // std.debug.print("q done \n", .{});
+
                     // prob want to call with the call thing
-                    self.ctx.jsBridge.call(@intFromEnum(jsResponseFunctions.query), &.{});
+
+                    std.debug.print("    QUERY DONE\n", .{});
+                    self.queryDone.signal();
+                    self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
+
                     if (self.nextModifyQueue.items.len > 0) {
                         const prevModifyQueue = self.modifyQueue;
                         self.modifyQueue = self.nextModifyQueue;
@@ -201,10 +219,15 @@ pub const Threads = struct {
                     self.pendingModifies -= 1;
 
                     if (self.pendingModifies == 0) {
-                        self.modifyDone.signal();
+                        // std.debug.print("mod done \n", .{});
+
                         // prob want to call with the call thing
                         // just use the bridge with id to select the correct stuff
-                        self.ctx.jsBridge.call(@intFromEnum(jsResponseFunctions.modify), &.{});
+                        std.debug.print("    MOD DONE\n", .{});
+
+                        self.modifyDone.signal();
+                        self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+
                         if (self.nextQueryQueue.items.len > 0) {
                             const prevQueryQueue = self.queryQueue;
                             self.queryQueue = self.nextQueryQueue;

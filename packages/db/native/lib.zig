@@ -124,10 +124,6 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "getQueryBufThread", query.getQueryBufThread) catch return null;
     registerFunction(env, exports, "modifyThread", modify.modifyThread) catch return null;
 
-    // this is temp will be called on callback
-    registerFunction(env, exports, "getQueryResults", query.getQueryResults) catch return null;
-    registerFunction(env, exports, "getModifyResults", modify.getModifyResults) catch return null;
-
     // registerFunction(env, exports, "modify", modify.modify) catch return null;
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
     registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;

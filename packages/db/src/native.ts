@@ -1,6 +1,6 @@
 // @ts-ignore
 import db from '@based/db/native'
-import { DECODER, ENCODER } from '@based/utils'
+import { DECODER, ENCODER, readUint32 } from '@based/utils'
 
 const selvaIoErrlog = new Uint8Array(256)
 var compressor = db.createCompressor()
@@ -10,6 +10,33 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
   let i: number
   let len = (i = buf.indexOf(0)) >= 0 ? i : buf.byteLength
   return DECODER.decode(selvaIoErrlog.slice(0, len))
+}
+
+const getAll = (arr: ArrayBuffer[] | null) => {
+  if (!arr) {
+    // console.log('wairing?')
+    return 0
+  }
+  let cnt = 0
+  for (const buf of arr) {
+    if (!buf) {
+      console.log('thread has no response :(', cnt)
+      continue
+    } else {
+      const v = new Uint8Array(buf)
+
+      // console.log('heloo', v)
+      for (let i = 0; i < v.byteLength; ) {
+        const size = readUint32(v, i)
+        cnt++
+
+        // then we need the QueryId in the query itself (4 bytes for now)
+
+        i += size
+      }
+    }
+  }
+  return cnt
 }
 
 const native = {
@@ -46,10 +73,7 @@ const native = {
     return db.intFromExternal(external)
   },
 
-  modify: (
-    data: Uint8Array,
-    dbCtx: any,
-  ): number | null => {
+  modify: (data: Uint8Array, dbCtx: any): number | null => {
     console.dir(data, { depth: 10 })
     return db.modify(data, dbCtx)
   },
@@ -69,32 +93,20 @@ const native = {
     return x
   },
 
-  getQueryResults(dbCtx: any): ArrayBuffer[] {
-    // what to return?
-    const x = db.getQueryResults(dbCtx)
-    return x
-  },
-
-  getModifyResults(dbCtx: any): ArrayBuffer {
-    // what to return?
-    const x = db.getModifyResults(dbCtx)
-    return x
-  },
-
   start: () => {
-    let x = db.start((id: number, buffer: ArrayBuffer) => {
+    let x = db.start((id: number, buffer: any) => {
       // maybe dont add the id...
       // use enum
       // native.cnt++
       // console.log('im a little derp', new Uint8Array(xxx), x)
       if (id === 1) {
+        native.cnt += getAll(buffer)
+        // console.log(native.cnt)
         // can be a bit nicer
-        const r = native.getQueryResults(x)
-        console.log('QUERY RESULTS')
+        // console.log('QUERY RESULTS')
         // console.log(native.getQueryResults(x))
       } else if (id === 2) {
-        const r = native.getModifyResults(x)
-        console.log('MODIFY RESULTS', new Uint8Array(r))
+        // console.log('MODIFY RESULTS')
       }
     })
     return x

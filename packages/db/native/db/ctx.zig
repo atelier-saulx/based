@@ -4,10 +4,11 @@ const selva = @import("../selva.zig").c;
 const deflate = @import("../deflate.zig");
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
-const napi = @import("../napi.zig");
+const jsBridge = @import("./jsBridge.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
 const subs = @import("./subscription/types.zig");
 const threads = @import("./threads.zig");
+const napi = @import("../napi.zig");
 const rand = std.crypto.random;
 
 pub const DbCtx = struct {
@@ -19,7 +20,7 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
     subscriptions: subs.SubscriptionCtx,
     ids: []u32,
-    jsBridge: *napi.Callback,
+    jsBridge: *jsBridge.Callback,
     threads: *threads.Threads,
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
@@ -44,14 +45,14 @@ pub fn init() void {
 }
 
 pub fn createDbCtx(
-    jsBridge: *napi.Callback,
-    // modifyCallback: *napi.Callback,
+    env: napi.Env,
+    bridge: napi.Value,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
-    const b = try allocator.create(DbCtx);
+    const dbCtxPointer = try allocator.create(DbCtx);
     const subscriptions = try allocator.create(subs.SubscriptionCtx);
     subscriptions.*.types = subs.TypeSubMap.init(allocator);
 
@@ -66,8 +67,8 @@ pub fn createDbCtx(
         db_backing_allocator.destroy(arena);
     }
 
-    b.* = .{
-        .threads = try threads.Threads.init(allocator, try std.Thread.getCpuCount() - 1, b),
+    dbCtxPointer.* = .{
+        .threads = try threads.Threads.init(allocator, try std.Thread.getCpuCount() - 1, dbCtxPointer),
         .id = rand.int(u32),
         .arena = arena,
         .allocator = allocator,
@@ -76,12 +77,13 @@ pub fn createDbCtx(
         .selva = null,
         .subscriptions = subscriptions.*,
         .ids = &[_]u32{},
-        .jsBridge = jsBridge,
+        .jsBridge = try jsBridge.Callback.init(env, dbCtxPointer, bridge),
+        // Also per thread this is just for when on the main thread
         .decompressor = deflate.createDecompressor(),
         .libdeflateBlockState = deflate.initBlockState(305000),
     };
 
-    return b;
+    return dbCtxPointer;
 }
 
 pub fn destroyDbCtx(ctx: *DbCtx) void {

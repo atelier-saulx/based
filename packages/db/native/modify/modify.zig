@@ -40,30 +40,6 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
     try dbCtx.threads.modify(batch);
 }
-
-pub fn getModifyResults(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    return getModifyResultsInternal(env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-pub fn getModifyResultsInternal(env: napi.Env, info: napi.Info) !napi.Value {
-    const args = try napi.getArgs(1, env, info);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-    dbCtx.threads.waitForModify();
-    const thread = dbCtx.threads.threads[0];
-    var arrayBuffer: napi.Value = undefined;
-    _ = napi.c.napi_create_external_arraybuffer(
-        env,
-        thread.modifyResults.ptr,
-        thread.modifyResultsIndex,
-        null,
-        null,
-        &arrayBuffer,
-    );
-    thread.*.modifyResultsIndex = 0;
-    return arrayBuffer;
-}
 //  -----------------------
 
 fn switchType(ctx: *ModifyCtx, typeId: u16) !void {

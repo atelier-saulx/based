@@ -104,10 +104,10 @@ await test('include', async (t) => {
   callMod()
 
   await wait(1)
-  console.log(
-    getAll(native.getQueryResults(db.server.dbCtxExternal)),
-    'execed query items',
-  )
+  // console.log(
+  //   getAll(native.getQueryResults(db.server.dbCtxExternal)),
+  //   'execed query items',
+  // )
 
   // await db.query('user').get().inspect()
 
@@ -116,15 +116,14 @@ await test('include', async (t) => {
     readyTime = resolve
   })
 
-  const amount = 0
-  // const amount = 1e6
+  // const amount = 10000
+  const amount = 1e6
 
   var d = Date.now()
 
   const collector = () => {
-    cnt += getAll(native.getQueryResults(db.server.dbCtxExternal))
     // console.log('check?', cnt)
-    if (cnt === amount) {
+    if (native.cnt >= amount) {
       console.log('TOOK', Date.now() - d, '+/- 18ms')
       readyTime()
     } else {
@@ -132,9 +131,11 @@ await test('include', async (t) => {
     }
   }
 
+  collector()
+
   // setTimeout(collector, 18)
 
-  // var d = Date.now()
+  var d = Date.now()
   // // // const x = []
 
   // // const bufSize = 1e6 * buf.byteLength
@@ -147,31 +148,9 @@ await test('include', async (t) => {
   }
   // // native.getQueryBufThreadBatch(x, db.server.dbCtxExternal)
 
-  // console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
-
-  // await wait(1000)
-  // console.log(getAll(native.getQueryResults(db.server.dbCtxExternal)))
-
-  // console.log(native.getQueryResults(db.server.dbCtxExternal))
-
-  // await wait(100)
-  // console.log(native.cnt)
-  // await wait(100)
-  // console.log(native.cnt)
-  // await wait(100)
-  // console.log(native.cnt)
-  // await wait(100)
-  // // console.log(native.cnt)
-  // const cnter = () => {
-  //   cnt++
-  // }
-  // var d = Date.now()
-  // for (let i = 0; i < amount; i++) {
-  //   db.server.getQueryBuf(buf).then(cnter)
-  // }
   console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
 
-  // await isRdy
+  await isRdy
 
   console.log('done')
 })

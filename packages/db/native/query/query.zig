@@ -26,40 +26,12 @@ const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
 const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
 
+// -------- NAPI ---------- (put in js bridge maybe?)
 pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return getQueryBufInternalThread(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
-}
-
-pub fn getQueryResults(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    return getQueryBufInternalResults(env, info) catch |err| {
-        napi.jsThrow(env, @errorName(err));
-        return null;
-    };
-}
-
-pub fn getQueryBufInternalResults(env: napi.Env, info: napi.Info) !napi.Value {
-    const args = try napi.getArgs(1, env, info);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-    dbCtx.threads.waitForQueries();
-    var jsArray: napi.Value = undefined;
-    _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
-    for (dbCtx.threads.threads, 0..) |thread, index| {
-        var arrayBuffer: napi.Value = undefined;
-        _ = napi.c.napi_create_external_arraybuffer(
-            env,
-            thread.queryResults.ptr,
-            thread.queryResultsIndex,
-            null,
-            null,
-            &arrayBuffer,
-        );
-        _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
-        thread.*.queryResultsIndex = 0;
-    }
-    return jsArray;
 }
 
 pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
@@ -69,7 +41,9 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
     try dbCtx.threads.query(q);
     return null;
 }
+// -------------------------
 
+// from thread
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
     q: []u8,
