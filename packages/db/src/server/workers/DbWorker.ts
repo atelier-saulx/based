@@ -30,12 +30,12 @@ export abstract class DbWorker {
     })
 
     this.readyPromise = new Promise((resolve, reject) => {
-      const onReady = (msg: { status: string, theadId: BigInt } | any) => {
+      const onReady = (msg: { status: string; theadId: BigInt } | any) => {
         if (msg?.status === 'READY') {
           // TODO Also call native.destroyThreadCtx() somewhere
           this.#threadId = msg.threadId
           try {
-            native.createThreadCtx(db.dbCtxExternal, this.#threadId)
+            // native.createThreadCtx(db.dbCtxExternal, this.#threadId)
             this.worker.off('message', onReady)
             resolve(true)
           } catch (e) {
@@ -108,7 +108,7 @@ export abstract class DbWorker {
 
   updateCtx(address: BigInt): Promise<void> {
     const ctx = native.externalFromInt(address)
-    native.createThreadCtx(ctx, this.#threadId)
+    // native.createThreadCtx(ctx, this.#threadId)
     return this.call(address) as Promise<unknown> as Promise<void>
   }
 }

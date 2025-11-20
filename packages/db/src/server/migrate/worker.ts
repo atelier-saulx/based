@@ -29,8 +29,8 @@ if (isMainThread) {
     const fromCtx = native.externalFromInt(from)
     const toCtx = native.externalFromInt(to)
 
-    native.createThreadCtx(fromCtx, native.getThreadId())
-    native.createThreadCtx(toCtx, native.getThreadId())
+    // native.createThreadCtx(fromCtx, native.getThreadId())
+    // native.createThreadCtx(toCtx, native.getThreadId())
 
     const fromDb = new BasedDb({ path: null })
     const toDb = new BasedDb({ path: null })

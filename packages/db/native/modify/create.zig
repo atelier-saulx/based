@@ -78,7 +78,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
                         if (ctx.currentSortIndex != null) {
-                            sort.remove(ctx.db, ctx.currentSortIndex.?, slice, db.getNode(ctx.typeEntry.?, old).?);
+                            sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, db.getNode(ctx.typeEntry.?, old).?);
                         }
                         Modify.markDirtyRange(ctx, ctx.typeId, old);
                     }
@@ -97,11 +97,11 @@ pub fn addSortIndexOnCreation(ctx: *ModifyCtx, slice: []u8) !void {
             var it = ctx.typeSortIndex.?.main.iterator();
             while (it.next()) |entry| {
                 const sI = entry.value_ptr.*;
-                sort.insert(ctx.db, sI, slice, ctx.node.?);
+                sort.insert(ctx.threadCtx.decompressor, sI, slice, ctx.node.?);
             }
         }
     } else if (ctx.currentSortIndex != null) {
-        sort.insert(ctx.db, ctx.currentSortIndex.?, slice, ctx.node.?);
+        sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
     } else if (ctx.typeSortIndex != null and ctx.fieldType == types.Prop.TEXT) {
         const sIndex = sort.getSortIndex(
             ctx.db.sortIndexes.get(ctx.typeId),
@@ -110,7 +110,7 @@ pub fn addSortIndexOnCreation(ctx: *ModifyCtx, slice: []u8) !void {
             @enumFromInt(slice[0]),
         );
         if (sIndex) |s| {
-            sort.insert(ctx.db, s, slice, ctx.node.?);
+            sort.insert(ctx.threadCtx.decompressor, s, slice, ctx.node.?);
         }
     }
 }

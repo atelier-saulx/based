@@ -38,18 +38,6 @@ const native = {
     return db.getMarkedMultiSubscriptions(dbCtx)
   },
 
-  getThreadId: (): BigInt => {
-    return db.getThreadId()
-  },
-
-  createThreadCtx: (dbCtx: any, threadId: BigInt): void => {
-    db.createThreadCtx(dbCtx, threadId)
-  },
-
-  destroyThreadCtx: (dbCtx: any, threadId: BigInt): void => {
-    db.destroyThreadCtx(dbCtx, threadId)
-  },
-
   externalFromInt(address: BigInt): any {
     return db.externalFromInt(address)
   },

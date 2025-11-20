@@ -8,14 +8,15 @@ const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
 const modifyInternal = @import("../modify/modify.zig").modifyInternal;
 const selva = @import("../selva.zig").c;
 const Queue = std.array_list.Managed([]u8);
+const deflate = @import("./decompress.zig");
 
 pub const DbThread = struct {
     thread: Thread,
     id: usize,
     queryResults: []u8,
     lastQueryResultIndex: usize,
-    decompressor: ?*selva.libdeflate_decompressor,
-    libdeflateBlockState: selva.libdeflate_block_state,
+    decompressor: *deflate.LibdeflateDecompressor,
+    libdeflateBlockState: deflate.LibdeflateBlockState,
 };
 
 pub const Threads = struct {
@@ -141,7 +142,7 @@ pub const Threads = struct {
                     // std.debug.print("Go run mod on thread! \n", .{});
                     var res: u32 = 0;
                     // add dirty ranfges on db ctx
-                    try modifyInternal(m, self.ctx, &.{}, &res);
+                    try modifyInternal(threadCtx, m, self.ctx, &.{}, &res);
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
@@ -187,10 +188,8 @@ pub const Threads = struct {
             .allocator = allocator,
             .threads = try allocator.alloc(*DbThread, threadAmount),
             .ctx = ctx,
-
             .modifyQueue = modifyQueue,
             .nextModifyQueue = nextModifyQueue,
-
             .queryQueue = queryQueue,
             .nextQueryQueue = nextQueryQueue,
         };

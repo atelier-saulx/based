@@ -61,7 +61,7 @@ pub fn sortedReferences(
                 return result;
             };
             const value = db.getField(typeEntry, refNode, fs, sortProp);
-            dbSort.insert(ctx.db, &metaSortIndex, value, refNode);
+            dbSort.insert(ctx.threadCtx.decompressor, &metaSortIndex, value, refNode);
         }
     }
     i = 0;

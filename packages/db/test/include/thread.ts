@@ -27,12 +27,12 @@ await test('include', async (t) => {
     x.push('xxw qweudhweiofh')
   }
 
-  const id = await db.create('user', {
-    nr: 1,
-    // flap: x.join(' '),
-  })
+  // const id = await db.create('user', {
+  //   nr: 1,
+  //   // flap: x.join(' '),
+  // })
 
-  const q = db.query('user', id)
+  const q = db.query('user', 1)
   registerQuery(q)
   // maybe expose regisrer query on class
 

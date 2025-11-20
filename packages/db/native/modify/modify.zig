@@ -25,14 +25,7 @@ const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 
-pub fn modify(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    var result: napi.Value = undefined;
-    var resCount: u32 = 0;
-    modifyInternalNapi(env, info, &resCount) catch undefined;
-    _ = napi.c.napi_create_uint32(env, resCount * 5, &result);
-    return result;
-}
-
+//  -----------------------
 pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     modifyInternalThread(
         env,
@@ -40,13 +33,13 @@ pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     ) catch undefined;
     return null;
 }
-
 fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     const args = try napi.getArgs(2, env, info);
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
     try dbCtx.threads.modify(batch);
 }
+//  -----------------------
 
 fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     ctx.typeId = typeId;
@@ -149,15 +142,13 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
     return prevNodeId;
 }
 
-fn modifyInternalNapi(env: napi.Env, info: napi.Info, resCount: *u32) !void {
-    const args = try napi.getArgs(4, env, info);
-    const batch = try napi.get([]u8, env, args[0]);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
-    const dirtyRanges = try napi.get([]f64, env, args[2]);
-    try modifyInternal(batch, dbCtx, dirtyRanges, resCount);
-}
-
-pub fn modifyInternal(batch: []u8, dbCtx: *db.DbCtx, _: []f64, resCount: *u32) !void {
+pub fn modifyInternal(
+    threadCtx: *db.DbThread,
+    batch: []u8,
+    dbCtx: *db.DbCtx,
+    _: []f64,
+    resCount: *u32,
+) !void {
     var i: usize = 0;
     var ctx: ModifyCtx = .{
         .field = undefined,
@@ -175,6 +166,7 @@ pub fn modifyInternal(batch: []u8, dbCtx: *db.DbCtx, _: []f64, resCount: *u32) !
         .err = errors.ClientError.null,
         .idSubs = null,
         .subTypes = null,
+        .threadCtx = threadCtx,
     };
 
     defer ctx.dirtyRanges.deinit();

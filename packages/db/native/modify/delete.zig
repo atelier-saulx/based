@@ -24,11 +24,11 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
             if (currentData == null) {
                 currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             }
-            sort.remove(ctx.db, entry.value_ptr.*, currentData.?, ctx.node.?);
+            sort.remove(ctx.threadCtx.decompressor, entry.value_ptr.*, currentData.?, ctx.node.?);
         }
     } else if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
-        sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
+        sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
     } else if (ctx.fieldType == types.Prop.TEXT) {
         var it = ctx.typeSortIndex.?.text.iterator();
         while (it.next()) |entry| {
@@ -42,7 +42,7 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
                     ctx.fieldType,
                     sortIndex.langCode,
                 );
-                sort.remove(ctx.db, sortIndex, t, ctx.node.?);
+                sort.remove(ctx.threadCtx.decompressor, sortIndex, t, ctx.node.?);
             }
         }
     }
@@ -59,8 +59,8 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
     if (ctx.typeSortIndex != null) {
         if (ctx.currentSortIndex != null) {
             const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
-            sort.remove(ctx.db, ctx.currentSortIndex.?, currentData, ctx.node.?);
-            sort.insert(ctx.db, ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
+            sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
+            sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
         } else if (ctx.fieldType == types.Prop.TEXT) {
             var it = ctx.typeSortIndex.?.text.iterator();
             while (it.next()) |entry| {
@@ -73,8 +73,8 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
                         ctx.fieldType,
                         sortIndex.langCode,
                     );
-                    sort.remove(ctx.db, sortIndex, t, ctx.node.?);
-                    sort.insert(ctx.db, sortIndex, sort.EMPTY_SLICE, ctx.node.?);
+                    sort.remove(ctx.threadCtx.decompressor, sortIndex, t, ctx.node.?);
+                    sort.insert(ctx.threadCtx.decompressor, sortIndex, sort.EMPTY_SLICE, ctx.node.?);
                 }
             }
         }
@@ -114,8 +114,8 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: types.LangCode) void {
 
         const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
         if (sortIndex) |sI| {
-            sort.remove(ctx.db, sI, t, ctx.node.?);
-            sort.insert(ctx.db, sI, sort.EMPTY_SLICE, ctx.node.?);
+            sort.remove(ctx.threadCtx.decompressor, sI, t, ctx.node.?);
+            sort.insert(ctx.threadCtx.decompressor, sI, sort.EMPTY_SLICE, ctx.node.?);
         }
         db.deleteTextFieldTranslation(ctx, ctx.fieldSchema.?, lang) catch |e| {
             std.log.debug("Failed to delete a translation ({any}:{any}.{any}.{any}): {any}", .{ ctx.typeId, ctx.id, ctx.field, lang, e });

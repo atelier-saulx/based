@@ -125,7 +125,6 @@ pub fn search(
     sortBuffer: []u8,
     searchCtx: *const searchStr.SearchCtx(isVector),
 ) !void {
-    const tctx = try getThreadCtx(ctx.db);
 
     // [order] [prop] [propType] [start] [start] [len] [len]
     const field = sortBuffer[0];
@@ -157,8 +156,8 @@ pub fn search(
             node = @ptrCast(selva.selva_sort_foreach(sI.index, &it));
         }
         s.addToScore(
-            tctx.decompressor.?,
-            &tctx.libdeflateBlockState,
+            ctx.threadCtx.decompressor,
+            &ctx.threadCtx.libdeflateBlockState,
             isVector,
             ctx,
             &searchCtxC,

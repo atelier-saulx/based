@@ -24,12 +24,8 @@ pub fn cb(
 }
 
 // Decompress as many bytes as will fit to output or available in the compressed buffer
-pub inline fn decompressFirstBytes(ctx: *db.DbCtx, input: []u8, output: []u8) ![]u8 {
-    // TODO Move to higher up in the call chain
-    const tctx = try dbCtx.getThreadCtx(ctx);
-    const decompressor = tctx.decompressor;
+pub inline fn decompressFirstBytes(decompressor: *LibdeflateDecompressor, input: []u8, output: []u8) ![]u8 {
     var nbytes: usize = 0;
-
     try deflateErrors(selva.libdeflate_decompress_short(decompressor, input[6..input.len].ptr, input.len - 10, output.ptr, output.len, &nbytes));
     return output[0..nbytes];
 }

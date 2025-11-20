@@ -56,7 +56,7 @@ fn parseCharEndDeflate(
     };
     alloc[0] = value[0];
     alloc[1] = 0;
-    const v = decompressFirstBytes(ctx.db, value, alloc[2..]) catch |err| {
+    const v = decompressFirstBytes(ctx.threadCtx.decompressor, value, alloc[2..]) catch |err| {
         std.log.err("Error decompressing parseCharEndDeflate {any} \n", .{err});
         return &.{};
     };
@@ -118,7 +118,7 @@ pub fn parseOptsString(
                 const v = try ctx.allocator.alloc(u8, opts.end + 2);
                 v[0] = value[0];
                 v[1] = 0;
-                _ = try decompressFirstBytes(ctx.db, value, v[2..]);
+                _ = try decompressFirstBytes(ctx.threadCtx.decompressor, value, v[2..]);
                 return v;
             } else if (value.len - 4 < opts.end + 2) {
                 return value[0 .. value.len - 4];

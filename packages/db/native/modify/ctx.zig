@@ -22,6 +22,7 @@ pub const ModifyCtx = struct {
     idSubs: ?[]subs.IdSubsItem,
     batch: []u8,
     err: errors.ClientError,
+    threadCtx: *db.DbThread,
 };
 
 pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {

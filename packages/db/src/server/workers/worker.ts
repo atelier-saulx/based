@@ -53,5 +53,6 @@ export function registerMsgHandler(
   }
 
   channel.on('message', handleMsg)
-  parentPort.postMessage({ status: 'READY', threadId: native.getThreadId() })
+  //
+  parentPort.postMessage({ status: 'READY' })
 }

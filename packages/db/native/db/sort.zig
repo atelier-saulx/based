@@ -1,5 +1,5 @@
 const db = @import("./db.zig");
-const decompressFirstBytes = @import("./decompress.zig").decompressFirstBytes;
+const decompress = @import("./decompress.zig");
 const selva = @import("../selva.zig").c;
 const std = @import("std");
 const napi = @import("../napi.zig");
@@ -98,8 +98,10 @@ inline fn createSortIndexNodeInternal(env: napi.Env, info: napi.Info) !napi.Valu
     const len = read(u16, buf, 5);
     const typeIndex = buf[7];
     const lang = buf[8];
+    // main thread
     const index = try createSortIndex(
         dbCtx,
+        dbCtx.decompressor,
         typeId,
         field,
         start,
@@ -191,6 +193,7 @@ fn getOrCreateFromCtx(
 
 pub fn createSortIndex(
     dbCtx: *db.DbCtx,
+    decompressor: *decompress.LibdeflateDecompressor,
     typeId: db.TypeId,
     field: u8,
     start: u16,
@@ -210,13 +213,10 @@ pub fn createSortIndex(
         lang,
         desc,
     );
-
     const typeEntry = try db.getType(dbCtx, typeId);
-
     const fieldSchema = try db.getFieldSchema(typeEntry, field);
     var node = db.getFirstNode(typeEntry);
     var first = true;
-
     while (node != null) {
         if (first) {
             first = false;
@@ -238,12 +238,11 @@ pub fn createSortIndex(
             fieldSchema,
             prop,
         );
-        insert(dbCtx, sortIndex, data, node.?);
+        insert(decompressor, sortIndex, data, node.?);
     }
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
     }
-
     return sortIndex;
 }
 
@@ -297,7 +296,7 @@ pub fn getTypeSortIndexes(
     return dbCtx.sortIndexes.get(typeId);
 }
 
-inline fn parseString(ctx: *db.DbCtx, data: []u8, out: []u8) [*]u8 {
+inline fn parseString(decompressor: *decompress.LibdeflateDecompressor, data: []u8, out: []u8) [*]u8 {
     if (data.len <= 6) {
         return out.ptr;
     } else if (data.len < SIZE + 6) {
@@ -310,7 +309,7 @@ inline fn parseString(ctx: *db.DbCtx, data: []u8, out: []u8) [*]u8 {
         const slice = data[2 .. SIZE + 2];
         return slice.ptr;
     } else {
-        const res = decompressFirstBytes(ctx, data, out) catch out;
+        const res = decompress.decompressFirstBytes(decompressor, data, out) catch out;
         return res.ptr;
     }
 }
@@ -336,7 +335,7 @@ inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, nod
 }
 
 pub fn remove(
-    ctx: *db.DbCtx,
+    decompressor: *decompress.LibdeflateDecompressor,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -361,7 +360,7 @@ pub fn remove(
                 );
             } else {
                 var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
-                selva.selva_sort_remove_buf(index, parseString(ctx, data, &buf), SIZE, node);
+                selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
             }
         },
         types.Prop.NUMBER, types.Prop.TIMESTAMP => {
@@ -387,7 +386,7 @@ inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: d
 }
 
 pub fn insert(
-    ctx: *db.DbCtx,
+    decompressor: *decompress.LibdeflateDecompressor,
     sortIndex: *SortIndexMeta,
     data: []u8,
     node: db.Node,
@@ -412,7 +411,7 @@ pub fn insert(
                 );
             } else {
                 var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
-                const str = parseString(ctx, data, &buf);
+                const str = parseString(decompressor, data, &buf);
                 selva.selva_sort_insert_buf(index, str, SIZE, node);
             }
         },

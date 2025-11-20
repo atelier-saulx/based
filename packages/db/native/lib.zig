@@ -108,10 +108,6 @@ fn selvaLangAll(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
 export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value {
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
-    registerFunction(env, exports, "getThreadId", lifeTime.getThreadId) catch return null;
-
-    registerFunction(env, exports, "createThreadCtx", lifeTime.createThreadCtx) catch return null;
-    registerFunction(env, exports, "destroyThreadCtx", lifeTime.destroyThreadCtx) catch return null;
 
     registerFunction(env, exports, "saveCommon", dump.saveCommon) catch return null;
     registerFunction(env, exports, "saveBlock", dump.saveBlock) catch return null;
@@ -131,7 +127,7 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     // this is temp will be called on callback
     registerFunction(env, exports, "getQueryResults", Query.getQueryResults) catch return null;
 
-    registerFunction(env, exports, "modify", modify.modify) catch return null;
+    // registerFunction(env, exports, "modify", modify.modify) catch return null;
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
     registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;
 

@@ -211,7 +211,7 @@ pub fn filter(
             if (meta == Meta.id) {
                 value = db.getNodeIdAsSlice(node);
                 if (value.len == 0 or !runCondition(
-                    threadCtx.decompressor.?,
+                    threadCtx.decompressor,
                     &threadCtx.libdeflateBlockState,
                     query,
                     value,
@@ -260,7 +260,7 @@ pub fn filter(
                         var iter = db.textIterator(value);
                         while (iter.next()) |s| {
                             if (!runCondition(
-                                threadCtx.decompressor.?,
+                                threadCtx.decompressor,
                                 &threadCtx.libdeflateBlockState,
                                 query,
                                 s,
@@ -281,7 +281,7 @@ pub fn filter(
                             query[query.len - 2 - fallBackSize .. query.len - 2],
                         );
                         if (s.len == 0 or !runCondition(
-                            threadCtx.decompressor.?,
+                            threadCtx.decompressor,
                             &threadCtx.libdeflateBlockState,
                             query,
                             s,
@@ -291,7 +291,7 @@ pub fn filter(
                     } else {
                         const s = db.getTextFromValue(value, lang);
                         if (s.len == 0 or !runCondition(
-                            threadCtx.decompressor.?,
+                            threadCtx.decompressor,
                             &threadCtx.libdeflateBlockState,
                             query,
                             s,
@@ -327,7 +327,7 @@ pub fn filter(
                         value = db.getField(te, actNode, fieldSchema, prop);
                     }
                     if (value.len == 0 or !runCondition(
-                        threadCtx.decompressor.?,
+                        threadCtx.decompressor,
                         &threadCtx.libdeflateBlockState,
                         query,
                         value,
