@@ -25,14 +25,14 @@ export function saveBlock(
   if (err == SELVA_ENOENT) {
     // Generally we don't nor can't remove blocks from verifTree before we
     // attempt to access them.
-    db.blockMap.remove(mtKey)
+    db.blockMap.removeBlock(mtKey)
   } else if (err) {
     db.emit(
       'error',
       `Save ${typeId}:${start}-${end} failed: ${native.selvaStrerror(err)}`,
     )
   } else {
-    db.blockMap.update(mtKey, hash)
+    db.blockMap.updateBlock(mtKey, hash)
   }
 }
 
@@ -54,14 +54,14 @@ export async function saveBlocks(
     if (err === SELVA_ENOENT) {
       // Generally we don't nor can't remove blocks from verifTree before we
       // attempt to access them.
-      db.blockMap.remove(key)
+      db.blockMap.removeBlock(key)
     } else if (err) {
       db.emit(
         'error',
         `Save ${block.typeId}:${block.start} failed: ${native.selvaStrerror(err)}`,
       )
     } else {
-      db.blockMap.update(key, hash)
+      db.blockMap.updateBlock(key, hash)
     }
   }
 }
@@ -104,7 +104,7 @@ export async function loadBlock(
   )
   if (res) {
     const key = makeTreeKey(def.id, start)
-    db.blockMap.update(key, hash)
+    db.blockMap.updateBlock(key, hash)
     if (!equals(prevHash, hash)) {
       throw new Error('Block hash mismatch')
     }
@@ -134,10 +134,10 @@ export async function unloadBlock(
   try {
     const hash = await db.ioWorker.unloadBlock(filepath, typeId, start)
     native.delBlock(db.dbCtxExternal, typeId, start)
-    db.blockMap.update(key, hash, false)
+    db.blockMap.updateBlock(key, hash, false)
   } catch (e) {
     // TODO Proper logging
-    // TODO SELVA_ENOENT => db.blockMap.remove(key) ??
+    // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
     console.error(`Save ${typeId}:${start}-${end} failed`)
     console.error(e)
   }

@@ -163,7 +163,7 @@ export class BlockMap {
     return this.#h.digest() as Uint8Array
   }
 
-  update(key: number, hash: Hash, inmem: boolean = true) {
+  updateBlock(key: number, hash: Hash, inmem: boolean = true) {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]
     if (!type) {
@@ -183,7 +183,7 @@ export class BlockMap {
     block.inmem = inmem
   }
 
-  remove(key: number) {
+  removeBlock(key: number) {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]
     if (!type) {
