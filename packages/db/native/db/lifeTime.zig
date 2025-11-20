@@ -30,10 +30,9 @@ fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     dbCtx.init();
 
     const args = try napi.getArgs(2, env, info);
-    const queryCallback = try napi.Callback.init(env, args[0]);
-    const modifyCallback = try napi.Callback.init(env, args[1]);
+    const jsBridge = try napi.Callback.init(env, args[0]);
 
-    const ctx = try dbCtx.createDbCtx(queryCallback, modifyCallback);
+    const ctx = try dbCtx.createDbCtx(jsBridge);
     ctx.selva = selva.selva_db_create();
     var externalNapi: napi.Value = undefined;
     ctx.initialized = true;

@@ -196,17 +196,20 @@ pub fn getArgs(comptime totalArgs: comptime_int, env: Env, info: Info) ![totalAr
     return argv;
 }
 
-pub const Call = *const fn (data: []u8) anyerror!void;
-
 pub const CallResult = struct {
     data: []u8,
-    // allocator: std.mem.Allocator,
+    id: u32,
+    // db ctx
 };
 
 fn callJsCallback(env: Env, jsCallback: Value, _: ?*anyopaque, data: ?*anyopaque) callconv(.c) void {
     const result = @as(*CallResult, @ptrCast(@alignCast(data.?)));
 
     var jsBufferValue: Value = undefined;
+
+    // we get a db ctx
+    // and just an enum
+    // this will take away the problem
 
     const status = c.napi_create_external_buffer(
         env,
@@ -222,12 +225,15 @@ fn callJsCallback(env: Env, jsCallback: Value, _: ?*anyopaque, data: ?*anyopaque
         return;
     }
 
+    var jsId: Value = undefined;
+    _ = c.napi_create_uint32(env, result.id, &jsId);
+
     var undefinedVal: Value = undefined;
     _ = c.napi_get_undefined(env, &undefinedVal);
 
-    var args = [_]Value{jsBufferValue};
+    var args = [_]Value{ jsBufferValue, jsId };
 
-    _ = c.napi_call_function(env, undefinedVal, jsCallback, 1, &args, null);
+    _ = c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
 
     std.heap.raw_c_allocator.destroy(result);
 }
@@ -275,12 +281,15 @@ pub const Callback = struct {
         std.heap.raw_c_allocator.destroy(self);
     }
 
-    pub fn call(self: *Callback, data: []u8) void {
+    pub fn call(
+        self: *Callback,
+        id: u32,
+        data: []u8,
+    ) void {
         // will get rid of this result
         const result = std.heap.raw_c_allocator.create(CallResult) catch return;
         // add allocator as well so js can ask to lcose this
-        // make this the entire CTX including allocator
-        result.* = .{ .data = data }; //  .allocator = self.allocator
+        result.* = .{ .data = data, .id = id }; //  .allocator = self.allocator
         _ = c.napi_call_threadsafe_function(self.tsfn, result, c.napi_tsfn_blocking);
     }
 };

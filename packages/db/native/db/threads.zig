@@ -12,6 +12,11 @@ const deflate = @import("../deflate.zig");
 const writeInt = @import("../utils.zig").writeInt;
 const napi = @import("../napi.zig");
 
+const jsResponseFunctions = enum(u32) {
+    query = 1,
+    modify = 2,
+};
+
 pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id: u32) ![]u8 {
     const paddedSize = size + 8;
     if (isQuery) {
@@ -86,17 +91,21 @@ pub const Threads = struct {
     pub fn waitForModify(self: *Threads) void {
         self.mutex.lock();
         defer self.mutex.unlock();
+        std.debug.print("waiting mod \n", .{});
         while (self.pendingModifies > 0) {
             self.modifyDone.wait(&self.mutex);
         }
+        std.debug.print("  waiting mod done \n", .{});
     }
 
     pub fn waitForQueries(self: *Threads) void {
         self.mutex.lock();
         defer self.mutex.unlock();
+        std.debug.print("waiting q \n", .{});
         while (self.pendingQueries > 0) {
             self.queryDone.wait(&self.mutex);
         }
+        std.debug.print("  waiting q done \n", .{});
     }
 
     pub fn query(
@@ -164,11 +173,9 @@ pub const Threads = struct {
                 self.mutex.lock();
                 self.pendingQueries -= 1;
                 if (self.pendingQueries == 0) {
-                    std.debug.print("QEURY ready and broadcast! start mod \n", .{});
                     self.queryDone.signal();
                     // prob want to call with the call thing
-                    self.ctx.queryCallback.call(&.{});
-
+                    self.ctx.jsBridge.call(@intFromEnum(jsResponseFunctions.query), &.{});
                     if (self.nextModifyQueue.items.len > 0) {
                         const prevModifyQueue = self.modifyQueue;
                         self.modifyQueue = self.nextModifyQueue;
@@ -194,13 +201,11 @@ pub const Threads = struct {
                     self.pendingModifies -= 1;
 
                     if (self.pendingModifies == 0) {
-                        std.debug.print(" ------->  m {any} \n", .{m});
                         self.modifyDone.signal();
-
-                        self.ctx.modifyCallback.call(&.{});
-
+                        // prob want to call with the call thing
+                        // just use the bridge with id to select the correct stuff
+                        self.ctx.jsBridge.call(@intFromEnum(jsResponseFunctions.modify), &.{});
                         if (self.nextQueryQueue.items.len > 0) {
-                            std.debug.print("MODIFY ready and broadcast! start query \n", .{});
                             const prevQueryQueue = self.queryQueue;
                             self.queryQueue = self.nextQueryQueue;
                             self.nextQueryQueue = prevQueryQueue;

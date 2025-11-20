@@ -83,23 +83,21 @@ const native = {
   },
 
   start: () => {
-    let x = db.start(
-      (xxx) => {
-        // native.cnt++
-        // console.log('im a little derp', new Uint8Array(xxx), x)
-        if (x) {
-          // can be a bit nicer
-          const r = native.getQueryResults(x)
-          console.log('QUERY RESULTS')
-
-          // console.log(native.getQueryResults(x))
-        }
-      },
-      (buf) => {
+    let x = db.start((id: number, buffer: ArrayBuffer) => {
+      // maybe dont add the id...
+      // use enum
+      // native.cnt++
+      // console.log('im a little derp', new Uint8Array(xxx), x)
+      if (id === 1) {
+        // can be a bit nicer
+        const r = native.getQueryResults(x)
+        console.log('QUERY RESULTS')
+        // console.log(native.getQueryResults(x))
+      } else if (id === 2) {
         const r = native.getModifyResults(x)
         console.log('MODIFY RESULTS', new Uint8Array(r))
-      },
-    )
+      }
+    })
     return x
   },
 

@@ -132,7 +132,7 @@ await test('include', async (t) => {
     }
   }
 
-  setTimeout(collector, 18)
+  // setTimeout(collector, 18)
 
   // var d = Date.now()
   // // // const x = []
@@ -171,7 +171,7 @@ await test('include', async (t) => {
   // }
   console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
 
-  await isRdy
+  // await isRdy
 
   console.log('done')
 })

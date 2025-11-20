@@ -19,8 +19,7 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
     subscriptions: subs.SubscriptionCtx,
     ids: []u32,
-    queryCallback: *napi.Callback,
-    modifyCallback: *napi.Callback,
+    jsBridge: *napi.Callback,
     threads: *threads.Threads,
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
@@ -45,8 +44,8 @@ pub fn init() void {
 }
 
 pub fn createDbCtx(
-    queryCallback: *napi.Callback,
-    modifyCallback: *napi.Callback,
+    jsBridge: *napi.Callback,
+    // modifyCallback: *napi.Callback,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
@@ -77,8 +76,7 @@ pub fn createDbCtx(
         .selva = null,
         .subscriptions = subscriptions.*,
         .ids = &[_]u32{},
-        .queryCallback = queryCallback,
-        .modifyCallback = modifyCallback,
+        .jsBridge = jsBridge,
         .decompressor = deflate.createDecompressor(),
         .libdeflateBlockState = deflate.initBlockState(305000),
     };
@@ -88,7 +86,7 @@ pub fn createDbCtx(
 
 pub fn destroyDbCtx(ctx: *DbCtx) void {
     ctx.initialized = false;
-    ctx.queryCallback.deinit();
+    ctx.jsBridge.deinit();
     ctx.threads.deinit();
 
     var it = ctx.sortIndexes.iterator();
