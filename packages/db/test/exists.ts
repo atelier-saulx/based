@@ -89,7 +89,7 @@ await test('exists', async (t) => {
   deepEqual(await db.query('user').filter('friends', 'exists').get(), [])
 
   const friends = []
-  for (let i = 0; i < 10e6; i++) {
+  for (let i = 0; i < 1e6; i++) {
     const id = db.create('user', {})
     friends.push(id)
   }

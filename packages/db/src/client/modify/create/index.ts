@@ -9,7 +9,7 @@ import {
   writeTypeCursor,
 } from '../cursor.js'
 import { getByPath, writeUint16 } from '@based/utils'
-import { writeMainBuffer, writeMainValue } from '../props/main.js'
+import { writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
 import { schedule } from '../drain.js'
@@ -200,8 +200,8 @@ export const writeCreate = (
       throw 'Invalid payload. "id" not allowed'
     }
   } else if (schema.capped) {
-      writeU8(ctx, SWITCH_ID_CREATE_RING)
-      writeU32(ctx, schema.capped)
+    writeU8(ctx, SWITCH_ID_CREATE_RING)
+    writeU32(ctx, schema.capped)
   } else {
     writeU8(ctx, SWITCH_ID_CREATE)
   }

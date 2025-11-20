@@ -25,9 +25,15 @@ fn getMarkedIdSubscriptionsInternal(env: c.napi_env, info: c.napi_callback_info)
         while (i < ctx.subscriptions.lastIdMarked) {
             const sub = ctx.subscriptions.singleIdMarked[i];
             const newDataIndex = i * 8;
-            utils.writeInt(u32, data, newDataIndex, sub.id);
-            utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
-            sub.*.marked = types.SubStatus.all;
+            const id = sub.id;
+            if (sub.isRemoved) {
+                // can make
+                try singleId.removeSubscriptionMarked(ctx, sub);
+            } else {
+                utils.writeInt(u32, data, newDataIndex, id);
+                utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
+                sub.*.marked = types.SubStatus.all;
+            }
             i += 1;
         }
 

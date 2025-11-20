@@ -15,6 +15,9 @@ await test('migration', async (t) => {
   await db.setSchema({
     version: '1.0.0',
     types: {
+      role: {
+        name: 'string',
+      },
       user: {
         firstName: 'string',
         lastName: 'string',
@@ -34,17 +37,26 @@ await test('migration', async (t) => {
             ref: 'user',
             prop: 'persons2',
             $rating: 'uint8',
+            $roles: {
+              items: {
+                ref: 'role',
+              },
+            },
           },
         },
       },
     },
   })
 
+  const role = await db.create('role', {
+    name: 'xxx',
+  })
+
   let i = 10
   const _users = []
   while (i--) {
     _users.push(
-      db.create('user', {
+      await db.create('user', {
         firstName: 'John' + i,
         lastName: 'Doe' + i,
         email: 'johndoe' + i + '@example.com',
@@ -55,17 +67,27 @@ await test('migration', async (t) => {
   }
   i = _users.length
   while (i--) {
-    db.create('person', {
+    const payload = {
       email: 'person' + i + '@example.com',
       user: {
         id: _users[i],
         $relation: 'buddy',
       },
       users: _users.map((user) => {
-        return { id: user, $rating: 5 }
+        return {
+          id: user,
+          $rating: 5,
+          $roles: [role],
+        }
       }),
-    })
+    }
+    // console.dir(payload, { depth: null })
+    await db.create('person', payload)
   }
+
+  // console.dir(await db.query('person').include('*', '**').get().toObject(), {
+  //   depth: null,
+  // })
 
   await db.drain()
 
@@ -86,6 +108,9 @@ await test('migration', async (t) => {
     {
       version: '2.0.0',
       types: {
+        role: {
+          name: 'string',
+        },
         user: {
           props: {
             fullName: 'string',
@@ -107,6 +132,11 @@ await test('migration', async (t) => {
               ref: 'user',
               prop: 'persons2',
               $rating: 'uint8',
+              $roles: {
+                items: {
+                  ref: 'role',
+                },
+              },
             },
           },
         },
@@ -128,6 +158,9 @@ await test('migration', async (t) => {
     {
       version: '3.0.0',
       types: {
+        role: {
+          name: 'string',
+        },
         user: {
           props: {
             name: 'string',
@@ -150,6 +183,11 @@ await test('migration', async (t) => {
               ref: 'user',
               prop: 'persons2',
               $rating: 'uint8',
+              $roles: {
+                items: {
+                  ref: 'role',
+                },
+              },
             },
           },
         },
@@ -278,6 +316,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -293,6 +332,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -308,6 +348,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -323,6 +364,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -338,6 +380,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -353,6 +396,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -368,6 +412,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -383,6 +428,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -398,6 +444,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },
@@ -413,6 +460,7 @@ await test('migration', async (t) => {
         return {
           ...user,
           $rating: 5,
+          $roles: [{ id: 1, name: 'xxx' }],
         }
       }),
     },

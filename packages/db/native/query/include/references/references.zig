@@ -55,10 +55,7 @@ pub fn getRefsFields(
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
-
-    var edgeConstraint: ?db.EdgeFieldConstraint = null;
     var refs: ?types.Refs = undefined;
-
     if (isEdge) {
         if (db.getEdgeReferences(ctx.db, ref.?.edgeConstraint, ref.?.largeReference.?, refField)) |r| {
             const edgeFs = db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstraint, refField) catch {
@@ -75,7 +72,6 @@ pub fn getRefsFields(
             // default empty size - means a bug!
             return 10;
         };
-        edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
         const references = db.getReferences(node, fieldSchema);
         if (references == null) {
             // default empty size - this should never happen
@@ -86,7 +82,10 @@ pub fn getRefsFields(
     }
 
     var result: types.RefsResult = undefined;
-
+    const edgeConstraint = if (isEdge) ref.?.edgeConstraint else db.getEdgeFieldConstraint(db.getFieldSchema(originalType, refField) catch {
+        // default empty size - means a bug!
+        return 10;
+    });
     if (sortArr != null) {
         if (hasFilter) {
             result = sortedReferences(refs.?, ctx, includeNested, sortArr.?, typeEntry.?, edgeConstraint, true, filterArr.?, offset, limit);

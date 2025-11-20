@@ -165,17 +165,17 @@ pub fn getField(
 }
 
 pub inline fn getNodeFromReference(dstType: Type, ref: anytype) ?Node {
-    if (comptime
-        @TypeOf(ref) == ReferenceSmall or
+    if (comptime @TypeOf(ref) == ReferenceSmall or
         @TypeOf(ref) == ReferenceLarge or
         @TypeOf(ref) == *allowzero selva.SelvaNodeSmallReference or
-        @TypeOf(ref) == *allowzero selva.SelvaNodeLargeReference) {
+        @TypeOf(ref) == *allowzero selva.SelvaNodeLargeReference)
+    {
         return selva.selva_find_node(dstType, ref.*.dst);
-    } else if (comptime
-        @TypeOf(ref) == ?ReferenceSmall or
+    } else if (comptime @TypeOf(ref) == ?ReferenceSmall or
         @TypeOf(ref) == ?ReferenceLarge or
         @TypeOf(ref) == ?*selva.SelvaNodeSmallReference or
-        @TypeOf(ref) == ?*selva.SelvaNodeLargeReference) {
+        @TypeOf(ref) == ?*selva.SelvaNodeLargeReference)
+    {
         if (ref) |r| {
             return selva.selva_find_node(dstType, r.*.dst);
         }
@@ -453,12 +453,7 @@ pub fn ensureEdgePropString(
     return selva.selva_fields_ensure_string(meta_node, fieldSchema, selva.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
 }
 
-pub fn ensureRefEdgeNode(
-    ctx: *modifyCtx.ModifyCtx,
-    node: Node,
-    efc: EdgeFieldConstraint,
-    ref: ReferenceLarge
-) !Node {
+pub fn ensureRefEdgeNode(ctx: *modifyCtx.ModifyCtx, node: Node, efc: EdgeFieldConstraint, ref: ReferenceLarge) !Node {
     const edgeNode = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx);
     if (edgeNode) |n| {
         modifyCtx.markDirtyRange(ctx, efc.meta_node_type, getNodeId(n));

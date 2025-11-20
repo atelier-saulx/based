@@ -679,6 +679,7 @@ static inline void write_ref_2way(
 
     if (fs_src->type == SELVA_FIELD_TYPE_REFERENCE) {
         write_ref(src, fs_src, dst,  ref_out ? &ref_out->large : nullptr);
+        ref_out->type = SELVA_NODE_REFERENCE_LARGE;
     } else {
 #if 0
         assert(fs_src->type == SELVA_FIELD_TYPE_REFERENCES);
