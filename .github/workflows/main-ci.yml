@@ -1,4 +1,4 @@
-name: CI/CD & Discord Notification
+name: Automated test with & Discord Notification
 
 on:
   push:
@@ -13,6 +13,7 @@ jobs:
   ci_build_test:
     name: Build, Test, and Notify Discord
     runs-on: ubuntu-latest
+    environment: 'BasedDB CI-CD'
 
     steps:
       - name: Checkout Repository
@@ -34,7 +35,7 @@ jobs:
         run: npm run test-fast
 
       - name: Send Discord Notification
-        uses: dta-archive/discord-webhook-action@v1.1.2
+        uses: tsickert/discord-webhook@v7.0.0
         if: always()
         with:
           webhook: ${{ env.DISCORD_WEBHOOK_URL }}
