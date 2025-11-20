@@ -1,23 +1,23 @@
-import { assert, isRecord, isString } from './shared.ts'
-import { parseAlias, type SchemaAlias } from './alias.ts'
-import { parseBinary, type SchemaBinary } from './binary.ts'
-import { parseBoolean, type SchemaBoolean } from './boolean.ts'
-import { parseCardinality, type SchemaCardinality } from './cardinality.ts'
-import { parseEnum, type EnumItem, type SchemaEnum } from './enum.ts'
-import { parseJson, type SchemaJson } from './json.ts'
+import { assert, isRecord, isString } from './shared.js'
+import { parseAlias, type SchemaAlias } from './alias.js'
+import { parseBinary, type SchemaBinary } from './binary.js'
+import { parseBoolean, type SchemaBoolean } from './boolean.js'
+import { parseCardinality, type SchemaCardinality } from './cardinality.js'
+import { parseEnum, type EnumItem, type SchemaEnum } from './enum.js'
+import { parseJson, type SchemaJson } from './json.js'
 import {
   numberTypes,
   parseNumber,
   type NumberType,
   type SchemaNumber,
-} from './number.ts'
-import { parseReferences, type SchemaReferences } from './references.ts'
-import { parseReference, type SchemaReference } from './reference.ts'
-import { parseString, type SchemaString } from './string.ts'
-import { parseText, type SchemaText } from './text.ts'
-import { parseTimestamp, type SchemaTimestamp } from './timestamp.ts'
-import { parseVector, type SchemaVector } from './vector.ts'
-import { parseObject, type SchemaObject } from './object.ts'
+} from './number.js'
+import { parseReferences, type SchemaReferences } from './references.js'
+import { parseReference, type SchemaReference } from './reference.js'
+import { parseString, type SchemaString } from './string.js'
+import { parseText, type SchemaText } from './text.js'
+import { parseTimestamp, type SchemaTimestamp } from './timestamp.js'
+import { parseVector, type SchemaVector } from './vector.js'
+import { parseObject, type SchemaObject } from './object.js'
 
 type SchemaPropObj<strict = false> =
   | SchemaAlias

@@ -4,9 +4,9 @@ import {
   isBoolean,
   isFunction,
   isString,
-} from './shared.ts'
-import type { SchemaProp } from './prop.ts'
-import { isHooks, type SchemaPropHooks } from './hooks.ts'
+} from './shared.js'
+import type { SchemaProp } from './prop.js'
+import { isHooks, type SchemaPropHooks } from './hooks.js'
 
 type Validation = (payload: any, schema: SchemaProp<true>) => boolean | string
 

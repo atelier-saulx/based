@@ -1,15 +1,12 @@
 {
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
-    "composite": true,
     "outDir": "dist",
-    "rootDir": ".",
-    "noEmit": true,
-    "declarationMap": true,
     "esModuleInterop": true,
     "strictNullChecks": true,
-    "allowImportingTsExtensions": true
+    "rootDir": "./",
+    "composite": true
   },
-  "include": ["src", "test"],
-  "exclude": ["dist"]
+  "include": ["./src"],
+  "exclude": ["./dist"]
 }

@@ -1,5 +1,5 @@
-import { assert, isRecord } from './shared.ts'
-import { parseBase, type Base } from './base.ts'
+import { assert, isRecord } from './shared.js'
+import { parseBase, type Base } from './base.js'
 
 export type SchemaJson = Base & {
   type: 'json'

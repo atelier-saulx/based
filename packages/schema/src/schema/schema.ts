@@ -5,10 +5,10 @@ import {
   isFunction,
   isRecord,
   isString,
-} from './shared.ts'
-import { parseType, type SchemaType } from './type.ts'
-import { langCodesMap, type LangName } from './lang.ts'
-import type { SchemaProp } from './prop.ts'
+} from './shared.js'
+import { parseType, type SchemaType } from './type.js'
+import { langCodesMap, type LangName } from './lang.js'
+import type { SchemaProp } from './prop.js'
 
 type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 type SchemaLocales = Partial<

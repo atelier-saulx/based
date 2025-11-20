@@ -1,5 +1,5 @@
-import { assert, isBoolean, isRecord } from './shared.ts'
-import { parseBase, type Base } from './base.ts'
+import { assert, isBoolean, isRecord } from './shared.js'
+import { parseBase, type Base } from './base.js'
 
 export type SchemaBoolean = Base & {
   type: 'boolean'

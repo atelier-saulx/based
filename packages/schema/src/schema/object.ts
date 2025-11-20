@@ -1,6 +1,6 @@
-import { assert, isRecord, type RequiredIfStrict } from './shared.ts'
-import { parseBase, type Base } from './base.ts'
-import { parseProp, type SchemaProp } from './prop.ts'
+import { assert, isRecord, type RequiredIfStrict } from './shared.js'
+import { parseBase, type Base } from './base.js'
+import { parseProp, type SchemaProp } from './prop.js'
 
 export type SchemaObject<strict = false> = Base & {
   props: Record<string, SchemaProp<strict>>

@@ -1,14 +1,14 @@
 import type { BasedDbQuery, Operator } from '@based/db'
-import type { Schema } from './schema.ts'
+import type { Schema } from './schema.js'
 import {
   assert,
   deleteUndefined,
   isBoolean,
   isNatural,
   isRecord,
-} from './shared.ts'
-import { parseProp, type SchemaProp } from './prop.ts'
-import { isHooks } from './hooks.ts'
+} from './shared.js'
+import { parseProp, type SchemaProp } from './prop.js'
+import { isHooks } from './hooks.js'
 
 type SchemaHooks = {
   create?: (payload: Record<string, any>) => void | Record<string, any>

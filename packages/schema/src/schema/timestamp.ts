@@ -1,5 +1,5 @@
-import { assert, isNumber, isRecord, isString } from './shared.ts'
-import { parseBase, type Base } from './base.ts'
+import { assert, isNumber, isRecord, isString } from './shared.js'
+import { parseBase, type Base } from './base.js'
 import { convertToTimestamp } from '@based/utils'
 
 type Timestamp = number | Date | string

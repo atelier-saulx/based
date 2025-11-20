@@ -1,6 +1,6 @@
-import { assert, isNatural, isRecord, isString } from './shared.ts'
-import { parseBase, type Base } from './base.ts'
-import { numberTypes } from './number.ts'
+import { assert, isNatural, isRecord, isString } from './shared.js'
+import { parseBase, type Base } from './base.js'
+import { numberTypes } from './number.js'
 
 const vectorBaseTypes = [...numberTypes, 'float32', 'float64']
 

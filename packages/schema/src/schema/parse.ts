@@ -1,4 +1,4 @@
-import { parseSchema, type Schema } from './schema.ts'
+import { parseSchema, type Schema } from './schema.js'
 
 export const parse = (input: Schema): { schema: Schema<true> } => {
   const schema = parseSchema(input)

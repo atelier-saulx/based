@@ -5,8 +5,8 @@
 //   float64: Float64Array
 // }
 
-import type { SchemaObject } from './schema/object.ts'
-import type { Schema } from './schema/schema.ts'
+import type { SchemaObject } from './schema/object.js'
+import type { Schema } from './schema/schema.js'
 
 type TypedArray =
   | Uint8Array

@@ -1,6 +1,6 @@
-import { assert, isRecord, isString } from './shared.ts'
-import { parseBase, type Base } from './base.ts'
-import type { StringCompression, StringFormat } from './string.ts'
+import { assert, isRecord, isString } from './shared.js'
+import { parseBase, type Base } from './base.js'
+import type { StringCompression, StringFormat } from './string.js'
 
 export type SchemaText = Base & {
   type: 'text'

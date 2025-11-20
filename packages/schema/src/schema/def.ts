@@ -1,11 +1,11 @@
-import type { SchemaObject } from './object.ts'
-import type { SchemaProp } from './prop.ts'
-import type { SchemaReference } from './reference.ts'
-import type { SchemaReferences } from './references.ts'
-import type { Schema } from './schema.ts'
-import type { SchemaString } from './string.ts'
-import type { SchemaProps, SchemaType } from './type.ts'
-import type { SchemaVector } from './vector.ts'
+import type { SchemaObject } from './object.js'
+import type { SchemaProp } from './prop.js'
+import type { SchemaReference } from './reference.js'
+import type { SchemaReferences } from './references.js'
+import type { Schema } from './schema.js'
+import type { SchemaString } from './string.js'
+import type { SchemaProps, SchemaType } from './type.js'
+import type { SchemaVector } from './vector.js'
 
 type BaseProp = {
   root: TypeDef

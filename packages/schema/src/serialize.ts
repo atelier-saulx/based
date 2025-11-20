@@ -10,9 +10,9 @@ import {
   ENCODER,
   DECODER,
 } from '@based/utils'
-import { stringFormats } from './schema/string.ts'
-import type { Schema } from './schema/schema.ts'
-import { reverseTypeMap, typeMap } from './enums.ts'
+import { stringFormats } from './schema/string.js'
+import type { Schema } from './schema/schema.js'
+import { reverseTypeMap, typeMap } from './enums.js'
 
 const UINT8 = 245
 const FALSE = 246
