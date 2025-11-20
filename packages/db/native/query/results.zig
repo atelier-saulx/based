@@ -42,12 +42,12 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
 
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
-    env: napi.c.napi_env,
-) !napi.c.napi_value {
+    env: napi.Env,
+) !napi.Value {
     var resultBuffer: ?*anyopaque = undefined;
-    var result: napi.c.napi_value = undefined;
+    var result: napi.Value = undefined;
 
-    if (napi.c.napi_create_arraybuffer(env, ctx.size + HEADER_SIZE, &resultBuffer, &result) != napi.c.napi_ok) {
+    if (napi.c.napi_create_arraybuffer(env, ctx.size + HEADER_SIZE, &resultBuffer, &result) != napi.Ok) {
         return null;
     }
 

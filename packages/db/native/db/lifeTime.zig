@@ -5,7 +5,7 @@ const dump = @import("./dump.zig");
 const selva = @import("../selva.zig").c;
 const dbCtx = @import("./ctx.zig");
 
-pub fn start(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn start(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return startInternal(env, info) catch |e| {
         std.log.err("Err {any} \n", .{e});
         _ = napi.jsThrow(env, "Start failed\n");
@@ -13,19 +13,19 @@ pub fn start(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c)
     };
 }
 
-pub fn stop(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn stop(napi_env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return stopInternal(napi_env, info) catch return null;
 }
 
 fn getOptPath(
-    env: napi.c.napi_env,
-    value: napi.c.napi_value,
+    env: napi.Env,
+    value: napi.Value,
 ) !?[]u8 {
     const t = try napi.getType(env, value);
     return if (!(t == napi.c.napi_null or t == napi.c.napi_undefined)) try napi.get([]u8, env, value) else null;
 }
 
-fn startInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     // does this make double things with valgrind? Ask marco
     dbCtx.init();
 
@@ -34,13 +34,13 @@ fn startInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.
 
     const ctx = try dbCtx.createDbCtx(jsCallback);
     ctx.selva = selva.selva_db_create();
-    var externalNapi: napi.c.napi_value = undefined;
+    var externalNapi: napi.Value = undefined;
     ctx.initialized = true;
     _ = napi.c.napi_create_external(env, ctx, null, null, &externalNapi);
     return externalNapi;
 }
 
-fn stopInternal(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+fn stopInternal(napi_env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(1, napi_env, info);
     const ctx = try napi.get(*dbCtx.DbCtx, napi_env, args[0]);
 
@@ -54,15 +54,15 @@ fn stopInternal(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) !nap
     return null;
 }
 
-pub fn getThreadId(env: napi.c.napi_env, _: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
-    var result: napi.c.napi_value = undefined;
-    if (napi.c.napi_create_bigint_uint64(env, dbCtx.getThreadId(), &result) != napi.c.napi_ok) {
+pub fn getThreadId(env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
+    var result: napi.Value = undefined;
+    if (napi.c.napi_create_bigint_uint64(env, dbCtx.getThreadId(), &result) != napi.Ok) {
         return null;
     }
     return result;
 }
 
-fn _createThreadCtx(env: napi.c.napi_env, nfo: napi.c.napi_callback_info) !napi.c.napi_value {
+fn _createThreadCtx(env: napi.Env, nfo: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, env, nfo);
     const ctx = try napi.get(*dbCtx.DbCtx, env, args[0]);
     const threadId = try napi.get(u64, env, args[1]);
@@ -71,14 +71,14 @@ fn _createThreadCtx(env: napi.c.napi_env, nfo: napi.c.napi_callback_info) !napi.
     return null;
 }
 
-pub fn createThreadCtx(env: napi.c.napi_env, nfo: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn createThreadCtx(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
     return _createThreadCtx(env, nfo) catch {
         _ = napi.jsThrow(env, "Failed to create a thread context");
         return null;
     };
 }
 
-fn _destroyThreadCtx(env: napi.c.napi_env, nfo: napi.c.napi_callback_info) !napi.c.napi_value {
+fn _destroyThreadCtx(env: napi.Env, nfo: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, env, nfo);
     const ctx = try napi.get(*dbCtx.DbCtx, env, args[0]);
     const threadId = try napi.get(u64, env, args[1]);
@@ -87,6 +87,6 @@ fn _destroyThreadCtx(env: napi.c.napi_env, nfo: napi.c.napi_callback_info) !napi
     return null;
 }
 
-pub fn destroyThreadCtx(env: napi.c.napi_env, nfo: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn destroyThreadCtx(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
     return _destroyThreadCtx(env, nfo) catch null;
 }

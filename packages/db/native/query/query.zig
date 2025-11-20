@@ -26,36 +26,35 @@ const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
 const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
 
-pub fn getQueryBuf(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn getQueryBuf(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return getQueryBufInternal(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getQueryBufThread(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return getQueryBufInternalThread(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getQueryResults(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn getQueryResults(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return getQueryBufInternalResults(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
     };
 }
 
-pub fn getQueryBufInternalResults(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
-    // prob dont want this from ZIG
+pub fn getQueryBufInternalResults(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(1, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     dbCtx.threads.waitForQueries();
-    var js_array: napi.c.napi_value = undefined;
-    _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &js_array);
+    var jsArray: napi.Value = undefined;
+    _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
     for (dbCtx.threads.threads, 0..) |thread, index| {
-        var array_buffer: napi.c.napi_value = undefined;
+        var array_buffer: napi.Value = undefined;
         _ = napi.c.napi_create_external_arraybuffer(
             env,
             thread.queryResults.ptr,
@@ -64,13 +63,13 @@ pub fn getQueryBufInternalResults(env: napi.c.napi_env, info: napi.c.napi_callba
             null,
             &array_buffer,
         );
-        _ = napi.c.napi_set_element(env, js_array, @truncate(index), array_buffer);
+        _ = napi.c.napi_set_element(env, jsArray, @truncate(index), array_buffer);
         thread.*.lastQueryResultIndex = 0;
     }
-    return js_array;
+    return jsArray;
 }
 
-pub fn getQueryBufInternalThread(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const q = try napi.get([]u8, env, args[1]);
@@ -79,7 +78,7 @@ pub fn getQueryBufInternalThread(env: napi.c.napi_env, info: napi.c.napi_callbac
     return null;
 }
 
-pub fn getQueryBufInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+pub fn getQueryBufInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
 

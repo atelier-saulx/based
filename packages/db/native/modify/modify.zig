@@ -25,8 +25,8 @@ const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 
-pub fn modify(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
-    var result: napi.c.napi_value = undefined;
+pub fn modify(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
+    var result: napi.Value = undefined;
     var resCount: u32 = 0;
     modifyInternalNapi(env, info, &resCount) catch undefined;
     _ = napi.c.napi_create_uint32(env, resCount * 5, &result);
@@ -134,7 +134,7 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
     return prevNodeId;
 }
 
-fn modifyInternalNapi(env: napi.c.napi_env, info: napi.c.napi_callback_info, resCount: *u32) !void {
+fn modifyInternalNapi(env: napi.Env, info: napi.Info, resCount: *u32) !void {
     const args = try napi.getArgs(4, env, info);
     const batch = try napi.get([]u8, env, args[0]);
     const dbCtx = try napi.get(*db.DbCtx, env, args[1]);

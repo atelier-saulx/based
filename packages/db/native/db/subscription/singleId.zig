@@ -71,7 +71,7 @@ pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
     }
 }
 
-pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
@@ -145,7 +145,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
     return null;
 }
 
-pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
     const value = try napi.get([]u8, env, args[1]);

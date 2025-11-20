@@ -19,12 +19,12 @@ const createGroupCtx = groupFunctions.createGroupCtx;
 const aggregate = @import("../aggregate/aggregate.zig").aggregate;
 const aux = @import("../aggregate/utils.zig");
 
-pub fn countType(env: napi.c.napi_env, ctx: *QueryCtx, typeId: db.TypeId) !napi.c.napi_value {
+pub fn countType(env: napi.Env, ctx: *QueryCtx, typeId: db.TypeId) !napi.Value {
     const typeEntry = try db.getType(ctx.db, typeId);
     const count: u32 = @truncate(selva.selva_node_count(typeEntry));
     var resultBuffer: ?*anyopaque = undefined;
-    var result: napi.c.napi_value = undefined;
-    if (napi.c.napi_create_arraybuffer(env, 4, &resultBuffer, &result) != napi.c.napi_ok) {
+    var result: napi.Value = undefined;
+    if (napi.c.napi_create_arraybuffer(env, 4, &resultBuffer, &result) != napi.Ok) {
         return null;
     }
     const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0..4];
@@ -32,7 +32,7 @@ pub fn countType(env: napi.c.napi_env, ctx: *QueryCtx, typeId: db.TypeId) !napi.
     return result;
 }
 
-pub fn default(env: napi.c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !napi.c.napi_value {
+pub fn default(env: napi.Env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !napi.Value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
@@ -46,8 +46,8 @@ pub fn default(env: napi.c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.Type
     ctx.size = resultsSize + accumulatorSize;
     const agg = aggInput[index..aggInput.len];
     var resultBuffer: ?*anyopaque = undefined;
-    var result: napi.c.napi_value = undefined;
-    if (napi.c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != napi.c.napi_ok) {
+    var result: napi.Value = undefined;
+    if (napi.c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != napi.Ok) {
         return null;
     }
     const hasFilter = conditions.len > 0;
@@ -80,7 +80,7 @@ pub fn default(env: napi.c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.Type
     return result;
 }
 
-pub fn group(env: napi.c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !napi.c.napi_value {
+pub fn group(env: napi.Env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !napi.Value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
@@ -136,8 +136,8 @@ pub fn group(env: napi.c.napi_env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId
         }
     }
     var resultBuffer: ?*anyopaque = undefined;
-    var result: napi.c.napi_value = undefined;
-    if (napi.c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != napi.c.napi_ok) {
+    var result: napi.Value = undefined;
+    if (napi.c.napi_create_arraybuffer(env, ctx.size + 4, &resultBuffer, &result) != napi.Ok) {
         return null;
     }
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];

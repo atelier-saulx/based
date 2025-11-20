@@ -83,11 +83,11 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
     }
 }
 
-pub fn createSortIndexNode(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn createSortIndexNode(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return createSortIndexNodeInternal(env, info) catch return null;
 }
 
-inline fn createSortIndexNodeInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+inline fn createSortIndexNodeInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const buf = try napi.get([]u8, env, args[1]);
@@ -109,16 +109,16 @@ inline fn createSortIndexNodeInternal(env: napi.c.napi_env, info: napi.c.napi_ca
         true,
         false,
     );
-    var externalNapi: napi.c.napi_value = undefined;
+    var externalNapi: napi.Value = undefined;
     _ = napi.c.napi_create_external(env, index, null, null, &externalNapi);
     return externalNapi;
 }
 
-pub fn destroySortIndexNode(env: napi.c.napi_env, info: napi.c.napi_callback_info) callconv(.c) napi.c.napi_value {
+pub fn destroySortIndexNode(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return destroySortIndexNodeInternal(env, info) catch return null;
 }
 
-pub fn destroySortIndexNodeInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
+pub fn destroySortIndexNodeInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
     const buf = try napi.get([]u8, env, args[1]);
