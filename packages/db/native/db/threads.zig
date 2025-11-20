@@ -29,11 +29,11 @@ pub const Threads = struct {
     queryDone: Condition = .{},
     modifyDone: Condition = .{},
 
-    activeModifyQueue: *Queue,
-    pendingModifyQueue: *Queue,
+    modifyQueue: *Queue,
+    nextModifyQueue: *Queue,
 
-    activeQueryQueue: *Queue,
-    pendingQueryQueue: *Queue,
+    queryQueue: *Queue,
+    nextQueryQueue: *Queue,
 
     shutdown: bool = false,
 
@@ -63,10 +63,14 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        // problem if node decides to de-alloc the query buffer
-        try self.activeQueryQueue.append(queryBuffer);
-        self.pendingQueries += 1;
-        self.wakeup.signal(); // wake up one thread - we prop want to batch this is a heavy operation! might be able to make this better
+        std.debug.print("stage query! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
+        if (self.pendingModifies > 0) {
+            try self.nextQueryQueue.append(queryBuffer);
+        } else {
+            try self.queryQueue.append(queryBuffer);
+            self.pendingQueries += 1;
+            self.wakeup.signal();
+        }
     }
 
     pub fn modify(
@@ -75,10 +79,16 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        // problem if node decides to de-alloc the query buffer
-        try self.activeModifyQueue.append(modifyBuffer);
-        self.pendingModifies += 1;
-        self.wakeup.signal(); // wake up one thread - we prop want to batch this is a heavy operation! might be able to make this better
+        std.debug.print("stage modify! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
+        if (self.pendingQueries > 0) {
+            try self.nextModifyQueue.append(modifyBuffer);
+        } else {
+            // std.debug.print("GO GO mod {any} q {any} {any} \n", .{ self.pendingModifies, self.pendingQueries, modifyBuffer });
+
+            try self.modifyQueue.append(modifyBuffer);
+            self.pendingModifies += 1;
+            self.wakeup.signal();
+        }
     }
 
     fn worker(self: *Threads, threadCtx: *DbThread) !void {
@@ -94,13 +104,13 @@ pub const Threads = struct {
                     if (self.shutdown) return;
 
                     // if modify is active dont do this
-                    if (self.activeQueryQueue.items.len > 0) {
-                        queryBuf = self.activeQueryQueue.swapRemove(0);
+                    if (self.queryQueue.items.len > 0) {
+                        queryBuf = self.queryQueue.swapRemove(0);
                         break;
                     }
 
-                    if (self.activeModifyQueue.items.len > 0) {
-                        modifyBuf = self.activeModifyQueue.items[0];
+                    if (self.modifyQueue.items.len > 0) {
+                        modifyBuf = self.modifyQueue.items[0];
                         break;
                     }
 
@@ -109,26 +119,46 @@ pub const Threads = struct {
             }
 
             if (queryBuf) |q| {
+                // add time measurement
                 try getQueryThreaded(self.ctx, q, threadCtx);
                 self.mutex.lock();
                 self.pendingQueries -= 1;
                 if (self.pendingQueries == 0) {
                     self.queryDone.signal();
+                    if (self.nextModifyQueue.items.len > 0) {
+                        std.debug.print("QEURY ready and broadcast! start mod \n", .{});
+                        const prevModifyQueue = self.modifyQueue;
+                        self.modifyQueue = self.nextModifyQueue;
+                        self.nextModifyQueue = prevModifyQueue;
+                        self.pendingModifies = self.modifyQueue.items.len;
+                        self.wakeup.broadcast();
+                    }
                 }
                 self.mutex.unlock();
             }
 
             if (modifyBuf) |m| {
                 if (threadCtx.id == 0) {
-                    std.debug.print("go run mod on thread!", .{});
+                    // time measurement?
+                    std.debug.print("Go run mod on thread! \n", .{});
                     var res: u32 = 0;
                     // add dirty ranfges on db ctx
                     try modifyInternal(m, self.ctx, &.{}, &res);
-                    _ = self.activeModifyQueue.swapRemove(0);
                     self.mutex.lock();
+                    _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
+                    std.debug.print(" -------> {any} m {any} \n", .{ self.pendingModifies, m });
+
                     if (self.pendingModifies == 0) {
                         self.modifyDone.signal();
+                        if (self.nextQueryQueue.items.len > 0) {
+                            std.debug.print("MODIFY ready and broadcast! start query \n", .{});
+                            const prevQueryQueue = self.queryQueue;
+                            self.queryQueue = self.nextQueryQueue;
+                            self.nextQueryQueue = prevQueryQueue;
+                            self.pendingQueries = self.queryQueue.items.len;
+                            self.wakeup.broadcast();
+                        }
                     }
                     self.mutex.unlock();
                 } else {
@@ -145,26 +175,26 @@ pub const Threads = struct {
     ) !*Threads {
         const self = try allocator.create(Threads);
 
-        const activeModifyQueue = try allocator.create(Queue);
-        activeModifyQueue.* = Queue.init(allocator);
-        const pendingModifyQueuy = try allocator.create(Queue);
-        pendingModifyQueuy.* = Queue.init(allocator);
+        const modifyQueue = try allocator.create(Queue);
+        modifyQueue.* = Queue.init(allocator);
+        const nextModifyQueue = try allocator.create(Queue);
+        nextModifyQueue.* = Queue.init(allocator);
 
-        const activeQueryQueue = try allocator.create(Queue);
-        activeQueryQueue.* = Queue.init(allocator);
-        const pendingQueryQueuy = try allocator.create(Queue);
-        pendingQueryQueuy.* = Queue.init(allocator);
+        const queryQueue = try allocator.create(Queue);
+        queryQueue.* = Queue.init(allocator);
+        const nextQueryQueue = try allocator.create(Queue);
+        nextQueryQueue.* = Queue.init(allocator);
 
         self.* = .{
             .allocator = allocator,
             .threads = try allocator.alloc(*DbThread, threadAmount),
             .ctx = ctx,
 
-            .activeModifyQueue = activeModifyQueue,
-            .pendingModifyQueue = pendingModifyQueuy,
+            .modifyQueue = modifyQueue,
+            .nextModifyQueue = nextModifyQueue,
 
-            .activeQueryQueue = activeQueryQueue,
-            .pendingQueryQueue = pendingQueryQueuy,
+            .queryQueue = queryQueue,
+            .nextQueryQueue = nextQueryQueue,
         };
 
         for (self.threads, 0..) |*t, id| {
@@ -193,15 +223,15 @@ pub const Threads = struct {
             std.heap.raw_c_allocator.free(t.queryResults);
             self.allocator.destroy(t);
         }
-        self.activeModifyQueue.*.deinit();
-        self.pendingModifyQueue.*.deinit();
-        self.activeQueryQueue.*.deinit();
-        self.pendingQueryQueue.*.deinit();
+        self.modifyQueue.*.deinit();
+        self.nextModifyQueue.*.deinit();
+        self.queryQueue.*.deinit();
+        self.nextQueryQueue.*.deinit();
 
-        self.allocator.destroy(self.activeModifyQueue);
-        self.allocator.destroy(self.pendingModifyQueue);
-        self.allocator.destroy(self.activeQueryQueue);
-        self.allocator.destroy(self.pendingQueryQueue);
+        self.allocator.destroy(self.modifyQueue);
+        self.allocator.destroy(self.nextModifyQueue);
+        self.allocator.destroy(self.queryQueue);
+        self.allocator.destroy(self.nextQueryQueue);
 
         self.allocator.destroy(self);
     }

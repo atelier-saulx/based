@@ -1,4 +1,4 @@
-import { readUint32, wait } from '@based/utils'
+import { readUint32, wait, writeUint32 } from '@based/utils'
 import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { BasedDb } from '../../src/index.js'
 import native from '../../src/native.js'
@@ -70,13 +70,31 @@ await test('include', async (t) => {
     return cnt
   }
 
-  const makeThing = new Uint8Array([
-    2, 2, 0, 9, 0, 0, 17, 3, 4, 0, 0, 0, 2, 0, 0, 0,
-  ])
+  var modCnt = 1
+  const callMod = () => {
+    const makeThing = new Uint8Array([
+      2, 2, 0, 9, 0, 0, 17, 3, 4, 0, 0, 0, 1, 0, 0, 0,
+    ])
+    modCnt++
+    writeUint32(makeThing, modCnt, makeThing.byteLength - 4)
+    native.modifyThread(makeThing, db.server.dbCtxExternal)
+  }
 
-  native.modifyThread(makeThing, db.server.dbCtxExternal)
+  callMod()
+  native.getQueryBufThread(buf, db.server.dbCtxExternal)
+
+  callMod()
+
+  await wait(1)
+  native.getQueryBufThread(buf, db.server.dbCtxExternal)
+
+  callMod()
 
   await wait(1000)
+  console.log(
+    getAll(native.getQueryResults(db.server.dbCtxExternal)),
+    'execed query items',
+  )
 
   await db.query('user').get().inspect()
 
@@ -85,7 +103,9 @@ await test('include', async (t) => {
     readyTime = resolve
   })
 
-  const amount = 1e6
+  // const amount = 1e6
+  const amount = 0
+
   var d = Date.now()
 
   const collector = () => {
@@ -95,11 +115,11 @@ await test('include', async (t) => {
       console.log('TOOK', Date.now() - d, '+/- 18ms')
       readyTime()
     } else {
-      setTimeout(collector, 100)
+      setTimeout(collector, 18)
     }
   }
 
-  setTimeout(collector, 100)
+  setTimeout(collector, 18)
 
   // var d = Date.now()
   // // // const x = []
