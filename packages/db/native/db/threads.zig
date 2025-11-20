@@ -150,3 +150,5 @@ pub const Threads = struct {
         // self.allocator.free(self.modifyQueue);
     }
 };
+
+// make event loop on main thread (using a timer)

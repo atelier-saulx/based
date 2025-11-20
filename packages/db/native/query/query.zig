@@ -49,37 +49,25 @@ pub fn getQueryResults(env: c.napi_env, info: c.napi_callback_info) callconv(.C)
 }
 
 pub fn getQueryBufInternalResults(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+    // prob dont want this from ZIG
     const args = try napi.getArgs(1, env, info);
     const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-
     dbCtx.threads.waitForAll();
-    // if (dbCtx.threads.pendingWork > 0) {
-    //     return null;
-    // }
-
-    // if (dbCtx.threads.queryQueue.items.len > 0) {
-    //     return null;
-    // }
-
     var js_array: c.napi_value = undefined;
     _ = c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &js_array);
     for (dbCtx.threads.threads, 0..) |thread, index| {
-        // if (thread.inProgress) {
-        //     // std.debug.print("In progress! WRONG\n", .{});
-        //     continue;
-        // } else {
         var array_buffer: c.napi_value = undefined;
-        _ = c.napi_create_external_arraybuffer(env, thread.queryResults.ptr, // Pointer to data
-            thread.lastQueryResultIndex, // Size in bytes
-            null, // Function to call on GC
-            null, // Hint (our context struct) passed to finalizer
-            &array_buffer // Result
+        _ = c.napi_create_external_arraybuffer(
+            env,
+            thread.queryResults.ptr,
+            thread.lastQueryResultIndex,
+            null,
+            null,
+            &array_buffer,
         );
         _ = c.napi_set_element(env, js_array, @truncate(index), array_buffer);
         thread.*.lastQueryResultIndex = 0;
-        // }
     }
-
     return js_array;
 }
 
