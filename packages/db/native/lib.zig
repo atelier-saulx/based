@@ -4,7 +4,7 @@ const dump = @import("./db/dump.zig");
 const info = @import("./db/info.zig");
 const errors = @import("errors.zig");
 const Query = @import("./query/query.zig");
-const modify = @import("./modify/modify.zig").modify;
+const modify = @import("./modify/modify.zig");
 const lifeTime = @import("./db/lifeTime.zig");
 const schema = @import("./schema/schema.zig");
 const sort = @import("./db/sort.zig");
@@ -109,6 +109,7 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
     registerFunction(env, exports, "getThreadId", lifeTime.getThreadId) catch return null;
+
     registerFunction(env, exports, "createThreadCtx", lifeTime.createThreadCtx) catch return null;
     registerFunction(env, exports, "destroyThreadCtx", lifeTime.destroyThreadCtx) catch return null;
 
@@ -124,10 +125,10 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
 
     registerFunction(env, exports, "getQueryBufThread", Query.getQueryBufThread) catch return null;
-
+    registerFunction(env, exports, "modifyThread", modify.modifyThread) catch return null;
     registerFunction(env, exports, "getQueryResults", Query.getQueryResults) catch return null;
 
-    registerFunction(env, exports, "modify", modify) catch return null;
+    registerFunction(env, exports, "modify", modify.modify) catch return null;
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
     registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;
 

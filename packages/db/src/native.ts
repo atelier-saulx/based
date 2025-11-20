@@ -63,6 +63,7 @@ const native = {
     dbCtx: any,
     dirtyBlocksOut: Float64Array,
   ): number | null => {
+    console.dir(data, { depth: 10 })
     return db.modify(data, dbCtx, dirtyBlocksOut)
   },
 
@@ -72,8 +73,12 @@ const native = {
   },
 
   getQueryBufThread: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
-    // will return bool
     const x = db.getQueryBufThread(dbCtx, q)
+    return x
+  },
+
+  modifyThread: (q: Uint8Array, dbCtx: any): null => {
+    const x = db.modifyThread(q, dbCtx)
     return x
   },
 

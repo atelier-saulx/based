@@ -70,6 +70,16 @@ await test('include', async (t) => {
     return cnt
   }
 
+  const makeThing = new Uint8Array([
+    2, 2, 0, 9, 0, 0, 17, 3, 4, 0, 0, 0, 2, 0, 0, 0,
+  ])
+
+  native.modifyThread(makeThing, db.server.dbCtxExternal)
+
+  await wait(1000)
+
+  await db.query('user').get().inspect()
+
   let readyTime
   var isRdy = new Promise((resolve) => {
     readyTime = resolve

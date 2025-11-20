@@ -33,6 +33,21 @@ pub fn modify(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return result;
 }
 
+pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
+    modifyInternalThread(
+        env,
+        info,
+    ) catch undefined;
+    return null;
+}
+
+fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
+    const args = try napi.getArgs(2, env, info);
+    const batch = try napi.get([]u8, env, args[0]);
+    const dbCtx = try napi.get(*db.DbCtx, env, args[1]);
+    try dbCtx.threads.modify(batch);
+}
+
 fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     ctx.typeId = typeId;
     ctx.typeEntry = try db.getType(ctx.db, ctx.typeId);
