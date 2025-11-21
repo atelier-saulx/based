@@ -38,6 +38,8 @@ await test('include', async (t) => {
 
   const buf = q.buffer
 
+  console.log('q', buf)
+
   // await q.get().inspect()
 
   var cnt = 0

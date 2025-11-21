@@ -352,16 +352,19 @@ pub fn modifyInternal(
     const newDirtyRanges = ctx.dirtyRanges.values();
 
     // pass id later..
-    const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 4);
+    const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 67);
 
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
 
     utils.copy(data, newDirtySlice);
+
+    // const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 67);
 
     // std.debug.print("----> x{any} => {any} d {any} - {any} index {d} \n", .{ data, newDirtySlice, data.len, threadCtx.modifyResults, threadCtx.modifyResultsIndex });
 
     // _ = memcpy(data.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     // _ = napi.c.memcpy(data.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     // dirtyRanges[newDirtyRanges.len] = 0.0;
+
     // writeoutPrevNodeId(&ctx, resCount, ctx.id);
 }

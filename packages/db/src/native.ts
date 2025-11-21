@@ -12,33 +12,6 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
   return DECODER.decode(selvaIoErrlog.slice(0, len))
 }
 
-const getAll = (arr: ArrayBuffer[] | null) => {
-  if (!arr) {
-    // console.log('wairing?')
-    return 0
-  }
-  let cnt = 0
-  for (const buf of arr) {
-    if (!buf) {
-      console.log('thread has no response :(', cnt)
-      continue
-    } else {
-      const v = new Uint8Array(buf)
-
-      // console.log('heloo', v)
-      for (let i = 0; i < v.byteLength; ) {
-        const size = readUint32(v, i)
-        cnt++
-
-        // then we need the QueryId in the query itself (4 bytes for now)
-
-        i += size
-      }
-    }
-  }
-  return cnt
-}
-
 const native = {
   cnt: 0,
   addMultiSubscription: (dbCtx: any, typeId: number): void => {
@@ -93,23 +66,8 @@ const native = {
     return x
   },
 
-  start: () => {
-    let x = db.start((id: number, buffer: any) => {
-      // maybe dont add the id...
-      // use enum
-      // native.cnt++
-      // console.log('im a little derp', new Uint8Array(xxx), x)
-      if (id === 1) {
-        native.cnt += getAll(buffer)
-        // console.log(native.cnt)
-        // can be a bit nicer
-        // console.log('QUERY RESULTS')
-        // console.log(native.getQueryResults(x))
-      } else if (id === 2) {
-        // console.log('MODIFY RESULTS')
-      }
-    })
-    return x
+  start: (bridge: (id: number, payload: any) => void) => {
+    return db.start(bridge)
   },
 
   stop: (dbCtx: any) => {

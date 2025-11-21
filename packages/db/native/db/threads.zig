@@ -207,7 +207,12 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 // add time measurement
-                try getQueryThreaded(self.ctx, q, threadCtx);
+                if (q[0] == 67) {
+                    std.debug.print("SAVE COMMAND", .{});
+                } else {
+                    try getQueryThreaded(self.ctx, q, threadCtx);
+                }
+
                 self.mutex.lock();
                 self.pendingQueries -= 1;
                 if (self.pendingQueries == 0) {
@@ -254,6 +259,8 @@ pub const Threads = struct {
                     self.mutex.unlock();
                 }
             }
+
+            // needs save
         }
     }
 

@@ -11,7 +11,7 @@ import exitHook from 'exit-hook'
 import { save, saveSync, Writelog } from './save.js'
 import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
-import { bufToHex, equals, hexToBuf, wait } from '@based/utils'
+import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 
@@ -33,6 +33,28 @@ function startWorkers(db: DbServer, opts: StartOpts) {
   db.ioWorker = new IoWorker(address, db)
 }
 
+// tmp
+const getAll = (arr: ArrayBuffer[] | null) => {
+  if (!arr) {
+    return 0
+  }
+  let cnt = 0
+  for (const buf of arr) {
+    if (!buf) {
+      console.log('thread has no response :(', cnt)
+      continue
+    } else {
+      const v = new Uint8Array(buf)
+      for (let i = 0; i < v.byteLength; ) {
+        const size = readUint32(v, i)
+        cnt++
+        i += size
+      }
+    }
+  }
+  return cnt
+}
+
 export async function start(db: DbServer, opts: StartOpts) {
   const path = db.fileSystemPath
   const noop = () => {}
@@ -43,7 +65,22 @@ export async function start(db: DbServer, opts: StartOpts) {
 
   await mkdir(path, { recursive: true }).catch(noop)
 
-  db.dbCtxExternal = native.start()
+  db.dbCtxExternal = native.start((id: number, buffer: any) => {
+    // maybe dont add the id...
+    // use enum
+    // native.cnt++
+    // console.log('im a little derp', new Uint8Array(xxx), x)
+    if (id === 1) {
+      native.cnt += getAll(buffer)
+      // console.log(native.cnt)
+      // can be a bit nicer
+      // console.log('QUERY RESULTS')
+      // console.log(native.getQueryResults(x))
+    } else if (id === 2) {
+      //
+      console.log('MODIFY RESULTS', buffer)
+    }
+  })
 
   let writelog: Writelog = null
   let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]
