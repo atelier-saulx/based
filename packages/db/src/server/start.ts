@@ -83,7 +83,15 @@ export async function start(db: DbServer, opts: StartOpts) {
       // console.log(native.getQueryResults(x))
     } else if (id === 2) {
       //
+      // const size = readUint32(v, i)
+      //   const id = readUint32(v, i + 4)
+      //   const fn = server.queryResponses.get(id)
+      //   if (fn) {
+      //     fn(v.subarray(i + 8, i + size))
+      //   }
       console.log('MODIFY RESULTS', buffer)
+      // 8 bytes padding and size
+      // dirtyTime()
     }
   })
 
