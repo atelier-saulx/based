@@ -244,6 +244,9 @@ pub const Threads = struct {
 
             if (modifyBuf) |m| {
                 if (threadCtx.id == 0) {
+
+                    // special id is pos you can use it here [4] 🤪
+
                     // Modify worker
                     try modifyInternal(threadCtx, m, self.ctx);
                     self.mutex.lock();
