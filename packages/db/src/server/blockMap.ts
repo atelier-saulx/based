@@ -34,6 +34,8 @@ export const BLOCK_HASH_SIZE = 16
  */
 export type BlockStatus = 'fs' | 'inmem' | 'dirty'
 
+type IoPromise = null | ReturnType<typeof Promise.withResolvers<void>>
+
 /**
  * Block state.
  * Type and a node id range.
@@ -53,7 +55,7 @@ export type Block = {
   /**
    * If set, the block is being loaded and it can be awaited with this promise.
    */
-  loadPromise: null | Promise<void>
+  ioPromise: IoPromise
 }
 
 /**
@@ -161,7 +163,7 @@ export class BlockMap {
     return this.#h.digest() as Uint8Array
   }
 
-  updateBlock(key: number, hash: BlockHash, status: BlockStatus = 'inmem') {
+  updateBlock(key: number, hash: BlockHash, status: BlockStatus = 'inmem'): Block {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]
     if (!type) {
@@ -174,10 +176,12 @@ export class BlockMap {
         key,
         hash,
         status,
-        loadPromise: null,
+        ioPromise: null,
       }))
     block.hash = hash
     block.status = status
+
+    return block
   }
 
   removeBlock(key: number) {
@@ -187,6 +191,10 @@ export class BlockMap {
       throw new Error(`type ${typeId} not found`)
     }
     const blockI = nodeId2BlockI(start, type.blockCapacity)
+    if (type.blocks[blockI]) {
+      const block = type.blocks[blockI]
+      block.ioPromise?.resolve(undefined) // Assume we can just resolve it
+    }
     delete type.blocks[blockI]
   }
 

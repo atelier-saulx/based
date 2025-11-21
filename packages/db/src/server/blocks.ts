@@ -1,8 +1,8 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { equals, readInt32 } from '@based/utils'
-import { BLOCK_HASH_SIZE, BlockHash, BlockMap, makeTreeKey, destructureTreeKey } from './blockMap.js'
+import { ENCODER, equals, readUint32, writeUint16, writeUint32 } from '@based/utils'
+import { BLOCK_HASH_SIZE, BlockHash, BlockMap, makeTreeKey, destructureTreeKey, Block } from './blockMap.js'
 import { DbServer } from './index.js'
 import { writeFile } from 'node:fs/promises'
 import { bufToHex } from '@based/utils'
@@ -32,56 +32,19 @@ export type SaveOpts = {
 
 const SELVA_ENOENT = -8
 
-/**
- * Save a block.
- */
-export function saveBlock(
-  db: DbServer,
-  typeId: number,
-  start: number,
-  end: number,
-): void {
-  const hash: BlockHash = new Uint8Array(BLOCK_HASH_SIZE)
-  const mtKey = makeTreeKey(typeId, start)
-  const file = BlockMap.blockSdbFile(typeId, start, end)
-  const path = join(db.fileSystemPath, file)
-  const err = native.saveBlock(path, typeId, start, db.dbCtxExternal, hash)
-  if (err == SELVA_ENOENT) {
-    // Generally we don't nor can't remove blocks from blockMap before we
-    // attempt to access them.
-    db.blockMap.removeBlock(mtKey)
-  } else if (err) {
-    db.emit(
-      'error',
-      `Save ${typeId}:${start}-${end} failed: ${native.selvaStrerror(err)}`,
-    )
-  } else {
-    db.blockMap.updateBlock(mtKey, hash)
-  }
-}
-
 type IoJobBlock = {
   filepath: string
   typeId: number
   start: number
 }
 
-async function saveBlocks(
-  db: DbServer,
-  blocks: IoJobBlock[],
-): Promise<void> {
-  // FIXME save
-  //const res = await db.ioWorker.saveBlocks(blocks)
-  const res = new Uint8Array(20)
-
-  if (res.byteOffset !== 0) throw new Error('Unexpected offset')
-  // if (res.byteLength / 20 !== blocks.length) throw new Error('Invalid res size')
-
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i]
-    const key = makeTreeKey(block.typeId, block.start)
-    const err = readInt32(res, i * 20)
-    const hash: BlockHash = new Uint8Array(res.buffer, i * 20 + 4, BLOCK_HASH_SIZE)
+export function addSBlockisterners(db: DbServer) {
+  db.addQueryListener(0, (buf: Uint8Array) => {
+    const typeId = readUint32(buf, 8)
+    const start = readUint32(buf, 12)
+    const err = readUint32(buf, 16)
+    const hash = buf.slice(20, 20 + BLOCK_HASH_SIZE)
+    const key = makeTreeKey(typeId, start)
 
     if (err === SELVA_ENOENT) {
       // Generally we don't nor can't remove blocks from blockMap before we
@@ -90,12 +53,74 @@ async function saveBlocks(
     } else if (err) {
       db.emit(
         'error',
-        `Save ${block.typeId}:${block.start} failed: ${native.selvaStrerror(err)}`,
+        `Save ${typeId}:${start} failed: ${native.selvaStrerror(err)}`,
       )
     } else {
-      db.blockMap.updateBlock(key, hash)
+      const block = db.blockMap.updateBlock(key, hash)
+      block.ioPromise?.resolve()
     }
-  }
+  })
+
+  db.addModifyListener(new Uint8Array(0), (buf: Uint8Array) => {
+    const op = 0
+    const typeId = readUint32(buf, 8)
+    const start = readUint32(buf, 12)
+    const err = readUint32(buf, 16)
+    const hash = buf.slice(20, 20 + BLOCK_HASH_SIZE)
+    const key = makeTreeKey(typeId, start)
+
+    if (op == LOAD) {
+      const block = db.blockMap.getBlock(key)
+      if (err === 0) {
+        const prevHash = block.hash
+        if (equals(prevHash, hash)) {
+          const block = db.blockMap.updateBlock(key, hash)
+          block.ioPromise.resolve()
+        } else {
+          block.ioPromise.reject(new Error('Block hash mismatch'))
+        }
+      } else {
+        block.ioPromise.reject(new Error(`Load ${typeId}:${start} failed: ${native.selvaStrerror(err)}`))
+      }
+    } else if (op == UNLOAD) {
+      // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
+      if (err === 0) {
+        const block = db.blockMap.updateBlock(key, hash, 'fs')
+        block.ioPromise?.resolve()
+      } else {
+        const block = db.blockMap.getBlock(key)
+        block.ioPromise.reject(new Error(`Unload ${typeId}:${start} failed: ${native.selvaStrerror(err)}`))
+      }
+    }
+  })
+}
+
+function setIoPromise(block: Block): Promise<void> {
+    const p = block.ioPromise = Promise.withResolvers<void>()
+    p.promise.then(() => block.ioPromise = null)
+    return p.promise;
+}
+
+async function saveBlocks(
+  db: DbServer,
+  blocks: Block[],
+): Promise<void> {
+  await Promise.all(blocks.map((block) => {
+    const [typeId, start] = destructureTreeKey(block.key)
+    const def = db.schemaTypesParsedById[typeId]
+    const end = start + def.blockCapacity - 1
+    const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(typeId, start, end)))
+    const msg = new Uint8Array(6 + filepath.byteLength)
+
+    // TODO MSG
+    writeUint32(msg, start, 0)
+    writeUint16(msg, typeId, 4)
+    msg.set(filepath, 6)
+
+    const p = setIoPromise(block)
+    native.getQueryBufThread(msg, db.dbCtxExternal)
+    return p
+  }))
 }
 
 /**
@@ -112,37 +137,20 @@ export async function loadBlock(
     throw new Error(`No such block: ${key}`)
   }
 
-  if (block.loadPromise) {
-    return block.loadPromise
+  if (block.ioPromise) {
+    return block.ioPromise
   }
 
-  const prevHash = block.hash
-  const filename = db.blockMap.getBlockFile(block)
-
-  // FIXME
-  //const p = db.ioWorker.loadBlock(join(db.fileSystemPath, filename))
-  const p = new Promise<void>(() => {})
-  block.loadPromise = p
-  await p
-  block.loadPromise = null
-
-  // Update and verify the hash
-  const hash: BlockHash = new Uint8Array(BLOCK_HASH_SIZE)
   const end = start + def.blockCapacity - 1
-  const res = native.getNodeRangeHash(
-    def.id,
-    start,
-    end,
-    hash,
-    db.dbCtxExternal,
-  )
-  if (res) {
-    const key = makeTreeKey(def.id, start)
-    db.blockMap.updateBlock(key, hash)
-    if (!equals(prevHash, hash)) {
-      throw new Error('Block hash mismatch')
-    }
-  }
+  const filepath = ENCODER.encode((join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end))))
+  const msg = new Uint8Array(8 + filepath.byteLength)
+
+  // TODO MSG
+  msg.set(filepath, 8)
+
+  const p = setIoPromise(block)
+  native.modifyThread(msg, db.dbCtxExternal)
+  await p
 }
 
 /**
@@ -153,30 +161,22 @@ export async function unloadBlock(
   def: SchemaTypeDef,
   start: number,
 ) {
-  const typeId = def.id
   const end = start + def.blockCapacity - 1
-  const key = makeTreeKey(typeId, start)
+  const key = makeTreeKey(def.id, start)
   const block = db.blockMap.getBlock(key)
   if (!block) {
     throw new Error(`No such block: ${key}`)
   }
 
-  const filepath = join(
-    db.fileSystemPath,
-    BlockMap.blockSdbFile(typeId, start, end),
-  )
-  try {
-    // FIXME
-    //const hash = await db.ioWorker.unloadBlock(filepath, typeId, start)
-    const hash = new Uint8Array(16)
-    native.delBlock(db.dbCtxExternal, typeId, start)
-    db.blockMap.updateBlock(key, hash, 'fs')
-  } catch (e) {
-    // TODO Proper logging
-    // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
-    console.error(`Save ${typeId}:${start}-${end} failed`)
-    console.error(e)
-  }
+  const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end)))
+  const msg = new Uint8Array(8 + filepath.byteLength)
+
+  // TODO MSG
+  msg.set(filepath, 8)
+
+  const p = setIoPromise(block)
+  native.modifyThread(msg, db.dbCtxExternal)
+  await p
 }
 
 /**
