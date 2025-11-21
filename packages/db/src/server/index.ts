@@ -15,7 +15,6 @@ import {
   destructureTreeKey,
   makeTreeKeyFromNodeId,
 } from './blockMap.js'
-import { save, SaveOpts } from './save.js'
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
@@ -27,7 +26,7 @@ import {
   setSchemaOnServer,
   writeSchemaFile,
 } from './schema.js'
-import { loadBlock, unloadBlock } from './blocks.js'
+import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
 
 const emptyUint8Array = new Uint8Array(0)
@@ -57,6 +56,9 @@ export class DbServer extends DbShared {
   saveInProgress: boolean = false
   fileSystemPath: string
   blockMap: BlockMap
+  activeReaders = 0 // processing queries or other DB reads
+  modifyQueue: Map<Function, Uint8Array> = new Map()
+  queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean // = true does not work
   unlistenExit: ReturnType<typeof exitHook>
   saveIntervalInSeconds?: number
@@ -496,12 +498,40 @@ export class DbServer extends DbShared {
   //     // This will be more advanced - sometimes has indexes / sometimes not
   //   }
 
+<<<<<<< HEAD
   //   // if (!fromQueue) {
   //   //   this.#expire()
   //   // }
 
   //   // return this.getQueryBuf(buf)
   // }
+=======
+      if (!fromQueue) {
+        this.#expire()
+      }
+    }
+  }
+
+  onQueryEnd() {
+    if (this.activeReaders === 0) {
+      if (this.modifyQueue.size) {
+        const modifyQueue = this.modifyQueue
+        this.modifyQueue = new Map()
+        for (const [resolve, payload] of modifyQueue) {
+          resolve(this.modify(payload))
+        }
+      }
+      if (this.queryQueue.size) {
+        const queryQueue = this.queryQueue
+        this.queryQueue = new Map()
+        this.#expire()
+        for (const [resolve, buf] of queryQueue) {
+          resolve(this.getQueryBuf(buf, true))
+        }
+      }
+    }
+  }
+>>>>>>> 0e70ebf08 (Remove workers)
 
   async stop(noSave?: boolean) {
     if (this.stopped) {
