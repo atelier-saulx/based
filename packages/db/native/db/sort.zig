@@ -2,11 +2,9 @@ const db = @import("./db.zig");
 const deflate = @import("../deflate.zig");
 const selva = @import("../selva.zig").c;
 const std = @import("std");
-const napi = @import("../napi.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const errors = @import("../errors.zig");
-
 const read = utils.read;
 
 pub const SortIndexMeta = struct {
@@ -16,6 +14,7 @@ pub const SortIndexMeta = struct {
     index: *selva.SelvaSortCtx,
     langCode: types.LangCode,
     field: u8,
+    isCreated: bool,
 };
 
 const SIZE = 16;
@@ -35,6 +34,16 @@ pub const TypeIndex = struct {
     field: FieldSortIndexes,
     main: MainSortIndexes,
 };
+
+// check if sort index && sort index is DONE = true
+
+// - lock when creratecreater container, cpntainer has NOT DONE as bool
+// - unlock
+// make index
+// - lock
+// DONE = true
+// - fire condition sort index made
+// - unlock
 
 pub const TypeSortIndexes = std.AutoHashMap(u16, *TypeIndex);
 
@@ -83,56 +92,6 @@ fn getSortFlag(sortFieldType: types.Prop, desc: bool) !selva.SelvaSortOrder {
     }
 }
 
-pub fn createSortIndexNode(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    return createSortIndexNodeInternal(env, info) catch return null;
-}
-
-inline fn createSortIndexNodeInternal(env: napi.Env, info: napi.Info) !napi.Value {
-    const args = try napi.getArgs(2, env, info);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-    const buf = try napi.get([]u8, env, args[1]);
-    // size [2 type] [1 field] [2 start] [2 len] [1 typeIndex]
-    const typeId = read(u16, buf, 0);
-    const field = buf[2];
-    const start = read(u16, buf, 3);
-    const len = read(u16, buf, 5);
-    const typeIndex = buf[7];
-    const lang = buf[8];
-    // main thread
-    const index = try createSortIndex(
-        dbCtx,
-        dbCtx.decompressor,
-        typeId,
-        field,
-        start,
-        len,
-        @enumFromInt(typeIndex),
-        @enumFromInt(lang),
-        true,
-        false,
-    );
-    var externalNapi: napi.Value = undefined;
-    _ = napi.c.napi_create_external(env, index, null, null, &externalNapi);
-    return externalNapi;
-}
-
-pub fn destroySortIndexNode(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    return destroySortIndexNodeInternal(env, info) catch return null;
-}
-
-pub fn destroySortIndexNodeInternal(env: napi.Env, info: napi.Info) !napi.Value {
-    const args = try napi.getArgs(2, env, info);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
-    const buf = try napi.get([]u8, env, args[1]);
-    // [2 type] [1 field] [2 start] [1 lang]
-    const typeId = read(u16, buf, 0);
-    const field = buf[2];
-    const start = read(u16, buf, 3);
-    const lang = read(u8, buf, 5);
-    destroySortIndex(dbCtx, typeId, field, start, @enumFromInt(lang));
-    return null;
-}
-
 pub fn createSortIndexMeta(
     start: u16,
     len: u16,
@@ -150,6 +109,7 @@ pub fn createSortIndexMeta(
         .prop = prop,
         .langCode = lang,
         .field = field,
+        .isCreated = false,
     };
     return s;
 }
@@ -191,6 +151,9 @@ fn getOrCreateFromCtx(
     return sortIndex.?;
 }
 
+// allways without these 2 options
+// true,
+// false,
 pub fn createSortIndex(
     dbCtx: *db.DbCtx,
     decompressor: *deflate.Decompressor,
@@ -215,6 +178,8 @@ pub fn createSortIndex(
     );
     const typeEntry = try db.getType(dbCtx, typeId);
     const fieldSchema = try db.getFieldSchema(typeEntry, field);
+
+    // fill sort index needs to a special field
     var node = db.getFirstNode(typeEntry);
     var first = true;
     while (node != null) {
@@ -243,6 +208,8 @@ pub fn createSortIndex(
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
     }
+    // This is wrong ofcourse
+    sortIndex.isCreated = true;
     return sortIndex;
 }
 
@@ -431,4 +398,41 @@ pub fn insert(
         types.Prop.UINT16 => insertIntIndex(u16, data, sortIndex, node),
         else => {},
     };
+}
+
+pub fn getSortIndexFromBuffer(
+    ctx: *db.DbCtx,
+    typeId: db.TypeId,
+    sortBuffer: []u8,
+) ?*SortIndexMeta {
+    const field = sortBuffer[0];
+    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
+    const start = read(u16, sortBuffer, 2);
+    return getSortIndex(ctx.sortIndexes.get(typeId), field, start, lang);
+}
+
+pub fn createSortIndexFromBuffer(
+    ctx: *db.DbCtx,
+    decompressor: *deflate.Decompressor,
+    typeId: db.TypeId,
+    sortBuffer: []u8,
+) !*SortIndexMeta {
+    const field = sortBuffer[0];
+    const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
+    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
+    const start = read(u16, sortBuffer, 2);
+    const len = read(u16, sortBuffer, 4);
+    return createSortIndex(
+        ctx,
+        decompressor,
+        typeId,
+        field,
+        start,
+        len,
+        sortProp,
+        lang,
+        true,
+        false,
+        // dont finish
+    );
 }

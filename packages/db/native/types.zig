@@ -243,15 +243,6 @@ pub const Compression = enum(u8) {
     compressed = 1,
 };
 
-pub const QueryType = enum(u8) {
-    id = 0,
-    ids = 1,
-    default = 2,
-    alias = 3,
-    aggregates = 4,
-    aggregatesCountType = 5,
-};
-
 pub const Interval: type = enum(u8) {
     none = 0,
     epoch = 1,

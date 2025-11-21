@@ -49,7 +49,8 @@ pub fn createResultsBuffer(
     var i: usize = 4;
 
     // add correct id later
-    const data = try getResultSlice(true, ctx.threadCtx, size, ctx.id);
+    // , ctx.queryType
+    const data = try getResultSlice(true, ctx.threadCtx, size, ctx.id, ctx.queryType);
 
     writeInt(u32, data, 0, ctx.totalResults);
 

@@ -4,12 +4,12 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
-const QueryCtx = @import("./types.zig").QueryCtx;
+const types = @import("./types.zig");
+const QueryCtx = types.QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
-const types = @import("../types.zig");
 
-const QueryType = types.QueryType;
+pub const QueryType = types.QueryType;
 const QuerySort = @import("./queryTypes/sort.zig");
 const QueryDefault = @import("./queryTypes/default.zig");
 const QueryId = @import("./queryTypes/id.zig");
@@ -53,11 +53,12 @@ pub fn getQueryThreaded(
     defer arena.deinit();
 
     const allocator = arena.allocator();
-
     const q = qIn[4..qIn.len];
-
     const len = q.len - 8;
     // last 4 is query id might need that as well
+
+    var index: usize = 0;
+    const queryType: QueryType = @enumFromInt(q[index]);
 
     var ctx: QueryCtx = .{
         .id = read(u32, qIn, 0),
@@ -68,10 +69,9 @@ pub fn getQueryThreaded(
         .aggResult = null,
         .allocator = allocator,
         .threadCtx = threadCtx,
+        .queryType = queryType,
     };
 
-    var index: usize = 0;
-    const queryType: QueryType = @enumFromInt(q[index]);
     index += 1;
     const typeId: db.TypeId = read(u16, q, index);
     index += 2;

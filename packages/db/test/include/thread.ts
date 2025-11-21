@@ -61,7 +61,7 @@ await test('include', async (t) => {
 
   await wait(1)
 
-  await db.query('user').range(0, 10).sort('nr').get().inspect()
+  await db.query('user').range(0, 10).sort('nr', 'desc').get().inspect()
 
   // console.log(
   //   getAll(native.getQueryResults(db.server.dbCtxExternal)),
@@ -113,8 +113,8 @@ await test('include', async (t) => {
 
   // await db.query('user').range(0, 1e6).get().inspect()
 
-  db.server.addQueryListener(0, () => {
-    console.log('yo')
+  db.server.addQueryListener(0, (v) => {
+    console.log('yo', v)
   })
   // native.getQueryBufThread()
 

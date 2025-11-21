@@ -3,10 +3,10 @@ const deflate = @import("../../deflate.zig");
 const read = @import("../../utils.zig").read;
 const createSearchCtx = @import("../filter/search.zig").createSearchCtx;
 const isVectorSearch = @import("../filter/search.zig").isVectorSearch;
-const t = @import("../types.zig");
 const QuerySort = @import("../queryTypes/sort.zig");
 const QueryDefault = @import("../queryTypes/default.zig");
 const db = @import("../../db/db.zig");
+const t = @import("../types.zig");
 
 const std = @import("std");
 const ReadOp = @import("../../types.zig").ReadOp;
@@ -18,17 +18,17 @@ pub inline fn defaultProtocol(ctx: *t.QueryCtx, typeId: db.TypeId, q: []u8, inde
     const limit = read(u32, q, index);
     index += 4;
 
+    const sortSize = read(u16, q, index);
+    index += 2;
+    const sortBuf = q[index .. index + sortSize];
+    index += sortSize;
+
     const filterSize = read(u16, q, index);
     index += 2;
     const isSimpleFilter = q[index] == 1;
     index += 1;
     const filterBuf = q[index .. index + filterSize];
     index += filterSize;
-
-    const sortSize = read(u16, q, index);
-    index += 2;
-    const sortBuf = q[index .. index + sortSize];
-    index += sortSize;
 
     const searchSize = read(u16, q, index);
     index += 2;

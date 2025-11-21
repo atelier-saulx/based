@@ -25,7 +25,7 @@ const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 const getResultSlice = @import("../db/threads.zig").getResultSlice;
-
+pub const ModifyType = @import("./types.zig").ModifyType;
 //  ----------NAPI-------------
 pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     modifyInternalThread(
@@ -143,15 +143,15 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
     return prevNodeId;
 }
 
-pub fn modifyInternal(
+pub fn modify(
     // comptime isSubscriptionWorker: bool,
     threadCtx: *db.DbThread,
     batch: []u8,
     dbCtx: *db.DbCtx,
 ) !void {
     const modifyId = utils.read(u32, batch, 0);
+    const modifyType: ModifyType = @enumFromInt(batch[4]);
     var i: usize = 13; // 5 for id + type and 8 for schema checksum
-
     std.debug.print("mod id {any} \n", .{modifyId});
 
     var ctx: ModifyCtx = .{
@@ -356,14 +356,14 @@ pub fn modifyInternal(
     const newDirtyRanges = ctx.dirtyRanges.values();
 
     // pass id later..
-    const dirtyRangesSize = newDirtyRanges.len * 8 + 8;
-    const data = try getResultSlice(false, threadCtx, dirtyRangesSize, modifyId);
+    const dirtyRangesSize = newDirtyRanges.len * 8 + 7;
+    const data = try getResultSlice(false, threadCtx, dirtyRangesSize, modifyId, modifyType);
 
     writeInt(u32, data, 0, dirtyRangesSize);
 
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
 
-    utils.copy(data[8..data.len], newDirtySlice);
+    utils.copy(data[7..data.len], newDirtySlice);
 
     // const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 67);
 

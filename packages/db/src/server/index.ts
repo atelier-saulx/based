@@ -146,7 +146,7 @@ export class DbServer extends DbShared {
     }
   }
 
-  execQueryListeners(id: number, q: Uint8Array) {
+  execQueryListeners(id: number, type: number, q: Uint8Array) {
     const s = this.queryResponses.get(id)
     if (!s) {
       return
@@ -182,7 +182,8 @@ export class DbServer extends DbShared {
     //   return Promise.resolve(new Uint8Array(1))
     // }
     return new Promise((resolve) => {
-      const id = readUint32(buf, 0)
+      // make readUint40 ?
+      const id = readUint32(buf, 0) + buf[4]
       if (this.queryResponses.get(id)) {
         console.log('Query allready staged dont exec again', id)
       } else {
@@ -237,7 +238,7 @@ export class DbServer extends DbShared {
     this.modResponses.delete(id)
   }
 
-  execModifyListeners(id: number, v: Uint8Array) {
+  execModifyListeners(id: number, type: number, v: Uint8Array) {
     const fn = this.modResponses.get(id)
     if (!fn) {
       return
@@ -247,8 +248,8 @@ export class DbServer extends DbShared {
       if (dirtyBlockSize > 8) {
         const dirtyBlocks = new Float64Array(
           v.buffer,
-          v.byteOffset + 8,
-          (v.byteLength - 8) / 8,
+          v.byteOffset + 7,
+          (v.byteLength - 7) / 8,
         )
         this.blockMap.setDirtyBlocks(dirtyBlocks)
       }

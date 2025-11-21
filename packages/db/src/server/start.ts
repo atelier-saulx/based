@@ -31,8 +31,9 @@ const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
       const v = new Uint8Array(buf)
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
-        const id = readUint32(v, i + 4)
-        db.execQueryListeners(id, v.subarray(i + 8, i + size))
+        const type = v[i + 8]
+        const id = readUint32(v, i + 4) + type
+        db.execQueryListeners(id, type, v.subarray(i + 9, i + size))
         i += size
       }
     }
@@ -44,7 +45,8 @@ const handleModifyListeners = (db: DbServer, arr: ArrayBuffer) => {
   for (let i = 0; i < v.byteLength; ) {
     const size = readUint32(v, i)
     const id = readUint32(v, i + 4)
-    db.execModifyListeners(id, v.subarray(i + 8, i + size))
+    const type = v[i + 8]
+    db.execModifyListeners(id, type, v.subarray(i + 9, i + size))
     i += size
   }
 }

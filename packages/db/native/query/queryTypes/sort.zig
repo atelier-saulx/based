@@ -14,6 +14,7 @@ const Result = @import("../results.zig").Result;
 const s = @import("./search.zig");
 const std = @import("std");
 
+// pass sort index - can be set to threadCtx
 pub fn default(
     comptime desc: bool,
     ctx: *QueryCtx,
@@ -22,19 +23,16 @@ pub fn default(
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
-    sortBuffer: []u8,
+    _: []u8,
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len] [lan]
-    const field = sortBuffer[0];
     // const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
-    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
-    const start = read(u16, sortBuffer, 2);
-    const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(typeId), field, start, lang);
 
+    const sIndex = ctx.threadCtx.sortIndex;
     if (sIndex == null) {
         std.log.err(
-            "Err exec query (zig) no sort index available for query type: {any} field: {any} start: {any} lang: {any} \n",
-            .{ typeId, field, start, lang },
+            "Err exec query (zig) no sort index available for query \n",
+            .{},
         );
         return;
     }

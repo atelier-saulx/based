@@ -7,7 +7,6 @@ const query = @import("./query/query.zig");
 const modify = @import("./modify/modify.zig");
 const lifeTime = @import("./db/lifeTime.zig");
 const schema = @import("./schema/schema.zig");
-const sort = @import("./db/sort.zig");
 const string = @import("./string.zig");
 const napi = @import("./napi.zig");
 const jsThrow = errors.jsThrow;
@@ -15,7 +14,6 @@ const dbthrow = errors.mdb;
 const colvecTest = @import("./colvec.zig").colvec;
 const dbCtx = @import("./db/ctx.zig");
 const subscriptions = @import("./db/subscription/subscription.zig");
-
 const strerror_zig = @import("selva.zig").strerror_zig;
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
@@ -72,16 +70,6 @@ fn _externalFromInt(napi_env: napi.Env, inf: napi.Info) !napi.Value {
     return result;
 }
 
-fn membarSyncRead(_: napi.Env, _: napi.Info) callconv(.c) napi.Value {
-    selva.membar_sync_read();
-    return null;
-}
-
-fn membarSyncWrite(_: napi.Env, _: napi.Info) callconv(.c) napi.Value {
-    selva.membar_sync_write();
-    return null;
-}
-
 fn _selvaStrerror(napi_env: napi.Env, nfo: napi.Info) !napi.Value {
     const args = try napi.getArgs(1, napi_env, nfo);
     const err = try napi.get(i32, napi_env, args[0]);
@@ -119,12 +107,9 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "setSchemaIds", schema.setSchemaIds) catch return null;
     registerFunction(env, exports, "getSchemaIds", schema.getSchemaIds) catch return null;
 
-    // registerFunction(env, exports, "getQueryBuf", Query.getQueryBuf) catch return null;
-
     registerFunction(env, exports, "getQueryBufThread", query.getQueryBufThread) catch return null;
     registerFunction(env, exports, "modifyThread", modify.modifyThread) catch return null;
 
-    // registerFunction(env, exports, "modify", modify.modify) catch return null;
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
     registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;
 
@@ -139,12 +124,6 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "createCompressor", string.createCompressor) catch return null;
     registerFunction(env, exports, "createDecompressor", string.createDecompressor) catch return null;
     registerFunction(env, exports, "equals", string.equals) catch return null;
-
-    registerFunction(env, exports, "createSortIndex", sort.createSortIndexNode) catch return null;
-    registerFunction(env, exports, "destroySortIndex", sort.destroySortIndexNode) catch return null;
-
-    registerFunction(env, exports, "membarSyncRead", membarSyncRead) catch return null;
-    registerFunction(env, exports, "membarSyncWrite", membarSyncWrite) catch return null;
 
     registerFunction(env, exports, "selvaStrerror", selvaStrerror) catch return null;
 

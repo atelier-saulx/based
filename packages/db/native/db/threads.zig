@@ -4,16 +4,25 @@ const Thread = std.Thread;
 const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const utils = @import("../utils.zig");
-const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
-const modifyInternal = @import("../modify/modify.zig").modifyInternal;
+const Query = @import("../query/query.zig");
+const Modify = @import("../modify/modify.zig");
 const selva = @import("../selva.zig").c;
-const Queue = std.array_list.Managed([]u8);
 const deflate = @import("../deflate.zig");
 const writeInt = @import("../utils.zig").writeInt;
 const jsBridge = @import("./jsBridge.zig");
+const sort = @import("./sort.zig");
 
-pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id: u32) ![]u8 {
-    const paddedSize = size + 8;
+const Queue = std.array_list.Managed([]u8);
+
+pub fn getResultSlice(
+    comptime isQuery: bool,
+    thread: *DbThread,
+    size: usize,
+    id: u32,
+    subType: if (isQuery) Query.QueryType else Modify.ModifyType,
+) ![]u8 {
+    const offset = 9;
+    const paddedSize = size + offset;
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
         if (thread.queryResults.len < thread.queryResultsIndex + paddedSize) {
@@ -27,7 +36,8 @@ pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id
         }
         writeInt(u32, thread.queryResults, thread.queryResultsIndex, paddedSize);
         writeInt(u32, thread.queryResults, thread.queryResultsIndex + 4, id);
-        const data = thread.queryResults[thread.queryResultsIndex + 8 .. thread.queryResultsIndex + paddedSize];
+        thread.queryResults[thread.queryResultsIndex + 8] = @intFromEnum(subType);
+        const data = thread.queryResults[thread.queryResultsIndex + offset .. thread.queryResultsIndex + paddedSize];
         thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
         return data;
     } else {
@@ -42,7 +52,8 @@ pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id
         }
         writeInt(u32, thread.modifyResults, thread.modifyResultsIndex, paddedSize);
         writeInt(u32, thread.modifyResults, thread.modifyResultsIndex + 4, id);
-        const data = thread.modifyResults[thread.modifyResultsIndex + 8 .. thread.modifyResultsIndex + paddedSize];
+        thread.modifyResults[thread.modifyResultsIndex + 8] = @intFromEnum(subType);
+        const data = thread.modifyResults[thread.modifyResultsIndex + offset .. thread.modifyResultsIndex + paddedSize];
         thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;
         return data;
     }
@@ -58,6 +69,7 @@ pub const DbThread = struct {
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
     pendingModifies: usize,
+    sortIndex: ?*sort.SortIndexMeta,
 };
 
 pub const Threads = struct {
@@ -70,6 +82,10 @@ pub const Threads = struct {
     wakeup: Condition = .{},
     queryDone: Condition = .{},
     modifyDone: Condition = .{},
+
+    sortDone: Condition = .{},
+    makingSortIndexes: usize = 0,
+    // makingSortIndexes = [std.Thread.getCpuCount() - 1].{[5]u8},
 
     modifyQueue: *Queue,
     nextModifyQueue: *Queue,
@@ -187,6 +203,8 @@ pub const Threads = struct {
             var modifyBuf: ?[]u8 = null;
             var modIndex: usize = 0;
 
+            threadCtx.sortIndex = null;
+
             self.mutex.lock();
 
             if (self.shutdown) {
@@ -196,6 +214,45 @@ pub const Threads = struct {
 
             if (self.queryQueue.items.len > 0) {
                 queryBuf = self.queryQueue.swapRemove(0);
+                if (queryBuf) |q| {
+                    const queryType: Query.QueryType = @enumFromInt(q[4]);
+                    // make function for this
+                    if (queryType == Query.QueryType.default) {
+                        const typeId = utils.read(u16, q, 5);
+
+                        std.debug.print("derp typeId {any} {any} \n", .{ typeId, q });
+
+                        // index += 1;
+                        // const typeId = utils.read(u16, q, index);
+                        // index += 2;
+
+                        // index += 4;
+                        // index += 4;
+
+                        // const filterSize = utils.read(u16, q, index);
+                        // index += 2;
+                        // index += 1;
+                        // index += filterSize;
+
+                        // const sortSize = utils.read(u16, q, index);
+                        // index += 2;
+                        // const sortBuf = q[index .. index + sortSize];
+                        // index += sortSize;
+
+                        // if (sortSize > 0) {
+                        //     if (sort.getSortIndexFromBuffer(self.ctx, typeId, sortBuf)) |sortMetaIndex| {
+                        //         threadCtx.sortIndex = sortMetaIndex;
+                        //     } else {
+                        //         threadCtx.sortIndex = try sort.createSortIndexFromBuffer(
+                        //             self.ctx,
+                        //             threadCtx.decompressor,
+                        //             typeId,
+                        //             sortBuf,
+                        //         );
+                        //     }
+                        // }
+                    }
+                }
             } else if (self.modifyQueue.items.len > 0 and threadCtx.pendingModifies > 0) {
                 modifyBuf = self.modifyQueue.items[0];
                 modIndex = self.modifyQueue.items.len;
@@ -206,13 +263,19 @@ pub const Threads = struct {
             self.mutex.unlock();
 
             if (queryBuf) |q| {
-                // add time measurement
                 if (q[4] == 67) {
                     std.debug.print("SAVE COMMAND\n", .{});
-                    const data = try getResultSlice(true, threadCtx, 1, utils.read(u32, q, 0));
+                    const queryType: Query.QueryType = @enumFromInt(q[4]);
+                    const data = try getResultSlice(
+                        true,
+                        threadCtx,
+                        1,
+                        utils.read(u32, q, 0),
+                        queryType,
+                    );
                     data[0] = 67;
                 } else {
-                    try getQueryThreaded(self.ctx, q, threadCtx);
+                    try Query.getQueryThreaded(self.ctx, q, threadCtx);
                 }
 
                 self.mutex.lock();
@@ -243,12 +306,15 @@ pub const Threads = struct {
             }
 
             if (modifyBuf) |m| {
+                // special id is pos you can use it here [4] 🤪
+                // add block amoutn to load in buffer
+                // then check threads amount
+                // % what your work is
+
                 if (threadCtx.id == 0) {
 
-                    // special id is pos you can use it here [4] 🤪
-
                     // Modify worker
-                    try modifyInternal(threadCtx, m, self.ctx);
+                    try Modify.modify(threadCtx, m, self.ctx);
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
@@ -267,8 +333,6 @@ pub const Threads = struct {
                     self.mutex.unlock();
                 }
             }
-
-            // needs save
         }
     }
 
