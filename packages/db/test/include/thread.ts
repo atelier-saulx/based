@@ -86,11 +86,6 @@ await test('include', async (t) => {
 
   // await db.query('user').get().inspect()
 
-  let readyTime
-  var isRdy = new Promise((resolve) => {
-    readyTime = resolve
-  })
-
   const amount = 1_000_000
   // const amount = 1_000_000
 
@@ -100,19 +95,6 @@ await test('include', async (t) => {
   0
 
   var d = Date.now()
-
-  // db.server.addQueryWorkerListener(new Uint8Array([6, 6, 6, 6, 67]), (x) => {
-  //   console.log('derp', x)
-  // })
-
-  // var cnt = 0
-  // db.server.addQueryWorkerListener(buf, (x) => {
-  //   cnt++
-  //   if (cnt === amount) {
-  //     console.log('DONE!')
-  //     readyTime()
-  //   }
-  // })
 
   for (let i = 0; i < amount; i++) {
     native.getQueryBufThread(buf, db.server.dbCtxExternal)
@@ -125,7 +107,7 @@ await test('include', async (t) => {
 
   console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
 
-  await isRdy
+  await db.query('user').get().inspect()
 
   console.log('done')
 })
