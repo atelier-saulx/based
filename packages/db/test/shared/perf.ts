@@ -114,7 +114,7 @@ export async function perf(
 
 async function callWrapper(fn: () => void | Promise<void>) {
   const result = fn()
-  if (result instanceof Promise) {
+  if (result && typeof (result as any).then === 'function') {
     await result
   }
 }
