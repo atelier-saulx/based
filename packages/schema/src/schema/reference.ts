@@ -18,19 +18,19 @@ export type SchemaReference<strict = false> = Base &
   }
 
 let parsingEdges: boolean
-export const parseReference = (def: unknown): SchemaReference<true> => {
-  assert(isRecord(def))
-  assert(def.type === undefined || def.type === 'reference')
-  assert(isString(def.ref))
+export const parseReference = (
+  def: Record<string, unknown>,
+): SchemaReference<true> => {
+  assert(isString(def.ref), 'Ref should be string')
 
   if (parsingEdges) {
-    return parseBase<Omit<SchemaReference<true>, EdgeExcludedProps>>(def, {
+    return parseBase<SchemaReference<true>>(def, {
       type: 'reference',
       ref: def.ref,
-    }) as SchemaReference<true>
+    } as SchemaReference<true>)
   }
 
-  assert(isString(def.prop))
+  assert(isString(def.prop), 'Prop should be string')
 
   const result: SchemaReference<true> = {
     type: 'reference',
@@ -41,7 +41,7 @@ export const parseReference = (def: unknown): SchemaReference<true> => {
   parsingEdges = true
   for (const key in def) {
     if (key.startsWith('$')) {
-      result[key] = parseProp(def[key])
+      result[key] = parseProp(def, key)
     }
   }
   parsingEdges = false

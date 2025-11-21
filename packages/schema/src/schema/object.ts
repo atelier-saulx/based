@@ -6,14 +6,14 @@ export type SchemaObject<strict = false> = Base & {
   props: Record<string, SchemaProp<strict>>
 } & RequiredIfStrict<{ type: 'object' }, strict>
 
-export const parseObject = (def: unknown): SchemaObject<true> => {
-  assert(isRecord(def))
-  assert(def.type === undefined || def.type === 'object')
-  assert(isRecord(def.props))
+export const parseObject = (
+  def: Record<string, unknown>,
+): SchemaObject<true> => {
+  assert(isRecord(def.props), 'Props should be record')
 
   const props = {}
   for (const prop in def.props) {
-    props[prop] = parseProp(def.props[prop])
+    props[prop] = parseProp(def.props, prop)
   }
 
   return parseBase<SchemaObject<true>>(def, {

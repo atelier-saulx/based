@@ -10,13 +10,17 @@ export type SchemaBinary = Base & {
   format?: StringFormat
 }
 
-export const parseBinary = (def: unknown): SchemaBinary => {
-  assert(isRecord(def))
-  assert(def.type === 'binary')
-  assert(def.default === undefined || def.default instanceof Uint8Array)
-  assert(def.maxBytes === undefined || isNatural(def.maxBytes))
-  assert(def.mime === undefined || isMime(def.mime))
-  assert(def.format === undefined || isFormat(def.format))
+export const parseBinary = (def: Record<string, unknown>): SchemaBinary => {
+  assert(
+    def.default === undefined || def.default instanceof Uint8Array,
+    'Default should be Uint8Array',
+  )
+  assert(
+    def.maxBytes === undefined || isNatural(def.maxBytes),
+    'Max Bytes should be a natural number',
+  )
+  assert(def.mime === undefined || isMime(def.mime), 'Invalid mime')
+  assert(def.format === undefined || isFormat(def.format), 'Invalid format')
 
   return parseBase<SchemaBinary>(def, {
     type: 'binary',

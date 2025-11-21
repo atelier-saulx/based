@@ -1,4 +1,4 @@
-import type { DbPropDef, ObjPropDef, PropDef, TypeDef } from './schema/def.js'
+import type { DbPropDef, ObjPropDef, PropDef, TypeDef } from './def/index.js'
 import {
   parseSchema,
   type Schema,
@@ -7,9 +7,9 @@ import {
 } from './schema/schema.js'
 
 export type { Schema, SchemaIn, SchemaOut }
-export * from './enums.js'
+export * from './def/enums.js'
 export * from './schema/lang.js'
-export * from './schema/def.js'
+export * from './def/index.js'
 
 export const parse = (input: SchemaIn): { schema: SchemaOut } => {
   const schema = parseSchema(input)
@@ -37,24 +37,20 @@ export const getPropChain = (
   })
 }
 
-const collectProps = (def: ObjPropDef | TypeDef, result: DbPropDef[]) => {
+export function* getAllProps(
+  def: ObjPropDef | TypeDef,
+): IterableIterator<DbPropDef> {
   for (const key in def.props) {
     const propDef = def.props[key]
-    if ('target' in propDef) {
-      continue
-    }
+
     if ('props' in propDef) {
-      collectProps(propDef, result)
-    } else {
-      result.push(propDef)
+      console.log('- obj')
+      yield* getAllProps(propDef)
+    } else if (!('target' in propDef)) {
+      console.log('- prop')
+      yield propDef
     }
   }
-}
-
-export const getAllProps = (typeDef: TypeDef): DbPropDef[] => {
-  const result: DbPropDef[] = []
-  collectProps(typeDef, result)
-  return result
 }
 
 export const getProp = (typeDef: TypeDef, path: string[]): PropDef | void =>

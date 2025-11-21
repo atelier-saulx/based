@@ -18,11 +18,12 @@ export type SchemaEnum<strict = false> = Base &
 const isEnumItem = (v: unknown): v is EnumItem =>
   isString(v) || isNumber(v) || isBoolean(v)
 
-export const parseEnum = (def: unknown): SchemaEnum<true> => {
-  assert(isRecord(def))
-  assert(def.type === undefined || def.type === 'enum')
-  assert(def.default === undefined || isEnumItem(def.default))
-  assert(Array.isArray(def.enum) && def.enum.every(isEnumItem))
+export const parseEnum = (def: Record<string, unknown>): SchemaEnum<true> => {
+  assert(
+    def.default === undefined || isEnumItem(def.default),
+    'Default should be valid enum',
+  )
+  assert(Array.isArray(def.enum) && def.enum.every(isEnumItem), 'Invalid enum')
 
   return parseBase<SchemaEnum<true>>(def, {
     type: 'enum',

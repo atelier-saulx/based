@@ -8,17 +8,24 @@ export type SchemaCardinality = Base & {
   mode?: 'sparse' | 'dense'
 }
 
-export const parseCardinality = (def: unknown): SchemaCardinality => {
-  assert(isRecord(def))
-  assert(def.type === 'cardinality')
-  assert(def.maxBytes === undefined || isNatural(def.maxBytes))
-  assert(def.precision === undefined || isNatural(def.precision))
+export const parseCardinality = (
+  def: Record<string, unknown>,
+): SchemaCardinality => {
+  assert(
+    def.maxBytes === undefined || isNatural(def.maxBytes),
+    'Max Bytes should be natural number',
+  )
+  assert(
+    def.precision === undefined || isNatural(def.precision),
+    'Precision should be natural number',
+  )
   assert(
     def.mode === undefined || def.mode === 'sparse' || def.mode === 'dense',
+    "Mode should be 'sparse' or 'dense'",
   )
 
   return parseBase<SchemaCardinality>(def, {
-    type: def.type,
+    type: 'cardinality',
     maxBytes: def.maxBytes,
     precision: def.precision,
     mode: def.mode,

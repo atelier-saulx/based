@@ -11,6 +11,7 @@ import { parseType, type SchemaType } from './type.js'
 import { langCodesMap, type LangName } from './lang.js'
 import type { SchemaProp } from './prop.js'
 import { hash } from '@based/hash'
+import { inspect } from 'node:util'
 
 type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 type SchemaLocales = Partial<
@@ -103,8 +104,12 @@ const parseRefs = (
       }
     }
 
-    assert(inverse.ref === type)
-    assert(inverse.prop === dotPath)
+    assert(inverse.ref === type, [inverse, 'ref', `Ref should be ${type}`])
+    assert(inverse.prop === dotPath, [
+      inverse,
+      'prop',
+      `Prop should be ${dotPath}`,
+    ])
   } else if ('items' in prop) {
     parseRefs(types, type, prop.items, path)
   } else if ('props' in prop) {
@@ -114,24 +119,85 @@ const parseRefs = (
   }
 }
 
+const getPath = (
+  obj: Record<string, unknown>,
+  def: Record<string, unknown>,
+  path: string[],
+): string[] | undefined => {
+  for (const k in obj) {
+    const v = obj[k]
+    if (v === def) {
+      return path
+    }
+    if (isRecord(v)) {
+      const res = getPath(v, def, [...path, k])
+      if (res) return res
+    }
+  }
+}
+
+const parseError = (v: Record<string, unknown>, e): Error => {
+  if (Array.isArray(e)) {
+    const [obj, key, msg] = e
+    const def = obj[key]
+    if (isRecord(def)) {
+      const path = getPath(v, def, [])
+      e = `${path?.join('.')}: ${inspect(def)} ${msg}`
+    } else {
+      const path = getPath(v, obj, [])
+      e = `${path?.join('.')}.${key}: ${inspect(def)} ${msg}`
+    }
+  }
+  return Error(e)
+}
+
 export const parseSchema = (v: unknown): SchemaOut => {
-  assert(isRecord(v))
-  assert(isRecord(v.types))
-  assert(v.version === undefined || isString(v.version))
-  assert(v.locales === undefined || isLocales(v.locales))
-  assert(v.migrations === undefined || isMigrations(v.migrations))
-  assert(v.defaultTimezone === undefined || isString(v.defaultTimezone))
+  assert(isRecord(v), 'Schema should be record')
+  assert(isRecord(v.types), 'Types should be record')
+  assert(
+    v.version === undefined || isString(v.version),
+    'Version should be string',
+  )
+  assert(v.locales === undefined || isLocales(v.locales), 'Invalid locales')
+  assert(
+    v.migrations === undefined || isMigrations(v.migrations),
+    'Invalid migrations',
+  )
+  assert(
+    v.defaultTimezone === undefined || isString(v.defaultTimezone),
+    'Invalid Default Timezone',
+  )
 
   const types: SchemaTypes<true> = {}
-  for (const key in v.types) {
-    types[key] = parseType(v.types[key])
+  try {
+    for (const key in v.types) {
+      const type = v.types[key]
+      assert(isRecord(type), [v.types, key, 'Type should be object'])
+      types[key] = parseType(type)
+    }
+  } catch (e) {
+    if (Array.isArray(e)) {
+      const [obj, key, msg] = e
+      const def = obj[key]
+      if (isRecord(def)) {
+        const path = getPath(v, def, [])
+        e = `${path?.join('.')}: ${inspect(def)} ${msg}`
+      } else {
+        const path = getPath(v, obj, [])
+        e = `${path?.join('.')}.${key}: ${inspect(def)} ${msg}`
+      }
+    }
+    throw parseError(v, e)
   }
 
-  // handle references here now
-  for (const type in types) {
-    for (const k in types[type].props) {
-      parseRefs(types, type, types[type].props[k], [k])
+  try {
+    for (const type in types) {
+      for (const k in types[type].props) {
+        parseRefs(types, type, types[type].props[k], [k])
+      }
     }
+  } catch (e) {
+    throw parseError({ types }, e)
   }
 
   const clean = deleteUndefined({

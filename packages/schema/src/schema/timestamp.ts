@@ -19,17 +19,26 @@ const isTimestamp = (v: unknown): v is Timestamp =>
 const convertToTsIfDefined = (v: Timestamp | undefined): number | undefined =>
   v === undefined ? v : convertToTimestamp(v)
 
-export const parseTimestamp = (def: unknown): SchemaTimestamp<true> => {
-  assert(isRecord(def))
-  assert(def.type === 'timestamp')
-  assert(def.on === undefined || def.on === 'create' || def.on === 'update')
-  assert(def.min === undefined || isTimestamp(def.min))
-  assert(def.max === undefined || isTimestamp(def.max))
-  assert(def.step === undefined || isNumber(def.step) || isString(def.step))
-  assert(def.default === undefined || isTimestamp(def.default))
+export const parseTimestamp = (
+  def: Record<string, unknown>,
+): SchemaTimestamp<true> => {
+  assert(
+    def.on === undefined || def.on === 'create' || def.on === 'update',
+    "On should be one of 'create' or 'update",
+  )
+  assert(def.min === undefined || isTimestamp(def.min), 'Invalid timestamp')
+  assert(def.max === undefined || isTimestamp(def.max), 'Invalid max timestamp')
+  assert(
+    def.step === undefined || isNumber(def.step) || isString(def.step),
+    'Invalid step',
+  )
+  assert(
+    def.default === undefined || isTimestamp(def.default),
+    'Invalid default timestamp',
+  )
 
   return parseBase<SchemaTimestamp<true>>(def, {
-    type: def.type,
+    type: 'timestamp',
     on: def.on,
     min: convertToTsIfDefined(def.min),
     max: convertToTsIfDefined(def.max),

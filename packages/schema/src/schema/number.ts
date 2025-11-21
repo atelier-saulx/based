@@ -24,13 +24,15 @@ export type SchemaNumber = Base & {
 const isNumberType = (v: unknown): v is NumberType =>
   isString(v) && numberTypes.includes(v as NumberType)
 
-export const parseNumber = (def: unknown): SchemaNumber => {
-  assert(isRecord(def))
-  assert(isNumberType(def.type))
-  assert(def.default === undefined || isNumber(def.default))
-  assert(def.min === undefined || isNumber(def.min))
-  assert(def.max === undefined || isNumber(def.max))
-  assert(def.step === undefined || isNumber(def.step))
+export const parseNumber = (def: Record<string, unknown>): SchemaNumber => {
+  assert(isNumberType(def.type), `Type should be one of ${numberTypes}`)
+  assert(
+    def.default === undefined || isNumber(def.default),
+    'Default should be number',
+  )
+  assert(def.min === undefined || isNumber(def.min), 'Min should be number')
+  assert(def.max === undefined || isNumber(def.max), 'Max should be number')
+  assert(def.step === undefined || isNumber(def.step), 'Step should be number')
 
   return parseBase<SchemaNumber>(def, {
     type: def.type,

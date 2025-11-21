@@ -152,46 +152,46 @@ export const writeCreate = (
 ) => {
   validatePayload(payload)
 
-  if (schema.propHooks?.create) {
-    for (const def of schema.propHooks.create) {
-      let val = payload
-      let obj: any
-      let key: string
-      for (key of def.path) {
-        obj = val
-        val = val?.[key]
-      }
-      if (val !== undefined) {
-        obj[key] = def.hooks.create(val, obj)
-      }
-    }
-  }
+  // if (schema.propHooks?.create) {
+  //   for (const def of schema.propHooks.create) {
+  //     let val = payload
+  //     let obj: any
+  //     let key: string
+  //     for (key of def.path) {
+  //       obj = val
+  //       val = val?.[key]
+  //     }
+  //     if (val !== undefined) {
+  //       obj[key] = def.hooks.create(val, obj)
+  //     }
+  //   }
+  // }
 
-  if (schema.hooks?.create) {
-    payload = schema.hooks.create(payload) || payload
-  }
+  // if (schema.hooks?.create) {
+  //   payload = schema.hooks.create(payload) || payload
+  // }
 
-  if (ctx.defaults) {
-    ctx.defaults = 0
-    schema.separateDefaults?.bufferTmp.fill(0)
-  }
+  // if (ctx.defaults) {
+  //   ctx.defaults = 0
+  //   schema.separateDefaults?.bufferTmp.fill(0)
+  // }
 
-  if (ctx.sort) {
-    ctx.sort = 0
-    schema.separateSort.bufferTmp.set(schema.separateSort.buffer)
-  }
+  // if (ctx.sort) {
+  //   ctx.sort = 0
+  //   schema.separateSort.bufferTmp.set(schema.separateSort.buffer)
+  // }
 
-  if (ctx.sortText) {
-    ctx.sortText = 0
-    schema.separateTextSort.bufferTmp.set(schema.separateTextSort.buffer)
-  }
+  // if (ctx.sortText) {
+  //   ctx.sortText = 0
+  //   schema.separateTextSort.bufferTmp.set(schema.separateTextSort.buffer)
+  // }
 
   ctx.schema = schema
   ctx.operation = CREATE
   ctx.unsafe = opts?.unsafe
-  ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
+  ctx.locale = (opts?.locale && langCodesMap.get(opts.locale)) || 0
   // TODO: can we remove this (and just init main buffer here?)
-  ctx.cursor.main = null
+  ctx.cursor.main = undefined
 
   reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)

@@ -6,12 +6,8 @@ export type SchemaJson = Base & {
   default?: any
 }
 
-export const parseJson = (def: unknown): SchemaJson => {
-  assert(isRecord(def))
-  assert(def.type === 'json')
-
-  return parseBase<SchemaJson>(def, {
-    type: def.type,
+export const parseJson = (def: Record<string, unknown>): SchemaJson =>
+  parseBase<SchemaJson>(def, {
+    type: 'json',
     default: def.default,
   })
-}

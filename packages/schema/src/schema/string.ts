@@ -1,79 +1,10 @@
 import { isString, isNatural, isRecord, assert } from './shared.js'
 import { parseBase, type Base } from './base.js'
+import { validators } from '../def/validation.js'
 
-export const stringFormats = [
-  'alpha',
-  'alphaLocales',
-  'alphanumeric',
-  'alphanumericLocales',
-  'ascii',
-  'base32',
-  'base58',
-  'base64',
-  'BIC',
-  'btcAddress',
-  'clike',
-  'code',
-  'creditCard',
-  'css',
-  'currency',
-  'dataURI',
-  'EAN',
-  'email',
-  'ethereumAddress',
-  'FQDN',
-  'hexadecimal',
-  'hexColor',
-  'HSL',
-  'html',
-  'IBAN',
-  'identityCard',
-  'IMEI',
-  'IP',
-  'IPRange',
-  'ISBN',
-  'ISIN',
-  'ISO31661Alpha2',
-  'ISO31661Alpha3',
-  'ISO4217',
-  'ISO6391',
-  'ISO8601',
-  'ISRC',
-  'ISSN',
-  'javascript',
-  'json',
-  'JWT',
-  'latLong',
-  'licensePlate',
-  'lowercase',
-  'luhnNumber',
-  'MACAddress',
-  'magnetURI',
-  'markdown',
-  'MD5',
-  'mimeType',
-  'mobilePhone',
-  'mobilePhoneLocales',
-  'octal',
-  'password',
-  'passportNumber',
-  'port',
-  'postalCode',
-  'postalCodeLocales',
-  'python',
-  'RFC3339',
-  'rgbColor',
-  'rust',
-  'semVer',
-  'slug',
-  'surrogatePair',
-  'taxID',
-  'typescript',
-  'uppercase',
-  'URL',
-  'UUID',
-  'VAT',
-] as const
+export type StringFormat = keyof typeof validators
+
+export const stringFormats = Object.keys(validators) as StringFormat[]
 export const stringCompressions = ['none', 'deflate']
 
 export type StringCompression = (typeof stringCompressions)[number]
@@ -89,10 +20,10 @@ type KnownMimeTypes =
   | 'video/*'
   | 'audio/*'
   | '*/*'
+
 type GeneralMimeType = `${string}/${string}`
 type MimeString = KnownMimeTypes | (GeneralMimeType & {})
 
-export type StringFormat = (typeof stringFormats)[number]
 export type Mime = MimeString | MimeString[]
 
 const isMimeString = (v: unknown): v is MimeString =>
@@ -118,19 +49,32 @@ export type SchemaString = Base & {
   compression?: StringCompression
 }
 
-export const parseString = (def: unknown): SchemaString => {
-  assert(isRecord(def))
-  assert(def.type === 'string')
-  assert(def.default === undefined || isString(def.default))
-  assert(def.maxBytes === undefined || isNatural(def.maxBytes))
-  assert(def.min === undefined || isNatural(def.min))
-  assert(def.max === undefined || isNatural(def.max))
-  assert(def.mime === undefined || isMime(def.mime))
-  assert(def.format === undefined || isFormat(def.format))
-  assert(def.compression === undefined || isCompression(def.compression))
+export const parseString = (def: Record<string, unknown>): SchemaString => {
+  assert(
+    def.default === undefined || isString(def.default),
+    'Default should be string',
+  )
+  assert(
+    def.maxBytes === undefined || isNatural(def.maxBytes),
+    'Max bytes should be natural number',
+  )
+  assert(
+    def.min === undefined || isNatural(def.min),
+    'Min should be natural number',
+  )
+  assert(
+    def.max === undefined || isNatural(def.max),
+    'Max should be natural number',
+  )
+  assert(def.mime === undefined || isMime(def.mime), 'Invalid mime')
+  assert(def.format === undefined || isFormat(def.format), 'Invalid format')
+  assert(
+    def.compression === undefined || isCompression(def.compression),
+    'Invalid compression',
+  )
 
   return parseBase<SchemaString>(def, {
-    type: def.type,
+    type: 'string',
     default: def.default,
     maxBytes: def.maxBytes,
     min: def.min,

@@ -6,10 +6,11 @@ export type SchemaBoolean = Base & {
   default?: boolean
 }
 
-export const parseBoolean = (def: unknown): SchemaBoolean => {
-  assert(isRecord(def))
-  assert(def.type === 'boolean')
-  assert(def.default === undefined || isBoolean(def.default))
+export const parseBoolean = (def: Record<string, unknown>): SchemaBoolean => {
+  assert(
+    def.default === undefined || isBoolean(def.default),
+    'Default should be boolean',
+  )
 
   return parseBase<SchemaBoolean>(def, {
     type: 'boolean',

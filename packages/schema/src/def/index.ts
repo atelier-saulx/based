@@ -1,16 +1,19 @@
-import type { SchemaEnum } from './enum.js'
-import type { SchemaObject } from './object.js'
-import type { SchemaProp } from './prop.js'
-import type { SchemaReference } from './reference.js'
-import type { SchemaReferences } from './references.js'
-import type { SchemaOut } from './schema.js'
-import type { SchemaString } from './string.js'
-import type { SchemaProps, SchemaType } from './type.js'
-import type { SchemaVector } from './vector.js'
+import { typeMap, type Type } from './enums.js'
+import type { SchemaEnum } from '../schema/enum.js'
+import type { SchemaObject } from '../schema/object.js'
+import type { SchemaProp } from '../schema/prop.js'
+import type { SchemaReference } from '../schema/reference.js'
+import type { SchemaReferences } from '../schema/references.js'
+import type { SchemaOut } from '../schema/schema.js'
+import type { SchemaString } from '../schema/string.js'
+import type { SchemaProps, SchemaType } from '../schema/type.js'
+import type { SchemaVector } from '../schema/vector.js'
+import { getValidator, type Validation } from './validation.js'
 
 type BaseProp = {
   typeDef: TypeDef
   path: string[]
+  validation: Validation
 }
 
 type DbProp = BaseProp & {
@@ -38,7 +41,7 @@ type PropDefRest = Exclude<
 export type ObjPropDef = SchemaObject<true> &
   BaseProp & { props: Record<string, PropDef> }
 export type RefPropDef = RefLike &
-  DbProp & { target: PropDef; edges?: Record<string, PropDef> }
+  DbProp & { target: PropDef; edgeDef?: TypeDef }
 export type DbPropDef = RefPropDef | PropDefRest | EnumPropDef
 export type PropDef = ObjPropDef | DbPropDef
 export type TypeDef = Omit<SchemaType<true>, 'props'> & {
@@ -56,37 +59,8 @@ const stringLen = ({ maxBytes = Infinity, max = Infinity }: SchemaString) =>
 const numberLen = (type?: string) =>
   (type && Number(type.replace(/[^0-9]/g, '')) / 4) || 8
 
-const propTypeEnums: Record<
-  Exclude<SchemaProp<true>['type'], 'object'>,
-  number
-> = {
-  alias: 18,
-  binary: 25,
-  boolean: 9,
-  cardinality: 5,
-  colvec: 30,
-  enum: 10,
-  int16: 21,
-  int32: 23,
-  int8: 20,
-  json: 28,
-  number: 4,
-  reference: 13,
-  references: 14,
-  string: 11,
-  text: 12,
-  timestamp: 1,
-  uint8: 6,
-  uint16: 22,
-  uint32: 7,
-  vector: 27,
-} as const
-
 const propMainSizes: Partial<
-  Record<
-    SchemaProp<true>['type'],
-    number | ((propSchema: SchemaProp<true>) => number)
-  >
+  Record<Type, number | ((propSchema: SchemaProp<true>) => number)>
 > = {
   boolean: 1,
   enum: 1,
@@ -103,8 +77,8 @@ const propMainSizes: Partial<
   binary: stringLen,
   string: stringLen,
   cardinality: stringLen,
-  colvec: ({ size, baseType }: SchemaVector) => size * numberLen(baseType),
   vector: ({ size }: SchemaVector) => size * 4,
+  colvec: ({ size, baseType }: SchemaVector) => size * numberLen(baseType),
 }
 
 export const schemaToDefs = (schema: SchemaOut): Defs => {
@@ -153,6 +127,7 @@ export const schemaToDefs = (schema: SchemaOut): Defs => {
         const mainSize =
           typeof getSize === 'function' ? getSize(propSchema) : getSize || 0
         const propPath = [...path, prop]
+        const validation = getValidator(propSchema)
         let propDef: PropDef
 
         if (propType === 'object') {
@@ -162,15 +137,17 @@ export const schemaToDefs = (schema: SchemaOut): Defs => {
             typeDef,
             ...rest,
             props: parseProps(propSchema.props, propPath, {}),
+            validation,
           }
         } else {
           propDef = {
             id: mainSize ? 0 : propIdCnt++,
             type: propType,
-            typeEnum: propTypeEnums[propType],
+            typeEnum: typeMap[propType],
             typeDef,
             path: propPath,
             ...rest,
+            validation,
           } as PropDef
 
           if ('enum' in propDef) {
@@ -189,9 +166,6 @@ export const schemaToDefs = (schema: SchemaOut): Defs => {
         }
 
         propDefs[prop] = propDef
-        // if (propDef.path.length > 1) {
-        //   typeProps[propDef.path.join('.')] = propDef
-        // }
       }
       return propDefs
     }
@@ -224,8 +198,8 @@ export const schemaToDefs = (schema: SchemaOut): Defs => {
       const edgeProp = edgeType.props[key]
       refSchema[key] = edgeProp
       targetSchema[key] = edgeProp
-      refDef.edges = edgeType.props
-      target.edges = edgeType.props
+      refDef.edgeDef = edgeType
+      target.edgeDef = edgeType
     }
 
     defs[edgeTypeName] = edgeType

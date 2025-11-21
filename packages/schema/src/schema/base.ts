@@ -7,6 +7,7 @@ import {
 } from './shared.js'
 import type { SchemaProp } from './prop.js'
 import { isHooks, type SchemaPropHooks } from './hooks.js'
+import { getValidator } from '../def/validation.js'
 
 type Validation = (payload: any, schema: SchemaProp<true>) => boolean | string
 
@@ -20,15 +21,27 @@ export type Base = {
 
 const isValidation = (v: unknown): v is Validation => isFunction(v)
 
-export const parseBase = <T extends Base>(
+export const parseBase = <T extends SchemaProp<true>>(
   def: Record<string, unknown>,
   result: T,
 ): T => {
-  assert(def.required === undefined || isBoolean(def.required))
-  assert(def.title === undefined || isString(def.title))
-  assert(def.description === undefined || isString(def.description))
-  assert(def.validation === undefined || isValidation(def.validation))
-  assert(def.hooks === undefined || isHooks(def.hooks))
+  assert(
+    def.required === undefined || isBoolean(def.required),
+    'Required should be boolean',
+  )
+  assert(
+    def.title === undefined || isString(def.title),
+    'Title should be string',
+  )
+  assert(
+    def.description === undefined || isString(def.description),
+    'Description should be string',
+  )
+  assert(
+    def.validation === undefined || isValidation(def.validation),
+    'Invalid validation',
+  )
+  assert(def.hooks === undefined || isHooks(def.hooks), 'Invalid hooks')
 
   result.required = def.required
   result.title = def.title
@@ -36,15 +49,17 @@ export const parseBase = <T extends Base>(
   result.validation = def.validation
   result.hooks = def.hooks
 
-  if ('default' in def) {
-    // validate default here
-    console.warn('TODO validate default here!')
-  }
+  const unexpectedKey = Object.keys(def).find((key) => !(key in result))
+  assert(unexpectedKey === undefined, `Unexpected property: ${unexpectedKey}`)
 
-  assert(
-    Object.keys(def).every((key) => key in result),
-    'Unexpected key',
-  )
+  if ('default' in result) {
+    const validation = getValidator(result)
+    assert(
+      validation(result.default, result),
+      `Default should be valid ${('format' in result && result.format) || result.type}`,
+    )
+    result.default = def.default
+  }
 
   return deleteUndefined(result)
 }

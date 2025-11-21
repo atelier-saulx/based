@@ -50,27 +50,40 @@ export type SchemaType<strict = false> = strict extends true
   ? SchemaTypeObj<strict>
   : SchemaTypeObj<strict> | ({ props?: never } & SchemaProps<strict>)
 
-const parseProps = (typeProps: unknown) => {
-  assert(isRecord(typeProps))
+const parseProps = (typeProps: Record<string, unknown>) => {
   const props: SchemaProps<true> = {}
   for (const key in typeProps) {
-    props[key] = parseProp(typeProps[key])
+    props[key] = parseProp(typeProps, key)
   }
   return props
 }
 
-export const parseType = (type: unknown): SchemaType<true> => {
-  assert(isRecord(type))
-
+export const parseType = (type: Record<string, unknown>): SchemaType<true> => {
   if (type.props === undefined) {
     return { props: parseProps(type) }
   }
 
-  assert(type.hooks === undefined || isHooks<SchemaHooks>(type.hooks))
-  assert(type.blockCapacity === undefined || isNatural(type.blockCapacity))
-  assert(type.capped === undefined || isNatural(type.capped))
-  assert(type.partial === undefined || isBoolean(type.partial))
-
+  assert(type.hooks === undefined || isHooks<SchemaHooks>(type.hooks), [
+    type,
+    'hooks',
+    'Invalid hooks',
+  ])
+  assert(type.blockCapacity === undefined || isNatural(type.blockCapacity), [
+    type,
+    'blockCapacity',
+    'Should be natural number',
+  ])
+  assert(type.capped === undefined || isNatural(type.capped), [
+    type,
+    'capped',
+    'Should be natural number',
+  ])
+  assert(type.partial === undefined || isBoolean(type.partial), [
+    type,
+    'partial',
+    'Should be boolean',
+  ])
+  assert(isRecord(type.props), [type, 'props', 'Should be record'])
   const result = {
     hooks: type.hooks,
     blockCapacity: type.blockCapacity,

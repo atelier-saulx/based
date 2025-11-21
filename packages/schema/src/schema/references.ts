@@ -7,8 +7,10 @@ export type SchemaReferences<strict = true> = Base &
     items: SchemaReference<strict>
   }
 
-export const parseReferences = (def: unknown): SchemaReferences => {
-  assert(isRecord(def))
+export const parseReferences = (
+  def: Record<string, unknown>,
+): SchemaReferences => {
+  assert(isRecord(def.items), 'Items should be record')
   return parseBase<SchemaReferences>(def, {
     type: 'references',
     items: parseReference(def.items),

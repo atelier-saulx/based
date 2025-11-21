@@ -17,11 +17,16 @@ export type SchemaVector = Base & {
   baseType?: (typeof vectorBaseTypes)[number]
 }
 
-export const parseVector = (def: unknown): SchemaVector => {
-  assert(isRecord(def))
-  assert(def.type === 'vector' || def.type === 'colvec')
-  assert(isNatural(def.size))
-  assert(isString(def.baseType) && vectorBaseTypes.includes(def.baseType))
+export const parseVector = (def: Record<string, unknown>): SchemaVector => {
+  assert(
+    def.type === 'vector' || def.type === 'colvec',
+    "Type should be one of 'vector' or 'colvec'",
+  )
+  assert(isNatural(def.size), 'Size should be natural number')
+  assert(
+    isString(def.baseType) && vectorBaseTypes.includes(def.baseType),
+    'Invalid baseType',
+  )
 
   return parseBase<SchemaVector>(def, {
     type: def.type,
