@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { performance } from 'perf_hooks'
 import { styleText } from 'util'
+import { difference } from '../../../schema/dist/parse/semver/difference.js'
 
 const MEASURES_PER_TEST = 10
 
@@ -92,10 +93,12 @@ export async function perf(
             'red',
             `+${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
           )
-        : styleText(
-            'green',
-            `${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
-          )
+        : !isNaN(diff.difference)
+          ? styleText(
+              'green',
+              `${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+            )
+          : ''
     if (!silent)
       console.log(
         styleText(
