@@ -119,7 +119,7 @@ export class BlockMap {
 
   setDirtyBlocks(dirtyBlocks: Float64Array) {
     for (const key of dirtyBlocks) {
-      this.getBlock(key).status = 'dirty'
+      this.updateBlock(key, new Uint8Array(BLOCK_HASH_SIZE), 'dirty')
     }
   }
 
