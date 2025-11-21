@@ -49,6 +49,11 @@ await test('include', async (t) => {
     nr: 67,
   })
 
+  await wait(100)
+
+  console.log('BLOCMMAP!!!')
+  console.dir(db.server.blockMap.foreachBlock(console.log))
+
   var modCnt = 1
   const callMod = () => {
     const makeThing = new Uint8Array([

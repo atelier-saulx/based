@@ -69,7 +69,8 @@ export async function start(db: DbServer, opts: StartOpts) {
       const v = new Uint8Array(buffer)
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
-        const dirtyBlocks = new Float64Array(v.buffer, i + 8, (size - 8) / 8);
+        const dirtyBlocks = new Float64Array(v.buffer, i + 8, (size - 8) / 8)
+        console.log('DERP', dirtyBlocks)
         db.blockMap.setDirtyBlocks(dirtyBlocks)
         i += size
       }
@@ -171,18 +172,21 @@ export async function start(db: DbServer, opts: StartOpts) {
   }
 
   if (!opts?.hosted) {
-    db.unlistenExit = asyncExitHook(async (signal) => {
-      const blockSig = () => {}
-      const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
-      // A really dumb way to block signals temporarily while saving.
-      // This is needed because there is no way to set the process signal mask
-      // in Node.js.
-      signals.forEach((sig) => process.on(sig, blockSig))
-      db.emit('info', `Exiting with signal: ${signal}`)
-      await db.save()
-      db.emit('info', 'Successfully saved.')
-      signals.forEach((sig) => process.off(sig, blockSig))
-    }, { wait: 5000 })
+    db.unlistenExit = asyncExitHook(
+      async (signal) => {
+        const blockSig = () => {}
+        const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
+        // A really dumb way to block signals temporarily while saving.
+        // This is needed because there is no way to set the process signal mask
+        // in Node.js.
+        signals.forEach((sig) => process.on(sig, blockSig))
+        db.emit('info', `Exiting with signal: ${signal}`)
+        await db.save()
+        db.emit('info', 'Successfully saved.')
+        signals.forEach((sig) => process.off(sig, blockSig))
+      },
+      { wait: 5000 },
+    )
   }
 
   // use timeout
