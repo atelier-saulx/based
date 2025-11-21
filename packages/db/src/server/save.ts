@@ -1,15 +1,9 @@
 import native from '../native.js'
-import { isMainThread } from 'node:worker_threads'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BlockMap, destructureTreeKey } from './blockMap.js'
-import {
-  saveBlock,
-  foreachBlock,
-  saveBlocks,
-} from './blocks.js'
+import { saveBlocks, } from './blocks.js'
 import { DbServer } from './index.js'
-import { writeFileSync } from 'node:fs'
 import { bufToHex } from '@based/utils'
 import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
 
@@ -30,34 +24,16 @@ export type Writelog = {
   }
 }
 
-function hasPartialTypes(db: DbServer): boolean {
-  for (const id in db.schemaTypesParsedById) {
-    if (db.schemaTypesParsedById[id].partial) {
-      return true
-    }
-  }
-  return false
-}
-
-type SaveOpts = {
-  forceFullDump?: boolean
+export type SaveOpts = {
   skipDirtyCheck?: boolean
   skipMigrationCheck?: boolean
 }
 
 function inhibitSave(
   db: DbServer,
-  { skipDirtyCheck, forceFullDump, skipMigrationCheck }: SaveOpts,
+  { skipDirtyCheck, skipMigrationCheck }: SaveOpts,
 ): boolean {
-  // RFE isMainThread needed??
-  if (
-    !(isMainThread && (skipDirtyCheck || db.blockMap.isDirty || forceFullDump))
-  ) {
-    return true
-  }
-
-  if (forceFullDump && hasPartialTypes(db)) {
-    db.emit('error', 'forceFullDump is not allowed with partial types')
+  if (!(skipDirtyCheck || db.blockMap.isDirty)) {
     return true
   }
 
@@ -106,55 +82,6 @@ function makeWritelog(db: DbServer, ts: number): Writelog {
   }
 }
 
-export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
-  if (inhibitSave(db, opts)) return
-
-  let ts = Date.now()
-  db.saveInProgress = true
-
-  try {
-    let err: number
-    err = native.saveCommon(
-      join(db.fileSystemPath, COMMON_SDB_FILE),
-      db.dbCtxExternal,
-    )
-    if (err) {
-      db.emit('error', `Save common failed: ${err}`)
-      // Return ?
-    }
-
-    if (opts.forceFullDump) {
-      // reset the state just in case
-      db.blockMap = new BlockMap(db.schemaTypesParsed)
-
-      // We use db.blockMap.types instead of db.schemaTypesParsed because it's
-      // ordered.
-      for (const { typeId } of db.blockMap.types()) {
-        const def = db.schemaTypesParsedById[typeId]
-        foreachBlock(db, def, (start: number, end: number, _hash: Uint8Array) =>
-          saveBlock(db, def.id, start, end),
-        )
-      }
-    } else {
-      db.blockMap.foreachDirtyBlock((typeId, start, end) => {
-        saveBlock(db, typeId, start, end)
-      }
-      )
-    }
-
-    const data = makeWritelog(db, ts)
-    const content = JSON.stringify(data)
-    db.emit('info', `Save took ${Date.now() - ts}ms`)
-
-    db.saveInProgress = false
-    return writeFileSync(join(db.fileSystemPath, WRITELOG_FILE), content)
-  } catch (err) {
-    db.emit('error', `Save failed ${err.message}`)
-    db.saveInProgress = false
-    throw err
-  }
-}
-
 export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
   if (inhibitSave(db, opts)) {
     return
@@ -180,41 +107,15 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
       start: number
     }[] = []
 
-    if (opts.forceFullDump) {
-      // reset the state just in case
-      db.blockMap = new BlockMap(db.schemaTypesParsed)
-
-      // We use db.blockMap.types instead of db.schemaTypesParsed because it's
-      // ordered.
-
-      for (const { typeId } of db.blockMap.types()) {
-        const def = db.schemaTypesParsedById[typeId]
-        foreachBlock(
-          db,
-          def,
-          (start: number, end: number, _hash: Uint8Array) => {
-            const typeId = def.id
-            const file = BlockMap.blockSdbFile(typeId, start, end)
-            const filepath = join(db.fileSystemPath, file)
-            blocks.push({
-              filepath,
-              typeId,
-              start,
-            })
-          },
-        )
-      }
-    } else {
-      db.blockMap.foreachDirtyBlock((typeId, start, end) => {
-        const file = BlockMap.blockSdbFile(typeId, start, end)
-        const filepath = join(db.fileSystemPath, file)
-        blocks.push({
-          filepath,
-          typeId,
-          start,
-        })
+    db.blockMap.foreachDirtyBlock((typeId, start, end) => {
+      const file = BlockMap.blockSdbFile(typeId, start, end)
+      const filepath = join(db.fileSystemPath, file)
+      blocks.push({
+        filepath,
+        typeId,
+        start,
       })
-    }
+    })
     await saveBlocks(db, blocks)
 
     try {

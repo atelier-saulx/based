@@ -15,7 +15,7 @@ import {
   destructureTreeKey,
   makeTreeKeyFromNodeId,
 } from './blockMap.js'
-import { save } from './save.js'
+import { save, SaveOpts } from './save.js'
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
@@ -100,7 +100,7 @@ export class DbServer extends DbShared {
     return start(this, opts)
   }
 
-  save(opts?: { forceFullDump?: boolean }) {
+  save(opts?: SaveOpts) {
     return save(this, opts)
   }
 

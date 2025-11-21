@@ -7,8 +7,8 @@ import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BlockMap, makeTreeKey } from './blockMap.js'
 import { foreachBlock } from './blocks.js'
-import exitHook from 'exit-hook'
-import { save, saveSync, Writelog } from './save.js'
+import { asyncExitHook } from 'exit-hook'
+import { Writelog } from './save.js'
 import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
@@ -191,7 +191,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   startWorkers(db, opts)
 
   if (!opts?.hosted) {
-    db.unlistenExit = exitHook((signal) => {
+    db.unlistenExit = asyncExitHook(async (signal) => {
       const blockSig = () => {}
       const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
       // A really dumb way to block signals temporarily while saving.
@@ -199,10 +199,10 @@ export async function start(db: DbServer, opts: StartOpts) {
       // in Node.js.
       signals.forEach((sig) => process.on(sig, blockSig))
       db.emit('info', `Exiting with signal: ${signal}`)
-      saveSync(db)
+      await db.save()
       db.emit('info', 'Successfully saved.')
       signals.forEach((sig) => process.off(sig, blockSig))
-    })
+    }, { wait: 5000 })
   }
 
   await Promise.all(db.workers.map(({ readyPromise }) => readyPromise))
@@ -211,7 +211,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   // use timeout
   if (db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {
-      save(db)
+      db.save()
     }, db.saveIntervalInSeconds * 1e3)
   }
 

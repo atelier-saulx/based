@@ -5,7 +5,6 @@ import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import native from '../native.js'
 import { SCHEMA_FILE } from '../types.js'
-import { saveSync } from './save.js'
 import { writeCreate } from '../client/modify/create/index.js'
 import { Ctx } from '../client/modify/Ctx.js'
 import { consume } from '../client/modify/drain.js'
@@ -66,6 +65,6 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
 
   server.blockMap.updateTypes(server.schemaTypesParsed)
   if (server.fileSystemPath) {
-    saveSync(server, { skipDirtyCheck: true })
+    server.save({ skipDirtyCheck: true }).catch(console.error)
   }
 }
