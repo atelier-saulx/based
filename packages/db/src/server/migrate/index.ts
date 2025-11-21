@@ -1,4 +1,4 @@
-import { BasedDb, save } from '../../index.js'
+import { BasedDb } from '../../index.js'
 import { dirname, join } from 'path'
 import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
@@ -168,7 +168,7 @@ export const migrate = async (
   let i = 0
   let rangesToMigrate: MigrateRange[] = []
 
-  await save(server, { skipMigrationCheck: true })
+  // await save(server, { skipMigrationCheck: true })
 
   server.blockMap.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
@@ -227,10 +227,10 @@ export const migrate = async (
     return
   }
   native.membarSyncRead()
-  await save(server, {
-    skipDirtyCheck: true,
-    skipMigrationCheck: true,
-  })
+  // await save(server, {
+  //   skipDirtyCheck: true,
+  //   skipMigrationCheck: true,
+  // })
   await writeSchemaFile(server, toSchema)
   server.migrating = 0
   process.nextTick(() => server.emit('schema', server.schema))

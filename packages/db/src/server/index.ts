@@ -498,40 +498,12 @@ export class DbServer extends DbShared {
   //     // This will be more advanced - sometimes has indexes / sometimes not
   //   }
 
-<<<<<<< HEAD
   //   // if (!fromQueue) {
   //   //   this.#expire()
   //   // }
 
   //   // return this.getQueryBuf(buf)
   // }
-=======
-      if (!fromQueue) {
-        this.#expire()
-      }
-    }
-  }
-
-  onQueryEnd() {
-    if (this.activeReaders === 0) {
-      if (this.modifyQueue.size) {
-        const modifyQueue = this.modifyQueue
-        this.modifyQueue = new Map()
-        for (const [resolve, payload] of modifyQueue) {
-          resolve(this.modify(payload))
-        }
-      }
-      if (this.queryQueue.size) {
-        const queryQueue = this.queryQueue
-        this.queryQueue = new Map()
-        this.#expire()
-        for (const [resolve, buf] of queryQueue) {
-          resolve(this.getQueryBuf(buf, true))
-        }
-      }
-    }
-  }
->>>>>>> 0e70ebf08 (Remove workers)
 
   async stop(noSave?: boolean) {
     if (this.stopped) {
