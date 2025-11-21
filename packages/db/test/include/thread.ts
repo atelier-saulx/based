@@ -140,12 +140,14 @@ await test('include', async (t) => {
 
   await db.query('user').range(0, 1e6).get().inspect()
 
-  // db.server.addQueryListener(9999, )
+  db.server.addQueryListener(0, () => {
+    console.log('yo')
+  })
   // native.getQueryBufThread()
 
   // save command
   native.getQueryBufThread(
-    new Uint8Array([6, 6, 6, 6, 67]),
+    new Uint8Array([0, 0, 0, 0, 67]),
     db.server.dbCtxExternal,
   )
 
