@@ -37,9 +37,8 @@ export type Schema<strict = false> = {
   version?: string
   types: SchemaTypes<strict>
   defaultTimezone?: string
-  locales?: SchemaLocales
   migrations?: Migrations
-} & RequiredIfStrict<{ hash: number }, strict>
+} & RequiredIfStrict<{ locales: SchemaLocales; hash: number }, strict>
 
 export type SchemaIn = Schema<false>
 export type SchemaOut = Schema<true>
@@ -183,7 +182,7 @@ export const parseSchema = (input: SchemaIn): SchemaOut => {
 
     const result = deleteUndefined({
       version: v.version,
-      locales: v.locales,
+      locales: v.locales || {},
       defaultTimezone: v.defaultTimezone,
       migrations: v.migrations,
       types,

@@ -104,7 +104,7 @@ export class DbServer extends DbShared {
   }
 
   async loadBlock(typeName: string, nodeId: number) {
-    const def = this.schemaTypesParsed[typeName]
+    const def = this.defs[typeName]
     if (!def) {
       throw new Error('Type not found')
     }
@@ -117,7 +117,7 @@ export class DbServer extends DbShared {
   }
 
   async unloadBlock(typeName: string, nodeId: number) {
-    const def = this.schemaTypesParsed[typeName]
+    const def = this.defs[typeName]
     if (!def) {
       throw new Error('Type not found')
     }
@@ -183,7 +183,7 @@ export class DbServer extends DbShared {
     field: string,
     lang: LangName = 'none',
   ): SortIndex {
-    const t = this.schemaTypesParsed[type]
+    const t = this.defs[type]
     const prop = t.props[field]
     const langCode =
       langCodesMap.get(lang ?? Object.keys(this.schema?.locales ?? 'en')[0]) ??
@@ -223,7 +223,7 @@ export class DbServer extends DbShared {
   }
 
   destroySortIndex(type: string, field: string, lang: LangName = 'none'): any {
-    const t = this.schemaTypesParsed[type]
+    const t = this.defs[type]
     const prop = t.props[field]
 
     let types = this.sortIndexes[t.id]
@@ -289,9 +289,9 @@ export class DbServer extends DbShared {
 
     if (field === 255) {
       prop = ID_FIELD_DEF
-      typeDef = this.schemaTypesParsedById[typeId]
+      typeDef = this.defsById[typeId]
     } else {
-      typeDef = this.schemaTypesParsedById[typeId]
+      typeDef = this.defsById[typeId]
       for (const p in typeDef.props) {
         const propDef = typeDef.props[p]
         if (propDef.prop == field && propDef.start == start) {

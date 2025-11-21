@@ -8,10 +8,10 @@ export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
   if (client.schema && client.schema.hash === schema.hash) {
     return client.schema
   }
-  const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
+  const { defs, defsById } = updateTypeDefs(schema)
   client.schema = schema
-  client.schemaTypesParsed = schemaTypesParsed
-  client.schemaTypesParsedById = schemaTypesParsedById
+  client.defs = defs
+  client.defsById = defsById
 
   if (client.modifyCtx.index > 8) {
     console.info('Modify cancelled - schema updated')

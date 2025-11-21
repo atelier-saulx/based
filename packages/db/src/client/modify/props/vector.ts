@@ -1,12 +1,16 @@
 import { Ctx } from '../Ctx.js'
-import { PropDef } from '@based/schema/def'
 import { deleteProp } from './delete.js'
 import { validate } from '../validate.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { reserve } from '../resize.js'
 import { writeU8 } from '../uint.js'
+import type { LeafDef, SchemaVector } from '@based/schema'
 
-export const writeVector = (ctx: Ctx, def: PropDef, val: any) => {
+export const writeVector = (
+  ctx: Ctx,
+  def: SchemaVector & LeafDef,
+  val: any,
+) => {
   if (val === null) {
     deleteProp(ctx, def)
     return
@@ -23,7 +27,7 @@ export const writeVector = (ctx: Ctx, def: PropDef, val: any) => {
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
 
-  let size = Math.min(val.byteLength, def.len)
+  let size = Math.min(val.byteLength, def.size)
   let padding = 0
   if (ctx.index % 4 != 0) {
     padding = ctx.index % 4

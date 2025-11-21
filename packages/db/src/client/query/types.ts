@@ -1,5 +1,5 @@
 import type {
-  DbPropDef,
+  LeafDef,
   LangCode,
   LangName,
   PropDef,
@@ -119,7 +119,7 @@ export type FilterCondition = {
 export type QueryDefFilter = {
   size: number
   conditions: Map<number, FilterCondition[]>
-  exists?: { prop: DbPropDef; negate: boolean }[]
+  exists?: { prop: LeafDef; negate: boolean }[]
   references?: Map<
     number,
     {
@@ -165,7 +165,7 @@ export type QueryDefSort = {
 
 export type Aggregation = {
   type: AggregateType
-  propDef: DbPropDef
+  propDef: LeafDef
   resultPos: number
   accumulatorPos: number
   isEdge: boolean
@@ -181,7 +181,7 @@ export type QueryDefAggregation = {
   totalAccumulatorSize: number
 }
 
-export type AggPropDef = DbPropDef & {
+export type AggPropDef = LeafDef & {
   stepType?: Interval
   stepRange?: number
   tz?: number

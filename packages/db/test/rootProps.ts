@@ -31,10 +31,7 @@ await test('rootProps', async (t) => {
     },
   })
 
-  deepEqual(
-    db.server.schemaTypesParsed['_root'].blockCapacity,
-    BLOCK_CAPACITY_MAX,
-  )
+  deepEqual(db.server.defs['_root'].blockCapacity, BLOCK_CAPACITY_MAX)
 
   const rootData = {
     myString: 'im the root',
@@ -71,5 +68,7 @@ await test('rootProps', async (t) => {
   deepEqual(rootRes, rootRes2)
 
   await db.update('_root', 1, { myBoolean: false })
-  deepEqual(await db.query('_root', 1).include('myBoolean').get().toObject(), { myBoolean: false })
+  deepEqual(await db.query('_root', 1).include('myBoolean').get().toObject(), {
+    myBoolean: false,
+  })
 })

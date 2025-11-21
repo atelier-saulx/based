@@ -1,16 +1,3 @@
-import {
-  PropDef,
-  STRING,
-  TEXT,
-  REFERENCE,
-  REFERENCES,
-  BINARY,
-  ALIAS,
-  CARDINALITY,
-  VECTOR,
-  COLVEC,
-  JSON,
-} from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeReference } from './reference.js'
 import { writeString } from './string.js'
@@ -22,26 +9,26 @@ import { writeCardinality } from './cardinality.js'
 import { writeVector } from './vector.js'
 import { writeJson } from './json.js'
 import { markDefaults } from '../create/mark.js'
+import type { LeafDef } from '@based/schema'
 
-export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
-  const type = def.typeIndex
-  if (type === STRING) {
+export const writeSeparate = (ctx: Ctx, def: LeafDef, val: any) => {
+  if (def.type === 'string') {
     writeString(ctx, def, val, 0)
-  } else if (type === TEXT) {
+  } else if (def.type === 'text') {
     writeText(ctx, def, val)
-  } else if (type === REFERENCE) {
+  } else if (def.type === 'reference') {
     writeReference(ctx, def, val)
-  } else if (type === REFERENCES) {
+  } else if (def.type === 'references') {
     writeReferences(ctx, def, val)
-  } else if (type === BINARY) {
+  } else if (def.type === 'binary') {
     writeBinary(ctx, def, val)
-  } else if (type === ALIAS) {
+  } else if (def.type === 'alias') {
     writeAlias(ctx, def, val)
-  } else if (type === CARDINALITY) {
+  } else if (def.type === 'cardinality') {
     writeCardinality(ctx, def, val)
-  } else if (type === VECTOR || type === COLVEC) {
+  } else if (def.type === 'vector' || def.type === 'colvec') {
     writeVector(ctx, def, val)
-  } else if (type === JSON) {
+  } else if (def.type === 'json') {
     writeJson(ctx, def, val)
   }
   markDefaults(ctx, def, val)

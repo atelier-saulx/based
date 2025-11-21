@@ -182,8 +182,8 @@ export function foreachDirtyBlock(
   cb: (mtKey: number, typeId: number, start: number, end: number) => void,
 ) {
   const typeIdMap: { [key: number]: SchemaTypeDef } = {}
-  for (const typeName in db.schemaTypesParsed) {
-    const type = db.schemaTypesParsed[typeName]
+  for (const typeName in db.defs) {
+    const type = db.defs[typeName]
     const typeId = type.id
     typeIdMap[typeId] = type
   }

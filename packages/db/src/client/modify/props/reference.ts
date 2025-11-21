@@ -1,4 +1,3 @@
-import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { Tmp } from '../Tmp.js'
 import { reserve } from '../resize.js'
@@ -13,10 +12,11 @@ import { writeEdges } from '../edges/index.js'
 import { deleteProp } from './delete.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { validate } from '../validate.js'
+import type { LeafDef } from '@based/schema'
 
 const writeReferenceId = (
   ctx: Ctx,
-  def: PropDef,
+  def: LeafDef,
   val: number,
   refOp:
     | typeof NOEDGE_NOINDEX_REALID
@@ -33,7 +33,7 @@ const writeReferenceId = (
 
 export const writeReference = (
   ctx: Ctx,
-  def: PropDef,
+  def: LeafDef,
   val: number | Tmp | { id: number | Tmp | Promise<any> },
 ) => {
   if (val === null) {

@@ -22,7 +22,7 @@ export function expire(
   const schema = getValidSchema(db, type)
   try {
     ctx.start = ctx.index
-    ctx.schema = schema
+    ctx.typeDef = schema
     validateId(id)
     reserve(ctx, TYPE_CURSOR_SIZE + NODE_CURSOR_SIZE + 5)
     writeTypeCursor(ctx)

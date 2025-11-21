@@ -322,7 +322,7 @@ export const validateFilter = (
 }
 
 export const validateType = (db: DbClient, def: QueryDef, type: string) => {
-  const r = db.schemaTypesParsed[type]
+  const r = db.defs[type]
   if (!r) {
     def.errors.push({
       code: ERR_TARGET_INVAL_TYPE,

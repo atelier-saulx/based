@@ -12,10 +12,10 @@ import { consume } from '../client/modify/drain.js'
 import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
 
 export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
-  const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
+  const { defs, defsById } = updateTypeDefs(schema)
   server.schema = schema
-  server.schemaTypesParsed = schemaTypesParsed
-  server.schemaTypesParsedById = schemaTypesParsedById
+  server.defs = defs
+  server.defsById = defsById
   server.ids = native.getSchemaIds(server.dbCtxExternal)
 }
 
@@ -37,11 +37,11 @@ export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
  * necessary because `common.sdb` already contains the required schema.
  */
 export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
-  const types = Object.keys(server.schemaTypesParsed)
-  const s = schemaToSelvaBuffer(server.schemaTypesParsed)
+  const types = Object.keys(server.defs)
+  const s = schemaToSelvaBuffer(server.defs)
   let maxTid = 0
   for (let i = 0; i < s.length; i++) {
-    const type = server.schemaTypesParsed[types[i]]
+    const type = server.defs[types[i]]
     maxTid = Math.max(maxTid, type.id)
     try {
       native.setSchemaType(server.dbCtxExternal, type.id, new Uint8Array(s[i]))
@@ -59,12 +59,12 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
   if (schema.types._root) {
     const tmpArr = new Uint8Array(new ArrayBuffer(1e3, { maxByteLength: 10e3 }))
     const tmpCtx = new Ctx(schema.hash, tmpArr)
-    writeCreate(tmpCtx, server.schemaTypesParsed._root, {}, null)
+    writeCreate(tmpCtx, server.defs._root, {}, null)
     const buf = consume(tmpCtx)
     server.modify(buf)
   }
 
-  server.verifTree.updateTypes(server.schemaTypesParsed)
+  server.verifTree.updateTypes(server.defs)
   if (server.fileSystemPath) {
     saveSync(server, { skipDirtyCheck: true })
   }

@@ -1,11 +1,4 @@
-import {
-  isPropDef,
-  PropDef,
-  PropDefEdge,
-  REVERSE_TYPE_INDEX_MAP,
-  SchemaPropTree,
-  SchemaTypeDef,
-} from '@based/schema/def'
+import type { PropDef, TypeDef } from '@based/schema'
 import { DbClient } from '../../index.js'
 import { create } from './create/index.js'
 import { Ctx } from './Ctx.js'
@@ -44,16 +37,12 @@ const parseVal = (val) => {
   return val
 }
 
-const parseErrorArr = (
-  prop: PropDef | PropDefEdge | SchemaPropTree,
-  val: any,
-  msg?: string,
-) => {
-  if (isPropDef(prop)) {
+const parseErrorArr = (prop: PropDef, val: any, msg?: string) => {
+  if ('path' in prop) {
     if (msg) {
       return `Invalid value at '${prop.path.join('.')}'. Expected ${msg} received '${parseVal(val)}'`
     }
-    return `Invalid value at '${prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[prop.typeIndex]}, received '${parseVal(val)}'`
+    return `Invalid value at '${prop.path.join('.')}'. Expected ${prop.type}, received '${parseVal(val)}'`
   }
   return `Unknown property '${val}'. Expected one of: ${Object.keys(prop).join(', ')}`
 }
@@ -71,7 +60,7 @@ export const handleError = (
   e: any,
 ): Promise<number> => {
   ctx.index = ctx.start
-  ctx.cursor = {}
+  ctx.cursor = { main: 0 }
 
   if (e === RANGE_ERR) {
     if (ctx.start === 8) {
@@ -104,8 +93,8 @@ export const handleError = (
 
 export const errors = {
   NotExists: class extends Error {
-    constructor(id: number, schema: SchemaTypeDef) {
-      super(`Target ${schema.type}:${id} does not exist`)
+    constructor(id: number, schema: TypeDef) {
+      super(`Target ${schema.name}:${id} does not exist`)
     }
   },
 } as const

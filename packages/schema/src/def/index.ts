@@ -9,6 +9,7 @@ import type { SchemaString } from '../schema/string.js'
 import type { SchemaProps, SchemaType } from '../schema/type.js'
 import type { SchemaVector } from '../schema/vector.js'
 import { getValidator, type Validation } from './validation.js'
+import type { SchemaPropHooks } from '../schema/hooks.js'
 
 type BaseProp = {
   typeDef: TypeDef
@@ -19,10 +20,6 @@ type BaseProp = {
 type DbProp = BaseProp & {
   id: number
   typeEnum: number
-  main?: {
-    start: number
-    size: number
-  }
 }
 
 type EnumPropDef = DbProp &
@@ -41,27 +38,40 @@ type PropDefRest = Exclude<
 export type ObjPropDef = SchemaObject<true> &
   BaseProp & { props: Record<string, PropDef> }
 export type RefPropDef = RefLike &
-  DbProp & { target: PropDef; edgeDef?: TypeDef }
-export type DbPropDef = RefPropDef | PropDefRest | EnumPropDef
-export type PropDef = ObjPropDef | DbPropDef
+  DbProp & { target: PropDef; edgesDef?: TypeDef }
+
+export type SeparateDef = RefPropDef | PropDefRest | EnumPropDef
+export type MainDef = SeparateDef & {
+  main: {
+    start: number
+    size: number
+  }
+}
+export type LeafDef = SeparateDef | MainDef
+export type PropDef = ObjPropDef | LeafDef
 export type TypeDef = Omit<SchemaType<true>, 'props'> & {
   id: number
   name: string
   size: number
   props: Record<string, PropDef>
   edge?: true
+  separate: SeparateDef[]
+  propHooks: Partial<Record<keyof SchemaPropHooks, PropDef[]>>
 }
-
-type Defs = Record<string | number, TypeDef>
+export type BranchDef = TypeDef | ObjPropDef
+export type TypeDefs = Record<string | number, TypeDef>
 
 const stringLen = ({ maxBytes = Infinity, max = Infinity }: SchemaString) =>
   maxBytes < 61 ? maxBytes + 1 : max < 31 ? max * 2 + 1 : 0
+
 const numberLen = (type?: string) =>
   (type && Number(type.replace(/[^0-9]/g, '')) / 4) || 8
 
-const propMainSizes: Partial<
+type SizeMap = Partial<
   Record<Type, number | ((propSchema: SchemaProp<true>) => number)>
-> = {
+>
+
+export const mainSizeMap = {
   boolean: 1,
   enum: 1,
   int8: 1,
@@ -72,17 +82,18 @@ const propMainSizes: Partial<
   uint32: 4,
   number: 8,
   timestamp: 8,
-
-  alias: stringLen,
   binary: stringLen,
   string: stringLen,
-  cardinality: stringLen,
+} as const satisfies SizeMap
+
+export const sizeMap = {
+  // cardinality: stringLen,
   vector: ({ size }: SchemaVector) => size * 4,
   colvec: ({ size, baseType }: SchemaVector) => size * numberLen(baseType),
-}
+} as const satisfies SizeMap
 
-export const schemaToDefs = (schema: SchemaOut): Defs => {
-  const defs: Defs = {}
+export const schemaToTypeDefs = (schema: SchemaOut): TypeDefs => {
+  const defs: TypeDefs = {}
   let idCnt = 0
 
   for (const type in schema.types) {
@@ -92,10 +103,15 @@ export const schemaToDefs = (schema: SchemaOut): Defs => {
   for (const type in defs) {
     for (const prop in defs[type].props) {
       const propDef = defs[type].props[prop]
-      if (propDef.type === 'reference' || propDef.type === 'references') {
+      if ('target' in propDef) {
         parseRefLike(type, prop, propDef)
       }
     }
+  }
+
+  for (const type in defs) {
+    const typeDef = defs[type]
+    defs[typeDef.id] = typeDef
   }
 
   return defs
@@ -111,63 +127,81 @@ export const schemaToDefs = (schema: SchemaOut): Defs => {
       ...typeSchema,
     } as TypeDef
 
-    typeDef.props = parseProps(typeSchema.props, [], typeProps)
+    typeDef.separate = []
+    typeDef.propHooks = {}
+    typeDef.props = parseProps(typeSchema.props, typeProps, [])
 
     return typeDef
 
     function parseProps(
-      props: Record<string, SchemaProp<true>>,
+      schemaProps: Record<string, SchemaProp<true>>,
+      defProps: Record<string, PropDef>,
       path: string[],
-      propDefs: Record<string, PropDef>,
     ): Record<string, PropDef> {
-      for (const prop in props) {
-        const propSchema = props[prop]
+      for (const prop in schemaProps) {
+        const propSchema = schemaProps[prop]
         const { type: propType, ...rest } = propSchema
-        const getSize = propMainSizes[propType]
-        const mainSize =
-          typeof getSize === 'function' ? getSize(propSchema) : getSize || 0
         const propPath = [...path, prop]
         const validation = getValidator(propSchema)
-        let propDef: PropDef
 
         if (propType === 'object') {
-          propDef = {
+          defProps[prop] = {
             type: propType,
             path: propPath,
             typeDef,
             ...rest,
-            props: parseProps(propSchema.props, propPath, {}),
+            props: parseProps(propSchema.props, {}, propPath),
             validation,
+          }
+          continue
+        }
+
+        const getMainSize = mainSizeMap[propType]
+        const mainSize =
+          typeof getMainSize === 'function'
+            ? getMainSize(propSchema)
+            : getMainSize || 0
+
+        const propDef = {
+          id: mainSize ? 0 : propIdCnt++,
+          type: propType,
+          typeEnum: typeMap[propType],
+          typeDef,
+          path: propPath,
+          ...rest,
+          validation,
+        } as LeafDef
+
+        if ('enum' in propDef) {
+          propDef.enumMap = Object.fromEntries(
+            propDef.enum.map((val, index) => [val, index + 1]),
+          )
+        } else if (propDef.type === 'vector') {
+          propDef.size *= 4
+        } else if (propDef.type === 'colvec') {
+          propDef.size *= numberLen(propDef.baseType)
+        }
+
+        if (mainSize) {
+          typeDef.size += mainSize
+          ;(propDef as MainDef).main = {
+            start: mainSize && typeDef.size,
+            size: mainSize,
           }
         } else {
-          propDef = {
-            id: mainSize ? 0 : propIdCnt++,
-            type: propType,
-            typeEnum: typeMap[propType],
-            typeDef,
-            path: propPath,
-            ...rest,
-            validation,
-          } as PropDef
+          typeDef.separate.push(propDef)
+        }
 
-          if ('enum' in propDef) {
-            propDef.enumMap = Object.fromEntries(
-              propDef.enum.map((val, index) => [val, index + 1]),
-            )
-          }
-
-          if (mainSize) {
-            typeDef.size += mainSize
-            ;(propDef as PropDefRest).main = {
-              start: mainSize && typeDef.size,
-              size: mainSize,
-            }
+        if (propDef.hooks) {
+          for (const key in propDef.hooks) {
+            typeDef.propHooks[key] ??= []
+            typeDef.propHooks[key].push(propDef)
           }
         }
 
-        propDefs[prop] = propDef
+        defProps[prop] = propDef
       }
-      return propDefs
+      return defProps
     }
   }
 
@@ -198,8 +232,8 @@ export const schemaToDefs = (schema: SchemaOut): Defs => {
       const edgeProp = edgeType.props[key]
       refSchema[key] = edgeProp
       targetSchema[key] = edgeProp
-      refDef.edgeDef = edgeType
-      target.edgeDef = edgeType
+      refDef.edgesDef = edgeType
+      target.edgesDef = edgeType
     }
 
     defs[edgeTypeName] = edgeType

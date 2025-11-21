@@ -47,8 +47,8 @@ if (isMainThread) {
         number,
         { type: string; include: string[]; includeRaw: string[] }
       > = {}
-      for (const type in fromDb.server.schemaTypesParsed) {
-        const { id, props } = fromDb.server.schemaTypesParsed[type]
+      for (const type in fromDb.server.defs) {
+        const { id, props } = fromDb.server.defs[type]
         const include = []
         const includeRaw = []
 
@@ -114,7 +114,7 @@ if (isMainThread) {
                 toDb.create(type, res || node, { unsafe: true })
               }
             }
-          } else if (type in toDb.server.schemaTypesParsed) {
+          } else if (type in toDb.server.defs) {
             for (const node of nodes) {
               toDb.create(type, node, { unsafe: true })
             }

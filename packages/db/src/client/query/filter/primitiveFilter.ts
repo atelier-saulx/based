@@ -11,11 +11,11 @@ import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { createReferenceFilter } from './createReferenceFilter.js'
 import { validateFilter } from '../validation.js'
-import type { DbPropDef } from '@based/schema'
+import type { LeafDef } from '@based/schema'
 
 export const primitiveFilter = (
   def: QueryDef,
-  prop: DbPropDef,
+  prop: LeafDef,
   filter: Filter,
   conditions: QueryDefFilter,
   lang: QueryDef['lang'],

@@ -39,12 +39,12 @@ const referencesFilter = (
           edges = def.target.propDef.edges
         }
         if (edges) {
-          const edgeDef = edges[p]
-          if (edgeDef) {
+          const edgesDef = edges[p]
+          if (edgesDef) {
             conditions.edges ??= new Map()
             size +=
               3 +
-              primitiveFilter(def, edgeDef, filter, conditions, {
+              primitiveFilter(def, edgesDef, filter, conditions, {
                 lang: def.lang.lang,
                 fallback: [],
               })
@@ -67,7 +67,7 @@ const referencesFilter = (
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
-        const schema = db.schemaTypesParsed[t.inverseTypeName]
+        const schema = db.defs[t.inverseTypeName]
         size += t.typeIndex === REFERENCES ? 11 : 6
         refConditions = {
           conditions: {

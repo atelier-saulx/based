@@ -1,4 +1,4 @@
-import { getAllProps, type DbPropDef } from '@based/schema'
+import { getAllProps, type LeafDef } from '@based/schema'
 import { IncludeField, IncludeOpts, QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (
@@ -76,7 +76,7 @@ export const includeAllProps = (def: QueryDef, opts?: IncludeOpts) => {
 
 export const includeProp = (
   def: QueryDef,
-  prop: DbPropDef,
+  prop: LeafDef,
   opts?: IncludeOpts,
 ) => {
   if (!prop || prop.type === 'reference' || prop.type === 'references') {

@@ -5,7 +5,7 @@ import { validators } from '../def/validation.js'
 export type StringFormat = keyof typeof validators
 
 export const stringFormats = Object.keys(validators) as StringFormat[]
-export const stringCompressions = ['none', 'deflate']
+export const stringCompressions = ['none', 'deflate'] as const
 
 export type StringCompression = (typeof stringCompressions)[number]
 type KnownMimeTypes =

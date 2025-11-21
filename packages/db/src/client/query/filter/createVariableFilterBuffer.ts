@@ -14,13 +14,13 @@ import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { crc32 } from '../../crc32.js'
 import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'
 import { FilterCondition, QueryDef } from '../types.js'
-import { type DbPropDef } from '@based/schema'
+import { type LeafDef } from '@based/schema'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 
 const parseValue = (
   value: any,
-  prop: DbPropDef,
+  prop: LeafDef,
   ctx: FilterCtx,
   lang: QueryDef['lang'],
 ): Uint8Array => {
@@ -86,7 +86,7 @@ const parseValue = (
 
 export const createVariableFilterBuffer = (
   value: any,
-  prop: DbPropDef,
+  prop: LeafDef,
   ctx: FilterCtx,
   lang: QueryDef['lang'],
 ): FilterCondition => {
@@ -183,7 +183,7 @@ function writeVarFilter(
   mode: FILTER_MODE,
   val: Uint8Array,
   ctx: FilterCtx,
-  prop: DbPropDef,
+  prop: LeafDef,
   start: number,
   len: number,
 ): Uint8Array {

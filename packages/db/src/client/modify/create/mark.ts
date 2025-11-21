@@ -1,51 +1,51 @@
 import { Ctx } from '../Ctx.js'
 import { CREATE } from '../types.js'
-import { type LangCode, type DbPropDef } from '@based/schema'
+import { type LangCode, type LeafDef } from '@based/schema'
 
-export const markString = (ctx: Ctx, def: DbPropDef) => {
+export const markString = (ctx: Ctx, def: LeafDef) => {
   if (ctx.operation === CREATE) {
-    ctx.schema.separateSort.bufferTmp[def.id] = 2
+    ctx.typeDef.separateSort.bufferTmp[def.id] = 2
     ctx.sort++
-    if (ctx.schema.hasSeperateDefaults) {
-      ctx.schema.separateDefaults.bufferTmp[def.id] = 1
+    if (ctx.typeDef.hasSeperateDefaults) {
+      ctx.typeDef.separateDefaults.bufferTmp[def.id] = 1
       ctx.defaults++
     }
   }
 }
 
-export const markDefaults = (ctx: Ctx, def: DbPropDef, val: any) => {
+export const markDefaults = (ctx: Ctx, def: LeafDef, val: any) => {
   if (
     ctx.operation === CREATE &&
-    ctx.schema.hasSeperateDefaults &&
+    ctx.typeDef.hasSeperateDefaults &&
     val !== null
   ) {
-    if (!ctx.schema.separateDefaults.bufferTmp[def.id]) {
-      ctx.schema.separateDefaults.bufferTmp[def.id] = 1
+    if (!ctx.typeDef.separateDefaults.bufferTmp[def.id]) {
+      ctx.typeDef.separateDefaults.bufferTmp[def.id] = 1
       ctx.defaults++
     }
   }
 }
 
 export const markTextObj = (ctx: Ctx) => {
-  if (ctx.operation === CREATE && ctx.schema.hasSeperateDefaults) {
+  if (ctx.operation === CREATE && ctx.typeDef.hasSeperateDefaults) {
     ctx.defaults++
   }
 }
 
 export const markTextValue = (
   ctx: Ctx,
-  def: DbPropDef,
+  def: LeafDef,
   locale: LangCode,
   textStringValue: boolean,
 ) => {
   if (ctx.operation === CREATE) {
-    const index = def.id * (1 + ctx.schema.localeSize)
-    const langIndex = ctx.schema.separateTextSort.localeToIndex.get(locale)
-    ctx.schema.separateTextSort.bufferTmp[index] -= 1
-    ctx.schema.separateTextSort.bufferTmp[index + langIndex] = 0
+    const index = def.id * (1 + ctx.typeDef.localeSize)
+    const langIndex = ctx.typeDef.separateTextSort.localeToIndex.get(locale)
+    ctx.typeDef.separateTextSort.bufferTmp[index] -= 1
+    ctx.typeDef.separateTextSort.bufferTmp[index + langIndex] = 0
     ctx.sortText++
-    if (ctx.schema.hasSeperateDefaults) {
-      ctx.schema.separateDefaults.bufferTmp[def.id]++
+    if (ctx.typeDef.hasSeperateDefaults) {
+      ctx.typeDef.separateDefaults.bufferTmp[def.id]++
       if (textStringValue) {
         ctx.defaults++
       }

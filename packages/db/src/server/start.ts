@@ -79,7 +79,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     // Load block dumps
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
-      const def = db.schemaTypesParsedById[typeId]
+      const def = db.defsById[typeId]
 
       if (!def.partial && !opts?.noLoadDumps) {
         for (const dump of dumps) {
@@ -107,10 +107,10 @@ export async function start(db: DbServer, opts: StartOpts) {
     }
   }
 
-  db.verifTree = new VerifTree(db.schemaTypesParsed)
+  db.verifTree = new VerifTree(db.defs)
 
   for (const { typeId } of db.verifTree.types()) {
-    const def = db.schemaTypesParsedById[typeId]
+    const def = db.defsById[typeId]
     def.blockCapacity =
       writelog?.types[def.id]?.blockCapacity ||
       def.blockCapacity ||

@@ -15,7 +15,7 @@ import { QueryBranch } from '../BasedDbQuery.js'
 import { AggregateType } from '@based/protocol/db-read'
 import {
   typeMap,
-  type DbPropDef,
+  type LeafDef,
   type PropDef,
   type TypeDef,
 } from '@based/schema'
@@ -158,7 +158,7 @@ export const groupBy = (
 
 const updateAggregateDefs = (
   def: QueryDef,
-  propDef: DbPropDef,
+  propDef: LeafDef,
   aggType: AggregateType,
 ) => {
   const aggregates = def.aggregate.aggregates
@@ -205,7 +205,7 @@ const getPropDefinition = (
   propName: string,
   type: AggregateType,
   resolvedPropDef: PropDef | undefined,
-): DbPropDef | undefined => {
+): LeafDef | undefined => {
   if (isCount(propName, type)) {
     return {
       id: 255,
@@ -238,7 +238,7 @@ const processPropPath = (
   path: string[],
   originalPropName: string,
   type: AggregateType,
-): DbPropDef | undefined | typeof IN_RECURSION => {
+): LeafDef | undefined | typeof IN_RECURSION => {
   let t: PropDef | TypeDef = query.def.schema
 
   for (let i = 0; i < path.length; i++) {

@@ -1,15 +1,14 @@
 import { writeU16, writeU32, writeU8, writeU8Array } from '../uint.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { validate } from '../validate.js'
-import { BINARY, PropDef } from '@based/schema/def'
 import native from '../../../native.js'
 import { reserve } from '../resize.js'
-import { markDefaults } from '../create/mark.js'
 import { deleteProp } from './delete.js'
 import { ENCODER } from '@based/utils'
 import { Ctx } from '../Ctx.js'
+import { typeMap, type LeafDef } from '@based/schema'
 
-export const getBuffer = (val: any): Uint8Array => {
+export const getBuffer = (val: any): Uint8Array | void => {
   if (typeof val === 'string') {
     return ENCODER.encode(val)
   }
@@ -35,7 +34,7 @@ export const writeBinaryRaw = (ctx: Ctx, val: Uint8Array): void => {
 
 export const writeBinary = (
   ctx: Ctx,
-  def: PropDef,
+  def: LeafDef,
   val: any,
   validated?: boolean,
 ) => {
@@ -57,7 +56,7 @@ export const writeBinary = (
   }
   const size = buf.byteLength + 6
   reserve(ctx, PROP_CURSOR_SIZE + size + 11)
-  writePropCursor(ctx, def, BINARY)
+  writePropCursor(ctx, def, typeMap.enum)
   writeU8(ctx, ctx.operation)
   writeBinaryRaw(ctx, buf)
 }

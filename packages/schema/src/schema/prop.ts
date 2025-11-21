@@ -18,7 +18,6 @@ import { parseText, type SchemaText } from './text.js'
 import { parseTimestamp, type SchemaTimestamp } from './timestamp.js'
 import { parseVector, type SchemaVector } from './vector.js'
 import { parseObject, type SchemaObject } from './object.js'
-import { inspect } from 'node:util'
 
 type SchemaPropObj<strict = false> =
   | SchemaAlias

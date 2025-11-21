@@ -26,7 +26,7 @@ await test.skip('colvec', async (t) => {
     },
   })
 
-  deepEqual(db.server.schemaTypesParsed.col.blockCapacity, 10_000)
+  deepEqual(db.server.defs.col.blockCapacity, 10_000)
 
   let seed = 100
   const next = () => (seed = (214013 * seed + 2531011) % 10e3)

@@ -16,9 +16,9 @@ import {
   writeUint32,
 } from '@based/utils'
 import { FilterCondition, FilterMetaNow } from '../types.js'
-import { type DbPropDef, type PropDef } from '@based/schema'
+import { type LeafDef, type PropDef } from '@based/schema'
 
-const isNowQuery = (prop: DbPropDef, value: any, ctx: FilterCtx) => {
+const isNowQuery = (prop: LeafDef, value: any, ctx: FilterCtx) => {
   return (
     prop.type === 'timestamp' &&
     typeof value === 'string' &&
@@ -42,7 +42,7 @@ const createNowMeta = (
 }
 
 export const writeFixed = (
-  prop: DbPropDef,
+  prop: LeafDef,
   buf: Uint8Array,
   value: any,
   size: number,
@@ -77,7 +77,7 @@ export const writeFixed = (
 }
 
 export const createFixedFilterBuffer = (
-  prop: DbPropDef,
+  prop: LeafDef,
   size: number,
   ctx: FilterCtx,
   value: any,
