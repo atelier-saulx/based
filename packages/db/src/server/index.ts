@@ -10,12 +10,16 @@ import {
 } from '@based/schema'
 import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
-import { BlockMap, destructureTreeKey, makeTreeKeyFromNodeId } from './blockMap.js'
+import {
+  BlockMap,
+  destructureTreeKey,
+  makeTreeKeyFromNodeId,
+} from './blockMap.js'
 import { save } from './save.js'
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import { readUint16, readUint64 } from '@based/utils'
+import { readUint16, readUint32, readUint64 } from '@based/utils'
 import { QueryType } from '../client/query/types.js'
 import { IoWorker } from './IoWorker.js'
 import { QueryWorker } from './QueryWorker.js'
@@ -320,6 +324,14 @@ export class DbServer extends DbShared {
     return sortIndex
   }
 
+  queryResponses: Map<number, (x: any) => void> = new Map()
+  modResponses: Map<number, (x: any) => void> = new Map()
+
+  addQueryWorkerListener(q: Uint8Array, cb: (x: any) => void) {
+    const id = readUint32(q, 0)
+    this.queryResponses.set(id, cb)
+  }
+
   async setSchema(
     strictSchema: StrictSchema,
     transformFns?: MigrateFns,
@@ -378,10 +390,7 @@ export class DbServer extends DbShared {
     }
 
     const content = payload.subarray(8)
-    const len = native.modify(
-      content,
-      this.dbCtxExternal,
-    )
+    const len = native.modify(content, this.dbCtxExternal)
     return content.subarray(0, len)
   }
 

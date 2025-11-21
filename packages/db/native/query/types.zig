@@ -7,10 +7,11 @@ pub const QueryCtx = struct {
     results: std.array_list.Managed(results.Result),
     size: usize,
     totalResults: usize,
-    aggResult: ?u32,
+    aggResult: ?u32, // adds 8 bytes for no reason
     allocator: std.mem.Allocator,
     db: *db.DbCtx,
     threadCtx: *db.DbThread,
+    id: u32,
 };
 
 pub const FilterType = enum(u8) {

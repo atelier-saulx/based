@@ -46,7 +46,7 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
 // from thread
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
-    q: []u8,
+    qIn: []u8,
     threadCtx: *db.DbThread,
 ) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
@@ -54,10 +54,13 @@ pub fn getQueryThreaded(
 
     const allocator = arena.allocator();
 
-    const len = q.len - 12;
+    const q = qIn[4..qIn.len];
+
+    const len = q.len - 8;
     // last 4 is query id might need that as well
 
     var ctx: QueryCtx = .{
+        .id = read(u32, qIn, 0),
         .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
         .size = 0,

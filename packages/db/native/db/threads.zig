@@ -207,8 +207,10 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 // add time measurement
-                if (q[0] == 67) {
-                    std.debug.print("SAVE COMMAND", .{});
+                if (q[4] == 67) {
+                    std.debug.print("SAVE COMMAND\n", .{});
+                    const data = try getResultSlice(true, threadCtx, 1, utils.read(u32, q, 0));
+                    data[0] = 67;
                 } else {
                     try getQueryThreaded(self.ctx, q, threadCtx);
                 }

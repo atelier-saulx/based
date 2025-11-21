@@ -141,6 +141,10 @@ export const queryToBuffer = (query: BasedDbQuery) => {
     bufs.reduce((acc, cur) => acc + cur.buffer.byteLength, 0) + 4
   const res = new Uint8Array(totalByteLength)
 
+  const crc32Target = new Uint8Array(4)
+
+  bufs.unshift(crc32Target)
+
   let offset = 0
   for (let i = 0; i < bufs.length; i++) {
     const intermediateResult = bufs[i]
@@ -157,6 +161,8 @@ export const queryToBuffer = (query: BasedDbQuery) => {
       offset += intermediateResult.buffer.byteLength
     }
   }
-  writeUint32(res, crc32(res), res.byteLength - 4)
+
+  writeUint32(res, crc32(res), 0)
+
   return res
 }

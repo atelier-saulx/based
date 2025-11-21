@@ -34,7 +34,10 @@ function startWorkers(db: DbServer, opts: StartOpts) {
 }
 
 // tmp
-const getAll = (arr: ArrayBuffer[] | null) => {
+const handleQueryWorkerResponse = (
+  server: DbServer,
+  arr: ArrayBuffer[] | null,
+) => {
   if (!arr) {
     return 0
   }
@@ -47,6 +50,11 @@ const getAll = (arr: ArrayBuffer[] | null) => {
       const v = new Uint8Array(buf)
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
+        const id = readUint32(v, i + 4)
+        const fn = server.queryResponses.get(id)
+        if (fn) {
+          fn(v.subarray(i + 8, i + size))
+        }
         cnt++
         i += size
       }
@@ -71,7 +79,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     // native.cnt++
     // console.log('im a little derp', new Uint8Array(xxx), x)
     if (id === 1) {
-      native.cnt += getAll(buffer)
+      native.cnt += handleQueryWorkerResponse(db, buffer)
       // console.log(native.cnt)
       // can be a bit nicer
       // console.log('QUERY RESULTS')

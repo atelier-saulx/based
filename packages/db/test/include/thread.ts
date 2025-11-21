@@ -141,6 +141,10 @@ await test('include', async (t) => {
 
   var d = Date.now()
 
+  db.server.addQueryWorkerListener(new Uint8Array([6, 6, 6, 6, 67]), (x) => {
+    console.log('derp', x)
+  })
+
   // // // const x = []
 
   // // const bufSize = 1e6 * buf.byteLength
@@ -151,6 +155,12 @@ await test('include', async (t) => {
     // x.push(buf)
     native.getQueryBufThread(buf, db.server.dbCtxExternal)
   }
+
+  native.getQueryBufThread(
+    new Uint8Array([6, 6, 6, 6, 67]),
+    db.server.dbCtxExternal,
+  )
+
   // // native.getQueryBufThreadBatch(x, db.server.dbCtxExternal)
 
   console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
