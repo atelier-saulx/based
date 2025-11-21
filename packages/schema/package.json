@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@based/hash": "^1.1.0",
-    "@based/utils": "1.2.0",
+    "@based/utils": "^1.2.0",
     "flat": "^6.0.1",
     "picocolors": "^1.1.0",
     "valibot": "^1.1.0",

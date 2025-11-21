@@ -70,6 +70,7 @@ const parseRefs = (
   path: string[],
 ) => {
   if (prop.type === 'reference') {
+    assert(prop.ref in types, `Ref type ${prop.ref} should be defined`)
     let inverse: any = types[prop.ref]
     for (const key of prop.prop.split('.')) {
       let next = 'props' in inverse ? inverse.props?.[key] : inverse[key]
@@ -104,12 +105,8 @@ const parseRefs = (
       }
     }
 
-    assert(inverse.ref === type, [inverse, 'ref', `Ref should be ${type}`])
-    assert(inverse.prop === dotPath, [
-      inverse,
-      'prop',
-      `Prop should be ${dotPath}`,
-    ])
+    assert(inverse.ref === type, `Ref should be ${type}`)
+    assert(inverse.prop === dotPath, `Prop should be ${dotPath}`)
   } else if ('items' in prop) {
     parseRefs(types, type, prop.items, path)
   } else if ('props' in prop) {
@@ -136,80 +133,72 @@ const getPath = (
   }
 }
 
-const parseError = (v: Record<string, unknown>, e): Error => {
-  if (Array.isArray(e)) {
-    const [obj, key, msg] = e
-    const def = obj[key]
-    if (isRecord(def)) {
-      const path = getPath(v, def, [])
-      e = `${path?.join('.')}: ${inspect(def)} ${msg}`
-    } else {
-      const path = getPath(v, obj, [])
-      e = `${path?.join('.')}.${key}: ${inspect(def)} ${msg}`
-    }
-  }
-  return Error(e)
+let tracking
+let path: string[] = []
+let value: any
+
+const _track = <P extends Record<string, unknown>>(
+  input: P,
+  depth: number,
+): P =>
+  new Proxy(input, {
+    get(obj, key: string) {
+      let val = obj[key]
+      value = val
+      path[depth] = key
+      if (path.length > depth + 1) path = path.slice(0, depth + 1)
+      return isRecord(val) ? _track(val, depth + 1) : val
+    },
+  })
+const track = <P extends Record<string, unknown>>(input: P): P => {
+  tracking = input
+  return _track(input, 0)
 }
 
-export const parseSchema = (v: unknown): SchemaOut => {
+export const parseSchema = (input: SchemaIn): SchemaOut => {
+  const v: unknown = track(input)
   assert(isRecord(v), 'Schema should be record')
-  assert(isRecord(v.types), 'Types should be record')
-  assert(
-    v.version === undefined || isString(v.version),
-    'Version should be string',
-  )
-  assert(v.locales === undefined || isLocales(v.locales), 'Invalid locales')
-  assert(
-    v.migrations === undefined || isMigrations(v.migrations),
-    'Invalid migrations',
-  )
-  assert(
-    v.defaultTimezone === undefined || isString(v.defaultTimezone),
-    'Invalid Default Timezone',
-  )
-
-  const types: SchemaTypes<true> = {}
   try {
+    assert(isRecord(v.types), 'Types should be record')
+    assert(
+      v.version === undefined || isString(v.version),
+      'Version should be string',
+    )
+    assert(v.locales === undefined || isLocales(v.locales), 'Invalid locales')
+    assert(
+      v.migrations === undefined || isMigrations(v.migrations),
+      'Invalid migrations',
+    )
+    assert(
+      v.defaultTimezone === undefined || isString(v.defaultTimezone),
+      'Invalid Default Timezone',
+    )
+
+    let types: SchemaTypes<true> = {}
     for (const key in v.types) {
       const type = v.types[key]
-      assert(isRecord(type), [v.types, key, 'Type should be object'])
+      assert(isRecord(type), 'Type should be object')
       types[key] = parseType(type)
     }
-  } catch (e) {
-    if (Array.isArray(e)) {
-      const [obj, key, msg] = e
-      const def = obj[key]
-      if (isRecord(def)) {
-        const path = getPath(v, def, [])
-        e = `${path?.join('.')}: ${inspect(def)} ${msg}`
-      } else {
-        const path = getPath(v, obj, [])
-        e = `${path?.join('.')}.${key}: ${inspect(def)} ${msg}`
+
+    const result = deleteUndefined({
+      version: v.version,
+      locales: v.locales,
+      defaultTimezone: v.defaultTimezone,
+      migrations: v.migrations,
+      types,
+    }) as SchemaOut
+
+    const tracked = track(result)
+    for (const type in tracked.types) {
+      for (const k in tracked.types[type].props) {
+        parseRefs(tracked.types, type, tracked.types[type].props[k], [k])
       }
     }
-    throw parseError(v, e)
-  }
 
-  try {
-    for (const type in types) {
-      for (const k in types[type].props) {
-        parseRefs(types, type, types[type].props[k], [k])
-      }
-    }
+    result.hash = hash(result)
+    return result
   } catch (e) {
-    throw parseError({ types }, e)
-  }
-
-  const clean = deleteUndefined({
-    version: v.version,
-    locales: v.locales,
-    defaultTimezone: v.defaultTimezone,
-    migrations: v.migrations,
-    types,
-  })
-
-  return {
-    ...clean,
-    hash: hash(clean),
+    throw Error(`${path.join('.')}: ${inspect(value)} - ${e}`, { cause: e })
   }
 }

@@ -10,11 +10,8 @@ export const isInteger = (v: unknown): v is number =>
   isNumber(v) && Number.isSafeInteger(v)
 export const isNatural = (v: unknown): v is number => isInteger(v) && v > 0
 
-export function assert(
-  condition: unknown,
-  msg: string | [obj: Record<string, unknown>, key: string, msg: string],
-): asserts condition {
-  if (!condition) throw msg
+export function assert(condition: unknown, msg: string): asserts condition {
+  if (!condition) throw Error(msg)
 }
 
 export type RequiredIfStrict<T, strict> = strict extends true ? T : Partial<T>

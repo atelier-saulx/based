@@ -62,28 +62,23 @@ export const parseType = (type: Record<string, unknown>): SchemaType<true> => {
   if (type.props === undefined) {
     return { props: parseProps(type) }
   }
-
-  assert(type.hooks === undefined || isHooks<SchemaHooks>(type.hooks), [
-    type,
-    'hooks',
+  assert(
+    type.hooks === undefined || isHooks<SchemaHooks>(type.hooks),
     'Invalid hooks',
-  ])
-  assert(type.blockCapacity === undefined || isNatural(type.blockCapacity), [
-    type,
-    'blockCapacity',
+  )
+  assert(
+    type.blockCapacity === undefined || isNatural(type.blockCapacity),
     'Should be natural number',
-  ])
-  assert(type.capped === undefined || isNatural(type.capped), [
-    type,
-    'capped',
+  )
+  assert(
+    type.capped === undefined || isNatural(type.capped),
     'Should be natural number',
-  ])
-  assert(type.partial === undefined || isBoolean(type.partial), [
-    type,
-    'partial',
+  )
+  assert(
+    type.partial === undefined || isBoolean(type.partial),
     'Should be boolean',
-  ])
-  assert(isRecord(type.props), [type, 'props', 'Should be record'])
+  )
+  assert(isRecord(type.props), 'Should be record')
   const result = {
     hooks: type.hooks,
     blockCapacity: type.blockCapacity,

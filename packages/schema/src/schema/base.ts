@@ -52,10 +52,10 @@ export const parseBase = <T extends SchemaProp<true>>(
   const unexpectedKey = Object.keys(def).find((key) => !(key in result))
   assert(unexpectedKey === undefined, `Unexpected property: ${unexpectedKey}`)
 
-  if ('default' in result) {
+  if ('default' in result && result.default !== undefined) {
     const validation = getValidator(result)
     assert(
-      validation(result.default, result),
+      validation(def.default, result),
       `Default should be valid ${('format' in result && result.format) || result.type}`,
     )
     result.default = def.default
