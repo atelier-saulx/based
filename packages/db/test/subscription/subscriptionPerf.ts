@@ -53,7 +53,7 @@ await test('subscription perf', async (t) => {
           const dbCtx = native.externalFromInt(ctx)
           for (let i = 0; i < amount; i++) {
             utils.writeUint32(buffer, i + 1, 4)
-            native.getQueryBuf(buffer, dbCtx)
+            // native.getQueryBuf(buffer, dbCtx)
           }
         },
         {

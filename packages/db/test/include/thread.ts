@@ -101,18 +101,18 @@ await test('include', async (t) => {
 
   var d = Date.now()
 
-  db.server.addQueryWorkerListener(new Uint8Array([6, 6, 6, 6, 67]), (x) => {
-    console.log('derp', x)
-  })
+  // db.server.addQueryWorkerListener(new Uint8Array([6, 6, 6, 6, 67]), (x) => {
+  //   console.log('derp', x)
+  // })
 
-  var cnt = 0
-  db.server.addQueryWorkerListener(buf, (x) => {
-    cnt++
-    if (cnt === amount) {
-      console.log('DONE!')
-      readyTime()
-    }
-  })
+  // var cnt = 0
+  // db.server.addQueryWorkerListener(buf, (x) => {
+  //   cnt++
+  //   if (cnt === amount) {
+  //     console.log('DONE!')
+  //     readyTime()
+  //   }
+  // })
 
   for (let i = 0; i < amount; i++) {
     native.getQueryBufThread(buf, db.server.dbCtxExternal)

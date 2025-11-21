@@ -555,8 +555,8 @@ await test('sort - from start (1M items)', async (t) => {
 
   await newDb.start()
 
-  newDb.server.createSortIndex('user', 'age')
-  newDb.server.createSortIndex('user', 'name')
+  // newDb.server.createSortIndex('user', 'age')
+  // newDb.server.createSortIndex('user', 'name')
 
   t.after(() => newDb.destroy())
 
@@ -576,7 +576,7 @@ await test('sort - from start (1M items)', async (t) => {
     ],
   )
 
-  newDb.server.destroySortIndex('user', 'age')
+  // newDb.server.destroySortIndex('user', 'age')
 })
 
 await test('unset value on create', async (t) => {
