@@ -14,9 +14,9 @@ const jsBridge = @import("./jsBridge.zig");
 
 pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id: u32) ![]u8 {
     const paddedSize = size + 8;
+    var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
         if (thread.queryResults.len < thread.queryResultsIndex + paddedSize) {
-            var increasedSize: usize = 1_000_000;
             if (paddedSize > 1_000_000) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
@@ -32,7 +32,6 @@ pub fn getResultSlice(comptime isQuery: bool, thread: *DbThread, size: usize, id
         return data;
     } else {
         if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
-            var increasedSize: usize = 100_000;
             if (paddedSize > 100_000) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
@@ -137,7 +136,6 @@ pub const Threads = struct {
         } else {
             try self.queryQueue.append(queryBuffer);
             self.pendingQueries += 1;
-            // std.debug.print("stage query! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
             self.wakeup.signal();
         }
     }
@@ -156,7 +154,29 @@ pub const Threads = struct {
             for (self.threads) |thread| {
                 thread.*.pendingModifies += 1;
             }
-            // std.debug.print("stage modify! mod {any} q {any} \n", .{ self.pendingModifies, self.pendingQueries });
+            self.wakeup.broadcast();
+        }
+    }
+
+    fn modifyNotPending(self: *Threads) void {
+        for (self.threads) |thread| {
+            if (thread.pendingModifies != 0) {
+                return;
+            }
+        }
+
+        self.modifyDone.signal();
+
+        if (!self.jsModifyBridgeStaged) {
+            self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+            self.jsModifyBridgeStaged = true;
+        }
+
+        if (self.nextQueryQueue.items.len > 0) {
+            const prevQueryQueue = self.queryQueue;
+            self.queryQueue = self.nextQueryQueue;
+            self.nextQueryQueue = prevQueryQueue;
+            self.pendingQueries = self.queryQueue.items.len;
             self.wakeup.broadcast();
         }
     }
@@ -167,30 +187,23 @@ pub const Threads = struct {
             var modifyBuf: ?[]u8 = null;
             var modIndex: usize = 0;
 
-            {
-                self.mutex.lock();
+            self.mutex.lock();
 
-                if (self.shutdown) {
-                    self.mutex.unlock();
-                    return;
-                }
-
-                // if modify is active dont do this
-                if (self.queryQueue.items.len > 0) {
-                    // std.debug.print("    QUERY DO {any} {any} \n", .{ threadCtx.id, self.queryQueue.items.len });
-                    queryBuf = self.queryQueue.swapRemove(0);
-                } else if (self.modifyQueue.items.len > 0 and threadCtx.pendingModifies > 0) {
-                    // store last handled
-                    // std.debug.print("    MOD DO {any} {any} \n", .{ threadCtx.id, self.modifyQueue.items.len });
-                    modifyBuf = self.modifyQueue.items[0];
-                    modIndex = self.modifyQueue.items.len;
-                } else {
-                    // std.debug.print("    SLEEP {any} \n", .{threadCtx.id});
-                    self.wakeup.wait(&self.mutex);
-                }
-
+            if (self.shutdown) {
                 self.mutex.unlock();
+                return;
             }
+
+            if (self.queryQueue.items.len > 0) {
+                queryBuf = self.queryQueue.swapRemove(0);
+            } else if (self.modifyQueue.items.len > 0 and threadCtx.pendingModifies > 0) {
+                modifyBuf = self.modifyQueue.items[0];
+                modIndex = self.modifyQueue.items.len;
+            } else {
+                self.wakeup.wait(&self.mutex);
+            }
+
+            self.mutex.unlock();
 
             if (queryBuf) |q| {
                 // add time measurement
@@ -198,14 +211,9 @@ pub const Threads = struct {
                 self.mutex.lock();
                 self.pendingQueries -= 1;
                 if (self.pendingQueries == 0) {
-                    // std.debug.print("q done \n", .{});
-
-                    // prob want to call with the call thing
-
                     self.queryDone.signal();
 
                     if (!self.jsQueryBridgeStaged) {
-                        // std.debug.print("    QUERY DONE call js bridge\n", .{});
                         self.jsQueryBridgeStaged = true;
                         self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
                     }
@@ -226,84 +234,24 @@ pub const Threads = struct {
 
             if (modifyBuf) |m| {
                 if (threadCtx.id == 0) {
-                    // time measurement?
-                    // std.debug.print("Go run mod on thread! \n", .{});
-                    var res: u32 = 0;
-                    // add dirty ranfges on db ctx
-                    try modifyInternal(threadCtx, m, self.ctx, &res);
-                    // check how we want to do this to send back information
-
+                    // Modify worker
+                    try modifyInternal(threadCtx, m, self.ctx);
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
                     threadCtx.pendingModifies -= 1;
-
-                    // this is slightly different
                     if (self.pendingModifies == 0) {
-                        var bla = false;
-                        for (self.threads) |thread| {
-                            if (thread.pendingModifies != 0) {
-                                bla = true;
-                                break;
-                            }
-                        }
-
-                        if (!bla) {
-                            self.modifyDone.signal();
-
-                            if (!self.jsModifyBridgeStaged) {
-                                self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
-                                self.jsModifyBridgeStaged = true;
-                            }
-
-                            if (self.nextQueryQueue.items.len > 0) {
-                                const prevQueryQueue = self.queryQueue;
-                                self.queryQueue = self.nextQueryQueue;
-                                self.nextQueryQueue = prevQueryQueue;
-                                self.pendingQueries = self.queryQueue.items.len;
-                                self.wakeup.broadcast();
-                            }
-                        }
+                        self.modifyNotPending();
                     }
                     self.mutex.unlock();
                 } else {
+                    // Subscription worker
                     self.mutex.lock();
                     threadCtx.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
-                        var bla = false;
-                        for (self.threads) |thread| {
-                            if (thread.pendingModifies != 0) {
-                                bla = true;
-                                break;
-                            }
-                        }
-
-                        if (!bla) {
-                            self.modifyDone.signal();
-
-                            if (!self.jsModifyBridgeStaged) {
-                                self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
-                                self.jsModifyBridgeStaged = true;
-                            }
-
-                            if (self.nextQueryQueue.items.len > 0) {
-                                const prevQueryQueue = self.queryQueue;
-                                self.queryQueue = self.nextQueryQueue;
-                                self.nextQueryQueue = prevQueryQueue;
-                                self.pendingQueries = self.queryQueue.items.len;
-                                self.wakeup.broadcast();
-                            }
-                        }
+                        self.modifyNotPending();
                     }
                     self.mutex.unlock();
-
-                    // self.mutex.lock();
-
-                    // threadCtx.modIndex =
-                    // self.pendingModifies == 0
-                    // self.mutex.unlock();
-
-                    // add comtime and check for SUBS
                 }
             }
         }
@@ -359,7 +307,6 @@ pub const Threads = struct {
         self.wakeup.broadcast();
         self.mutex.unlock();
         for (self.threads) |t| {
-            // see if this is enough...
             t.thread.join();
             std.heap.raw_c_allocator.free(t.queryResults);
             std.heap.raw_c_allocator.free(t.modifyResults);
@@ -369,14 +316,10 @@ pub const Threads = struct {
         self.nextModifyQueue.*.deinit();
         self.queryQueue.*.deinit();
         self.nextQueryQueue.*.deinit();
-
         self.allocator.destroy(self.modifyQueue);
         self.allocator.destroy(self.nextModifyQueue);
         self.allocator.destroy(self.queryQueue);
         self.allocator.destroy(self.nextQueryQueue);
-
         self.allocator.destroy(self);
     }
 };
-
-// make event loop on main thread (using a timer)

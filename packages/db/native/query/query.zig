@@ -54,7 +54,8 @@ pub fn getQueryThreaded(
 
     const allocator = arena.allocator();
 
-    const len = q.len - 8;
+    const len = q.len - 12;
+    // last 4 is query id might need that as well
 
     var ctx: QueryCtx = .{
         .results = std.array_list.Managed(results.Result).init(allocator),

@@ -148,7 +148,6 @@ pub fn modifyInternal(
     threadCtx: *db.DbThread,
     batch: []u8,
     dbCtx: *db.DbCtx,
-    resCount: *u32,
 ) !void {
     var i: usize = 0;
     var ctx: ModifyCtx = .{
@@ -172,6 +171,7 @@ pub fn modifyInternal(
 
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
+    var resCount: u32 = 0;
 
     while (i < batch.len) {
         const op: types.ModOp = @enumFromInt(batch[i]);
@@ -217,18 +217,18 @@ pub fn modifyInternal(
                 i = i + 2;
             },
             types.ModOp.SWITCH_ID_CREATE => {
-                writeoutPrevNodeId(&ctx, resCount, ctx.id);
+                writeoutPrevNodeId(&ctx, &resCount, ctx.id);
                 try newNode(&ctx);
                 i = i + 1;
             },
             types.ModOp.SWITCH_ID_CREATE_RING => {
-                writeoutPrevNodeId(&ctx, resCount, ctx.id);
+                writeoutPrevNodeId(&ctx, &resCount, ctx.id);
                 const maxNodeId = read(u32, operation, 0);
                 try newNodeRing(&ctx, maxNodeId);
                 i = i + 5;
             },
             types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
-                writeoutPrevNodeId(&ctx, resCount, ctx.id);
+                writeoutPrevNodeId(&ctx, &resCount, ctx.id);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
@@ -240,7 +240,7 @@ pub fn modifyInternal(
             types.ModOp.SWITCH_ID_UPDATE => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
-                    writeoutPrevNodeId(&ctx, resCount, ctx.id);
+                    writeoutPrevNodeId(&ctx, &resCount, ctx.id);
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
                     ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
@@ -260,7 +260,7 @@ pub fn modifyInternal(
                 const dstId = read(u32, operation, 4);
                 const refField = read(u8, operation, 8);
                 const prevNodeId = try switchEdgeId(&ctx, srcId, dstId, refField);
-                writeoutPrevNodeId(&ctx, resCount, prevNodeId);
+                writeoutPrevNodeId(&ctx, &resCount, prevNodeId);
                 i = i + 10;
             },
             types.ModOp.UPSERT => {
@@ -293,9 +293,9 @@ pub fn modifyInternal(
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = db.getNodeId(node);
-                        writeInt(u32, batch, resCount.* * 5, id);
-                        writeInt(u8, batch, resCount.* * 5 + 4, @intFromEnum(errors.ClientError.null));
-                        resCount.* += 1;
+                        writeInt(u32, batch, resCount * 5, id);
+                        writeInt(u8, batch, resCount * 5 + 4, @intFromEnum(errors.ClientError.null));
+                        resCount += 1;
                         nextIndex = endIndex;
                         break;
                     }

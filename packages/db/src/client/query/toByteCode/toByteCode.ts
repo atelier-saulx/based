@@ -8,7 +8,7 @@ import {
 import { includeToBuffer } from '../include/toByteCode.js'
 import { searchToBuffer } from '../search/index.js'
 import { DbClient } from '../../index.js'
-import { writeUint64 } from '@based/utils'
+import { writeUint32, writeUint64 } from '@based/utils'
 import { defaultQuery } from './default.js'
 import { idQuery } from './id.js'
 import { aliasQuery } from './alias.js'
@@ -18,6 +18,7 @@ import { referenceQuery } from './reference.js'
 import { aggregatesQuery } from './aggregates.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { resolveMetaIndexes } from '../query.js'
+import { crc32 } from '../../crc32.js'
 
 const byteSize = (arr: IntermediateByteCode[]) => {
   return arr.reduce((a, b) => {
@@ -136,11 +137,10 @@ export function defToBuffer(
 export const queryToBuffer = (query: BasedDbQuery) => {
   const bufs = defToBuffer(query.db, query.def)
   // allow both uint8 and def
-  let totalByteLength = bufs.reduce(
-    (acc, cur) => acc + cur.buffer.byteLength,
-    0,
-  )
+  const totalByteLength =
+    bufs.reduce((acc, cur) => acc + cur.buffer.byteLength, 0) + 4
   const res = new Uint8Array(totalByteLength)
+
   let offset = 0
   for (let i = 0; i < bufs.length; i++) {
     const intermediateResult = bufs[i]
@@ -157,5 +157,6 @@ export const queryToBuffer = (query: BasedDbQuery) => {
       offset += intermediateResult.buffer.byteLength
     }
   }
+  writeUint32(res, crc32(res), res.byteLength - 4)
   return res
 }
