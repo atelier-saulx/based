@@ -39,12 +39,11 @@ const handleQueryWorkerResponse = (
   arr: ArrayBuffer[] | null,
 ) => {
   if (!arr) {
-    return 0
+    return
   }
-  let cnt = 0
   for (const buf of arr) {
     if (!buf) {
-      console.log('thread has no response :(', cnt)
+      console.error('thread has no response :(')
       continue
     } else {
       const v = new Uint8Array(buf)
@@ -55,12 +54,10 @@ const handleQueryWorkerResponse = (
         if (fn) {
           fn(v.subarray(i + 8, i + size))
         }
-        cnt++
         i += size
       }
     }
   }
-  return cnt
 }
 
 export async function start(db: DbServer, opts: StartOpts) {
@@ -79,7 +76,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     // native.cnt++
     // console.log('im a little derp', new Uint8Array(xxx), x)
     if (id === 1) {
-      native.cnt += handleQueryWorkerResponse(db, buffer)
+      handleQueryWorkerResponse(db, buffer)
       // console.log(native.cnt)
       // can be a bit nicer
       // console.log('QUERY RESULTS')
