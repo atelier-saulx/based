@@ -652,15 +652,4 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         }),
     )
   }
-
-  _getSync(dbCtxExternal: any) {
-    const buf = registerQuery(this)
-    const d = performance.now()
-    const res = native.getQueryBuf(buf, dbCtxExternal)
-    return new BasedQueryResponse(
-      this.def,
-      new Uint8Array(res),
-      performance.now() - d,
-    )
-  }
 }

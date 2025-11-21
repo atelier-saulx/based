@@ -1,6 +1,6 @@
 // @ts-ignore
 import db from '@based/db/native'
-import { DECODER, ENCODER, readUint32 } from '@based/utils'
+import { DECODER, ENCODER } from '@based/utils'
 
 const selvaIoErrlog = new Uint8Array(256)
 var compressor = db.createCompressor()
@@ -43,16 +43,6 @@ const native = {
 
   intFromExternal(external: any): BigInt {
     return db.intFromExternal(external)
-  },
-
-  modify: (data: Uint8Array, dbCtx: any): number | null => {
-    console.dir(data, { depth: 10 })
-    return db.modify(data, dbCtx)
-  },
-
-  getQueryBuf: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
-    const x = db.getQueryBuf(dbCtx, q)
-    return x
   },
 
   getQueryBufThread: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {

@@ -21,8 +21,6 @@ import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
 import { readUint16, readUint32, readUint64 } from '@based/utils'
 import { QueryType } from '../client/query/types.js'
-import { IoWorker } from './IoWorker.js'
-import { QueryWorker } from './QueryWorker.js'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,
@@ -59,18 +57,14 @@ export class DbServer extends DbShared {
   saveInProgress: boolean = false
   fileSystemPath: string
   blockMap: BlockMap
-  ioWorker: IoWorker
-  workers: QueryWorker[] = []
-  availableWorkerIndex: number = -1
-  activeReaders = 0 // processing queries or other DB reads
-  modifyQueue: Map<Function, Uint8Array> = new Map()
-  queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean // = true does not work
   unlistenExit: ReturnType<typeof exitHook>
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout
   delayInMs?: number
-  ids: Uint32Array
+
+  ids: Uint32Array // whats this
+
   constructor({
     path,
     debug,
@@ -147,189 +141,256 @@ export class DbServer extends DbShared {
 
   cleanupTimer: NodeJS.Timeout
 
-  cleanup() {
-    if (!this.cleanupTimer) {
-      // amount accessed
-      // current mem available
-      this.cleanupTimer = global.setTimeout(() => {
-        this.cleanupTimer = null
-        let remaining: boolean
+  // cleanup() {
+  // if (!this.cleanupTimer) {
+  //   // amount accessed
+  //   // current mem available
+  //   this.cleanupTimer = global.setTimeout(() => {
+  //     this.cleanupTimer = null
+  //     let remaining: boolean
+  //     for (const type in this.sortIndexes) {
+  //       for (const field in this.sortIndexes[type]) {
+  //         for (const start in this.sortIndexes[type][field]) {
+  //           for (const lang in this.sortIndexes[type][field][start]) {
+  //             const sortIndex = this.sortIndexes[type][field][start][lang]
+  //             sortIndex.cnt /= 2
+  //             if (sortIndex.cnt < 1 && !this.activeReaders) {
+  //               native.destroySortIndex(sortIndex.buf, this.dbCtxExternal)
+  //               delete this.sortIndexes[type][field][start][lang]
+  //             } else {
+  //               remaining = true
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+  //     if (remaining) {
+  //       this.cleanup()
+  //     }
+  //   }, 60e3)
+  // }
+  // }
 
-        for (const type in this.sortIndexes) {
-          for (const field in this.sortIndexes[type]) {
-            for (const start in this.sortIndexes[type][field]) {
-              for (const lang in this.sortIndexes[type][field][start]) {
-                const sortIndex = this.sortIndexes[type][field][start][lang]
-                sortIndex.cnt /= 2
-                if (sortIndex.cnt < 1 && !this.activeReaders) {
-                  native.destroySortIndex(sortIndex.buf, this.dbCtxExternal)
-                  delete this.sortIndexes[type][field][start][lang]
-                } else {
-                  remaining = true
-                }
-              }
-            }
-          }
-        }
+  // createSortIndex(
+  //   type: string,
+  //   field: string,
+  //   lang: LangName = 'none',
+  // ): SortIndex {
+  //   const t = this.schemaTypesParsed[type]
+  //   const prop = t.props[field]
+  //   const langCode =
+  //     langCodesMap.get(lang ?? Object.keys(this.schema?.locales ?? 'en')[0]) ??
+  //     0
 
-        if (remaining) {
-          this.cleanup()
-        }
-      }, 60e3)
-    }
-  }
+  //   let types = this.sortIndexes[t.id]
+  //   if (!types) {
+  //     types = this.sortIndexes[t.id] = {}
+  //   }
+  //   let f = types[prop.prop]
+  //   if (!f) {
+  //     f = types[prop.prop] = {}
+  //   }
+  //   let fields = f[prop.start]
+  //   if (!fields) {
+  //     fields = f[prop.start] = {}
+  //   }
+  //   let sortIndex = fields[langCode]
+  //   if (sortIndex) {
+  //     return sortIndex
+  //   }
+  //   const buf = new Uint8Array(9)
+  //   // size [2 type] [1 field]  [2 start] [2 len] [propIndex] [lang]
+  //   // call createSortBuf here
+  //   buf[0] = t.id
+  //   buf[1] = t.id >>> 8
+  //   buf[2] = prop.prop
+  //   buf[3] = prop.start
+  //   buf[4] = prop.start >>> 8
+  //   buf[5] = prop.len
+  //   buf[6] = prop.len >>> 8
+  //   buf[7] = prop.typeIndex
+  //   buf[8] = langCode
+  //   sortIndex = new SortIndex(buf, this.dbCtxExternal)
+  //   fields[langCode] = sortIndex
+  //   return sortIndex
+  // }
 
-  createSortIndex(
-    type: string,
-    field: string,
-    lang: LangName = 'none',
-  ): SortIndex {
-    const t = this.schemaTypesParsed[type]
-    const prop = t.props[field]
-    const langCode =
-      langCodesMap.get(lang ?? Object.keys(this.schema?.locales ?? 'en')[0]) ??
-      0
+  // destroySortIndex(type: string, field: string, lang: LangName = 'none'): any {
+  //   const t = this.schemaTypesParsed[type]
+  //   const prop = t.props[field]
 
-    let types = this.sortIndexes[t.id]
-    if (!types) {
-      types = this.sortIndexes[t.id] = {}
-    }
-    let f = types[prop.prop]
-    if (!f) {
-      f = types[prop.prop] = {}
-    }
-    let fields = f[prop.start]
-    if (!fields) {
-      fields = f[prop.start] = {}
-    }
-    let sortIndex = fields[langCode]
-    if (sortIndex) {
-      return sortIndex
-    }
-    const buf = new Uint8Array(9)
-    // size [2 type] [1 field]  [2 start] [2 len] [propIndex] [lang]
-    // call createSortBuf here
-    buf[0] = t.id
-    buf[1] = t.id >>> 8
-    buf[2] = prop.prop
-    buf[3] = prop.start
-    buf[4] = prop.start >>> 8
-    buf[5] = prop.len
-    buf[6] = prop.len >>> 8
-    buf[7] = prop.typeIndex
-    buf[8] = langCode
-    sortIndex = new SortIndex(buf, this.dbCtxExternal)
-    fields[langCode] = sortIndex
-    return sortIndex
-  }
+  //   let types = this.sortIndexes[t.id]
+  //   if (!type) {
+  //     return
+  //   }
+  //   let fields = types[prop.prop]
+  //   if (!fields) {
+  //     fields = types[prop.prop] = {}
+  //   }
+  //   let sortIndex = fields[prop.start]
+  //   if (sortIndex) {
+  //     const buf = new Uint8Array(6)
+  //     buf[0] = t.id
+  //     buf[1] = t.id >>> 8
+  //     buf[2] = prop.prop
+  //     buf[3] = prop.start
+  //     buf[4] = prop.start >>> 8
+  //     buf[5] =
+  //       langCodesMap.get(
+  //         lang ?? Object.keys(this.schema?.locales ?? 'en')[0],
+  //       ) ?? 0
+  //     native.destroySortIndex(buf, this.dbCtxExternal)
+  //     delete fields[prop.start]
+  //   }
+  // }
 
-  destroySortIndex(type: string, field: string, lang: LangName = 'none'): any {
-    const t = this.schemaTypesParsed[type]
-    const prop = t.props[field]
+  // getSortIndex(
+  //   typeId: number,
+  //   field: number,
+  //   start: number,
+  //   lang: number,
+  // ): SortIndex {
+  //   let types = this.sortIndexes[typeId]
+  //   if (!types) {
+  //     types = this.sortIndexes[typeId] = {}
+  //   }
+  //   let f = types[field]
+  //   if (!f) {
+  //     f = types[field] = {}
+  //   }
+  //   let fields = f[start]
+  //   if (!fields) {
+  //     fields = f[start] = {}
+  //   }
+  //   return fields[lang]
+  // }
 
-    let types = this.sortIndexes[t.id]
-    if (!type) {
-      return
-    }
-    let fields = types[prop.prop]
-    if (!fields) {
-      fields = types[prop.prop] = {}
-    }
-    let sortIndex = fields[prop.start]
-    if (sortIndex) {
-      const buf = new Uint8Array(6)
-      buf[0] = t.id
-      buf[1] = t.id >>> 8
-      buf[2] = prop.prop
-      buf[3] = prop.start
-      buf[4] = prop.start >>> 8
-      buf[5] =
-        langCodesMap.get(
-          lang ?? Object.keys(this.schema?.locales ?? 'en')[0],
-        ) ?? 0
-      native.destroySortIndex(buf, this.dbCtxExternal)
-      delete fields[prop.start]
-    }
-  }
+  // createSortIndexBuffer(
+  //   typeId: number,
+  //   field: number,
+  //   start: number,
+  //   lang: number,
+  // ): SortIndex {
+  //   const buf = new Uint8Array(9)
+  //   buf[0] = typeId
+  //   buf[1] = typeId >>> 8
+  //   buf[2] = field
+  //   buf[3] = start
+  //   buf[4] = start >>> 8
+  //   let typeDef: SchemaTypeDef
+  //   let prop: PropDef
 
-  getSortIndex(
-    typeId: number,
-    field: number,
-    start: number,
-    lang: number,
-  ): SortIndex {
-    let types = this.sortIndexes[typeId]
-    if (!types) {
-      types = this.sortIndexes[typeId] = {}
-    }
-    let f = types[field]
-    if (!f) {
-      f = types[field] = {}
-    }
-    let fields = f[start]
-    if (!fields) {
-      fields = f[start] = {}
-    }
-    return fields[lang]
-  }
+  //   if (field === 255) {
+  //     prop = ID_FIELD_DEF
+  //     typeDef = this.schemaTypesParsedById[typeId]
+  //   } else {
+  //     typeDef = this.schemaTypesParsedById[typeId]
+  //     for (const p in typeDef.props) {
+  //       const propDef = typeDef.props[p]
+  //       if (propDef.prop == field && propDef.start == start) {
+  //         prop = propDef
+  //         break
+  //       }
+  //     }
+  //   }
 
-  createSortIndexBuffer(
-    typeId: number,
-    field: number,
-    start: number,
-    lang: number,
-  ): SortIndex {
-    const buf = new Uint8Array(9)
-    buf[0] = typeId
-    buf[1] = typeId >>> 8
-    buf[2] = field
-    buf[3] = start
-    buf[4] = start >>> 8
-    let typeDef: SchemaTypeDef
-    let prop: PropDef
+  //   if (!typeDef) {
+  //     throw new Error(`Cannot find type id on db from query for sort ${typeId}`)
+  //   }
 
-    if (field === 255) {
-      prop = ID_FIELD_DEF
-      typeDef = this.schemaTypesParsedById[typeId]
-    } else {
-      typeDef = this.schemaTypesParsedById[typeId]
-      for (const p in typeDef.props) {
-        const propDef = typeDef.props[p]
-        if (propDef.prop == field && propDef.start == start) {
-          prop = propDef
-          break
-        }
-      }
+  //   if (!prop) {
+  //     throw new Error(`Cannot find prop on db from query for sort ${field}`)
+  //   }
+
+  //   buf[5] = prop.len
+  //   buf[6] = prop.len >>> 8
+  //   buf[7] = prop.typeIndex
+  //   buf[8] = lang
+  //   // put in modify stuff
+  //   const sortIndex =
+  //     this.getSortIndex(typeId, prop.prop, prop.start, lang) ??
+  //     new SortIndex(buf, this.dbCtxExternal)
+  //   const types = this.sortIndexes[typeId]
+  //   const fields = types[field]
+  //   fields[start][lang] = sortIndex
+  //   return sortIndex
+  // }
+
+  queryResponses: Map<
+    number,
+    {
+      persistent: Set<(x: any) => void>
+      once: ((x: any) => void)[]
     }
-
-    if (!typeDef) {
-      throw new Error(`Cannot find type id on db from query for sort ${typeId}`)
-    }
-
-    if (!prop) {
-      throw new Error(`Cannot find prop on db from query for sort ${field}`)
-    }
-
-    buf[5] = prop.len
-    buf[6] = prop.len >>> 8
-    buf[7] = prop.typeIndex
-    buf[8] = lang
-    // put in modify stuff
-    const sortIndex =
-      this.getSortIndex(typeId, prop.prop, prop.start, lang) ??
-      new SortIndex(buf, this.dbCtxExternal)
-    const types = this.sortIndexes[typeId]
-    const fields = types[field]
-    fields[start][lang] = sortIndex
-    return sortIndex
-  }
-
-  queryResponses: Map<number, (x: any) => void> = new Map()
+  > = new Map()
   modResponses: Map<number, (x: any) => void> = new Map()
 
-  addQueryWorkerListener(q: Uint8Array, cb: (x: any) => void) {
-    const id = readUint32(q, 0)
-    this.queryResponses.set(id, cb)
+  addQueryListener(id: number, q: Uint8Array, cb: (x: any) => void) {
+    if (!this.queryResponses.has(id)) {
+      this.queryResponses.set(id, {
+        persistent: new Set(),
+        once: [],
+      })
+    }
+    const s = this.queryResponses.get(id)
+    s.persistent.add(cb)
+  }
+
+  removeQueryListener(id: number, cb: (x: any) => void) {
+    if (!this.queryResponses.has(id)) {
+      return
+    }
+    const s = this.queryResponses.get(id)
+    s.persistent.delete(cb)
+    if (s.persistent.size === 0 && s.once.length === 0) {
+      this.queryResponses.delete(id)
+    }
+  }
+
+  execQueryListeners(id: number, q: Uint8Array) {
+    const s = this.queryResponses.get(id)
+    if (!s) {
+      return
+    }
+    for (const fn of s.once) {
+      fn(q)
+    }
+    if (s.persistent.size === 0) {
+      this.queryResponses.delete(id)
+    } else {
+      for (const fn of s.persistent) {
+        fn(q)
+      }
+      s.once = []
+    }
+  }
+
+  addQueryOnceListener(id: number, q: Uint8Array, cb: (x: any) => void) {
+    if (!this.queryResponses.has(id)) {
+      this.queryResponses.set(id, {
+        persistent: new Set(),
+        once: [],
+      })
+    }
+    const s = this.queryResponses.get(id)
+    s.once.push(cb)
+  }
+
+  getQueryBuf(buf): Promise<Uint8Array> {
+    // do this check in ZIG - also add to dbCtx
+    // const schemaChecksum = readUint64(buf, buf.byteLength - 8)
+    // if (schemaChecksum !== this.schema?.hash) {
+    //   return Promise.resolve(new Uint8Array(1))
+    // }
+    return new Promise((resolve) => {
+      const id = readUint32(buf, 0)
+      if (this.queryResponses.get(id)) {
+        console.log('Query allready staged dont exec again')
+      } else {
+        native.getQueryBufThread(buf, this.dbCtxExternal)
+      }
+      this.addQueryOnceListener(id, buf, resolve)
+    })
   }
 
   async setSchema(
@@ -343,25 +404,15 @@ export class DbServer extends DbShared {
     const schema = strictSchemaToDbSchema(strictSchema)
 
     if (schema.hash === this.schema?.hash) {
-      // Todo something for sending back to actual client
       return schema.hash
     }
 
     if (this.schema) {
-      // skip if allrdy doing the same
       if (schema.hash === this.migrating) {
         await this.once('schema')
         return this.schema.hash
       }
-
       await migrate(this, this.schema, schema, transformFns)
-
-      // if (this.schema.hash !== schema.hash) {
-      //   // process.nextTick(() => this.emit('schema', this.schema))
-      //   await this.once('schema')
-      // }
-      // Handle this later if it gets changed back to the same schema do false
-      // console.log(this.schema.hash == schema.hash)
       return this.schema.hash
     }
 
@@ -376,6 +427,18 @@ export class DbServer extends DbShared {
     return schema.hash
   }
 
+  addModifyListener(m: Uint8Array, cb: (x: any) => void) {
+    // id will be at zero
+    const id = readUint32(m, 0)
+    this.modResponses.set(id, cb)
+  }
+
+  removeModifyListener(m: Uint8Array) {
+    // id will be at zero
+    const id = readUint32(m, 0)
+    this.modResponses.delete(id)
+  }
+
   modify(payload: Uint8Array): Uint8Array | null | Promise<Uint8Array | null> {
     const hash = readUint64(payload, 0)
     if (this.schema?.hash !== hash) {
@@ -383,108 +446,62 @@ export class DbServer extends DbShared {
       return null
     }
 
-    if (this.activeReaders) {
-      return new Promise((resolve) => {
-        this.modifyQueue.set(resolve, new Uint8Array(payload))
-      })
-    }
-
     const content = payload.subarray(8)
-    const len = native.modify(content, this.dbCtxExternal)
+    const len = native.modifyThread(content, this.dbCtxExternal)
+    // the return value will not really work here...
+
     return content.subarray(0, len)
   }
 
-  #expire() {
-    native.modify(emptyUint8Array, this.dbCtxExternal)
-  }
+  // #expire() {
+  //   native.modifyThread(emptyUint8Array, this.dbCtxExternal)
+  // }
 
-  addToQueryQueue(resolve, buf) {
-    if (this.queryQueue.size === 16_777_216) {
-      resolve(new Error('Query queue exceeded'))
-      return
-    }
-    const schemaChecksum = readUint64(buf, buf.byteLength - 8)
-    if (schemaChecksum !== this.schema?.hash) {
-      return Promise.resolve(new Uint8Array(1))
-    }
-    this.queryQueue.set(resolve, buf)
-  }
+  // getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
+  //   if (this.stopped) {
+  //     console.error('Db is stopped - trying to query', buf.byteLength)
+  //     return Promise.resolve(new Uint8Array(8))
+  //   }
 
-  getQueryBuf(
-    buf: Uint8Array,
-    fromQueue: boolean = false,
-  ): Promise<Uint8Array> {
-    if (this.stopped) {
-      console.error('Db is stopped - trying to query', buf.byteLength)
-      return Promise.resolve(new Uint8Array(8))
-    }
-    if (this.modifyQueue.size) {
-      return new Promise((resolve) => {
-        this.addToQueryQueue(resolve, buf)
-      })
-    } else {
-      const queryType = buf[0]
-      if (queryType == QueryType.default) {
-        // TODO: make a function for this!
-        const s = 14 + readUint16(buf, 11)
-        const sortLen = readUint16(buf, s)
-        if (sortLen) {
-          // make function for this
-          const typeId = readUint16(buf, 1)
-          const sort = buf.slice(s + 2, s + 2 + sortLen)
-          const field = sort[1]
-          const start = readUint16(sort, 3)
-          let sortIndex = this.getSortIndex(typeId, field, start, 0)
-          if (!sortIndex) {
-            if (this.activeReaders) {
-              return new Promise((resolve) => {
-                this.addToQueryQueue(resolve, buf)
-              })
-            }
-            sortIndex = this.createSortIndexBuffer(
-              typeId,
-              field,
-              start,
-              sort[sort.byteLength - 1],
-            )
-          }
-          // increment
-          sortIndex.cnt++
-          this.cleanup()
-        }
-      } else if (queryType == 1) {
-        // This will be more advanced - sometimes has indexes / sometimes not
-      }
+  //   const queryType = buf[0]
+  //   if (queryType == QueryType.default) {
+  // // TODO: make a function for this!
+  // const s = 14 + readUint16(buf, 11)
+  // const sortLen = readUint16(buf, s)
+  // if (sortLen) {
+  //   // make function for this
+  //   const typeId = readUint16(buf, 1)
+  //   const sort = buf.slice(s + 2, s + 2 + sortLen)
+  //   const field = sort[1]
+  //   const start = readUint16(sort, 3)
+  //   let sortIndex = this.getSortIndex(typeId, field, start, 0)
+  //   if (!sortIndex) {
+  //     if (this.activeReaders) {
+  //       return new Promise((resolve) => {
+  //         this.addToQueryQueue(resolve, buf)
+  //       })
+  //     }
+  //     sortIndex = this.createSortIndexBuffer(
+  //       typeId,
+  //       field,
+  //       start,
+  //       sort[sort.byteLength - 1],
+  //     )
+  //   }
+  //   // increment
+  //   sortIndex.cnt++
+  //   this.cleanup()
+  // }
+  //   } else if (queryType == 1) {
+  //     // This will be more advanced - sometimes has indexes / sometimes not
+  //   }
 
-      if (!fromQueue) {
-        this.#expire()
-      }
+  //   // if (!fromQueue) {
+  //   //   this.#expire()
+  //   // }
 
-      this.availableWorkerIndex =
-        (this.availableWorkerIndex + 1) % this.workers.length
-      return this.workers[this.availableWorkerIndex].getQueryBuf(buf)
-    }
-  }
-
-  onQueryEnd() {
-    if (this.activeReaders === 0) {
-      if (this.modifyQueue.size) {
-        const modifyQueue = this.modifyQueue
-        this.modifyQueue = new Map()
-        for (const [resolve, payload] of modifyQueue) {
-          resolve(this.modify(payload))
-        }
-      }
-      if (this.queryQueue.size) {
-        const queryQueue = this.queryQueue
-        this.queryQueue = new Map()
-        this.#expire()
-        for (const [resolve, buf] of queryQueue) {
-          resolve(this.getQueryBuf(buf, true))
-        }
-      }
-    }
-  }
+  //   // return this.getQueryBuf(buf)
+  // }
 
   async stop(noSave?: boolean) {
     if (this.stopped) {
@@ -506,10 +523,6 @@ export class DbServer extends DbShared {
       if (!noSave) {
         await this.save()
       }
-      await this.ioWorker.terminate()
-      this.ioWorker = null
-      await Promise.all(this.workers.map((worker) => worker.terminate()))
-      this.workers = []
       native.stop(this.dbCtxExternal)
       this.dbCtxExternal = null
     } catch (e) {

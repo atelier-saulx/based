@@ -183,14 +183,14 @@ export const migrate = async (
       break
     }
     // block modifies
-    server.activeReaders++
+    // server.activeReaders++
     const leafData = rangesToMigrate[i++]
     port1.postMessage(leafData)
     setToAwake(workerState, true)
     await Promise.race([errorPromise, waitUntilSleeping(workerState)])
     // exec queued modifies
-    server.activeReaders--
-    server.onQueryEnd()
+    // server.activeReaders--
+    // server.onQueryEnd()
     if (i === rangesToMigrate.length) {
       if (server.blockMap.isDirty) {
         rangesToMigrate = []
@@ -218,11 +218,11 @@ export const migrate = async (
   setSchemaOnServer(server, toSchema)
   tmpDb.server.dbCtxExternal = fromCtx
   // TODO makes this SYNC
-  const promises: Promise<any>[] = [server.ioWorker, ...server.workers].map(
-    (worker) => worker.updateCtx(toAddress),
-  )
-  promises.push(tmpDb.destroy(), worker.terminate())
-  await Promise.all(promises)
+  // const promises: Promise<any>[] = [server.ioWorker, ...server.workers].map(
+  //   (worker) => worker.updateCtx(toAddress),
+  // )
+  // promises.push(tmpDb.destroy(), worker.terminate())
+  // await Promise.all(promises)
   if (abort()) {
     return
   }

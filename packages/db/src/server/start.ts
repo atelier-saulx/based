@@ -1,7 +1,4 @@
-import { availableParallelism } from 'node:os'
 import { DbServer } from './index.js'
-import { QueryWorker } from './QueryWorker.js'
-import { IoWorker } from './IoWorker.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -23,16 +20,6 @@ export type StartOpts = {
   queryThreads?: number
 }
 
-function startWorkers(db: DbServer, opts: StartOpts) {
-  const queryThreads = opts?.queryThreads ?? availableParallelism()
-  const address: BigInt = native.intFromExternal(db.dbCtxExternal)
-  db.workers = []
-  for (let i = 0; i < queryThreads; i++) {
-    db.workers.push(new QueryWorker(address, db, i))
-  }
-  db.ioWorker = new IoWorker(address, db)
-}
-
 // tmp
 const handleQueryWorkerResponse = (
   server: DbServer,
@@ -50,10 +37,7 @@ const handleQueryWorkerResponse = (
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
         const id = readUint32(v, i + 4)
-        const fn = server.queryResponses.get(id)
-        if (fn) {
-          fn(v.subarray(i + 8, i + size))
-        }
+        server.execQueryListeners(id, v.subarray(i + 8, i + size))
         i += size
       }
     }
@@ -71,16 +55,9 @@ export async function start(db: DbServer, opts: StartOpts) {
   await mkdir(path, { recursive: true }).catch(noop)
 
   db.dbCtxExternal = native.start((id: number, buffer: any) => {
-    // maybe dont add the id...
     // use enum
-    // native.cnt++
-    // console.log('im a little derp', new Uint8Array(xxx), x)
     if (id === 1) {
       handleQueryWorkerResponse(db, buffer)
-      // console.log(native.cnt)
-      // can be a bit nicer
-      // console.log('QUERY RESULTS')
-      // console.log(native.getQueryResults(x))
     } else if (id === 2) {
       //
       // const size = readUint32(v, i)
@@ -188,8 +165,6 @@ export async function start(db: DbServer, opts: StartOpts) {
     }
   }
 
-  startWorkers(db, opts)
-
   if (!opts?.hosted) {
     db.unlistenExit = exitHook((signal) => {
       const blockSig = () => {}
@@ -204,9 +179,6 @@ export async function start(db: DbServer, opts: StartOpts) {
       signals.forEach((sig) => process.off(sig, blockSig))
     })
   }
-
-  await Promise.all(db.workers.map(({ readyPromise }) => readyPromise))
-  db.emit('info', 'All workers ready')
 
   // use timeout
   if (db.saveIntervalInSeconds > 0) {
