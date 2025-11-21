@@ -42,11 +42,15 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
     return null;
 }
 // -------------------------
+fn getHeader(T: type, q: []u8, index: *usize) T {
+    const header = read(T, q, index.*);
+    index.* = index.* + @bitSizeOf(T) / 8;
+    return header;
+}
 
-// from thread
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
-    qIn: []u8,
+    batch: []u8,
     threadCtx: *db.DbThread,
     op: OpType,
 ) !void {
@@ -54,15 +58,13 @@ pub fn getQueryThreaded(
     defer arena.deinit();
 
     const allocator = arena.allocator();
-    const q = qIn[4..qIn.len];
-    const len = q.len - 8;
+    // const len = q.len - 8;
     // last 4 is query id might need that as well
 
-    var index: usize = 0;
     // const queryType: QueryType = @enumFromInt(q[index]);
 
     var ctx: QueryCtx = .{
-        .id = read(u32, qIn, 0),
+        .id = read(u32, batch, 0),
         .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
         .size = 0,
@@ -72,95 +74,110 @@ pub fn getQueryThreaded(
         .threadCtx = threadCtx,
     };
 
-    index += 1;
-    const typeId: db.TypeId = read(u16, q, index);
-    index += 2;
+    // index += 1;
+    // const typeId: db.TypeId = read(u16, q, index);
+    // index += 2;
 
-    if (op == OpType.default) {
-        // const header = read(t.QueryDefaultHeader, q, 1);
+    const q = batch[4 .. batch.len - 8];
+    var index: usize = 1;
 
-        try defaultProtocol(&ctx, q[1..len]);
-    } else if (op == OpType.id) {
-        const id = read(u32, q, 3);
-        const filterSize = read(u16, q, 7);
-        const filterBuf = q[9 .. 9 + filterSize];
-        const include = q[9 + filterSize .. len];
-        try QueryId.default(id, &ctx, typeId, filterBuf, include);
-    } else if (op == OpType.ids) {
-        const idsSize = read(u32, q, 3);
-        const ids: []u8 = q[7 .. idsSize + 7];
-        const offset = read(u32, q, idsSize + 7);
-        const limit = read(u32, q, idsSize + 11);
-        // add 1 extra byte for is single condition
-        const filterSize = read(u16, q, idsSize + 15);
-        const filterBuf = q[17 + idsSize .. 17 + filterSize + idsSize];
-        const sortSize = read(u16, q, 17 + filterSize + idsSize);
-        const sortBuf = q[19 + idsSize + filterSize .. 19 + filterSize + sortSize + idsSize];
-        const searchIndex = 21 + idsSize + filterSize + sortSize;
-        const searchSize = read(u16, q, 19 + idsSize + filterSize + sortSize);
-        const include = q[searchIndex + searchSize .. len];
-        if (sortSize == 0) {
-            if (searchSize > 0) {
-                const search = q[searchIndex .. searchIndex + searchSize];
-                if (isVectorSearch(search)) {
-                    const searchCtx = &createSearchCtx(true, search);
-                    try QueryIds.search(true, ids, &ctx, typeId, filterBuf, include, searchCtx);
-                } else {
-                    const searchCtx = &createSearchCtx(false, search);
-                    try QueryIds.search(false, ids, &ctx, typeId, filterBuf, include, searchCtx);
-                }
-            } else {
-                try QueryIds.default(ids, &ctx, typeId, filterBuf, include);
-            }
-        } else {
-            if (searchSize > 0) {
-                const search = q[searchIndex .. searchIndex + searchSize];
-                if (isVectorSearch(search)) {
-                    const searchCtx = &createSearchCtx(true, search);
-                    try QueryIds.search(true, ids, &ctx, typeId, filterBuf, include, searchCtx);
-                } else {
-                    const searchCtx = &createSearchCtx(false, search);
-                    try QueryIds.search(false, ids, &ctx, typeId, filterBuf, include, searchCtx);
-                }
-            } else {
-                const isAsc = sortBuf[0] == 0;
-                if (isAsc) {
-                    try QueryIds.sort(false, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
-                } else {
-                    try QueryIds.sort(true, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
-                }
-            }
-        }
-    } else if (op == OpType.alias) {
-        const field = q[3];
-        const valueSize = read(u16, q, 4);
-        const value = q[6 .. 6 + valueSize];
-        const filterSize = read(u16, q, valueSize + 6);
-        const filterBuf = q[8 + valueSize .. 8 + valueSize + filterSize];
-        const include = q[8 + filterSize + valueSize .. len];
-        try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
-    } else if (op == OpType.aggregates) {
-        // var i: usize = 7; // queryType + typeId + offset
-        // const limit = read(u32, q, i);
-        // i += 4;
-        // const filterSize = read(u16, q, i);
-        // i += 2;
-        // const filterBuf = q[i .. i + filterSize];
-        // i += 1 + filterSize; // isSimpleFilter + filterSize
-        // const aggSize = read(u16, q, i);
-        // i += 2;
-        // const agg: []u8 = q[i .. i + aggSize];
-        // const groupBy: aggregateTypes.GroupedBy = @enumFromInt(agg[0]);
-        // if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
-        //     return try AggDefault.group(env, &ctx, limit, typeId, filterBuf, agg);
-        // } else {
-        //     return try AggDefault.default(env, &ctx, limit, typeId, filterBuf, agg);
-        // }
-    } else if (op == OpType.aggregatesCountType) {
-        // return try AggDefault.countType(env, &ctx, typeId);
-    } else {
-        return errors.DbError.INCORRECT_QUERY_TYPE;
+    switch (op) {
+        OpType.default => {
+            const header = getHeader(types.QueryDefaultHeader, q, &index);
+            std.debug.print("derp header {any} \n", .{header});
+            // try defaultProtocol(&ctx, q[1..len]);
+        },
+        OpType.id => {
+            // const id = read(u32, q, 3);
+            // const filterSize = read(u16, q, 7);
+            // const filterBuf = q[9 .. 9 + filterSize];
+            // const include = q[9 + filterSize .. len];
+            // try QueryId.default(id, &ctx, typeId, filterBuf, include);
+        },
+        OpType.ids => {},
+        OpType.alias => {},
+        OpType.aggregates => {},
+        OpType.aggregatesCountType => {},
+        else => {
+            return errors.DbError.INCORRECT_QUERY_TYPE;
+        },
     }
+
+    // if (op == OpType.default) {} else if (op == OpType.id) {} else if (op == OpType.ids) {
+    //     const idsSize = read(u32, q, 3);
+    //     const ids: []u8 = q[7 .. idsSize + 7];
+    //     const offset = read(u32, q, idsSize + 7);
+    //     const limit = read(u32, q, idsSize + 11);
+    //     // add 1 extra byte for is single condition
+    //     const filterSize = read(u16, q, idsSize + 15);
+    //     const filterBuf = q[17 + idsSize .. 17 + filterSize + idsSize];
+    //     const sortSize = read(u16, q, 17 + filterSize + idsSize);
+    //     const sortBuf = q[19 + idsSize + filterSize .. 19 + filterSize + sortSize + idsSize];
+    //     const searchIndex = 21 + idsSize + filterSize + sortSize;
+    //     const searchSize = read(u16, q, 19 + idsSize + filterSize + sortSize);
+    //     const include = q[searchIndex + searchSize .. len];
+    //     if (sortSize == 0) {
+    //         if (searchSize > 0) {
+    //             const search = q[searchIndex .. searchIndex + searchSize];
+    //             if (isVectorSearch(search)) {
+    //                 const searchCtx = &createSearchCtx(true, search);
+    //                 try QueryIds.search(true, ids, &ctx, typeId, filterBuf, include, searchCtx);
+    //             } else {
+    //                 const searchCtx = &createSearchCtx(false, search);
+    //                 try QueryIds.search(false, ids, &ctx, typeId, filterBuf, include, searchCtx);
+    //             }
+    //         } else {
+    //             try QueryIds.default(ids, &ctx, typeId, filterBuf, include);
+    //         }
+    //     } else {
+    //         if (searchSize > 0) {
+    //             const search = q[searchIndex .. searchIndex + searchSize];
+    //             if (isVectorSearch(search)) {
+    //                 const searchCtx = &createSearchCtx(true, search);
+    //                 try QueryIds.search(true, ids, &ctx, typeId, filterBuf, include, searchCtx);
+    //             } else {
+    //                 const searchCtx = &createSearchCtx(false, search);
+    //                 try QueryIds.search(false, ids, &ctx, typeId, filterBuf, include, searchCtx);
+    //             }
+    //         } else {
+    //             const isAsc = sortBuf[0] == 0;
+    //             if (isAsc) {
+    //                 try QueryIds.sort(false, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+    //             } else {
+    //                 try QueryIds.sort(true, ids, &ctx, typeId, filterBuf, include, sortBuf[1..sortBuf.len], offset, limit);
+    //             }
+    //         }
+    //     }
+    // } else if (op == OpType.alias) {
+    //     const field = q[3];
+    //     const valueSize = read(u16, q, 4);
+    //     const value = q[6 .. 6 + valueSize];
+    //     const filterSize = read(u16, q, valueSize + 6);
+    //     const filterBuf = q[8 + valueSize .. 8 + valueSize + filterSize];
+    //     const include = q[8 + filterSize + valueSize .. len];
+    //     try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
+    // } else if (op == OpType.aggregates) {
+    //     // var i: usize = 7; // queryType + typeId + offset
+    //     // const limit = read(u32, q, i);
+    //     // i += 4;
+    //     // const filterSize = read(u16, q, i);
+    //     // i += 2;
+    //     // const filterBuf = q[i .. i + filterSize];
+    //     // i += 1 + filterSize; // isSimpleFilter + filterSize
+    //     // const aggSize = read(u16, q, i);
+    //     // i += 2;
+    //     // const agg: []u8 = q[i .. i + aggSize];
+    //     // const groupBy: aggregateTypes.GroupedBy = @enumFromInt(agg[0]);
+    //     // if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
+    //     //     return try AggDefault.group(env, &ctx, limit, typeId, filterBuf, agg);
+    //     // } else {
+    //     //     return try AggDefault.default(env, &ctx, limit, typeId, filterBuf, agg);
+    //     // }
+    // } else if (op == OpType.aggregatesCountType) {
+    //     // return try AggDefault.countType(env, &ctx, typeId);
+    // } else {
+    //     return errors.DbError.INCORRECT_QUERY_TYPE;
+    // }
 
     try results.createResultsBuffer(&ctx, op);
 }
