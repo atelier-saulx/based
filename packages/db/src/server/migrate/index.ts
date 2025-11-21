@@ -214,7 +214,6 @@ export const migrate = async (
   }
 
   server.dbCtxExternal = toCtx
-  server.sortIndexes = {}
   setSchemaOnServer(server, toSchema)
   tmpDb.server.dbCtxExternal = fromCtx
   // TODO makes this SYNC

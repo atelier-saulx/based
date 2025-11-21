@@ -19,11 +19,7 @@ export type StartOpts = {
   queryThreads?: number
 }
 
-// tmp
-const handleQueryWorkerResponse = (
-  server: DbServer,
-  arr: ArrayBuffer[] | null,
-) => {
+const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
   if (!arr) {
     return
   }
@@ -36,10 +32,20 @@ const handleQueryWorkerResponse = (
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
         const id = readUint32(v, i + 4)
-        server.execQueryListeners(id, v.subarray(i + 8, i + size))
+        db.execQueryListeners(id, v.subarray(i + 8, i + size))
         i += size
       }
     }
+  }
+}
+
+const handleModifyListeners = (db: DbServer, arr: ArrayBuffer) => {
+  const v = new Uint8Array(arr)
+  for (let i = 0; i < v.byteLength; ) {
+    const size = readUint32(v, i)
+    const id = readUint32(v, i + 4)
+    db.execModifyListeners(id, v.subarray(i + 8, i + size))
+    i += size
   }
 }
 
@@ -58,23 +64,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     if (id === 1) {
       handleQueryWorkerResponse(db, buffer)
     } else if (id === 2) {
-      //
-      // const size = readUint32(v, i)
-      //   const id = readUint32(v, i + 4)
-      //   const fn = server.queryResponses.get(id)
-      //   if (fn) {
-      //     fn(v.subarray(i + 8, i + size))
-      //   }
-      console.log('MODIFY RESULTS', buffer)
-      const v = new Uint8Array(buffer)
-      for (let i = 0; i < v.byteLength; ) {
-        const size = readUint32(v, i)
-        const dirtyBlocks = new Float64Array(v.buffer, v.byteOffset + i + 8, (size - 8) / 8)
-        console.log('DERP', dirtyBlocks)
-        db.blockMap.setDirtyBlocks(dirtyBlocks)
-        i += size
-      }
-      // 8 bytes padding and size
+      handleModifyListeners(db, buffer)
     }
   })
 

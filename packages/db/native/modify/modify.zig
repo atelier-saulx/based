@@ -149,7 +149,11 @@ pub fn modifyInternal(
     batch: []u8,
     dbCtx: *db.DbCtx,
 ) !void {
-    var i: usize = 0;
+    const modifyId = utils.read(u32, batch, 0);
+    var i: usize = 13; // 5 for id + type and 8 for schema checksum
+
+    std.debug.print("mod id {any} \n", .{modifyId});
+
     var ctx: ModifyCtx = .{
         .field = undefined,
         .typeId = 0,
@@ -352,11 +356,14 @@ pub fn modifyInternal(
     const newDirtyRanges = ctx.dirtyRanges.values();
 
     // pass id later..
-    const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 67);
+    const dirtyRangesSize = newDirtyRanges.len * 8 + 8;
+    const data = try getResultSlice(false, threadCtx, dirtyRangesSize, modifyId);
+
+    writeInt(u32, data, 0, dirtyRangesSize);
 
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
 
-    utils.copy(data, newDirtySlice);
+    utils.copy(data[8..data.len], newDirtySlice);
 
     // const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 67);
 

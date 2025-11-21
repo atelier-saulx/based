@@ -3,7 +3,7 @@ import { Ctx } from './Ctx.js'
 import { rejectTmp, resolveTmp } from './Tmp.js'
 
 export const reset = (ctx: Ctx) => {
-  ctx.index = 8
+  ctx.index = 5 + 8 // 5 for id + type + schema
   ctx.max = ctx.array.buffer.maxByteLength - 4
   ctx.size = ctx.array.buffer.byteLength - 4
   ctx.cursor = {}

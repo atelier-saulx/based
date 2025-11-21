@@ -53,43 +53,16 @@ await test('include', async (t) => {
 
   await db.query('user').get()
 
-  console.log('BLOCMMAP!!!')
+  console.log('BLOCK MAP!!!')
   console.dir(db.server.blockMap.foreachBlock(console.log))
 
-  var modCnt = 1
-  const callMod = () => {
-    const makeThing = new Uint8Array([
-      2, 2, 0, 9, 0, 0, 17, 3, 4, 0, 0, 0, 1, 0, 0, 0,
-    ])
-    modCnt++
-    writeUint32(makeThing, modCnt, makeThing.byteLength - 4)
-    native.modifyThread(makeThing, db.server.dbCtxExternal)
-  }
-
-  callMod()
-  native.getQueryBufThread(buf, db.server.dbCtxExternal)
-
-  callMod()
-
   await wait(1)
   native.getQueryBufThread(buf, db.server.dbCtxExternal)
 
-  for (let i = 0; i < 5; i++) {
-    if (i % 2) {
-      await wait(0)
-    }
-    if (Math.random() < 0.5) {
-      callMod()
-      native.getQueryBufThread(buf, db.server.dbCtxExternal)
-    } else {
-      native.getQueryBufThread(buf, db.server.dbCtxExternal)
-      callMod()
-    }
-  }
-
-  callMod()
-
   await wait(1)
+
+  await db.query('user').range(0, 10).sort('nr').get().inspect()
+
   // console.log(
   //   getAll(native.getQueryResults(db.server.dbCtxExternal)),
   //   'execed query items',
@@ -111,34 +84,34 @@ await test('include', async (t) => {
 
   // console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
 
-  const q2 = db.query('user').range(0, 1e6)
-  await q2.get().inspect()
+  // const q2 = db.query('user').range(0, 1e6)
+  // await q2.get().inspect()
 
-  const bufx = q2.buffer
-  console.log(bufx)
+  // const bufx = q2.buffer
+  // console.log(bufx)
 
-  const qq: any = []
+  // const qq: any = []
 
-  const z = []
+  // const z = []
 
-  for (let i = 1; i < 100 - 1; i++) {
-    const x = bufx.slice()
-    // writeUint32(x, i, 7)
-    writeUint32(x, i, 0)
+  // for (let i = 1; i < 100 - 1; i++) {
+  //   const x = bufx.slice()
+  //   // writeUint32(x, i, 7)
+  //   writeUint32(x, i, 0)
 
-    z.push(x)
+  //   z.push(x)
 
-    // qq.push(db.server.getQueryBuf(x))
-  }
+  //   // qq.push(db.server.getQueryBuf(x))
+  // }
 
-  const d = Date.now()
-  for (const zz of z) {
-    qq.push(db.server.getQueryBuf(zz))
-  }
-  await Promise.all(qq)
-  console.log(Date.now() - d, 'ms')
+  // const d = Date.now()
+  // for (const zz of z) {
+  //   qq.push(db.server.getQueryBuf(zz))
+  // }
+  // await Promise.all(qq)
+  // console.log(Date.now() - d, 'ms')
 
-  await db.query('user').range(0, 1e6).get().inspect()
+  // await db.query('user').range(0, 1e6).get().inspect()
 
   db.server.addQueryListener(0, () => {
     console.log('yo')

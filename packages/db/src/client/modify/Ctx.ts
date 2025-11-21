@@ -9,10 +9,11 @@ export class Ctx {
     this.array = array
     this.max = array.buffer.maxByteLength - 4 // dataLen
     this.size = array.buffer.byteLength - 4
-    writeUint64(array, schemaChecksum, 0)
+    array[4] = 1 // make enum later 1 means normal MODIFY
+    writeUint64(array, schemaChecksum, 5)
   }
   start: number
-  index: number = 8
+  index: number = 5 + 8 // 8 for schema checksum and 5 for mod ID + mod type
   schema: SchemaTypeDef
   array: Uint8Array<ArrayBufferLike>
   max: number
