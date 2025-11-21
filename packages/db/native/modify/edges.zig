@@ -3,7 +3,9 @@ const utils = @import("../utils.zig");
 const Modify = @import("./ctx.zig");
 const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
+const ModOp = @import("./types.zig").ModOp;
 const types = @import("../types.zig");
+
 const update = @import("./update.zig");
 const std = @import("std");
 const read = utils.read;
@@ -35,7 +37,7 @@ pub fn writeEdges(
     }
 
     while (i < data.len) {
-        const op: types.ModOp = @enumFromInt(data[i]);
+        const op: ModOp = @enumFromInt(data[i]);
         const prop = data[i + 1];
         const t: p = @enumFromInt(data[i + 2]);
         i += 3;
@@ -49,7 +51,7 @@ pub fn writeEdges(
         var offset: u32 = 0;
 
         // Only relevant for MAIN buffer
-        if (op == types.ModOp.UPDATE_PARTIAL) {
+        if (op == ModOp.UPDATE_PARTIAL) {
             len = read(u32, data, i);
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
@@ -62,8 +64,8 @@ pub fn writeEdges(
                 while (j < mainBufferOffset + offset + i) : (j += 6) {
                     const start = read(u16, data, j);
                     const l = read(u16, data, j + 2);
-                    const fieldOp: types.ModOp = @enumFromInt(data[j + 4]);
-                    if (fieldOp == types.ModOp.INCREMENT or fieldOp == types.ModOp.DECREMENT) {
+                    const fieldOp: ModOp = @enumFromInt(data[j + 4]);
+                    if (fieldOp == ModOp.INCREMENT or fieldOp == ModOp.DECREMENT) {
                         _ = update.incrementBuffer(op, @enumFromInt(data[j + 5]), val, edgeData);
                     } else {
                         copy(val[start .. start + l], edgeData[start .. start + l]);

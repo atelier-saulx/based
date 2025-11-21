@@ -9,6 +9,7 @@ const references = @import("./references.zig");
 const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 const subs = @import("./subscription.zig");
+const ModOp = @import("./types.zig").ModOp;
 
 const read = utils.read;
 const copy = utils.copy;
@@ -201,7 +202,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 fn incrementBuf(
-    op: types.ModOp,
+    op: ModOp,
     T: type,
     value: []u8,
     addition: []u8,
@@ -209,11 +210,11 @@ fn incrementBuf(
     const a = read(T, value, 0);
     const b = read(T, addition, 0);
     if (T == f64) {
-        const v: T = if (op == types.ModOp.DECREMENT) a - b else a + b;
+        const v: T = if (op == ModOp.DECREMENT) a - b else a + b;
         value[0..8].* = @bitCast(v);
         return 8;
     } else if (T != f64) {
-        const overflow = if (op == types.ModOp.DECREMENT) @subWithOverflow(a, b) else @addWithOverflow(a, b);
+        const overflow = if (op == ModOp.DECREMENT) @subWithOverflow(a, b) else @addWithOverflow(a, b);
         const v: T = if (overflow[1] == 1) a else overflow[0];
         const size = @sizeOf(T);
         value[0..size].* = @bitCast(v);
@@ -222,7 +223,7 @@ fn incrementBuf(
 }
 
 pub fn incrementBuffer(
-    op: types.ModOp,
+    op: ModOp,
     fieldType: types.Prop,
     value: []u8,
     addition: []u8,
@@ -298,7 +299,7 @@ pub fn incrementBuffer(
     }
 }
 
-pub fn increment(ctx: *ModifyCtx, data: []u8, op: types.ModOp) !usize {
+pub fn increment(ctx: *ModifyCtx, data: []u8, op: ModOp) !usize {
     const fieldType: types.Prop = @enumFromInt(read(u8, data, 0));
 
     // wastfull check

@@ -61,7 +61,7 @@ await test('include', async (t) => {
 
   await wait(1)
 
-  await db.query('user').range(0, 10).sort('nr', 'desc').get().inspect()
+  await db.query('user').range(0, 5).sort('nr', 'desc').get().inspect()
 
   // console.log(
   //   getAll(native.getQueryResults(db.server.dbCtxExternal)),

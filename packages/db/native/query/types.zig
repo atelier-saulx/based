@@ -27,6 +27,8 @@ pub const QueryDefaultHeader = packed struct {
     limit: u32,
     sortSize: u16,
     filterSize: u16,
+    searchSize: u16,
+    simpleFilter: u8,
 };
 
 pub const QueryIdHeader = packed struct {

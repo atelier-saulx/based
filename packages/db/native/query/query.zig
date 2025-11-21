@@ -77,7 +77,7 @@ pub fn getQueryThreaded(
     index += 2;
 
     if (queryType == QueryType.default) {
-        try defaultProtocol(&ctx, typeId, q, index, len);
+        try defaultProtocol(&ctx, q[1..len]);
     } else if (queryType == QueryType.id) {
         const id = read(u32, q, 3);
         const filterSize = read(u16, q, 7);

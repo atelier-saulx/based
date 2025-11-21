@@ -10,7 +10,6 @@ const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
 const deleteField = @import("./delete.zig").deleteField;
 const deleteTextLang = @import("./delete.zig").deleteTextLang;
 const subs = @import("./subscription.zig");
-
 const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
@@ -26,6 +25,8 @@ const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 const getResultSlice = @import("../db/threads.zig").getResultSlice;
 pub const ModifyType = @import("./types.zig").ModifyType;
+const ModOp = @import("./types.zig").ModOp;
+
 //  ----------NAPI-------------
 pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     modifyInternalThread(
@@ -178,13 +179,13 @@ pub fn modify(
     var resCount: u32 = 0;
 
     while (i < batch.len) {
-        const op: types.ModOp = @enumFromInt(batch[i]);
+        const op: ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
         switch (op) {
-            types.ModOp.PADDING => {
+            ModOp.PADDING => {
                 i = i + 1;
             },
-            types.ModOp.SWITCH_FIELD => {
+            ModOp.SWITCH_FIELD => {
                 ctx.field = operation[0];
                 i = i + 3;
                 ctx.fieldSchema = try db.getFieldSchema(ctx.typeEntry.?, ctx.field);
@@ -207,7 +208,7 @@ pub fn modify(
                     ctx.currentSortIndex = null;
                 }
             },
-            types.ModOp.DELETE_NODE => {
+            ModOp.DELETE_NODE => {
                 if (ctx.node) |node| {
                     subs.stage(&ctx, subs.Op.deleteNode);
                     db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
@@ -215,23 +216,23 @@ pub fn modify(
                 }
                 i = i + 1;
             },
-            types.ModOp.DELETE_TEXT_FIELD => {
+            ModOp.DELETE_TEXT_FIELD => {
                 const lang: types.LangCode = @enumFromInt(operation[0]);
                 deleteTextLang(&ctx, lang);
                 i = i + 2;
             },
-            types.ModOp.SWITCH_ID_CREATE => {
+            ModOp.SWITCH_ID_CREATE => {
                 writeoutPrevNodeId(&ctx, &resCount, ctx.id);
                 try newNode(&ctx);
                 i = i + 1;
             },
-            types.ModOp.SWITCH_ID_CREATE_RING => {
+            ModOp.SWITCH_ID_CREATE_RING => {
                 writeoutPrevNodeId(&ctx, &resCount, ctx.id);
                 const maxNodeId = read(u32, operation, 0);
                 try newNodeRing(&ctx, maxNodeId);
                 i = i + 5;
             },
-            types.ModOp.SWITCH_ID_CREATE_UNSAFE => {
+            ModOp.SWITCH_ID_CREATE_UNSAFE => {
                 writeoutPrevNodeId(&ctx, &resCount, ctx.id);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
@@ -241,7 +242,7 @@ pub fn modify(
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
-            types.ModOp.SWITCH_ID_UPDATE => {
+            ModOp.SWITCH_ID_UPDATE => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
                     writeoutPrevNodeId(&ctx, &resCount, ctx.id);
@@ -259,7 +260,7 @@ pub fn modify(
                 }
                 i = i + 5;
             },
-            types.ModOp.SWITCH_EDGE_ID => {
+            ModOp.SWITCH_EDGE_ID => {
                 const srcId = read(u32, operation, 0);
                 const dstId = read(u32, operation, 4);
                 const refField = read(u8, operation, 8);
@@ -267,7 +268,7 @@ pub fn modify(
                 writeoutPrevNodeId(&ctx, &resCount, prevNodeId);
                 i = i + 10;
             },
-            types.ModOp.UPSERT => {
+            ModOp.UPSERT => {
                 const writeIndex = read(u32, operation, 0);
                 const updateIndex = read(u32, operation, 4);
                 var nextIndex: u32 = writeIndex;
@@ -286,7 +287,7 @@ pub fn modify(
                 }
                 i = i + nextIndex + 1;
             },
-            types.ModOp.INSERT => {
+            ModOp.INSERT => {
                 const writeIndex = read(u32, operation, 0);
                 const endIndex = read(u32, operation, 4);
                 var nextIndex: u32 = writeIndex;
@@ -307,38 +308,38 @@ pub fn modify(
                 }
                 i = i + nextIndex + 1;
             },
-            types.ModOp.SWITCH_TYPE => {
+            ModOp.SWITCH_TYPE => {
                 try switchType(&ctx, read(u16, operation, 0));
                 i = i + 3;
             },
-            types.ModOp.ADD_EMPTY_SORT => {
+            ModOp.ADD_EMPTY_SORT => {
                 i += try addEmptyToSortIndex(&ctx, operation) + 1;
             },
-            types.ModOp.ADD_EMPTY_SORT_TEXT => {
+            ModOp.ADD_EMPTY_SORT_TEXT => {
                 i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
-            types.ModOp.DELETE => {
+            ModOp.DELETE => {
                 i += try deleteField(&ctx) + 1;
             },
-            types.ModOp.DELETE_SORT_INDEX => {
+            ModOp.DELETE_SORT_INDEX => {
                 i += try deleteFieldSortIndex(&ctx) + 1;
             },
-            types.ModOp.CREATE_PROP => {
+            ModOp.CREATE_PROP => {
                 i += try createField(&ctx, operation) + offset;
             },
-            types.ModOp.UPDATE_PROP => {
+            ModOp.UPDATE_PROP => {
                 i += try updateField(&ctx, operation) + offset;
             },
-            types.ModOp.UPDATE_PARTIAL => {
+            ModOp.UPDATE_PARTIAL => {
                 // fires too often!
                 // std.debug.print("PARTIAL TIMES! \n", .{});
                 i += try updatePartialField(&ctx, operation) + offset;
             },
-            types.ModOp.INCREMENT, types.ModOp.DECREMENT => {
+            ModOp.INCREMENT, ModOp.DECREMENT => {
                 // std.debug.print("INCREMENT TIMES! \n", .{});
                 i += try increment(&ctx, operation, op) + 1;
             },
-            types.ModOp.EXPIRE => {
+            ModOp.EXPIRE => {
                 db.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
                 i += 5;
             },

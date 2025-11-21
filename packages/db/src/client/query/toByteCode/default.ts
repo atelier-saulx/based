@@ -3,6 +3,16 @@ import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
 import { writeUint16, writeUint32 } from '@based/utils'
 import { DEFAULT } from './offsets.js'
 
+// pub const QueryDefaultHeader = packed struct {
+//     typeId: db.TypeId,
+//     offset: u32,
+//     limit: u32,
+//     sortSize: u16,
+//     filterSize: u16,
+//     searchSize: u16,
+//     simpleFilter: bool,
+// };
+
 export const defaultQuery = (
   def: QueryDef,
   filterSize: number,
@@ -22,25 +32,25 @@ export const defaultQuery = (
   index += 4
   writeUint32(buffer, def.range.limit, index)
   index += 4
-
   writeUint16(buffer, sortSize, index)
   index += 2
+  writeUint16(buffer, filterSize, index)
+  index += 2
+  writeUint16(buffer, searchSize, index)
+  index += 2
+  buffer[index] = filterSize && isSimpleMainFilter(def.filter) ? 1 : 0
+  index += 1
+
   if (sortSize) {
     buffer.set(sort, index)
     index += sortSize
   }
-
-  writeUint16(buffer, filterSize, index)
-  index += 2
-  buffer[index++] = filterSize && isSimpleMainFilter(def.filter) ? 1 : 0
 
   if (filterSize) {
     buffer.set(filterToBuffer(def.filter, index), index)
     index += filterSize
   }
 
-  writeUint16(buffer, searchSize, index)
-  index += 2
   if (searchSize) {
     buffer.set(search, index)
   }
