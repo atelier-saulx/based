@@ -90,8 +90,14 @@ export async function start(db: DbServer, opts: StartOpts) {
       //     fn(v.subarray(i + 8, i + size))
       //   }
       console.log('MODIFY RESULTS', buffer)
+      const v = new Uint8Array(buffer)
+      for (let i = 0; i < v.byteLength; ) {
+        const size = readUint32(v, i)
+        const dirtyBlocks = new Float64Array(v.buffer, i + 8, (size - 8) / 8);
+        db.blockMap.setDirtyBlocks(dirtyBlocks)
+        i += size
+      }
       // 8 bytes padding and size
-      // dirtyTime()
     }
   })
 
