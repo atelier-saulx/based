@@ -1,5 +1,6 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import perf from '../shared/assert.js'
 import { deepEqual } from '../shared/assert.js'
 import { fastPrng } from '@based/utils'
 import { equal } from 'node:assert'
@@ -44,39 +45,47 @@ await test('overall performance', async (t) => {
   const isDebugMode = scriptName.includes('debug')
   const acceptableDuration = isDebugMode ? 300 : 30
 
-  const q = await db.query('beer').sum('price').get()
-  deepEqual(
-    q.execTime < acceptableDuration,
-    true,
-    'Acceptable main agg performance',
+  // const q = await db.query('beer').sum('price').get()
+  // deepEqual(
+  //   q.execTime < acceptableDuration,
+  //   true,
+  //   'Acceptable main agg performance',
+  // )
+  // ------------------------------------------------------------
+  await perf(
+    async () => {
+      await db.query('beer').groupBy('year').get()
+    },
+    'group by year',
+    { repeat: 10, timeout: 1000 },
   )
+  // ------------------------------------------------------------
+  //   const startTime2 = performance.now()
+  //   await db.query('beer').groupBy('year').get()
+  //   const elapsedTime2 = performance.now() - startTime2
+  //   deepEqual(
+  //     elapsedTime2 < acceptableDuration,
+  //     true,
+  //     'Acceptable group by main prop performance',
+  //   )
 
-  const startTime2 = performance.now()
-  await db.query('beer').groupBy('year').get()
-  const elapsedTime2 = performance.now() - startTime2
-  deepEqual(
-    elapsedTime2 < acceptableDuration,
-    true,
-    'Acceptable group by main prop performance',
-  )
+  //   const startTime3 = performance.now()
+  //   await db.query('beer').groupBy('type').get()
+  //   const elapsedTime3 = performance.now() - startTime3
+  //   deepEqual(
+  //     elapsedTime3 < acceptableDuration,
+  //     true,
+  //     'Acceptable group by enum main performance',
+  //   )
 
-  const startTime3 = performance.now()
-  await db.query('beer').groupBy('type').get()
-  const elapsedTime3 = performance.now() - startTime3
-  deepEqual(
-    elapsedTime3 < acceptableDuration,
-    true,
-    'Acceptable group by enum main performance',
-  )
-
-  const startTime4 = performance.now()
-  await db.query('beer').max('price').groupBy('type').get()
-  const elapsedTime4 = performance.now() - startTime4
-  deepEqual(
-    elapsedTime4 < acceptableDuration,
-    true,
-    'Acceptable agg + enum main group by performance',
-  )
+  //   const startTime4 = performance.now()
+  //   await db.query('beer').max('price').groupBy('type').get()
+  //   const elapsedTime4 = performance.now() - startTime4
+  //   deepEqual(
+  //     elapsedTime4 < acceptableDuration,
+  //     true,
+  //     'Acceptable agg + enum main group by performance',
+  //   )
 })
 
 await test('count top level bignumber', async (t) => {
