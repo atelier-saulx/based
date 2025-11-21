@@ -41,51 +41,21 @@ await test('overall performance', async (t) => {
   }
   await db.drain()
 
-  const scriptName = process.env.npm_lifecycle_event || ''
-  const isDebugMode = scriptName.includes('debug')
-  const acceptableDuration = isDebugMode ? 300 : 30
+  await perf(async () => {
+    await db.query('beer').sum('price').get()
+  }, 'main agg performance')
 
-  // const q = await db.query('beer').sum('price').get()
-  // deepEqual(
-  //   q.execTime < acceptableDuration,
-  //   true,
-  //   'Acceptable main agg performance',
-  // )
-  // ------------------------------------------------------------
-  await perf(
-    async () => {
-      await db.query('beer').groupBy('year').get()
-    },
-    'group by year',
-    { repeat: 10, timeout: 1000 },
-  )
-  // ------------------------------------------------------------
-  //   const startTime2 = performance.now()
-  //   await db.query('beer').groupBy('year').get()
-  //   const elapsedTime2 = performance.now() - startTime2
-  //   deepEqual(
-  //     elapsedTime2 < acceptableDuration,
-  //     true,
-  //     'Acceptable group by main prop performance',
-  //   )
+  await perf(async () => {
+    await db.query('beer').groupBy('year').get()
+  }, 'group by year')
 
-  //   const startTime3 = performance.now()
-  //   await db.query('beer').groupBy('type').get()
-  //   const elapsedTime3 = performance.now() - startTime3
-  //   deepEqual(
-  //     elapsedTime3 < acceptableDuration,
-  //     true,
-  //     'Acceptable group by enum main performance',
-  //   )
+  await perf(async () => {
+    await db.query('beer').groupBy('type').get()
+  }, 'Acceptable group by enum main performance')
 
-  //   const startTime4 = performance.now()
-  //   await db.query('beer').max('price').groupBy('type').get()
-  //   const elapsedTime4 = performance.now() - startTime4
-  //   deepEqual(
-  //     elapsedTime4 < acceptableDuration,
-  //     true,
-  //     'Acceptable agg + enum main group by performance',
-  //   )
+  await perf(async () => {
+    await db.query('beer').max('price').groupBy('type').get()
+  }, 'Acceptable agg + enum main group by performance')
 })
 
 await test('count top level bignumber', async (t) => {
