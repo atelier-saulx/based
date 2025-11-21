@@ -4,7 +4,7 @@ const db = @import("../db/db.zig");
 const types = @import("../types.zig");
 
 pub const QueryCtx = struct {
-    results: std.ArrayList(results.Result),
+    results: std.array_list.Managed(results.Result),
     size: usize,
     totalResults: usize,
     aggResult: ?u32,

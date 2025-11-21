@@ -222,7 +222,7 @@ pub fn filter(
                     te = db.getEdgeType(ctx, ref.?.edgeConstraint) catch {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);
                     };
-                    if (db.getNode(te, ref.?.largeReference.?.meta)) |n| {
+                    if (db.getNode(te, ref.?.largeReference.?.edge)) |n| {
                         actNode = n;
                     } else {
                         return fail(ctx, node, typeEntry, conditions, ref, orJump, isEdge);

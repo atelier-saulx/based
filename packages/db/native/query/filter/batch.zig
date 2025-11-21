@@ -3,7 +3,7 @@ const simd = std.simd;
 const move = @import("../../utils.zig").move;
 const read = @import("../../utils.zig").read;
 
-const selva = @import("../../selva.zig");
+const selva = @import("../../selva.zig").c;
 const types = @import("./types.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;

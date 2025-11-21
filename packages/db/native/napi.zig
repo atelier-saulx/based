@@ -1,6 +1,11 @@
-const c = @import("c.zig");
 const errors = @import("errors.zig");
 const std = @import("std");
+
+pub const c = @cImport({
+    @cDefine("NAPI_VERSION", "10");
+    @cInclude("node_api.h");
+    @cInclude("string.h");
+});
 
 pub fn jsThrow(env: c.napi_env, message: [:0]const u8) void {
     const result = c.napi_throw_error(env, null, message);

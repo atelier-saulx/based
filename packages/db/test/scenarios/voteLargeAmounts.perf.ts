@@ -1,10 +1,9 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.js'
 import { SchemaProp, SchemaType } from '@based/schema'
-import { clientWorker } from './shared/startWorker.js'
-import { allCountryCodes } from './shared/examples.js'
+import { clientWorker } from '../shared/startWorker.js'
+import { allCountryCodes } from '../shared/examples.js'
 import { wait } from '@based/utils'
-import assert from 'node:assert'
 
 const NR_VOTES = 7.5e6
 const NR_WORKERS = 15
@@ -184,11 +183,14 @@ await test('schema with many uint8 fields', async (t) => {
     await clientWorker(
       t,
       db,
-      async (client, { NR_VOTES, allCountryCodes, countryCodesArray, status }) => {
+      async (
+        client,
+        { NR_VOTES, allCountryCodes, countryCodesArray, status },
+      ) => {
         const fastPrng = (seed: number = 100) => {
           return (min: number, max: number) => {
-            seed = (214013 * seed + 2531011) & 0xFFFFFFFF
-            return ((seed >> 16) & 0x7FFF) % (max - min + 1) + min
+            seed = (214013 * seed + 2531011) & 0xffffffff
+            return (((seed >> 16) & 0x7fff) % (max - min + 1)) + min
           }
         }
         const prng = fastPrng(~~(Math.random() * 100))
@@ -223,7 +225,12 @@ await test('schema with many uint8 fields', async (t) => {
         }
         await client.drain()
       },
-      { NR_VOTES: NR_VOTES / NR_WORKERS, allCountryCodes, countryCodesArray, status },
+      {
+        NR_VOTES: NR_VOTES / NR_WORKERS,
+        allCountryCodes,
+        countryCodesArray,
+        status,
+      },
     )
   }
 

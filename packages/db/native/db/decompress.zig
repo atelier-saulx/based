@@ -1,5 +1,5 @@
 const dbCtx = @import("../db/ctx.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const std = @import("std");
 const db = @import("./db.zig");
 const deflateErrors = @import("../errors.zig").deflate;
@@ -14,7 +14,7 @@ pub fn cb(
     b: [*c]const u8,
     dictSize: usize,
     dataSize: usize,
-) callconv(.C) c_int {
+) callconv(.c) c_int {
     const buf: [*c]u8 = @constCast(b);
     const ctx: *CtxC = @ptrCast(@alignCast(ctxC.?));
     var value: []u8 = undefined;

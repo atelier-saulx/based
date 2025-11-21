@@ -119,7 +119,7 @@ const propDefBuffer = (
     buf[1] = makeEdgeConstraintFlags(prop) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
     buf[4] = prop.inversePropNumber // inverse_field
-    view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // meta_node_type
+    view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // edge_node_type
     view.setUint32(7, prop.referencesCapped ?? 0, true)
 
     return [...buf]

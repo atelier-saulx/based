@@ -2,7 +2,7 @@ const std = @import("std");
 const types = @import("../../types.zig");
 const utils = @import("../../utils.zig");
 const read = utils.read;
-const selva = @import("../../selva.zig");
+const selva = @import("../../selva.zig").c;
 
 pub inline fn microbufferToF64(propType: types.Prop, buffer: []u8, offset: usize) f64 {
     return switch (propType) {

@@ -1,15 +1,15 @@
 const assert = std.debug.assert;
-const c = @import("../c.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");
-const selva = @import("../selva.zig");
+const selva = @import("../selva.zig").c;
 const modifyCtx = @import("../modify/ctx.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
 pub const DbCtx = @import("./ctx.zig").DbCtx;
+const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 
 const read = utils.read;
 const move = utils.move;
@@ -69,9 +69,9 @@ pub inline fn getRefDstType(ctx: *DbCtx, sch: anytype) !Type {
 
 pub inline fn getEdgeType(ctx: *DbCtx, sch: anytype) !Type {
     if (comptime @TypeOf(sch) == FieldSchema) {
-        return getType(ctx, selva.selva_get_edge_field_constraint(sch).*.meta_node_type);
+        return getType(ctx, selva.selva_get_edge_field_constraint(sch).*.edge_node_type);
     } else if (comptime @TypeOf(sch) == EdgeFieldConstraint) {
-        return getType(ctx, sch.*.meta_node_type);
+        return getType(ctx, sch.*.edge_node_type);
     } else {
         @compileLog("Invalid type: ", @TypeOf(sch));
         @compileError("Invalid type");
@@ -122,12 +122,12 @@ pub fn selvaStringDestroy(str: ?selva.selva_string) void {
 }
 
 pub fn getCardinalityReference(ctx: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge, fieldSchema: FieldSchema) []u8 {
-    const meta_node = getEdgeNode(ctx, efc, ref);
-    if (meta_node == null) {
+    const edge_node = getEdgeNode(ctx, efc, ref);
+    if (edge_node == null) {
         return emptySlice;
     }
 
-    if (selva.selva_fields_get_selva_string(meta_node, fieldSchema) orelse null) |stored| {
+    if (selva.selva_fields_get_selva_string(edge_node, fieldSchema) orelse null) |stored| {
         const countDistinct = selva.hll_count(@ptrCast(stored));
         return countDistinct[0..4];
     } else {
@@ -353,12 +353,12 @@ pub fn swapReference(
 }
 
 fn getEdgeNode(db: *DbCtx, efc: EdgeFieldConstraint, ref: ReferenceLarge) ?Node {
-    if (ref.*.meta == 0) {
+    if (ref.*.edge == 0) {
         return null;
     }
 
-    const meta_type = selva.selva_get_type_by_index(db.selva, efc.*.meta_node_type);
-    return selva.selva_find_node(meta_type, ref.*.meta);
+    const edge_type = selva.selva_get_type_by_index(db.selva, efc.*.edge_node_type);
+    return selva.selva_find_node(edge_type, ref.*.edge);
 }
 
 pub inline fn getEdgeFieldConstraint(fieldSchema: FieldSchema) EdgeFieldConstraint {
@@ -383,13 +383,13 @@ pub fn getEdgeProp(
     ref: ReferenceLarge,
     fieldSchema: FieldSchema,
 ) []u8 {
-    const meta_node = getEdgeNode(db, efc, ref);
-    if (meta_node == null) {
+    const edge_node = getEdgeNode(db, efc, ref);
+    if (edge_node == null) {
         return emptySlice;
     }
 
     const result: selva.SelvaFieldsPointer = selva.selva_fields_get_raw(
-        meta_node,
+        edge_node,
         fieldSchema,
     );
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
@@ -401,8 +401,8 @@ pub fn getEdgeReference(
     ref: ReferenceLarge,
     field: u8,
 ) ?ReferenceLarge {
-    const meta_node = getEdgeNode(db, efc, ref);
-    if (meta_node == null) {
+    const edge_node = getEdgeNode(db, efc, ref);
+    if (edge_node == null) {
         return null;
     }
 
@@ -411,7 +411,7 @@ pub fn getEdgeReference(
         return null;
     }
 
-    return selva.selva_fields_get_reference(meta_node, fs);
+    return selva.selva_fields_get_reference(edge_node, fs);
 }
 
 // TODO This should be going away
@@ -421,8 +421,8 @@ pub fn getEdgeReferences(
     ref: ReferenceLarge,
     field: u8,
 ) ?References {
-    const meta_node = getEdgeNode(db, efc, ref);
-    if (meta_node == null) {
+    const edge_node = getEdgeNode(db, efc, ref);
+    if (edge_node == null) {
         return null;
     }
 
@@ -431,7 +431,7 @@ pub fn getEdgeReferences(
         return null;
     }
 
-    return selva.selva_fields_get_references(meta_node, fs);
+    return selva.selva_fields_get_references(edge_node, fs);
 }
 
 // TODO This is now hll specific but we might want to change it.
@@ -449,14 +449,14 @@ pub fn ensureEdgePropString(
     ref: ReferenceLarge,
     fieldSchema: FieldSchema,
 ) !*selva.selva_string {
-    const meta_node = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
-    return selva.selva_fields_ensure_string(meta_node, fieldSchema, selva.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
+    const edge_node = selva.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
+    return selva.selva_fields_ensure_string(edge_node, fieldSchema, selva.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
 }
 
 pub fn ensureRefEdgeNode(ctx: *modifyCtx.ModifyCtx, node: Node, efc: EdgeFieldConstraint, ref: ReferenceLarge) !Node {
-    const edgeNode = selva.selva_fields_ensure_ref_meta(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx);
+    const edgeNode = selva.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx);
     if (edgeNode) |n| {
-        modifyCtx.markDirtyRange(ctx, efc.meta_node_type, getNodeId(n));
+        modifyCtx.markDirtyRange(ctx, efc.edge_node_type, getNodeId(n));
         return n;
     } else {
         return errors.SelvaError.SELVA_ENOTSUP;
@@ -467,7 +467,7 @@ pub fn preallocReferences(ctx: *modifyCtx.ModifyCtx, len: u64) void {
     _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
 }
 
-pub fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.C) void {
+pub fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.c) void {
     const mctx: *modifyCtx.ModifyCtx = @ptrCast(@alignCast(ctx));
     modifyCtx.markDirtyRange(mctx, typeId, nodeId);
 }
@@ -529,7 +529,7 @@ pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
 
-pub fn getNodeRangeHash(db: *DbCtx, typeEntry: Type, start: u32, end: u32) !selva.SelvaHash128 {
+pub fn getNodeRangeHash(db: *DbCtx, typeEntry: Type, start: u32, end: u32) !SelvaHash128 {
     var hash: u128 = undefined;
     try errors.selva(selva.selva_node_hash_range(db.selva, typeEntry, start, end, &hash));
     return hash;

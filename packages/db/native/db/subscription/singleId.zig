@@ -2,7 +2,6 @@ const std = @import("std");
 const db = @import("../db.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
-const c = @import("../../c.zig");
 const utils = @import("../../utils.zig");
 const types = @import("./types.zig");
 const upsertSubType = @import("./shared.zig").upsertSubType;
@@ -72,7 +71,7 @@ pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
     }
 }
 
-pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, napi_env, info);
     const ctx = try napi.get(*DbCtx, napi_env, args[0]);
     const value = try napi.get([]u8, napi_env, args[1]);
@@ -146,7 +145,7 @@ pub fn addIdSubscriptionInternal(napi_env: c.napi_env, info: c.napi_callback_inf
     return null;
 }
 
-pub fn removeIdSubscriptionInternal(env: c.napi_env, info: c.napi_callback_info) !c.napi_value {
+pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info) !napi.c.napi_value {
     const args = try napi.getArgs(2, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
     const value = try napi.get([]u8, env, args[1]);

@@ -1,4 +1,4 @@
-import { benchmark } from '../utils'
+import { benchmark } from './benchmarks/utils.js'
 
 benchmark('create 1m 2char strings', async (db) => {
   await db.setSchema({
