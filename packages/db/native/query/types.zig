@@ -12,7 +12,6 @@ pub const QueryCtx = struct {
     db: *db.DbCtx,
     threadCtx: *db.DbThread,
     id: u32,
-    queryType: QueryType,
 };
 
 pub const FilterType = enum(u8) {
@@ -40,16 +39,4 @@ pub const QueryAliasHeader = packed struct {
     typeId: db.TypeId,
     filterSize: u16,
     valueSize: u16,
-};
-
-pub const QueryType = enum(u8) {
-    id = 0,
-    ids = 1,
-    default = 2,
-    alias = 3,
-    aggregates = 4,
-    aggregatesCountType = 5,
-    // --------
-    save = 67,
-    saveCommon = 69,
 };

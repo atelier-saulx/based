@@ -1,6 +1,25 @@
 // TODO: lower case this is the zig way
 // https://zig.guide/language-basics/enums/
 
+pub const OpType = enum(u8) {
+    // Query Types
+    id = 0,
+    ids = 1,
+    default = 2,
+    alias = 3,
+    aggregates = 4,
+    aggregatesCountType = 5,
+
+    // Modify types
+    modify = 10,
+    load = 22,
+    unload = 33,
+
+    // Save Operations
+    save = 67,
+    saveCommon = 69,
+};
+
 pub const Prop = enum(u8) {
     NULL = 0,
     TIMESTAMP = 1,

@@ -149,11 +149,10 @@ pub fn modify(
     threadCtx: *db.DbThread,
     batch: []u8,
     dbCtx: *db.DbCtx,
+    opType: types.OpType,
 ) !void {
     const modifyId = utils.read(u32, batch, 0);
-    const modifyType: ModifyType = @enumFromInt(batch[4]);
     var i: usize = 13; // 5 for id + type and 8 for schema checksum
-    std.debug.print("mod id {any} \n", .{modifyId});
 
     var ctx: ModifyCtx = .{
         .field = undefined,
@@ -352,13 +351,11 @@ pub fn modify(
 
     db.expire(&ctx);
 
-    // std.debug.print();
-
     const newDirtyRanges = ctx.dirtyRanges.values();
 
     // pass id later..
     const dirtyRangesSize = newDirtyRanges.len * 8 + 7;
-    const data = try getResultSlice(false, threadCtx, dirtyRangesSize, modifyId, modifyType);
+    const data = try getResultSlice(false, threadCtx, dirtyRangesSize, modifyId, opType);
 
     writeInt(u32, data, 0, dirtyRangesSize);
 

@@ -11,7 +11,7 @@ const deflate = @import("../deflate.zig");
 const writeInt = @import("../utils.zig").writeInt;
 const jsBridge = @import("./jsBridge.zig");
 const sort = @import("./sort.zig");
-
+const OpType = @import("../types.zig").OpType;
 const Queue = std.array_list.Managed([]u8);
 
 pub fn getResultSlice(
@@ -19,7 +19,7 @@ pub fn getResultSlice(
     thread: *DbThread,
     size: usize,
     id: u32,
-    subType: if (isQuery) Query.QueryType else Modify.ModifyType,
+    subType: OpType,
 ) ![]u8 {
     const offset = 9;
     const paddedSize = size + offset;
@@ -201,7 +201,7 @@ pub const Threads = struct {
         while (true) {
             var queryBuf: ?[]u8 = null;
             var modifyBuf: ?[]u8 = null;
-            var modIndex: usize = 0;
+            var op: OpType = undefined;
 
             threadCtx.sortIndex = null;
 
@@ -215,29 +215,11 @@ pub const Threads = struct {
             if (self.queryQueue.items.len > 0) {
                 queryBuf = self.queryQueue.swapRemove(0);
                 if (queryBuf) |q| {
-                    const queryType: Query.QueryType = @enumFromInt(q[4]);
-                    // make function for this
-                    if (queryType == Query.QueryType.default) {
+                    op = @enumFromInt(q[4]);
+                    if (op == OpType.default) {
                         const typeId = utils.read(u16, q, 5);
 
                         std.debug.print("derp typeId {any} {any} \n", .{ typeId, q });
-
-                        // index += 1;
-                        // const typeId = utils.read(u16, q, index);
-                        // index += 2;
-
-                        // index += 4;
-                        // index += 4;
-
-                        // const filterSize = utils.read(u16, q, index);
-                        // index += 2;
-                        // index += 1;
-                        // index += filterSize;
-
-                        // const sortSize = utils.read(u16, q, index);
-                        // index += 2;
-                        // const sortBuf = q[index .. index + sortSize];
-                        // index += sortSize;
 
                         // if (sortSize > 0) {
                         //     if (sort.getSortIndexFromBuffer(self.ctx, typeId, sortBuf)) |sortMetaIndex| {
@@ -255,7 +237,9 @@ pub const Threads = struct {
                 }
             } else if (self.modifyQueue.items.len > 0 and threadCtx.pendingModifies > 0) {
                 modifyBuf = self.modifyQueue.items[0];
-                modIndex = self.modifyQueue.items.len;
+                if (modifyBuf) |m| {
+                    op = @enumFromInt(m[4]);
+                }
             } else {
                 self.wakeup.wait(&self.mutex);
             }
@@ -263,19 +247,17 @@ pub const Threads = struct {
             self.mutex.unlock();
 
             if (queryBuf) |q| {
-                if (q[4] == 67) {
-                    std.debug.print("SAVE COMMAND\n", .{});
-                    const queryType: Query.QueryType = @enumFromInt(q[4]);
+                if (op == OpType.save) {
                     const data = try getResultSlice(
                         true,
                         threadCtx,
                         1,
                         utils.read(u32, q, 0),
-                        queryType,
+                        op,
                     );
                     data[0] = 67;
                 } else {
-                    try Query.getQueryThreaded(self.ctx, q, threadCtx);
+                    try Query.getQueryThreaded(self.ctx, q, threadCtx, op);
                 }
 
                 self.mutex.lock();
@@ -306,15 +288,9 @@ pub const Threads = struct {
             }
 
             if (modifyBuf) |m| {
-                // special id is pos you can use it here [4] 🤪
-                // add block amoutn to load in buffer
-                // then check threads amount
-                // % what your work is
-
                 if (threadCtx.id == 0) {
-
                     // Modify worker
-                    try Modify.modify(threadCtx, m, self.ctx);
+                    try Modify.modify(threadCtx, m, self.ctx, op);
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;

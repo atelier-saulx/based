@@ -9,7 +9,7 @@ export class Ctx {
     this.array = array
     this.max = array.buffer.maxByteLength - 4 // dataLen
     this.size = array.buffer.byteLength - 4
-    array[4] = 1 // make enum later 1 means normal MODIFY
+    array[4] = 10 // make enum later 1 means normal MODIFY
     writeUint64(array, schemaChecksum, 5)
   }
   start: number

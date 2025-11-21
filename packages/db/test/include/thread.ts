@@ -45,11 +45,13 @@ await test('include', async (t) => {
   var cnt = 0
   let totalTime = 0
 
+  console.log('create?')
   for (let i = 0; i < 1e6; i++) {
     db.create('user', {
       nr: i,
     })
   }
+  console.log('derp?')
 
   await db.query('user').get()
 

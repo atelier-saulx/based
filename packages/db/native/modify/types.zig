@@ -1,9 +1,3 @@
-pub const ModifyType = enum(u8) {
-    modify = 1,
-    load = 2,
-    unload = 3,
-};
-
 pub const ModOp = enum(u8) {
     SWITCH_FIELD = 0,
     SWITCH_ID_UPDATE = 1,

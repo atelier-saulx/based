@@ -6,7 +6,6 @@ const t = @import("../types.zig");
 const std = @import("std");
 const selva = @import("../selva.zig").c;
 const getResultSlice = @import("../db/threads.zig").getResultSlice;
-
 const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeInt;
@@ -43,6 +42,7 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
 
 pub fn createResultsBuffer(
     ctx: *QueryCtx,
+    op: t.OpType,
 ) !void {
     const size = ctx.size + 8;
 
@@ -50,7 +50,7 @@ pub fn createResultsBuffer(
 
     // add correct id later
     // , ctx.queryType
-    const data = try getResultSlice(true, ctx.threadCtx, size, ctx.id, ctx.queryType);
+    const data = try getResultSlice(true, ctx.threadCtx, size, ctx.id, op);
 
     writeInt(u32, data, 0, ctx.totalResults);
 

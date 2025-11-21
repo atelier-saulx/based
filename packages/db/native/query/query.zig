@@ -8,8 +8,8 @@ const types = @import("./types.zig");
 const QueryCtx = types.QueryCtx;
 const filter = @import("./filter/filter.zig").filter;
 const sort = @import("../db/sort.zig");
+const OpType = @import("../types.zig").OpType;
 
-pub const QueryType = types.QueryType;
 const QuerySort = @import("./queryTypes/sort.zig");
 const QueryDefault = @import("./queryTypes/default.zig");
 const QueryId = @import("./queryTypes/id.zig");
@@ -48,6 +48,7 @@ pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
     qIn: []u8,
     threadCtx: *db.DbThread,
+    op: OpType,
 ) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
     defer arena.deinit();
@@ -58,7 +59,7 @@ pub fn getQueryThreaded(
     // last 4 is query id might need that as well
 
     var index: usize = 0;
-    const queryType: QueryType = @enumFromInt(q[index]);
+    // const queryType: QueryType = @enumFromInt(q[index]);
 
     var ctx: QueryCtx = .{
         .id = read(u32, qIn, 0),
@@ -69,22 +70,23 @@ pub fn getQueryThreaded(
         .aggResult = null,
         .allocator = allocator,
         .threadCtx = threadCtx,
-        .queryType = queryType,
     };
 
     index += 1;
     const typeId: db.TypeId = read(u16, q, index);
     index += 2;
 
-    if (queryType == QueryType.default) {
+    if (op == OpType.default) {
+        // const header = read(t.QueryDefaultHeader, q, 1);
+
         try defaultProtocol(&ctx, q[1..len]);
-    } else if (queryType == QueryType.id) {
+    } else if (op == OpType.id) {
         const id = read(u32, q, 3);
         const filterSize = read(u16, q, 7);
         const filterBuf = q[9 .. 9 + filterSize];
         const include = q[9 + filterSize .. len];
         try QueryId.default(id, &ctx, typeId, filterBuf, include);
-    } else if (queryType == QueryType.ids) {
+    } else if (op == OpType.ids) {
         const idsSize = read(u32, q, 3);
         const ids: []u8 = q[7 .. idsSize + 7];
         const offset = read(u32, q, idsSize + 7);
@@ -129,7 +131,7 @@ pub fn getQueryThreaded(
                 }
             }
         }
-    } else if (queryType == QueryType.alias) {
+    } else if (op == OpType.alias) {
         const field = q[3];
         const valueSize = read(u16, q, 4);
         const value = q[6 .. 6 + valueSize];
@@ -137,7 +139,7 @@ pub fn getQueryThreaded(
         const filterBuf = q[8 + valueSize .. 8 + valueSize + filterSize];
         const include = q[8 + filterSize + valueSize .. len];
         try QueryAlias.default(field, value, &ctx, typeId, filterBuf, include);
-    } else if (queryType == QueryType.aggregates) {
+    } else if (op == OpType.aggregates) {
         // var i: usize = 7; // queryType + typeId + offset
         // const limit = read(u32, q, i);
         // i += 4;
@@ -154,12 +156,11 @@ pub fn getQueryThreaded(
         // } else {
         //     return try AggDefault.default(env, &ctx, limit, typeId, filterBuf, agg);
         // }
-    } else if (queryType == QueryType.aggregatesCountType) {
+    } else if (op == OpType.aggregatesCountType) {
         // return try AggDefault.countType(env, &ctx, typeId);
     } else {
         return errors.DbError.INCORRECT_QUERY_TYPE;
     }
 
-    try results.createResultsBuffer(&ctx);
-    // return d;
+    try results.createResultsBuffer(&ctx, op);
 }
