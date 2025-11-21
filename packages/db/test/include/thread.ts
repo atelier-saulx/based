@@ -45,11 +45,13 @@ await test('include', async (t) => {
   var cnt = 0
   let totalTime = 0
 
-  await db.create('user', {
-    nr: 67,
-  })
+  for (let i = 0; i < 1e6; i++) {
+    db.create('user', {
+      nr: i,
+    })
+  }
 
-  await wait(100)
+  await db.query('user').get()
 
   console.log('BLOCMMAP!!!')
   console.dir(db.server.blockMap.foreachBlock(console.log))
@@ -95,28 +97,59 @@ await test('include', async (t) => {
 
   // await db.query('user').get().inspect()
 
-  const amount = 1_000_000
+  // const amount = 1_000_000
   // const amount = 1_000_000
 
-  await wait(100)
-  var d = Date.now()
+  // await wait(100)
+  // var d = Date.now()
 
-  0
+  // var d = Date.now()
 
-  var d = Date.now()
+  // for (let i = 0; i < amount; i++) {
+  //   native.getQueryBufThread(buf, db.server.dbCtxExternal)
+  // }
 
-  for (let i = 0; i < amount; i++) {
-    native.getQueryBufThread(buf, db.server.dbCtxExternal)
+  // console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
+
+  const q2 = db.query('user').range(0, 1e6)
+  await q2.get().inspect()
+
+  const bufx = q2.buffer
+  console.log(bufx)
+
+  const qq: any = []
+
+  const z = []
+
+  for (let i = 1; i < 100 - 1; i++) {
+    const x = bufx.slice()
+    // writeUint32(x, i, 7)
+    writeUint32(x, i, 0)
+
+    z.push(x)
+
+    // qq.push(db.server.getQueryBuf(x))
   }
 
+  const d = Date.now()
+  for (const zz of z) {
+    qq.push(db.server.getQueryBuf(zz))
+  }
+  await Promise.all(qq)
+  console.log(Date.now() - d, 'ms')
+
+  await db.query('user').range(0, 1e6).get().inspect()
+
+  // db.server.addQueryListener(9999, )
+  // native.getQueryBufThread()
+
+  // save command
   native.getQueryBufThread(
     new Uint8Array([6, 6, 6, 6, 67]),
     db.server.dbCtxExternal,
   )
 
-  console.log('STAGING FOR EXEC TIME', Date.now() - d, 'ms')
-
-  await db.query('user').get().inspect()
-
   console.log('done')
+
+  await wait(100)
 })

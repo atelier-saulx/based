@@ -217,6 +217,9 @@ pub const Threads = struct {
 
                 self.mutex.lock();
                 self.pendingQueries -= 1;
+
+                // If results size is too large move stuff to next query
+
                 if (self.pendingQueries == 0) {
                     self.queryDone.signal();
 

@@ -327,7 +327,7 @@ export class DbServer extends DbShared {
   > = new Map()
   modResponses: Map<number, (x: any) => void> = new Map()
 
-  addQueryListener(id: number, q: Uint8Array, cb: (x: any) => void) {
+  addQueryListener(id: number, cb: (x: any) => void) {
     if (!this.queryResponses.has(id)) {
       this.queryResponses.set(id, {
         persistent: new Set(),
@@ -387,7 +387,7 @@ export class DbServer extends DbShared {
     return new Promise((resolve) => {
       const id = readUint32(buf, 0)
       if (this.queryResponses.get(id)) {
-        console.log('Query allready staged dont exec again')
+        console.log('Query allready staged dont exec again', id)
       } else {
         native.getQueryBufThread(buf, this.dbCtxExternal)
       }
