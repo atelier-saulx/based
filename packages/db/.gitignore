@@ -3,3 +3,4 @@
 /.zig-cache
 /.cache
 /deps/node-*
+*_perf_logs
