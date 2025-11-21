@@ -22,6 +22,7 @@ type Result = {
   repetitions: number
   difference?: number
   previous?: number
+  isDebugMode?: boolean
 }
 
 type FileStructure = {
@@ -71,6 +72,9 @@ export async function perf(
     const totalTime = durations.reduce((a, b) => a + b, 0)
     const avgTime = totalTime / durations.length
 
+    const scriptName = process.env.npm_lifecycle_event || ''
+    const isDebugMode = scriptName.includes('debug')
+
     const result: Result = {
       timestamp: new Date().toISOString(),
       dbVersion: dbVersion,
@@ -78,6 +82,7 @@ export async function perf(
       avgDurationMs: Number(avgTime.toFixed(4)),
       totalDurationMs: Number(totalTime.toFixed(4)),
       repetitions: repeat,
+      isDebugMode: isDebugMode,
     }
 
     const diff = await saveResultToFile(
