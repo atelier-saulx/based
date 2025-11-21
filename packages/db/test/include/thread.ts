@@ -45,6 +45,10 @@ await test('include', async (t) => {
   var cnt = 0
   let totalTime = 0
 
+  await db.create('user', {
+    nr: 67,
+  })
+
   var modCnt = 1
   const callMod = () => {
     const makeThing = new Uint8Array([
