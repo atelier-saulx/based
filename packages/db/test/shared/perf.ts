@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { performance } from 'perf_hooks'
+import { styleText } from 'util'
 
 const MEASURES_PER_TEST = 10
 
@@ -15,14 +16,20 @@ type Result = {
   timestamp: string
   dbVersion: string
   label: string
-  //   testName: string
   avgDurationMs: number
   totalDurationMs: number
   repetitions: number
+  difference?: number
+  previous?: number
 }
 
 type FileStructure = {
   [key: string]: Result[]
+}
+
+type Difference = {
+  difference: number
+  previous: number
 }
 
 export async function perf(
@@ -38,7 +45,6 @@ export async function perf(
   const outputFile =
     options.outputFile ?? `perf_${testFileName}_${dbVersion}.json`
   const outputDir = './tmp_perf_logs'
-  console.log(process.env.TEST_TMP_DIR, outputDir)
   const testFunction = process.env.TEST_TO_RUN ?? 'not inside a test'
 
   const durations: number[] = []
@@ -73,13 +79,30 @@ export async function perf(
       repetitions: repeat,
     }
 
-    console.log('🦋', outputFile, { [testFunction]: result })
-    await saveResultToFile(
+    const diff = await saveResultToFile(
       path.join(outputDir, outputFile),
       testFunction,
       result,
     )
-    if (!silent) console.log('🎃')
+    const percentDiff =
+      diff.previous !== null ? (diff.difference / diff.previous) * 100 : 0
+    const diffMessage =
+      diff.difference > 0
+        ? styleText(
+            'red',
+            `+${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+          )
+        : styleText(
+            'green',
+            `${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+          )
+    if (!silent)
+      console.log(
+        styleText(
+          'gray',
+          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x) ${diffMessage}.`,
+        ),
+      )
   } catch (err) {
     console.error(`Error in perf run "${label}":`, err)
     return
@@ -97,7 +120,7 @@ async function saveResultToFile(
   filePath: string,
   testName: string,
   data: Result,
-) {
+): Promise<Difference> {
   const absolutePath = path.resolve(filePath)
   let fileContent: FileStructure = {}
 
@@ -117,6 +140,11 @@ async function saveResultToFile(
     fileContent[testName] = []
   }
 
+  const previous = fileContent[testName].slice(-1)[0]?.avgDurationMs
+  const difference = data.avgDurationMs - previous
+  data.difference = difference
+  data.previous = previous
+
   fileContent[testName].push(data)
 
   if (fileContent[testName].length > MEASURES_PER_TEST) {
@@ -124,4 +152,6 @@ async function saveResultToFile(
   }
 
   fs.writeFileSync(absolutePath, JSON.stringify(fileContent, null, 2))
+
+  return { difference: difference, previous: previous }
 }
