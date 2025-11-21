@@ -69,7 +69,7 @@ export async function start(db: DbServer, opts: StartOpts) {
       const v = new Uint8Array(buffer)
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
-        const dirtyBlocks = new Float64Array(v.buffer, i + 8, (size - 8) / 8)
+        const dirtyBlocks = new Float64Array(v.buffer, v.byteOffset + i + 8, (size - 8) / 8)
         console.log('DERP', dirtyBlocks)
         db.blockMap.setDirtyBlocks(dirtyBlocks)
         i += size
