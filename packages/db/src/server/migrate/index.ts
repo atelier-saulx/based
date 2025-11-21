@@ -228,7 +228,6 @@ export const migrate = async (
   }
   native.membarSyncRead()
   await save(server, {
-    forceFullDump: true,
     skipDirtyCheck: true,
     skipMigrationCheck: true,
   })

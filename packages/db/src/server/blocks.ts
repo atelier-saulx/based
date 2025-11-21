@@ -23,7 +23,7 @@ export function saveBlock(
   const path = join(db.fileSystemPath, file)
   const err = native.saveBlock(path, typeId, start, db.dbCtxExternal, hash)
   if (err == SELVA_ENOENT) {
-    // Generally we don't nor can't remove blocks from verifTree before we
+    // Generally we don't nor can't remove blocks from blockMap before we
     // attempt to access them.
     db.blockMap.removeBlock(mtKey)
   } else if (err) {
@@ -52,7 +52,7 @@ export async function saveBlocks(
     const hash: BlockHash = new Uint8Array(res.buffer, i * 20 + 4, BLOCK_HASH_SIZE)
 
     if (err === SELVA_ENOENT) {
-      // Generally we don't nor can't remove blocks from verifTree before we
+      // Generally we don't nor can't remove blocks from blockMap before we
       // attempt to access them.
       db.blockMap.removeBlock(key)
     } else if (err) {
