@@ -55,6 +55,7 @@ await test('await updates', async (t) => {
         //lastMeasure = performance.now()
         totalAlias = 0
       }
+      i++
     },
     'update alias',
     { repeat: 100_000 },
