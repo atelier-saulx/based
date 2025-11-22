@@ -135,8 +135,8 @@ const native = {
     return db.stringByteLength(s)
   },
 
-  stringToUint8Array: (dst: Uint8Array, s: string): number => {
-    return db.stringToUint8Array(dst, s)
+  stringToUint8Array: (s: string, dst: Uint8Array, offset: number = 0, terminated: boolean = false): number => {
+    return db.stringToUint8Array(s, dst, offset, terminated)
   },
 
   selvaStrerror: (err: number) => {
