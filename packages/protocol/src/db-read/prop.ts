@@ -1,18 +1,9 @@
 import { readUint32, readUtf8 } from '@based/utils/dist/src/uint8.js'
 import { Item, ReaderPropDef, ReaderSchema } from './types.js'
 import { addProp, addLangProp } from './addProps.js'
-import {
-  ALIAS,
-  BINARY,
-  CARDINALITY,
-  COLVEC,
-  JSON,
-  STRING,
-  TEXT,
-  VECTOR,
-} from '@based/schema/def'
 import { readString } from './string.js'
 import { readVector } from './vector.js'
+import { typeIndexMap } from '@based/schema'
 
 const readStringProp = (
   prop: ReaderPropDef,
@@ -21,16 +12,16 @@ const readStringProp = (
   size: number,
 ) => {
   if (
-    prop.typeIndex === TEXT ||
-    prop.typeIndex === STRING ||
-    prop.typeIndex === ALIAS
+    prop.typeIndex === typeIndexMap.text ||
+    prop.typeIndex === typeIndexMap.string ||
+    prop.typeIndex === typeIndexMap.alias
   ) {
     return readString(buf, offset, size, true)
   }
-  if (prop.typeIndex === JSON) {
+  if (prop.typeIndex === typeIndexMap.json) {
     return global.JSON.parse(readString(buf, offset, size, true))
   }
-  if (prop.typeIndex === BINARY) {
+  if (prop.typeIndex === typeIndexMap.binary) {
     return buf.subarray(offset + 2, size + offset)
   }
 }
@@ -45,23 +36,23 @@ export const readProp = (
   const prop = q.props[instruction]
 
   prop.readBy = q.readId
-  if (prop.typeIndex === CARDINALITY) {
+  if (prop.typeIndex === typeIndexMap.cardinality) {
     const size = readUint32(result, i)
     addProp(prop, readUint32(result, i + 4), item)
     i += size + 4
-  } else if (prop.typeIndex === JSON) {
+  } else if (prop.typeIndex === typeIndexMap.json) {
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex === BINARY) {
+  } else if (prop.typeIndex === typeIndexMap.binary) {
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex === STRING) {
+  } else if (prop.typeIndex === typeIndexMap.string) {
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex == TEXT) {
+  } else if (prop.typeIndex == typeIndexMap.text) {
     const size = readUint32(result, i)
     if (size === 0) {
       // do nothing
@@ -78,7 +69,7 @@ export const readProp = (
       }
     }
     i += size + 4
-  } else if (prop.typeIndex === ALIAS) {
+  } else if (prop.typeIndex === typeIndexMap.alias) {
     const size = readUint32(result, i)
     i += 4
     if (size === 0) {
@@ -88,7 +79,10 @@ export const readProp = (
       i += size
       addProp(prop, string, item)
     }
-  } else if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
+  } else if (
+    prop.typeIndex === typeIndexMap.vector ||
+    prop.typeIndex === typeIndexMap.colvec
+  ) {
     const tmp = result.slice(i, i + prop.len) // maybe align?
     addProp(prop, readVector(prop, tmp), item)
     i += prop.len

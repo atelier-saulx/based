@@ -1,17 +1,4 @@
-import {
-  ENUM,
-  isNumberType,
-  TIMESTAMP,
-  REFERENCE,
-  INT16,
-  INT32,
-  INT8,
-  NUMBER,
-  UINT16,
-  UINT32,
-  UINT8,
-  TypeIndex,
-} from '@based/schema/prop-types'
+import { numberTypes, typeIndexMap, type TypeIndex } from '@based/schema'
 import { ReaderSchema, AggregateType } from './types.js'
 import {
   readInt64,
@@ -29,22 +16,26 @@ const readNumber = (
   type: TypeIndex,
 ): any => {
   switch (type) {
-    case NUMBER:
+    case typeIndexMap.number:
       return readDoubleLE(value, offset)
-    case UINT16:
+    case typeIndexMap.uint16:
       return readUint16(value, offset)
-    case UINT32:
+    case typeIndexMap.uint32:
       return readUint32(value, offset)
-    case INT16:
+    case typeIndexMap.int16:
       return readInt16(value, offset)
-    case INT32:
+    case typeIndexMap.int32:
       return readInt32(value, offset)
-    case UINT8:
+    case typeIndexMap.uint8:
       return value[offset]
-    case INT8:
+    case typeIndexMap.int8:
       return value[offset]
   }
 }
+
+const numberTypeIndexSet = new Set<TypeIndex>(
+  numberTypes.map((type) => typeIndexMap[type]),
+)
 
 export const readAggregate = (
   // only need agg
@@ -68,25 +59,25 @@ export const readAggregate = (
         // }
         i += 2
       } else {
-        if (q.aggregate.groupBy.typeIndex == ENUM) {
+        if (q.aggregate.groupBy.typeIndex == typeIndexMap.enum) {
           i += 2
           key = q.aggregate.groupBy.enum[result[i] - 1]
           i++
-        } else if (isNumberType(q.aggregate.groupBy.typeIndex)) {
+        } else if (numberTypeIndexSet.has(q.aggregate.groupBy.typeIndex)) {
           keyLen = readUint16(result, i)
           i += 2
           key = readNumber(result, i, q.aggregate.groupBy.typeIndex)
           i += keyLen
         } else if (
-          q.aggregate.groupBy.typeIndex == TIMESTAMP &&
+          q.aggregate.groupBy.typeIndex == typeIndexMap.timestamp &&
           q.aggregate.groupBy.stepType
         ) {
           keyLen = readUint16(result, i)
           i += 2
-          key = readNumber(result, i, INT32)
+          key = readNumber(result, i, typeIndexMap.int32)
           i += keyLen
         } else if (
-          q.aggregate.groupBy.typeIndex == TIMESTAMP &&
+          q.aggregate.groupBy.typeIndex == typeIndexMap.timestamp &&
           q.aggregate.groupBy.stepRange !== 0
         ) {
           keyLen = readUint16(result, i)
@@ -105,10 +96,10 @@ export const readAggregate = (
             key = dtFormat.format(readInt64(result, i))
           }
           i += keyLen
-        } else if (q.aggregate.groupBy.typeIndex == REFERENCE) {
+        } else if (q.aggregate.groupBy.typeIndex == typeIndexMap.reference) {
           keyLen = readUint16(result, i)
           i += 2
-          key = readNumber(result, i, INT32)
+          key = readNumber(result, i, typeIndexMap.int32)
           i += keyLen
         } else {
           keyLen = readUint16(result, i)

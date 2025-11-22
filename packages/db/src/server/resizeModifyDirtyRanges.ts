@@ -3,8 +3,8 @@ import { DbServer } from './index.js'
 
 export const resizeModifyDirtyRanges = (server: DbServer) => {
   let maxNrChanges = 0
-  for (const typeId in server.schemaTypesParsedById) {
-    const def = server.schemaTypesParsedById[typeId]
+  for (const typeId in server.defs.byId) {
+    const def = server.defs.byId[typeId]
     const lastId = server.ids[def.id - 1]
     const blockCapacity = def.blockCapacity
     const tmp = lastId - +!(lastId % def.blockCapacity)

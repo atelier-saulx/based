@@ -4,6 +4,7 @@ import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
 import { FilterMetaNow, QueryDef, QueryDefFilter, QueryType } from '../types.js'
 import { SubscriptionType } from './types.js'
+import type { MainDef } from '@based/schema'
 
 type Fields = { separate: Set<number>; main: Set<number> }
 
@@ -29,7 +30,7 @@ export const collectFilters = (
       fields.separate.add(prop)
       if (prop === 0) {
         for (const condition of conditions) {
-          fields.main.add(condition.propDef.start)
+          fields.main.add((condition.propDef as MainDef).main.start)
         }
       }
     }
@@ -45,7 +46,7 @@ export const collectFilters = (
   if (filter.references) {
     for (const ref of filter.references.values()) {
       for (const prop of filter.conditions.keys()) {
-        fields.separate.add(prop)
+        fields?.separate.add(prop)
       }
       collectFilters(ref.conditions, undefined, nowQueries)
     }
@@ -60,13 +61,13 @@ export const collectFields = (def: QueryDef) => {
   }
   if (def.include.main.len > 0) {
     for (const [, propDef] of def.include.main.include.values()) {
-      fields.main.add(propDef.start)
+      fields.main.add(propDef.main.start)
     }
     // Add 0
     fields.separate.add(0)
   }
   for (const prop of def.include.props.values()) {
-    fields.separate.add(prop.def.prop)
+    fields.separate.add(prop.def.id)
   }
   for (const prop of def.references.keys()) {
     fields.separate.add(prop)
@@ -78,20 +79,20 @@ export const collectTypes = (
   def: QueryDef | QueryDefFilter,
   types: Set<number> = new Set(),
 ) => {
-  if ('references' in def) {
+  if (def.references) {
     for (const ref of def.references.values()) {
       if ('schema' in ref) {
         types.add(ref.schema.id)
         collectTypes(ref, types)
       } else {
-        types.add(ref.conditions.schema.id)
+        types.add(ref.conditions.schema?.id ?? 0)
         collectTypes(ref.conditions, types)
       }
     }
   }
-  if ('filter' in def && 'references' in def.filter) {
+  if ('filter' in def && def.filter.references) {
     for (const ref of def.filter.references.values()) {
-      types.add(ref.conditions.schema.id)
+      types.add(ref.conditions.schema?.id ?? 0)
       collectTypes(ref.conditions)
     }
   }
@@ -99,17 +100,18 @@ export const collectTypes = (
 }
 
 export const registerSubscription = (query: BasedDbQuery) => {
-  if (query.def.queryType === QueryType.id) {
+  const def = query.def as QueryDef
+
+  if (def.queryType === QueryType.id) {
+    const buf = query.buffer as Uint8Array<ArrayBufferLike>
     // @ts-ignore
-    const id = query.def.target.id
-    const fields = collectFields(query.def)
-    const typeId = query.def.schema.id
-    const subId = native.crc32(
-      query.buffer.subarray(ID.id + 4, query.buffer.byteLength - 4),
-    )
+    const id = def.target.id as number
+    const fields = collectFields(def)
+    const typeId = def.schema.id
+    const subId = native.crc32(buf.subarray(ID.id + 4, buf.byteLength - 4))
     const headerLen = 18
-    const types = collectTypes(query.def)
-    const nowQueries = collectFilters(query.def.filter, fields)
+    const types = collectTypes(def)
+    const nowQueries = collectFilters(def.filter, fields)
     const buffer = new Uint8Array(
       headerLen +
         fields.separate.size +
@@ -139,7 +141,7 @@ export const registerSubscription = (query: BasedDbQuery) => {
       i += 2
     }
     for (const now of nowQueries) {
-      buffer[i] = now.prop.prop
+      buffer[i] = now.prop.id
       buffer[i + 1] = now.ctx.operation
       writeUint16(buffer, now.ctx.typeId, i + 2)
       writeInt64(buffer, now.offset, i + 4)
@@ -148,9 +150,9 @@ export const registerSubscription = (query: BasedDbQuery) => {
     }
     query.subscriptionBuffer = buffer
   } else {
-    const typeId = query.def.schema.id
-    const types = collectTypes(query.def)
-    const nowQueries = collectFilters(query.def.filter, {
+    const typeId = def.schema.id
+    const types = collectTypes(def)
+    const nowQueries = collectFilters(def.filter, {
       separate: new Set(),
       main: new Set(),
     })
@@ -171,7 +173,7 @@ export const registerSubscription = (query: BasedDbQuery) => {
       }
     }
     for (const now of nowQueries) {
-      buffer[i] = now.prop.prop
+      buffer[i] = now.prop.id
       buffer[i + 1] = now.ctx.operation
       writeUint16(buffer, now.ctx.typeId, i + 2)
       writeInt64(buffer, now.offset, i + 4)

@@ -1,12 +1,4 @@
 import {
-  PropDef,
-  PropDefEdge,
-  BINARY,
-  STRING,
-  REFERENCES,
-  TIMESTAMP,
-} from '@based/schema/def'
-import {
   ALIGNMENT_NOT_SET,
   EQUAL,
   FilterCtx,
@@ -24,14 +16,11 @@ import {
   writeUint32,
 } from '@based/utils'
 import { FilterCondition, FilterMetaNow } from '../types.js'
+import { type QueryPropDef } from '@based/schema'
 
-const isNowQuery = (
-  prop: PropDef | PropDefEdge,
-  value: any,
-  ctx: FilterCtx,
-) => {
+const isNowQuery = (prop: QueryPropDef, value: any, ctx: FilterCtx) => {
   return (
-    prop.typeIndex === TIMESTAMP &&
+    prop.type === 'timestamp' &&
     typeof value === 'string' &&
     value.includes('now') &&
     isNumerical(ctx.operation)
@@ -39,7 +28,7 @@ const isNowQuery = (
 }
 
 const createNowMeta = (
-  prop: PropDef | PropDefEdge,
+  prop: QueryPropDef,
   parsedValue: number,
   ctx: FilterCtx,
 ): FilterMetaNow => {
@@ -53,13 +42,13 @@ const createNowMeta = (
 }
 
 export const writeFixed = (
-  prop: PropDef | PropDefEdge,
+  prop: QueryPropDef,
   buf: Uint8Array,
   value: any,
   size: number,
   offset: number,
 ) => {
-  if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
+  if (prop.type === 'binary' || prop.type === 'string') {
     if (typeof value === 'string') {
       const { written } = ENCODER.encodeInto(value, buf.subarray(offset + 1))
       buf[offset] = written
@@ -72,7 +61,7 @@ export const writeFixed = (
     buf[offset] = value
   } else {
     if (size === 8) {
-      if (prop.typeIndex === TIMESTAMP) {
+      if (prop.type === 'timestamp') {
         writeInt64(buf, value, offset)
       } else {
         writeDoubleLE(buf, value, offset)
@@ -88,13 +77,13 @@ export const writeFixed = (
 }
 
 export const createFixedFilterBuffer = (
-  prop: PropDef | PropDefEdge,
+  prop: QueryPropDef,
   size: number,
   ctx: FilterCtx,
   value: any,
   sort: boolean,
 ): FilterCondition => {
-  const start = prop.start
+  const start = 'main' in prop ? prop.main.start : 0
   if (Array.isArray(value)) {
     const len = value.length
     // Add 8 extra bytes for alignment
@@ -102,7 +91,7 @@ export const createFixedFilterBuffer = (
     const result: FilterCondition = { buffer, propDef: prop }
     buffer[0] = ctx.type
     buffer[1] =
-      prop.typeIndex === REFERENCES && ctx.operation === EQUAL
+      prop.type === 'references' && ctx.operation === EQUAL
         ? MODE_AND_FIXED
         : MODE_OR_FIXED
     buffer[2] = prop.typeIndex
@@ -121,12 +110,8 @@ export const createFixedFilterBuffer = (
       for (let i = 0; i < len; i++) {
         const parsedValue = parseFilterValue(prop, value[i])
         if (isNowQuery(prop, value, ctx)) {
-          if (!result.subscriptionMeta) {
-            result.subscriptionMeta = {}
-          }
-          if (!result.subscriptionMeta.now) {
-            result.subscriptionMeta = { now: [] }
-          }
+          result.subscriptionMeta ??= {}
+          result.subscriptionMeta.now ??= []
           result.subscriptionMeta.now.push(
             createNowMeta(prop, parsedValue, ctx),
           )

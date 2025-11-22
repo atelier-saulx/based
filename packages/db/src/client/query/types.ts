@@ -1,5 +1,10 @@
-import { LangCode, LangName } from '@based/schema'
-import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
+import type {
+  LangCode,
+  LangName,
+  TypeDef,
+  MainDef,
+  QueryPropDef,
+} from '@based/schema'
 import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
@@ -20,9 +25,9 @@ export type IncludeField = {
   opts?: IncludeOpts
 }
 
-export type MainIncludes = Map<number, [number, PropDef, IncludeOpts]>
+export type MainIncludes = Map<number, [number, MainDef, IncludeOpts]>
 
-export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
+export type IncludeTreeArr = (string | QueryPropDef | IncludeTreeArr)[]
 
 export enum QueryType {
   id = 0,
@@ -42,7 +47,7 @@ export enum ReferenceSelect {
 export type ReferenceSelectValue = {
   type: ReferenceSelect
   index?: number
-  prop: PropDef | PropDefEdge
+  prop: QueryPropDef
 }
 
 export type ReferenceSelectOperator = '*' | '*?' | number
@@ -54,7 +59,10 @@ export const getReferenceSelect = (
   if (p[p.length - 1] === ']') {
     const [refsField, indexNotation] = p.split('[')
     const index = indexNotation.slice(0, -1)
-    const ref = def.schema.props[refsField]
+    const ref = def.schema?.props[refsField]
+    if (!ref || 'props' in ref) {
+      return
+    }
     if (index === '*') {
       return { type: ReferenceSelect.All, prop: ref }
     }
@@ -76,17 +84,17 @@ enum QueryDefType {
 }
 
 export type EdgeTarget = {
-  ref: PropDef | PropDefEdge | null
+  ref: QueryPropDef | null
 }
 
 export type Target = {
   type: string
   id?: number | void | Promise<number>
   ids?: Uint32Array | void
-  propDef?: PropDef | PropDefEdge
+  propDef?: QueryPropDef
   alias?: QueryByAliasObj
   // This can just instantly be added
-  resolvedAlias?: { def: PropDef; value: string }
+  resolvedAlias?: { def: QueryPropDef; value: string }
 }
 
 export const isRefDef = (def: QueryDef): def is QueryDefRest => {
@@ -100,12 +108,12 @@ export type FilterMetaNow = {
   resolvedByteIndex: number
   offset: number
   ctx: FilterCtx
-  prop: PropDef | PropDefEdge
+  prop: QueryPropDef
 }
 
 export type FilterCondition = {
   buffer: Uint8Array
-  propDef: PropDef | PropDefEdge
+  propDef: QueryPropDef
   subscriptionMeta?: {
     now?: FilterMetaNow[]
   }
@@ -114,7 +122,7 @@ export type FilterCondition = {
 export type QueryDefFilter = {
   size: number
   conditions: Map<number, FilterCondition[]>
-  exists?: { prop: PropDef | PropDefEdge; negate: boolean }[]
+  exists?: { prop: QueryPropDef; negate: boolean }[]
   references?: Map<
     number,
     {
@@ -122,8 +130,8 @@ export type QueryDefFilter = {
       select: ReferenceSelectValue
     }
   >
-  fromRef?: PropDef
-  schema?: SchemaTypeDef
+  fromRef?: QueryPropDef
+  schema?: TypeDef
   edges?: Map<number, FilterCondition[]>
   or?: QueryDefFilter
   // Make this work
@@ -153,14 +161,14 @@ export type QueryDefSearch =
     }
 
 export type QueryDefSort = {
-  prop: PropDefEdge | PropDef
+  prop: QueryPropDef
   order: 0 | 1
   lang: LangCode
 }
 
 export type Aggregation = {
   type: AggregateType
-  propDef: PropDef | PropDefEdge
+  propDef: QueryPropDef
   resultPos: number
   accumulatorPos: number
   isEdge: boolean
@@ -168,7 +176,7 @@ export type Aggregation = {
 
 export type QueryDefAggregation = {
   size: number
-  groupBy?: aggPropDef
+  groupBy?: AggQueryPropDef
   // only field 0 to start
   aggregates: Map<number, Aggregation[]>
   option?: aggFnOptions
@@ -176,7 +184,7 @@ export type QueryDefAggregation = {
   totalAccumulatorSize: number
 }
 
-export interface aggPropDef extends PropDef {
+export type AggQueryPropDef = QueryPropDef & {
   stepType?: Interval
   stepRange?: number
   tz?: number
@@ -202,32 +210,33 @@ export type QueryDefShared = {
   }
   include: {
     stringFields: Map<string, IncludeField>
-    props: Map<number, { def: PropDef | PropDefEdge; opts?: IncludeOpts }>
+    props: Map<number, { def: QueryPropDef; opts?: IncludeOpts }>
     main: {
       include: MainIncludes
       len: number
     }
   }
   references: Map<number, QueryDef>
-  edges?: QueryDefEdges
+  // edges?: QueryDefEdges
   readSchema?: ReaderSchema
 }
 
-export type QueryDefEdges = {
-  type: QueryDefType.Edge
-  target: EdgeTarget
-  schema: null
-  props: PropDef['edges']
-} & QueryDefShared
+// export type QueryDefEdges = {
+//   type: QueryDefType.Edge
+//   target: EdgeTarget
+//   schema: null
+//   props: Record<string, QueryPropDef>
+// } & QueryDefShared
 
 export type QueryDefRest = {
   type: QueryDefType.References | QueryDefType.Reference | QueryDefType.Root
   target: Target
-  schema: SchemaTypeDef | null
-  props: SchemaTypeDef['props'] | PropDef['edges']
+  schema: TypeDef // | null
+  props: Record<string, QueryPropDef>
 } & QueryDefShared
 
-export type QueryDef = QueryDefEdges | QueryDefRest
+// export type QueryDef = QueryDefEdges | QueryDefRest
+export type QueryDef = QueryDefRest
 
 export type QueryTarget = EdgeTarget | Target
 

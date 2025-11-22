@@ -22,12 +22,12 @@ export function del(db: DbClient, type: string, id: number) {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx
   try {
-    if (schema.insertOnly) {
-      throw `This type is insertOnly`
-    }
+    // if (schema.insertOnly) {
+    //   throw `This type is insertOnly`
+    // }
 
     ctx.start = ctx.index
-    ctx.schema = schema
+    ctx.typeDef = schema
     ctx.operation = UPDATE
 
     validateId(id)

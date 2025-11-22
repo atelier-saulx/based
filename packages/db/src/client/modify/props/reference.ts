@@ -1,4 +1,3 @@
-import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { Tmp } from '../Tmp.js'
 import { reserve } from '../resize.js'
@@ -9,14 +8,15 @@ import {
   NOEDGE_NOINDEX_REALID,
   NOEDGE_NOINDEX_TMPID,
 } from '../types.js'
-import { writeEdges } from '../edges/index.js'
+// import { writeEdges } from '../edges/index.js'
 import { deleteProp } from './delete.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { validate } from '../validate.js'
+import type { LeafDef } from '@based/schema'
 
 const writeReferenceId = (
   ctx: Ctx,
-  def: PropDef,
+  def: LeafDef,
   val: number,
   refOp:
     | typeof NOEDGE_NOINDEX_REALID
@@ -33,7 +33,7 @@ const writeReferenceId = (
 
 export const writeReference = (
   ctx: Ctx,
-  def: PropDef,
+  def: LeafDef,
   val: number | Tmp | { id: number | Tmp | Promise<any> },
 ) => {
   if (val === null) {
@@ -43,12 +43,13 @@ export const writeReference = (
 
   if (typeof val === 'number') {
     validate(val, def)
-    if (def.hasDefaultEdges) {
-      writeReferenceId(ctx, def, val, EDGE_NOINDEX_REALID)
-      writeEdges(ctx, def, {}, true)
-    } else {
-      writeReferenceId(ctx, def, val, NOEDGE_NOINDEX_REALID)
-    }
+    console.warn('DO EDGES')
+    // if (def.hasDefaultEdges) {
+    //   writeReferenceId(ctx, def, val, EDGE_NOINDEX_REALID)
+    //   writeEdges(ctx, def, {}, true)
+    // } else {
+    writeReferenceId(ctx, def, val, NOEDGE_NOINDEX_REALID)
+    // }
     return
   }
 
@@ -69,12 +70,13 @@ export const writeReference = (
 
     if (typeof val.id === 'number') {
       validate(val.id, def)
-      if (!def.edges || val instanceof Tmp || val instanceof Promise) {
-        writeReferenceId(ctx, def, val.id, NOEDGE_NOINDEX_REALID)
-      } else {
-        writeReferenceId(ctx, def, val.id, EDGE_NOINDEX_REALID)
-        writeEdges(ctx, def, val, true)
-      }
+      console.warn('DO EDGES')
+      // if (!def.edges || val instanceof Tmp || val instanceof Promise) {
+      writeReferenceId(ctx, def, val.id, NOEDGE_NOINDEX_REALID)
+      // } else {
+      //   writeReferenceId(ctx, def, val.id, EDGE_NOINDEX_REALID)
+      //   writeEdges(ctx, def, val, true)
+      // }
       return
     }
 
@@ -82,12 +84,13 @@ export const writeReference = (
       if (val.id.batch !== ctx.batch) {
         throw val.id
       }
-      if (!def.edges) {
-        writeReferenceId(ctx, def, val.id.tmpId, NOEDGE_NOINDEX_TMPID)
-      } else {
-        writeReferenceId(ctx, def, val.id.tmpId, EDGE_NOINDEX_TMPID)
-        writeEdges(ctx, def, val, true)
-      }
+      // if (!def.edges) {
+      console.warn('DO EDGES')
+      writeReferenceId(ctx, def, val.id.tmpId, NOEDGE_NOINDEX_TMPID)
+      // } else {
+      //   writeReferenceId(ctx, def, val.id.tmpId, EDGE_NOINDEX_TMPID)
+      //   writeEdges(ctx, def, val, true)
+      // }
       return
     }
 
@@ -95,12 +98,13 @@ export const writeReference = (
       if (val.batch !== ctx.batch) {
         throw val
       }
-      if (def.hasDefaultEdges) {
-        writeReferenceId(ctx, def, val.tmpId, EDGE_NOINDEX_TMPID)
-        writeEdges(ctx, def, {}, true)
-      } else {
-        writeReferenceId(ctx, def, val.tmpId, NOEDGE_NOINDEX_TMPID)
-      }
+      // if (def.hasDefaultEdges) {
+      //   writeReferenceId(ctx, def, val.tmpId, EDGE_NOINDEX_TMPID)
+      //   writeEdges(ctx, def, {}, true)
+      // } else {
+      console.warn('DO EDGES')
+      writeReferenceId(ctx, def, val.tmpId, NOEDGE_NOINDEX_TMPID)
+      // }
       return
     }
 

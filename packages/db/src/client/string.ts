@@ -56,7 +56,7 @@ export const stringCompress = (str: string): Uint8Array => {
   const len = ENCODER.encode(str).byteLength
   const tmpCompressBlock = getTmpBuffer(len * 3)
   const l = write({ array: tmpCompressBlock } as Ctx, str, 0, false)
-  const nBuffer = new Uint8Array(l)
-  nBuffer.set(tmpCompressBlock.subarray(0, l))
+  const nBuffer = l ? new Uint8Array(l) : new Uint8Array()
+  nBuffer.set(tmpCompressBlock.subarray(0, l ?? 0))
   return nBuffer
 }

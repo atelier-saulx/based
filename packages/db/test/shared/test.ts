@@ -36,7 +36,7 @@ export type T = {
 
 const test = async (
   name: string,
-  fn: (t?: T) => Promise<void>,
+  fn: (t: T) => Promise<void>,
 ): Promise<any> => {
   if (
     process.env.TEST_TO_RUN &&
@@ -50,7 +50,7 @@ const test = async (
   let hasErrored = false
   console.log(styleText('gray', `\nstart ${name}`))
   const d = performance.now()
-  const afters = []
+  const afters: any[] = []
   const t: T = {
     after: (fn: () => Promise<void> | void, push?: boolean) => {
       if (push) {
@@ -78,8 +78,11 @@ const test = async (
 
         for (const type in db.server.schema?.types) {
           let x = await db.query(type).include(fields).get()
+          // @ts-ignore
           checksums.push(x.checksum)
+          // @ts-ignore
           data.push(x.toObject())
+          // @ts-ignore
           counts.push(await db.query(type).count().get().toObject().count)
         }
 
@@ -155,6 +158,7 @@ const test = async (
           deepEqual(
             b[di],
             a[di],
+            // @ts-ignore
             `Mismatch after backup (len:${b.length}) ${Object.keys(db.server.schema.types)[di]}`,
           )
         }
@@ -163,6 +167,7 @@ const test = async (
           deepEqual(
             c[ci],
             counts[ci],
+            // @ts-ignore
             `Mismatching count after backup (len:${b.length}) ${Object.keys(db.server.schema.types)[ci]}`,
           )
         }
@@ -229,6 +234,7 @@ const test = async (
       try {
         await afters[i]()
       } catch (err) {
+        // @ts-ignore
         errs.push(err)
       }
     }

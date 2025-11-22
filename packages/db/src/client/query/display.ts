@@ -1,22 +1,25 @@
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
-import {
-  ALIAS,
-  BINARY,
-  CARDINALITY,
-  NUMBER,
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  STRING,
-  TEXT,
-  TIMESTAMP,
-  TypeIndex,
-} from '@based/schema/def'
+// import {
+//   typeIndexMap.alias,
+//   typeIndexMap.binary,
+//   typeIndexMap.cardinality,
+//   typeIndexMap.number,
+//   PropDef,
+//   PropDefEdge,
+//   typeIndexMap.reference,
+//   typeIndexMap.references,
+//   typeIndexMap.string,
+//   typeIndexMap.text,
+//   typeIndexMap.timestamp,
+//   TypeIndex,
+// } from '@based/schema/def'
+
+import { typeIndexMap, type TypeIndex } from '@based/schema'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { ENCODER } from '@based/utils'
 import { AggregateType } from '@based/protocol/db-read'
+import type { PropDef, QueryPropDef } from '@based/schema'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 
@@ -63,7 +66,7 @@ export const printNumber = (nr: number) => {
 }
 
 export const prettyPrintVal = (v: any, type: TypeIndex): string => {
-  if (type === BINARY) {
+  if (type === typeIndexMap.binary) {
     const nr = 12
     const isLarger = v.length > nr
     // RFE Doesn't slice make a new alloc? subarray would be probably sufficient here.
@@ -79,7 +82,11 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
     )
   }
 
-  if (type === STRING || type === TEXT || type === ALIAS) {
+  if (
+    type === typeIndexMap.string ||
+    type === typeIndexMap.text ||
+    type === typeIndexMap.alias
+  ) {
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
       const chars = picocolors.italic(
@@ -92,18 +99,18 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
         chars
     }
 
-    if (type === ALIAS) {
+    if (type === typeIndexMap.alias) {
       return `"${v}" ${picocolors.italic(picocolors.dim('alias'))}`
     }
 
     return `"${v}"`
   }
 
-  if (type === CARDINALITY) {
+  if (type === typeIndexMap.cardinality) {
     return `${picocolors.blue(v)} ${picocolors.italic(picocolors.dim('unique'))}`
   }
 
-  if (type === TIMESTAMP) {
+  if (type === typeIndexMap.timestamp) {
     if (v === 0) {
       return `0 ${picocolors.italic(picocolors.dim('No date'))}`
     } else {
@@ -119,6 +126,7 @@ export const parseUint8Array = (p: any) => {
     const x = []
     // @ts-ignore
     for (let i = 0; i < p.length; i++) {
+      // @ts-ignore
       x[i] = p[i]
     }
     p = x
@@ -168,15 +176,18 @@ const inspectObject = (
   // use reader schema
   for (const k in object) {
     const key = path ? path + '.' + k : k
-    let def: PropDef | PropDefEdge
+    let def: QueryPropDef
     def = q.props[key]
     let v = object[k]
     let isEdge = k[0] === '$'
 
     if (k === '$searchScore') {
-      edges.push({ k, v, def: { typeIndex: NUMBER } })
+      // @ts-ignore
+      edges.push({ k, v, def: { typeIndex: typeIndexMap.number } })
     } else if (isEdge) {
+      // @ts-ignore
       if (q.edges?.props?.[k]) {
+        // @ts-ignore
         edges.push({ k, v, def: q.edges?.props?.[k] })
       } else {
         str += prefixBody + `${k}: `
@@ -207,21 +218,22 @@ const inspectObject = (
         str +=
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
       }
-    } else if ('__isPropDef' in def) {
-      if (def.typeIndex === REFERENCES) {
+    } else if ('typeIndex' in def) {
+      if (def.typeIndex === typeIndexMap.references) {
         if (q.aggregate) {
           str += printNumber(v)
           str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
         } else {
           str += inspectData(
             v,
-            q.references.get(def.prop),
+            // @ts-ignore
+            q.references.get(def.id),
             level + 2,
             false,
             depth,
           )
         }
-      } else if (def.typeIndex === REFERENCE) {
+      } else if (def.typeIndex === typeIndexMap.reference) {
         if (!v || !v.id) {
           str += 'null,\n'
         } else {
@@ -231,7 +243,8 @@ const inspectObject = (
           } else {
             str += inspectObject(
               v,
-              q.references.get(def.prop),
+              // @ts-ignore
+              q.references.get(def.id),
               '',
               level + 2,
               false,
@@ -241,12 +254,12 @@ const inspectObject = (
             )
           }
         }
-      } else if (def.typeIndex === BINARY) {
+      } else if (def.typeIndex === typeIndexMap.binary) {
         if (v === undefined) {
           return ''
         }
         str += prettyPrintVal(v, def.typeIndex)
-      } else if (def.typeIndex === TEXT) {
+      } else if (def.typeIndex === typeIndexMap.text) {
         if (typeof v === 'object') {
           str += '{\n'
           for (const lang in v) {
@@ -259,19 +272,22 @@ const inspectObject = (
           }
           str += prettyPrintVal(v, def.typeIndex)
         }
-      } else if (def.typeIndex === STRING || def.typeIndex === ALIAS) {
+      } else if (
+        def.typeIndex === typeIndexMap.string ||
+        def.typeIndex === typeIndexMap.alias
+      ) {
         if (v === undefined) {
           return ''
         }
         str += prettyPrintVal(v, def.typeIndex)
-      } else if (def.typeIndex === CARDINALITY) {
+      } else if (def.typeIndex === typeIndexMap.cardinality) {
         if (typeof v === 'object' && v !== null) {
           str +=
             inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
         } else {
           str += prettyPrintVal(v, def.typeIndex)
         }
-      } else if (def.typeIndex === TIMESTAMP) {
+      } else if (def.typeIndex === typeIndexMap.timestamp) {
         str += prettyPrintVal(v, def.typeIndex)
       } else {
         if (typeof v === 'number') {
@@ -289,8 +305,8 @@ const inspectObject = (
         }
       }
       if (
-        def?.typeIndex !== REFERENCE &&
-        def?.typeIndex !== REFERENCES &&
+        def?.typeIndex !== typeIndexMap.reference &&
+        def?.typeIndex !== typeIndexMap.references &&
         typeof v !== 'object'
       ) {
         str += ',\n'
@@ -300,37 +316,38 @@ const inspectObject = (
     }
   }
 
-  for (const edge of edges) {
-    if (edge.def.typeIndex === REFERENCE) {
-      str += prefixBody + picocolors.bold(`${edge.k}: `)
-      str += inspectObject(
-        edge.v,
-        q.edges.references.get(edge.def.prop),
-        '',
-        level + 2,
-        false,
-        false,
-        true,
-        depth,
-      )
-    } else if (edge.def.typeIndex === REFERENCES) {
-      str += prefixBody + picocolors.bold(`${edge.k}: `)
-      str +=
-        inspectData(
-          edge.v,
-          q.edges.references.get(edge.def.prop),
-          level + 3,
-          false,
-          depth + 2,
-        ) + '\n'
-    } else {
-      str +=
-        prefixBody +
-        picocolors.bold(`${edge.k}: `) +
-        prettyPrintVal(edge.v, edge.def.typeIndex) +
-        ',\n'
-    }
-  }
+  // TODO fix edges display
+  // for (const edge of edges) {
+  //   if (edge.def.typeIndex === typeIndexMap.reference) {
+  //     str += prefixBody + picocolors.bold(`${edge.k}: `)
+  //     str += inspectObject(
+  //       edge.v,
+  //       q.edges.references.get(edge.def.id),
+  //       '',
+  //       level + 2,
+  //       false,
+  //       false,
+  //       true,
+  //       depth,
+  //     )
+  //   } else if (edge.def.typeIndex === typeIndexMap.references) {
+  //     str += prefixBody + picocolors.bold(`${edge.k}: `)
+  //     str +=
+  //       inspectData(
+  //         edge.v,
+  //         q.edges.references.get(edge.def.id),
+  //         level + 3,
+  //         false,
+  //         depth + 2,
+  //       ) + '\n'
+  //   } else {
+  //     str +=
+  //       prefixBody +
+  //       picocolors.bold(`${edge.k}: `) +
+  //       prettyPrintVal(edge.v, edge.def.typeIndex) +
+  //       ',\n'
+  //   }
+  // }
 
   if (isObject) {
     str += prefix + ' },\n'
@@ -435,7 +452,7 @@ export const displayTarget = (def: QueryDef) => {
 
   const target =
     hasId || hasIds
-      ? def.schema.type +
+      ? def.schema.name +
         ':' +
         (hasIds
           ? // @ts-ignore
@@ -444,6 +461,6 @@ export const displayTarget = (def: QueryDef) => {
             ? safeStringify(def.target.alias, 30)
             : // @ts-ignore
               def.target.id)
-      : def.schema.type
+      : def.schema.name
   return target
 }

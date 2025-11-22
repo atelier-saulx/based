@@ -1,4 +1,3 @@
-import { MICRO_BUFFER, STRING, TEXT, JSON, BINARY } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import {
   IntermediateByteCode,
@@ -7,7 +6,7 @@ import {
   includeOp,
 } from '../types.js'
 import { walkDefs } from './walk.js'
-import { langCodesMap } from '@based/schema'
+import { langCodesMap, typeIndexMap } from '@based/schema'
 import { writeUint16, writeUint32 } from '@based/utils'
 import { getEnd } from './utils.js'
 
@@ -28,7 +27,7 @@ export const includeToBuffer = (
     return result
   }
 
-  let mainBuffer: Uint8Array
+  let mainBuffer: Uint8Array | undefined
 
   if (def.include.stringFields) {
     for (const [field, include] of def.include.stringFields.entries()) {
@@ -37,17 +36,19 @@ export const includeToBuffer = (
   }
 
   if (def.include.main.len > 0) {
-    const len =
-      def.type === QueryDefType.Edge
-        ? def.target.ref.edgeMainLen
-        : def.schema.mainLen
+    // const len =
+    //   def.type === QueryDefType.Edge
+    //     ? def.target.ref.edgeMainLen
+    //     : def.schema.mainLen
 
+    console.warn('TODO: includeToBuffer handle edges here?')
+    const len = def.schema.size
     if (def.include.main.len === len) {
       // Get all main fields
       mainBuffer = EMPTY_BUFFER
       let i = 2
       for (const value of def.include.main.include.values()) {
-        value[0] = value[1].start
+        value[0] = value[1].main.start
         i += 4
       }
     } else {
@@ -58,11 +59,11 @@ export const includeToBuffer = (
       let m = 0
       for (const value of def.include.main.include.values()) {
         const propDef = value[1]
-        writeUint16(mainBuffer, propDef.start, i)
-        writeUint16(mainBuffer, propDef.len, i + 2)
+        writeUint16(mainBuffer, propDef.main.start, i)
+        writeUint16(mainBuffer, propDef.main.size, i + 2)
         value[0] = m
         i += 4
-        m += propDef.len
+        m += propDef.main.size
       }
     }
   }
@@ -74,14 +75,14 @@ export const includeToBuffer = (
       const buf = new Uint8Array(5)
       buf[0] = includeOp.PARTIAL
       buf[1] = 0 // field name 0
-      buf[2] = MICRO_BUFFER
+      buf[2] = typeIndexMap.microbuffer
       writeUint16(buf, mainBuffer.byteLength, 3)
       result.push(buf, mainBuffer)
     } else {
       const buf = new Uint8Array(4)
       buf[0] = includeOp.DEFAULT
       buf[1] = 0 // field name 0
-      buf[2] = MICRO_BUFFER
+      buf[2] = typeIndexMap.microbuffer
       buf[3] = 0 // opts len
       result.push(buf)
     }
@@ -89,19 +90,25 @@ export const includeToBuffer = (
 
   if (propSize) {
     for (const [prop, propDef] of def.include.props.entries()) {
-      const typeIndex = propDef.opts?.raw ? BINARY : propDef.def.typeIndex
-      if (propDef.opts?.meta) {
+      const typeIndex = propDef.opts?.raw
+        ? typeIndexMap.binary
+        : propDef.def.typeIndex
+      if (!propDef.opts?.fallBacks) {
+        continue
+      }
+      if (propDef.opts.meta) {
         if (propDef.opts.codes) {
           if (propDef.opts.codes.has(0)) {
+            console.warn('TODO: handle locales!')
             // TODO use locales for 0 make this NICE
-            for (const code in def.schema.locales) {
-              const buf = new Uint8Array(4)
-              buf[0] = includeOp.META
-              buf[1] = prop
-              buf[2] = typeIndex
-              buf[3] = langCodesMap.get(code)
-              result.push(buf)
-            }
+            // for (const code in def.schema.locales) {
+            //   const buf = new Uint8Array(4)
+            //   buf[0] = includeOp.META
+            //   buf[1] = prop
+            //   buf[2] = typeIndex
+            //   buf[3] = langCodesMap.get(code) ?? 0
+            //   result.push(buf)
+            // }
           } else {
             for (const code of propDef.opts.codes) {
               const buf = new Uint8Array(4)
@@ -122,10 +129,11 @@ export const includeToBuffer = (
         }
       }
 
-      if (propDef.opts?.meta !== 'only') {
+      if (propDef.opts.meta !== 'only') {
         const hasEnd = propDef.opts?.end
-        if (typeIndex === TEXT) {
-          const codes = propDef.opts.codes
+        if (typeIndex === typeIndexMap.text) {
+          const codes = propDef.opts?.codes
+          if (!codes) continue
           if (codes.has(0)) {
             const b = new Uint8Array(hasEnd ? 12 : 4)
             b[0] = includeOp.DEFAULT
@@ -182,7 +190,8 @@ export const includeToBuffer = (
             buf[3] = 5 // opts len
             buf[4] =
               propDef.opts?.bytes ||
-              (typeIndex !== JSON && typeIndex !== STRING)
+              (typeIndex !== typeIndexMap.json &&
+                typeIndex !== typeIndexMap.string)
                 ? 0
                 : 1
             writeUint32(buf, getEnd(propDef.opts), 5)

@@ -20,7 +20,8 @@ import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
 import { undefinedProps } from './undefined.js'
-import { TEXT } from '@based/schema/prop-types'
+import { typeIndexMap } from '@based/schema'
+
 export * from './types.js'
 export * from './string.js'
 export * from './schema/deserialize.js'
@@ -32,7 +33,7 @@ const meta: ReadInstruction = (q, result, i, item) => {
   const lang = result[i]
   i++
   prop.readBy = q.readId
-  if (prop.typeIndex === TEXT && prop.locales) {
+  if (prop.typeIndex === typeIndexMap.text && prop.locales) {
     addLangMetaProp(prop, readMetaSeperate(result, i), item, lang)
   } else {
     addMetaProp(prop, readMetaSeperate(result, i), item)

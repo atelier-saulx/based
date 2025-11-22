@@ -1,4 +1,3 @@
-import { ALIAS, PropDef, PropDefEdge, TEXT, VECTOR } from '@based/schema/def'
 import {
   EQUAL,
   EQUAL_CRC32,
@@ -15,12 +14,13 @@ import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { crc32 } from '../../crc32.js'
 import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'
 import { FilterCondition, QueryDef } from '../types.js'
+import { type QueryPropDef } from '@based/schema'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 
 const parseValue = (
   value: any,
-  prop: PropDef | PropDefEdge,
+  prop: QueryPropDef,
   ctx: FilterCtx,
   lang: QueryDef['lang'],
 ): Uint8Array => {
@@ -28,7 +28,7 @@ const parseValue = (
     value = value.toLowerCase()
   }
 
-  if (ctx.operation === LIKE && prop.typeIndex === VECTOR) {
+  if (ctx.operation === LIKE && prop.type === 'vector') {
     if (!(value instanceof ArrayBuffer)) {
       throw new Error('Vector should be an arrayBuffer')
     }
@@ -50,13 +50,13 @@ const parseValue = (
   if (
     value instanceof Uint8Array ||
     typeof value === 'string' ||
-    !prop.separate ||
+    'main' in prop ||
     ctx.operation !== EQUAL
   ) {
     if (typeof value === 'string') {
       value = ENCODER.encode(value.normalize('NFKD'))
     }
-    if (prop.typeIndex === TEXT) {
+    if (prop.type === 'text') {
       // 1 + size
       const fallbacksSize = lang.lang === 0 ? 0 : lang.fallback.length
       const tmp = new Uint8Array(value.byteLength + 2 + fallbacksSize)
@@ -75,7 +75,7 @@ const parseValue = (
   if (!(value instanceof Uint8Array || value instanceof ArrayBuffer)) {
     throw new Error(`Incorrect value for filter: ${prop.path}`)
   }
-  if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
+  if (ctx.operation === LIKE && prop.type !== 'vector') {
     const tmp = new Uint8Array(value.byteLength + 1)
     tmp.set(value instanceof ArrayBuffer ? new Uint8Array(value) : value)
     tmp[tmp.byteLength - 1] = ctx.opts.score ?? 2
@@ -86,17 +86,16 @@ const parseValue = (
 
 export const createVariableFilterBuffer = (
   value: any,
-  prop: PropDef | PropDefEdge,
+  prop: QueryPropDef,
   ctx: FilterCtx,
   lang: QueryDef['lang'],
-): FilterCondition => {
+): FilterCondition | void => {
   let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any
-  let parsedCondition: FilterCondition
   if (Array.isArray(value)) {
-    if (ctx.operation !== EQUAL || !prop.separate) {
+    if (ctx.operation !== EQUAL || 'main' in prop) {
       mode = MODE_OR_VAR
-      const values = []
+      const values: any[] = []
       for (const v of value) {
         const parsedValue = parseValue(v, prop, ctx, lang)
         const size = new Uint8Array(2)
@@ -105,7 +104,7 @@ export const createVariableFilterBuffer = (
       }
       val = concatUint8Arr(values)
     } else {
-      const x = []
+      const x: any[] = []
       for (const v of value) {
         x.push(parseValue(v, prop, ctx, lang))
       }
@@ -116,69 +115,76 @@ export const createVariableFilterBuffer = (
   }
 
   if (
-    ctx.operation === EQUAL ||
-    ctx.operation === INCLUDES ||
-    ctx.operation === LIKE ||
-    ctx.operation === INCLUDES_TO_LOWER_CASE
+    ctx.operation !== EQUAL &&
+    ctx.operation !== INCLUDES &&
+    ctx.operation !== LIKE &&
+    ctx.operation !== INCLUDES_TO_LOWER_CASE
   ) {
-    if (prop.separate) {
-      if (
-        ctx.operation === EQUAL &&
-        prop.typeIndex !== ALIAS &&
-        prop.typeIndex !== VECTOR
-      ) {
-        if (prop.typeIndex === TEXT) {
-          const fbLen = 2 + val[val.byteLength - 1]
-          const crc = crc32(val.slice(0, -fbLen))
-          const len = val.byteLength - fbLen
-          const v = new Uint8Array(8 + fbLen)
-          writeUint32(v, crc, 0)
-          writeUint32(v, len, 4)
-          for (let i = 0; i < fbLen; i++) {
-            v[v.byteLength - (i + 1)] = val[val.byteLength - (i + 1)]
-          }
-          parsedCondition = {
-            buffer: writeVarFilter(mode, v, ctx, prop, 0, 0),
-            propDef: prop,
-          }
-        } else {
-          parsedCondition = createFixedFilterBuffer(
-            prop,
-            8,
-            {
-              operation: EQUAL_CRC32,
-              type: ctx.type,
-              opts: ctx.opts,
-              typeId: ctx.typeId,
-            },
-            val,
-            false,
-          )
-        }
-      } else {
-        if (val instanceof ArrayBuffer) {
-          val = new Uint8Array(val)
-        }
-        parsedCondition = {
-          buffer: writeVarFilter(mode, val, ctx, prop, 0, 0),
-          propDef: prop,
-        }
+    return
+  }
+
+  if ('main' in prop) {
+    return {
+      buffer: writeVarFilter(
+        mode,
+        val,
+        ctx,
+        prop,
+        prop.main.start,
+        prop.main.size,
+      ),
+      propDef: prop,
+    }
+  }
+
+  if (
+    ctx.operation === EQUAL &&
+    prop.type !== 'alias' &&
+    prop.type !== 'vector'
+  ) {
+    if (prop.type === 'text') {
+      const fbLen = 2 + val[val.byteLength - 1]
+      const crc = crc32(val.slice(0, -fbLen))
+      const len = val.byteLength - fbLen
+      const v = new Uint8Array(8 + fbLen)
+      writeUint32(v, crc, 0)
+      writeUint32(v, len, 4)
+      for (let i = 0; i < fbLen; i++) {
+        v[v.byteLength - (i + 1)] = val[val.byteLength - (i + 1)]
       }
-    } else {
-      parsedCondition = {
-        buffer: writeVarFilter(mode, val, ctx, prop, prop.start, prop.len),
+      return {
+        buffer: writeVarFilter(mode, v, ctx, prop, 0, 0),
         propDef: prop,
       }
     }
+
+    return createFixedFilterBuffer(
+      prop,
+      8,
+      {
+        operation: EQUAL_CRC32,
+        type: ctx.type,
+        opts: ctx.opts,
+        typeId: ctx.typeId,
+      },
+      val,
+      false,
+    )
   }
-  return parsedCondition
+  if (val instanceof ArrayBuffer) {
+    val = new Uint8Array(val)
+  }
+  return {
+    buffer: writeVarFilter(mode, val, ctx, prop, 0, 0),
+    propDef: prop,
+  }
 }
 
 function writeVarFilter(
   mode: FILTER_MODE,
   val: Uint8Array,
   ctx: FilterCtx,
-  prop: PropDef | PropDefEdge,
+  prop: QueryPropDef,
   start: number,
   len: number,
 ): Uint8Array {

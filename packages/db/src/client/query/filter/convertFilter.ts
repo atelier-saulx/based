@@ -1,4 +1,5 @@
 import { QueryBranch } from '../BasedDbQuery.js'
+import type { QueryDef } from '../types.js'
 import { Operator } from './filter.js'
 import { FilterBranch } from './FilterBranch.js'
 import { FilterOpts, FilterAst, toFilterCtx } from './types.js'
@@ -17,30 +18,10 @@ export const convertFilter = (
   operator?: Operator | boolean,
   value?: any,
   opts?: FilterOpts | undefined,
-): FilterAst => {
-  const def = query.def
-  const propHooks = def.schema.props[field]?.hooks
-  const hooks = def.schema.hooks
-  const propFilterHook = propHooks?.filter
-  const filterHook = hooks?.filter
-  if (propFilterHook) {
-    propHooks.filter = null
-    if (typeof operator === 'boolean') {
-      propFilterHook(query, field, '=', operator)
-    } else {
-      propFilterHook(query, field, operator, value)
-    }
-    propHooks.filter = propFilterHook
-  }
-  if (filterHook) {
-    hooks.filter = null
-    if (typeof operator === 'boolean') {
-      filterHook(query, field, '=', operator)
-    } else {
-      filterHook(query, field, operator, value)
-    }
-    hooks.filter = filterHook
-  }
+): FilterAst | void => {
+  const def = query.def as QueryDef
+  const propHooks = def.schema?.props[field]?.hooks
+  const hooks = def.schema?.hooks
 
   if (operator === undefined) {
     operator = '='
@@ -49,14 +30,30 @@ export const convertFilter = (
     value = operator
     operator = '='
   }
+
+  if (propHooks?.filter) {
+    const hook = propHooks.filter
+    propHooks.filter = undefined
+    hook(query, field, operator, value)
+    propHooks.filter = hook
+  }
+  if (hooks?.filter) {
+    const hook = hooks.filter
+    hooks.filter = undefined
+    hook(query, field, operator, value)
+    hooks.filter = hook
+  }
+
   if (
     !(operator === 'exists' || operator === '!exists') &&
     (value === '' || value === undefined)
   ) {
     if (value === '' && operator === '=') {
-      return [[field, toFilterCtx(def, '!exists', opts), undefined]]
+      const f = toFilterCtx(def, '!exists', opts)
+      return f && [[field, f, undefined]]
     } else if (value === '' && operator === '!=') {
-      return [[field, toFilterCtx(def, 'exists', opts), undefined]]
+      const f = toFilterCtx(def, 'exists', opts)
+      return f && [[field, f, undefined]]
     }
 
     return

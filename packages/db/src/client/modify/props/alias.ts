@@ -1,4 +1,3 @@
-import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { deleteProp } from './delete.js'
 import { validate } from '../validate.js'
@@ -7,8 +6,9 @@ import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
 import { markString } from '../create/mark.js'
+import type { LeafDef, SchemaAlias } from '@based/schema'
 
-export const writeAlias = (ctx: Ctx, def: PropDef, val: any) => {
+export const writeAlias = (ctx: Ctx, def: SchemaAlias & LeafDef, val: any) => {
   if (val === null) {
     deleteProp(ctx, def)
     return

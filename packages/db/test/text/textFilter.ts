@@ -104,7 +104,7 @@ await test('textFilter', async (t) => {
     searchTerms.push('F')
   }
 
-  const q = []
+  const q: any[] = []
   for (const term of searchTerms) {
     q.push(
       (async () => {

@@ -1,9 +1,9 @@
 import {
-  MigrateFns,
   parse,
-  Schema,
-  StrictSchema,
-  SchemaChecksum,
+  type Schema,
+  type SchemaIn,
+  type SchemaMigrateFns,
+  type SchemaOut,
 } from '@based/schema'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { debugMode } from '../utils.js'
@@ -38,7 +38,7 @@ export class DbClient extends DbShared {
     this.hooks = hooks
     this.maxModifySize = maxModifySize
     this.modifyCtx = new Ctx(
-      0,
+      { locales: {}, types: {}, hash: 0 },
       new Uint8Array(
         new ArrayBuffer(Math.min(1e3, maxModifySize), {
           maxByteLength: maxModifySize,
@@ -75,21 +75,21 @@ export class DbClient extends DbShared {
   }
 
   async setSchema(
-    schema: Schema,
-    transformFns?: MigrateFns,
-  ): Promise<SchemaChecksum> {
+    schema: SchemaIn,
+    transformFns?: SchemaMigrateFns,
+  ): Promise<SchemaOut['hash']> {
     const strictSchema = parse(schema).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
-      strictSchema as StrictSchema,
+      strictSchema as Schema<true>,
       transformFns,
     )
     if (this.stopped) {
-      return this.schema.hash
+      return this.schema?.hash ?? 0
     }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
-      return this.schema.hash
+      return this.schema?.hash ?? 0
     }
     return schemaChecksum
   }
@@ -261,7 +261,7 @@ export class DbClient extends DbShared {
 
   destroy() {
     this.stop()
-    delete this.listeners
+    this.listeners = {}
   }
 
   stop() {

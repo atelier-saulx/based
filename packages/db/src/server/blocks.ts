@@ -1,10 +1,10 @@
 import native from '../native.js'
 import { join } from 'node:path'
-import { SchemaTypeDef } from '@based/schema/def'
 import { bufToHex, equals, readInt32 } from '@based/utils'
 import { VerifTree, destructureTreeKey, makeTreeKey } from './tree.js'
 import { DbServer } from './index.js'
 import { IoJobSave } from './workers/io_worker_types.js'
+import type { TypeDef } from '@based/schema'
 
 const SELVA_ENOENT = -8
 
@@ -69,11 +69,7 @@ export async function saveBlocks(
 /**
  * Load an existing block (typically of a partial type) back to memory.
  */
-export async function loadBlock(
-  db: DbServer,
-  def: SchemaTypeDef,
-  start: number,
-) {
+export async function loadBlock(db: DbServer, def: TypeDef, start: number) {
   const key = makeTreeKey(def.id, start)
   const block = db.verifTree.getBlock(key)
   if (!block) {
@@ -114,11 +110,7 @@ export async function loadBlock(
 /**
  * Save a block and remove it from memory.
  */
-export async function unloadBlock(
-  db: DbServer,
-  def: SchemaTypeDef,
-  start: number,
-) {
+export async function unloadBlock(db: DbServer, def: TypeDef, start: number) {
   const typeId = def.id
   const end = start + def.blockCapacity - 1
   const key = makeTreeKey(typeId, start)
@@ -148,7 +140,7 @@ export async function unloadBlock(
  */
 export function foreachBlock(
   db: DbServer,
-  def: SchemaTypeDef,
+  def: TypeDef,
   cb: (start: number, end: number, hash: Uint8Array) => void,
   includeEmptyBlocks: boolean = false,
 ) {
@@ -181,9 +173,9 @@ export function foreachDirtyBlock(
   db: DbServer,
   cb: (mtKey: number, typeId: number, start: number, end: number) => void,
 ) {
-  const typeIdMap: { [key: number]: SchemaTypeDef } = {}
-  for (const typeName in db.schemaTypesParsed) {
-    const type = db.schemaTypesParsed[typeName]
+  const typeIdMap: { [key: number]: TypeDef } = {}
+  for (const typeName in db.defs.byName) {
+    const type = db.defs.byName[typeName]
     const typeId = type.id
     typeIdMap[typeId] = type
   }

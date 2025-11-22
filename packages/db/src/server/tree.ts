@@ -1,5 +1,5 @@
+import type { TypeDef } from '@based/schema'
 import createDbHash from './dbHash.js'
-import { SchemaTypeDef } from '@based/schema/def'
 
 export const destructureTreeKey = (key: number) => [
   (key / 4294967296) | 0, // typeId
@@ -25,7 +25,6 @@ export const makeTreeKeyFromNodeId = (
 }
 
 type Hash = Uint8Array
-const HASH_SIZE = 16
 
 /**
  * Block state.
@@ -69,25 +68,22 @@ export class VerifTree {
   #types: { [key: number]: VerifType }
   #h = createDbHash()
 
-  constructor(schemaTypesParsed: Record<string, SchemaTypeDef>) {
-    this.#types = VerifTree.#makeTypes(schemaTypesParsed)
+  constructor(defs: Record<string, TypeDef>) {
+    this.#types = VerifTree.#makeTypes(defs)
   }
 
-  static #makeTypes(schemaTypesParsed: Record<string, SchemaTypeDef>): {
+  static #makeTypes(defs: Record<string, TypeDef>): {
     [key: number]: VerifType
   } {
     return Object.preventExtensions(
-      Object.keys(schemaTypesParsed)
-        .sort(
-          (a: string, b: string) =>
-            schemaTypesParsed[a].id - schemaTypesParsed[b].id,
-        )
+      Object.keys(defs)
+        .sort((a: string, b: string) => defs[a].id - defs[b].id)
         .reduce(
           (
             obj: { [key: number]: VerifType },
             key: string,
           ): { [key: number]: VerifType } => {
-            const def = schemaTypesParsed[key]
+            const def = defs[key]
             const typeId = def.id
             obj[typeId] = {
               typeId,
@@ -183,9 +179,9 @@ export class VerifTree {
     return VerifTree.blockSdbFile(typeId, start, end)
   }
 
-  updateTypes(schemaTypesParsed: Record<string, SchemaTypeDef>) {
+  updateTypes(defs: Record<string, TypeDef>) {
     const oldTypes = this.#types
-    const newTypes = VerifTree.#makeTypes(schemaTypesParsed)
+    const newTypes = VerifTree.#makeTypes(defs)
 
     for (const k of Object.keys(oldTypes)) {
       const oldType = oldTypes[k]

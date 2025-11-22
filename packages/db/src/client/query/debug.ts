@@ -1,5 +1,4 @@
 import picocolors from 'picocolors'
-import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '@based/schema/def'
 import { QueryDef, QueryDefType } from './types.js'
 import { concatUint8Arr } from '@based/utils'
 
@@ -27,8 +26,8 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
       if (a.type && a.include && a.filter && a.range) {
         return debugQueryDef(a, true)
       }
-      if (isPropDef(a)) {
-        return `${a.path.join('.')}: ${a.prop} ${REVERSE_TYPE_INDEX_MAP[a.typeIndex]}`
+      if ('id' in a) {
+        return `${a.path.join('.')}: ${a.prop} ${a.type}`
       } else {
         const b = Array.isArray(a) ? [] : {}
         walk(a, b)

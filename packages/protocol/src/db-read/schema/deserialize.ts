@@ -1,4 +1,4 @@
-import { TypeIndex } from '@based/schema/prop-types'
+import type { TypeIndex } from '@based/schema'
 import {
   ReaderPropDef,
   ReaderSchema,

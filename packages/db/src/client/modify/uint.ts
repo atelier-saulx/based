@@ -12,9 +12,8 @@ export const writeU32 = (ctx: Ctx, val: number) => {
 }
 
 export const writePadding = (ctx: Ctx, padding: number) => {
-  while (padding--) {
-    ctx.array[ctx.index++] = 0
-  }
+  ctx.array.fill(0, ctx.index, ctx.index + padding)
+  ctx.index += padding
 }
 
 export const writeU16 = (ctx: Ctx, val: number) => {

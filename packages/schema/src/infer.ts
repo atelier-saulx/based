@@ -1,12 +1,12 @@
-import { VectorBaseType } from './def/typeIndexes.js'
-import { Schema, SchemaVector } from './types.js'
-
 // type BasedTypeMap = {
 //   uint8: Uint8Array
 //   float32: Float32Array
 //   number: Float64Array
 //   float64: Float64Array
 // }
+
+import type { SchemaObject } from './schema/object.js'
+import type { Schema } from './schema/schema.js'
 
 type TypedArray =
   | Uint8Array
@@ -54,14 +54,12 @@ type InferReferences<
   ? Array<{ id: number } & InferSchemaType<Types[RefName], Types>>
   : Array<{ id: number }>
 
-type InferObject<T extends Record<string, any>, Types> = {
-  [K in keyof T]: InferProp<T[K], Types>
-}
-
 type InferSet<T, Types> = InferProp<T, Types>[]
 
-type InferProp<T, Types> = T extends { props: infer P }
-  ? InferObject<P, Types>
+type InferProp<T, Types> = T extends SchemaObject
+  ? {
+      [K in keyof T['props']]: InferProp<T['props'][K], Types>
+    }
   : T extends { items: { ref: infer R extends string } }
     ? InferReferences<R, Types>
     : T extends { items: infer I }

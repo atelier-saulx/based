@@ -6,7 +6,7 @@ export const reset = (ctx: Ctx) => {
   ctx.index = 8
   ctx.max = ctx.array.buffer.maxByteLength - 4
   ctx.size = ctx.array.buffer.byteLength - 4
-  ctx.cursor = {}
+  ctx.cursor = { main: 0 }
   ctx.batch = {}
 }
 
@@ -48,7 +48,7 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         if (batch.promises) {
           start = ctx.index
           batch.promises.forEach(batch.error ? rejectTmp : resolveTmp)
-          batch.promises = null
+          batch.promises = undefined
         }
       })
       .then(() => {
@@ -70,12 +70,12 @@ export const schedule = (db: DbClient, ctx: Ctx) => {
   ctx.scheduled = new Promise<void>((resolve) => {
     if (db.flushTime === 0) {
       process.nextTick(() => {
-        ctx.scheduled = null
+        ctx.scheduled = undefined
         resolve(drain(db, ctx))
       })
     } else {
       setTimeout(() => {
-        ctx.scheduled = null
+        ctx.scheduled = undefined
         resolve(drain(db, ctx))
       }, db.flushTime)
     }

@@ -9,6 +9,6 @@ export const xxHash64 = (
     target = new Uint8Array(8)
     index = 0
   }
-  native.xxHash64(buf, target, index)
+  native.xxHash64(buf, target, index ?? 0)
   return target
 }

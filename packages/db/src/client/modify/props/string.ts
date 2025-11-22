@@ -1,13 +1,11 @@
-import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
-import { LangCode } from '@based/schema'
 import {
-  CREATE,
-  DELETE,
-  DELETE_TEXT_FIELD,
-  RANGE_ERR,
-  UPDATE,
-} from '../types.js'
+  LangCode,
+  type LeafDef,
+  type PropDef,
+  type SchemaString,
+} from '@based/schema'
+import { DELETE, DELETE_TEXT_FIELD, RANGE_ERR, UPDATE } from '../types.js'
 import {
   FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
@@ -20,7 +18,7 @@ import { writeU8, writeU8Array } from '../uint.js'
 import { markString } from '../create/mark.js'
 import { validate } from '../validate.js'
 
-export const deleteString = (ctx: Ctx, def: PropDef, lang: LangCode): void => {
+export const deleteString = (ctx: Ctx, def: LeafDef, lang: LangCode): void => {
   if (ctx.operation !== UPDATE) {
     return
   }
@@ -38,7 +36,7 @@ export const deleteString = (ctx: Ctx, def: PropDef, lang: LangCode): void => {
 
 export const writeString = (
   ctx: Ctx,
-  def: PropDef,
+  def: LeafDef & { compression?: SchemaString['compression'] },
   val: any,
   lang: LangCode,
 ): void => {
@@ -49,7 +47,9 @@ export const writeString = (
   }
 
   validate(val, def)
-  let size = isUint8 ? val.byteLength : ENCODER.encode(val).byteLength + 6
+  let size: number | null = isUint8
+    ? val.byteLength
+    : ENCODER.encode(val).byteLength + 6
   reserve(ctx, FULL_CURSOR_SIZE + 11 + size)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
@@ -58,7 +58,7 @@ export const writeString = (
   if (isUint8) {
     writeU8Array(ctx, val)
   } else {
-    size = write(ctx, val, ctx.index, def.compression === 0, lang)
+    size = write(ctx, val, ctx.index, def.compression === 'none', lang)
     if (size === null) {
       throw RANGE_ERR
     }

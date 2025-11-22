@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal, throws, perf } from './shared/assert.js'
+import { deepEqual, equal, throws } from './shared/assert.js'
 
 await test('update with payload.id', async (t) => {
   const db = new BasedDb({
@@ -197,7 +197,7 @@ await test('update', async (t) => {
     },
   ])
 
-  const ids = []
+  const ids: any[] = []
   let snurpId = 1
   for (; snurpId <= 1e6; snurpId++) {
     ids.push(snurpId)
@@ -250,7 +250,7 @@ await test('update', async (t) => {
     ],
   )
 
-  const promises = []
+  const promises: any[] = []
   for (var j = 0; j < 1; j++) {
     for (var i = 0; i < 1e5; i++) {
       promises.push(db.query('snurp', i).include('a').get())

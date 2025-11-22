@@ -1,10 +1,10 @@
-import { PropDef, PropDefEdge } from '@based/schema/def'
 import { ALIGNMENT_NOT_SET, FilterCtx, MODE_REFERENCE } from './types.js'
 import { FilterCondition } from '../types.js'
 import { writeUint16, writeUint32 } from '@based/utils'
+import type { RefPropDef } from '@based/schema'
 
 export const createReferenceFilter = (
-  prop: PropDef | PropDefEdge,
+  prop: RefPropDef,
   ctx: FilterCtx,
   value: any,
 ): FilterCondition => {
@@ -18,7 +18,7 @@ export const createReferenceFilter = (
   writeUint16(buffer, len, 5)
   buffer[7] = ctx.operation
   buffer[8] = 0
-  writeUint16(buffer, prop.inverseTypeId, 9)
+  writeUint16(buffer, prop.target.typeDef.id, 9)
   if (isArray) {
     buffer[11] = ALIGNMENT_NOT_SET
     for (let i = 0; i < len; i++) {

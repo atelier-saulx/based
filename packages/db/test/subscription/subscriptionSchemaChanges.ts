@@ -74,7 +74,7 @@ await test('subscription schema changes', async (t) => {
   await wait(20)
   q.reset()
   deepEqual(result1, q.get(), 'first schema change results are correct')
-  const subResults = []
+  const subResults: any = []
   const close = q.subscribe((q) => {
     subResults.push(q.toObject())
     cnt++
@@ -132,7 +132,7 @@ await test('better subscription schema changes', async (t) => {
     },
   })
 
-  const results = []
+  const results: any = []
   db.query('user').subscribe((res) => {
     const obj = res.toObject()
     results.push(obj)

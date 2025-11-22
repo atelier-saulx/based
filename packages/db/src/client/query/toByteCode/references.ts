@@ -10,7 +10,7 @@ export const referencesQuery = (
 ): IntermediateByteCode => {
   const filterSize = def.filter.size || 0
 
-  let sort: Uint8Array
+  let sort: Uint8Array | undefined
   let sortSize = 0
   if (def.sort) {
     sort = createSortBuffer(def.sort)

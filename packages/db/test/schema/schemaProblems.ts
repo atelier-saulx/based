@@ -236,10 +236,10 @@ await test.skip('schema problems', async (t) => {
   //   validates the schema
   // setServerLocalSchema(SERVER)
   //   add lastSchemaId and makes checksum
-  //   schemaTypesParsed()
+  //   defs()
   // setLocalSchema (client)
   //   adds client.schema and emits 'schema'
-  //   schemaTypesParsed()
+  //   defs()
   // subscribeSchema (client hook)
   // listen on incoming schema (over network) and calls setLocalSchema
   //   migrateSchema

@@ -1,4 +1,4 @@
-import { NonStrictSchema } from '@based/schema'
+import { SchemaIn } from '@based/schema'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
@@ -104,7 +104,7 @@ await test('migration', async (t) => {
     },
   }
 
-  const schemas: NonStrictSchema[] = [
+  const schemas: SchemaIn[] = [
     {
       version: '2.0.0',
       types: {

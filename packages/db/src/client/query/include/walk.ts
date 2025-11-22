@@ -1,11 +1,3 @@
-import {
-  isPropDef,
-  PropDef,
-  REFERENCE,
-  REFERENCES,
-  SchemaPropTree,
-  TEXT,
-} from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
 import {
   getReferenceSelect,
@@ -29,7 +21,8 @@ export const walkDefs = (
   const prop = def.props[include.field]
   const path = include.field.split('.')
   let referencesSelect: ReferenceSelectValue | void
-
+  console.warn('TODO: walkDefs')
+  /*
   if (!prop) {
     let t: PropDef | SchemaPropTree = def.schema.tree
     for (let i = 0; i < path.length; i++) {
@@ -154,4 +147,5 @@ export const walkDefs = (
   } else {
     includeProp(def, prop, include.opts)
   }
+  */
 }

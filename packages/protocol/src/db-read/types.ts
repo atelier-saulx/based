@@ -1,5 +1,4 @@
-import { TypeIndex, VectorBaseType } from '@based/schema/prop-types'
-import type { HLLRegisterRepresentation, SchemaHooks } from '@based/schema'
+import type { SchemaHooks, TypeIndex } from '@based/schema'
 
 export type Item = {
   id: number
@@ -45,6 +44,17 @@ export type ReadInstruction = (
 ) => number
 
 export type ReaderLocales = { [langCode: string]: string }
+
+export enum VectorBaseType {
+  Int8 = 1,
+  Uint8 = 2,
+  Int16 = 3,
+  Uint16 = 4,
+  Int32 = 5,
+  Uint32 = 6,
+  Float32 = 7,
+  Float64 = 8,
+}
 
 export type ReaderPropDef = {
   path: string[]

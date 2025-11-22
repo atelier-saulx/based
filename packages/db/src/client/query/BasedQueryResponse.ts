@@ -11,6 +11,7 @@ import {
   readId,
   readChecksum,
   readVersion,
+  type ReaderSchema,
 } from '@based/protocol/db-read'
 
 export { time, size, inspectData }
@@ -34,7 +35,7 @@ export class BasedQueryResponse {
   }
 
   get id() {
-    return readId(this.def.readSchema, this.result)
+    return readId(this.def?.readSchema as ReaderSchema, this.result)
   }
 
   get version() {
@@ -104,7 +105,7 @@ export class BasedQueryResponse {
         i += 4
       }
       const l = readProps(
-        this.def.readSchema,
+        this.def?.readSchema as ReaderSchema,
         result,
         i,
         result.byteLength - 4,
@@ -150,7 +151,12 @@ export class BasedQueryResponse {
   }
 
   toObject(): any {
-    return resultToObject(this.def.readSchema, this.result, this.end - 4, 0)
+    return resultToObject(
+      this.def?.readSchema as ReaderSchema,
+      this.result,
+      this.end - 4,
+      0,
+    )
   }
 
   toJSON(

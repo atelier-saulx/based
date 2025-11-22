@@ -1,4 +1,3 @@
-import { PropDef, PropDefEdge } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { deleteProp } from './delete.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
@@ -7,12 +6,12 @@ import { xxHash64 } from '../../xxHash64.js'
 import { ENCODER } from '@based/utils'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
-import { CREATE } from '../types.js'
 import { writeBinary } from './binary.js'
+import type { LeafDef, SchemaCardinality } from '@based/schema'
 
 export const writeCardinalityRaw = (
   ctx: Ctx,
-  def: PropDef | PropDefEdge,
+  def: LeafDef,
   val: any[],
   sizeFixBecauseEdgeIsDifferent = val.length,
 ) => {
@@ -33,7 +32,11 @@ export const writeCardinalityRaw = (
   }
 }
 
-export const writeCardinality = (ctx: Ctx, def: PropDef, val: any) => {
+export const writeCardinality = (
+  ctx: Ctx,
+  def: SchemaCardinality & LeafDef,
+  val: any,
+) => {
   if (val === null) {
     deleteProp(ctx, def)
     return
@@ -56,11 +59,12 @@ export const writeCardinality = (ctx: Ctx, def: PropDef, val: any) => {
   reserve(ctx, PROP_CURSOR_SIZE + size + 1)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
-  writeU8(ctx, def.cardinalityMode)
-  writeU8(ctx, def.cardinalityPrecision)
+  writeU8(ctx, def.mode === 'dense' ? 1 : 0)
+  writeU8(ctx, def.precision ?? 8)
   writeCardinalityRaw(ctx, def, val)
-  if (ctx.operation === CREATE) {
-    ctx.schema.separateSort.bufferTmp[def.prop] = 2
-    ctx.sort++
-  }
+  // if (ctx.operation === CREATE) {
+  // TODO SORT
+  // ctx.typeDef.separateSort.bufferTmp[def.prop] = 2
+  // ctx.sort++
+  // }
 }

@@ -142,12 +142,6 @@ await test('capped references', async (t) => {
 
   deepEqual(await db.query('user', user).include('**').get(), {
     id: 1,
-    latestArticles: [
-      { id: 6 },
-      { id: 7 },
-      { id: 8 },
-      { id: 9 },
-      { id: 10 },
-    ]
+    latestArticles: [{ id: 6 }, { id: 7 }, { id: 8 }, { id: 9 }, { id: 10 }],
   })
 })
