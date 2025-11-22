@@ -1,5 +1,5 @@
+import type { TypeDef } from '@based/schema'
 import createDbHash from './dbHash.js'
-import { SchemaTypeDef } from '@based/schema/def'
 
 export const destructureTreeKey = (key: number) => [
   (key / 4294967296) | 0, // typeId
@@ -25,7 +25,6 @@ export const makeTreeKeyFromNodeId = (
 }
 
 type Hash = Uint8Array
-const HASH_SIZE = 16
 
 /**
  * Block state.
@@ -69,11 +68,11 @@ export class VerifTree {
   #types: { [key: number]: VerifType }
   #h = createDbHash()
 
-  constructor(defs: Record<string, SchemaTypeDef>) {
+  constructor(defs: Record<string, TypeDef>) {
     this.#types = VerifTree.#makeTypes(defs)
   }
 
-  static #makeTypes(defs: Record<string, SchemaTypeDef>): {
+  static #makeTypes(defs: Record<string, TypeDef>): {
     [key: number]: VerifType
   } {
     return Object.preventExtensions(
@@ -180,7 +179,7 @@ export class VerifTree {
     return VerifTree.blockSdbFile(typeId, start, end)
   }
 
-  updateTypes(defs: Record<string, SchemaTypeDef>) {
+  updateTypes(defs: Record<string, TypeDef>) {
     const oldTypes = this.#types
     const newTypes = VerifTree.#makeTypes(defs)
 

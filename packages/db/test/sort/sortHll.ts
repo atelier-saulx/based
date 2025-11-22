@@ -1,4 +1,3 @@
-import { numberTypes } from '@based/schema/def'
 import { BasedDb, xxHash64 } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from 'node:assert'

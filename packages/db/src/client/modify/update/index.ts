@@ -58,7 +58,7 @@ export const writeUpdate = (
   schema: TypeDef,
   id: number,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ) => {
   validatePayload(payload)
 
@@ -104,7 +104,7 @@ export function update(
   type: string,
   id: number,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ): Promise<number> {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx

@@ -13,7 +13,7 @@ export const createReferenceFilter = (
   const buffer = new Uint8Array(11 + (isArray ? 8 : 0) + len * 4)
   buffer[0] = ctx.type
   buffer[1] = MODE_REFERENCE
-  buffer[2] = prop.typeEnum
+  buffer[2] = prop.typeIndex
   writeUint16(buffer, 4, 3) // size (4)
   writeUint16(buffer, len, 5)
   buffer[7] = ctx.operation

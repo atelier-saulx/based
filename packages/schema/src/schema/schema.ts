@@ -14,36 +14,31 @@ import { hash } from '@based/hash'
 import { inspect } from 'node:util'
 
 type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
-type SchemaLocales = Partial<
-  Record<
-    LangName,
-    | true
-    | {
-        required?: boolean
-        fallback?: LangName // not multiple - 1 is enough else it becomes too complex
-      }
-  >
->
+export type SchemaLocale = {
+  required?: boolean
+  fallback?: LangName // not multiple - 1 is enough else it becomes too complex
+}
+type SchemaLocales = Partial<Record<LangName, true | SchemaLocale>>
 
 type MigrateFn = (
   node: Record<string, any>,
 ) => Record<string, any> | [string, Record<string, any>]
-type MigrateFns = Record<string, MigrateFn>
-type Migrations = {
+export type SchemaMigrateFns = Record<string, MigrateFn>
+export type SchemaMigrations = {
   version: string
-  migrate: MigrateFns
+  migrate: SchemaMigrateFns
 }[]
 export type Schema<strict = false> = {
   version?: string
   types: SchemaTypes<strict>
   defaultTimezone?: string
-  migrations?: Migrations
+  migrations?: SchemaMigrations
 } & RequiredIfStrict<{ locales: SchemaLocales; hash: number }, strict>
 
 export type SchemaIn = Schema<false>
 export type SchemaOut = Schema<true>
 
-const isMigrations = (v: unknown): v is Migrations =>
+const isMigrations = (v: unknown): v is SchemaMigrations =>
   isRecord(v) &&
   Object.values(v).every(
     (m) =>

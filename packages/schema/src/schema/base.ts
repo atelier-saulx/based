@@ -3,6 +3,7 @@ import {
   deleteUndefined,
   isBoolean,
   isFunction,
+  isRecord,
   isString,
 } from './shared.js'
 import type { SchemaProp } from './prop.js'
@@ -54,10 +55,15 @@ export const parseBase = <T extends SchemaProp<true>>(
 
   if ('default' in result && result.default !== undefined) {
     const validation = getValidator(result)
-    assert(
-      validation(def.default, result),
-      `Default should be valid ${('format' in result && result.format) || result.type}`,
-    )
+    const msg = `Default should be valid ${('format' in result && result.format) || result.type}`
+    if (isRecord(def.default)) {
+      for (const k in def.default) {
+        assert(validation(def.default[k], result), msg)
+      }
+    } else {
+      assert(validation(def.default, result), msg)
+    }
+
     result.default = def.default
   }
 

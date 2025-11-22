@@ -17,12 +17,12 @@ export const writeIncrement = (ctx: Ctx, def: MainDef, val: any) => {
   writeMainCursor(ctx)
   if (val.increment > 0) {
     writeU8(ctx, INCREMENT)
-    writeU8(ctx, def.typeEnum)
+    writeU8(ctx, def.typeIndex)
     writeU16(ctx, def.main.start)
     writeFixed(ctx, def, val.increment)
   } else {
     writeU8(ctx, DECREMENT)
-    writeU8(ctx, def.typeEnum)
+    writeU8(ctx, def.typeIndex)
     writeU16(ctx, def.main.start)
     writeFixed(ctx, def, -val.increment)
   }

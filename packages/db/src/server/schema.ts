@@ -1,25 +1,19 @@
-import { updateTypeDefs } from '@based/schema/def'
-import { DbSchema, serialize } from '@based/schema'
 import { DbServer } from './index.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import native from '../native.js'
 import { SCHEMA_FILE } from '../types.js'
 import { saveSync } from './save.js'
-import { writeCreate } from '../client/modify/create/index.js'
-import { Ctx } from '../client/modify/Ctx.js'
-import { consume } from '../client/modify/drain.js'
 import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
+import { schemaToTypeDefs, serialize, type SchemaOut } from '@based/schema'
 
-export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
-  const { defs, defsById } = updateTypeDefs(schema)
+export const setSchemaOnServer = (server: DbServer, schema: SchemaOut) => {
   server.schema = schema
-  server.defs = defs
-  server.defsById = defsById
+  server.defs = schemaToTypeDefs(schema)
   server.ids = native.getSchemaIds(server.dbCtxExternal)
 }
 
-export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
+export const writeSchemaFile = async (server: DbServer, schema: SchemaOut) => {
   if (server.fileSystemPath) {
     const schemaFilePath = join(server.fileSystemPath, SCHEMA_FILE)
     try {
@@ -36,18 +30,20 @@ export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
  * instance. If a `common.sdb` file is loaded then calling this function isn't
  * necessary because `common.sdb` already contains the required schema.
  */
-export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
-  const types = Object.keys(server.defs)
-  const s = schemaToSelvaBuffer(server.defs)
+export const setNativeSchema = (server: DbServer) => {
+  const types = Object.keys(server.defs.byName)
+  const s = schemaToSelvaBuffer(server.defs.byName)
+  console.log(s)
   let maxTid = 0
   for (let i = 0; i < s.length; i++) {
-    const type = server.defs[types[i]]
+    const type = server.defs.byName[types[i]]
     maxTid = Math.max(maxTid, type.id)
+    console.log(type.id, new Uint8Array(s[i]))
     try {
       native.setSchemaType(server.dbCtxExternal, type.id, new Uint8Array(s[i]))
     } catch (err) {
       throw new Error(
-        `Cannot update schema on selva (native) ${type.type} ${err.message}`,
+        `Cannot update schema on selva (native) ${type.name} ${err.message}`,
       )
     }
   }
@@ -55,16 +51,7 @@ export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
   // Init the last ids
   native.setSchemaIds(new Uint32Array(maxTid), server.dbCtxExternal)
 
-  // Insert a root node
-  if (schema.types._root) {
-    const tmpArr = new Uint8Array(new ArrayBuffer(1e3, { maxByteLength: 10e3 }))
-    const tmpCtx = new Ctx(schema.hash, tmpArr)
-    writeCreate(tmpCtx, server.defs._root, {}, null)
-    const buf = consume(tmpCtx)
-    server.modify(buf)
-  }
-
-  server.verifTree.updateTypes(server.defs)
+  server.verifTree.updateTypes(server.defs.byName)
   if (server.fileSystemPath) {
     saveSync(server, { skipDirtyCheck: true })
   }

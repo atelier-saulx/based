@@ -148,7 +148,7 @@ export const writeCreate = (
   ctx: Ctx,
   schema: TypeDef,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ) => {
   validatePayload(payload)
 
@@ -228,7 +228,7 @@ export function create(
   db: DbClient,
   type: string,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ): Promise<number> {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx

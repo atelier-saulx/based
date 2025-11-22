@@ -1,4 +1,9 @@
-import { langCodesMap } from '@based/schema'
+import {
+  langCodesMap,
+  typeIndexMap,
+  type LangCode,
+  type LeafDef,
+} from '@based/schema'
 import { QueryDefSearch, QueryDef } from '../types.js'
 import { FilterOpts, getVectorFn } from '../filter/types.js'
 import {
@@ -23,12 +28,9 @@ export const vectorSearch = (
   field: string,
   opts: Omit<FilterOpts, 'lowerCase'>,
 ) => {
-  let prop = def.props[field]
-  if (!prop) {
-    prop = searchDoesNotExist(def, field, true)
-  }
+  const prop = def.props[field] || searchDoesNotExist(def, field, true)
   if (prop.type !== 'vector') {
-    searchIncorrectType(def, prop)
+    searchIncorrectType(def, prop as any)
   }
   let size = 17
   const vec = new Uint8Array(q.buffer, 0, q.byteLength)
@@ -47,7 +49,7 @@ export const search = (
   q: string,
   s?: Search,
 ) => {
-  const def = queryBranch.def
+  const def = queryBranch.def as QueryDef
   const bufs: Uint8Array[] = []
   let nrBlocks = 0
   let totalByteLength = 1
@@ -92,7 +94,7 @@ export const search = (
     for (const k in def.props) {
       const prop = def.props[k]
       // if title / name / headline add ROLE:
-      if (prop.typeIndex === STRING || prop.typeIndex === TEXT) {
+      if (prop.type === 'string' || prop.type === 'text') {
         s[k] = k === 'title' || k === 'name' || k === 'headline' ? 0 : 2
       }
     }
@@ -104,27 +106,27 @@ export const search = (
     s = x
   }
 
-  let hookFields: Set<string>
+  let hookFields: Set<string> | undefined
   for (const key in s) {
     let prop = def.props[key]
-    let lang = def.lang.lang
+    let lang: LangCode = def.lang.lang
     let fallback = def.lang.fallback
     if (!prop) {
       if (key.includes('.')) {
         const k = key.split('.')
         prop = def.props[k.slice(0, -1).join('.')]
-        if (prop && prop.typeIndex === TEXT) {
-          lang = langCodesMap.get(k[k.length - 1])
+        if (prop && prop.type === 'text') {
+          lang = langCodesMap.get(k[k.length - 1]) as LangCode
           fallback = []
           // handle incorrect LANG
         } else {
-          prop = searchDoesNotExist(def, key, false)
+          prop = searchDoesNotExist(def, key, false) as any
         }
       } else {
-        prop = searchDoesNotExist(def, key, false)
+        prop = searchDoesNotExist(def, key, false) as any
       }
     }
-    if (prop.typeIndex !== STRING && prop.typeIndex !== TEXT) {
+    if (prop.type !== 'string' && prop.type !== 'text') {
       searchIncorrectType(def, prop)
     }
 
@@ -140,24 +142,24 @@ export const search = (
       typeIndex: prop.typeIndex,
       weight: s[key],
       lang: { lang, fallback },
-      field: prop.prop,
-      start: prop.start ?? 0, // also need lang ofc if you have start
+      field: prop.id,
+      start: 'main' in prop ? prop.main.start : 0, // also need lang ofc if you have start
     })
 
-    const searchHook = prop.hooks?.search
-    if (searchHook) {
+    if (prop.hooks?.search) {
+      const hook = prop.hooks.search
       hookFields ??= new Set(Object.keys(s))
-      prop.hooks.search = null
-      searchHook(queryBranch, hookFields)
-      prop.hooks.search = searchHook
+      prop.hooks.search = undefined
+      hook(queryBranch, hookFields)
+      prop.hooks.search = hook
     }
   }
 
-  const searchHook = def.schema.hooks?.search
-  if (searchHook) {
-    def.schema.hooks.search = null
-    searchHook(queryBranch, hookFields || new Set(Object.keys(s)))
-    def.schema.hooks.search = searchHook
+  if (def.schema.hooks?.search) {
+    const hook = def.schema.hooks.search
+    def.schema.hooks.search = undefined
+    hook(queryBranch, hookFields || new Set(Object.keys(s)))
+    def.schema.hooks.search = hook
   }
 }
 

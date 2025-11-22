@@ -157,29 +157,30 @@ export const VECTOR_COSTINE_SIMILARITY = 2
 export const VECTOR_EUCLIDEAN_DIST = 3
 
 export const getVectorFn = (optsFn?: FilterOpts['fn']) => {
-  if (!optsFn) {
-    return VECTOR_COSTINE_SIMILARITY
+  if (optsFn) {
+    if (optsFn === 'dotProduct') {
+      return VECTOR_DOT_PRODUCT
+    } else if (optsFn === 'euclideanDistance') {
+      return VECTOR_EUCLIDEAN_DIST
+    } else if (optsFn === 'manhattanDistance') {
+      return VECTOR_MANHATTAN_DIST
+    }
   }
-  if (optsFn === 'dotProduct') {
-    return VECTOR_DOT_PRODUCT
-  } else if (optsFn === 'euclideanDistance') {
-    return VECTOR_EUCLIDEAN_DIST
-  } else if (optsFn === 'manhattanDistance') {
-    return VECTOR_MANHATTAN_DIST
-  }
+  return VECTOR_COSTINE_SIMILARITY
 }
 
 export const toFilterCtx = (
   def: QueryDef,
   op: Operator,
   opts: FilterOpts = {},
-): FilterCtx => {
+): FilterCtx | void => {
+  const id = def.schema?.id || 0
   if (op === '=' || op === '!=') {
     return {
       operation: EQUAL,
       type: op === '!=' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
-      typeId: def.schema.id,
+      typeId: id,
     }
   }
 
@@ -188,7 +189,7 @@ export const toFilterCtx = (
       operation: EXISTS,
       type: op === '!exists' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
-      typeId: def.schema.id,
+      typeId: id,
     }
   }
 
@@ -197,7 +198,7 @@ export const toFilterCtx = (
       operation: opts.lowerCase ? INCLUDES_TO_LOWER_CASE : INCLUDES,
       type: op === '!includes' ? TYPE_NEGATE : TYPE_DEFAULT,
       opts,
-      typeId: def.schema.id,
+      typeId: id,
     }
   }
 
@@ -206,7 +207,7 @@ export const toFilterCtx = (
       operation: GREATER_THAN,
       opts,
       type: TYPE_DEFAULT,
-      typeId: def.schema.id,
+      typeId: id,
     }
   }
 
@@ -215,7 +216,7 @@ export const toFilterCtx = (
       operation: SMALLER_THAN,
       opts,
       type: TYPE_DEFAULT,
-      typeId: def.schema.id,
+      typeId: id,
     }
   }
 
@@ -224,7 +225,7 @@ export const toFilterCtx = (
       operation: GREATER_THAN_INCLUSIVE,
       opts,
       type: TYPE_DEFAULT,
-      typeId: def.schema.id,
+      typeId: id,
     }
   }
 
@@ -233,7 +234,7 @@ export const toFilterCtx = (
       operation: SMALLER_THAN_INCLUSIVE,
       opts,
       type: TYPE_DEFAULT,
-      typeId: def.schema.id,
+      typeId: id,
     }
   }
 
@@ -242,7 +243,7 @@ export const toFilterCtx = (
       operation: LIKE,
       opts,
       type: TYPE_DEFAULT,
-      typeId: def.schema.id,
+      typeId: id,
     }
   }
 

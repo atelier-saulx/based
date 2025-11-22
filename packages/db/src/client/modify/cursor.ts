@@ -1,7 +1,7 @@
 import { Ctx } from './Ctx.js'
 import { writeU16, writeU8 } from './uint.js'
 import { SWITCH_TYPE, SWITCH_FIELD } from './types.js'
-import { typeMap, type LeafDef } from '@based/schema'
+import { typeIndexMap, type LeafDef } from '@based/schema'
 
 export const TYPE_CURSOR_SIZE = 3
 export const PROP_CURSOR_SIZE = 3
@@ -21,12 +21,12 @@ export const writeTypeCursor = (ctx: Ctx) => {
 export const writePropCursor = (
   ctx: Ctx,
   def: LeafDef,
-  typeEnum = def.typeEnum,
+  typeIndex = def.typeIndex,
 ) => {
   if (def.id !== ctx.cursor.prop) {
     writeU8(ctx, SWITCH_FIELD)
     writeU8(ctx, def.id)
-    writeU8(ctx, typeEnum)
+    writeU8(ctx, typeIndex)
     ctx.cursor.prop = def.id
   }
 }
@@ -35,7 +35,7 @@ export const writeMainCursor = (ctx: Ctx) => {
   if (ctx.cursor.prop !== 0) {
     writeU8(ctx, SWITCH_FIELD)
     writeU8(ctx, 0)
-    writeU8(ctx, typeMap.microbuffer)
+    writeU8(ctx, typeIndexMap.microbuffer)
     ctx.cursor.prop = 0
   }
 }

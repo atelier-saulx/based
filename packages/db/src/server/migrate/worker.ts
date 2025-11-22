@@ -5,12 +5,11 @@ import {
 } from 'node:worker_threads'
 import native from '../../native.js'
 import { BasedDb } from '../../index.js'
-import { CARDINALITY, REFERENCE, REFERENCES } from '@based/schema/def'
 import { setSchemaOnServer } from '../schema.js'
 import { setToSleep } from './utils.js'
 import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 import { MigrateRange } from './index.js'
-import { DbSchema, deSerialize } from '@based/schema'
+import { deSerialize } from '@based/schema'
 
 if (isMainThread) {
   console.warn('running worker.ts in mainthread')
@@ -37,8 +36,8 @@ if (isMainThread) {
     fromDb.server.dbCtxExternal = fromCtx
     toDb.server.dbCtxExternal = toCtx
 
-    setSchemaOnServer(fromDb.server, deSerialize(fromSchema) as DbSchema)
-    setSchemaOnServer(toDb.server, deSerialize(toSchema) as DbSchema)
+    setSchemaOnServer(fromDb.server, deSerialize(fromSchema))
+    setSchemaOnServer(toDb.server, deSerialize(toSchema))
     setLocalClientSchema(fromDb.client, fromDb.server.schema)
     setLocalClientSchema(toDb.client, toDb.server.schema)
 
@@ -47,31 +46,32 @@ if (isMainThread) {
         number,
         { type: string; include: string[]; includeRaw: string[] }
       > = {}
-      for (const type in fromDb.server.defs) {
-        const { id, props } = fromDb.server.defs[type]
+      for (const type in fromDb.server.defs.byName) {
+        const { id, props } = fromDb.server.defs.byName[type]
         const include = []
         const includeRaw = []
 
         for (const path in props) {
           const prop = props[path]
-          if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+          if (prop.type === 'reference' || prop.type === 'references') {
             include.push(`${path}.id`)
-            if (prop.edges) {
-              for (const key in prop.edges) {
-                const edge = prop.edges[key]
-                if (
-                  edge.typeIndex === REFERENCE ||
-                  edge.typeIndex === REFERENCES
-                ) {
-                  include.push(`${path}.${key}.id`)
-                } else if (edge.typeIndex === CARDINALITY) {
-                  includeRaw.push(`${path}.${key}`)
-                } else {
-                  include.push(`${path}.${key}`)
-                }
-              }
-            }
-          } else if (prop.typeIndex === CARDINALITY) {
+            // TODO edges?
+            // if (prop.edges) {
+            //   for (const key in prop.edges) {
+            //     const edge = prop.edges[key]
+            //     if (
+            //       edge.typeIndex === REFERENCE ||
+            //       edge.typeIndex === REFERENCES
+            //     ) {
+            //       include.push(`${path}.${key}.id`)
+            //     } else if (edge.typeIndex === CARDINALITY) {
+            //       includeRaw.push(`${path}.${key}`)
+            //     } else {
+            //       include.push(`${path}.${key}`)
+            //     }
+            //   }
+            // }
+          } else if (prop.type === 'cardinality') {
             includeRaw.push(path)
           } else {
             include.push(path)
@@ -114,7 +114,7 @@ if (isMainThread) {
                 toDb.create(type, res || node, { unsafe: true })
               }
             }
-          } else if (type in toDb.server.defs) {
+          } else if (type in toDb.server.defs.byName) {
             for (const node of nodes) {
               toDb.create(type, node, { unsafe: true })
             }

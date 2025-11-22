@@ -1,4 +1,4 @@
-import { getAllProps, type LeafDef } from '@based/schema'
+import { getAllProps, type QueryPropDef } from '@based/schema'
 import { IncludeField, IncludeOpts, QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (
@@ -26,12 +26,12 @@ export const getAllRefs = (
     if (prop.type === 'reference' || prop.type === 'references') {
       const refPath = prop.path.join('.') + affix
       fields.push({ field: refPath, opts })
-
-      if (prop.edges) {
-        for (const edge in prop.edges) {
-          fields.push({ field: refPath + '.' + edge, opts })
-        }
-      }
+      console.warn('TODO: edges getAllRefs')
+      // if (prop.edges) {
+      //   for (const edge in prop.edges) {
+      //     fields.push({ field: refPath + '.' + edge, opts })
+      //   }
+      // }
     }
   }
   return fields
@@ -45,11 +45,12 @@ export const includeField = (def: QueryDef, include: IncludeField) => {
       def.type === QueryDefType.References
     ) {
       const fields: IncludeField[] = []
-      if ('target' in def.target.propDef && def.target.propDef.edges) {
-        for (const edge in def.target.propDef.edges) {
-          fields.push({ field: edge, opts })
-        }
-      }
+      console.warn('TODO: edges includeField')
+      // if ('target' in def.target.propDef && def.target.propDef.edges) {
+      //   for (const edge in def.target.propDef.edges) {
+      //     fields.push({ field: edge, opts })
+      //   }
+      // }
       includeFields(def, fields)
     }
     includeFields(def, getAll(def.props, opts))
@@ -76,7 +77,7 @@ export const includeAllProps = (def: QueryDef, opts?: IncludeOpts) => {
 
 export const includeProp = (
   def: QueryDef,
-  prop: LeafDef,
+  prop: QueryPropDef,
   opts?: IncludeOpts,
 ) => {
   if (!prop || prop.type === 'reference' || prop.type === 'references') {
@@ -96,22 +97,28 @@ export const includeProp = (
       })
     }
 
-    const langs = def.include.props.get(prop.id).opts
-    if (def.lang.fallback.length > 0) {
-      for (const fallback of def.lang.fallback) {
-        if (!langs.fallBacks.includes(fallback)) {
-          langs.fallBacks.push(fallback)
+    const langs = def.include.props.get(prop.id)?.opts
+    if (langs?.codes && langs.fallBacks) {
+      if (def.lang.fallback.length > 0) {
+        for (const fallback of def.lang.fallback) {
+          if (!langs.fallBacks.includes(fallback)) {
+            langs.fallBacks.push(fallback)
+          }
         }
       }
+      const langCode = def.lang.lang ?? 0
+      langs.codes.add(langCode)
+      if (langCode === 0 || langs.codes.size > 1) {
+        langs.fallBacks = []
+      }
     }
-    const langCode = def.lang.lang ?? 0
-    langs.codes.add(langCode)
-    if (langCode === 0 || langs.codes.size > 1) {
-      langs.fallBacks = []
-    }
-  } else if (prop.main) {
+  } else if ('main' in prop) {
     def.include.main.len += prop.main.size
-    def.include.main.include.set(prop.main.start, [0, prop, opts])
+    def.include.main.include.set(prop.main.start, [
+      0,
+      prop,
+      opts as IncludeOpts,
+    ])
     return true
   } else {
     def.include.props.set(prop.id, { def: prop, opts })

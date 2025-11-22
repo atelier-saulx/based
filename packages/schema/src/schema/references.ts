@@ -4,6 +4,7 @@ import { assert, isRecord, type RequiredIfStrict } from './shared.js'
 
 export type SchemaReferences<strict = true> = Base &
   RequiredIfStrict<{ type: 'references' }, strict> & {
+    capped?: number
     items: SchemaReference<strict>
   }
 

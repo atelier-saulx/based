@@ -1,25 +1,25 @@
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 // import {
-//   typeMap.alias,
-//   typeMap.binary,
-//   typeMap.cardinality,
-//   typeMap.number,
+//   typeIndexMap.alias,
+//   typeIndexMap.binary,
+//   typeIndexMap.cardinality,
+//   typeIndexMap.number,
 //   PropDef,
 //   PropDefEdge,
-//   typeMap.reference,
-//   typeMap.references,
-//   typeMap.string,
-//   typeMap.text,
-//   typeMap.timestamp,
+//   typeIndexMap.reference,
+//   typeIndexMap.references,
+//   typeIndexMap.string,
+//   typeIndexMap.text,
+//   typeIndexMap.timestamp,
 //   TypeIndex,
 // } from '@based/schema/def'
 
-import { typeMap, type TypeEnum } from '@based/schema'
+import { typeIndexMap, type TypeIndex } from '@based/schema'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { ENCODER } from '@based/utils'
 import { AggregateType } from '@based/protocol/db-read'
-import type { PropDef } from '@based/schema'
+import type { PropDef, QueryPropDef } from '@based/schema'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 
@@ -65,8 +65,8 @@ export const printNumber = (nr: number) => {
   return picocolors.blue(nr)
 }
 
-export const prettyPrintVal = (v: any, type: TypeEnum): string => {
-  if (type === typeMap.binary) {
+export const prettyPrintVal = (v: any, type: TypeIndex): string => {
+  if (type === typeIndexMap.binary) {
     const nr = 12
     const isLarger = v.length > nr
     // RFE Doesn't slice make a new alloc? subarray would be probably sufficient here.
@@ -83,9 +83,9 @@ export const prettyPrintVal = (v: any, type: TypeEnum): string => {
   }
 
   if (
-    type === typeMap.string ||
-    type === typeMap.text ||
-    type === typeMap.alias
+    type === typeIndexMap.string ||
+    type === typeIndexMap.text ||
+    type === typeIndexMap.alias
   ) {
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
@@ -99,18 +99,18 @@ export const prettyPrintVal = (v: any, type: TypeEnum): string => {
         chars
     }
 
-    if (type === typeMap.alias) {
+    if (type === typeIndexMap.alias) {
       return `"${v}" ${picocolors.italic(picocolors.dim('alias'))}`
     }
 
     return `"${v}"`
   }
 
-  if (type === typeMap.cardinality) {
+  if (type === typeIndexMap.cardinality) {
     return `${picocolors.blue(v)} ${picocolors.italic(picocolors.dim('unique'))}`
   }
 
-  if (type === typeMap.timestamp) {
+  if (type === typeIndexMap.timestamp) {
     if (v === 0) {
       return `0 ${picocolors.italic(picocolors.dim('No date'))}`
     } else {
@@ -126,6 +126,7 @@ export const parseUint8Array = (p: any) => {
     const x = []
     // @ts-ignore
     for (let i = 0; i < p.length; i++) {
+      // @ts-ignore
       x[i] = p[i]
     }
     p = x
@@ -175,15 +176,18 @@ const inspectObject = (
   // use reader schema
   for (const k in object) {
     const key = path ? path + '.' + k : k
-    let def: PropDef
+    let def: QueryPropDef
     def = q.props[key]
     let v = object[k]
     let isEdge = k[0] === '$'
 
     if (k === '$searchScore') {
-      edges.push({ k, v, def: { typeIndex: typeMap.number } })
+      // @ts-ignore
+      edges.push({ k, v, def: { typeIndex: typeIndexMap.number } })
     } else if (isEdge) {
+      // @ts-ignore
       if (q.edges?.props?.[k]) {
+        // @ts-ignore
         edges.push({ k, v, def: q.edges?.props?.[k] })
       } else {
         str += prefixBody + `${k}: `
@@ -214,21 +218,22 @@ const inspectObject = (
         str +=
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
       }
-    } else if ('typeEnum' in def) {
-      if (def.typeEnum === typeMap.references) {
+    } else if ('typeIndex' in def) {
+      if (def.typeIndex === typeIndexMap.references) {
         if (q.aggregate) {
           str += printNumber(v)
           str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
         } else {
           str += inspectData(
             v,
+            // @ts-ignore
             q.references.get(def.id),
             level + 2,
             false,
             depth,
           )
         }
-      } else if (def.typeEnum === typeMap.reference) {
+      } else if (def.typeIndex === typeIndexMap.reference) {
         if (!v || !v.id) {
           str += 'null,\n'
         } else {
@@ -238,6 +243,7 @@ const inspectObject = (
           } else {
             str += inspectObject(
               v,
+              // @ts-ignore
               q.references.get(def.id),
               '',
               level + 2,
@@ -248,41 +254,41 @@ const inspectObject = (
             )
           }
         }
-      } else if (def.typeEnum === typeMap.binary) {
+      } else if (def.typeIndex === typeIndexMap.binary) {
         if (v === undefined) {
           return ''
         }
-        str += prettyPrintVal(v, def.typeEnum)
-      } else if (def.typeEnum === typeMap.text) {
+        str += prettyPrintVal(v, def.typeIndex)
+      } else if (def.typeIndex === typeIndexMap.text) {
         if (typeof v === 'object') {
           str += '{\n'
           for (const lang in v) {
-            str += `${prefixBody}  ${lang}: ${prettyPrintVal(v[lang], def.typeEnum)},\n`
+            str += `${prefixBody}  ${lang}: ${prettyPrintVal(v[lang], def.typeIndex)},\n`
           }
           str += `${prefixBody}}`
         } else {
           if (v === undefined) {
             return ''
           }
-          str += prettyPrintVal(v, def.typeEnum)
+          str += prettyPrintVal(v, def.typeIndex)
         }
       } else if (
-        def.typeEnum === typeMap.string ||
-        def.typeEnum === typeMap.alias
+        def.typeIndex === typeIndexMap.string ||
+        def.typeIndex === typeIndexMap.alias
       ) {
         if (v === undefined) {
           return ''
         }
-        str += prettyPrintVal(v, def.typeEnum)
-      } else if (def.typeEnum === typeMap.cardinality) {
+        str += prettyPrintVal(v, def.typeIndex)
+      } else if (def.typeIndex === typeIndexMap.cardinality) {
         if (typeof v === 'object' && v !== null) {
           str +=
             inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
         } else {
-          str += prettyPrintVal(v, def.typeEnum)
+          str += prettyPrintVal(v, def.typeIndex)
         }
-      } else if (def.typeEnum === typeMap.timestamp) {
-        str += prettyPrintVal(v, def.typeEnum)
+      } else if (def.typeIndex === typeIndexMap.timestamp) {
+        str += prettyPrintVal(v, def.typeIndex)
       } else {
         if (typeof v === 'number') {
           if (q.aggregate) {
@@ -299,8 +305,8 @@ const inspectObject = (
         }
       }
       if (
-        def?.typeEnum !== typeMap.reference &&
-        def?.typeEnum !== typeMap.references &&
+        def?.typeIndex !== typeIndexMap.reference &&
+        def?.typeIndex !== typeIndexMap.references &&
         typeof v !== 'object'
       ) {
         str += ',\n'
@@ -310,37 +316,38 @@ const inspectObject = (
     }
   }
 
-  for (const edge of edges) {
-    if (edge.def.typeEnum === typeMap.reference) {
-      str += prefixBody + picocolors.bold(`${edge.k}: `)
-      str += inspectObject(
-        edge.v,
-        q.edges.references.get(edge.def.id),
-        '',
-        level + 2,
-        false,
-        false,
-        true,
-        depth,
-      )
-    } else if (edge.def.typeEnum === typeMap.references) {
-      str += prefixBody + picocolors.bold(`${edge.k}: `)
-      str +=
-        inspectData(
-          edge.v,
-          q.edges.references.get(edge.def.id),
-          level + 3,
-          false,
-          depth + 2,
-        ) + '\n'
-    } else {
-      str +=
-        prefixBody +
-        picocolors.bold(`${edge.k}: `) +
-        prettyPrintVal(edge.v, edge.def.typeEnum) +
-        ',\n'
-    }
-  }
+  // TODO fix edges display
+  // for (const edge of edges) {
+  //   if (edge.def.typeIndex === typeIndexMap.reference) {
+  //     str += prefixBody + picocolors.bold(`${edge.k}: `)
+  //     str += inspectObject(
+  //       edge.v,
+  //       q.edges.references.get(edge.def.id),
+  //       '',
+  //       level + 2,
+  //       false,
+  //       false,
+  //       true,
+  //       depth,
+  //     )
+  //   } else if (edge.def.typeIndex === typeIndexMap.references) {
+  //     str += prefixBody + picocolors.bold(`${edge.k}: `)
+  //     str +=
+  //       inspectData(
+  //         edge.v,
+  //         q.edges.references.get(edge.def.id),
+  //         level + 3,
+  //         false,
+  //         depth + 2,
+  //       ) + '\n'
+  //   } else {
+  //     str +=
+  //       prefixBody +
+  //       picocolors.bold(`${edge.k}: `) +
+  //       prettyPrintVal(edge.v, edge.def.typeIndex) +
+  //       ',\n'
+  //   }
+  // }
 
   if (isObject) {
     str += prefix + ' },\n'
@@ -445,7 +452,7 @@ export const displayTarget = (def: QueryDef) => {
 
   const target =
     hasId || hasIds
-      ? def.schema.type +
+      ? def.schema.name +
         ':' +
         (hasIds
           ? // @ts-ignore
@@ -454,6 +461,6 @@ export const displayTarget = (def: QueryDef) => {
             ? safeStringify(def.target.alias, 30)
             : // @ts-ignore
               def.target.id)
-      : def.schema.type
+      : def.schema.name
   return target
 }

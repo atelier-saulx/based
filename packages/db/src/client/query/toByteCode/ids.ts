@@ -8,14 +8,14 @@ import { IDS } from './offsets.js'
 export const idsQuery = (def: QueryDef): IntermediateByteCode => {
   const filterSize = def.filter.size || 0
 
-  let sort: Uint8Array
+  let sort: Uint8Array | undefined
   let sortSize = 0
   if (def.sort) {
     sort = createSortBuffer(def.sort)
     sortSize = sort.byteLength
   }
 
-  let search: Uint8Array
+  let search: Uint8Array | undefined
   let searchSize = 0
   if (def.search) {
     search = searchToBuffer(def.search)
@@ -49,14 +49,14 @@ export const idsQuery = (def: QueryDef): IntermediateByteCode => {
   writeUint16(buffer, sortSize, index)
   index += 2
   if (sortSize) {
-    buffer.set(sort, index)
+    buffer.set(sort as Uint8Array, index)
     index += sortSize
   }
 
   writeUint16(buffer, searchSize, index)
   index += 2
   if (searchSize) {
-    buffer.set(search, index)
+    buffer.set(search as Uint8Array, index)
   }
 
   return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }

@@ -2,6 +2,7 @@ import {
   parse,
   type Schema,
   type SchemaIn,
+  type SchemaMigrateFns,
   type SchemaOut,
 } from '@based/schema'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
@@ -37,7 +38,7 @@ export class DbClient extends DbShared {
     this.hooks = hooks
     this.maxModifySize = maxModifySize
     this.modifyCtx = new Ctx(
-      0,
+      { locales: {}, types: {}, hash: 0 },
       new Uint8Array(
         new ArrayBuffer(Math.min(1e3, maxModifySize), {
           maxByteLength: maxModifySize,
@@ -75,7 +76,7 @@ export class DbClient extends DbShared {
 
   async setSchema(
     schema: SchemaIn,
-    transformFns?: SchemaIn['migrations'][0]['migrate'],
+    transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']> {
     const strictSchema = parse(schema).schema
     await this.drain()
@@ -84,11 +85,11 @@ export class DbClient extends DbShared {
       transformFns,
     )
     if (this.stopped) {
-      return this.schema.hash
+      return this.schema?.hash ?? 0
     }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
-      return this.schema.hash
+      return this.schema?.hash ?? 0
     }
     return schemaChecksum
   }
@@ -260,7 +261,7 @@ export class DbClient extends DbShared {
 
   destroy() {
     this.stop()
-    delete this.listeners
+    this.listeners = {}
   }
 
   stop() {

@@ -172,7 +172,7 @@ await test('simple load/unload', async (t) => {
   await db2.server.loadBlock('product', 100_001)
   deepEqual(
     db.server.verifTree.getBlock(
-      makeTreeKey(db.server.defs['product'].id, 100_001),
+      makeTreeKey(db.server.defs.byName['product'].id, 100_001),
     ).inmem,
     true,
   )

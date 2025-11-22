@@ -2,13 +2,12 @@ import {
   assert,
   isBoolean,
   isNumber,
-  isRecord,
   isString,
   type RequiredIfStrict,
 } from './shared.js'
 import { parseBase, type Base } from './base.js'
 
-export type EnumItem = string | number | boolean
+export type EnumItem = string | number
 export type SchemaEnum<strict = false> = Base &
   RequiredIfStrict<{ type: 'enum' }, strict> & {
     default?: EnumItem

@@ -1,4 +1,4 @@
-import type { LeafDef } from '@based/schema'
+import type { QueryPropDef } from '@based/schema'
 import { crc32 } from '../../crc32.js'
 import { convertToTimestamp, ENCODER, writeUint32 } from '@based/utils'
 // -------------------------------------------
@@ -15,7 +15,7 @@ import { convertToTimestamp, ENCODER, writeUint32 } from '@based/utils'
 // [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
-export const parseFilterValue = (prop: LeafDef, value: any): any => {
+export const parseFilterValue = (prop: QueryPropDef, value: any): any => {
   if (
     prop.type === 'binary' ||
     prop.type === 'string' ||

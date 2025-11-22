@@ -11,11 +11,11 @@ import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { createReferenceFilter } from './createReferenceFilter.js'
 import { validateFilter } from '../validation.js'
-import type { LeafDef } from '@based/schema'
+import type { QueryPropDef } from '@based/schema'
 
 export const primitiveFilter = (
   def: QueryDef,
-  prop: LeafDef,
+  prop: QueryPropDef,
   filter: Filter,
   conditions: QueryDefFilter,
   lang: QueryDef['lang'],
@@ -24,12 +24,12 @@ export const primitiveFilter = (
     return 0
   }
   let [, ctx, value] = filter
-  let parsedCondition: FilterCondition
+  let parsedCondition: FilterCondition | void
   const fieldIndexChar = prop.id
   const bufferMap = prop.typeDef.edge ? conditions.edges : conditions.conditions
 
   if (ctx.operation === EXISTS) {
-    if (prop.main) {
+    if ('main' in prop) {
       if (prop.type === 'string') {
         ctx.operation = EQUAL
         ctx.type = ctx.type === TYPE_NEGATE ? TYPE_DEFAULT : TYPE_NEGATE
@@ -52,7 +52,7 @@ export const primitiveFilter = (
   if (isArray && value.length === 1) {
     value = value[0]
   }
-  const propSize = prop.main?.size || 0
+  const propSize = 'main' in prop ? prop.main.size : 0
   if (prop.type === 'reference') {
     parsedCondition = createReferenceFilter(prop, ctx, value)
   } else if (prop.type === 'references') {
@@ -73,19 +73,27 @@ export const primitiveFilter = (
   } else {
     parsedCondition = createVariableFilterBuffer(value, prop, ctx, lang)
   }
-  // ADD OR if array for value
-  let arr = bufferMap.get(fieldIndexChar)
-  if (!arr) {
-    size += 3 // [field] [size 2]
-    arr = []
-    bufferMap.set(fieldIndexChar, arr)
-  }
-  size += parsedCondition.buffer.byteLength
 
-  if ('subscriptionMeta' in parsedCondition) {
-    conditions.hasSubMeta = true
+  let arr
+  if (bufferMap) {
+    // ADD OR if array for value
+    arr = bufferMap.get(fieldIndexChar)
+    if (!arr) {
+      size += 3 // [field] [size 2]
+      arr = []
+      bufferMap.set(fieldIndexChar, arr)
+    }
   }
 
-  arr.push(parsedCondition)
+  if (parsedCondition) {
+    size += parsedCondition.buffer.byteLength
+
+    if ('subscriptionMeta' in parsedCondition) {
+      conditions.hasSubMeta = true
+    }
+
+    arr.push(parsedCondition)
+  }
+
   return size
 }

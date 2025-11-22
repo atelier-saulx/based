@@ -16,9 +16,9 @@ import {
   writeUint32,
 } from '@based/utils'
 import { FilterCondition, FilterMetaNow } from '../types.js'
-import { type LeafDef, type PropDef } from '@based/schema'
+import { type QueryPropDef } from '@based/schema'
 
-const isNowQuery = (prop: LeafDef, value: any, ctx: FilterCtx) => {
+const isNowQuery = (prop: QueryPropDef, value: any, ctx: FilterCtx) => {
   return (
     prop.type === 'timestamp' &&
     typeof value === 'string' &&
@@ -28,7 +28,7 @@ const isNowQuery = (prop: LeafDef, value: any, ctx: FilterCtx) => {
 }
 
 const createNowMeta = (
-  prop: PropDef,
+  prop: QueryPropDef,
   parsedValue: number,
   ctx: FilterCtx,
 ): FilterMetaNow => {
@@ -42,7 +42,7 @@ const createNowMeta = (
 }
 
 export const writeFixed = (
-  prop: LeafDef,
+  prop: QueryPropDef,
   buf: Uint8Array,
   value: any,
   size: number,
@@ -77,13 +77,13 @@ export const writeFixed = (
 }
 
 export const createFixedFilterBuffer = (
-  prop: LeafDef,
+  prop: QueryPropDef,
   size: number,
   ctx: FilterCtx,
   value: any,
   sort: boolean,
 ): FilterCondition => {
-  const start = prop.main?.start || 0
+  const start = 'main' in prop ? prop.main.start : 0
   if (Array.isArray(value)) {
     const len = value.length
     // Add 8 extra bytes for alignment
@@ -94,7 +94,7 @@ export const createFixedFilterBuffer = (
       prop.type === 'references' && ctx.operation === EQUAL
         ? MODE_AND_FIXED
         : MODE_OR_FIXED
-    buffer[2] = prop.typeEnum
+    buffer[2] = prop.typeIndex
     writeUint16(buffer, size, 3)
     writeUint16(buffer, start, 5)
     buffer[7] = ctx.operation
@@ -110,12 +110,8 @@ export const createFixedFilterBuffer = (
       for (let i = 0; i < len; i++) {
         const parsedValue = parseFilterValue(prop, value[i])
         if (isNowQuery(prop, value, ctx)) {
-          if (!result.subscriptionMeta) {
-            result.subscriptionMeta = {}
-          }
-          if (!result.subscriptionMeta.now) {
-            result.subscriptionMeta = { now: [] }
-          }
+          result.subscriptionMeta ??= {}
+          result.subscriptionMeta.now ??= []
           result.subscriptionMeta.now.push(
             createNowMeta(prop, parsedValue, ctx),
           )
@@ -128,7 +124,7 @@ export const createFixedFilterBuffer = (
     const buffer = new Uint8Array(8 + size)
     buffer[0] = ctx.type
     buffer[1] = MODE_DEFAULT
-    buffer[2] = prop.typeEnum
+    buffer[2] = prop.typeIndex
     writeUint16(buffer, size, 3)
     writeUint16(buffer, start, 5)
     buffer[7] = ctx.operation

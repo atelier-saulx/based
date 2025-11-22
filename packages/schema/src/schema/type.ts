@@ -41,6 +41,7 @@ export type SchemaProps<strict = true> = Record<string, SchemaProp<strict>>
 type SchemaTypeObj<strict = false> = {
   hooks?: SchemaHooks
   blockCapacity?: number
+  insertOnly?: boolean
   capped?: number
   partial?: boolean
   props: SchemaProps<strict>

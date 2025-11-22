@@ -1,43 +1,33 @@
-import {
-  STRING,
-  JSON,
-  BINARY,
-  CARDINALITY,
-  REFERENCES,
-  REFERENCE,
-  VECTOR,
-  TEXT,
-  ALIAS,
-} from '@based/schema/prop-types'
 import { Item, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readVector } from './vector.js'
 import { emptyMeta } from './meta.js'
+import { typeIndexMap } from '@based/schema'
 
 const undefinedValue = (prop: ReaderPropDef) => {
   const typeIndex = prop.typeIndex
-  if (typeIndex === STRING || typeIndex === ALIAS) {
+  if (typeIndex === typeIndexMap.string || typeIndex === typeIndexMap.alias) {
     return ''
   }
-  if (typeIndex === JSON) {
+  if (typeIndex === typeIndexMap.json) {
     return null
   }
-  if (typeIndex === BINARY) {
+  if (typeIndex === typeIndexMap.binary) {
     return new Uint8Array()
   }
-  if (typeIndex === CARDINALITY) {
+  if (typeIndex === typeIndexMap.cardinality) {
     return 0
   }
-  if (typeIndex === REFERENCES) {
+  if (typeIndex === typeIndexMap.references) {
     return []
   }
-  if (typeIndex === REFERENCE) {
+  if (typeIndex === typeIndexMap.reference) {
     return null
   }
-  if (typeIndex === VECTOR) {
+  if (typeIndex === typeIndexMap.vector) {
     return readVector(prop, new Uint8Array())
   }
-  if (typeIndex === TEXT) {
+  if (typeIndex === typeIndexMap.text) {
     if (prop.locales) {
       const codes = {}
       for (const code in prop.locales) {
@@ -57,7 +47,7 @@ export const undefinedProps = (q: ReaderSchema, item: Item) => {
     if (p.readBy !== q.readId) {
       p.readBy = q.readId
       if (p.meta) {
-        if (p.typeIndex === TEXT && p.locales) {
+        if (p.typeIndex === typeIndexMap.text && p.locales) {
           for (const code in p.locales) {
             const meta = emptyMeta()
             if (p.meta === ReaderMeta.combined) {

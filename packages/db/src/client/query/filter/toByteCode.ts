@@ -26,13 +26,17 @@ const writeConditions = (
   for (const condition of conditions) {
     conditionSize += condition.buffer.byteLength
     result.set(condition.buffer, lastWritten)
-    if ('subscriptionMeta' in condition) {
-      if ('now' in condition.subscriptionMeta) {
-        for (const n of condition.subscriptionMeta.now) {
-          n.resolvedByteIndex = n.byteIndex + lastWritten + metaOffset
-        }
+    if (condition?.subscriptionMeta?.now) {
+      for (const n of condition.subscriptionMeta.now) {
+        n.resolvedByteIndex = n.byteIndex + lastWritten + metaOffset
       }
     }
+    // if ('now' in condition.subscriptionMeta) {
+    //   for (const n of condition.subscriptionMeta.now) {
+    //     n.resolvedByteIndex = n.byteIndex + lastWritten + metaOffset
+    //   }
+    // }
+    // }
     lastWritten += condition.buffer.byteLength
   }
   writeUint16(result, conditionSize, sizeIndex)
@@ -67,7 +71,7 @@ export const fillConditionsBuffer = (
       lastWritten += 1
       result[lastWritten] = refField
       lastWritten += 1
-      writeUint16(result, refConditions.conditions.schema.id, lastWritten)
+      writeUint16(result, refConditions.conditions.schema?.id || 0, lastWritten)
       lastWritten += 2
       if (isReferences) {
         result[lastWritten] = refConditions.select.type
@@ -118,7 +122,7 @@ export const fillConditionsBuffer = (
       result[lastWritten++] = META_EXISTS
       result[lastWritten++] = exists.prop.id
       result[lastWritten++] = exists.negate ? TYPE_NEGATE : TYPE_DEFAULT
-      result[lastWritten++] = exists.prop.typeEnum
+      result[lastWritten++] = exists.prop.typeIndex
     }
   }
 

@@ -32,8 +32,8 @@ export type Writelog = {
 }
 
 function hasPartialTypes(db: DbServer): boolean {
-  for (const id in db.defsById) {
-    if (db.defsById[id].partial) {
+  for (const id in db.defs.byId) {
+    if (db.defs.byId[id].partial) {
       return true
     }
   }
@@ -78,15 +78,15 @@ function makeWritelog(db: DbServer, ts: number): Writelog {
   const types: Writelog['types'] = {}
   const rangeDumps: Writelog['rangeDumps'] = {}
 
-  for (const key in db.defs) {
-    const { id, blockCapacity } = db.defs[key]
+  for (const key in db.defs.byName) {
+    const { id, blockCapacity } = db.defs.byName[key]
     types[id] = { blockCapacity }
     rangeDumps[id] = []
   }
 
   db.verifTree.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
-    const def = db.defsById[typeId]
+    const def = db.defs.byId[typeId]
     const end = start + def.blockCapacity - 1
     const data: RangeDump = {
       file: db.verifTree.getBlockFile(block),
@@ -126,12 +126,12 @@ export function saveSync(db: DbServer, opts: SaveOpts = {}): void {
 
     if (opts.forceFullDump) {
       // reset the state just in case
-      db.verifTree = new VerifTree(db.defs)
+      db.verifTree = new VerifTree(db.defs.byName)
 
       // We use db.verifTree.types instead of db.defs because it's
       // ordered.
       for (const { typeId } of db.verifTree.types()) {
-        const def = db.defsById[typeId]
+        const def = db.defs.byId[typeId]
         foreachBlock(db, def, (start: number, end: number, _hash: Uint8Array) =>
           saveBlock(db, def.id, start, end),
         )
@@ -184,13 +184,13 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
 
     if (opts.forceFullDump) {
       // reset the state just in case
-      db.verifTree = new VerifTree(db.defs)
+      db.verifTree = new VerifTree(db.defs.byName)
 
       // We use db.verifTree.types instead of db.defs because it's
       // ordered.
 
       for (const { typeId } of db.verifTree.types()) {
-        const def = db.defsById[typeId]
+        const def = db.defs.byId[typeId]
         foreachBlock(
           db,
           def,

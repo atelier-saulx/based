@@ -1,4 +1,4 @@
-import { validationMap, type PropDef, type TypeDef } from '@based/schema'
+import { isValidId, type PropDef, type TypeDef } from '@based/schema'
 import { DbClient } from '../../index.js'
 
 export const validate = (val: any, def: PropDef) => {
@@ -7,8 +7,11 @@ export const validate = (val: any, def: PropDef) => {
     throw [def, val, msg]
   }
 }
-const maxUint32 = 4_294_967_295
-export const validateId = (v: number) => v > 0 && v <= maxUint32
+export const validateId = (v: number) => {
+  if (!isValidId(v)) {
+    throw 'Invalid id'
+  }
+}
 export const validatePayload = (payload: any) => {
   if (typeof payload !== 'object' || payload === null) {
     throw 'Invalid payload'
@@ -16,7 +19,7 @@ export const validatePayload = (payload: any) => {
 }
 
 export const getValidSchema = (db: DbClient, type: string): TypeDef => {
-  const schema = db.defs[type]
+  const schema = db.defs.byName[type]
   if (schema) return schema
-  throw `Unknown type: ${type}. Did you mean on of: ${Object.keys(db.defs).filter(Number.isNaN).join(', ')}`
+  throw `Unknown type: ${type}. Did you mean on of: ${Object.keys(db.defs.byName).filter(Number.isNaN).join(', ')}`
 }

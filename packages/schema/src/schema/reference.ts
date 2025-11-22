@@ -1,5 +1,5 @@
 import { parseBase, type Base } from './base.js'
-import { assert, isRecord, isString, type RequiredIfStrict } from './shared.js'
+import { assert, isBoolean, isString, type RequiredIfStrict } from './shared.js'
 import { parseProp, type SchemaProp } from './prop.js'
 import type { SchemaReferences } from './references.js'
 
@@ -10,6 +10,7 @@ export type SchemaReference<strict = false> = Base &
     ref: string
   } & {
     prop: string
+    dependent?: boolean
     [edge: `$${string}`]:
       | Exclude<SchemaProp<strict>, SchemaReferences<strict>>
       | (Omit<SchemaReferences<strict>, 'items'> & {
@@ -31,6 +32,10 @@ export const parseReference = (
   }
 
   assert(isString(def.prop), 'Prop should be string')
+  assert(
+    def.dependent === undefined || isBoolean(def.dependent),
+    'Dependent should be boolean',
+  )
 
   const result: SchemaReference<true> = {
     type: 'reference',

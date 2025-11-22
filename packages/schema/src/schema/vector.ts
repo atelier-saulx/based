@@ -2,7 +2,7 @@ import { assert, isNatural, isRecord, isString } from './shared.js'
 import { parseBase, type Base } from './base.js'
 import { numberTypes } from './number.js'
 
-const vectorBaseTypes = [...numberTypes, 'float32', 'float64']
+const vectorBaseTypes = [...numberTypes, 'float32', 'float64'] as const
 
 export type SchemaVector = Base & {
   type: 'vector' | 'colvec'
@@ -24,13 +24,13 @@ export const parseVector = (def: Record<string, unknown>): SchemaVector => {
   )
   assert(isNatural(def.size), 'Size should be natural number')
   assert(
-    isString(def.baseType) && vectorBaseTypes.includes(def.baseType),
+    isString(def.baseType) && vectorBaseTypes.includes(def.baseType as any),
     'Invalid baseType',
   )
 
   return parseBase<SchemaVector>(def, {
     type: def.type,
     size: def.size,
-    baseType: def.baseType,
+    baseType: def.baseType as SchemaVector['baseType'],
   })
 }

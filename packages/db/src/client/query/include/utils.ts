@@ -1,9 +1,3 @@
-import {
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  SchemaPropTree,
-} from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import { createQueryDef } from '../queryDef.js'
 import {
@@ -12,16 +6,20 @@ import {
   QueryDefType,
   ReferenceSelectValue,
 } from '../types.js'
-import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
-import { ref } from 'node:process'
+import {
+  inverseLangMap,
+  LangCode,
+  langCodesMap,
+  type BranchDef,
+  type QueryPropDef,
+  type PropDef,
+  type RefPropDef,
+} from '@based/schema'
 
-export const getAllFieldFromObject = (
-  tree: SchemaPropTree | PropDef,
-  arr: string[] = [],
-) => {
-  for (const key in tree) {
-    const leaf = tree[key]
-    if (!leaf.typeIndex && !leaf.__isPropDef) {
+export const getAllFieldFromObject = (tree: BranchDef, arr: string[] = []) => {
+  for (const key in tree.props) {
+    const leaf = tree.props[key]
+    if ('props' in leaf) {
       getAllFieldFromObject(leaf, arr)
     } else {
       arr.push(leaf.path.join('.'))
@@ -33,56 +31,54 @@ export const getAllFieldFromObject = (
 const createRefQueryDef = (
   db: DbClient,
   def: QueryDef,
-  t: PropDef | PropDefEdge,
+  t: RefPropDef,
   refSelect?: ReferenceSelectValue,
 ) => {
   const defRef = createQueryDef(
     db,
-    t.typeIndex === REFERENCE
-      ? QueryDefType.Reference
-      : QueryDefType.References,
+    t.type === 'reference' ? QueryDefType.Reference : QueryDefType.References,
     {
-      type: t.inverseTypeName,
+      type: t.target.typeDef.name, //t.inverseTypeName,
       propDef: t,
     },
     def.skipValidation,
   )
   defRef.lang = def.lang
-  def.references.set(t.prop, defRef)
+  def.references.set(t.id, defRef)
   return defRef
 }
 
 export const createOrGetRefQueryDef = (
   db: DbClient,
   def: QueryDef,
-  t: PropDef | PropDefEdge,
+  t: RefPropDef,
   refSelect?: ReferenceSelectValue,
 ) => {
-  let refDef = def.references.get(t.prop)
+  let refDef = def.references.get(t.id)
   if (!refDef) {
     refDef = createRefQueryDef(db, def, t, refSelect)
   }
   return refDef
 }
 
-export const createOrGetEdgeRefQueryDef = (
-  db: DbClient,
-  def: QueryDef,
-  t: PropDefEdge,
-) => {
-  def.edges ??= createQueryDef(
-    db,
-    QueryDefType.Edge,
-    {
-      ref: t,
-    },
-    def.skipValidation,
-  )
-  def.edges.props ??= {}
-  def.edges.props[t.name] = t
-  const refDef = createOrGetRefQueryDef(db, def.edges, t)
-  return refDef
-}
+// export const createOrGetEdgeRefQueryDef = (
+//   db: DbClient,
+//   def: QueryDef,
+//   t: PropDefEdge,
+// ) => {
+//   def.edges ??= createQueryDef(
+//     db,
+//     QueryDefType.Edge,
+//     {
+//       ref: t,
+//     },
+//     def.skipValidation,
+//   )
+//   def.edges.props ??= {}
+//   def.edges.props[t.name] = t
+//   const refDef = createOrGetRefQueryDef(db, def.edges, t)
+//   return refDef
+// }
 
 export const getEnd = (opts?: IncludeOpts, lang?: LangCode): number => {
   if (!opts || !opts.end) {

@@ -4,6 +4,7 @@ import {
   QueryDef,
   QueryDefType,
   includeOp,
+  type QueryDefRest,
 } from '../types.js'
 import { includeToBuffer } from '../include/toByteCode.js'
 import { searchToBuffer } from '../search/index.js'
@@ -45,21 +46,24 @@ export function defToBuffer(
     }
   })
 
-  let edges: IntermediateByteCode[]
-  let edgesSize = 0
+  // let edges: IntermediateByteCode[]
+  // let edgesSize = 0
 
-  if (def.edges) {
-    edges = includeToBuffer(db, def.edges)
-    def.edges.references.forEach((ref) => {
-      edges.push(...defToBuffer(db, ref))
-      if (ref.errors) {
-        def.errors.push(...ref.errors)
-      }
-    })
-    edgesSize = byteSize(edges)
-  }
+  // if (def.edges) {
+  //   edges = includeToBuffer(db, def.edges)
+  //   def.edges.references.forEach((ref) => {
+  //     edges.push(...defToBuffer(db, ref))
+  //     if (ref.errors) {
+  //       def.errors.push(...ref.errors)
+  //     }
+  //   })
+  //   edgesSize = byteSize(edges)
+  // }
 
-  const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
+  // const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
+
+  console.warn('TODO: handle edges defToBuffer')
+  const size = byteSize(include)
 
   if (def.aggregate) {
     result.push(aggregatesQuery(def))
@@ -90,14 +94,14 @@ export function defToBuffer(
         }
         result.push(idsQuery(def))
       } else {
-        let search: Uint8Array
+        let search: Uint8Array | undefined
         let searchSize = 0
         if (def.search) {
           search = searchToBuffer(def.search)
           searchSize = def.search.size
         }
 
-        let sort: Uint8Array
+        let sort: Uint8Array | undefined
         let sortSize = 0
         if (def.sort) {
           sort = createSortBuffer(def.sort)
@@ -106,7 +110,14 @@ export function defToBuffer(
 
         const filterSize = def.filter.size || 0
         result.push(
-          defaultQuery(def, filterSize, sortSize, searchSize, sort, search),
+          defaultQuery(
+            def,
+            filterSize,
+            sortSize,
+            searchSize,
+            sort as Uint8Array,
+            search as Uint8Array,
+          ),
         )
       }
     }
@@ -118,13 +129,13 @@ export function defToBuffer(
 
   result.push(...include)
 
-  if (edges) {
-    const metaEdgeBuffer = new Uint8Array(3)
-    metaEdgeBuffer[0] = includeOp.EDGE
-    metaEdgeBuffer[1] = edgesSize
-    metaEdgeBuffer[2] = edgesSize >>> 8
-    result.push(metaEdgeBuffer, ...edges)
-  }
+  // if (edges) {
+  //   const metaEdgeBuffer = new Uint8Array(3)
+  //   metaEdgeBuffer[0] = includeOp.EDGE
+  //   metaEdgeBuffer[1] = edgesSize
+  //   metaEdgeBuffer[2] = edgesSize >>> 8
+  //   result.push(metaEdgeBuffer, ...edges)
+  // }
 
   if (def.type === QueryDefType.Root) {
     result.push(schemaChecksum(def))
@@ -134,7 +145,7 @@ export function defToBuffer(
 }
 
 export const queryToBuffer = (query: BasedDbQuery) => {
-  const bufs = defToBuffer(query.db, query.def)
+  const bufs = defToBuffer(query.db, query.def as QueryDef)
   // allow both uint8 and def
   let totalByteLength = bufs.reduce(
     (acc, cur) => acc + cur.buffer.byteLength,

@@ -9,10 +9,14 @@ import { VerifTree, makeTreeKey } from './tree.js'
 import { foreachBlock } from './blocks.js'
 import exitHook from 'exit-hook'
 import { save, saveSync, Writelog } from './save.js'
-import { DbSchema, deSerialize } from '@based/schema'
-import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
+import { deSerialize } from '@based/schema'
 import { bufToHex, equals, hexToBuf, wait } from '@based/utils'
-import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
+import {
+  SCHEMA_FILE,
+  WRITELOG_FILE,
+  SCHEMA_FILE_DEPRECATED,
+  BLOCK_CAPACITY_DEFAULT,
+} from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 
 export type StartOpts = {
@@ -67,7 +71,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     // Load schema
     const schema = await readFile(join(path, SCHEMA_FILE)).catch(noop)
     if (schema) {
-      const s = deSerialize(schema) as DbSchema
+      const s = deSerialize(schema)
       setSchemaOnServer(db, s)
     } else {
       const schemaJson = await readFile(join(path, SCHEMA_FILE_DEPRECATED))
@@ -79,7 +83,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     // Load block dumps
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
-      const def = db.defsById[typeId]
+      const def = db.defs.byId[typeId]
 
       if (!def.partial && !opts?.noLoadDumps) {
         for (const dump of dumps) {
@@ -107,10 +111,10 @@ export async function start(db: DbServer, opts: StartOpts) {
     }
   }
 
-  db.verifTree = new VerifTree(db.defs)
+  db.verifTree = new VerifTree(db.defs.byName)
 
   for (const { typeId } of db.verifTree.types()) {
-    const def = db.defsById[typeId]
+    const def = db.defs.byId[typeId]
     def.blockCapacity =
       writelog?.types[def.id]?.blockCapacity ||
       def.blockCapacity ||

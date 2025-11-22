@@ -1,7 +1,7 @@
-import { IncludeOpts } from '../types.js'
+import { IncludeOpts, type QueryDef } from '../types.js'
 import { BranchInclude, QueryBranch } from '../BasedDbQuery.js'
 import { includeField } from './props.js'
-import { createOrGetEdgeRefQueryDef, createOrGetRefQueryDef } from './utils.js'
+import { createOrGetRefQueryDef } from './utils.js'
 
 export const include = (
   query: QueryBranch<any>,
@@ -11,34 +11,36 @@ export const include = (
     const f = fields[i]
     const next = fields[i + 1]
     const opts = typeof next === 'object' ? (next as IncludeOpts) : undefined
-
+    const def = query.def as QueryDef
     if (opts) {
       i++
     }
 
     if (typeof f === 'string') {
-      includeField(query.def, { field: f, opts })
+      includeField(def, { field: f, opts })
     } else if (typeof f === 'function') {
       f((field: string) => {
         if (field[0] === '$') {
-          const prop = query.def.target?.propDef?.edges[field]
-          if (
-            prop &&
-            (prop.type === 'reference' || prop.type === 'references')
-          ) {
-            const refDef = createOrGetEdgeRefQueryDef(query.db, query.def, prop)
-            return new QueryBranch(query.db, refDef)
-          }
-          throw new Error(
-            `No edge reference or edge references field named "${field}"`,
-          )
+          console.warn('TODO edge stuff here')
+          throw Error('not implemented')
+          // const prop = def.target?.propDef?.edges[field]
+          // if (
+          //   prop &&
+          //   (prop.type === 'reference' || prop.type === 'references')
+          // ) {
+          //   const refDef = createOrGetEdgeRefQueryDef(query.db, def, prop)
+          //   return new QueryBranch(query.db, refDef)
+          // }
+          // throw new Error(
+          //   `No edge reference or edge references field named "${field}"`,
+          // )
         } else {
-          const prop = query.def.props[field]
+          const prop = def.props[field]
           if (
             prop &&
             (prop.type === 'reference' || prop.type === 'references')
           ) {
-            const refDef = createOrGetRefQueryDef(query.db, query.def, prop)
+            const refDef = createOrGetRefQueryDef(query.db, def, prop)
             return new QueryBranch(query.db, refDef)
           }
           throw new Error(`No reference or references field named "${field}"`)
@@ -46,7 +48,7 @@ export const include = (
       })
     } else if (Array.isArray(f)) {
       if (f.length === 0) {
-        includeField(query.def, { field: 'id', opts })
+        includeField(def, { field: 'id', opts })
       } else {
         include(query, f)
       }

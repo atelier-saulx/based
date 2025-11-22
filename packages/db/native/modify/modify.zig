@@ -337,8 +337,10 @@ fn modifyInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info, resCoun
     db.expire(&ctx);
 
     const newDirtyRanges = ctx.dirtyRanges.values();
+    std.debug.print("newDirtyRanges.len {d} - {d}\n", .{ newDirtyRanges.len, dirtyRanges.len });
     assert(newDirtyRanges.len < dirtyRanges.len);
     _ = napi.c.memcpy(dirtyRanges.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
+    std.debug.print("newDirtyRanges.len {d} - {d}\n", .{ newDirtyRanges.len, dirtyRanges.len });
     dirtyRanges[newDirtyRanges.len] = 0.0;
     writeoutPrevNodeId(&ctx, resCount, ctx.id);
 }

@@ -6,9 +6,9 @@ import { reserve } from '../resize.js'
 import { deleteProp } from './delete.js'
 import { ENCODER } from '@based/utils'
 import { Ctx } from '../Ctx.js'
-import { typeMap, type LeafDef } from '@based/schema'
+import { typeIndexMap, type LeafDef } from '@based/schema'
 
-export const getBuffer = (val: any): Uint8Array | void => {
+export const getBuffer = (val: any): Uint8Array | undefined => {
   if (typeof val === 'string') {
     return ENCODER.encode(val)
   }
@@ -56,7 +56,7 @@ export const writeBinary = (
   }
   const size = buf.byteLength + 6
   reserve(ctx, PROP_CURSOR_SIZE + size + 11)
-  writePropCursor(ctx, def, typeMap.enum)
+  writePropCursor(ctx, def, typeIndexMap.enum)
   writeU8(ctx, ctx.operation)
   writeBinaryRaw(ctx, buf)
 }

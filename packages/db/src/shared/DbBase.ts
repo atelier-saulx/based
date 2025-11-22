@@ -11,5 +11,8 @@ export type Listener<T> = (data: T) => void
 
 export class DbShared extends Emitter {
   schema?: SchemaOut
-  defs: TypeDefs = {}
+  defs: TypeDefs = {
+    byName: {},
+    byId: {},
+  }
 }

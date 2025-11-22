@@ -12,8 +12,8 @@ const reverseMap = <P extends Record<PropertyKey, PropertyKey>>(
   return reverse
 }
 
-export const typeMap = {
-  //   null: 0,
+export const typeIndexMap = {
+  null: 0,
   timestamp: 1,
   number: 4,
   cardinality: 5,
@@ -40,6 +40,6 @@ export const typeMap = {
   colvec: 30,
 } as const
 
-export const reverseTypeMap = reverseMap(typeMap)
-export type Type = keyof typeof typeMap
-export type TypeEnum = keyof typeof reverseTypeMap
+export const reverseTypeMap = reverseMap(typeIndexMap)
+export type TypeName = keyof typeof typeIndexMap
+export type TypeIndex = keyof typeof reverseTypeMap

@@ -1,62 +1,61 @@
 import { convertToTimestamp } from '@based/utils'
 import type { SchemaProp } from '../schema/prop.js'
-import isEmail from 'validator/es/lib/isEmail.js'
-import isURL from 'validator/es/lib/isURL.js'
-import isMACAddress from 'validator/es/lib/isMACAddress.js'
-import isIP from 'validator/es/lib/isIP.js'
-import isIPRange from 'validator/es/lib/isIPRange.js'
-import isFQDN from 'validator/es/lib/isFQDN.js'
-import isIBAN from 'validator/es/lib/isIBAN.js'
-import isBIC from 'validator/es/lib/isBIC.js'
-import isAlpha from 'validator/es/lib/isAlpha.js'
-import isAlphanumeric from 'validator/es/lib/isAlphanumeric.js'
-import isPassportNumber from 'validator/es/lib/isPassportNumber.js'
-import isPort from 'validator/es/lib/isPort.js'
-import isLowercase from 'validator/es/lib/isLowercase.js'
-import isUppercase from 'validator/es/lib/isUppercase.js'
-import isAscii from 'validator/es/lib/isAscii.js'
-import isSemVer from 'validator/es/lib/isSemVer.js'
-import isSurrogatePair from 'validator/es/lib/isSurrogatePair.js'
-import isIMEI from 'validator/es/lib/isIMEI.js'
-import isHexadecimal from 'validator/es/lib/isHexadecimal.js'
-import isOctal from 'validator/es/lib/isOctal.js'
-import isHexColor from 'validator/es/lib/isHexColor.js'
-import isRgbColor from 'validator/es/lib/isRgbColor.js'
-import isHSL from 'validator/es/lib/isHSL.js'
-import isISRC from 'validator/es/lib/isISRC.js'
-import isMD5 from 'validator/es/lib/isMD5.js'
-import isJWT from 'validator/es/lib/isJWT.js'
-import isUUID from 'validator/es/lib/isUUID.js'
-import isLuhnNumber from 'validator/es/lib/isLuhnNumber.js'
-import isCreditCard from 'validator/es/lib/isCreditCard.js'
-import isIdentityCard from 'validator/es/lib/isIdentityCard.js'
-import isEAN from 'validator/es/lib/isEAN.js'
-import isISIN from 'validator/es/lib/isISIN.js'
-import isISBN from 'validator/es/lib/isISBN.js'
-import isISSN from 'validator/es/lib/isISSN.js'
-import isMobilePhone from 'validator/es/lib/isMobilePhone.js'
-import isPostalCode from 'validator/es/lib/isPostalCode.js'
-import isEthereumAddress from 'validator/es/lib/isEthereumAddress.js'
-import isCurrency from 'validator/es/lib/isCurrency.js'
-import isBtcAddress from 'validator/es/lib/isBtcAddress.js'
-import isISO6391 from 'validator/es/lib/isISO6391.js'
-import isISO8601 from 'validator/es/lib/isISO8601.js'
-import isRFC3339 from 'validator/es/lib/isRFC3339.js'
-import isISO31661Alpha2 from 'validator/es/lib/isISO31661Alpha2.js'
-import isISO31661Alpha3 from 'validator/es/lib/isISO31661Alpha3.js'
-import isISO4217 from 'validator/es/lib/isISO4217.js'
-import isBase32 from 'validator/es/lib/isBase32.js'
-import isBase58 from 'validator/es/lib/isBase58.js'
-import isBase64 from 'validator/es/lib/isBase64.js'
-import isDataURI from 'validator/es/lib/isDataURI.js'
-import isMagnetURI from 'validator/es/lib/isMagnetURI.js'
-import isMimeType from 'validator/es/lib/isMimeType.js'
-import isLatLong from 'validator/es/lib/isLatLong.js'
-import isSlug from 'validator/es/lib/isSlug.js'
-import isStrongPassword from 'validator/es/lib/isStrongPassword.js'
-import isTaxID from 'validator/es/lib/isTaxID.js'
-import isLicensePlate from 'validator/es/lib/isLicensePlate.js'
-import isVAT from 'validator/es/lib/isVAT.js'
+import isEmail from 'validator/lib/isEmail.js'
+import isURL from 'validator/lib/isURL.js'
+import isMACAddress from 'validator/lib/isMACAddress.js'
+import isIP from 'validator/lib/isIP.js'
+import isIPRange from 'validator/lib/isIPRange.js'
+import isFQDN from 'validator/lib/isFQDN.js'
+import isIBAN from 'validator/lib/isIBAN.js'
+import isBIC from 'validator/lib/isBIC.js'
+import isAlpha from 'validator/lib/isAlpha.js'
+import isAlphanumeric from 'validator/lib/isAlphanumeric.js'
+import isPassportNumber from 'validator/lib/isPassportNumber.js'
+import isPort from 'validator/lib/isPort.js'
+import isLowercase from 'validator/lib/isLowercase.js'
+import isUppercase from 'validator/lib/isUppercase.js'
+import isAscii from 'validator/lib/isAscii.js'
+import isSemVer from 'validator/lib/isSemVer.js'
+import isSurrogatePair from 'validator/lib/isSurrogatePair.js'
+import isIMEI from 'validator/lib/isIMEI.js'
+import isHexadecimal from 'validator/lib/isHexadecimal.js'
+import isOctal from 'validator/lib/isOctal.js'
+import isHexColor from 'validator/lib/isHexColor.js'
+import isRgbColor from 'validator/lib/isRgbColor.js'
+import isHSL from 'validator/lib/isHSL.js'
+import isISRC from 'validator/lib/isISRC.js'
+import isMD5 from 'validator/lib/isMD5.js'
+import isJWT from 'validator/lib/isJWT.js'
+import isUUID from 'validator/lib/isUUID.js'
+import isLuhnNumber from 'validator/lib/isLuhnNumber.js'
+import isCreditCard from 'validator/lib/isCreditCard.js'
+import isEAN from 'validator/lib/isEAN.js'
+import isISIN from 'validator/lib/isISIN.js'
+import isISBN from 'validator/lib/isISBN.js'
+import isISSN from 'validator/lib/isISSN.js'
+import isMobilePhone from 'validator/lib/isMobilePhone.js'
+import isPostalCode from 'validator/lib/isPostalCode.js'
+import isEthereumAddress from 'validator/lib/isEthereumAddress.js'
+import isCurrency from 'validator/lib/isCurrency.js'
+import isBtcAddress from 'validator/lib/isBtcAddress.js'
+import isISO6391 from 'validator/lib/isISO6391.js'
+import isISO8601 from 'validator/lib/isISO8601.js'
+import isRFC3339 from 'validator/lib/isRFC3339.js'
+import isISO31661Alpha2 from 'validator/lib/isISO31661Alpha2.js'
+import isISO31661Alpha3 from 'validator/lib/isISO31661Alpha3.js'
+import isISO4217 from 'validator/lib/isISO4217.js'
+import isBase32 from 'validator/lib/isBase32.js'
+import isBase58 from 'validator/lib/isBase58.js'
+import isBase64 from 'validator/lib/isBase64.js'
+import isDataURI from 'validator/lib/isDataURI.js'
+import isMagnetURI from 'validator/lib/isMagnetURI.js'
+import isMimeType from 'validator/lib/isMimeType.js'
+import isLatLong from 'validator/lib/isLatLong.js'
+import isSlug from 'validator/lib/isSlug.js'
+import isStrongPassword from 'validator/lib/isStrongPassword.js'
+import isTaxID from 'validator/lib/isTaxID.js'
+import isLicensePlate from 'validator/lib/isLicensePlate.js'
+import isVAT from 'validator/lib/isVAT.js'
 import { isBoolean, isRecord, isString } from '../schema/shared.js'
 import type { SchemaTimestamp } from '../schema/timestamp.js'
 import type { SchemaNumber } from '../schema/number.js'
@@ -102,7 +101,6 @@ export const validators = {
   UUID: wrap(isUUID),
   luhnNumber: wrap(isLuhnNumber),
   creditCard: wrap(isCreditCard),
-  identityCard: wrap(isIdentityCard),
   EAN: wrap(isEAN),
   ISIN: wrap(isISIN),
   ISBN: wrap(isISBN),
@@ -142,9 +140,9 @@ export const validators = {
   clike: allGood,
 } as const
 
-const maxUint32 = 4_294_967_295
+export const MAX_ID = 4_294_967_295
 const epsilon = 1e-9 // Small tolerance for floating point comparisons
-const isId: Validation = (v) => v > 0 && v <= maxUint32
+export const isValidId = (v) => v > 0 && v <= MAX_ID
 const getIntValidaton =
   (min: number, max: number): Validation =>
   (value, t: SchemaNumber) => {
@@ -222,7 +220,7 @@ export const validationMap: Record<SchemaProp<true>['type'], Validation> = {
   int32: getIntValidaton(-2_147_483_648, 2_147_483_647),
   uint8: getIntValidaton(0, 255),
   uint16: getIntValidaton(0, 65_535),
-  uint32: getIntValidaton(0, maxUint32),
+  uint32: getIntValidaton(0, MAX_ID),
   number: (v, t: SchemaNumber) => {
     if (t.step) {
       const div = v / t.step
@@ -239,7 +237,7 @@ export const validationMap: Record<SchemaProp<true>['type'], Validation> = {
     if (t.max !== undefined && v > t.max) {
       return false
     }
-    return v <= Number.MAX_VALUE && v <= Number.MIN_VALUE
+    return true
   },
   enum: (v, t: SchemaEnum<true>) => {
     if (v === null) {
@@ -254,8 +252,8 @@ export const validationMap: Record<SchemaProp<true>['type'], Validation> = {
     return false
   },
   json: allGood,
-  reference: isId,
-  references: isId,
+  reference: isValidId,
+  references: isValidId,
   string: isStringLike,
   text: isStringLike,
   vector: (v) => v instanceof Float32Array,

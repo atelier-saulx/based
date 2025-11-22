@@ -14,13 +14,13 @@ import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { crc32 } from '../../crc32.js'
 import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'
 import { FilterCondition, QueryDef } from '../types.js'
-import { type LeafDef } from '@based/schema'
+import { type QueryPropDef } from '@based/schema'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 
 const parseValue = (
   value: any,
-  prop: LeafDef,
+  prop: QueryPropDef,
   ctx: FilterCtx,
   lang: QueryDef['lang'],
 ): Uint8Array => {
@@ -50,7 +50,7 @@ const parseValue = (
   if (
     value instanceof Uint8Array ||
     typeof value === 'string' ||
-    prop.main ||
+    'main' in prop ||
     ctx.operation !== EQUAL
   ) {
     if (typeof value === 'string') {
@@ -86,16 +86,16 @@ const parseValue = (
 
 export const createVariableFilterBuffer = (
   value: any,
-  prop: LeafDef,
+  prop: QueryPropDef,
   ctx: FilterCtx,
   lang: QueryDef['lang'],
-): FilterCondition => {
+): FilterCondition | void => {
   let mode: FILTER_MODE = MODE_DEFAULT_VAR
   let val: any
   if (Array.isArray(value)) {
-    if (ctx.operation !== EQUAL || prop.main) {
+    if (ctx.operation !== EQUAL || 'main' in prop) {
       mode = MODE_OR_VAR
-      const values = []
+      const values: any[] = []
       for (const v of value) {
         const parsedValue = parseValue(v, prop, ctx, lang)
         const size = new Uint8Array(2)
@@ -104,7 +104,7 @@ export const createVariableFilterBuffer = (
       }
       val = concatUint8Arr(values)
     } else {
-      const x = []
+      const x: any[] = []
       for (const v of value) {
         x.push(parseValue(v, prop, ctx, lang))
       }
@@ -123,7 +123,7 @@ export const createVariableFilterBuffer = (
     return
   }
 
-  if (prop.main) {
+  if ('main' in prop) {
     return {
       buffer: writeVarFilter(
         mode,
@@ -157,6 +157,7 @@ export const createVariableFilterBuffer = (
         propDef: prop,
       }
     }
+
     return createFixedFilterBuffer(
       prop,
       8,
@@ -183,7 +184,7 @@ function writeVarFilter(
   mode: FILTER_MODE,
   val: Uint8Array,
   ctx: FilterCtx,
-  prop: LeafDef,
+  prop: QueryPropDef,
   start: number,
   len: number,
 ): Uint8Array {
@@ -191,7 +192,7 @@ function writeVarFilter(
   const buf = new Uint8Array(12 + size)
   buf[0] = ctx.type
   buf[1] = mode
-  buf[2] = prop.typeEnum
+  buf[2] = prop.typeIndex
   writeUint16(buf, start, 3)
   writeUint16(buf, len, 5)
   writeUint32(buf, size, 7)

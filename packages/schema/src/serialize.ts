@@ -11,7 +11,7 @@ import {
   DECODER,
 } from '@based/utils'
 import { stringFormats } from './schema/string.js'
-import { reverseTypeMap, typeMap } from './def/enums.js'
+import { reverseTypeMap, typeIndexMap } from './def/enums.js'
 import { Schema } from './schema/schema.js'
 
 const UINT8 = 245
@@ -41,7 +41,7 @@ const REF = 8
 const PROP = 9
 
 const KEY_OPTS = PROP
-const ENUM = typeMap.enum
+const ENUM = typeIndexMap.enum
 
 type DictMapUsed = { key: DictMapKey; address: number }
 
@@ -238,12 +238,12 @@ const walk = (
   const isArray = Array.isArray(obj)
   const isFromObj = prev2?.type === 'object' || fromObject === false
   const isSchemaProp =
-    ('enum' in obj || ('type' in obj && typeMap[obj.type])) && isFromObj
+    ('enum' in obj || ('type' in obj && typeIndexMap[obj.type])) && isFromObj
 
   ensureCapacity(1 + 5) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
-    const typeIndex = typeMap['enum' in obj ? 'enum' : obj.type]
+    const typeIndex = typeIndexMap['enum' in obj ? 'enum' : obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT

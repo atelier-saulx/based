@@ -2,13 +2,14 @@ import { BasedDbQuery } from './BasedDbQuery.js'
 import { queryToBuffer } from './toByteCode/toByteCode.js'
 import { handleErrors } from './validation.js'
 import { createQueryDef } from './queryDef.js'
-import { QueryDefType } from './types.js'
+import { QueryDefType, type QueryDef } from './types.js'
 import { includeField } from './query.js'
 import { convertToReaderSchema } from './queryDefToReadSchema.js'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.buffer) {
     const commands = q.queryCommands
+    // @ts-ignore
     q.queryCommands = null
     const def = createQueryDef(
       q.db,
@@ -45,6 +46,6 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     handleErrors(q.def)
     return buf
   }
-  handleErrors(q.def)
+  handleErrors(q.def as QueryDef)
   return q.buffer
 }

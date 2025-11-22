@@ -27,7 +27,7 @@ export const writeVector = (
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
 
-  let size = Math.min(val.byteLength, def.size)
+  let size = Math.min(val.byteLength, def.size * def.baseSize)
   let padding = 0
   if (ctx.index % 4 != 0) {
     padding = ctx.index % 4

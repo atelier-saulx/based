@@ -2,7 +2,6 @@ import { deepEqual as uDeepEqual } from '@based/utils'
 import { styleText } from 'node:util'
 import util from 'node:util'
 import { BasedQueryResponse } from '../../src/client/query/BasedQueryResponse.js'
-import { REVERSE_TYPE_INDEX_MAP } from '@based/schema/def'
 export { perf as default } from './perf.js'
 
 // add fn
@@ -55,7 +54,7 @@ export const isSorted = (
   const propDef = a.def?.schema?.props?.[field]
 
   if (propDef) {
-    fieldType = ' ' + REVERSE_TYPE_INDEX_MAP[propDef.typeIndex]
+    fieldType = ' ' + propDef.type
   }
 
   for (const result of a) {
