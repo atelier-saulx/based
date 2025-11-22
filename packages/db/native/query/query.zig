@@ -76,7 +76,7 @@ pub fn getQueryThreaded(
             const header = readNext(t.QueryDefaultHeader, q, &index);
             index += header.sortSize;
 
-            std.debug.print("Query - SUB TYPE: {any}...\n", .{header.subType});
+            std.debug.print("Query: {any}...\n", .{header});
 
             switch (header.subType) {
                 t.QuerySubType.default => {

@@ -280,13 +280,13 @@ pub const Interval: type = enum(u8) {
     year = 14,
 };
 
-pub const SortOder = enum(u8) {
+pub const SortOrder = enum(u8) {
     asc = 0,
     desc = 1,
 };
 
 pub const SortHeader = packed struct {
-    order: SortOder,
+    order: SortOrder,
     prop: u8, // use prop type for this
     propType: PropType,
     start: u16,

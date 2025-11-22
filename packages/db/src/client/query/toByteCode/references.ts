@@ -1,6 +1,6 @@
 import { filterToBuffer } from '../query.js'
 import { QueryDef, includeOp, IntermediateByteCode } from '../types.js'
-import { createSortBuffer } from '../sort.js'
+// import { createSortBuffer } from '../sort.js'
 import { writeUint16, writeUint32 } from '@based/utils'
 import { REFERENCES } from './offsets.js'
 
@@ -13,8 +13,9 @@ export const referencesQuery = (
   let sort: Uint8Array
   let sortSize = 0
   if (def.sort) {
-    sort = createSortBuffer(def.sort)
-    sortSize = sort.byteLength
+    console.error('MAKE')
+    // sort = createSortBuffer(def.sort)
+    // sortSize = sort.byteLength
   }
 
   const modsSize = filterSize + sortSize
@@ -22,6 +23,7 @@ export const referencesQuery = (
   const sz = size + 7 + modsSize + 8
 
   buffer[REFERENCES.includeOp] = includeOp.REFERENCES
+  // -- REFERENCES HEADER
   writeUint16(buffer, sz, REFERENCES.size)
   writeUint16(buffer, filterSize, REFERENCES.filterSize)
   writeUint16(buffer, sortSize, REFERENCES.sortSize)

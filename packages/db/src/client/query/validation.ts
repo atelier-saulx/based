@@ -391,10 +391,7 @@ export const validateSort = (
       payload: { order: orderInput, field },
     })
   }
-  const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
-
   let lang: LangCode = 0
-
   if (!propDef) {
     let isText = false
     if (field.includes('.')) {
@@ -412,11 +409,7 @@ export const validateSort = (
         code: ERR_SORT_ENOENT,
         payload: field,
       })
-      return {
-        prop: EMPTY_ALIAS_PROP_DEF,
-        order,
-        lang: def.lang?.lang,
-      }
+      return null
     }
   }
   const type = propDef.typeIndex
@@ -436,7 +429,6 @@ export const validateSort = (
       }
     }
   }
-
   // add propDef LANG
   if ('id' in def.target || 'alias' in def.target) {
     def.errors.push({
@@ -444,12 +436,7 @@ export const validateSort = (
       payload: def,
     })
   }
-
-  return {
-    prop: propDef,
-    order,
-    lang,
-  }
+  return null
 }
 
 export const validateAlias = (

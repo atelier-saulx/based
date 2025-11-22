@@ -1,7 +1,6 @@
 import { filterToBuffer } from '../query.js'
 import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
 import { searchToBuffer } from '../search/index.js'
-import { createSortBuffer } from '../sort.js'
 import { writeUint16, writeUint32 } from '@based/utils'
 import { IDS } from './offsets.js'
 
@@ -11,8 +10,9 @@ export const idsQuery = (def: QueryDef): IntermediateByteCode => {
   let sort: Uint8Array
   let sortSize = 0
   if (def.sort) {
-    sort = createSortBuffer(def.sort)
-    sortSize = sort.byteLength
+    console.error('MAKE')
+    // sort = createSortBuffer(def.sort)
+    // sortSize = sort.byteLength
   }
 
   let search: Uint8Array

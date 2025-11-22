@@ -1,12 +1,8 @@
-import {
-  writeUint16,
-  writeInt16,
-  writeUint32,
-  writeInt32,
-  writeUint64,
-  writeInt64,
-  writeFloatLE,
-  writeDoubleLE,
+import { 
+  writeUint16, writeInt16, 
+  writeUint32, writeInt32, 
+  writeUint64, writeInt64, 
+  writeFloatLE, writeDoubleLE 
 } from '@based/utils'
 
 export type TypeId = number
@@ -202,8 +198,7 @@ export const ReferencesSelect = {
   any, 
   all 
  */
-export type ReferencesSelectEnum =
-  (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
+export type ReferencesSelectEnum = (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
 
 export const RefEdgeOp = {
   noEdgeNoIndexRealId: 0,
@@ -388,7 +383,7 @@ export const Interval = {
  */
 export type IntervalEnum = (typeof Interval)[keyof typeof Interval]
 
-export const SortOder = {
+export const SortOrder = {
   asc: 0,
   desc: 1,
 } as const
@@ -397,10 +392,10 @@ export const SortOder = {
   asc, 
   desc 
  */
-export type SortOderEnum = (typeof SortOder)[keyof typeof SortOder]
+export type SortOrderEnum = (typeof SortOrder)[keyof typeof SortOrder]
 
 export type SortHeader = {
-  order: SortOderEnum
+  order: SortOrderEnum
   prop: number
   propType: PropTypeEnum
   start: number
@@ -502,7 +497,6 @@ export const writeQueryDefaultHeader = (
   header: QueryDefaultHeader,
   offset: number,
 ): number => {
-  console.log({ header })
   writeUint16(buf, header.typeId, offset)
   offset += 2
   writeUint32(buf, header.offset, offset)
@@ -678,8 +672,7 @@ export const FilterVectorFn = {
   cosineSimilarity, 
   euclideanDistance 
  */
-export type FilterVectorFnEnum =
-  (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
+export type FilterVectorFnEnum = (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
 
 export const FilterMaxVectorScore = 9999999
 export const FilterMaxStringScore = 255
@@ -728,3 +721,4 @@ export const AggType = {
   hmean 
  */
 export type AggTypeEnum = (typeof AggType)[keyof typeof AggType]
+

@@ -1,10 +1,12 @@
 import { filterToBuffer } from '../query.js'
 import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
 import { getQuerySubType } from './subType.js'
-import { ID } from '@based/schema/prop-types'
 import {
+  ID_PROP,
   QueryDefaultHeaderByteSize,
+  SortOrder,
   writeQueryDefaultHeader,
+  writeSortHeader,
 } from '../../../zigTsExports.js'
 
 export const defaultQuery = (
@@ -12,10 +14,9 @@ export const defaultQuery = (
   filterSize: number,
   sortSize: number,
   searchSize: number,
-  sort: Uint8Array,
   search: Uint8Array,
 ): IntermediateByteCode => {
-  const idDescSort = sortSize > 0 ? sort[1] === ID : false
+  const idDescSort = def.sort?.prop === ID_PROP
   if (idDescSort) {
     sortSize = 0
   }
@@ -40,7 +41,7 @@ export const defaultQuery = (
         filterSize,
         sortSize,
         searchSize,
-        sortSize > 0 && sort[0] == 1,
+        def.sort?.order === SortOrder.desc,
         idDescSort,
         searchSize > 0 && search[0] === 1,
       ),
@@ -49,8 +50,7 @@ export const defaultQuery = (
   )
 
   if (sortSize) {
-    buffer.set(sort, index)
-    index += sortSize
+    index = writeSortHeader(buffer, def.sort, index)
   }
 
   if (filterSize) {

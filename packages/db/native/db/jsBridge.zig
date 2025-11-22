@@ -23,7 +23,7 @@ fn callJsCallback(
         std.debug.print("REMOVED {any} \n", .{responseFn});
         return;
     }
-    std.debug.print("query here {any} \n", .{responseFn});
+    std.debug.print("callJsCallback {any} \n", .{responseFn});
 
     switch (responseFn.*) {
         BridgeResponse.modify => {

@@ -4,6 +4,7 @@ import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
 import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
+import { SortHeader } from '../../zigTsExports.js'
 
 export type IncludeOpts = {
   end?: { [langCode: string]: number } | number
@@ -152,12 +153,6 @@ export type QueryDefSearch =
       opts: FilterOpts
     }
 
-export type QueryDefSort = {
-  prop: PropDefEdge | PropDef
-  order: 0 | 1
-  lang: LangCode
-}
-
 export type Aggregation = {
   type: AggregateType
   propDef: PropDef | PropDefEdge
@@ -194,7 +189,7 @@ export type QueryDefShared = {
   filter: QueryDefFilter
   aggregate: null | QueryDefAggregation
   search: null | QueryDefSearch
-  sort: null | QueryDefSort
+  sort: null | SortHeader
   skipValidation: boolean
   range: {
     offset: number

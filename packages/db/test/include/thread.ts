@@ -15,6 +15,7 @@ await test('include', async (t) => {
     types: {
       user: {
         props: {
+          // name: 'string',
           nr: 'uint32',
           // flap: { type: 'string', compression: 'none' },
         },
@@ -27,10 +28,13 @@ await test('include', async (t) => {
     x.push('xxw qweudhweiofh')
   }
 
-  // const id = await db.create('user', {
-  //   nr: 1,
-  //   // flap: x.join(' '),
-  // // })
+  const id = await db.create('user', {
+    nr: 1,
+    // name: 'mr poop',
+    // flap: x.join(' '),
+  })
+
+  await wait(100)
 
   // const q = db.query('user', 1)
   // registerQuery(q)
@@ -67,6 +71,8 @@ await test('include', async (t) => {
   await db.query('user').get().inspect()
 
   await db.query('user').range(0, 5).sort('nr', 'desc').get().inspect()
+
+  await db.query('user').search('poop').get().inspect()
 
   // console.log(
   //   getAll(native.getQueryResults(db.server.dbCtxExternal)),

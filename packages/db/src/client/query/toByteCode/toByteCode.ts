@@ -1,4 +1,3 @@
-import { createSortBuffer } from '../sort.js'
 import {
   IntermediateByteCode,
   QueryDef,
@@ -19,6 +18,7 @@ import { aggregatesQuery } from './aggregates.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
+import { SortHeaderByteSize, writeSortHeader } from '../../../zigTsExports.js'
 
 const byteSize = (arr: IntermediateByteCode[]) => {
   return arr.reduce((a, b) => {
@@ -79,7 +79,7 @@ export function defToBuffer(
       result.push(idQuery(def))
     } else {
       if (def.target.ids) {
-        const sortSize = def.sort ? createSortBuffer(def.sort).byteLength : 0
+        const sortSize = def.sort ? SortHeaderByteSize : 0
         if (
           !sortSize &&
           (def.range.offset || def.range.limit < (def.target as any).ids.length)
@@ -98,17 +98,10 @@ export function defToBuffer(
           searchSize = def.search.size
         }
 
-        let sort: Uint8Array
-        let sortSize = 0
-        if (def.sort) {
-          sort = createSortBuffer(def.sort)
-          sortSize = sort.byteLength
-        }
+        let sortSize = def.sort ? SortHeaderByteSize : 0
 
         const filterSize = def.filter.size || 0
-        result.push(
-          defaultQuery(def, filterSize, sortSize, searchSize, sort, search),
-        )
+        result.push(defaultQuery(def, filterSize, sortSize, searchSize, search))
       }
     }
   } else if (def.type === QueryDefType.References) {
