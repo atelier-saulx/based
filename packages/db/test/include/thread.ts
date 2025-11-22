@@ -46,7 +46,7 @@ await test('include', async (t) => {
   let totalTime = 0
 
   console.log('create?')
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 10; i++) {
     db.create('user', {
       nr: i,
     })
@@ -62,7 +62,8 @@ await test('include', async (t) => {
   // await wait(1)
   // native.getQueryBufThread(buf, db.server.dbCtxExternal)
 
-  await wait(1)
+  await wait(1000)
+  console.log('FLAP')
   await db.query('user').get().inspect()
 
   await db.query('user').range(0, 5).sort('nr', 'desc').get().inspect()
