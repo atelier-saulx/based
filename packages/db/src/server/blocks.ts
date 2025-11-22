@@ -30,16 +30,21 @@ export type SaveOpts = {
   skipMigrationCheck?: boolean
 }
 
-const SELVA_ENOENT = -8
-
 type IoJobBlock = {
   filepath: string
   typeId: number
   start: number
 }
 
+const SELVA_ENOENT = -8
+
+const QOP_SAVE_BLOCK = 67
+const QOP_SAVE_COMMON = 69
+const MOP_LOAD = 22
+const MOP_UNLOAD = 33
+
 export function registerBlockIoListeners(db: DbServer) {
-  db.addQueryListener(67, (buf: Uint8Array) => {
+  db.addQueryListener(QOP_SAVE_BLOCK, (buf: Uint8Array) => {
     const err = readUint32(buf, 0)
     const start = readUint32(buf, 4)
     const typeId = readUint16(buf, 8)
@@ -103,7 +108,7 @@ async function saveCommon(db: DbServer): Promise<void> {
   msg.set(filepath, 6)
 
   return new Promise((resolve, reject) => {
-    db.addQueryOnceListener(69, msg, (buf: Uint8Array) => {
+    db.addQueryOnceListener(QOP_SAVE_COMMON, msg, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
         const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
@@ -113,6 +118,8 @@ async function saveCommon(db: DbServer): Promise<void> {
         resolve()
       }
     })
+
+    native.getQueryBufThread(msg, db.dbCtxExternal)
   })
 }
 
@@ -133,7 +140,6 @@ async function saveBlocks(
     const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(typeId, start, end)))
     const msg = new Uint8Array(6 + filepath.byteLength + 1)
 
-    // TODO MSG
     writeUint32(msg, start, 0)
     writeUint16(msg, typeId, 4)
     msg.set(filepath, 6)
@@ -142,6 +148,50 @@ async function saveBlocks(
     native.getQueryBufThread(msg, db.dbCtxExternal)
     return p
   }))
+}
+
+export async function loadCommon(db: DbServer, filename: string): Promise<void> {
+  const filepath = ENCODER.encode(filename)
+  const msg = new Uint8Array(8 + filepath.byteLength + 1)
+
+  msg.set(filepath, 8)
+
+  return new Promise((resolve, reject) => {
+    db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
+
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
+}
+
+export async function loadBlockRaw(db: DbServer, filename: string): Promise<void> {
+  const filepath = ENCODER.encode(filename)
+  const msg = new Uint8Array(8 + filepath.byteLength + 1)
+
+  msg.set(filepath, 8)
+
+  return new Promise((resolve, reject) => {
+    db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
+
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
 }
 
 /**
@@ -166,7 +216,6 @@ export async function loadBlock(
   const filepath = ENCODER.encode((join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end))))
   const msg = new Uint8Array(8 + filepath.byteLength + 1)
 
-  // TODO MSG
   msg.set(filepath, 8)
 
   const p = setIoPromise(block)
@@ -192,7 +241,6 @@ export async function unloadBlock(
   const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end)))
   const msg = new Uint8Array(8 + filepath.byteLength + 1)
 
-  // TODO MSG
   msg.set(filepath, 8)
 
   const p = setIoPromise(block)

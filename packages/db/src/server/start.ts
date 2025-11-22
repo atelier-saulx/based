@@ -80,7 +80,6 @@ export async function start(db: DbServer, opts: StartOpts) {
       handleModifyListeners(db, buffer)
     }
   })
-  registerBlockIoListeners(db)
 
   let writelog: Writelog = null
   let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]
@@ -95,7 +94,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   if (writelog) {
     // Load the common dump
     try {
-      native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
+      await blocks.loadCommon(db, join(path, writelog.commonDump))
     } catch (e) {
       console.error(e.message)
       throw e
@@ -124,7 +123,7 @@ export async function start(db: DbServer, opts: StartOpts) {
           if (fname?.length > 0) {
             try {
               // Can't use loadBlock() yet because blockMap is not avail
-              native.loadBlock(join(path, fname), db.dbCtxExternal)
+              await blocks.loadBlockRaw(db, join(path, fname))
             } catch (e) {
               console.error(e.message)
             }
@@ -174,6 +173,9 @@ export async function start(db: DbServer, opts: StartOpts) {
       )
     }
   }
+
+  // From now on we can use normal block saving and loading
+  registerBlockIoListeners(db)
 
   if (!opts?.hosted) {
     db.unlistenExit = asyncExitHook(
