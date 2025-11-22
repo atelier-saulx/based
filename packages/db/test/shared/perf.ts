@@ -38,7 +38,7 @@ export async function perf(
   fn: () => void | Promise<void>,
   label: string,
   options: Options = {},
-): Promise<void> {
+): Promise<number> {
   const repeat = options.repeat ?? 1
   const timeout = options.timeout ?? 5000
   const silent = options.silent ?? false
@@ -88,10 +88,11 @@ export async function perf(
     const diff = await saveResultToFile(
       path.join(outputDir, outputFile),
       testFunction,
+      label,
       result,
     )
     const percentDiff =
-      diff.previous !== null ? (diff.difference / diff.previous) * 100 : 0
+      diff.previous !== undefined ? (diff.difference / diff.previous) * 100 : 0
     const diffMessage =
       diff.difference > 0
         ? styleText(
@@ -111,6 +112,7 @@ export async function perf(
           `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x) ${diffMessage}.`,
         ),
       )
+    return totalTime
   } catch (err) {
     console.error(`Error in perf run "${label}":`, err)
     return
@@ -127,6 +129,7 @@ async function callWrapper(fn: () => void | Promise<void>) {
 async function saveResultToFile(
   filePath: string,
   testName: string,
+  label: string,
   data: Result,
 ): Promise<Difference> {
   const absolutePath = path.resolve(filePath)
@@ -148,15 +151,22 @@ async function saveResultToFile(
     fileContent[testName] = []
   }
 
-  const previous = fileContent[testName].slice(-1)[0]?.avgDurationMs
+  const previous = fileContent[testName]
+    .filter((m) => m.label == label)
+    .slice(-1)[0]?.avgDurationMs
   const difference = data.avgDurationMs - previous
   data.difference = difference
   data.previous = previous
 
   fileContent[testName].push(data)
 
-  if (fileContent[testName].length > MEASURES_PER_TEST) {
-    fileContent[testName] = fileContent[testName].slice(-MEASURES_PER_TEST)
+  if (
+    fileContent[testName].filter((m) => m.label == label).length >
+    MEASURES_PER_TEST
+  ) {
+    fileContent[testName] = fileContent[testName]
+      .filter((m) => m.label == label)
+      .slice(-MEASURES_PER_TEST)
   }
 
   fs.writeFileSync(absolutePath, JSON.stringify(fileContent, null, 2))

@@ -3,6 +3,7 @@ import { Sema } from 'async-sema'
 import test from './shared/test.js'
 import { start as startMulti } from './shared/multi.js'
 import assert from 'node:assert'
+import { perf } from './shared/assert.js'
 
 const N = 1e7 // Nodes
 const N2 = 1e3 // nr filter queries
@@ -32,49 +33,50 @@ await test('test embedded', async (t) => {
 
   await db.setSchema(schema)
 
-  let start = performance.now()
-  let i = N
-  while (i--) {
-    db.create('test', {
-      x: i % 100,
-      s: `hello ${i}`,
-    })
-  }
-  await db.drain()
-  const ctime = performance.now() - start
-  console.log(ctime, 'ms', toxps(N, ctime), 'c/s')
+  const ctime = await perf(async () => {
+    let i = N
+    while (i--) {
+      db.create('test', {
+        x: i % 100,
+        s: `hello ${i}`,
+      })
+    }
+    await db.drain()
+  }, 'c')
+  console.log(toxps(N, ctime), 'c/s')
 
   const arr = Array.from({ length: N2 })
-  start = performance.now()
-  let res = (
-    await Promise.all(
-      arr.map(() =>
-        db.query('test').filter('x', '=', 0).range(1, 10_001).get(),
-      ),
-    )
-  ).reduce((prev, cur) => prev + cur.length, 0)
-  const qtime = performance.now() - start
+  let res = undefined
+  const qtime = await perf(async () => {
+    res = (
+      await Promise.all(
+        arr.map(() =>
+          db.query('test').filter('x', '=', 0).range(1, 10_001).get(),
+        ),
+      )
+    ).reduce((prev, cur) => prev + cur.length, 0)
+  }, 'q')
   assert(res === N)
-  console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
+  console.log(toxps(N2, qtime), 'q/s')
 
   const s = new Sema(512)
-  start = performance.now()
-  await Promise.all(
-    Array.from({ length: N3 }).map(async (_, i) => {
-      await s.acquire()
-      db.query('test', i + 1)
-        .get()
-        .then(() => s.release())
-    }),
-  )
-  await s.drain()
-  //res = (
-  //  await Promise.all(
-  //    Array.from({ length: N3 }).map((_, i) => db.query('test', i + 1).get()),
-  //  )
-  //).reduce((prev, cur) => prev + cur.length, 0)
-  const qtime1 = performance.now() - start
-  console.log(qtime1, 'ms', toxps(N3, qtime1), 'q/s')
+  const qtime1 = await perf(async () => {
+    await Promise.all(
+      Array.from({ length: N3 }).map(async (_, i) => {
+        await s.acquire()
+        db.query('test', i + 1)
+          .get()
+          .then(() => s.release())
+      }),
+    )
+    await s.drain()
+    //res = (
+    //  await Promise.all(
+    //    Array.from({ length: N3 }).map((_, i) => db.query('test', i + 1).get()),
+    //  )
+    //).reduce((prev, cur) => prev + cur.length, 0)
+  }, 'q1')
+  console.log(toxps(N3, qtime1), 'q/s')
 
   assert(toxpsNum(N, ctime) > 1_000_000)
   assert(toxpsNum(N2, qtime) > 500)
@@ -88,43 +90,44 @@ await test('test client-server', async (t) => {
 
   await client1.setSchema(schema)
 
-  let start = performance.now()
+  const ctime = await perf(async () => {
+    let i = N
+    while (i--) {
+      client1.create('test', {
+        x: i % 100,
+        s: `hello ${i}`,
+      })
+    }
 
-  let i = N
-  while (i--) {
-    client1.create('test', {
-      x: i % 100,
-      s: `hello ${i}`,
-    })
-  }
-
-  await client1.drain()
-  const ctime = performance.now() - start
-  console.log(ctime, 'ms', toxps(N, ctime), 'c/s')
+    await client1.drain()
+  }, 'c')
+  console.log(toxps(N, ctime), 'c/s')
 
   const arr = Array.from({ length: N2 })
-  start = performance.now()
-  let res = (
-    await Promise.all(
-      arr.map(() =>
-        client1.query('test').filter('x', '=', 0).range(1, 10_001).get(),
-      ),
-    )
-  ).reduce((prev, cur) => prev + cur.length, 0)
-  const qtime = performance.now() - start
-  assert(res === 1_0000_000)
-  console.log(qtime, 'ms', toxps(N2, qtime), 'q/s')
 
-  start = performance.now()
-  res = (
-    await Promise.all(
-      Array.from({ length: N3 }).map((_, i) =>
-        client1.query('test', i + 1).get(),
-      ),
-    )
-  ).reduce((prev, cur) => prev + cur.length, 0)
-  const qtime1 = performance.now() - start
-  console.log(qtime1, 'ms', toxps(N3, qtime1), 'q/s')
+  let res = undefined
+  const qtime = await perf(async () => {
+    res = (
+      await Promise.all(
+        arr.map(() =>
+          client1.query('test').filter('x', '=', 0).range(1, 10_001).get(),
+        ),
+      )
+    ).reduce((prev, cur) => prev + cur.length, 0)
+  }, 'q')
+  assert(res === 1_0000_000)
+  console.log(toxps(N2, qtime), 'q/s')
+
+  const qtime1 = await perf(async () => {
+    res = (
+      await Promise.all(
+        Array.from({ length: N3 }).map((_, i) =>
+          client1.query('test', i + 1).get(),
+        ),
+      )
+    ).reduce((prev, cur) => prev + cur.length, 0)
+  }, 'q1')
+  console.log(toxps(N3, qtime1), 'q/s')
 
   assert(toxpsNum(N, ctime) > 1_000_000)
   assert(toxpsNum(N2, qtime) > 500)

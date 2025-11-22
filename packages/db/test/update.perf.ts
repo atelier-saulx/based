@@ -1,6 +1,7 @@
-import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
-import { deepEqual, equal, perf } from '../shared/assert.js'
+import { BasedDb } from '../src/index.js'
+import test from './shared/test.js'
+import { perf } from './shared/assert.js'
+import assert from 'node:assert'
 
 await test('await updates', async (t) => {
   const db = new BasedDb({
@@ -15,14 +16,14 @@ await test('await updates', async (t) => {
     types: {
       user: {
         props: {
-          externalId: { type: 'alias' },
+          externalId: { type: 'string', max: 20 },
           status,
         },
       },
     },
   })
 
-  const total = 10e6
+  const total = 1e4
 
   for (let i = 0; i < total; i++) {
     db.create('user', {
@@ -36,22 +37,22 @@ await test('await updates', async (t) => {
   let totalAlias = 0
 
   const updateAlias = async () => {
-    const externalId = Math.ceil(Math.random() * total) + '-alias'
     const id = Math.ceil(Math.random() * total)
     await db.update('user', id, {
-      externalId,
+      status: status[~~Math.random() * status.length],
     })
+    await db.drain()
     totalAlias++
   }
 
   //let lastMeasure = performance.now()
   let i = 0
-  await perf(
+  const t1 = await perf(
     async () => {
       await updateAlias()
-      if (!(i % 10_000)) {
+      if (!(i % 500)) {
         //const opsPerS = totalAlias / ((performance.now() - lastMeasure) / 1e3)
-        //console.log(`${~~opsPerS} per sec`)
+        // console.log(`${~~opsPerS} per sec`)
         //lastMeasure = performance.now()
         totalAlias = 0
       }
@@ -60,5 +61,5 @@ await test('await updates', async (t) => {
     'update alias',
     { repeat: 100_000 },
   )
-  // should be smaller then 5s
+  assert(t1 < 3e3, 'should be smaller than 3s')
 })

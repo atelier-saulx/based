@@ -1,6 +1,14 @@
-import { benchmark } from '../benchmarks/utils.js'
+import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.js'
+import { deepEqual, equal, throws, perf } from '../shared/assert.js'
 
-benchmark('create 1m items with 1 reference(s)', async (db) => {
+await test('create 1m items with 1 reference(s)', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
   await db.setSchema({
     types: {
       test: {
@@ -16,20 +24,25 @@ benchmark('create 1m items with 1 reference(s)', async (db) => {
 
   let i = 1000_000
   let prevId = db.create('test', {})
-  const start = performance.now()
 
-  while (i--) {
-    prevId = db.create('test', {
-      refs: [prevId],
-    })
-  }
+  await perf(async () => {
+    while (i--) {
+      prevId = db.create('test', {
+        refs: [prevId],
+      })
+    }
 
-  await db.drain()
-
-  return performance.now() - start
+    await db.drain()
+  }, '1m items with 1 reference(s)')
 })
 
-benchmark('create 1m items with 100 reference(s)', async (db) => {
+await test('create 1m items with 100 reference(s)', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
   await db.setSchema({
     types: {
       test: {
@@ -45,18 +58,16 @@ benchmark('create 1m items with 100 reference(s)', async (db) => {
 
   let i = 1000_000
   let prevIds = Array.from({ length: 100 }).map(() => db.create('test', {}))
-  const start = performance.now()
 
-  while (i--) {
-    prevIds.push(
-      db.create('test', {
-        refs: prevIds,
-      }),
-    )
-    prevIds.shift()
-  }
-
-  await db.drain()
-
-  return performance.now() - start
+  await perf(async () => {
+    while (i--) {
+      prevIds.push(
+        db.create('test', {
+          refs: prevIds,
+        }),
+      )
+      prevIds.shift()
+    }
+    await db.drain()
+  }, '1m items with 100 reference(s)')
 })
