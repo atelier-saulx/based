@@ -256,3 +256,12 @@ pub const Interval: type = enum(u8) {
     year = 14,
     // timeZone = 15, // ? seconds? or string?
 };
+
+pub const SortHeader = packed struct {
+    order: u8,
+    prop: u8, // use prop type for this
+    propType: PropType,
+    start: u16,
+    len: u16,
+    lang: LangCode,
+};

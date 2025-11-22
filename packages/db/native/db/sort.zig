@@ -93,22 +93,18 @@ fn getSortFlag(sortFieldType: types.PropType, desc: bool) !selva.SelvaSortOrder 
 }
 
 pub fn createSortIndexMeta(
-    start: u16,
-    len: u16,
-    prop: types.PropType,
+    header: types.SortHeader,
     desc: bool,
-    lang: types.LangCode,
-    field: u8,
 ) !SortIndexMeta {
-    const sortFlag = try getSortFlag(prop, desc);
+    const sortFlag = try getSortFlag(header.propType, desc);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, 0).?;
     const s: SortIndexMeta = .{
-        .len = len,
-        .start = start,
+        .len = header.len,
+        .start = header.start,
         .index = sortCtx,
-        .prop = prop,
-        .langCode = lang,
-        .field = field,
+        .prop = header.propType,
+        .langCode = header.lang,
+        .field = header.prop,
         .isCreated = false,
     };
     return s;
@@ -117,11 +113,7 @@ pub fn createSortIndexMeta(
 fn getOrCreateFromCtx(
     dbCtx: *db.DbCtx,
     typeId: db.TypeId,
-    field: u8,
-    start: u16,
-    len: u16,
-    prop: types.PropType,
-    lang: types.LangCode,
+    sortHeader: types.SortHeader,
     comptime desc: bool,
 ) !*SortIndexMeta {
     var sortIndex: ?*SortIndexMeta = undefined;
@@ -136,16 +128,16 @@ fn getOrCreateFromCtx(
         try dbCtx.sortIndexes.put(typeId, typeIndexes.?);
     }
     const tI: *TypeIndex = typeIndexes.?;
-    sortIndex = getSortIndex(typeIndexes, field, start, lang);
+    sortIndex = getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang);
     if (sortIndex == null) {
         sortIndex = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = try createSortIndexMeta(start, len, prop, desc, lang, field);
-        if (field == 0) {
-            try tI.main.put(start, sortIndex.?);
-        } else if (prop == types.PropType.TEXT) {
-            try tI.text.put(getTextKey(field, lang), sortIndex.?);
+        sortIndex.?.* = try createSortIndexMeta(sortHeader, desc);
+        if (sortHeader.prop == 0) {
+            try tI.main.put(sortHeader.start, sortIndex.?);
+        } else if (sortHeader.propType == types.PropType.TEXT) {
+            try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex.?);
         } else {
-            try tI.field.put(field, sortIndex.?);
+            try tI.field.put(sortHeader.prop, sortIndex.?);
         }
     }
     return sortIndex.?;
@@ -158,26 +150,13 @@ pub fn createSortIndex(
     dbCtx: *db.DbCtx,
     decompressor: *deflate.Decompressor,
     typeId: db.TypeId,
-    field: u8,
-    start: u16,
-    len: u16,
-    prop: types.PropType,
-    lang: types.LangCode,
+    header: types.SortHeader,
     comptime defrag: bool,
     comptime desc: bool,
 ) !*SortIndexMeta {
-    const sortIndex = try getOrCreateFromCtx(
-        dbCtx,
-        typeId,
-        field,
-        start,
-        len,
-        prop,
-        lang,
-        desc,
-    );
+    const sortIndex = try getOrCreateFromCtx(dbCtx, typeId, header, desc);
     const typeEntry = try db.getType(dbCtx, typeId);
-    const fieldSchema = try db.getFieldSchema(typeEntry, field);
+    const fieldSchema = try db.getFieldSchema(typeEntry, header.prop);
 
     // fill sort index needs to a special field
     var node = db.getFirstNode(typeEntry);
@@ -191,17 +170,17 @@ pub fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = if (prop == types.PropType.TEXT) db.getText(
+        const data = if (header.propType == types.PropType.TEXT) db.getText(
             typeEntry,
             node.?,
             fieldSchema,
-            prop,
-            lang,
+            header.propType,
+            header.lang,
         ) else db.getField(
             typeEntry,
             node.?,
             fieldSchema,
-            prop,
+            header.propType,
         );
         insert(decompressor, sortIndex, data, node.?);
     }
@@ -398,41 +377,4 @@ pub fn insert(
         types.PropType.UINT16 => insertIntIndex(u16, data, sortIndex, node),
         else => {},
     };
-}
-
-pub fn getSortIndexFromBuffer(
-    ctx: *db.DbCtx,
-    typeId: db.TypeId,
-    sortBuffer: []u8,
-) ?*SortIndexMeta {
-    const field = sortBuffer[0];
-    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
-    const start = read(u16, sortBuffer, 2);
-    return getSortIndex(ctx.sortIndexes.get(typeId), field, start, lang);
-}
-
-pub fn createSortIndexFromBuffer(
-    ctx: *db.DbCtx,
-    decompressor: *deflate.Decompressor,
-    typeId: db.TypeId,
-    sortBuffer: []u8,
-) !*SortIndexMeta {
-    const field = sortBuffer[0];
-    const sortPropType: types.PropType = @enumFromInt(sortBuffer[1]);
-    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
-    const start = read(u16, sortBuffer, 2);
-    const len = read(u16, sortBuffer, 4);
-    return createSortIndex(
-        ctx,
-        decompressor,
-        typeId,
-        field,
-        start,
-        len,
-        sortPropType,
-        lang,
-        true,
-        false,
-        // dont finish
-    );
 }

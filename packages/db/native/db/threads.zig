@@ -4,6 +4,7 @@ const Thread = std.Thread;
 const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const read = @import("../utils.zig").read;
+const readNext = @import("../utils.zig").readNext;
 const Query = @import("../query/query.zig");
 const Modify = @import("../modify/modify.zig");
 const selva = @import("../selva.zig").c;
@@ -14,6 +15,7 @@ const writeInt = @import("../utils.zig").writeInt;
 const jsBridge = @import("./jsBridge.zig");
 const sort = @import("./sort.zig");
 const OpType = @import("../types.zig").OpType;
+const SortHeader = @import("../types.zig").SortHeader;
 const Queue = std.array_list.Managed([]u8);
 
 pub fn getResultSlice(
@@ -202,7 +204,7 @@ pub const Threads = struct {
             var queryBuf: ?[]u8 = null;
             var modifyBuf: ?[]u8 = null;
             var op: OpType = undefined;
-            const sortIndex: ?*sort.SortIndexMeta = null;
+            var sortIndex: ?*sort.SortIndexMeta = null;
 
             self.mutex.lock();
 
@@ -216,22 +218,29 @@ pub const Threads = struct {
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
                     if (op == OpType.default) {
-                        const typeId = read(u16, q, 5);
-
-                        std.debug.print("derp typeId {any} {any} \n", .{ typeId, q });
-
-                        // if (sortSize > 0) {
-                        //     if (sort.getSortIndexFromBuffer(self.ctx, typeId, sortBuf)) |sortMetaIndex| {
-                        //         threadCtx.sortIndex = sortMetaIndex;
-                        //     } else {
-                        //         threadCtx.sortIndex = try sort.createSortIndexFromBuffer(
-                        //             self.ctx,
-                        //             threadCtx.decompressor,
-                        //             typeId,
-                        //             sortBuf,
-                        //         );
-                        //     }
-                        // }
+                        var index: usize = 5;
+                        const header = readNext(Query.Query.QueryDefaultHeader, q, &index);
+                        if (header.sortSize != 0) {
+                            const sortHeader = readNext(SortHeader, q, &index);
+                            if (sort.getSortIndex(
+                                self.ctx.sortIndexes.get(header.typeId),
+                                sortHeader.prop,
+                                sortHeader.start,
+                                sortHeader.lang,
+                            )) |sortMetaIndex| {
+                                sortIndex = sortMetaIndex;
+                            } else {
+                                // needs multi threading ofc
+                                sortIndex = try sort.createSortIndex(
+                                    self.ctx,
+                                    threadCtx.decompressor,
+                                    header.typeId,
+                                    sortHeader,
+                                    true,
+                                    false,
+                                );
+                            }
+                        }
                     }
                 }
             } else if (self.modifyQueue.items.len > 0 and threadCtx.pendingModifies > 0) {
@@ -307,6 +316,7 @@ pub const Threads = struct {
                             const data = try getResultSlice(true, threadCtx, 1, read(u32, m, 0), op);
                             data[0] = 67;
                         },
+                        else => {},
                     }
 
                     self.mutex.lock();

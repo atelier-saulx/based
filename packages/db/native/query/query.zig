@@ -4,7 +4,7 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
-const Query = @import("./common.zig");
+pub const Query = @import("./common.zig");
 
 const OpType = @import("../types.zig").OpType;
 const Sort = @import("../db/sort.zig");
@@ -72,9 +72,11 @@ pub fn getQueryThreaded(
     switch (op) {
         OpType.default => {
             const header = readNext(Query.QueryDefaultHeader, q, &index);
-            if (header.sortSize != 0) index += header.sortSize;
-            // const filterFn = sliceNext(header.filterSize, q, &index);
+            // sort allready handled higher up
+            index += header.sortSize;
+            // const filterSlice = sliceNext(header.filterSize, q, &index);
             // const search = sliceNext(header.searchSize, q, &index);
+
             // const sort = if (header.sortSize != 0) read(types.QuerySortHeader, q, &index) else null;
 
             // if (sort) |s| {
