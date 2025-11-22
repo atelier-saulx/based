@@ -1,6 +1,6 @@
 const read = @import("../../../utils.zig").read;
 const db = @import("../../../db/db.zig");
-const QueryCtx = @import("../../types.zig").QueryCtx;
+const QueryCtx = @import("../../common.zig").QueryCtx;
 const getFields = @import("../include.zig").getFields;
 const types = @import("../types.zig");
 const filter = @import("../../filter/filter.zig").filter;

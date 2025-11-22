@@ -51,6 +51,18 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
     }
 }
 
+pub inline fn readNext(T: type, q: []u8, offset: *usize) T {
+    const header = read(T, q, offset.*);
+    offset.* = offset.* + @bitSizeOf(T) / 8;
+    return header;
+}
+
+pub inline fn sliceNext(size: u16, q: []u8, offset: *usize) []u8 {
+    const value = q[offset .. offset + size];
+    offset.* += size;
+    return value;
+}
+
 pub fn debugPrint(comptime format: []const u8, args: anytype) void {
     if (config.enable_debug) {
         std.debug.print(format, args);

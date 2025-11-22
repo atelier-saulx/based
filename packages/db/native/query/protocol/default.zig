@@ -6,7 +6,7 @@ const isVectorSearch = @import("../filter/search.zig").isVectorSearch;
 const QuerySort = @import("../queryTypes/sort.zig");
 const QueryDefault = @import("../queryTypes/default.zig");
 const db = @import("../../db/db.zig");
-const t = @import("../types.zig");
+const t = @import("../common.zig");
 
 const std = @import("std");
 const ReadOp = @import("../../types.zig").ReadOp;

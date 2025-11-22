@@ -2,14 +2,14 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig").c;
-const Modify = @import("./ctx.zig");
+const Modify = @import("./common.zig");
 const utils = @import("../utils.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const references = @import("./references.zig");
 const reference = @import("./reference.zig");
 const types = @import("../types.zig");
 const subs = @import("./subscription.zig");
-const ModOp = @import("./types.zig").ModOp;
+const ModOp = Modify.ModOp;
 
 const read = utils.read;
 const copy = utils.copy;

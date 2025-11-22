@@ -2,7 +2,7 @@ const db = @import("../../db/db.zig");
 const deflate = @import("../../deflate.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../types.zig").QueryCtx;
+const QueryCtx = @import("../common.zig").QueryCtx;
 const AggFn = @import("../../types.zig").AggFn;
 const filter = @import("../filter/filter.zig").filter;
 const searchStr = @import("../filter/search.zig");
@@ -10,7 +10,7 @@ const s = @import("./search.zig");
 const std = @import("std");
 const utils = @import("../../utils.zig");
 const t = @import("../../types.zig");
-const FilterType = @import("../types.zig").FilterType;
+const FilterType = @import("../common.zig").FilterType;
 const filterTypes = @import("../filter//types.zig");
 
 const runConditions = @import("../filter/conditions.zig").runConditions;

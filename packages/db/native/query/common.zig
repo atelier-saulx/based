@@ -2,6 +2,7 @@ const std = @import("std");
 const results = @import("./results.zig");
 const db = @import("../db/db.zig");
 const types = @import("../types.zig");
+const utils = @import("../utils.zig");
 
 pub const QueryCtx = struct {
     results: std.array_list.Managed(results.Result),
@@ -49,6 +50,18 @@ pub const QuerySortHeader = packed struct {
     len: u16,
     lang: types.LangCode,
 };
+
+pub inline fn read(T: type, q: []u8, index: *usize) T {
+    const header = utils.read(T, q, index.*);
+    index.* = index.* + @bitSizeOf(T) / 8;
+    return header;
+}
+
+pub inline fn buffer(size: u16, q: []u8, index: *usize) []u8 {
+    const value = q[index .. index + size];
+    index.* += size;
+    return value;
+}
 
 // for filter etc
 // pub const QuerySort = struct {

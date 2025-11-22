@@ -1,10 +1,9 @@
-const assert = std.debug.assert;
 const std = @import("std");
 const selva = @import("../selva.zig").c;
 const types = @import("../types.zig");
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
-const Modify = @import("./ctx.zig");
+const Modify = @import("./common.zig");
 const createField = @import("./create.zig").createField;
 const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
 const deleteField = @import("./delete.zig").deleteField;
@@ -14,7 +13,6 @@ const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
 const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
 const Update = @import("./update.zig");
-const ModifyCtx = Modify.ModifyCtx;
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
 const dbSort = @import("../db/sort.zig");
@@ -24,8 +22,9 @@ const read = utils.read;
 const writeInt = utils.writeInt;
 const errors = @import("../errors.zig");
 const getResultSlice = @import("../db/threads.zig").getResultSlice;
-pub const ModifyType = @import("./types.zig").ModifyType;
-const ModOp = @import("./types.zig").ModOp;
+const assert = std.debug.assert;
+const ModOp = Modify.ModOp;
+const ModifyCtx = Modify.ModifyCtx;
 
 //  ----------NAPI-------------
 pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {

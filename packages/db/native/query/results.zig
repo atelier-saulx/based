@@ -1,6 +1,6 @@
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
-const QueryCtx = @import("./types.zig").QueryCtx;
+const QueryCtx = @import("./common.zig").QueryCtx;
 const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const std = @import("std");

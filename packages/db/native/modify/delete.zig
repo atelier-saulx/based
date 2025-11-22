@@ -1,12 +1,12 @@
+const Modify = @import("./common.zig");
 const db = @import("../db/db.zig");
 const sort = @import("../db/sort.zig");
-const Modify = @import("./ctx.zig");
 const std = @import("std");
 const types = @import("../types.zig");
-const ModifyCtx = Modify.ModifyCtx;
 const utils = @import("../utils.zig");
 const references = @import("./references.zig");
 const subs = @import("./subscription.zig");
+const ModifyCtx = Modify.ModifyCtx;
 
 // TODO: can optmize this greatly, espcialy text
 pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {

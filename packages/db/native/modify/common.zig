@@ -25,6 +25,32 @@ pub const ModifyCtx = struct {
     threadCtx: *db.DbThread,
 };
 
+pub const ModOp = enum(u8) {
+    SWITCH_FIELD = 0,
+    SWITCH_ID_UPDATE = 1,
+    SWITCH_TYPE = 2,
+    CREATE_PROP = 3,
+    DELETE_SORT_INDEX = 4,
+    UPDATE_PARTIAL = 5,
+    UPDATE_PROP = 6,
+    ADD_EMPTY_SORT = 7,
+    SWITCH_ID_CREATE_UNSAFE = 8,
+    SWITCH_ID_CREATE = 9,
+    SWITCH_ID_CREATE_RING = 19,
+    SWITCH_EDGE_ID = 20,
+    DELETE_NODE = 10,
+    DELETE = 11,
+    INCREMENT = 12,
+    DECREMENT = 13,
+    EXPIRE = 14,
+    ADD_EMPTY_SORT_TEXT = 15,
+    DELETE_TEXT_FIELD = 16,
+    UPSERT = 17,
+    INSERT = 18,
+    PADDING = 255,
+    _,
+};
+
 pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {
     const index = tmpId * 5;
     return read(u32, ctx.batch, index);

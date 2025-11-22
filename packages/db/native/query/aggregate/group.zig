@@ -6,7 +6,7 @@ const types = @import("../../types.zig");
 const GroupByHashMap = @import("./types.zig").GroupByHashMap;
 const read = utils.read;
 const db = @import("../../db/db.zig");
-const QueryCtx = @import("../types.zig").QueryCtx;
+const QueryCtx = @import("../common.zig").QueryCtx;
 const aggregateTypes = @import("../aggregate/types.zig");
 
 pub const ProtocolLen = 18;

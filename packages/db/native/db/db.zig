@@ -3,7 +3,7 @@ const errors = @import("../errors.zig");
 const std = @import("std");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig").c;
-const modifyCtx = @import("../modify/ctx.zig");
+const Modify = @import("../modify/common.zig");
 const utils = @import("../utils.zig");
 const types = @import("../types.zig");
 const valgrind = @import("../valgrind.zig");
@@ -204,11 +204,11 @@ pub fn getReferences(node: Node, fieldSchema: FieldSchema) ?References {
     return selva.selva_fields_get_references(node, fieldSchema);
 }
 
-pub fn clearReferences(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: FieldSchema) void {
+pub fn clearReferences(ctx: *Modify.ModifyCtx, node: Node, fieldSchema: FieldSchema) void {
     selva.selva_fields_clear_references(ctx.db.selva, node, fieldSchema, markDirtyCb, ctx);
 }
 
-pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: FieldSchema, id: u32) !void {
+pub fn deleteReference(ctx: *Modify.ModifyCtx, node: Node, fieldSchema: FieldSchema, id: u32) !void {
     try errors.selva(selva.selva_fields_del_ref(
         ctx.db.selva,
         node,
@@ -220,7 +220,7 @@ pub fn deleteReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
     const dstType = efc.*.dst_node_type;
-    modifyCtx.markDirtyRange(ctx, dstType, id);
+    Modify.markDirtyRange(ctx, dstType, id);
 }
 
 pub fn referencesHas(refs: References, dstNodeId: u32) bool {
@@ -271,7 +271,7 @@ pub fn setColvec(te: Type, nodeId: selva.node_id_t, fieldSchema: FieldSchema, ve
     );
 }
 
-pub fn writeReference(ctx: *modifyCtx.ModifyCtx, src: Node, fieldSchema: FieldSchema, dst: Node) !?ReferenceLarge {
+pub fn writeReference(ctx: *Modify.ModifyCtx, src: Node, fieldSchema: FieldSchema, dst: Node) !?ReferenceLarge {
     var refAny: selva.SelvaNodeReferenceAny = undefined;
 
     errors.selva(selva.selva_fields_reference_set(
@@ -301,18 +301,18 @@ pub fn writeReference(ctx: *modifyCtx.ModifyCtx, src: Node, fieldSchema: FieldSc
     return refAny.p.large;
 }
 
-pub fn putReferences(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: FieldSchema, ids: []u32) !void {
+pub fn putReferences(ctx: *Modify.ModifyCtx, node: Node, fieldSchema: FieldSchema, ids: []u32) !void {
     try errors.selva(selva.selva_fields_references_insert_tail(ctx.db.selva, node, fieldSchema, try getRefDstType(ctx.db, fieldSchema), ids.ptr, ids.len, markDirtyCb, ctx));
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
     const dstType = efc.*.dst_node_type;
     for (ids) |id| {
-        modifyCtx.markDirtyRange(ctx, dstType, id);
+        Modify.markDirtyRange(ctx, dstType, id);
     }
 }
 
 // @param index 0 = first; -1 = last.
-pub fn insertReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: FieldSchema, dstNode: Node, index: isize, reorder: bool) !selva.SelvaNodeReferenceAny {
+pub fn insertReference(ctx: *Modify.ModifyCtx, node: Node, fieldSchema: FieldSchema, dstNode: Node, index: isize, reorder: bool) !selva.SelvaNodeReferenceAny {
     const te_dst = selva.selva_get_type_by_node(ctx.db.selva, dstNode);
     var ref: selva.SelvaNodeReferenceAny = undefined;
     const insertFlags: selva.selva_fields_references_insert_flags = if (reorder) selva.SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER else 0;
@@ -325,7 +325,7 @@ pub fn insertReference(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: Field
         // relevant when updating
         const efc = selva.selva_get_edge_field_constraint(fieldSchema);
         const dstType = efc.*.dst_node_type;
-        modifyCtx.markDirtyRange(ctx, dstType, getNodeId(dstNode));
+        Modify.markDirtyRange(ctx, dstType, getNodeId(dstNode));
     }
 
     return ref;
@@ -438,14 +438,14 @@ pub fn getEdgeReferences(
 
 // TODO This is now hll specific but we might want to change it.
 pub fn ensurePropTypeString(
-    ctx: *modifyCtx.ModifyCtx,
+    ctx: *Modify.ModifyCtx,
     fieldSchema: FieldSchema,
 ) !*selva.selva_string {
     return selva.selva_fields_ensure_string(ctx.node.?, fieldSchema, selva.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
 pub fn ensureEdgePropTypeString(
-    ctx: *modifyCtx.ModifyCtx,
+    ctx: *Modify.ModifyCtx,
     node: Node,
     efc: EdgeFieldConstraint,
     ref: ReferenceLarge,
@@ -455,30 +455,30 @@ pub fn ensureEdgePropTypeString(
     return selva.selva_fields_ensure_string(edge_node, fieldSchema, selva.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
 }
 
-pub fn ensureRefEdgeNode(ctx: *modifyCtx.ModifyCtx, node: Node, efc: EdgeFieldConstraint, ref: ReferenceLarge) !Node {
+pub fn ensureRefEdgeNode(ctx: *Modify.ModifyCtx, node: Node, efc: EdgeFieldConstraint, ref: ReferenceLarge) !Node {
     const edgeNode = selva.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0, markDirtyCb, ctx);
     if (edgeNode) |n| {
-        modifyCtx.markDirtyRange(ctx, efc.edge_node_type, getNodeId(n));
+        Modify.markDirtyRange(ctx, efc.edge_node_type, getNodeId(n));
         return n;
     } else {
         return errors.SelvaError.SELVA_ENOTSUP;
     }
 }
 
-pub fn preallocReferences(ctx: *modifyCtx.ModifyCtx, len: u64) void {
+pub fn preallocReferences(ctx: *Modify.ModifyCtx, len: u64) void {
     _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
 }
 
 pub fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.c) void {
-    const mctx: *modifyCtx.ModifyCtx = @ptrCast(@alignCast(ctx));
-    modifyCtx.markDirtyRange(mctx, typeId, nodeId);
+    const mctx: *Modify.ModifyCtx = @ptrCast(@alignCast(ctx));
+    Modify.markDirtyRange(mctx, typeId, nodeId);
 }
 
-pub fn deleteField(ctx: *modifyCtx.ModifyCtx, node: Node, fieldSchema: FieldSchema) !void {
+pub fn deleteField(ctx: *Modify.ModifyCtx, node: Node, fieldSchema: FieldSchema) !void {
     try errors.selva(selva.selva_fields_del(ctx.db.selva, node, fieldSchema, markDirtyCb, ctx));
 }
 
-pub fn deleteTextFieldTranslation(ctx: *modifyCtx.ModifyCtx, fieldSchema: FieldSchema, lang: types.LangCode) !void {
+pub fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: FieldSchema, lang: types.LangCode) !void {
     return errors.selva(selva.selva_fields_set_text(ctx.node, fieldSchema, &selva.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
 }
 
@@ -487,15 +487,15 @@ pub fn getRefTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
     return result;
 }
 
-pub fn deleteNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, node: Node) !void {
+pub fn deleteNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) !void {
     selva.selva_del_node(ctx.db.selva, typeEntry, node, markDirtyCb, ctx);
 }
 
-pub fn flushNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, node: Node) void {
+pub fn flushNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) void {
     selva.selva_flush_node(ctx.db.selva, typeEntry, node, markDirtyCb, ctx);
 }
 
-pub fn upsertNode(ctx: *modifyCtx.ModifyCtx, typeEntry: Type, id: u32) !Node {
+pub fn upsertNode(ctx: *Modify.ModifyCtx, typeEntry: Type, id: u32) !Node {
     const node = selva.selva_upsert_node(ctx.db.selva, typeEntry, id);
     if (node == null) {
         return errors.SelvaError.SELVA_CANNOT_UPSERT;
@@ -669,12 +669,12 @@ pub inline fn getText(
     return getTextFromValue(data, langCode);
 }
 
-pub fn expireNode(ctx: *modifyCtx.ModifyCtx, typeId: TypeId, nodeId: u32, ts: i64) void {
+pub fn expireNode(ctx: *Modify.ModifyCtx, typeId: TypeId, nodeId: u32, ts: i64) void {
     selva.selva_expire_node(ctx.db.selva, typeId, nodeId, ts, selva.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
-    modifyCtx.markDirtyRange(ctx, typeId, nodeId);
+    Modify.markDirtyRange(ctx, typeId, nodeId);
 }
 
-pub fn expire(ctx: *modifyCtx.ModifyCtx) void {
+pub fn expire(ctx: *Modify.ModifyCtx) void {
     // Expire things before query
     selva.selva_db_expire_tick(ctx.db.selva, markDirtyCb, ctx, std.time.timestamp());
 }

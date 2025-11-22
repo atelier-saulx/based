@@ -4,24 +4,25 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
-const types = @import("./types.zig");
-const QueryCtx = types.QueryCtx;
+const Query = @import("./common.zig");
+
 const OpType = @import("../types.zig").OpType;
 const Sort = @import("../db/sort.zig");
+
 const QuerySort = @import("./queryTypes/sort.zig");
 const QueryDefault = @import("./queryTypes/default.zig");
 const QueryId = @import("./queryTypes/id.zig");
 const QueryIds = @import("./queryTypes/ids.zig");
 const QueryAlias = @import("./queryTypes/alias.zig");
 const AggDefault = @import("./queryTypes/aggregate.zig");
-
 const aggregateTypes = @import("./aggregate/types.zig");
-const utils = @import("../utils.zig");
 const filter = @import("./filter/filter.zig").filter;
 const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
 const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
-
 const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
+
+const readNext = @import("../utils.zig").readNext;
+const sliceNext = @import("../utils.zig").sliceNext;
 
 // -------- NAPI ---------- (put in js bridge maybe?)
 pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
@@ -39,11 +40,6 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
     return null;
 }
 // -------------------------
-inline fn read(T: type, q: []u8, index: *usize) T {
-    const header = utils.read(T, q, index.*);
-    index.* = index.* + @bitSizeOf(T) / 8;
-    return header;
-}
 
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
@@ -57,8 +53,8 @@ pub fn getQueryThreaded(
     const allocator = arena.allocator();
     var index: usize = 0;
 
-    var ctx: QueryCtx = .{
-        .id = read(u32, q, &index),
+    var ctx: Query.QueryCtx = .{
+        .id = readNext(u32, q, &index),
         .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
         .size = 0,
@@ -68,17 +64,22 @@ pub fn getQueryThreaded(
         .threadCtx = threadCtx,
     };
 
-    const op = read(OpType, q, &index);
+    const op = readNext(OpType, q, &index);
 
     // const q = batch[4 .. batch.len - 8];
     // const len = q.len - 8;
 
     switch (op) {
         OpType.default => {
-            const header = read(types.QueryDefaultHeader, q, &index);
-            const sort = if (header.sortSize != 0) read(types.QuerySortHeader, q, &index) else null;
+            const header = readNext(Query.QueryDefaultHeader, q, &index);
+            if (header.sortSize != 0) index += header.sortSize;
+            // const filterFn = sliceNext(header.filterSize, q, &index);
+            // const search = sliceNext(header.searchSize, q, &index);
+            // const sort = if (header.sortSize != 0) read(types.QuerySortHeader, q, &index) else null;
 
-            std.debug.print("SORT {any} {any} \n", .{ header, sort });
+            // if (sort) |s| {
+            // std.debug.print("HEADEr {any}  SORT {any} \n", .{ header, s });
+            // }
             // [order] [prop] [propType] [start] [start] [len] [len] [lan]
 
             //

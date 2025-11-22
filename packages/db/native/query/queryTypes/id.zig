@@ -1,7 +1,7 @@
 const db = @import("../../db/db.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../types.zig").QueryCtx;
+const QueryCtx = @import("../common.zig").QueryCtx;
 const filter = @import("../filter/filter.zig").filter;
 
 const std = @import("std");
