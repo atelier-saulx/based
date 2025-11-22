@@ -258,17 +258,19 @@ pub const Threads = struct {
                 switch (op) {
                     OpType.saveBlock => {
                         const data = try getResultSlice(true, threadCtx, 26, 0, op);
-                        const start = read(u32, q, 5);
                         const typeCode = read(u16, q, 9);
+                        const start = read(u32, q, 5);
+                        const filename = q[11..q.len];
                         _ = selva.memcpy(data[4..10].ptr, q[5..11].ptr, 6);
                         var hash: SelvaHash128 = 0;
-                        const err = dump.saveBlock(self.ctx, typeCode, start, q[11..q.len], &hash);
+                        const err = dump.saveBlock(self.ctx, typeCode, start, filename, &hash);
                         _ = selva.memcpy(data[0..4].ptr, &err, 4);
                         _ = selva.memcpy(data[10..16].ptr, &hash, 16);
                     },
                     OpType.saveCommon => {
                         const data = try getResultSlice(true, threadCtx, 4, 0, op);
-                        const err = dump.saveCommon(self.ctx, q[5..q.len]);
+                        const filename = q[5..q.len];
+                        const err = dump.saveCommon(self.ctx, filename);
                         _ = selva.memcpy(data[0..4].ptr, &err, 4);
                     },
                     else => {
@@ -319,6 +321,17 @@ pub const Threads = struct {
                         OpType.unload => {
                             const data = try getResultSlice(true, threadCtx, 1, read(u32, m, 0), op);
                             data[0] = 67;
+
+                            const start: u32 = read(u32, m, 5);
+                            const typeCode: u16 = read(u16, m, 9);
+                            const filename = m[11].ptr;
+
+                            var hash: SelvaHash128 = 0;
+                            const err = dump.saveBlock(self.ctx, typeCode, start, filename, &hash);
+                            _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                            _ = selva.memcpy(data[10..16].ptr, &hash, 16);
+
+                            dump.delBlock(self.ctx, typeCode, start);
                         },
                         else => {},
                     }

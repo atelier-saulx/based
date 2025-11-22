@@ -63,14 +63,9 @@ pub fn loadBlock(napi_env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return res;
 }
 
-pub fn delBlock(napi_env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    const args = napi.getArgs(3, napi_env, info) catch return null;
-    const ctx = napi.get(*db.DbCtx, napi_env, args[0]) catch return null;
-    const typeId = napi.get(u16, napi_env, args[1]) catch return null;
-    const start = napi.get(u32, napi_env, args[2]) catch return null;
-
-    const te = selva.selva_get_type_by_index(ctx.selva, typeId);
-
-    selva.selva_del_block(ctx.selva, te, start);
-    return null;
+pub fn delBlock(ctx: *db.DbCtx, typeCode: u16, start: u32) void {
+    const te = selva.selva_get_type_by_index(ctx.selva, typeCode);
+    if (te) {
+        selva.selva_del_block(ctx.selva, te, start);
+    }
 }
