@@ -94,8 +94,8 @@ fn selvaLangAll(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
 }
 
 fn stringByteLength(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
-    const args = napi.getArgs(2, env, nfo) catch return null;
-    var len: usize = undefined;
+    const args = napi.getArgs(1, env, nfo) catch return null;
+    var len: usize = 0;
     var result: napi.Value = undefined;
 
     _ = napi.c.napi_get_value_string_utf8(env, args[0], null, 0, &len);
@@ -105,12 +105,27 @@ fn stringByteLength(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
 }
 
 fn stringToUint8Array(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
-    const args = napi.getArgs(2, env, nfo) catch return null;
-    const dst = napi.get([]u8, env, args[0]) catch return null;
+    const args = napi.getArgs(4, env, nfo) catch return null;
+    const src = args[0];
+    const dst = napi.get([]u8, env, args[1]) catch return null;
+    const offset = napi.get(usize, env, args[2]) catch return null;
+    const terminate = napi.get(bool, env, args[3]) catch return null;
     var bytesCopied: usize = 0;
     var result: napi.Value = undefined;
 
-    _ = napi.c.napi_get_value_string_utf8(env, args[1], dst.ptr, dst.len, &bytesCopied);
+    const dstPtr = dst.ptr + offset;
+    const dstLen = dst.len - offset;
+
+    if (terminate) {
+        _ = napi.c.napi_get_value_string_utf8(env, src, dstPtr, dstLen, &bytesCopied);
+    } else {
+        const len = dstLen + 1;
+        const buf = selva.selva_malloc(len);
+        _ = napi.c.napi_get_value_string_utf8(env, src, @ptrCast(buf), len, &bytesCopied);
+        _ = selva.memcpy(dstPtr, buf, bytesCopied);
+        selva.selva_free(buf);
+    }
+
     _ = napi.c.napi_create_double(env, @floatFromInt(bytesCopied), &result);
 
     return result;

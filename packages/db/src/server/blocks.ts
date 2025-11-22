@@ -1,7 +1,7 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { DECODER, ENCODER, equals, readUint16, readUint32, writeUint16, writeUint32 } from '@based/utils'
+import { DECODER, equals, readUint16, readUint32, writeUint16, writeUint32 } from '@based/utils'
 import { BLOCK_HASH_SIZE, BlockHash, BlockMap, makeTreeKey, destructureTreeKey, Block } from './blockMap.js'
 import { DbServer } from './index.js'
 import { writeFile } from 'node:fs/promises'
@@ -98,11 +98,11 @@ export function registerBlockIoListeners(db: DbServer) {
 }
 
 async function saveCommon(db: DbServer): Promise<void> {
-  const filepath = ENCODER.encode(join(db.fileSystemPath, COMMON_SDB_FILE))
-  const msg = new Uint8Array(5 + filepath.byteLength + 1)
+  const filename = join(db.fileSystemPath, COMMON_SDB_FILE)
+  const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
   msg[4] = QOP_SAVE_COMMON
-  msg.set(filepath, 5)
+  native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
     db.addQueryOnceListener(QOP_SAVE_COMMON, msg, (buf: Uint8Array) => {
@@ -129,13 +129,13 @@ async function saveBlocks(
     const [typeId, start] = destructureTreeKey(block.key)
     const def = db.schemaTypesParsedById[typeId]
     const end = start + def.blockCapacity - 1
-    const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(typeId, start, end)))
-    const msg = new Uint8Array(5 + filepath.byteLength + 1)
+    const filename = join(db.fileSystemPath, BlockMap.blockSdbFile(typeId, start, end))
+    const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
     msg[4] = QOP_SAVE_BLOCK
     writeUint32(msg, start, 5)
     writeUint16(msg, typeId, 9)
-    msg.set(filepath, 11)
+    native.stringToUint8Array(filename, msg, 11, true)
 
     const p = BlockMap.setIoPromise(block)
     native.getQueryBufThread(msg, db.dbCtxExternal)
@@ -144,11 +144,10 @@ async function saveBlocks(
 }
 
 export async function loadCommon(db: DbServer, filename: string): Promise<void> {
-  const filepath = ENCODER.encode(filename)
-  const msg = new Uint8Array(5 + filepath.byteLength + 1)
+  const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
   msg[4] = MOP_LOAD_COMMON
-  msg.set(filepath, 5)
+  native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
     // FIXME
@@ -168,11 +167,10 @@ export async function loadCommon(db: DbServer, filename: string): Promise<void> 
 }
 
 export async function loadBlockRaw(db: DbServer, filename: string): Promise<void> {
-  const filepath = ENCODER.encode(filename)
-  const msg = new Uint8Array(6 + filepath.byteLength + 1)
+  const msg = new Uint8Array(6 + native.stringByteLength(filename) + 1)
 
   msg[4] = MOP_LOAD_BLOCK
-  msg.set(filepath, 5)
+  native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
     // FIXME
@@ -210,11 +208,11 @@ export async function loadBlock(
   }
 
   const end = start + def.blockCapacity - 1
-  const filepath = ENCODER.encode((join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end))))
-  const msg = new Uint8Array(5 + filepath.byteLength + 1)
+  const filename = (join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end)))
+  const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
   msg[4] = MOP_LOAD_BLOCK
-  msg.set(filepath, 5)
+  native.stringToUint8Array(filename, msg, 5, true)
 
   const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)
@@ -236,11 +234,11 @@ export async function unloadBlock(
     throw new Error(`No such block: ${key}`)
   }
 
-  const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end)))
-  const msg = new Uint8Array(5 + filepath.byteLength + 1)
+  const filename = join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end))
+  const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
   msg[4] = MOP_UNLOAD_BLOCK
-  msg.set(filepath, 5)
+  native.stringToUint8Array(filename, msg, 5, true)
 
   const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)

@@ -116,6 +116,14 @@ pub inline fn get(comptime T: type, env: Env, value: Value) !T {
         return res;
     }
 
+    if (T == usize) {
+        var tmp: f64 = undefined;
+        if (c.napi_get_value_double(env, value, &tmp) != Ok) {
+            return errors.Napi.CannotGetInt;
+        }
+        return @as(usize, @intFromFloat(tmp));
+    }
+
     if (T == bool) {
         if (c.napi_get_value_bool(env, value, @ptrCast(&res)) != Ok) {
             return errors.Napi.CannotGetBool;
