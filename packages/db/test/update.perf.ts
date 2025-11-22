@@ -58,8 +58,8 @@ await test('await updates', async (t) => {
       }
       i++
     },
-    'should be smaller then 5s',
+    'update alias',
     { repeat: 100_000 },
   )
-  assert(t1 < 3e3, 'delete 1M users')
+  assert(t1 < 3e3, 'should be smaller than 3s')
 })
