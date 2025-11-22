@@ -340,6 +340,15 @@ pub const Threads = struct {
                             _ = selva.memcpy(data[10..16].ptr, &hash, 16);
 
                         },
+                        OpType.loadCommon => {
+                            std.debug.print("LOAD COMMON\n", .{});
+                            const data = try getResultSlice(true, threadCtx, 20 + 492, read(u32, m, 0), op);
+                            const filename = m[5..m.len - 5];
+
+                            const errlog = data[5..data.len - 5];
+                            const err = dump.loadCommon(self.ctx, filename, errlog);
+                            _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                        },
                         else => {},
                     }
 

@@ -14,6 +14,7 @@ pub const OpType = enum(u8) {
     modify = 10,
     loadBlock = 22,
     unloadBlock = 33,
+    loadCommon = 44,
 
     // Save Operations
     saveBlock = 67,
