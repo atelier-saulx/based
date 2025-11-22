@@ -97,8 +97,6 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
 
-    registerFunction(env, exports, "saveCommon", dump.saveCommon) catch return null;
-    registerFunction(env, exports, "saveBlock", dump.saveBlock) catch return null;
     registerFunction(env, exports, "loadCommon", dump.loadCommon) catch return null;
     registerFunction(env, exports, "loadBlock", dump.loadBlock) catch return null;
     registerFunction(env, exports, "delBlock", dump.delBlock) catch return null;

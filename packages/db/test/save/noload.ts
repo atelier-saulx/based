@@ -190,13 +190,13 @@ await test('references', async (t) => {
   for (const type of db.server.blockMap.types()) {
     for (const block of db.server.blockMap.blocks(type)) {
       if (block.key === 8589934593) {
-        assert(block.loadPromise)
+        assert(block.ioPromise)
         deepEqual(block.status === 'inmem', false)
         block1 = block
       }
     }
   }
   await p
-  assert(!block1.loadPromise)
+  assert(!block1.ioPromise)
   deepEqual(block1.status, 'inmem')
 })

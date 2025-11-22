@@ -16,7 +16,7 @@ pub const OpType = enum(u8) {
     unload = 33,
 
     // Save Operations
-    save = 67,
+    saveBlock = 67,
     saveCommon = 69,
 };
 

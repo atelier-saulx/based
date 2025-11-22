@@ -3,7 +3,7 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BlockMap, makeTreeKey } from './blockMap.js'
-import { Writelog, foreachBlock } from './blocks.js'
+import { Writelog, foreachBlock, registerBlockIoListeners } from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
 import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
@@ -80,6 +80,7 @@ export async function start(db: DbServer, opts: StartOpts) {
       handleModifyListeners(db, buffer)
     }
   })
+  registerBlockIoListeners(db)
 
   let writelog: Writelog = null
   let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]

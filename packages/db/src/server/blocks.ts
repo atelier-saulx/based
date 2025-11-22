@@ -1,7 +1,7 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { ENCODER, equals, readUint32, writeUint16, writeUint32 } from '@based/utils'
+import { ENCODER, equals, readUint16, readUint32, writeUint16, writeUint32 } from '@based/utils'
 import { BLOCK_HASH_SIZE, BlockHash, BlockMap, makeTreeKey, destructureTreeKey, Block } from './blockMap.js'
 import { DbServer } from './index.js'
 import { writeFile } from 'node:fs/promises'
@@ -38,12 +38,12 @@ type IoJobBlock = {
   start: number
 }
 
-export function addSBlockisterners(db: DbServer) {
-  db.addQueryListener(0, (buf: Uint8Array) => {
-    const typeId = readUint32(buf, 8)
-    const start = readUint32(buf, 12)
-    const err = readUint32(buf, 16)
-    const hash = buf.slice(20, 20 + BLOCK_HASH_SIZE)
+export function registerBlockIoListeners(db: DbServer) {
+  db.addQueryListener(67, (buf: Uint8Array) => {
+    const err = readUint32(buf, 0)
+    const start = readUint32(buf, 4)
+    const typeId = readUint16(buf, 8)
+    const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
     const key = makeTreeKey(typeId, start)
 
     if (err === SELVA_ENOENT) {
@@ -51,17 +51,18 @@ export function addSBlockisterners(db: DbServer) {
       // attempt to access them.
       db.blockMap.removeBlock(key)
     } else if (err) {
-      db.emit(
-        'error',
-        `Save ${typeId}:${start} failed: ${native.selvaStrerror(err)}`,
-      )
-    } else {
       const block = db.blockMap.updateBlock(key, hash)
+      const errMsg = `Save ${typeId}:${start} failed: ${native.selvaStrerror(err)}`
+      db.emit('error', errMsg)
+      block.ioPromise.reject(errMsg)
+    } else {
       block.ioPromise?.resolve()
     }
   })
 
-  db.addModifyListener(new Uint8Array(0), (buf: Uint8Array) => {
+  const LOAD = 0
+  const UNLOAD = 1
+  db.addModifyListener(0, (buf: Uint8Array) => {
     const op = 0
     const typeId = readUint32(buf, 8)
     const start = readUint32(buf, 12)
@@ -95,6 +96,25 @@ export function addSBlockisterners(db: DbServer) {
   })
 }
 
+async function saveCommon(db: DbServer): Promise<void> {
+  const filepath = ENCODER.encode(join(db.fileSystemPath, COMMON_SDB_FILE))
+  const msg = new Uint8Array(filepath.byteLength + 1)
+  msg.set(filepath, 6)
+
+  return new Promise((resolve, reject) => {
+    db.addQueryOnceListener(69, msg, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
 function setIoPromise(block: Block): Promise<void> {
     const p = block.ioPromise = Promise.withResolvers<void>()
     p.promise.then(() => block.ioPromise = null)
@@ -110,7 +130,7 @@ async function saveBlocks(
     const def = db.schemaTypesParsedById[typeId]
     const end = start + def.blockCapacity - 1
     const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(typeId, start, end)))
-    const msg = new Uint8Array(6 + filepath.byteLength)
+    const msg = new Uint8Array(6 + filepath.byteLength + 1)
 
     // TODO MSG
     writeUint32(msg, start, 0)
@@ -143,7 +163,7 @@ export async function loadBlock(
 
   const end = start + def.blockCapacity - 1
   const filepath = ENCODER.encode((join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end))))
-  const msg = new Uint8Array(8 + filepath.byteLength)
+  const msg = new Uint8Array(8 + filepath.byteLength + 1)
 
   // TODO MSG
   msg.set(filepath, 8)
@@ -169,7 +189,7 @@ export async function unloadBlock(
   }
 
   const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end)))
-  const msg = new Uint8Array(8 + filepath.byteLength)
+  const msg = new Uint8Array(8 + filepath.byteLength + 1)
 
   // TODO MSG
   msg.set(filepath, 8)
@@ -270,31 +290,10 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
   db.saveInProgress = true
 
   try {
-    let err: number
-    err = native.saveCommon(
-      join(db.fileSystemPath, COMMON_SDB_FILE),
-      db.dbCtxExternal,
-    )
-    if (err) {
-      db.emit('error', `Save common failed: ${err}`)
-      // Return ?
-    }
+    await saveCommon(db)
 
-    const blocks: {
-      filepath: string
-      typeId: number
-      start: number
-    }[] = []
-
-    db.blockMap.foreachDirtyBlock((typeId, start, end) => {
-      const file = BlockMap.blockSdbFile(typeId, start, end)
-      const filepath = join(db.fileSystemPath, file)
-      blocks.push({
-        filepath,
-        typeId,
-        start,
-      })
-    })
+    const blocks: Block[] = []
+    db.blockMap.foreachDirtyBlock((typeId, start, end, block) => blocks.push(block))
     await saveBlocks(db, blocks)
 
     try {

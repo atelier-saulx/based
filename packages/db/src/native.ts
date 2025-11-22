@@ -63,22 +63,6 @@ const native = {
     return db.stop(dbCtx)
   },
 
-  saveCommon: (path: string, dbCtx: any): number => {
-    const pathBuf = ENCODER.encode(path + '\0')
-    return db.saveCommon(pathBuf, dbCtx)
-  },
-
-  saveBlock: (
-    path: string,
-    typeCode: number,
-    start: number,
-    dbCtx: any,
-    hashOut: Uint8Array,
-  ): number => {
-    const pathBuf = ENCODER.encode(path + '\0')
-    return db.saveBlock(pathBuf, typeCode, start, dbCtx, hashOut)
-  },
-
   loadCommon: (path: string, dbCtx: any): void => {
     const pathBuf = ENCODER.encode(path + '\0')
     const err: number = db.loadCommon(pathBuf, dbCtx, selvaIoErrlog)
