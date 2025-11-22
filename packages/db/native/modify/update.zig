@@ -175,21 +175,21 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                     const sI = ctx.typeSortIndex.?.main.get(start);
                     if (sI != null) {
                         sort.remove(ctx.threadCtx.decompressor, sI.?, currentData, ctx.node.?);
-                        copy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                        copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
                         sort.insert(ctx.threadCtx.decompressor, sI.?, currentData, ctx.node.?);
                     } else {
-                        copy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                        copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
                     }
                 } else {
-                    copy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                    copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
                 }
             } else if (ctx.currentSortIndex != null) {
                 sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
-                copy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
                 subs.stage(ctx, subs.Op.update);
             } else {
-                copy(currentData[start .. start + l], operation[4 .. 4 + l]);
+                copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
                 subs.stage(ctx, subs.Op.update);
             }
             j += 4 + l;

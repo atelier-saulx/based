@@ -10,7 +10,6 @@ const aggregate = @import("../aggregate/aggregate.zig").aggregate;
 const t = @import("../../types.zig");
 
 const read = utils.read;
-const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 const GroupProtocolLen = groupFunctions.ProtocolLen;
 const setGroupResults = groupFunctions.setGroupResults;

@@ -63,7 +63,7 @@ pub fn writeEdges(
                     if (fieldOp == t.ModOp.increment or fieldOp == t.ModOp.decrement) {
                         _ = update.incrementBuffer(op, @enumFromInt(data[j + 5]), val, edgeData);
                     } else {
-                        copy(val[start .. start + l], edgeData[start .. start + l]);
+                        copy(u8, val[start .. start + l], edgeData[start .. start + l]);
                     }
                 }
             } else {

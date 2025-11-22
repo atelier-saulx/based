@@ -37,10 +37,10 @@ pub inline fn setGroupResults(
         writeInt(u16, data, i, keyLen);
         i += 2;
         if (keyLen > 0) {
-            copy(data[i .. i + keyLen], key);
+            copy(u8, data[i .. i + keyLen], key);
             i += keyLen;
         }
-        copy(data[i .. i + ctx.resultsSize], entry.value_ptr.*);
+        copy(u8, data[i .. i + ctx.resultsSize], entry.value_ptr.*);
         i += ctx.resultsSize;
     }
 }
@@ -74,12 +74,12 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
             j += 1;
 
             if (aggType == t.AggType.count) {
-                copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
+                copy(u8, resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
             } else if (aggType == t.AggType.sum or
                 aggType == t.AggType.max or
                 aggType == t.AggType.min)
             {
-                copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 8]);
+                copy(u8, resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 8]);
             } else if (aggType == t.AggType.average) {
                 const count = read(u64, accumulatorField, accumulatorPos);
                 const sum = read(f64, accumulatorField, accumulatorPos + 8);
@@ -158,7 +158,7 @@ pub inline fn finalizeGroupResults(
             writeInt(u16, data, i, keyLen);
             i += 2;
             if (keyLen > 0) {
-                copy(data[i .. i + keyLen], key);
+                copy(u8, data[i .. i + keyLen], key);
                 i += keyLen;
             }
 

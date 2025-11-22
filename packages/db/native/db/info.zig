@@ -52,7 +52,7 @@ pub fn nodeRangeHash(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     }
 
     const hash = db.getNodeRangeHash(ctx, te.?, start, end) catch return nil;
-    copy(buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
+    copy(u8, buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
 
     return ok;
 }

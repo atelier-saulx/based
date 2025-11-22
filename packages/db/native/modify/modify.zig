@@ -357,7 +357,7 @@ pub fn modify(
 
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
 
-    utils.copy(data[7..data.len], newDirtySlice);
+    utils.copy(u8, data[7..data.len], newDirtySlice);
 
     // const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 67);
 

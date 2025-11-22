@@ -71,16 +71,7 @@ pub fn debugPrint(comptime format: []const u8, args: anytype) void {
     }
 }
 
-// TODO MERGE these 2
-pub inline fn copy(dest: []u8, source: []const u8) void {
-    if (builtin.link_libc) {
-        _ = memcpy(dest.ptr, source.ptr, source.len);
-    } else {
-        @memcpy(dest[0..source.len], source);
-    }
-}
-
-pub inline fn copyType(T: type, dest: []T, source: []const T) void {
+pub inline fn copy(T: type, dest: []T, source: []const T) void {
     if (builtin.link_libc) {
         _ = memcpy(dest.ptr, source.ptr, source.len);
     } else {

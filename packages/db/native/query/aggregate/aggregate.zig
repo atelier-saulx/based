@@ -6,7 +6,6 @@ const Query = @import("../common.zig");
 const t = @import("../../types.zig");
 
 const microbufferToF64 = utils.microbufferToF64;
-const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeIntExact;
 

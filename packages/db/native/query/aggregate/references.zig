@@ -5,18 +5,15 @@ const results = @import("../results.zig");
 const Query = @import("../common.zig");
 const utils = @import("../../utils.zig");
 const aggregate = @import("./aggregate.zig").aggregate;
-const createGroupCtx = @import("./group.zig").createGroupCtx;
-const GroupProtocolLen = @import("./group.zig").ProtocolLen;
-const groupFunctions = @import("./group.zig");
+const group = @import("./group.zig");
 const filter = @import("../filter/filter.zig").filter;
 const t = @import("../../types.zig");
 
-const setGroupResults = groupFunctions.setGroupResults;
-const finalizeGroupResults = groupFunctions.finalizeGroupResults;
-const finalizeResults = groupFunctions.finalizeResults;
-const GroupCtx = groupFunctions.GroupCtx;
+const createGroupCtx = group.createGroupCtx;
+const GroupProtocolLen = group.ProtocolLen;
+const finalizeGroupResults = group.finalizeGroupResults;
+const finalizeResults = group.finalizeResults;
 const read = utils.read;
-const copy = utils.copy;
 const writeInt = utils.writeIntExact;
 
 pub fn aggregateRefsFields(
