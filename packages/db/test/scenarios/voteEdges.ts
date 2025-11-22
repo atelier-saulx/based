@@ -1,5 +1,6 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { perf } from '../shared/assert.js'
 
 await test('votesEdges', async (t) => {
   const db = new BasedDb({
@@ -88,50 +89,45 @@ await test('votesEdges', async (t) => {
     // voteData.ddi[`ddi${i}`] = i % 256
   }
 
-  let d = performance.now()
-  for (let j = 1; j <= amount; j++) {
-    const payment = db.create('payment')
-    voteData.payment = payment
-    voteData.fingerprint = `f${j}-${final}`
-    const artist = contestants[j % 20]
-    // voteData.contestants = [
-    // {
-    // id: artist,
-    // $votes: 8,
-    // },
-    // ]
-    // voteData.contestant = artist
-    db.create('vote', voteData)
-  }
+  await perf(async () => {
+    for (let j = 1; j <= amount; j++) {
+      const payment = db.create('payment')
+      voteData.payment = payment
+      voteData.fingerprint = `f${j}-${final}`
+      const artist = contestants[j % 20]
+      // voteData.contestants = [
+      // {
+      // id: artist,
+      // $votes: 8,
+      // },
+      // ]
+      // voteData.contestant = artist
+      db.create('vote', voteData)
+    }
 
-  await db.drain()
-  console.log(`Create ${amount} votes`, performance.now() - d, 'ms')
+    await db.drain()
+  }, `Create ${amount} votes`)
 
   let a = 0
   const has = new Set()
-  d = performance.now()
-  for (let j = amount - 1; j > 0; j--) {
-    const artist = contestants[j % 20]
-    const randId = ~~(Math.random() * amount) + 1
-    a = randId
-    if (!has.has(randId)) {
-      // from 200 to 4000
-      has.add(randId)
-      db.update('vote', randId, {
-        contestant: artist,
-      })
-    } else {
-      a++
+  await perf(async () => {
+    for (let j = amount - 1; j > 0; j--) {
+      const artist = contestants[j % 20]
+      const randId = ~~(Math.random() * amount) + 1
+      a = randId
+      if (!has.has(randId)) {
+        // from 200 to 4000
+        has.add(randId)
+        db.update('vote', randId, {
+          contestant: artist,
+        })
+      } else {
+        a++
+      }
     }
-  }
 
-  await db.drain()
-  console.log(
-    `Update random order id ${amount} votes`,
-    performance.now() - d,
-    'ms',
-    a,
-  )
+    await db.drain()
+  }, `Update random order id ${amount} votes, ${a}`)
 
   await db.query('vote').get().inspect(1)
   await db.query('round', final).include('*', '**').get().inspect(1)
