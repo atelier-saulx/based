@@ -238,7 +238,7 @@ pub const Threads = struct {
                                     self.ctx,
                                     threadCtx.decompressor,
                                     header.typeId,
-                                    sortHeader,
+                                    &sortHeader,
                                     true,
                                     false,
                                 );

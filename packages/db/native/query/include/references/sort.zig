@@ -24,7 +24,7 @@ pub fn sortedReferences(
     var i: usize = 0;
     const sortHeader = read(t.SortHeader, sortBuffer, 0);
     var metaSortIndex = dbSort.createSortIndexMeta(
-        sortHeader,
+        &sortHeader,
         sortHeader.order == t.SortOder.desc,
     ) catch {
         return result;

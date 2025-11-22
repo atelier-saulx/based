@@ -83,7 +83,7 @@ fn getSortFlag(sortFieldType: t.PropType, desc: bool) !selva.SelvaSortOrder {
 }
 
 pub fn createSortIndexMeta(
-    header: t.SortHeader,
+    header: *const t.SortHeader,
     desc: bool,
 ) !SortIndexMeta {
     const sortFlag = try getSortFlag(header.propType, desc);
@@ -103,7 +103,7 @@ pub fn createSortIndexMeta(
 fn getOrCreateFromCtx(
     dbCtx: *db.DbCtx,
     typeId: t.TypeId,
-    sortHeader: t.SortHeader,
+    sortHeader: *const t.SortHeader,
     comptime desc: bool,
 ) !*SortIndexMeta {
     var sortIndex: ?*SortIndexMeta = undefined;
@@ -140,7 +140,7 @@ pub fn createSortIndex(
     dbCtx: *db.DbCtx,
     decompressor: *deflate.Decompressor,
     typeId: t.TypeId,
-    header: t.SortHeader,
+    header: *const t.SortHeader,
     comptime defrag: bool,
     comptime desc: bool,
 ) !*SortIndexMeta {
