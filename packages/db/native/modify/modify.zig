@@ -338,10 +338,6 @@ pub fn modify(
                 db.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
                 i += 5;
             },
-            else => {
-                std.log.err("Something went wrong, incorrect modify operation. At i: {d} len: {d}\n", .{ i, batch.len });
-                break;
-            },
         }
     }
 

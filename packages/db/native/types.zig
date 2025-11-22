@@ -40,7 +40,6 @@ pub const ModOp = enum(u8) {
     upsert = 17,
     insert = 18,
     padding = 255,
-    _,
 };
 
 pub const PropType = enum(u8) {
@@ -279,7 +278,6 @@ pub const Interval: type = enum(u8) {
     isoMonth = 12, // The number of the month within the year (1–12);
     quarter = 13, // The quarter of the year (1–4) that the date is in
     year = 14,
-    // timeZone = 15, // ? seconds? or string?
 };
 
 pub const SortOder = enum(u8) {
