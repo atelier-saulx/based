@@ -1,6 +1,6 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { deepEqual, equal } from '../shared/assert.js'
+import { deepEqual, equal, perf } from '../shared/assert.js'
 
 await test('await updates', async (t) => {
   const db = new BasedDb({
@@ -44,17 +44,20 @@ await test('await updates', async (t) => {
     totalAlias++
   }
 
-  const start = performance.now()
   //let lastMeasure = performance.now()
-  for (let i = 0; i < 100000; i++) {
-    await updateAlias()
-    if (!(i % 10000)) {
-      //const opsPerS = totalAlias / ((performance.now() - lastMeasure) / 1e3)
-      //console.log(`${~~opsPerS} per sec`)
-      //lastMeasure = performance.now()
-      totalAlias = 0
-    }
-  }
-
-  equal(performance.now() - start < 5e3, true, 'should be smaller then 5s')
+  let i = 0
+  await perf(
+    async () => {
+      await updateAlias()
+      if (!(i % 10_000)) {
+        //const opsPerS = totalAlias / ((performance.now() - lastMeasure) / 1e3)
+        //console.log(`${~~opsPerS} per sec`)
+        //lastMeasure = performance.now()
+        totalAlias = 0
+      }
+    },
+    'update alias',
+    { repeat: 100_000 },
+  )
+  // should be smaller then 5s
 })

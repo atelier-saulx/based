@@ -1,6 +1,6 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import perf from '../shared/assert.js'
+import { perf } from '../shared/assert.js'
 import { deepEqual } from '../shared/assert.js'
 import { fastPrng } from '@based/utils'
 import { equal } from 'node:assert'
@@ -43,7 +43,7 @@ await test('overall performance', async (t) => {
 
   await perf(async () => {
     await db.query('beer').sum('price').get()
-  }, 'main agg performance')
+  }, 'main agg')
 
   await perf(async () => {
     await db.query('beer').groupBy('year').get()
@@ -51,11 +51,11 @@ await test('overall performance', async (t) => {
 
   await perf(async () => {
     await db.query('beer').groupBy('type').get()
-  }, 'Acceptable group by enum main performance')
+  }, 'group by enum main')
 
   await perf(async () => {
     await db.query('beer').max('price').groupBy('type').get()
-  }, 'Acceptable agg + enum main group by performance')
+  }, 'agg + enum main group by')
 })
 
 await test('count top level bignumber', async (t) => {

@@ -1,6 +1,14 @@
-import { benchmark } from '../benchmarks/utils.js'
+import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.js'
+import { perf } from '../shared/assert.js'
 
-benchmark('create 1m items with an alias', async (db) => {
+await test('create 1m items with an alias', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
   await db.setSchema({
     types: {
       test: {
@@ -9,14 +17,15 @@ benchmark('create 1m items with an alias', async (db) => {
     },
   })
 
-  const start = performance.now()
-
   let i = 1000_000
-  while (i--) {
-    db.create('test', { alias: String(i) })
-  }
+  await perf(
+    async () => {
+      db.create('test', { alias: String(i) })
+      i--
 
-  await db.drain()
-
-  return performance.now() - start
+      await db.drain()
+    },
+    '1m items with an alias',
+    { repeat: 1_000_000 },
+  )
 })
