@@ -30,12 +30,6 @@ export type SaveOpts = {
   skipMigrationCheck?: boolean
 }
 
-type IoJobBlock = {
-  filepath: string
-  typeId: number
-  start: number
-}
-
 const SELVA_ENOENT = -8
 
 const QOP_SAVE_BLOCK = 67
