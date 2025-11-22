@@ -246,21 +246,25 @@ pub const Threads = struct {
             self.mutex.unlock();
 
             if (queryBuf) |q| {
-                if (op == OpType.saveBlock) {
-                    const data = try getResultSlice(true, threadCtx, 26, 0, op);
-                    const start = read(u32, q, 5);
-                    const typeCode = read(u16, q, 9);
-                    _ = selva.memcpy(data[4..10].ptr, q[5..11].ptr, 6);
-                    var hash: SelvaHash128 = 0;
-                    const err = dump.saveBlock(self.ctx, typeCode, start, q[11..q.len], &hash);
-                    _ = selva.memcpy(data[0..4].ptr, &err, 4);
-                    _ = selva.memcpy(data[10..16].ptr, &hash, 16);
-                } else if (op == OpType.saveCommon) {
-                    const data = try getResultSlice(true, threadCtx, 4, 0, op);
-                    const err = dump.saveCommon(self.ctx, q[5..q.len]);
-                    _ = selva.memcpy(data[0..4].ptr, &err, 4);
-                } else {
-                    try Query.getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
+                switch (op) {
+                    OpType.saveBlock => {
+                        const data = try getResultSlice(true, threadCtx, 26, 0, op);
+                        const start = read(u32, q, 5);
+                        const typeCode = read(u16, q, 9);
+                        _ = selva.memcpy(data[4..10].ptr, q[5..11].ptr, 6);
+                        var hash: SelvaHash128 = 0;
+                        const err = dump.saveBlock(self.ctx, typeCode, start, q[11..q.len], &hash);
+                        _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                        _ = selva.memcpy(data[10..16].ptr, &hash, 16);
+                    },
+                    OpType.saveCommon => {
+                        const data = try getResultSlice(true, threadCtx, 4, 0, op);
+                        const err = dump.saveCommon(self.ctx, q[5..q.len]);
+                        _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                    },
+                    else => {
+                        try Query.getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
+                    },
                 }
 
                 self.mutex.lock();
@@ -293,8 +297,18 @@ pub const Threads = struct {
 
             if (modifyBuf) |m| {
                 if (threadCtx.id == 0) {
-                    // Modify worker
-                    try Modify.modify(threadCtx, m, self.ctx, op);
+                    switch (op) {
+                        OpType.modify => {
+                            try Modify.modify(threadCtx, m, self.ctx, op);
+                        },
+                        OpType.load => {
+                            std.debug.print("LOAD LOAD \n", .{});
+                            // LOAD LOAD
+                            const data = try getResultSlice(true, threadCtx, 1, read(u32, m, 0), op);
+                            data[0] = 67;
+                        },
+                    }
+
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
