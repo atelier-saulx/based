@@ -30,15 +30,15 @@ await test('include', async (t) => {
   // const id = await db.create('user', {
   //   nr: 1,
   //   // flap: x.join(' '),
-  // })
+  // // })
 
-  const q = db.query('user', 1)
-  registerQuery(q)
-  // maybe expose regisrer query on class
+  // const q = db.query('user', 1)
+  // registerQuery(q)
+  // // maybe expose regisrer query on class
 
-  const buf = q.buffer
+  // const buf = q.buffer
 
-  console.log('q', buf)
+  // console.log('q', buf)
 
   // await q.get().inspect()
 
@@ -59,10 +59,11 @@ await test('include', async (t) => {
 
   console.dir(db.server.blockMap.foreachBlock(console.log))
 
-  await wait(1)
-  native.getQueryBufThread(buf, db.server.dbCtxExternal)
+  // await wait(1)
+  // native.getQueryBufThread(buf, db.server.dbCtxExternal)
 
   await wait(1)
+  await db.query('user').get().inspect()
 
   await db.query('user').range(0, 5).sort('nr', 'desc').get().inspect()
 

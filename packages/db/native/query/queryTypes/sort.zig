@@ -69,27 +69,25 @@ pub fn default(
     }
 }
 
-// complete seperate enum...
 pub fn idDesc(
+    comptime hasFilter: bool,
     ctx: *QueryCtx,
-    offset: u32,
-    limit: u32,
-    typeId: db.TypeId,
-    conditions: []u8,
+    header: *const QueryDefaultHeader,
     include: []u8,
+    filterSlice: if (hasFilter) []u8 else void,
 ) !void {
-    var correctedForOffset: u32 = offset;
-    const typeEntry = try db.getType(ctx.db, typeId);
+    var correctedForOffset: u32 = header.offset;
+    const typeEntry = try db.getType(ctx.db, header.typeId);
     var first = true;
     var node = db.getLastNode(typeEntry);
-    checkItem: while (ctx.totalResults < limit) {
+    checkItem: while (ctx.totalResults < header.limit) {
         if (first) {
             first = false;
         } else {
             node = db.getPrevNode(typeEntry, node.?);
         }
         if (node) |n| {
-            if (!filter(ctx.db, n, ctx.threadCtx, typeEntry, conditions, null, null, 0, false)) {
+            if (hasFilter and !filter(ctx.db, n, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
                 continue :checkItem;
             }
             if (correctedForOffset != 0) {
@@ -107,6 +105,7 @@ pub fn idDesc(
     }
 }
 
+// search + idDesc
 pub fn search(
     comptime isVector: bool,
     comptime desc: bool,

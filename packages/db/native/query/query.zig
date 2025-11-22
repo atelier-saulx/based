@@ -78,7 +78,7 @@ pub fn getQueryThreaded(
             // const filterSlice = sliceNext(header.filterSize, q, &index);
             // const search = sliceNext(header.searchSize, q, &index);
             // const include = q[index..len];
-            std.debug.print("SUB TYPE: {any}...", .{header.subType});
+            std.debug.print("SUB TYPE: {any}...\n", .{header.subType});
 
             switch (header.subType) {
                 QuerySubType.default => {
@@ -90,9 +90,33 @@ pub fn getQueryThreaded(
                 },
                 QuerySubType.sortAsc => {
                     index += header.sortSize;
+                    try QuerySort.default(false, false, &ctx, sortIndex, &header, q[index..len], undefined);
+                },
+                QuerySubType.sortDesc => {
+                    index += header.sortSize;
+                    try QuerySort.default(true, false, &ctx, sortIndex, &header, q[index..len], undefined);
+                },
+                QuerySubType.sortAscFilter => {
+                    index += header.sortSize;
+                    const filterSlice = sliceNext(header.filterSize, q, &index);
+                    try QuerySort.default(false, true, &ctx, sortIndex, &header, q[index..len], filterSlice);
+                },
+                QuerySubType.sortDescFilter => {
+                    index += header.sortSize;
+                    const filterSlice = sliceNext(header.filterSize, q, &index);
+                    try QuerySort.default(true, true, &ctx, sortIndex, &header, q[index..len], filterSlice);
+                },
+                QuerySubType.sortIdDesc => {
+                    index += header.sortSize;
+                    try QuerySort.idDesc(false, &ctx, &header, q[index..len], undefined);
+                },
+                QuerySubType.sortIdDescFilter => {
+                    index += header.sortSize;
+                    const filterSlice = sliceNext(header.filterSize, q, &index);
+                    try QuerySort.idDesc(true, &ctx, &header, q[index..len], filterSlice);
                 },
                 else => {
-                    std.debug.print("not handled yet {any}...", .{header.subType});
+                    std.debug.print("🤪 not handled yet {any}...\n", .{header.subType});
                 },
             }
 
