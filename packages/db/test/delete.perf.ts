@@ -45,39 +45,42 @@ await test('delete performance', async (t) => {
       users.push(db.create('user', { name: `user_${i}`, flap: i }))
     }
     await db.drain()
-  }, 'create 1M users') // < 1500
+  }, 'create 1M users')
 
-  await perf(async () => {
+  const t0 = await perf(async () => {
     for (const user of users) {
       db.delete('user', user)
     }
     await db.drain()
-  }, 'delete 1M users') // < 400
+  }, 'delete 1M users')
+  assert(t0 < 400, 'delete 1M users')
 
   deepEqual((await db.query('user').get()).toObject(), [])
 
   const amountArticles = 1e6
   const articles = []
 
-  await perf(async () => {
+  const t1 = await perf(async () => {
     for (let i = 0; i < amountArticles; i++) {
       articles.push(db.create('article', { name: `article_${i}` }))
     }
     await db.drain()
-  }, 'create 1M articles') // < 1500
+  }, 'create 1M articles')
+  assert(t1 < 1500, 'delete 1M users')
 
-  await perf(async () => {
+  const t2 = await perf(async () => {
     for (const article of articles) {
       db.delete('article', article)
     }
     await db.drain()
-  }, 'delete 1M articles') // < 400
+  }, 'delete 1M articles')
+  assert(t2 < 400, 'delete 1M users')
 
   deepEqual((await db.query('article').get()).toObject(), [])
 
   const articles2 = []
 
-  await perf(async () => {
+  const t3 = await perf(async () => {
     for (let i = 0; i < amountArticles; i++) {
       articles2.push(db.create('article', { name: `article_${i}` }))
       if (i % 1e5 === 0) {
@@ -85,7 +88,8 @@ await test('delete performance', async (t) => {
       }
     }
     await db.drain()
-  }, 'create 1M articles - drain interleaved at 10k') // < 1500
+  }, 'create 1M articles - drain interleaved at 10k')
+  assert(t3 < 1500, 'delete 1M users')
 
   //console.log(
   //  'if you interleave drain in each batch of 10K deletes you come up if +2min',

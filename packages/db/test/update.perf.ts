@@ -1,6 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal, throws, perf } from './shared/assert.js'
+import { perf } from './shared/assert.js'
+import assert from 'node:assert'
 
 await test('await updates', async (t) => {
   const db = new BasedDb({
@@ -46,7 +47,7 @@ await test('await updates', async (t) => {
 
   //let lastMeasure = performance.now()
   let i = 0
-  await perf(
+  const t1 = await perf(
     async () => {
       await updateAlias()
       if (!(i % 500)) {
@@ -59,5 +60,6 @@ await test('await updates', async (t) => {
     },
     'should be smaller then 5s',
     { repeat: 100_000 },
-  ) // < 3e3
+  )
+  assert(t1 < 3e3, 'delete 1M users')
 })
