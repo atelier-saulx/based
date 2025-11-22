@@ -30,16 +30,6 @@ type IdPropDef = DbProp & {
   typeIndex: typeof typeIndexMap.null
 }
 
-// type MicroBufferPropDef = DbProp & {
-//   type: 'microbuffer'
-//   id: 0
-//   typeIndex: typeof typeIndexMap.microbuffer
-//   main: {
-//     start: 0
-//     size: number
-//   }
-// }
-
 type ErrorPropDef = BaseProp & {
   type: 'error'
   id: -1
@@ -203,11 +193,12 @@ export const schemaToTypeDefs = (schema: SchemaOut): TypeDefs => {
   function parseType(name: string, typeSchema: SchemaType<true>): TypeDef {
     const typeProps = {}
     const typeDef = {
-      ...typeSchema,
       id: idCnt++,
       name,
       size: 0,
       propHooks: {},
+      blockCapacity: 100_000,
+      ...typeSchema,
       locales,
       props: {},
       dbProps: {},
