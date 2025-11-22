@@ -1,6 +1,14 @@
-import { benchmark } from './benchmarks/utils.js'
+import { BasedDb } from '../src/index.js'
+import test from './shared/test.js'
+import { perf } from './shared/assert.js'
 
-benchmark('create 1m booleans', async (db) => {
+await test('create 1m booleans', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
   await db.setSchema({
     types: {
       test: {
@@ -9,16 +17,15 @@ benchmark('create 1m booleans', async (db) => {
     },
   })
 
-  const start = performance.now()
-
-  let i = 1000_000
-  while (i--) {
-    db.create('test', {
-      boolean: true,
-    })
-  }
+  await perf(
+    () => {
+      db.create('test', {
+        boolean: true,
+      })
+    },
+    'create booleans',
+    { repeat: 1_000_000 },
+  )
 
   await db.drain()
-
-  return performance.now() - start
 })

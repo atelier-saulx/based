@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, throws } from './shared/assert.js'
+import { deepEqual, perf } from './shared/assert.js'
 import assert from 'node:assert'
 
 await test('delete performance', async (t) => {
@@ -40,58 +40,52 @@ await test('delete performance', async (t) => {
   const amount = 1e6
   const users = []
 
-  let t0, t1: number
+  await perf(async () => {
+    for (let i = 0; i < amount; i++) {
+      users.push(db.create('user', { name: `user_${i}`, flap: i }))
+    }
+    await db.drain()
+  }, 'create 1M users') // < 1500
 
-  t0 = performance.now()
-  for (let i = 0; i < amount; i++) {
-    users.push(db.create('user', { name: `user_${i}`, flap: i }))
-  }
-  await db.drain()
-  t1 = performance.now()
-  assert(t1 - t0 < 1500, 'create 1M users')
-
-  t0 = performance.now()
-  for (const user of users) {
-    db.delete('user', user)
-  }
-  await db.drain()
-  t1 = performance.now()
-  assert(t1 - t0 < 400, 'delete 1M users')
+  await perf(async () => {
+    for (const user of users) {
+      db.delete('user', user)
+    }
+    await db.drain()
+  }, 'delete 1M users') // < 400
 
   deepEqual((await db.query('user').get()).toObject(), [])
 
   const amountArticles = 1e6
   const articles = []
 
-  t0 = performance.now()
-  for (let i = 0; i < amountArticles; i++) {
-    articles.push(db.create('article', { name: `article_${i}` }))
-  }
-  await db.drain()
-  t1 = performance.now()
-  assert(t1 - t0 < 1500, 'create 1M articles')
+  await perf(async () => {
+    for (let i = 0; i < amountArticles; i++) {
+      articles.push(db.create('article', { name: `article_${i}` }))
+    }
+    await db.drain()
+  }, 'create 1M articles') // < 1500
 
-  t0 = performance.now()
-  for (const article of articles) {
-    db.delete('article', article)
-  }
-  await db.drain()
-  t1 = performance.now()
-  assert(t1 - t0 < 400, 'delete 1M articles')
+  await perf(async () => {
+    for (const article of articles) {
+      db.delete('article', article)
+    }
+    await db.drain()
+  }, 'delete 1M articles') // < 400
+
   deepEqual((await db.query('article').get()).toObject(), [])
 
   const articles2 = []
 
-  t0 = performance.now()
-  for (let i = 0; i < amountArticles; i++) {
-    articles2.push(db.create('article', { name: `article_${i}` }))
-    if (i % 1e5 === 0) {
-      await db.drain()
+  await perf(async () => {
+    for (let i = 0; i < amountArticles; i++) {
+      articles2.push(db.create('article', { name: `article_${i}` }))
+      if (i % 1e5 === 0) {
+        await db.drain()
+      }
     }
-  }
-  await db.drain()
-  t1 = performance.now()
-  assert(t1 - t0 < 1500, 'create 1M articles - drain interleaved at 10k')
+    await db.drain()
+  }, 'create 1M articles - drain interleaved at 10k') // < 1500
 
   //console.log(
   //  'if you interleave drain in each batch of 10K deletes you come up if +2min',
@@ -107,12 +101,11 @@ await test('delete performance', async (t) => {
   // await db.drain()
   // console.timeEnd('delete 1M articles - drain interleaved at 10k')
 
-  t0 = performance.now()
-  for (const article of articles2) {
-    db.delete('article', article)
-  }
-  await db.drain()
-  t1 = performance.now()
-  assert(t1 - t0 < 400, 'delete 1M articles - again')
+  await perf(async () => {
+    for (const article of articles2) {
+      db.delete('article', article)
+    }
+    await db.drain()
+  }, 'delete 1M articles - again') //  < 400
   deepEqual((await db.query('article').get()).toObject(), [])
 })
