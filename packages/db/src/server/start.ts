@@ -13,7 +13,6 @@ import {
   equals,
   hexToBuf,
   readUint32,
-  readUint40,
   wait,
 } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'

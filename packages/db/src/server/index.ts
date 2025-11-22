@@ -16,13 +16,7 @@ import {
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import {
-  combineToNumber,
-  readUint32,
-  readUint40,
-  readUint64,
-  writeUint32,
-} from '@based/utils'
+import { combineToNumber, readUint32, writeUint32 } from '@based/utils'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,
