@@ -286,7 +286,6 @@ pub const Threads = struct {
 
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
-                        std.debug.print("derp!@# \n", .{});
                         self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
                     }
 

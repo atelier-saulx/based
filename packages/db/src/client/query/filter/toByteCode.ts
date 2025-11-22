@@ -130,20 +130,6 @@ export const fillConditionsBuffer = (
   return lastWritten - offset
 }
 
-export const isSimpleMainFilter = (conditions: QueryDefFilter) => {
-  if (
-    !conditions.references &&
-    !conditions.edges &&
-    conditions.conditions.size === 1 &&
-    conditions.conditions.has(0) &&
-    !conditions.or &&
-    !conditions.exists
-  ) {
-    return true
-  }
-  return false
-}
-
 export const filterToBuffer = (
   conditions: QueryDefFilter,
   metaOffset: number,

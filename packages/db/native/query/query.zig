@@ -8,6 +8,7 @@ pub const Query = @import("./common.zig");
 
 const OpType = @import("../types.zig").OpType;
 const Sort = @import("../db/sort.zig");
+const QuerySubType = Query.QuerySubType;
 
 const QuerySort = @import("./queryTypes/sort.zig");
 const QueryDefault = @import("./queryTypes/default.zig");
@@ -20,7 +21,7 @@ const filter = @import("./filter/filter.zig").filter;
 const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
 const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
-
+const SortHeader = @import("../types.zig").SortHeader;
 const readNext = @import("../utils.zig").readNext;
 const sliceNext = @import("../utils.zig").sliceNext;
 
@@ -65,17 +66,39 @@ pub fn getQueryThreaded(
     };
 
     const op = readNext(OpType, q, &index);
+    const len = q.len - 8;
 
     // const q = batch[4 .. batch.len - 8];
-    // const len = q.len - 8;
 
     switch (op) {
         OpType.default => {
             const header = readNext(Query.QueryDefaultHeader, q, &index);
             // sort allready handled higher up
-            index += header.sortSize;
+            // index += header.sortSize;
             // const filterSlice = sliceNext(header.filterSize, q, &index);
             // const search = sliceNext(header.searchSize, q, &index);
+            // const include = q[index..len];
+            std.debug.print("SUB TYPE: {any}...", .{header.subType});
+
+            switch (header.subType) {
+                QuerySubType.default => {
+                    try QueryDefault.default(false, &ctx, &header, q[index..len], undefined);
+                },
+                QuerySubType.filter => {
+                    const filterSlice = sliceNext(header.filterSize, q, &index);
+                    try QueryDefault.default(true, &ctx, &header, q[index..len], filterSlice);
+                },
+                QuerySubType.sortAsc => {
+                    index += header.sortSize;
+                },
+                else => {
+                    std.debug.print("not handled yet {any}...", .{header.subType});
+                },
+            }
+
+            // if (header.sortSize == 0 and header.filterSize == 0 and header.searchSize == 0) {
+            //     try QueryDefault.default(ctx, *header, include);
+            // }
 
             // const sort = if (header.sortSize != 0) read(types.QuerySortHeader, q, &index) else null;
 

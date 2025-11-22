@@ -57,8 +57,8 @@ pub inline fn readNext(T: type, q: []u8, offset: *usize) T {
     return header;
 }
 
-pub inline fn sliceNext(size: u16, q: []u8, offset: *usize) []u8 {
-    const value = q[offset .. offset + size];
+pub inline fn sliceNext(size: usize, q: []u8, offset: *usize) []u8 {
+    const value = q[offset.* .. offset.* + size];
     offset.* += size;
     return value;
 }

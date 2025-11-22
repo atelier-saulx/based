@@ -13,67 +13,63 @@ const read = @import("../../utils.zig").read;
 const Result = @import("../results.zig").Result;
 const s = @import("./search.zig");
 const std = @import("std");
+const FilterType = @import("../common.zig").FilterType;
+const QueryDefaultHeader = @import("../common.zig").QueryDefaultHeader;
 
-// pass sort index - can be set to threadCtx
 pub fn default(
     comptime desc: bool,
+    comptime hasFilter: bool,
     ctx: *QueryCtx,
-    offset: u32,
-    limit: u32,
-    typeId: db.TypeId,
-    conditions: []u8,
+    sortIndex: ?*sort.SortIndexMeta,
+    header: *const QueryDefaultHeader,
     include: []u8,
-    _: []u8,
+    filterSlice: if (hasFilter) []u8 else void,
 ) !void {
-    // [order] [prop] [propType] [start] [start] [len] [len] [lan]
-    // const sortPropType: types.PropType = @enumFromInt(sortBuffer[1]);
-
-    const sIndex = ctx.threadCtx.sortIndex;
-    if (sIndex == null) {
-        std.log.err(
-            "Err exec query (zig) no sort index available for query \n",
-            .{},
-        );
-        return;
-    }
-
-    const typeEntry = try db.getType(ctx.db, typeId);
-    const sI = sIndex.?;
-    var it: selva.SelvaSortIterator = undefined;
-
-    if (desc) {
-        selva.selva_sort_foreach_begin_reverse(sI.index, &it);
-    } else {
-        selva.selva_sort_foreach_begin(sI.index, &it);
-    }
-    // create a new iterator per CORE
-    var correctedForOffset: u32 = offset;
-    checkItem: while (!selva.selva_sort_foreach_done(&it)) {
-        var node: db.Node = undefined;
+    if (sortIndex) |sI| {
+        const typeEntry = try db.getType(ctx.db, header.typeId);
+        var it: selva.SelvaSortIterator = undefined;
         if (desc) {
-            node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index, &it));
+            selva.selva_sort_foreach_begin_reverse(sI.index, &it);
         } else {
-            node = @ptrCast(selva.selva_sort_foreach(sI.index, &it));
+            selva.selva_sort_foreach_begin(sI.index, &it);
         }
-        if (!filter(ctx.db, node, ctx.threadCtx, typeEntry, conditions, null, null, 0, false)) {
-            continue :checkItem;
+        // create a new iterator per CORE
+        var correctedForOffset: u32 = header.offset;
+        checkItem: while (!selva.selva_sort_foreach_done(&it)) {
+            var node: db.Node = undefined;
+            if (desc) {
+                node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index, &it));
+            } else {
+                node = @ptrCast(selva.selva_sort_foreach(sI.index, &it));
+            }
+
+            if (hasFilter and !filter(ctx.db, node, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
+                continue :checkItem;
+            }
+
+            if (correctedForOffset != 0) {
+                correctedForOffset -= 1;
+                continue :checkItem;
+            }
+            const id = db.getNodeId(node);
+            const size = try getFields(node, ctx, id, typeEntry, include, null, null, false);
+            if (size > 0) {
+                ctx.size += size;
+                ctx.totalResults += 1;
+            }
+            if (ctx.totalResults >= header.limit) {
+                break;
+            }
         }
-        if (correctedForOffset != 0) {
-            correctedForOffset -= 1;
-            continue :checkItem;
-        }
-        const id = db.getNodeId(node);
-        const size = try getFields(node, ctx, id, typeEntry, include, null, null, false);
-        if (size > 0) {
-            ctx.size += size;
-            ctx.totalResults += 1;
-        }
-        if (ctx.totalResults >= limit) {
-            break;
-        }
+    } else {
+        std.log.err(
+            "Err exec query (zig) no sort index available for query {any} \n",
+            .{header},
+        );
     }
 }
 
+// complete seperate enum...
 pub fn idDesc(
     ctx: *QueryCtx,
     offset: u32,

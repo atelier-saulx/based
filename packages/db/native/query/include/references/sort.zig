@@ -1,4 +1,3 @@
-const read = @import("../../../utils.zig").read;
 const db = @import("../../../db/db.zig");
 const dbSort = @import("../../../db/sort.zig");
 const QueryCtx = @import("../../common.zig").QueryCtx;
@@ -8,12 +7,13 @@ const types = @import("../../../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
 const selva = @import("../../../selva.zig").c;
 const std = @import("std");
+const read = @import("../../../utils.zig").read;
 
 pub fn sortedReferences(
     refs: queryTypes.Refs,
     ctx: *QueryCtx,
     include: []u8,
-    sortBuffer: []u8,
+    sortBuffer: []u8, // PASS SORT HEADER HERE
     typeEntry: db.Type,
     edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
@@ -23,21 +23,10 @@ pub fn sortedReferences(
 ) queryTypes.RefsResult {
     var result: queryTypes.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = 0;
-    var start: u16 = undefined;
-    var len: u16 = undefined;
-    const sortField: u8 = sortBuffer[1];
-    const sortPropType: types.PropType = @enumFromInt(sortBuffer[2]);
-    start = read(u16, sortBuffer, 3);
-    len = read(u16, sortBuffer, 5);
-    const langCode: types.LangCode = @enumFromInt(sortBuffer[7]);
-
+    const sortHeader = read(types.SortHeader, sortBuffer, 0);
     var metaSortIndex = dbSort.createSortIndexMeta(
-        start,
-        len,
-        sortPropType,
-        sortBuffer[0] == 1,
-        langCode,
-        sortField,
+        sortHeader,
+        sortHeader.order == types.SortOder.desc,
     ) catch {
         return result;
     };
@@ -57,10 +46,10 @@ pub fn sortedReferences(
             )) {
                 continue :checkItem;
             }
-            const fs = db.getFieldSchema(typeEntry, sortField) catch {
+            const fs = db.getFieldSchema(typeEntry, sortHeader.prop) catch {
                 return result;
             };
-            const value = db.getField(typeEntry, refNode, fs, sortPropType);
+            const value = db.getField(typeEntry, refNode, fs, sortHeader.propType);
             dbSort.insert(ctx.threadCtx.decompressor, &metaSortIndex, value, refNode);
         }
     }

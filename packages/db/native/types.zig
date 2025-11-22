@@ -257,8 +257,13 @@ pub const Interval: type = enum(u8) {
     // timeZone = 15, // ? seconds? or string?
 };
 
+pub const SortOder = enum(u8) {
+    asc = 0,
+    desc = 1,
+};
+
 pub const SortHeader = packed struct {
-    order: u8,
+    order: SortOder,
     prop: u8, // use prop type for this
     propType: PropType,
     start: u16,

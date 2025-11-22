@@ -11,33 +11,29 @@ const std = @import("std");
 const utils = @import("../../utils.zig");
 const t = @import("../../types.zig");
 const FilterType = @import("../common.zig").FilterType;
+const QueryDefaultHeader = @import("../common.zig").QueryDefaultHeader;
+
 const filterTypes = @import("../filter//types.zig");
 
 const runConditions = @import("../filter/conditions.zig").runConditions;
 
 pub fn default(
-    comptime filterType: FilterType,
+    comptime hasFilter: bool,
     ctx: *QueryCtx,
-    offset: u32,
-    limit: u32,
-    typeId: db.TypeId,
-    conditions: []u8,
+    header: *const QueryDefaultHeader,
     include: []u8,
+    filterSlice: if (hasFilter) []u8 else void,
 ) !void {
-    var correctedForOffset: u32 = offset;
-    const typeEntry = try db.getType(ctx.db, typeId);
+    var correctedForOffset: u32 = header.offset;
+    const typeEntry = try db.getType(ctx.db, header.typeId);
     var node = db.getFirstNode(typeEntry);
-    checkItem: while (ctx.totalResults < limit) {
+    checkItem: while (ctx.totalResults < header.limit) {
         if (node == null) {
             break :checkItem;
         }
-
-        // Todo measure if this optmizes things
-        if (filterType == FilterType.default) {
-            if (!filter(ctx.db, node.?, ctx.threadCtx, typeEntry, conditions, null, null, 0, false)) {
-                node = db.getNextNode(typeEntry, node.?);
-                continue :checkItem;
-            }
+        if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
+            node = db.getNextNode(typeEntry, node.?);
+            continue :checkItem;
         }
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
@@ -49,54 +45,7 @@ pub fn default(
             ctx.size += size;
             ctx.totalResults += 1;
         }
-
         node = db.getNextNode(typeEntry, node.?);
-    }
-}
-
-pub fn defaultSimpleFilter(
-    ctx: *QueryCtx,
-    offset: u32,
-    limit: u32,
-    typeId: db.TypeId,
-    conditions: []u8,
-    include: []u8,
-) !void {
-    var correctedForOffset: u32 = offset;
-    const typeEntry = try db.getType(ctx.db, typeId);
-    var first = true;
-    var node = db.getFirstNode(typeEntry);
-    const fieldSchema = try db.getFieldSchema(typeEntry, t.MAIN_PROP);
-
-    const querySize: u16 = utils.read(u16, conditions, 1);
-    const query = conditions[3 .. querySize + 3];
-    checkItem: while (ctx.totalResults < limit) {
-        if (first) {
-            first = false;
-        } else {
-            node = db.getNextNode(typeEntry, node.?);
-        }
-        if (node == null) {
-            break :checkItem;
-        }
-        const value = db.getField(typeEntry, node.?, fieldSchema, t.PropType.MICRO_BUFFER);
-        if (value.len == 0 or !runConditions(
-            ctx.threadCtx.decompressor,
-            &ctx.threadCtx.libdeflateBlockState,
-            query,
-            value,
-        )) {
-            continue :checkItem;
-        }
-        if (correctedForOffset != 0) {
-            correctedForOffset -= 1;
-            continue :checkItem;
-        }
-        const size = try getFields(node.?, ctx, db.getNodeId(node.?), typeEntry, include, null, null, false);
-        if (size > 0) {
-            ctx.size += size;
-            ctx.totalResults += 1;
-        }
     }
 }
 
