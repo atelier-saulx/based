@@ -51,11 +51,12 @@ await test('include', async (t) => {
       nr: i,
     })
   }
-  console.log('derp?')
+  console.log('CREATE DONE?')
 
+  console.log('START QUERY')
   await db.query('user').get()
+  console.log('QUERY DONE')
 
-  console.log('BLOCK MAP!!!')
   console.dir(db.server.blockMap.foreachBlock(console.log))
 
   await wait(1)

@@ -6,7 +6,7 @@ const db = @import("../../db//db.zig");
 const types = @import("../include/types.zig");
 const compressed = @import("./compressed.zig");
 const decompress = compressed.decompress;
-const Prop = @import("../../types.zig").Prop;
+const PropType = @import("../../types.zig").PropType;
 const LangCode = @import("../../types.zig").LangCode;
 const VectorFn = @import("./types.zig").VectorFn;
 const MAIN_PROP = @import("../../types.zig").MAIN_PROP;
@@ -351,7 +351,7 @@ pub fn search(
         bestScore = 255;
         fieldLoop: while (j < fl) : (j += 10) {
             const field = ctx.fields[j];
-            const prop: Prop = @enumFromInt(ctx.fields[j + 1]);
+            const prop: PropType = @enumFromInt(ctx.fields[j + 1]);
             const penalty = ctx.fields[j + 2];
             const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                 return 255;
@@ -378,7 +378,7 @@ pub fn search(
                 if (value.len == 0) {
                     continue :fieldLoop;
                 }
-                if (prop == Prop.TEXT) {
+                if (prop == PropType.TEXT) {
                     const code: LangCode = @enumFromInt(ctx.fields[j + 5]);
                     score = 255;
                     if (code == LangCode.NONE) {
@@ -437,7 +437,7 @@ pub fn searchVector(
     const fieldSchema = db.getFieldSchema(typeEntry, ctx.field) catch {
         return MaxVectorScore;
     };
-    const value = db.getField(typeEntry, node, fieldSchema, Prop.VECTOR);
+    const value = db.getField(typeEntry, node, fieldSchema, PropType.VECTOR);
     if (value.len == 0) {
         return MaxVectorScore;
     }

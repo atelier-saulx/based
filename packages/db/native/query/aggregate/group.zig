@@ -20,7 +20,7 @@ pub const GroupCtx = struct {
     start: u16,
     field: u8,
     len: u16,
-    propType: types.Prop,
+    propType: types.PropType,
     stepType: u8,
     stepRange: u32,
     timezone: i16,
@@ -55,21 +55,21 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
         i += 1;
         const fieldAggsSize = read(u16, agg, i);
         i += 2;
-        const aggPropDef = agg[i .. i + fieldAggsSize];
+        const aggPropTypeDef = agg[i .. i + fieldAggsSize];
 
         var j: usize = 0;
         var y: u8 = 0;
         while (j < fieldAggsSize) {
             y += 1;
-            const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
+            const aggType: aggregateTypes.AggType = @enumFromInt(aggPropTypeDef[j]);
             j += 1;
             // propType
             j += 1;
             // start
             j += 2;
-            const resultPos = read(u16, aggPropDef, j);
+            const resultPos = read(u16, aggPropTypeDef, j);
             j += 2;
-            const accumulatorPos = read(u16, aggPropDef, j);
+            const accumulatorPos = read(u16, aggPropTypeDef, j);
             j += 2;
             // isEdge
             j += 1;
@@ -175,11 +175,11 @@ pub inline fn finalizeGroupResults(
 
 pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*GroupCtx {
     const field = aggInput[0];
-    const srcPropType: types.Prop = @enumFromInt(aggInput[1]);
-    const propType: types.Prop = if (field == types.MAIN_PROP and srcPropType != types.Prop.ENUM and srcPropType != types.Prop.TIMESTAMP and srcPropType != types.Prop.STRING)
-        types.Prop.MICRO_BUFFER
+    const srcPropTypeType: types.PropType = @enumFromInt(aggInput[1]);
+    const propType: types.PropType = if (field == types.MAIN_PROP and srcPropTypeType != types.PropType.ENUM and srcPropTypeType != types.PropType.TIMESTAMP and srcPropTypeType != types.PropType.STRING)
+        types.PropType.MICRO_BUFFER
     else
-        srcPropType;
+        srcPropTypeType;
     const start = read(u16, aggInput, 2);
     const len = read(u16, aggInput, 4);
     const stepType: u8 = aggInput[6];

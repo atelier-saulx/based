@@ -3,7 +3,7 @@ const loose = @import("./loose.zig").loose;
 const like = @import("./like.zig");
 const t = @import("../types.zig");
 const Op = t.Operator;
-const Prop = @import("../../../types.zig").Prop;
+const PropType = @import("../../../types.zig").PropType;
 const compressed = @import("../compressed.zig");
 const read = @import("../../../utils.zig").read;
 const decompress = compressed.decompress;
@@ -44,14 +44,14 @@ inline fn hasInner(
     comptime isOr: bool,
     compare: Compare(void),
     mainLen: u16,
-    prop: Prop,
+    prop: PropType,
     value: []u8,
     query: []u8,
 ) bool {
-    if (prop == Prop.VECTOR) {
+    if (prop == PropType.VECTOR) {
         const vecAligned = read([]f32, value, 0);
         return like.vector(vecAligned, query);
-    } else if ((prop == Prop.STRING or prop == Prop.TEXT) and mainLen == 0) {
+    } else if ((prop == PropType.STRING or prop == PropType.TEXT) and mainLen == 0) {
         if (value[1] == @intFromEnum(Compression.compressed)) {
             if (!decompress(decompressor, blockState, void, orCompare(isOr, compare).func, query, value, undefined)) {
                 return false;
@@ -70,7 +70,7 @@ pub inline fn has(
     blockState: *deflate.BlockState,
     comptime isOr: bool,
     op: Op,
-    prop: Prop,
+    prop: PropType,
     value: []u8,
     query: []u8,
     mainLen: u16,

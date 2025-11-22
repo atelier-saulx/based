@@ -20,7 +20,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     subs.stage(ctx, subs.Op.create);
 
     switch (ctx.fieldType) {
-        types.Prop.REFERENCES => {
+        types.PropType.REFERENCES => {
             switch (@as(types.RefOp, @enumFromInt(data[4]))) {
                 types.RefOp.OVERWRITE, types.RefOp.ADD => {
                     return references.updateReferences(ctx, data);
@@ -35,29 +35,29 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                 },
             }
         },
-        types.Prop.REFERENCE => {
+        types.PropType.REFERENCE => {
             return reference.updateReference(ctx, data);
         },
-        types.Prop.VECTOR => {
+        types.PropType.VECTOR => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             try db.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
             return len;
         },
-        types.Prop.COLVEC => {
+        types.PropType.COLVEC => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             db.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
             return len;
         },
-        types.Prop.CARDINALITY => {
+        types.PropType.CARDINALITY => {
             const hllMode = if (data[0] == 0) true else false;
             const hllPrecision = data[1];
             const offset = 2;
             const len = read(u32, data, offset);
-            const hll = try db.ensurePropString(ctx, ctx.fieldSchema.?);
+            const hll = try db.ensurePropTypeString(ctx, ctx.fieldSchema.?);
             selva.hll_init(hll, hllPrecision, hllMode);
             var i: usize = 4 + offset;
             while (i < (len * 8) + offset) {
@@ -73,7 +73,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             const slice = data[4 .. len + 4];
             addSortIndexOnCreation(ctx, slice) catch null;
-            if (ctx.fieldType == types.Prop.ALIAS) {
+            if (ctx.fieldType == types.PropType.ALIAS) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
@@ -102,7 +102,7 @@ pub fn addSortIndexOnCreation(ctx: *ModifyCtx, slice: []u8) !void {
         }
     } else if (ctx.currentSortIndex != null) {
         sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
-    } else if (ctx.typeSortIndex != null and ctx.fieldType == types.Prop.TEXT) {
+    } else if (ctx.typeSortIndex != null and ctx.fieldType == types.PropType.TEXT) {
         const sIndex = sort.getSortIndex(
             ctx.db.sortIndexes.get(ctx.typeId),
             ctx.field,

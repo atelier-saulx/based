@@ -26,7 +26,7 @@ pub fn default(
     _: []u8,
 ) !void {
     // [order] [prop] [propType] [start] [start] [len] [len] [lan]
-    // const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
+    // const sortPropType: types.PropType = @enumFromInt(sortBuffer[1]);
 
     const sIndex = ctx.threadCtx.sortIndex;
     if (sIndex == null) {

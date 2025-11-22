@@ -46,8 +46,8 @@ const user: User = {
   id: 1,
   name: 'John Doe',
   age: 30,
-  status: 'active', // TypeScript will enforce this must be 'active' | 'inactive'
-  friends: [], // Array of numbers (user IDs)
+  status: 'active',
+  friends: [],
   profile: {
     bio: 'Hello world!',
   },
@@ -74,7 +74,7 @@ const post: Post = {
 
 console.log('Type inference working correctly!')
 console.log('User:', user)
-console.log('Post:', post)
+console.log('Post:', post.author)
 
 export { testSchema, createUser, createPost }
 

@@ -29,7 +29,7 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
     } else if (ctx.currentSortIndex != null) {
         const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
         sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
-    } else if (ctx.fieldType == types.Prop.TEXT) {
+    } else if (ctx.fieldType == types.PropType.TEXT) {
         var it = ctx.typeSortIndex.?.text.iterator();
         while (it.next()) |entry| {
             const sortIndex = entry.value_ptr.*;
@@ -61,7 +61,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
             sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
-        } else if (ctx.fieldType == types.Prop.TEXT) {
+        } else if (ctx.fieldType == types.PropType.TEXT) {
             var it = ctx.typeSortIndex.?.text.iterator();
             while (it.next()) |entry| {
                 const sortIndex = entry.value_ptr.*;
@@ -79,13 +79,13 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             }
         }
     }
-    if (ctx.fieldType == types.Prop.ALIAS) {
+    if (ctx.fieldType == types.PropType.ALIAS) {
         db.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
             if (e != error.SELVA_ENOENT) return e;
         };
     } else {
         // TODO check it!
-        if (ctx.fieldType == types.Prop.REFERENCE) {
+        if (ctx.fieldType == types.PropType.REFERENCE) {
             const fs = ctx.fieldSchema.?;
             const dstType = try db.getRefDstType(ctx.db, fs);
             const oldRefDst = db.getNodeFromReference(dstType, db.getSingleReference(ctx.node.?, fs));

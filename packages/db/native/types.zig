@@ -20,7 +20,7 @@ pub const OpType = enum(u8) {
     saveCommon = 69,
 };
 
-pub const Prop = enum(u8) {
+pub const PropType = enum(u8) {
     NULL = 0,
     TIMESTAMP = 1,
     CREATED = 2,
@@ -47,64 +47,64 @@ pub const Prop = enum(u8) {
     VECTOR = 27,
     JSON = 28,
     COLVEC = 30,
-    pub fn isBuffer(self: Prop) bool {
+    pub fn isBuffer(self: PropType) bool {
         return switch (self) {
-            Prop.BINARY,
-            Prop.ALIAS,
-            Prop.STRING,
+            PropType.BINARY,
+            PropType.ALIAS,
+            PropType.STRING,
             => true,
             else => false,
         };
     }
-    pub fn isSigned(self: Prop) bool {
+    pub fn isSigned(self: PropType) bool {
         return switch (self) {
-            Prop.INT16,
-            Prop.INT32,
-            Prop.TIMESTAMP,
-            Prop.CREATED,
-            Prop.UPDATED,
+            PropType.INT16,
+            PropType.INT32,
+            PropType.TIMESTAMP,
+            PropType.CREATED,
+            PropType.UPDATED,
             => true,
             else => false,
         };
     }
-    pub fn isNumber(self: Prop) bool {
+    pub fn isNumber(self: PropType) bool {
         return switch (self) {
-            Prop.NUMBER,
-            Prop.INT8,
-            Prop.UINT8,
-            Prop.UINT16,
-            Prop.INT16,
-            Prop.UINT32,
-            Prop.INT32,
-            Prop.CARDINALITY,
+            PropType.NUMBER,
+            PropType.INT8,
+            PropType.UINT8,
+            PropType.UINT16,
+            PropType.INT16,
+            PropType.UINT32,
+            PropType.INT32,
+            PropType.CARDINALITY,
             => true,
             else => false,
         };
     }
-    pub fn crcLen(self: Prop) usize {
+    pub fn crcLen(self: PropType) usize {
         return switch (self) {
-            Prop.STRING => 4,
+            PropType.STRING => 4,
             else => 0,
         };
     }
 };
 
-pub fn Size(p: Prop) u8 {
+pub fn Size(p: PropType) u8 {
     switch (p) {
-        Prop.TIMESTAMP,
-        Prop.CREATED,
-        Prop.UPDATED,
-        Prop.NUMBER,
+        PropType.TIMESTAMP,
+        PropType.CREATED,
+        PropType.UPDATED,
+        PropType.NUMBER,
         => {
             return 8;
         },
-        Prop.INT8, Prop.UINT8, Prop.BOOLEAN, Prop.ENUM => {
+        PropType.INT8, PropType.UINT8, PropType.BOOLEAN, PropType.ENUM => {
             return 1;
         },
-        Prop.ID, Prop.UINT32, Prop.INT32 => {
+        PropType.ID, PropType.UINT32, PropType.INT32 => {
             return 4;
         },
-        Prop.INT16, Prop.UINT16 => {
+        PropType.INT16, PropType.UINT16 => {
             return 2;
         },
         else => {
@@ -171,6 +171,8 @@ pub const RefEdgeOp = enum(u8) {
 };
 
 pub const LangCode = enum(u8) { NONE = 0, _ };
+
+// prop as enum (just a u8)
 
 pub const MAIN_PROP: u8 = 0;
 

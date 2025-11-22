@@ -104,21 +104,21 @@ pub fn group(env: napi.Env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, condi
             }
             const groupValue = db.getField(typeEntry, n, groupCtx.fieldSchema, groupCtx.propType);
             const key: []u8 = if (groupValue.len > 0)
-                if (groupCtx.propType == types.Prop.STRING)
+                if (groupCtx.propType == types.PropType.STRING)
                     if (groupCtx.field == 0)
                         groupValue.ptr[groupCtx.start + 1 .. groupCtx.start + 1 + groupValue[groupCtx.start]]
                     else
                         groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
-                else if (groupCtx.propType == types.Prop.TIMESTAMP)
+                else if (groupCtx.propType == types.PropType.TIMESTAMP)
                     @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
-                else if (groupCtx.propType == types.Prop.REFERENCE)
+                else if (groupCtx.propType == types.PropType.REFERENCE)
                     db.getReferenceNodeId(@ptrCast(@alignCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
 
-            const hash_map_entry = if (groupCtx.propType == types.Prop.TIMESTAMP and groupCtx.stepRange != 0)
+            const hash_map_entry = if (groupCtx.propType == types.PropType.TIMESTAMP and groupCtx.stepRange != 0)
                 try groupCtx.hashMap.getOrInsertWithRange(key, groupCtx.accumulatorSize, groupCtx.stepRange)
             else
                 try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);

@@ -40,3 +40,18 @@ pub const QueryAliasHeader = packed struct {
     filterSize: u16,
     valueSize: u16,
 };
+
+pub const QuerySortHeader = packed struct {
+    order: u8,
+    prop: u8, // use prop type for this
+    propType: types.PropType,
+    start: u16,
+    len: u16,
+    lang: types.LangCode,
+};
+
+// for filter etc
+// pub const QuerySort = struct {
+//     header: QuerySortHeader,
+//     buf: []u8,
+// };

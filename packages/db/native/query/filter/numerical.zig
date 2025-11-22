@@ -4,7 +4,7 @@ const Op = t.Operator;
 const Mode = t.Mode;
 const std = @import("std");
 const db = @import("../../db/db.zig");
-const Prop = @import("../../types.zig").Prop;
+const PropType = @import("../../types.zig").PropType;
 
 inline fn operate(
     T: type,
@@ -34,13 +34,13 @@ pub inline fn compare(
     op: Op,
     query: []u8,
     v: []u8,
-    prop: Prop,
+    prop: PropType,
 ) bool {
     // MODE all this is stored in microbuffers...
     // maybe op is better scince its only for these operations
-    const isSigned = Prop.isSigned(prop);
+    const isSigned = PropType.isSigned(prop);
 
-    if (prop == Prop.REFERENCES) {
+    if (prop == PropType.REFERENCES) {
         return operateSwitch(u32, op, read(u32, query, 0), @truncate(v.len / 4));
     }
 
@@ -53,7 +53,7 @@ pub inline fn compare(
         }
     } else if (size == 8) {
         // todo update if changing how its written
-        if (prop == Prop.NUMBER) {
+        if (prop == PropType.NUMBER) {
             return operate(f64, op, query, value);
         } else if (isSigned) {
             return operate(i64, op, query, value);

@@ -6,21 +6,18 @@ const getFields = @import("./include/include.zig").getFields;
 const results = @import("./results.zig");
 const types = @import("./types.zig");
 const QueryCtx = types.QueryCtx;
-const filter = @import("./filter/filter.zig").filter;
-const sort = @import("../db/sort.zig");
 const OpType = @import("../types.zig").OpType;
-
+const Sort = @import("../db/sort.zig");
 const QuerySort = @import("./queryTypes/sort.zig");
 const QueryDefault = @import("./queryTypes/default.zig");
 const QueryId = @import("./queryTypes/id.zig");
 const QueryIds = @import("./queryTypes/ids.zig");
 const QueryAlias = @import("./queryTypes/alias.zig");
-
-const aggregateTypes = @import("./aggregate/types.zig");
 const AggDefault = @import("./queryTypes/aggregate.zig");
 
+const aggregateTypes = @import("./aggregate/types.zig");
 const utils = @import("../utils.zig");
-const read = utils.read;
+const filter = @import("./filter/filter.zig").filter;
 const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
 const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
 
@@ -42,29 +39,26 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
     return null;
 }
 // -------------------------
-fn getHeader(T: type, q: []u8, index: *usize) T {
-    const header = read(T, q, index.*);
+inline fn read(T: type, q: []u8, index: *usize) T {
+    const header = utils.read(T, q, index.*);
     index.* = index.* + @bitSizeOf(T) / 8;
     return header;
 }
 
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
-    batch: []u8,
+    q: []u8,
     threadCtx: *db.DbThread,
-    op: OpType,
+    sortIndex: ?*Sort.SortIndexMeta,
 ) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
     defer arena.deinit();
 
     const allocator = arena.allocator();
-    // const len = q.len - 8;
-    // last 4 is query id might need that as well
-
-    // const queryType: QueryType = @enumFromInt(q[index]);
+    var index: usize = 0;
 
     var ctx: QueryCtx = .{
-        .id = read(u32, batch, 0),
+        .id = read(u32, q, &index),
         .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
         .size = 0,
@@ -74,17 +68,38 @@ pub fn getQueryThreaded(
         .threadCtx = threadCtx,
     };
 
-    // index += 1;
-    // const typeId: db.TypeId = read(u16, q, index);
-    // index += 2;
+    const op = read(OpType, q, &index);
 
-    const q = batch[4 .. batch.len - 8];
-    var index: usize = 1;
+    // const q = batch[4 .. batch.len - 8];
+    // const len = q.len - 8;
 
     switch (op) {
         OpType.default => {
-            const header = getHeader(types.QueryDefaultHeader, q, &index);
-            std.debug.print("derp header {any} \n", .{header});
+            const header = read(types.QueryDefaultHeader, q, &index);
+            const sort = if (header.sortSize != 0) read(types.QuerySortHeader, q, &index) else null;
+
+            std.debug.print("SORT {any} {any} \n", .{ header, sort });
+            // [order] [prop] [propType] [start] [start] [len] [len] [lan]
+
+            //
+
+            // get sort filter, search
+            // index += sortSize;
+
+            // const filterSize = read(u16, q, index);
+            // index += 2;
+            // const isSimpleFilter = q[index] == 1;
+            // index += 1;
+            // const filterBuf = q[index .. index + filterSize];
+            // index += filterSize;
+
+            // const searchSize = read(u16, q, index);
+            // index += 2;
+            // const search = q[index .. index + searchSize];
+            // index += searchSize;
+
+            // const include = q[index..len];
+            std.debug.print("derp header {any} {any} \n", .{ header, sortIndex });
             // try defaultProtocol(&ctx, q[1..len]);
         },
         OpType.id => {

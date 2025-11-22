@@ -21,7 +21,7 @@ const utils = @import("../../../utils.zig");
 // | Offset  | Field     | Size (bytes)| Description                          |
 // |---------|-----------|-------------|--------------------------------------|
 // | 0       | op        | 1           | Operation identifier (253)           |
-// | 1       | prop      | 1           | Prop identifier                      |
+// | 1       | prop      | 1           | PropType identifier                      |
 // | 2       | refSize   | 4           | Reference size (u32)                 |
 // | 6       | totalRefs | 4           | Total number of references (u32)     |
 

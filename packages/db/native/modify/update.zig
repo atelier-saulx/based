@@ -23,7 +23,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     subs.stage(ctx, subs.Op.update);
 
     switch (ctx.fieldType) {
-        types.Prop.REFERENCES => {
+        types.PropType.REFERENCES => {
             switch (@as(types.RefOp, @enumFromInt(data[4]))) {
                 // overwrite
                 types.RefOp.OVERWRITE => {
@@ -53,31 +53,31 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 },
             }
         },
-        types.Prop.REFERENCE => {
+        types.PropType.REFERENCE => {
             return reference.updateReference(ctx, data);
         },
-        types.Prop.VECTOR => {
+        types.PropType.VECTOR => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             try db.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
             return len;
         },
-        types.Prop.COLVEC => {
+        types.PropType.COLVEC => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             db.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
             return len;
         },
-        types.Prop.CARDINALITY => {
+        types.PropType.CARDINALITY => {
             const hllMode = if (data[0] == 0) true else false;
             const hllPrecision = data[1];
             const offset = 2;
             const len = read(u32, data, offset);
             var currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
             if (currentData == null) {
-                currentData = try db.ensurePropString(ctx, ctx.fieldSchema.?);
+                currentData = try db.ensurePropTypeString(ctx, ctx.fieldSchema.?);
                 selva.hll_init(currentData, hllPrecision, hllMode);
             }
             var i: usize = 4 + offset;
@@ -121,8 +121,8 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
 
-            if (ctx.fieldType == types.Prop.TEXT) {
-                if (ctx.typeSortIndex != null and ctx.fieldType == types.Prop.TEXT) {
+            if (ctx.fieldType == types.PropType.TEXT) {
+                if (ctx.typeSortIndex != null and ctx.fieldType == types.PropType.TEXT) {
                     const lang: types.LangCode = @enumFromInt(slice[0]);
                     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
                     if (sIndex) |sortIndex| {
@@ -132,7 +132,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
                 try db.setText(ctx.node.?, ctx.fieldSchema.?, slice);
-            } else if (ctx.fieldType == types.Prop.ALIAS) {
+            } else if (ctx.fieldType == types.PropType.ALIAS) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
@@ -224,12 +224,12 @@ fn incrementBuf(
 
 pub fn incrementBuffer(
     op: ModOp,
-    fieldType: types.Prop,
+    fieldType: types.PropType,
     value: []u8,
     addition: []u8,
 ) usize {
     switch (fieldType) {
-        types.Prop.INT8 => {
+        types.PropType.INT8 => {
             return incrementBuf(
                 op,
                 i8,
@@ -237,7 +237,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.Prop.UINT8 => {
+        types.PropType.UINT8 => {
             return incrementBuf(
                 op,
                 u8,
@@ -245,7 +245,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.Prop.INT16 => {
+        types.PropType.INT16 => {
             return incrementBuf(
                 op,
                 i16,
@@ -253,7 +253,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.Prop.UINT16 => {
+        types.PropType.UINT16 => {
             return incrementBuf(
                 op,
                 u16,
@@ -261,7 +261,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.Prop.INT32 => {
+        types.PropType.INT32 => {
             return incrementBuf(
                 op,
                 i32,
@@ -269,7 +269,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.Prop.UINT32 => {
+        types.PropType.UINT32 => {
             return incrementBuf(
                 op,
                 u32,
@@ -277,7 +277,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.Prop.TIMESTAMP => {
+        types.PropType.TIMESTAMP => {
             return incrementBuf(
                 op,
                 i64,
@@ -285,7 +285,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.Prop.NUMBER => {
+        types.PropType.NUMBER => {
             return incrementBuf(
                 op,
                 f64,
@@ -300,7 +300,7 @@ pub fn incrementBuffer(
 }
 
 pub fn increment(ctx: *ModifyCtx, data: []u8, op: ModOp) !usize {
-    const fieldType: types.Prop = @enumFromInt(read(u8, data, 0));
+    const fieldType: types.PropType = @enumFromInt(read(u8, data, 0));
 
     // wastfull check
     const propSize = types.Size(fieldType);

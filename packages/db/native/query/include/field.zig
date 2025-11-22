@@ -19,7 +19,7 @@ pub inline fn get(
     ctx: *QueryCtx,
     node: db.Node,
     field: u8,
-    prop: t.Prop,
+    prop: t.PropType,
     typeEntry: db.Type,
     edgeRef: ?types.RefStruct,
     comptime isEdge: bool,

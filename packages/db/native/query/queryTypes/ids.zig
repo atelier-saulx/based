@@ -27,12 +27,12 @@ pub fn sort(
     var start: u16 = undefined;
     var len: u16 = undefined;
     const sortField: u8 = sortBuffer[0];
-    const sortProp: types.Prop = @enumFromInt(sortBuffer[1]);
+    const sortPropType: types.PropType = @enumFromInt(sortBuffer[1]);
     const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
     start = read(u16, sortBuffer, 2);
     len = read(u16, sortBuffer, 4);
     // --------------------------------
-    var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortProp, desc, lang, sortField);
+    var metaSortIndex = try dbSort.createSortIndexMeta(start, len, sortPropType, desc, lang, sortField);
     const fieldSchema = try db.getFieldSchema(typeEntry, sortField);
     sortItem: while (i < ids.len) : (i += 4) {
         const id = read(u32, ids, i);
@@ -43,7 +43,7 @@ pub fn sort(
         if (!filter(ctx.db, node.?, ctx.threadCtx, typeEntry, conditions, null, null, 0, false)) {
             continue :sortItem;
         }
-        const value = db.getField(typeEntry, node.?, fieldSchema, sortProp);
+        const value = db.getField(typeEntry, node.?, fieldSchema, sortPropType);
         dbSort.insert(ctx.threadCtx.decompressor, &metaSortIndex, value, node.?);
     }
     // ------------------------------

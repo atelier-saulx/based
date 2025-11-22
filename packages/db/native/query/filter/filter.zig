@@ -6,7 +6,7 @@ const QueryCtx = @import("../types.zig").QueryCtx;
 const db = @import("../../db/db.zig");
 const types = @import("../include/types.zig");
 const std = @import("std");
-const Prop = @import("../../types.zig").Prop;
+const PropType = @import("../../types.zig").PropType;
 const Meta = @import("./types.zig").Meta;
 const Type = @import("./types.zig").Type;
 const Mode = @import("./types.zig").Mode;
@@ -154,7 +154,7 @@ pub fn filter(
         } else if (meta == Meta.exists) {
             const field: u8 = conditions[i + 1];
             const negate: Type = @enumFromInt(conditions[i + 2]);
-            const prop: Prop = @enumFromInt(conditions[i + 3]);
+            const prop: PropType = @enumFromInt(conditions[i + 3]);
 
             var te: db.Type = undefined;
             var fs: db.FieldSchema = undefined;
@@ -179,12 +179,12 @@ pub fn filter(
                 };
             }
 
-            if (prop == Prop.REFERENCES) {
+            if (prop == PropType.REFERENCES) {
                 const refs = db.getReferences(node, fs);
                 if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
                     return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                 }
-            } else if (prop == Prop.REFERENCE) {
+            } else if (prop == PropType.REFERENCE) {
                 const dstType = db.getRefDstType(ctx, fs) catch {
                     return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                 };
@@ -247,8 +247,8 @@ pub fn filter(
                     };
                 }
 
-                const prop: Prop = @enumFromInt(conditions[i + 5]);
-                if (prop == Prop.TEXT) {
+                const prop: PropType = @enumFromInt(conditions[i + 5]);
+                if (prop == PropType.TEXT) {
                     value = db.getField(te, actNode, fieldSchema, prop);
                     if (value.len == 0) {
                         return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
@@ -300,7 +300,7 @@ pub fn filter(
                         }
                     }
                 } else {
-                    if (prop == Prop.REFERENCE) {
+                    if (prop == PropType.REFERENCE) {
                         const dstType = db.getRefDstType(ctx, fieldSchema) catch {
                             return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                         };
@@ -311,7 +311,7 @@ pub fn filter(
                         } else {
                             return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                         }
-                    } else if (prop == Prop.REFERENCES) {
+                    } else if (prop == PropType.REFERENCES) {
                         const refs = db.getReferences(actNode, fieldSchema);
                         if (refs) |r| {
                             if (r.nr_refs != 0) {

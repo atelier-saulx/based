@@ -83,7 +83,7 @@ pub fn getFields(
             t.IncludeOp.partial => {
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
-                const prop: t.Prop = @enumFromInt(include[i + 1]);
+                const prop: t.PropType = @enumFromInt(include[i + 1]);
                 i += 2;
                 result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.fixed);
                 const includeSize = read(u16, include, i);
@@ -97,20 +97,20 @@ pub fn getFields(
             t.IncludeOp.meta => {
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
-                const prop: t.Prop = @enumFromInt(include[i + 1]);
+                const prop: t.PropType = @enumFromInt(include[i + 1]);
                 const langCode: t.LangCode = @enumFromInt(include[i + 2]);
                 i += 3;
                 result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.meta);
                 if (result) |r| {
                     switch (prop) {
-                        t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON, t.Prop.ALIAS => {
+                        t.PropType.BINARY, t.PropType.STRING, t.PropType.JSON, t.PropType.ALIAS => {
                             if (isEdge) {
                                 size += 1;
                             }
                             size += 12 + try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
-                        t.Prop.TEXT => {
+                        t.PropType.TEXT => {
                             if (isEdge) {
                                 size += 1;
                             }
@@ -128,15 +128,15 @@ pub fn getFields(
             t.IncludeOp.default => {
                 var result: ?*results.Result = null;
                 const field: u8 = include[i];
-                const prop: t.Prop = @enumFromInt(include[i + 1]);
+                const prop: t.PropType = @enumFromInt(include[i + 1]);
                 const optsSize = include[i + 2];
                 i += 3;
                 result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.default);
                 if (result) |r| {
                     switch (prop) {
-                        t.Prop.BINARY,
-                        t.Prop.STRING,
-                        t.Prop.JSON,
+                        t.PropType.BINARY,
+                        t.PropType.STRING,
+                        t.PropType.JSON,
                         => {
                             if (optsSize != 0) {
                                 size += try f.selvaString(ctx, isEdge, r, true, o.getOpts(include, &i));
@@ -147,7 +147,7 @@ pub fn getFields(
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
-                        t.Prop.TEXT => {
+                        t.PropType.TEXT => {
                             var s: usize = undefined;
                             if (optsSize == 0) {
                                 s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
@@ -170,7 +170,7 @@ pub fn getFields(
                                 size += s;
                             }
                         },
-                        t.Prop.MICRO_BUFFER, t.Prop.VECTOR, t.Prop.COLVEC => {
+                        t.PropType.MICRO_BUFFER, t.PropType.VECTOR, t.PropType.COLVEC => {
                             if (optsSize == 0) {
                                 size += try f.fixed(isEdge, r, false, undefined);
                             } else {

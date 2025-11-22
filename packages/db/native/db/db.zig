@@ -141,9 +141,9 @@ pub fn getField(
     typeEntry: ?Type,
     node: Node,
     fieldSchema: FieldSchema,
-    fieldType: types.Prop,
+    fieldType: types.PropType,
 ) []u8 {
-    if (fieldType == types.Prop.ALIAS) {
+    if (fieldType == types.PropType.ALIAS) {
         const target = getNodeId(node);
         const typeAliases = selva.selva_get_aliases(typeEntry, fieldSchema.field);
         const alias = selva.selva_get_alias_by_dest(typeAliases, target);
@@ -153,9 +153,9 @@ pub fn getField(
         var len: usize = 0;
         const res = selva.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
-    } else if (fieldType == types.Prop.CARDINALITY) {
+    } else if (fieldType == types.PropType.CARDINALITY) {
         return getCardinalityField(node, fieldSchema) orelse emptySlice;
-    } else if (fieldType == types.Prop.COLVEC) {
+    } else if (fieldType == types.PropType.COLVEC) {
         const nodeId = getNodeId(node);
         const vec = selva.colvec_get_vec(typeEntry, nodeId, fieldSchema);
         const len = fieldSchema.*.unnamed_0.colvec.vec_len * fieldSchema.*.unnamed_0.colvec.comp_size;
@@ -190,7 +190,7 @@ pub inline fn getNodeFromReference(dstType: Type, ref: anytype) ?Node {
 
 pub inline fn getReferenceNodeId(ref: ?ReferenceLarge) []u8 {
     if (ref) |r| {
-        const id: *u32 = @alignCast(@ptrCast(&r.*.dst));
+        const id: *u32 = @ptrCast(@alignCast(&r.*.dst));
         return std.mem.asBytes(id)[0..4];
     }
     return &[_]u8{};
@@ -379,7 +379,7 @@ pub fn getEdgeFieldSchema(db: *DbCtx, edgeConstraint: EdgeFieldConstraint, field
 }
 
 // TODO This should be going away
-pub fn getEdgeProp(
+pub fn getEdgePropType(
     db: *DbCtx,
     efc: EdgeFieldConstraint,
     ref: ReferenceLarge,
@@ -437,14 +437,14 @@ pub fn getEdgeReferences(
 }
 
 // TODO This is now hll specific but we might want to change it.
-pub fn ensurePropString(
+pub fn ensurePropTypeString(
     ctx: *modifyCtx.ModifyCtx,
     fieldSchema: FieldSchema,
 ) !*selva.selva_string {
     return selva.selva_fields_ensure_string(ctx.node.?, fieldSchema, selva.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
-pub fn ensureEdgePropString(
+pub fn ensureEdgePropTypeString(
     ctx: *modifyCtx.ModifyCtx,
     node: Node,
     efc: EdgeFieldConstraint,
@@ -661,7 +661,7 @@ pub inline fn getText(
     typeEntry: ?Type,
     node: Node,
     fieldSchema: FieldSchema,
-    fieldType: types.Prop,
+    fieldType: types.PropType,
     langCode: types.LangCode,
 ) []u8 {
     // fallbacks

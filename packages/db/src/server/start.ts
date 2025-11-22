@@ -7,7 +7,15 @@ import { Writelog, foreachBlock } from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
 import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
-import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
+import {
+  bufToHex,
+  combineToNumber,
+  equals,
+  hexToBuf,
+  readUint32,
+  readUint40,
+  wait,
+} from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 
@@ -32,7 +40,11 @@ const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
         const type = v[i + 8]
-        const id = readUint32(v, i + 4) + type
+
+        // const id = readUint40(v, i + 4)
+        const id = combineToNumber(readUint32(v, i + 4), type)
+
+        console.log('YO -->', type, readUint32(v, i + 4), id)
         db.execQueryListeners(id, type, v.subarray(i + 9, i + size))
         i += size
       }

@@ -1,16 +1,16 @@
 const read = @import("../../utils.zig").read;
-const Prop = @import("../../types.zig").Prop;
+const PropType = @import("../../types.zig").PropType;
 const db = @import("../../db//db.zig");
 const std = @import("std");
 
 pub inline fn crc32Equal(
-    prop: Prop,
+    prop: PropType,
     query: []u8,
     v: []u8,
 ) bool {
     const origLen = read(u32, query, 4);
     var valueLen: usize = undefined;
-    if (prop == Prop.STRING and v[1] == 1) {
+    if (prop == PropType.STRING and v[1] == 1) {
         valueLen = read(u32, v, 2);
     } else {
         valueLen = v.len - 6;

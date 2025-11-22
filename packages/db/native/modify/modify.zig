@@ -163,7 +163,7 @@ pub fn modify(
         .node = null,
         .typeEntry = null,
         .fieldSchema = null,
-        .fieldType = types.Prop.NULL,
+        .fieldType = types.PropType.NULL,
         .db = dbCtx,
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
         .batch = batch,
@@ -189,9 +189,9 @@ pub fn modify(
                 i = i + 3;
                 ctx.fieldSchema = try db.getFieldSchema(ctx.typeEntry.?, ctx.field);
                 ctx.fieldType = @enumFromInt(operation[1]);
-                if (ctx.fieldType == types.Prop.REFERENCE) {
+                if (ctx.fieldType == types.PropType.REFERENCE) {
                     offset = 1;
-                } else if (ctx.fieldType == types.Prop.CARDINALITY) {
+                } else if (ctx.fieldType == types.PropType.CARDINALITY) {
                     offset = 7;
                 } else {
                     offset = 5;

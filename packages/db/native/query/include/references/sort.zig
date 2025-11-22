@@ -26,7 +26,7 @@ pub fn sortedReferences(
     var start: u16 = undefined;
     var len: u16 = undefined;
     const sortField: u8 = sortBuffer[1];
-    const sortProp: types.Prop = @enumFromInt(sortBuffer[2]);
+    const sortPropType: types.PropType = @enumFromInt(sortBuffer[2]);
     start = read(u16, sortBuffer, 3);
     len = read(u16, sortBuffer, 5);
     const langCode: types.LangCode = @enumFromInt(sortBuffer[7]);
@@ -34,7 +34,7 @@ pub fn sortedReferences(
     var metaSortIndex = dbSort.createSortIndexMeta(
         start,
         len,
-        sortProp,
+        sortPropType,
         sortBuffer[0] == 1,
         langCode,
         sortField,
@@ -60,7 +60,7 @@ pub fn sortedReferences(
             const fs = db.getFieldSchema(typeEntry, sortField) catch {
                 return result;
             };
-            const value = db.getField(typeEntry, refNode, fs, sortProp);
+            const value = db.getField(typeEntry, refNode, fs, sortPropType);
             dbSort.insert(ctx.threadCtx.decompressor, &metaSortIndex, value, refNode);
         }
     }

@@ -109,21 +109,21 @@ pub inline fn aggregateRefsGroup(
             }
             const groupValue = db.getField(typeEntry, n, groupCtx.fieldSchema, groupCtx.propType);
             const key: []u8 = if (groupValue.len > 0)
-                if (groupCtx.propType == types.Prop.STRING)
+                if (groupCtx.propType == types.PropType.STRING)
                     if (groupCtx.field == 0)
                         groupValue.ptr[groupCtx.start + 1 .. groupCtx.start + 1 + groupValue[groupCtx.start]]
                     else
                         groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
-                else if (groupCtx.propType == types.Prop.TIMESTAMP)
+                else if (groupCtx.propType == types.PropType.TIMESTAMP)
                     @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
-                else if (groupCtx.propType == types.Prop.REFERENCE)
+                else if (groupCtx.propType == types.PropType.REFERENCE)
                     db.getReferenceNodeId(@ptrCast(@alignCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
 
-            const hash_map_entry = if (groupCtx.propType == types.Prop.TIMESTAMP and groupCtx.stepRange != 0)
+            const hash_map_entry = if (groupCtx.propType == types.PropType.TIMESTAMP and groupCtx.stepRange != 0)
                 try groupCtx.hashMap.getOrInsertWithRange(key, groupCtx.accumulatorSize, groupCtx.stepRange)
             else
                 try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
@@ -174,15 +174,15 @@ pub inline fn aggregateRefsDefault(
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
     defer selva.selva_string_free(hllAccumulator);
     var fieldSchema: db.FieldSchema = undefined;
-    const aggPropDefSize = 10;
+    const aggPropTypeDefSize = 10;
 
     fieldSchema = db.getFieldSchema(originalType, refField) catch {
-        return aggPropDefSize;
+        return aggPropTypeDefSize;
     };
     const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema);
     const references = db.getReferences(node, fieldSchema);
     if (references == null) {
-        return aggPropDefSize;
+        return aggPropTypeDefSize;
     }
 
     refs = .{ .refs = references.?, .fs = fieldSchema };
@@ -190,10 +190,10 @@ pub inline fn aggregateRefsDefault(
     const refsCnt = refs.?.refs.*.nr_refs;
 
     const fieldAggsSize = read(u16, agg, 1);
-    const aggPropDef = agg[3 .. 3 + fieldAggsSize];
-    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
+    const aggPropTypeDef = agg[3 .. 3 + fieldAggsSize];
+    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropTypeDef[0]);
     if (aggType == aggregateTypes.AggType.COUNT and !hasFilter and accumulatorSize == 4) {
-        const resultPos = read(u16, aggPropDef, 4);
+        const resultPos = read(u16, aggPropTypeDef, 4);
         writeInt(u32, accumulatorField, resultPos, refsCnt);
     } else {
         var i: usize = offset;

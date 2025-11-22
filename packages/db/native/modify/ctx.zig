@@ -15,7 +15,7 @@ pub const ModifyCtx = struct {
     typeEntry: ?db.Type,
     fieldSchema: ?db.FieldSchema,
     node: ?db.Node,
-    fieldType: types.Prop,
+    fieldType: types.PropType,
     db: *db.DbCtx,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
     subTypes: ?*subs.TypeSubscriptionCtx,

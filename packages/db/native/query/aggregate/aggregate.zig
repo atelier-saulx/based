@@ -11,7 +11,7 @@ const microbufferToF64 = @import("./utils.zig").microbufferToF64;
 const incTypes = @import("../include/types.zig");
 
 inline fn execAgg(
-    aggPropDef: []u8,
+    aggPropTypeDef: []u8,
     accumulatorField: []u8,
     value: []u8,
     fieldAggsSize: u16,
@@ -21,15 +21,15 @@ inline fn execAgg(
 ) void {
     var j: usize = 0;
     while (j < fieldAggsSize) {
-        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[j]);
+        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropTypeDef[j]);
         j += 1;
-        const propType: types.Prop = @enumFromInt(aggPropDef[j]);
+        const propType: types.PropType = @enumFromInt(aggPropTypeDef[j]);
         j += 1;
-        const start = read(u16, aggPropDef, j);
+        const start = read(u16, aggPropTypeDef, j);
         j += 2;
-        // const resultPos = read(u16, aggPropDef, j); // TODO: Remove from buffer if not used
+        // const resultPos = read(u16, aggPropTypeDef, j); // TODO: Remove from buffer if not used
         j += 2;
-        const accumulatorPos = read(u16, aggPropDef, j);
+        const accumulatorPos = read(u16, aggPropTypeDef, j);
         j += 2;
         // isEdge
         j += 1;
@@ -107,9 +107,9 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
         i += 1;
         const fieldAggsSize = read(u16, agg, i);
         i += 2;
-        const aggPropDef = agg[i .. i + fieldAggsSize];
-        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropDef[0]);
-        const isEdge: bool = aggPropDef[8] == 1;
+        const aggPropTypeDef = agg[i .. i + fieldAggsSize];
+        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropTypeDef[0]);
+        const isEdge: bool = aggPropTypeDef[8] == 1;
         var value: []u8 = undefined;
 
         if (field != aggregateTypes.IsId) {
@@ -132,19 +132,19 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                     _ = selva.selva_string_replace(hllAccumulator, null, selva.HLL_INIT_SIZE);
                     selva.hll_init_like(hllAccumulator, hllValue);
                 }
-                execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, hllAccumulator, hllValue);
+                execAgg(aggPropTypeDef, accumulatorField, value, fieldAggsSize, hadAccumulated, hllAccumulator, hllValue);
                 hadAccumulated.* = true;
             } else {
-                value = if (isEdge and edgeRef != null) db.getEdgeProp(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(typeEntry, node, fieldSchema, types.Prop.MICRO_BUFFER);
+                value = if (isEdge and edgeRef != null) db.getEdgePropType(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(typeEntry, node, fieldSchema, types.PropType.MICRO_BUFFER);
                 if (value.len == 0) {
                     i += fieldAggsSize;
                     continue;
                 }
-                execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, null, null);
+                execAgg(aggPropTypeDef, accumulatorField, value, fieldAggsSize, hadAccumulated, null, null);
                 hadAccumulated.* = true;
             }
         } else {
-            execAgg(aggPropDef, accumulatorField, value, fieldAggsSize, hadAccumulated, null, null);
+            execAgg(aggPropTypeDef, accumulatorField, value, fieldAggsSize, hadAccumulated, null, null);
             hadAccumulated.* = true;
         }
         i += fieldAggsSize;

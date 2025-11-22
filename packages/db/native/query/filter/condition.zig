@@ -9,12 +9,12 @@ const Mode = t.Mode;
 const Op = t.Operator;
 const Type = t.Type;
 const ConditionsResult = t.ConditionsResult;
-const Prop = @import("../../types.zig").Prop;
+const PropType = @import("../../types.zig").PropType;
 const deflate = @import("../../deflate.zig");
 const crc32Equal = @import("./crc32Equal.zig").crc32Equal;
 
 pub inline fn orVar(decompressor: *deflate.Decompressor, blockState: *deflate.BlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const prop: Prop = @enumFromInt(q[2]);
+    const prop: PropType = @enumFromInt(q[2]);
     const valueSize = read(u32, q, i + 6);
     const next = 11 + valueSize;
     const mainLen = read(u16, q, i + 4);
@@ -53,12 +53,12 @@ pub inline fn orVar(decompressor: *deflate.Decompressor, blockState: *deflate.Bl
 }
 
 pub inline fn defaultVar(decompressor: *deflate.Decompressor, blockState: *deflate.BlockState, q: []u8, v: []u8, i: usize) ConditionsResult {
-    const prop: Prop = @enumFromInt(q[2]);
+    const prop: PropType = @enumFromInt(q[2]);
     const start = read(u16, q, i + 2);
     const mainLen = read(u16, q, i + 4);
     var valueSize = read(u32, q, i + 6);
 
-    const isText: bool = prop == Prop.TEXT;
+    const isText: bool = prop == PropType.TEXT;
     const op: Op = @enumFromInt(q[i + 10]);
     const next = 11 + valueSize;
     var query = q[i + 11 .. i + next];
@@ -153,7 +153,7 @@ pub inline fn default(
     v: []u8,
     i: usize,
 ) ConditionsResult {
-    const prop: Prop = @enumFromInt(q[i + 1]);
+    const prop: PropType = @enumFromInt(q[i + 1]);
     const valueSize = read(u16, q, i + 2);
     const start = read(u16, q, i + 4);
     const op: Op = @enumFromInt(q[i + 6]);
@@ -210,7 +210,7 @@ pub inline fn orFixed(
     v: []u8,
     i: usize,
 ) ConditionsResult {
-    const prop: Prop = @enumFromInt(q[i + 1]);
+    const prop: PropType = @enumFromInt(q[i + 1]);
     const valueSize = read(u16, q, i + 2);
     const start = read(u16, q, i + 4);
     const op: Op = @enumFromInt(q[i + 6]);
@@ -233,7 +233,7 @@ pub inline fn orFixed(
         if (!batch.equalsOr(valueSize, value, query)) {
             return .{ next, false };
         }
-    } else if (op == Op.has and prop == Prop.REFERENCES) {
+    } else if (op == Op.has and prop == PropType.REFERENCES) {
         if (!batch.simdReferencesHas(query, v)) {
             return .{ next, false };
         }

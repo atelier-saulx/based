@@ -3,7 +3,7 @@ const DbCtx = @import("./ctx.zig").DbCtx;
 const Thread = std.Thread;
 const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
-const utils = @import("../utils.zig");
+const read = @import("../utils.zig").read;
 const Query = @import("../query/query.zig");
 const Modify = @import("../modify/modify.zig");
 const selva = @import("../selva.zig").c;
@@ -69,7 +69,6 @@ pub const DbThread = struct {
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
     pendingModifies: usize,
-    sortIndex: ?*sort.SortIndexMeta,
 };
 
 pub const Threads = struct {
@@ -85,7 +84,6 @@ pub const Threads = struct {
 
     sortDone: Condition = .{},
     makingSortIndexes: usize = 0,
-    // makingSortIndexes = [std.Thread.getCpuCount() - 1].{[5]u8},
 
     modifyQueue: *Queue,
     nextModifyQueue: *Queue,
@@ -202,8 +200,7 @@ pub const Threads = struct {
             var queryBuf: ?[]u8 = null;
             var modifyBuf: ?[]u8 = null;
             var op: OpType = undefined;
-
-            threadCtx.sortIndex = null;
+            const sortIndex: ?*sort.SortIndexMeta = null;
 
             self.mutex.lock();
 
@@ -217,7 +214,7 @@ pub const Threads = struct {
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
                     if (op == OpType.default) {
-                        const typeId = utils.read(u16, q, 5);
+                        const typeId = read(u16, q, 5);
 
                         std.debug.print("derp typeId {any} {any} \n", .{ typeId, q });
 
@@ -248,16 +245,10 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 if (op == OpType.save) {
-                    const data = try getResultSlice(
-                        true,
-                        threadCtx,
-                        1,
-                        utils.read(u32, q, 0),
-                        op,
-                    );
+                    const data = try getResultSlice(true, threadCtx, 1, read(u32, q, 0), op);
                     data[0] = 67;
                 } else {
-                    try Query.getQueryThreaded(self.ctx, q, threadCtx, op);
+                    try Query.getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
                 }
 
                 self.mutex.lock();
@@ -270,6 +261,7 @@ pub const Threads = struct {
 
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
+                        std.debug.print("derp!@# \n", .{});
                         self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
                     }
 

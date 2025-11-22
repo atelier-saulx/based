@@ -26,19 +26,29 @@ pub inline fn toSlice(comptime T: type, value: []u8) []T {
 }
 
 pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
-    const isSlice = T == []u64 or T == []u8 or T == []u32 or T == []f32 or T == []f64 or T == []u16 or T == []u8 or T == []i8 or T == []i16 or T == []i32 or T == []i64;
-    if (isSlice) {
-        const X = switch (@typeInfo(T)) {
-            .pointer => |info| info.child,
-            else => @compileError("Expected pointer type"),
-        };
-        const s = @bitSizeOf(X) / 8;
-        const x: T = @as([*]X, @ptrCast(@alignCast(buffer.ptr)))[0..@divFloor(buffer.len, s)];
-        return x;
+    switch (@typeInfo(T)) {
+        .pointer => |info| {
+            if (info.size == .slice) {
+                const ChildType = info.child;
+                const s = @bitSizeOf(T) / 8;
+                const value: T = @as([*]ChildType, @ptrCast(@alignCast(buffer.ptr)))[0..@divFloor(buffer.len, s)];
+                return value;
+            } else {
+                @compileError("Read: Only slice pointers supported for now... " ++ @typeName(T));
+            }
+        },
+        // .enum is a keyword so thats why you need this beauty
+        .@"enum" => |info| {
+            const TagType = info.tag_type;
+            const intVal = read(TagType, buffer, offset);
+            return @enumFromInt(intVal);
+        },
+        else => {
+            const size = @bitSizeOf(T) / 8;
+            const value: T = @bitCast(buffer[offset..][0..size].*);
+            return value;
+        },
     }
-    const size = @bitSizeOf(T) / 8;
-    const value: T = @bitCast(buffer[offset..][0..size].*);
-    return value;
 }
 
 pub fn debugPrint(comptime format: []const u8, args: anytype) void {

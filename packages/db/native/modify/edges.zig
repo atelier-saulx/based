@@ -12,7 +12,7 @@ const read = utils.read;
 const copy = utils.copy;
 
 const ModifyCtx = Modify.ModifyCtx;
-const p = types.Prop;
+const p = types.PropType;
 
 fn isMainEmpty(val: []u8) bool {
     var b = false;
@@ -101,7 +101,7 @@ pub fn writeEdges(
         } else if (t == p.CARDINALITY) {
             len = read(u32, data, i);
             offset = 4;
-            const hll = try db.ensureEdgePropString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
+            const hll = try db.ensureEdgePropTypeString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
             selva.hll_init(hll, 8, true); // TBD: to get optionals from buffer
             var it: usize = i + offset;
             while (it < len) {
