@@ -63,10 +63,6 @@ const native = {
     return db.stop(dbCtx)
   },
 
-  delBlock: (dbCtx: any, typeId: number, block: number) => {
-    db.delBlock(dbCtx, typeId, block)
-  },
-
   setSchemaType: (dbCtx: any, prefix: number, buf: Uint8Array) => {
     return db.setSchemaType(dbCtx, prefix, buf)
   },

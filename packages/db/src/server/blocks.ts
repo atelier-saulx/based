@@ -157,16 +157,17 @@ export async function loadCommon(db: DbServer, filename: string): Promise<void> 
   msg.set(filepath, 8)
 
   return new Promise((resolve, reject) => {
-    db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
-      if (err) {
-        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
-        db.emit('error', errMsg)
-        reject(new Error(errMsg))
-      } else {
-        resolve()
-      }
-    })
+    // FIXME
+    //db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
+    //  const err = readUint32(buf, 0)
+    //  if (err) {
+    //    const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+    //    db.emit('error', errMsg)
+    //    reject(new Error(errMsg))
+    //  } else {
+    //    resolve()
+    //  }
+    //})
 
     native.modifyThread(msg, db.dbCtxExternal)
   })
@@ -179,16 +180,17 @@ export async function loadBlockRaw(db: DbServer, filename: string): Promise<void
   msg.set(filepath, 8)
 
   return new Promise((resolve, reject) => {
-    db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
-      if (err) {
-        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
-        db.emit('error', errMsg)
-        reject(new Error(errMsg))
-      } else {
-        resolve()
-      }
-    })
+    // FIXME
+    //db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
+    //  const err = readUint32(buf, 0)
+    //  if (err) {
+    //    const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+    //    db.emit('error', errMsg)
+    //    reject(new Error(errMsg))
+    //  } else {
+    //    resolve()
+    //  }
+    //})
 
     native.modifyThread(msg, db.dbCtxExternal)
   })
