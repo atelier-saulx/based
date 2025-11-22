@@ -221,9 +221,9 @@ pub const IncludeOp = enum(u8) {
 };
 
 pub const ReadRefOp = enum(u8) {
-    REFERENCES = @intFromEnum(ReadOp.REFERENCES),
-    REFERENCE = @intFromEnum(ReadOp.REFERENCE),
-    none = @intFromEnum(ReadOp.NONE),
+    references = @intFromEnum(ReadOp.references),
+    reference = @intFromEnum(ReadOp.reference),
+    none = @intFromEnum(ReadOp.none),
 };
 
 pub const ResultType = enum(u8) {
@@ -350,6 +350,9 @@ pub const QueryAliasHeader = packed struct {
     typeId: TypeId,
     filterSize: u16,
     valueSize: u16,
+    a: bool,
+    b: bool,
+    _padding: u6,
 };
 
 pub const FilterOp = enum(u8) {

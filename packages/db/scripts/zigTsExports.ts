@@ -33,14 +33,13 @@ const parseZig = (input: string): string => {
 
   const enumBackingTypes: Record<string, string> = {}
   const aliases: Record<string, string> = {}
-  // Store resolved enum fields to handle @intFromEnum references and casing
   const enumValues: Record<string, Record<string, string>> = {}
 
   // Regex patterns
   const regexConstAlias = /^pub const (\w+) = ([a-zA-Z_][\w]*);/
   const regexEnumStart = /^pub const (\w+)(?:: type)? = enum\((\w+)\) \{/
   const regexConstVal = /^pub const (\w+)(?:: [\w\d]+)?\s*=\s*([^;]+);/
-  const regexStructStart = /^pub const (\w+) = (?:packed )?struct \{/
+  const regexStructStart = /^pub const (\w+) = (packed )?struct \{/
   const regexField = /^\s*([\w@"]+)\s*=\s*(.+?)(?:,|;)?$/
   const regexStructField = /^\s*(\w+):\s*([\w\.]+),/
 
@@ -49,6 +48,7 @@ const parseZig = (input: string): string => {
   let currentBuffer: string[] = []
   let currentBackingType = 'u8'
   let currentEnumHasWildcard = false
+  let currentStructIsPacked = false
 
   const toTsType = (zigType: string): string => {
     if (
@@ -61,6 +61,7 @@ const parseZig = (input: string): string => {
     if (aliases[zigType]) return toTsType(aliases[zigType])
     if (typeSizes[zigType])
       return zigType.endsWith('Enum') ? zigType : zigType + 'Enum'
+    if (/^u\d+$/.test(zigType)) return 'number'
     return 'number'
   }
 
@@ -77,7 +78,16 @@ const parseZig = (input: string): string => {
     return t
   }
 
-  // Pre-pass to register types
+  const getBitSize = (type: string): number => {
+    const prim = getPrimitive(type)
+    if (prim === 'bool') return 1 // bool is 1 bit in packed structs
+    if (typeSizes[prim]) return typeSizes[prim] * 8
+    const match = prim.match(/^u(\d+)$/)
+    if (match) return parseInt(match[1], 10)
+    return 8
+  }
+
+  // Pre-pass
   for (const line of lines) {
     const aliasMatch = line.match(regexConstAlias)
     if (aliasMatch) {
@@ -98,7 +108,6 @@ const parseZig = (input: string): string => {
     const rawLine = lines[i]
     let line = rawLine.trim()
 
-    // 1. Type Aliases
     const matchAlias = line.match(regexConstAlias)
     if (matchAlias) {
       const [_, name, target] = matchAlias
@@ -106,7 +115,6 @@ const parseZig = (input: string): string => {
       continue
     }
 
-    // 2. Enums
     const matchEnum = line.match(regexEnumStart)
     if (matchEnum) {
       const name = matchEnum[1]
@@ -129,7 +137,6 @@ const parseZig = (input: string): string => {
       continue
     }
 
-    // 3. Value Consts
     const matchVal = line.match(regexConstVal)
     if (matchVal) {
       const [_, name, val] = matchVal
@@ -139,16 +146,15 @@ const parseZig = (input: string): string => {
       continue
     }
 
-    // 4. Start Struct
     const matchStruct = line.match(regexStructStart)
     if (matchStruct) {
       currentBlock = 'STRUCT'
       currentName = matchStruct[1]
       currentBuffer = []
+      currentStructIsPacked = !!matchStruct[2]
       continue
     }
 
-    // 5. End Block
     if ((line === '};' || line === '};') && currentBlock !== 'NONE') {
       if (currentBlock === 'ENUM') {
         processEnum(
@@ -158,14 +164,13 @@ const parseZig = (input: string): string => {
           currentBackingType,
         )
       } else if (currentBlock === 'STRUCT') {
-        processStruct(currentName, currentBuffer)
+        processStruct(currentName, currentBuffer, currentStructIsPacked)
       }
       currentBlock = 'NONE'
       currentBuffer = []
       continue
     }
 
-    // 6. Accumulate
     if (currentBlock !== 'NONE') {
       if (line.startsWith('pub fn')) {
         let fnBuffer: string[] = [rawLine]
@@ -199,17 +204,10 @@ const parseZig = (input: string): string => {
   ) {
     const pairs: { key: string; val: string }[] = []
 
-    const localValues: Record<string, string> = {}
-
     body.forEach((l) => {
       const trimmed = l.trim()
       if (!trimmed) return
-
-      // SKIP ALL FUNCTIONS IN ENUMS
-      if (trimmed.startsWith('pub fn')) {
-        return
-      }
-
+      if (trimmed.startsWith('pub fn')) return
       if (trimmed === '_' || trimmed === '_,') return
 
       const match = trimmed.match(regexField)
@@ -218,7 +216,6 @@ const parseZig = (input: string): string => {
         let valStr = match[2].trim()
 
         if (key.startsWith('@"')) key = key.replace(/@"/, '').replace(/"/, '')
-
         if (valStr.includes('//')) valStr = valStr.split('//')[0].trim()
         if (valStr.endsWith(',')) valStr = valStr.slice(0, -1)
 
@@ -227,7 +224,6 @@ const parseZig = (input: string): string => {
           if (inner) {
             const [refEnum, refField] = inner.split('.')
             let resolvedField = refField
-
             if (enumValues[refEnum]) {
               if (enumValues[refEnum][refField] !== undefined) {
                 resolvedField = refField
@@ -244,13 +240,9 @@ const parseZig = (input: string): string => {
             valStr = `${refEnum}.${resolvedField}`
           }
         }
-
         pairs.push({ key, val: valStr })
-        localValues[key] = valStr
       }
     })
-
-    enumValues[name] = localValues
 
     output += `export const ${name} = {\n`
     pairs.forEach((p) => (output += `  ${p.key}: ${p.val},\n`))
@@ -266,7 +258,6 @@ const parseZig = (input: string): string => {
       output += `// this needs number because it has a any (_) condition\n`
       if (pairs.length > 0) {
         const vals = pairs.map((p) => p.val).join(' | ')
-        // Updated here to use (number & {})
         output += `export type ${name}Enum = ${vals} | (number & {})\n\n`
       } else {
         output += `export type ${name}Enum = number\n\n`
@@ -280,9 +271,15 @@ const parseZig = (input: string): string => {
     }
   }
 
-  function processStruct(name: string, body: string[]) {
-    const fields: { name: string; type: string }[] = []
-    let totalSize = 0
+  function processStruct(name: string, body: string[], isPacked: boolean) {
+    const fields: {
+      name: string
+      type: string
+      bitSize: number
+      isPadding: boolean
+      isBoolean: boolean
+    }[] = []
+    let totalBits = 0
 
     body.forEach((l) => {
       const match = l.match(regexStructField)
@@ -290,6 +287,7 @@ const parseZig = (input: string): string => {
         const fName = match[1]
         let fType = match[2]
         let tsType = 'number'
+        const isPadding = fName.startsWith('_')
 
         if (aliases[fType]) {
           tsType = fType
@@ -299,16 +297,32 @@ const parseZig = (input: string): string => {
           tsType = 'boolean'
         }
 
-        fields.push({ name: fName, type: tsType })
-        totalSize += typeSizes[fType] || 0
+        const prim = getPrimitive(fType)
+        const isBoolean = prim === 'bool'
+
+        const bitSize = getBitSize(fType)
+        totalBits += bitSize
+
+        fields.push({
+          name: fName,
+          type: tsType,
+          bitSize,
+          isPadding,
+          isBoolean,
+        })
       }
     })
 
     output += `export type ${name} = {\n`
-    fields.forEach((f) => (output += `  ${f.name}: ${f.type}\n`))
+    fields.forEach((f) => {
+      if (!f.isPadding) {
+        output += `  ${f.name}: ${f.type}\n`
+      }
+    })
     output += `}\n\n`
 
-    output += `export const ${name}ByteSize = ${totalSize}\n\n`
+    const byteSize = Math.ceil(totalBits / 8)
+    output += `export const ${name}ByteSize = ${byteSize}\n\n`
 
     output += `export const write${name} = (\n`
     output += `  buf: Uint8Array,\n`
@@ -316,67 +330,115 @@ const parseZig = (input: string): string => {
     output += `  offset: number,\n`
     output += `): number => {\n`
 
-    body.forEach((l) => {
-      const match = l.match(regexStructField)
-      if (!match) return
-      const fName = match[1]
-      const zigType = match[2]
-      const prim = getPrimitive(zigType)
+    if (!isPacked) {
+      fields.forEach((f) => {
+        const fName = f.name
+        const prim = getPrimitive(
+          body
+            .find((l) => l.includes(`${fName}:`))
+            ?.match(regexStructField)?.[2] || 'u8',
+        )
+        const valRef = f.isPadding ? '0' : `header.${fName}`
 
-      switch (prim) {
-        case 'u8':
-        case 'LangCode':
-          output += `  buf[offset] = header.${fName}\n`
-          output += `  offset += 1\n`
-          break
-        case 'bool':
-          output += `  buf[offset] = header.${fName} ? 1 : 0\n`
-          output += `  offset += 1\n`
-          break
-        case 'i8':
-          output += `  buf[offset] = header.${fName}\n`
-          output += `  offset += 1\n`
-          break
-        case 'u16':
-          output += `  writeUint16(buf, header.${fName}, offset)\n`
-          output += `  offset += 2\n`
-          break
-        case 'i16':
-          output += `  writeInt16(buf, header.${fName}, offset)\n`
-          output += `  offset += 2\n`
-          break
-        case 'u32':
-          output += `  writeUint32(buf, header.${fName}, offset)\n`
-          output += `  offset += 4\n`
-          break
-        case 'i32':
-          output += `  writeInt32(buf, header.${fName}, offset)\n`
-          output += `  offset += 4\n`
-          break
-        case 'f32':
-          output += `  writeFloatLE(buf, header.${fName}, offset)\n`
-          output += `  offset += 4\n`
-          break
-        case 'u64':
-        case 'usize':
-          output += `  writeUint64(buf, header.${fName}, offset)\n`
-          output += `  offset += 8\n`
-          break
-        case 'i64':
-          output += `  writeInt64(buf, header.${fName}, offset)\n`
-          output += `  offset += 8\n`
-          break
-        case 'f64':
-          output += `  writeDoubleLE(buf, header.${fName}, offset)\n`
-          output += `  offset += 8\n`
-          break
-        default:
-          output += `  // Unknown type writer for ${fName}: ${zigType} (${prim})\n`
-          const size = typeSizes[zigType] || 0
-          if (size > 0) output += `  offset += ${size}\n`
-          break
+        switch (prim) {
+          case 'u8':
+          case 'LangCode':
+            output += `  buf[offset] = ${valRef}\n;  offset += 1\n`
+            break
+          case 'bool':
+            output += `  buf[offset] = ${valRef} ? 1 : 0\n;  offset += 1\n`
+            break
+          case 'i8':
+            output += `  buf[offset] = ${valRef}\n;  offset += 1\n`
+            break
+          case 'u16':
+            output += `  writeUint16(buf, ${valRef}, offset)\n;  offset += 2\n`
+            break
+          case 'i16':
+            output += `  writeInt16(buf, ${valRef}, offset)\n;  offset += 2\n`
+            break
+          case 'u32':
+            output += `  writeUint32(buf, ${valRef}, offset)\n;  offset += 4\n`
+            break
+          case 'i32':
+            output += `  writeInt32(buf, ${valRef}, offset)\n;  offset += 4\n`
+            break
+          case 'f32':
+            output += `  writeFloatLE(buf, ${valRef}, offset)\n;  offset += 4\n`
+            break
+          case 'u64':
+          case 'usize':
+            output += `  writeUint64(buf, ${valRef}, offset)\n;  offset += 8\n`
+            break
+          case 'i64':
+            output += `  writeInt64(buf, ${valRef}, offset)\n;  offset += 8\n`
+            break
+          case 'f64':
+            output += `  writeDoubleLE(buf, ${valRef}, offset)\n;  offset += 8\n`
+            break
+          default:
+            output += `  offset += ${Math.ceil(f.bitSize / 8)}\n`
+        }
+      })
+    } else {
+      let currentBitGlobal = 0
+
+      for (let i = 0; i < fields.length; i++) {
+        const f = fields[i]
+
+        if (currentBitGlobal % 8 === 0 && [8, 16, 32, 64].includes(f.bitSize)) {
+          const fName = f.name
+          const valRef = f.isPadding ? '0' : `header.${fName}`
+          const valWithTernary =
+            f.isBoolean && !f.isPadding ? `(${valRef} ? 1 : 0)` : valRef
+
+          if (f.bitSize === 8) {
+            output += `  buf[offset] = ${valWithTernary}\n`
+            output += `  offset += 1\n`
+          } else if (f.bitSize === 16) {
+            output += `  writeUint16(buf, ${valRef}, offset)\n`
+            output += `  offset += 2\n`
+          } else if (f.bitSize === 32) {
+            output += `  writeUint32(buf, ${valRef}, offset)\n`
+            output += `  offset += 4\n`
+          } else if (f.bitSize === 64) {
+            output += `  writeUint64(buf, ${valRef}, offset)\n`
+            output += `  offset += 8\n`
+          }
+          currentBitGlobal += f.bitSize
+        } else {
+          let remainingBits = f.bitSize
+          let valExpression = f.isPadding ? '0' : `header.${f.name}`
+
+          if (f.isBoolean && !f.isPadding) {
+            valExpression = `(${valExpression} ? 1 : 0)`
+          }
+
+          let bitsProcessed = 0
+          while (remainingBits > 0) {
+            const bitInByte = currentBitGlobal % 8
+            const bitsCanFitInByte = 8 - bitInByte
+            const bitsToWrite = Math.min(remainingBits, bitsCanFitInByte)
+
+            const mask = (1 << bitsToWrite) - 1
+
+            if (bitInByte === 0) {
+              output += `  buf[offset] = 0\n`
+            }
+
+            output += `  buf[offset] |= ((${valExpression} >>> ${bitsProcessed}) & ${mask}) << ${bitInByte}\n`
+
+            currentBitGlobal += bitsToWrite
+            bitsProcessed += bitsToWrite
+            remainingBits -= bitsToWrite
+
+            if (currentBitGlobal % 8 === 0) {
+              output += `  offset += 1\n`
+            }
+          }
+        }
       }
-    })
+    }
 
     output += `  return offset\n`
     output += `}\n\n`

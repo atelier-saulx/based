@@ -1,12 +1,8 @@
-import {
-  writeUint16,
-  writeInt16,
-  writeUint32,
-  writeInt32,
-  writeUint64,
-  writeInt64,
-  writeFloatLE,
-  writeDoubleLE,
+import { 
+  writeUint16, writeInt16, 
+  writeUint32, writeInt32, 
+  writeUint64, writeInt64, 
+  writeFloatLE, writeDoubleLE 
 } from '@based/utils'
 
 export type TypeId = number
@@ -202,8 +198,7 @@ export const ReferencesSelect = {
   any, 
   all 
  */
-export type ReferencesSelectEnum =
-  (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
+export type ReferencesSelectEnum = (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
 
 export const RefEdgeOp = {
   noEdgeNoIndexRealId: 0,
@@ -264,14 +259,14 @@ export const IncludeOp = {
 export type IncludeOpEnum = (typeof IncludeOp)[keyof typeof IncludeOp]
 
 export const ReadRefOp = {
-  REFERENCES: ReadOp.references,
-  REFERENCE: ReadOp.reference,
+  references: ReadOp.references,
+  reference: ReadOp.reference,
   none: ReadOp.none,
 } as const
 
 /**
-  REFERENCES, 
-  REFERENCE, 
+  references, 
+  reference, 
   none 
  */
 export type ReadRefOpEnum = (typeof ReadRefOp)[keyof typeof ReadRefOp]
@@ -561,9 +556,11 @@ export type QueryAliasHeader = {
   typeId: TypeId
   filterSize: number
   valueSize: number
+  a: boolean
+  b: boolean
 }
 
-export const QueryAliasHeaderByteSize = 6
+export const QueryAliasHeaderByteSize = 7
 
 export const writeQueryAliasHeader = (
   buf: Uint8Array,
@@ -576,6 +573,11 @@ export const writeQueryAliasHeader = (
   offset += 2
   writeUint16(buf, header.valueSize, offset)
   offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.a ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.b ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= ((0 >>> 0) & 63) << 2
+  offset += 1
   return offset
 }
 
@@ -677,8 +679,7 @@ export const FilterVectorFn = {
   cosineSimilarity, 
   euclideanDistance 
  */
-export type FilterVectorFnEnum =
-  (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
+export type FilterVectorFnEnum = (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
 
 export const FilterMaxVectorScore = 9999999
 export const FilterMaxStringScore = 255
@@ -727,3 +728,4 @@ export const AggType = {
   hmean 
  */
 export type AggTypeEnum = (typeof AggType)[keyof typeof AggType]
+
