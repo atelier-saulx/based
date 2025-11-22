@@ -112,7 +112,7 @@ export async function perf(
           `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x) ${diffMessage}.`,
         ),
       )
-    return avgTime
+    return totalTime
   } catch (err) {
     console.error(`Error in perf run "${label}":`, err)
     return
