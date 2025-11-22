@@ -93,6 +93,29 @@ fn selvaLangAll(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
     return result;
 }
 
+fn stringByteLength(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
+    const args = napi.getArgs(2, env, nfo) catch return null;
+    var len: usize = undefined;
+    var result: napi.Value = undefined;
+
+    _ = napi.c.napi_get_value_string_utf8(env, args[0], null, 0, &len);
+    _ = napi.c.napi_create_double(env, @floatFromInt(len), &result);
+
+    return result;
+}
+
+fn stringToUint8Array(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
+    const args = napi.getArgs(2, env, nfo) catch return null;
+    const dst = napi.get([]u8, env, args[0]) catch return null;
+    var bytesCopied: usize = 0;
+    var result: napi.Value = undefined;
+
+    _ = napi.c.napi_get_value_string_utf8(env, args[1], dst.ptr, dst.len, &bytesCopied);
+    _ = napi.c.napi_create_double(env, @floatFromInt(bytesCopied), &result);
+
+    return result;
+}
+
 export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value {
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
@@ -119,9 +142,10 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "createCompressor", string.createCompressor) catch return null;
     registerFunction(env, exports, "createDecompressor", string.createDecompressor) catch return null;
     registerFunction(env, exports, "equals", string.equals) catch return null;
+    registerFunction(env, exports, "stringByteLength", stringByteLength) catch return null;
+    registerFunction(env, exports, "stringToUint8Array", stringToUint8Array) catch return null;
 
     registerFunction(env, exports, "selvaStrerror", selvaStrerror) catch return null;
-
     registerFunction(env, exports, "selvaLangAll", selvaLangAll) catch return null;
 
     registerFunction(env, exports, "colvecTest", colvecTest) catch return null;

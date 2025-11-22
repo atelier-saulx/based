@@ -131,6 +131,14 @@ const native = {
     return !!db.equals(a, b)
   },
 
+  stringByteLength: (s: string): number => {
+    return db.stringByteLength(s)
+  },
+
+  stringToUint8Array: (dst: Uint8Array, s: string): number => {
+    return db.stringToUint8Array(dst, s)
+  },
+
   selvaStrerror: (err: number) => {
     return db.selvaStrerror(err)
   },
