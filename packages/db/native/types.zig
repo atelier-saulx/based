@@ -1,126 +1,161 @@
-// TODO: lower case this is the zig way
-// https://zig.guide/language-basics/enums/
+pub const TypeId = u16;
 
 pub const OpType = enum(u8) {
-    // Query Types
+    // Query
     id = 0,
     ids = 1,
     default = 2,
     alias = 3,
     aggregates = 4,
     aggregatesCountType = 5,
-
-    // Modify types
+    saveBlock = 67,
+    saveCommon = 69,
+    // Modify
     modify = 10,
     loadBlock = 22,
     unloadBlock = 33,
     loadCommon = 44,
+};
 
-    // Save Operations
-    saveBlock = 67,
-    saveCommon = 69,
+pub const ModOp = enum(u8) {
+    switchProp = 0,
+    switchIdUpdate = 1,
+    switchType = 2,
+    createProp = 3,
+    deleteSortIndex = 4,
+    updatePartial = 5,
+    updateProp = 6,
+    addEmptySort = 7,
+    switchIdCreateUnsafe = 8,
+    switchIdCreate = 9,
+    switchIdCreateRing = 19,
+    switchEdgeId = 20,
+    deleteNode = 10,
+    delete = 11,
+    increment = 12,
+    decrement = 13,
+    expire = 14,
+    addEmptySortText = 15,
+    deleteTextField = 16,
+    upsert = 17,
+    insert = 18,
+    padding = 255,
+    _,
 };
 
 pub const PropType = enum(u8) {
-    NULL = 0,
-    TIMESTAMP = 1,
-    CREATED = 2,
-    UPDATED = 3,
-    NUMBER = 4,
-    CARDINALITY = 5,
-    INT8 = 20,
-    UINT8 = 6,
-    INT16 = 21,
-    UINT16 = 22,
-    INT32 = 23,
-    UINT32 = 7,
-    BOOLEAN = 9,
-    ENUM = 10,
-    STRING = 11,
-    TEXT = 12,
-    REFERENCE = 13,
-    REFERENCES = 14,
-    MICRO_BUFFER = 17,
-    ALIAS = 18,
-    ALIASES = 19,
-    BINARY = 25,
-    ID = 26,
-    VECTOR = 27,
-    JSON = 28,
-    COLVEC = 30,
+    null = 0,
+    timestamp = 1,
+    created = 2,
+    updated = 3,
+    number = 4,
+    cardinality = 5,
+    uint8 = 6,
+    uint32 = 7,
+    boolean = 9,
+    @"enum" = 10,
+    string = 11,
+    text = 12,
+    reference = 13,
+    references = 14,
+    microBuffer = 17,
+    alias = 18,
+    aliases = 19,
+    int8 = 20,
+    int16 = 21,
+    uint16 = 22,
+    int32 = 23,
+    binary = 25,
+    id = 26,
+    vector = 27,
+    json = 28,
+    colVec = 30,
+
     pub fn isBuffer(self: PropType) bool {
         return switch (self) {
-            PropType.BINARY,
-            PropType.ALIAS,
-            PropType.STRING,
+            .binary,
+            .alias,
+            .string,
             => true,
             else => false,
         };
     }
+
     pub fn isSigned(self: PropType) bool {
         return switch (self) {
-            PropType.INT16,
-            PropType.INT32,
-            PropType.TIMESTAMP,
-            PropType.CREATED,
-            PropType.UPDATED,
+            .int16,
+            .int32,
+            .timestamp,
+            .created,
+            .updated,
             => true,
             else => false,
         };
     }
+
     pub fn isNumber(self: PropType) bool {
         return switch (self) {
-            PropType.NUMBER,
-            PropType.INT8,
-            PropType.UINT8,
-            PropType.UINT16,
-            PropType.INT16,
-            PropType.UINT32,
-            PropType.INT32,
-            PropType.CARDINALITY,
+            .number,
+            .int8,
+            .uint8,
+            .uint16,
+            .int16,
+            .uint32,
+            .int32,
+            .cardinality,
             => true,
             else => false,
         };
     }
+
     pub fn crcLen(self: PropType) usize {
         return switch (self) {
-            PropType.STRING => 4,
+            .string => 4,
             else => 0,
         };
     }
+
+    pub fn size(self: PropType) u8 {
+        switch (self) {
+            .timestamp,
+            .created,
+            .updated,
+            .number,
+            => return 8,
+            .int8,
+            .uint8,
+            .boolean,
+            .@"enum",
+            => return 1,
+            .id,
+            .uint32,
+            .int32,
+            => return 4,
+            .int16,
+            .uint16,
+            => return 2,
+            else => return 0,
+        }
+    }
 };
 
-pub fn Size(p: PropType) u8 {
-    switch (p) {
-        PropType.TIMESTAMP,
-        PropType.CREATED,
-        PropType.UPDATED,
-        PropType.NUMBER,
-        => {
-            return 8;
-        },
-        PropType.INT8, PropType.UINT8, PropType.BOOLEAN, PropType.ENUM => {
-            return 1;
-        },
-        PropType.ID, PropType.UINT32, PropType.INT32 => {
-            return 4;
-        },
-        PropType.INT16, PropType.UINT16 => {
-            return 2;
-        },
-        else => {
-            return 0;
-        },
-    }
-}
-
 pub const RefOp = enum(u8) {
-    OVERWRITE = 0,
-    ADD = 1,
-    DELETE = 2,
-    PUT_OVERWRITE = 3,
-    PUT_ADD = 4,
+    overwrite = 0,
+    add = 1,
+    delete = 2,
+    putOverwrite = 3,
+    putAdd = 4,
     _,
+};
+
+pub const ReadOp = enum(u8) {
+    none = 0,
+    id = 255,
+    edge = 252,
+    references = 253,
+    reference = 254,
+    aggregation = 250,
+    meta = 249,
 };
 
 pub const ReferencesSelect = enum(u8) {
@@ -173,19 +208,8 @@ pub const RefEdgeOp = enum(u8) {
 
 pub const LangCode = enum(u8) { NONE = 0, _ };
 
-// prop as enum (just a u8)
-
 pub const MAIN_PROP: u8 = 0;
-
-pub const ReadOp = enum(u8) {
-    NONE = 0,
-    ID = 255,
-    EDGE = 252,
-    REFERENCES = 253,
-    REFERENCE = 254,
-    AGGREGATION = 250,
-    META = 249,
-};
+pub const ID_PROP: u8 = 255;
 
 pub const IncludeOp = enum(u8) {
     default = 1,
@@ -270,4 +294,143 @@ pub const SortHeader = packed struct {
     start: u16,
     len: u16,
     lang: LangCode,
+};
+
+pub const QuerySubType = enum(u8) {
+    // --- NO SEARCH ---
+    default = 0, //                   Filter: [ X ],  Sort: [ X     ],  Search: [ X   ]
+    filter = 1, //                    Filter: [ √ ],  Sort: [ X     ],  Search: [ X   ]
+    sortAsc = 2, //                   Filter: [ X ],  Sort: [ASC    ],  Search: [ X   ]
+    sortAscFilter = 3, //             Filter: [ √ ],  Sort: [ASC    ],  Search: [ X   ]
+    sortDesc = 4, //                  Filter: [ X ],  Sort: [DESC   ],  Search: [ X   ]
+    sortDescFilter = 5, //            Filter: [ √ ],  Sort: [DESC   ],  Search: [ X   ]
+    sortIdDesc = 6, //                Filter: [ X ],  Sort: [ID_DESC],  Search: [ X   ]
+    sortIdDescFilter = 7, //          Filter: [ √ ],  Sort: [ID_DESC],  Search: [ X   ]
+
+    // --- TEXT SEARCH ---
+    search = 8, //                    Filter: [ X ],  Sort: [ X     ],  Search: [TEXT ]
+    searchFilter = 9, //              Filter: [ √ ],  Sort: [ X     ],  Search: [TEXT ]
+    searchSortAsc = 10, //            Filter: [ X ],  Sort: [ASC    ],  Search: [TEXT ]
+    searchSortAscFilter = 11, //      Filter: [ √ ],  Sort: [ASC    ],  Search: [TEXT ]
+    searchSortDesc = 12, //           Filter: [ X ],  Sort: [DESC   ],  Search: [TEXT ]
+    searchSortDescFilter = 13, //     Filter: [ √ ],  Sort: [DESC   ],  Search: [TEXT ]
+    searchSortIdDesc = 14, //         Filter: [ X ],  Sort: [ID_DESC],  Search: [TEXT ]
+    searchSortIdDescFilter = 15, //   Filter: [ √ ],  Sort: [ID_DESC],  Search: [TEXT ]
+
+    // --- VECTOR SEARCH ---
+    vec = 16, //                      Filter: [ X ],  Sort: [ X     ],  Search: [ VEC ]
+    vecFilter = 17, //                Filter: [ √ ],  Sort: [ X     ],  Search: [ VEC ]
+    vecSortAsc = 18, //               Filter: [ X ],  Sort: [ASC    ],  Search: [ VEC ]
+    vecSortAscFilter = 19, //         Filter: [ √ ],  Sort: [ASC    ],  Search: [ VEC ]
+    vecSortDesc = 20, //              Filter: [ X ],  Sort: [DESC   ],  Search: [ VEC ]
+    vecSortDescFilter = 21, //        Filter: [ √ ],  Sort: [DESC   ],  Search: [ VEC ]
+    vecSortIdDesc = 22, //            Filter: [ X ],  Sort: [ID_DESC],  Search: [ VEC ]
+    vecSortIdDescFilter = 23, //      Filter: [ √ ],  Sort: [ID_DESC],  Search: [ VEC ]
+};
+
+pub const QueryDefaultHeader = packed struct {
+    typeId: TypeId,
+    offset: u32,
+    limit: u32,
+    sortSize: u16,
+    filterSize: u16,
+    searchSize: u16,
+    subType: QuerySubType,
+};
+
+pub const QueryIdHeader = packed struct {
+    typeId: TypeId,
+    filterSize: u16,
+};
+
+pub const QueryIdsHeader = packed struct {
+    typeId: TypeId,
+    filterSize: u16,
+};
+
+pub const QueryAliasHeader = packed struct {
+    typeId: TypeId,
+    filterSize: u16,
+    valueSize: u16,
+};
+
+pub const FilterOp = enum(u8) {
+    equal = 1,
+    has = 2,
+    endsWith = 4,
+    startsWith = 5,
+    largerThen = 6,
+    smallerThen = 7,
+    largerThenInclusive = 8,
+    smallerThenInclusive = 9,
+    equalNormalize = 12,
+    hasLowerCase = 13,
+    startsWithNormalize = 14,
+    endsWithNormalize = 15,
+    equalCrc32 = 17,
+    like = 18,
+    pub fn isNumerical(self: FilterOp) bool {
+        return switch (self) {
+            FilterOp.smallerThen,
+            FilterOp.largerThen,
+            FilterOp.largerThenInclusive,
+            FilterOp.smallerThenInclusive,
+            => true,
+            else => false,
+        };
+    }
+};
+
+pub const FilterType = enum(u8) {
+    negate = 1,
+    default = 2,
+};
+
+pub const FilterMode = enum(u8) {
+    default = 0,
+    orFixed = 1,
+    orVar = 2,
+    andFixed = 3,
+    defaultVar = 4,
+    reference = 5,
+};
+
+pub const FilterMeta = enum(u8) {
+    references = 250,
+    exists = 251,
+    edge = 252,
+    orBranch = 253,
+    reference = 254,
+    id = 255,
+    _,
+};
+
+pub const FilterVectorFn = enum(u8) {
+    dotProduct = 0,
+    manhattanDistance = 1,
+    cosineSimilarity = 2,
+    euclideanDistance = 3,
+};
+
+pub const FilterMaxVectorScore: f32 = 9999999;
+
+pub const FilterMaxStringScore: u8 = 255;
+
+pub const FilterAlignment = enum(u8) { notSet = 255, _ };
+
+pub const AggGroupedBy = enum(u8) {
+    hasGroup = 255,
+    none = 0,
+};
+
+pub const AggType = enum(u8) {
+    sum = 1,
+    count = 2,
+    cardinality = 3,
+    stddev = 4,
+    average = 5,
+    variance = 6,
+    max = 7,
+    min = 8,
+    hmean = 9,
 };

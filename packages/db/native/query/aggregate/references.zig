@@ -1,32 +1,26 @@
+const std = @import("std");
 const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig").c;
-
 const results = @import("../results.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
-
-const types = @import("../../types.zig");
-const std = @import("std");
+const Query = @import("../common.zig");
 const utils = @import("../../utils.zig");
-const read = utils.read;
-const copy = utils.copy;
-const writeInt = utils.writeIntExact;
-
-const aggregateTypes = @import("./types.zig");
 const aggregate = @import("./aggregate.zig").aggregate;
 const createGroupCtx = @import("./group.zig").createGroupCtx;
 const GroupProtocolLen = @import("./group.zig").ProtocolLen;
 const groupFunctions = @import("./group.zig");
+const filter = @import("../filter/filter.zig").filter;
+const t = @import("../../types.zig");
+
 const setGroupResults = groupFunctions.setGroupResults;
 const finalizeGroupResults = groupFunctions.finalizeGroupResults;
 const finalizeResults = groupFunctions.finalizeResults;
 const GroupCtx = groupFunctions.GroupCtx;
-const aux = @import("./utils.zig");
-
-const incTypes = @import("../include/types.zig");
-const filter = @import("../filter/filter.zig").filter;
+const read = utils.read;
+const copy = utils.copy;
+const writeInt = utils.writeIntExact;
 
 pub fn aggregateRefsFields(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     include: []u8,
     node: db.Node,
     originalType: db.Type,
@@ -38,13 +32,13 @@ pub fn aggregateRefsFields(
     index += 4;
     const filterArr: ?[]u8 = if (filterSize > 0) include[index .. index + filterSize] else null;
     index += filterSize;
-    const typeId: db.TypeId = read(u16, include, index);
+    const typeId: t.TypeId = read(u16, include, index);
     index += 2;
     const refField = include[index];
     index += 1;
-    const groupBy: aggregateTypes.GroupedBy = @enumFromInt(include[index]);
+    const groupBy: t.AggGroupedBy = @enumFromInt(include[index]);
     index += 1;
-    if (groupBy == aggregateTypes.GroupedBy.hasGroup) {
+    if (groupBy == t.AggGroupedBy.hasGroup) {
         const agg = include[index..include.len];
         return try aggregateRefsGroup(ctx, typeId, originalType, node, refField, agg, offset, filterArr);
     } else {
@@ -61,8 +55,8 @@ pub fn aggregateRefsFields(
 }
 
 pub inline fn aggregateRefsGroup(
-    ctx: *QueryCtx,
-    typeId: db.TypeId,
+    ctx: *Query.QueryCtx,
+    typeId: t.TypeId,
     originalType: db.Type,
     node: db.Node,
     refField: u8,
@@ -71,7 +65,7 @@ pub inline fn aggregateRefsGroup(
     filterArr: ?[]u8,
 ) !usize {
     const typeEntry = try db.getType(ctx.db, typeId);
-    var refs: ?incTypes.Refs = undefined;
+    var refs: ?Query.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     const emptyKey = &[_]u8{};
     const fieldSchema = db.getFieldSchema(originalType, refField) catch {
@@ -100,36 +94,36 @@ pub inline fn aggregateRefsGroup(
     defer selva.selva_string_free(hllAccumulator);
 
     checkItem: while (i < refsCnt) : (i += 1) {
-        if (incTypes.resolveRefsNode(ctx.db, refs.?, i)) |n| {
+        if (Query.resolveRefsNode(ctx.db, refs.?, i)) |n| {
             if (hasFilter) {
-                const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
+                const refStruct = Query.RefResult(refs, edgeConstraint, i);
                 if (!filter(ctx.db, n, ctx.threadCtx, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                     continue :checkItem;
                 }
             }
             const groupValue = db.getField(typeEntry, n, groupCtx.fieldSchema, groupCtx.propType);
             const key: []u8 = if (groupValue.len > 0)
-                if (groupCtx.propType == types.PropType.STRING)
+                if (groupCtx.propType == t.PropType.string)
                     if (groupCtx.field == 0)
                         groupValue.ptr[groupCtx.start + 1 .. groupCtx.start + 1 + groupValue[groupCtx.start]]
                     else
                         groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
-                else if (groupCtx.propType == types.PropType.TIMESTAMP)
-                    @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
-                else if (groupCtx.propType == types.PropType.REFERENCE)
+                else if (groupCtx.propType == t.PropType.timestamp)
+                    @constCast(utils.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
+                else if (groupCtx.propType == t.PropType.reference)
                     db.getReferenceNodeId(@ptrCast(@alignCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
 
-            const hash_map_entry = if (groupCtx.propType == types.PropType.TIMESTAMP and groupCtx.stepRange != 0)
+            const hash_map_entry = if (groupCtx.propType == t.PropType.timestamp and groupCtx.stepRange != 0)
                 try groupCtx.hashMap.getOrInsertWithRange(key, groupCtx.accumulatorSize, groupCtx.stepRange)
             else
                 try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
             const accumulatorField = hash_map_entry.value;
             var hadAccumulated = !hash_map_entry.is_new;
-            const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
+            const resultKeyLen = if (groupCtx.stepType != @intFromEnum(t.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
                 resultsSize += 2 + resultKeyLen + groupCtx.resultsSize;
             }
@@ -147,14 +141,14 @@ pub inline fn aggregateRefsGroup(
         .prop = refField,
         .value = data,
         .score = null,
-        .type = types.ResultType.aggregate,
+        .type = t.ResultType.aggregate,
     });
     return resultsSize + 6;
 }
 
 pub inline fn aggregateRefsDefault(
-    ctx: *QueryCtx,
-    typeId: db.TypeId,
+    ctx: *Query.QueryCtx,
+    typeId: t.TypeId,
     originalType: db.Type,
     node: db.Node,
     refField: u8,
@@ -168,7 +162,7 @@ pub inline fn aggregateRefsDefault(
     const accumulatorField = try ctx.allocator.alloc(u8, accumulatorSize);
     @memset(accumulatorField, 0);
     const typeEntry = try db.getType(ctx.db, typeId);
-    var refs: ?incTypes.Refs = undefined;
+    var refs: ?Query.Refs = undefined;
     const hasFilter: bool = filterArr != null;
     var hadAccumulated: bool = false;
     const hllAccumulator = selva.selva_string_create(null, selva.HLL_INIT_SIZE, selva.SELVA_STRING_MUTABLE);
@@ -191,15 +185,15 @@ pub inline fn aggregateRefsDefault(
 
     const fieldAggsSize = read(u16, agg, 1);
     const aggPropTypeDef = agg[3 .. 3 + fieldAggsSize];
-    const aggType: aggregateTypes.AggType = @enumFromInt(aggPropTypeDef[0]);
-    if (aggType == aggregateTypes.AggType.COUNT and !hasFilter and accumulatorSize == 4) {
+    const aggType: t.AggType = @enumFromInt(aggPropTypeDef[0]);
+    if (aggType == t.AggType.count and !hasFilter and accumulatorSize == 4) {
         const resultPos = read(u16, aggPropTypeDef, 4);
         writeInt(u32, accumulatorField, resultPos, refsCnt);
     } else {
         var i: usize = offset;
         checkItem: while (i < refsCnt) : (i += 1) {
-            if (incTypes.resolveRefsNode(ctx.db, refs.?, i)) |refNode| {
-                const refStruct = incTypes.RefResult(refs, edgeConstraint, i);
+            if (Query.resolveRefsNode(ctx.db, refs.?, i)) |refNode| {
+                const refStruct = Query.RefResult(refs, edgeConstraint, i);
                 if (hasFilter) {
                     if (!filter(ctx.db, refNode, ctx.threadCtx, typeEntry, filterArr.?, refStruct, null, 0, false)) {
                         continue :checkItem;
@@ -217,7 +211,7 @@ pub inline fn aggregateRefsDefault(
         .prop = refField,
         .value = value,
         .score = null,
-        .type = types.ResultType.aggregate,
+        .type = t.ResultType.aggregate,
     });
 
     return resultsSize + 2 + 4;

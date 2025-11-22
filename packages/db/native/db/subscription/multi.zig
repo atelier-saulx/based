@@ -1,14 +1,7 @@
-const std = @import("std");
-const db = @import("../db.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
-const utils = @import("../../utils.zig");
-const types = @import("./types.zig");
-const t = @import("../../types.zig");
 const upsertSubType = @import("./shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
-const selva = @import("../../selva.zig");
-const vectorLen = std.simd.suggestVectorLength(u8).?;
 
 pub fn addMultiSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value {
 

@@ -1,10 +1,9 @@
-const errors = @import("../../errors.zig");
 const db = @import("../../db/db.zig");
 const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
 const selva = @import("../../selva.zig").c;
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
+const Query = @import("../common.zig");
 const filter = @import("../filter/filter.zig").filter;
 const sort = @import("../../db/sort.zig");
 const types = @import("../../types.zig");
@@ -13,15 +12,14 @@ const read = @import("../../utils.zig").read;
 const Result = @import("../results.zig").Result;
 const s = @import("./search.zig");
 const std = @import("std");
-const FilterType = @import("../common.zig").FilterType;
-const QueryDefaultHeader = @import("../common.zig").QueryDefaultHeader;
+const t = @import("../../types.zig");
 
 pub fn default(
     comptime desc: bool,
     comptime hasFilter: bool,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     sortIndex: ?*sort.SortIndexMeta,
-    header: *const QueryDefaultHeader,
+    header: *const t.QueryDefaultHeader,
     include: []u8,
     filterSlice: if (hasFilter) []u8 else void,
 ) !void {
@@ -71,8 +69,8 @@ pub fn default(
 
 pub fn idDesc(
     comptime hasFilter: bool,
-    ctx: *QueryCtx,
-    header: *const QueryDefaultHeader,
+    ctx: *Query.QueryCtx,
+    header: *const t.QueryDefaultHeader,
     include: []u8,
     filterSlice: if (hasFilter) []u8 else void,
 ) !void {
@@ -109,10 +107,10 @@ pub fn idDesc(
 pub fn search(
     comptime isVector: bool,
     comptime desc: bool,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     offset: u32,
     limit: u32,
-    typeId: db.TypeId,
+    typeId: t.TypeId,
     conditions: []u8,
     include: []u8,
     sortBuffer: []u8,

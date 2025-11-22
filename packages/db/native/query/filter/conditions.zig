@@ -1,28 +1,25 @@
-const db = @import("../../db/db.zig");
-const t = @import("./types.zig");
-const Mode = t.Mode;
-const Op = t.Operator;
-const Type = t.Type;
-const ConditionsResult = t.ConditionsResult;
-const c = @import("./condition.zig");
 const std = @import("std");
+const db = @import("../../db/db.zig");
+const FilterConditionsResult = @import("../common.zig").FilterConditionsResult;
+const c = @import("./condition.zig");
 const deflate = @import("../../deflate.zig");
+const t = @import("../../types.zig");
 
 inline fn condition(
     decompressor: *deflate.Decompressor,
     blockState: *deflate.BlockState,
-    mode: Mode,
+    mode: t.FilterMode,
     q: []u8,
     v: []u8,
     i: usize,
-) ConditionsResult {
+) FilterConditionsResult {
     return switch (mode) {
-        Mode.default => c.default(q, v, i),
-        Mode.defaultVar => c.defaultVar(decompressor, blockState, q, v, i),
-        Mode.orVar => c.orVar(decompressor, blockState, q, v, i),
-        Mode.andFixed => c.andFixed(q, v, i),
-        Mode.orFixed => c.orFixed(q, v, i),
-        Mode.reference => c.reference(q, v, i),
+        t.FilterMode.default => c.default(q, v, i),
+        t.FilterMode.defaultVar => c.defaultVar(decompressor, blockState, q, v, i),
+        t.FilterMode.orVar => c.orVar(decompressor, blockState, q, v, i),
+        t.FilterMode.andFixed => c.andFixed(q, v, i),
+        t.FilterMode.orFixed => c.orFixed(q, v, i),
+        t.FilterMode.reference => c.reference(q, v, i),
     };
 }
 
@@ -34,9 +31,9 @@ pub inline fn runConditions(
 ) bool {
     var i: usize = 0;
     while (i < q.len) {
-        const match = @as(Type, @enumFromInt(q[i])) == Type.default;
+        const match = @as(t.FilterType, @enumFromInt(q[i])) == t.FilterType.default;
         i += 1;
-        const mode: Mode = @enumFromInt(q[i]);
+        const mode: t.FilterMode = @enumFromInt(q[i]);
         const result = condition(decompressor, blockState, mode, q, v, i);
         if (result[1] != match) {
             return false;

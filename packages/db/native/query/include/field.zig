@@ -1,13 +1,12 @@
-const types = @import("./types.zig");
+const Query = @import("../common.zig");
 const std = @import("std");
 const db = @import("../../db/db.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
-const t = @import("../../types.zig");
 const results = @import("../results.zig");
 const errors = @import("../../errors.zig");
 const utils = @import("../../utils.zig");
 const decompressFirstBytes = @import("../../deflate.zig").decompressFirstBytes;
 const o = @import("./opts.zig");
+const t = @import("../../types.zig");
 
 pub const ResultType = enum(u8) {
     default = 0,
@@ -16,12 +15,12 @@ pub const ResultType = enum(u8) {
 };
 
 pub inline fn get(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     node: db.Node,
     field: u8,
     prop: t.PropType,
     typeEntry: db.Type,
-    edgeRef: ?types.RefStruct,
+    edgeRef: ?Query.RefStruct,
     comptime isEdge: bool,
     comptime subType: ResultType,
 ) !?*results.Result {
@@ -67,7 +66,7 @@ pub inline fn get(
 }
 
 pub fn add(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     id: u32,
     score: ?[4]u8,
     idIsSet: bool,
@@ -88,7 +87,7 @@ pub fn add(
 
 pub inline fn partial(
     comptime isEdge: bool,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     result: *results.Result,
     includeMain: []u8,
 ) !usize {
@@ -150,7 +149,7 @@ pub inline fn fixed(
 }
 
 pub inline fn selvaString(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     comptime isEdge: bool,
     r: *results.Result,
     comptime hasOpts: bool,
@@ -167,7 +166,7 @@ pub inline fn selvaString(
 pub inline fn switchText(
     comptime isEdge: bool,
     code: t.LangCode,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     id: u32,
     score: ?[4]u8,
     fallbackSize: u8,
@@ -201,7 +200,7 @@ pub inline fn switchText(
 
 pub inline fn textSpecific(
     comptime isEdge: bool,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     id: u32,
     score: ?[4]u8,
     result: *results.Result,
@@ -233,7 +232,7 @@ pub inline fn textSpecific(
 
 pub inline fn textFallback(
     comptime isEdge: bool,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     id: u32,
     score: ?[4]u8,
     result: *results.Result,
@@ -266,7 +265,7 @@ pub inline fn textFallback(
 
 pub inline fn textAll(
     comptime isEdge: bool,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     id: u32,
     score: ?[4]u8,
     result: *results.Result,

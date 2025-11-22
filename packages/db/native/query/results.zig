@@ -1,14 +1,14 @@
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
-const QueryCtx = @import("./common.zig").QueryCtx;
+const Query = @import("./common.zig");
 const utils = @import("../utils.zig");
-const t = @import("../types.zig");
 const std = @import("std");
 const selva = @import("../selva.zig").c;
 const getResultSlice = @import("../db/threads.zig").getResultSlice;
 const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeInt;
+const t = @import("../types.zig");
 
 pub const Result = struct {
     id: u32,
@@ -22,7 +22,7 @@ const HEADER_SIZE = 8;
 
 // Not inline because its not a common path
 fn addChecksum(item: *Result, data: []u8, i: *usize) void {
-    data[i.*] = @intFromEnum(t.ReadOp.META);
+    data[i.*] = @intFromEnum(t.ReadOp.meta);
     i.* += 1;
     data[i.*] = item.*.prop;
     i.* += 1;
@@ -41,7 +41,7 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
 }
 
 pub fn createResultsBuffer(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     op: t.OpType,
 ) !void {
     const size = ctx.size + 8;
@@ -55,7 +55,7 @@ pub fn createResultsBuffer(
     for (ctx.results.items) |*item| {
         // Always start with id
         if (item.id != 0) {
-            data[i] = @intFromEnum(t.ReadOp.ID);
+            data[i] = @intFromEnum(t.ReadOp.id);
             writeInt(u32, data, i + 1, item.id);
             i += 5;
             if (item.score) |s| {
@@ -66,20 +66,20 @@ pub fn createResultsBuffer(
 
         switch (item.type) {
             t.ResultType.aggregate => {
-                data[i] = @intFromEnum((t.ReadOp.AGGREGATION));
+                data[i] = @intFromEnum((t.ReadOp.aggregation));
                 data[i + 1] = item.prop;
                 writeInt(u32, data, i + 2, item.value.len);
                 copy(data[i + 6 .. i + 6 + item.value.len], item.value);
                 i += item.value.len + 6;
             },
             t.ResultType.edgeFixed => {
-                data[i] = @intFromEnum(t.ReadOp.EDGE);
+                data[i] = @intFromEnum(t.ReadOp.edge);
                 data[i + 1] = item.prop;
                 copy(data[i + 2 .. i + 2 + item.value.len], item.value);
                 i += item.value.len + 2;
             },
             t.ResultType.metaEdge => {
-                data[i] = @intFromEnum(t.ReadOp.EDGE);
+                data[i] = @intFromEnum(t.ReadOp.edge);
                 i += 1;
                 addChecksum(item, data, &i);
             },
@@ -87,14 +87,14 @@ pub fn createResultsBuffer(
                 addChecksum(item, data, &i);
             },
             t.ResultType.edge => {
-                data[i] = @intFromEnum(t.ReadOp.EDGE);
+                data[i] = @intFromEnum(t.ReadOp.edge);
                 data[i + 1] = item.prop;
                 writeInt(u32, data, i + 2, item.value.len);
                 copy(data[i + 6 .. i + 6 + item.value.len], item.value);
                 i += item.value.len + 6;
             },
             t.ResultType.fixed => {
-                if (item.prop == @intFromEnum(t.ReadOp.ID)) {
+                if (item.prop == @intFromEnum(t.ReadOp.id)) {
                     continue;
                 }
                 data[i] = item.prop;
@@ -102,7 +102,7 @@ pub fn createResultsBuffer(
                 i += item.value.len + 1;
             },
             t.ResultType.default => {
-                if (item.prop == @intFromEnum(t.ReadOp.ID)) {
+                if (item.prop == @intFromEnum(t.ReadOp.id)) {
                     continue;
                 }
                 data[i] = item.prop;
@@ -117,7 +117,7 @@ pub fn createResultsBuffer(
                 // | 0       | op        | 1           | Operation identifier (254)           |
                 // | 1       | prop      | 1           | Field identifier                     |
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
-                data[i] = @intFromEnum(t.ReadOp.REFERENCE);
+                data[i] = @intFromEnum(t.ReadOp.references);
                 data[i + 1] = item.prop;
                 copy(data[i + 2 .. i + 6], item.value);
                 i += 6;
@@ -130,21 +130,21 @@ pub fn createResultsBuffer(
                 // | 1       | prop      | 1           | Field identifier                     |
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
                 // | 6       | totalRefs | 4           | Total number of references (u32)     |
-                data[i] = @intFromEnum(t.ReadOp.REFERENCES);
+                data[i] = @intFromEnum(t.ReadOp.references);
                 data[i + 1] = item.prop;
                 copy(data[i + 2 .. i + 10], item.value);
                 i += 10;
             },
             t.ResultType.referenceEdge => {
-                data[i] = @intFromEnum(t.ReadOp.EDGE);
-                data[i + 1] = @intFromEnum(t.ReadOp.REFERENCE);
+                data[i] = @intFromEnum(t.ReadOp.edge);
+                data[i + 1] = @intFromEnum(t.ReadOp.reference);
                 data[i + 2] = item.prop;
                 copy(data[i + 3 .. i + 7], item.value);
                 i += 7;
             },
             t.ResultType.referencesEdge => {
-                data[i] = @intFromEnum(t.ReadOp.EDGE);
-                data[i + 1] = @intFromEnum(t.ReadOp.REFERENCES);
+                data[i] = @intFromEnum(t.ReadOp.edge);
+                data[i + 1] = @intFromEnum(t.ReadOp.references);
                 data[i + 2] = item.prop;
                 copy(data[i + 3 .. i + 7], item.value);
                 i += 11;

@@ -4,7 +4,7 @@ const std = @import("std");
 const db = @import("../db/db.zig");
 const selva = @import("../selva.zig");
 const utils = @import("../utils.zig");
-const subTypes = @import("../db//subscription/types.zig");
+const Subscription = @import("../db/subscription/common.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
@@ -38,21 +38,21 @@ pub fn stagePartial(ctx: *ModifyCtx, start: u16) void {
     if (ctx.idSubs) |idSubs| {
         var i: u32 = 0;
         var f: @Vector(vectorLenU16, u16) = @splat(start);
-        f[vectorLenU16 - 1] = @intFromEnum(subTypes.SubPartialStatus.all);
+        f[vectorLenU16 - 1] = @intFromEnum(Subscription.SubPartialStatus.all);
         while (i < idSubs.len) : (i += 1) {
-            if (idSubs[i].marked == subTypes.SubStatus.marked) {
+            if (idSubs[i].marked == Subscription.SubStatus.marked) {
                 continue;
             }
             if (@reduce(.Or, idSubs[i].partial == f)) {
                 if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
                     ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                         ctx.db.subscriptions.singleIdMarked,
-                        ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE,
+                        ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
                     ) catch &.{};
                 }
                 ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
                 ctx.db.subscriptions.lastIdMarked += 1;
-                idSubs[i].marked = subTypes.SubStatus.marked;
+                idSubs[i].marked = Subscription.SubStatus.marked;
             }
         }
     }
@@ -66,41 +66,41 @@ pub fn stage(
     if (op == Op.deleteNode) {
         if (ctx.idSubs) |idSubs| {
             while (i < idSubs.len) : (i += 1) {
-                if (idSubs[i].marked == subTypes.SubStatus.marked) {
+                if (idSubs[i].marked == Subscription.SubStatus.marked) {
                     continue;
                 }
 
                 if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 16) {
                     ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                         ctx.db.subscriptions.singleIdMarked,
-                        ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE * 16,
+                        ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE * 16,
                     ) catch &.{};
                 }
 
                 ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
                 ctx.db.subscriptions.lastIdMarked += 1;
 
-                idSubs[i].marked = subTypes.SubStatus.marked;
+                idSubs[i].marked = Subscription.SubStatus.marked;
             }
         }
     } else if (op != Op.create) {
         if (ctx.idSubs) |idSubs| {
             var f: @Vector(vectorLen, u8) = @splat(ctx.field);
-            f[vectorLen - 1] = @intFromEnum(subTypes.SubStatus.all);
+            f[vectorLen - 1] = @intFromEnum(Subscription.SubStatus.all);
             while (i < idSubs.len) : (i += 1) {
-                if (idSubs[i].marked == subTypes.SubStatus.marked) {
+                if (idSubs[i].marked == Subscription.SubStatus.marked) {
                     continue;
                 }
                 if (@reduce(.Or, idSubs[i].fields == f)) {
                     if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
                         ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                             ctx.db.subscriptions.singleIdMarked,
-                            ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE,
+                            ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
                         ) catch &.{};
                     }
                     ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
                     ctx.db.subscriptions.lastIdMarked += 1;
-                    idSubs[i].marked = subTypes.SubStatus.marked;
+                    idSubs[i].marked = Subscription.SubStatus.marked;
                 }
             }
         }

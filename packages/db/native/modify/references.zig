@@ -5,10 +5,11 @@ const Modify = @import("./common.zig");
 const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
 const std = @import("std");
-const ModifyCtx = Modify.ModifyCtx;
 const edge = @import("./edges.zig");
 const RefEdgeOp = @import("../types.zig").RefEdgeOp;
 const move = @import("../utils.zig").move;
+
+const ModifyCtx = Modify.ModifyCtx;
 
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);

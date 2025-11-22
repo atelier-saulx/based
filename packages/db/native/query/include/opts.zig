@@ -1,11 +1,6 @@
-const types = @import("./types.zig");
 const std = @import("std");
-const db = @import("../../db/db.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
-const t = @import("../../types.zig");
+const Query = @import("../common.zig");
 const selva = @import("../../selva.zig").c;
-const results = @import("../results.zig");
-const errors = @import("../../errors.zig");
 const utils = @import("../../utils.zig");
 const decompressFirstBytes = @import("../../deflate.zig").decompressFirstBytes;
 
@@ -40,7 +35,7 @@ pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u
 }
 
 fn parseCharEndDeflate(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     value: []u8,
     opts: *const IncludeOpts,
     extraSize: *usize,
@@ -108,7 +103,7 @@ fn parseCharEndDeflate(
 }
 
 pub fn parseOptsString(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     value: []u8,
     opts: *const IncludeOpts,
 ) ![]u8 {

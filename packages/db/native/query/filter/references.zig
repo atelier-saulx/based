@@ -1,8 +1,8 @@
+const std = @import("std");
 const ReferencesSelect = @import("../../types.zig").ReferencesSelect;
-const types = @import("../include/types.zig");
 const db = @import("../../db/db.zig");
 const filter = @import("./filter.zig").filter;
-const std = @import("std");
+const Query = @import("../common.zig");
 
 pub fn filteReferencesMode(
     comptime refsSelectType: ReferencesSelect,
@@ -10,7 +10,7 @@ pub fn filteReferencesMode(
     threadCtx: *db.DbThread,
     conditions: []u8,
     edgeConstraint: db.EdgeFieldConstraint,
-    refs: types.Refs,
+    refs: Query.Refs,
     refTypeEntry: db.Type,
     index: i32,
 ) bool {
@@ -19,8 +19,8 @@ pub fn filteReferencesMode(
 
     if (refsSelectType == ReferencesSelect.any) {
         while (j < refsCnt) : (j += 1) {
-            if (types.resolveRefsNode(ctx, refs, j)) |refNode| {
-                const refStruct = types.RefResult(refs, edgeConstraint, j);
+            if (Query.resolveRefsNode(ctx, refs, j)) |refNode| {
+                const refStruct = Query.RefResult(refs, edgeConstraint, j);
                 if (filter(
                     ctx,
                     refNode,
@@ -41,8 +41,8 @@ pub fn filteReferencesMode(
 
     if (refsSelectType == ReferencesSelect.all) {
         while (j < refsCnt) : (j += 1) {
-            if (types.resolveRefsNode(ctx, refs, j)) |refNode| {
-                const refStruct = types.RefResult(refs, edgeConstraint, j);
+            if (Query.resolveRefsNode(ctx, refs, j)) |refNode| {
+                const refStruct = Query.RefResult(refs, edgeConstraint, j);
                 if (!filter(
                     ctx,
                     refNode,
@@ -70,8 +70,8 @@ pub fn filteReferencesMode(
         } else {
             j = @intCast(index);
         }
-        if (types.resolveRefsNode(ctx, refs, j)) |refNode| {
-            const refStruct = types.RefResult(refs, edgeConstraint, j);
+        if (Query.resolveRefsNode(ctx, refs, j)) |refNode| {
+            const refStruct = Query.RefResult(refs, edgeConstraint, j);
             if (filter(
                 ctx,
                 refNode,
@@ -98,7 +98,7 @@ pub inline fn filterReferences(
     threadCtx: *db.DbThread,
     conditions: []u8,
     edgeConstraint: db.EdgeFieldConstraint,
-    refs: types.Refs,
+    refs: Query.Refs,
     refTypeEntry: db.Type,
     index: i32,
 ) bool {

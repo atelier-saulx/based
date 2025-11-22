@@ -1,25 +1,23 @@
-const QueryCtx = @import("../common.zig").QueryCtx;
+const Query = @import("../common.zig");
 const getSingleRefFields = @import("./reference.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const read = @import("../../utils.zig").read;
 const db = @import("../../db//db.zig");
 const getRefsFields = @import("./references/references.zig").getRefsFields;
 const aggregateRefsFields = @import("../aggregate/references.zig").aggregateRefsFields;
-const types = @import("./types.zig");
 const t = @import("../../types.zig");
 const f = @import("./field.zig");
 const o = @import("./opts.zig");
 const results = @import("../results.zig");
-
 const std = @import("std");
 
 pub fn getFields(
     node: db.Node,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     id: u32,
     typeEntry: db.Type,
     include: []u8,
-    edgeRef: ?types.RefStruct,
+    edgeRef: ?Query.RefStruct,
     score: ?[4]u8,
     comptime isEdge: bool,
 ) !usize {
@@ -103,14 +101,14 @@ pub fn getFields(
                 result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.meta);
                 if (result) |r| {
                     switch (prop) {
-                        t.PropType.BINARY, t.PropType.STRING, t.PropType.JSON, t.PropType.ALIAS => {
+                        t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
                             if (isEdge) {
                                 size += 1;
                             }
                             size += 12 + try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
-                        t.PropType.TEXT => {
+                        t.PropType.text => {
                             if (isEdge) {
                                 size += 1;
                             }
@@ -134,9 +132,9 @@ pub fn getFields(
                 result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.default);
                 if (result) |r| {
                     switch (prop) {
-                        t.PropType.BINARY,
-                        t.PropType.STRING,
-                        t.PropType.JSON,
+                        t.PropType.binary,
+                        t.PropType.string,
+                        t.PropType.json,
                         => {
                             if (optsSize != 0) {
                                 size += try f.selvaString(ctx, isEdge, r, true, o.getOpts(include, &i));
@@ -147,7 +145,7 @@ pub fn getFields(
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
                         },
-                        t.PropType.TEXT => {
+                        t.PropType.text => {
                             var s: usize = undefined;
                             if (optsSize == 0) {
                                 s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
@@ -170,7 +168,7 @@ pub fn getFields(
                                 size += s;
                             }
                         },
-                        t.PropType.MICRO_BUFFER, t.PropType.VECTOR, t.PropType.COLVEC => {
+                        t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
                             if (optsSize == 0) {
                                 size += try f.fixed(isEdge, r, false, undefined);
                             } else {

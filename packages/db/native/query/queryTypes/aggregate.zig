@@ -1,25 +1,28 @@
+const std = @import("std");
 const db = @import("../../db/db.zig");
 const napi = @import("../../napi.zig");
 const selva = @import("../../selva.zig").c;
-const QueryCtx = @import("../common.zig").QueryCtx;
-const types = @import("../../types.zig");
-const AggFn = types.AggFn;
+const Query = @import("../common.zig");
 const filter = @import("../filter/filter.zig").filter;
-const std = @import("std");
 const utils = @import("../../utils.zig");
+const groupFunctions = @import("../aggregate/group.zig");
+const aggregate = @import("../aggregate/aggregate.zig").aggregate;
+const t = @import("../../types.zig");
+
 const read = utils.read;
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
-const groupFunctions = @import("../aggregate/group.zig");
 const GroupProtocolLen = groupFunctions.ProtocolLen;
 const setGroupResults = groupFunctions.setGroupResults;
 const finalizeGroupResults = groupFunctions.finalizeGroupResults;
 const finalizeResults = groupFunctions.finalizeResults;
 const createGroupCtx = groupFunctions.createGroupCtx;
-const aggregate = @import("../aggregate/aggregate.zig").aggregate;
-const aux = @import("../aggregate/utils.zig");
 
-pub fn countType(env: napi.Env, ctx: *QueryCtx, typeId: db.TypeId) !napi.Value {
+pub fn countType(
+    env: napi.Env,
+    ctx: *Query.QueryCtx,
+    typeId: t.TypeId,
+) !napi.Value {
     const typeEntry = try db.getType(ctx.db, typeId);
     const count: u32 = @truncate(selva.selva_node_count(typeEntry));
     var resultBuffer: ?*anyopaque = undefined;
@@ -32,7 +35,14 @@ pub fn countType(env: napi.Env, ctx: *QueryCtx, typeId: db.TypeId) !napi.Value {
     return result;
 }
 
-pub fn default(env: napi.Env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !napi.Value {
+pub fn default(
+    env: napi.Env,
+    ctx: *Query.QueryCtx,
+    limit: u32,
+    typeId: t.TypeId,
+    conditions: []u8,
+    aggInput: []u8,
+) !napi.Value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
@@ -80,7 +90,14 @@ pub fn default(env: napi.Env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, con
     return result;
 }
 
-pub fn group(env: napi.Env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, conditions: []u8, aggInput: []u8) !napi.Value {
+pub fn group(
+    env: napi.Env,
+    ctx: *Query.QueryCtx,
+    limit: u32,
+    typeId: t.TypeId,
+    conditions: []u8,
+    aggInput: []u8,
+) !napi.Value {
     const typeEntry = try db.getType(ctx.db, typeId);
     var first = true;
     var node = db.getFirstNode(typeEntry);
@@ -104,28 +121,32 @@ pub fn group(env: napi.Env, ctx: *QueryCtx, limit: u32, typeId: db.TypeId, condi
             }
             const groupValue = db.getField(typeEntry, n, groupCtx.fieldSchema, groupCtx.propType);
             const key: []u8 = if (groupValue.len > 0)
-                if (groupCtx.propType == types.PropType.STRING)
+                if (groupCtx.propType == t.PropType.string)
                     if (groupCtx.field == 0)
                         groupValue.ptr[groupCtx.start + 1 .. groupCtx.start + 1 + groupValue[groupCtx.start]]
                     else
                         groupValue.ptr[2 + groupCtx.start .. groupCtx.start + groupValue.len - groupCtx.propType.crcLen()]
-                else if (groupCtx.propType == types.PropType.TIMESTAMP)
-                    @constCast(aux.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
-                else if (groupCtx.propType == types.PropType.REFERENCE)
+                else if (groupCtx.propType == t.PropType.timestamp)
+                    @constCast(utils.datePart(
+                        groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len],
+                        @enumFromInt(groupCtx.stepType),
+                        groupCtx.timezone,
+                    ))
+                else if (groupCtx.propType == t.PropType.reference)
                     db.getReferenceNodeId(@ptrCast(@alignCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
                 emptyKey;
 
-            const hash_map_entry = if (groupCtx.propType == types.PropType.TIMESTAMP and groupCtx.stepRange != 0)
+            const hash_map_entry = if (groupCtx.propType == t.PropType.timestamp and groupCtx.stepRange != 0)
                 try groupCtx.hashMap.getOrInsertWithRange(key, groupCtx.accumulatorSize, groupCtx.stepRange)
             else
                 try groupCtx.hashMap.getOrInsert(key, groupCtx.accumulatorSize);
             const accumulatorField = hash_map_entry.value;
             var hadAccumulated = !hash_map_entry.is_new;
 
-            const resultKeyLen = if (groupCtx.stepType != @intFromEnum(types.Interval.none)) 4 else key.len;
+            const resultKeyLen = if (groupCtx.stepType != @intFromEnum(t.Interval.none)) 4 else key.len;
             if (hash_map_entry.is_new) {
                 ctx.size += 2 + resultKeyLen + groupCtx.resultsSize;
                 ctx.totalResults += 1;

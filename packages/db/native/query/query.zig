@@ -1,29 +1,30 @@
-const errors = @import("../errors.zig");
-const napi = @import("../napi.zig");
 const std = @import("std");
 const db = @import("../db/db.zig");
-const getFields = @import("./include/include.zig").getFields;
-const results = @import("./results.zig");
-pub const Query = @import("./common.zig");
-
-const OpType = @import("../types.zig").OpType;
+const errors = @import("../errors.zig");
+const napi = @import("../napi.zig");
 const Sort = @import("../db/sort.zig");
-const QuerySubType = Query.QuerySubType;
-
-const QuerySort = @import("./queryTypes/sort.zig");
+const Query = @import("./common.zig");
+const utils = @import("../utils.zig");
+const results = @import("./results.zig");
 const QueryDefault = @import("./queryTypes/default.zig");
-const QueryId = @import("./queryTypes/id.zig");
-const QueryIds = @import("./queryTypes/ids.zig");
-const QueryAlias = @import("./queryTypes/alias.zig");
-const AggDefault = @import("./queryTypes/aggregate.zig");
-const aggregateTypes = @import("./aggregate/types.zig");
-const filter = @import("./filter/filter.zig").filter;
-const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
-const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
-const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
-const SortHeader = @import("../types.zig").SortHeader;
-const readNext = @import("../utils.zig").readNext;
-const sliceNext = @import("../utils.zig").sliceNext;
+const QuerySort = @import("./queryTypes/sort.zig");
+
+const t = @import("../types.zig");
+
+// const getFields = @import("./include/include.zig").getFields;
+// const QueryId = @import("./queryTypes/id.zig");
+// const QueryIds = @import("./queryTypes/ids.zig");
+// const QueryAlias = @import("./queryTypes/alias.zig");
+// const AggDefault = @import("./queryTypes/aggregate.zig");
+// const aggregateTypes = @import("./aggregate/types.zig");
+// const filter = @import("./filter/filter.zig").filter;
+// const createSearchCtx = @import("./filter/search.zig").createSearchCtx;
+// const isVectorSearch = @import("./filter/search.zig").isVectorSearch;
+// const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
+// const SortHeader = @import("../types.zig").SortHeader;
+
+const readNext = utils.readNext;
+const sliceNext = utils.sliceNext;
 
 // -------- NAPI ---------- (put in js bridge maybe?)
 pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
@@ -65,53 +66,44 @@ pub fn getQueryThreaded(
         .threadCtx = threadCtx,
     };
 
-    const op = readNext(OpType, q, &index);
+    const op = readNext(t.OpType, q, &index);
     const len = q.len - 8;
 
     // const q = batch[4 .. batch.len - 8];
 
     switch (op) {
-        OpType.default => {
-            const header = readNext(Query.QueryDefaultHeader, q, &index);
-            // sort allready handled higher up
-            // index += header.sortSize;
-            // const filterSlice = sliceNext(header.filterSize, q, &index);
-            // const search = sliceNext(header.searchSize, q, &index);
-            // const include = q[index..len];
-            std.debug.print("SUB TYPE: {any}...\n", .{header.subType});
+        t.OpType.default => {
+            const header = readNext(t.QueryDefaultHeader, q, &index);
+            index += header.sortSize;
+
+            std.debug.print("Query - SUB TYPE: {any}...\n", .{header.subType});
 
             switch (header.subType) {
-                QuerySubType.default => {
+                t.QuerySubType.default => {
                     try QueryDefault.default(false, &ctx, &header, q[index..len], undefined);
                 },
-                QuerySubType.filter => {
+                t.QuerySubType.filter => {
                     const filterSlice = sliceNext(header.filterSize, q, &index);
                     try QueryDefault.default(true, &ctx, &header, q[index..len], filterSlice);
                 },
-                QuerySubType.sortAsc => {
-                    index += header.sortSize;
+                t.QuerySubType.sortAsc => {
                     try QuerySort.default(false, false, &ctx, sortIndex, &header, q[index..len], undefined);
                 },
-                QuerySubType.sortDesc => {
-                    index += header.sortSize;
+                t.QuerySubType.sortDesc => {
                     try QuerySort.default(true, false, &ctx, sortIndex, &header, q[index..len], undefined);
                 },
-                QuerySubType.sortAscFilter => {
-                    index += header.sortSize;
+                t.QuerySubType.sortAscFilter => {
                     const filterSlice = sliceNext(header.filterSize, q, &index);
                     try QuerySort.default(false, true, &ctx, sortIndex, &header, q[index..len], filterSlice);
                 },
-                QuerySubType.sortDescFilter => {
-                    index += header.sortSize;
+                t.QuerySubType.sortDescFilter => {
                     const filterSlice = sliceNext(header.filterSize, q, &index);
                     try QuerySort.default(true, true, &ctx, sortIndex, &header, q[index..len], filterSlice);
                 },
-                QuerySubType.sortIdDesc => {
-                    index += header.sortSize;
+                t.QuerySubType.sortIdDesc => {
                     try QuerySort.idDesc(false, &ctx, &header, q[index..len], undefined);
                 },
-                QuerySubType.sortIdDescFilter => {
-                    index += header.sortSize;
+                t.QuerySubType.sortIdDescFilter => {
                     const filterSlice = sliceNext(header.filterSize, q, &index);
                     try QuerySort.idDesc(true, &ctx, &header, q[index..len], filterSlice);
                 },
@@ -119,50 +111,18 @@ pub fn getQueryThreaded(
                     std.debug.print("🤪 not handled yet {any}...\n", .{header.subType});
                 },
             }
-
-            // if (header.sortSize == 0 and header.filterSize == 0 and header.searchSize == 0) {
-            //     try QueryDefault.default(ctx, *header, include);
-            // }
-
-            // const sort = if (header.sortSize != 0) read(types.QuerySortHeader, q, &index) else null;
-
-            // if (sort) |s| {
-            // std.debug.print("HEADEr {any}  SORT {any} \n", .{ header, s });
-            // }
-            // [order] [prop] [propType] [start] [start] [len] [len] [lan]
-
-            //
-
-            // get sort filter, search
-            // index += sortSize;
-
-            // const filterSize = read(u16, q, index);
-            // index += 2;
-            // const isSimpleFilter = q[index] == 1;
-            // index += 1;
-            // const filterBuf = q[index .. index + filterSize];
-            // index += filterSize;
-
-            // const searchSize = read(u16, q, index);
-            // index += 2;
-            // const search = q[index .. index + searchSize];
-            // index += searchSize;
-
-            // const include = q[index..len];
-            std.debug.print("derp header {any} {any} \n", .{ header, sortIndex });
-            // try defaultProtocol(&ctx, q[1..len]);
         },
-        OpType.id => {
+        t.OpType.ids => {},
+        t.OpType.id => {
             // const id = read(u32, q, 3);
             // const filterSize = read(u16, q, 7);
             // const filterBuf = q[9 .. 9 + filterSize];
             // const include = q[9 + filterSize .. len];
             // try QueryId.default(id, &ctx, typeId, filterBuf, include);
         },
-        OpType.ids => {},
-        OpType.alias => {},
-        OpType.aggregates => {},
-        OpType.aggregatesCountType => {},
+        t.OpType.alias => {},
+        t.OpType.aggregates => {},
+        t.OpType.aggregatesCountType => {},
         else => {
             return errors.DbError.INCORRECT_QUERY_TYPE;
         },

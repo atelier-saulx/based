@@ -1,14 +1,15 @@
 const std = @import("std");
-const sort = @import("./sort.zig");
+const config = @import("config");
 const selva = @import("../selva.zig").c;
 const deflate = @import("../deflate.zig");
 const valgrind = @import("../valgrind.zig");
-const config = @import("config");
-const jsBridge = @import("./jsBridge.zig");
-const SelvaError = @import("../errors.zig").SelvaError;
-const subs = @import("./subscription/types.zig");
-const threads = @import("./threads.zig");
 const napi = @import("../napi.zig");
+const SelvaError = @import("../errors.zig").SelvaError;
+const Subscription = @import("./subscription/common.zig");
+const jsBridge = @import("./jsBridge.zig");
+const threads = @import("./threads.zig");
+const sort = @import("./sort.zig");
+
 const rand = std.crypto.random;
 
 pub const DbCtx = struct {
@@ -18,7 +19,7 @@ pub const DbCtx = struct {
     arena: *std.heap.ArenaAllocator,
     sortIndexes: sort.TypeSortIndexes,
     selva: ?*selva.SelvaDb,
-    subscriptions: subs.SubscriptionCtx,
+    subscriptions: Subscription.SubscriptionCtx,
     ids: []u32,
     jsBridge: *jsBridge.Callback,
     threads: *threads.Threads,
@@ -53,13 +54,13 @@ pub fn createDbCtx(
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const dbCtxPointer = try allocator.create(DbCtx);
-    const subscriptions = try allocator.create(subs.SubscriptionCtx);
-    subscriptions.*.types = subs.TypeSubMap.init(allocator);
+    const subscriptions = try allocator.create(Subscription.SubscriptionCtx);
+    subscriptions.*.types = Subscription.TypeSubMap.init(allocator);
 
     subscriptions.*.lastIdMarked = 0;
     subscriptions.*.singleIdMarked = try std.heap.raw_c_allocator.alloc(
-        *subs.IdSubsItem,
-        subs.BLOCK_SIZE,
+        *Subscription.IdSubsItem,
+        Subscription.BLOCK_SIZE,
     );
 
     errdefer {

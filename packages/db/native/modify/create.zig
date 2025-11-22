@@ -6,10 +6,11 @@ const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
 const references = @import("./references.zig");
 const reference = @import("./reference.zig");
-const types = @import("../types.zig");
 const std = @import("std");
 const lib = @import("../lib.zig");
 const subs = @import("./subscription.zig");
+const t = @import("../types.zig");
+
 const read = utils.read;
 
 const ModifyCtx = Modify.ModifyCtx;
@@ -20,12 +21,12 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     subs.stage(ctx, subs.Op.create);
 
     switch (ctx.fieldType) {
-        types.PropType.REFERENCES => {
-            switch (@as(types.RefOp, @enumFromInt(data[4]))) {
-                types.RefOp.OVERWRITE, types.RefOp.ADD => {
+        t.PropType.references => {
+            switch (@as(t.RefOp, @enumFromInt(data[4]))) {
+                t.RefOp.overwrite, t.RefOp.add => {
                     return references.updateReferences(ctx, data);
                 },
-                types.RefOp.PUT_OVERWRITE, types.RefOp.PUT_ADD => {
+                t.RefOp.putOverwrite, t.RefOp.putAdd => {
                     return references.putReferences(ctx, data);
                 },
                 else => {
@@ -35,24 +36,24 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                 },
             }
         },
-        types.PropType.REFERENCE => {
+        t.PropType.reference => {
             return reference.updateReference(ctx, data);
         },
-        types.PropType.VECTOR => {
+        t.PropType.vector => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             try db.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
             return len;
         },
-        types.PropType.COLVEC => {
+        t.PropType.colVec => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             db.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
             return len;
         },
-        types.PropType.CARDINALITY => {
+        t.PropType.cardinality => {
             const hllMode = if (data[0] == 0) true else false;
             const hllPrecision = data[1];
             const offset = 2;
@@ -73,7 +74,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             const slice = data[4 .. len + 4];
             addSortIndexOnCreation(ctx, slice) catch null;
-            if (ctx.fieldType == types.PropType.ALIAS) {
+            if (ctx.fieldType == t.PropType.alias) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
@@ -102,7 +103,7 @@ pub fn addSortIndexOnCreation(ctx: *ModifyCtx, slice: []u8) !void {
         }
     } else if (ctx.currentSortIndex != null) {
         sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
-    } else if (ctx.typeSortIndex != null and ctx.fieldType == types.PropType.TEXT) {
+    } else if (ctx.typeSortIndex != null and ctx.fieldType == t.PropType.text) {
         const sIndex = sort.getSortIndex(
             ctx.db.sortIndexes.get(ctx.typeId),
             ctx.field,

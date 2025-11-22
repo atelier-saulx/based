@@ -3,15 +3,13 @@ const db = @import("../db/db.zig");
 const utils = @import("../utils.zig");
 const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
-const types = @import("../types.zig");
 const update = @import("./update.zig");
 const std = @import("std");
+const t = @import("../types.zig");
 
 const read = utils.read;
 const copy = utils.copy;
 const ModifyCtx = Modify.ModifyCtx;
-const ModOp = Modify.ModOp;
-const PropType = types.PropType;
 
 fn isMainEmpty(val: []u8) bool {
     var b = false;
@@ -36,9 +34,9 @@ pub fn writeEdges(
     }
 
     while (i < data.len) {
-        const op: ModOp = @enumFromInt(data[i]);
+        const op: t.ModOp = @enumFromInt(data[i]);
         const prop = data[i + 1];
-        const propType: PropType = @enumFromInt(data[i + 2]);
+        const propType: t.PropType = @enumFromInt(data[i + 2]);
         i += 3;
 
         const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
@@ -49,7 +47,7 @@ pub fn writeEdges(
         var len: u32 = undefined;
         var offset: u32 = 0;
 
-        if (op == ModOp.UPDATE_PARTIAL) {
+        if (op == t.ModOp.updatePartial) {
             len = read(u32, data, i);
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
@@ -61,8 +59,8 @@ pub fn writeEdges(
                 while (j < mainBufferOffset + offset + i) : (j += 6) {
                     const start = read(u16, data, j);
                     const l = read(u16, data, j + 2);
-                    const fieldOp: ModOp = @enumFromInt(data[j + 4]);
-                    if (fieldOp == ModOp.INCREMENT or fieldOp == ModOp.DECREMENT) {
+                    const fieldOp: t.ModOp = @enumFromInt(data[j + 4]);
+                    if (fieldOp == t.ModOp.increment or fieldOp == t.ModOp.decrement) {
                         _ = update.incrementBuffer(op, @enumFromInt(data[j + 5]), val, edgeData);
                     } else {
                         copy(val[start .. start + l], edgeData[start .. start + l]);
@@ -73,7 +71,7 @@ pub fn writeEdges(
                 try db.writeField(edgeNode, edgeFieldSchema, edgeData);
             }
         } else switch (propType) {
-            PropType.REFERENCE => {
+            t.PropType.reference => {
                 len = 4;
                 offset = 0;
                 const dstId = read(u32, data, i + offset);
@@ -83,7 +81,7 @@ pub fn writeEdges(
                     return errors.SelvaError.SELVA_ENOENT;
                 }
             },
-            PropType.REFERENCES => {
+            t.PropType.references => {
                 len = read(u32, data, i);
                 offset = 4;
                 const edgeData = data[i + offset .. i + offset + len];
@@ -98,7 +96,7 @@ pub fn writeEdges(
                 const u32ids = read([]u32, aligned, 0);
                 try db.putReferences(ctx, edgeNode, edgeFieldSchema, u32ids);
             },
-            PropType.CARDINALITY => {
+            t.PropType.cardinality => {
                 len = read(u32, data, i);
                 offset = 4;
                 const hll = try db.ensureEdgePropTypeString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
@@ -117,7 +115,6 @@ pub fn writeEdges(
                 try db.writeField(edgeNode, edgeFieldSchema, edgeData);
             },
         }
-
         i += offset + len;
     }
 }

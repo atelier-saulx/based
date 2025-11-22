@@ -3,18 +3,18 @@ const dbSort = @import("../../db/sort.zig");
 const selva = @import("../../selva.zig").c;
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
+const Query = @import("../common.zig");
 const filter = @import("../filter/filter.zig").filter;
-const types = @import("../../types.zig");
 const read = @import("../../utils.zig").read;
 const std = @import("std");
 const searchStr = @import("../filter/search.zig");
 const s = @import("./search.zig");
+const t = @import("../../types.zig");
 
 pub fn sort(
     comptime desc: bool,
     ids: []u8,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
@@ -27,8 +27,8 @@ pub fn sort(
     var start: u16 = undefined;
     var len: u16 = undefined;
     const sortField: u8 = sortBuffer[0];
-    const sortPropType: types.PropType = @enumFromInt(sortBuffer[1]);
-    const lang: types.LangCode = @enumFromInt(sortBuffer[6]);
+    const sortPropType: t.PropType = @enumFromInt(sortBuffer[1]);
+    const lang: t.LangCode = @enumFromInt(sortBuffer[6]);
     start = read(u16, sortBuffer, 2);
     len = read(u16, sortBuffer, 4);
     // --------------------------------
@@ -81,7 +81,7 @@ pub fn sort(
 // add opt filter
 pub fn default(
     ids: []u8,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,
@@ -117,7 +117,7 @@ pub fn default(
 pub fn search(
     comptime isVector: bool,
     ids: []u8,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     typeId: db.TypeId,
     conditions: []u8,
     include: []u8,

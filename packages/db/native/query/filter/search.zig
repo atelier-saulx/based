@@ -1,21 +1,15 @@
 const std = @import("std");
-const simd = std.simd;
 const read = @import("../../utils.zig").read;
 const selva = @import("../../selva.zig").c;
 const db = @import("../../db//db.zig");
-const types = @import("../include/types.zig");
 const compressed = @import("./compressed.zig");
-const decompress = compressed.decompress;
-const PropType = @import("../../types.zig").PropType;
-const LangCode = @import("../../types.zig").LangCode;
-const VectorFn = @import("./types.zig").VectorFn;
-const MAIN_PROP = @import("../../types.zig").MAIN_PROP;
-const MaxVectorScore = @import("./types.zig").MaxVectorScore;
+const deflate = @import("../../deflate.zig");
 const vectorScore = @import("./has/vector.zig").vec;
 const move = @import("../../utils.zig").move;
-const Compression = @import("../../types.zig").Compression;
-const deflate = @import("../../deflate.zig");
+const t = @import("../../types.zig");
 
+const decompress = compressed.decompress;
+const simd = std.simd;
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
@@ -32,7 +26,7 @@ pub fn SearchCtx(comptime isVector: bool) type {
         return struct {
             field: u8,
             query: []f32,
-            func: VectorFn,
+            func: t.FilterVectorFn,
             score: f32,
         };
     }
@@ -146,8 +140,8 @@ fn hamming_mbs(
     query: []u8,
 ) u8 {
     const mbs = value[i + 1 .. value.len];
-    const t = query[1..query.len];
-    const d: u8 = @truncate(selva.strsearch_hamming_mbs(mbs.ptr, mbs.len, t.ptr, t.len));
+    const target = query[1..query.len];
+    const d: u8 = @truncate(selva.strsearch_hamming_mbs(mbs.ptr, mbs.len, target.ptr, target.len));
     return d;
 }
 
@@ -311,7 +305,7 @@ inline fn getScore(
     score: *u8,
     penalty: u8,
 ) bool {
-    if (value[1] == @intFromEnum(Compression.compressed)) {
+    if (value[1] == @intFromEnum(t.Compression.compressed)) {
         _ = decompress(
             decompressor,
             blockState,
@@ -351,13 +345,13 @@ pub fn search(
         bestScore = 255;
         fieldLoop: while (j < fl) : (j += 10) {
             const field = ctx.fields[j];
-            const prop: PropType = @enumFromInt(ctx.fields[j + 1]);
+            const prop: t.PropType = @enumFromInt(ctx.fields[j + 1]);
             const penalty = ctx.fields[j + 2];
             const fieldSchema = db.getFieldSchema(typeEntry, field) catch {
                 return 255;
             };
             var score: u8 = 255;
-            if (field == MAIN_PROP) {
+            if (field == t.MAIN_PROP) {
                 const value = db.getField(typeEntry, node, fieldSchema, prop);
                 const start = read(u16, ctx.fields, j + 3);
                 const len = value[start];
@@ -378,10 +372,10 @@ pub fn search(
                 if (value.len == 0) {
                     continue :fieldLoop;
                 }
-                if (prop == PropType.TEXT) {
-                    const code: LangCode = @enumFromInt(ctx.fields[j + 5]);
+                if (prop == t.PropType.text) {
+                    const code: t.LangCode = @enumFromInt(ctx.fields[j + 5]);
                     score = 255;
-                    if (code == LangCode.NONE) {
+                    if (code == t.LangCode.NONE) {
                         var iter = db.textIterator(value);
                         while (iter.next()) |s| {
                             _ = getScore(decompressor, blockState, s, query, &score, penalty);
@@ -435,11 +429,11 @@ pub fn searchVector(
     ctx: *const SearchCtx(true),
 ) f32 {
     const fieldSchema = db.getFieldSchema(typeEntry, ctx.field) catch {
-        return MaxVectorScore;
+        return t.FilterMaxVectorScoreMaxVectorScore;
     };
-    const value = db.getField(typeEntry, node, fieldSchema, PropType.VECTOR);
+    const value = db.getField(typeEntry, node, fieldSchema, t.PropType.vector);
     if (value.len == 0) {
-        return MaxVectorScore;
+        return t.FilterMaxVectorScore;
     }
     return vectorScore(ctx.func, read([]f32, value, 0), ctx.query);
 }

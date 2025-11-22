@@ -1,14 +1,13 @@
 const std = @import("std");
 const utils = @import("../../utils.zig");
+const GroupByHashMap = @import("./groupByHashMap.zig").GroupByHashMap;
+const db = @import("../../db/db.zig");
+const Query = @import("../common.zig");
+const t = @import("../../types.zig");
+
+const read = utils.read;
 const copy = utils.copy;
 const writeInt = utils.writeIntExact;
-const types = @import("../../types.zig");
-const GroupByHashMap = @import("./types.zig").GroupByHashMap;
-const read = utils.read;
-const db = @import("../../db/db.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
-const aggregateTypes = @import("../aggregate/types.zig");
-
 pub const ProtocolLen = 18;
 
 pub const GroupCtx = struct {
@@ -20,7 +19,7 @@ pub const GroupCtx = struct {
     start: u16,
     field: u8,
     len: u16,
-    propType: types.PropType,
+    propType: t.PropType,
     stepType: u8,
     stepRange: u32,
     timezone: i16,
@@ -61,7 +60,7 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
         var y: u8 = 0;
         while (j < fieldAggsSize) {
             y += 1;
-            const aggType: aggregateTypes.AggType = @enumFromInt(aggPropTypeDef[j]);
+            const aggType: t.AggType = @enumFromInt(aggPropTypeDef[j]);
             j += 1;
             // propType
             j += 1;
@@ -74,19 +73,19 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
             // isEdge
             j += 1;
 
-            if (aggType == aggregateTypes.AggType.COUNT) {
+            if (aggType == t.AggType.count) {
                 copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
-            } else if (aggType == aggregateTypes.AggType.SUM or
-                aggType == aggregateTypes.AggType.MAX or
-                aggType == aggregateTypes.AggType.MIN)
+            } else if (aggType == t.AggType.sum or
+                aggType == t.AggType.max or
+                aggType == t.AggType.min)
             {
                 copy(resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 8]);
-            } else if (aggType == aggregateTypes.AggType.AVERAGE) {
+            } else if (aggType == t.AggType.average) {
                 const count = read(u64, accumulatorField, accumulatorPos);
                 const sum = read(f64, accumulatorField, accumulatorPos + 8);
                 const mean = sum / @as(f64, @floatFromInt(count));
                 writeInt(f64, resultsField, resultPos, @floatCast(mean));
-            } else if (aggType == aggregateTypes.AggType.HMEAN) {
+            } else if (aggType == t.AggType.hmean) {
                 const count = read(u64, accumulatorField, accumulatorPos);
                 if (count != 0) {
                     const isum = read(f64, accumulatorField, accumulatorPos + 8);
@@ -95,7 +94,7 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                 } else {
                     writeInt(f64, resultsField, resultPos, 0.0);
                 }
-            } else if (aggType == aggregateTypes.AggType.VARIANCE) {
+            } else if (aggType == t.AggType.variance) {
                 const count = read(u64, accumulatorField, accumulatorPos);
 
                 if (count > 1) {
@@ -117,7 +116,7 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                 } else {
                     writeInt(f64, resultsField, resultPos, 0.0);
                 }
-            } else if (aggType == aggregateTypes.AggType.STDDEV) {
+            } else if (aggType == t.AggType.stddev) {
                 const count = read(u64, accumulatorField, accumulatorPos);
                 if (count > 1) {
                     const sum = read(f64, accumulatorField, accumulatorPos + 8);
@@ -134,7 +133,7 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                 } else {
                     writeInt(f64, resultsField, resultPos, 0.0);
                 }
-            } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
+            } else if (aggType == t.AggType.cardinality) {
                 writeInt(u32, resultsField, resultPos, read(u32, accumulatorField, accumulatorPos));
             }
         }
@@ -173,13 +172,18 @@ pub inline fn finalizeGroupResults(
     }
 }
 
-pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *QueryCtx) !*GroupCtx {
+pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *Query.QueryCtx) !*GroupCtx {
     const field = aggInput[0];
-    const srcPropTypeType: types.PropType = @enumFromInt(aggInput[1]);
-    const propType: types.PropType = if (field == types.MAIN_PROP and srcPropTypeType != types.PropType.ENUM and srcPropTypeType != types.PropType.TIMESTAMP and srcPropTypeType != types.PropType.STRING)
-        types.PropType.MICRO_BUFFER
+    const srcPropTypeType: t.PropType = @enumFromInt(aggInput[1]);
+
+    const propType: t.PropType = if (field == t.MAIN_PROP and
+        srcPropTypeType != t.PropType.@"enum" and
+        srcPropTypeType != t.PropType.timestamp and
+        srcPropTypeType != t.PropType.string)
+        t.PropType.microBuffer
     else
         srcPropTypeType;
+
     const start = read(u16, aggInput, 2);
     const len = read(u16, aggInput, 4);
     const stepType: u8 = aggInput[6];

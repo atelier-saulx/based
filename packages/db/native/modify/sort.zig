@@ -4,8 +4,9 @@ const sort = @import("../db/sort.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./common.zig");
 const std = @import("std");
+const t = @import("../types.zig");
+
 const ModifyCtx = Modify.ModifyCtx;
-const types = @import("../types.zig");
 
 pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
     const len = read(u16, data, 0);
@@ -19,7 +20,7 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
             ctx.typeSortIndex,
             field,
             0,
-            types.LangCode.NONE,
+            t.LangCode.NONE,
         );
         if (sI != null) {
             sort.insert(ctx.threadCtx.decompressor, sI.?, sort.EMPTY_SLICE, ctx.node.?);
@@ -40,7 +41,7 @@ pub fn addEmptyTextToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
         const langs = data[i] + i + 1;
         i += 1;
         while (i < langs) {
-            const lang: types.LangCode = @enumFromInt(data[i]);
+            const lang: t.LangCode = @enumFromInt(data[i]);
             const sI = sort.getSortIndex(
                 ctx.typeSortIndex,
                 field,

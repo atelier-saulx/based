@@ -1,18 +1,7 @@
 const std = @import("std");
-const addStep = @import("./utils.zig").addStep;
-const types = @import("../../types.zig");
 const utils = @import("../../utils.zig");
+
 const read = utils.read;
-const aux = @import("../aggregate/utils.zig");
-
-pub const GroupedBy = enum(u8) {
-    hasGroup = 255,
-    none = 0,
-};
-
-pub const AggType = enum(u8) { SUM = 1, COUNT = 2, CARDINALITY = 3, STDDEV = 4, AVERAGE = 5, VARIANCE = 6, MAX = 7, MIN = 8, HMEAN = 9 };
-
-pub const IsId = 255;
 
 pub const GroupByHashMap = struct {
     inner: std.StringHashMap([]u8),

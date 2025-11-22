@@ -1,19 +1,20 @@
-const assert = std.debug.assert;
-const errors = @import("../errors.zig");
 const std = @import("std");
+const t = @import("../types.zig");
+const errors = @import("../errors.zig");
 const sort = @import("./sort.zig");
 const selva = @import("../selva.zig").c;
 const Modify = @import("../modify/common.zig");
 const utils = @import("../utils.zig");
-const types = @import("../types.zig");
 const valgrind = @import("../valgrind.zig");
 const config = @import("config");
-pub const DbCtx = @import("./ctx.zig").DbCtx;
 const SelvaHash128 = @import("../selva.zig").SelvaHash128;
+pub const DbCtx = @import("./ctx.zig").DbCtx;
+pub const DbThread = @import("./threads.zig").DbThread;
 
+const assert = std.debug.assert;
 const read = utils.read;
 const move = utils.move;
-pub const TypeId = u16;
+
 pub const Node = *selva.SelvaNode;
 pub const Aliases = *selva.SelvaAliases;
 pub const Type = *selva.SelvaTypeEntry;
@@ -24,18 +25,16 @@ pub const ReferenceLarge = *selva.SelvaNodeLargeReference;
 pub const ReferenceAny = selva.SelvaNodeReferenceAny;
 pub const References = *const selva.SelvaNodeReferences;
 
-pub const DbThread = @import("./threads.zig").DbThread;
-
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
-pub fn createType(ctx: *DbCtx, typeId: TypeId, schema: []u8) !void {
+pub fn createType(ctx: *DbCtx, typeId: t.TypeId, schema: []u8) !void {
     try errors.selva(selva.selva_db_create_type(ctx.selva, typeId, schema.ptr, schema.len));
 }
 
-pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
+pub fn getType(ctx: *DbCtx, typeId: t.TypeId) !Type {
     const selvaTypeEntry: ?Type = selva.selva_get_type_by_index(
         ctx.selva.?,
         typeId,
@@ -46,7 +45,7 @@ pub fn getType(ctx: *DbCtx, typeId: TypeId) !Type {
     return selvaTypeEntry.?;
 }
 
-pub inline fn getBlockCapacity(ctx: *DbCtx, typeId: TypeId) u64 {
+pub inline fn getBlockCapacity(ctx: *DbCtx, typeId: t.TypeId) u64 {
     return selva.selva_get_block_capacity(selva.selva_get_type_by_index(ctx.selva, typeId));
 }
 
@@ -54,7 +53,7 @@ pub inline fn getNodeCount(te: Type) usize {
     return selva.selva_node_count(te);
 }
 
-pub inline fn getNodeTypeId(node: Node) TypeId {
+pub inline fn getNodeTypeId(node: Node) t.TypeId {
     return selva.selva_get_node_type(node);
 }
 
@@ -141,9 +140,9 @@ pub fn getField(
     typeEntry: ?Type,
     node: Node,
     fieldSchema: FieldSchema,
-    fieldType: types.PropType,
+    fieldType: t.PropType,
 ) []u8 {
-    if (fieldType == types.PropType.ALIAS) {
+    if (fieldType == t.PropType.alias) {
         const target = getNodeId(node);
         const typeAliases = selva.selva_get_aliases(typeEntry, fieldSchema.field);
         const alias = selva.selva_get_alias_by_dest(typeAliases, target);
@@ -153,9 +152,9 @@ pub fn getField(
         var len: usize = 0;
         const res = selva.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
-    } else if (fieldType == types.PropType.CARDINALITY) {
+    } else if (fieldType == t.PropType.cardinality) {
         return getCardinalityField(node, fieldSchema) orelse emptySlice;
-    } else if (fieldType == types.PropType.COLVEC) {
+    } else if (fieldType == t.PropType.colVec) {
         const nodeId = getNodeId(node);
         const vec = selva.colvec_get_vec(typeEntry, nodeId, fieldSchema);
         const len = fieldSchema.*.unnamed_0.colvec.vec_len * fieldSchema.*.unnamed_0.colvec.comp_size;
@@ -478,7 +477,7 @@ pub fn deleteField(ctx: *Modify.ModifyCtx, node: Node, fieldSchema: FieldSchema)
     try errors.selva(selva.selva_fields_del(ctx.db.selva, node, fieldSchema, markDirtyCb, ctx));
 }
 
-pub fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: FieldSchema, lang: types.LangCode) !void {
+pub fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: FieldSchema, lang: t.LangCode) !void {
     return errors.selva(selva.selva_fields_set_text(ctx.node, fieldSchema, &selva.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
 }
 
@@ -568,7 +567,7 @@ pub fn getAliasByName(typeEntry: Type, field: u8, aliasName: []u8) ?Node {
 
 pub inline fn getTextFromValueFallback(
     value: []u8,
-    code: types.LangCode,
+    code: t.LangCode,
     fallbacks: []u8,
 ) []u8 {
     if (value.len == 0) {
@@ -607,7 +606,7 @@ pub inline fn getTextFromValueFallback(
     return @as([*]u8, undefined)[0..0];
 }
 
-pub inline fn getTextFromValue(value: []u8, code: types.LangCode) []u8 {
+pub inline fn getTextFromValue(value: []u8, code: t.LangCode) []u8 {
     if (value.len == 0) {
         return value;
     }
@@ -661,15 +660,15 @@ pub inline fn getText(
     typeEntry: ?Type,
     node: Node,
     fieldSchema: FieldSchema,
-    fieldType: types.PropType,
-    langCode: types.LangCode,
+    fieldType: t.PropType,
+    langCode: t.LangCode,
 ) []u8 {
     // fallbacks
     const data = getField(typeEntry, node, fieldSchema, fieldType);
     return getTextFromValue(data, langCode);
 }
 
-pub fn expireNode(ctx: *Modify.ModifyCtx, typeId: TypeId, nodeId: u32, ts: i64) void {
+pub fn expireNode(ctx: *Modify.ModifyCtx, typeId: t.TypeId, nodeId: u32, ts: i64) void {
     selva.selva_expire_node(ctx.db.selva, typeId, nodeId, ts, selva.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
     Modify.markDirtyRange(ctx, typeId, nodeId);
 }

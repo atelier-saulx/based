@@ -1,11 +1,10 @@
 const std = @import("std");
-const simd = std.simd;
 const move = @import("../../utils.zig").move;
 const read = @import("../../utils.zig").read;
-
 const selva = @import("../../selva.zig").c;
-const types = @import("./types.zig");
+const t = @import("../../types.zig");
 
+const simd = std.simd;
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const indexes = std.simd.iota(u8, vectorLen);
 const nulls: @Vector(vectorLen, u8) = @splat(@as(u8, 255));
@@ -18,7 +17,7 @@ pub fn simdEqualsOr(
     var offset: u8 = values[0];
     const typeSize = @sizeOf(T);
 
-    if (values[0] == @intFromEnum((types.Alignment.notSet))) {
+    if (values[0] == @intFromEnum((t.FilterAlignment.notSet))) {
         const address = @intFromPtr(values.ptr);
         offset = @truncate(address % 8);
         values[0] = offset;
@@ -30,7 +29,7 @@ pub fn simdEqualsOr(
     const l = (values.len - 8) / bytes;
     const valueExpanded = read(T, value, 0);
 
-    const tmp: [*]T = @alignCast(@ptrCast(values[8 - offset .. values.len - offset].ptr));
+    const tmp: [*]T = @ptrCast(@alignCast(values[8 - offset .. values.len - offset].ptr));
     const ints: []T = tmp[0..l];
     if (vectorLen <= l) {
         while (i <= (l - vectorLen)) : (i += vectorLen) {
@@ -152,7 +151,7 @@ pub fn simdReferencesHasSingle(
         return false;
     }
     const l = values.len / 4;
-    const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
+    const tmp: [*]u32 = @ptrCast(@alignCast(values.ptr));
     return selva.node_id_set_bsearch(tmp, l, value) != -1;
 }
 
@@ -165,7 +164,7 @@ pub fn simdReferencesHas(
     }
     var i: usize = 0;
     const l = values.len / 4;
-    const tmp: [*]u32 = @alignCast(@ptrCast(values.ptr));
+    const tmp: [*]u32 = @ptrCast(@alignCast(values.ptr));
     while (i < value.len) : (i += 4) {
         if (selva.node_id_set_bsearch(tmp, l, read(u32, value, i)) != -1) {
             return true;

@@ -92,7 +92,7 @@ pub inline fn decompress(
         const result = deflate.decompressStream(
             decompressor,
             blockState,
-            value[6..value.len - 4],
+            value[6 .. value.len - 4],
             comptimeCb(DataType, compare).func,
             @ptrCast(&ctx),
             &hasMatch,

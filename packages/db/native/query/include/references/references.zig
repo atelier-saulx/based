@@ -1,20 +1,15 @@
+const std = @import("std");
 const read = @import("../../../utils.zig").read;
 const db = @import("../../../db/db.zig");
 const selva = @import("../../../selva.zig").c;
-
 const results = @import("../../results.zig");
-const QueryCtx = @import("../../common.zig").QueryCtx;
-
+const Query = @import("../../common.zig");
 const getFields = @import("../include.zig");
 const addIdOnly = @import("../addIdOnly.zig").addIdOnly;
-const types = @import("../types.zig");
-
 const sortedReferences = @import("./sort.zig").sortedReferences;
 const defaultReferences = @import("./default.zig").defaultReferences;
-
-const std = @import("std");
-const t = @import("../../../types.zig");
 const utils = @import("../../../utils.zig");
+const t = @import("../../../types.zig");
 
 //  Multiple References Protocol Schema:
 
@@ -26,11 +21,11 @@ const utils = @import("../../../utils.zig");
 // | 6       | totalRefs | 4           | Total number of references (u32)     |
 
 pub fn getRefsFields(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     include: []u8,
     node: db.Node,
     originalType: db.Type,
-    ref: ?types.RefStruct,
+    ref: ?Query.RefStruct,
     comptime isEdge: bool,
 ) usize {
     const filterSize: u16 = read(u16, include, 0);
@@ -41,7 +36,7 @@ pub fn getRefsFields(
     const filterArr: ?[]u8 = if (filterSize > 0) include[start .. start + filterSize] else null;
     const hasFilter: bool = filterArr != null;
     const sortArr: ?[]u8 = if (sortSize > 0) include[start + filterSize .. start + filterSize + sortSize] else null;
-    const typeId: db.TypeId = read(u16, include, start + filterSize + sortSize);
+    const typeId: t.TypeId = read(u16, include, start + filterSize + sortSize);
     const refField = include[start + 2 + filterSize + sortSize];
     const typeEntry = db.getType(ctx.db, typeId) catch null;
     const includeNested = include[(start + 3 + filterSize + sortSize)..include.len];
@@ -55,7 +50,7 @@ pub fn getRefsFields(
     }) catch return 0;
 
     const resultIndex: usize = ctx.results.items.len - 1;
-    var refs: ?types.Refs = undefined;
+    var refs: ?Query.Refs = undefined;
     if (isEdge) {
         if (db.getEdgeReferences(ctx.db, ref.?.edgeConstraint, ref.?.largeReference.?, refField)) |r| {
             const edgeFs = db.getEdgeFieldSchema(ctx.db, ref.?.edgeConstraint, refField) catch {
@@ -81,7 +76,7 @@ pub fn getRefsFields(
         refs = .{ .refs = references.?, .fs = fieldSchema };
     }
 
-    var result: types.RefsResult = undefined;
+    var result: Query.RefsResult = undefined;
     const edgeConstraint = if (isEdge) ref.?.edgeConstraint else db.getEdgeFieldConstraint(db.getFieldSchema(originalType, refField) catch {
         // default empty size - means a bug!
         return 10;

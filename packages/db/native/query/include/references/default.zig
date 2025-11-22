@@ -1,14 +1,13 @@
+const std = @import("std");
 const read = @import("../../../utils.zig").read;
 const db = @import("../../../db/db.zig");
-const QueryCtx = @import("../../common.zig").QueryCtx;
+const Query = @import("../../common.zig");
 const getFields = @import("../include.zig").getFields;
-const types = @import("../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
-const std = @import("std");
 
 pub fn defaultReferences(
-    refs: types.Refs,
-    ctx: *QueryCtx,
+    refs: Query.Refs,
+    ctx: *Query.QueryCtx,
     include: []u8,
     typeEntry: db.Type,
     edgeConstraint: db.EdgeFieldConstraint,
@@ -16,14 +15,13 @@ pub fn defaultReferences(
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,
     limit: u32,
-) types.RefsResult {
-    var result: types.RefsResult = .{ .size = 0, .cnt = 0 };
+) Query.RefsResult {
+    var result: Query.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = offset;
     const refsCnt = refs.refs.nr_refs;
-
     checkItem: while (i < refsCnt and result.cnt < limit) : (i += 1) {
-        if (types.resolveRefsNode(ctx.db, refs, i)) |refNode| {
-            const refStruct = types.RefResult(refs, edgeConstraint, i);
+        if (Query.resolveRefsNode(ctx.db, refs, i)) |refNode| {
+            const refStruct = Query.RefResult(refs, edgeConstraint, i);
             if (hasFilter and !filter(
                 ctx.db,
                 refNode,

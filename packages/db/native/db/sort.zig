@@ -3,16 +3,16 @@ const deflate = @import("../deflate.zig");
 const selva = @import("../selva.zig").c;
 const std = @import("std");
 const utils = @import("../utils.zig");
-const types = @import("../types.zig");
+const t = @import("../types.zig");
 const errors = @import("../errors.zig");
 const read = utils.read;
 
 pub const SortIndexMeta = struct {
-    prop: types.PropType,
+    prop: t.PropType,
     start: u16,
     len: u16, // len can be added somewhere else
     index: *selva.SelvaSortCtx,
-    langCode: types.LangCode,
+    langCode: t.LangCode,
     field: u8,
     isCreated: bool,
 };
@@ -35,36 +35,26 @@ pub const TypeIndex = struct {
     main: MainSortIndexes,
 };
 
-// check if sort index && sort index is DONE = true
-
-// - lock when creratecreater container, cpntainer has NOT DONE as bool
-// - unlock
-// make index
-// - lock
-// DONE = true
-// - fire condition sort index made
-// - unlock
-
 pub const TypeSortIndexes = std.AutoHashMap(u16, *TypeIndex);
 
 inline fn getTextKey(
     field: u8,
-    lang: types.LangCode,
+    lang: t.LangCode,
 ) u16 {
     return @as(u16, @bitCast([_]u8{ field, @intFromEnum(lang) }));
 }
 
-fn getSortFlag(sortFieldType: types.PropType, desc: bool) !selva.SelvaSortOrder {
+fn getSortFlag(sortFieldType: t.PropType, desc: bool) !selva.SelvaSortOrder {
     switch (sortFieldType) {
-        types.PropType.INT8,
-        types.PropType.UINT8,
-        types.PropType.INT16,
-        types.PropType.UINT16,
-        types.PropType.INT32,
-        types.PropType.UINT32,
-        types.PropType.BOOLEAN,
-        types.PropType.ENUM,
-        types.PropType.CARDINALITY,
+        t.PropType.int8,
+        t.PropType.uint8,
+        t.PropType.int16,
+        t.PropType.uint16,
+        t.PropType.int32,
+        t.PropType.uint32,
+        t.PropType.boolean,
+        t.PropType.@"enum",
+        t.PropType.cardinality,
         => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_I64_DESC;
@@ -72,14 +62,14 @@ fn getSortFlag(sortFieldType: types.PropType, desc: bool) !selva.SelvaSortOrder 
                 return selva.SELVA_SORT_ORDER_I64_ASC;
             }
         },
-        types.PropType.NUMBER, types.PropType.TIMESTAMP => {
+        t.PropType.number, t.PropType.timestamp => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_DOUBLE_DESC;
             } else {
                 return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
             }
         },
-        types.PropType.STRING, types.PropType.TEXT, types.PropType.ALIAS, types.PropType.BINARY => {
+        t.PropType.string, t.PropType.text, t.PropType.alias, t.PropType.binary => {
             if (desc) {
                 return selva.SELVA_SORT_ORDER_BUFFER_DESC;
             } else {
@@ -93,7 +83,7 @@ fn getSortFlag(sortFieldType: types.PropType, desc: bool) !selva.SelvaSortOrder 
 }
 
 pub fn createSortIndexMeta(
-    header: types.SortHeader,
+    header: t.SortHeader,
     desc: bool,
 ) !SortIndexMeta {
     const sortFlag = try getSortFlag(header.propType, desc);
@@ -112,8 +102,8 @@ pub fn createSortIndexMeta(
 
 fn getOrCreateFromCtx(
     dbCtx: *db.DbCtx,
-    typeId: db.TypeId,
-    sortHeader: types.SortHeader,
+    typeId: t.TypeId,
+    sortHeader: t.SortHeader,
     comptime desc: bool,
 ) !*SortIndexMeta {
     var sortIndex: ?*SortIndexMeta = undefined;
@@ -134,7 +124,7 @@ fn getOrCreateFromCtx(
         sortIndex.?.* = try createSortIndexMeta(sortHeader, desc);
         if (sortHeader.prop == 0) {
             try tI.main.put(sortHeader.start, sortIndex.?);
-        } else if (sortHeader.propType == types.PropType.TEXT) {
+        } else if (sortHeader.propType == t.PropType.text) {
             try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex.?);
         } else {
             try tI.field.put(sortHeader.prop, sortIndex.?);
@@ -149,8 +139,8 @@ fn getOrCreateFromCtx(
 pub fn createSortIndex(
     dbCtx: *db.DbCtx,
     decompressor: *deflate.Decompressor,
-    typeId: db.TypeId,
-    header: types.SortHeader,
+    typeId: t.TypeId,
+    header: t.SortHeader,
     comptime defrag: bool,
     comptime desc: bool,
 ) !*SortIndexMeta {
@@ -170,7 +160,7 @@ pub fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = if (header.propType == types.PropType.TEXT) db.getText(
+        const data = if (header.propType == t.PropType.text) db.getText(
             typeEntry,
             node.?,
             fieldSchema,
@@ -194,10 +184,10 @@ pub fn createSortIndex(
 
 pub fn destroySortIndex(
     dbCtx: *db.DbCtx,
-    typeId: db.TypeId,
+    typeId: t.TypeId,
     field: u8,
     start: u16,
-    lang: types.LangCode,
+    lang: t.LangCode,
 ) void {
     const typeIndexes = dbCtx.sortIndexes.get(typeId);
     if (typeIndexes == null) {
@@ -220,13 +210,13 @@ pub fn getSortIndex(
     typeSortIndexes: ?*TypeIndex,
     field: u8,
     start: u16,
-    lang: types.LangCode,
+    lang: t.LangCode,
 ) ?*SortIndexMeta {
     if (typeSortIndexes == null) {
         return null;
     }
     const tI = typeSortIndexes.?;
-    if (lang != types.LangCode.NONE) {
+    if (lang != t.LangCode.NONE) {
         return tI.text.get(getTextKey(field, lang));
     } else if (field == 0) {
         return tI.main.get(start);
@@ -237,7 +227,7 @@ pub fn getSortIndex(
 
 pub fn getTypeSortIndexes(
     dbCtx: *db.DbCtx,
-    typeId: db.TypeId,
+    typeId: t.TypeId,
 ) ?*TypeIndex {
     return dbCtx.sortIndexes.get(typeId);
 }
@@ -251,7 +241,7 @@ inline fn parseString(decompressor: *deflate.Decompressor, data: []u8, out: []u8
             out[i - 2] = data[i];
         }
         return out.ptr;
-    } else if (data[1] == @intFromEnum(types.Compression.none)) {
+    } else if (data[1] == @intFromEnum(t.Compression.none)) {
         const slice = data[2 .. SIZE + 2];
         return slice.ptr;
     } else {
@@ -290,13 +280,13 @@ pub fn remove(
     const start = sortIndex.start;
     const index = sortIndex.index;
     return switch (prop) {
-        types.PropType.ENUM, types.PropType.UINT8, types.PropType.INT8, types.PropType.BOOLEAN => {
+        t.PropType.@"enum", t.PropType.uint8, t.PropType.int8, t.PropType.boolean => {
             selva.selva_sort_remove_i64(index, data[start], node);
         },
-        types.PropType.ALIAS => {
+        t.PropType.alias => {
             selva.selva_sort_remove_buf(index, parseAlias(data), SIZE, node);
         },
-        types.PropType.STRING, types.PropType.TEXT, types.PropType.BINARY => {
+        t.PropType.string, t.PropType.text, t.PropType.binary => {
             if (sortIndex.len > 0) {
                 selva.selva_sort_remove_buf(
                     index,
@@ -309,20 +299,20 @@ pub fn remove(
                 selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
             }
         },
-        types.PropType.NUMBER, types.PropType.TIMESTAMP => {
+        t.PropType.number, t.PropType.timestamp => {
             selva.selva_sort_remove_double(index, @floatFromInt(read(u64, data, start)), node);
         },
-        types.PropType.CARDINALITY => {
+        t.PropType.cardinality => {
             if (data.len > 0) {
                 removeFromIntIndex(u32, data, sortIndex, node);
             } else {
                 removeFromIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, node);
             }
         },
-        types.PropType.INT32 => removeFromIntIndex(i32, data, sortIndex, node),
-        types.PropType.INT16 => removeFromIntIndex(i16, data, sortIndex, node),
-        types.PropType.UINT32 => removeFromIntIndex(u32, data, sortIndex, node),
-        types.PropType.UINT16 => removeFromIntIndex(u16, data, sortIndex, node),
+        t.PropType.int32 => removeFromIntIndex(i32, data, sortIndex, node),
+        t.PropType.int16 => removeFromIntIndex(i16, data, sortIndex, node),
+        t.PropType.uint32 => removeFromIntIndex(u32, data, sortIndex, node),
+        t.PropType.uint16 => removeFromIntIndex(u16, data, sortIndex, node),
         else => {},
     };
 }
@@ -341,13 +331,13 @@ pub fn insert(
     const start = sortIndex.start;
     const index = sortIndex.index;
     return switch (prop) {
-        types.PropType.ENUM, types.PropType.UINT8, types.PropType.INT8, types.PropType.BOOLEAN => {
+        t.PropType.@"enum", t.PropType.uint8, t.PropType.int8, t.PropType.boolean => {
             selva.selva_sort_insert_i64(index, data[start], node);
         },
-        types.PropType.ALIAS => {
+        t.PropType.alias => {
             selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, node);
         },
-        types.PropType.STRING, types.PropType.TEXT, types.PropType.BINARY => {
+        t.PropType.string, t.PropType.text, t.PropType.binary => {
             if (sortIndex.len > 0) {
                 selva.selva_sort_insert_buf(
                     index,
@@ -361,20 +351,20 @@ pub fn insert(
                 selva.selva_sort_insert_buf(index, str, SIZE, node);
             }
         },
-        types.PropType.NUMBER, types.PropType.TIMESTAMP => {
+        t.PropType.number, t.PropType.timestamp => {
             selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), node);
         },
-        types.PropType.CARDINALITY => {
+        t.PropType.cardinality => {
             if (data.len > 0) {
                 insertIntIndex(u32, data, sortIndex, node);
             } else {
                 insertIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, node);
             }
         },
-        types.PropType.INT32 => insertIntIndex(i32, data, sortIndex, node),
-        types.PropType.INT16 => insertIntIndex(i16, data, sortIndex, node),
-        types.PropType.UINT32 => insertIntIndex(u32, data, sortIndex, node),
-        types.PropType.UINT16 => insertIntIndex(u16, data, sortIndex, node),
+        t.PropType.int32 => insertIntIndex(i32, data, sortIndex, node),
+        t.PropType.int16 => insertIntIndex(i16, data, sortIndex, node),
+        t.PropType.uint32 => insertIntIndex(u32, data, sortIndex, node),
+        t.PropType.uint16 => insertIntIndex(u16, data, sortIndex, node),
         else => {},
     };
 }

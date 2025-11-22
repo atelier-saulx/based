@@ -3,7 +3,7 @@ const db = @import("../db.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
 const utils = @import("../../utils.zig");
-const types = @import("./types.zig");
+const Subscription = @import("./common.zig");
 const upsertSubType = @import("./shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
 const selva = @import("../../selva.zig");
@@ -21,19 +21,19 @@ pub inline fn getNewBitSize(size: u32) u32 {
     } else if (size < 100_000) {
         n = 100_000;
     } else {
-        n = types.MAX_BIT_SET_SIZE;
+        n = Subscription.MAX_BIT_SET_SIZE;
     }
-    if (n > types.MAX_BIT_SET_SIZE) {
-        n = types.MAX_BIT_SET_SIZE;
+    if (n > Subscription.MAX_BIT_SET_SIZE) {
+        n = Subscription.MAX_BIT_SET_SIZE;
     }
     return n;
 }
 
-pub fn sizeBitSet(typeSubs: *types.TypeSubscriptionCtx) !void {
+pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) !void {
     var needsChange = false;
     const range = typeSubs.maxId - typeSubs.minId;
 
-    if (typeSubs.bitSetSize != types.MAX_BIT_SET_SIZE and
+    if (typeSubs.bitSetSize != Subscription.MAX_BIT_SET_SIZE and
         (range > typeSubs.bitSetSize and
             typeSubs.idSubs.count() * typeSubs.*.bitSetRatio > typeSubs.bitSetSize))
     {
@@ -87,7 +87,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
 
     var typeSubs = try upsertSubType(ctx, typeId);
 
-    var subs: []types.IdSubsItem = undefined;
+    var subs: []Subscription.IdSubsItem = undefined;
     var idDoesNotExist = true;
     var subIndex: usize = 0;
 
@@ -102,7 +102,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
     }
 
     if (idDoesNotExist) {
-        subs = try std.heap.c_allocator.alloc(types.IdSubsItem, 1);
+        subs = try std.heap.c_allocator.alloc(Subscription.IdSubsItem, 1);
         try typeSubs.idSubs.put(id, subs);
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
@@ -114,16 +114,16 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
-    subs[subIndex].marked = types.SubStatus.all;
+    subs[subIndex].marked = Subscription.SubStatus.all;
     subs[subIndex].subId = subId;
     subs[subIndex].id = id;
     subs[subIndex].typeId = typeId;
     subs[subIndex].isRemoved = false;
-    subs[subIndex].partial = @splat(@intFromEnum(types.SubPartialStatus.none));
-    subs[subIndex].fields = @splat(@intFromEnum(types.SubStatus.marked));
+    subs[subIndex].partial = @splat(@intFromEnum(Subscription.SubPartialStatus.none));
+    subs[subIndex].fields = @splat(@intFromEnum(Subscription.SubStatus.marked));
 
     if (partialLen > vectorLenU16) {
-        subs[subIndex].partial = @splat(@intFromEnum(types.SubPartialStatus.all));
+        subs[subIndex].partial = @splat(@intFromEnum(Subscription.SubPartialStatus.all));
     } else {
         var j: usize = 0;
         while (j < partialLen) {
@@ -133,7 +133,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
     }
 
     if (fields.len > vectorLen) {
-        subs[subIndex].fields = @splat(@intFromEnum(types.SubStatus.all));
+        subs[subIndex].fields = @splat(@intFromEnum(Subscription.SubStatus.all));
     } else {
         var j: usize = 0;
         while (j < fieldsLen) {
@@ -161,16 +161,16 @@ pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
                 var i: usize = 0;
                 while (i < subs.len) {
                     if (subs[i].subId == subId) {
-                        if (subs[i].marked != types.SubStatus.marked) {
+                        if (subs[i].marked != Subscription.SubStatus.marked) {
                             if (ctx.subscriptions.singleIdMarked.len < ctx.subscriptions.lastIdMarked + 1) {
                                 ctx.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                                     ctx.subscriptions.singleIdMarked,
-                                    ctx.subscriptions.singleIdMarked.len + types.BLOCK_SIZE,
+                                    ctx.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
                                 ) catch &.{};
                             }
                             ctx.subscriptions.singleIdMarked[ctx.subscriptions.lastIdMarked] = &subs[i];
                             ctx.subscriptions.lastIdMarked += 1;
-                            subs[i].marked = types.SubStatus.marked;
+                            subs[i].marked = Subscription.SubStatus.marked;
                         }
                         subs[i].isRemoved = true;
                         break;
@@ -191,7 +191,7 @@ pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
     return null;
 }
 
-pub fn removeSubscriptionMarked(ctx: *db.DbCtx, sub: *types.IdSubsItem) !void {
+pub fn removeSubscriptionMarked(ctx: *db.DbCtx, sub: *Subscription.IdSubsItem) !void {
     const id = sub.id;
     const typeId = sub.typeId;
 

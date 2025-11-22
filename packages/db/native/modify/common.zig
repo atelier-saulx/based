@@ -1,54 +1,28 @@
 const db = @import("../db/db.zig");
-const types = @import("../types.zig");
 const errors = @import("../errors.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
-const subs = @import("../db/subscription/types.zig");
+const Subscription = @import("../db/subscription/common.zig");
+const t = @import("../types.zig");
 
 pub const ModifyCtx = struct {
     field: u8,
     id: u32,
     currentSortIndex: ?*sort.SortIndexMeta,
     typeSortIndex: ?*sort.TypeIndex,
-    typeId: db.TypeId,
+    typeId: t.TypeId,
     typeEntry: ?db.Type,
     fieldSchema: ?db.FieldSchema,
     node: ?db.Node,
-    fieldType: types.PropType,
+    fieldType: t.PropType,
     db: *db.DbCtx,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
-    subTypes: ?*subs.TypeSubscriptionCtx,
-    idSubs: ?[]subs.IdSubsItem,
+    subTypes: ?*Subscription.TypeSubscriptionCtx,
+    idSubs: ?[]Subscription.IdSubsItem,
     batch: []u8,
     err: errors.ClientError,
     threadCtx: *db.DbThread,
-};
-
-pub const ModOp = enum(u8) {
-    SWITCH_FIELD = 0,
-    SWITCH_ID_UPDATE = 1,
-    SWITCH_TYPE = 2,
-    CREATE_PROP = 3,
-    DELETE_SORT_INDEX = 4,
-    UPDATE_PARTIAL = 5,
-    UPDATE_PROP = 6,
-    ADD_EMPTY_SORT = 7,
-    SWITCH_ID_CREATE_UNSAFE = 8,
-    SWITCH_ID_CREATE = 9,
-    SWITCH_ID_CREATE_RING = 19,
-    SWITCH_EDGE_ID = 20,
-    DELETE_NODE = 10,
-    DELETE = 11,
-    INCREMENT = 12,
-    DECREMENT = 13,
-    EXPIRE = 14,
-    ADD_EMPTY_SORT_TEXT = 15,
-    DELETE_TEXT_FIELD = 16,
-    UPSERT = 17,
-    INSERT = 18,
-    PADDING = 255,
-    _,
 };
 
 pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {

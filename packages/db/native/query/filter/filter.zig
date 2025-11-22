@@ -1,18 +1,12 @@
+const std = @import("std");
 const errors = @import("../../errors.zig");
 const napi = @import("../../napi.zig");
 const read = @import("../../utils.zig").read;
 const runCondition = @import("./conditions.zig").runConditions;
-const QueryCtx = @import("../common.zig").QueryCtx;
+const Query = @import("../common.zig");
 const db = @import("../../db/db.zig");
-const types = @import("../include/types.zig");
-const std = @import("std");
-const PropType = @import("../../types.zig").PropType;
-const Meta = @import("./types.zig").Meta;
-const Type = @import("./types.zig").Type;
-const Mode = @import("./types.zig").Mode;
-const LangCode = @import("../../types.zig").LangCode;
-const ReferencesSelect = @import("../../types.zig").ReferencesSelect;
 const filterReferences = @import("./references.zig").filterReferences;
+const t = @import("../../types.zig");
 
 const EMPTY: [1]u8 = [_]u8{0} ** 1;
 const EMPTY_SLICE = @constCast(&EMPTY)[0..1];
@@ -23,7 +17,7 @@ inline fn fail(
     threadCtx: *db.DbThread,
     typeEntry: db.Type,
     conditions: []u8,
-    ref: ?types.RefStruct,
+    ref: ?Query.RefStruct,
     jump: ?[]u8,
     comptime isEdge: bool,
 ) bool {
@@ -51,7 +45,7 @@ pub fn filter(
     threadCtx: *db.DbThread,
     typeEntry: db.Type,
     conditions: []u8,
-    ref: ?types.RefStruct,
+    ref: ?Query.RefStruct,
     jump: ?[]u8,
     offset: usize,
     comptime isEdge: bool,
@@ -61,12 +55,12 @@ pub fn filter(
     var end: usize = conditions.len;
 
     while (i < end) {
-        const meta: Meta = @enumFromInt(conditions[i]);
-        if (meta == Meta.orBranch) {
+        const meta: t.FilterMeta = @enumFromInt(conditions[i]);
+        if (meta == t.FilterMeta.orBranch) {
             orJump = conditions[i + 1 .. i + 7];
             end = read(u32, conditions, i + 3);
             i += 7;
-        } else if (meta == Meta.edge) {
+        } else if (meta == t.FilterMeta.edge) {
             if (ref != null) {
                 const size = read(u16, conditions, i + 1);
                 if (!filter(
@@ -86,10 +80,10 @@ pub fn filter(
             } else {
                 return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
             }
-        } else if (meta == Meta.references) {
+        } else if (meta == t.FilterMeta.references) {
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = read(u16, conditions, i + 2);
-            const refsSelectType: ReferencesSelect = @enumFromInt(conditions[i + 4]);
+            const refsSelectType: t.ReferencesSelect = @enumFromInt(conditions[i + 4]);
             const size = read(u16, conditions, i + 9);
             const fieldSchema = db.getFieldSchema(typeEntry, refField) catch {
                 return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
@@ -114,7 +108,7 @@ pub fn filter(
                 return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
             }
             i += size + 11;
-        } else if (meta == Meta.reference) {
+        } else if (meta == t.FilterMeta.reference) {
             const refField: u8 = conditions[i + 1];
             const refTypePrefix = read(u16, conditions, i + 2);
             const size = read(u16, conditions, i + 4);
@@ -151,10 +145,10 @@ pub fn filter(
                 return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
             }
             i += size + 6;
-        } else if (meta == Meta.exists) {
+        } else if (meta == t.FilterMeta.exists) {
             const field: u8 = conditions[i + 1];
-            const negate: Type = @enumFromInt(conditions[i + 2]);
-            const prop: PropType = @enumFromInt(conditions[i + 3]);
+            const negate: t.FilterType = @enumFromInt(conditions[i + 2]);
+            const prop: t.PropType = @enumFromInt(conditions[i + 3]);
 
             var te: db.Type = undefined;
             var fs: db.FieldSchema = undefined;
@@ -167,7 +161,7 @@ pub fn filter(
                     fs = db.getEdgeFieldSchema(ctx, r.edgeConstraint, field) catch {
                         return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                     };
-                } else if (negate == Type.default) {
+                } else if (negate == t.FilterType.default) {
                     return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                 } else {
                     return true;
@@ -179,17 +173,25 @@ pub fn filter(
                 };
             }
 
-            if (prop == PropType.REFERENCES) {
+            if (prop == t.PropType.references) {
                 const refs = db.getReferences(node, fs);
-                if ((negate == Type.default and refs.?.nr_refs == 0) or (negate == Type.negate and refs.?.nr_refs != 0)) {
+                if ((negate == t.FilterType.default and
+                    refs.?.nr_refs == 0) or
+                    (negate == t.FilterType.negate and
+                        refs.?.nr_refs != 0))
+                {
                     return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                 }
-            } else if (prop == PropType.REFERENCE) {
+            } else if (prop == t.PropType.reference) {
                 const dstType = db.getRefDstType(ctx, fs) catch {
                     return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                 };
                 const checkRef = db.getNodeFromReference(dstType, db.getSingleReference(node, fs));
-                if ((negate == Type.default and checkRef == null) or (negate == Type.negate and checkRef != null)) {
+                if ((negate == t.FilterType.default and
+                    checkRef == null) or
+                    (negate == t.FilterType.negate and
+                        checkRef != null))
+                {
                     return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                 }
             } else {
@@ -198,7 +200,10 @@ pub fn filter(
                 };
                 const value = db.getField(te, node, fieldSchema, prop);
 
-                if ((negate == Type.default and value.len == 0) or (negate == Type.negate and value.len != 0)) {
+                if ((negate == t.FilterType.default and value.len == 0) or
+                    (negate == t.FilterType.negate and
+                        value.len != 0))
+                {
                     return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                 }
             }
@@ -208,7 +213,7 @@ pub fn filter(
             const querySize: u16 = read(u16, conditions, i + 1);
             const query = conditions[i + 3 .. querySize + i + 3];
             var value: []u8 = undefined;
-            if (meta == Meta.id) {
+            if (meta == t.FilterMeta.id) {
                 value = db.getNodeIdAsSlice(node);
                 if (value.len == 0 or !runCondition(
                     threadCtx.decompressor,
@@ -247,15 +252,15 @@ pub fn filter(
                     };
                 }
 
-                const prop: PropType = @enumFromInt(conditions[i + 5]);
-                if (prop == PropType.TEXT) {
+                const prop: t.PropType = @enumFromInt(conditions[i + 5]);
+                if (prop == t.PropType.text) {
                     value = db.getField(te, actNode, fieldSchema, prop);
                     if (value.len == 0) {
                         return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                     }
                     const fallBackSize: u8 = query[query.len - 1];
-                    const lang: LangCode = @enumFromInt(query[query.len - 2]);
-                    if (lang == LangCode.NONE) {
+                    const lang: t.LangCode = @enumFromInt(query[query.len - 2]);
+                    if (lang == t.LangCode.NONE) {
                         var f: usize = 0;
                         var iter = db.textIterator(value);
                         while (iter.next()) |s| {
@@ -300,7 +305,7 @@ pub fn filter(
                         }
                     }
                 } else {
-                    if (prop == PropType.REFERENCE) {
+                    if (prop == t.PropType.reference) {
                         const dstType = db.getRefDstType(ctx, fieldSchema) catch {
                             return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                         };
@@ -311,7 +316,7 @@ pub fn filter(
                         } else {
                             return fail(ctx, node, threadCtx, typeEntry, conditions, ref, orJump, isEdge);
                         }
-                    } else if (prop == PropType.REFERENCES) {
+                    } else if (prop == t.PropType.references) {
                         const refs = db.getReferences(actNode, fieldSchema);
                         if (refs) |r| {
                             if (r.nr_refs != 0) {

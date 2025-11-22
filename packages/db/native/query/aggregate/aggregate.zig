@@ -1,14 +1,14 @@
-const db = @import("../../db/db.zig");
-const types = @import("../../types.zig");
 const std = @import("std");
+const db = @import("../../db/db.zig");
 const utils = @import("../../utils.zig");
 const selva = @import("../../selva.zig").c;
+const Query = @import("../common.zig");
+const t = @import("../../types.zig");
+
+const microbufferToF64 = utils.microbufferToF64;
+const copy = utils.copy;
 const read = utils.read;
 const writeInt = utils.writeIntExact;
-const aggregateTypes = @import("../aggregate/types.zig");
-const copy = utils.copy;
-const microbufferToF64 = @import("./utils.zig").microbufferToF64;
-const incTypes = @import("../include/types.zig");
 
 inline fn execAgg(
     aggPropTypeDef: []u8,
@@ -21,9 +21,9 @@ inline fn execAgg(
 ) void {
     var j: usize = 0;
     while (j < fieldAggsSize) {
-        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropTypeDef[j]);
+        const aggType: t.AggType = @enumFromInt(aggPropTypeDef[j]);
         j += 1;
-        const propType: types.PropType = @enumFromInt(aggPropTypeDef[j]);
+        const propType: t.PropType = @enumFromInt(aggPropTypeDef[j]);
         j += 1;
         const start = read(u16, aggPropTypeDef, j);
         j += 2;
@@ -34,23 +34,23 @@ inline fn execAgg(
         // isEdge
         j += 1;
 
-        if (aggType == aggregateTypes.AggType.COUNT) {
+        if (aggType == t.AggType.count) {
             writeInt(u32, accumulatorField, accumulatorPos, read(u32, accumulatorField, accumulatorPos) + 1);
-        } else if (aggType == aggregateTypes.AggType.MAX) {
+        } else if (aggType == t.AggType.max) {
             if (!hadAccumulated.*) {
                 writeInt(f64, accumulatorField, accumulatorPos, microbufferToF64(propType, value, start));
             } else {
                 writeInt(f64, accumulatorField, accumulatorPos, @max(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)));
             }
-        } else if (aggType == aggregateTypes.AggType.MIN) {
+        } else if (aggType == t.AggType.min) {
             if (!hadAccumulated.*) {
                 writeInt(f64, accumulatorField, accumulatorPos, microbufferToF64(propType, value, start));
             } else {
                 writeInt(f64, accumulatorField, accumulatorPos, @min(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)));
             }
-        } else if (aggType == aggregateTypes.AggType.SUM) {
+        } else if (aggType == t.AggType.sum) {
             writeInt(f64, accumulatorField, accumulatorPos, read(f64, accumulatorField, accumulatorPos) + microbufferToF64(propType, value, start));
-        } else if (aggType == aggregateTypes.AggType.AVERAGE) {
+        } else if (aggType == t.AggType.average) {
             const val = microbufferToF64(propType, value, start);
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
@@ -60,7 +60,7 @@ inline fn execAgg(
 
             writeInt(u64, accumulatorField, accumulatorPos, count);
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
-        } else if (aggType == aggregateTypes.AggType.HMEAN) {
+        } else if (aggType == t.AggType.hmean) {
             const val = microbufferToF64(propType, value, start);
             if (val != 0) {
                 var count = read(u64, accumulatorField, accumulatorPos);
@@ -75,8 +75,8 @@ inline fn execAgg(
                 writeInt(u64, accumulatorField, accumulatorPos, 0.0);
                 writeInt(f64, accumulatorField, accumulatorPos + 8, 0.0);
             }
-        } else if (aggType == aggregateTypes.AggType.STDDEV or
-            aggType == aggregateTypes.AggType.VARIANCE)
+        } else if (aggType == t.AggType.stddev or
+            aggType == t.AggType.variance)
         {
             const val = microbufferToF64(propType, value, start);
             var count = read(u64, accumulatorField, accumulatorPos);
@@ -90,14 +90,23 @@ inline fn execAgg(
             writeInt(u64, accumulatorField, accumulatorPos, count);
             writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
             writeInt(f64, accumulatorField, accumulatorPos + 16, sum_sq);
-        } else if (aggType == aggregateTypes.AggType.CARDINALITY) {
+        } else if (aggType == t.AggType.cardinality) {
             selva.hll_union(hllAccumulator, hllValue);
             writeInt(u32, accumulatorField, accumulatorPos, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
         }
     }
 }
 
-pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulatorField: []u8, hllAccumulator: anytype, hadAccumulated: *bool, ctx: *db.DbCtx, edgeRef: ?incTypes.RefStruct) void {
+pub inline fn aggregate(
+    agg: []u8,
+    typeEntry: db.Type,
+    node: db.Node,
+    accumulatorField: []u8,
+    hllAccumulator: anytype,
+    hadAccumulated: *bool,
+    ctx: *db.DbCtx,
+    edgeRef: ?Query.RefStruct,
+) void {
     if (agg.len == 0) {
         return;
     }
@@ -108,12 +117,12 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
         const fieldAggsSize = read(u16, agg, i);
         i += 2;
         const aggPropTypeDef = agg[i .. i + fieldAggsSize];
-        const aggType: aggregateTypes.AggType = @enumFromInt(aggPropTypeDef[0]);
+        const aggType: t.AggType = @enumFromInt(aggPropTypeDef[0]);
         const isEdge: bool = aggPropTypeDef[8] == 1;
         var value: []u8 = undefined;
 
-        if (field != aggregateTypes.IsId) {
-            if (field != types.MAIN_PROP and aggType != aggregateTypes.AggType.CARDINALITY) {
+        if (field != t.ID_PROP) {
+            if (field != t.MAIN_PROP and aggType != t.AggType.cardinality) {
                 i += fieldAggsSize;
                 continue;
             }
@@ -122,7 +131,7 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 i += fieldAggsSize;
                 continue;
             };
-            if (aggType == aggregateTypes.AggType.CARDINALITY) {
+            if (aggType == t.AggType.cardinality) {
                 const hllValue = selva.selva_fields_get_selva_string(node, fieldSchema) orelse null;
                 if (hllValue == null) {
                     i += fieldAggsSize;
@@ -135,7 +144,12 @@ pub inline fn aggregate(agg: []u8, typeEntry: db.Type, node: db.Node, accumulato
                 execAgg(aggPropTypeDef, accumulatorField, value, fieldAggsSize, hadAccumulated, hllAccumulator, hllValue);
                 hadAccumulated.* = true;
             } else {
-                value = if (isEdge and edgeRef != null) db.getEdgePropType(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(typeEntry, node, fieldSchema, types.PropType.MICRO_BUFFER);
+                value = if (isEdge and edgeRef != null) db.getEdgePropType(ctx, edgeRef.?.edgeConstraint, edgeRef.?.largeReference.?, fieldSchema) else db.getField(
+                    typeEntry,
+                    node,
+                    fieldSchema,
+                    t.PropType.microBuffer,
+                );
                 if (value.len == 0) {
                     i += fieldAggsSize;
                     continue;

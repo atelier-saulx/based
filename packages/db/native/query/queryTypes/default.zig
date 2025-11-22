@@ -1,26 +1,19 @@
+const std = @import("std");
 const db = @import("../../db/db.zig");
 const deflate = @import("../../deflate.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
-const AggFn = @import("../../types.zig").AggFn;
+const Query = @import("../common.zig");
 const filter = @import("../filter/filter.zig").filter;
 const searchStr = @import("../filter/search.zig");
-const s = @import("./search.zig");
-const std = @import("std");
 const utils = @import("../../utils.zig");
+const s = @import("./search.zig");
 const t = @import("../../types.zig");
-const FilterType = @import("../common.zig").FilterType;
-const QueryDefaultHeader = @import("../common.zig").QueryDefaultHeader;
-
-const filterTypes = @import("../filter//types.zig");
-
-const runConditions = @import("../filter/conditions.zig").runConditions;
 
 pub fn default(
     comptime hasFilter: bool,
-    ctx: *QueryCtx,
-    header: *const QueryDefaultHeader,
+    ctx: *Query.QueryCtx,
+    header: *const t.QueryDefaultHeader,
     include: []u8,
     filterSlice: if (hasFilter) []u8 else void,
 ) !void {
@@ -51,7 +44,7 @@ pub fn default(
 
 pub fn search(
     comptime isVector: bool,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     offset: u32,
     limit: u32,
     typeId: db.TypeId,

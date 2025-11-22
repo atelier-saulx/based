@@ -1,14 +1,13 @@
+const std = @import("std");
 const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig").c;
 const deflate = @import("../../deflate.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
+const Query = @import("../common.zig");
 const filter = @import("../filter/filter.zig").filter;
 const searchMethods = @import("../filter/search.zig");
-const std = @import("std");
-const MaxVectorScore = @import("../filter/types.zig").MaxVectorScore;
-const MaxStringScore = @import("../filter/types.zig").MaxStringScore;
+const t = @import("../../types.zig");
 
 pub const QuerySearchCtxNoVector = struct {
     score: u8,
@@ -36,7 +35,7 @@ pub fn QuerySearchCtx(comptime isVector: bool) type {
 // comptime isVector
 pub fn createSearchCtx(comptime isVector: bool, offset: u32) QuerySearchCtx(isVector) {
     return .{
-        .score = if (isVector) MaxVectorScore else MaxStringScore,
+        .score = if (isVector) t.FilterMaxVectorScore else t.FilterMaxStringScore,
         .totalSearchResults = 0,
         .scoreSortCtx = selva.selva_sort_init(if (isVector) selva.SELVA_SORT_ORDER_FLOAT_ASC else selva.SELVA_SORT_ORDER_I64_ASC).?,
         .i = 0,
@@ -49,7 +48,7 @@ pub fn addToScore(
     decompressor: *deflate.Decompressor,
     blockState: *deflate.BlockState,
     comptime isVector: bool,
-    queryCtx: *QueryCtx,
+    queryCtx: *Query.QueryCtx,
     ctx: *QuerySearchCtx(isVector),
     node: db.Node,
     typeEntry: db.Type,
@@ -91,7 +90,7 @@ pub fn addToScore(
 // comptime isVector
 pub fn addToResults(
     comptime isVector: bool,
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     sCtx: *QuerySearchCtx(isVector),
     include: []u8,
     limit: u32,

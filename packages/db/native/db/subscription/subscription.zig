@@ -5,7 +5,7 @@ const napi = @import("../../napi.zig");
 const utils = @import("../../utils.zig");
 const singleId = @import("./singleId.zig");
 const multi = @import("./multi.zig");
-const types = @import("./types.zig");
+const Subscription = @import("./common.zig");
 
 fn getMarkedIdSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(1, env, info);
@@ -31,7 +31,7 @@ fn getMarkedIdSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Value 
             } else {
                 utils.writeInt(u32, data, newDataIndex, id);
                 utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
-                sub.*.marked = types.SubStatus.all;
+                sub.*.marked = Subscription.SubStatus.all;
             }
             i += 1;
         }

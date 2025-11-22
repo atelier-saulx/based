@@ -1,26 +1,23 @@
+const std = @import("std");
 const db = @import("../../db/db.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
+const Query = @import("../common.zig");
 const filter = @import("../filter/filter.zig").filter;
-
-const std = @import("std");
+const t = @import("../../types.zig");
 
 pub fn default(
     id: u32,
-    ctx: *QueryCtx,
-    typeId: db.TypeId,
-    _: []u8,
+    ctx: *Query.QueryCtx,
+    typeId: t.TypeId,
+    conditions: []u8,
     include: []u8,
 ) !void {
     const typeEntry = try db.getType(ctx.db, typeId);
     if (db.getNode(typeEntry, id)) |node| {
-        // std.debug.print("yo yo yo {any} {any} {any} \n", .{ node, conditions, include });
-
-        // if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
-        //     return;
-        // }
-        // std.debug.print("PASS -> {any} {any} {any} \n", .{ node, conditions, include });
+        if (!filter(ctx.db, node, typeEntry, conditions, null, null, 0, false)) {
+            return;
+        }
 
         const size = try getFields(
             node,

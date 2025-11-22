@@ -1,14 +1,11 @@
-const read = @import("../../utils.zig").read;
-const t = @import("./types.zig");
-const Op = t.Operator;
-const Mode = t.Mode;
 const std = @import("std");
+const read = @import("../../utils.zig").read;
 const db = @import("../../db/db.zig");
-const PropType = @import("../../types.zig").PropType;
+const t = @import("../../types.zig");
 
 inline fn operate(
     T: type,
-    op: Op,
+    op: t.FilterOp,
     query: []u8,
     value: []u8,
 ) bool {
@@ -18,12 +15,12 @@ inline fn operate(
     return result;
 }
 
-inline fn operateSwitch(T: type, op: Op, q: T, v: T) bool {
+inline fn operateSwitch(T: type, op: t.FilterOp, q: T, v: T) bool {
     return switch (op) {
-        Op.largerThen => v > q,
-        Op.smallerThen => v < q,
-        Op.largerThenInclusive => v >= q,
-        Op.smallerThenInclusive => v <= q,
+        t.FilterOp.largerThen => v > q,
+        t.FilterOp.smallerThen => v < q,
+        t.FilterOp.largerThenInclusive => v >= q,
+        t.FilterOp.smallerThenInclusive => v <= q,
         else => false,
     };
 }
@@ -31,16 +28,16 @@ inline fn operateSwitch(T: type, op: Op, q: T, v: T) bool {
 pub inline fn compare(
     size: u16,
     start: u16,
-    op: Op,
+    op: t.FilterOp,
     query: []u8,
     v: []u8,
-    prop: PropType,
+    prop: t.PropType,
 ) bool {
     // MODE all this is stored in microbuffers...
     // maybe op is better scince its only for these operations
-    const isSigned = PropType.isSigned(prop);
+    const isSigned = t.PropType.isSigned(prop);
 
-    if (prop == PropType.REFERENCES) {
+    if (prop == t.PropType.references) {
         return operateSwitch(u32, op, read(u32, query, 0), @truncate(v.len / 4));
     }
 
@@ -53,7 +50,7 @@ pub inline fn compare(
         }
     } else if (size == 8) {
         // todo update if changing how its written
-        if (prop == PropType.NUMBER) {
+        if (prop == t.PropType.number) {
             return operate(f64, op, query, value);
         } else if (isSigned) {
             return operate(i64, op, query, value);

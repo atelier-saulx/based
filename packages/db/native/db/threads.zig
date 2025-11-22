@@ -1,21 +1,22 @@
 const std = @import("std");
+const jsBridge = @import("./jsBridge.zig");
+const dump = @import("./dump.zig");
+const sort = @import("./sort.zig");
 const DbCtx = @import("./ctx.zig").DbCtx;
+const utils = @import("../utils.zig");
+const Modify = @import("../modify/modify.zig");
+const selva = @import("../selva.zig").c;
+const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
+const SelvaHash128 = @import("../selva.zig").SelvaHash128;
+const deflate = @import("../deflate.zig");
+const t = @import("../types.zig");
+
+const writeInt = utils.writeInt;
+const read = utils.read;
+const readNext = utils.readNext;
 const Thread = std.Thread;
 const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
-const read = @import("../utils.zig").read;
-const readNext = @import("../utils.zig").readNext;
-const Query = @import("../query/query.zig");
-const Modify = @import("../modify/modify.zig");
-const selva = @import("../selva.zig").c;
-const SelvaHash128 = @import("../selva.zig").SelvaHash128;
-const dump = @import("dump.zig");
-const deflate = @import("../deflate.zig");
-const writeInt = @import("../utils.zig").writeInt;
-const jsBridge = @import("./jsBridge.zig");
-const sort = @import("./sort.zig");
-const OpType = @import("../types.zig").OpType;
-const SortHeader = @import("../types.zig").SortHeader;
 const Queue = std.array_list.Managed([]u8);
 
 pub fn getResultSlice(
@@ -23,7 +24,7 @@ pub fn getResultSlice(
     thread: *DbThread,
     size: usize,
     id: u32,
-    subType: OpType,
+    subType: t.OpType,
 ) ![]u8 {
     const offset = 9;
     const paddedSize = size + offset;
@@ -203,7 +204,7 @@ pub const Threads = struct {
         while (true) {
             var queryBuf: ?[]u8 = null;
             var modifyBuf: ?[]u8 = null;
-            var op: OpType = undefined;
+            var op: t.OpType = undefined;
             var sortIndex: ?*sort.SortIndexMeta = null;
 
             self.mutex.lock();
@@ -217,11 +218,11 @@ pub const Threads = struct {
                 queryBuf = self.queryQueue.swapRemove(0);
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
-                    if (op == OpType.default) {
+                    if (op == t.OpType.default) {
                         var index: usize = 5;
-                        const header = readNext(Query.Query.QueryDefaultHeader, q, &index);
+                        const header = readNext(t.QueryDefaultHeader, q, &index);
                         if (header.sortSize != 0) {
-                            const sortHeader = readNext(SortHeader, q, &index);
+                            const sortHeader = readNext(t.SortHeader, q, &index);
                             if (sort.getSortIndex(
                                 self.ctx.sortIndexes.get(header.typeId),
                                 sortHeader.prop,
@@ -231,6 +232,8 @@ pub const Threads = struct {
                                 sortIndex = sortMetaIndex;
                             } else {
                                 // needs multi threading ofc
+                                // add comtime dont create all
+                                // can now store sort indexes for refs as well!
                                 sortIndex = try sort.createSortIndex(
                                     self.ctx,
                                     threadCtx.decompressor,
@@ -256,25 +259,25 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 switch (op) {
-                    OpType.saveBlock => {
+                    t.OpType.saveBlock => {
                         const data = try getResultSlice(true, threadCtx, 26, 0, op);
                         const typeCode = read(u16, q, 9);
                         const start = read(u32, q, 5);
-                        const filename = q[11..q.len - 11];
+                        const filename = q[11 .. q.len - 11];
                         _ = selva.memcpy(data[4..10].ptr, q[5..11].ptr, 6);
                         var hash: SelvaHash128 = 0;
                         const err = dump.saveBlock(self.ctx, typeCode, start, filename, &hash);
                         _ = selva.memcpy(data[0..4].ptr, &err, 4);
                         _ = selva.memcpy(data[10..16].ptr, &hash, 16);
                     },
-                    OpType.saveCommon => {
+                    t.OpType.saveCommon => {
                         const data = try getResultSlice(true, threadCtx, 4, 0, op);
-                        const filename = q[5..q.len - 5];
+                        const filename = q[5 .. q.len - 5];
                         const err = dump.saveCommon(self.ctx, filename);
                         _ = selva.memcpy(data[0..4].ptr, &err, 4);
                     },
                     else => {
-                        try Query.getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
+                        try getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
                     },
                 }
 
@@ -308,43 +311,42 @@ pub const Threads = struct {
             if (modifyBuf) |m| {
                 if (threadCtx.id == 0) {
                     switch (op) {
-                        OpType.modify => {
+                        t.OpType.modify => {
                             try Modify.modify(threadCtx, m, self.ctx, op);
                         },
-                        OpType.loadBlock => {
+                        t.OpType.loadBlock => {
                             std.debug.print("LOAD\n", .{});
                             const data = try getResultSlice(true, threadCtx, 20 + 492, read(u32, m, 0), op);
                             const start: u32 = read(u32, m, 5);
                             const typeCode: u16 = read(u16, m, 9);
-                            const filename = m[11..m.len - 11];
+                            const filename = m[11 .. m.len - 11];
 
-                            const errlog = data[16..data.len - 16];
+                            const errlog = data[16 .. data.len - 16];
                             var hash: SelvaHash128 = 0;
                             const err = dump.loadBlock(self.ctx, typeCode, start, filename, errlog, &hash);
                             _ = selva.memcpy(data[0..4].ptr, &err, 4);
                             _ = selva.memcpy(data[4..10].ptr, m[5..11].ptr, 6);
                             _ = selva.memcpy(data[10..16].ptr, &hash, 16);
                         },
-                        OpType.unloadBlock => {
+                        t.OpType.unloadBlock => {
                             std.debug.print("UNLOAD\n", .{});
                             const data = try getResultSlice(true, threadCtx, 20, read(u32, m, 0), op);
                             const start: u32 = read(u32, m, 5);
                             const typeCode: u16 = read(u16, m, 9);
-                            const filename = m[11..m.len - 11];
+                            const filename = m[11 .. m.len - 11];
 
                             var hash: SelvaHash128 = 0;
                             const err = dump.unloadBlock(self.ctx, typeCode, start, filename, &hash);
                             _ = selva.memcpy(data[0..4].ptr, &err, 4);
                             _ = selva.memcpy(data[4..10].ptr, m[5..11].ptr, 6);
                             _ = selva.memcpy(data[10..16].ptr, &hash, 16);
-
                         },
-                        OpType.loadCommon => {
+                        t.OpType.loadCommon => {
                             std.debug.print("LOAD COMMON\n", .{});
                             const data = try getResultSlice(true, threadCtx, 20 + 492, read(u32, m, 0), op);
-                            const filename = m[5..m.len - 5];
+                            const filename = m[5 .. m.len - 5];
 
-                            const errlog = data[5..data.len - 5];
+                            const errlog = data[5 .. data.len - 5];
                             const err = dump.loadCommon(self.ctx, filename, errlog);
                             _ = selva.memcpy(data[0..4].ptr, &err, 4);
                         },
@@ -399,7 +401,7 @@ pub const Threads = struct {
             .nextQueryQueue = nextQueryQueue,
         };
 
-        for (self.threads, 0..) |*t, id| {
+        for (self.threads, 0..) |*threadContainer, id| {
             const threadCtx = try allocator.create(DbThread);
             threadCtx.*.id = id;
             threadCtx.*.queryResultsIndex = 0;
@@ -410,7 +412,7 @@ pub const Threads = struct {
             threadCtx.*.decompressor = deflate.createDecompressor();
             threadCtx.*.libdeflateBlockState = deflate.initBlockState(305000);
             threadCtx.*.pendingModifies = 0;
-            t.* = threadCtx;
+            threadContainer.* = threadCtx;
         }
 
         return self;
@@ -421,11 +423,11 @@ pub const Threads = struct {
         self.shutdown = true;
         self.wakeup.broadcast();
         self.mutex.unlock();
-        for (self.threads) |t| {
-            t.thread.join();
-            std.heap.raw_c_allocator.free(t.queryResults);
-            std.heap.raw_c_allocator.free(t.modifyResults);
-            self.allocator.destroy(t);
+        for (self.threads) |threadContainer| {
+            threadContainer.thread.join();
+            std.heap.raw_c_allocator.free(threadContainer.queryResults);
+            std.heap.raw_c_allocator.free(threadContainer.modifyResults);
+            self.allocator.destroy(threadContainer);
         }
         self.modifyQueue.*.deinit();
         self.nextModifyQueue.*.deinit();

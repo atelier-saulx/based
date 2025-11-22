@@ -1,38 +1,37 @@
+const std = @import("std");
 const db = @import("../../../db/db.zig");
 const dbSort = @import("../../../db/sort.zig");
-const QueryCtx = @import("../../common.zig").QueryCtx;
+const Query = @import("../../common.zig");
 const getFields = @import("../include.zig").getFields;
-const queryTypes = @import("../types.zig");
-const types = @import("../../../types.zig");
 const filter = @import("../../filter/filter.zig").filter;
 const selva = @import("../../../selva.zig").c;
-const std = @import("std");
 const read = @import("../../../utils.zig").read;
+const t = @import("../../../types.zig");
 
 pub fn sortedReferences(
-    refs: queryTypes.Refs,
-    ctx: *QueryCtx,
+    refs: Query.Refs,
+    ctx: *Query.QueryCtx,
     include: []u8,
-    sortBuffer: []u8, // PASS SORT HEADER HERE
+    sortBuffer: []u8, // TODO: PASS SORT HEADER HERE
     typeEntry: db.Type,
     edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
     offset: u32,
     limit: u32,
-) queryTypes.RefsResult {
-    var result: queryTypes.RefsResult = .{ .size = 0, .cnt = 0 };
+) Query.RefsResult {
+    var result: Query.RefsResult = .{ .size = 0, .cnt = 0 };
     var i: usize = 0;
-    const sortHeader = read(types.SortHeader, sortBuffer, 0);
+    const sortHeader = read(t.SortHeader, sortBuffer, 0);
     var metaSortIndex = dbSort.createSortIndexMeta(
         sortHeader,
-        sortHeader.order == types.SortOder.desc,
+        sortHeader.order == t.SortOder.desc,
     ) catch {
         return result;
     };
     const refsCnt = refs.refs.nr_refs;
     checkItem: while (i < refsCnt) : (i += 1) {
-        if (queryTypes.resolveRefsNode(ctx.db, refs, i)) |refNode| {
+        if (Query.resolveRefsNode(ctx.db, refs, i)) |refNode| {
             if (hasFilter and !filter(
                 ctx.db,
                 refNode,
@@ -69,7 +68,7 @@ pub fn sortedReferences(
             db.getNodeId(refNode),
             typeEntry,
             include,
-            queryTypes.RefResult(refs, edgeConstraint, i),
+            Query.RefResult(refs, edgeConstraint, i),
             null,
             false,
         ) catch 0;
@@ -80,6 +79,5 @@ pub fn sortedReferences(
     }
     selva.selva_sort_destroy(metaSortIndex.index);
 
-    // AGG
     return result;
 }

@@ -1,18 +1,17 @@
+const std = @import("std");
 const default = @import("./default.zig").default;
 const loose = @import("./loose.zig").loose;
 const like = @import("./like.zig");
-const t = @import("../types.zig");
-const Op = t.Operator;
-const PropType = @import("../../../types.zig").PropType;
 const compressed = @import("../compressed.zig");
 const read = @import("../../../utils.zig").read;
-const decompress = compressed.decompress;
-const Compare = compressed.Compare;
 const db = @import("../../../db/db.zig");
-const std = @import("std");
 const toSlice = @import("../../../utils.zig").toSlice;
 const Compression = @import("../../../types.zig").Compression;
 const deflate = @import("../../../deflate.zig");
+const t = @import("../../../types.zig");
+
+const decompress = compressed.decompress;
+const Compare = compressed.Compare;
 
 inline fn orCompare(comptime isOr: bool, compare: Compare(void)) type {
     if (isOr) {
@@ -44,14 +43,14 @@ inline fn hasInner(
     comptime isOr: bool,
     compare: Compare(void),
     mainLen: u16,
-    prop: PropType,
+    prop: t.PropType,
     value: []u8,
     query: []u8,
 ) bool {
-    if (prop == PropType.VECTOR) {
+    if (prop == t.PropType.vector) {
         const vecAligned = read([]f32, value, 0);
         return like.vector(vecAligned, query);
-    } else if ((prop == PropType.STRING or prop == PropType.TEXT) and mainLen == 0) {
+    } else if ((prop == t.PropType.string or prop == t.PropType.text) and mainLen == 0) {
         if (value[1] == @intFromEnum(Compression.compressed)) {
             if (!decompress(decompressor, blockState, void, orCompare(isOr, compare).func, query, value, undefined)) {
                 return false;
@@ -69,17 +68,17 @@ pub inline fn has(
     decompressor: *deflate.Decompressor,
     blockState: *deflate.BlockState,
     comptime isOr: bool,
-    op: Op,
-    prop: PropType,
+    op: t.FilterOp,
+    prop: t.PropType,
     value: []u8,
     query: []u8,
     mainLen: u16,
 ) bool {
-    if (op == Op.like) {
+    if (op == t.FilterOp.like) {
         return hasInner(decompressor, blockState, isOr, like.str, mainLen, prop, value, query);
-    } else if (op == Op.has) {
+    } else if (op == t.FilterOp.has) {
         return hasInner(decompressor, blockState, isOr, default, mainLen, prop, value, query);
-    } else if (op == Op.hasLowerCase) {
+    } else if (op == t.FilterOp.hasLowerCase) {
         return hasInner(decompressor, blockState, isOr, loose, mainLen, prop, value, query);
     }
     return false;

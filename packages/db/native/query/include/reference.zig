@@ -1,13 +1,12 @@
 const read = @import("../../utils.zig").read;
 const db = @import("../../db/db.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
+const Query = @import("../common.zig");
 const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const std = @import("std");
 const results = @import("../results.zig");
-const types = @import("./types.zig");
-const t = @import("../../types.zig");
 const utils = @import("../../utils.zig");
+const t = @import("../../types.zig");
 
 //  Single Reference Protocol Schema:
 
@@ -18,15 +17,15 @@ const utils = @import("../../utils.zig");
 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
 
 pub fn getSingleRefFields(
-    ctx: *QueryCtx,
+    ctx: *Query.QueryCtx,
     include: []u8,
     originalNode: db.Node,
     originalType: db.Type,
-    ref: ?types.RefStruct,
+    ref: ?Query.RefStruct,
     comptime isEdge: bool,
 ) usize {
     var size: usize = 0;
-    const typeId: db.TypeId = read(u16, include, 0);
+    const typeId: t.TypeId = read(u16, include, 0);
     const refField = include[2];
 
     ctx.results.append(.{
@@ -49,7 +48,7 @@ pub fn getSingleRefFields(
         return 0;
     }
 
-    var edgeRefStruct: types.RefStruct = undefined;
+    var edgeRefStruct: Query.RefStruct = undefined;
     var node: ?db.Node = null;
 
     if (isEdge) {
@@ -61,7 +60,7 @@ pub fn getSingleRefFields(
 
         const edgeConstraint = db.getEdgeFieldConstraint(fieldSchema.?);
 
-        edgeRefStruct = std.mem.zeroInit(types.RefStruct, .{
+        edgeRefStruct = std.mem.zeroInit(Query.RefStruct, .{
             .edgeConstraint = edgeConstraint,
             .largeReference = selvaRef,
         });

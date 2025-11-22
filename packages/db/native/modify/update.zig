@@ -7,9 +7,8 @@ const utils = @import("../utils.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const references = @import("./references.zig");
 const reference = @import("./reference.zig");
-const types = @import("../types.zig");
 const subs = @import("./subscription.zig");
-const ModOp = Modify.ModOp;
+const t = @import("../types.zig");
 
 const read = utils.read;
 const copy = utils.copy;
@@ -23,28 +22,28 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     subs.stage(ctx, subs.Op.update);
 
     switch (ctx.fieldType) {
-        types.PropType.REFERENCES => {
-            switch (@as(types.RefOp, @enumFromInt(data[4]))) {
+        t.PropType.references => {
+            switch (@as(t.RefOp, @enumFromInt(data[4]))) {
                 // overwrite
-                types.RefOp.OVERWRITE => {
+                t.RefOp.overwrite => {
                     references.clearReferences(ctx);
                     return references.updateReferences(ctx, data);
                 },
                 // add
-                types.RefOp.ADD => {
+                t.RefOp.add => {
                     return references.updateReferences(ctx, data);
                 },
                 // delete
-                types.RefOp.DELETE => {
+                t.RefOp.delete => {
                     return references.deleteReferences(ctx, data);
                 },
                 // put
-                types.RefOp.PUT_OVERWRITE => {
+                t.RefOp.putOverwrite => {
                     references.clearReferences(ctx);
                     return references.putReferences(ctx, data);
                 },
                 // put
-                types.RefOp.PUT_ADD => {
+                t.RefOp.putAdd => {
                     return references.putReferences(ctx, data);
                 },
                 else => {
@@ -53,24 +52,24 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 },
             }
         },
-        types.PropType.REFERENCE => {
+        t.PropType.reference => {
             return reference.updateReference(ctx, data);
         },
-        types.PropType.VECTOR => {
+        t.PropType.vector => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             try db.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
             return len;
         },
-        types.PropType.COLVEC => {
+        t.PropType.colVec => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             db.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
             return len;
         },
-        types.PropType.CARDINALITY => {
+        t.PropType.cardinality => {
             const hllMode = if (data[0] == 0) true else false;
             const hllPrecision = data[1];
             const offset = 2;
@@ -102,7 +101,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             }
             const slice = data[4 .. len + 4];
 
-            if (ctx.field == types.MAIN_PROP) {
+            if (ctx.field == t.MAIN_PROP) {
                 if (ctx.typeSortIndex != null) {
                     var currentData: ?[]u8 = null;
                     var it = ctx.typeSortIndex.?.main.iterator();
@@ -121,9 +120,9 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
 
-            if (ctx.fieldType == types.PropType.TEXT) {
-                if (ctx.typeSortIndex != null and ctx.fieldType == types.PropType.TEXT) {
-                    const lang: types.LangCode = @enumFromInt(slice[0]);
+            if (ctx.fieldType == t.PropType.text) {
+                if (ctx.typeSortIndex != null and ctx.fieldType == t.PropType.text) {
+                    const lang: t.LangCode = @enumFromInt(slice[0]);
                     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
                     if (sIndex) |sortIndex| {
                         const currentData: []u8 = db.getText(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType, lang);
@@ -132,7 +131,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
                 try db.setText(ctx.node.?, ctx.fieldSchema.?, slice);
-            } else if (ctx.fieldType == types.PropType.ALIAS) {
+            } else if (ctx.fieldType == t.PropType.alias) {
                 if (slice.len > 0) {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
@@ -202,7 +201,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 fn incrementBuf(
-    op: ModOp,
+    op: t.ModOp,
     T: type,
     value: []u8,
     addition: []u8,
@@ -210,11 +209,11 @@ fn incrementBuf(
     const a = read(T, value, 0);
     const b = read(T, addition, 0);
     if (T == f64) {
-        const v: T = if (op == ModOp.DECREMENT) a - b else a + b;
+        const v: T = if (op == t.ModOp.decrement) a - b else a + b;
         value[0..8].* = @bitCast(v);
         return 8;
     } else if (T != f64) {
-        const overflow = if (op == ModOp.DECREMENT) @subWithOverflow(a, b) else @addWithOverflow(a, b);
+        const overflow = if (op == t.ModOp.decrement) @subWithOverflow(a, b) else @addWithOverflow(a, b);
         const v: T = if (overflow[1] == 1) a else overflow[0];
         const size = @sizeOf(T);
         value[0..size].* = @bitCast(v);
@@ -223,13 +222,13 @@ fn incrementBuf(
 }
 
 pub fn incrementBuffer(
-    op: ModOp,
-    fieldType: types.PropType,
+    op: t.ModOp,
+    fieldType: t.PropType,
     value: []u8,
     addition: []u8,
 ) usize {
     switch (fieldType) {
-        types.PropType.INT8 => {
+        t.PropType.int8 => {
             return incrementBuf(
                 op,
                 i8,
@@ -237,7 +236,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.PropType.UINT8 => {
+        t.PropType.uint8 => {
             return incrementBuf(
                 op,
                 u8,
@@ -245,7 +244,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.PropType.INT16 => {
+        t.PropType.int16 => {
             return incrementBuf(
                 op,
                 i16,
@@ -253,7 +252,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.PropType.UINT16 => {
+        t.PropType.uint16 => {
             return incrementBuf(
                 op,
                 u16,
@@ -261,7 +260,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.PropType.INT32 => {
+        t.PropType.int32 => {
             return incrementBuf(
                 op,
                 i32,
@@ -269,7 +268,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.PropType.UINT32 => {
+        t.PropType.uint32 => {
             return incrementBuf(
                 op,
                 u32,
@@ -277,7 +276,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.PropType.TIMESTAMP => {
+        t.PropType.timestamp => {
             return incrementBuf(
                 op,
                 i64,
@@ -285,7 +284,7 @@ pub fn incrementBuffer(
                 addition,
             );
         },
-        types.PropType.NUMBER => {
+        t.PropType.number => {
             return incrementBuf(
                 op,
                 f64,
@@ -299,11 +298,11 @@ pub fn incrementBuffer(
     }
 }
 
-pub fn increment(ctx: *ModifyCtx, data: []u8, op: ModOp) !usize {
-    const fieldType: types.PropType = @enumFromInt(read(u8, data, 0));
+pub fn increment(ctx: *ModifyCtx, data: []u8, op: t.ModOp) !usize {
+    const fieldType: t.PropType = @enumFromInt(read(u8, data, 0));
 
     // wastfull check
-    const propSize = types.Size(fieldType);
+    const propSize = t.PropType.size(fieldType);
 
     if (ctx.node == null) {
         return propSize + 3;

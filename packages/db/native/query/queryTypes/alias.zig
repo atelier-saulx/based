@@ -1,15 +1,16 @@
+const std = @import("std");
 const db = @import("../../db/db.zig");
 const getFields = @import("../include/include.zig").getFields;
 const results = @import("../results.zig");
-const QueryCtx = @import("../common.zig").QueryCtx;
+const Query = @import("../common.zig");
 const filter = @import("../filter/filter.zig").filter;
-const std = @import("std");
+const t = @import("../../types.zig");
 
 pub fn default(
     field: u8,
     value: []u8,
-    ctx: *QueryCtx,
-    typeId: db.TypeId,
+    ctx: *Query.QueryCtx,
+    typeId: t.TypeId,
     conditions: []u8,
     include: []u8,
 ) !void {
