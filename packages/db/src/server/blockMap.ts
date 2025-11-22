@@ -202,6 +202,12 @@ export class BlockMap {
     return `${typeId}_${start}_${end}.sdb`
   }
 
+  static setIoPromise(block: Block): Promise<void> {
+      const p = block.ioPromise = Promise.withResolvers<void>()
+      p.promise.then(() => block.ioPromise = null)
+      return p.promise;
+  }
+
   getBlock(key: number) {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]

@@ -32,14 +32,13 @@ export type SaveOpts = {
 
 const SELVA_ENOENT = -8
 
-type IoJobBlock = {
-  filepath: string
-  typeId: number
-  start: number
-}
+const QOP_SAVE_BLOCK = 67
+const QOP_SAVE_COMMON = 69
+const MOP_LOAD = 22
+const MOP_UNLOAD = 33
 
 export function registerBlockIoListeners(db: DbServer) {
-  db.addQueryListener(67, (buf: Uint8Array) => {
+  db.addQueryListener(QOP_SAVE_BLOCK, (buf: Uint8Array) => {
     const err = readUint32(buf, 0)
     const start = readUint32(buf, 4)
     const typeId = readUint16(buf, 8)
@@ -61,17 +60,15 @@ export function registerBlockIoListeners(db: DbServer) {
     }
   })
 
-  const LOAD = 0
-  const UNLOAD = 1
   db.addModifyListener(0, (buf: Uint8Array) => {
-    const op = 0
+    const op = Math.random() // TODO read op
     const typeId = readUint32(buf, 8)
     const start = readUint32(buf, 12)
     const err = readUint32(buf, 16)
     const hash = buf.slice(20, 20 + BLOCK_HASH_SIZE)
     const key = makeTreeKey(typeId, start)
 
-    if (op == LOAD) {
+    if (op == MOP_LOAD) {
       const block = db.blockMap.getBlock(key)
       if (err === 0) {
         const prevHash = block.hash
@@ -84,7 +81,7 @@ export function registerBlockIoListeners(db: DbServer) {
       } else {
         block.ioPromise.reject(new Error(`Load ${typeId}:${start} failed: ${native.selvaStrerror(err)}`))
       }
-    } else if (op == UNLOAD) {
+    } else if (op == MOP_UNLOAD) {
       // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
       if (err === 0) {
         const block = db.blockMap.updateBlock(key, hash, 'fs')
@@ -100,10 +97,12 @@ export function registerBlockIoListeners(db: DbServer) {
 async function saveCommon(db: DbServer): Promise<void> {
   const filepath = ENCODER.encode(join(db.fileSystemPath, COMMON_SDB_FILE))
   const msg = new Uint8Array(filepath.byteLength + 1)
+
+  // TODO MSG
   msg.set(filepath, 6)
 
   return new Promise((resolve, reject) => {
-    db.addQueryOnceListener(69, msg, (buf: Uint8Array) => {
+    db.addQueryOnceListener(QOP_SAVE_COMMON, msg, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
         const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
@@ -113,14 +112,11 @@ async function saveCommon(db: DbServer): Promise<void> {
         resolve()
       }
     })
+
+    native.getQueryBufThread(msg, db.dbCtxExternal)
   })
 }
 
-function setIoPromise(block: Block): Promise<void> {
-    const p = block.ioPromise = Promise.withResolvers<void>()
-    p.promise.then(() => block.ioPromise = null)
-    return p.promise;
-}
 
 async function saveBlocks(
   db: DbServer,
@@ -133,15 +129,62 @@ async function saveBlocks(
     const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(typeId, start, end)))
     const msg = new Uint8Array(6 + filepath.byteLength + 1)
 
-    // TODO MSG
     writeUint32(msg, start, 0)
     writeUint16(msg, typeId, 4)
     msg.set(filepath, 6)
 
-    const p = setIoPromise(block)
+    const p = BlockMap.setIoPromise(block)
     native.getQueryBufThread(msg, db.dbCtxExternal)
     return p
   }))
+}
+
+export async function loadCommon(db: DbServer, filename: string): Promise<void> {
+  const filepath = ENCODER.encode(filename)
+  const msg = new Uint8Array(8 + filepath.byteLength + 1)
+
+  // TODO MSG
+  msg.set(filepath, 8)
+
+  return new Promise((resolve, reject) => {
+    // FIXME
+    //db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
+    //  const err = readUint32(buf, 0)
+    //  if (err) {
+    //    const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+    //    db.emit('error', errMsg)
+    //    reject(new Error(errMsg))
+    //  } else {
+    //    resolve()
+    //  }
+    //})
+
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
+}
+
+export async function loadBlockRaw(db: DbServer, filename: string): Promise<void> {
+  const filepath = ENCODER.encode(filename)
+  const msg = new Uint8Array(8 + filepath.byteLength + 1)
+
+  // TODO MSG
+  msg.set(filepath, 8)
+
+  return new Promise((resolve, reject) => {
+    // FIXME
+    //db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
+    //  const err = readUint32(buf, 0)
+    //  if (err) {
+    //    const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+    //    db.emit('error', errMsg)
+    //    reject(new Error(errMsg))
+    //  } else {
+    //    resolve()
+    //  }
+    //})
+
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
 }
 
 /**
@@ -169,7 +212,7 @@ export async function loadBlock(
   // TODO MSG
   msg.set(filepath, 8)
 
-  const p = setIoPromise(block)
+  const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)
   await p
 }
@@ -195,7 +238,7 @@ export async function unloadBlock(
   // TODO MSG
   msg.set(filepath, 8)
 
-  const p = setIoPromise(block)
+  const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)
   await p
 }

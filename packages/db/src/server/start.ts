@@ -3,7 +3,7 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BlockMap, makeTreeKey } from './blockMap.js'
-import { Writelog, foreachBlock, registerBlockIoListeners } from './blocks.js'
+import { Writelog, foreachBlock, registerBlockIoListeners, loadCommon, loadBlock, loadBlockRaw } from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
 import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
@@ -80,7 +80,6 @@ export async function start(db: DbServer, opts: StartOpts) {
       handleModifyListeners(db, buffer)
     }
   })
-  registerBlockIoListeners(db)
 
   let writelog: Writelog = null
   let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]
@@ -95,7 +94,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   if (writelog) {
     // Load the common dump
     try {
-      native.loadCommon(join(path, writelog.commonDump), db.dbCtxExternal)
+      await loadCommon(db, join(path, writelog.commonDump))
     } catch (e) {
       console.error(e.message)
       throw e
@@ -124,7 +123,7 @@ export async function start(db: DbServer, opts: StartOpts) {
           if (fname?.length > 0) {
             try {
               // Can't use loadBlock() yet because blockMap is not avail
-              native.loadBlock(join(path, fname), db.dbCtxExternal)
+              await loadBlockRaw(db, join(path, fname))
             } catch (e) {
               console.error(e.message)
             }
@@ -174,6 +173,9 @@ export async function start(db: DbServer, opts: StartOpts) {
       )
     }
   }
+
+  // From now on we can use normal block saving and loading
+  registerBlockIoListeners(db)
 
   if (!opts?.hosted) {
     db.unlistenExit = asyncExitHook(

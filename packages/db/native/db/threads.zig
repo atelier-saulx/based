@@ -316,6 +316,10 @@ pub const Threads = struct {
                             const data = try getResultSlice(true, threadCtx, 1, read(u32, m, 0), op);
                             data[0] = 67;
                         },
+                        OpType.unload => {
+                            const data = try getResultSlice(true, threadCtx, 1, read(u32, m, 0), op);
+                            data[0] = 67;
+                        },
                         else => {},
                     }
 
