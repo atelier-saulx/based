@@ -4,6 +4,7 @@ import { getQuerySubType } from './subType.js'
 import {
   ID_PROP,
   QueryDefaultHeaderByteSize,
+  SortHeaderByteSize,
   SortOrder,
   writeQueryDefaultHeader,
   writeSortHeader,
@@ -12,13 +13,14 @@ import {
 export const defaultQuery = (
   def: QueryDef,
   filterSize: number,
-  sortSize: number,
   searchSize: number,
   search: Uint8Array,
 ): IntermediateByteCode => {
+  let sortSize = 0
   const idDescSort = def.sort?.prop === ID_PROP
-  if (idDescSort) {
-    sortSize = 0
+
+  if (def.sort && !idDescSort) {
+    sortSize = SortHeaderByteSize
   }
 
   console.log(sortSize, def.sort)
@@ -39,6 +41,7 @@ export const defaultQuery = (
       sortSize,
       filterSize,
       searchSize,
+      // to this thing pass the sort object...
       subType: getQuerySubType(
         filterSize,
         sortSize,

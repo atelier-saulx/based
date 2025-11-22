@@ -79,9 +79,8 @@ export function defToBuffer(
       result.push(idQuery(def))
     } else {
       if (def.target.ids) {
-        const sortSize = def.sort ? SortHeaderByteSize : 0
         if (
-          !sortSize &&
+          !def.sort &&
           (def.range.offset || def.range.limit < (def.target as any).ids.length)
         ) {
           ;(def.target as any).ids = (def.target as any).ids.slice(
@@ -97,11 +96,8 @@ export function defToBuffer(
           search = searchToBuffer(def.search)
           searchSize = def.search.size
         }
-
-        let sortSize = def.sort ? SortHeaderByteSize : 0
-
         const filterSize = def.filter.size || 0
-        result.push(defaultQuery(def, filterSize, sortSize, searchSize, search))
+        result.push(defaultQuery(def, filterSize, searchSize, search))
       }
     }
   } else if (def.type === QueryDefType.References) {
