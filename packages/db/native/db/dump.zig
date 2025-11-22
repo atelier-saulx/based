@@ -51,21 +51,32 @@ pub fn loadCommon(napi_env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return res;
 }
 
-pub fn loadBlock(napi_env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    const args = napi.getArgs(3, napi_env, info) catch return null;
-    const sdb_filename = napi.get([]u8, napi_env, args[0]) catch return null;
-    const ctx = napi.get(*db.DbCtx, napi_env, args[1]) catch return null;
-    const errlog = napi.get([]u8, napi_env, args[2]) catch return null;
+pub fn loadBlock(ctx: *db.DbCtx, typeCode: u16, start: u32, sdbFilename: []u8, errlog: []u8, hashOut: *SelvaHash128) c_int {
+    const err = selva.selva_dump_load_block(ctx.selva, sdbFilename.ptr, errlog.ptr, errlog.len);
+    if (err < 0) {
+        return err;
+    }
 
-    var res: napi.Value = null;
-    const rc = selva.selva_dump_load_block(ctx.selva, sdb_filename.ptr, errlog.ptr, errlog.len);
-    _ = napi.c.napi_create_int32(napi_env, rc, &res);
-    return res;
+    const te = selva.selva_get_type_by_index(ctx.selva, typeCode);
+    if (te == null) {
+        return selva.SELVA_ENOENT;
+    }
+
+    selva.selva_node_block_hash(ctx.selva, te, start, hashOut);
+
+    return 0;
 }
 
-pub fn delBlock(ctx: *db.DbCtx, typeCode: u16, start: u32) void {
+pub fn unloadBlock(ctx: *db.DbCtx, typeCode: u16, start: u32, sdbFilename: []u8, hashOut: *SelvaHash128) c_int {
     const te = selva.selva_get_type_by_index(ctx.selva, typeCode);
-    if (te) {
+    if (te == null) {
+        return selva.SELVA_ENOENT;
+    }
+
+    const err = selva.selva_dump_save_block(ctx.selva, te, sdbFilename.ptr, start, hashOut);
+    if (err == 0) {
         selva.selva_del_block(ctx.selva, te, start);
     }
+
+    return err;
 }

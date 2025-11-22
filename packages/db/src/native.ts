@@ -131,14 +131,6 @@ const native = {
     return !!db.equals(a, b)
   },
 
-  membarSyncRead: () => {
-    db.membarSyncRead()
-  },
-
-  membarSyncWrite: () => {
-    db.membarSyncWrite()
-  },
-
   selvaStrerror: (err: number) => {
     return db.selvaStrerror(err)
   },

@@ -12,8 +12,8 @@ pub const OpType = enum(u8) {
 
     // Modify types
     modify = 10,
-    load = 22,
-    unload = 33,
+    loadBlock = 22,
+    unloadBlock = 33,
 
     // Save Operations
     saveBlock = 67,

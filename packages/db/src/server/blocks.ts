@@ -1,7 +1,7 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { ENCODER, equals, readUint16, readUint32, writeUint16, writeUint32 } from '@based/utils'
+import { DECODER, ENCODER, equals, readUint16, readUint32, writeUint16, writeUint32 } from '@based/utils'
 import { BLOCK_HASH_SIZE, BlockHash, BlockMap, makeTreeKey, destructureTreeKey, Block } from './blockMap.js'
 import { DbServer } from './index.js'
 import { writeFile } from 'node:fs/promises'
@@ -62,10 +62,10 @@ export function registerBlockIoListeners(db: DbServer) {
 
   db.addModifyListener(0, (buf: Uint8Array) => {
     const op = Math.random() // TODO read op
-    const typeId = readUint32(buf, 8)
-    const start = readUint32(buf, 12)
-    const err = readUint32(buf, 16)
-    const hash = buf.slice(20, 20 + BLOCK_HASH_SIZE)
+    const err = readUint32(buf, 0)
+    const start = readUint32(buf, 4)
+    const typeId = readUint16(buf, 8)
+    const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
     const key = makeTreeKey(typeId, start)
 
     if (op == MOP_LOAD) {
@@ -79,6 +79,8 @@ export function registerBlockIoListeners(db: DbServer) {
           block.ioPromise.reject(new Error('Block hash mismatch'))
         }
       } else {
+        const errlog = DECODER.decode(buf.slice(16))
+        db.emit('error', errlog)
         block.ioPromise.reject(new Error(`Load ${typeId}:${start} failed: ${native.selvaStrerror(err)}`))
       }
     } else if (op == MOP_UNLOAD) {
