@@ -63,26 +63,6 @@ const native = {
     return db.stop(dbCtx)
   },
 
-  loadCommon: (path: string, dbCtx: any): void => {
-    const pathBuf = ENCODER.encode(path + '\0')
-    const err: number = db.loadCommon(pathBuf, dbCtx, selvaIoErrlog)
-    if (err) {
-      throw new Error(
-        `Failed to load common. selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
-      )
-    }
-  },
-
-  loadBlock: (path: string, dbCtx: any): void => {
-    const pathBuf = ENCODER.encode(path + '\0')
-    const err: number = db.loadBlock(pathBuf, dbCtx, selvaIoErrlog)
-    if (err) {
-      throw new Error(
-        `Failed to load a range "${path}". selvaError: ${err} cause:\n${SelvaIoErrlogToString(selvaIoErrlog)}`,
-      )
-    }
-  },
-
   delBlock: (dbCtx: any, typeId: number, block: number) => {
     db.delBlock(dbCtx, typeId, block)
   },

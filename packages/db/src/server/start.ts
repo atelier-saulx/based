@@ -3,7 +3,7 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BlockMap, makeTreeKey } from './blockMap.js'
-import { Writelog, foreachBlock, registerBlockIoListeners } from './blocks.js'
+import { Writelog, foreachBlock, registerBlockIoListeners, loadCommon, loadBlock, loadBlockRaw } from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
 import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
@@ -94,7 +94,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   if (writelog) {
     // Load the common dump
     try {
-      await blocks.loadCommon(db, join(path, writelog.commonDump))
+      await loadCommon(db, join(path, writelog.commonDump))
     } catch (e) {
       console.error(e.message)
       throw e
@@ -123,7 +123,7 @@ export async function start(db: DbServer, opts: StartOpts) {
           if (fname?.length > 0) {
             try {
               // Can't use loadBlock() yet because blockMap is not avail
-              await blocks.loadBlockRaw(db, join(path, fname))
+              await loadBlockRaw(db, join(path, fname))
             } catch (e) {
               console.error(e.message)
             }
