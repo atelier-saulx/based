@@ -1,7 +1,7 @@
 import native from '../native.js'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
-import { ENCODER, equals, readUint16, readUint32, writeUint16, writeUint32 } from '@based/utils'
+import { DECODER, ENCODER, equals, readUint16, readUint32, writeUint16, writeUint32 } from '@based/utils'
 import { BLOCK_HASH_SIZE, BlockHash, BlockMap, makeTreeKey, destructureTreeKey, Block } from './blockMap.js'
 import { DbServer } from './index.js'
 import { writeFile } from 'node:fs/promises'
@@ -34,8 +34,9 @@ const SELVA_ENOENT = -8
 
 const QOP_SAVE_BLOCK = 67
 const QOP_SAVE_COMMON = 69
-const MOP_LOAD = 22
-const MOP_UNLOAD = 33
+const MOP_LOAD_BLOCK = 22
+const MOP_UNLOAD_BLOCK = 33
+const MOP_LOAD_COMMON = 44
 
 export function registerBlockIoListeners(db: DbServer) {
   db.addQueryListener(QOP_SAVE_BLOCK, (buf: Uint8Array) => {
@@ -62,13 +63,13 @@ export function registerBlockIoListeners(db: DbServer) {
 
   db.addModifyListener(0, (buf: Uint8Array) => {
     const op = Math.random() // TODO read op
-    const typeId = readUint32(buf, 8)
-    const start = readUint32(buf, 12)
-    const err = readUint32(buf, 16)
-    const hash = buf.slice(20, 20 + BLOCK_HASH_SIZE)
+    const err = readUint32(buf, 0)
+    const start = readUint32(buf, 4)
+    const typeId = readUint16(buf, 8)
+    const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
     const key = makeTreeKey(typeId, start)
 
-    if (op == MOP_LOAD) {
+    if (op == MOP_LOAD_BLOCK) {
       const block = db.blockMap.getBlock(key)
       if (err === 0) {
         const prevHash = block.hash
@@ -79,9 +80,11 @@ export function registerBlockIoListeners(db: DbServer) {
           block.ioPromise.reject(new Error('Block hash mismatch'))
         }
       } else {
+        const errlog = DECODER.decode(buf.slice(16))
+        db.emit('error', errlog)
         block.ioPromise.reject(new Error(`Load ${typeId}:${start} failed: ${native.selvaStrerror(err)}`))
       }
-    } else if (op == MOP_UNLOAD) {
+    } else if (op == MOP_UNLOAD_BLOCK) {
       // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
       if (err === 0) {
         const block = db.blockMap.updateBlock(key, hash, 'fs')
@@ -96,10 +99,10 @@ export function registerBlockIoListeners(db: DbServer) {
 
 async function saveCommon(db: DbServer): Promise<void> {
   const filepath = ENCODER.encode(join(db.fileSystemPath, COMMON_SDB_FILE))
-  const msg = new Uint8Array(filepath.byteLength + 1)
+  const msg = new Uint8Array(5 + filepath.byteLength + 1)
 
-  // TODO MSG
-  msg.set(filepath, 6)
+  msg[4] = QOP_SAVE_COMMON
+  msg.set(filepath, 5)
 
   return new Promise((resolve, reject) => {
     db.addQueryOnceListener(QOP_SAVE_COMMON, msg, (buf: Uint8Array) => {
@@ -127,11 +130,12 @@ async function saveBlocks(
     const def = db.schemaTypesParsedById[typeId]
     const end = start + def.blockCapacity - 1
     const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(typeId, start, end)))
-    const msg = new Uint8Array(6 + filepath.byteLength + 1)
+    const msg = new Uint8Array(5 + filepath.byteLength + 1)
 
-    writeUint32(msg, start, 0)
-    writeUint16(msg, typeId, 4)
-    msg.set(filepath, 6)
+    msg[4] = QOP_SAVE_BLOCK
+    writeUint32(msg, start, 5)
+    writeUint16(msg, typeId, 9)
+    msg.set(filepath, 11)
 
     const p = BlockMap.setIoPromise(block)
     native.getQueryBufThread(msg, db.dbCtxExternal)
@@ -141,14 +145,14 @@ async function saveBlocks(
 
 export async function loadCommon(db: DbServer, filename: string): Promise<void> {
   const filepath = ENCODER.encode(filename)
-  const msg = new Uint8Array(8 + filepath.byteLength + 1)
+  const msg = new Uint8Array(5 + filepath.byteLength + 1)
 
-  // TODO MSG
-  msg.set(filepath, 8)
+  msg[4] = MOP_LOAD_COMMON
+  msg.set(filepath, 5)
 
   return new Promise((resolve, reject) => {
     // FIXME
-    //db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
+    //db.addModifyOnceListener(MOP_LOAD_COMMON, (buf: Uint8Array) => {
     //  const err = readUint32(buf, 0)
     //  if (err) {
     //    const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
@@ -165,14 +169,14 @@ export async function loadCommon(db: DbServer, filename: string): Promise<void> 
 
 export async function loadBlockRaw(db: DbServer, filename: string): Promise<void> {
   const filepath = ENCODER.encode(filename)
-  const msg = new Uint8Array(8 + filepath.byteLength + 1)
+  const msg = new Uint8Array(6 + filepath.byteLength + 1)
 
-  // TODO MSG
-  msg.set(filepath, 8)
+  msg[4] = MOP_LOAD_BLOCK
+  msg.set(filepath, 5)
 
   return new Promise((resolve, reject) => {
     // FIXME
-    //db.addModifyOnceListener(MOP_LOAD, (buf: Uint8Array) => {
+    //db.addModifyOnceListener(MOP_LOAD_BLOCK, (buf: Uint8Array) => {
     //  const err = readUint32(buf, 0)
     //  if (err) {
     //    const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
@@ -207,10 +211,10 @@ export async function loadBlock(
 
   const end = start + def.blockCapacity - 1
   const filepath = ENCODER.encode((join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end))))
-  const msg = new Uint8Array(8 + filepath.byteLength + 1)
+  const msg = new Uint8Array(5 + filepath.byteLength + 1)
 
-  // TODO MSG
-  msg.set(filepath, 8)
+  msg[4] = MOP_LOAD_BLOCK
+  msg.set(filepath, 5)
 
   const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)
@@ -233,10 +237,10 @@ export async function unloadBlock(
   }
 
   const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end)))
-  const msg = new Uint8Array(8 + filepath.byteLength + 1)
+  const msg = new Uint8Array(5 + filepath.byteLength + 1)
 
-  // TODO MSG
-  msg.set(filepath, 8)
+  msg[4] = MOP_UNLOAD_BLOCK
+  msg.set(filepath, 5)
 
   const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)

@@ -225,7 +225,6 @@ export const migrate = async (
   if (abort()) {
     return
   }
-  native.membarSyncRead()
   // await save(server, {
   //   skipDirtyCheck: true,
   //   skipMigrationCheck: true,
