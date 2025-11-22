@@ -3,7 +3,14 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BlockMap, makeTreeKey } from './blockMap.js'
-import { Writelog, foreachBlock, registerBlockIoListeners, loadCommon, loadBlock, loadBlockRaw } from './blocks.js'
+import {
+  Writelog,
+  foreachBlock,
+  registerBlockIoListeners,
+  loadCommon,
+  loadBlock,
+  loadBlockRaw,
+} from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
 import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
@@ -40,10 +47,7 @@ const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
         const size = readUint32(v, i)
         const type = v[i + 8]
 
-        // const id = readUint40(v, i + 4)
         const id = combineToNumber(readUint32(v, i + 4), type)
-
-        console.log('YO -->', type, readUint32(v, i + 4), id)
         db.execQueryListeners(id, type, v.subarray(i + 9, i + size))
         i += size
       }

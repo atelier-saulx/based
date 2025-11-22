@@ -48,9 +48,6 @@ pub fn createResultsBuffer(
 
     var i: usize = 4;
 
-    // add correct id later
-    // , ctx.queryType
-    std.debug.print("flap \n", .{});
     const data = try getResultSlice(true, ctx.threadCtx, size, ctx.id, op);
 
     writeInt(u32, data, 0, ctx.totalResults);

@@ -184,7 +184,6 @@ export class DbServer extends DbShared {
     return new Promise((resolve) => {
       // make readUint40 ?
       const id = combineToNumber(readUint32(buf, 0), buf[4])
-      console.log('????', id, readUint32(buf, 0))
       if (this.queryResponses.get(id)) {
         console.log('Query allready staged dont exec again', id)
       } else {
