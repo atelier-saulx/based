@@ -66,17 +66,15 @@ export function registerBlockIoListeners(db: DbServer) {
     }
   })
 
-  const LOAD = 0
-  const UNLOAD = 1
   db.addModifyListener(0, (buf: Uint8Array) => {
-    const op = 0
+    const op = Math.random() // TODO read op
     const typeId = readUint32(buf, 8)
     const start = readUint32(buf, 12)
     const err = readUint32(buf, 16)
     const hash = buf.slice(20, 20 + BLOCK_HASH_SIZE)
     const key = makeTreeKey(typeId, start)
 
-    if (op == LOAD) {
+    if (op == MOP_LOAD) {
       const block = db.blockMap.getBlock(key)
       if (err === 0) {
         const prevHash = block.hash
@@ -89,7 +87,7 @@ export function registerBlockIoListeners(db: DbServer) {
       } else {
         block.ioPromise.reject(new Error(`Load ${typeId}:${start} failed: ${native.selvaStrerror(err)}`))
       }
-    } else if (op == UNLOAD) {
+    } else if (op == MOP_UNLOAD) {
       // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
       if (err === 0) {
         const block = db.blockMap.updateBlock(key, hash, 'fs')
@@ -105,6 +103,8 @@ export function registerBlockIoListeners(db: DbServer) {
 async function saveCommon(db: DbServer): Promise<void> {
   const filepath = ENCODER.encode(join(db.fileSystemPath, COMMON_SDB_FILE))
   const msg = new Uint8Array(filepath.byteLength + 1)
+
+  // TODO MSG
   msg.set(filepath, 6)
 
   return new Promise((resolve, reject) => {
@@ -123,11 +123,6 @@ async function saveCommon(db: DbServer): Promise<void> {
   })
 }
 
-function setIoPromise(block: Block): Promise<void> {
-    const p = block.ioPromise = Promise.withResolvers<void>()
-    p.promise.then(() => block.ioPromise = null)
-    return p.promise;
-}
 
 async function saveBlocks(
   db: DbServer,
@@ -144,7 +139,7 @@ async function saveBlocks(
     writeUint16(msg, typeId, 4)
     msg.set(filepath, 6)
 
-    const p = setIoPromise(block)
+    const p = BlockMap.setIoPromise(block)
     native.getQueryBufThread(msg, db.dbCtxExternal)
     return p
   }))
@@ -154,6 +149,7 @@ export async function loadCommon(db: DbServer, filename: string): Promise<void> 
   const filepath = ENCODER.encode(filename)
   const msg = new Uint8Array(8 + filepath.byteLength + 1)
 
+  // TODO MSG
   msg.set(filepath, 8)
 
   return new Promise((resolve, reject) => {
@@ -177,6 +173,7 @@ export async function loadBlockRaw(db: DbServer, filename: string): Promise<void
   const filepath = ENCODER.encode(filename)
   const msg = new Uint8Array(8 + filepath.byteLength + 1)
 
+  // TODO MSG
   msg.set(filepath, 8)
 
   return new Promise((resolve, reject) => {
@@ -218,9 +215,10 @@ export async function loadBlock(
   const filepath = ENCODER.encode((join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end))))
   const msg = new Uint8Array(8 + filepath.byteLength + 1)
 
+  // TODO MSG
   msg.set(filepath, 8)
 
-  const p = setIoPromise(block)
+  const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)
   await p
 }
@@ -243,9 +241,10 @@ export async function unloadBlock(
   const filepath = ENCODER.encode(join(db.fileSystemPath, BlockMap.blockSdbFile(def.id, start, end)))
   const msg = new Uint8Array(8 + filepath.byteLength + 1)
 
+  // TODO MSG
   msg.set(filepath, 8)
 
-  const p = setIoPromise(block)
+  const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)
   await p
 }
