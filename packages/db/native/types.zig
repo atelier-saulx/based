@@ -350,9 +350,6 @@ pub const QueryAliasHeader = packed struct {
     typeId: TypeId,
     filterSize: u16,
     valueSize: u16,
-    a: bool,
-    b: bool,
-    _padding: u6,
 };
 
 pub const FilterOp = enum(u8) {

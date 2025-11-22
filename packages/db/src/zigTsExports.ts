@@ -556,11 +556,9 @@ export type QueryAliasHeader = {
   typeId: TypeId
   filterSize: number
   valueSize: number
-  a: boolean
-  b: boolean
 }
 
-export const QueryAliasHeaderByteSize = 7
+export const QueryAliasHeaderByteSize = 6
 
 export const writeQueryAliasHeader = (
   buf: Uint8Array,
@@ -573,11 +571,6 @@ export const writeQueryAliasHeader = (
   offset += 2
   writeUint16(buf, header.valueSize, offset)
   offset += 2
-  buf[offset] = 0
-  buf[offset] |= (((header.a ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.b ? 1 : 0) >>> 0) & 1) << 1
-  buf[offset] |= ((0 >>> 0) & 63) << 2
-  offset += 1
   return offset
 }
 
