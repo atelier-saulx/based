@@ -1,6 +1,6 @@
 // @ts-ignore
 import db from '@based/db/native'
-import { DECODER, ENCODER } from '@based/utils'
+import { DECODER } from '@based/utils'
 
 const selvaIoErrlog = new Uint8Array(256)
 var compressor = db.createCompressor()
