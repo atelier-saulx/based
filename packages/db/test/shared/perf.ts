@@ -38,7 +38,7 @@ export async function perf(
   fn: () => void | Promise<void>,
   label: string,
   options: Options = {},
-): Promise<void> {
+): Promise<number> {
   const repeat = options.repeat ?? 1
   const timeout = options.timeout ?? 5000
   const silent = options.silent ?? false
@@ -112,6 +112,7 @@ export async function perf(
           `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x) ${diffMessage}.`,
         ),
       )
+    return avgTime
   } catch (err) {
     console.error(`Error in perf run "${label}":`, err)
     return
