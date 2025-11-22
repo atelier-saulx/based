@@ -21,6 +21,8 @@ export const defaultQuery = (
     sortSize = 0
   }
 
+  console.log(sortSize, def.sort)
+
   const buffer = new Uint8Array(
     1 + QueryDefaultHeaderByteSize + filterSize + sortSize + searchSize,
   )

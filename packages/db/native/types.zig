@@ -65,10 +65,11 @@ pub const PropType = enum(u8) {
     uint16 = 22,
     int32 = 23,
     binary = 25,
-    id = 26,
     vector = 27,
     json = 28,
     colVec = 30,
+    object = 29,
+    id = 255,
 
     pub fn isBuffer(self: PropType) bool {
         return switch (self) {

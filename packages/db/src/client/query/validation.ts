@@ -41,6 +41,7 @@ import {
   Validation,
 } from '@based/schema'
 import { StepInput } from './aggregates/types.js'
+import { PropType } from '../../zigTsExports.js'
 
 export type QueryError = {
   code: number
@@ -391,6 +392,8 @@ export const validateSort = (
       payload: { order: orderInput, field },
     })
   }
+  const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
+
   let lang: LangCode = 0
   if (!propDef) {
     let isText = false
@@ -436,7 +439,15 @@ export const validateSort = (
       payload: def,
     })
   }
-  return null
+
+  return {
+    prop: propDef.prop,
+    propType: propDef.typeIndex,
+    start: propDef.start ?? 0,
+    len: propDef.len ?? 0,
+    order,
+    lang,
+  }
 }
 
 export const validateAlias = (

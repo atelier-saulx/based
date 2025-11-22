@@ -112,10 +112,11 @@ export const PropType = {
   uint16: 22,
   int32: 23,
   binary: 25,
-  id: 26,
   vector: 27,
   json: 28,
   colVec: 30,
+  object: 29,
+  id: 255,
 } as const
 
 /**
@@ -141,10 +142,11 @@ export const PropType = {
   uint16, 
   int32, 
   binary, 
-  id, 
   vector, 
   json, 
-  colVec 
+  colVec, 
+  object, 
+  id 
  */
 export type PropTypeEnum = (typeof PropType)[keyof typeof PropType]
 

@@ -15,7 +15,7 @@ await test('include', async (t) => {
     types: {
       user: {
         props: {
-          // name: 'string',
+          name: 'string',
           nr: 'uint32',
           // flap: { type: 'string', compression: 'none' },
         },
@@ -23,56 +23,59 @@ await test('include', async (t) => {
     },
   })
 
-  let x = []
-  for (let i = 0; i < 100; i++) {
-    x.push('xxw qweudhweiofh')
-  }
+  // let x = []
+  // for (let i = 0; i < 100; i++) {
+  //   x.push('xxw qweudhweiofh')
+  // }
 
-  const id = await db.create('user', {
+  console.log('poop')
+
+  const id = db.create('user', {
     nr: 1,
     // name: 'mr poop',
     // flap: x.join(' '),
   })
 
-  await wait(100)
+  // await wait(100)
 
-  // const q = db.query('user', 1)
-  // registerQuery(q)
-  // // maybe expose regisrer query on class
+  // // const q = db.query('user', 1)
+  // // registerQuery(q)
+  // // // maybe expose regisrer query on class
 
-  // const buf = q.buffer
+  // // const buf = q.buffer
 
-  // console.log('q', buf)
+  // // console.log('q', buf)
 
-  // await q.get().inspect()
+  // // await q.get().inspect()
 
-  var cnt = 0
-  let totalTime = 0
+  // var cnt = 0
+  // let totalTime = 0
 
-  console.log('create?')
-  for (let i = 0; i < 10; i++) {
+  // console.log('create?')
+  for (let i = 0; i < 10000; i++) {
     db.create('user', {
       nr: i,
     })
   }
-  console.log('CREATE DONE?')
+  // console.log('CREATE DONE?')
 
-  console.log('START QUERY')
-  await db.query('user').get()
-  console.log('QUERY DONE')
+  // console.log('START QUERY')
+  // await db.query('user').get()
+  // console.log('QUERY DONE')
 
-  console.dir(db.server.blockMap.foreachBlock(console.log))
+  // console.dir(db.server.blockMap.foreachBlock(console.log))
 
-  // await wait(1)
-  // native.getQueryBufThread(buf, db.server.dbCtxExternal)
+  // // await wait(1)
+  // // native.getQueryBufThread(buf, db.server.dbCtxExternal)
 
-  await wait(1000)
-  console.log('FLAP')
+  // await wait(1000)
+  // console.log('FLAP')
   await db.query('user').get().inspect()
 
+  console.log('this is sort!')
   await db.query('user').range(0, 5).sort('nr', 'desc').get().inspect()
 
-  await db.query('user').search('poop').get().inspect()
+  // await db.query('user').search('poop').get().inspect()
 
   // console.log(
   //   getAll(native.getQueryResults(db.server.dbCtxExternal)),
@@ -124,18 +127,18 @@ await test('include', async (t) => {
 
   // await db.query('user').range(0, 1e6).get().inspect()
 
-  db.server.addQueryListener(0, (v) => {
-    console.log('yo', v)
-  })
-  // native.getQueryBufThread()
+  // db.server.addQueryListener(0, (v) => {
+  //   console.log('yo', v)
+  // })
+  // // native.getQueryBufThread()
 
-  // save command
-  native.getQueryBufThread(
-    new Uint8Array([0, 0, 0, 0, 67]),
-    db.server.dbCtxExternal,
-  )
+  // // save command
+  // native.getQueryBufThread(
+  //   new Uint8Array([0, 0, 0, 0, 67]),
+  //   db.server.dbCtxExternal,
+  // )
 
-  console.log('done')
+  // console.log('done')
 
   await wait(100)
 })
