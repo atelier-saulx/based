@@ -1,5 +1,10 @@
 pub const TypeId = u16;
 
+pub const BridgeResponse = enum(u32) {
+    query = 1,
+    modify = 2,
+};
+
 pub const OpType = enum(u8) {
     // Query
     id = 0,
@@ -16,6 +21,11 @@ pub const OpType = enum(u8) {
     loadBlock = 128,
     unloadBlock = 129,
     loadCommon = 130,
+    createType = 131,
+
+    pub fn isModifyOp(self: OpType) bool {
+        return @intFromEnum(self) > 126;
+    }
 };
 
 pub const ModOp = enum(u8) {

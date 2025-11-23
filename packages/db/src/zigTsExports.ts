@@ -2,10 +2,30 @@ import {
   writeUint16, writeInt16, 
   writeUint32, writeInt32, 
   writeUint64, writeInt64, 
-  writeFloatLE, writeDoubleLE 
+  writeFloatLE, writeDoubleLE,
+  readUint16, readInt16, 
+  readUint32, readInt32, 
+  readUint64, readInt64, 
+  readFloatLE, readDoubleLE
 } from '@based/utils'
 
 export type TypeId = number
+
+export const BridgeResponse = {
+  query: 1,
+  modify: 2,
+} as const
+
+export const BridgeResponseInverse = {
+  1: 'query',
+  2: 'modify',
+} as const
+
+/**
+  query, 
+  modify 
+ */
+export type BridgeResponseEnum = (typeof BridgeResponse)[keyof typeof BridgeResponse]
 
 export const OpType = {
   id: 0,
@@ -21,6 +41,24 @@ export const OpType = {
   loadBlock: 128,
   unloadBlock: 129,
   loadCommon: 130,
+  createType: 131,
+} as const
+
+export const OpTypeInverse = {
+  0: 'id',
+  1: 'ids',
+  2: 'default',
+  3: 'alias',
+  4: 'aggregates',
+  5: 'aggregatesCountType',
+  42: 'blockHash',
+  67: 'saveBlock',
+  69: 'saveCommon',
+  127: 'modify',
+  128: 'loadBlock',
+  129: 'unloadBlock',
+  130: 'loadCommon',
+  131: 'createType',
 } as const
 
 /**
@@ -36,7 +74,8 @@ export const OpType = {
   modify, 
   loadBlock, 
   unloadBlock, 
-  loadCommon 
+  loadCommon, 
+  createType 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
 
@@ -63,6 +102,31 @@ export const ModOp = {
   upsert: 17,
   insert: 18,
   padding: 255,
+} as const
+
+export const ModOpInverse = {
+  0: 'switchProp',
+  1: 'switchIdUpdate',
+  2: 'switchType',
+  3: 'createProp',
+  4: 'deleteSortIndex',
+  5: 'updatePartial',
+  6: 'updateProp',
+  7: 'addEmptySort',
+  8: 'switchIdCreateUnsafe',
+  9: 'switchIdCreate',
+  19: 'switchIdCreateRing',
+  20: 'switchEdgeId',
+  10: 'deleteNode',
+  11: 'delete',
+  12: 'increment',
+  13: 'decrement',
+  14: 'expire',
+  15: 'addEmptySortText',
+  16: 'deleteTextField',
+  17: 'upsert',
+  18: 'insert',
+  255: 'padding',
 } as const
 
 /**
@@ -121,6 +185,36 @@ export const PropType = {
   id: 255,
 } as const
 
+export const PropTypeInverse = {
+  0: 'null',
+  1: 'timestamp',
+  2: 'created',
+  3: 'updated',
+  4: 'number',
+  5: 'cardinality',
+  6: 'uint8',
+  7: 'uint32',
+  9: 'boolean',
+  10: 'enum',
+  11: 'string',
+  12: 'text',
+  13: 'reference',
+  14: 'references',
+  17: 'microBuffer',
+  18: 'alias',
+  19: 'aliases',
+  20: 'int8',
+  21: 'int16',
+  22: 'uint16',
+  23: 'int32',
+  25: 'binary',
+  27: 'vector',
+  28: 'json',
+  30: 'colVec',
+  29: 'object',
+  255: 'id',
+} as const
+
 /**
   null, 
   timestamp, 
@@ -160,6 +254,14 @@ export const RefOp = {
   putAdd: 4,
 } as const
 
+export const RefOpInverse = {
+  0: 'overwrite',
+  1: 'add',
+  2: 'delete',
+  3: 'putOverwrite',
+  4: 'putAdd',
+} as const
+
 /**
   overwrite, 
   add, 
@@ -180,6 +282,16 @@ export const ReadOp = {
   meta: 249,
 } as const
 
+export const ReadOpInverse = {
+  0: 'none',
+  255: 'id',
+  252: 'edge',
+  253: 'references',
+  254: 'reference',
+  250: 'aggregation',
+  249: 'meta',
+} as const
+
 /**
   none, 
   id, 
@@ -195,6 +307,12 @@ export const ReferencesSelect = {
   index: 1,
   any: 2,
   all: 3,
+} as const
+
+export const ReferencesSelectInverse = {
+  1: 'index',
+  2: 'any',
+  3: 'all',
 } as const
 
 /**
@@ -215,6 +333,17 @@ export const RefEdgeOp = {
   noEdgeIndexTmpId: 7,
 } as const
 
+export const RefEdgeOpInverse = {
+  0: 'noEdgeNoIndexRealId',
+  1: 'edgeNoIndexRealId',
+  2: 'edgeIndexRealId',
+  3: 'noEdgeIndexRealId',
+  4: 'noEdgeNoIndexTmpId',
+  5: 'edgeNoIndexTmpId',
+  6: 'edgeIndexTmpId',
+  7: 'noEdgeIndexTmpId',
+} as const
+
 /**
   noEdgeNoIndexRealId, 
   edgeNoIndexRealId, 
@@ -230,6 +359,10 @@ export type RefEdgeOpEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | (number & {})
 
 export const LangCode = {
   NONE: 0,
+} as const
+
+export const LangCodeInverse = {
+  0: 'NONE',
 } as const
 
 /**
@@ -251,6 +384,16 @@ export const IncludeOp = {
   partial: 7,
 } as const
 
+export const IncludeOpInverse = {
+  1: 'default',
+  2: 'referencesAggregation',
+  3: 'edge',
+  4: 'references',
+  5: 'reference',
+  6: 'meta',
+  7: 'partial',
+} as const
+
 /**
   default, 
   referencesAggregation, 
@@ -266,6 +409,12 @@ export const ReadRefOp = {
   references: ReadOp.references,
   reference: ReadOp.reference,
   none: ReadOp.none,
+} as const
+
+export const ReadRefOpInverse = {
+  [ReadOp.references]: 'references',
+  [ReadOp.reference]: 'reference',
+  [ReadOp.none]: 'none',
 } as const
 
 /**
@@ -287,6 +436,20 @@ export const ResultType = {
   metaEdge: 8,
   fixed: 9,
   edgeFixed: 10,
+} as const
+
+export const ResultTypeInverse = {
+  0: 'default',
+  1: 'references',
+  2: 'reference',
+  3: 'edge',
+  4: 'referencesEdge',
+  5: 'referenceEdge',
+  6: 'aggregate',
+  7: 'meta',
+  8: 'metaEdge',
+  9: 'fixed',
+  10: 'edgeFixed',
 } as const
 
 /**
@@ -321,6 +484,23 @@ export const AggFn = {
   harmonicMean: 13,
 } as const
 
+export const AggFnInverse = {
+  0: 'none',
+  1: 'avg',
+  2: 'cardinality',
+  3: 'concat',
+  4: 'count',
+  5: 'max',
+  6: 'min',
+  7: 'mode',
+  8: 'percentile',
+  9: 'rank',
+  10: 'stddev',
+  11: 'sum',
+  12: 'variance',
+  13: 'harmonicMean',
+} as const
+
 /**
   none, 
   avg, 
@@ -342,6 +522,11 @@ export type AggFnEnum = (typeof AggFn)[keyof typeof AggFn]
 export const Compression = {
   none: 0,
   compressed: 1,
+} as const
+
+export const CompressionInverse = {
+  0: 'none',
+  1: 'compressed',
 } as const
 
 /**
@@ -368,6 +553,24 @@ export const Interval = {
   year: 14,
 } as const
 
+export const IntervalInverse = {
+  0: 'none',
+  1: 'epoch',
+  2: 'hour',
+  3: 'minute',
+  4: 'second',
+  5: 'microseconds',
+  6: 'day',
+  7: 'doy',
+  8: 'dow',
+  9: 'isoDOW',
+  10: 'week',
+  11: 'month',
+  12: 'isoMonth',
+  13: 'quarter',
+  14: 'year',
+} as const
+
 /**
   none, 
   epoch, 
@@ -390,6 +593,11 @@ export type IntervalEnum = (typeof Interval)[keyof typeof Interval]
 export const SortOrder = {
   asc: 0,
   desc: 1,
+} as const
+
+export const SortOrderInverse = {
+  0: 'asc',
+  1: 'desc',
 } as const
 
 /**
@@ -450,6 +658,42 @@ export const writeSortHeaderProps = {
   },
 }
 
+export const readSortHeader = (
+  buf: Uint8Array,
+  offset: number,
+): SortHeader => {
+  const value: SortHeader = {
+    order: (buf[offset]) as SortOrderEnum,
+    prop: buf[offset + 1],
+    propType: (buf[offset + 2]) as PropTypeEnum,
+    start: readUint16(buf, offset + 3),
+    len: readUint16(buf, offset + 5),
+    lang: (buf[offset + 7]) as LangCodeEnum,
+  }
+  return value
+}
+
+export const readSortHeaderProps = {
+  order: (buf: Uint8Array, offset: number): SortOrderEnum => {
+    return (buf[offset]) as SortOrderEnum
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 2]) as PropTypeEnum
+  },
+  start: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 3)
+  },
+  len: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 5)
+  },
+  lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
+    return (buf[offset + 7]) as LangCodeEnum
+  },
+}
+
 export const QuerySubType = {
   default: 0,
   filter: 1,
@@ -475,6 +719,33 @@ export const QuerySubType = {
   vecSortDescFilter: 21,
   vecSortIdDesc: 22,
   vecSortIdDescFilter: 23,
+} as const
+
+export const QuerySubTypeInverse = {
+  0: 'default',
+  1: 'filter',
+  2: 'sortAsc',
+  3: 'sortAscFilter',
+  4: 'sortDesc',
+  5: 'sortDescFilter',
+  6: 'sortIdDesc',
+  7: 'sortIdDescFilter',
+  8: 'search',
+  9: 'searchFilter',
+  10: 'searchSortAsc',
+  11: 'searchSortAscFilter',
+  12: 'searchSortDesc',
+  13: 'searchSortDescFilter',
+  14: 'searchSortIdDesc',
+  15: 'searchSortIdDescFilter',
+  16: 'vec',
+  17: 'vecFilter',
+  18: 'vecSortAsc',
+  19: 'vecSortAscFilter',
+  20: 'vecSortDesc',
+  21: 'vecSortDescFilter',
+  22: 'vecSortIdDesc',
+  23: 'vecSortIdDescFilter',
 } as const
 
 /**
@@ -563,6 +834,46 @@ export const writeQueryDefaultHeaderProps = {
   },
 }
 
+export const readQueryDefaultHeader = (
+  buf: Uint8Array,
+  offset: number,
+): QueryDefaultHeader => {
+  const value: QueryDefaultHeader = {
+    typeId: (readUint16(buf, offset)) as TypeId,
+    offset: readUint32(buf, offset + 2),
+    limit: readUint32(buf, offset + 6),
+    sortSize: readUint16(buf, offset + 10),
+    filterSize: readUint16(buf, offset + 12),
+    searchSize: readUint16(buf, offset + 14),
+    subType: (buf[offset + 16]) as QuerySubTypeEnum,
+  }
+  return value
+}
+
+export const readQueryDefaultHeaderProps = {
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset)) as TypeId
+  },
+  offset: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 2)
+  },
+  limit: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 6)
+  },
+  sortSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 10)
+  },
+  filterSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 12)
+  },
+  searchSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 14)
+  },
+  subType: (buf: Uint8Array, offset: number): QuerySubTypeEnum => {
+    return (buf[offset + 16]) as QuerySubTypeEnum
+  },
+}
+
 export type QueryIdHeader = {
   typeId: TypeId
   filterSize: number
@@ -591,6 +902,26 @@ export const writeQueryIdHeaderProps = {
   },
 }
 
+export const readQueryIdHeader = (
+  buf: Uint8Array,
+  offset: number,
+): QueryIdHeader => {
+  const value: QueryIdHeader = {
+    typeId: (readUint16(buf, offset)) as TypeId,
+    filterSize: readUint16(buf, offset + 2),
+  }
+  return value
+}
+
+export const readQueryIdHeaderProps = {
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset)) as TypeId
+  },
+  filterSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 2)
+  },
+}
+
 export type QueryIdsHeader = {
   typeId: TypeId
   filterSize: number
@@ -616,6 +947,26 @@ export const writeQueryIdsHeaderProps = {
   },
   filterSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 2)
+  },
+}
+
+export const readQueryIdsHeader = (
+  buf: Uint8Array,
+  offset: number,
+): QueryIdsHeader => {
+  const value: QueryIdsHeader = {
+    typeId: (readUint16(buf, offset)) as TypeId,
+    filterSize: readUint16(buf, offset + 2),
+  }
+  return value
+}
+
+export const readQueryIdsHeaderProps = {
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset)) as TypeId
+  },
+  filterSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 2)
   },
 }
 
@@ -653,6 +1004,30 @@ export const writeQueryAliasHeaderProps = {
   },
 }
 
+export const readQueryAliasHeader = (
+  buf: Uint8Array,
+  offset: number,
+): QueryAliasHeader => {
+  const value: QueryAliasHeader = {
+    typeId: (readUint16(buf, offset)) as TypeId,
+    filterSize: readUint16(buf, offset + 2),
+    valueSize: readUint16(buf, offset + 4),
+  }
+  return value
+}
+
+export const readQueryAliasHeaderProps = {
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset)) as TypeId
+  },
+  filterSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 2)
+  },
+  valueSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 4)
+  },
+}
+
 export const FilterOp = {
   equal: 1,
   has: 2,
@@ -668,6 +1043,23 @@ export const FilterOp = {
   endsWithNormalize: 15,
   equalCrc32: 17,
   like: 18,
+} as const
+
+export const FilterOpInverse = {
+  1: 'equal',
+  2: 'has',
+  4: 'endsWith',
+  5: 'startsWith',
+  6: 'largerThen',
+  7: 'smallerThen',
+  8: 'largerThenInclusive',
+  9: 'smallerThenInclusive',
+  12: 'equalNormalize',
+  13: 'hasLowerCase',
+  14: 'startsWithNormalize',
+  15: 'endsWithNormalize',
+  17: 'equalCrc32',
+  18: 'like',
 } as const
 
 /**
@@ -693,6 +1085,11 @@ export const FilterType = {
   default: 2,
 } as const
 
+export const FilterTypeInverse = {
+  1: 'negate',
+  2: 'default',
+} as const
+
 /**
   negate, 
   default 
@@ -706,6 +1103,15 @@ export const FilterMode = {
   andFixed: 3,
   defaultVar: 4,
   reference: 5,
+} as const
+
+export const FilterModeInverse = {
+  0: 'default',
+  1: 'orFixed',
+  2: 'orVar',
+  3: 'andFixed',
+  4: 'defaultVar',
+  5: 'reference',
 } as const
 
 /**
@@ -727,6 +1133,15 @@ export const FilterMeta = {
   id: 255,
 } as const
 
+export const FilterMetaInverse = {
+  250: 'references',
+  251: 'exists',
+  252: 'edge',
+  253: 'orBranch',
+  254: 'reference',
+  255: 'id',
+} as const
+
 /**
   references, 
   exists, 
@@ -745,6 +1160,13 @@ export const FilterVectorFn = {
   euclideanDistance: 3,
 } as const
 
+export const FilterVectorFnInverse = {
+  0: 'dotProduct',
+  1: 'manhattanDistance',
+  2: 'cosineSimilarity',
+  3: 'euclideanDistance',
+} as const
+
 /**
   dotProduct, 
   manhattanDistance, 
@@ -759,6 +1181,10 @@ export const FilterAlignment = {
   notSet: 255,
 } as const
 
+export const FilterAlignmentInverse = {
+  255: 'notSet',
+} as const
+
 /**
   notSet 
  */
@@ -768,6 +1194,11 @@ export type FilterAlignmentEnum = 255 | (number & {})
 export const AggGroupedBy = {
   hasGroup: 255,
   none: 0,
+} as const
+
+export const AggGroupedByInverse = {
+  255: 'hasGroup',
+  0: 'none',
 } as const
 
 /**
@@ -786,6 +1217,18 @@ export const AggType = {
   max: 7,
   min: 8,
   hmean: 9,
+} as const
+
+export const AggTypeInverse = {
+  1: 'sum',
+  2: 'count',
+  3: 'cardinality',
+  4: 'stddev',
+  5: 'average',
+  6: 'variance',
+  7: 'max',
+  8: 'min',
+  9: 'hmean',
 } as const
 
 /**

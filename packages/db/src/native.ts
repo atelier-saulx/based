@@ -63,10 +63,6 @@ const native = {
     return db.stop(dbCtx)
   },
 
-  setSchemaType: (dbCtx: any, prefix: number, buf: Uint8Array) => {
-    return db.setSchemaType(dbCtx, prefix, buf)
-  },
-
   setSchemaIds: (ids: Uint32Array, dbCtx: any) => {
     return db.setSchemaIds(ids, dbCtx)
   },

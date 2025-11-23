@@ -12,11 +12,16 @@ extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;
 
 pub inline fn writeInt(comptime T: type, buffer: []u8, offset: usize, value: usize) void {
     const v: T = @truncate(value);
-    const target = buffer[offset..][0..@sizeOf(T)];
+    const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
     target.* = @bitCast(v);
 }
 
 pub inline fn writeIntExact(comptime T: type, buffer: []u8, offset: usize, value: T) void {
+    const target = buffer[offset..][0..@sizeOf(T)];
+    target.* = @bitCast(value);
+}
+
+pub inline fn write(comptime T: type, buffer: []u8, value: T, offset: usize) void {
     const target = buffer[offset..][0..@sizeOf(T)];
     target.* = @bitCast(value);
 }

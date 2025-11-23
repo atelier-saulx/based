@@ -249,6 +249,7 @@ export class DbServer extends DbShared {
     }
 
     if (this.schema) {
+      console.log('MIGRATE')
       if (schema.hash === this.migrating) {
         await this.once('schema')
         return this.schema.hash
@@ -258,7 +259,7 @@ export class DbServer extends DbShared {
     }
 
     setSchemaOnServer(this, schema)
-    setNativeSchema(this, schema)
+    await setNativeSchema(this, schema)
     await writeSchemaFile(this, schema)
 
     console.warn('WAITING 500MS AFTER SCHEMA FOR FIXFIX')
@@ -286,7 +287,7 @@ export class DbServer extends DbShared {
 
     try {
       if (!noSave) {
-        await this.save()
+        await save(this)
       }
       native.stop(this.dbCtxExternal)
       this.dbCtxExternal = null

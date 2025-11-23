@@ -11,40 +11,42 @@ await test('include', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.stop())
 
-  var d = Date.now()
-  var cnt = 0
+  // var d = Date.now()
+  // var cnt = 0
 
-  const map2: any = new Map()
+  // const map2: any = new Map()
 
-  for (let i = 0; i < 1e6; i++) {
-    const type = i % 20
-    let t = map2.get(type)
-    if (!t) {
-      t = new Map()
-      map2.set(type, new Map())
-    }
-  }
+  // for (let i = 0; i < 1e6; i++) {
+  //   const type = i % 20
+  //   let t = map2.get(type)
+  //   if (!t) {
+  //     t = new Map()
+  //     map2.set(type, new Map())
+  //   }
+  // }
 
-  d = Date.now()
-  for (let i = 0; i < 1e6; i++) {
-    const type = i % 20
-    const t = map2.get(type)
-    t.set(i, (v: any) => {
-      cnt++
-    })
-  }
-  console.log('add buf ->', Date.now() - d, 'ms')
+  // d = Date.now()
+  // for (let i = 0; i < 1e6; i++) {
+  //   const type = i % 20
+  //   const t = map2.get(type)
+  //   t.set(i, (v: any) => {
+  //     cnt++
+  //   })
+  // }
+  // console.log('add buf ->', Date.now() - d, 'ms')
 
-  d = Date.now()
-  for (let i = 0; i < 1e6; i++) {
-    const type = i % 20
-    const t = map2.get(type)
-    const x = t.get(i)
-    if (x) {
-      x(i)
-    }
-  }
-  console.log('fire buf ->', Date.now() - d, 'ms')
+  // d = Date.now()
+  // for (let i = 0; i < 1e6; i++) {
+  //   const type = i % 20
+  //   const t = map2.get(type)
+  //   const x = t.get(i)
+  //   if (x) {
+  //     x(i)
+  //   }
+  // }
+  // console.log('fire buf ->', Date.now() - d, 'ms')
+
+  console.log('poop!')
 
   await db.setSchema({
     types: {
@@ -69,7 +71,8 @@ await test('include', async (t) => {
     // flap: x.join(' '),
   })
 
-  console.log('CREATE:', { id }, db.server.blockMap.isDirty)
+  console.log('CREATE:', { id })
+  console.log('baba', db.server.blockMap.isDirty)
 
   // await wait(100)
 
@@ -168,11 +171,7 @@ await test('include', async (t) => {
   // })
   // // native.getQueryBufThread()
 
-  // // save command
-  // native.getQueryBufThread(
-  //   new Uint8Array([0, 0, 0, 0, 67]),
-  //   db.server.dbCtxExternal,
-  // )
+  await db.save()
 
   // console.log('done')
 

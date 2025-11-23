@@ -5,9 +5,11 @@ const utils = @import("../utils.zig");
 const std = @import("std");
 const selva = @import("../selva.zig").c;
 const getResultSlice = @import("../db/threads.zig").getResultSlice;
+
 const copy = utils.copy;
 const read = utils.read;
-const writeInt = utils.writeInt;
+const write = utils.write;
+
 const t = @import("../types.zig");
 
 pub const Result = struct {
@@ -35,7 +37,7 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
     if (v[1] == 1) {
         utils.copy(u8, data[i.* + 4 .. i.* + 8], v[2..6]);
     } else {
-        writeInt(u32, data, i.* + 4, v.len);
+        write(u32, data, @truncate(v.len), i.* + 4);
     }
     i.* += 8;
 }
@@ -50,13 +52,13 @@ pub fn createResultsBuffer(
 
     const data = try getResultSlice(true, ctx.threadCtx, size, ctx.id, op);
 
-    writeInt(u32, data, 0, ctx.totalResults);
+    write(u32, data, @truncate(ctx.totalResults), 0);
 
     for (ctx.results.items) |*item| {
         // Always start with id
         if (item.id != 0) {
             data[i] = @intFromEnum(t.ReadOp.id);
-            writeInt(u32, data, i + 1, item.id);
+            write(u32, data, item.id, i + 1);
             i += 5;
             if (item.score) |s| {
                 copy(u8, data[i .. i + 4], &s);
@@ -68,7 +70,7 @@ pub fn createResultsBuffer(
             t.ResultType.aggregate => {
                 data[i] = @intFromEnum((t.ReadOp.aggregation));
                 data[i + 1] = item.prop;
-                writeInt(u32, data, i + 2, item.value.len);
+                write(u32, data, @truncate(item.value.len), i + 2);
                 copy(u8, data[i + 6 .. i + 6 + item.value.len], item.value);
                 i += item.value.len + 6;
             },
@@ -89,7 +91,7 @@ pub fn createResultsBuffer(
             t.ResultType.edge => {
                 data[i] = @intFromEnum(t.ReadOp.edge);
                 data[i + 1] = item.prop;
-                writeInt(u32, data, i + 2, item.value.len);
+                write(u32, data, @truncate(item.value.len), i + 2);
                 copy(u8, data[i + 6 .. i + 6 + item.value.len], item.value);
                 i += item.value.len + 6;
             },
@@ -106,7 +108,7 @@ pub fn createResultsBuffer(
                     continue;
                 }
                 data[i] = item.prop;
-                writeInt(u32, data, i + 1, item.value.len);
+                write(u32, data, @truncate(item.value.len), i + 1);
                 copy(u8, data[i + 5 .. i + 5 + item.value.len], item.value);
                 i += item.value.len + 5;
             },
@@ -152,9 +154,5 @@ pub fn createResultsBuffer(
         }
     }
 
-    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
-
-    // std.debug.print("flap {any}: \n", .{data});
-
-    // return data;
+    write(u32, data, selva.crc32c(4, data.ptr, data.len - 4), data.len - 4);
 }
