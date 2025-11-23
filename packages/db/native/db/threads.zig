@@ -188,7 +188,7 @@ pub const Threads = struct {
         }
         self.modifyDone.signal();
         if (!self.jsModifyBridgeStaged) {
-            self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+            self.ctx.jsBridge.call(t.BridgeResponse.modify);
             self.jsModifyBridgeStaged = true;
         }
         if (self.nextQueryQueue.items.len > 0) {
@@ -305,7 +305,7 @@ pub const Threads = struct {
 
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
-                        self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
+                        self.ctx.jsBridge.call(t.BridgeResponse.query);
                     }
 
                     if (self.nextModifyQueue.items.len > 0) {

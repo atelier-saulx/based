@@ -1,5 +1,10 @@
 pub const TypeId = u16;
 
+pub const BridgeResponse = enum(u32) {
+    query = 1,
+    modify = 2,
+};
+
 pub const OpType = enum(u8) {
     // Query
     id = 0,

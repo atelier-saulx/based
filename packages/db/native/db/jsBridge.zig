@@ -2,13 +2,7 @@ const db = @import("db.zig");
 const selva = @import("../selva.zig").c;
 const napi = @import("../napi.zig");
 const std = @import("std");
-
-pub const BridgeResponse = enum(u32) {
-    query = 1,
-    modify = 2,
-};
-
-// pub const BridgeResponseWrapped = struct {};
+const t = @import("../types.zig");
 
 fn callJsCallback(
     env: napi.Env,
@@ -16,7 +10,7 @@ fn callJsCallback(
     ctx: ?*anyopaque,
     data: ?*anyopaque,
 ) callconv(.c) void {
-    const responseFn = @as(*BridgeResponse, @ptrCast(@alignCast(data.?)));
+    const responseFn = @as(*t.BridgeResponse, @ptrCast(@alignCast(data.?)));
     const dbCtx = @as(*db.DbCtx, @ptrCast(@alignCast(ctx.?)));
 
     if (dbCtx.selva == null) {
@@ -26,7 +20,7 @@ fn callJsCallback(
     std.debug.print("callJsCallback {any} \n", .{responseFn});
 
     switch (responseFn.*) {
-        BridgeResponse.modify => {
+        t.BridgeResponse.modify => {
             dbCtx.threads.waitForModify();
             dbCtx.threads.mutex.lock();
             const thread = dbCtx.threads.threads[0];
@@ -49,7 +43,7 @@ fn callJsCallback(
             dbCtx.threads.jsModifyBridgeStaged = false;
             dbCtx.threads.mutex.unlock();
         },
-        BridgeResponse.query => {
+        t.BridgeResponse.query => {
             dbCtx.threads.waitForQuery();
             var jsArray: napi.Value = undefined;
             _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
@@ -129,9 +123,9 @@ pub const Callback = struct {
 
     pub fn call(
         self: *Callback,
-        response: BridgeResponse,
+        response: t.BridgeResponse,
     ) void {
-        const result = std.heap.raw_c_allocator.create(BridgeResponse) catch return;
+        const result = std.heap.raw_c_allocator.create(t.BridgeResponse) catch return;
         result.* = response;
         _ = napi.c.napi_call_threadsafe_function(self.tsfn, result, napi.c.napi_tsfn_blocking);
     }

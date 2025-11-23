@@ -11,6 +11,22 @@ import {
 
 export type TypeId = number
 
+export const BridgeResponse = {
+  query: 1,
+  modify: 2,
+} as const
+
+export const BridgeResponseInverse = {
+  1: 'query',
+  2: 'modify',
+} as const
+
+/**
+  query, 
+  modify 
+ */
+export type BridgeResponseEnum = (typeof BridgeResponse)[keyof typeof BridgeResponse]
+
 export const OpType = {
   id: 0,
   ids: 1,
