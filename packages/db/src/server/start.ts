@@ -8,7 +8,6 @@ import {
   foreachBlock,
   registerBlockIoListeners,
   loadCommon,
-  loadBlock,
   loadBlockRaw,
 } from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
@@ -16,7 +15,6 @@ import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import {
   bufToHex,
-  combineToNumber,
   equals,
   hexToBuf,
   readUint32,
