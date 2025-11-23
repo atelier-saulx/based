@@ -35,11 +35,11 @@ export async function createSelvaType(server: DbServer, typeId: number, schema: 
   const msg = new Uint8Array(5 + schema.byteLength)
 
   writeUint32(msg, typeId, 0)
-  msg[4] = OpType.loadBlock
+  msg[4] = OpType.createType
   msg.set(schema, 5)
 
   return new Promise((resolve, reject) => {
-    server.addOpOnceListener(OpType.loadBlock, typeId, (buf: Uint8Array) => {
+    server.addOpOnceListener(OpType.createType, typeId, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
         const errMsg = `Create type ${typeId} failed: ${native.selvaStrerror(err)}`
