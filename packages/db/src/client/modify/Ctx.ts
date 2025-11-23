@@ -2,21 +2,21 @@ import { writeUint64 } from '@based/utils'
 import type { SchemaTypeDef, PropDef } from '@based/schema/def'
 import type { LangCode } from '@based/schema'
 import type { Tmp } from './Tmp.js'
-import type { ModOpEnum } from '../../zigTsExports.js'
+import { OpType, type ModOpEnum } from '../../zigTsExports.js'
 
 export const MODIFY_HEADER_SIZE = 1 + 4 + 8 + 4
 
 export class Ctx {
   constructor(schemaChecksum: number, buf: Uint8Array<ArrayBufferLike>) {
     this.buf = buf
-    buf[4] = 10 // make enum later 1 means normal MODIFY
+    buf[4] = OpType.modify // make enum later 1 means normal MODIFY
     writeUint64(buf, schemaChecksum, 5)
     this.reset()
   }
   reset() {
     this.index = MODIFY_HEADER_SIZE // 5 for id + type + schema checksum + operation count
-    this.max = this.buf.buffer.maxByteLength - 4
-    this.size = this.buf.buffer.byteLength - 4
+    this.max = this.buf.buffer.maxByteLength
+    this.size = this.buf.buffer.byteLength
     this.cursor = {}
     this.batch = {}
   }

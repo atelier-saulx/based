@@ -63,8 +63,6 @@ await test('include', async (t) => {
   //   x.push('xxw qweudhweiofh')
   // }
 
-  console.log('poop')
-
   const id = await db.create('user', {
     nr: 1,
     // name: 'mr poop',

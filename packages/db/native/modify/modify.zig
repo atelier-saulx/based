@@ -150,7 +150,6 @@ pub fn modify(
     dbCtx: *db.DbCtx,
     opType: t.OpType,
 ) !void {
-    std.debug.print("modify incoming!", .{});
     const modifyId = utils.read(u32, batch, 0);
     var i: usize = 13 + 4; // 5 for id + type and 8 for schema checksum + 4 for operation count
     // currentOffset chek threadCtx.current
@@ -178,6 +177,7 @@ pub fn modify(
     var resultIndex: u32 = 4; // reserve for writing result len
 
     const tmpSizeToBeFixedImportant = batch.len;
+    std.debug.print("size {d},modifyId {any}, opType {any}\n", .{ batch.len, modifyId, opType });
     const result = try getResultSlice(false, threadCtx, tmpSizeToBeFixedImportant, modifyId, opType);
 
     while (i < batch.len) {
@@ -347,32 +347,15 @@ pub fn modify(
     }
 
     db.expire(&ctx);
+    writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
 
     const newDirtyRanges = ctx.dirtyRanges.values();
-
-    // pass id later..
-    const dirtyRangesSize = newDirtyRanges.len * 8 + 7;
-    // this creates uint 8 array
-    // const data = try getResultSlice(false, threadCtx, dirtyRangesSize, modifyId, opType);
+    const dirtyRangesSize = newDirtyRanges.len * 8;
 
     writeInt(u32, result, 0, resultIndex);
     writeInt(u32, result, resultIndex, dirtyRangesSize);
+    resultIndex += 4; // just wrote 4
+    resultIndex = resultIndex + 8 - (resultIndex % 8); // ceil to multiple of 8
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
-    utils.copy(u8, result[resultIndex + 7 ..], newDirtySlice);
-    std.debug.print("modify done!", .{});
-    // threadCtx.modifyResultsIndex = set back to real len (check diff)
-
-    // readSize from startOffset
-
-    // set delta on size
-
-    // const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 67);
-
-    // std.debug.print("----> x{any} => {any} d {any} - {any} index {d} \n", .{ data, newDirtySlice, data.len, threadCtx.modifyResults, threadCtx.modifyResultsIndex });
-
-    // _ = memcpy(data.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
-    // _ = napi.c.memcpy(data.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
-    // dirtyRanges[newDirtyRanges.len] = 0.0;
-
-    // writeoutPrevNodeId(&ctx, resultIndex, ctx.id);
+    utils.copy(u8, result[resultIndex..], newDirtySlice);
 }
