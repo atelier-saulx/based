@@ -30,7 +30,7 @@ jobs:
 
       - name: Run Build
         run: |
-          docker run --rm -v "${{ github.workspace }}:/usr/src/based-db" based-db-clibs-build-linux_aarch64
+          docker run --rm -w /usr/src/based-db -v "${{ github.workspace }}:/usr/src/based-db" based-db-clibs-build-linux_aarch64
 
           sudo chown -R $USER:$USER .
 

@@ -170,7 +170,6 @@ Note that version numbers may change due to nightly releases.
 - Partial loading of large databases (Experimental) better memory and concurrency management
 - Filter engine working for partials - automatically loads and unloads blocks when visiting
 - JS function support for include, filter, and aggregate, allowing users to create custom query functions
-- ~~Parquet exporter~~
 - Splitted tests into Functional core tests, scenarios and performance tests
 - Automatic testing for Linux (all the tests in CI/CD setup)
 - Cloud v.1 nightly
@@ -183,6 +182,7 @@ Note that version numbers may change due to nightly releases.
 ## v0.5.\* (Feb 1st 2026)
 
 - Based Platform Documentation
+- Parquet exporter
 - Cloud v.1 release
   - UI Dashboard
   - Database playground
