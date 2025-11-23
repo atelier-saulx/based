@@ -26,11 +26,11 @@ jobs:
           cache: 'npm'
 
       - name: Build Builder Image
-        run: docker build -t based-db-clibs-build-linux_aarch64 -f podman/Containerfile .
+        run: docker build --platform linux/arm64 -t based-db-clibs-build-linux_aarch64 -f podman/Containerfile .
 
       - name: Run Build
         run: |
-          docker run --rm -w /usr/src/based-db -v "${{ github.workspace }}:/usr/src/based-db" based-db-clibs-build-linux_aarch64
+          docker run --rm --platform linux/arm64 -w /usr/src/based-db -v "${{ github.workspace }}:/usr/src/based-db" based-db-clibs-build-linux_aarch64
 
           sudo chown -R $USER:$USER .
 
