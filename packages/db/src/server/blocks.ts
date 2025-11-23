@@ -293,11 +293,14 @@ async function getBlockHash(db: DbServer, typeCode: number, start: number): Prom
   return new Promise((resolve, reject) => {
     const msg = new Uint8Array(11)
 
+    // TODO gets for only one type can be inflight concurrently as we only detect
+    //      the ops by start.
+    writeUint32(msg, start, 0)
     msg[4] = OpType.saveCommon
     writeUint32(msg, start, 5)
     writeUint16(msg, typeCode, 9)
 
-    db.addOpOnceListener(OpType.blockHash, 0, (buf: Uint8Array) => {
+    db.addOpOnceListener(OpType.blockHash, start, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
         reject(new Error(`getBlockHash ${typeCode}:${start} failed: ${native.selvaStrerror(err)}`))
