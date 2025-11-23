@@ -34,27 +34,51 @@ jobs:
 
           sudo chown -R $USER:$USER .
 
+          echo "Installing ZVM..."
+          curl -L https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
+
+          export ZVM_INSTALL="$HOME/.zvm"
+          export PATH="$PATH:$ZVM_INSTALL/bin:$ZVM_INSTALL/self"
+
+          echo "Installing Zig..."
+          zvm i 0.15.2
+          zvm use 0.15.2
+
+          sudo apt-get update && sudo apt-get install -y patchelf
+
           npm ci
 
+          if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            echo "Running Linux Locale Build..."
+            npm run build-locale
+          fi
+          for pkg in hash utils schema protocol; do
+            npm run build -w "@based/$pkg"
+          done
+
+          cd packages/db
           npm run build-zig linux-aarch64
+
           npx tsc
 
       - name: Run Test Command (npm run test)
-        run: npm run test-fast
+        run: |
+          cd packages/db
+          npm run test-fast
 
-      # - name: Send Discord Notification
-      #   uses: tsickert/discord-webhook@v7.0.0
-      #   if: always()
-      #   with:
-      #     webhook-url: ${{ env.DISCORD_WEBHOOK_URL }}
-      #     content: |
-      #       ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
-      #   with:
-      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-      #     username: GitHub
-      #     avatar-url: "https://cdn.discordapp.com/avatars/999680196040982618/df91181b3f1cf0ef1592fbe18e0962d7.webp"
-      #     embed-author-name: ${{ github.actor.login }}
-      #     embed-author-url: ${{ github.actor.url }}
-      #     embed-author-icon-url: ${{ github.actor.avatar_url }}
-      #     embed-title: ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
-      #     embed-description: `${{ github.event.payload.push.ref}}, commit: ${{ github.event.payload.push.head}}`
+      - name: Send Discord Notification
+        uses: tsickert/discord-webhook@v7.0.0
+        if: always()
+        with:
+          webhook-url: ${{ env.DISCORD_WEBHOOK_URL }}
+          content: |
+            ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: GitHub
+          avatar-url: "https://cdn.discordapp.com/avatars/999680196040982618/df91181b3f1cf0ef1592fbe18e0962d7.webp"
+          embed-author-name: ${{ github.actor.login }}
+          embed-author-url: ${{ github.actor.url }}
+          embed-author-icon-url: ${{ github.actor.avatar_url }}
+          embed-title: ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
+          embed-description: `${{ github.event.payload.push.ref}}, commit: ${{ github.event.payload.push.head}}`
