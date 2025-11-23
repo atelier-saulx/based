@@ -4,11 +4,10 @@ import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BlockMap, makeTreeKey } from './blockMap.js'
 import {
-  Writelog,
+  readWritelog,
   foreachBlock,
   registerBlockIoListeners,
   loadCommon,
-  loadBlock,
   loadBlockRaw,
 } from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
@@ -16,7 +15,6 @@ import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import {
   bufToHex,
-  combineToNumber,
   equals,
   hexToBuf,
   readUint32,
@@ -85,15 +83,8 @@ export async function start(db: DbServer, opts: StartOpts) {
     }
   })
 
-  let writelog: Writelog = null
+  const writelog = await readWritelog(join(path, WRITELOG_FILE))
   let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]
-  try {
-    writelog = JSON.parse(
-      (await readFile(join(path, WRITELOG_FILE))).toString(),
-    )
-  } catch (err) {
-    // No dump
-  }
 
   if (writelog) {
     // Load the common dump
