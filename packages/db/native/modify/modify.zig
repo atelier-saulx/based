@@ -177,7 +177,6 @@ pub fn modify(
     var resultIndex: u32 = 4; // reserve for writing result len
 
     const tmpSizeToBeFixedImportant = batch.len;
-    std.debug.print("size {d},modifyId {any}, opType {any}\n", .{ batch.len, modifyId, opType });
     const result = try getResultSlice(false, threadCtx, tmpSizeToBeFixedImportant, modifyId, opType);
 
     while (i < batch.len) {

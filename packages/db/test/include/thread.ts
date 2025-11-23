@@ -90,6 +90,7 @@ await test('include', async (t) => {
   for (let i = 0; i < 10000; i++) {
     db.create('user', {
       nr: i,
+      name: 'youzi' + i,
     })
   }
   // console.log('CREATE DONE?')

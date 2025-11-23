@@ -215,20 +215,17 @@ export class DbServer extends DbShared {
     return new Promise((resolve) => {
       native.modifyThread(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {
-        const resultSize = readUint32(v, 0)
-        const dirtyBlockSize = readUint32(v, resultSize)
-
-        if (dirtyBlockSize > 8) {
-          const dirtyBlockOffset = resultSize + 8 - (resultSize % 8) // ceil to multiple of 8
-          const dirtyBlocks = new Float64Array(
-            v.buffer,
-            dirtyBlockOffset,
-            dirtyBlockSize / 8,
+        const resultLen = readUint32(v, 0)
+        const blocksLen = readUint32(v, resultLen)
+        if (blocksLen > 8) {
+          const blocksOffset = resultLen + 8 - (resultLen % 8) // ceil to multiple of 8
+          this.blockMap.setDirtyBlocks(
+            new Float64Array(v.buffer, blocksOffset, blocksLen / 8),
           )
-          this.blockMap.setDirtyBlocks(dirtyBlocks)
         }
         // YOUZI
-        const res = v.subarray(4, resultSize)
+        const res = v.subarray(4, resultLen)
+        console.log({ resultLen, res })
         resolve(res)
       })
     })
