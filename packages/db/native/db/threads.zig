@@ -259,9 +259,9 @@ pub const Threads = struct {
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
                     if (op == t.OpType.default) {
-                        var index: usize = 5;
-                        const header = readNext(t.QueryDefaultHeader, q, &index);
-                        if (header.sortSize != 0) {
+                        var index: usize = 4;
+                        const header = readNext(t.QueryHeader, q, &index);
+                        if (header.sort) {
                             const sortHeader = readNext(t.SortHeader, q, &index);
                             if (sort.getSortIndex(
                                 self.ctx.sortIndexes.get(header.typeId),

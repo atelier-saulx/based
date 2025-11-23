@@ -28,6 +28,7 @@ pub fn getRefsFields(
     ref: ?Query.RefStruct,
     comptime isEdge: bool,
 ) usize {
+    // just header
     const filterSize: u16 = read(u16, include, 0);
     const sortSize: u16 = read(u16, include, 2);
     const offset: u32 = read(u32, include, 4);

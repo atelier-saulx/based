@@ -694,6 +694,12 @@ export const readSortHeaderProps = {
   },
 }
 
+export const createSortHeader = (header: SortHeader): Uint8Array => {
+  const buffer = new Uint8Array(SortHeaderByteSize)
+  writeSortHeader(buffer, header, 0)
+  return buffer
+}
+
 export const QuerySubType = {
   default: 0,
   filter: 1,
@@ -776,31 +782,75 @@ export const QuerySubTypeInverse = {
  */
 export type QuerySubTypeEnum = (typeof QuerySubType)[keyof typeof QuerySubType]
 
-export type QueryDefaultHeader = {
+export const QueryType = {
+  id: 0,
+  ids: 1,
+  default: 2,
+  alias: 3,
+  aggregates: 4,
+  aggregatesCountType: 5,
+  references: 6,
+  reference: 7,
+} as const
+
+export const QueryTypeInverse = {
+  0: 'id',
+  1: 'ids',
+  2: 'default',
+  3: 'alias',
+  4: 'aggregates',
+  5: 'aggregatesCountType',
+  6: 'references',
+  7: 'reference',
+} as const
+
+/**
+  id, 
+  ids, 
+  default, 
+  alias, 
+  aggregates, 
+  aggregatesCountType, 
+  references, 
+  reference 
+ */
+export type QueryTypeEnum = (typeof QueryType)[keyof typeof QueryType]
+
+export type QueryHeader = {
+  op: QueryTypeEnum
+  refProp: number
   typeId: TypeId
   offset: number
   limit: number
-  sortSize: number
+  edge: boolean
+  sort: boolean
   filterSize: number
   searchSize: number
   subType: QuerySubTypeEnum
 }
 
-export const QueryDefaultHeaderByteSize = 17
+export const QueryHeaderByteSize = 18
 
-export const writeQueryDefaultHeader = (
+export const writeQueryHeader = (
   buf: Uint8Array,
-  header: QueryDefaultHeader,
+  header: QueryHeader,
   offset: number,
 ): number => {
+  buf[offset] = header.op
+  offset += 1
+  buf[offset] = header.refProp
+  offset += 1
   writeUint16(buf, header.typeId, offset)
   offset += 2
   writeUint32(buf, header.offset, offset)
   offset += 4
   writeUint32(buf, header.limit, offset)
   offset += 4
-  writeUint16(buf, header.sortSize, offset)
-  offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.edge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= ((0 >>> 0) & 63) << 2
+  offset += 1
   writeUint16(buf, header.filterSize, offset)
   offset += 2
   writeUint16(buf, header.searchSize, offset)
@@ -810,222 +860,179 @@ export const writeQueryDefaultHeader = (
   return offset
 }
 
-export const writeQueryDefaultHeaderProps = {
+export const writeQueryHeaderProps = {
+  op: (buf: Uint8Array, value: QueryTypeEnum, offset: number) => {
+    buf[offset] = value
+  },
+  refProp: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
   typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, value, offset)
+    writeUint16(buf, value, offset + 2)
   },
   offset: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 2)
+    writeUint32(buf, value, offset + 4)
   },
   limit: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 6)
+    writeUint32(buf, value, offset + 8)
   },
-  sortSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 10)
+  edge: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 12] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+  sort: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 12] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
   filterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 12)
+    writeUint16(buf, value, offset + 13)
   },
   searchSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 14)
+    writeUint16(buf, value, offset + 15)
   },
   subType: (buf: Uint8Array, value: QuerySubTypeEnum, offset: number) => {
-    buf[offset + 16] = value
+    buf[offset + 17] = value
   },
 }
 
-export const readQueryDefaultHeader = (
+export const readQueryHeader = (
   buf: Uint8Array,
   offset: number,
-): QueryDefaultHeader => {
-  const value: QueryDefaultHeader = {
-    typeId: (readUint16(buf, offset)) as TypeId,
-    offset: readUint32(buf, offset + 2),
-    limit: readUint32(buf, offset + 6),
-    sortSize: readUint16(buf, offset + 10),
-    filterSize: readUint16(buf, offset + 12),
-    searchSize: readUint16(buf, offset + 14),
-    subType: (buf[offset + 16]) as QuerySubTypeEnum,
+): QueryHeader => {
+  const value: QueryHeader = {
+    op: (buf[offset]) as QueryTypeEnum,
+    refProp: buf[offset + 1],
+    typeId: (readUint16(buf, offset + 2)) as TypeId,
+    offset: readUint32(buf, offset + 4),
+    limit: readUint32(buf, offset + 8),
+    edge: (((buf[offset + 12] >>> 0) & 1)) === 1,
+    sort: (((buf[offset + 12] >>> 1) & 1)) === 1,
+    filterSize: readUint16(buf, offset + 13),
+    searchSize: readUint16(buf, offset + 15),
+    subType: (buf[offset + 17]) as QuerySubTypeEnum,
   }
   return value
 }
 
-export const readQueryDefaultHeaderProps = {
+export const readQueryHeaderProps = {
+  op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
+    return (buf[offset]) as QueryTypeEnum
+  },
+  refProp: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
   typeId: (buf: Uint8Array, offset: number): TypeId => {
-    return (readUint16(buf, offset)) as TypeId
+    return (readUint16(buf, offset + 2)) as TypeId
   },
   offset: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 2)
+    return readUint32(buf, offset + 4)
   },
   limit: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 6)
+    return readUint32(buf, offset + 8)
   },
-  sortSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 10)
+  edge: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 12] >>> 0) & 1)) === 1
+  },
+  sort: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 12] >>> 1) & 1)) === 1
   },
   filterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 12)
+    return readUint16(buf, offset + 13)
   },
   searchSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 14)
+    return readUint16(buf, offset + 15)
   },
   subType: (buf: Uint8Array, offset: number): QuerySubTypeEnum => {
-    return (buf[offset + 16]) as QuerySubTypeEnum
+    return (buf[offset + 17]) as QuerySubTypeEnum
   },
 }
 
-export type QueryIdHeader = {
-  typeId: TypeId
-  filterSize: number
+export const createQueryHeader = (header: QueryHeader): Uint8Array => {
+  const buffer = new Uint8Array(QueryHeaderByteSize)
+  writeQueryHeader(buffer, header, 0)
+  return buffer
 }
 
-export const QueryIdHeaderByteSize = 4
+export type QuerySingleHeader = {
+  op: QueryTypeEnum
+  typeId: TypeId
+  id: number
+  filterSize: number
+  aliasSize: number
+}
 
-export const writeQueryIdHeader = (
+export const QuerySingleHeaderByteSize = 11
+
+export const writeQuerySingleHeader = (
   buf: Uint8Array,
-  header: QueryIdHeader,
+  header: QuerySingleHeader,
   offset: number,
 ): number => {
+  buf[offset] = header.op
+  offset += 1
   writeUint16(buf, header.typeId, offset)
   offset += 2
+  writeUint32(buf, header.id, offset)
+  offset += 4
   writeUint16(buf, header.filterSize, offset)
+  offset += 2
+  writeUint16(buf, header.aliasSize, offset)
   offset += 2
   return offset
 }
 
-export const writeQueryIdHeaderProps = {
+export const writeQuerySingleHeaderProps = {
+  op: (buf: Uint8Array, value: QueryTypeEnum, offset: number) => {
+    buf[offset] = value
+  },
   typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, value, offset)
+    writeUint16(buf, value, offset + 1)
+  },
+  id: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 3)
   },
   filterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 2)
+    writeUint16(buf, value, offset + 7)
+  },
+  aliasSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 9)
   },
 }
 
-export const readQueryIdHeader = (
+export const readQuerySingleHeader = (
   buf: Uint8Array,
   offset: number,
-): QueryIdHeader => {
-  const value: QueryIdHeader = {
-    typeId: (readUint16(buf, offset)) as TypeId,
-    filterSize: readUint16(buf, offset + 2),
+): QuerySingleHeader => {
+  const value: QuerySingleHeader = {
+    op: (buf[offset]) as QueryTypeEnum,
+    typeId: (readUint16(buf, offset + 1)) as TypeId,
+    id: readUint32(buf, offset + 3),
+    filterSize: readUint16(buf, offset + 7),
+    aliasSize: readUint16(buf, offset + 9),
   }
   return value
 }
 
-export const readQueryIdHeaderProps = {
+export const readQuerySingleHeaderProps = {
+  op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
+    return (buf[offset]) as QueryTypeEnum
+  },
   typeId: (buf: Uint8Array, offset: number): TypeId => {
-    return (readUint16(buf, offset)) as TypeId
+    return (readUint16(buf, offset + 1)) as TypeId
+  },
+  id: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 3)
   },
   filterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 2)
+    return readUint16(buf, offset + 7)
+  },
+  aliasSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 9)
   },
 }
 
-export type QueryIdsHeader = {
-  typeId: TypeId
-  filterSize: number
-}
-
-export const QueryIdsHeaderByteSize = 4
-
-export const writeQueryIdsHeader = (
-  buf: Uint8Array,
-  header: QueryIdsHeader,
-  offset: number,
-): number => {
-  writeUint16(buf, header.typeId, offset)
-  offset += 2
-  writeUint16(buf, header.filterSize, offset)
-  offset += 2
-  return offset
-}
-
-export const writeQueryIdsHeaderProps = {
-  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, value, offset)
-  },
-  filterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 2)
-  },
-}
-
-export const readQueryIdsHeader = (
-  buf: Uint8Array,
-  offset: number,
-): QueryIdsHeader => {
-  const value: QueryIdsHeader = {
-    typeId: (readUint16(buf, offset)) as TypeId,
-    filterSize: readUint16(buf, offset + 2),
-  }
-  return value
-}
-
-export const readQueryIdsHeaderProps = {
-  typeId: (buf: Uint8Array, offset: number): TypeId => {
-    return (readUint16(buf, offset)) as TypeId
-  },
-  filterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 2)
-  },
-}
-
-export type QueryAliasHeader = {
-  typeId: TypeId
-  filterSize: number
-  valueSize: number
-}
-
-export const QueryAliasHeaderByteSize = 6
-
-export const writeQueryAliasHeader = (
-  buf: Uint8Array,
-  header: QueryAliasHeader,
-  offset: number,
-): number => {
-  writeUint16(buf, header.typeId, offset)
-  offset += 2
-  writeUint16(buf, header.filterSize, offset)
-  offset += 2
-  writeUint16(buf, header.valueSize, offset)
-  offset += 2
-  return offset
-}
-
-export const writeQueryAliasHeaderProps = {
-  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, value, offset)
-  },
-  filterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 2)
-  },
-  valueSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 4)
-  },
-}
-
-export const readQueryAliasHeader = (
-  buf: Uint8Array,
-  offset: number,
-): QueryAliasHeader => {
-  const value: QueryAliasHeader = {
-    typeId: (readUint16(buf, offset)) as TypeId,
-    filterSize: readUint16(buf, offset + 2),
-    valueSize: readUint16(buf, offset + 4),
-  }
-  return value
-}
-
-export const readQueryAliasHeaderProps = {
-  typeId: (buf: Uint8Array, offset: number): TypeId => {
-    return (readUint16(buf, offset)) as TypeId
-  },
-  filterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 2)
-  },
-  valueSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 4)
-  },
+export const createQuerySingleHeader = (header: QuerySingleHeader): Uint8Array => {
+  const buffer = new Uint8Array(QuerySingleHeaderByteSize)
+  writeQuerySingleHeader(buffer, header, 0)
+  return buffer
 }
 
 export const FilterOp = {

@@ -23,9 +23,6 @@ const t = @import("../types.zig");
 // const defaultProtocol = @import("./protocol/default.zig").defaultProtocol;
 // const SortHeader = @import("../types.zig").SortHeader;
 
-const readNext = utils.readNext;
-const sliceNext = utils.sliceNext;
-
 // -------- NAPI ---------- (put in js bridge maybe?)
 pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return getQueryBufInternalThread(env, info) catch |err| {
@@ -56,7 +53,7 @@ pub fn getQueryThreaded(
     var index: usize = 0;
 
     var ctx: Query.QueryCtx = .{
-        .id = readNext(u32, q, &index),
+        .id = utils.readNext(u32, q, &index),
         .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
         .size = 0,
@@ -66,15 +63,12 @@ pub fn getQueryThreaded(
         .threadCtx = threadCtx,
     };
 
-    const op = readNext(t.OpType, q, &index);
+    const op = utils.read(t.OpType, q, index);
     const len = q.len - 8;
-
-    // const q = batch[4 .. batch.len - 8];
 
     switch (op) {
         t.OpType.default => {
-            const header = readNext(t.QueryDefaultHeader, q, &index);
-            index += header.sortSize;
+            const header = utils.readNext(t.QueryHeader, q, &index);
 
             std.debug.print("Query: {any}...\n", .{header});
 
@@ -83,28 +77,34 @@ pub fn getQueryThreaded(
                     try QueryDefault.default(false, &ctx, &header, q[index..len], undefined);
                 },
                 t.QuerySubType.filter => {
-                    const filterSlice = sliceNext(header.filterSize, q, &index);
+                    const filterSlice = utils.sliceNext(header.filterSize, q, &index);
                     try QueryDefault.default(true, &ctx, &header, q[index..len], filterSlice);
                 },
                 t.QuerySubType.sortAsc => {
+                    index += utils.sizeOf(t.SortHeader);
                     try QuerySort.default(false, false, &ctx, sortIndex, &header, q[index..len], undefined);
                 },
                 t.QuerySubType.sortDesc => {
+                    index += utils.sizeOf(t.SortHeader);
                     try QuerySort.default(true, false, &ctx, sortIndex, &header, q[index..len], undefined);
                 },
                 t.QuerySubType.sortAscFilter => {
-                    const filterSlice = sliceNext(header.filterSize, q, &index);
+                    index += utils.sizeOf(t.SortHeader);
+                    const filterSlice = utils.sliceNext(header.filterSize, q, &index);
                     try QuerySort.default(false, true, &ctx, sortIndex, &header, q[index..len], filterSlice);
                 },
                 t.QuerySubType.sortDescFilter => {
-                    const filterSlice = sliceNext(header.filterSize, q, &index);
+                    index += utils.sizeOf(t.SortHeader);
+                    const filterSlice = utils.sliceNext(header.filterSize, q, &index);
                     try QuerySort.default(true, true, &ctx, sortIndex, &header, q[index..len], filterSlice);
                 },
                 t.QuerySubType.sortIdDesc => {
+                    index += utils.sizeOf(t.SortHeader);
                     try QuerySort.idDesc(false, &ctx, &header, q[index..len], undefined);
                 },
                 t.QuerySubType.sortIdDescFilter => {
-                    const filterSlice = sliceNext(header.filterSize, q, &index);
+                    index += utils.sizeOf(t.SortHeader);
+                    const filterSlice = utils.sliceNext(header.filterSize, q, &index);
                     try QuerySort.idDesc(true, &ctx, &header, q[index..len], filterSlice);
                 },
                 else => {

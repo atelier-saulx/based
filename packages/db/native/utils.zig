@@ -124,3 +124,7 @@ pub inline fn datePart(timestamp: []u8, part: t.Interval, tz: i16) []const u8 {
         else => timestamp, // do nothing = epoch
     };
 }
+
+pub inline fn sizeOf(typeToCheck: type) comptime_int {
+    return @bitSizeOf(typeToCheck) / 8;
+}

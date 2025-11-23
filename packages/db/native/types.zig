@@ -339,31 +339,40 @@ pub const QuerySubType = enum(u8) {
     vecSortIdDescFilter = 23, //      Filter: [ √ ],  Sort: [ID_DESC],  Search: [ VEC ]
 };
 
-pub const QueryDefaultHeader = packed struct {
+pub const QueryType = enum(u8) {
+    id = 0,
+    ids = 1,
+    default = 2,
+    alias = 3,
+    aggregates = 4,
+    aggregatesCountType = 5,
+    references = 6,
+    reference = 7,
+};
+
+pub const QueryHeader = packed struct {
+    op: QueryType,
+    refProp: u8,
     typeId: TypeId,
     offset: u32,
     limit: u32,
-    sortSize: u16,
+    edge: bool,
+    sort: bool,
+    _padding: u6,
     filterSize: u16,
     searchSize: u16,
     subType: QuerySubType,
 };
 
-pub const QueryIdHeader = packed struct {
+pub const QuerySingleHeader = packed struct {
+    op: QueryType,
     typeId: TypeId,
+    id: u32,
     filterSize: u16,
+    aliasSize: u16,
 };
 
-pub const QueryIdsHeader = packed struct {
-    typeId: TypeId,
-    filterSize: u16,
-};
-
-pub const QueryAliasHeader = packed struct {
-    typeId: TypeId,
-    filterSize: u16,
-    valueSize: u16,
-};
+// Aggregates need 2 different HEADERS
 
 pub const FilterOp = enum(u8) {
     equal = 1,
