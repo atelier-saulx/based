@@ -75,6 +75,11 @@ pub inline fn copy(T: type, dest: []T, source: []const T, offset: usize) void {
     }
 }
 
+pub inline fn copyNext(T: type, dest: []T, source: []const T, offset: *usize) void {
+    copy(T, dest, source, offset.*);
+    offset.* += @bitSizeOf(T) * 8 * source.len;
+}
+
 pub inline fn move(dest: []u8, source: []const u8) void {
     _ = memmove(dest.ptr, source.ptr, source.len);
 }
