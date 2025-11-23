@@ -34,13 +34,13 @@ export type StartOpts = {
   queryThreads?: number
 }
 
-const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
+const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
   if (!arr) {
     return
   }
   for (const buf of arr) {
     if (!buf) {
-      console.error('thread has no response :(')
+      console.error('Thread has no response :(')
       continue
     } else {
       const v = new Uint8Array(buf)
@@ -48,14 +48,6 @@ const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
         const size = readUint32(v, i)
         const id = readUint32(v, i + 4)
         const type: OpTypeEnum = v[i + 8] as OpTypeEnum
-
-        console.log('\n LISTENER! FIRED!', type, id)
-        for (const key in OpType) {
-          if (OpType[key] === type) {
-            console.log(' -> TYPE', key)
-          }
-        }
-
         db.execOpListeners(type, id, v.subarray(i + 9, i + size))
         i += size
       }
@@ -63,7 +55,7 @@ const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
   }
 }
 
-const handleModifyListeners = (db: DbServer, arr: ArrayBuffer) => {
+const handleModifyResponse = (db: DbServer, arr: ArrayBuffer) => {
   const v = new Uint8Array(arr)
   for (let i = 0; i < v.byteLength; ) {
     const size = readUint32(v, i)
@@ -85,11 +77,11 @@ export async function start(db: DbServer, opts: StartOpts) {
   await mkdir(path, { recursive: true }).catch(noop)
 
   db.dbCtxExternal = native.start((id: number, buffer: any) => {
-    // use enum
+    // maybe just use OpType here...
     if (id === 1) {
-      handleQueryWorkerResponse(db, buffer)
+      handleQueryResponse(db, buffer)
     } else if (id === 2) {
-      handleModifyListeners(db, buffer)
+      handleModifyResponse(db, buffer)
     }
   })
 
