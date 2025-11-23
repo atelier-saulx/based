@@ -338,7 +338,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
     await saveCommon(db)
 
     const blocks: Block[] = []
-    db.blockMap.foreachDirtyBlock((typeId, start, end, block) => blocks.push(block))
+    db.blockMap.foreachDirtyBlock((_typeId, _start, _end, block) => blocks.push(block))
     await saveBlocks(db, blocks)
 
     try {
