@@ -15,7 +15,7 @@ const Update = @import("./update.zig");
 const dbSort = @import("../db/sort.zig");
 const config = @import("config");
 const errors = @import("../errors.zig");
-const getResultSlice = @import("../db/threads.zig").getResultSlice;
+const newResult = @import("../db/threads.zig").newResult;
 const t = @import("../types.zig");
 
 const updateField = Update.updateField;
@@ -177,7 +177,7 @@ pub fn modify(
     var resultIndex: u32 = 4; // reserve for writing result len
 
     const tmpSizeToBeFixedImportant = batch.len;
-    const result = try getResultSlice(false, threadCtx, tmpSizeToBeFixedImportant, modifyId, opType);
+    const result = try newResult(false, threadCtx, tmpSizeToBeFixedImportant, modifyId, opType);
 
     while (i < batch.len) {
         const op: t.ModOp = @enumFromInt(batch[i]);

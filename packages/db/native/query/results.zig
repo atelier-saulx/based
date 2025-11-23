@@ -4,7 +4,7 @@ const Query = @import("./common.zig");
 const utils = @import("../utils.zig");
 const std = @import("std");
 const selva = @import("../selva.zig").c;
-const getResultSlice = @import("../db/threads.zig").getResultSlice;
+const newResult = @import("../db/threads.zig").newResult;
 
 const copy = utils.copy;
 const read = utils.read;
@@ -50,7 +50,7 @@ pub fn createResultsBuffer(
 
     var i: usize = 4;
 
-    const data = try getResultSlice(true, ctx.threadCtx, size, ctx.id, op);
+    const data = try newResult(true, ctx.threadCtx, size, ctx.id, op);
 
     write(u32, data, @truncate(ctx.totalResults), 0);
 
