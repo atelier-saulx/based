@@ -284,7 +284,7 @@ export class DbServer extends DbShared {
 
     try {
       if (!noSave) {
-        await this.save()
+        await save(this)
       }
       native.stop(this.dbCtxExternal)
       this.dbCtxExternal = null

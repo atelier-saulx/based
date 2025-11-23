@@ -72,6 +72,7 @@ await test('include', async (t) => {
   })
 
   console.log('CREATE:', { id })
+  console.log('baba', db.server.blockMap.isDirty)
 
   // await wait(100)
 
@@ -170,11 +171,7 @@ await test('include', async (t) => {
   // })
   // // native.getQueryBufThread()
 
-  // // save command
-  // native.getQueryBufThread(
-  //   new Uint8Array([0, 0, 0, 0, 67]),
-  //   db.server.dbCtxExternal,
-  // )
+  await db.save()
 
   // console.log('done')
 

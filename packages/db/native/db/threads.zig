@@ -274,6 +274,7 @@ pub const Threads = struct {
                         _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                     },
                     t.OpType.saveBlock => {
+                        std.debug.print("SAVE BLOCK\n", .{});
                         const data = try getResultSlice(true, threadCtx, 26, 0, op);
                         const typeCode = read(u16, q, 9);
                         const start = read(u32, q, 5);
@@ -285,6 +286,7 @@ pub const Threads = struct {
                         _ = selva.memcpy(data[10..16].ptr, &hash, @sizeOf(@TypeOf(hash)));
                     },
                     t.OpType.saveCommon => {
+                        std.debug.print("SAVE COMMON\n", .{});
                         const data = try getResultSlice(true, threadCtx, 4, 0, op);
                         const filename = q[5..q.len];
                         const err = dump.saveCommon(self.ctx, filename);
