@@ -1,13 +1,7 @@
 import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { LangCode } from '@based/schema'
-import {
-  CREATE,
-  DELETE,
-  DELETE_TEXT_FIELD,
-  RANGE_ERR,
-  UPDATE,
-} from '../types.js'
+import { RANGE_ERR } from '../types.js'
 import {
   FULL_CURSOR_SIZE,
   PROP_CURSOR_SIZE,
@@ -19,19 +13,20 @@ import { write } from '../../string.js'
 import { writeU8, writeU8Array } from '../uint.js'
 import { markString } from '../create/mark.js'
 import { validate } from '../validate.js'
+import { ModOp } from '../../../zigTsExports.js'
 
 export const deleteString = (ctx: Ctx, def: PropDef, lang: LangCode): void => {
-  if (ctx.operation !== UPDATE) {
+  if (ctx.operation !== ModOp.updateProp) {
     return
   }
   if (!lang) {
     reserve(ctx, PROP_CURSOR_SIZE + 1)
     writePropCursor(ctx, def)
-    writeU8(ctx, DELETE)
+    writeU8(ctx, ModOp.delete)
   } else {
     reserve(ctx, PROP_CURSOR_SIZE + 2)
     writePropCursor(ctx, def)
-    writeU8(ctx, DELETE_TEXT_FIELD)
+    writeU8(ctx, ModOp.deleteTextField)
     writeU8(ctx, lang)
   }
 }

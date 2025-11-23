@@ -1,13 +1,13 @@
 import { PropDef, PropDefEdge } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeSeparateEdge } from './separate.js'
-import { DECREMENT, INCREMENT, UPDATE } from '../types.js'
 import { writeEdgeHeaderMain, writeEdgeHeaderPartial } from './header.js'
 import { writeU16, writeU32 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
 import { writeUint16, writeUint32 } from '@based/utils'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE } from '../cursor.js'
+import { ModOp } from '../../../zigTsExports.js'
 
 const setDefaultEdges = (def: PropDef, val: Record<string, any>) => {
   if (def.hasDefaultEdges) {
@@ -20,7 +20,10 @@ const setDefaultEdges = (def: PropDef, val: Record<string, any>) => {
   }
 }
 
-type EdgeOperation = typeof UPDATE | typeof INCREMENT | typeof DECREMENT
+type EdgeOperation =
+  | typeof ModOp.updateProp
+  | typeof ModOp.increment
+  | typeof ModOp.decrement
 
 export const writeEdges = (
   ctx: Ctx,
@@ -54,13 +57,13 @@ export const writeEdges = (
     }
 
     if (typeof val !== 'object' || val === null) {
-      operation = UPDATE
+      operation = ModOp.updateProp
     } else if (val.increment > 0) {
-      operation = INCREMENT
+      operation = ModOp.increment
       hasIncr = true
       val = val.increment
     } else if (val.increment < 0) {
-      operation = DECREMENT
+      operation = ModOp.decrement
       hasIncr = true
       val = val.increment
     } else {

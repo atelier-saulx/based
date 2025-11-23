@@ -7,10 +7,10 @@ import {
   TYPE_CURSOR_SIZE,
   writeTypeCursor,
 } from '../cursor.js'
-import { EXPIRE, SWITCH_ID_UPDATE } from '../types.js'
 import { schedule } from '../drain.js'
 import { Tmp } from '../Tmp.js'
 import { writeU32, writeU8 } from '../uint.js'
+import { ModOp } from '../../../zigTsExports.js'
 
 export function expire(
   db: DbClient,
@@ -26,9 +26,9 @@ export function expire(
     validateId(id)
     reserve(ctx, TYPE_CURSOR_SIZE + NODE_CURSOR_SIZE + 5)
     writeTypeCursor(ctx)
-    writeU8(ctx, SWITCH_ID_UPDATE)
+    writeU8(ctx, ModOp.switchIdUpdate)
     writeU32(ctx, id)
-    writeU8(ctx, EXPIRE)
+    writeU8(ctx, ModOp.expire)
     writeU32(ctx, seconds)
     const tmp = new Tmp(ctx)
     schedule(db, ctx)

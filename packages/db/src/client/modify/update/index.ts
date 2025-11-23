@@ -1,10 +1,5 @@
 import { Ctx } from '../Ctx.js'
-import {
-  ModifyOpts,
-  SWITCH_ID_UPDATE,
-  UPDATE,
-  UPDATE_PARTIAL,
-} from '../types.js'
+import { ModifyOpts } from '../types.js'
 import { DbClient } from '../../../index.js'
 import { getValidSchema, validateId, validatePayload } from '../validate.js'
 import { langCodesMap } from '@based/schema'
@@ -23,6 +18,7 @@ import { writeU16, writeU32, writeU8 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
 import { schedule } from '../drain.js'
 import { SchemaTypeDef } from '@based/schema/def'
+import { ModOp } from '../../../zigTsExports.js'
 
 const writeUpdateTs = (ctx: Ctx, payload: any) => {
   if (ctx.schema.updateTs) {
@@ -40,7 +36,7 @@ const writeMergeMain = (ctx: Ctx) => {
   if (ctx.main.size) {
     reserve(ctx, PROP_CURSOR_SIZE + 5 + ctx.main.size * 4)
     writeMainCursor(ctx)
-    writeU8(ctx, UPDATE_PARTIAL)
+    writeU8(ctx, ModOp.updatePartial)
     const index = ctx.index
     ctx.index += 4
     const start = ctx.index
@@ -82,7 +78,7 @@ export const writeUpdate = (
   }
 
   ctx.schema = schema
-  ctx.operation = UPDATE
+  ctx.operation = ModOp.updateProp
   ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
 
   if (ctx.main.size) {
@@ -91,7 +87,7 @@ export const writeUpdate = (
 
   reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)
-  writeU8(ctx, SWITCH_ID_UPDATE)
+  writeU8(ctx, ModOp.switchIdUpdate)
   writeU32(ctx, id)
   writeObject(ctx, ctx.schema.tree, payload)
   writeUpdateTs(ctx, payload)

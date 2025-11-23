@@ -1,12 +1,8 @@
-import {
-  writeUint16,
-  writeInt16,
-  writeUint32,
-  writeInt32,
-  writeUint64,
-  writeInt64,
-  writeFloatLE,
-  writeDoubleLE,
+import { 
+  writeUint16, writeInt16, 
+  writeUint32, writeInt32, 
+  writeUint64, writeInt64, 
+  writeFloatLE, writeDoubleLE 
 } from '@based/utils'
 
 export type TypeId = number
@@ -204,8 +200,7 @@ export const ReferencesSelect = {
   any, 
   all 
  */
-export type ReferencesSelectEnum =
-  (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
+export type ReferencesSelectEnum = (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
 
 export const RefEdgeOp = {
   noEdgeNoIndexRealId: 0,
@@ -754,8 +749,7 @@ export const FilterVectorFn = {
   cosineSimilarity, 
   euclideanDistance 
  */
-export type FilterVectorFnEnum =
-  (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
+export type FilterVectorFnEnum = (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
 
 export const FilterMaxVectorScore = 9999999
 export const FilterMaxStringScore = 255
@@ -804,3 +798,4 @@ export const AggType = {
   hmean 
  */
 export type AggTypeEnum = (typeof AggType)[keyof typeof AggType]
+

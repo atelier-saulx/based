@@ -134,12 +134,9 @@ function moveLibraryToPlatformDir(
         )
       } else {
         const cmd = `/bin/bash -c "cd dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
-        execSync(
-          cmd,
-          {
-            stdio: 'inherit',
-          },
-        )
+        execSync(cmd, {
+          stdio: 'inherit',
+        })
       }
     }
   } else {
