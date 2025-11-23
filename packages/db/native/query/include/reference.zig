@@ -114,7 +114,7 @@ pub fn getSingleRefFields(
         return 10;
     };
 
-    utils.writeInt(u32, val, 0, resultSizeNest);
+    utils.write(u32, val, @truncate(resultSizeNest), 0);
     ctx.results.items[resultIndex].value = val;
 
     size += 6 + resultSizeNest;

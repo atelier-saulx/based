@@ -7,7 +7,7 @@ const t = @import("../../types.zig");
 
 const microbufferToF64 = utils.microbufferToF64;
 const read = utils.read;
-const writeInt = utils.writeIntExact;
+const write = utils.write;
 
 inline fn execAgg(
     aggPropTypeDef: []u8,
@@ -34,45 +34,71 @@ inline fn execAgg(
         j += 1;
 
         if (aggType == t.AggType.count) {
-            writeInt(u32, accumulatorField, accumulatorPos, read(u32, accumulatorField, accumulatorPos) + 1);
+            write(
+                u32,
+                accumulatorField,
+                read(u32, accumulatorField, accumulatorPos) + 1,
+                accumulatorPos,
+            );
         } else if (aggType == t.AggType.max) {
             if (!hadAccumulated.*) {
-                writeInt(f64, accumulatorField, accumulatorPos, microbufferToF64(propType, value, start));
+                write(
+                    f64,
+                    accumulatorField,
+                    microbufferToF64(propType, value, start),
+                    accumulatorPos,
+                );
             } else {
-                writeInt(f64, accumulatorField, accumulatorPos, @max(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)));
+                write(
+                    f64,
+                    accumulatorField,
+                    @max(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)),
+                    accumulatorPos,
+                );
             }
         } else if (aggType == t.AggType.min) {
             if (!hadAccumulated.*) {
-                writeInt(f64, accumulatorField, accumulatorPos, microbufferToF64(propType, value, start));
+                write(
+                    f64,
+                    accumulatorField,
+                    microbufferToF64(propType, value, start),
+                    accumulatorPos,
+                );
             } else {
-                writeInt(f64, accumulatorField, accumulatorPos, @min(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)));
+                write(
+                    f64,
+                    accumulatorField,
+                    @min(read(f64, accumulatorField, accumulatorPos), microbufferToF64(propType, value, start)),
+                    accumulatorPos,
+                );
             }
         } else if (aggType == t.AggType.sum) {
-            writeInt(f64, accumulatorField, accumulatorPos, read(f64, accumulatorField, accumulatorPos) + microbufferToF64(propType, value, start));
+            write(
+                f64,
+                accumulatorField,
+                read(f64, accumulatorField, accumulatorPos) + microbufferToF64(propType, value, start),
+                accumulatorPos,
+            );
         } else if (aggType == t.AggType.average) {
             const val = microbufferToF64(propType, value, start);
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
-
             count += 1;
             sum += val;
-
-            writeInt(u64, accumulatorField, accumulatorPos, count);
-            writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
+            write(u64, accumulatorField, count, accumulatorPos);
+            write(f64, accumulatorField, sum, accumulatorPos + 8);
         } else if (aggType == t.AggType.hmean) {
             const val = microbufferToF64(propType, value, start);
             if (val != 0) {
                 var count = read(u64, accumulatorField, accumulatorPos);
                 var sum = read(f64, accumulatorField, accumulatorPos + 8);
-
                 count += 1;
                 sum += 1 / val;
-
-                writeInt(u64, accumulatorField, accumulatorPos, count);
-                writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
+                write(u64, accumulatorField, count, accumulatorPos);
+                write(f64, accumulatorField, sum, accumulatorPos + 8);
             } else {
-                writeInt(u64, accumulatorField, accumulatorPos, 0.0);
-                writeInt(f64, accumulatorField, accumulatorPos + 8, 0.0);
+                write(u64, accumulatorField, 0.0, accumulatorPos);
+                write(f64, accumulatorField, 0.0, accumulatorPos + 8);
             }
         } else if (aggType == t.AggType.stddev or
             aggType == t.AggType.variance)
@@ -81,17 +107,20 @@ inline fn execAgg(
             var count = read(u64, accumulatorField, accumulatorPos);
             var sum = read(f64, accumulatorField, accumulatorPos + 8);
             var sum_sq = read(f64, accumulatorField, accumulatorPos + 16);
-
             count += 1;
             sum += val;
             sum_sq += val * val;
-
-            writeInt(u64, accumulatorField, accumulatorPos, count);
-            writeInt(f64, accumulatorField, accumulatorPos + 8, sum);
-            writeInt(f64, accumulatorField, accumulatorPos + 16, sum_sq);
+            write(u64, accumulatorField, count, accumulatorPos);
+            write(f64, accumulatorField, sum, accumulatorPos + 8);
+            write(f64, accumulatorField, sum_sq, accumulatorPos + 16);
         } else if (aggType == t.AggType.cardinality) {
             selva.hll_union(hllAccumulator, hllValue);
-            writeInt(u32, accumulatorField, accumulatorPos, read(u32, selva.hll_count(hllAccumulator)[0..4], 0));
+            write(
+                u32,
+                accumulatorField,
+                read(u32, selva.hll_count(hllAccumulator)[0..4], 0),
+                accumulatorPos,
+            );
         }
     }
 }

@@ -47,6 +47,8 @@ export type SaveOpts = {
 }
 
 const SELVA_ENOENT = -8
+
+const SAVE_BLOCK_ID = 0
 const LOAD_BLOCK_ID = 0
 
 function* idGenerator(): Generator<number> {
@@ -63,7 +65,6 @@ function* idGenerator(): Generator<number> {
   }
 }
 
-const saveBlockId = idGenerator()
 const loadSaveCommonId = idGenerator()
 const loadBlockRawId = idGenerator()
 const getBlockHashId = idGenerator()
@@ -79,7 +80,7 @@ export async function readWritelog(path: string): Promise<Writelog | null> {
 }
 
 export function registerBlockIoListeners(db: DbServer) {
-  db.addOpListener(OpType.saveBlock, 0, (buf: Uint8Array) => {
+  db.addOpListener(OpType.saveBlock, SAVE_BLOCK_ID, (buf: Uint8Array) => {
     const err = readUint32(buf, 0)
     const start = readUint32(buf, 4)
     const typeId = readUint16(buf, 8)
@@ -98,27 +99,6 @@ export function registerBlockIoListeners(db: DbServer) {
     } else {
       const block = db.blockMap.updateBlock(key, hash)
       block.ioPromise?.resolve()
-    }
-  })
-
-  db.addOpListener(OpType.loadCommon, 0, (buf: Uint8Array) => {
-    const err = readUint32(buf, 0)
-    const start = readUint32(buf, 4)
-    const typeId = readUint16(buf, 8)
-    const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
-    const key = makeTreeKey(typeId, start)
-
-    // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
-    if (err === 0) {
-      const block = db.blockMap.updateBlock(key, hash, 'fs')
-      block.ioPromise?.resolve()
-    } else {
-      const block = db.blockMap.getBlock(key)
-      block.ioPromise.reject(
-        new Error(
-          `Unload ${typeId}:${start} failed: ${native.selvaStrerror(err)}`,
-        ),
-      )
     }
   })
 
@@ -178,7 +158,6 @@ async function saveCommon(db: DbServer): Promise<void> {
 async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
   await Promise.all(
     blocks.map((block) => {
-      const id = saveBlockId.next().value
       const [typeId, start] = destructureTreeKey(block.key)
       const def = db.schemaTypesParsedById[typeId]
       const end = start + def.blockCapacity - 1
@@ -188,7 +167,7 @@ async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
       )
       const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
-      writeUint32(msg, id, 0)
+      //writeUint32(msg, id, SAVE_BLOCK_ID)
       msg[4] = OpType.saveBlock
       writeUint32(msg, start, 5)
       writeUint16(msg, typeId, 9)

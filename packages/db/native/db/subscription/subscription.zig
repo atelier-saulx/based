@@ -7,6 +7,8 @@ const singleId = @import("./singleId.zig");
 const multi = @import("./multi.zig");
 const Subscription = @import("./common.zig");
 
+const write = utils.write;
+
 fn getMarkedIdSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(1, env, info);
     const ctx = try napi.get(*DbCtx, env, args[0]);
@@ -29,8 +31,8 @@ fn getMarkedIdSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Value 
                 // can make
                 try singleId.removeSubscriptionMarked(ctx, sub);
             } else {
-                utils.writeInt(u32, data, newDataIndex, id);
-                utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
+                write(u32, data, id, newDataIndex);
+                write(u32, data, sub.subId, newDataIndex + 4);
                 sub.*.marked = Subscription.SubStatus.all;
             }
             i += 1;
@@ -66,7 +68,7 @@ fn getMarkedMultiSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Val
     while (iterator.next()) |entry| {
         if (entry.value_ptr.*.typeModified) {
             entry.value_ptr.*.typeModified = false;
-            utils.writeInt(u16, data, i, entry.key_ptr.*);
+            utils.write(u16, data, entry.key_ptr.*, i);
             i += 2;
         }
     }

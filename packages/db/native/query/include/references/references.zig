@@ -99,8 +99,8 @@ pub fn getRefsFields(
         return 10;
     };
 
-    utils.writeInt(u32, val, 0, result.size);
-    utils.writeInt(u32, val, 4, result.cnt);
+    utils.write(u32, val, @truncate(result.size), 0);
+    utils.write(u32, val, result.cnt, 4);
     r.*.value = val;
 
     if (isEdge) {

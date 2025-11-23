@@ -12,7 +12,7 @@ const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 const deflate = @import("../deflate.zig");
 const t = @import("../types.zig");
 
-const writeInt = utils.writeInt;
+const write = utils.write;
 const read = utils.read;
 const readNext = utils.readNext;
 const Thread = std.Thread;
@@ -20,15 +20,8 @@ const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const Queue = std.array_list.Managed([]u8);
 
-pub fn getResultSlice(
-    comptime isQuery: bool,
-    thread: *DbThread,
-    size: usize,
-    id: u32,
-    subType: t.OpType,
-) ![]u8 {
-    const offset = 9;
-    const paddedSize = size + offset;
+pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
+    const paddedSize: u32 = @truncate(size); // zero padding for growth
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
         if (thread.queryResults.len < thread.queryResultsIndex + paddedSize) {
@@ -40,8 +33,52 @@ pub fn getResultSlice(
                 thread.queryResults.len + increasedSize,
             );
         }
-        writeInt(u32, thread.queryResults, thread.queryResultsIndex, paddedSize);
-        writeInt(u32, thread.queryResults, thread.queryResultsIndex + 4, id);
+        const currentSize = read(u32, thread.queryResults, thread.queryResultsIndexHeader);
+        write(u32, thread.queryResults, currentSize + paddedSize, thread.queryResultsIndexHeader);
+        const data = thread.queryResults[thread.queryResultsIndex .. thread.queryResultsIndex + paddedSize];
+        thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
+        return data;
+    } else {
+        if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
+            if (paddedSize > 100_000) {
+                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
+            }
+            thread.modifyResults = try std.heap.raw_c_allocator.realloc(
+                thread.modifyResults,
+                thread.modifyResults.len + increasedSize,
+            );
+        }
+        const currentSize = read(u32, thread.modifyResults, thread.modifyResultsIndexHeader);
+        write(u32, thread.modifyResults, currentSize + paddedSize, thread.modifyResultsIndexHeader);
+        const data = thread.modifyResults[thread.modifyResultsIndex .. thread.modifyResultsIndex + paddedSize];
+        thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;
+        return data;
+    }
+}
+
+pub fn newResult(
+    comptime isQuery: bool,
+    thread: *DbThread,
+    size: usize,
+    id: u32,
+    subType: t.OpType,
+) ![]u8 {
+    const offset = 9;
+    const paddedSize: u32 = @truncate(size + offset);
+    var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
+    if (isQuery) {
+        if (thread.queryResults.len < thread.queryResultsIndex + paddedSize) {
+            if (paddedSize > 1_000_000) {
+                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
+            }
+            thread.queryResults = try std.heap.raw_c_allocator.realloc(
+                thread.queryResults,
+                thread.queryResults.len + increasedSize,
+            );
+        }
+        thread.queryResultsIndexHeader = thread.queryResultsIndex;
+        write(u32, thread.queryResults, paddedSize, thread.queryResultsIndex);
+        write(u32, thread.queryResults, id, thread.queryResultsIndex + 4);
         thread.queryResults[thread.queryResultsIndex + 8] = @intFromEnum(subType);
         const data = thread.queryResults[thread.queryResultsIndex + offset .. thread.queryResultsIndex + paddedSize];
         thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
@@ -56,8 +93,9 @@ pub fn getResultSlice(
                 thread.modifyResults.len + increasedSize,
             );
         }
-        writeInt(u32, thread.modifyResults, thread.modifyResultsIndex, paddedSize);
-        writeInt(u32, thread.modifyResults, thread.modifyResultsIndex + 4, id);
+        thread.modifyResultsIndexHeader = thread.modifyResultsIndex;
+        write(u32, thread.modifyResults, paddedSize, thread.modifyResultsIndex);
+        write(u32, thread.modifyResults, id, thread.modifyResultsIndex + 4);
         thread.modifyResults[thread.modifyResultsIndex + 8] = @intFromEnum(subType);
         const data = thread.modifyResults[thread.modifyResultsIndex + offset .. thread.modifyResultsIndex + paddedSize];
         thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;
@@ -70,8 +108,10 @@ pub const DbThread = struct {
     id: usize,
     queryResults: []u8,
     queryResultsIndex: usize,
+    queryResultsIndexHeader: usize,
     modifyResults: []u8,
     modifyResultsIndex: usize,
+    modifyResultsIndexHeader: usize,
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
     pendingModifies: usize,
@@ -260,7 +300,8 @@ pub const Threads = struct {
             if (queryBuf) |q| {
                 switch (op) {
                     t.OpType.blockHash => {
-                        const data = try getResultSlice(true, threadCtx, 20, 0, op);
+                        const id = read(u32, q, 0);
+                        const data = try newResult(true, threadCtx, 20, id, op);
                         const start = read(u32, q, 0);
                         const typeCode = read(u16, q, 4);
                         const typeEntry = selva.selva_get_type_by_index(self.ctx.selva.?, typeCode);
@@ -275,7 +316,8 @@ pub const Threads = struct {
                     },
                     t.OpType.saveBlock => {
                         std.debug.print("SAVE BLOCK\n", .{});
-                        const data = try getResultSlice(true, threadCtx, 26, 0, op);
+                        const id = read(u32, q, 0);
+                        const data = try newResult(true, threadCtx, 26, id, op);
                         const typeCode = read(u16, q, 9);
                         const start = read(u32, q, 5);
                         const filename = q[11..q.len];
@@ -287,7 +329,8 @@ pub const Threads = struct {
                     },
                     t.OpType.saveCommon => {
                         std.debug.print("SAVE COMMON\n", .{});
-                        const data = try getResultSlice(true, threadCtx, 4, 0, op);
+                        const id = read(u32, q, 0);
+                        const data = try newResult(true, threadCtx, 4, id, op);
                         const filename = q[5..q.len];
                         const err = dump.saveCommon(self.ctx, filename);
                         _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
@@ -304,12 +347,10 @@ pub const Threads = struct {
 
                 if (self.pendingQueries == 0) {
                     self.queryDone.signal();
-
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
                         self.ctx.jsBridge.call(t.BridgeResponse.query);
                     }
-
                     if (self.nextModifyQueue.items.len > 0) {
                         const prevModifyQueue = self.modifyQueue;
                         self.modifyQueue = self.nextModifyQueue;
@@ -332,7 +373,7 @@ pub const Threads = struct {
                         },
                         t.OpType.loadBlock => {
                             std.debug.print("LOAD\n", .{});
-                            const data = try getResultSlice(false, threadCtx, 20 + 492, read(u32, m, 0), op);
+                            const data = try newResult(false, threadCtx, 20 + 492, read(u32, m, 0), op);
                             const start: u32 = read(u32, m, 5);
                             const typeCode: u16 = read(u16, m, 9);
                             const filename = m[11..m.len];
@@ -346,7 +387,7 @@ pub const Threads = struct {
                         },
                         t.OpType.unloadBlock => {
                             std.debug.print("UNLOAD\n", .{});
-                            const data = try getResultSlice(false, threadCtx, 20, read(u32, m, 0), op);
+                            const data = try newResult(false, threadCtx, 20, read(u32, m, 0), op);
                             const start: u32 = read(u32, m, 5);
                             const typeCode: u16 = read(u16, m, 9);
                             const filename = m[11..m.len];
@@ -359,7 +400,7 @@ pub const Threads = struct {
                         },
                         t.OpType.loadCommon => {
                             std.debug.print("LOAD COMMON\n", .{});
-                            const data = try getResultSlice(false, threadCtx, 20 + 492, read(u32, m, 0), op);
+                            const data = try newResult(false, threadCtx, 20 + 492, read(u32, m, 0), op);
                             const filename = m[5..m.len];
 
                             const errlog = data[5..data.len];
@@ -367,7 +408,7 @@ pub const Threads = struct {
                             _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                         },
                         t.OpType.createType => {
-                            const data = try getResultSlice(false, threadCtx, 4, read(u32, m, 0), op);
+                            const data = try newResult(false, threadCtx, 4, read(u32, m, 0), op);
                             const typeCode = read(u32, m, 0);
                             const schema = m[5..m.len];
                             const err = selva.selva_db_create_type(self.ctx.selva, @truncate(typeCode), schema.ptr, schema.len);

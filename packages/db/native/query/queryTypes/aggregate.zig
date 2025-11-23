@@ -10,7 +10,7 @@ const aggregate = @import("../aggregate/aggregate.zig").aggregate;
 const t = @import("../../types.zig");
 
 const read = utils.read;
-const writeInt = utils.writeIntExact;
+const write = utils.write;
 const GroupProtocolLen = groupFunctions.ProtocolLen;
 const setGroupResults = groupFunctions.setGroupResults;
 const finalizeGroupResults = groupFunctions.finalizeGroupResults;
@@ -30,7 +30,7 @@ pub fn countType(
         return null;
     }
     const resultsField = @as([*]u8, @ptrCast(resultBuffer))[0..4];
-    writeInt(u32, resultsField, 0, count);
+    write(u32, resultsField, count, 0);
     return result;
 }
 
@@ -85,7 +85,7 @@ pub fn default(
         }
     }
     try finalizeResults(resultsField, accumulatorField, agg, option);
-    writeInt(u32, resultsField, resultsField.len - 4, selva.crc32c(4, resultsField.ptr, resultsField.len - 4));
+    write(u32, resultsField, selva.crc32c(4, resultsField.ptr, resultsField.len - 4), resultsField.len - 4);
     return result;
 }
 
@@ -162,6 +162,6 @@ pub fn group(
     }
     const data = @as([*]u8, @ptrCast(resultBuffer))[0 .. ctx.size + 4];
     try finalizeGroupResults(data, groupCtx, agg);
-    writeInt(u32, data, data.len - 4, selva.crc32c(4, data.ptr, data.len - 4));
+    write(u32, data, selva.crc32c(4, data.ptr, data.len - 4), data.len - 4);
     return result;
 }

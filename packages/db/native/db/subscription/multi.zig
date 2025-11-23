@@ -34,7 +34,7 @@ pub fn addMultiSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
     // );
 
     // utils.read(u32, idSubs, i + 4)
-    // utils.writeInt(u32, typeSubs.multiSubs, typeSubs.multiSubsSize * types.SUB_SIZE + 4, subId);
+    // utils.write(u32, typeSubs.multiSubs, subId, typeSubs.multiSubsSize * types.SUB_SIZE + 4);
     // typeSubs.multiSubs[]
 
     // std.debug.print("DERP typeId: {any} subId: {any} \n", .{ typeId, subId });
