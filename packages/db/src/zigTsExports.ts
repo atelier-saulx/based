@@ -486,13 +486,13 @@ export type QueryDefaultHeader = {
   typeId: TypeId
   offset: number
   limit: number
-  sortSize: number
+  hasSort: boolean
   filterSize: number
   searchSize: number
   subType: QuerySubTypeEnum
 }
 
-export const QueryDefaultHeaderByteSize = 17
+export const QueryDefaultHeaderByteSize = 16
 
 export const writeQueryDefaultHeader = (
   buf: Uint8Array,
@@ -505,8 +505,10 @@ export const writeQueryDefaultHeader = (
   offset += 4
   writeUint32(buf, header.limit, offset)
   offset += 4
-  writeUint16(buf, header.sortSize, offset)
-  offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.hasSort ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
   writeUint16(buf, header.filterSize, offset)
   offset += 2
   writeUint16(buf, header.searchSize, offset)
