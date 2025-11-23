@@ -31,7 +31,7 @@ handling, client-server architecture support, and more.
 
 - recent GNU make
 - gcc 14.2 on Linux or clang 17.0.0 on macOS
-- zig 0.14.0
+- zig 0.15.2
 - npm & node.js v22.14.0 or newer
 
 ```bash
