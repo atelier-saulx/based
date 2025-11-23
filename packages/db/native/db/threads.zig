@@ -300,7 +300,12 @@ pub const Threads = struct {
             if (queryBuf) |q| {
                 switch (op) {
                     t.OpType.blockHash => {
+<<<<<<< HEAD
                         const data = try newResult(true, threadCtx, 20, 0, op);
+=======
+                        const id = read(u32, q, 0);
+                        const data = try getResultSlice(true, threadCtx, 20, id, op);
+>>>>>>> f3525494edc554aaf8d06511019423b7ab0bda39
                         const start = read(u32, q, 0);
                         const typeCode = read(u16, q, 4);
                         const typeEntry = selva.selva_get_type_by_index(self.ctx.selva.?, typeCode);
@@ -315,7 +320,12 @@ pub const Threads = struct {
                     },
                     t.OpType.saveBlock => {
                         std.debug.print("SAVE BLOCK\n", .{});
+<<<<<<< HEAD
                         const data = try newResult(true, threadCtx, 26, 0, op);
+=======
+                        const id = read(u32, q, 0);
+                        const data = try getResultSlice(true, threadCtx, 26, id, op);
+>>>>>>> f3525494edc554aaf8d06511019423b7ab0bda39
                         const typeCode = read(u16, q, 9);
                         const start = read(u32, q, 5);
                         const filename = q[11..q.len];
@@ -327,7 +337,12 @@ pub const Threads = struct {
                     },
                     t.OpType.saveCommon => {
                         std.debug.print("SAVE COMMON\n", .{});
+<<<<<<< HEAD
                         const data = try newResult(true, threadCtx, 4, 0, op);
+=======
+                        const id = read(u32, q, 0);
+                        const data = try getResultSlice(true, threadCtx, 4, id, op);
+>>>>>>> f3525494edc554aaf8d06511019423b7ab0bda39
                         const filename = q[5..q.len];
                         const err = dump.saveCommon(self.ctx, filename);
                         _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
