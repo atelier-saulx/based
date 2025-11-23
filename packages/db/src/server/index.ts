@@ -190,7 +190,7 @@ export class DbServer extends DbShared {
 
   getQueryBuf(buf): Promise<Uint8Array> {
     return new Promise((resolve) => {
-      const id = combineToNumber(readUint32(buf, 0), buf[4])
+      const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4]
       const queryListeners = this.opListeners.get(op)
       if (queryListeners.get(id)) {
@@ -198,7 +198,36 @@ export class DbServer extends DbShared {
       } else {
         native.getQueryBufThread(buf, this.dbCtxExternal)
       }
-      this.addOpListener(op, id, resolve)
+      this.addOpOnceListener(op, id, resolve)
+    })
+  }
+
+  // allow 10 ids for special listeners on mod thread
+  modifyCnt = 10
+
+  modify(payload: Uint8Array): Promise<Uint8Array | null> {
+    this.modifyCnt++
+    if (this.modifyCnt > MAX_ID) {
+      this.modifyCnt = 10
+    }
+    const id = this.modifyCnt++
+    writeUint32(payload, id, 0)
+    return new Promise((resolve) => {
+      const len = native.modifyThread(payload, this.dbCtxExternal)
+      this.addOpOnceListener(OpType.modify, id, (v) => {
+        const dirtyBlockSize = readUint32(v, 0)
+        if (dirtyBlockSize > 8) {
+          const dirtyBlocks = new Float64Array(
+            v.buffer,
+            v.byteOffset + 7,
+            (v.byteLength - 7) / 8,
+          )
+          this.blockMap.setDirtyBlocks(dirtyBlocks)
+        }
+        // YOUZI
+        console.log('MOD FIRED!')
+        resolve(TMP_EMPTY)
+      })
     })
   }
 
@@ -234,34 +263,6 @@ export class DbServer extends DbShared {
     })
 
     return schema.hash
-  }
-
-  // allow 10 ids for special listeners on mod thread
-  modifyCnt = 10
-
-  modify(payload: Uint8Array): Promise<Uint8Array | null> {
-    this.modifyCnt++
-    if (this.modifyCnt > MAX_ID) {
-      this.modifyCnt = 10
-    }
-    const id = this.modifyCnt++
-    writeUint32(payload, id, 0)
-    return new Promise((resolve) => {
-      const len = native.modifyThread(payload, this.dbCtxExternal)
-      this.addOpOnceListener(OpType.modify, id, (v) => {
-        const dirtyBlockSize = readUint32(v, 0)
-        if (dirtyBlockSize > 8) {
-          const dirtyBlocks = new Float64Array(
-            v.buffer,
-            v.byteOffset + 7,
-            (v.byteLength - 7) / 8,
-          )
-          this.blockMap.setDirtyBlocks(dirtyBlocks)
-        }
-        // YOUZI
-        resolve(TMP_EMPTY)
-      })
-    })
   }
 
   async stop(noSave?: boolean) {

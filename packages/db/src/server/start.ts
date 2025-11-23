@@ -46,8 +46,16 @@ const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
       const v = new Uint8Array(buf)
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
-        const type: OpTypeEnum = v[i + 8] as OpTypeEnum
         const id = readUint32(v, i + 4)
+        const type: OpTypeEnum = v[i + 8] as OpTypeEnum
+
+        console.log('\n LISTENER! FIRED!', type, id)
+        for (const key in OpType) {
+          if (OpType[key] === type) {
+            console.log(' -> TYPE', key)
+          }
+        }
+
         db.execOpListeners(type, id, v.subarray(i + 9, i + size))
         i += size
       }
