@@ -43,11 +43,11 @@ map[STRING] = (ctx, val, def) => {
   validate(val, def)
   reserve(ctx, size + 1)
   const fullSize = def.len - 1
-  ctx.array[ctx.index] = size
-  ctx.array.set(valBuf, ctx.index + 1)
+  ctx.buf[ctx.index] = size
+  ctx.buf.set(valBuf, ctx.index + 1)
   ctx.index += fullSize + 1
   if (fullSize !== size) {
-    ctx.array.fill(0, ctx.index - (fullSize - size), ctx.index)
+    ctx.buf.fill(0, ctx.index - (fullSize - size), ctx.index)
   }
 }
 
@@ -75,7 +75,7 @@ map[NUMBER] = (ctx, val, def) => {
   val ??= def.default
   validate(val, def)
   reserve(ctx, 8)
-  writeDoubleLE(ctx.array, val, ctx.array.byteOffset + ctx.index)
+  writeDoubleLE(ctx.buf, val, ctx.buf.byteOffset + ctx.index)
   ctx.index += 8
 }
 

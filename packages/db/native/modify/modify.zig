@@ -57,12 +57,12 @@ fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     //ctx.id = 0;
 }
 
-fn writeoutPrevNodeId(ctx: *ModifyCtx, resCount: *u32, prevNodeId: u32) void {
+fn writeoutPrevNodeId(ctx: *ModifyCtx, resultIndex: *u32, prevNodeId: u32, result: []u8) void {
     if (prevNodeId != 0) {
-        writeInt(u32, ctx.batch, resCount.* * 5, prevNodeId);
-        writeInt(u8, ctx.batch, resCount.* * 5 + 4, @intFromEnum(ctx.err));
+        writeInt(u32, result, resultIndex.*, prevNodeId);
+        writeInt(u8, result, resultIndex.* + 4, @intFromEnum(ctx.err));
         ctx.err = errors.ClientError.null;
-        resCount.* += 1;
+        resultIndex.* += 5;
     }
 }
 
@@ -151,8 +151,8 @@ pub fn modify(
     opType: t.OpType,
 ) !void {
     const modifyId = utils.read(u32, batch, 0);
-    var i: usize = 13; // 5 for id + type and 8 for schema checksum
-
+    var i: usize = 13 + 4; // 5 for id + type and 8 for schema checksum + 4 for operation count
+    // currentOffset chek threadCtx.current
     var ctx: ModifyCtx = .{
         .field = undefined,
         .typeId = 0,
@@ -174,7 +174,10 @@ pub fn modify(
 
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
-    var resCount: u32 = 0;
+    var resultIndex: u32 = 4; // reserve for writing result len
+
+    const tmpSizeToBeFixedImportant = batch.len;
+    const result = try getResultSlice(false, threadCtx, tmpSizeToBeFixedImportant, modifyId, opType);
 
     while (i < batch.len) {
         const op: t.ModOp = @enumFromInt(batch[i]);
@@ -188,6 +191,7 @@ pub fn modify(
                 i = i + 3;
                 ctx.fieldSchema = try db.getFieldSchema(ctx.typeEntry.?, ctx.field);
                 ctx.fieldType = @enumFromInt(operation[1]);
+                // TODO move this logic to the actual handlers (createProp, updateProp, etc)
                 if (ctx.fieldType == t.PropType.reference) {
                     offset = 1;
                 } else if (ctx.fieldType == t.PropType.cardinality) {
@@ -220,18 +224,18 @@ pub fn modify(
                 i = i + 2;
             },
             t.ModOp.switchIdCreate => {
-                writeoutPrevNodeId(&ctx, &resCount, ctx.id);
+                writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
                 try newNode(&ctx);
                 i = i + 1;
             },
             t.ModOp.switchIdCreateRing => {
-                writeoutPrevNodeId(&ctx, &resCount, ctx.id);
+                writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
                 const maxNodeId = read(u32, operation, 0);
                 try newNodeRing(&ctx, maxNodeId);
                 i = i + 5;
             },
             t.ModOp.switchIdCreateUnsafe => {
-                writeoutPrevNodeId(&ctx, &resCount, ctx.id);
+                writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
@@ -243,7 +247,7 @@ pub fn modify(
             t.ModOp.switchIdUpdate => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
-                    writeoutPrevNodeId(&ctx, &resCount, ctx.id);
+                    writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
                     ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
@@ -263,7 +267,7 @@ pub fn modify(
                 const dstId = read(u32, operation, 4);
                 const refField = read(u8, operation, 8);
                 const prevNodeId = try switchEdgeId(&ctx, srcId, dstId, refField);
-                writeoutPrevNodeId(&ctx, &resCount, prevNodeId);
+                writeoutPrevNodeId(&ctx, &resultIndex, prevNodeId, result);
                 i = i + 10;
             },
             t.ModOp.upsert => {
@@ -296,9 +300,9 @@ pub fn modify(
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = db.getNodeId(node);
-                        writeInt(u32, batch, resCount * 5, id);
-                        writeInt(u8, batch, resCount * 5 + 4, @intFromEnum(errors.ClientError.null));
-                        resCount += 1;
+                        writeInt(u32, batch, resultIndex, id);
+                        writeInt(u8, batch, resultIndex + 4, @intFromEnum(errors.ClientError.null));
+                        resultIndex += 5;
                         nextIndex = endIndex;
                         break;
                     }
@@ -347,13 +351,19 @@ pub fn modify(
 
     // pass id later..
     const dirtyRangesSize = newDirtyRanges.len * 8 + 7;
-    const data = try getResultSlice(false, threadCtx, dirtyRangesSize, modifyId, opType);
+    // this creates uint 8 array
+    // const data = try getResultSlice(false, threadCtx, dirtyRangesSize, modifyId, opType);
 
-    writeInt(u32, data, 0, dirtyRangesSize);
-
+    writeInt(u32, result, 0, resultIndex);
+    writeInt(u32, result, resultIndex, dirtyRangesSize);
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
+    utils.copy(u8, result[resultIndex + 7 ..], newDirtySlice);
 
-    utils.copy(u8, data[7..data.len], newDirtySlice);
+    // threadCtx.modifyResultsIndex = set back to real len (check diff)
+
+    // readSize from startOffset
+
+    // set delta on size
 
     // const data = try getResultSlice(false, threadCtx, newDirtyRanges.len * 8, 67);
 
@@ -363,5 +373,5 @@ pub fn modify(
     // _ = napi.c.memcpy(data.ptr, newDirtyRanges.ptr, newDirtyRanges.len * 8);
     // dirtyRanges[newDirtyRanges.len] = 0.0;
 
-    // writeoutPrevNodeId(&ctx, resCount, ctx.id);
+    // writeoutPrevNodeId(&ctx, resultIndex, ctx.id);
 }

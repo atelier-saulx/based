@@ -5,17 +5,23 @@ import type { Tmp } from './Tmp.js'
 import type { ModOpEnum } from '../../zigTsExports.js'
 
 export class Ctx {
-  constructor(schemaChecksum: number, array: Uint8Array<ArrayBufferLike>) {
-    this.array = array
-    this.max = array.buffer.maxByteLength - 4 // dataLen
-    this.size = array.buffer.byteLength - 4
-    array[4] = 10 // make enum later 1 means normal MODIFY
-    writeUint64(array, schemaChecksum, 5)
+  constructor(schemaChecksum: number, buf: Uint8Array<ArrayBufferLike>) {
+    this.buf = buf
+    buf[4] = 10 // make enum later 1 means normal MODIFY
+    writeUint64(buf, schemaChecksum, 5)
+    this.reset()
+  }
+  reset() {
+    this.index = 1 + 4 + 8 + 4 // 5 for id + type + schema checksum + operation count
+    this.max = this.buf.buffer.maxByteLength - 4
+    this.size = this.buf.buffer.byteLength - 4
+    this.cursor = {}
+    this.batch = {}
   }
   start: number
-  index: number = 5 + 8 // 8 for schema checksum and 5 for mod ID + mod type
+  index: number
   schema: SchemaTypeDef
-  array: Uint8Array<ArrayBufferLike>
+  buf: Uint8Array<ArrayBufferLike>
   max: number
   size: number
   unsafe?: boolean

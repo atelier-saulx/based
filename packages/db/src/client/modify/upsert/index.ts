@@ -51,9 +51,9 @@ export function upsert(
     const start = ctx.index
     ctx.index += 8
     writeAliases(ctx, schema.tree, payload)
-    writeUint32(ctx.array, ctx.index - start, start)
+    writeUint32(ctx.buf, ctx.index - start, start)
     writeCreate(ctx, schema, {}, opts)
-    writeUint32(ctx.array, ctx.index - start, start + 4)
+    writeUint32(ctx.buf, ctx.index - start, start + 4)
     writeUpdate(ctx, schema, 0, payload, opts)
     schedule(db, ctx)
     return new Tmp(ctx)
@@ -80,9 +80,9 @@ export function insert(
     const start = ctx.index
     ctx.index += 8
     writeAliases(ctx, schema.tree, payload)
-    writeUint32(ctx.array, ctx.index - start, start)
+    writeUint32(ctx.buf, ctx.index - start, start)
     writeCreate(ctx, schema, payload, opts)
-    writeUint32(ctx.array, ctx.index - start, start + 4)
+    writeUint32(ctx.buf, ctx.index - start, start + 4)
     schedule(db, ctx)
     return new Tmp(ctx)
   } catch (e) {

@@ -1,13 +1,10 @@
+import { writeUint32 } from '@based/utils'
 import { DbClient } from '../../index.js'
 import { Ctx } from './Ctx.js'
 import { rejectTmp, resolveTmp } from './Tmp.js'
 
 export const reset = (ctx: Ctx) => {
-  ctx.index = 5 + 8 // 5 for id + type + schema
-  ctx.max = ctx.array.buffer.maxByteLength - 4
-  ctx.size = ctx.array.buffer.byteLength - 4
-  ctx.cursor = {}
-  ctx.batch = {}
+  ctx.reset()
 }
 
 export const cancel = (ctx: Ctx, error: Error) => {
@@ -18,10 +15,11 @@ export const cancel = (ctx: Ctx, error: Error) => {
 }
 
 export const consume = (ctx: Ctx): Uint8Array => {
-  if (ctx.index > ctx.array.byteLength) {
+  if (ctx.index > ctx.buf.byteLength) {
     throw new Error('Invalid size - modify buffer length mismatch')
   }
-  const payload = ctx.array.subarray(0, ctx.index)
+  const payload = ctx.buf.subarray(0, ctx.index)
+  writeUint32(ctx.buf, ctx.batch.count, 5 + 8)
   reset(ctx)
   return payload
 }

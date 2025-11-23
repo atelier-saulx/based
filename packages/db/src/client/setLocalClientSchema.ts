@@ -18,7 +18,7 @@ export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
   }
 
   cancel(client.modifyCtx, Error('Schema changed - in-flight modify cancelled'))
-  client.modifyCtx = new Ctx(schema.hash, client.modifyCtx.array)
+  client.modifyCtx = new Ctx(schema.hash, client.modifyCtx.buf)
 
   // resubscribe
   for (const [q, store] of client.subs) {

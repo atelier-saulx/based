@@ -213,20 +213,23 @@ export class DbServer extends DbShared {
     const id = this.modifyCnt++
     writeUint32(payload, id, 0)
     return new Promise((resolve) => {
-      const len = native.modifyThread(payload, this.dbCtxExternal)
+      native.modifyThread(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {
-        const dirtyBlockSize = readUint32(v, 0)
+        const resultSize = readUint32(v, 0)
+
+        const dirtyBlockSize = readUint32(v, resultSize)
         if (dirtyBlockSize > 8) {
+          const dirtyBlockOffset = resultSize + 7 // what is this 7?
           const dirtyBlocks = new Float64Array(
             v.buffer,
-            v.byteOffset + 7,
-            (v.byteLength - 7) / 8,
+            v.byteOffset + dirtyBlockOffset,
+            (v.byteLength - dirtyBlockOffset) / 8,
           )
           this.blockMap.setDirtyBlocks(dirtyBlocks)
         }
         // YOUZI
         console.log('MOD FIRED!')
-        resolve(TMP_EMPTY)
+        resolve(v.subarray(0, resultSize))
       })
     })
   }

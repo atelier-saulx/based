@@ -77,7 +77,7 @@ const writeSortable = (ctx: Ctx) => {
         writeU8(ctx, def.prop)
       }
     }
-    writeUint16(ctx.array, ctx.index - start, index)
+    writeUint16(ctx.buf, ctx.index - start, index)
   }
 }
 
@@ -112,7 +112,7 @@ const writeSortableText = (ctx: Ctx) => {
         writeU8(ctx, lang)
       }
     }
-    writeUint16(ctx.array, ctx.index - start, index)
+    writeUint16(ctx.buf, ctx.index - start, index)
     if (ctx.sortText) {
       buf.set(ctx.schema.separateTextSort.buffer, 0)
     }

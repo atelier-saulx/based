@@ -21,7 +21,7 @@ export const writeCardinalityRaw = (
   for (const item of val) {
     validate(item, def)
     if (typeof item === 'string') {
-      xxHash64(ENCODER.encode(item), ctx.array, ctx.index)
+      xxHash64(ENCODER.encode(item), ctx.buf, ctx.index)
       ctx.index += 8
       continue
     }

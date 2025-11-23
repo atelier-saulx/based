@@ -45,7 +45,7 @@ const writeMergeMain = (ctx: Ctx) => {
       writeU16(ctx, def.len)
       writeFixed(ctx, def, val)
     }
-    writeUint32(ctx.array, ctx.index - start, index)
+    writeUint32(ctx.buf, ctx.index - start, index)
   }
 }
 

@@ -118,7 +118,7 @@ export const writeEdges = (
       const sIndex = ctx.index
       ctx.index += mainFieldsStartSize
       // Add zeroes
-      ctx.array.set(def.edgeMainEmpty, ctx.index)
+      ctx.buf.set(def.edgeMainEmpty, ctx.index)
       // Keep track of written bytes from append fixed
       let startMain = ctx.index
       for (let i = 0; i < mainFields.length; i += 3) {
@@ -126,10 +126,10 @@ export const writeEdges = (
         const value = mainFields[i + 1]
         const operation = mainFields[i + 2]
         const sIndexI = i * 2 + sIndex
-        writeUint16(ctx.array, edge.start, sIndexI)
-        writeUint16(ctx.array, edge.len, sIndexI + 2)
-        ctx.array[sIndexI + 4] = operation
-        ctx.array[sIndexI + 5] = edge.typeIndex
+        writeUint16(ctx.buf, edge.start, sIndexI)
+        writeUint16(ctx.buf, edge.len, sIndexI + 2)
+        ctx.buf[sIndexI + 4] = operation
+        ctx.buf[sIndexI + 5] = edge.typeIndex
         ctx.index = startMain + edge.start
         // Add null support (defaults)
         writeFixed(ctx, edge, value)
@@ -140,5 +140,5 @@ export const writeEdges = (
   }
 
   const size = ctx.index - start + (isSingleRefFix ? 4 : 0)
-  writeUint32(ctx.array, size, index)
+  writeUint32(ctx.buf, size, index)
 }
