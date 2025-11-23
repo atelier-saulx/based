@@ -246,6 +246,7 @@ export class DbServer extends DbShared {
     }
 
     if (this.schema) {
+      console.log('MIGRATE')
       if (schema.hash === this.migrating) {
         await this.once('schema')
         return this.schema.hash
