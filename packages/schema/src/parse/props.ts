@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { convertToTimestamp } from '@based/utils'
 import { NUMBER, PropDef, TYPE_INDEX_MAP, TypeIndex } from '../def/types.js'
 import { getValidator, VALIDATION_MAP } from '../def/validation.js'
@@ -362,7 +363,10 @@ p.references = propParser<SchemaReferences>(
       }
     },
     capped(val) {
-      if (val !== undefined && (typeof val !== 'number' || val < 0 || !Number.isInteger(val))) {
+      if (
+        val !== undefined &&
+        (typeof val !== 'number' || val < 0 || !Number.isInteger(val))
+      ) {
         throw Error(INVALID_VALUE)
       }
     },

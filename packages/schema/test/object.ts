@@ -3,11 +3,13 @@ import { parse } from '@based/schema'
 
 await test('object', () => {
   parse({
-    props: {
-      myObject: {
-        props: {
-          myField: {
-            type: 'boolean',
+    types: {
+      myType: {
+        myObject: {
+          props: {
+            myField: {
+              type: 'boolean',
+            },
           },
         },
       },

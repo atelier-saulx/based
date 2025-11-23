@@ -349,13 +349,11 @@ pub fn modify(
 
     const newDirtyRanges = ctx.dirtyRanges.values();
     const dirtyRangesSize: u32 = @truncate(newDirtyRanges.len * 8);
-
     write(u32, result, resultIndex, 0);
     write(u32, result, dirtyRangesSize, resultIndex);
     resultIndex += 4; // just wrote 4
-    resultIndex = resultIndex + 8 - (resultIndex % 8); // ceil to multiple of 8
+    resultIndex = resultIndex - (resultIndex % 8); // round to multiple of 8
+    resultIndex += 7; // add 7 to compensate for the 9
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
-
-    // copy with offset!
-    utils.copy(u8, result[resultIndex..], newDirtySlice);
+    utils.copy(u8, result[resultIndex .. resultIndex + newDirtySlice.len], newDirtySlice);
 }

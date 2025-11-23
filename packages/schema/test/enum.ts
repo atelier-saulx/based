@@ -4,26 +4,32 @@ import { parse } from '@based/schema'
 
 await test('enum', () => {
   parse({
-    props: {
-      myEnum: {
-        enum: ['published', 'draft'],
-        default: 'published',
+    types: {
+      myType: {
+        myEnum: {
+          enum: ['published', 'draft'],
+          default: 'published',
+        },
       },
     },
   })
 
   parse({
-    props: {
-      myEnum: ['published', 'draft'],
+    types: {
+      myType: {
+        myEnum: ['published', 'draft'],
+      },
     },
   })
 
   throws(() => {
     parse({
-      props: {
-        myEnum: {
-          enum: ['published', 'draft'],
-          default: 'blurdo',
+      types: {
+        myType: {
+          myEnum: {
+            enum: ['published', 'draft'],
+            default: 'blurdo',
+          },
         },
       },
     })

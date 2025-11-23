@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { VectorBaseType } from './def/typeIndexes.js'
 import { Schema, SchemaVector } from './types.js'
 

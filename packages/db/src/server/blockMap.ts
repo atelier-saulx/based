@@ -136,7 +136,7 @@ export class BlockMap {
 
   get isDirty() {
     let dirty = 0
-    this.foreachBlock((block) => dirty |= ~~(block.status === 'dirty'))
+    this.foreachBlock((block) => (dirty |= ~~(block.status === 'dirty')))
     return !!dirty
   }
 
@@ -145,7 +145,9 @@ export class BlockMap {
    * A dirty block is one that is changed in memory but not yet persisted in the
    * file system.
    */
-  foreachDirtyBlock(cb: (typeId: number, start: number, end: number, block: Block) => void) {
+  foreachDirtyBlock(
+    cb: (typeId: number, start: number, end: number, block: Block) => void,
+  ) {
     this.foreachBlock((block) => {
       if (block.status === 'dirty') {
         const [typeId, start] = destructureTreeKey(block.key)
@@ -163,7 +165,11 @@ export class BlockMap {
     return this.#h.digest() as Uint8Array
   }
 
-  updateBlock(key: number, hash: BlockHash, status: BlockStatus = 'inmem'): Block {
+  updateBlock(
+    key: number,
+    hash: BlockHash,
+    status: BlockStatus = 'inmem',
+  ): Block {
     const [typeId, start] = destructureTreeKey(key)
     const type = this.#types[typeId]
     if (!type) {
@@ -203,9 +209,9 @@ export class BlockMap {
   }
 
   static setIoPromise(block: Block): Promise<void> {
-      const p = block.ioPromise = Promise.withResolvers<void>()
-      p.promise.then(() => block.ioPromise = null)
-      return p.promise;
+    const p = (block.ioPromise = Promise.withResolvers<void>())
+    p.promise.then(() => (block.ioPromise = null))
+    return p.promise
   }
 
   getBlock(key: number) {
