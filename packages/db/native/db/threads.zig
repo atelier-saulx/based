@@ -315,11 +315,9 @@ pub const Threads = struct {
                         _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                     },
                     t.OpType.saveBlock => {
-                        std.debug.print("SAVE BLOCK\n", .{});
                         try dump.saveBlock(threadCtx, self.ctx, q, op);
                     },
                     t.OpType.saveCommon => {
-                        std.debug.print("SAVE COMMON\n", .{});
                         try dump.saveCommon(threadCtx, self.ctx, q, op);
                     },
                     else => {
@@ -359,15 +357,12 @@ pub const Threads = struct {
                             try Modify.modify(threadCtx, m, self.ctx, op);
                         },
                         t.OpType.loadBlock => {
-                            std.debug.print("LOAD\n", .{});
                             try dump.loadBlock(threadCtx, self.ctx, m, op);
                         },
                         t.OpType.unloadBlock => {
-                            std.debug.print("UNLOAD\n", .{});
                             try dump.unloadBlock(threadCtx, self.ctx, m, op);
                         },
                         t.OpType.loadCommon => {
-                            std.debug.print("LOAD COMMON\n", .{});
                             try dump.loadCommon(threadCtx, self.ctx, m, op);
                         },
                         t.OpType.createType => {
