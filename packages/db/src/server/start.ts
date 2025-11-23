@@ -26,11 +26,7 @@ export type StartOpts = {
   queryThreads?: number
 }
 
-const handleQueryResponse = (
-  db: DbServer,
-  type: OpTypeEnum,
-  arr: ArrayBuffer[] | null,
-) => {
+const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
   if (!arr) {
     return
   }
@@ -43,6 +39,7 @@ const handleQueryResponse = (
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
         const id = readUint32(v, i + 4)
+        const type: OpTypeEnum = v[i + 8] as OpTypeEnum
         db.execOpListeners(type, id, v.subarray(i + 9, i + size))
         i += size
       }
@@ -50,14 +47,11 @@ const handleQueryResponse = (
   }
 }
 
-const handleModifyResponse = (
-  db: DbServer,
-  type: OpTypeEnum,
-  arr: ArrayBuffer,
-) => {
+const handleModifyResponse = (db: DbServer, arr: ArrayBuffer) => {
   const v = new Uint8Array(arr)
   for (let i = 0; i < v.byteLength; ) {
     const size = readUint32(v, i)
+    const type: OpTypeEnum = v[i + 8] as OpTypeEnum
     const id = readUint32(v, i + 4)
     db.execOpListeners(type, id, v.subarray(i + 9, i + size))
     i += size
@@ -75,11 +69,11 @@ export async function start(db: DbServer, opts: StartOpts) {
   await mkdir(path, { recursive: true }).catch(noop)
 
   db.dbCtxExternal = native.start((id: OpTypeEnum, buffer: any) => {
-    // if larger then 126 means IS_Modify
-    if (id > 126) {
-      handleModifyResponse(db, id, buffer)
-    } else {
-      handleQueryResponse(db, id, buffer)
+    // maybe just use OpType here...
+    if (id === 1) {
+      handleQueryResponse(db, buffer)
+    } else if (id === 2) {
+      handleModifyResponse(db, buffer)
     }
   })
 

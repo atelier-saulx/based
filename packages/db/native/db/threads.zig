@@ -178,7 +178,9 @@ pub const Threads = struct {
         }
     }
 
-    fn modifyNotPending(self: *Threads, op: t.OpType) void {
+    fn modifyNotPending(
+        self: *Threads,
+    ) void {
         for (self.threads) |thread| {
             if (thread.pendingModifies != 0) {
                 return;
@@ -186,7 +188,7 @@ pub const Threads = struct {
         }
         self.modifyDone.signal();
         if (!self.jsModifyBridgeStaged) {
-            self.ctx.jsBridge.call(op);
+            self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
             self.jsModifyBridgeStaged = true;
         }
         if (self.nextQueryQueue.items.len > 0) {
@@ -303,7 +305,7 @@ pub const Threads = struct {
 
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
-                        self.ctx.jsBridge.call(op);
+                        self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
                     }
 
                     if (self.nextModifyQueue.items.len > 0) {
@@ -377,7 +379,7 @@ pub const Threads = struct {
                     self.pendingModifies -= 1;
                     threadCtx.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
-                        self.modifyNotPending(op);
+                        self.modifyNotPending();
                     }
                     self.mutex.unlock();
                 } else {
@@ -385,7 +387,7 @@ pub const Threads = struct {
                     self.mutex.lock();
                     threadCtx.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
-                        self.modifyNotPending(op);
+                        self.modifyNotPending();
                     }
                     self.mutex.unlock();
                 }
