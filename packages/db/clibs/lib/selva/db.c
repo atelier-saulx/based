@@ -727,4 +727,6 @@ int selva_node_block_hash(struct SelvaDb *db, struct SelvaTypeEntry *type, node_
     *hash_out = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
     selva_hash_free_state(tmp_hash_state);
+
+    return 0;
 }
