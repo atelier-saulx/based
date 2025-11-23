@@ -530,8 +530,8 @@ pub fn getPrevNode(typeEntry: Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
 
-pub fn getNodeBlockHash(db: *DbCtx, typeEntry: Type, start: u32, hashOut: *SelvaHash128) void {
-    selva.selva_node_block_hash(db.selva, typeEntry, start, hashOut);
+pub fn getNodeBlockHash(db: *DbCtx, typeEntry: Type, start: u32, hashOut: *SelvaHash128) c_int {
+    return selva.selva_node_block_hash(db.selva, typeEntry, start, hashOut);
 }
 
 pub fn setAlias(typeEntry: Type, id: u32, field: u8, aliasName: []u8) !u32 {

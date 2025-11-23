@@ -75,15 +75,6 @@ const native = {
     return new Uint32Array(db.getSchemaIds(dbCtx))
   },
 
-  getNodeBlockHash: (
-    dbCtx: any,
-    typeId: number,
-    start: number,
-    bufOut: Uint8Array,
-  ) => {
-    return db.getNodeBlockHash(dbCtx, typeId, start, bufOut)
-  },
-
   createCompressor() {
     return db.createCompressor()
   },

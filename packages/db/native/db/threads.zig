@@ -6,6 +6,7 @@ const DbCtx = @import("./ctx.zig").DbCtx;
 const utils = @import("../utils.zig");
 const Modify = @import("../modify/modify.zig");
 const selva = @import("../selva.zig").c;
+const db = @import("db.zig");
 const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
 const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 const deflate = @import("../deflate.zig");
@@ -259,6 +260,20 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 switch (op) {
+                    t.OpType.blockHash => {
+                        const data = try getResultSlice(true, threadCtx, 20, 0, op);
+                        const start = read(u32, q, 0);
+                        const typeCode = read(u16, q, 4);
+                        const typeEntry = selva.selva_get_type_by_index(self.ctx.selva.?, typeCode);
+                        var err: c_int = selva.SELVA_EINTYPE;
+
+                        if (typeEntry) |te| {
+                            var hash: SelvaHash128 = 0;
+                            err = db.getNodeBlockHash(self.ctx, te, start, &hash);
+                            _ = selva.memcpy(data[4..20].ptr, &hash, @sizeOf(@TypeOf(hash)));
+                        }
+                        _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                    },
                     t.OpType.saveBlock => {
                         const data = try getResultSlice(true, threadCtx, 26, 0, op);
                         const typeCode = read(u16, q, 9);
@@ -267,14 +282,14 @@ pub const Threads = struct {
                         _ = selva.memcpy(data[4..10].ptr, q[5..11].ptr, 6);
                         var hash: SelvaHash128 = 0;
                         const err = dump.saveBlock(self.ctx, typeCode, start, filename, &hash);
-                        _ = selva.memcpy(data[0..4].ptr, &err, 4);
-                        _ = selva.memcpy(data[10..16].ptr, &hash, 16);
+                        _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                        _ = selva.memcpy(data[10..16].ptr, &hash, @sizeOf(@TypeOf(hash)));
                     },
                     t.OpType.saveCommon => {
                         const data = try getResultSlice(true, threadCtx, 4, 0, op);
                         const filename = q[5 .. q.len - 5];
                         const err = dump.saveCommon(self.ctx, filename);
-                        _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                        _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                     },
                     else => {
                         try getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
@@ -324,9 +339,9 @@ pub const Threads = struct {
                             const errlog = data[16 .. data.len - 16];
                             var hash: SelvaHash128 = 0;
                             const err = dump.loadBlock(self.ctx, typeCode, start, filename, errlog, &hash);
-                            _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                             _ = selva.memcpy(data[4..10].ptr, m[5..11].ptr, 6);
-                            _ = selva.memcpy(data[10..16].ptr, &hash, 16);
+                            _ = selva.memcpy(data[10..16].ptr, &hash, @sizeOf(@TypeOf(hash)));
                         },
                         t.OpType.unloadBlock => {
                             std.debug.print("UNLOAD\n", .{});
@@ -337,9 +352,9 @@ pub const Threads = struct {
 
                             var hash: SelvaHash128 = 0;
                             const err = dump.unloadBlock(self.ctx, typeCode, start, filename, &hash);
-                            _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                             _ = selva.memcpy(data[4..10].ptr, m[5..11].ptr, 6);
-                            _ = selva.memcpy(data[10..16].ptr, &hash, 16);
+                            _ = selva.memcpy(data[10..16].ptr, &hash, @sizeOf(@TypeOf(hash)));
                         },
                         t.OpType.loadCommon => {
                             std.debug.print("LOAD COMMON\n", .{});
@@ -348,7 +363,7 @@ pub const Threads = struct {
 
                             const errlog = data[5 .. data.len - 5];
                             const err = dump.loadCommon(self.ctx, filename, errlog);
-                            _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                         },
                         else => {},
                     }
