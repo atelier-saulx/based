@@ -1,4 +1,4 @@
-import { readUint32, wait, writeUint32 } from '@based/utils'
+import { combineToNumber, readUint32, wait, writeUint32 } from '@based/utils'
 import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { BasedDb } from '../../src/index.js'
 import native from '../../src/native.js'
@@ -10,6 +10,17 @@ await test('include', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => db.stop())
+
+  var d = Date.now()
+
+  const map: any = new Map()
+
+  for (let i = 0; i < 1e6; i++) {
+    map.set(combineToNumber(i, 1), (v) => {
+      // --
+    })
+  }
+  console.log('->', Date.now() - d, 'ms')
 
   await db.setSchema({
     types: {

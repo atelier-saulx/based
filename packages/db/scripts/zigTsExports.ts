@@ -313,6 +313,7 @@ const parseZig = (input: string): string => {
       }
     })
 
+    // 1. Export Type
     output += `export type ${name} = {\n`
     fields.forEach((f) => {
       if (!f.isPadding) {
@@ -324,6 +325,7 @@ const parseZig = (input: string): string => {
     const byteSize = Math.ceil(totalBits / 8)
     output += `export const ${name}ByteSize = ${byteSize}\n\n`
 
+    // 2. Export Main Write Function
     output += `export const write${name} = (\n`
     output += `  buf: Uint8Array,\n`
     output += `  header: ${name},\n`
@@ -441,6 +443,133 @@ const parseZig = (input: string): string => {
     }
 
     output += `  return offset\n`
+    output += `}\n\n`
+
+    // 3. Export Props Writers
+    output += `export const write${name}Props = {\n`
+
+    // We need to re-simulate the layout to determine offsets/bits
+    let propsCurrentOffset = 0 // For non-packed (byte offset)
+    let propsCurrentBitGlobal = 0 // For packed (bit offset)
+
+    if (!isPacked) {
+      fields.forEach((f) => {
+        const fName = f.name
+        if (f.isPadding) return
+
+        const prim = getPrimitive(
+          body
+            .find((l) => l.includes(`${fName}:`))
+            ?.match(regexStructField)?.[2] || 'u8',
+        )
+        const typeTs = f.type
+
+        output += `  ${fName}: (buf: Uint8Array, value: ${typeTs}, offset: number) => {\n`
+
+        // Calculate static offset relative to struct start
+        const offStr =
+          propsCurrentOffset === 0 ? 'offset' : `offset + ${propsCurrentOffset}`
+
+        switch (prim) {
+          case 'u8':
+          case 'LangCode':
+            output += `    buf[${offStr}] = value\n`
+            break
+          case 'bool':
+            output += `    buf[${offStr}] = value ? 1 : 0\n`
+            break
+          case 'i8':
+            output += `    buf[${offStr}] = value\n`
+            break
+          case 'u16':
+            output += `    writeUint16(buf, value, ${offStr})\n`
+            break
+          case 'i16':
+            output += `    writeInt16(buf, value, ${offStr})\n`
+            break
+          case 'u32':
+            output += `    writeUint32(buf, value, ${offStr})\n`
+            break
+          case 'i32':
+            output += `    writeInt32(buf, value, ${offStr})\n`
+            break
+          case 'f32':
+            output += `    writeFloatLE(buf, value, ${offStr})\n`
+            break
+          case 'u64':
+          case 'usize':
+            output += `    writeUint64(buf, value, ${offStr})\n`
+            break
+          case 'i64':
+            output += `    writeInt64(buf, value, ${offStr})\n`
+            break
+          case 'f64':
+            output += `    writeDoubleLE(buf, value, ${offStr})\n`
+            break
+          default:
+          // Unknown or handled by bitSize below
+        }
+        propsCurrentOffset += Math.ceil(f.bitSize / 8)
+        output += `  },\n`
+      })
+    } else {
+      // Packed Props
+      for (let i = 0; i < fields.length; i++) {
+        const f = fields[i]
+        const startBit = propsCurrentBitGlobal
+        propsCurrentBitGlobal += f.bitSize
+
+        if (f.isPadding) continue
+
+        output += `  ${f.name}: (buf: Uint8Array, value: ${f.type}, offset: number) => {\n`
+
+        // Calculate byte offset relative to struct start
+        const byteOffset = Math.floor(startBit / 8)
+        const offStr = byteOffset === 0 ? 'offset' : `offset + ${byteOffset}`
+
+        if (startBit % 8 === 0 && [8, 16, 32, 64].includes(f.bitSize)) {
+          const valWithTernary = f.isBoolean ? `(value ? 1 : 0)` : `value`
+
+          if (f.bitSize === 8) {
+            output += `    buf[${offStr}] = ${valWithTernary}\n`
+          } else if (f.bitSize === 16) {
+            output += `    writeUint16(buf, value, ${offStr})\n`
+          } else if (f.bitSize === 32) {
+            output += `    writeUint32(buf, value, ${offStr})\n`
+          } else if (f.bitSize === 64) {
+            output += `    writeUint64(buf, value, ${offStr})\n`
+          }
+        } else {
+          let remainingBits = f.bitSize
+          let valExpression = `value`
+          if (f.isBoolean) valExpression = `(${valExpression} ? 1 : 0)`
+
+          let localCurrentBitGlobal = startBit
+
+          let bitsProcessed = 0
+          while (remainingBits > 0) {
+            const bitInByte = localCurrentBitGlobal % 8
+            const bitsCanFitInByte = 8 - bitInByte
+            const bitsToWrite = Math.min(remainingBits, bitsCanFitInByte)
+
+            const mask = (1 << bitsToWrite) - 1
+
+            // Byte index relative to struct start
+            const currentByteIndex = Math.floor(localCurrentBitGlobal / 8)
+            const accessStr =
+              currentByteIndex === 0 ? 'offset' : `offset + ${currentByteIndex}`
+
+            output += `    buf[${accessStr}] |= ((${valExpression} >>> ${bitsProcessed}) & ${mask}) << ${bitInByte}\n`
+
+            localCurrentBitGlobal += bitsToWrite
+            bitsProcessed += bitsToWrite
+            remainingBits -= bitsToWrite
+          }
+        }
+        output += `  },\n`
+      }
+    }
+
     output += `}\n\n`
   }
 
