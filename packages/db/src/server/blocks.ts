@@ -291,6 +291,12 @@ export async function unloadBlock(
 
 async function getBlockHash(db: DbServer, typeCode: number, start: number): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
+    const msg = new Uint8Array(11)
+
+    msg[4] = OpType.saveCommon
+    writeUint32(msg, start, 5)
+    writeUint16(msg, typeCode, 9)
+
     db.addOpOnceListener(OpType.blockHash, 0, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
@@ -299,6 +305,8 @@ async function getBlockHash(db: DbServer, typeCode: number, start: number): Prom
         resolve(buf.slice(4, 20))
       }
     })
+
+    native.getQueryBufThread(msg, db.dbCtxExternal)
   })
 }
 
