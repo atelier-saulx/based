@@ -14,12 +14,13 @@ export const OpType = {
   alias: 3,
   aggregates: 4,
   aggregatesCountType: 5,
+  blockHash: 42,
   saveBlock: 67,
   saveCommon: 69,
-  modify: 10,
-  loadBlock: 22,
-  unloadBlock: 33,
-  loadCommon: 44,
+  modify: 127,
+  loadBlock: 128,
+  unloadBlock: 129,
+  loadCommon: 130,
 } as const
 
 /**
@@ -29,6 +30,7 @@ export const OpType = {
   alias, 
   aggregates, 
   aggregatesCountType, 
+  blockHash, 
   saveBlock, 
   saveCommon, 
   modify, 

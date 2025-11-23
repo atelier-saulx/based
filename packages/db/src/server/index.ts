@@ -194,7 +194,7 @@ export class DbServer extends DbShared {
       const op: OpTypeEnum = buf[4]
       const queryListeners = this.opListeners.get(op)
       if (queryListeners.get(id)) {
-        console.log('Query allready staged dont exec again', id)
+        console.log('💤 Query allready staged dont exec again', id)
       } else {
         native.getQueryBufThread(buf, this.dbCtxExternal)
       }
