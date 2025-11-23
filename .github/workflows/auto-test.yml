@@ -71,14 +71,10 @@ jobs:
         if: always()
         with:
           webhook-url: ${{ env.DISCORD_WEBHOOK_URL }}
-          content: |
-            ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           username: GitHub
-          avatar-url: "https://cdn.discordapp.com/avatars/999680196040982618/df91181b3f1cf0ef1592fbe18e0962d7.webp"
-          embed-author-name: ${{ github.actor.login }}
-          embed-author-url: ${{ github.actor.url }}
-          embed-author-icon-url: ${{ github.actor.avatar_url }}
-          embed-title: ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
-          embed-description: `${{ github.event.payload.push.ref}}, commit: ${{ github.event.payload.push.head}}`
+          avatar-url: 'https://cdn.discordapp.com/avatars/999680196040982618/df91181b3f1cf0ef1592fbe18e0962d7.webp'
+          embed-author-name: ${{ github.actor }}
+          embed-author-url: ${{ github.server_url }}/${{ github.actor }}
+          embed-author-icon-url: ${{ github.actor_id }}
+          embed-title: "${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}"
+          embed-description: '${{ github.ref }}, commit: ${{ github.sha }}'
