@@ -1,7 +1,7 @@
-import { DbSchema } from '@based/schema'
+import type { SchemaOut } from '@based/schema'
 
 export type EventMap = {
-  schema: DbSchema
+  schema: SchemaOut
   info: string
   error: string
 }

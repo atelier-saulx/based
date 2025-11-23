@@ -11,7 +11,7 @@ import {
   loadBlockRaw,
 } from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
-import { DbSchema, deSerialize } from '@based/schema'
+import { deSerialize, type SchemaOut } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
 import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
@@ -95,7 +95,7 @@ export async function start(db: DbServer, opts: StartOpts) {
     // Load schema
     const schema = await readFile(join(path, SCHEMA_FILE)).catch(noop)
     if (schema) {
-      const s = deSerialize(schema) as DbSchema
+      const s = deSerialize(schema)
       setSchemaOnServer(db, s)
     } else {
       const schemaJson = await readFile(join(path, SCHEMA_FILE_DEPRECATED))

@@ -1,12 +1,6 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import {
-  StrictSchema,
-  MigrateFns,
-  SchemaChecksum,
-  strictSchemaToDbSchema,
-  MAX_ID,
-} from '@based/schema'
+import { MigrateFns, MAX_ID, type SchemaOut } from '@based/schema'
 import { start, StartOpts } from './start.js'
 import {
   BlockMap,
@@ -16,7 +10,7 @@ import {
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import { combineToNumber, readUint32, wait, writeUint32 } from '@based/utils'
+import { readUint32, wait, writeUint32 } from '@based/utils'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,
@@ -26,9 +20,6 @@ import {
 import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
 import { OpType, OpTypeEnum } from '../zigTsExports.js'
-
-// YOUZI REPLACE
-const TMP_EMPTY = new Uint8Array(1000000)
 
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
@@ -235,14 +226,12 @@ export class DbServer extends DbShared {
   }
 
   async setSchema(
-    strictSchema: StrictSchema,
+    schema: SchemaOut,
     transformFns?: MigrateFns,
-  ): Promise<SchemaChecksum> {
+  ): Promise<SchemaOut['hash']> {
     if (this.stopped || !this.dbCtxExternal) {
       throw new Error('Db is stopped')
     }
-
-    const schema = strictSchemaToDbSchema(strictSchema)
 
     if (schema.hash === this.schema?.hash) {
       return schema.hash

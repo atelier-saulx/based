@@ -1,5 +1,5 @@
 // import * as deflate from 'fflate'
-import { StrictSchema, stringFormats } from './types.js'
+import { stringFormats } from './types.js'
 import { ENUM, REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
 import {
   readDoubleLE,
@@ -13,6 +13,7 @@ import {
   ENCODER,
   DECODER,
 } from '@based/utils'
+import type { SchemaOut } from './schema/schema.js'
 
 const UINT8 = 245
 const FALSE = 246
@@ -594,9 +595,9 @@ export const deSerializeInner = (
   return i - start
 }
 
-export const deSerialize = (buf: Uint8Array): StrictSchema => {
+export const deSerialize = (buf: Uint8Array): SchemaOut => {
   // if first byte is deflate
   const schema: any = {}
   deSerializeInner(buf, schema, 0, false)
-  return schema as StrictSchema
+  return schema as SchemaOut
 }

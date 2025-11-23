@@ -2,11 +2,10 @@
 import {
   isPropType,
   SchemaObject,
-  StrictSchemaType,
-  getPropType,
   SchemaLocales,
   SchemaHooks,
   getValidator,
+  type SchemaOut,
 } from '../index.js'
 import { setByPath } from '@based/utils'
 import {
@@ -24,7 +23,6 @@ import {
   CARDINALITY,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
-import { StrictSchema } from '../types.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
 import { makeSeparateSort } from './makeSeparateSort.js'
 import {
@@ -39,25 +37,21 @@ import {
 import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
+import type { SchemaType } from '../schema/type.js'
 
-export const updateTypeDefs = (schema: StrictSchema) => {
+export const updateTypeDefs = (schema: SchemaOut) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   const schemaTypesParsedById: { [id: number]: SchemaTypeDef } = {}
 
+  let typeIdCnt = 1
   for (const typeName in schema.types) {
     const type = schema.types[typeName]
-    if (!type.id) {
-      throw new Error('NEED ID ON TYPE')
-    }
-    const def = createSchemaTypeDef(
-      typeName,
-      type,
-      schema.locales ?? {
-        en: {},
-      },
-    )
+    const locales = schema.locales ?? { en: {} }
+    const result = createEmptyDef(typeName, type, locales)
+    result.id = typeIdCnt++
+    const def = createSchemaTypeDef(typeName, type, locales, result)
     schemaTypesParsed[typeName] = def
-    schemaTypesParsedById[type.id] = def
+    schemaTypesParsedById[def.id] = def
   }
 
   for (const schema of Object.values(schemaTypesParsed)) {
@@ -110,20 +104,13 @@ export const updateTypeDefs = (schema: StrictSchema) => {
 
 const createSchemaTypeDef = (
   typeName: string,
-  type: StrictSchemaType | SchemaObject,
+  type: SchemaType<true>,
   locales: Partial<SchemaLocales>,
-  result: Partial<SchemaTypeDef> = createEmptyDef(typeName, type, locales),
+  result: Partial<SchemaTypeDef>,
   path: string[] = [],
   top: boolean = true,
 ): SchemaTypeDef => {
   if (top) {
-    if (result.id == 0) {
-      if ('id' in type) {
-        result.id = type.id
-      } else {
-        throw new Error(`Invalid schema type id ${result.type}`)
-      }
-    }
     if (result.blockCapacity == 0) {
       if ('blockCapacity' in type) {
         if (

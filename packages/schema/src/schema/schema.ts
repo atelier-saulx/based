@@ -9,7 +9,7 @@ import {
   type RequiredIfStrict,
 } from './shared.js'
 import { parseType, type SchemaType } from './type.js'
-import { langCodesMap, type LangName } from './lang.js'
+import { langCodesMap, type LangName } from '../lang.js'
 import { hash } from '@based/hash'
 import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
@@ -19,7 +19,7 @@ export type SchemaLocale = {
   required?: boolean
   fallback?: LangName // not multiple - 1 is enough else it becomes too complex
 }
-type SchemaLocales = Partial<Record<LangName, true | SchemaLocale>>
+export type SchemaLocales = Partial<Record<LangName, true | SchemaLocale>>
 
 type MigrateFn = (
   node: Record<string, any>,

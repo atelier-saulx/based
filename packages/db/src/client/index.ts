@@ -1,9 +1,7 @@
 import {
-  MigrateFns,
+  type MigrateFns,
   parse,
-  Schema,
-  StrictSchema,
-  SchemaChecksum,
+  type SchemaOut,
   type SchemaIn,
 } from '@based/schema'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
@@ -78,11 +76,11 @@ export class DbClient extends DbShared {
   async setSchema(
     schema: SchemaIn,
     transformFns?: MigrateFns,
-  ): Promise<SchemaChecksum> {
+  ): Promise<SchemaOut['hash']> {
     const strictSchema = parse(schema).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
-      strictSchema as StrictSchema,
+      strictSchema as SchemaOut,
       transformFns,
     )
     if (this.stopped) {

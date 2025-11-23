@@ -1,9 +1,11 @@
-import { SchemaLocales, SchemaObject, StrictSchemaType } from '../types.js'
 import { hashObjectIgnoreKeyOrder } from '@based/hash'
+import type { SchemaObject } from '../schema/object.js'
+import type { SchemaType } from '../schema/type.js'
+import type { SchemaLocales } from '../schema/schema.js'
 
 export const createEmptyDef = (
   typeName: string,
-  type: StrictSchemaType | SchemaObject,
+  type: SchemaType<true> | SchemaObject<true>,
   locales: Partial<SchemaLocales>,
 ) => {
   return {
