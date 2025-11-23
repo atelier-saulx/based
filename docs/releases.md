@@ -131,7 +131,7 @@ Note that version numbers may change due to nightly releases.
   - Automatic cohesive updates across all suite of packages
   - Start of CI/CD
 
-## SDK v1.1.2 (DB v0.2.2) (Nov 7th 2025)
+## SDK v1.1.\* (DB v0.2.2) (Nov 7th 2025)
 
 - Handover from October plan
 - Expose function 'entrypoint' on context
@@ -162,7 +162,7 @@ Note that version numbers may change due to nightly releases.
 - Fixed bug with expire syntax + dependent
 - Fixed bug with edges and migrations
 
-## SDK 1.v0.4.\* (Dec 1st 2025)
+## SDK v1.2.\* (Dec 1st 2025)
 
 - Fully automated partial loading & offloading of large databases
 - Sorted results and Range on aggregations
@@ -170,7 +170,8 @@ Note that version numbers may change due to nightly releases.
 - Partial loading of large databases (Experimental) better memory and concurrency management
 - Filter engine working for partials - automatically loads and unloads blocks when visiting
 - JS function support for include, filter, and aggregate, allowing users to create custom query functions
-- Parquet exporter
+- ~~Parquet exporter~~
+- Splitted tests into Functional core tests, scenarios and performance tests
 - Automatic testing for Linux (all the tests in CI/CD setup)
 - Cloud v.1 nightly
   - Orchestrator working on new Based Db
