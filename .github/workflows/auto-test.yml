@@ -25,6 +25,21 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Setup Docker
+        run: |
+          if ! command -v docker &> /dev/null; then
+            echo "🐳 Docker not found on this runner. Installing..."
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            
+            sudo systemctl start docker || sudo service docker start
+          else
+            echo "✅ Docker is already installed."
+          fi
+
+          echo "🔧 Fixing Docker socket permissions..."
+          sudo chmod 666 /var/run/docker.sock
+
       - name: Build Builder Image
         run: docker build -t based-db-clibs-build-linux_aarch64 -f podman/Containerfile .
 
