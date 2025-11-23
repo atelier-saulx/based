@@ -11,7 +11,11 @@ const parseZig = (input: string): string => {
   writeUint16, writeInt16, 
   writeUint32, writeInt32, 
   writeUint64, writeInt64, 
-  writeFloatLE, writeDoubleLE 
+  writeFloatLE, writeDoubleLE,
+  readUint16, readInt16, 
+  readUint32, readInt32, 
+  readUint64, readInt64, 
+  readFloatLE, readDoubleLE
 } from '@based/utils'\n\n`
 
   // Symbol tables
@@ -244,8 +248,20 @@ const parseZig = (input: string): string => {
       }
     })
 
+    // 1. Enum Map
     output += `export const ${name} = {\n`
     pairs.forEach((p) => (output += `  ${p.key}: ${p.val},\n`))
+    output += `} as const\n\n`
+
+    // 2. Inverse Map
+    output += `export const ${name}Inverse = {\n`
+    pairs.forEach((p) => {
+      let key = p.val
+      if (!/^[-]?\d/.test(key)) {
+        key = `[${key}]`
+      }
+      output += `  ${key}: '${p.key}',\n`
+    })
     output += `} as const\n\n`
 
     output += `/**\n`
@@ -448,9 +464,8 @@ const parseZig = (input: string): string => {
     // 3. Export Props Writers
     output += `export const write${name}Props = {\n`
 
-    // We need to re-simulate the layout to determine offsets/bits
-    let propsCurrentOffset = 0 // For non-packed (byte offset)
-    let propsCurrentBitGlobal = 0 // For packed (bit offset)
+    let propsCurrentOffset = 0
+    let propsCurrentBitGlobal = 0
 
     if (!isPacked) {
       fields.forEach((f) => {
@@ -465,8 +480,6 @@ const parseZig = (input: string): string => {
         const typeTs = f.type
 
         output += `  ${fName}: (buf: Uint8Array, value: ${typeTs}, offset: number) => {\n`
-
-        // Calculate static offset relative to struct start
         const offStr =
           propsCurrentOffset === 0 ? 'offset' : `offset + ${propsCurrentOffset}`
 
@@ -506,8 +519,6 @@ const parseZig = (input: string): string => {
           case 'f64':
             output += `    writeDoubleLE(buf, value, ${offStr})\n`
             break
-          default:
-          // Unknown or handled by bitSize below
         }
         propsCurrentOffset += Math.ceil(f.bitSize / 8)
         output += `  },\n`
@@ -523,7 +534,6 @@ const parseZig = (input: string): string => {
 
         output += `  ${f.name}: (buf: Uint8Array, value: ${f.type}, offset: number) => {\n`
 
-        // Calculate byte offset relative to struct start
         const byteOffset = Math.floor(startBit / 8)
         const offStr = byteOffset === 0 ? 'offset' : `offset + ${byteOffset}`
 
@@ -543,24 +553,19 @@ const parseZig = (input: string): string => {
           let remainingBits = f.bitSize
           let valExpression = `value`
           if (f.isBoolean) valExpression = `(${valExpression} ? 1 : 0)`
-
           let localCurrentBitGlobal = startBit
-
           let bitsProcessed = 0
           while (remainingBits > 0) {
             const bitInByte = localCurrentBitGlobal % 8
             const bitsCanFitInByte = 8 - bitInByte
             const bitsToWrite = Math.min(remainingBits, bitsCanFitInByte)
-
             const mask = (1 << bitsToWrite) - 1
 
-            // Byte index relative to struct start
             const currentByteIndex = Math.floor(localCurrentBitGlobal / 8)
             const accessStr =
               currentByteIndex === 0 ? 'offset' : `offset + ${currentByteIndex}`
 
             output += `    buf[${accessStr}] |= ((${valExpression} >>> ${bitsProcessed}) & ${mask}) << ${bitInByte}\n`
-
             localCurrentBitGlobal += bitsToWrite
             bitsProcessed += bitsToWrite
             remainingBits -= bitsToWrite
@@ -569,7 +574,286 @@ const parseZig = (input: string): string => {
         output += `  },\n`
       }
     }
+    output += `}\n\n`
 
+    // 4. Export Reader
+    output += `export const read${name} = (\n`
+    output += `  buf: Uint8Array,\n`
+    output += `  offset: number,\n`
+    output += `): ${name} => {\n`
+    output += `  const value: ${name} = {\n`
+
+    let readCurrentOffset = 0
+    let readCurrentBitGlobal = 0
+
+    if (!isPacked) {
+      fields.forEach((f) => {
+        const fName = f.name
+        if (f.isPadding) return
+
+        const prim = getPrimitive(
+          body
+            .find((l) => l.includes(`${fName}:`))
+            ?.match(regexStructField)?.[2] || 'u8',
+        )
+        const offStr =
+          readCurrentOffset === 0 ? 'offset' : `offset + ${readCurrentOffset}`
+        let readExpr = ''
+
+        switch (prim) {
+          case 'u8':
+          case 'LangCode':
+            readExpr = `buf[${offStr}]`
+            break
+          case 'bool':
+            readExpr = `buf[${offStr}] === 1`
+            break
+          case 'i8':
+            readExpr = `buf[${offStr}]`
+            break
+          case 'u16':
+            readExpr = `readUint16(buf, ${offStr})`
+            break
+          case 'i16':
+            readExpr = `readInt16(buf, ${offStr})`
+            break
+          case 'u32':
+            readExpr = `readUint32(buf, ${offStr})`
+            break
+          case 'i32':
+            readExpr = `readInt32(buf, ${offStr})`
+            break
+          case 'f32':
+            readExpr = `readFloatLE(buf, ${offStr})`
+            break
+          case 'u64':
+          case 'usize':
+            readExpr = `readUint64(buf, ${offStr})`
+            break
+          case 'i64':
+            readExpr = `readInt64(buf, ${offStr})`
+            break
+          case 'f64':
+            readExpr = `readDoubleLE(buf, ${offStr})`
+            break
+        }
+        // Add 'as Type' if enum
+        if (f.type.endsWith('Enum')) {
+          readExpr = `(${readExpr}) as ${f.type}`
+        } else if (f.type === 'TypeId') {
+          readExpr = `(${readExpr}) as TypeId`
+        }
+
+        output += `    ${fName}: ${readExpr},\n`
+        readCurrentOffset += Math.ceil(f.bitSize / 8)
+      })
+    } else {
+      // Packed Readers
+      for (let i = 0; i < fields.length; i++) {
+        const f = fields[i]
+        const startBit = readCurrentBitGlobal
+        readCurrentBitGlobal += f.bitSize
+
+        if (f.isPadding) continue
+
+        const byteOffset = Math.floor(startBit / 8)
+        const offStr = byteOffset === 0 ? 'offset' : `offset + ${byteOffset}`
+        let readExpr = ''
+
+        if (startBit % 8 === 0 && [8, 16, 32, 64].includes(f.bitSize)) {
+          if (f.bitSize === 8) readExpr = `buf[${offStr}]`
+          else if (f.bitSize === 16) readExpr = `readUint16(buf, ${offStr})`
+          else if (f.bitSize === 32) readExpr = `readUint32(buf, ${offStr})`
+          else if (f.bitSize === 64) readExpr = `readUint64(buf, ${offStr})`
+
+          if (f.isBoolean) readExpr = `(${readExpr}) === 1`
+        } else {
+          // Bitwise Read
+          let expressionParts: string[] = []
+          let remainingBits = f.bitSize
+          let localCurrentBitGlobal = startBit
+          let bitsProcessed = 0
+
+          while (remainingBits > 0) {
+            const bitInByte = localCurrentBitGlobal % 8
+            const bitsCanFitInByte = 8 - bitInByte
+            const bitsToRead = Math.min(remainingBits, bitsCanFitInByte)
+            const mask = (1 << bitsToRead) - 1
+
+            const currentByteIndex = Math.floor(localCurrentBitGlobal / 8)
+            const accessStr =
+              currentByteIndex === 0 ? 'offset' : `offset + ${currentByteIndex}`
+
+            // part = ((buf[access] >>> bitInByte) & mask) << bitsProcessed
+            let part = `((buf[${accessStr}] >>> ${bitInByte}) & ${mask})`
+            if (bitsProcessed > 0) part = `(${part} << ${bitsProcessed})`
+
+            expressionParts.push(part)
+
+            localCurrentBitGlobal += bitsToRead
+            bitsProcessed += bitsToRead
+            remainingBits -= bitsToRead
+          }
+
+          readExpr = expressionParts.join(' | ')
+          if (expressionParts.length > 1) readExpr = `(${readExpr})`
+
+          if (f.isBoolean) {
+            readExpr = `(${readExpr}) === 1`
+          }
+        }
+
+        if (f.type.endsWith('Enum')) {
+          readExpr = `(${readExpr}) as ${f.type}`
+        } else if (f.type === 'TypeId') {
+          readExpr = `(${readExpr}) as TypeId`
+        }
+
+        output += `    ${f.name}: ${readExpr},\n`
+      }
+    }
+
+    output += `  }\n`
+    output += `  return value\n`
+    output += `}\n\n`
+
+    // 5. Export Read Props
+    output += `export const read${name}Props = {\n`
+
+    let readPropsCurrentOffset = 0
+    let readPropsCurrentBitGlobal = 0
+
+    if (!isPacked) {
+      fields.forEach((f) => {
+        const fName = f.name
+        if (f.isPadding) return
+
+        const prim = getPrimitive(
+          body
+            .find((l) => l.includes(`${fName}:`))
+            ?.match(regexStructField)?.[2] || 'u8',
+        )
+        const offStr =
+          readPropsCurrentOffset === 0
+            ? 'offset'
+            : `offset + ${readPropsCurrentOffset}`
+        let readExpr = ''
+
+        switch (prim) {
+          case 'u8':
+          case 'LangCode':
+            readExpr = `buf[${offStr}]`
+            break
+          case 'bool':
+            readExpr = `buf[${offStr}] === 1`
+            break
+          case 'i8':
+            readExpr = `buf[${offStr}]`
+            break
+          case 'u16':
+            readExpr = `readUint16(buf, ${offStr})`
+            break
+          case 'i16':
+            readExpr = `readInt16(buf, ${offStr})`
+            break
+          case 'u32':
+            readExpr = `readUint32(buf, ${offStr})`
+            break
+          case 'i32':
+            readExpr = `readInt32(buf, ${offStr})`
+            break
+          case 'f32':
+            readExpr = `readFloatLE(buf, ${offStr})`
+            break
+          case 'u64':
+          case 'usize':
+            readExpr = `readUint64(buf, ${offStr})`
+            break
+          case 'i64':
+            readExpr = `readInt64(buf, ${offStr})`
+            break
+          case 'f64':
+            readExpr = `readDoubleLE(buf, ${offStr})`
+            break
+        }
+
+        if (f.type.endsWith('Enum')) {
+          readExpr = `(${readExpr}) as ${f.type}`
+        } else if (f.type === 'TypeId') {
+          readExpr = `(${readExpr}) as TypeId`
+        }
+
+        output += `  ${fName}: (buf: Uint8Array, offset: number): ${f.type} => {\n`
+        output += `    return ${readExpr}\n`
+        output += `  },\n`
+
+        readPropsCurrentOffset += Math.ceil(f.bitSize / 8)
+      })
+    } else {
+      // Packed Read Props
+      for (let i = 0; i < fields.length; i++) {
+        const f = fields[i]
+        const startBit = readPropsCurrentBitGlobal
+        readPropsCurrentBitGlobal += f.bitSize
+
+        if (f.isPadding) continue
+
+        const byteOffset = Math.floor(startBit / 8)
+        const offStr = byteOffset === 0 ? 'offset' : `offset + ${byteOffset}`
+        let readExpr = ''
+
+        if (startBit % 8 === 0 && [8, 16, 32, 64].includes(f.bitSize)) {
+          if (f.bitSize === 8) readExpr = `buf[${offStr}]`
+          else if (f.bitSize === 16) readExpr = `readUint16(buf, ${offStr})`
+          else if (f.bitSize === 32) readExpr = `readUint32(buf, ${offStr})`
+          else if (f.bitSize === 64) readExpr = `readUint64(buf, ${offStr})`
+
+          if (f.isBoolean) readExpr = `(${readExpr}) === 1`
+        } else {
+          let expressionParts: string[] = []
+          let remainingBits = f.bitSize
+          let localCurrentBitGlobal = startBit
+          let bitsProcessed = 0
+
+          while (remainingBits > 0) {
+            const bitInByte = localCurrentBitGlobal % 8
+            const bitsCanFitInByte = 8 - bitInByte
+            const bitsToRead = Math.min(remainingBits, bitsCanFitInByte)
+            const mask = (1 << bitsToRead) - 1
+
+            const currentByteIndex = Math.floor(localCurrentBitGlobal / 8)
+            const accessStr =
+              currentByteIndex === 0 ? 'offset' : `offset + ${currentByteIndex}`
+
+            let part = `((buf[${accessStr}] >>> ${bitInByte}) & ${mask})`
+            if (bitsProcessed > 0) part = `(${part} << ${bitsProcessed})`
+
+            expressionParts.push(part)
+
+            localCurrentBitGlobal += bitsToRead
+            bitsProcessed += bitsToRead
+            remainingBits -= bitsToRead
+          }
+
+          readExpr = expressionParts.join(' | ')
+          if (expressionParts.length > 1) readExpr = `(${readExpr})`
+
+          if (f.isBoolean) {
+            readExpr = `(${readExpr}) === 1`
+          }
+        }
+
+        if (f.type.endsWith('Enum')) {
+          readExpr = `(${readExpr}) as ${f.type}`
+        } else if (f.type === 'TypeId') {
+          readExpr = `(${readExpr}) as TypeId`
+        }
+
+        output += `  ${f.name}: (buf: Uint8Array, offset: number): ${f.type} => {\n`
+        output += `    return ${readExpr}\n`
+        output += `  },\n`
+      }
+    }
     output += `}\n\n`
   }
 

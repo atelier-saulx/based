@@ -135,8 +135,6 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
 
-    registerFunction(env, exports, "getNodeBlockHash", info.nodeBlockHash) catch return null;
-    registerFunction(env, exports, "setSchemaType", schema.setSchemaType) catch return null;
     registerFunction(env, exports, "setSchemaIds", schema.setSchemaIds) catch return null;
     registerFunction(env, exports, "getSchemaIds", schema.getSchemaIds) catch return null;
 

@@ -33,19 +33,16 @@ export const writeVector = (ctx: Ctx, def: PropDef, val: any) => {
   let tmp = size + 4
 
   // 16-bits would be enough but the zig expects 32-bits
-  ctx.array[ctx.index++] = tmp
-  ctx.array[ctx.index++] = tmp >>>= 8
-  ctx.array[ctx.index++] = tmp >>>= 8
-  ctx.array[ctx.index++] = tmp >>>= 8
+  ctx.buf[ctx.index++] = tmp
+  ctx.buf[ctx.index++] = tmp >>>= 8
+  ctx.buf[ctx.index++] = tmp >>>= 8
+  ctx.buf[ctx.index++] = tmp >>>= 8
 
-  ctx.array[ctx.index++] = padding
-  ctx.array[ctx.index++] = 0
-  ctx.array[ctx.index++] = 0
-  ctx.array[ctx.index++] = 0
+  ctx.buf[ctx.index++] = padding
+  ctx.buf[ctx.index++] = 0
+  ctx.buf[ctx.index++] = 0
+  ctx.buf[ctx.index++] = 0
 
-  ctx.array.set(
-    new Uint8Array(val.buffer).subarray(0, size),
-    ctx.index - padding,
-  )
+  ctx.buf.set(new Uint8Array(val.buffer).subarray(0, size), ctx.index - padding)
   ctx.index += size
 }

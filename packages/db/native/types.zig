@@ -8,13 +8,15 @@ pub const OpType = enum(u8) {
     alias = 3,
     aggregates = 4,
     aggregatesCountType = 5,
+    blockHash = 42,
     saveBlock = 67,
     saveCommon = 69,
     // Modify
-    modify = 10,
-    loadBlock = 22,
-    unloadBlock = 33,
-    loadCommon = 44,
+    modify = 127,
+    loadBlock = 128,
+    unloadBlock = 129,
+    loadCommon = 130,
+    createType = 131,
 };
 
 pub const ModOp = enum(u8) {

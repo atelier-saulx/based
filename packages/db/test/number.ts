@@ -78,7 +78,7 @@ await test('number', async (t) => {
       }
     }),
   )
-
+  console.log('==========================')
   const newThing = await db.create('user', {
     number: {
       increment: 12,
@@ -102,6 +102,7 @@ await test('number', async (t) => {
       increment: 12,
     },
   })
+
   deepEqual((await db.query('user', newThing).get()).toObject(), {
     id: newThing,
     number: 12,

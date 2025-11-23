@@ -167,7 +167,7 @@ const updateReferences = (
     }
   }
 
-  writeUint32(ctx.array, ctx.index - start, sizeIndex)
+  writeUint32(ctx.buf, ctx.index - start, sizeIndex)
 }
 
 const putOrUpdateReferences = (

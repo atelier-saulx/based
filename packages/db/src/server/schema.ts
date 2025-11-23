@@ -9,6 +9,8 @@ import { writeCreate } from '../client/modify/create/index.js'
 import { Ctx } from '../client/modify/Ctx.js'
 import { consume } from '../client/modify/drain.js'
 import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
+import { readUint32, writeUint32 } from '@based/utils'
+import { OpType } from '../zigTsExports.js'
 
 export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
@@ -29,27 +31,51 @@ export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
   }
 }
 
+export async function createSelvaType(server: DbServer, typeId: number, schema: Uint8Array): Promise<void> {
+  const msg = new Uint8Array(5 + schema.byteLength)
+
+  writeUint32(msg, typeId, 0)
+  msg[4] = OpType.createType
+  msg.set(schema, 5)
+
+  return new Promise((resolve, reject) => {
+    server.addOpOnceListener(OpType.createType, typeId, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        const errMsg = `Create type ${typeId} failed: ${native.selvaStrerror(err)}`
+        server.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
+
+    native.modifyThread(msg, server.dbCtxExternal)
+  })
+}
+
 /**
  * Set schema used in native code.
  * This function should be only called when a new schema is set to an empty DB
  * instance. If a `common.sdb` file is loaded then calling this function isn't
  * necessary because `common.sdb` already contains the required schema.
  */
-export const setNativeSchema = (server: DbServer, schema: DbSchema) => {
+export const setNativeSchema = async (server: DbServer, schema: DbSchema) => {
   const types = Object.keys(server.schemaTypesParsed)
   const s = schemaToSelvaBuffer(server.schemaTypesParsed)
   let maxTid = 0
-  for (let i = 0; i < s.length; i++) {
+
+  await Promise.all(s.map(async (ab, i) => {
     const type = server.schemaTypesParsed[types[i]]
     maxTid = Math.max(maxTid, type.id)
     try {
-      native.setSchemaType(server.dbCtxExternal, type.id, new Uint8Array(s[i]))
+      await createSelvaType(server, type.id, new Uint8Array(ab))
     } catch (err) {
       throw new Error(
         `Cannot update schema on selva (native) ${type.type} ${err.message}`,
       )
     }
-  }
+  }))
 
   // Init the last ids
   native.setSchemaIds(new Uint32Array(maxTid), server.dbCtxExternal)

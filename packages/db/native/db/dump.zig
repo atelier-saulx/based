@@ -48,12 +48,10 @@ pub fn loadBlock(ctx: *db.DbCtx, typeCode: u16, start: u32, sdbFilename: []u8, e
 
     const te = selva.selva_get_type_by_index(ctx.selva, typeCode);
     if (te == null) {
-        return selva.SELVA_ENOENT;
+        return selva.SELVA_EINTYPE;
     }
 
-    selva.selva_node_block_hash(ctx.selva, te, start, hashOut);
-
-    return 0;
+    return selva.selva_node_block_hash(ctx.selva, te, start, hashOut);
 }
 
 pub fn unloadBlock(ctx: *db.DbCtx, typeCode: u16, start: u32, sdbFilename: []u8, hashOut: *SelvaHash128) c_int {

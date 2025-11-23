@@ -63,25 +63,12 @@ const native = {
     return db.stop(dbCtx)
   },
 
-  setSchemaType: (dbCtx: any, prefix: number, buf: Uint8Array) => {
-    return db.setSchemaType(dbCtx, prefix, buf)
-  },
-
   setSchemaIds: (ids: Uint32Array, dbCtx: any) => {
     return db.setSchemaIds(ids, dbCtx)
   },
 
   getSchemaIds: (dbCtx: any): Uint32Array => {
     return new Uint32Array(db.getSchemaIds(dbCtx))
-  },
-
-  getNodeBlockHash: (
-    dbCtx: any,
-    typeId: number,
-    start: number,
-    bufOut: Uint8Array,
-  ) => {
-    return db.getNodeBlockHash(dbCtx, typeId, start, bufOut)
   },
 
   createCompressor() {
@@ -134,7 +121,12 @@ const native = {
     return db.stringByteLength(s)
   },
 
-  stringToUint8Array: (s: string, dst: Uint8Array, offset: number = 0, terminated: boolean = false): number => {
+  stringToUint8Array: (
+    s: string,
+    dst: Uint8Array,
+    offset: number = 0,
+    terminated: boolean = false,
+  ): number => {
     return db.stringToUint8Array(s, dst, offset, terminated)
   },
 

@@ -65,14 +65,13 @@ await test('include', async (t) => {
   //   x.push('xxw qweudhweiofh')
   // }
 
-  console.log('poop')
-
-  await wait(2000)
-  const id = db.create('user', {
+  const id = await db.create('user', {
     nr: 1,
     // name: 'mr poop',
     // flap: x.join(' '),
   })
+
+  console.log('CREATE:', { id })
 
   // await wait(100)
 
@@ -93,6 +92,7 @@ await test('include', async (t) => {
   for (let i = 0; i < 10000; i++) {
     db.create('user', {
       nr: i,
+      name: 'youzi' + i,
     })
   }
   // console.log('CREATE DONE?')

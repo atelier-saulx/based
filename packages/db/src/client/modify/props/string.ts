@@ -59,6 +59,6 @@ export const writeString = (
     }
     ctx.index += size
   }
-  writeUint32(ctx.array, size, index)
+  writeUint32(ctx.buf, size, index)
   markString(ctx, def)
 }

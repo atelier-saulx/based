@@ -6,6 +6,7 @@ const DbCtx = @import("./ctx.zig").DbCtx;
 const utils = @import("../utils.zig");
 const Modify = @import("../modify/modify.zig");
 const selva = @import("../selva.zig").c;
+const db = @import("db.zig");
 const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
 const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 const deflate = @import("../deflate.zig");
@@ -259,22 +260,36 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 switch (op) {
+                    t.OpType.blockHash => {
+                        const data = try getResultSlice(true, threadCtx, 20, 0, op);
+                        const start = read(u32, q, 0);
+                        const typeCode = read(u16, q, 4);
+                        const typeEntry = selva.selva_get_type_by_index(self.ctx.selva.?, typeCode);
+                        var err: c_int = selva.SELVA_EINTYPE;
+
+                        if (typeEntry) |te| {
+                            var hash: SelvaHash128 = 0;
+                            err = db.getNodeBlockHash(self.ctx, te, start, &hash);
+                            _ = selva.memcpy(data[4..20].ptr, &hash, @sizeOf(@TypeOf(hash)));
+                        }
+                        _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                    },
                     t.OpType.saveBlock => {
                         const data = try getResultSlice(true, threadCtx, 26, 0, op);
                         const typeCode = read(u16, q, 9);
                         const start = read(u32, q, 5);
-                        const filename = q[11 .. q.len - 11];
+                        const filename = q[11 .. q.len];
                         _ = selva.memcpy(data[4..10].ptr, q[5..11].ptr, 6);
                         var hash: SelvaHash128 = 0;
                         const err = dump.saveBlock(self.ctx, typeCode, start, filename, &hash);
-                        _ = selva.memcpy(data[0..4].ptr, &err, 4);
-                        _ = selva.memcpy(data[10..16].ptr, &hash, 16);
+                        _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                        _ = selva.memcpy(data[10..16].ptr, &hash, @sizeOf(@TypeOf(hash)));
                     },
                     t.OpType.saveCommon => {
                         const data = try getResultSlice(true, threadCtx, 4, 0, op);
-                        const filename = q[5 .. q.len - 5];
+                        const filename = q[5 .. q.len];
                         const err = dump.saveCommon(self.ctx, filename);
-                        _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                        _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                     },
                     else => {
                         try getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
@@ -316,39 +331,46 @@ pub const Threads = struct {
                         },
                         t.OpType.loadBlock => {
                             std.debug.print("LOAD\n", .{});
-                            const data = try getResultSlice(true, threadCtx, 20 + 492, read(u32, m, 0), op);
+                            const data = try getResultSlice(false, threadCtx, 20 + 492, read(u32, m, 0), op);
                             const start: u32 = read(u32, m, 5);
                             const typeCode: u16 = read(u16, m, 9);
-                            const filename = m[11 .. m.len - 11];
+                            const filename = m[11 .. m.len];
 
-                            const errlog = data[16 .. data.len - 16];
+                            const errlog = data[16 .. data.len];
                             var hash: SelvaHash128 = 0;
                             const err = dump.loadBlock(self.ctx, typeCode, start, filename, errlog, &hash);
-                            _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                             _ = selva.memcpy(data[4..10].ptr, m[5..11].ptr, 6);
-                            _ = selva.memcpy(data[10..16].ptr, &hash, 16);
+                            _ = selva.memcpy(data[10..16].ptr, &hash, @sizeOf(@TypeOf(hash)));
                         },
                         t.OpType.unloadBlock => {
                             std.debug.print("UNLOAD\n", .{});
-                            const data = try getResultSlice(true, threadCtx, 20, read(u32, m, 0), op);
+                            const data = try getResultSlice(false, threadCtx, 20, read(u32, m, 0), op);
                             const start: u32 = read(u32, m, 5);
                             const typeCode: u16 = read(u16, m, 9);
-                            const filename = m[11 .. m.len - 11];
+                            const filename = m[11 .. m.len];
 
                             var hash: SelvaHash128 = 0;
                             const err = dump.unloadBlock(self.ctx, typeCode, start, filename, &hash);
-                            _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                             _ = selva.memcpy(data[4..10].ptr, m[5..11].ptr, 6);
-                            _ = selva.memcpy(data[10..16].ptr, &hash, 16);
+                            _ = selva.memcpy(data[10..16].ptr, &hash, @sizeOf(@TypeOf(hash)));
                         },
                         t.OpType.loadCommon => {
                             std.debug.print("LOAD COMMON\n", .{});
-                            const data = try getResultSlice(true, threadCtx, 20 + 492, read(u32, m, 0), op);
-                            const filename = m[5 .. m.len - 5];
+                            const data = try getResultSlice(false, threadCtx, 20 + 492, read(u32, m, 0), op);
+                            const filename = m[5 .. m.len];
 
-                            const errlog = data[5 .. data.len - 5];
+                            const errlog = data[5 .. data.len];
                             const err = dump.loadCommon(self.ctx, filename, errlog);
-                            _ = selva.memcpy(data[0..4].ptr, &err, 4);
+                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                        },
+                        t.OpType.createType => {
+                            const data = try getResultSlice(false, threadCtx, 4, read(u32, m, 0), op);
+                            const typeCode = read(u32, m, 0);
+                            const schema = m[5..m.len];
+                            const err = selva.selva_db_create_type(self.ctx.selva, @truncate(typeCode), schema.ptr, schema.len);
+                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                         },
                         else => {},
                     }

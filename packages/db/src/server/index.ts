@@ -16,7 +16,7 @@ import {
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import { combineToNumber, readUint32, writeUint32 } from '@based/utils'
+import { combineToNumber, readUint32, wait, writeUint32 } from '@based/utils'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,
@@ -213,20 +213,20 @@ export class DbServer extends DbShared {
     const id = this.modifyCnt++
     writeUint32(payload, id, 0)
     return new Promise((resolve) => {
-      const len = native.modifyThread(payload, this.dbCtxExternal)
+      native.modifyThread(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {
-        const dirtyBlockSize = readUint32(v, 0)
-        if (dirtyBlockSize > 8) {
-          const dirtyBlocks = new Float64Array(
-            v.buffer,
-            v.byteOffset + 7,
-            (v.byteLength - 7) / 8,
+        const resultLen = readUint32(v, 0)
+        const blocksLen = readUint32(v, resultLen)
+        if (blocksLen > 8) {
+          const blocksOffset = resultLen + 8 - (resultLen % 8) // ceil to multiple of 8
+          this.blockMap.setDirtyBlocks(
+            new Float64Array(v.buffer, blocksOffset, blocksLen / 8),
           )
-          this.blockMap.setDirtyBlocks(dirtyBlocks)
         }
         // YOUZI
-        console.log('MOD FIRED!')
-        resolve(TMP_EMPTY)
+        const res = v.subarray(4, resultLen)
+        console.log({ resultLen, res })
+        resolve(res)
       })
     })
   }
@@ -256,9 +256,11 @@ export class DbServer extends DbShared {
     }
 
     setSchemaOnServer(this, schema)
-    setNativeSchema(this, schema)
+    await setNativeSchema(this, schema)
     await writeSchemaFile(this, schema)
 
+    console.warn('WAITING 500MS AFTER SCHEMA FOR FIXFIX')
+    await wait(500)
     process.nextTick(() => {
       this.emit('schema', this.schema)
     })
