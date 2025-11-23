@@ -158,6 +158,20 @@ export class BlockMap {
     })
   }
 
+  *dirtyBlocks(): Generator<{ typeId: number, start: number, end: number, block: Block }> {
+    for (const k of Object.keys(this.#types)) {
+      const { blocks } = this.#types[k]
+      for (let block of blocks) {
+        if (block.status === 'dirty') {
+          const [typeId, start] = destructureTreeKey(block.key)
+          const t = this.#types[typeId]
+          const end = start + t.blockCapacity - 1
+          yield { typeId, start, end, block }
+        }
+      }
+    }
+  }
+
   get hash() {
     this.#h.reset()
     this.foreachBlock((block) => this.#h.update(block.hash))
