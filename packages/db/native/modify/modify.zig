@@ -355,5 +355,5 @@ pub fn modify(
     resultIndex = resultIndex - (resultIndex % 8); // round to multiple of 8
     resultIndex += 7; // add 7 to compensate for the 9
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
-    utils.copy(u8, result[resultIndex .. resultIndex + newDirtySlice.len], newDirtySlice);
+    utils.copy(u8, result, newDirtySlice, resultIndex);
 }

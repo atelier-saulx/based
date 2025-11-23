@@ -100,7 +100,7 @@ pub inline fn partial(
         const mainOp = includeMain[mainPos..];
         const start = utils.read(u16, mainOp, 0);
         const len = utils.read(u16, mainOp, 2);
-        utils.copy(u8, value[j .. j + len], original[start .. start + len]);
+        utils.copy(u8, value, original[start .. start + len], j);
         j += len;
         mainPos += 4;
     }

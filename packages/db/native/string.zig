@@ -39,7 +39,7 @@ pub fn hashDigest(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const state = napi.get(*selva.selva_hash_state_t, env, args[0]) catch return null;
     const buf = napi.get([]u8, env, args[1]) catch return null;
     const hash = selva.selva_hash_digest(state);
-    copy(u8, buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
+    copy(u8, buf, @as([*]const u8, @ptrCast(&hash))[0..16], 0);
     return null;
 }
 

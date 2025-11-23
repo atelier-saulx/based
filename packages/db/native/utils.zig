@@ -67,12 +67,11 @@ pub fn debugPrint(comptime format: []const u8, args: anytype) void {
     }
 }
 
-// maybe make copy with offset
-pub inline fn copy(T: type, dest: []T, source: []const T) void {
-    if (builtin.link_libc) {
+pub inline fn copy(T: type, dest: []T, source: []const T, offset: usize) void {
+    if (offset == 0) {
         _ = memcpy(dest.ptr, source.ptr, source.len);
     } else {
-        @memcpy(dest[0..source.len], source);
+        _ = memcpy(dest[offset..][0..source.len].ptr, source.ptr, source.len);
     }
 }
 

@@ -161,7 +161,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     const slice = data[4 .. len + 4];
-    var currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+    const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     if (currentData.len != 0) {
         var j: usize = 0;
         while (j < len) {
@@ -175,21 +175,21 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                     const sI = ctx.typeSortIndex.?.main.get(start);
                     if (sI != null) {
                         sort.remove(ctx.threadCtx.decompressor, sI.?, currentData, ctx.node.?);
-                        copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
+                        copy(u8, currentData, operation[4 .. 4 + l], start);
                         sort.insert(ctx.threadCtx.decompressor, sI.?, currentData, ctx.node.?);
                     } else {
-                        copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
+                        copy(u8, currentData, operation[4 .. 4 + l], start);
                     }
                 } else {
-                    copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
+                    copy(u8, currentData, operation[4 .. 4 + l], start);
                 }
             } else if (ctx.currentSortIndex != null) {
                 sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
-                copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
+                copy(u8, currentData, operation[4 .. 4 + l], start);
                 subs.stage(ctx, subs.Op.update);
             } else {
-                copy(u8, currentData[start .. start + l], operation[4 .. 4 + l]);
+                copy(u8, currentData, operation[4 .. 4 + l], start);
                 subs.stage(ctx, subs.Op.update);
             }
             j += 4 + l;

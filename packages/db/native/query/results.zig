@@ -33,9 +33,9 @@ fn addChecksum(item: *Result, data: []u8, i: *usize) void {
     i.* += 1;
     data[i.*] = v[1];
     i.* += 1;
-    utils.copy(u8, data[i.* .. i.* + 4], v[v.len - 4 .. v.len]);
+    copy(u8, data, v[v.len - 4 .. v.len], i.*);
     if (v[1] == 1) {
-        utils.copy(u8, data[i.* + 4 .. i.* + 8], v[2..6]);
+        copy(u8, data, v[2..6], i.* + 4);
     } else {
         write(u32, data, @truncate(v.len), i.* + 4);
     }
@@ -61,7 +61,7 @@ pub fn createResultsBuffer(
             write(u32, data, item.id, i + 1);
             i += 5;
             if (item.score) |s| {
-                copy(u8, data[i .. i + 4], &s);
+                copy(u8, data, &s, i);
                 i += 4;
             }
         }
@@ -71,13 +71,13 @@ pub fn createResultsBuffer(
                 data[i] = @intFromEnum((t.ReadOp.aggregation));
                 data[i + 1] = item.prop;
                 write(u32, data, @truncate(item.value.len), i + 2);
-                copy(u8, data[i + 6 .. i + 6 + item.value.len], item.value);
+                copy(u8, data, item.value, i + 6);
                 i += item.value.len + 6;
             },
             t.ResultType.edgeFixed => {
                 data[i] = @intFromEnum(t.ReadOp.edge);
                 data[i + 1] = item.prop;
-                copy(u8, data[i + 2 .. i + 2 + item.value.len], item.value);
+                copy(u8, data, item.value, i + 2);
                 i += item.value.len + 2;
             },
             t.ResultType.metaEdge => {
@@ -92,7 +92,7 @@ pub fn createResultsBuffer(
                 data[i] = @intFromEnum(t.ReadOp.edge);
                 data[i + 1] = item.prop;
                 write(u32, data, @truncate(item.value.len), i + 2);
-                copy(u8, data[i + 6 .. i + 6 + item.value.len], item.value);
+                copy(u8, data, item.value, i + 6);
                 i += item.value.len + 6;
             },
             t.ResultType.fixed => {
@@ -100,7 +100,7 @@ pub fn createResultsBuffer(
                     continue;
                 }
                 data[i] = item.prop;
-                copy(u8, data[i + 1 .. i + 1 + item.value.len], item.value);
+                copy(u8, data, item.value, i + 1);
                 i += item.value.len + 1;
             },
             t.ResultType.default => {
@@ -109,7 +109,7 @@ pub fn createResultsBuffer(
                 }
                 data[i] = item.prop;
                 write(u32, data, @truncate(item.value.len), i + 1);
-                copy(u8, data[i + 5 .. i + 5 + item.value.len], item.value);
+                copy(u8, data, item.value, i + 5);
                 i += item.value.len + 5;
             },
             t.ResultType.reference => {
@@ -121,7 +121,7 @@ pub fn createResultsBuffer(
                 // | 2       | refSize   | 4           | Reference size (unsigned 32-bit int) |
                 data[i] = @intFromEnum(t.ReadOp.references);
                 data[i + 1] = item.prop;
-                copy(u8, data[i + 2 .. i + 6], item.value);
+                copy(u8, data, item.value, i + 2);
                 i += 6;
             },
             t.ResultType.references => {
@@ -134,21 +134,21 @@ pub fn createResultsBuffer(
                 // | 6       | totalRefs | 4           | Total number of references (u32)     |
                 data[i] = @intFromEnum(t.ReadOp.references);
                 data[i + 1] = item.prop;
-                copy(u8, data[i + 2 .. i + 10], item.value);
+                copy(u8, data, item.value, i + 2);
                 i += 10;
             },
             t.ResultType.referenceEdge => {
                 data[i] = @intFromEnum(t.ReadOp.edge);
                 data[i + 1] = @intFromEnum(t.ReadOp.reference);
                 data[i + 2] = item.prop;
-                copy(u8, data[i + 3 .. i + 7], item.value);
+                copy(u8, data, item.value, i + 3);
                 i += 7;
             },
             t.ResultType.referencesEdge => {
                 data[i] = @intFromEnum(t.ReadOp.edge);
                 data[i + 1] = @intFromEnum(t.ReadOp.references);
                 data[i + 2] = item.prop;
-                copy(u8, data[i + 3 .. i + 7], item.value);
+                copy(u8, data, item.value, i + 3);
                 i += 11;
             },
         }

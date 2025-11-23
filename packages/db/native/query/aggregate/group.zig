@@ -37,10 +37,10 @@ pub inline fn setGroupResults(
         write(u16, data, keyLen, i);
         i += 2;
         if (keyLen > 0) {
-            copy(u8, data[i .. i + keyLen], key);
+            copy(u8, data[i .. i + keyLen], key, 0);
             i += keyLen;
         }
-        copy(u8, data[i .. i + ctx.resultsSize], entry.value_ptr.*);
+        copy(u8, data[i .. i + ctx.resultsSize], entry.value_ptr.*, 0);
         i += ctx.resultsSize;
     }
 }
@@ -74,12 +74,12 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
             j += 1;
 
             if (aggType == t.AggType.count) {
-                copy(u8, resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 4]);
+                copy(u8, resultsField, accumulatorField[accumulatorPos .. accumulatorPos + 4], resultPos);
             } else if (aggType == t.AggType.sum or
                 aggType == t.AggType.max or
                 aggType == t.AggType.min)
             {
-                copy(u8, resultsField[resultPos..], accumulatorField[accumulatorPos .. accumulatorPos + 8]);
+                copy(u8, resultsField, accumulatorField[accumulatorPos .. accumulatorPos + 8], resultPos);
             } else if (aggType == t.AggType.average) {
                 const count = read(u64, accumulatorField, accumulatorPos);
                 const sum = read(f64, accumulatorField, accumulatorPos + 8);
@@ -151,21 +151,18 @@ pub inline fn finalizeGroupResults(
     } else {
         var it = ctx.hashMap.iterator();
         var i: usize = 0;
-
         while (it.next()) |entry| {
             const key = entry.key_ptr.*;
             const keyLen: u16 = @intCast(key.len);
             write(u16, data, keyLen, i);
             i += 2;
             if (keyLen > 0) {
-                copy(u8, data[i .. i + keyLen], key);
+                copy(u8, data, key, i);
                 i += keyLen;
             }
-
             const accumulatorField = entry.value_ptr.*;
             const resultsField = data[i .. i + ctx.resultsSize];
             @memset(resultsField, 0);
-
             try finalizeResults(resultsField, accumulatorField, agg, ctx.option);
             i += ctx.resultsSize;
         }
