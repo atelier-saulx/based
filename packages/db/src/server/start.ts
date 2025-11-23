@@ -24,6 +24,7 @@ import {
 } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
+import { OpTypeEnum } from '../zigTsExports.js'
 
 export type StartOpts = {
   clean?: boolean
@@ -45,10 +46,9 @@ const handleQueryWorkerResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
       const v = new Uint8Array(buf)
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
-        const type = v[i + 8]
-
-        const id = combineToNumber(readUint32(v, i + 4), type)
-        db.execQueryListeners(id, type, v.subarray(i + 9, i + size))
+        const type: OpTypeEnum = v[i + 8] as OpTypeEnum
+        const id = readUint32(v, i + 4)
+        db.execOpListeners(type, id, v.subarray(i + 9, i + size))
         i += size
       }
     }
@@ -59,9 +59,9 @@ const handleModifyListeners = (db: DbServer, arr: ArrayBuffer) => {
   const v = new Uint8Array(arr)
   for (let i = 0; i < v.byteLength; ) {
     const size = readUint32(v, i)
+    const type: OpTypeEnum = v[i + 8] as OpTypeEnum
     const id = readUint32(v, i + 4)
-    const type = v[i + 8]
-    db.execModifyListeners(id, type, v.subarray(i + 9, i + size))
+    db.execOpListeners(type, id, v.subarray(i + 9, i + size))
     i += size
   }
 }
