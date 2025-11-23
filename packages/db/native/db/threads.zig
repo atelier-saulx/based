@@ -178,20 +178,17 @@ pub const Threads = struct {
         }
     }
 
-    fn modifyNotPending(self: *Threads) void {
+    fn modifyNotPending(self: *Threads, op: t.OpType) void {
         for (self.threads) |thread| {
             if (thread.pendingModifies != 0) {
                 return;
             }
         }
-
         self.modifyDone.signal();
-
         if (!self.jsModifyBridgeStaged) {
-            self.ctx.jsBridge.call(jsBridge.BridgeResponse.modify);
+            self.ctx.jsBridge.call(op);
             self.jsModifyBridgeStaged = true;
         }
-
         if (self.nextQueryQueue.items.len > 0) {
             const prevQueryQueue = self.queryQueue;
             self.queryQueue = self.nextQueryQueue;
@@ -278,7 +275,7 @@ pub const Threads = struct {
                         const data = try getResultSlice(true, threadCtx, 26, 0, op);
                         const typeCode = read(u16, q, 9);
                         const start = read(u32, q, 5);
-                        const filename = q[11 .. q.len];
+                        const filename = q[11..q.len];
                         _ = selva.memcpy(data[4..10].ptr, q[5..11].ptr, 6);
                         var hash: SelvaHash128 = 0;
                         const err = dump.saveBlock(self.ctx, typeCode, start, filename, &hash);
@@ -287,7 +284,7 @@ pub const Threads = struct {
                     },
                     t.OpType.saveCommon => {
                         const data = try getResultSlice(true, threadCtx, 4, 0, op);
-                        const filename = q[5 .. q.len];
+                        const filename = q[5..q.len];
                         const err = dump.saveCommon(self.ctx, filename);
                         _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                     },
@@ -306,7 +303,7 @@ pub const Threads = struct {
 
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
-                        self.ctx.jsBridge.call(jsBridge.BridgeResponse.query);
+                        self.ctx.jsBridge.call(op);
                     }
 
                     if (self.nextModifyQueue.items.len > 0) {
@@ -334,9 +331,9 @@ pub const Threads = struct {
                             const data = try getResultSlice(false, threadCtx, 20 + 492, read(u32, m, 0), op);
                             const start: u32 = read(u32, m, 5);
                             const typeCode: u16 = read(u16, m, 9);
-                            const filename = m[11 .. m.len];
+                            const filename = m[11..m.len];
 
-                            const errlog = data[16 .. data.len];
+                            const errlog = data[16..data.len];
                             var hash: SelvaHash128 = 0;
                             const err = dump.loadBlock(self.ctx, typeCode, start, filename, errlog, &hash);
                             _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
@@ -348,7 +345,7 @@ pub const Threads = struct {
                             const data = try getResultSlice(false, threadCtx, 20, read(u32, m, 0), op);
                             const start: u32 = read(u32, m, 5);
                             const typeCode: u16 = read(u16, m, 9);
-                            const filename = m[11 .. m.len];
+                            const filename = m[11..m.len];
 
                             var hash: SelvaHash128 = 0;
                             const err = dump.unloadBlock(self.ctx, typeCode, start, filename, &hash);
@@ -359,9 +356,9 @@ pub const Threads = struct {
                         t.OpType.loadCommon => {
                             std.debug.print("LOAD COMMON\n", .{});
                             const data = try getResultSlice(false, threadCtx, 20 + 492, read(u32, m, 0), op);
-                            const filename = m[5 .. m.len];
+                            const filename = m[5..m.len];
 
-                            const errlog = data[5 .. data.len];
+                            const errlog = data[5..data.len];
                             const err = dump.loadCommon(self.ctx, filename, errlog);
                             _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                         },
@@ -380,7 +377,7 @@ pub const Threads = struct {
                     self.pendingModifies -= 1;
                     threadCtx.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
-                        self.modifyNotPending();
+                        self.modifyNotPending(op);
                     }
                     self.mutex.unlock();
                 } else {
@@ -388,7 +385,7 @@ pub const Threads = struct {
                     self.mutex.lock();
                     threadCtx.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
-                        self.modifyNotPending();
+                        self.modifyNotPending(op);
                     }
                     self.mutex.unlock();
                 }

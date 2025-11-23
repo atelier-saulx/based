@@ -2,13 +2,7 @@ const db = @import("db.zig");
 const selva = @import("../selva.zig").c;
 const napi = @import("../napi.zig");
 const std = @import("std");
-
-pub const BridgeResponse = enum(u32) {
-    query = 1,
-    modify = 2,
-};
-
-// pub const BridgeResponseWrapped = struct {};
+const t = @import("../types.zig");
 
 fn callJsCallback(
     env: napi.Env,
@@ -16,7 +10,7 @@ fn callJsCallback(
     ctx: ?*anyopaque,
     data: ?*anyopaque,
 ) callconv(.c) void {
-    const responseFn = @as(*BridgeResponse, @ptrCast(@alignCast(data.?)));
+    const responseFn = @as(*t.OpType, @ptrCast(@alignCast(data.?)));
     const dbCtx = @as(*db.DbCtx, @ptrCast(@alignCast(ctx.?)));
 
     if (dbCtx.selva == null) {
@@ -25,59 +19,54 @@ fn callJsCallback(
     }
     std.debug.print("callJsCallback {any} \n", .{responseFn});
 
-    switch (responseFn.*) {
-        BridgeResponse.modify => {
-            dbCtx.threads.waitForModify();
-            dbCtx.threads.mutex.lock();
-            const thread = dbCtx.threads.threads[0];
+    if (responseFn.isModifyOp()) {
+        dbCtx.threads.waitForModify();
+        dbCtx.threads.mutex.lock();
+        const thread = dbCtx.threads.threads[0];
+        var arrayBuffer: napi.Value = undefined;
+        _ = napi.c.napi_create_external_arraybuffer(
+            env,
+            thread.modifyResults.ptr,
+            thread.modifyResultsIndex,
+            null,
+            null,
+            &arrayBuffer,
+        );
+        thread.*.modifyResultsIndex = 0;
+        var fnResponse: napi.Value = undefined;
+        _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.*), &fnResponse);
+        var args = [_]napi.Value{ fnResponse, arrayBuffer };
+        var undefinedVal: napi.Value = undefined;
+        _ = napi.c.napi_get_undefined(env, &undefinedVal);
+        _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
+        dbCtx.threads.jsModifyBridgeStaged = false;
+        dbCtx.threads.mutex.unlock();
+    } else {
+        dbCtx.threads.waitForQuery();
+        var jsArray: napi.Value = undefined;
+        _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
+        dbCtx.threads.mutex.lock();
+        for (dbCtx.threads.threads, 0..) |thread, index| {
             var arrayBuffer: napi.Value = undefined;
             _ = napi.c.napi_create_external_arraybuffer(
                 env,
-                thread.modifyResults.ptr,
-                thread.modifyResultsIndex,
+                thread.queryResults.ptr,
+                thread.queryResultsIndex,
                 null,
                 null,
                 &arrayBuffer,
             );
-            thread.*.modifyResultsIndex = 0;
-            var fnResponse: napi.Value = undefined;
-            _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.*), &fnResponse);
-            var args = [_]napi.Value{ fnResponse, arrayBuffer };
-            var undefinedVal: napi.Value = undefined;
-            _ = napi.c.napi_get_undefined(env, &undefinedVal);
-            _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
-            dbCtx.threads.jsModifyBridgeStaged = false;
-            dbCtx.threads.mutex.unlock();
-        },
-        BridgeResponse.query => {
-            dbCtx.threads.waitForQuery();
-            var jsArray: napi.Value = undefined;
-            _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
-            dbCtx.threads.mutex.lock();
-            for (dbCtx.threads.threads, 0..) |thread, index| {
-                var arrayBuffer: napi.Value = undefined;
-                _ = napi.c.napi_create_external_arraybuffer(
-                    env,
-                    thread.queryResults.ptr,
-                    thread.queryResultsIndex,
-                    null,
-                    null,
-                    &arrayBuffer,
-                );
-                _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
-                // dbCtx.threads.mutex.lock();
-                thread.*.queryResultsIndex = 0;
-                // dbCtx.threads.mutex.unlock();
-            }
-            var fnResponse: napi.Value = undefined;
-            _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.*), &fnResponse);
-            var args = [_]napi.Value{ fnResponse, jsArray };
-            var undefinedVal: napi.Value = undefined;
-            _ = napi.c.napi_get_undefined(env, &undefinedVal);
-            _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
-            dbCtx.threads.jsQueryBridgeStaged = false;
-            dbCtx.threads.mutex.unlock();
-        },
+            _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
+            thread.*.queryResultsIndex = 0;
+        }
+        var fnResponse: napi.Value = undefined;
+        _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.*), &fnResponse);
+        var args = [_]napi.Value{ fnResponse, jsArray };
+        var undefinedVal: napi.Value = undefined;
+        _ = napi.c.napi_get_undefined(env, &undefinedVal);
+        _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
+        dbCtx.threads.jsQueryBridgeStaged = false;
+        dbCtx.threads.mutex.unlock();
     }
 
     std.heap.raw_c_allocator.destroy(responseFn);
@@ -129,9 +118,9 @@ pub const Callback = struct {
 
     pub fn call(
         self: *Callback,
-        response: BridgeResponse,
+        response: t.OpType,
     ) void {
-        const result = std.heap.raw_c_allocator.create(BridgeResponse) catch return;
+        const result = std.heap.raw_c_allocator.create(t.OpType) catch return;
         result.* = response;
         _ = napi.c.napi_call_threadsafe_function(self.tsfn, result, napi.c.napi_tsfn_blocking);
     }

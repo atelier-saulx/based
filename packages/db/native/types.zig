@@ -17,6 +17,10 @@ pub const OpType = enum(u8) {
     unloadBlock = 129,
     loadCommon = 130,
     createType = 131,
+
+    pub fn isModifyOp(self: OpType) bool {
+        return @intFromEnum(self) > 126;
+    }
 };
 
 pub const ModOp = enum(u8) {

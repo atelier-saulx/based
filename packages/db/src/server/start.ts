@@ -13,13 +13,7 @@ import {
 import { asyncExitHook } from 'exit-hook'
 import { DbSchema, deSerialize } from '@based/schema'
 import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
-import {
-  bufToHex,
-  equals,
-  hexToBuf,
-  readUint32,
-  wait,
-} from '@based/utils'
+import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 import { OpType, OpTypeEnum } from '../zigTsExports.js'
@@ -32,7 +26,11 @@ export type StartOpts = {
   queryThreads?: number
 }
 
-const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
+const handleQueryResponse = (
+  db: DbServer,
+  type: OpTypeEnum,
+  arr: ArrayBuffer[] | null,
+) => {
   if (!arr) {
     return
   }
@@ -45,7 +43,6 @@ const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
       for (let i = 0; i < v.byteLength; ) {
         const size = readUint32(v, i)
         const id = readUint32(v, i + 4)
-        const type: OpTypeEnum = v[i + 8] as OpTypeEnum
         db.execOpListeners(type, id, v.subarray(i + 9, i + size))
         i += size
       }
@@ -53,11 +50,14 @@ const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
   }
 }
 
-const handleModifyResponse = (db: DbServer, arr: ArrayBuffer) => {
+const handleModifyResponse = (
+  db: DbServer,
+  type: OpTypeEnum,
+  arr: ArrayBuffer,
+) => {
   const v = new Uint8Array(arr)
   for (let i = 0; i < v.byteLength; ) {
     const size = readUint32(v, i)
-    const type: OpTypeEnum = v[i + 8] as OpTypeEnum
     const id = readUint32(v, i + 4)
     db.execOpListeners(type, id, v.subarray(i + 9, i + size))
     i += size
@@ -74,12 +74,12 @@ export async function start(db: DbServer, opts: StartOpts) {
 
   await mkdir(path, { recursive: true }).catch(noop)
 
-  db.dbCtxExternal = native.start((id: number, buffer: any) => {
-    // maybe just use OpType here...
-    if (id === 1) {
-      handleQueryResponse(db, buffer)
-    } else if (id === 2) {
-      handleModifyResponse(db, buffer)
+  db.dbCtxExternal = native.start((id: OpTypeEnum, buffer: any) => {
+    // if larger then 126 means IS_Modify
+    if (id > 126) {
+      handleModifyResponse(db, id, buffer)
+    } else {
+      handleQueryResponse(db, id, buffer)
     }
   })
 
@@ -148,7 +148,7 @@ export async function start(db: DbServer, opts: StartOpts) {
       BLOCK_CAPACITY_DEFAULT
 
     const blockGen = foreachBlock(db, def)
-    for await (const [ start,  _end, hash ] of blockGen) {
+    for await (const [start, _end, hash] of blockGen) {
       const mtKey = makeTreeKey(def.id, start)
       db.blockMap.updateBlock(mtKey, hash)
     }
