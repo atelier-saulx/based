@@ -1,5 +1,4 @@
 import { hash } from '@based/hash'
-import { getPropType } from './parse/utils.js'
 import {
   SchemaPropOneWay,
   SchemaProps,
@@ -26,7 +25,7 @@ function _makeEdgeTypes(
 
   for (const propName in props) {
     const prop = props[propName]
-    const propType = getPropType(prop)
+    const propType = prop.type
     const nextPropPrefix = propPrefix ? `${propPrefix}_${propName}` : propName
     if (propType === 'object') {
       _makeEdgeTypes(newTypes, typeName, prop.props, nextPropPrefix)
@@ -83,7 +82,7 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
   if (dbSchema.props) {
     for (const key in dbSchema.props) {
       const prop = dbSchema.props[key]
-      const propType = getPropType(prop)
+      const propType = prop.type
       let refProp: any
 
       if (propType === 'reference') {
@@ -132,7 +131,7 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
 
     for (const key in edgeTypes[et].props) {
       const prop = edgeTypes[et].props[key]
-      const propType = getPropType(prop)
+      const propType = prop.type
       let refProp: any
 
       if (propType === 'reference') {

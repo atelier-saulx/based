@@ -40,11 +40,9 @@ import {
   SchemaProps,
   SchemaString,
   SchemaTimestamp,
-  SchemaType,
   StrictSchema,
 } from '../types.js'
 import v from 'validator'
-import { getPropType } from '../parse/index.js'
 
 export type Validation = (
   payload: any,
@@ -504,7 +502,7 @@ const validateObj = (
         }
       } else {
         const msg =
-          getPropType(prop) === 'reference' && typeof val === 'object'
+          prop.type === 'reference' && typeof val === 'object'
             ? test(val?.id, prop)
             : test(val, prop)
         if (msg !== true) {
@@ -521,7 +519,8 @@ const validateObj = (
 
 export const getValidator = (prop: SchemaProp<true>): Validation => {
   const validator =
-    VALIDATION_MAP[TYPE_INDEX_MAP[getPropType(prop)]] ?? defaultValidation
+    // @ts-ignore
+    VALIDATION_MAP[TYPE_INDEX_MAP[prop.type]] ?? defaultValidation
   const custom = prop.validation
   if (custom) {
     return (a, b) => {

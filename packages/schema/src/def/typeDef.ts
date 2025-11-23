@@ -167,7 +167,7 @@ const createSchemaTypeDef = (
     // Create prop def
     const schemaProp = target[key]
     const propPath = [...path, key]
-    const propType = getPropType(schemaProp)
+    const propType = schemaProp.type
     if (propType === 'object') {
       createSchemaTypeDef(
         typeName,
