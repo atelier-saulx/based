@@ -30,10 +30,6 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
-pub fn createType(ctx: *DbCtx, typeId: t.TypeId, schema: []u8) !void {
-    try errors.selva(selva.selva_db_create_type(ctx.selva, typeId, schema.ptr, schema.len));
-}
-
 pub fn getType(ctx: *DbCtx, typeId: t.TypeId) !Type {
     const selvaTypeEntry: ?Type = selva.selva_get_type_by_index(
         ctx.selva.?,
