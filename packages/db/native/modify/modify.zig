@@ -150,6 +150,7 @@ pub fn modify(
     dbCtx: *db.DbCtx,
     opType: t.OpType,
 ) !void {
+    std.debug.print("modify incoming!", .{});
     const modifyId = utils.read(u32, batch, 0);
     var i: usize = 13 + 4; // 5 for id + type and 8 for schema checksum + 4 for operation count
     // currentOffset chek threadCtx.current
@@ -358,7 +359,7 @@ pub fn modify(
     writeInt(u32, result, resultIndex, dirtyRangesSize);
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
     utils.copy(u8, result[resultIndex + 7 ..], newDirtySlice);
-
+    std.debug.print("modify done!", .{});
     // threadCtx.modifyResultsIndex = set back to real len (check diff)
 
     // readSize from startOffset

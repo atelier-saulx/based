@@ -79,7 +79,9 @@ export class DbClient extends DbShared {
     transformFns?: MigrateFns,
   ): Promise<SchemaChecksum> {
     const strictSchema = parse(schema).schema
+    console.log('??')
     await this.drain()
+    console.log('??xxx')
     const schemaChecksum = await this.hooks.setSchema(
       strictSchema as StrictSchema,
       transformFns,

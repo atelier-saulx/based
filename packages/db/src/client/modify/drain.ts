@@ -1,6 +1,6 @@
 import { writeUint32 } from '@based/utils'
 import { DbClient } from '../../index.js'
-import { Ctx } from './Ctx.js'
+import { Ctx, MODIFY_HEADER_SIZE } from './Ctx.js'
 import { rejectTmp, resolveTmp } from './Tmp.js'
 
 export const reset = (ctx: Ctx) => {
@@ -25,10 +25,12 @@ export const consume = (ctx: Ctx): Uint8Array => {
 }
 
 export const drain = (db: DbClient, ctx: Ctx) => {
-  if (ctx.index > 8) {
+  if (ctx.index > MODIFY_HEADER_SIZE) {
+    // TODO USE PACKED STRUCT HEADER
     const { batch } = ctx
     const payload = consume(ctx)
     let start: number
+    console.log('DRAIN IT')
     const current = db.hooks
       .flushModify(payload)
       .then((res) => {

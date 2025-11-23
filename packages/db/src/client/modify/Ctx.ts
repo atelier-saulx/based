@@ -4,6 +4,8 @@ import type { LangCode } from '@based/schema'
 import type { Tmp } from './Tmp.js'
 import type { ModOpEnum } from '../../zigTsExports.js'
 
+export const MODIFY_HEADER_SIZE = 1 + 4 + 8 + 4
+
 export class Ctx {
   constructor(schemaChecksum: number, buf: Uint8Array<ArrayBufferLike>) {
     this.buf = buf
@@ -12,7 +14,7 @@ export class Ctx {
     this.reset()
   }
   reset() {
-    this.index = 1 + 4 + 8 + 4 // 5 for id + type + schema checksum + operation count
+    this.index = MODIFY_HEADER_SIZE // 5 for id + type + schema checksum + operation count
     this.max = this.buf.buffer.maxByteLength - 4
     this.size = this.buf.buffer.byteLength - 4
     this.cursor = {}

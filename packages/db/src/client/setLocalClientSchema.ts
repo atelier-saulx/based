@@ -2,7 +2,7 @@ import { updateTypeDefs } from '@based/schema/def'
 import { DbSchema } from '@based/schema'
 import { DbClient } from '../index.js'
 import { cancel } from './modify/drain.js'
-import { Ctx } from './modify/Ctx.js'
+import { Ctx, MODIFY_HEADER_SIZE } from './modify/Ctx.js'
 
 export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
   if (client.schema && client.schema.hash === schema.hash) {
@@ -13,7 +13,7 @@ export const setLocalClientSchema = (client: DbClient, schema: DbSchema) => {
   client.schemaTypesParsed = schemaTypesParsed
   client.schemaTypesParsedById = schemaTypesParsedById
 
-  if (client.modifyCtx.index > 8) {
+  if (client.modifyCtx.index > MODIFY_HEADER_SIZE) {
     console.info('Modify cancelled - schema updated')
   }
 

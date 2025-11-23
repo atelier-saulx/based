@@ -16,7 +16,7 @@ import {
 import { migrate } from './migrate/index.js'
 import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
-import { combineToNumber, readUint32, writeUint32 } from '@based/utils'
+import { combineToNumber, readUint32, wait, writeUint32 } from '@based/utils'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,
@@ -212,6 +212,7 @@ export class DbServer extends DbShared {
     }
     const id = this.modifyCnt++
     writeUint32(payload, id, 0)
+    console.log('LEGGO')
     return new Promise((resolve) => {
       native.modifyThread(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {
@@ -261,6 +262,8 @@ export class DbServer extends DbShared {
     setNativeSchema(this, schema)
     await writeSchemaFile(this, schema)
 
+    console.warn('WAITING 500MS AFTER SCHEMA FOR FIXFIX')
+    await wait(500)
     process.nextTick(() => {
       this.emit('schema', this.schema)
     })

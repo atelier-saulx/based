@@ -65,11 +65,13 @@ await test('include', async (t) => {
 
   console.log('poop')
 
-  const id = db.create('user', {
+  const id = await db.create('user', {
     nr: 1,
     // name: 'mr poop',
     // flap: x.join(' '),
   })
+
+  console.log('CREATE:', { id })
 
   // await wait(100)
 
