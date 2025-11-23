@@ -120,7 +120,7 @@ export const migrate = async (
   }
 
   setSchemaOnServer(tmpDb.server, toSchema)
-  setNativeSchema(tmpDb.server, toSchema)
+  await setNativeSchema(tmpDb.server, toSchema)
 
   if (abort()) {
     await tmpDb.destroy()

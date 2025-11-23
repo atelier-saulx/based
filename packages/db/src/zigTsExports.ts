@@ -21,6 +21,7 @@ export const OpType = {
   loadBlock: 128,
   unloadBlock: 129,
   loadCommon: 130,
+  createType: 131,
 } as const
 
 /**
@@ -36,7 +37,8 @@ export const OpType = {
   modify, 
   loadBlock, 
   unloadBlock, 
-  loadCommon 
+  loadCommon, 
+  createType 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
 

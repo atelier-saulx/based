@@ -365,6 +365,13 @@ pub const Threads = struct {
                             const err = dump.loadCommon(self.ctx, filename, errlog);
                             _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                         },
+                        t.OpType.createType => {
+                            std.log.err("Create type", .{});
+                            const data = try getResultSlice(true, threadCtx, 4, read(u32, m, 0), op);
+                            const typeCode = read(u32, m, 0);
+                            const err = selva.selva_db_create_type(self.ctx.selva, @truncate(typeCode), m.ptr, m.len);
+                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                        },
                         else => {},
                     }
 
