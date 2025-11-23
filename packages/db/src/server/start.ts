@@ -147,10 +147,11 @@ export async function start(db: DbServer, opts: StartOpts) {
       def.blockCapacity ||
       BLOCK_CAPACITY_DEFAULT
 
-    foreachBlock(db, def, (start, _end, hash) => {
+    const blockGen = foreachBlock(db, def)
+    for await (const [ start,  _end, hash ] of blockGen) {
       const mtKey = makeTreeKey(def.id, start)
       db.blockMap.updateBlock(mtKey, hash)
-    })
+    }
   }
 
   // Insert partials to make the hash match

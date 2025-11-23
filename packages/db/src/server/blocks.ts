@@ -289,26 +289,32 @@ export async function unloadBlock(
   await p
 }
 
+async function getBlockHash(db: DbServer, typeCode: number, start: number): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    db.addOpOnceListener(OpType.blockHash, 0, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        reject(new Error(`getBlockHash ${typeCode}:${start} failed: ${native.selvaStrerror(err)}`))
+      } else {
+        resolve(buf.slice(4, 20))
+      }
+    })
+  })
+}
+
 /**
- * Execute cb() for each block in memory.
+ * Get hash of each block in memory.
  */
-export function foreachBlock(
-  db: DbServer,
-  def: SchemaTypeDef,
-  cb: (start: number, end: number, hash: BlockHash) => void,
-  includeEmptyBlocks: boolean = false,
-) {
+export async function* foreachBlock(db: DbServer, def: SchemaTypeDef): AsyncGenerator<[number, number, Uint8Array]> {
   const step = def.blockCapacity
   const lastId = db.ids[def.id - 1]
 
   for (let start = 1; start <= lastId; start += step) {
     const end = start + step - 1
-    const hash: BlockHash = new Uint8Array(BLOCK_HASH_SIZE)
-    const res = native.getNodeBlockHash(db.dbCtxExternal, def.id, start, hash)
-
-    if (res || includeEmptyBlocks) {
-      cb(start, end, hash)
-    }
+    try {
+      const hash = await getBlockHash(db, def.id, start)
+      yield [start, end, hash]
+    } catch {}
   }
 }
 
