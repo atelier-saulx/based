@@ -1,7 +1,7 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
 import { randomString, wait } from '@based/utils'
-import { Schema } from '@based/schema'
+import { type SchemaIn } from '@based/schema'
 
 await test('schema problems save', async (t) => {
   let db = new BasedDb({
@@ -12,7 +12,7 @@ await test('schema problems save', async (t) => {
 
   await db.save()
 
-  const types: Schema['types'] = {}
+  const types: SchemaIn['types'] = {}
 
   for (let i = 0; i < 50; i++) {
     types[(~~(Math.random() * 1e6)).toString(16)] = {

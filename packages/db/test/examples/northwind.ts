@@ -1,7 +1,7 @@
 import { BasedDb } from '../../src/index.js'
 // import { mermaid } from '@based/schema-diagram'
 import { deepCopy } from '@based/utils'
-import { Schema } from '@based/schema'
+import { Schema, type SchemaIn } from '@based/schema'
 import test from '../shared/test.js'
 import createNorthwindDb, { defaultSchema } from '../shared/northwindDb.js'
 import { deepEqual } from '../shared/assert.js'
@@ -1676,7 +1676,7 @@ await test('hooks', async (t) => {
       }
     },
   }
-  await createNorthwindDb(db, schema as Schema)
+  await createNorthwindDb(db, schema as SchemaIn)
 
   // SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
   deepEqual(await db.query('orderDetails').avg('discountAmount').get(), {

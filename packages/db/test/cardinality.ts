@@ -409,9 +409,9 @@ await test('defaultPrecision', async (t) => {
   t.after(() => db.stop())
 
   await db.setSchema({
-    props: {
-      myRootCount: 'cardinality',
-    },
+    // props: {
+    //   myRootCount: 'cardinality',
+    // },
     types: {
       stores: {
         name: 'string',

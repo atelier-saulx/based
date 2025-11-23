@@ -16,11 +16,9 @@ await test('shorthands', () => {
           },
         },
       },
-      props: {
-        myText: 'text',
-      },
     }).schema,
     {
+      hash: 1370478657748,
       locales: { en: {} },
       types: {
         hello: {
@@ -28,12 +26,9 @@ await test('shorthands', () => {
             myText: { type: 'text' },
             myString: { type: 'string' },
             myNumber: { type: 'number' },
-            myEnum: { enum: [1, 2, 3] },
+            myEnum: { type: 'enum', enum: [1, 2, 3] },
           },
         },
-      },
-      props: {
-        myText: { type: 'text' },
       },
     },
   )
@@ -50,6 +45,7 @@ await test('shorthands', () => {
       },
     }).schema,
     {
+      hash: 4322500041486,
       locales: { en: {} },
       types: {
         article: {
@@ -81,6 +77,7 @@ await test('shorthands', () => {
       },
     }).schema,
     {
+      hash: 4322500041486,
       locales: { en: {} },
       types: {
         article: {

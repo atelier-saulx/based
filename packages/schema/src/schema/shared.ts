@@ -26,3 +26,14 @@ export const deleteUndefined = <P extends Record<string, unknown>>(
   }
   return obj
 }
+
+export const assertExpectedProps = (
+  shape: Record<string, any>,
+  def: Record<string, unknown>,
+) => {
+  const unexpectedKey = Object.keys(def).find((key) => !(key in shape))
+  assert(
+    unexpectedKey === undefined,
+    `Unexpected property: ${unexpectedKey}: ${def[unexpectedKey as string]}`,
+  )
+}

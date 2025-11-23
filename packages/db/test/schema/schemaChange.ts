@@ -1,7 +1,7 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
 import { deepCopy } from '@based/utils'
-import { Schema } from '@based/schema'
+import type { SchemaIn } from '@based/schema'
 import { deepEqual } from '../shared/assert.js'
 
 await test('set schema dont migrate', async (t) => {
@@ -14,8 +14,12 @@ await test('set schema dont migrate', async (t) => {
   t.after(() => db.destroy())
 
   let schema = {
-    props: {
-      haha: 'boolean',
+    types: {
+      yoyo: {
+        props: {
+          haha: 'boolean',
+        },
+      },
     },
   }
 
@@ -24,18 +28,14 @@ await test('set schema dont migrate', async (t) => {
     updates++
   })
 
-  await db.setSchema(deepCopy(schema) as Schema)
-  await db.setSchema(deepCopy(schema) as Schema)
-  await db.setSchema(deepCopy(schema) as Schema)
+  await db.setSchema(deepCopy(schema) as SchemaIn)
+  await db.setSchema(deepCopy(schema) as SchemaIn)
+  await db.setSchema(deepCopy(schema) as SchemaIn)
 
   deepEqual(updates, 1, '1 update')
   // deepEqual(migrates, 0, '0 migrates')
 
   await db.setSchema({
-    props: {
-      coolguy: 'string',
-      badguy: 'boolean',
-    },
     types: {
       yes: {
         name: 'string',
@@ -66,11 +66,6 @@ await test('set schema dont migrate', async (t) => {
   // deepEqual(migrates, 1, '1 migrates')
 
   await db.setSchema({
-    props: {
-      badguy: 'boolean',
-      coolguy: 'string',
-      okguy: 'boolean',
-    },
     types: {
       nope: {
         name: 'string',
@@ -100,16 +95,6 @@ await test('set schema dont migrate', async (t) => {
   })
 
   await db.setSchema({
-    props: {
-      badguy: 'boolean',
-      coolguy: 'string',
-      okguy: 'boolean',
-      excludesNopes: {
-        items: {
-          ref: 'nope',
-        },
-      },
-    },
     types: {
       nope: {
         name: 'string',

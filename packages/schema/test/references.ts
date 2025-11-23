@@ -34,47 +34,53 @@ await test('references', (t) => {
     },
   })
 
-  deepEqual(
-    parse({
-      types: {
-        article: {
-          props: {
-            writer: {
-              ref: 'author',
-              prop: 'articles',
-            },
+  const {
+    schema: { hash, ...rest },
+  } = parse({
+    types: {
+      article: {
+        props: {
+          writer: {
+            ref: 'author',
+            prop: 'articles',
           },
-        },
-        author: {
-          props: {},
         },
       },
-    }).schema,
-    {
-      types: {
-        article: {
-          props: {
-            writer: {
-              ref: 'author',
-              prop: 'articles',
-            },
+      author: {
+        props: {},
+      },
+    },
+  })
+
+  deepEqual(rest, {
+    types: {
+      article: {
+        props: {
+          writer: {
+            type: 'reference',
+            ref: 'author',
+            prop: 'articles',
           },
         },
-        author: {
-          props: {
-            articles: {
-              items: {
-                ref: 'article',
-                prop: 'writer',
-              },
+      },
+      author: {
+        props: {
+          articles: {
+            type: 'references',
+            items: {
+              type: 'reference',
+              ref: 'article',
+              prop: 'writer',
             },
           },
         },
       },
     },
-  )
+  })
 
-  const { schema } = parse({
+  const {
+    schema: { hash: hash2, ...rest2 },
+  } = parse({
     types: {
       article: {
         props: {
@@ -92,12 +98,14 @@ await test('references', (t) => {
     },
   })
 
-  deepEqual(schema, {
+  deepEqual(rest2, {
     types: {
       article: {
         props: {
           writers: {
+            type: 'references',
             items: {
+              type: 'reference',
               ref: 'author',
               prop: 'articles',
             },
@@ -107,7 +115,9 @@ await test('references', (t) => {
       author: {
         props: {
           articles: {
+            type: 'references',
             items: {
+              type: 'reference',
               ref: 'article',
               prop: 'writers',
             },
@@ -197,11 +207,9 @@ await test('references', (t) => {
         },
         author: {
           props: {
-            // @ts-ignore
             articles: {
-              // @ts-ignore
               items: {
-                // @ts-ignore
+                // @ts-expect-error
                 required: true,
                 ref: 'article',
                 prop: 'author',

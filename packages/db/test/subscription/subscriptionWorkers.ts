@@ -1,6 +1,6 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { SchemaProp, SchemaType } from '@based/schema'
+import { SchemaType } from '@based/schema'
 import { clientWorker } from '../shared/startWorker.js'
 import { allCountryCodes } from '../shared/examples.js'
 
@@ -21,7 +21,8 @@ await test('subscriptionWorkers', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  const voteCountrySchema: SchemaProp = countrySchema
+  // TODO fix this type
+  const voteCountrySchema: any = countrySchema
 
   await db.setSchema({
     types: {

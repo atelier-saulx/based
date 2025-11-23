@@ -1,4 +1,4 @@
-import { parseSchema, type SchemaIn } from './schema/schema.js'
+import { parseSchema, type SchemaIn, type SchemaOut } from './schema/schema.js'
 
 export * from './types.js'
 export * from './dbSchema.js'
@@ -9,4 +9,5 @@ export * from './serialize.js'
 export * from './infer.js'
 export * as semver from './parse/semver/mod.js'
 
-// export const parse = (schema: SchemaIn) => ({ schema: parseSchema(schema) })
+export type { SchemaIn, SchemaOut }
+export const parse = (schema: SchemaIn) => ({ schema: parseSchema(schema) })

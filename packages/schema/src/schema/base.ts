@@ -1,5 +1,6 @@
 import {
   assert,
+  assertExpectedProps,
   deleteUndefined,
   isBoolean,
   isFunction,
@@ -50,8 +51,7 @@ export const parseBase = <T extends SchemaProp<true>>(
   result.validation = def.validation
   result.hooks = def.hooks
 
-  const unexpectedKey = Object.keys(def).find((key) => !(key in result))
-  assert(unexpectedKey === undefined, `Unexpected property: ${unexpectedKey}`)
+  assertExpectedProps(result, def)
 
   if ('default' in result && result.default !== undefined) {
     // @ts-ignore
