@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '22.21.1'
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+
+jobs:
+  ci_build_test:
+    name: Autotest
+    runs-on: ubuntu-latest
+    environment: 'BasedDB CI-CD'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Build Builder Image
+        run: docker build -t based-db-clibs-build-linux_aarch64 -f podman/Containerfile .
+
+      - name: Run Build
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/usr/src/based-db" based-db-clibs-build-linux_aarch64
+
+          sudo chown -R $USER:$USER .
+
+          npm ci
+
+          npm run build-zig linux-aarch64
+          npx tsc
+
+      - name: Run Test Command (npm run test)
+        run: npm run test-fast
+
+      # - name: Send Discord Notification
+      #   uses: tsickert/discord-webhook@v7.0.0
+      #   if: always()
+      #   with:
+      #     webhook-url: ${{ env.DISCORD_WEBHOOK_URL }}
+      #     content: |
+      #       ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
+      #   with:
+      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      #     username: GitHub
+      #     avatar-url: "https://cdn.discordapp.com/avatars/999680196040982618/df91181b3f1cf0ef1592fbe18e0962d7.webp"
+      #     embed-author-name: ${{ github.actor.login }}
+      #     embed-author-url: ${{ github.actor.url }}
+      #     embed-author-icon-url: ${{ github.actor.avatar_url }}
+      #     embed-title: ${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}
+      #     embed-description: `${{ github.event.payload.push.ref}}, commit: ${{ github.event.payload.push.head}}`
