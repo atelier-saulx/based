@@ -1,9 +1,11 @@
 const napi = @import("./napi.zig");
 const deflate = @import("./deflate.zig");
+const utils = @import("./utils.zig");
 const std = @import("std");
 const selva = @import("./selva.zig").c;
-const writeInt = @import("./utils.zig").writeInt;
-const copy = @import("./utils.zig").copy;
+
+const write = utils.write;
+const copy = utils.copy;
 
 pub fn napi_finalize_hash(_: napi.Env, finalize_data: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
     _ = selva.selva_hash_free_state(@ptrCast(finalize_data));
@@ -113,7 +115,7 @@ pub fn xxHash64(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const target = napi.get([]u8, env, args[1]) catch return null;
     const offset = napi.get(u32, env, args[2]) catch return null;
     const hash = selva.XXH64(buf.ptr, buf.len, 0);
-    writeInt(usize, target, offset, hash);
+    write(usize, target, hash, offset);
     return null;
 }
 

@@ -12,7 +12,7 @@ const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 const deflate = @import("../deflate.zig");
 const t = @import("../types.zig");
 
-const writeInt = utils.writeInt;
+const write = utils.write;
 const read = utils.read;
 const readNext = utils.readNext;
 const Thread = std.Thread;
@@ -28,7 +28,7 @@ pub fn getResultSlice(
     subType: t.OpType,
 ) ![]u8 {
     const offset = 9;
-    const paddedSize = size + offset;
+    const paddedSize: u32 = @truncate(size + offset);
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
         if (thread.queryResults.len < thread.queryResultsIndex + paddedSize) {
@@ -40,8 +40,8 @@ pub fn getResultSlice(
                 thread.queryResults.len + increasedSize,
             );
         }
-        writeInt(u32, thread.queryResults, thread.queryResultsIndex, paddedSize);
-        writeInt(u32, thread.queryResults, thread.queryResultsIndex + 4, id);
+        write(u32, thread.queryResults, paddedSize, thread.queryResultsIndex);
+        write(u32, thread.queryResults, id, thread.queryResultsIndex + 4);
         thread.queryResults[thread.queryResultsIndex + 8] = @intFromEnum(subType);
         const data = thread.queryResults[thread.queryResultsIndex + offset .. thread.queryResultsIndex + paddedSize];
         thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
@@ -56,8 +56,8 @@ pub fn getResultSlice(
                 thread.modifyResults.len + increasedSize,
             );
         }
-        writeInt(u32, thread.modifyResults, thread.modifyResultsIndex, paddedSize);
-        writeInt(u32, thread.modifyResults, thread.modifyResultsIndex + 4, id);
+        write(u32, thread.modifyResults, paddedSize, thread.modifyResultsIndex);
+        write(u32, thread.modifyResults, id, thread.modifyResultsIndex + 4);
         thread.modifyResults[thread.modifyResultsIndex + 8] = @intFromEnum(subType);
         const data = thread.modifyResults[thread.modifyResultsIndex + offset .. thread.modifyResultsIndex + paddedSize];
         thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;

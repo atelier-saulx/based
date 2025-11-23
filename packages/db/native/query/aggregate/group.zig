@@ -7,7 +7,7 @@ const t = @import("../../types.zig");
 
 const read = utils.read;
 const copy = utils.copy;
-const writeInt = utils.writeIntExact;
+const write = utils.write;
 pub const ProtocolLen = 18;
 
 pub const GroupCtx = struct {
@@ -34,7 +34,7 @@ pub inline fn setGroupResults(
     while (it.next()) |entry| {
         const key = entry.key_ptr.*;
         const keyLen: u16 = @intCast(key.len);
-        writeInt(u16, data, i, keyLen);
+        write(u16, data, keyLen, i);
         i += 2;
         if (keyLen > 0) {
             copy(u8, data[i .. i + keyLen], key);
@@ -84,15 +84,15 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                 const count = read(u64, accumulatorField, accumulatorPos);
                 const sum = read(f64, accumulatorField, accumulatorPos + 8);
                 const mean = sum / @as(f64, @floatFromInt(count));
-                writeInt(f64, resultsField, resultPos, @floatCast(mean));
+                write(f64, resultsField, @floatCast(mean), resultPos);
             } else if (aggType == t.AggType.hmean) {
                 const count = read(u64, accumulatorField, accumulatorPos);
                 if (count != 0) {
                     const isum = read(f64, accumulatorField, accumulatorPos + 8);
                     const mean = @as(f64, @floatFromInt(count)) / isum;
-                    writeInt(f64, resultsField, resultPos, @floatCast(mean));
+                    write(f64, resultsField, @floatCast(mean), resultPos);
                 } else {
-                    writeInt(f64, resultsField, resultPos, 0.0);
+                    write(f64, resultsField, 0.0, resultPos);
                 }
             } else if (aggType == t.AggType.variance) {
                 const count = read(u64, accumulatorField, accumulatorPos);
@@ -109,12 +109,12 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                         numerator / denominator;
 
                     if (variance < 0.0 and variance > -std.math.inf(f64)) {
-                        writeInt(f64, resultsField, resultPos, 0.0);
+                        write(f64, resultsField, 0.0, resultPos);
                     } else {
-                        writeInt(f64, resultsField, resultPos, @floatCast(variance));
+                        write(f64, resultsField, @floatCast(variance), resultPos);
                     }
                 } else {
-                    writeInt(f64, resultsField, resultPos, 0.0);
+                    write(f64, resultsField, 0.0, resultPos);
                 }
             } else if (aggType == t.AggType.stddev) {
                 const count = read(u64, accumulatorField, accumulatorPos);
@@ -129,12 +129,12 @@ pub inline fn finalizeResults(resultsField: []u8, accumulatorField: []u8, agg: [
                     else
                         numerator / denominator;
                     const stddev = @sqrt(variance);
-                    writeInt(f64, resultsField, resultPos, @floatCast(stddev));
+                    write(f64, resultsField, @floatCast(stddev), resultPos);
                 } else {
-                    writeInt(f64, resultsField, resultPos, 0.0);
+                    write(f64, resultsField, 0.0, resultPos);
                 }
             } else if (aggType == t.AggType.cardinality) {
-                writeInt(u32, resultsField, resultPos, read(u32, accumulatorField, accumulatorPos));
+                write(u32, resultsField, read(u32, accumulatorField, accumulatorPos), resultPos);
             }
         }
         i += fieldAggsSize;
@@ -155,7 +155,7 @@ pub inline fn finalizeGroupResults(
         while (it.next()) |entry| {
             const key = entry.key_ptr.*;
             const keyLen: u16 = @intCast(key.len);
-            writeInt(u16, data, i, keyLen);
+            write(u16, data, keyLen, i);
             i += 2;
             if (keyLen > 0) {
                 copy(u8, data[i .. i + keyLen], key);

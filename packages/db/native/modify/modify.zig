@@ -22,7 +22,7 @@ const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
 const increment = Update.increment;
 const read = utils.read;
-const writeInt = utils.writeInt;
+const write = utils.write;
 const assert = std.debug.assert;
 const ModifyCtx = Modify.ModifyCtx;
 
@@ -59,8 +59,8 @@ fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
 
 fn writeoutPrevNodeId(ctx: *ModifyCtx, resultIndex: *u32, prevNodeId: u32, result: []u8) void {
     if (prevNodeId != 0) {
-        writeInt(u32, result, resultIndex.*, prevNodeId);
-        writeInt(u8, result, resultIndex.* + 4, @intFromEnum(ctx.err));
+        write(u32, result, prevNodeId, resultIndex.*);
+        write(u8, result, @intFromEnum(ctx.err), resultIndex.* + 4);
         ctx.err = errors.ClientError.null;
         resultIndex.* += 5;
     }
@@ -280,8 +280,7 @@ pub fn modify(
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
-                        // write the id into the operation
-                        writeInt(u32, operation, updateIndex + 1, db.getNodeId(node));
+                        write(u32, operation, db.getNodeId(node), updateIndex + 1);
                         nextIndex = updateIndex;
                         break;
                     }
@@ -300,8 +299,8 @@ pub fn modify(
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = db.getNodeId(node);
-                        writeInt(u32, batch, resultIndex, id);
-                        writeInt(u8, batch, resultIndex + 4, @intFromEnum(errors.ClientError.null));
+                        write(u32, batch, id, resultIndex);
+                        write(u8, batch, @intFromEnum(errors.ClientError.null), resultIndex + 4);
                         resultIndex += 5;
                         nextIndex = endIndex;
                         break;
@@ -349,12 +348,14 @@ pub fn modify(
     writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
 
     const newDirtyRanges = ctx.dirtyRanges.values();
-    const dirtyRangesSize = newDirtyRanges.len * 8;
+    const dirtyRangesSize: u32 = @truncate(newDirtyRanges.len * 8);
 
-    writeInt(u32, result, 0, resultIndex);
-    writeInt(u32, result, resultIndex, dirtyRangesSize);
+    write(u32, result, resultIndex, 0);
+    write(u32, result, dirtyRangesSize, resultIndex);
     resultIndex += 4; // just wrote 4
     resultIndex = resultIndex + 8 - (resultIndex % 8); // ceil to multiple of 8
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
+
+    // copy with offset!
     utils.copy(u8, result[resultIndex..], newDirtySlice);
 }

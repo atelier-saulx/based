@@ -14,7 +14,7 @@ const GroupProtocolLen = group.ProtocolLen;
 const finalizeGroupResults = group.finalizeGroupResults;
 const finalizeResults = group.finalizeResults;
 const read = utils.read;
-const writeInt = utils.writeIntExact;
+const write = utils.write;
 
 pub fn aggregateRefsFields(
     ctx: *Query.QueryCtx,
@@ -185,7 +185,7 @@ pub inline fn aggregateRefsDefault(
     const aggType: t.AggType = @enumFromInt(aggPropTypeDef[0]);
     if (aggType == t.AggType.count and !hasFilter and accumulatorSize == 4) {
         const resultPos = read(u16, aggPropTypeDef, 4);
-        writeInt(u32, accumulatorField, resultPos, refsCnt);
+        write(u32, accumulatorField, refsCnt, resultPos);
     } else {
         var i: usize = offset;
         checkItem: while (i < refsCnt) : (i += 1) {

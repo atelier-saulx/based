@@ -7,23 +7,14 @@ const selva = @import("./selva.zig").c;
 extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
 extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;
 
-// Only little endian for us (at least for now)
-// const native_endian = builtin.cpu.arch.endian();
-
-pub inline fn writeInt(comptime T: type, buffer: []u8, offset: usize, value: usize) void {
-    const v: T = @truncate(value);
-    const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
-    target.* = @bitCast(v);
-}
-
-pub inline fn writeIntExact(comptime T: type, buffer: []u8, offset: usize, value: T) void {
-    const target = buffer[offset..][0..@sizeOf(T)];
-    target.* = @bitCast(value);
-}
-
 pub inline fn write(comptime T: type, buffer: []u8, value: T, offset: usize) void {
-    const target = buffer[offset..][0..@sizeOf(T)];
+    const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
     target.* = @bitCast(value);
+}
+
+pub inline fn writeNext(comptime T: type, buffer: []u8, value: T, offset: *usize) void {
+    write(T, buffer, value, offset.*);
+    offset.* = offset.* + @bitSizeOf(T) / 8;
 }
 
 pub inline fn toSlice(comptime T: type, value: []u8) []T {
@@ -58,8 +49,8 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
     }
 }
 
-pub inline fn readNext(T: type, q: []u8, offset: *usize) T {
-    const header = read(T, q, offset.*);
+pub inline fn readNext(T: type, buffer: []u8, offset: *usize) T {
+    const header = read(T, buffer, offset.*);
     offset.* = offset.* + @bitSizeOf(T) / 8;
     return header;
 }
@@ -76,6 +67,7 @@ pub fn debugPrint(comptime format: []const u8, args: anytype) void {
     }
 }
 
+// maybe make copy with offset
 pub inline fn copy(T: type, dest: []T, source: []const T) void {
     if (builtin.link_libc) {
         _ = memcpy(dest.ptr, source.ptr, source.len);
