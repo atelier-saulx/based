@@ -47,6 +47,26 @@ export type SaveOpts = {
 }
 
 const SELVA_ENOENT = -8
+const LOAD_BLOCK_ID = 0
+
+function* idGenerator(): Generator<number> {
+  let i = Number.MAX_SAFE_INTEGER
+
+  while (true) {
+    if (i >= Number.MAX_SAFE_INTEGER) {
+      i = 1
+    } else {
+      i++
+    }
+
+    yield i
+  }
+}
+
+const saveBlockId = idGenerator()
+const loadSaveCommonId = idGenerator()
+const loadBlockRawId = idGenerator()
+const getBlockHashId = idGenerator()
 
 export async function readWritelog(path: string): Promise<Writelog | null> {
   try {
@@ -102,7 +122,7 @@ export function registerBlockIoListeners(db: DbServer) {
     }
   })
 
-  db.addOpListener(OpType.loadBlock, 0, (buf: Uint8Array) => {
+  db.addOpListener(OpType.loadBlock, LOAD_BLOCK_ID, (buf: Uint8Array) => {
     const err = readUint32(buf, 0)
     const start = readUint32(buf, 4)
     const typeId = readUint16(buf, 8)
@@ -131,14 +151,16 @@ export function registerBlockIoListeners(db: DbServer) {
 }
 
 async function saveCommon(db: DbServer): Promise<void> {
+  const id = loadSaveCommonId.next().value
   const filename = join(db.fileSystemPath, COMMON_SDB_FILE)
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
+  writeUint32(msg, id, 0)
   msg[4] = OpType.saveCommon
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
-    db.addOpOnceListener(OpType.saveCommon, 0, (buf: Uint8Array) => {
+    db.addOpOnceListener(OpType.saveCommon, id, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
         const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
@@ -156,6 +178,7 @@ async function saveCommon(db: DbServer): Promise<void> {
 async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
   await Promise.all(
     blocks.map((block) => {
+      const id = saveBlockId.next().value
       const [typeId, start] = destructureTreeKey(block.key)
       const def = db.schemaTypesParsedById[typeId]
       const end = start + def.blockCapacity - 1
@@ -165,6 +188,7 @@ async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
       )
       const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
+      writeUint32(msg, id, 0)
       msg[4] = OpType.saveBlock
       writeUint32(msg, start, 5)
       writeUint16(msg, typeId, 9)
@@ -181,13 +205,15 @@ export async function loadCommon(
   db: DbServer,
   filename: string,
 ): Promise<void> {
+  const id = loadSaveCommonId.next().value
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
+  writeUint32(msg, id, 0)
   msg[4] = OpType.loadCommon
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
-    db.addOpOnceListener(OpType.loadCommon, 0, (buf: Uint8Array) => {
+    db.addOpOnceListener(OpType.loadCommon, id, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
         const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
@@ -206,13 +232,15 @@ export async function loadBlockRaw(
   db: DbServer,
   filename: string,
 ): Promise<void> {
+  const id = loadBlockRawId.next().value
   const msg = new Uint8Array(6 + native.stringByteLength(filename) + 1)
 
+  writeUint32(msg, id, 0)
   msg[4] = OpType.loadBlock
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
-    db.addOpOnceListener(OpType.loadBlock, 0, (buf: Uint8Array) => {
+    db.addOpOnceListener(OpType.loadBlock, id, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
         const errMsg = `Load ${filename} failed: ${native.selvaStrerror(err)}`
@@ -291,16 +319,15 @@ export async function unloadBlock(
 
 async function getBlockHash(db: DbServer, typeCode: number, start: number): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
+    const id = getBlockHashId.next().value
     const msg = new Uint8Array(11)
 
-    // TODO gets for only one type can be inflight concurrently as we only detect
-    //      the ops by start.
-    writeUint32(msg, start, 0)
+    writeUint32(msg, id, 0)
     msg[4] = OpType.saveCommon
     writeUint32(msg, start, 5)
     writeUint16(msg, typeCode, 9)
 
-    db.addOpOnceListener(OpType.blockHash, start, (buf: Uint8Array) => {
+    db.addOpOnceListener(OpType.blockHash, id, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
         reject(new Error(`getBlockHash ${typeCode}:${start} failed: ${native.selvaStrerror(err)}`))
