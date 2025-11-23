@@ -296,13 +296,7 @@ export function foreachBlock(
   for (let start = 1; start <= lastId; start += step) {
     const end = start + step - 1
     const hash: BlockHash = new Uint8Array(BLOCK_HASH_SIZE)
-    const res = native.getNodeRangeHash(
-      def.id,
-      start,
-      end,
-      hash,
-      db.dbCtxExternal,
-    )
+    const res = native.getNodeBlockHash(db.dbCtxExternal, def.id, start, hash)
 
     if (res || includeEmptyBlocks) {
       cb(start, end, hash)
@@ -375,7 +369,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
     await saveCommon(db)
 
     const blocks: Block[] = []
-    db.blockMap.foreachDirtyBlock((typeId, start, end, block) =>
+    db.blockMap.foreachDirtyBlock((_typeId, _start, _end, block) =>
       blocks.push(block),
     )
     await saveBlocks(db, blocks)
