@@ -215,7 +215,7 @@ export async function loadBlockRaw(
     db.addOpOnceListener(OpType.loadBlock, 0, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
-        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        const errMsg = `Load ${filename} failed: ${native.selvaStrerror(err)}`
         db.emit('error', errMsg)
         reject(new Error(errMsg))
       } else {
