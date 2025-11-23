@@ -7,8 +7,8 @@ import { xxHash64 } from '../../xxHash64.js'
 import { ENCODER } from '@based/utils'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
-import { CREATE } from '../types.js'
 import { writeBinary } from './binary.js'
+import { ModOp } from '../../../zigTsExports.js'
 
 export const writeCardinalityRaw = (
   ctx: Ctx,
@@ -59,7 +59,7 @@ export const writeCardinality = (ctx: Ctx, def: PropDef, val: any) => {
   writeU8(ctx, def.cardinalityMode)
   writeU8(ctx, def.cardinalityPrecision)
   writeCardinalityRaw(ctx, def, val)
-  if (ctx.operation === CREATE) {
+  if (ctx.operation === ModOp.createProp) {
     ctx.schema.separateSort.bufferTmp[def.prop] = 2
     ctx.sort++
   }

@@ -39,6 +39,7 @@ pub const ModOp = enum(u8) {
     deleteTextField = 16,
     upsert = 17,
     insert = 18,
+    // TODO remove when modify is not used for response
     padding = 255,
 };
 

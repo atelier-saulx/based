@@ -1,6 +1,6 @@
 import { ALIAS, isPropDef, SchemaPropTree } from '@based/schema/def'
 import { DbClient } from '../../../index.js'
-import { INSERT, ModifyOpts, UPSERT } from '../types.js'
+import { ModifyOpts } from '../types.js'
 import { getValidSchema } from '../validate.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
 import { reserve } from '../resize.js'
@@ -12,6 +12,7 @@ import { writeUpdate } from '../update/index.js'
 import { schedule } from '../drain.js'
 import { TYPE_CURSOR_SIZE, writeTypeCursor } from '../cursor.js'
 import { Tmp } from '../Tmp.js'
+import { ModOp } from '../../../zigTsExports.js'
 
 const writeAliases = (ctx: Ctx, tree: SchemaPropTree, obj: any) => {
   for (const key in obj) {
@@ -46,7 +47,7 @@ export function upsert(
   try {
     reserve(ctx, TYPE_CURSOR_SIZE + 1 + 4 + 4)
     writeTypeCursor(ctx)
-    writeU8(ctx, UPSERT)
+    writeU8(ctx, ModOp.upsert)
     const start = ctx.index
     ctx.index += 8
     writeAliases(ctx, schema.tree, payload)
@@ -75,7 +76,7 @@ export function insert(
   try {
     reserve(ctx, TYPE_CURSOR_SIZE + 1 + 4 + 4)
     writeTypeCursor(ctx)
-    writeU8(ctx, INSERT)
+    writeU8(ctx, ModOp.insert)
     const start = ctx.index
     ctx.index += 8
     writeAliases(ctx, schema.tree, payload)

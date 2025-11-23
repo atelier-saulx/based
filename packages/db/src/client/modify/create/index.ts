@@ -13,22 +13,14 @@ import { writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
 import { schedule } from '../drain.js'
-import {
-  ADD_EMPTY_SORT,
-  ADD_EMPTY_SORT_TEXT,
-  CREATE,
-  ModifyOpts,
-  PADDING,
-  SWITCH_ID_CREATE,
-  SWITCH_ID_CREATE_RING,
-  SWITCH_ID_CREATE_UNSAFE,
-} from '../types.js'
+import { ModifyOpts } from '../types.js'
 import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
 import { writeSeparate } from '../props/separate.js'
 import { writeString } from '../props/string.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { getValidSchema, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
+import { ModOp } from '../../../zigTsExports.js'
 
 const writeDefaults = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateDefaults) {
@@ -75,7 +67,7 @@ const writeSortable = (ctx: Ctx) => {
   }
   if (ctx.sort !== ctx.schema.separateSort.size) {
     reserve(ctx, 3)
-    writeU8(ctx, ADD_EMPTY_SORT)
+    writeU8(ctx, ModOp.addEmptySort)
     const index = ctx.index
     ctx.index += 2
     const start = ctx.index
@@ -96,7 +88,7 @@ const writeSortableText = (ctx: Ctx) => {
 
   if (ctx.sortText !== ctx.schema.separateTextSort.size) {
     reserve(ctx, 3)
-    writeU8(ctx, ADD_EMPTY_SORT_TEXT)
+    writeU8(ctx, ModOp.addEmptySortText)
     const index = ctx.index
     ctx.index += 2
     const start = ctx.index
@@ -184,7 +176,7 @@ export const writeCreate = (
   }
 
   ctx.schema = schema
-  ctx.operation = CREATE
+  ctx.operation = ModOp.createProp
   ctx.unsafe = opts?.unsafe
   ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
   // TODO: can we remove this (and just init main buffer here?)
@@ -194,16 +186,16 @@ export const writeCreate = (
   writeTypeCursor(ctx)
   if (payload.id) {
     if (ctx.unsafe) {
-      writeU8(ctx, SWITCH_ID_CREATE_UNSAFE)
+      writeU8(ctx, ModOp.switchIdCreateUnsafe)
       writeU32(ctx, payload.id)
     } else {
       throw 'Invalid payload. "id" not allowed'
     }
   } else if (schema.capped) {
-    writeU8(ctx, SWITCH_ID_CREATE_RING)
+    writeU8(ctx, ModOp.switchIdCreateRing)
     writeU32(ctx, schema.capped)
   } else {
-    writeU8(ctx, SWITCH_ID_CREATE)
+    writeU8(ctx, ModOp.switchIdCreate)
   }
   const index = ctx.index
   writeObject(ctx, ctx.schema.tree, payload)
@@ -216,7 +208,7 @@ export const writeCreate = (
   writeSortable(ctx)
   writeSortableText(ctx)
   while (ctx.index < ctx.start + 5) {
-    writeU8(ctx, PADDING)
+    writeU8(ctx, ModOp.padding)
   }
 }
 

@@ -7,16 +7,11 @@ import {
   writeTypeCursor,
 } from '../cursor.js'
 import { reserve } from '../resize.js'
-import {
-  DELETE_NODE,
-  DELETE_SORT_INDEX,
-  SWITCH_ID_UPDATE,
-  UPDATE,
-} from '../types.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { handleError } from '../error.js'
 import { Tmp } from '../Tmp.js'
 import { schedule } from '../drain.js'
+import { ModOp } from '../../../zigTsExports.js'
 
 export function del(db: DbClient, type: string, id: number) {
   const schema = getValidSchema(db, type)
@@ -28,20 +23,20 @@ export function del(db: DbClient, type: string, id: number) {
 
     ctx.start = ctx.index
     ctx.schema = schema
-    ctx.operation = UPDATE
+    ctx.operation = ModOp.updateProp
 
     validateId(id)
     reserve(ctx, FULL_CURSOR_SIZE + 2 + schema.separate.length * 12) // 12 too much?
     writeTypeCursor(ctx)
-    writeU8(ctx, SWITCH_ID_UPDATE)
+    writeU8(ctx, ModOp.switchIdUpdate)
     writeU32(ctx, id)
     writeMainCursor(ctx)
-    writeU8(ctx, DELETE_SORT_INDEX)
+    writeU8(ctx, ModOp.deleteSortIndex)
     for (const def of schema.separate) {
       writePropCursor(ctx, def)
-      writeU8(ctx, DELETE_SORT_INDEX)
+      writeU8(ctx, ModOp.deleteSortIndex)
     }
-    writeU8(ctx, DELETE_NODE)
+    writeU8(ctx, ModOp.deleteNode)
     const tmp = new Tmp(ctx)
     schedule(db, ctx)
     return tmp

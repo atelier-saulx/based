@@ -1,8 +1,8 @@
 import { writeUint64 } from '@based/utils'
 import type { SchemaTypeDef, PropDef } from '@based/schema/def'
 import type { LangCode } from '@based/schema'
-import { type ModifyOp } from './types.js'
 import type { Tmp } from './Tmp.js'
+import type { ModOpEnum } from '../../zigTsExports.js'
 
 export class Ctx {
   constructor(schemaChecksum: number, array: Uint8Array<ArrayBufferLike>) {
@@ -19,7 +19,7 @@ export class Ctx {
   max: number
   size: number
   unsafe?: boolean
-  operation: ModifyOp
+  operation: ModOpEnum
   main: Map<PropDef, any> = new Map()
   draining: Promise<void>
   scheduled: Promise<void>
@@ -31,7 +31,7 @@ export class Ctx {
     type?: number
     prop?: number
     main?: number
-    operation?: ModifyOp
+    operation?: ModOpEnum
     upserting?: boolean
   } = {}
   batch: {

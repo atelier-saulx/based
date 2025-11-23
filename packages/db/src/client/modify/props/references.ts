@@ -8,7 +8,6 @@ import { validate } from '../validate.js'
 import { writeEdges } from '../edges/index.js'
 import { writeUint32 } from '@based/utils'
 import {
-  DELETE,
   EDGE_INDEX_REALID,
   EDGE_INDEX_TMPID,
   EDGE_NOINDEX_REALID,
@@ -24,11 +23,12 @@ import {
   REF_OP_UPDATE,
   RefOp,
 } from '../types.js'
+import { ModOp } from '../../../zigTsExports.js'
 
 const clearReferences = (ctx: Ctx, def: PropDef) => {
   reserve(ctx, PROP_CURSOR_SIZE + 1)
   writePropCursor(ctx, def)
-  writeU8(ctx, DELETE)
+  writeU8(ctx, ModOp.delete)
 }
 
 const hasEdgeOrIndex = (def: PropDef, obj: Record<string, any>): boolean => {

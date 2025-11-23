@@ -1,43 +1,45 @@
 import { LangName } from '@based/schema'
+import { ModOp } from '../../zigTsExports.js'
 
-export const CREATE = 3
-export const UPDATE = 6
-
-export const UPDATE_PARTIAL = 5
-export const DELETE = 11
-export const DELETE_SORT_INDEX = 4
-export const DELETE_NODE = 10
 export const RANGE_ERR = 1
-export const INCREMENT = 12
-export const DECREMENT = 13
-export const EXPIRE = 14
-export const ADD_EMPTY_SORT_TEXT = 15
-export const ADD_EMPTY_SORT = 7
-export const DELETE_TEXT_FIELD = 16
-export const PADDING = 255
 
-export const SWITCH_TYPE = 2
-export const SWITCH_FIELD = 0
-export const SWITCH_ID_CREATE = 9
-export const SWITCH_ID_CREATE_RING = 19
-export const SWITCH_ID_CREATE_UNSAFE = 8
-export const SWITCH_ID_UPDATE = 1
-export const SWITCH_EDGE_ID = 20
-export const UPSERT = 17
-export const INSERT = 18
+// export const CREATE = 3
+// export const UPDATE = 6
 
-export type ModifyOp =
-  | typeof CREATE
-  | typeof UPDATE
-  | typeof INCREMENT
-  | typeof EXPIRE
+// export const UPDATE_PARTIAL = 5
+// export const DELETE = 11
+// export const DELETE_SORT_INDEX = 4
+// export const DELETE_NODE = 10
 
-export const MOD_OPS_TO_STRING: Record<ModifyOp, 'create' | 'update'> = {
-  [CREATE]: 'create',
-  [UPDATE]: 'update',
-  [INCREMENT]: 'update',
-  [EXPIRE]: 'update',
-}
+// export const INCREMENT = 12
+// export const DECREMENT = 13
+// export const EXPIRE = 14
+// export const ADD_EMPTY_SORT_TEXT = 15
+// export const ADD_EMPTY_SORT = 7
+// export const DELETE_TEXT_FIELD = 16
+// export const PADDING = 255
+
+// export const SWITCH_TYPE = 2
+
+// export const SWITCH_ID_CREATE = 9
+// export const SWITCH_ID_CREATE_RING = 19
+// export const SWITCH_ID_CREATE_UNSAFE = 8
+// export const SWITCH_EDGE_ID = 20
+// export const UPSERT = 17
+// export const INSERT = 18
+
+// export type ModifyOp =
+//   | typeof CREATE
+//   | typeof UPDATE
+//   | typeof INCREMENT
+//   | typeof EXPIRE
+
+export const MOD_OPS_TO_STRING = {
+  [ModOp.createProp]: 'create',
+  [ModOp.updateProp]: 'update',
+  [ModOp.increment]: 'update',
+  [ModOp.expire]: 'update',
+} as const
 
 export const enum SIZE {
   DEFAULT_CURSOR = 11,
