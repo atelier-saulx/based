@@ -27,6 +27,9 @@ import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
 import { OpType, OpTypeEnum } from '../zigTsExports.js'
 
+// YOUZI REPLACE
+const TMP_EMPTY = new Uint8Array(1000000)
+
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
   subscriptions: Subscriptions = {
@@ -245,7 +248,19 @@ export class DbServer extends DbShared {
     writeUint32(payload, id, 0)
     return new Promise((resolve) => {
       const len = native.modifyThread(payload, this.dbCtxExternal)
-      this.addOpOnceListener(OpType.modify, id, resolve)
+      this.addOpOnceListener(OpType.modify, id, (v) => {
+        const dirtyBlockSize = readUint32(v, 0)
+        if (dirtyBlockSize > 8) {
+          const dirtyBlocks = new Float64Array(
+            v.buffer,
+            v.byteOffset + 7,
+            (v.byteLength - 7) / 8,
+          )
+          this.blockMap.setDirtyBlocks(dirtyBlocks)
+        }
+        // YOUZI
+        resolve(TMP_EMPTY)
+      })
     })
   }
 

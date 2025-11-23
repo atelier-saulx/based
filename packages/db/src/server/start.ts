@@ -24,7 +24,7 @@ import {
 } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
-import { OpTypeEnum } from '../zigTsExports.js'
+import { OpType, OpTypeEnum } from '../zigTsExports.js'
 
 export type StartOpts = {
   clean?: boolean
