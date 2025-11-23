@@ -76,48 +76,53 @@ export function registerBlockIoListeners(db: DbServer) {
     }
   })
 
-  //   db.addOpListener(0, (buf: Uint8Array) => {
-  //     const op = Math.random() // TODO read op
-  //     const err = readUint32(buf, 0)
-  //     const start = readUint32(buf, 4)
-  //     const typeId = readUint16(buf, 8)
-  //     const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
-  //     const key = makeTreeKey(typeId, start)
+  db.addOpListener(OpType.loadCommon, 0, (buf: Uint8Array) => {
+    const err = readUint32(buf, 0)
+    const start = readUint32(buf, 4)
+    const typeId = readUint16(buf, 8)
+    const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
+    const key = makeTreeKey(typeId, start)
 
-  //     if (op == MOP_LOAD_BLOCK) {
-  //       const block = db.blockMap.getBlock(key)
-  //       if (err === 0) {
-  //         const prevHash = block.hash
-  //         if (equals(prevHash, hash)) {
-  //           const block = db.blockMap.updateBlock(key, hash)
-  //           block.ioPromise.resolve()
-  //         } else {
-  //           block.ioPromise.reject(new Error('Block hash mismatch'))
-  //         }
-  //       } else {
-  //         const errlog = DECODER.decode(buf.slice(16))
-  //         db.emit('error', errlog)
-  //         block.ioPromise.reject(
-  //           new Error(
-  //             `Load ${typeId}:${start} failed: ${native.selvaStrerror(err)}`,
-  //           ),
-  //         )
-  //       }
-  //     } else if (op == MOP_UNLOAD_BLOCK) {
-  //       // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
-  //       if (err === 0) {
-  //         const block = db.blockMap.updateBlock(key, hash, 'fs')
-  //         block.ioPromise?.resolve()
-  //       } else {
-  //         const block = db.blockMap.getBlock(key)
-  //         block.ioPromise.reject(
-  //           new Error(
-  //             `Unload ${typeId}:${start} failed: ${native.selvaStrerror(err)}`,
-  //           ),
-  //         )
-  //       }
-  //     }
-  //   })
+    // TODO SELVA_ENOENT => db.blockMap.removeBlock(key) ??
+    if (err === 0) {
+      const block = db.blockMap.updateBlock(key, hash, 'fs')
+      block.ioPromise?.resolve()
+    } else {
+      const block = db.blockMap.getBlock(key)
+      block.ioPromise.reject(
+        new Error(
+          `Unload ${typeId}:${start} failed: ${native.selvaStrerror(err)}`,
+        ),
+      )
+    }
+  })
+
+  db.addOpListener(OpType.loadBlock, 0, (buf: Uint8Array) => {
+    const err = readUint32(buf, 0)
+    const start = readUint32(buf, 4)
+    const typeId = readUint16(buf, 8)
+    const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
+    const key = makeTreeKey(typeId, start)
+    const block = db.blockMap.getBlock(key)
+
+    if (err === 0) {
+      const prevHash = block.hash
+      if (equals(prevHash, hash)) {
+        const block = db.blockMap.updateBlock(key, hash)
+        block.ioPromise.resolve()
+      } else {
+        block.ioPromise.reject(new Error('Block hash mismatch'))
+      }
+    } else {
+      const errlog = DECODER.decode(buf.slice(16))
+      db.emit('error', errlog)
+      block.ioPromise.reject(
+        new Error(
+          `Load ${typeId}:${start} failed: ${native.selvaStrerror(err)}`,
+        ),
+      )
+    }
+  })
 }
 
 async function saveCommon(db: DbServer): Promise<void> {
@@ -128,16 +133,16 @@ async function saveCommon(db: DbServer): Promise<void> {
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
-    // db.addQueryOnceListener(QOP_SAVE_COMMON, msg, (buf: Uint8Array) => {
-    //   const err = readUint32(buf, 0)
-    //   if (err) {
-    //     const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
-    //     db.emit('error', errMsg)
-    //     reject(new Error(errMsg))
-    //   } else {
-    //     resolve()
-    //   }
-    // })
+    db.addOpOnceListener(OpType.saveCommon, 0, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
 
     native.getQueryBufThread(msg, db.dbCtxExternal)
   })
@@ -177,17 +182,16 @@ export async function loadCommon(
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
-    // FIXME
-    //db.addModifyOnceListener(MOP_LOAD_COMMON, (buf: Uint8Array) => {
-    //  const err = readUint32(buf, 0)
-    //  if (err) {
-    //    const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
-    //    db.emit('error', errMsg)
-    //    reject(new Error(errMsg))
-    //  } else {
-    //    resolve()
-    //  }
-    //})
+    db.addOpOnceListener(OpType.loadCommon, 0, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
 
     native.modifyThread(msg, db.dbCtxExternal)
   })
@@ -203,17 +207,16 @@ export async function loadBlockRaw(
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
-    // FIXME
-    //db.addModifyOnceListener(MOP_LOAD_BLOCK, (buf: Uint8Array) => {
-    //  const err = readUint32(buf, 0)
-    //  if (err) {
-    //    const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
-    //    db.emit('error', errMsg)
-    //    reject(new Error(errMsg))
-    //  } else {
-    //    resolve()
-    //  }
-    //})
+    db.addOpOnceListener(OpType.loadBlock, 0, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
 
     native.modifyThread(msg, db.dbCtxExternal)
   })
