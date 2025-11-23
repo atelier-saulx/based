@@ -7,6 +7,7 @@ import {
   SortHeaderByteSize,
   SortOrder,
   writeQueryDefaultHeader,
+  writeQueryDefaultHeaderProps,
   writeSortHeader,
 } from '../../../zigTsExports.js'
 

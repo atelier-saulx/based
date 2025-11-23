@@ -12,15 +12,39 @@ await test('include', async (t) => {
   t.after(() => db.stop())
 
   var d = Date.now()
+  var cnt = 0
 
-  const map: any = new Map()
+  const map2: any = new Map()
 
   for (let i = 0; i < 1e6; i++) {
-    map.set(combineToNumber(i, 1), (v) => {
-      // --
+    const type = i % 20
+    let t = map2.get(type)
+    if (!t) {
+      t = new Map()
+      map2.set(type, new Map())
+    }
+  }
+
+  d = Date.now()
+  for (let i = 0; i < 1e6; i++) {
+    const type = i % 20
+    const t = map2.get(type)
+    t.set(i, (v: any) => {
+      cnt++
     })
   }
-  console.log('->', Date.now() - d, 'ms')
+  console.log('add buf ->', Date.now() - d, 'ms')
+
+  d = Date.now()
+  for (let i = 0; i < 1e6; i++) {
+    const type = i % 20
+    const t = map2.get(type)
+    const x = t.get(i)
+    if (x) {
+      x(i)
+    }
+  }
+  console.log('fire buf ->', Date.now() - d, 'ms')
 
   await db.setSchema({
     types: {

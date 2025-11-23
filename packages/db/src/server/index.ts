@@ -25,6 +25,7 @@ import {
 } from './schema.js'
 import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
+import { OpType, OpTypeEnum } from '../zigTsExports.js'
 
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
@@ -68,6 +69,11 @@ export class DbServer extends DbShared {
     if (process.stderr.isTTY) {
       //this.on('info', (v) => console.error('Info:', v))
       this.on('error', (v) => console.error('Error:', v))
+    }
+
+    // Add all op type maps
+    for (const key in OpType) {
+      this.opListeners.set(OpType[key], new Map())
     }
 
     if (debug) {
@@ -115,39 +121,54 @@ export class DbServer extends DbShared {
     await unloadBlock(this, def, start)
   }
 
-  queryResponses: Map<
-    number,
-    {
-      persistent: Set<(x: any) => void>
-      once: ((x: any) => void)[]
-    }
+  // op listeners
+  opListeners: Map<
+    OpTypeEnum,
+    Map<
+      number,
+      {
+        persistent: Set<(x: any) => void>
+        once: ((x: any) => void)[]
+      }
+    >
   > = new Map()
-  modResponses: Map<number, (x: any) => void> = new Map()
 
-  addQueryListener(id: number, cb: (x: any) => void) {
-    if (!this.queryResponses.has(id)) {
-      this.queryResponses.set(id, {
+  addOpListener(op: OpTypeEnum, id: number, cb: (x: any) => void) {
+    const type = this.opListeners.get(op)
+    if (!type.has(id)) {
+      type.set(id, {
         persistent: new Set(),
         once: [],
       })
     }
-    const s = this.queryResponses.get(id)
+    const s = type.get(id)
     s.persistent.add(cb)
   }
 
-  removeQueryListener(id: number, cb: (x: any) => void) {
-    if (!this.queryResponses.has(id)) {
-      return
+  addOpOnceListener(op: OpTypeEnum, id: number, cb: (q: Uint8Array) => void) {
+    const type = this.opListeners.get(op)
+    if (!type.has(id)) {
+      type.set(id, {
+        persistent: new Set(),
+        once: [],
+      })
     }
-    const s = this.queryResponses.get(id)
+    const s = type.get(id)
+    s.once.push(cb)
+  }
+
+  removeOpListener(op: OpTypeEnum, id: number, cb: (x: any) => void) {
+    const type = this.opListeners.get(op)
+    const s = type.get(id)
     s.persistent.delete(cb)
     if (s.persistent.size === 0 && s.once.length === 0) {
-      this.queryResponses.delete(id)
+      type.delete(id)
     }
   }
 
-  execQueryListeners(id: number, type: number, q: Uint8Array) {
-    const s = this.queryResponses.get(id)
+  execOpListeners(op: OpTypeEnum, id: number, q: Uint8Array) {
+    const type = this.opListeners.get(op)
+    const s = type.get(id)
     if (!s) {
       return
     }
@@ -155,7 +176,7 @@ export class DbServer extends DbShared {
       fn(q)
     }
     if (s.persistent.size === 0) {
-      this.queryResponses.delete(id)
+      type.delete(id)
     } else {
       for (const fn of s.persistent) {
         fn(q)
@@ -164,32 +185,17 @@ export class DbServer extends DbShared {
     }
   }
 
-  addQueryOnceListener(id: number, q: Uint8Array, cb: (x: any) => void) {
-    if (!this.queryResponses.has(id)) {
-      this.queryResponses.set(id, {
-        persistent: new Set(),
-        once: [],
-      })
-    }
-    const s = this.queryResponses.get(id)
-    s.once.push(cb)
-  }
-
   getQueryBuf(buf): Promise<Uint8Array> {
-    // do this check in ZIG - also add to dbCtx
-    // const schemaChecksum = readUint64(buf, buf.byteLength - 8)
-    // if (schemaChecksum !== this.schema?.hash) {
-    //   return Promise.resolve(new Uint8Array(1))
-    // }
     return new Promise((resolve) => {
-      // make readUint40 ?
       const id = combineToNumber(readUint32(buf, 0), buf[4])
-      if (this.queryResponses.get(id)) {
+      const op: OpTypeEnum = buf[4]
+      const queryListeners = this.opListeners.get(op)
+      if (queryListeners.get(id)) {
         console.log('Query allready staged dont exec again', id)
       } else {
         native.getQueryBufThread(buf, this.dbCtxExternal)
       }
-      this.addQueryOnceListener(id, buf, resolve)
+      this.addOpListener(op, id, resolve)
     })
   }
 
@@ -230,35 +236,6 @@ export class DbServer extends DbShared {
   // allow 10 ids for special listeners on mod thread
   modifyCnt = 10
 
-  addModifyListener(id: number, cb: (x: any) => void) {
-    this.modResponses.set(id, cb)
-  }
-
-  removeModifyListener(id: number) {
-    this.modResponses.delete(id)
-  }
-
-  execModifyListeners(id: number, type: number, v: Uint8Array) {
-    const fn = this.modResponses.get(id)
-    if (!fn) {
-      return
-    }
-    try {
-      const dirtyBlockSize = readUint32(v, 0)
-      if (dirtyBlockSize > 8) {
-        const dirtyBlocks = new Float64Array(
-          v.buffer,
-          v.byteOffset + 7,
-          (v.byteLength - 7) / 8,
-        )
-        this.blockMap.setDirtyBlocks(dirtyBlocks)
-      }
-      fn(v.subarray(dirtyBlockSize))
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
   modify(payload: Uint8Array): Promise<Uint8Array | null> {
     this.modifyCnt++
     if (this.modifyCnt > MAX_ID) {
@@ -268,10 +245,7 @@ export class DbServer extends DbShared {
     writeUint32(payload, id, 0)
     return new Promise((resolve) => {
       const len = native.modifyThread(payload, this.dbCtxExternal)
-      this.addModifyListener(id, (v) => {
-        this.removeModifyListener(id)
-        resolve(v)
-      })
+      this.addOpOnceListener(OpType.modify, id, resolve)
     })
   }
 
