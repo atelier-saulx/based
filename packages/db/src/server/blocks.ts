@@ -1,4 +1,5 @@
 import native from '../native.js'
+import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { SchemaTypeDef } from '@based/schema/def'
 import {
@@ -47,11 +48,15 @@ export type SaveOpts = {
 
 const SELVA_ENOENT = -8
 
-const QOP_SAVE_BLOCK = 67
-const QOP_SAVE_COMMON = 69
-const MOP_LOAD_BLOCK = 22
-const MOP_UNLOAD_BLOCK = 33
-const MOP_LOAD_COMMON = 44
+export async function readWritelog(path: string): Promise<Writelog | null> {
+  try {
+    return JSON.parse(
+      (await readFile(join(path, WRITELOG_FILE))).toString(),
+    )
+  } catch (err) {
+    return null
+  }
+}
 
 export function registerBlockIoListeners(db: DbServer) {
   db.addOpListener(OpType.saveBlock, 0, (buf: Uint8Array) => {
@@ -129,7 +134,7 @@ async function saveCommon(db: DbServer): Promise<void> {
   const filename = join(db.fileSystemPath, COMMON_SDB_FILE)
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
-  msg[4] = QOP_SAVE_COMMON
+  msg[4] = OpType.saveCommon
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
@@ -160,7 +165,7 @@ async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
       )
       const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
-      msg[4] = QOP_SAVE_BLOCK
+      msg[4] = OpType.saveBlock
       writeUint32(msg, start, 5)
       writeUint16(msg, typeId, 9)
       native.stringToUint8Array(filename, msg, 11, true)
@@ -178,7 +183,7 @@ export async function loadCommon(
 ): Promise<void> {
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
-  msg[4] = MOP_LOAD_COMMON
+  msg[4] = OpType.loadCommon
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
@@ -203,7 +208,7 @@ export async function loadBlockRaw(
 ): Promise<void> {
   const msg = new Uint8Array(6 + native.stringByteLength(filename) + 1)
 
-  msg[4] = MOP_LOAD_BLOCK
+  msg[4] = OpType.loadBlock
   native.stringToUint8Array(filename, msg, 5, true)
 
   return new Promise((resolve, reject) => {
@@ -247,7 +252,7 @@ export async function loadBlock(
   )
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
-  msg[4] = MOP_LOAD_BLOCK
+  msg[4] = OpType.loadBlock
   native.stringToUint8Array(filename, msg, 5, true)
 
   const p = BlockMap.setIoPromise(block)
@@ -276,7 +281,7 @@ export async function unloadBlock(
   )
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
-  msg[4] = MOP_UNLOAD_BLOCK
+  msg[4] = OpType.unloadBlock
   native.stringToUint8Array(filename, msg, 5, true)
 
   const p = BlockMap.setIoPromise(block)
