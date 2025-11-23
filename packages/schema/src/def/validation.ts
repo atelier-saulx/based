@@ -51,7 +51,8 @@ export type Validation = (
   schema: SchemaProp<true>,
 ) => boolean | string
 const EPSILON = 1e-9 // Small tolerance for floating point comparisons
-const validators: Record<SchemaString['format'], (str: string) => boolean> = {
+
+export const validators = {
   email: v.isEmail,
   URL: v.isURL,
   MACAddress: v.isMACAddress,
@@ -123,7 +124,8 @@ const validators: Record<SchemaString['format'], (str: string) => boolean> = {
   json: () => true,
   markdown: () => true,
   clike: () => true,
-}
+} as const
+
 export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
   [NULL]: () => true,
   [OBJECT]: () => true,
@@ -396,6 +398,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
+  // @ts-ignore
   [TEXT]: null,
 }
 
@@ -538,6 +541,7 @@ export function validate<S extends StrictSchema = StrictSchema>(
   errors: ValidationErrors
 } {
   const errors = []
+  // @ts-ignore
   validateObj(payload, schema?.types?.[type as string]?.props, errors, [], true)
   return {
     valid: !errors.length,

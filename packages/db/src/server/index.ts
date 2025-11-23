@@ -217,16 +217,19 @@ export class DbServer extends DbShared {
       this.addOpOnceListener(OpType.modify, id, (v) => {
         const resultLen = readUint32(v, 0)
         const blocksLen = readUint32(v, resultLen)
-        if (blocksLen > 8) {
-          const blocksOffset = resultLen + 8 - (resultLen % 8) // ceil to multiple of 8
-          this.blockMap.setDirtyBlocks(
-            new Float64Array(v.buffer, blocksOffset, blocksLen / 8),
+        if (blocksLen > 0) {
+          let blocksOffset = resultLen + 4
+          blocksOffset = blocksOffset - (blocksOffset % 8)
+          blocksOffset += 7
+          const ranges = new Float64Array(
+            v.buffer,
+            v.byteOffset + blocksOffset,
+            blocksLen / 8,
           )
+
+          this.blockMap.setDirtyBlocks(ranges)
         }
-        // YOUZI
-        const res = v.subarray(4, resultLen)
-        console.log({ resultLen, res })
-        resolve(res)
+        resolve(v.subarray(4, resultLen))
       })
     })
   }

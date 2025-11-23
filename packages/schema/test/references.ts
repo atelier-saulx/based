@@ -27,13 +27,6 @@ await test('references', (t) => {
   })
 
   parse({
-    props: {
-      articles: {
-        items: {
-          ref: 'article',
-        },
-      },
-    },
     types: {
       article: {
         name: 'string',
@@ -143,10 +136,13 @@ await test('references', (t) => {
 
   throws(() => {
     parse({
-      props: {
-        myRefs: {
-          items: {
-            ref: 'user',
+      types: {
+        myType: {
+          // @ts-expect-error
+          myRefs: {
+            items: {
+              ref: 'user',
+            },
           },
         },
       },

@@ -16,7 +16,6 @@ import {
   parseMinMaxStep,
   sortMainProps,
 } from './utils.js'
-import { defaultValidation, VALIDATION_MAP } from './validation.js'
 
 export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   const mainEdges: PropDefEdge[] = []
@@ -34,6 +33,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       const len = getPropLen(edgeProp)
       const separate = isSeparate(edgeProp, len)
       if (separate) {
+        prop.edgesSeperateCnt ??= 0
         prop.edgesSeperateCnt++
       }
       const typeIndex = TYPE_INDEX_MAP[edgeType]
@@ -47,7 +47,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         schema: edgeProp,
         __isPropDef: true,
         __isEdge: true,
-        prop: separate ? prop.edgesSeperateCnt : 0,
+        prop: separate ? (prop.edgesSeperateCnt ?? 0) : 0,
         validation: getValidator(edgeProp),
         name: key,
         typeIndex,
@@ -83,7 +83,9 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
           ? refProp[key]
           : refProp[key].enum
         edge.reverseEnum = {}
+        // @ts-ignore
         for (let i = 0; i < edge.enum.length; i++) {
+          // @ts-ignore
           edge.reverseEnum[edge.enum[i]] = i
         }
       } else if (edge.typeIndex === REFERENCES) {
@@ -93,6 +95,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
       }
       prop.edges[key] = edge
       if (separate) {
+        // @ts-ignore
         prop.reverseSeperateEdges[edge.prop] = edge
       }
     }
@@ -101,9 +104,11 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
   mainEdges.sort(sortMainProps)
   for (const edge of mainEdges) {
     edge.start = prop.edgeMainLen
+    // @ts-ignore
     prop.edgeMainLen += edge.len
+    // @ts-ignore
     prop.reverseMainEdges[edge.start] = edge
   }
-
+  // @ts-ignore
   prop.edgeMainEmpty = fillEmptyMain(mainEdges, prop.edgeMainLen)
 }

@@ -4,15 +4,13 @@ import { parse } from '@based/schema'
 
 await test('schema', () => {
   parse({
-    props: {},
     types: {},
   })
 
   throws(() => {
     parse({
-      props: {},
       types: {},
-      // @ts-ignore
+      // @ts-expect-error
       unknownTsIgnoredField: true,
     })
   }, 'Should throw with unknown fields')

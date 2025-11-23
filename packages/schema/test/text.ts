@@ -13,18 +13,22 @@ await test('text', () => {
         fallback: 'en',
       },
     },
-    props: {
-      myText: {
-        type: 'text',
+    types: {
+      myType: {
+        myText: {
+          type: 'text',
+        },
       },
     },
   })
 
   throws(() => {
     parse({
-      props: {
-        myText: {
-          type: 'text',
+      types: {
+        myType: {
+          myText: {
+            type: 'text',
+          },
         },
       },
     })

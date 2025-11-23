@@ -69,7 +69,7 @@ await test('include', async (t) => {
     // flap: x.join(' '),
   })
 
-  console.log('CREATE:', { id })
+  console.log('CREATE:', { id }, db.server.blockMap.isDirty)
 
   // await wait(100)
 

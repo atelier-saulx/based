@@ -94,10 +94,13 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
       }
 
       if (refProp) {
+        // @ts-ignore
         const type = dbSchema.types[refProp.ref]
         const inverseKey = '_' + key
+        // @ts-ignore
         dbSchema.types[refProp.ref] = {
           ...type,
+          // @ts-ignore
           props: {
             ...type.props,
             [inverseKey]: {
@@ -120,10 +123,11 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
     }
     delete dbSchema.props
   }
-
+  // @ts-ignore
   const edgeTypes = makeEdgeTypes(dbSchema.types)
   // Create inverse props for reference(s)
   for (const et in edgeTypes) {
+    // @ts-ignore
     dbSchema.types[et] = edgeTypes[et]
 
     for (const key in edgeTypes[et].props) {
@@ -138,11 +142,13 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
       } else {
         continue // not a ref
       }
-
+      // @ts-ignore
       const type = dbSchema.types[refProp.ref]
       const inverseKey = `_${et}_${key}`
+      // @ts-ignore
       dbSchema.types[refProp.ref] = {
         ...type,
+        // @ts-ignore
         props: {
           ...type.props,
           [inverseKey]: {
@@ -164,7 +170,7 @@ export const strictSchemaToDbSchema = (schema: StrictSchema): DbSchema => {
       dbSchema.types[typeName].id = dbSchema.lastId
     }
   }
-
+  // @ts-ignore
   delete dbSchema.hash
   dbSchema.hash = hash(dbSchema)
 

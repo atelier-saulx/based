@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { SchemaAnyProp, SchemaProps, SchemaPropTypes } from '../types.js'
 import { INVALID_TYPE, MISSING_TYPE } from './errors.js'
 

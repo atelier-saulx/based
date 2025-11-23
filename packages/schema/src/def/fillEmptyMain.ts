@@ -28,7 +28,7 @@ export const fillEmptyMain = (
       continue
     }
     const t = f.typeIndex
-    const s = f.start
+    const s = f.start ?? 0
     let val = f.default
 
     if (t === ENUM) {

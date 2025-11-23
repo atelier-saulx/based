@@ -1,8 +1,15 @@
-import { SchemaTypeDef, STRING, ALIAS, CARDINALITY } from './types.js'
+import {
+  SchemaTypeDef,
+  STRING,
+  ALIAS,
+  CARDINALITY,
+  type SchemaSortUndefinedHandler,
+} from './types.js'
 
 export function makeSeparateSort(result: Partial<SchemaTypeDef>) {
   result.hasSeperateSort = true
   let max = 0
+  result.separate ??= []
   for (const f of result.separate) {
     if (
       f.typeIndex === STRING ||
@@ -15,18 +22,19 @@ export function makeSeparateSort(result: Partial<SchemaTypeDef>) {
     }
   }
 
-  result.separateSort.buffer = new Uint8Array(max + 1)
+  const separateSort = result.separateSort as SchemaSortUndefinedHandler
+  separateSort.buffer = new Uint8Array(max + 1)
   for (const f of result.separate) {
     if (
       f.typeIndex === STRING ||
       f.typeIndex === ALIAS ||
       f.typeIndex === CARDINALITY
     ) {
-      result.separateSort.buffer[f.prop] = 1
-      result.separateSort.props.push(f)
-      result.separateSort.size++
+      separateSort.buffer[f.prop] = 1
+      separateSort.props.push(f)
+      separateSort.size++
     }
   }
-  result.separateSort.bufferTmp = new Uint8Array(max + 1)
-  result.separateSort.buffer.set(result.separateSort.bufferTmp)
+  separateSort.bufferTmp = new Uint8Array(max + 1)
+  separateSort.buffer.set(separateSort.bufferTmp)
 }
