@@ -33,13 +33,12 @@ pub fn ofType(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return arr;
 }
 
-pub fn nodeRangeHash(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
-    const args = napi.getArgs(5, env, info) catch return null;
-    const typeId = napi.get(u16, env, args[0]) catch return null;
-    const start = napi.get(u32, env, args[1]) catch return null;
-    const end = napi.get(u32, env, args[2]) catch return null;
+pub fn nodeBlockHash(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
+    const args = napi.getArgs(4, env, info) catch return null;
+    const ctx = napi.get(*db.DbCtx, env, args[0]) catch return null;
+    const typeId = napi.get(u16, env, args[1]) catch return null;
+    const start = napi.get(u32, env, args[2]) catch return null;
     const buf = napi.get([]u8, env, args[3]) catch return null;
-    const ctx = napi.get(*db.DbCtx, env, args[4]) catch return null;
     var ok: napi.Value = undefined;
     var nil: napi.Value = undefined;
 
@@ -51,8 +50,6 @@ pub fn nodeRangeHash(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
         return nil;
     }
 
-    const hash = db.getNodeRangeHash(ctx, te.?, start, end) catch return nil;
-    copy(u8, buf, @as([*]const u8, @ptrCast(&hash))[0..16]);
-
+    db.getNodeBlockHash(ctx, te.?, start, @alignCast(@ptrCast(buf.ptr)));
     return ok;
 }
