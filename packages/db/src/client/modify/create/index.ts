@@ -1,4 +1,3 @@
-import { SchemaTypeDef, TEXT } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeObject } from '../props/object.js'
 import { reserve } from '../resize.js'
@@ -14,13 +13,18 @@ import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
 import { schedule } from '../drain.js'
 import { ModifyOpts } from '../types.js'
-import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
+import {
+  inverseLangMap,
+  LangCode,
+  langCodesMap,
+  type SchemaTypeDef,
+} from '@based/schema'
 import { writeSeparate } from '../props/separate.js'
 import { writeString } from '../props/string.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { getValidSchema, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
-import { ModOp } from '../../../zigTsExports.js'
+import { ModOp, PropType } from '../../../zigTsExports.js'
 
 const writeDefaults = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateDefaults) {
@@ -34,7 +38,7 @@ const writeDefaults = (ctx: Ctx) => {
         continue
       }
 
-      if (type !== TEXT) {
+      if (type !== PropType.text) {
         continue
       }
 

@@ -64,12 +64,13 @@ await test('include', async (t) => {
   // for (let i = 0; i < 100; i++) {
   //   x.push('xxw qweudhweiofh')
   // }
-
+  console.log('???')
   const id = await db.create('user', {
     nr: 1,
     // name: 'mr poop',
     // flap: x.join(' '),
   })
+  console.log('xxx')
 
   console.log('CREATE:', { id })
   console.log('baba', db.server.blockMap.isDirty)

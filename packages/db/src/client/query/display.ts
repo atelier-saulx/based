@@ -1,22 +1,9 @@
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
-import {
-  ALIAS,
-  BINARY,
-  CARDINALITY,
-  NUMBER,
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  STRING,
-  TEXT,
-  TIMESTAMP,
-  TypeIndex,
-} from '@based/schema/def'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { ENCODER } from '@based/utils'
-import { AggregateType } from '@based/protocol/db-read'
+import { PropType, type PropTypeEnum } from '../../zigTsExports.js'
+import type { PropDef, PropDefEdge } from '@based/schema'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 
@@ -62,8 +49,8 @@ export const printNumber = (nr: number) => {
   return picocolors.blue(nr)
 }
 
-export const prettyPrintVal = (v: any, type: TypeIndex): string => {
-  if (type === BINARY) {
+export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
+  if (type === PropType.binary) {
     const nr = 12
     const isLarger = v.length > nr
     // RFE Doesn't slice make a new alloc? subarray would be probably sufficient here.
@@ -79,7 +66,11 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
     )
   }
 
-  if (type === STRING || type === TEXT || type === ALIAS) {
+  if (
+    type === PropType.string ||
+    type === PropType.text ||
+    type === PropType.alias
+  ) {
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
       const chars = picocolors.italic(
@@ -92,18 +83,18 @@ export const prettyPrintVal = (v: any, type: TypeIndex): string => {
         chars
     }
 
-    if (type === ALIAS) {
+    if (type === PropType.alias) {
       return `"${v}" ${picocolors.italic(picocolors.dim('alias'))}`
     }
 
     return `"${v}"`
   }
 
-  if (type === CARDINALITY) {
+  if (type === PropType.cardinality) {
     return `${picocolors.blue(v)} ${picocolors.italic(picocolors.dim('unique'))}`
   }
 
-  if (type === TIMESTAMP) {
+  if (type === PropType.timestamp) {
     if (v === 0) {
       return `0 ${picocolors.italic(picocolors.dim('No date'))}`
     } else {
@@ -174,7 +165,7 @@ const inspectObject = (
     let isEdge = k[0] === '$'
 
     if (k === '$searchScore') {
-      edges.push({ k, v, def: { typeIndex: NUMBER } })
+      edges.push({ k, v, def: { typeIndex: PropType.number } })
     } else if (isEdge) {
       if (q.edges?.props?.[k]) {
         edges.push({ k, v, def: q.edges?.props?.[k] })
@@ -208,7 +199,7 @@ const inspectObject = (
           inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
       }
     } else if ('__isPropDef' in def) {
-      if (def.typeIndex === REFERENCES) {
+      if (def.typeIndex === PropType.references) {
         if (q.aggregate) {
           str += printNumber(v)
           str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
@@ -221,7 +212,7 @@ const inspectObject = (
             depth,
           )
         }
-      } else if (def.typeIndex === REFERENCE) {
+      } else if (def.typeIndex === PropType.reference) {
         if (!v || !v.id) {
           str += 'null,\n'
         } else {
@@ -241,12 +232,12 @@ const inspectObject = (
             )
           }
         }
-      } else if (def.typeIndex === BINARY) {
+      } else if (def.typeIndex === PropType.binary) {
         if (v === undefined) {
           return ''
         }
         str += prettyPrintVal(v, def.typeIndex)
-      } else if (def.typeIndex === TEXT) {
+      } else if (def.typeIndex === PropType.text) {
         if (typeof v === 'object') {
           str += '{\n'
           for (const lang in v) {
@@ -259,19 +250,22 @@ const inspectObject = (
           }
           str += prettyPrintVal(v, def.typeIndex)
         }
-      } else if (def.typeIndex === STRING || def.typeIndex === ALIAS) {
+      } else if (
+        def.typeIndex === PropType.string ||
+        def.typeIndex === PropType.alias
+      ) {
         if (v === undefined) {
           return ''
         }
         str += prettyPrintVal(v, def.typeIndex)
-      } else if (def.typeIndex === CARDINALITY) {
+      } else if (def.typeIndex === PropType.cardinality) {
         if (typeof v === 'object' && v !== null) {
           str +=
             inspectObject(v, q, key, level + 2, false, false, true, depth) + ''
         } else {
           str += prettyPrintVal(v, def.typeIndex)
         }
-      } else if (def.typeIndex === TIMESTAMP) {
+      } else if (def.typeIndex === PropType.timestamp) {
         str += prettyPrintVal(v, def.typeIndex)
       } else {
         if (typeof v === 'number') {
@@ -289,8 +283,8 @@ const inspectObject = (
         }
       }
       if (
-        def?.typeIndex !== REFERENCE &&
-        def?.typeIndex !== REFERENCES &&
+        def?.typeIndex !== PropType.reference &&
+        def?.typeIndex !== PropType.references &&
         typeof v !== 'object'
       ) {
         str += ',\n'
@@ -301,7 +295,7 @@ const inspectObject = (
   }
 
   for (const edge of edges) {
-    if (edge.def.typeIndex === REFERENCE) {
+    if (edge.def.typeIndex === PropType.reference) {
       str += prefixBody + picocolors.bold(`${edge.k}: `)
       str += inspectObject(
         edge.v,
@@ -313,7 +307,7 @@ const inspectObject = (
         true,
         depth,
       )
-    } else if (edge.def.typeIndex === REFERENCES) {
+    } else if (edge.def.typeIndex === PropType.references) {
       str += prefixBody + picocolors.bold(`${edge.k}: `)
       str +=
         inspectData(

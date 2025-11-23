@@ -1,5 +1,5 @@
+import type { SchemaTypeDef } from '@based/schema'
 import createDbHash from './dbHash.js'
-import { SchemaTypeDef } from '@based/schema/def'
 
 export const destructureTreeKey = (key: number) => [
   (key / 4294967296) | 0, // typeId
@@ -158,7 +158,12 @@ export class BlockMap {
     })
   }
 
-  *dirtyBlocks(): Generator<{ typeId: number, start: number, end: number, block: Block }> {
+  *dirtyBlocks(): Generator<{
+    typeId: number
+    start: number
+    end: number
+    block: Block
+  }> {
     for (const k of Object.keys(this.#types)) {
       const { blocks } = this.#types[k]
       for (let block of blocks) {

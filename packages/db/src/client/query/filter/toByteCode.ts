@@ -9,7 +9,7 @@ import {
   TYPE_DEFAULT,
   TYPE_NEGATE,
 } from './types.js'
-import { REFERENCES } from '@based/schema/prop-types'
+import { PropType } from '../../../zigTsExports.js'
 
 const writeConditions = (
   result: Uint8Array,
@@ -63,7 +63,8 @@ export const fillConditionsBuffer = (
 
   if (conditions.references) {
     for (const [refField, refConditions] of conditions.references) {
-      const isReferences = refConditions.select.prop.typeIndex === REFERENCES
+      const isReferences =
+        refConditions.select.prop.typeIndex === PropType.references
       result[lastWritten] = isReferences ? META_REFERENCES : META_REFERENCE
       lastWritten += 1
       result[lastWritten] = refField

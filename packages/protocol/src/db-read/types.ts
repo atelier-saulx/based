@@ -1,5 +1,5 @@
-import { TypeIndex, VectorBaseType } from '@based/schema/prop-types'
-import type { HLLRegisterRepresentation, SchemaHooks } from '@based/schema'
+import type { SchemaHooks, VectorBaseType } from '@based/schema'
+import type { PropTypeEnum } from '../zigTsExports.js'
 
 export type Item = {
   id: number
@@ -48,7 +48,7 @@ export type ReaderLocales = { [langCode: string]: string }
 
 export type ReaderPropDef = {
   path: string[]
-  typeIndex: TypeIndex
+  typeIndex: PropTypeEnum
   meta?: ReaderMeta
   enum?: any[]
   vectorBaseType?: VectorBaseType
@@ -66,7 +66,7 @@ export type ReaderAggregateSchema = {
     resultPos: number
   }[]
   groupBy?: {
-    typeIndex: TypeIndex
+    typeIndex: PropTypeEnum
     stepRange?: number
     stepType?: boolean
     display?: Intl.DateTimeFormat // find a way for this -- shitty

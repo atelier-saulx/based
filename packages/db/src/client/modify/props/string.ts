@@ -1,6 +1,5 @@
-import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
-import { LangCode } from '@based/schema'
+import { LangCode, type PropDef } from '@based/schema'
 import { RANGE_ERR } from '../types.js'
 import {
   FULL_CURSOR_SIZE,

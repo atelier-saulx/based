@@ -1,4 +1,3 @@
-import { PropDefEdge, STRING } from '@based/schema/def'
 import { ENCODER } from '@based/utils'
 import { write } from '../../string.js'
 import { Ctx } from '../Ctx.js'
@@ -7,11 +6,13 @@ import { RANGE_ERR } from '../types.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 import { validate } from '../validate.js'
+import type { PropDefEdge } from '@based/schema'
+import { PropType } from '../../../zigTsExports.js'
 
 export const writeStringEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (val === null) {
     reserve(ctx, 3 + 4)
-    writeEdgeHeader(ctx, edge, STRING)
+    writeEdgeHeader(ctx, edge, PropType.string)
     writeU32(ctx, 0)
     return
   }
@@ -21,7 +22,7 @@ export const writeStringEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
       ? val.byteLength
       : ENCODER.encode(val).byteLength + 6
   reserve(ctx, 3 + maxSize + 4)
-  writeEdgeHeader(ctx, edge, STRING)
+  writeEdgeHeader(ctx, edge, PropType.string)
   const realSize = write(ctx, val, ctx.index + 4, !edge.compression)
   if (realSize === null) {
     throw RANGE_ERR

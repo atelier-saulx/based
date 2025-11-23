@@ -1,4 +1,4 @@
-import { MigrateFns, type SchemaOut } from '@based/schema'
+import { SchemaMigrateFns, type SchemaOut } from '@based/schema'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
 import { registerSubscription } from './server/subscription.js'
@@ -7,7 +7,7 @@ import type { BasedDbQuery } from './client/query/BasedDbQuery.js'
 export type DbClientHooks = {
   setSchema(
     schema: SchemaOut,
-    transformFns?: MigrateFns,
+    transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']>
   flushModify(buf: Uint8Array): Promise<Uint8Array | null>
   getQueryBuf(buf: Uint8Array): ReturnType<DbServer['getQueryBuf']>

@@ -1,8 +1,7 @@
-import { updateTypeDefs } from '@based/schema/def'
 import { DbClient } from '../index.js'
 import { cancel } from './modify/drain.js'
 import { Ctx, MODIFY_HEADER_SIZE } from './modify/Ctx.js'
-import type { SchemaOut } from '@based/schema'
+import { updateTypeDefs, type SchemaOut } from '@based/schema'
 
 export const setLocalClientSchema = (client: DbClient, schema: SchemaOut) => {
   if (client.schema && client.schema.hash === schema.hash) {

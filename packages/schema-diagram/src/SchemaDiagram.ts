@@ -1,4 +1,4 @@
-import { Schema, StrictSchema, parse } from '@based/schema'
+import { Schema, parse, type SchemaOut } from '@based/schema'
 import initPathFindingLib from './pfLib.js'
 import { FilterOps, TypeVisual } from './types.js'
 import { render } from './render.js'
@@ -22,7 +22,7 @@ export class SchemaDiagram {
   canvas: CanvasRenderingContext2D
   types: { [key: string]: TypeVisual } = {}
   // ------------
-  schema: StrictSchema
+  schema: SchemaOut
   typesArray: TypeVisual[] = []
   rootElement: Element
   // ------------
@@ -32,7 +32,7 @@ export class SchemaDiagram {
   pixelScale: number
   // ------------
   filterInternal: FilterOps
-  origSchema: StrictSchema
+  origSchema: SchemaOut
   // ------------
   backgroundGrid: boolean = true
 

@@ -1,10 +1,10 @@
 import { PROP_CURSOR_SIZE, writeMainCursor } from '../cursor.js'
 import { writeU16, writeU8 } from '../uint.js'
-import { PropDef } from '@based/schema/def'
 import { reserve } from '../resize.js'
 import { writeFixed } from './fixed.js'
 import { Ctx } from '../Ctx.js'
 import { ModOp } from '../../../zigTsExports.js'
+import type { PropDef } from '@based/schema'
 
 export const writeIncrement = (ctx: Ctx, def: PropDef, val: any) => {
   if (typeof val.increment !== 'number') {

@@ -1,10 +1,10 @@
-// @ts-nocheck
-import { langCodesMap } from '../lang.js'
+import { langCodesMap, type LangCode } from '../lang.js'
 import { SchemaTypeDef, TEXT } from './types.js'
 
-export function makeSeparateTextSort(result: Partial<SchemaTypeDef>) {
+export function makeSeparateTextSort(result: SchemaTypeDef) {
   result.hasSeperateTextSort = true
   let max = 0
+  result.separate ??= []
   for (const f of result.separate) {
     if (f.typeIndex === TEXT) {
       if (f.prop > max) {
@@ -17,7 +17,7 @@ export function makeSeparateTextSort(result: Partial<SchemaTypeDef>) {
   result.separateTextSort.buffer = new Uint8Array(bufLen)
   let index = 0
   for (const code in result.locales) {
-    const codeLang = langCodesMap.get(code)
+    const codeLang = langCodesMap.get(code) as LangCode
     result.separateTextSort.localeStringToIndex.set(
       code,
       new Uint8Array([index + 1, codeLang]),

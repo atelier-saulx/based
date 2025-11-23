@@ -11,7 +11,7 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
-import { SchemaOut, MigrateFns, serialize } from '@based/schema'
+import { SchemaOut, SchemaMigrateFns, serialize } from '@based/schema'
 import { semver } from '@based/schema'
 const { satisfies, parseRange, parse } = semver
 
@@ -21,7 +21,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
 
-const parseTransform = (transform?: MigrateFns) => {
+const parseTransform = (transform?: SchemaMigrateFns) => {
   const res = {}
   if (typeof transform === 'object' && transform !== null) {
     for (const type in transform) {
@@ -59,7 +59,7 @@ export const migrate = async (
   server: DbServer,
   fromSchema: SchemaOut,
   toSchema: SchemaOut,
-  transform?: MigrateFns,
+  transform?: SchemaMigrateFns,
 ): Promise<void> => {
   const migrationId = toSchema.hash
 

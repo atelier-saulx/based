@@ -1,7 +1,7 @@
-import { MICRO_BUFFER, PropDef } from '@based/schema/def'
 import { Ctx } from './Ctx.js'
 import { writeU8, writeU8Array } from './uint.js'
-import { ModOp } from '../../zigTsExports.js'
+import { ModOp, PropType } from '../../zigTsExports.js'
+import type { PropDef } from '@based/schema'
 
 export const TYPE_CURSOR_SIZE = 3
 export const PROP_CURSOR_SIZE = 3
@@ -35,7 +35,7 @@ export const writeMainCursor = (ctx: Ctx) => {
   if (ctx.cursor.prop !== 0) {
     writeU8(ctx, ModOp.switchProp)
     writeU8(ctx, 0)
-    writeU8(ctx, MICRO_BUFFER)
+    writeU8(ctx, PropType.microBuffer)
     ctx.cursor.prop = 0
   }
 }

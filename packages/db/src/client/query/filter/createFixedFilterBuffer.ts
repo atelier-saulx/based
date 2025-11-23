@@ -1,12 +1,4 @@
 import {
-  PropDef,
-  PropDefEdge,
-  BINARY,
-  STRING,
-  REFERENCES,
-  TIMESTAMP,
-} from '@based/schema/def'
-import {
   ALIGNMENT_NOT_SET,
   EQUAL,
   FilterCtx,
@@ -24,6 +16,8 @@ import {
   writeUint32,
 } from '@based/utils'
 import { FilterCondition, FilterMetaNow } from '../types.js'
+import type { PropDef, PropDefEdge } from '@based/schema'
+import { PropType } from '../../../zigTsExports.js'
 
 const isNowQuery = (
   prop: PropDef | PropDefEdge,
@@ -31,7 +25,7 @@ const isNowQuery = (
   ctx: FilterCtx,
 ) => {
   return (
-    prop.typeIndex === TIMESTAMP &&
+    prop.typeIndex === PropType.timestamp &&
     typeof value === 'string' &&
     value.includes('now') &&
     isNumerical(ctx.operation)
@@ -59,7 +53,10 @@ export const writeFixed = (
   size: number,
   offset: number,
 ) => {
-  if (prop.typeIndex === BINARY || prop.typeIndex === STRING) {
+  if (
+    prop.typeIndex === PropType.binary ||
+    prop.typeIndex === PropType.string
+  ) {
     if (typeof value === 'string') {
       const { written } = ENCODER.encodeInto(value, buf.subarray(offset + 1))
       buf[offset] = written
@@ -72,7 +69,7 @@ export const writeFixed = (
     buf[offset] = value
   } else {
     if (size === 8) {
-      if (prop.typeIndex === TIMESTAMP) {
+      if (prop.typeIndex === PropType.timestamp) {
         writeInt64(buf, value, offset)
       } else {
         writeDoubleLE(buf, value, offset)
@@ -102,7 +99,7 @@ export const createFixedFilterBuffer = (
     const result: FilterCondition = { buffer, propDef: prop }
     buffer[0] = ctx.type
     buffer[1] =
-      prop.typeIndex === REFERENCES && ctx.operation === EQUAL
+      prop.typeIndex === PropType.references && ctx.operation === EQUAL
         ? MODE_AND_FIXED
         : MODE_OR_FIXED
     buffer[2] = prop.typeIndex

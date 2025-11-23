@@ -1,9 +1,9 @@
 import { Ctx } from '../Ctx.js'
-import { PropDef } from '@based/schema/def'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { writeU8 } from '../uint.js'
 import { ModOp } from '../../../zigTsExports.js'
+import type { PropDef } from '@based/schema'
 
 export const deleteProp = (ctx: Ctx, def: PropDef) => {
   if (ctx.operation !== ModOp.updateProp) {

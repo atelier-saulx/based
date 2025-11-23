@@ -1,13 +1,5 @@
-// @ts-nocheck
-import { VectorBaseType } from './def/typeIndexes.js'
-import { Schema, SchemaVector } from './types.js'
-
-// type BasedTypeMap = {
-//   uint8: Uint8Array
-//   float32: Float32Array
-//   number: Float64Array
-//   float64: Float64Array
-// }
+import type { Schema } from './_types.js'
+import type { SchemaObject } from './schema/object.js'
 
 type TypedArray =
   | Uint8Array
@@ -61,25 +53,26 @@ type InferObject<T extends Record<string, any>, Types> = {
 
 type InferSet<T, Types> = InferProp<T, Types>[]
 
-type InferProp<T, Types> = T extends { props: infer P }
-  ? InferObject<P, Types>
-  : T extends { items: { ref: infer R extends string } }
-    ? InferReferences<R, Types>
-    : T extends { items: infer I }
-      ? InferSet<I, Types>
-      : T extends { ref: infer R extends string }
-        ? InferReference<R, Types>
-        : T extends { enum: infer E }
-          ? E extends readonly (string | number | boolean)[]
-            ? InferEnum<E>
-            : never
-          : T extends { type: infer U }
-            ? U extends keyof TypeMap
-              ? TypeMap[U]
+type InferProp<T, Types> =
+  T extends SchemaObject<true>
+    ? InferObject<T['props'], Types>
+    : T extends { items: { ref: infer R extends string } }
+      ? InferReferences<R, Types>
+      : T extends { items: infer I }
+        ? InferSet<I, Types>
+        : T extends { ref: infer R extends string }
+          ? InferReference<R, Types>
+          : T extends { enum: infer E }
+            ? E extends readonly (string | number | boolean)[]
+              ? InferEnum<E>
               : never
-            : T extends keyof TypeMap
-              ? TypeMap[T]
-              : never
+            : T extends { type: infer U }
+              ? U extends keyof TypeMap
+                ? TypeMap[U]
+                : never
+              : T extends keyof TypeMap
+                ? TypeMap[T]
+                : never
 
 // Schema type inference with support for both shorthand and full notation
 type InferSchemaType<T, Types> = T extends { props: infer Props }

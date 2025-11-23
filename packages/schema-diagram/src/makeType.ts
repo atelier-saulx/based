@@ -6,7 +6,7 @@ import { SchemaDiagram } from './SchemaDiagram.js'
 export const makeType = (
   ctx: SchemaDiagram,
   type: string,
-  schemaType: SchemaType,
+  schemaType: SchemaType<true>,
 ): TypeVisual => {
   const collect = {}
   walkProps(schemaType, collect)

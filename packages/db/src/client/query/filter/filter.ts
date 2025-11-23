@@ -5,23 +5,21 @@ import {
   ReferenceSelect,
   ReferenceSelectValue,
 } from '../types.js'
-import {
-  isPropDef,
-  SchemaTypeDef,
-  SchemaPropTree,
-  PropDef,
-  ID_FIELD_DEF,
-  TEXT,
-  REFERENCE,
-  REFERENCES,
-  PropDefEdge,
-} from '@based/schema/def'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './types.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { DbClient } from '../../index.js'
-import { langCodesMap } from '@based/schema'
+import {
+  ID_FIELD_DEF,
+  isPropDef,
+  langCodesMap,
+  type PropDef,
+  type PropDefEdge,
+  type SchemaPropTree,
+  type SchemaTypeDef,
+} from '@based/schema'
 import { filterFieldDoesNotExist, filterInvalidLang } from '../validation.js'
+import { PropType } from '../../../zigTsExports.js'
 
 export { Operator, Filter }
 
@@ -73,13 +71,14 @@ const referencesFilter = (
 
     if (
       isPropDef(t) &&
-      (t.typeIndex === REFERENCE || t.typeIndex === REFERENCES)
+      (t.typeIndex === PropType.reference ||
+        t.typeIndex === PropType.references)
     ) {
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
         const schema = db.schemaTypesParsed[t.inverseTypeName]
-        size += t.typeIndex === REFERENCES ? 11 : 6
+        size += t.typeIndex === PropType.references ? 11 : 6
         refConditions = {
           conditions: {
             conditions: new Map(),
@@ -131,7 +130,7 @@ export const filterRaw = (
     if (s.length > 1) {
       const f = s.slice(0, -1).join()
       fieldDef = schema.props[f]
-      if (fieldDef && fieldDef.typeIndex === TEXT) {
+      if (fieldDef && fieldDef.typeIndex === PropType.text) {
         const lang = s[s.length - 1]
         const code = langCodesMap.get(lang)
         if (!code || !schema.locales[lang]) {

@@ -1,4 +1,3 @@
-// import type { BasedDbQuery, Operator } from '@based/db'
 import { isFunction, isRecord } from './shared.js'
 
 type BasedDbQuery = any

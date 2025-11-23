@@ -1,5 +1,4 @@
-import { updateTypeDefs } from '@based/schema/def'
-import { serialize, type SchemaOut } from '@based/schema'
+import { serialize, updateTypeDefs, type SchemaOut } from '@based/schema'
 import { DbServer } from './index.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'

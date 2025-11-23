@@ -1,4 +1,4 @@
-import { TypeIndex } from '@based/schema/prop-types'
+import type { PropTypeEnum } from '../../zigTsExports.js'
 import {
   ReaderPropDef,
   ReaderSchema,
@@ -66,7 +66,7 @@ const deserializeAggregates = (
   if (hasGroup) {
     const opts = p[index]
     const groupBy: ReaderSchema['aggregate']['groupBy'] = {
-      typeIndex: p[index + 1] as TypeIndex,
+      typeIndex: p[index + 1] as PropTypeEnum,
     }
     index += 2
 
@@ -131,7 +131,7 @@ const deSerializeProp = (
   const map = p[off + keySize + 1]
   const path = readPath(p, off + 2 + keySize)
   const prop: ReaderPropDef = {
-    typeIndex: p[off + keySize] as TypeIndex,
+    typeIndex: p[off + keySize] as PropTypeEnum,
     path: path.path,
     readBy: 0,
   }

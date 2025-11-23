@@ -1,43 +1,33 @@
-import {
-  STRING,
-  JSON,
-  BINARY,
-  CARDINALITY,
-  REFERENCES,
-  REFERENCE,
-  VECTOR,
-  TEXT,
-  ALIAS,
-} from '@based/schema/prop-types'
 import { Item, ReaderMeta, ReaderPropDef, ReaderSchema } from './types.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readVector } from './vector.js'
 import { emptyMeta } from './meta.js'
+import { PropType } from '../zigTsExports.js'
 
 const undefinedValue = (prop: ReaderPropDef) => {
   const typeIndex = prop.typeIndex
-  if (typeIndex === STRING || typeIndex === ALIAS) {
+  if (typeIndex === PropType.string || typeIndex === PropType.alias) {
     return ''
   }
-  if (typeIndex === JSON) {
+  if (typeIndex === PropType.json) {
     return null
   }
-  if (typeIndex === BINARY) {
+  if (typeIndex === PropType.binary) {
     return new Uint8Array()
   }
-  if (typeIndex === CARDINALITY) {
+  if (typeIndex === PropType.cardinality) {
     return 0
   }
-  if (typeIndex === REFERENCES) {
+  if (typeIndex === PropType.references) {
     return []
   }
-  if (typeIndex === REFERENCE) {
+  if (typeIndex === PropType.reference) {
     return null
   }
-  if (typeIndex === VECTOR) {
+  if (typeIndex === PropType.vector) {
     return readVector(prop, new Uint8Array())
   }
-  if (typeIndex === TEXT) {
+  if (typeIndex === PropType.text) {
     if (prop.locales) {
       const codes = {}
       for (const code in prop.locales) {
@@ -57,7 +47,7 @@ export const undefinedProps = (q: ReaderSchema, item: Item) => {
     if (p.readBy !== q.readId) {
       p.readBy = q.readId
       if (p.meta) {
-        if (p.typeIndex === TEXT && p.locales) {
+        if (p.typeIndex === PropType.text && p.locales) {
           for (const code in p.locales) {
             const meta = emptyMeta()
             if (p.meta === ReaderMeta.combined) {

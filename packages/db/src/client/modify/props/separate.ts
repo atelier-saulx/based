@@ -1,16 +1,3 @@
-import {
-  PropDef,
-  STRING,
-  TEXT,
-  REFERENCE,
-  REFERENCES,
-  BINARY,
-  ALIAS,
-  CARDINALITY,
-  VECTOR,
-  COLVEC,
-  JSON,
-} from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeReference } from './reference.js'
 import { writeString } from './string.js'
@@ -22,26 +9,28 @@ import { writeCardinality } from './cardinality.js'
 import { writeVector } from './vector.js'
 import { writeJson } from './json.js'
 import { markDefaults } from '../create/mark.js'
+import type { PropDef } from '@based/schema'
+import { PropType } from '../../../zigTsExports.js'
 
 export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex
-  if (type === STRING) {
+  if (type === PropType.string) {
     writeString(ctx, def, val, 0)
-  } else if (type === TEXT) {
+  } else if (type === PropType.text) {
     writeText(ctx, def, val)
-  } else if (type === REFERENCE) {
+  } else if (type === PropType.reference) {
     writeReference(ctx, def, val)
-  } else if (type === REFERENCES) {
+  } else if (type === PropType.references) {
     writeReferences(ctx, def, val)
-  } else if (type === BINARY) {
+  } else if (type === PropType.binary) {
     writeBinary(ctx, def, val)
-  } else if (type === ALIAS) {
+  } else if (type === PropType.alias) {
     writeAlias(ctx, def, val)
-  } else if (type === CARDINALITY) {
+  } else if (type === PropType.cardinality) {
     writeCardinality(ctx, def, val)
-  } else if (type === VECTOR || type === COLVEC) {
+  } else if (type === PropType.vector || type === PropType.colVec) {
     writeVector(ctx, def, val)
-  } else if (type === JSON) {
+  } else if (type === PropType.json) {
     writeJson(ctx, def, val)
   }
   markDefaults(ctx, def, val)

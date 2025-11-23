@@ -1,5 +1,10 @@
-import { LangCode, LangName } from '@based/schema'
-import { PropDef, PropDefEdge, SchemaTypeDef } from '@based/schema/def'
+import {
+  LangCode,
+  LangName,
+  type PropDef,
+  type PropDefEdge,
+  type SchemaTypeDef,
+} from '@based/schema'
 import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'

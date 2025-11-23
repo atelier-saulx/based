@@ -1,9 +1,4 @@
-import {
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  SchemaPropTree,
-} from '@based/schema/def'
+import { PropType } from '../../../zigTsExports.js'
 import { DbClient } from '../../index.js'
 import { createQueryDef } from '../queryDef.js'
 import {
@@ -12,8 +7,13 @@ import {
   QueryDefType,
   ReferenceSelectValue,
 } from '../types.js'
-import { inverseLangMap, LangCode, langCodesMap } from '@based/schema'
-import { ref } from 'node:process'
+import {
+  inverseLangMap,
+  LangCode,
+  type PropDef,
+  type PropDefEdge,
+  type SchemaPropTree,
+} from '@based/schema'
 
 export const getAllFieldFromObject = (
   tree: SchemaPropTree | PropDef,
@@ -34,11 +34,10 @@ const createRefQueryDef = (
   db: DbClient,
   def: QueryDef,
   t: PropDef | PropDefEdge,
-  refSelect?: ReferenceSelectValue,
 ) => {
   const defRef = createQueryDef(
     db,
-    t.typeIndex === REFERENCE
+    t.typeIndex === PropType.reference
       ? QueryDefType.Reference
       : QueryDefType.References,
     {
@@ -56,11 +55,10 @@ export const createOrGetRefQueryDef = (
   db: DbClient,
   def: QueryDef,
   t: PropDef | PropDefEdge,
-  refSelect?: ReferenceSelectValue,
 ) => {
   let refDef = def.references.get(t.prop)
   if (!refDef) {
-    refDef = createRefQueryDef(db, def, t, refSelect)
+    refDef = createRefQueryDef(db, def, t)
   }
   return refDef
 }

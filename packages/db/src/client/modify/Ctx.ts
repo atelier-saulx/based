@@ -1,6 +1,5 @@
 import { writeUint64 } from '@based/utils'
-import type { SchemaTypeDef, PropDef } from '@based/schema/def'
-import type { LangCode } from '@based/schema'
+import type { LangCode, PropDef, SchemaTypeDef } from '@based/schema'
 import type { Tmp } from './Tmp.js'
 import { OpType, type ModOpEnum } from '../../zigTsExports.js'
 

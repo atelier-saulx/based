@@ -1,13 +1,3 @@
-import {
-  CARDINALITY,
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  REVERSE_SIZE_MAP,
-  REVERSE_TYPE_INDEX_MAP,
-  STRING,
-} from '@based/schema/def'
 import { FilterCondition, QueryDef, QueryDefFilter } from '../types.js'
 import {
   EQUAL,
@@ -21,6 +11,13 @@ import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { createReferenceFilter } from './createReferenceFilter.js'
 import { validateFilter } from '../validation.js'
+import {
+  REVERSE_TYPE_INDEX_MAP,
+  type PropDef,
+  type PropDefEdge,
+} from '@based/schema'
+import { PropType } from '../../../zigTsExports.js'
+import { REVERSE_SIZE_MAP } from '@based/schema/dist/def/types.js'
 
 export const primitiveFilter = (
   def: QueryDef,
@@ -39,7 +36,7 @@ export const primitiveFilter = (
 
   if (ctx.operation === EXISTS) {
     if (!prop.separate) {
-      if (prop.typeIndex === STRING) {
+      if (prop.typeIndex === PropType.string) {
         ctx.operation = EQUAL
         ctx.type = ctx.type === TYPE_NEGATE ? TYPE_DEFAULT : TYPE_NEGATE
         value = ''
@@ -68,9 +65,9 @@ export const primitiveFilter = (
     value = value[0]
   }
   const propSize = REVERSE_SIZE_MAP[prop.typeIndex]
-  if (prop.typeIndex === REFERENCE) {
+  if (prop.typeIndex === PropType.reference) {
     parsedCondition = createReferenceFilter(prop, ctx, value)
-  } else if (prop.typeIndex === REFERENCES) {
+  } else if (prop.typeIndex === PropType.references) {
     if (ctx.operation === EQUAL && !isArray) {
       value = [value]
     }
@@ -81,7 +78,7 @@ export const primitiveFilter = (
       value,
       !isNumerical(ctx.operation),
     )
-  } else if (prop.typeIndex === CARDINALITY) {
+  } else if (prop.typeIndex === PropType.cardinality) {
     parsedCondition = createFixedFilterBuffer(prop, 4, ctx, value, false)
   } else if (propSize) {
     parsedCondition = createFixedFilterBuffer(prop, propSize, ctx, value, false)

@@ -1,9 +1,9 @@
-import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeFixedAtOffset } from './fixed.js'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writeMainCursor } from '../cursor.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
+import type { PropDef } from '@based/schema'
 
 export const writeMainBuffer = (ctx: Ctx) => {
   if (ctx.cursor.main === null) {

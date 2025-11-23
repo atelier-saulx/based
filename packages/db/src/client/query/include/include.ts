@@ -1,8 +1,8 @@
 import { IncludeOpts } from '../types.js'
 import { BranchInclude, QueryBranch } from '../BasedDbQuery.js'
 import { includeField } from './props.js'
-import { REFERENCE, REFERENCES } from '@based/schema/def'
 import { createOrGetEdgeRefQueryDef, createOrGetRefQueryDef } from './utils.js'
+import { PropType } from '../../../zigTsExports.js'
 
 export const include = (
   query: QueryBranch<any>,
@@ -28,7 +28,8 @@ export const include = (
           const prop = query.def.target?.propDef?.edges[field]
           if (
             prop &&
-            (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
+            (prop.typeIndex === PropType.reference ||
+              prop.typeIndex === PropType.references)
           ) {
             const refDef = createOrGetEdgeRefQueryDef(query.db, query.def, prop)
             // @ts-ignore
@@ -41,7 +42,8 @@ export const include = (
           const prop = query.def.props[field]
           if (
             prop &&
-            (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES)
+            (prop.typeIndex === PropType.reference ||
+              prop.typeIndex === PropType.references)
           ) {
             const refDef = createOrGetRefQueryDef(query.db, query.def, prop)
             // @ts-ignore

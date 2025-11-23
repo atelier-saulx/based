@@ -1,5 +1,4 @@
 import { Ctx } from '../Ctx.js'
-import { PropDef } from '@based/schema/def'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { writeU32, writeU8 } from '../uint.js'
@@ -24,6 +23,7 @@ import {
   RefOp,
 } from '../types.js'
 import { ModOp } from '../../../zigTsExports.js'
+import type { PropDef } from '@based/schema'
 
 const clearReferences = (ctx: Ctx, def: PropDef) => {
   reserve(ctx, PROP_CURSOR_SIZE + 1)

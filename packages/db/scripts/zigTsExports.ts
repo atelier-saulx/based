@@ -862,10 +862,13 @@ const parseZig = (input: string): string => {
 
 const zigCode = await fs.readFile(join(__dirname, '../native/types.zig'))
 const zigCodeString = zigCode.toString()
-
-await fs.writeFile(
-  join(__dirname, '../src/zigTsExports.ts'),
-  parseZig(zigCodeString),
-)
+const zigTsExports = parseZig(zigCodeString)
+await Promise.all([
+  fs.writeFile(join(__dirname, '../src/zigTsExports.ts'), zigTsExports),
+  fs.writeFile(
+    join(__dirname, '../../protocol/src/zigTsExports.ts'),
+    zigTsExports,
+  ),
+])
 
 console.log('build zig types file in ts (src/zigTsExports)')

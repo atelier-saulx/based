@@ -1,4 +1,3 @@
-import { ALIAS, isPropDef, SchemaPropTree } from '@based/schema/def'
 import { DbClient } from '../../../index.js'
 import { ModifyOpts } from '../types.js'
 import { getValidSchema } from '../validate.js'
@@ -12,7 +11,8 @@ import { writeUpdate } from '../update/index.js'
 import { schedule } from '../drain.js'
 import { TYPE_CURSOR_SIZE, writeTypeCursor } from '../cursor.js'
 import { Tmp } from '../Tmp.js'
-import { ModOp } from '../../../zigTsExports.js'
+import { ModOp, PropType } from '../../../zigTsExports.js'
+import { isPropDef, type SchemaPropTree } from '@based/schema'
 
 const writeAliases = (ctx: Ctx, tree: SchemaPropTree, obj: any) => {
   for (const key in obj) {
@@ -23,7 +23,7 @@ const writeAliases = (ctx: Ctx, tree: SchemaPropTree, obj: any) => {
     }
     if (!isPropDef(def)) {
       writeAliases(ctx, def, val)
-    } else if (def.typeIndex === ALIAS) {
+    } else if (def.typeIndex === PropType.alias) {
       const buf = ENCODER.encode(val)
       reserve(ctx, 1 + 4 + buf.byteLength)
       writeU8(ctx, def.prop)

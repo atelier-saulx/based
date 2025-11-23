@@ -1,7 +1,7 @@
-import { PropDef, PropDefEdge } from '@based/schema/def'
 import { ALIGNMENT_NOT_SET, FilterCtx, MODE_REFERENCE } from './types.js'
 import { FilterCondition } from '../types.js'
 import { writeUint16, writeUint32 } from '@based/utils'
+import type { PropDef, PropDefEdge } from '@based/schema'
 
 export const createReferenceFilter = (
   prop: PropDef | PropDefEdge,
