@@ -104,14 +104,14 @@ await test('multiple references', async (t) => {
     ],
   })
 
-  console.log(
-    'derp',
-    await db
-      .query('article')
-      .include('contributors.$role')
-      // .include('contributors.$role', 'contributors.$bigString')
-      .get(),
-  )
+  // console.log(
+  //   'derp',
+  //   await db
+  //     .query('article')
+  //     .include('contributors.$role')
+  //     // .include('contributors.$role', 'contributors.$bigString')
+  //     .get(),
+  // )
 
   deepEqual(
     (

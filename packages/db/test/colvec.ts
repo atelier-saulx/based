@@ -1,6 +1,6 @@
 import test from './shared/test.js'
 import { BasedDb } from '../src/index.js'
-import { deepEqual } from './shared/assert.js'
+import { deepEqual, perf } from './shared/assert.js'
 
 await test.skip('colvec', async (t) => {
   const db = new BasedDb({
@@ -40,24 +40,22 @@ await test.skip('colvec', async (t) => {
   const N = 10_000_000
 
   reset()
-  const trow0 = performance.now()
-  for (let i = 0; i < N; i++) {
-    genVec()
-    db.create('row', { vec })
-  }
-  await db.drain()
-  const trow1 = performance.now()
+  await perf(async () => {
+    for (let i = 0; i < N; i++) {
+      genVec()
+      db.create('row', { vec })
+    }
+    await db.drain()
+  }, 'row')
 
   reset()
-  const tcol0 = performance.now()
-  for (let i = 0; i < N; i++) {
-    genVec()
-    db.create('col', { vec })
-  }
-  await db.drain()
-  const tcol1 = performance.now()
-
-  console.log(`CREATE row: ${trow1 - trow0} ms col: ${tcol1 - tcol0} ms`)
+  await perf(async () => {
+    for (let i = 0; i < N; i++) {
+      genVec()
+      db.create('col', { vec })
+    }
+    await db.drain()
+  }, 'col')
 
   vec[0] = 2311.0
   vec[1] = 5054.0
@@ -67,19 +65,23 @@ await test.skip('colvec', async (t) => {
   vec[5] = 7474.0
   vec[6] = 4173.0
   vec[7] = 7261.0
-  const tr0 = performance.now()
-  await db
-    .query('row')
-    .include('*')
-    .filter('vec', 'like', vec, { fn: 'euclideanDistance', score: 1 })
-    .get()
-  const tr1 = performance.now()
-  console.log(`QUERY row: ${tr1 - tr0} ms`)
+  await perf(async () => {
+    await db
+      .query('row')
+      .include('*')
+      .filter('vec', 'like', vec, { fn: 'euclideanDistance', score: 1 })
+      .get()
+  }, 'QUERY row')
 
-  const tc0 = performance.now()
-  global.__basedDb__native__.colvecTest(db.server.dbCtxExternal, 3, 1, 1, N + 1)
-  const tc1 = performance.now()
-  console.log(`QUERY col: ${tc1 - tc0} ms`)
+  await perf(async () => {
+    global.__basedDb__native__.colvecTest(
+      db.server.dbCtxExternal,
+      3,
+      1,
+      1,
+      N + 1,
+    )
+  }, 'QUERY col')
 
   const res = await db.query('col').include('vec').range(0, 2).get().toObject()
   deepEqual(res, [

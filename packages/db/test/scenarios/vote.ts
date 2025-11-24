@@ -1,7 +1,8 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.js'
 import { wait } from '@based/utils'
-import { allCountryCodes } from './shared/examples.js'
+import { SchemaProp } from '@based/schema'
+import { allCountryCodes } from '../shared/examples.js'
 import { clearTimeout } from 'timers'
 
 await test('schema with many uint8 fields', async (t) => {

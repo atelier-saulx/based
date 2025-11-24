@@ -28,13 +28,13 @@ pub fn saveBlock(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType)
     std.debug.print("\n--------saveBlock-------\n", .{});
     const id = read(u32, q, 0);
     const data = try threads.newResult(true, threadCtx, 26, id, op);
-    const typeCode = read(u16, q, 9);
     const start = read(u32, q, 5);
+    const typeCode = read(u16, q, 9);
     const filename = q[11..q.len];
+    var hash: SelvaHash128 = 0;
     var err: c_int = undefined;
 
-    _ = selva.memcpy(data[4..10].ptr, q[5..11].ptr, 6);
-    var hash: SelvaHash128 = 0;
+    utils.byteCopy(data, q[5..11], 4);
 
     const te = selva.selva_get_type_by_index(ctx.selva, typeCode);
     if (te == null) {
@@ -95,7 +95,7 @@ pub fn loadBlock(
     const errlog = data[16..data.len];
 
     err = selva.selva_dump_load_block(dbCtx.selva, filename.ptr, errlog.ptr, errlog.len);
-    if (err == 0) {
+    if (err != 0) {
         utils.write(data, err, 0);
         return;
     }

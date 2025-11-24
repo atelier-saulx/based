@@ -1,5 +1,4 @@
 import type { Schema } from './_types.js'
-import type { SchemaObject } from './schema/object.js'
 
 type TypedArray =
   | Uint8Array
@@ -28,79 +27,107 @@ type TypeMap = {
   // return type is different
   timestamp: number | string | Date
   binary: Uint8Array
-  cardinality: number
   vector: TypedArray
   colvec: TypedArray
   alias: string
 }
 
+type OutputSpecifics = {
+  cardinality: number
+}
+
+type InputSpecifics = {
+  cardinality: string | string[]
+}
+
+type IO = 'input' | 'output'
+
+type ResolveDataType<
+  Key,
+  Mode extends IO,
+> = Key extends keyof (Mode extends 'input' ? InputSpecifics : OutputSpecifics)
+  ? (Mode extends 'input' ? InputSpecifics : OutputSpecifics)[Key &
+      keyof (Mode extends 'input' ? InputSpecifics : OutputSpecifics)]
+  : Key extends keyof TypeMap
+    ? TypeMap[Key]
+    : never
+
 type InferEnum<T extends readonly (string | number | boolean)[]> = T[number]
 
-type InferReference<RefName extends string, Types> = RefName extends keyof Types
-  ? { id: number } & InferSchemaType<Types[RefName], Types>
+type InferReference<
+  RefName extends string,
+  Types,
+  Mode extends IO,
+> = RefName extends keyof Types
+  ? { id: number } & InferSchemaType<Types[RefName], Types, Mode>
   : { id: number } | undefined
 
 type InferReferences<
   RefName extends string,
   Types,
+  Mode extends IO,
 > = RefName extends keyof Types
-  ? Array<{ id: number } & InferSchemaType<Types[RefName], Types>>
+  ? Array<{ id: number } & InferSchemaType<Types[RefName], Types, Mode>>
   : Array<{ id: number }>
 
-type InferObject<T extends Record<string, any>, Types> = {
-  [K in keyof T]: InferProp<T[K], Types>
+type InferObject<T extends Record<string, any>, Types, Mode extends IO> = {
+  [K in keyof T]: InferProp<T[K], Types, Mode>
 }
 
-type InferSet<T, Types> = InferProp<T, Types>[]
+type InferSet<T, Types, Mode extends IO> = InferProp<T, Types, Mode>[]
 
-type InferProp<T, Types> =
-  T extends SchemaObject<true>
-    ? InferObject<T['props'], Types>
-    : T extends { items: { ref: infer R extends string } }
-      ? InferReferences<R, Types>
-      : T extends { items: infer I }
-        ? InferSet<I, Types>
-        : T extends { ref: infer R extends string }
-          ? InferReference<R, Types>
-          : T extends { enum: infer E }
-            ? E extends readonly (string | number | boolean)[]
-              ? InferEnum<E>
+type InferProp<T, Types, Mode extends IO> = T extends { props: infer P }
+  ? P extends Record<string, any>
+    ? InferObject<P, Types, Mode>
+    : never
+  : T extends { items: { ref: infer R extends string } }
+    ? InferReferences<R, Types, Mode>
+    : T extends { items: infer I }
+      ? InferSet<I, Types, Mode>
+      : T extends { ref: infer R extends string }
+        ? InferReference<R, Types, Mode>
+        : T extends { enum: infer E }
+          ? E extends readonly (string | number | boolean)[]
+            ? InferEnum<E>
+            : never
+          : T extends { type: infer U }
+            ? ResolveDataType<U, Mode>
+            : T extends keyof TypeMap
+              ? ResolveDataType<T, Mode>
               : never
-            : T extends { type: infer U }
-              ? U extends keyof TypeMap
-                ? TypeMap[U]
-                : never
-              : T extends keyof TypeMap
-                ? TypeMap[T]
-                : never
 
 // Schema type inference with support for both shorthand and full notation
-type InferSchemaType<T, Types> = T extends { props: infer Props }
+type InferSchemaType<T, Types, Mode extends IO> = T extends {
+  props: infer Props
+}
   ? {
-      [K in keyof Props]: InferProp<Props[K], Types>
+      [K in keyof Props]: InferProp<Props[K], Types, Mode>
     } & { id: number }
   : {
-      [K in keyof T]: InferProp<T[K], Types>
+      [K in keyof T]: InferProp<T[K], Types, Mode>
     } & { id: number }
 
-type InferSchemaTypes<T> = {
-  [K in keyof T]: InferSchemaType<T[K], T>
+type InferSchemaTypes<T, Mode extends IO> = {
+  [K in keyof T]: InferSchemaType<T[K], T, Mode>
 }
 
-type InferSchema<T extends Schema> = T extends {
+type InferSchema<T extends Schema, Mode extends IO> = T extends {
   types: infer Types
 }
   ? Types extends Record<string, any>
-    ? InferSchemaTypes<Types>
+    ? InferSchemaTypes<Types, Mode>
     : never
   : never
 
 // Utility type for getting the inferred type
-export type Infer<T extends Schema> = InferSchema<T>
+export type Infer<T extends Schema> = InferSchema<T, 'output'>
+
+export type InferOutput<T extends Schema> = InferSchema<T, 'output'>
+export type InferInput<T extends Schema> = InferSchema<T, 'input'>
 
 // Main inference function, returns the inferred schema
 export const infer = <T extends { types: Record<string, any> }>(
   schema: T,
-): InferSchema<T> => {
+): InferSchema<T, 'output'> => {
   return schema.types as any
 }

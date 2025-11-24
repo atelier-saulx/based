@@ -1,8 +1,8 @@
-import { BasedDb } from '../src/index.js'
-import test from './shared/test.js'
+import { BasedDb } from '../../src/index.js'
+import test from '../shared/test.js'
 import { SchemaProp, SchemaType } from '@based/schema'
-import { clientWorker } from './shared/startWorker.js'
-import { allCountryCodes } from './shared/examples.js'
+import { clientWorker } from '../shared/startWorker.js'
+import { allCountryCodes } from '../shared/examples.js'
 import { wait } from '@based/utils'
 
 const NR_VOTES = 7.5e6
