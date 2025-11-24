@@ -51,10 +51,12 @@ pub fn default(
                 continue;
             }
 
-            const nodeHeader = try threads.sliceFromResult(true, ctx.thread, 5);
+            try threads.appendToResult(true, ctx.thread, t.ReadOp.id);
+            try threads.appendToResult(true, ctx.thread, Node.getNodeId(n));
+
+            // const nodeHeader = try threads.sliceFromResult(true, ctx.thread, 5);
             // utils.write(nodeHeader, t.ReadOp.id, 0);
-            nodeHeader[0] = @intFromEnum(t.ReadOp.id);
-            utils.write(nodeHeader, Node.getNodeId(n), 1);
+            // utils.write(nodeHeader, Node.getNodeId(n), 1);
 
             try include.include(n, ctx, nestedQuery);
 

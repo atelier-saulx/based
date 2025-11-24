@@ -22,7 +22,8 @@ const Condition = std.Thread.Condition;
 const Queue = std.array_list.Managed([]u8);
 
 // TODO make 1 struct
-pub fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
+
+pub inline fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
     const paddedSize: u32 = @truncate(size); // zero padding for growth
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
@@ -56,13 +57,13 @@ pub fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) !
     }
 }
 
-pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, value: anytype) !void {
+pub inline fn appendToResult(comptime isQuery: bool, thread: *DbThread, value: anytype) !void {
     const T = @TypeOf(value);
     const size = utils.sizeOf(T);
     utils.writeAs(T, try sliceFromResult(isQuery, thread, size), value, 0);
 }
 
-pub fn appendToResultAs(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !usize {
+pub inline fn appendToResultAs(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !usize {
     const size = utils.sizeOf(T);
     utils.writeAs(T, try sliceFromResult(isQuery, thread, size), value, 0);
     return size;
