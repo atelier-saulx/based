@@ -39,21 +39,22 @@ export async function perf(
   label: string,
   options: Options = {},
 ): Promise<number> {
-  const repeat = options.repeat ?? 1
-  const timeout = options.timeout ?? 5000
-  const silent = options.silent ?? false
-  const diffThreshold = options.diffThreshold ?? 10 // 10%
+  options.repeat ??= 1
+  options.timeout ??= 5000
+  options.silent ??= false
+  options.diffThreshold ??= 10
+
   const testFileName = path.basename(process.env.TEST_FILENAME)
   const dbVersion = process.env.npm_package_version
   const outputFile =
     options.outputFile ?? `perf_${testFileName}_${dbVersion}.json`
   const outputDir = './tmp_perf_logs'
   const testFunction = process.env.TEST_NAME ?? 'not inside a test'
-
   const durations: number[] = []
   let timeOut: ReturnType<typeof setTimeout>
+
   try {
-    for (let i = 0; i < repeat; i++) {
+    for (let i = 0; i < options.repeat; i++) {
       const start = performance.now()
       clearTimeout(timeOut)
 
@@ -62,8 +63,9 @@ export async function perf(
         new Promise(
           (_, reject) =>
             (timeOut = setTimeout(
-              () => reject(new Error(`Timeout of ${timeout}ms exceeded`)),
-              timeout,
+              () =>
+                reject(new Error(`Timeout of ${options.timeout}ms exceeded`)),
+              options.timeout,
             )),
         ),
       ])
@@ -87,7 +89,7 @@ export async function perf(
       label,
       avgDurationMs: Number(avgTime.toFixed(4)),
       totalDurationMs: Number(totalTime.toFixed(4)),
-      repetitions: repeat,
+      repetitions: options.repeat,
       isDebugMode: isDebugMode,
     }
 
@@ -103,7 +105,7 @@ export async function perf(
     let diffMessage = styleText('gray', ` no previous found`)
 
     if (!isNaN(diff.difference)) {
-      if (Math.abs(percentDiff) > diffThreshold) {
+      if (Math.abs(percentDiff) > options.diffThreshold) {
         diffMessage =
           diff.difference >= 0
             ? styleText(
@@ -118,11 +120,11 @@ export async function perf(
         diffMessage = styleText('gray', ` similar performance`)
       }
     }
-    if (!silent)
+    if (!options.silent)
       console.log(
         styleText(
           'gray',
-          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x)${diffMessage}`,
+          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${options.repeat}x)${diffMessage}`,
         ),
       )
     return totalTime
@@ -164,8 +166,8 @@ async function saveResultToFile(
 
   const previous = fileContent[testName]
     .filter((m) => m.label == label)
-    .slice(-1)[0]?.avgDurationMs
-  const difference = data.avgDurationMs - previous
+    .slice(-1)[0]?.totalDurationMs
+  const difference = data.totalDurationMs - previous
   data.difference = difference
   data.previous = previous
 
