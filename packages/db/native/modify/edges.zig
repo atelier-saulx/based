@@ -1,5 +1,6 @@
 const Modify = @import("./common.zig");
 const db = @import("../db/db.zig");
+const Node = @import("../db/node.zig");
 const utils = @import("../utils.zig");
 const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
@@ -26,7 +27,7 @@ pub fn writeEdges(
 ) !void {
     var i: usize = 0;
     const edgeConstraint = db.getEdgeFieldConstraint(ctx.fieldSchema.?);
-    const edgeNode = try db.ensureRefEdgeNode(ctx, ctx.node.?, edgeConstraint, ref);
+    const edgeNode = try Node.ensureRefEdgeNode(ctx, ctx.node.?, edgeConstraint, ref);
     const edgeId = ref.*.edge;
     const edgeTypeId = edgeConstraint.*.edge_node_type;
     if (edgeId > ctx.db.ids[edgeTypeId - 1]) {
@@ -75,7 +76,7 @@ pub fn writeEdges(
                 len = 4;
                 offset = 0;
                 const dstId = read(u32, data, i + offset);
-                if (db.getNode(try db.getRefDstType(ctx.db, edgeFieldSchema), dstId)) |dstNode| {
+                if (Node.getNode(try db.getRefDstType(ctx.db, edgeFieldSchema), dstId)) |dstNode| {
                     _ = try db.writeReference(ctx, edgeNode, edgeFieldSchema, dstNode);
                 } else {
                     return errors.SelvaError.SELVA_ENOENT;

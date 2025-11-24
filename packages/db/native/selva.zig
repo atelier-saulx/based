@@ -34,8 +34,21 @@ pub const c = @cImport({
 const std = @import("std");
 
 pub const SelvaHash128 = u128;
+pub const Node = *c.SelvaNode;
+pub const Aliases = *c.SelvaAliases;
+pub const Type = *c.SelvaTypeEntry;
+pub const FieldSchema = *const c.SelvaFieldSchema;
+pub const EdgeFieldConstraint = *const c.EdgeFieldConstraint;
+pub const ReferenceSmall = *c.SelvaNodeSmallReference;
+pub const ReferenceLarge = *c.SelvaNodeLargeReference;
+pub const ReferenceAny = c.SelvaNodeReferenceAny;
+pub const References = *const c.SelvaNodeReferences;
 
 pub fn strerror_zig(err: i32) [:0]const u8 {
     const s = c.selva_strerror(err);
     return s[0..std.mem.len(s) :0];
+}
+
+pub fn selvaStringDestroy(str: ?c.selva_string) void {
+    try c.selva_string_free(str);
 }

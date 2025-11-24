@@ -1,6 +1,7 @@
 const read = @import("../../utils.zig").read;
 const db = @import("../../db/db.zig");
 const Query = @import("../common.zig");
+const Node = @import("../../db/node.zig");
 const getFields = @import("./include.zig").getFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const std = @import("std");
@@ -19,8 +20,8 @@ const t = @import("../../types.zig");
 pub fn getSingleRefFields(
     ctx: *Query.QueryCtx,
     include: []u8,
-    originalNode: db.Node,
-    originalType: db.Type,
+    originalNode: Node.Node,
+    originalType: Node.Type,
     ref: ?Query.RefStruct,
     comptime isEdge: bool,
 ) usize {
@@ -49,7 +50,7 @@ pub fn getSingleRefFields(
     }
 
     var edgeRefStruct: Query.RefStruct = undefined;
-    var node: ?db.Node = null;
+    var node: ?Node.Node = null;
 
     if (isEdge) {
         size += 1;
@@ -65,7 +66,7 @@ pub fn getSingleRefFields(
             .largeReference = selvaRef,
         });
         if (db.getRefDstType(ctx.db, fieldSchema.?) catch null) |dstType| {
-            node = db.getNodeFromReference(dstType, selvaRef);
+            node = Node.getNodeFromReference(dstType, selvaRef);
         }
         if (node == null) {
             return 6 + size;
@@ -85,13 +86,13 @@ pub fn getSingleRefFields(
             .largeReference = @ptrCast(selvaRef.?),
             .edgeConstraint = edgeConstraint,
         };
-        node = db.getNodeFromReference(dstType, selvaRef);
+        node = Node.getNodeFromReference(dstType, selvaRef);
         if (node == null) {
             return 6 + size;
         }
     }
 
-    const refId = db.getNodeId(node.?);
+    const refId = Node.getNodeId(node.?);
 
     const typeEntry = db.getType(ctx.db, typeId) catch {
         return 6 + size;

@@ -1,4 +1,5 @@
 const db = @import("../db/db.zig");
+const Node = @import("../db/node.zig");
 const errors = @import("../errors.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
@@ -12,9 +13,9 @@ pub const ModifyCtx = struct {
     currentSortIndex: ?*sort.SortIndexMeta,
     typeSortIndex: ?*sort.TypeIndex,
     typeId: t.TypeId,
-    typeEntry: ?db.Type,
+    typeEntry: ?Node.Type,
     fieldSchema: ?db.FieldSchema,
-    node: ?db.Node,
+    node: ?Node.Node,
     fieldType: t.PropType,
     db: *db.DbCtx,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),

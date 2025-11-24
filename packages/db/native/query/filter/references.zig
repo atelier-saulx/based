@@ -1,6 +1,7 @@
 const std = @import("std");
 const ReferencesSelect = @import("../../types.zig").ReferencesSelect;
 const db = @import("../../db/db.zig");
+const Node = @import("../../db/node.zig");
 const filter = @import("./filter.zig").filter;
 const Query = @import("../common.zig");
 
@@ -11,7 +12,7 @@ pub fn filteReferencesMode(
     conditions: []u8,
     edgeConstraint: db.EdgeFieldConstraint,
     refs: Query.Refs,
-    refTypeEntry: db.Type,
+    refTypeEntry: Node.Type,
     index: i32,
 ) bool {
     var j: usize = 0;
@@ -99,7 +100,7 @@ pub inline fn filterReferences(
     conditions: []u8,
     edgeConstraint: db.EdgeFieldConstraint,
     refs: Query.Refs,
-    refTypeEntry: db.Type,
+    refTypeEntry: Node.Type,
     index: i32,
 ) bool {
     return switch (refsSelectType) {

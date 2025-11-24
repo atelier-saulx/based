@@ -1,6 +1,7 @@
 const std = @import("std");
 const read = @import("../../../utils.zig").read;
 const db = @import("../../../db/db.zig");
+const Node = @import("../../../db/node.zig");
 const selva = @import("../../../selva.zig").c;
 const results = @import("../../results.zig");
 const Query = @import("../../common.zig");
@@ -23,8 +24,8 @@ const t = @import("../../../types.zig");
 pub fn getRefsFields(
     ctx: *Query.QueryCtx,
     include: []u8,
-    node: db.Node,
-    originalType: db.Type,
+    node: Node.Node,
+    originalType: Node.Type,
     ref: ?Query.RefStruct,
     comptime isEdge: bool,
 ) usize {

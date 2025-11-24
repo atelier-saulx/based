@@ -1,5 +1,6 @@
 const std = @import("std");
 const db = @import("../../../db/db.zig");
+const Node = @import("../../../db/node.zig");
 const dbSort = @import("../../../db/sort.zig");
 const Query = @import("../../common.zig");
 const getFields = @import("../include.zig").getFields;
@@ -13,7 +14,7 @@ pub fn sortedReferences(
     ctx: *Query.QueryCtx,
     include: []u8,
     sortBuffer: []u8, // TODO: PASS SORT HEADER HERE
-    typeEntry: db.Type,
+    typeEntry: Node.Type,
     edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
@@ -56,7 +57,7 @@ pub fn sortedReferences(
     var it: selva.SelvaSortIterator = undefined;
     selva.selva_sort_foreach_begin(metaSortIndex.index, &it);
     while (!selva.selva_sort_foreach_done(&it)) {
-        const refNode: db.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index, &it));
+        const refNode: Node.Node = @ptrCast(selva.selva_sort_foreach(metaSortIndex.index, &it));
         result.cnt += 1;
         if (offset != 0 and result.cnt <= offset) {
             i += 1;
@@ -65,7 +66,7 @@ pub fn sortedReferences(
         result.size += getFields(
             refNode,
             ctx,
-            db.getNodeId(refNode),
+            Node.getNodeId(refNode),
             typeEntry,
             include,
             Query.RefResult(refs, edgeConstraint, i),

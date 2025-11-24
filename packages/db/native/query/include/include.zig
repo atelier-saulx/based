@@ -2,7 +2,8 @@ const Query = @import("../common.zig");
 const getSingleRefFields = @import("./reference.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
 const read = @import("../../utils.zig").read;
-const db = @import("../../db//db.zig");
+const db = @import("../../db/db.zig");
+const Node = @import("../../db/node.zig");
 const getRefsFields = @import("./references/references.zig").getRefsFields;
 const aggregateRefsFields = @import("../aggregate/references.zig").aggregateRefsFields;
 const t = @import("../../types.zig");
@@ -12,10 +13,10 @@ const results = @import("../results.zig");
 const std = @import("std");
 
 pub fn getFields(
-    node: db.Node,
+    node: Node.Node,
     ctx: *Query.QueryCtx,
     id: u32,
-    typeEntry: db.Type,
+    typeEntry: Node.Type,
     include: []u8,
     edgeRef: ?Query.RefStruct,
     score: ?[4]u8,

@@ -3,6 +3,7 @@ const db = @import("../../db/db.zig");
 const selva = @import("../../selva.zig").c;
 const results = @import("../results.zig");
 const Query = @import("../common.zig");
+const Node = @import("../../db/node.zig");
 const utils = @import("../../utils.zig");
 const aggregate = @import("./aggregate.zig").aggregate;
 const group = @import("./group.zig");
@@ -19,8 +20,8 @@ const write = utils.write;
 pub fn aggregateRefsFields(
     ctx: *Query.QueryCtx,
     include: []u8,
-    node: db.Node,
-    originalType: db.Type,
+    node: Node.Node,
+    originalType: Node.Type,
 ) !usize {
     var index: usize = 0;
     const filterSize: u16 = read(u16, include, index);
@@ -54,8 +55,8 @@ pub fn aggregateRefsFields(
 pub inline fn aggregateRefsGroup(
     ctx: *Query.QueryCtx,
     typeId: t.TypeId,
-    originalType: db.Type,
-    node: db.Node,
+    originalType: Node.Type,
+    node: Node.Node,
     refField: u8,
     aggInput: []u8,
     offset: u32,
@@ -108,7 +109,7 @@ pub inline fn aggregateRefsGroup(
                 else if (groupCtx.propType == t.PropType.timestamp)
                     @constCast(utils.datePart(groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len], @enumFromInt(groupCtx.stepType), groupCtx.timezone))
                 else if (groupCtx.propType == t.PropType.reference)
-                    db.getReferenceNodeId(@ptrCast(@alignCast(groupValue.ptr)))
+                    Node.getReferenceNodeId(@ptrCast(@alignCast(groupValue.ptr)))
                 else
                     groupValue.ptr[groupCtx.start .. groupCtx.start + groupCtx.len]
             else
@@ -146,8 +147,8 @@ pub inline fn aggregateRefsGroup(
 pub inline fn aggregateRefsDefault(
     ctx: *Query.QueryCtx,
     typeId: t.TypeId,
-    originalType: db.Type,
-    node: db.Node,
+    originalType: Node.Type,
+    node: Node.Node,
     refField: u8,
     agg: []u8,
     offset: u32,

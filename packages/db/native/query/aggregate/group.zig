@@ -2,6 +2,7 @@ const std = @import("std");
 const utils = @import("../../utils.zig");
 const GroupByHashMap = @import("./groupByHashMap.zig").GroupByHashMap;
 const db = @import("../../db/db.zig");
+const Node = @import("../../db/node.zig");
 const Query = @import("../common.zig");
 const t = @import("../../types.zig");
 
@@ -169,7 +170,7 @@ pub inline fn finalizeGroupResults(
     }
 }
 
-pub fn createGroupCtx(aggInput: []u8, typeEntry: db.Type, ctx: *Query.QueryCtx) !*GroupCtx {
+pub fn createGroupCtx(aggInput: []u8, typeEntry: Node.Type, ctx: *Query.QueryCtx) !*GroupCtx {
     const field = aggInput[0];
     const srcPropTypeType: t.PropType = @enumFromInt(aggInput[1]);
 
