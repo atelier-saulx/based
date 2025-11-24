@@ -1,12 +1,11 @@
 const std = @import("std");
 const utils = @import("../utils.zig");
-const Query = @import("./common.zig");
-const include = @import("./include.zig");
+const Query = @import("common.zig");
+const include = @import("include.zig");
 const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
 const threads = @import("../db/threads.zig");
 const t = @import("../types.zig");
-// const assert = std.debug.assert;
 
 pub fn default(
     // references: true
