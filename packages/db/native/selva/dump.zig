@@ -2,15 +2,15 @@ const db = @import("db.zig");
 const selva = @import("selva.zig").c;
 const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const utils = @import("../utils.zig");
-const threads = @import("../db/threads.zig");
+const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 const std = @import("std");
 const read = utils.read;
 
 // sdbFilename must be nul-terminated
-pub fn saveCommon(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
+pub fn saveCommon(threadCtx: *Thread.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
     const id = read(u32, q, 0);
-    const data = try threads.newResult(true, threadCtx, 4, id, op);
+    const data = try Thread.newResult(true, threadCtx, 4, id, op);
     const filename = q[5..q.len];
     var com: selva.selva_dump_common_data = .{
         .meta_data = ctx.ids.ptr,
@@ -24,9 +24,9 @@ pub fn saveCommon(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType
 }
 
 // sdbFilename must be nul-terminated
-pub fn saveBlock(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
+pub fn saveBlock(threadCtx: *Thread.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
     const id = read(u32, q, 0);
-    const data = try threads.newResult(true, threadCtx, 26, id, op);
+    const data = try Thread.newResult(true, threadCtx, 26, id, op);
     const start = read(u32, q, 5);
     const typeCode = read(u16, q, 9);
     const filename = q[11..q.len];
@@ -47,12 +47,12 @@ pub fn saveBlock(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType)
 }
 
 pub fn loadCommon(
-    threadCtx: *db.DbThread,
+    threadCtx: *Thread.DbThread,
     dbCtx: *db.DbCtx,
     m: []u8,
     op: t.OpType,
 ) !void {
-    const data = try threads.newResult(false, threadCtx, 20 + 492, read(u32, m, 0), op);
+    const data = try Thread.newResult(false, threadCtx, 20 + 492, read(u32, m, 0), op);
     const filename = m[5..m.len];
     const errlog = data[5..data.len];
     var com: selva.selva_dump_common_data = .{
@@ -80,12 +80,12 @@ pub fn loadCommon(
 }
 
 pub fn loadBlock(
-    threadCtx: *db.DbThread,
+    threadCtx: *Thread.DbThread,
     dbCtx: *db.DbCtx,
     m: []u8,
     op: t.OpType,
 ) !void {
-    const data = try threads.newResult(false, threadCtx, 20 + 492, read(u32, m, 0), op);
+    const data = try Thread.newResult(false, threadCtx, 20 + 492, read(u32, m, 0), op);
     const start: u32 = read(u32, m, 5);
     const typeCode: u16 = read(u16, m, 9);
     const filename = m[11..m.len];
@@ -113,12 +113,12 @@ pub fn loadBlock(
 }
 
 pub fn unloadBlock(
-    threadCtx: *db.DbThread,
+    threadCtx: *Thread.DbThread,
     dbCtx: *db.DbCtx,
     m: []u8,
     op: t.OpType,
 ) !void {
-    const data = try threads.newResult(false, threadCtx, 20, read(u32, m, 0), op);
+    const data = try Thread.newResult(false, threadCtx, 20, read(u32, m, 0), op);
     const start: u32 = read(u32, m, 5);
     const typeCode: u16 = read(u16, m, 9);
     const filename = m[11..m.len];

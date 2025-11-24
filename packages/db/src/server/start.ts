@@ -51,6 +51,23 @@ const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
   }
 }
 
+const handleQueryResponseFromSingleThread = (
+  db: DbServer,
+  arr: ArrayBuffer | null,
+) => {
+  if (!arr) {
+    return
+  }
+  const v = new Uint8Array(arr)
+  for (let i = 0; i < v.byteLength; ) {
+    const size = readUint32(v, i)
+    const id = readUint32(v, i + 4)
+    const type: OpTypeEnum = v[i + 8] as OpTypeEnum
+    db.execOpListeners(type, id, v.subarray(i + 9, i + size))
+    i += size
+  }
+}
+
 const handleModifyResponse = (db: DbServer, arr: ArrayBuffer) => {
   const v = new Uint8Array(arr)
   for (let i = 0; i < v.byteLength; ) {
@@ -76,6 +93,10 @@ export async function start(db: DbServer, opts: StartOpts) {
     if (id === BridgeResponse.query) {
       handleQueryResponse(db, buffer)
     } else if (id === BridgeResponse.modify) {
+      handleModifyResponse(db, buffer)
+    } else if (id === BridgeResponse.flushQuery) {
+      handleQueryResponseFromSingleThread(db, buffer)
+    } else if (id === BridgeResponse.flushModify) {
       handleModifyResponse(db, buffer)
     }
   })

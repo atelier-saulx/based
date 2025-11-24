@@ -4,7 +4,7 @@ const Query = @import("common.zig");
 const include = @import("include.zig");
 const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
-const threads = @import("../db/threads.zig");
+const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 
 pub fn default(
@@ -19,7 +19,7 @@ pub fn default(
 
     var nodeCnt: u32 = 0;
     const nestedQuery = q[index..];
-    const sizeIndex = try threads.reserveResultSpace(true, ctx.thread, 4);
+    const sizeIndex = try Thread.reserveResultSpace(true, ctx.thread, 4);
 
     // this will be a nice iterator
     const typeEntry = try db.getType(ctx.db, header.typeId);
@@ -45,8 +45,8 @@ pub fn default(
                 continue;
             }
 
-            try threads.appendToResult(true, ctx.thread, t.ReadOp.id);
-            try threads.appendToResult(true, ctx.thread, Node.getNodeId(n));
+            try Thread.appendToResult(true, ctx.thread, t.ReadOp.id);
+            try Thread.appendToResult(true, ctx.thread, Node.getNodeId(n));
 
             // const nodeHeader = try threads.sliceFromResult(true, ctx.thread, 5);
             // utils.write(nodeHeader, t.ReadOp.id, 0);
@@ -62,5 +62,5 @@ pub fn default(
         }
     }
 
-    threads.writeToResult(true, ctx.thread, nodeCnt, sizeIndex);
+    Thread.writeToResult(true, ctx.thread, nodeCnt, sizeIndex);
 }

@@ -14,16 +14,22 @@ export type TypeId = number
 export const BridgeResponse = {
   query: 1,
   modify: 2,
+  flushQuery: 3,
+  flushModify: 4,
 } as const
 
 export const BridgeResponseInverse = {
   1: 'query',
   2: 'modify',
+  3: 'flushQuery',
+  4: 'flushModify',
 } as const
 
 /**
   query, 
-  modify 
+  modify, 
+  flushQuery, 
+  flushModify 
  */
 export type BridgeResponseEnum = (typeof BridgeResponse)[keyof typeof BridgeResponse]
 
