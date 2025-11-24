@@ -21,7 +21,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     const refTypeId = Db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
-    const refTypeEntry = try Db.getType(ctx.db, refTypeId);
+    const refTypeEntry = try Node.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
     var i: usize = 9;
 

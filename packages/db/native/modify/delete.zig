@@ -1,12 +1,12 @@
-const Modify = @import("./common.zig");
+const Modify = @import("common.zig");
 const Db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
 const utils = @import("../utils.zig");
-const references = @import("./references.zig");
-const subs = @import("./subscription.zig");
+const references = @import("references.zig");
+const subs = @import("subscription.zig");
 const t = @import("../types.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
@@ -86,7 +86,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
     } else {
         if (ctx.fieldType == t.PropType.reference) {
             const fs = ctx.fieldSchema.?;
-            const dstType = try Db.getRefDstType(ctx.db, fs);
+            const dstType = try Node.getRefDstType(ctx.db, fs);
             const oldRefDst = Node.getNodeFromReference(dstType, References.getSingleReference(ctx.node.?, fs));
             if (oldRefDst) |dstNode| {
                 Modify.markDirtyRange(ctx, Node.getNodeTypeId(dstNode), Node.getNodeId(dstNode));

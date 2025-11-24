@@ -26,48 +26,6 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
-pub fn getType(ctx: *DbCtx, typeId: t.TypeId) !Node.Type {
-    const selvaTypeEntry: ?Node.Type = selva.selva_get_type_by_index(
-        ctx.selva.?,
-        typeId,
-    );
-    if (selvaTypeEntry == null) {
-        return errors.SelvaError.SELVA_EINTYPE;
-    }
-    return selvaTypeEntry.?;
-}
-
-pub inline fn getRefDstType(ctx: *DbCtx, sch: anytype) !Node.Type {
-    if (comptime @TypeOf(sch) == Schema.FieldSchema) {
-        return getType(ctx, selva.selva_get_edge_field_constraint(sch).*.dst_node_type);
-    } else if (comptime @TypeOf(sch) == Schema.EdgeFieldConstraint) {
-        return getType(ctx, sch.*.dst_node_type);
-    } else {
-        @compileLog("Invalid type: ", @TypeOf(sch));
-        @compileError("Invalid type");
-    }
-}
-
-pub inline fn getEdgeType(ctx: *DbCtx, sch: anytype) !Node.Type {
-    if (comptime @TypeOf(sch) == Schema.FieldSchema) {
-        return getType(ctx, selva.selva_get_edge_field_constraint(sch).*.edge_node_type);
-    } else if (comptime @TypeOf(sch) == Schema.EdgeFieldConstraint) {
-        return getType(ctx, sch.*.edge_node_type);
-    } else {
-        @compileLog("Invalid type: ", @TypeOf(sch));
-        @compileError("Invalid type");
-    }
-}
-
-
-pub inline fn getBlockCapacity(ctx: *DbCtx, typeId: t.TypeId) u64 {
-    return selva.selva_get_block_capacity(selva.selva_get_type_by_index(ctx.selva, typeId));
-}
-
-pub inline fn getNodeCount(te: Type) usize {
-    return selva.selva_node_count(te);
-}
-
 pub fn getCardinalityField(node: st.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
     if (selva.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
         const countDistinct = selva.hll_count(@ptrCast(stored));

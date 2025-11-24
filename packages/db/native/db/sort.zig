@@ -147,7 +147,7 @@ pub fn createSortIndex(
     comptime desc: bool,
 ) !*SortIndexMeta {
     const sortIndex = try getOrCreateFromCtx(dbCtx, typeId, header, desc);
-    const typeEntry = try Db.getType(dbCtx, typeId);
+    const typeEntry = try Node.getType(dbCtx, typeId);
     const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
 
     // fill sort index needs to a special field

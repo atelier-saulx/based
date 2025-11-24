@@ -23,7 +23,7 @@ pub fn default(
     const sizeIndex = try Thread.reserveResultSpace(true, ctx.thread, 4);
 
     // this will be a nice iterator
-    const typeEntry = try Db.getType(ctx.db, header.typeId);
+    const typeEntry = try Node.getType(ctx.db, header.typeId);
     var node = Node.getFirstNode(typeEntry);
 
     while (nodeCnt < header.limit) {

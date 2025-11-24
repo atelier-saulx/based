@@ -59,7 +59,7 @@ fn colvecInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const nodeId = try napi.get(u32, env, args[3]);
     const len = try napi.get(u32, env, args[4]);
 
-    const typeEntry = try Db.getType(dbCtx, typeId);
+    const typeEntry = try Node.getType(dbCtx, typeId);
     const fs = try Schema.getFieldSchema(typeEntry, field);
 
     var res: f32 = std.math.inf(f32);

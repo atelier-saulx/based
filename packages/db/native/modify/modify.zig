@@ -47,7 +47,7 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
 
 fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     ctx.typeId = typeId;
-    ctx.typeEntry = try Db.getType(ctx.db, ctx.typeId);
+    ctx.typeEntry = try Node.getType(ctx.db, ctx.typeId);
     ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
 
     ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);

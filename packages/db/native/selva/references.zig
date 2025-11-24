@@ -93,11 +93,11 @@ pub fn getReferences(comptime includeEdge: bool, db: *Db.DbCtx, node: Node.Node,
         return null;
     }
 
-    const dstType = Db.getRefDstType(db, fieldSchema) catch return null;
+    const dstType = Node.getRefDstType(db, fieldSchema) catch return null;
     return switch (if (comptime !includeEdge) ReferencesIterator1 else ReferencesIterator2) {
         ReferencesIterator1 => return ReferencesIterator1{ .refs = refs, .dstType = dstType },
         ReferencesIterator2 => {
-            const edgeType = Db.getEdgeType(db, fieldSchema) catch return null;
+            const edgeType = Node.getEdgeType(db, fieldSchema) catch return null;
             return ReferencesIterator2{ .refs = refs, .dstType = dstType, .edgeType = edgeType };
         },
         else => @compileError("Did wrong"),
@@ -139,7 +139,7 @@ pub fn writeReference(ctx: *Modify.ModifyCtx, src: Node.Node, fieldSchema: Schem
 }
 
 pub fn putReferences(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, ids: []u32) !void {
-    try errors.selva(selva.c.selva_fields_references_insert_tail(ctx.db.selva, node, fieldSchema, try Db.getRefDstType(ctx.db, fieldSchema), ids.ptr, ids.len, selva.markDirtyCb, ctx));
+    try errors.selva(selva.c.selva_fields_references_insert_tail(ctx.db.selva, node, fieldSchema, try Node.getRefDstType(ctx.db, fieldSchema), ids.ptr, ids.len, selva.markDirtyCb, ctx));
 
     const efc = selva.c.selva_get_edge_field_constraint(fieldSchema);
     const dstType = efc.*.dst_node_type;

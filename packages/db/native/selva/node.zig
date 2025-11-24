@@ -1,5 +1,6 @@
 const std = @import("std");
 const selva = @import("selva.zig");
+const Schema = @import("schema.zig");
 const errors = @import("../errors.zig");
 const utils = @import("../utils.zig");
 const Modify = @import("../modify/common.zig");
@@ -8,6 +9,47 @@ const t = @import("../types.zig");
 
 pub const Type = selva.Type;
 pub const Node = selva.Node;
+
+pub fn getType(ctx: *Db.DbCtx, typeId: t.TypeId) !Type {
+    const selvaTypeEntry: ?Type = selva.c.selva_get_type_by_index(
+        ctx.selva.?,
+        typeId,
+    );
+    if (selvaTypeEntry == null) {
+        return errors.SelvaError.SELVA_EINTYPE;
+    }
+    return selvaTypeEntry.?;
+}
+
+pub inline fn getRefDstType(ctx: *Db.DbCtx, sch: anytype) !Type {
+    if (comptime @TypeOf(sch) == Schema.FieldSchema) {
+        return getType(ctx, selva.c.selva_get_edge_field_constraint(sch).*.dst_node_type);
+    } else if (comptime @TypeOf(sch) == Schema.EdgeFieldConstraint) {
+        return getType(ctx, sch.*.dst_node_type);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(sch));
+        @compileError("Invalid type");
+    }
+}
+
+pub inline fn getEdgeType(ctx: *Db.DbCtx, sch: anytype) !Type {
+    if (comptime @TypeOf(sch) == Schema.FieldSchema) {
+        return getType(ctx, selva.c.selva_get_edge_field_constraint(sch).*.edge_node_type);
+    } else if (comptime @TypeOf(sch) == Schema.EdgeFieldConstraint) {
+        return getType(ctx, sch.*.edge_node_type);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(sch));
+        @compileError("Invalid type");
+    }
+}
+
+pub inline fn getBlockCapacity(ctx: *Db.DbCtx, typeId: t.TypeId) u64 {
+    return selva.c.selva_get_block_capacity(selva.c.selva_get_type_by_index(ctx.selva, typeId));
+}
+
+pub inline fn getNodeCount(te: Type) usize {
+    return selva.c.selva_node_count(te);
+}
 
 pub inline fn getNodeId(node: Node) u32 {
     return utils.read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
