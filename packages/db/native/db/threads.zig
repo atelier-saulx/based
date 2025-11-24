@@ -22,7 +22,7 @@ const Condition = std.Thread.Condition;
 const Queue = std.array_list.Managed([]u8);
 
 // TODO make 1 struct
-pub fn newFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
+pub fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
     const paddedSize: u32 = @truncate(size); // zero padding for growth
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
@@ -56,25 +56,32 @@ pub fn newFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]
     }
 }
 
-pub fn appendToResult(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !usize {
+pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, value: anytype) !usize {
+    const T = @TypeOf(value);
     const size = utils.sizeOf(T);
-    utils.write(T, try newFromResult(isQuery, thread, size), value, 0);
+    utils.writeAs(T, try sliceFromResult(isQuery, thread, size), value, 0);
+    return size;
+}
+
+pub fn appendToResultAs(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !usize {
+    const size = utils.sizeOf(T);
+    utils.writeAs(T, try sliceFromResult(isQuery, thread, size), value, 0);
     return size;
 }
 
 pub fn commitResult(comptime isQuery: bool, thread: *DbThread) void {
     if (isQuery) {
-        write(
+        utils.writeAs(
             u32,
             thread.queryResults,
-            @truncate(thread.queryResultsIndex - thread.queryResultsIndexHeader),
+            thread.queryResultsIndex - thread.queryResultsIndexHeader,
             thread.queryResultsIndexHeader,
         );
     } else {
-        write(
+        utils.writeAs(
             u32,
             thread.modifyResults,
-            @truncate(thread.modifyResultsIndex - thread.modifyResultsIndexHeader),
+            thread.modifyResultsIndex - thread.modifyResultsIndexHeader,
             thread.modifyResultsIndexHeader,
         );
     }
@@ -102,7 +109,7 @@ pub fn newResult(
             );
         }
         thread.queryResultsIndexHeader = thread.queryResultsIndex;
-        write(u32, thread.queryResults, id, thread.queryResultsIndexHeader + 4);
+        utils.writeAs(u32, thread.queryResults, id, thread.queryResultsIndexHeader + 4);
         thread.queryResults[thread.queryResultsIndex + 8] = @intFromEnum(subType);
         const data = thread.queryResults[thread.queryResultsIndex + offset .. newLen];
         thread.*.queryResultsIndex = newLen;
@@ -119,7 +126,7 @@ pub fn newResult(
             );
         }
         thread.modifyResultsIndexHeader = thread.modifyResultsIndex;
-        write(u32, thread.modifyResults, id, thread.modifyResultsIndexHeader + 4);
+        utils.writeAs(u32, thread.modifyResults, id, thread.modifyResultsIndexHeader + 4);
         thread.modifyResults[thread.modifyResultsIndex + 8] = @intFromEnum(subType);
         const data = thread.modifyResults[thread.modifyResultsIndex + offset .. newLen];
         thread.*.modifyResultsIndex = newLen;

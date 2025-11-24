@@ -37,6 +37,7 @@ pub fn default(
         //     node = db.getNextNode(typeEntry, node.?);
         //     continue :checkItem;
         // }
+
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
             node = Node.getNextNode(typeEntry, node.?);
@@ -50,16 +51,20 @@ pub fn default(
                 continue;
             }
 
-            _ = try threads.appendToResult(
-                t.QueryNodeResponse,
+            const nodeHeaderSlice = try threads.sliceFromResult(
                 true,
                 ctx.thread,
-                .{ .id = Node.getNodeId(n), .size = 4 },
+                utils.sizeOf(t.QueryNodeResponse),
             );
 
+            var nodeHeader: t.QueryNodeResponse = .{ .id = Node.getNodeId(n), .size = 4 };
+            const currentSize = ctx.thread.queryResultsIndex;
             // std.debug.print("DERP {any} \n", .{nodeHeader});
 
             try include.include(n, ctx, nestedQuery);
+
+            nodeHeader.size += @truncate(ctx.thread.queryResultsIndex - currentSize);
+            utils.write(nodeHeaderSlice, nodeHeader, 0);
 
             nodeCnt += 1;
 

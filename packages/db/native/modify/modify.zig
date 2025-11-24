@@ -60,8 +60,8 @@ fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
 
 fn writeoutPrevNodeId(ctx: *ModifyCtx, resultLen: *u32, prevNodeId: u32, result: []u8) void {
     if (prevNodeId != 0) {
-        write(u32, result, prevNodeId, resultLen.*);
-        write(u8, result, @intFromEnum(ctx.err), resultLen.* + 4);
+        utils.write(result, prevNodeId, resultLen.*);
+        utils.writeAs(u8, result, ctx.err, resultLen.* + 4);
         ctx.err = errors.ClientError.null;
         resultLen.* += 5;
     }
@@ -283,7 +283,7 @@ pub fn modify(
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
-                        write(u32, operation, Node.getNodeId(node), updateIndex + 1);
+                        write(operation, Node.getNodeId(node), updateIndex + 1);
                         nextIndex = updateIndex;
                         break;
                     }
@@ -302,8 +302,8 @@ pub fn modify(
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = Node.getNodeId(node);
-                        write(u32, batch, id, resultLen);
-                        write(u8, batch, @intFromEnum(errors.ClientError.null), resultLen + 4);
+                        write(batch, id, resultLen);
+                        write(batch, errors.ClientError.null, resultLen + 4);
                         resultLen += 5;
                         nextIndex = endIndex;
                         break;
@@ -349,7 +349,7 @@ pub fn modify(
 
     db.expire(&ctx);
     writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
-    write(u32, result, resultLen, 0);
+    write(result, resultLen, 0);
 
     if (resultLen < expectedLen) {
         @memset(result[resultLen..expectedLen], 0);
@@ -360,8 +360,8 @@ pub fn modify(
 
     var blocksOffset = resultLen + 4;
     blocksOffset = 7 - (blocksOffset % 8);
-    const blockSlice = try threads.newFromResult(false, threadCtx, 4 + blocksOffset + dirtyRangesSize);
+    const blockSlice = try threads.sliceFromResult(false, threadCtx, 4 + blocksOffset + dirtyRangesSize);
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
-    write(u32, blockSlice, dirtyRangesSize, 0);
+    write(blockSlice, dirtyRangesSize, 0);
     utils.copy(u8, blockSlice, newDirtySlice, 4 + blocksOffset);
 }

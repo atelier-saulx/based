@@ -12,11 +12,10 @@ pub fn blockHash(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType)
     const typeCode = utils.read(u16, q, 4);
     const typeEntry = selva.selva_get_type_by_index(ctx.selva.?, typeCode);
     var err: c_int = selva.SELVA_EINTYPE;
-
     if (typeEntry) |te| {
         var hash: SelvaHash128 = 0;
         err = db.getNodeBlockHash(ctx, te, start, &hash);
         utils.byteCopy(data, &hash, 4);
     }
-    utils.write(c_int, data, err, 0);
+    utils.write(data, err, 0);
 }

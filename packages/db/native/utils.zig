@@ -9,7 +9,7 @@ extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;
 
 pub inline fn increment(comptime T: type, buffer: []u8, value: T, offset: usize) void {
     switch (@typeInfo(T)) {
-        .int, .comptime_int => {}, // OK
+        .int, .comptime_int => {},
         else => @compileError("increment expects an integer type, found " ++ @typeName(T)),
     }
     const size = @bitSizeOf(T) / 8;
@@ -20,9 +20,52 @@ pub inline fn increment(comptime T: type, buffer: []u8, value: T, offset: usize)
     ptr.* +%= value;
 }
 
-pub inline fn write(comptime T: type, buffer: []u8, value: T, offset: usize) void {
-    const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
-    target.* = @bitCast(value);
+pub inline fn writeAs(T: type, buffer: []u8, value: anytype, offset: usize) void {
+    const X = @TypeOf(value);
+
+    switch (@typeInfo(X)) {
+        .int, .comptime_int => {
+            if (sizeOf(X) > sizeOf(T)) {
+                const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
+                target.* = @bitCast(@as(T, @truncate(value)));
+            } else {
+                const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
+                target.* = @bitCast(value);
+            }
+        },
+        // .error_set => {
+        //     std.debug.print("ERROR TIME: Type X is an error set\n", .{});
+        // },
+        // .error_union => |info| {
+        //     std.debug.print("Type X is an Error Union. Payload: {}\n", .{info.payload});
+        // },
+        // .@"union" => {
+        //     std.debug.print("Union. Payload: {}\n", .{});
+        // },
+        .@"enum" => {
+            return writeAs(T, buffer, @intFromEnum(value), offset);
+        },
+        else => {
+            const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
+            target.* = @bitCast(value);
+        },
+    }
+}
+
+pub inline fn write(buffer: []u8, value: anytype, offset: usize) void {
+    const T = @TypeOf(value);
+    switch (@typeInfo(T)) {
+        .@"enum" => |info| {
+            const TagType = info.tag_type;
+            const target = buffer[offset..][0 .. @bitSizeOf(TagType) / 8];
+            const intVal: TagType = @intFromEnum(value);
+            target.* = @bitCast(intVal);
+        },
+        else => {
+            const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
+            target.* = @bitCast(value);
+        },
+    }
 }
 
 pub inline fn writeNext(comptime T: type, buffer: []u8, value: T, offset: *usize) void {
@@ -159,7 +202,7 @@ pub inline fn sizeOf(typeToCheck: type) comptime_int {
     return @bitSizeOf(typeToCheck) / 8;
 }
 
-pub fn perf(ctx: anytype, callback: anytype) !void {
+pub inline fn perf(ctx: anytype, callback: anytype) !void {
     var timer = try std.time.Timer.start();
     if (@typeInfo(@TypeOf(callback)).Fn.params.len == 0) {
         _ = callback();

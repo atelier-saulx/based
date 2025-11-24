@@ -7,7 +7,6 @@ const Query = @import("./common.zig");
 const utils = @import("../utils.zig");
 const multiple = @import("./multiple.zig");
 const threads = @import("../db/threads.zig");
-
 const t = @import("../types.zig");
 
 // -------- NAPI ---------- (put in js bridge maybe?)

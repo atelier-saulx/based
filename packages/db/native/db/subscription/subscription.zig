@@ -20,7 +20,6 @@ fn getMarkedIdSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Value 
             return null;
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
-
         // Reset
         var i: usize = 0;
         while (i < ctx.subscriptions.lastIdMarked) {
@@ -28,11 +27,10 @@ fn getMarkedIdSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Value 
             const newDataIndex = i * 8;
             const id = sub.id;
             if (sub.isRemoved) {
-                // can make
                 try singleId.removeSubscriptionMarked(ctx, sub);
             } else {
-                write(u32, data, id, newDataIndex);
-                write(u32, data, sub.subId, newDataIndex + 4);
+                utils.writeAs(u32, data, id, newDataIndex);
+                utils.writeAs(u32, data, sub.subId, newDataIndex + 4);
                 sub.*.marked = Subscription.SubStatus.all;
             }
             i += 1;
@@ -68,7 +66,7 @@ fn getMarkedMultiSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Val
     while (iterator.next()) |entry| {
         if (entry.value_ptr.*.typeModified) {
             entry.value_ptr.*.typeModified = false;
-            utils.write(u16, data, entry.key_ptr.*, i);
+            utils.write(data, entry.key_ptr.*, i);
             i += 2;
         }
     }
