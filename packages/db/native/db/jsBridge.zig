@@ -60,6 +60,7 @@ fn callJsCallback(
                     &arrayBuffer,
                 );
                 _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
+                // std.debug.print("Reset query index #{d} \n", .{thread.id});
                 thread.*.queryResultsIndex = 0;
                 // IF TOO LARGE MAKE SMALLER
             }

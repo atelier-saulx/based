@@ -69,8 +69,6 @@ export class BasedQueryResponse {
     return this
   }
 
-  //
-
   node(index: number = 0): any {
     // get id as well
     // and potentialy a proxy [i] as well

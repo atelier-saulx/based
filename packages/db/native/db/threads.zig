@@ -23,15 +23,23 @@ const Queue = std.array_list.Managed([]u8);
 
 // TODO make 1 struct
 
+// Slice from result
 pub inline fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
     const paddedSize: u32 = @truncate(size); // zero padding for growth
-    var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
         const newLen = thread.queryResultsIndex + paddedSize;
         if (thread.queryResults.len < newLen) {
-            if (paddedSize > 1_000_000) {
+            var increasedSize: usize = 10_000_000;
+            if (paddedSize > increasedSize) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
+
+            // std.debug.print("thread #{any} - increase size from {any}mb to {any}mb \n", .{
+            //     thread.id,
+            //     @divTrunc(thread.queryResults.len, 1_000_000),
+            //     @divTrunc(thread.queryResults.len + increasedSize, 1_000_000),
+            // });
+
             thread.queryResults = try std.heap.raw_c_allocator.realloc(
                 thread.queryResults,
                 thread.queryResults.len + increasedSize,
@@ -43,7 +51,8 @@ pub inline fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: u
     } else {
         const newLen = thread.modifyResultsIndex + paddedSize;
         if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
-            if (paddedSize > 100_000) {
+            var increasedSize: usize = 100_000;
+            if (paddedSize > increasedSize) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
             thread.modifyResults = try std.heap.raw_c_allocator.realloc(
@@ -57,10 +66,70 @@ pub inline fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: u
     }
 }
 
+// returns start index
+pub inline fn reserveResultSpace(comptime isQuery: bool, thread: *DbThread, size: usize) !usize {
+    const paddedSize: u32 = @truncate(size); // zero padding for growth
+    if (isQuery) {
+        const newLen = thread.queryResultsIndex + paddedSize;
+        if (thread.queryResults.len < newLen) {
+            var increasedSize: usize = 10_000_000;
+            if (paddedSize > increasedSize) {
+                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
+            }
+
+            // std.debug.print("thread #{any} - increase size from {any}mb to {any}mb \n", .{
+            //     thread.id,
+            //     @divTrunc(thread.queryResults.len, 1_000_000),
+            //     @divTrunc(thread.queryResults.len + increasedSize, 1_000_000),
+            // });
+
+            thread.queryResults = try std.heap.raw_c_allocator.realloc(
+                thread.queryResults,
+                thread.queryResults.len + increasedSize,
+            );
+        }
+        const prev = thread.*.queryResultsIndex;
+        thread.*.queryResultsIndex = newLen;
+        return prev;
+    } else {
+        const newLen = thread.modifyResultsIndex + paddedSize;
+        if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
+            var increasedSize: usize = 100_000;
+            if (paddedSize > increasedSize) {
+                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
+            }
+            thread.modifyResults = try std.heap.raw_c_allocator.realloc(
+                thread.modifyResults,
+                thread.modifyResults.len + increasedSize,
+            );
+        }
+        const prev = thread.*.queryResultsIndex;
+        thread.*.modifyResultsIndex = newLen;
+        return prev;
+    }
+}
+
+pub inline fn writeToResult(
+    comptime isQuery: bool,
+    thread: *DbThread,
+    value: anytype,
+    offset: usize,
+) void {
+    utils.write(if (isQuery) thread.queryResults else thread.modifyResults, value, offset);
+}
+
+pub inline fn writeToResultAs(
+    comptime T: type,
+    comptime isQuery: bool,
+    thread: *DbThread,
+    value: T,
+    offset: usize,
+) void {
+    utils.writeAs(T, if (isQuery) thread.queryResults else thread.modifyResults, value, offset);
+}
+
 pub inline fn appendToResult(comptime isQuery: bool, thread: *DbThread, value: anytype) !void {
-    const T = @TypeOf(value);
-    const size = utils.sizeOf(T);
-    utils.writeAs(T, try sliceFromResult(isQuery, thread, size), value, 0);
+    utils.write(try sliceFromResult(isQuery, thread, utils.sizeOf(@TypeOf(value))), value, 0);
 }
 
 pub inline fn appendToResultAs(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !usize {
@@ -96,7 +165,7 @@ pub fn newResult(
 ) ![]u8 {
     const offset = 9;
     const paddedSize: u32 = @truncate(size + offset);
-    var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
+    var increasedSize: usize = if (isQuery) 10_000_000 else 100_000;
     if (isQuery) {
         const newLen = thread.queryResultsIndex + paddedSize;
         if (thread.queryResults.len < newLen) {
@@ -133,6 +202,8 @@ pub fn newResult(
         return data;
     }
 }
+
+// -------------------- clean this up
 
 pub const DbThread = struct {
     thread: Thread,

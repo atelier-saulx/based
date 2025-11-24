@@ -16,16 +16,11 @@ pub fn default(
     var index: usize = 0;
     const header = utils.readNext(t.QueryHeader, q, &index);
 
-    // if references // -> if (header.includesEdge) else
-
     var correctedForOffset: u32 = header.offset;
-
-    // assert(header.size == q.len);
-
-    // std.debug.print("multiple.default {any} {any} \n", .{ header, q.len });
 
     var nodeCnt: u32 = 0;
     const nestedQuery = q[index..];
+    const sizeIndex = try threads.reserveResultSpace(true, ctx.thread, 4);
 
     // this will be a nice iterator
     const typeEntry = try db.getType(ctx.db, header.typeId);
@@ -68,5 +63,5 @@ pub fn default(
         }
     }
 
-    // std.debug.print("results #{any} \n", .{nodeCnt});
+    threads.writeToResult(true, ctx.thread, nodeCnt, sizeIndex);
 }

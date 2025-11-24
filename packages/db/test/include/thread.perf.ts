@@ -89,8 +89,10 @@ await test('include', async (t) => {
         q.push(
           db
             .query('user')
-            .range(0, 1e6 + i)
+            .include('id')
+            .range(0, 1_000_000 + i)
             .get(),
+          // .inspect(),
         )
       }
       await Promise.all(q)
