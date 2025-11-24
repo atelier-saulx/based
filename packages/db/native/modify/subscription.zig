@@ -1,8 +1,8 @@
 const Modify = @import("./common.zig");
 const ModifyCtx = Modify.ModifyCtx;
 const std = @import("std");
-const db = @import("../db/db.zig");
-const selva = @import("../selva.zig");
+const db = @import("../selva/db.zig");
+const selva = @import("../selva/selva.zig");
 const utils = @import("../utils.zig");
 const Subscription = @import("../db/subscription/common.zig");
 

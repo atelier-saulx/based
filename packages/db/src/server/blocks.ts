@@ -163,7 +163,7 @@ async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
         db.fileSystemPath,
         BlockMap.blockSdbFile(typeId, start, end),
       )
-      const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
+      const msg = new Uint8Array(11 + native.stringByteLength(filename) + 1)
 
       //writeUint32(msg, id, SAVE_BLOCK_ID)
       msg[4] = OpType.saveBlock

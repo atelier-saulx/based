@@ -375,18 +375,12 @@ pub const QueryHeader = packed struct {
     limit: u32,
     filterSize: u16,
     searchSize: u16,
+    edgeIncludeOffset: u16,
     subType: QuerySubType,
     includeEdge: bool, // this just tells it in references that it needs to loop trhough edge + ref
     sort: bool,
     _padding: u6,
 };
-
-pub const QueryNodeResponse = packed struct {
-    id: u32,
-    size: u32,
-};
-
-// Aggregates need 2 different HEADERS
 
 pub const FilterOp = enum(u8) {
     equal = 1,

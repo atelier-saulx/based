@@ -137,7 +137,9 @@ const test = async (
 
       d = performance.now()
       await newDb.start()
-      console.log(styleText('gray', `started from backup ${performance.now() - d} ms`))
+      console.log(
+        styleText('gray', `started from backup ${performance.now() - d} ms`),
+      )
 
       const [backupChecksums, b, c] = await make(newDb)
       // console.dir(b, { depth: null })
@@ -179,6 +181,9 @@ const test = async (
     },
     tmp: resolve(join(__dirname, relativePath)),
   }
+
+  process.env.TEST_FILENAME = global._currentTestPath
+  process.env.TEST_TMP_DIR = t.tmp
 
   try {
     await fn(t)

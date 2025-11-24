@@ -1,8 +1,8 @@
 const errors = @import("../errors.zig");
 const std = @import("std");
 const napi = @import("../napi.zig");
-const dump = @import("./dump.zig");
-const selva = @import("../selva.zig").c;
+const dump = @import("../selva/dump.zig");
+const selva = @import("../selva/selva.zig").c;
 const dbCtx = @import("./ctx.zig");
 
 pub fn start(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {

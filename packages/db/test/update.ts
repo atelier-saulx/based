@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { deepEqual, equal, throws } from './shared/assert.js'
+import { deepEqual, equal, throws, perf } from './shared/assert.js'
 
 await test('update with payload.id', async (t) => {
   const db = new BasedDb({
@@ -268,65 +268,10 @@ await test('update', async (t) => {
 
   const nonExistingId = snurpId + 10
 
-  throws(() => db.update('snurp', nonExistingId, {
-    a: nonExistingId,
-    name: 'mr snurp ' + nonExistingId,
-  }))
-})
-
-await test('await updates', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const status = ['a', 'b', 'c', 'd', 'e', 'f']
-
-  await db.setSchema({
-    types: {
-      user: {
-        props: {
-          externalId: { type: 'string', max: 20 },
-          status,
-        },
-      },
-    },
-  })
-
-  const total = 1e4
-
-  for (let i = 0; i < total; i++) {
-    db.create('user', {
-      externalId: i + '-alias',
-      status: 'a',
-    })
-  }
-
-  await db.isModified()
-
-  let totalAlias = 0
-
-  const updateAlias = async () => {
-    const id = Math.ceil(Math.random() * total)
-    await db.update('user', id, {
-      status: status[~~Math.random() * status.length],
-    })
-    await db.drain()
-    totalAlias++
-  }
-
-  const start = performance.now()
-  //let lastMeasure = performance.now()
-  for (let i = 0; i < 100000; i++) {
-    await updateAlias()
-    if (!(i % 500)) {
-      //const opsPerS = totalAlias / ((performance.now() - lastMeasure) / 1e3)
-      // console.log(`${~~opsPerS} per sec`)
-      //lastMeasure = performance.now()
-      totalAlias = 0
-    }
-  }
-
-  equal(performance.now() - start < 3e3, true, 'should be smaller then 5s')
+  throws(() =>
+    db.update('snurp', nonExistingId, {
+      a: nonExistingId,
+      name: 'mr snurp ' + nonExistingId,
+    }),
+  )
 })

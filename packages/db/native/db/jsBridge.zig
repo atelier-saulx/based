@@ -1,5 +1,5 @@
-const db = @import("db.zig");
-const selva = @import("../selva.zig").c;
+const db = @import("../selva/db.zig");
+const selva = @import("../selva/selva.zig").c;
 const napi = @import("../napi.zig");
 const std = @import("std");
 const t = @import("../types.zig");
@@ -34,6 +34,7 @@ fn callJsCallback(
                 &arrayBuffer,
             );
             thread.*.modifyResultsIndex = 0;
+            // IF TOO LARGE MAKE SMALLER
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.*), &fnResponse);
             var args = [_]napi.Value{ fnResponse, arrayBuffer };
@@ -59,9 +60,8 @@ fn callJsCallback(
                     &arrayBuffer,
                 );
                 _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
-                // dbCtx.threads.mutex.lock();
                 thread.*.queryResultsIndex = 0;
-                // dbCtx.threads.mutex.unlock();
+                // IF TOO LARGE MAKE SMALLER
             }
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.*), &fnResponse);

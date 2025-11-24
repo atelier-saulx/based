@@ -1,6 +1,6 @@
-const db = @import("../db/db.zig");
+const db = @import("../selva/db.zig");
 
 pub const QueryCtx = struct {
     db: *db.DbCtx,
-    threadCtx: *db.DbThread,
+    thread: *db.DbThread,
 };
