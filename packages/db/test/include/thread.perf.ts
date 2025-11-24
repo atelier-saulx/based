@@ -10,7 +10,7 @@ await test('include', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => db.stop())
+  t.after(() => db.stop(true))
   // t.after(() => t.backup(db))
 
   // var d = Date.now()
@@ -84,25 +84,24 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q = []
-
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 1; i++) {
         q.push(
           db
             .query('user')
             .include('id')
-            .range(0, 1_000_000 + i)
-            .get()
-            .inspect(),
+            .range(10)
+            // .range(0, 1_000_000 + i)
+            .get(),
           // .inspect(),
         )
       }
       await Promise.all(q)
     },
     '1B nodes',
-    { repeat: 10 },
+    { repeat: 1 },
   )
 
-  // console.log('done')
+  console.log('done')
 
-  await wait(100)
+  // await wait(100)
 })

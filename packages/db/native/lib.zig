@@ -72,7 +72,7 @@ fn _selvaStrerror(napi_env: napi.Env, nfo: napi.Info) !napi.Value {
     const err = try napi.get(i32, napi_env, args[0]);
     var result: napi.Value = undefined;
     var copied: selva.c.bool = undefined;
-    const str = selvaStrerror(err);
+    const str = selva.strerror(err);
     // std.debug.print("{any} {any} {any} \n", .{ result, copied, str });
     _ = napi.c.node_api_create_external_string_latin1(napi_env, @constCast(str.ptr), str.len, null, null, &result, &copied);
     return result;

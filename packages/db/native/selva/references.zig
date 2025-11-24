@@ -6,7 +6,6 @@ const t = @import("../types.zig");
 const Db = @import("db.zig");
 const Node = @import("node.zig");
 const Modify = @import("../modify/common.zig");
-pub const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const ReferenceSmall = st.ReferenceSmall;
 pub const ReferenceLarge = st.ReferenceLarge;
@@ -140,7 +139,7 @@ pub fn swapReference(
 }
 
 pub fn getEdgeReference(
-    db: *DbCtx,
+    db: *Db.DbCtx,
     efc: st.EdgeFieldConstraint,
     ref: ReferenceLarge,
     field: u8,
@@ -160,7 +159,7 @@ pub fn getEdgeReference(
 
 // TODO This should be going away
 pub fn getEdgeReferences(
-    db: *DbCtx,
+    db: *Db.DbCtx,
     efc: st.EdgeFieldConstraint,
     ref: ReferenceLarge,
     field: u8,
