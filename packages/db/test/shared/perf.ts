@@ -10,6 +10,7 @@ type Options = {
   timeout?: number
   silent?: boolean
   outputFile?: string
+  diffThreshold?: number
 }
 
 type Result = {
@@ -41,6 +42,7 @@ export async function perf(
   const repeat = options.repeat ?? 1
   const timeout = options.timeout ?? 5000
   const silent = options.silent ?? false
+  const diffThreshold = options.diffThreshold ?? 10 // 10%
   const testFileName = path.basename(process.env.TEST_FILENAME)
   const dbVersion = process.env.npm_package_version
   const outputFile =
@@ -96,23 +98,24 @@ export async function perf(
     )
     const percentDiff =
       diff.previous !== undefined ? (diff.difference / diff.previous) * 100 : 0
+
     const diffMessage =
-      diff.difference > 0
-        ? styleText(
-            'red',
-            `+${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
-          )
-        : !isNaN(diff.difference)
+      !isNaN(diff.difference) && Math.abs(percentDiff) > diffThreshold
+        ? diff.difference > 0
           ? styleText(
-              'green',
-              `${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+              'red',
+              ` +${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
             )
-          : ''
+          : styleText(
+              'green',
+              ` ${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+            )
+        : ''
     if (!silent)
       console.log(
         styleText(
           'gray',
-          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x) ${diffMessage}.`,
+          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x)${diffMessage}.`,
         ),
       )
     return totalTime
