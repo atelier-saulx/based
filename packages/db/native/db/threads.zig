@@ -20,7 +20,7 @@ const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const Queue = std.array_list.Managed([]u8);
 
-pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
+pub fn newFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
     const paddedSize: u32 = @truncate(size); // zero padding for growth
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
@@ -54,6 +54,12 @@ pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![
         thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;
         return data;
     }
+}
+
+pub fn appendToResult(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !comptime_int {
+    const size = utils.sizeOf(T);
+    utils.write(u32, try newFromResult(isQuery, thread, size), value);
+    return size;
 }
 
 pub fn newResult(
