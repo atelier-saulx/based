@@ -23,22 +23,53 @@ pub fn getNode(typeEntry: st.Type, id: u32) ?Node {
     return selva.selva_find_node(typeEntry, id);
 }
 
-
-pub fn getFirstNode(typeEntry: st.Type) ?Node {
+pub inline fn getFirstNode(typeEntry: st.Type) ?Node {
     return selva.selva_min_node(typeEntry);
 }
 
-pub fn getLastNode(typeEntry: st.Type) ?Node {
+pub inline fn getLastNode(typeEntry: st.Type) ?Node {
     return selva.selva_max_node(typeEntry);
 }
 
-pub fn getNextNode(typeEntry: st.Type, node: Node) ?Node {
+pub inline fn getNextNode(typeEntry: st.Type, node: Node) ?Node {
     return selva.selva_next_node(typeEntry, node);
 }
 
-pub fn getPrevNode(typeEntry: st.Type, node: Node) ?Node {
+pub inline fn getPrevNode(typeEntry: st.Type, node: Node) ?Node {
     return selva.selva_prev_node(typeEntry, node);
 }
+
+pub const TypeIterator = struct {
+    comptime desc: bool = false,
+    typeEntry: st.Type,
+    node: ?Node = null,
+    fn init(s: *const TypeIterator) TypeIterator {
+        if (s.desc) {
+            return TypeIterator{
+                .desc = s.desc,
+                .typeEntry = s.typeEntry,
+                .node = getLastNode(s.typeEntry),
+            };
+        } else {
+            return TypeIterator{
+                .desc = s.desc,
+                .typeEntry = s.typeEntry,
+                .node = getFirstNode(s.typeEntry),
+            };
+        }
+    }
+    fn next(self: *TypeIterator) ?Node {
+        const node = self.node;
+        if (node) |n| {
+            if (self.desc) {
+                self.node = getPrevNode(self.typeEntry, n);
+            } else {
+                self.node = getNextNode(self.typeEntry, n);
+            }
+        }
+        return node;
+    }
+};
 
 pub inline fn getNodeId(node: Node) u32 {
     return utils.read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
