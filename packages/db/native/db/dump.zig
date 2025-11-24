@@ -4,7 +4,7 @@ const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 const utils = @import("../utils.zig");
 const threads = @import("../db/threads.zig");
 const t = @import("../types.zig");
-
+const std = @import("std");
 const read = utils.read;
 
 // sdbFilename must be nul-terminated
@@ -26,6 +26,7 @@ pub fn saveCommon(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType
 
 // sdbFilename must be nul-terminated
 pub fn saveBlock(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
+    std.debug.print("\n--------saveBlock-------\n", .{});
     const id = read(u32, q, 0);
     const data = try threads.newResult(true, threadCtx, 26, id, op);
     const typeCode = read(u16, q, 9);
@@ -124,7 +125,6 @@ pub fn unloadBlock(
     const typeCode: u16 = read(u16, m, 9);
     const filename = m[11..m.len];
     var err: c_int = undefined;
-
 
     const te = selva.selva_get_type_by_index(dbCtx.selva, typeCode);
     if (te == null) {

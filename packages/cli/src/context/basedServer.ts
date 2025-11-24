@@ -16,6 +16,7 @@ import { deepMerge } from '@based/utils'
 import { createRequire } from 'module'
 global.require = createRequire(import.meta.url)
 import { authEmail } from './authEmail/index.js'
+import type { SchemaIn } from '@based/schema'
 
 const remoteServerConfig: BasedFunctionConfigs = {
   db: {
@@ -56,7 +57,6 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
   'db:set-schema': {
     type: 'function',
     fn: async (based, schema) => {
-      
       // @ts-ignore
       const db = based.db.v2 as BasedDb
       if (!Array.isArray(schema)) {
@@ -65,7 +65,7 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
       if (schema.length > 1) {
         console.info('Multiple schemas found: merging for local dev')
       }
-      const mergedSchema = {}
+      const mergedSchema: SchemaIn = { types: {} }
       for (const { schema: schemaItem } of schema) {
         deepMerge(mergedSchema, schemaItem)
       }
@@ -325,7 +325,6 @@ export const contextBasedServer =
             console.warn('dbServerClient query not implemented', ...args)
           },
         }
-
 
         server.client.db = basedDb.client
 
