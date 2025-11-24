@@ -4,7 +4,6 @@ import { deepEqual } from './shared/assert.js'
 import { SchemaProps } from '@based/schema'
 import { serializeReaderSchema as serialize } from '@based/protocol/db-read/serialize-schema'
 import { deSerializeSchema, resultToObject } from '@based/protocol/db-read'
-import { equal } from 'assert'
 
 await test('big nodes', async (t) => {
   const db = new BasedDb({
