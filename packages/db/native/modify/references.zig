@@ -1,5 +1,6 @@
 const assert = std.debug.assert;
 const db = @import("../db/db.zig");
+const Node = @import("../db/node.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./common.zig");
 const selva = @import("../selva.zig").c;
@@ -51,7 +52,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         const index: i32 = if (hasIndex) read(i32, data, i + 5) else -1;
 
         var ref: db.ReferenceAny = undefined;
-        if (db.getNode(refTypeEntry, id)) |dstNode| {
+        if (Node.getNode(refTypeEntry, id)) |dstNode| {
             ref = try db.insertReference(ctx, ctx.node.?, ctx.fieldSchema.?, dstNode, index, hasIndex);
         } else {
             if (hasEdgeData) {

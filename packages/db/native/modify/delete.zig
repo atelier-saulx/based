@@ -1,5 +1,6 @@
 const Modify = @import("./common.zig");
 const db = @import("../db/db.zig");
+const Node = @import("../db/node.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
 const utils = @import("../utils.zig");
@@ -85,9 +86,9 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         if (ctx.fieldType == t.PropType.reference) {
             const fs = ctx.fieldSchema.?;
             const dstType = try db.getRefDstType(ctx.db, fs);
-            const oldRefDst = db.getNodeFromReference(dstType, db.getSingleReference(ctx.node.?, fs));
+            const oldRefDst = Node.getNodeFromReference(dstType, db.getSingleReference(ctx.node.?, fs));
             if (oldRefDst) |dstNode| {
-                Modify.markDirtyRange(ctx, db.getNodeTypeId(dstNode), db.getNodeId(dstNode));
+                Modify.markDirtyRange(ctx, Node.getNodeTypeId(dstNode), Node.getNodeId(dstNode));
             }
         }
         try db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);

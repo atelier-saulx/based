@@ -6,6 +6,7 @@ const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const errors = @import("../errors.zig");
 const read = utils.read;
+const Node = @import("node.zig");
 
 pub const SortIndexMeta = struct {
     prop: t.PropType,
@@ -149,13 +150,13 @@ pub fn createSortIndex(
     const fieldSchema = try db.getFieldSchema(typeEntry, header.prop);
 
     // fill sort index needs to a special field
-    var node = db.getFirstNode(typeEntry);
+    var node = Node.getFirstNode(typeEntry);
     var first = true;
     while (node != null) {
         if (first) {
             first = false;
         } else {
-            node = db.getNextNode(typeEntry, node.?);
+            node = Node.getNextNode(typeEntry, node.?);
         }
         if (node == null) {
             break;
@@ -266,7 +267,7 @@ inline fn parseAlias(
     return EMPTY_CHAR_SLICE.ptr;
 }
 
-inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
+inline fn removeFromIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: Node.Node) void {
     selva.selva_sort_remove_i64(sortIndex.index, @intCast(read(T, data, sortIndex.start)), node);
 }
 
@@ -274,7 +275,7 @@ pub fn remove(
     decompressor: *deflate.Decompressor,
     sortIndex: *SortIndexMeta,
     data: []u8,
-    node: db.Node,
+    node: Node.Node,
 ) void {
     const prop = sortIndex.prop;
     const start = sortIndex.start;
@@ -317,7 +318,7 @@ pub fn remove(
     };
 }
 
-inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: db.Node) void {
+inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: Node.Node) void {
     selva.selva_sort_insert_i64(sortIndex.index, @intCast(read(T, data, sortIndex.start)), node);
 }
 
@@ -325,7 +326,7 @@ pub fn insert(
     decompressor: *deflate.Decompressor,
     sortIndex: *SortIndexMeta,
     data: []u8,
-    node: db.Node,
+    node: Node.Node,
 ) void {
     const prop = sortIndex.prop;
     const start = sortIndex.start;

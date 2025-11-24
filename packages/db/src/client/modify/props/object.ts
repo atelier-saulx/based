@@ -1,9 +1,9 @@
-import { PropDef, SchemaTypeDef, isPropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeSeparate } from './separate.js'
 import { writeMainValue } from './main.js'
 import { writeIncrement } from './increment.js'
 import { ModOp } from '../../../zigTsExports.js'
+import { isPropDef, type PropDef, type SchemaTypeDef } from '@based/schema'
 
 const writeProp = (ctx: Ctx, def: PropDef, val: any) => {
   if (def.separate) {

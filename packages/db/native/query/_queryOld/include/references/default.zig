@@ -1,6 +1,7 @@
 const std = @import("std");
 const read = @import("../../../utils.zig").read;
 const db = @import("../../../db/db.zig");
+const Node = @import("../../../db/node.zig");
 const Query = @import("../../common.zig");
 const getFields = @import("../include.zig").getFields;
 const filter = @import("../../filter/filter.zig").filter;
@@ -9,7 +10,7 @@ pub fn defaultReferences(
     refs: Query.Refs,
     ctx: *Query.QueryCtx,
     include: []u8,
-    typeEntry: db.Type,
+    typeEntry: Node.Type,
     edgeConstraint: db.EdgeFieldConstraint,
     comptime hasFilter: bool,
     filterArr: if (hasFilter) []u8 else ?void,
@@ -39,7 +40,7 @@ pub fn defaultReferences(
             result.size += getFields(
                 refNode,
                 ctx,
-                db.getNodeId(refNode),
+                Node.getNodeId(refNode),
                 typeEntry,
                 include,
                 refStruct,

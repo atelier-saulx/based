@@ -1,4 +1,3 @@
-import { PropDef, PropDefEdge } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { writeSeparateEdge } from './separate.js'
 import { writeEdgeHeaderMain, writeEdgeHeaderPartial } from './header.js'
@@ -8,6 +7,7 @@ import { writeUint16, writeUint32 } from '@based/utils'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE } from '../cursor.js'
 import { ModOp } from '../../../zigTsExports.js'
+import type { PropDef, PropDefEdge } from '@based/schema'
 
 const setDefaultEdges = (def: PropDef, val: Record<string, any>) => {
   if (def.hasDefaultEdges) {

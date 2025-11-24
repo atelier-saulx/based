@@ -1,7 +1,7 @@
 import picocolors from 'picocolors'
-import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '@based/schema/def'
 import { QueryDef, QueryDefType } from './types.js'
 import { concatUint8Arr } from '@based/utils'
+import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '@based/schema'
 
 export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
   const loggableObject: any = { type: 'bla', schema: null }

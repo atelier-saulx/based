@@ -1,33 +1,24 @@
-import {
-  isPropType,
-  SchemaProps,
-  SchemaPropsOneWay,
-  StrictSchema,
-} from '@based/schema'
+import type { SchemaOut, SchemaProps } from '@based/schema'
 
-export const mermaid2 = (schema: StrictSchema) => {
+export const mermaid2 = (schema: SchemaOut) => {
   let mermaid = 'erDiagram'
   let relations = ''
 
-  const parse = (
-    type: string,
-    props: SchemaProps | SchemaPropsOneWay,
-    indent = '',
-  ) => {
+  const parse = (type: string, props: SchemaProps<true>, indent = '') => {
     let entity = indent ? '' : `\n${type} {`
     for (const key in props) {
       const prop = props[key]
-      if (isPropType('reference', prop)) {
+      if (prop.type === 'reference') {
         entity += `\n${prop.ref} ${indent}${key}`
         relations += `\n${type} ||--o| ${prop.ref} : ${key}`
-      } else if (isPropType('references', prop)) {
+      } else if (prop.type === 'references') {
         entity += `\n${prop.items.ref} ${indent}${key}`
         relations += `\n${type} ||--o{ ${prop.items.ref} : ${key}`
       } else {
         entity += `\n${prop.type} ${indent}${key}`
-        if (isPropType('object', prop)) {
+        if (prop.type === 'object') {
           entity += parse(type, prop.props, `${indent}_`)
-        } else if (isPropType('enum', prop)) {
+        } else if (prop.type === 'enum') {
           entity += '"'
           if (prop.enum.length > 3) {
             const [a, b, c] = prop.enum
@@ -47,10 +38,6 @@ export const mermaid2 = (schema: StrictSchema) => {
     return entity
   }
 
-  if (schema.props) {
-    mermaid += parse('_root', schema.props)
-  }
-
   if (schema.types) {
     for (const type in schema.types) {
       mermaid += parse(type, schema.types[type].props)
@@ -59,33 +46,25 @@ export const mermaid2 = (schema: StrictSchema) => {
 
   return mermaid + relations
 }
-export const mermaid = (schema: StrictSchema) => {
+export const mermaid = (schema: SchemaOut) => {
   let mermaid = 'classDiagram'
 
-  const parse = (
-    type: string,
-    props: SchemaProps | SchemaPropsOneWay,
-    indent = '',
-  ) => {
+  const parse = (type: string, props: SchemaProps, indent = '') => {
     for (const key in props) {
       const prop = props[key]
 
-      if (isPropType('reference', prop)) {
+      if (prop.type === 'reference') {
         mermaid += `\n${type} --> ${prop.ref} : ${key}`
-      } else if (isPropType('references', prop)) {
+      } else if (prop.type === 'references') {
         mermaid += `\n${type} --> ${prop.items.ref} : ${key}[]`
       } else {
         const propType = prop.type
         mermaid += `\n${type} : ${indent}${key} __${propType}__`
-        if (isPropType('object', prop)) {
+        if (prop.type === 'object') {
           parse(type, prop.props, `${indent}.`)
         }
       }
     }
-  }
-
-  if (schema.props) {
-    parse('_root', schema.props)
   }
 
   if (schema.types) {

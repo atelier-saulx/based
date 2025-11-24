@@ -1,23 +1,4 @@
 import picocolors from 'picocolors'
-import {
-  ALIAS,
-  BINARY,
-  BOOLEAN,
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  REVERSE_TYPE_INDEX_MAP,
-  SchemaTypeDef,
-  STRING,
-  TEXT,
-  TIMESTAMP,
-  VECTOR,
-  propIsNumerical,
-  createEmptyDef,
-  DEFAULT_MAP,
-  ID_FIELD_DEF,
-} from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
   EQUAL,
@@ -33,12 +14,20 @@ import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 import { displayTarget, safeStringify } from './display.js'
 import {
+  createEmptyDef,
+  DEFAULT_MAP,
+  ID_FIELD_DEF,
   isValidId,
   isValidString,
   LangCode,
   langCodesMap,
   MAX_ID,
+  propIsNumerical,
+  REVERSE_TYPE_INDEX_MAP,
   Validation,
+  type PropDef,
+  type PropDefEdge,
+  type SchemaTypeDef,
 } from '@based/schema'
 import { StepInput } from './aggregates/types.js'
 import { PropType } from '../../zigTsExports.js'
@@ -227,12 +216,12 @@ export const validateFilter = (
       })
       return true
     }
-  } else if (t === REFERENCES || t === REFERENCE) {
+  } else if (t === PropType.references || t === PropType.reference) {
     if (op == LIKE) {
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }
-    if (t === REFERENCE && op != EQUAL) {
+    if (t === PropType.reference && op != EQUAL) {
       def.errors.push({
         code: ERR_FILTER_OP_FIELD,
         payload: f,
@@ -265,7 +254,7 @@ export const validateFilter = (
     if (validateVal(def, f, prop.validation)) {
       return true
     }
-  } else if (t === VECTOR) {
+  } else if (t === PropType.vector) {
     if (isNumerical(op) || op === INCLUDES) {
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
@@ -289,7 +278,11 @@ export const validateFilter = (
     ) {
       return true
     }
-  } else if (t === TEXT || t === STRING || t === BINARY) {
+  } else if (
+    t === PropType.text ||
+    t === PropType.string ||
+    t === PropType.binary
+  ) {
     if (isNumerical(op)) {
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
@@ -312,10 +305,16 @@ export const validateFilter = (
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }
-    if (validateVal(def, f, (v) => t == TIMESTAMP || typeof v === 'number')) {
+    if (
+      validateVal(
+        def,
+        f,
+        (v) => t == PropType.timestamp || typeof v === 'number',
+      )
+    ) {
       return true
     }
-  } else if (t === BOOLEAN && op !== EQUAL) {
+  } else if (t === PropType.boolean && op !== EQUAL) {
     def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
     return true
   }
@@ -401,7 +400,7 @@ export const validateSort = (
       const path = field.split('.')
       const x = path.slice(0, -1).join('.')
       propDef = def.props[x]
-      if (propDef && propDef.typeIndex === TEXT) {
+      if (propDef && propDef.typeIndex === PropType.text) {
         const k = path[path.length - 1]
         lang = langCodesMap.get(k)
         isText = true
@@ -416,12 +415,16 @@ export const validateSort = (
     }
   }
   const type = propDef.typeIndex
-  if (type === REFERENCES || type === REFERENCE || type === VECTOR) {
+  if (
+    type === PropType.references ||
+    type === PropType.reference ||
+    type === PropType.vector
+  ) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,
     })
-  } else if (type === TEXT) {
+  } else if (type === PropType.text) {
     if (lang === 0) {
       lang = def.lang?.lang ?? 0
       if (lang === 0) {
@@ -462,7 +465,7 @@ export const validateAlias = (
       const prop = schema.props[p]
       if (!prop) {
         // def.errors.push({ code: ERR_TARGET_INVAL_ALIAS, payload: def })
-      } else if (prop.typeIndex === ALIAS) {
+      } else if (prop.typeIndex === PropType.alias) {
         return { def: prop, value: alias[k] }
       }
     } else if (typeof alias[k] === 'object') {
@@ -563,39 +566,39 @@ export const handleErrors = (def: QueryDef) => {
 export const EMPTY_ALIAS_PROP_DEF: PropDef = {
   schema: null,
   prop: 1,
-  typeIndex: ALIAS,
+  typeIndex: PropType.alias,
   __isPropDef: true,
   separate: true,
   validation: () => true,
   len: 0,
   start: 0,
-  default: DEFAULT_MAP[ALIAS],
+  default: DEFAULT_MAP[PropType.alias],
   path: ['ERROR_ALIAS'],
 }
 
 export const ERROR_STRING: PropDef = {
   schema: null,
   prop: 1,
-  typeIndex: STRING,
+  typeIndex: PropType.string,
   __isPropDef: true,
   separate: true,
   validation: () => true,
   len: 0,
   start: 0,
-  default: DEFAULT_MAP[STRING],
+  default: DEFAULT_MAP[PropType.string],
   path: ['ERROR_STRING'],
 }
 
 export const ERROR_VECTOR: PropDef = {
   schema: null,
   prop: 1,
-  typeIndex: VECTOR,
+  typeIndex: PropType.vector,
   __isPropDef: true,
   separate: true,
   validation: () => true,
   len: 0,
   start: 0,
-  default: DEFAULT_MAP[VECTOR],
+  default: DEFAULT_MAP[PropType.vector],
   path: ['ERROR_VECTOR'],
 }
 

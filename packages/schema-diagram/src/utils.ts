@@ -1,10 +1,15 @@
-import { SchemaType, SchemaProp, Schema, StrictSchema } from '@based/schema'
+import {
+  SchemaType,
+  SchemaProp,
+  type SchemaObject,
+  type SchemaOut,
+} from '@based/schema'
 import { SchemaDiagram } from './SchemaDiagram.js'
 import { FilterOps } from './types.js'
 import { getByPath, setByPath } from '@based/utils'
 
 export const walkProps = (
-  type: SchemaType,
+  type: SchemaType<true> | SchemaObject<true>,
   collect: { [key: string]: SchemaProp },
   path = [],
 ) => {
@@ -13,9 +18,10 @@ export const walkProps = (
     const schemaProp = target[key]
     const propPath = [...path, key]
     const propType = schemaProp.type
-    if (propType === 'object' || 'props' in schemaProp) {
+    if (propType === 'object') {
       walkProps(schemaProp, collect, propPath)
     } else {
+      // @ts-ignore
       if (propType || schemaProp.items || schemaProp.enum || schemaProp.ref) {
         collect[propPath.join('.')] = schemaProp
       }
@@ -30,8 +36,12 @@ export const filterSchema = (ctx: SchemaDiagram, ops: FilterOps) => {
     ctx.schema = originalSchema
     ctx.filterInternal = undefined
   }
-  const filteredSchema: StrictSchema = { types: {} }
-  const walk = (type: SchemaType, path: string[], all?: boolean) => {
+  const filteredSchema: SchemaOut = { hash: 0, types: {} }
+  const walk = (
+    type: SchemaType<true> | SchemaObject<true>,
+    path: string[],
+    all?: boolean,
+  ) => {
     const target = type.props
     path = [...path, 'props']
 
@@ -41,11 +51,16 @@ export const filterSchema = (ctx: SchemaDiagram, ops: FilterOps) => {
       const propType = schemaProp.type
 
       if (all || key.toLowerCase().includes(filter)) {
-        if (propType === 'object' || 'props' in schemaProp) {
+        if (propType === 'object') {
           walk(schemaProp, propPath, all)
         } else {
-          if (schemaProp.items || schemaProp.ref) {
+          if (
+            schemaProp.type === 'reference' ||
+            schemaProp.type === 'references'
+          ) {
+            // @ts-ignore
             const prop = schemaProp.items?.prop || schemaProp.prop
+            // @ts-ignore
             const ref = schemaProp.items?.ref || schemaProp.ref
 
             if (prop) {
@@ -63,7 +78,7 @@ export const filterSchema = (ctx: SchemaDiagram, ops: FilterOps) => {
         }
         setByPath(filteredSchema, propPath, schemaProp)
       } else {
-        if (propType === 'object' || 'props' in schemaProp) {
+        if (propType === 'object') {
           walk(schemaProp, propPath, all)
         }
       }
@@ -76,10 +91,6 @@ export const filterSchema = (ctx: SchemaDiagram, ops: FilterOps) => {
     } else {
       walk(type, ['types', t])
     }
-  }
-  if (originalSchema.props) {
-    // @ts-ignore
-    walk(originalSchema, [])
   }
 
   ctx.schema = filteredSchema

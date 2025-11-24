@@ -1,15 +1,3 @@
-// import type { IncludeOpts, QueryDef, Target } from '@based/db'
-import { inverseLangMap, langCodesMap } from '@based/schema'
-import {
-  PropDef,
-  PropDefEdge,
-  COLVEC,
-  ENUM,
-  TEXT,
-  VECTOR,
-  BINARY,
-  CARDINALITY,
-} from '@based/schema/def'
 import {
   ReaderLocales,
   ReaderMeta,
@@ -18,6 +6,13 @@ import {
   ReaderSchemaEnum,
 } from '@based/protocol/db-read'
 import { IncludeOpts, QueryDef, Target } from './types.js'
+import { PropType } from '../../zigTsExports.js'
+import {
+  inverseLangMap,
+  langCodesMap,
+  type PropDef,
+  type PropDefEdge,
+} from '@based/schema'
 
 const createReaderPropDef = (
   p: PropDef | PropDefEdge,
@@ -26,25 +21,25 @@ const createReaderPropDef = (
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
     path: p.__isEdge ? p.path.slice(1) : p.path,
-    typeIndex: opts?.raw ? BINARY : p.typeIndex,
+    typeIndex: opts?.raw ? PropType.binary : p.typeIndex,
     readBy: 0,
   }
   if (opts?.meta) {
     readerPropDef.meta =
       opts?.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
   }
-  if (p.typeIndex === ENUM) {
+  if (p.typeIndex === PropType.enum) {
     readerPropDef.enum = p.enum
   }
-  if (p.typeIndex === VECTOR || p.typeIndex === COLVEC) {
+  if (p.typeIndex === PropType.vector || p.typeIndex === PropType.colVec) {
     readerPropDef.vectorBaseType = p.vectorBaseType
     readerPropDef.len = p.len
   }
-  if (p.typeIndex === CARDINALITY) {
+  if (p.typeIndex === PropType.cardinality) {
     readerPropDef.cardinalityMode = p.cardinalityMode
     readerPropDef.cardinalityPrecision = p.cardinalityPrecision
   }
-  if (p.typeIndex === TEXT) {
+  if (p.typeIndex === PropType.text) {
     if (opts.codes.has(0)) {
       readerPropDef.locales = locales
     } else {

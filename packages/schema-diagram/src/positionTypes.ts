@@ -1,4 +1,4 @@
-import { StrictSchemaType } from '@based/schema'
+import type { SchemaType } from '@based/schema'
 import { SchemaDiagram } from './SchemaDiagram.js'
 import { makeType } from './makeType.js'
 import { TypeVisual, Node, Root } from './types.js'
@@ -46,12 +46,7 @@ export const positionTypes = (ctx: SchemaDiagram) => {
       this.root = { x: 0, y: 0, w: w, h: h }
     },
   }
-  if (ctx.schema.props) {
-    let rootProps: StrictSchemaType
-    // @ts-ignore
-    rootProps = { props: ctx.schema.props }
-    ctx.typesArray.push(makeType(ctx, '.props', rootProps))
-  }
+
   for (const key in ctx.schema.types) {
     ctx.typesArray.push(makeType(ctx, key, ctx.schema.types[key]))
   }

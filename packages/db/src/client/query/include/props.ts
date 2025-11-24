@@ -1,10 +1,5 @@
-import {
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  TEXT,
-} from '@based/schema/def'
+import type { PropDef, PropDefEdge } from '@based/schema'
+import { PropType } from '../../../zigTsExports.js'
 import { IncludeField, IncludeOpts, QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (
@@ -14,7 +9,10 @@ export const getAll = (
   const fields: IncludeField[] = []
   for (const key in props) {
     const prop = props[key]
-    if (prop.typeIndex !== REFERENCE && prop.typeIndex !== REFERENCES) {
+    if (
+      prop.typeIndex !== PropType.reference &&
+      prop.typeIndex !== PropType.references
+    ) {
       fields.push({ field: prop.path.join('.'), opts })
     }
   }
@@ -29,7 +27,10 @@ export const getAllRefs = (
   const fields: IncludeField[] = []
   for (const key in props) {
     const prop = props[key]
-    if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+    if (
+      prop.typeIndex === PropType.reference ||
+      prop.typeIndex === PropType.references
+    ) {
       const refPath = prop.path.join('.') + affix
       fields.push({ field: refPath, opts })
 
@@ -77,7 +78,10 @@ export const includeFields = (def: QueryDef, fields: IncludeField[]) => {
 export const includeAllProps = (def: QueryDef, opts?: IncludeOpts) => {
   for (const key in def.props) {
     const prop = def.props[key]
-    if (prop.typeIndex !== REFERENCE && prop.typeIndex !== REFERENCES) {
+    if (
+      prop.typeIndex !== PropType.reference &&
+      prop.typeIndex !== PropType.references
+    ) {
       includeProp(def, prop, opts)
     }
   }
@@ -88,11 +92,15 @@ export const includeProp = (
   prop: PropDef | PropDefEdge,
   opts?: IncludeOpts,
 ) => {
-  if (!prop || prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+  if (
+    !prop ||
+    prop.typeIndex === PropType.reference ||
+    prop.typeIndex === PropType.references
+  ) {
     return false
   }
 
-  if (prop.typeIndex === TEXT) {
+  if (prop.typeIndex === PropType.text) {
     if (!def.include.props.has(prop.prop)) {
       def.include.props.set(prop.prop, {
         def: prop,

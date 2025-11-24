@@ -9,23 +9,9 @@ import {
   readInt32,
   readUtf8,
 } from '@based/utils'
-import {
-  INT8,
-  INT16,
-  INT32,
-  UINT8,
-  UINT16,
-  UINT32,
-  NUMBER,
-  TIMESTAMP,
-  BOOLEAN,
-  ENUM,
-  STRING,
-  JSON,
-  BINARY,
-} from '@based/schema/prop-types'
 import { Item } from './types.js'
 import { readMetaMainString } from './meta.js'
+import { PropType } from '../zigTsExports.js'
 
 const readMainValue = (
   prop: ReaderPropDef,
@@ -34,21 +20,21 @@ const readMainValue = (
   item: Item,
 ) => {
   const typeIndex = prop.typeIndex
-  if (typeIndex === TIMESTAMP) {
+  if (typeIndex === PropType.timestamp) {
     addProp(prop, readInt64(result, i), item)
-  } else if (typeIndex === NUMBER) {
+  } else if (typeIndex === PropType.number) {
     addProp(prop, readDoubleLE(result, i), item)
-  } else if (typeIndex === UINT32) {
+  } else if (typeIndex === PropType.uint32) {
     addProp(prop, readUint32(result, i), item)
-  } else if (typeIndex === BOOLEAN) {
+  } else if (typeIndex === PropType.boolean) {
     addProp(prop, Boolean(result[i]), item)
-  } else if (typeIndex === ENUM) {
+  } else if (typeIndex === PropType.enum) {
     if (result[i] === 0) {
       addProp(prop, undefined, item)
     } else {
       addProp(prop, prop.enum[result[i] - 1], item)
     }
-  } else if (typeIndex === STRING) {
+  } else if (typeIndex === PropType.string) {
     const len = result[i]
     i++
     const value = len === 0 ? '' : readUtf8(result, i, len)
@@ -62,26 +48,26 @@ const readMainValue = (
     } else {
       addProp(prop, value, item)
     }
-  } else if (typeIndex === JSON) {
+  } else if (typeIndex === PropType.json) {
     const len = result[i]
     i++
     const value = len === 0 ? null : global.JSON.parse(readUtf8(result, i, len))
     addProp(prop, value, item)
-  } else if (typeIndex === BINARY) {
+  } else if (typeIndex === PropType.binary) {
     const len = result[i]
     i++
     const value = len === 0 ? new Uint8Array(0) : result.subarray(i, i + len)
     addProp(prop, value, item)
-  } else if (typeIndex === INT8) {
+  } else if (typeIndex === PropType.int8) {
     const signedVal = (result[i] << 24) >> 24
     addProp(prop, signedVal, item)
-  } else if (typeIndex === UINT8) {
+  } else if (typeIndex === PropType.uint8) {
     addProp(prop, result[i], item)
-  } else if (typeIndex === INT16) {
+  } else if (typeIndex === PropType.int16) {
     addProp(prop, readInt16(result, i), item)
-  } else if (typeIndex === UINT16) {
+  } else if (typeIndex === PropType.uint16) {
     addProp(prop, readUint16(result, i), item)
-  } else if (typeIndex === INT32) {
+  } else if (typeIndex === PropType.int32) {
     addProp(prop, readInt32(result, i), item)
   }
 }

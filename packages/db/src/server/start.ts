@@ -11,8 +11,7 @@ import {
   loadBlockRaw,
 } from './blocks.js'
 import { asyncExitHook } from 'exit-hook'
-import { deSerialize, type SchemaOut } from '@based/schema'
-import { BLOCK_CAPACITY_DEFAULT } from '@based/schema/def'
+import { BLOCK_CAPACITY_DEFAULT, deSerialize } from '@based/schema'
 import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'

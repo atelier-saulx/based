@@ -1,6 +1,5 @@
-import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
-import { LangCode } from '@based/schema'
+import { LangCode, type PropDef } from '@based/schema'
 import { ModOp } from '../../../zigTsExports.js'
 
 export const markString = (ctx: Ctx, def: PropDef) => {

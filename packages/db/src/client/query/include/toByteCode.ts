@@ -1,4 +1,3 @@
-import { MICRO_BUFFER, STRING, TEXT, JSON, BINARY } from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import {
   IntermediateByteCode,
@@ -10,6 +9,7 @@ import { walkDefs } from './walk.js'
 import { langCodesMap } from '@based/schema'
 import { writeUint16, writeUint32 } from '@based/utils'
 import { getEnd } from './utils.js'
+import { PropType } from '../../../zigTsExports.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
 
@@ -74,14 +74,14 @@ export const includeToBuffer = (
       const buf = new Uint8Array(5)
       buf[0] = includeOp.PARTIAL
       buf[1] = 0 // field name 0
-      buf[2] = MICRO_BUFFER
+      buf[2] = PropType.microBuffer
       writeUint16(buf, mainBuffer.byteLength, 3)
       result.push(buf, mainBuffer)
     } else {
       const buf = new Uint8Array(4)
       buf[0] = includeOp.DEFAULT
       buf[1] = 0 // field name 0
-      buf[2] = MICRO_BUFFER
+      buf[2] = PropType.microBuffer
       buf[3] = 0 // opts len
       result.push(buf)
     }
@@ -89,7 +89,9 @@ export const includeToBuffer = (
 
   if (propSize) {
     for (const [prop, propDef] of def.include.props.entries()) {
-      const typeIndex = propDef.opts?.raw ? BINARY : propDef.def.typeIndex
+      const typeIndex = propDef.opts?.raw
+        ? PropType.binary
+        : propDef.def.typeIndex
       if (propDef.opts?.meta) {
         if (propDef.opts.codes) {
           if (propDef.opts.codes.has(0)) {
@@ -124,7 +126,7 @@ export const includeToBuffer = (
 
       if (propDef.opts?.meta !== 'only') {
         const hasEnd = propDef.opts?.end
-        if (typeIndex === TEXT) {
+        if (typeIndex === PropType.text) {
           const codes = propDef.opts.codes
           if (codes.has(0)) {
             const b = new Uint8Array(hasEnd ? 12 : 4)
@@ -182,7 +184,7 @@ export const includeToBuffer = (
             buf[3] = 5 // opts len
             buf[4] =
               propDef.opts?.bytes ||
-              (typeIndex !== JSON && typeIndex !== STRING)
+              (typeIndex !== PropType.json && typeIndex !== PropType.string)
                 ? 0
                 : 1
             writeUint32(buf, getEnd(propDef.opts), 5)

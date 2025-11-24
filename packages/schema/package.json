@@ -8,12 +8,6 @@
     "!dist/**/*.map"
   ],
   "main": "./dist/index.js",
-  "exports": {
-    "./def": "./dist/def/index.js",
-    "./lang": "./dist/lang.js",
-    "./prop-types": "./dist/def/typeIndexes.js",
-    ".": "./dist/index.js"
-  },
   "scripts": {
     "clean": "rm -rf .node_modules ./dist ./tsconfig.tsbuildinfo",
     "build": "tsc",

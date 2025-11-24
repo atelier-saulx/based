@@ -2,15 +2,6 @@ import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
 import {
-  PropDef,
-  UINT32,
-  SchemaPropTree,
-  REFERENCE,
-  REFERENCES,
-  PropDefEdge,
-  isPropDef,
-} from '@based/schema/def'
-import {
   aggregationFieldDoesNotExist,
   validateStepRange,
   edgeNotImplemented,
@@ -22,6 +13,13 @@ import {
 } from '../aggregates/types.js'
 import { QueryBranch } from '../BasedDbQuery.js'
 import { AggregateType } from '@based/protocol/db-read'
+import {
+  isPropDef,
+  type PropDef,
+  type PropDefEdge,
+  type SchemaPropTree,
+} from '@based/schema'
+import { PropType } from '../../../zigTsExports.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -198,7 +196,7 @@ const isEdge = (propString) => {
 }
 
 const isReferenceOrReferences = (typeIndex) => {
-  return typeIndex === REFERENCE || typeIndex === REFERENCES
+  return typeIndex === PropType.reference || typeIndex === PropType.references
 }
 
 const getPropDefinition = (

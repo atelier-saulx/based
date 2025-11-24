@@ -1,11 +1,10 @@
 import { BasedDb } from '@based/db'
-import { REFERENCE, REFERENCES, NUMBER, TypeIndex } from '@based/schema/def'
-import { destructureTreeKey } from '@based/db/dist/src/server/tree.js'
 import { open } from 'fs/promises'
 import { join } from 'path'
 import { toCsvHeader, toCsvChunk } from './toCsv.js'
 import os from 'node:os'
-import { buffer } from 'node:stream/consumers'
+import { destructureTreeKey } from '@based/db/dist/src/server/blockMap.js'
+import { PropType, type PropTypeEnum } from './zigTsExports.js'
 
 let CHUNK_SIZE = 1025
 let OUTPUT_DIR = './tmp/export'
@@ -48,12 +47,12 @@ const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   const propsToExport = Object.keys(def.props).filter((propName) => {
     const typeIndex = def.props[propName].typeIndex
     // For now we do not export references, waiting for partials
-    return typeIndex !== REFERENCE && typeIndex !== REFERENCES
+    return typeIndex !== PropType.reference && typeIndex !== PropType.references
   })
 
   const csvHeader = ['id', ...propsToExport]
-  const propTypes: TypeIndex[] = [
-    NUMBER,
+  const propTypes: PropTypeEnum[] = [
+    PropType.number,
     ...Object.keys(def.props).map((propName) => def.props[propName].typeIndex),
   ]
 
@@ -147,8 +146,8 @@ await import('fs')
   })
   .catch(console.error)
 
-for (const blockInfo of db.server.verifTree.types()) {
-  for (const block of db.server.verifTree.blocks(blockInfo)) {
+for (const blockInfo of db.server.blockMap.types()) {
+  for (const block of db.server.blockMap.blocks(blockInfo)) {
     await processBlockAndExportToCsv(db, block.key)
   }
 }

@@ -1,11 +1,10 @@
 import {
-  isPropDef,
-  PropDef,
-  PropDefEdge,
   REVERSE_TYPE_INDEX_MAP,
-  SchemaPropTree,
-  SchemaTypeDef,
-} from '@based/schema/def'
+  type PropDef,
+  type PropDefEdge,
+  type SchemaPropTree,
+  type SchemaTypeDef,
+} from '@based/schema'
 import { DbClient } from '../../index.js'
 import { create } from './create/index.js'
 import { Ctx } from './Ctx.js'
@@ -49,11 +48,11 @@ const parseErrorArr = (
   val: any,
   msg?: string,
 ) => {
-  if (isPropDef(prop)) {
+  if ('typeIndex' in prop && 'path' in prop) {
     if (msg) {
-      return `Invalid value at '${prop.path.join('.')}'. Expected ${msg} received '${parseVal(val)}'`
+      return `Invalid value at '${(prop.path as any).join('.')}'. Expected ${msg} received '${parseVal(val)}'`
     }
-    return `Invalid value at '${prop.path.join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[prop.typeIndex]}, received '${parseVal(val)}'`
+    return `Invalid value at '${(prop.path as any).join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[prop.typeIndex as number]}, received '${parseVal(val)}'`
   }
   return `Unknown property '${val}'. Expected one of: ${Object.keys(prop).join(', ')}`
 }

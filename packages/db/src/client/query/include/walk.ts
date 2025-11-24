@@ -1,11 +1,3 @@
-import {
-  isPropDef,
-  PropDef,
-  REFERENCE,
-  REFERENCES,
-  SchemaPropTree,
-  TEXT,
-} from '@based/schema/def'
 import { createQueryDef } from '../queryDef.js'
 import {
   getReferenceSelect,
@@ -18,8 +10,14 @@ import {
 import { getAllFieldFromObject, createOrGetRefQueryDef } from './utils.js'
 import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
-import { langCodesMap } from '@based/schema'
+import {
+  isPropDef,
+  langCodesMap,
+  type PropDef,
+  type SchemaPropTree,
+} from '@based/schema'
 import { includeDoesNotExist, includeLangDoesNotExist } from '../validation.js'
+import { PropType } from '../../../zigTsExports.js'
 
 export const walkDefs = (
   db: DbClient,
@@ -71,8 +69,8 @@ export const walkDefs = (
         }
 
         if (
-          edgeProp.typeIndex === REFERENCE ||
-          edgeProp.typeIndex === REFERENCES
+          edgeProp.typeIndex === PropType.reference ||
+          edgeProp.typeIndex === PropType.references
         ) {
           const refDef = createOrGetRefQueryDef(db, def.edges, edgeProp)
           if (path.length - 1 === i) {
@@ -98,7 +96,7 @@ export const walkDefs = (
         return
       }
 
-      if (isPropDef(t) && t.typeIndex === TEXT) {
+      if (isPropDef(t) && t.typeIndex === PropType.text) {
         const lang = path[path.length - 1]
         const langCode = langCodesMap.get(lang)
         if (!langCode || !db.schema.locales[lang]) {
@@ -129,7 +127,8 @@ export const walkDefs = (
         return
       } else if (
         isPropDef(t) &&
-        (t.typeIndex === REFERENCE || t.typeIndex === REFERENCES)
+        (t.typeIndex === PropType.reference ||
+          t.typeIndex === PropType.references)
       ) {
         const refDef = createOrGetRefQueryDef(db, def, t)
         const f = path.slice(i + 1).join('.')
@@ -147,7 +146,10 @@ export const walkDefs = (
         walkDefs(db, def, { field, opts: include.opts })
       }
     }
-  } else if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+  } else if (
+    prop.typeIndex === PropType.reference ||
+    prop.typeIndex === PropType.references
+  ) {
     const refDef = createOrGetRefQueryDef(db, def, prop)
     includeAllProps(refDef, include.opts)
     return

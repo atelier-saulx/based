@@ -14,17 +14,17 @@ import { hash } from '@based/hash'
 import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
 
-type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
+export type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 export type SchemaLocale = {
   required?: boolean
   fallback?: LangName // not multiple - 1 is enough else it becomes too complex
 }
 export type SchemaLocales = Partial<Record<LangName, true | SchemaLocale>>
 
-type MigrateFn = (
+export type SchemaMigrateFn = (
   node: Record<string, any>,
 ) => Record<string, any> | [string, Record<string, any>]
-export type SchemaMigrateFns = Record<string, MigrateFn>
+export type SchemaMigrateFns = Record<string, SchemaMigrateFn>
 export type SchemaMigrations = {
   version: string
   migrate: SchemaMigrateFns
@@ -37,7 +37,7 @@ export type Schema<strict = false> = {
   locales?: SchemaLocales
 } & RequiredIfStrict<{ hash: number }, strict>
 
-export type SchemaIn = Schema<false>
+export type SchemaIn = Schema<false> | Schema<true>
 export type SchemaOut = Schema<true>
 
 const isMigrations = (v: unknown): v is SchemaMigrations =>

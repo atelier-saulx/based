@@ -27,22 +27,20 @@ import {
   NULL,
   OBJECT,
   TYPE_INDEX_MAP,
-  PropDef,
-  PropDefEdge,
 } from './types.js'
+import v from 'validator'
+import type { SchemaProp } from '../schema/prop.js'
+import type { SchemaTimestamp } from '../schema/timestamp.js'
+import type { SchemaNumber } from '../schema/number.js'
+import type { SchemaEnum } from '../schema/enum.js'
 import {
   MAX_ID,
   MIN_ID,
-  SchemaEnum,
-  SchemaNumber,
-  SchemaObject,
-  SchemaProp,
-  SchemaProps,
-  SchemaString,
-  SchemaTimestamp,
-  StrictSchema,
-} from '../types.js'
-import v from 'validator'
+  type SchemaObject,
+  type SchemaOut,
+  type SchemaProps,
+  type SchemaString,
+} from '../index.js'
 
 export type Validation = (
   payload: any,
@@ -313,7 +311,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [ENUM]: (value, t: SchemaEnum) => {
+  [ENUM]: (value, t: SchemaEnum<true>) => {
     if (value === null) {
       return true
     }
@@ -531,7 +529,7 @@ export const getValidator = (prop: SchemaProp<true>): Validation => {
   return validator
 }
 
-export function validate<S extends StrictSchema = StrictSchema>(
+export function validate<S extends SchemaOut = SchemaOut>(
   schema: S,
   type: keyof S['types'],
   payload: unknown,

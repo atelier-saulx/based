@@ -13,7 +13,7 @@ export type SchemaTimestamp<strict = false> = Base & {
   step?: strict extends true ? number : number | string
 }
 
-const isTimestamp = (v: unknown): v is Timestamp =>
+export const isTimestamp = (v: unknown): v is Timestamp =>
   v instanceof Date || isNumber(v) || isString(v)
 
 const convertToTsIfDefined = (v: Timestamp | undefined): number | undefined =>

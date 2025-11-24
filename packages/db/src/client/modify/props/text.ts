@@ -1,7 +1,6 @@
-import { PropDef } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { deleteString, writeString } from './string.js'
-import { LangCode } from '@based/schema'
+import { LangCode, type PropDef } from '@based/schema'
 import { markTextValue, markTextObj } from '../create/mark.js'
 
 export const writeText = (ctx: Ctx, def: PropDef, val: any): void => {

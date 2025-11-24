@@ -65,11 +65,12 @@ await test('include', async (t) => {
   // for (let i = 0; i < 100; i++) {
   //   x.push('xxw qweudhweiofh')
   // }
-
+  console.log('???')
   const id = await db.create('user', {
     nr: 1,
     name: 'Mr poop',
   })
+  console.log('xxx')
 
   console.log('start query')
   ;(await db.query('user').get()).debug()

@@ -62,16 +62,3 @@ export enum VectorBaseType {
   Float32 = 7,
   Float64 = 8,
 }
-
-export const isNumberType = (type: TypeIndex): boolean => {
-  return (
-    type === NUMBER ||
-    type === UINT16 ||
-    type === UINT32 ||
-    type === INT16 ||
-    type === INT32 ||
-    type == UINT8 ||
-    type === INT8 ||
-    type === CARDINALITY
-  )
-}

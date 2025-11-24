@@ -1,5 +1,3 @@
-// import * as deflate from 'fflate'
-import { stringFormats } from './types.js'
 import { ENUM, REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
 import {
   readDoubleLE,
@@ -14,6 +12,7 @@ import {
   DECODER,
 } from '@based/utils'
 import type { SchemaOut } from './schema/schema.js'
+import { stringFormats } from './schema/string.js'
 
 const UINT8 = 245
 const FALSE = 246

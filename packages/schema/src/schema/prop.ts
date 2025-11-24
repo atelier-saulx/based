@@ -36,7 +36,7 @@ type SchemaPropObj<strict = false> =
   | SchemaVector
   | SchemaObject<strict>
 
-type SchemaPropShorthand =
+export type SchemaPropShorthand =
   | 'timestamp'
   | 'binary'
   | 'boolean'

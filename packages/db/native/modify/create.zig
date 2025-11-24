@@ -1,5 +1,6 @@
 const Modify = @import("./common.zig");
 const db = @import("../db/db.zig");
+const Node = @import("../db/node.zig");
 const utils = @import("../utils.zig");
 const sort = @import("../db/sort.zig");
 const selva = @import("../selva.zig").c;
@@ -79,7 +80,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
                         if (ctx.currentSortIndex != null) {
-                            sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, db.getNode(ctx.typeEntry.?, old).?);
+                            sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
                         }
                         Modify.markDirtyRange(ctx, ctx.typeId, old);
                     }

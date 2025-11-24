@@ -1,4 +1,5 @@
 const db = @import("../../db/db.zig");
+const Node = @import("../../db/node.zig");
 const getThreadCtx = @import("../../db/ctx.zig").getThreadCtx;
 const selva = @import("../../selva.zig").c;
 const getFields = @import("../include/include.zig").getFields;
@@ -34,7 +35,7 @@ pub fn default(
         // create a new iterator per CORE
         var correctedForOffset: u32 = header.offset;
         checkItem: while (!selva.selva_sort_foreach_done(&it)) {
-            var node: db.Node = undefined;
+            var node: Node.Node = undefined;
             if (desc) {
                 node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index, &it));
             } else {
@@ -49,7 +50,7 @@ pub fn default(
                 correctedForOffset -= 1;
                 continue :checkItem;
             }
-            const id = db.getNodeId(node);
+            const id = Node.getNodeId(node);
             const size = try getFields(node, ctx, id, typeEntry, include, null, null, false);
             if (size > 0) {
                 ctx.size += size;
@@ -77,12 +78,12 @@ pub fn idDesc(
     var correctedForOffset: u32 = header.offset;
     const typeEntry = try db.getType(ctx.db, header.typeId);
     var first = true;
-    var node = db.getLastNode(typeEntry);
+    var node = Node.getLastNode(typeEntry);
     checkItem: while (ctx.totalResults < header.limit) {
         if (first) {
             first = false;
         } else {
-            node = db.getPrevNode(typeEntry, node.?);
+            node = Node.getPrevNode(typeEntry, node.?);
         }
         if (node) |n| {
             if (hasFilter and !filter(ctx.db, n, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
@@ -92,7 +93,7 @@ pub fn idDesc(
                 correctedForOffset -= 1;
                 continue :checkItem;
             }
-            const size = try getFields(n, ctx, db.getNodeId(n), typeEntry, include, null, null, false);
+            const size = try getFields(n, ctx, Node.getNodeId(n), typeEntry, include, null, null, false);
             if (size > 0) {
                 ctx.size += size;
                 ctx.totalResults += 1;
@@ -140,7 +141,7 @@ pub fn search(
     }
     var searchCtxC = s.createSearchCtx(isVector, offset);
     while (!selva.selva_sort_foreach_done(&it)) {
-        var node: db.Node = undefined;
+        var node: Node.Node = undefined;
         if (desc) {
             node = @ptrCast(selva.selva_sort_foreach_reverse(sI.index, &it));
         } else {

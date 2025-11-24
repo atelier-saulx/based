@@ -1,4 +1,3 @@
-import { ALIAS, PropDef, PropDefEdge, TEXT, VECTOR } from '@based/schema/def'
 import {
   EQUAL,
   EQUAL_CRC32,
@@ -15,6 +14,8 @@ import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { crc32 } from '../../crc32.js'
 import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'
 import { FilterCondition, QueryDef } from '../types.js'
+import type { PropDef, PropDefEdge } from '@based/schema'
+import { PropType } from '../../../zigTsExports.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 
@@ -28,7 +29,7 @@ const parseValue = (
     value = value.toLowerCase()
   }
 
-  if (ctx.operation === LIKE && prop.typeIndex === VECTOR) {
+  if (ctx.operation === LIKE && prop.typeIndex === PropType.vector) {
     if (!(value instanceof ArrayBuffer)) {
       throw new Error('Vector should be an arrayBuffer')
     }
@@ -56,7 +57,7 @@ const parseValue = (
     if (typeof value === 'string') {
       value = ENCODER.encode(value.normalize('NFKD'))
     }
-    if (prop.typeIndex === TEXT) {
+    if (prop.typeIndex === PropType.text) {
       // 1 + size
       const fallbacksSize = lang.lang === 0 ? 0 : lang.fallback.length
       const tmp = new Uint8Array(value.byteLength + 2 + fallbacksSize)
@@ -75,7 +76,7 @@ const parseValue = (
   if (!(value instanceof Uint8Array || value instanceof ArrayBuffer)) {
     throw new Error(`Incorrect value for filter: ${prop.path}`)
   }
-  if (ctx.operation === LIKE && prop.typeIndex !== VECTOR) {
+  if (ctx.operation === LIKE && prop.typeIndex !== PropType.vector) {
     const tmp = new Uint8Array(value.byteLength + 1)
     tmp.set(value instanceof ArrayBuffer ? new Uint8Array(value) : value)
     tmp[tmp.byteLength - 1] = ctx.opts.score ?? 2
@@ -124,10 +125,10 @@ export const createVariableFilterBuffer = (
     if (prop.separate) {
       if (
         ctx.operation === EQUAL &&
-        prop.typeIndex !== ALIAS &&
-        prop.typeIndex !== VECTOR
+        prop.typeIndex !== PropType.alias &&
+        prop.typeIndex !== PropType.vector
       ) {
-        if (prop.typeIndex === TEXT) {
+        if (prop.typeIndex === PropType.text) {
           const fbLen = 2 + val[val.byteLength - 1]
           const crc = crc32(val.slice(0, -fbLen))
           const len = val.byteLength - fbLen

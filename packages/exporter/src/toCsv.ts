@@ -1,5 +1,4 @@
-import { ENUM, STRING, JSON as JSON2, TEXT, TypeIndex } from '@based/schema/def'
-import { concatUint8Arr } from '@based/utils'
+import { PropType, type PropTypeEnum } from './zigTsExports.js'
 
 export const toCsvHeader = (headers: string[]): string => {
   return headers.join(',') + '\n'
@@ -7,7 +6,7 @@ export const toCsvHeader = (headers: string[]): string => {
 
 export const toCsvChunk = (
   rows: any[][],
-  propTypes: TypeIndex[],
+  propTypes: PropTypeEnum[],
   locale: string,
 ): string => {
   let chunkString = ''
@@ -19,11 +18,11 @@ export const toCsvChunk = (
 
     for (let j = 0; j < numCols; j++) {
       const type = propTypes[j]
-      if (type === ENUM || type === STRING) {
+      if (type === PropType.enum || type === PropType.string) {
         chunkString += escapeCSVReservedChars(String(row[j]))
-      } else if (type === JSON2) {
+      } else if (type === PropType.json) {
         chunkString += escapeCSVReservedChars(JSON.stringify(row[j]))
-      } else if (type === TEXT) {
+      } else if (type === PropType.text) {
         chunkString += escapeCSVReservedChars(row[j][locale] || '')
       } else {
         chunkString += row[j]

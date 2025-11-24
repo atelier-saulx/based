@@ -1,6 +1,4 @@
-// @ts-nocheck
 import {
-  isPropType,
   SchemaObject,
   SchemaLocales,
   SchemaHooks,
@@ -20,7 +18,6 @@ import {
   BLOCK_CAPACITY_MIN,
   VECTOR,
   COLVEC,
-  CARDINALITY,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
@@ -65,31 +62,34 @@ export const updateTypeDefs = (schema: SchemaOut) => {
 
         if (!prop.__isEdge) {
           // Update inverseProps in references
-          const dstType: SchemaTypeDef = schemaTypesParsed[prop.inverseTypeName]
+          const dstType: SchemaTypeDef =
+            schemaTypesParsed[prop.inverseTypeName as string]
           prop.inverseTypeId = dstType.id
-          prop.inversePropNumber = dstType.props[prop.inversePropName].prop
+          prop.inversePropNumber =
+            dstType.props[prop.inversePropName as string].prop
 
           if (prop.edges) {
-            if (dstType.props[prop.inversePropName].edges) {
+            if (dstType.props[prop.inversePropName as string].edges) {
               // this currently is not allowed, but might be
               const mergedEdges = {
-                ...dstType.props[prop.inversePropName].edges,
+                ...dstType.props[prop.inversePropName as string].edges,
                 ...prop.edges,
               }
-              dstType.props[prop.inversePropName].edges = mergedEdges
+              dstType.props[prop.inversePropName as string].edges = mergedEdges
               prop.edges = mergedEdges
             } else {
-              dstType.props[prop.inversePropName].edges = prop.edges
+              dstType.props[prop.inversePropName as string].edges = prop.edges
             }
           }
 
           // Update edgeNodeTypeId
           if (!prop.edgeNodeTypeId) {
             if (prop.edges) {
-              const edgeTypeName = `_${[`${schema.type}_${prop.path.join('_')}`, `${dstType.type}_${dstType.props[prop.inversePropName].path.join('_')}`].sort().join(':')}`
+              const edgeTypeName = `_${[`${schema.type}_${prop.path.join('_')}`, `${dstType.type}_${dstType.props[prop.inversePropName as string].path.join('_')}`].sort().join(':')}`
               const edgeType = schemaTypesParsed[edgeTypeName]
               prop.edgeNodeTypeId = edgeType.id
-              dstType.props[prop.inversePropName].edgeNodeTypeId = edgeType.id
+              dstType.props[prop.inversePropName as string].edgeNodeTypeId =
+                edgeType.id
             } else {
               prop.edgeNodeTypeId = 0
             }
@@ -104,7 +104,7 @@ export const updateTypeDefs = (schema: SchemaOut) => {
 
 const createSchemaTypeDef = (
   typeName: string,
-  type: SchemaType<true>,
+  type: SchemaType<true> | SchemaObject<true>,
   locales: Partial<SchemaLocales>,
   result: Partial<SchemaTypeDef>,
   path: string[] = [],
@@ -146,8 +146,8 @@ const createSchemaTypeDef = (
   }
   result.locales = locales
   result.localeSize = Object.keys(locales).length
-  result.idUint8[0] = result.id & 255
-  result.idUint8[1] = result.id >> 8
+  ;(result.idUint8 as any)[0] = (result.id as number) & 255
+  ;(result.idUint8 as any)[1] = (result.id as number) >> 8
   const target = type.props
 
   for (const key in target) {
@@ -158,7 +158,7 @@ const createSchemaTypeDef = (
     if (propType === 'object') {
       createSchemaTypeDef(
         typeName,
-        schemaProp as SchemaObject,
+        schemaProp as SchemaObject<true>,
         locales,
         result,
         propPath,
@@ -169,29 +169,33 @@ const createSchemaTypeDef = (
 
     const len = getPropLen(schemaProp)
     if (
-      isPropType('string', schemaProp) ||
-      isPropType('alias', schemaProp) ||
-      isPropType('cardinality', schemaProp)
+      schemaProp.type === 'string' ||
+      schemaProp.type === 'alias' ||
+      schemaProp.type === 'cardinality'
     ) {
       if (typeof schemaProp === 'object') {
         if (
-          !(schemaProp.maxBytes < 61) ||
-          !('max' in schemaProp && schemaProp.max < 31)
+          !(schemaProp.maxBytes && schemaProp.maxBytes < 61) ||
+          !('max' in schemaProp && schemaProp.max && schemaProp.max < 31)
         ) {
+          result.separateSortProps ??= 0
           result.separateSortProps++
         }
       } else {
+        result.separateSortProps ??= 0
         result.separateSortProps++
       }
-    } else if (isPropType('text', schemaProp)) {
+    } else if (schemaProp.type === 'text') {
+      result.separateSortText ??= 0
       result.separateSortText++
-    } else if (isPropType('colvec', schemaProp)) {
+    } else if (schemaProp.type === 'colvec') {
       if (!result.insertOnly) {
         throw new Error('colvec requires insertOnly')
       }
     }
     const isseparate = isSeparate(schemaProp, len)
     const typeIndex = TYPE_INDEX_MAP[propType]
+    result.cnt ??= 0
     const prop: PropDef = {
       schema: schemaProp,
       typeIndex,
@@ -201,7 +205,9 @@ const createSchemaTypeDef = (
       start: 0,
       validation: getValidator(schemaProp),
       len,
-      default: schemaProp.default ?? DEFAULT_MAP[typeIndex],
+      default:
+        ('default' in schemaProp ? schemaProp.default : null) ??
+        DEFAULT_MAP[typeIndex],
       prop: isseparate ? ++result.cnt : 0,
     }
 
@@ -214,15 +220,15 @@ const createSchemaTypeDef = (
       }
     }
 
-    if (schemaProp.max !== undefined) {
+    if ('max' in schemaProp && schemaProp.max !== undefined) {
       schemaProp.max = prop.max = parseMinMaxStep(schemaProp.max)
     }
 
-    if (schemaProp.min !== undefined) {
+    if ('min' in schemaProp && schemaProp.min !== undefined) {
       schemaProp.min = prop.min = parseMinMaxStep(schemaProp.min)
     }
 
-    if (schemaProp.step !== undefined) {
+    if ('step' in schemaProp && schemaProp.step !== undefined) {
       schemaProp.step = prop.step = parseMinMaxStep(schemaProp.step)
     }
 
@@ -231,11 +237,11 @@ const createSchemaTypeDef = (
     }
     if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
       prop.vectorBaseType = schemaVectorBaseTypeToEnum(
-        schemaProp.baseType ?? 'number',
+        ('baseType' in schemaProp && schemaProp.baseType) || 'number',
       )
     }
 
-    if (prop.typeIndex === CARDINALITY) {
+    if (schemaProp.type === 'cardinality') {
       prop.cardinalityMode ??= cardinalityModeToEnum(
         (schemaProp.mode ??= 'sparse'),
       )
@@ -243,13 +249,13 @@ const createSchemaTypeDef = (
       prop.cardinalityPrecision ??= schemaProp.precision ??= prec
     }
 
-    if (isPropType('enum', schemaProp)) {
+    if (schemaProp.type === 'enum') {
       prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
       prop.reverseEnum = {}
       for (let i = 0; i < prop.enum.length; i++) {
         prop.reverseEnum[prop.enum[i]] = i
       }
-    } else if (isPropType('references', schemaProp)) {
+    } else if (schemaProp.type === 'references') {
       if (result.partial) {
         throw new Error('references is not supported with partial')
       }
@@ -259,7 +265,7 @@ const createSchemaTypeDef = (
       prop.dependent = schemaProp.items.dependent
       prop.referencesCapped = schemaProp.capped ?? 0
       addEdges(prop, schemaProp.items)
-    } else if (isPropType('reference', schemaProp)) {
+    } else if (schemaProp.type === 'reference') {
       if (result.partial) {
         throw new Error('reference is not supported with partial')
       }
@@ -269,12 +275,12 @@ const createSchemaTypeDef = (
       prop.dependent = schemaProp.dependent
       addEdges(prop, schemaProp)
     } else if (typeof schemaProp === 'object') {
-      if (isPropType('string', schemaProp) || isPropType('text', schemaProp)) {
+      if (schemaProp.type === 'string' || schemaProp.type === 'text') {
         prop.compression =
           'compression' in schemaProp && schemaProp.compression === 'none'
             ? 0
             : 1
-      } else if (isPropType('timestamp', schemaProp) && 'on' in schemaProp) {
+      } else if (schemaProp.type === 'timestamp' && schemaProp.on) {
         if (schemaProp.on[0] === 'c') {
           result.createTs ??= []
           result.createTs.push(prop)
@@ -286,15 +292,17 @@ const createSchemaTypeDef = (
         }
       }
     }
+    result.props ??= {}
     result.props[propPath.join('.')] = prop
     if (isseparate) {
+      result.separate ??= []
       result.separate.push(prop)
     }
   }
 
   if (top) {
     // Put top level together
-    const vals = Object.values(result.props)
+    const vals = Object.values(result.props || {})
     reorderProps(vals)
     let len = 2
     let biggestSeperatePropDefault = 0
@@ -325,31 +333,37 @@ const createSchemaTypeDef = (
         len += 2
       }
       len += 1
-      f.start = result.mainLen
+      f.start = result.mainLen ?? 0
+      result.mainLen ??= 0
       result.mainLen += f.len
       setByPath(result.tree, f.path, f)
     }
 
     if (result.hasSeperateDefaults) {
-      result.separateDefaults.bufferTmp = new Uint8Array(
+      ;(result.separateDefaults as any).bufferTmp = new Uint8Array(
         biggestSeperatePropDefault + 1,
       )
     }
 
-    result.mainEmpty = fillEmptyMain(vals, result.mainLen)
+    result.mainEmpty = fillEmptyMain(vals, result.mainLen ?? 0)
     result.mainEmptyAllZeroes = isZeroes(result.mainEmpty)
 
+    // @ts-ignore
     if (result.separateSortText > 0) {
+      // @ts-ignore
       makeSeparateTextSort(result)
     }
+    // @ts-ignore
     if (result.separateSortProps > 0) {
       makeSeparateSort(result)
     }
     for (const p in result.props) {
       const x = result.props[p]
       if (!x.separate) {
+        // @ts-ignore
         result.main[x.start] = x
       } else {
+        // @ts-ignore
         result.reverseProps[x.prop] = x
       }
     }

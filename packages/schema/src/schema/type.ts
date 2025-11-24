@@ -6,38 +6,11 @@ import {
   isRecord,
 } from './shared.js'
 import { parseProp, type SchemaProp } from './prop.js'
-import { isHooks } from './hooks.js'
+import { isHooks, type SchemaHooks } from './hooks.js'
 import type { SchemaOut } from './schema.js'
 
-type BasedDbQuery = any
-type Operator = any
-
-type SchemaHooks = {
-  create?: (payload: Record<string, any>) => void | Record<string, any>
-  update?: (payload: Record<string, any>) => void | Record<string, any>
-  read?: (result: Record<string, any>) => void | null | Record<string, any>
-  search?: (query: BasedDbQuery, fields: Set<string>) => void
-  include?: (
-    query: BasedDbQuery,
-    fields: Map<
-      string,
-      {
-        field: string
-        opts?: any // temp this type
-      }
-    >,
-  ) => void
-  filter?: (
-    query: BasedDbQuery,
-    field: string,
-    operator: Operator,
-    value: any,
-  ) => void
-  groupBy?: (query: BasedDbQuery, field: string) => void
-  aggregate?: (query: BasedDbQuery, fields: Set<string>) => void
-}
-
 export type SchemaProps<strict = true> = Record<string, SchemaProp<strict>>
+
 type SchemaTypeObj<strict = false> = {
   hooks?: SchemaHooks
   blockCapacity?: number

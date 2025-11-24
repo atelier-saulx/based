@@ -1,5 +1,4 @@
 import { langCodesMap } from '@based/schema'
-import { STRING, TEXT, VECTOR } from '@based/schema/def'
 import { QueryDefSearch, QueryDef } from '../types.js'
 import { FilterOpts, getVectorFn } from '../filter/types.js'
 import {
@@ -9,6 +8,7 @@ import {
 } from '../validation.js'
 import { ENCODER, concatUint8Arr } from '@based/utils'
 import { QueryBranch } from '../BasedDbQuery.js'
+import { PropType } from '../../../zigTsExports.js'
 
 export type Search =
   | string[]
@@ -28,7 +28,7 @@ export const vectorSearch = (
   if (!prop) {
     prop = searchDoesNotExist(def, field, true)
   }
-  if (prop.typeIndex !== VECTOR) {
+  if (prop.typeIndex !== PropType.vector) {
     searchIncorrectType(def, prop)
   }
   let size = 17
@@ -93,7 +93,10 @@ export const search = (
     for (const k in def.props) {
       const prop = def.props[k]
       // if title / name / headline add ROLE:
-      if (prop.typeIndex === STRING || prop.typeIndex === TEXT) {
+      if (
+        prop.typeIndex === PropType.string ||
+        prop.typeIndex === PropType.text
+      ) {
         s[k] = k === 'title' || k === 'name' || k === 'headline' ? 0 : 2
       }
     }
@@ -114,7 +117,7 @@ export const search = (
       if (key.includes('.')) {
         const k = key.split('.')
         prop = def.props[k.slice(0, -1).join('.')]
-        if (prop && prop.typeIndex === TEXT) {
+        if (prop && prop.typeIndex === PropType.text) {
           lang = langCodesMap.get(k[k.length - 1])
           fallback = []
           // handle incorrect LANG
@@ -125,7 +128,10 @@ export const search = (
         prop = searchDoesNotExist(def, key, false)
       }
     }
-    if (prop.typeIndex !== STRING && prop.typeIndex !== TEXT) {
+    if (
+      prop.typeIndex !== PropType.string &&
+      prop.typeIndex !== PropType.text
+    ) {
       searchIncorrectType(def, prop)
     }
 

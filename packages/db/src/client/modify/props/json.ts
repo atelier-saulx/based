@@ -1,5 +1,5 @@
+import type { PropDef } from '@based/schema'
 import { Ctx } from '../Ctx.js'
-import { PropDef } from '@based/schema/def'
 import { writeBinary } from './binary.js'
 
 export const writeJson = (ctx: Ctx, def: PropDef, val: any) => {

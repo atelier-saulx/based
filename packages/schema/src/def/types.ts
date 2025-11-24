@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type {
   LangCode,
   SchemaHooks,
@@ -66,7 +65,7 @@ export const TYPE_INDEX_MAP: Record<string, TypeIndex> = {
   colvec: COLVEC,
 }
 
-export const enum numberTypes {
+export const enum typeNumberTypes {
   number = NUMBER,
   uint16 = UINT16,
   uint32 = UINT32,
@@ -265,7 +264,7 @@ export const REVERSE_TYPE_INDEX_MAP: Record<TypeIndex, InternalSchemaProp> =
   reverseMap
 
 export const ID_FIELD_DEF: PropDef = {
-  schema: null,
+  schema: null as any,
   typeIndex: NULL,
   separate: true,
   path: ['id'],
@@ -278,7 +277,7 @@ export const ID_FIELD_DEF: PropDef = {
 }
 
 export const EMPTY_MICRO_BUFFER: PropDef = {
-  schema: null,
+  schema: null as any,
   typeIndex: MICRO_BUFFER,
   separate: true,
   path: [''],

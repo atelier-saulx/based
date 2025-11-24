@@ -3,6 +3,7 @@ const Query = @import("../common.zig");
 const utils = @import("../../utils.zig");
 const db = @import("../../db/db.zig");
 const threads = @import("../../db/threads.zig");
+const Node = @import("../../db/node.zig");
 
 const t = @import("../../types.zig");
 // const f = @import("./field.zig");
@@ -10,7 +11,7 @@ const t = @import("../../types.zig");
 
 // call this include
 pub fn include(
-    node: db.Node, // instead of node pass target which is { node, edgeNode } now we can do .edges.
+    node: Node.Node,
     _: *Query.QueryCtx, // prob just want to pass type entry on the queryctx..
     q: []u8, // call this q
     // size:

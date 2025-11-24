@@ -4,6 +4,7 @@ const Query = @import("./common.zig");
 const include = @import("./include/include.zig");
 const t = @import("../types.zig");
 const db = @import("../db/db.zig");
+const Node = @import("../db/Node.zig");
 // const assert = std.debug.assert;
 
 pub fn default(
@@ -23,7 +24,7 @@ pub fn default(
 
     // this will be a nice iterator
     const typeEntry = try db.getType(ctx.db, header.typeId);
-    var node = db.getFirstNode(typeEntry);
+    var node = Node.getFirstNode(typeEntry);
 
     while (nodeCnt < header.limit) {
         if (node == null) {
@@ -35,14 +36,14 @@ pub fn default(
         // }
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
-            node = db.getNextNode(typeEntry, node.?);
+            node = Node.getNextNode(typeEntry, node.?);
             continue;
         }
 
         try include.include(node.?, ctx, nestedQuery);
         nodeCnt += 1;
 
-        node = db.getNextNode(typeEntry, node.?);
+        node = Node.getNextNode(typeEntry, node.?);
     }
 
     std.debug.print("results #{any} \n", .{nodeCnt});

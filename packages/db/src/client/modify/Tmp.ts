@@ -1,7 +1,7 @@
 import { readUint32 } from '@based/utils'
 import { Ctx } from './Ctx.js'
 import { errorMap } from './error.js'
-import { SchemaTypeDef } from '@based/schema/def'
+import type { SchemaTypeDef } from '@based/schema'
 
 const promisify = (tmp: Tmp) => {
   if (!tmp.promise) {

@@ -1,8 +1,8 @@
 import {
-  type MigrateFns,
   parse,
   type SchemaOut,
   type SchemaIn,
+  type SchemaMigrateFns,
 } from '@based/schema'
 import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { debugMode } from '../utils.js'
@@ -75,7 +75,7 @@ export class DbClient extends DbShared {
 
   async setSchema(
     schema: SchemaIn,
-    transformFns?: MigrateFns,
+    transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']> {
     const strictSchema = parse(schema).schema
     await this.drain()

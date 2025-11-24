@@ -1,6 +1,6 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import { MigrateFns, MAX_ID, type SchemaOut } from '@based/schema'
+import { SchemaMigrateFns, MAX_ID, type SchemaOut } from '@based/schema'
 import { start, StartOpts } from './start.js'
 import {
   BlockMap,
@@ -228,7 +228,7 @@ export class DbServer extends DbShared {
 
   async setSchema(
     schema: SchemaOut,
-    transformFns?: MigrateFns,
+    transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']> {
     if (this.stopped || !this.dbCtxExternal) {
       throw new Error('Db is stopped')

@@ -1,7 +1,6 @@
 import native from '../native.js'
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { SchemaTypeDef } from '@based/schema/def'
 import {
   DECODER,
   equals,
@@ -23,6 +22,7 @@ import { writeFile } from 'node:fs/promises'
 import { bufToHex } from '@based/utils'
 import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
 import { OpType } from '../zigTsExports.js'
+import type { SchemaTypeDef } from '@based/schema'
 
 type RangeDump = {
   file: string
@@ -71,9 +71,7 @@ const getBlockHashId = idGenerator()
 
 export async function readWritelog(filepath: string): Promise<Writelog | null> {
   try {
-    return JSON.parse(
-      (await readFile(filepath)).toString(),
-    )
+    return JSON.parse((await readFile(filepath)).toString())
   } catch (err) {
     return null
   }
@@ -300,20 +298,28 @@ export async function unloadBlock(
   await p
 }
 
-async function getBlockHash(db: DbServer, typeCode: number, start: number): Promise<Uint8Array> {
+async function getBlockHash(
+  db: DbServer,
+  typeCode: number,
+  start: number,
+): Promise<Uint8Array> {
   return new Promise((resolve, reject) => {
     const id = getBlockHashId.next().value
     const msg = new Uint8Array(11)
 
     writeUint32(msg, id, 0)
-    msg[4] = OpType.saveCommon
+    msg[4] = OpType.blockHash
     writeUint32(msg, start, 5)
     writeUint16(msg, typeCode, 9)
 
     db.addOpOnceListener(OpType.blockHash, id, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
-        reject(new Error(`getBlockHash ${typeCode}:${start} failed: ${native.selvaStrerror(err)}`))
+        reject(
+          new Error(
+            `getBlockHash ${typeCode}:${start} failed: ${native.selvaStrerror(err)}`,
+          ),
+        )
       } else {
         resolve(buf.slice(4, 20))
       }
@@ -326,7 +332,10 @@ async function getBlockHash(db: DbServer, typeCode: number, start: number): Prom
 /**
  * Get hash of each block in memory.
  */
-export async function* foreachBlock(db: DbServer, def: SchemaTypeDef): AsyncGenerator<[number, number, Uint8Array]> {
+export async function* foreachBlock(
+  db: DbServer,
+  def: SchemaTypeDef,
+): AsyncGenerator<[number, number, Uint8Array]> {
   const step = def.blockCapacity
   const lastId = db.ids[def.id - 1]
 

@@ -28,7 +28,7 @@ export type Root = {
 }
 
 export type TypeVisual = {
-  schemaType: SchemaType
+  schemaType: SchemaType<true>
   type: string
   x: number
   y: number

@@ -1,10 +1,10 @@
-import { PropDefEdge, CARDINALITY } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { reserve } from '../resize.js'
-import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 import { writeCardinalityRaw } from '../props/cardinality.js'
 import { PROP_CURSOR_SIZE } from '../cursor.js'
+import type { PropDefEdge } from '@based/schema'
+import { PropType } from '../../../zigTsExports.js'
 
 export const writeCardinalityEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (!Array.isArray(val)) {
@@ -12,6 +12,6 @@ export const writeCardinalityEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   }
   const size = 4 + val.length * 8
   reserve(ctx, PROP_CURSOR_SIZE + size)
-  writeEdgeHeader(ctx, edge, CARDINALITY)
+  writeEdgeHeader(ctx, edge, PropType.cardinality)
   writeCardinalityRaw(ctx, edge, val, size)
 }

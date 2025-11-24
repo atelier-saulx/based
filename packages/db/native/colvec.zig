@@ -2,9 +2,10 @@ const std = @import("std");
 const napi = @import("./napi.zig");
 const selva = @import("./selva.zig").c;
 const db = @import("./db/db.zig");
+const Node = @import("db/Node.zig");
 
-pub const Type = db.Type;
-pub const FieldSchema = db.FieldSchema;
+const Type = Node.Type;
+const FieldSchema = db.FieldSchema;
 
 pub fn colvec(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return colvecInternal(env, info) catch |err| {
