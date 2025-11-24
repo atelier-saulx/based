@@ -159,3 +159,4 @@ packages/db/*.o
 aggregationNotes.md
 .vscode
 /packages/*/package-lock.json
+.zig-cache

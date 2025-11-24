@@ -13,9 +13,6 @@ pub const c = @cImport({
 
     @cInclude("libdeflate.h");
 });
-const dbCtx = @import("./db/ctx.zig");
-const std = @import("std");
-const db = @import("./db/db.zig");
 
 pub const Compressor = c.libdeflate_compressor;
 pub const Decompressor = c.libdeflate_decompressor;

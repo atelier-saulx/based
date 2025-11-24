@@ -1,4 +1,4 @@
-import * as fs from 'fs'
+import * as fs from 'fs/promises'
 import * as path from 'path'
 import { performance } from 'perf_hooks'
 import { styleText } from 'util'
@@ -51,18 +51,19 @@ export async function perf(
   const testFunction = process.env.TEST_TO_RUN ?? 'not inside a test'
 
   const durations: number[] = []
-
+  let timeOut
   try {
     for (let i = 0; i < repeat; i++) {
       const start = performance.now()
 
       await Promise.race([
         callWrapper(fn),
-        new Promise((_, reject) =>
-          setTimeout(
-            () => reject(new Error(`Timeout of ${timeout}ms exceeded`)),
-            timeout,
-          ),
+        new Promise(
+          (_, reject) =>
+            (timeOut = setTimeout(
+              () => reject(new Error(`Timeout of ${timeout}ms exceeded`)),
+              timeout,
+            )),
         ),
       ])
 
@@ -70,10 +71,13 @@ export async function perf(
       durations.push(end - start)
     }
 
+    clearTimeout(timeOut)
+
     const totalTime = durations.reduce((a, b) => a + b, 0)
     const avgTime = totalTime / durations.length
 
     const scriptName = process.env.npm_lifecycle_event || ''
+
     const isDebugMode = scriptName.includes('debug')
 
     const result: Result = {
@@ -138,11 +142,11 @@ async function saveResultToFile(
   let fileContent: FileStructure = {}
 
   try {
-    if (!fs.existsSync(path.dirname(filePath))) {
-      fs.mkdirSync(path.dirname(filePath))
+    if (!(await fs.stat(path.dirname(filePath)).catch(() => {}))) {
+      await fs.mkdir(path.dirname(filePath))
     }
-    if (fs.existsSync(absolutePath)) {
-      const content = fs.readFileSync(absolutePath, 'utf-8')
+    if (!(await fs.stat(absolutePath).catch(() => {}))) {
+      const content = await fs.readFile(absolutePath, 'utf-8')
       fileContent = JSON.parse(content)
     }
   } catch (e) {
@@ -171,7 +175,7 @@ async function saveResultToFile(
       .slice(-MEASURES_PER_TEST)
   }
 
-  fs.writeFileSync(absolutePath, JSON.stringify(fileContent, null, 2))
+  await fs.writeFile(absolutePath, JSON.stringify(fileContent, null, 2))
 
   return { difference: difference, previous: previous }
 }

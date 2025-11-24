@@ -1,5 +1,5 @@
-const db = @import("../db/db.zig");
-const selva = @import("../selva.zig").c;
+const db = @import("../selva/db.zig");
+const selva = @import("../selva/selva.zig").c;
 const napi = @import("../napi.zig");
 const utils = @import("../utils.zig");
 const std = @import("std");

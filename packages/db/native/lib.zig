@@ -1,20 +1,17 @@
 const std = @import("std");
-const selva = @import("selva.zig").c;
-const dump = @import("./db/dump.zig");
-const info = @import("./db/info.zig");
+const selva = @import("selva/selva.zig");
+const dump = @import("selva/dump.zig");
+const info = @import("selva/info.zig");
 const errors = @import("errors.zig");
-const query = @import("./query/query.zig");
-const modify = @import("./modify/modify.zig");
-const lifeTime = @import("./db/lifeTime.zig");
-const schema = @import("./schema/schema.zig");
-const string = @import("./string.zig");
-const napi = @import("./napi.zig");
-const jsThrow = errors.jsThrow;
-const dbthrow = errors.mdb;
-const colvecTest = @import("./colvec.zig").colvec;
-const dbCtx = @import("./db/ctx.zig");
-const subscriptions = @import("./db/subscription/subscription.zig");
-const strerror_zig = @import("selva.zig").strerror_zig;
+const query = @import("query/query.zig");
+const modify = @import("modify/modify.zig");
+const lifeTime = @import("db/lifeTime.zig");
+const schema = @import("schema/schema.zig");
+const string = @import("string.zig");
+const napi = @import("napi.zig");
+const colvecTest = @import("colvec.zig").colvec;
+const dbCtx = @import("db/ctx.zig");
+const subscriptions = @import("db/subscription/subscription.zig");
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
 
@@ -29,11 +26,11 @@ pub fn registerFunction(
 ) !void {
     var napi_function: napi.Value = undefined;
     if (napi.c.napi_create_function(env, null, 0, function, null, &napi_function) != napi.Ok) {
-        _ = jsThrow(env, "Failed to create function " ++ name ++ "().");
+        _ = errors.jsThrow(env, "Failed to create function " ++ name ++ "().");
         return NapiError.NapiError;
     }
     if (napi.c.napi_set_named_property(env, exports, name, napi_function) != napi.Ok) {
-        _ = jsThrow(env, "Failed to add " ++ name ++ "() to exports.");
+        _ = errors.jsThrow(env, "Failed to add " ++ name ++ "() to exports.");
         return NapiError.NapiError;
     }
 }
@@ -74,8 +71,8 @@ fn _selvaStrerror(napi_env: napi.Env, nfo: napi.Info) !napi.Value {
     const args = try napi.getArgs(1, napi_env, nfo);
     const err = try napi.get(i32, napi_env, args[0]);
     var result: napi.Value = undefined;
-    var copied: selva.bool = undefined;
-    const str = strerror_zig(err);
+    var copied: selva.c.bool = undefined;
+    const str = selva.strerror(err);
     // std.debug.print("{any} {any} {any} \n", .{ result, copied, str });
     _ = napi.c.node_api_create_external_string_latin1(napi_env, @constCast(str.ptr), str.len, null, null, &result, &copied);
     return result;
@@ -87,9 +84,9 @@ fn selvaStrerror(napi_env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
 
 fn selvaLangAll(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
     var result: napi.Value = undefined;
-    var copied: selva.bool = undefined;
+    var copied: selva.c.bool = undefined;
 
-    _ = napi.c.node_api_create_external_string_latin1(napi_env, @constCast(selva.selva_lang_all_str), selva.selva_lang_all_len, null, null, &result, &copied);
+    _ = napi.c.node_api_create_external_string_latin1(napi_env, @constCast(selva.c.selva_lang_all_str), selva.c.selva_lang_all_len, null, null, &result, &copied);
     return result;
 }
 
@@ -120,10 +117,10 @@ fn stringToUint8Array(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
         _ = napi.c.napi_get_value_string_utf8(env, src, dstPtr, dstLen, &bytesCopied);
     } else {
         const len = dstLen + 1;
-        const buf = selva.selva_malloc(len);
+        const buf = selva.c.selva_malloc(len);
         _ = napi.c.napi_get_value_string_utf8(env, src, @ptrCast(buf), len, &bytesCopied);
-        _ = selva.memcpy(dstPtr, buf, bytesCopied);
-        selva.selva_free(buf);
+        _ = selva.c.memcpy(dstPtr, buf, bytesCopied);
+        selva.c.selva_free(buf);
     }
 
     _ = napi.c.napi_create_double(env, @floatFromInt(bytesCopied), &result);

@@ -1,9 +1,10 @@
 const assert = std.debug.assert;
-const db = @import("../db/db.zig");
-const Node = @import("../db/node.zig");
+const selva = @import("../selva/selva.zig").c;
+const Db = @import("../selva/db.zig");
+const Node = @import("../selva/node.zig");
+const References = @import("../selva/references.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./common.zig");
-const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
 const std = @import("std");
 const edge = @import("./edges.zig");
@@ -19,12 +20,12 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         return len;
     }
 
-    const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
-    const refTypeEntry = try db.getType(ctx.db, refTypeId);
+    const refTypeId = Db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
+    const refTypeEntry = try Db.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
     var i: usize = 9;
 
-    db.preallocReferences(ctx, refsLen);
+    References.preallocReferences(ctx, refsLen);
 
     while (i < len) : (i += 5) {
         const op: RefEdgeOp = @enumFromInt(data[i]);
@@ -51,9 +52,9 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
         const index: i32 = if (hasIndex) read(i32, data, i + 5) else -1;
 
-        var ref: db.ReferenceAny = undefined;
+        var ref: Db.ReferenceAny = undefined;
         if (Node.getNode(refTypeEntry, id)) |dstNode| {
-            ref = try db.insertReference(ctx, ctx.node.?, ctx.fieldSchema.?, dstNode, index, hasIndex);
+            ref = try References.insertReference(ctx, ctx.node.?, ctx.fieldSchema.?, dstNode, index, hasIndex);
         } else {
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
@@ -84,17 +85,17 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn clearReferences(ctx: *ModifyCtx) void {
-    const refs = db.getReferences(ctx.node.?, ctx.fieldSchema.?);
+    const refs = References.getReferences(ctx.node.?, ctx.fieldSchema.?);
     if (refs) |r| {
         if (r.nr_refs == 0) {
             // Is empty already
             return;
         } else {
             const refsIndex = r.index[0..r.nr_refs];
-            const edgeConstraint = db.getEdgeFieldConstraint(ctx.fieldSchema.?);
+            const edgeConstraint = Db.getEdgeFieldConstraint(ctx.fieldSchema.?);
             Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
         }
-        db.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
+        References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
     }
 }
 
@@ -110,7 +111,7 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
     while (i < len) : (i += 4) {
         const id = read(u32, data, i + 4);
-        try db.deleteReference(
+        try References.deleteReference(
             ctx,
             ctx.node.?,
             ctx.fieldSchema.?,
@@ -140,7 +141,7 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
     const u32ids = read([]u32, aligned, 0);
 
-    try db.putReferences(
+    try References.putReferences(
         ctx,
         ctx.node.?,
         ctx.fieldSchema.?,

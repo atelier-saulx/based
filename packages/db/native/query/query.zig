@@ -1,5 +1,5 @@
 const std = @import("std");
-const db = @import("../db/db.zig");
+const db = @import("../selva/db.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const Sort = @import("../db/sort.zig");
@@ -7,7 +7,6 @@ const Query = @import("./common.zig");
 const utils = @import("../utils.zig");
 const multiple = @import("./multiple.zig");
 const threads = @import("../db/threads.zig");
-
 const t = @import("../types.zig");
 
 // -------- NAPI ---------- (put in js bridge maybe?)
@@ -30,20 +29,20 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
     buffer: []u8,
-    threadCtx: *db.DbThread,
+    thread: *db.DbThread,
     _: ?*Sort.SortIndexMeta,
 ) !void {
     var index: usize = 0;
 
     var ctx: Query.QueryCtx = .{
         .db = dbCtx,
-        .threadCtx = threadCtx,
+        .thread = thread,
     };
 
     const queryId = utils.readNext(u32, buffer, &index);
     const q = buffer[index .. buffer.len - 8]; // - checksum len
     const op = utils.read(t.OpType, q, 0);
-    _ = try threads.newResult(true, threadCtx, 0, queryId, op);
+    _ = try threads.newResult(true, thread, 0, queryId, op);
 
     switch (op) {
         t.OpType.default => {

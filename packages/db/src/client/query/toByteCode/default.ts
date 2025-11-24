@@ -44,6 +44,7 @@ export const defaultQuery = (
       limit: def.range.limit,
       sort: hasSort,
       includeEdge: false,
+      edgeIncludeOffset: 0,
       filterSize: def.filter.size,
       searchSize,
       subType: getQuerySubType(def),

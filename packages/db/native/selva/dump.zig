@@ -1,6 +1,6 @@
 const db = @import("db.zig");
-const selva = @import("../selva.zig").c;
-const SelvaHash128 = @import("../selva.zig").SelvaHash128;
+const selva = @import("selva.zig").c;
+const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const utils = @import("../utils.zig");
 const threads = @import("../db/threads.zig");
 const t = @import("../types.zig");
@@ -19,14 +19,12 @@ pub fn saveCommon(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType
         .errlog_size = 0,
     };
     var err: c_int = undefined;
-
     err = selva.selva_dump_save_common(ctx.selva, &com, filename.ptr);
-    utils.write(c_int, data, err, 0);
+    utils.write(data, err, 0);
 }
 
 // sdbFilename must be nul-terminated
 pub fn saveBlock(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
-    std.debug.print("\n--------saveBlock-------\n", .{});
     const id = read(u32, q, 0);
     const data = try threads.newResult(true, threadCtx, 26, id, op);
     const start = read(u32, q, 5);
@@ -39,12 +37,12 @@ pub fn saveBlock(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType)
 
     const te = selva.selva_get_type_by_index(ctx.selva, typeCode);
     if (te == null) {
-        utils.write(c_int, data, selva.SELVA_EINTYPE, 0);
+        utils.write(data, selva.SELVA_EINTYPE, 0);
         return;
     }
 
     err = selva.selva_dump_save_block(ctx.selva, te, filename.ptr, start, &hash);
-    utils.write(c_int, data, err, 0);
+    utils.write(data, err, 0);
     utils.byteCopy(data, &hash, 10);
 }
 
@@ -73,12 +71,12 @@ pub fn loadCommon(
         defer selva.selva_free(@constCast(com.meta_data));
         dbCtx.ids = dbCtx.allocator.dupe(u32, ptr[0..len]) catch {
             err = selva.SELVA_ENOMEM;
-            utils.write(c_int, data, err, 0);
+            utils.write(data, err, 0);
             return;
         };
     }
 
-    utils.write(c_int, data, err, 0);
+    utils.write(data, err, 0);
 }
 
 pub fn loadBlock(
@@ -97,19 +95,19 @@ pub fn loadBlock(
 
     err = selva.selva_dump_load_block(dbCtx.selva, filename.ptr, errlog.ptr, errlog.len);
     if (err != 0) {
-        utils.write(c_int, data, err, 0);
+        utils.write(data, err, 0);
         return;
     }
 
     const te = selva.selva_get_type_by_index(dbCtx.selva, typeCode);
     if (te == null) {
-        utils.write(c_int, data, selva.SELVA_EINTYPE, 0);
+        utils.write(data, selva.SELVA_EINTYPE, 0);
         return;
     }
 
     var hash: SelvaHash128 = 0;
     err = selva.selva_node_block_hash(dbCtx.selva, te, start, &hash);
-    utils.write(c_int, data, err, 0);
+    utils.write(data, err, 0);
     utils.byteCopy(data, m[5..11], 4);
     utils.byteCopy(data, &hash, 10);
 }
@@ -128,7 +126,7 @@ pub fn unloadBlock(
 
     const te = selva.selva_get_type_by_index(dbCtx.selva, typeCode);
     if (te == null) {
-        utils.write(c_int, data, selva.SELVA_EINTYPE, 0);
+        utils.write(data, selva.SELVA_EINTYPE, 0);
         return;
     }
 
@@ -139,7 +137,7 @@ pub fn unloadBlock(
         return;
     }
 
-    utils.write(c_int, data, err, 0);
+    utils.write(data, err, 0);
     utils.byteCopy(data, m[5..11], 4);
     utils.byteCopy(data, &hash, 10);
 }
