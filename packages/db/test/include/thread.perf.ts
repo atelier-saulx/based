@@ -84,13 +84,13 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q = []
-      for (let i = 0; i < 1; i++) {
+      for (let i = 0; i < 1000; i++) {
         q.push(
           db
             .query('user')
             .include('id')
             .range(10)
-            // .range(0, 1_000_000 + i)
+            .range(0, 1_000_000 + i)
             .get(),
           // .inspect(),
         )
@@ -98,10 +98,10 @@ await test('include', async (t) => {
       await Promise.all(q)
     },
     '1B nodes',
-    { repeat: 1 },
+    { repeat: 10 },
   )
 
   console.log('done')
 
-  // await wait(100)
+  await wait(100)
 })
