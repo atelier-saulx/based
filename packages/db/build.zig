@@ -25,7 +25,42 @@ pub fn build(b: *std.Build) void {
 
     lib.linker_allow_shlib_undefined = true;
     lib.root_module.addOptions("config", options);
-    const node_hpath = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse "deps/node-v22.21.1/include/node";
+    _ = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse "deps/node-v22.21.1/include/node";
+
+    const alloc = std.heap.page_allocator;
+    const argv = [_][]const u8{ "node", "--version" };
+    const proc = std.process.Child.run(.{
+        .argv = &argv,
+        .allocator = alloc,
+    }) catch |err| {
+        std.debug.print("Failed to spawn child process: {s}\n", .{@errorName(err)});
+        return;
+    };
+
+    // on success, we own the output streams
+    defer alloc.free(proc.stdout);
+    defer alloc.free(proc.stderr);
+
+    var nodeVersion = std.mem.splitScalar(u8, proc.stdout, '.');
+    const nodeMajor = nodeVersion.next() orelse "v22";
+    const nodeMinor = nodeVersion.next() orelse "21";
+    const nodePatch = std.mem.trimRight(u8, nodeVersion.next() orelse "1", " \n\r\t");
+
+    var os_name: []const u8 = @tagName(target.result.os.tag);
+    if (target.result.os.tag == .macos) {
+        os_name = "darwin";
+    }
+    const dest_path = b.fmt("../../dist/lib/{s}_{s}/libnode-{s}.node", .{
+        os_name,
+        @tagName(target.result.cpu.arch),
+        nodeMajor,
+    });
+    const node_hpath = b.fmt("deps/node-{s}.{s}.{s}/include/node", .{
+        nodeMajor,
+        nodeMinor,
+        nodePatch,
+    });
+
     lib.addIncludePath(b.path(node_hpath));
 
     const rpath = b.option([]const u8, "rpath", "run-time search path") orelse "@loader_path";
@@ -37,28 +72,6 @@ pub fn build(b: *std.Build) void {
     lib.addLibraryPath(b.path(lib_selva_path));
     lib.linkSystemLibrary("selva");
     lib.linkLibC();
-
-    // Extract node major version from the header path
-    var node_version: []const u8 = "v22"; // default
-    var it = std.mem.splitScalar(u8, node_hpath, '-');
-    _ = it.next(); // "node"
-    if (it.next()) |version_part| {
-        var version_it = std.mem.splitScalar(u8, version_part, '.');
-        if (version_it.next()) |major| {
-            node_version = major;
-        }
-    }
-
-    var os_name: []const u8 = @tagName(target.result.os.tag);
-    if (target.result.os.tag == .macos) {
-        os_name = "darwin";
-    }
-
-    const dest_path = b.fmt("../../dist/lib/{s}_{s}/libnode-{s}.node", .{
-        os_name,
-        @tagName(target.result.cpu.arch),
-        node_version,
-    });
 
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = dest_path,
