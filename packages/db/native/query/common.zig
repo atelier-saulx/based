@@ -2,6 +2,7 @@ const std = @import("std");
 const results = @import("./results.zig");
 const db = @import("../db/db.zig");
 const selva = @import("../selva.zig").c;
+const Node = @import("../db/node.zig");
 
 pub const Refs = struct { refs: db.References, fs: db.FieldSchema };
 
@@ -15,15 +16,15 @@ pub inline fn resolveRefsNode(
     ctx: *db.DbCtx,
     refs: Refs,
     i: usize,
-) ?db.Node {
+) ?Node.Node {
     const dstType = db.getRefDstType(ctx, refs.fs) catch {
         return null;
     };
 
     if (refs.refs.*.size == selva.SELVA_NODE_REFERENCE_SMALL) {
-        return db.getNodeFromReference(dstType, &refs.refs.unnamed_0.small[i]);
+        return Node.getNodeFromReference(dstType, &refs.refs.unnamed_0.small[i]);
     } else if (refs.refs.size == selva.SELVA_NODE_REFERENCE_LARGE) {
-        return db.getNodeFromReference(dstType, &refs.refs.unnamed_0.large[i]);
+        return Node.getNodeFromReference(dstType, &refs.refs.unnamed_0.large[i]);
     }
 
     return null;

@@ -1,6 +1,7 @@
 const Query = @import("../common.zig");
 const std = @import("std");
 const db = @import("../../db/db.zig");
+const Node = @import("../../db/node.zig");
 const results = @import("../results.zig");
 const errors = @import("../../errors.zig");
 const utils = @import("../../utils.zig");
@@ -16,15 +17,15 @@ pub const ResultType = enum(u8) {
 
 pub inline fn get(
     ctx: *Query.QueryCtx,
-    node: db.Node,
+    node: Node.Node,
     field: u8,
     prop: t.PropType,
-    typeEntry: db.Type,
+    typeEntry: Node.Type,
     edgeRef: ?Query.RefStruct,
     comptime isEdge: bool,
     comptime subType: ResultType,
 ) !?*results.Result {
-    var actNode: db.Node = node;
+    var actNode: Node.Node = node;
     var value: []u8 = undefined;
     var fieldSchema: db.FieldSchema = undefined;
     var result: results.Result = undefined;
@@ -32,7 +33,7 @@ pub inline fn get(
     if (isEdge) {
         const edgeConstraint = edgeRef.?.edgeConstraint;
         fieldSchema = try db.getEdgeFieldSchema(ctx.db, edgeConstraint, field);
-        if (db.getNode(try db.getEdgeType(ctx.db, edgeConstraint), edgeRef.?.largeReference.?.edge)) |edgeNode| {
+        if (Node.getNode(try db.getEdgeType(ctx.db, edgeConstraint), edgeRef.?.largeReference.?.edge)) |edgeNode| {
             actNode = edgeNode;
         } else {
             return null;

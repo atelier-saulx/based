@@ -1,7 +1,8 @@
 const std = @import("std");
-const selva = @import("../selva.zig").c;
 const napi = @import("../napi.zig");
+const selva = @import("../selva.zig").c;
 const db = @import("../db/db.zig");
+const Node = @import("../db/node.zig");
 const Modify = @import("./common.zig");
 const create = @import("./create.zig");
 const delete = @import("./delete.zig");
@@ -66,7 +67,7 @@ fn writeoutPrevNodeId(ctx: *ModifyCtx, resultLen: *u32, prevNodeId: u32, result:
 fn newNode(ctx: *ModifyCtx) !void {
     const id = ctx.db.ids[ctx.typeId - 1] + 1;
 
-    ctx.node = try db.upsertNode(ctx, ctx.typeEntry.?, id);
+    ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, id);
     ctx.id = id;
     ctx.db.ids[ctx.typeId - 1] = id;
     Modify.markDirtyRange(ctx, ctx.typeId, id);
@@ -74,12 +75,12 @@ fn newNode(ctx: *ModifyCtx) !void {
 
 fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     const nextId = ctx.db.ids[ctx.typeId - 1] % maxId + 1;
-    ctx.node = db.getNode(ctx.typeEntry.?, nextId);
+    ctx.node = Node.getNode(ctx.typeEntry.?, nextId);
 
     if (ctx.node) |oldNode| {
         db.flushNode(ctx, ctx.typeEntry.?, oldNode);
     } else {
-        ctx.node = try db.upsertNode(ctx, ctx.typeEntry.?, nextId);
+        ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, nextId);
     }
 
     ctx.id = nextId;
@@ -87,7 +88,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
 }
 
-fn getLargeRef(node: db.Node, fs: db.FieldSchema, dstId: u32) ?db.ReferenceLarge {
+fn getLargeRef(node: Node.Node, fs: db.FieldSchema, dstId: u32) ?db.ReferenceLarge {
     if (dstId == 0) { // assume reference
         return db.getSingleReference(node, fs);
     } else { // references
@@ -118,7 +119,7 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
         switchType(ctx, efc.edge_node_type) catch {
             return 0;
         };
-        const edgeNode = db.ensureRefEdgeNode(ctx, ctx.node.?, efc, ref) catch {
+        const edgeNode = Node.ensureRefEdgeNode(ctx, ctx.node.?, efc, ref) catch {
             return 0;
         };
         const edgeId = ref.*.edge;
@@ -239,7 +240,7 @@ pub fn modify(
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
                 }
-                ctx.node = try db.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
+                ctx.node = try Node.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
@@ -249,7 +250,7 @@ pub fn modify(
                     writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
-                    ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
+                    ctx.node = Node.getNode(ctx.typeEntry.?, ctx.id);
                     if (ctx.node == null) {
                         ctx.err = errors.ClientError.nx;
                     } else {
@@ -279,7 +280,7 @@ pub fn modify(
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
-                        write(u32, operation, db.getNodeId(node), updateIndex + 1);
+                        write(u32, operation, Node.getNodeId(node), updateIndex + 1);
                         nextIndex = updateIndex;
                         break;
                     }
@@ -297,7 +298,7 @@ pub fn modify(
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
-                        const id = db.getNodeId(node);
+                        const id = Node.getNodeId(node);
                         write(u32, batch, id, resultLen);
                         write(u8, batch, @intFromEnum(errors.ClientError.null), resultLen + 4);
                         resultLen += 5;

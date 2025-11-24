@@ -1,4 +1,5 @@
 const db = @import("../db/db.zig");
+const Node = @import("../db/node.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./common.zig");
 const errors = @import("../errors.zig");
@@ -28,16 +29,16 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
 
     const oldRefDst = db.getSingleReference(ctx.node.?, ctx.fieldSchema.?);
     const dstType = try db.getRefDstType(ctx.db, ctx.fieldSchema.?);
-    const dstNode = db.getNodeFromReference(dstType, oldRefDst);
+    const dstNode = Node.getNodeFromReference(dstType, oldRefDst);
 
     if (dstNode) |d| {
-        if (db.getNodeId(d) == id) {
+        if (Node.getNodeId(d) == id) {
             ref = oldRefDst;
         }
     }
 
     if (ref == null) {
-        if (db.getNode(refTypeEntry, id)) |dst| {
+        if (Node.getNode(refTypeEntry, id)) |dst| {
             ref = try db.writeReference(ctx, ctx.node.?, ctx.fieldSchema.?, dst);
         } else {
             return 5; //TODO WARN errors.SelvaError.SELVA_ENOENT

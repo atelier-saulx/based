@@ -2,6 +2,7 @@ const std = @import("std");
 const db = @import("../../db/db.zig");
 const utils = @import("../../utils.zig");
 const selva = @import("../../selva.zig").c;
+const Node = @import("../../db/node.zig");
 const Query = @import("../common.zig");
 const t = @import("../../types.zig");
 
@@ -127,8 +128,8 @@ inline fn execAgg(
 
 pub inline fn aggregate(
     agg: []u8,
-    typeEntry: db.Type,
-    node: db.Node,
+    typeEntry: Node.Type,
+    node: Node.Node,
     accumulatorField: []u8,
     hllAccumulator: anytype,
     hadAccumulated: *bool,
