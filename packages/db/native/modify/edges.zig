@@ -1,8 +1,9 @@
 const Modify = @import("common.zig");
 const selva = @import("../selva/selva.zig").c;
 const Db = @import("../selva/db.zig");
-const Node = @import("../selva/node.zig");
 const Schema = @import("../selva/schema.zig");
+const Node = @import("../selva/node.zig");
+const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");
 const utils = @import("../utils.zig");
 const errors = @import("../errors.zig");
@@ -55,7 +56,7 @@ pub fn writeEdges(
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
             const mainBufferOffset = len - totalMainBufferLen;
-            const val = Db.getField(null, edgeNode, edgeFieldSchema, propType);
+            const val = Fields.getField(null, edgeNode, edgeFieldSchema, propType);
             if (!isMainEmpty(val)) {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 var j: usize = offset + i;
@@ -71,7 +72,7 @@ pub fn writeEdges(
                 }
             } else {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
-                try Db.writeField(edgeNode, edgeFieldSchema, edgeData);
+                try Fields.writeField(edgeNode, edgeFieldSchema, edgeData);
             }
         } else switch (propType) {
             t.PropType.reference => {
@@ -102,7 +103,7 @@ pub fn writeEdges(
             t.PropType.cardinality => {
                 len = read(u32, data, i);
                 offset = 4;
-                const hll = try Db.ensureEdgePropTypeString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
+                const hll = try Fields.ensureEdgePropTypeString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
                 selva.hll_init(hll, 8, true); // TBD: to get optionals from buffer
                 var it: usize = i + offset;
                 while (it < len) {
@@ -115,7 +116,7 @@ pub fn writeEdges(
                 len = read(u32, data, i);
                 offset = 4;
                 const edgeData = data[i + offset .. i + offset + len];
-                try Db.writeField(edgeNode, edgeFieldSchema, edgeData);
+                try Fields.writeField(edgeNode, edgeFieldSchema, edgeData);
             },
         }
         i += offset + len;

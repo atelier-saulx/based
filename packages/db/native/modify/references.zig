@@ -1,13 +1,14 @@
 const assert = std.debug.assert;
 const selva = @import("../selva/selva.zig").c;
 const Db = @import("../selva/db.zig");
+const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");
 const read = @import("../utils.zig").read;
-const Modify = @import("./common.zig");
+const Modify = @import("common.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
-const edge = @import("./edges.zig");
+const edge = @import("edges.zig");
 const RefEdgeOp = @import("../types.zig").RefEdgeOp;
 const move = @import("../utils.zig").move;
 
@@ -20,7 +21,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         return len;
     }
 
-    const refTypeId = Db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
+    const refTypeId = Schema.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
     const refTypeEntry = try Node.getType(ctx.db, refTypeId);
     const refsLen: usize = read(u32, data, 5);
     var i: usize = 9;

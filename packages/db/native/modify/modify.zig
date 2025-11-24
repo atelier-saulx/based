@@ -2,8 +2,9 @@ const std = @import("std");
 const napi = @import("../napi.zig");
 const selva = @import("../selva/selva.zig").c;
 const Db = @import("../selva/db.zig");
-const Node = @import("../selva/node.zig");
 const Schema = @import("../selva/schema.zig");
+const Node = @import("../selva/node.zig");
+const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");
 const Modify = @import("common.zig");
 const createField = @import("create.zig").createField;
@@ -285,7 +286,7 @@ pub fn modify(
                     const prop = read(u8, operation, j);
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
-                    if (Db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                    if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         write(operation, Node.getNodeId(node), updateIndex + 1);
                         nextIndex = updateIndex;
                         break;
@@ -303,7 +304,7 @@ pub fn modify(
                     const prop = read(u8, operation, j);
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
-                    if (Db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                    if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = Node.getNodeId(node);
                         write(batch, id, resultLen);
                         write(batch, errors.ClientError.null, resultLen + 4);
@@ -344,13 +345,13 @@ pub fn modify(
                 i += try increment(&ctx, operation, op) + 1;
             },
             t.ModOp.expire => {
-                Db.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
+                Node.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
                 i += 5;
             },
         }
     }
 
-    Db.expire(&ctx);
+    Node.expire(&ctx);
     writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
     write(result, resultLen, 0);
 

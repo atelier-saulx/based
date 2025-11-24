@@ -171,3 +171,13 @@ pub fn deleteNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) !void {
 pub fn flushNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) void {
     selva.c.selva_flush_node(ctx.db.selva, typeEntry, node, selva.markDirtyCb, ctx);
 }
+
+pub fn expireNode(ctx: *Modify.ModifyCtx, typeId: t.TypeId, nodeId: u32, ts: i64) void {
+    selva.c.selva_expire_node(ctx.db.selva, typeId, nodeId, ts, selva.c.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
+    Modify.markDirtyRange(ctx, typeId, nodeId);
+}
+
+pub fn expire(ctx: *Modify.ModifyCtx) void {
+    // Expire things before query
+    selva.c.selva_db_expire_tick(ctx.db.selva, selva.markDirtyCb, ctx, std.time.timestamp());
+}

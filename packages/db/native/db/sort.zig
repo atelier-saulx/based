@@ -1,8 +1,9 @@
 const deflate = @import("../deflate.zig");
 const selva = @import("../selva/selva.zig").c;
 const Db = @import("../selva/db.zig");
-const Node = @import("../selva/node.zig");
 const Schema = @import("../selva/schema.zig");
+const Node = @import("../selva/node.zig");
+const Fields = @import("../selva/fields.zig");
 const std = @import("std");
 const utils = @import("../utils.zig");
 const t = @import("../types.zig");
@@ -162,13 +163,13 @@ pub fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = if (header.propType == t.PropType.text) Db.getText(
+        const data = if (header.propType == t.PropType.text) Fields.getText(
             typeEntry,
             node.?,
             fieldSchema,
             header.propType,
             header.lang,
-        ) else Db.getField(
+        ) else Fields.getField(
             typeEntry,
             node.?,
             fieldSchema,

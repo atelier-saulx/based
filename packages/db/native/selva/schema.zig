@@ -73,3 +73,8 @@ pub fn getEdgeFieldSchema(db: *Db.DbCtx, edgeConstraint: EdgeFieldConstraint, fi
 pub inline fn getEdgeFieldConstraint(fieldSchema: FieldSchema) EdgeFieldConstraint {
     return selva.c.selva_get_edge_field_constraint(fieldSchema);
 }
+
+pub fn getRefTypeIdFromFieldSchema(fieldSchema: FieldSchema) u16 {
+    const result = selva.c.selva_get_edge_field_constraint(fieldSchema).*.dst_node_type;
+    return result;
+}
