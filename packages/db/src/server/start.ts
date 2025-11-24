@@ -114,7 +114,7 @@ export async function start(db: DbServer, opts: StartOpts) {
           if (fname?.length > 0) {
             try {
               // Can't use loadBlock() yet because blockMap is not avail
-              await loadBlockRaw(db, join(path, fname))
+              await loadBlockRaw(db, def.id, dump.start, join(path, fname))
             } catch (e) {
               console.error(e.message)
             }

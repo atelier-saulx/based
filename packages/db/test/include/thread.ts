@@ -9,7 +9,8 @@ await test('include', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => db.stop())
+  //t.after(() => db.stop())
+  t.after(() => t.backup(db))
 
   // var d = Date.now()
   // var cnt = 0
