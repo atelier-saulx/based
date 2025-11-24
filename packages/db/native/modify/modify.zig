@@ -83,7 +83,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     ctx.node = Node.getNode(ctx.typeEntry.?, nextId);
 
     if (ctx.node) |oldNode| {
-        Db.flushNode(ctx, ctx.typeEntry.?, oldNode);
+        Node.flushNode(ctx, ctx.typeEntry.?, oldNode);
     } else {
         ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, nextId);
     }
@@ -219,7 +219,7 @@ pub fn modify(
             t.ModOp.deleteNode => {
                 if (ctx.node) |node| {
                     subs.stage(&ctx, subs.Op.deleteNode);
-                    Db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
+                    Node.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
                     ctx.node = null;
                 }
                 i = i + 1;

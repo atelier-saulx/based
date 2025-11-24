@@ -165,18 +165,6 @@ pub fn getRefTypeIdFromFieldSchema(fieldSchema: Schema.FieldSchema) u16 {
     return result;
 }
 
-pub fn deleteNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: st.Node) !void {
-    selva.selva_del_node(ctx.db.selva, typeEntry, node, st.markDirtyCb, ctx);
-}
-
-pub fn flushNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: st.Node) void {
-    selva.selva_flush_node(ctx.db.selva, typeEntry, node, st.markDirtyCb, ctx);
-}
-
-pub inline fn getNodeIdAsSlice(node: st.Node) []u8 {
-    return @as([*]u8, @ptrCast(node))[0..4];
-}
-
 pub fn getNodeBlockHash(db: *DbCtx, typeEntry: Type, start: u32, hashOut: *SelvaHash128) c_int {
     return selva.selva_node_block_hash(db.selva, typeEntry, start, hashOut);
 }

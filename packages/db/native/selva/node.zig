@@ -55,6 +55,10 @@ pub inline fn getNodeId(node: Node) u32 {
     return utils.read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
 }
 
+pub inline fn getNodeIdAsSlice(node: Node) []u8 {
+    return @as([*]u8, @ptrCast(node))[0..4];
+}
+
 pub inline fn getNodeTypeId(node: Node) t.TypeId {
     return selva.c.selva_get_node_type(node);
 }
@@ -158,4 +162,12 @@ pub fn getEdgeNode(db: *Db.DbCtx, efc: selva.EdgeFieldConstraint, ref: selva.Ref
 
     const edge_type = selva.c.selva_get_type_by_index(db.selva, efc.*.edge_node_type);
     return selva.c.selva_find_node(edge_type, ref.*.edge);
+}
+
+pub fn deleteNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) !void {
+    selva.c.selva_del_node(ctx.db.selva, typeEntry, node, selva.markDirtyCb, ctx);
+}
+
+pub fn flushNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) void {
+    selva.c.selva_flush_node(ctx.db.selva, typeEntry, node, selva.markDirtyCb, ctx);
 }
