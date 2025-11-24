@@ -1,12 +1,11 @@
 const std = @import("std");
-const Query = @import("../common.zig");
-const utils = @import("../../utils.zig");
-const db = @import("../../db/db.zig");
-const threads = @import("../../db/threads.zig");
-const Node = @import("../../db/node.zig");
-
-const t = @import("../../types.zig");
-// const f = @import("./field.zig");
+const Query = @import("./common.zig");
+const utils = @import("../utils.zig");
+const db = @import("../db/db.zig");
+const threads = @import("../db/threads.zig");
+const Node = @import("../db/node.zig");
+const t = @import("../types.zig");
+// const f = @import("./prop.zig");
 // const o = @import("./opts.zig");
 
 // call this include
@@ -33,24 +32,8 @@ pub fn include(
         const op: t.IncludeOp = @enumFromInt(q[i]);
         i += 1;
         switch (op) {
-            // t.IncludeOp.edge => {
-            //     const edgeSize = read(u16, include, i);
-            //     i += 2;
-            //     const operation = include[i .. i + edgeSize];
-            //     if (!idIsSet) {
-            //         idIsSet = true;
-            //         // size += try addIdOnly(ctx, id, score);
-            //     }
-            //     // just get the edge node here
-            //     // edge is just a combination of EDGE + REFS
-            //     size += try getFields(node, ctx, id, typeEntry, operation, .{
-            //         .smallReference = edgeRef.?.smallReference,
-            //         .largeReference = edgeRef.?.largeReference,
-            //         .edgeConstraint = edgeRef.?.edgeConstraint,
-            //     }, null, true);
-            //     i += edgeSize + 2;
-            // },
             // t.IncludeOp.references => {
+            // call multiple
             //     const operation = include[i..];
             //     const refSize = read(u16, operation, 0);
             //     const multiRefs = operation[2 .. 2 + refSize];
@@ -62,6 +45,7 @@ pub fn include(
             //     size += getRefsFields(ctx, multiRefs, node, typeEntry, edgeRef, isEdge);
             // },
             // t.IncludeOp.reference => {
+            //  call single
             //     const operation = include[i..];
             //     const refSize = read(u16, operation, 0);
             //     const singleRef = operation[2 .. 2 + refSize];

@@ -21,11 +21,13 @@ const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const Queue = std.array_list.Managed([]u8);
 
+// TODO make 1 struct
 pub fn newFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
     const paddedSize: u32 = @truncate(size); // zero padding for growth
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
-        if (thread.queryResults.len < thread.queryResultsIndex + paddedSize) {
+        const newLen = thread.queryResultsIndex + paddedSize;
+        if (thread.queryResults.len < newLen) {
             if (paddedSize > 1_000_000) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
@@ -34,12 +36,11 @@ pub fn newFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]
                 thread.queryResults.len + increasedSize,
             );
         }
-        const currentSize = read(u32, thread.queryResults, thread.queryResultsIndexHeader);
-        write(u32, thread.queryResults, currentSize + paddedSize, thread.queryResultsIndexHeader);
-        const data = thread.queryResults[thread.queryResultsIndex .. thread.queryResultsIndex + paddedSize];
-        thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
+        const data = thread.queryResults[thread.queryResultsIndex..newLen];
+        thread.*.queryResultsIndex = newLen;
         return data;
     } else {
+        const newLen = thread.modifyResultsIndex + paddedSize;
         if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
             if (paddedSize > 100_000) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
@@ -49,18 +50,34 @@ pub fn newFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]
                 thread.modifyResults.len + increasedSize,
             );
         }
-        const currentSize = read(u32, thread.modifyResults, thread.modifyResultsIndexHeader);
-        write(u32, thread.modifyResults, currentSize + paddedSize, thread.modifyResultsIndexHeader);
-        const data = thread.modifyResults[thread.modifyResultsIndex .. thread.modifyResultsIndex + paddedSize];
-        thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;
+        const data = thread.modifyResults[thread.modifyResultsIndex..newLen];
+        thread.*.modifyResultsIndex = newLen;
         return data;
     }
 }
 
-pub fn appendToResult(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !comptime_int {
+pub fn appendToResult(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !usize {
     const size = utils.sizeOf(T);
-    utils.write(u32, try newFromResult(isQuery, thread, size), value);
+    utils.write(T, try newFromResult(isQuery, thread, size), value, 0);
     return size;
+}
+
+pub fn commitResult(comptime isQuery: bool, thread: *DbThread) void {
+    if (isQuery) {
+        write(
+            u32,
+            thread.queryResults,
+            @truncate(thread.queryResultsIndex - thread.queryResultsIndexHeader),
+            thread.queryResultsIndexHeader,
+        );
+    } else {
+        write(
+            u32,
+            thread.modifyResults,
+            @truncate(thread.modifyResultsIndex - thread.modifyResultsIndexHeader),
+            thread.modifyResultsIndexHeader,
+        );
+    }
 }
 
 pub fn newResult(
@@ -74,7 +91,8 @@ pub fn newResult(
     const paddedSize: u32 = @truncate(size + offset);
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
-        if (thread.queryResults.len < thread.queryResultsIndex + paddedSize) {
+        const newLen = thread.queryResultsIndex + paddedSize;
+        if (thread.queryResults.len < newLen) {
             if (paddedSize > 1_000_000) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
@@ -84,14 +102,14 @@ pub fn newResult(
             );
         }
         thread.queryResultsIndexHeader = thread.queryResultsIndex;
-        write(u32, thread.queryResults, paddedSize, thread.queryResultsIndex);
-        write(u32, thread.queryResults, id, thread.queryResultsIndex + 4);
+        write(u32, thread.queryResults, id, thread.queryResultsIndexHeader + 4);
         thread.queryResults[thread.queryResultsIndex + 8] = @intFromEnum(subType);
-        const data = thread.queryResults[thread.queryResultsIndex + offset .. thread.queryResultsIndex + paddedSize];
-        thread.*.queryResultsIndex = thread.queryResultsIndex + paddedSize;
+        const data = thread.queryResults[thread.queryResultsIndex + offset .. newLen];
+        thread.*.queryResultsIndex = newLen;
         return data;
     } else {
-        if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
+        const newLen = thread.modifyResultsIndex + paddedSize;
+        if (thread.modifyResults.len < newLen) {
             if (paddedSize > 100_000) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
@@ -101,11 +119,10 @@ pub fn newResult(
             );
         }
         thread.modifyResultsIndexHeader = thread.modifyResultsIndex;
-        write(u32, thread.modifyResults, paddedSize, thread.modifyResultsIndex);
-        write(u32, thread.modifyResults, id, thread.modifyResultsIndex + 4);
+        write(u32, thread.modifyResults, id, thread.modifyResultsIndexHeader + 4);
         thread.modifyResults[thread.modifyResultsIndex + 8] = @intFromEnum(subType);
-        const data = thread.modifyResults[thread.modifyResultsIndex + offset .. thread.modifyResultsIndex + paddedSize];
-        thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;
+        const data = thread.modifyResults[thread.modifyResultsIndex + offset .. newLen];
+        thread.*.modifyResultsIndex = newLen;
         return data;
     }
 }
@@ -323,6 +340,7 @@ pub const Threads = struct {
                     },
                 }
 
+                commitResult(true, threadCtx);
                 self.mutex.lock();
                 self.pendingQueries -= 1;
 
@@ -372,6 +390,8 @@ pub const Threads = struct {
                         },
                         else => {},
                     }
+
+                    commitResult(false, threadCtx);
 
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);

@@ -8,8 +8,9 @@ extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
 extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;
 
 pub inline fn increment(comptime T: type, buffer: []u8, value: T, offset: usize) void {
-    if (@typeInfo(T) != .Int) {
-        @compileError("increment expects an integer type, found " ++ @typeName(T));
+    switch (@typeInfo(T)) {
+        .int, .comptime_int => {}, // OK
+        else => @compileError("increment expects an integer type, found " ++ @typeName(T)),
     }
     const size = @bitSizeOf(T) / 8;
     const target = buffer[offset..][0..size];
@@ -156,4 +157,14 @@ pub inline fn datePart(timestamp: []u8, part: t.Interval, tz: i16) []const u8 {
 
 pub inline fn sizeOf(typeToCheck: type) comptime_int {
     return @bitSizeOf(typeToCheck) / 8;
+}
+
+pub fn perf(ctx: anytype, callback: anytype) !void {
+    var timer = try std.time.Timer.start();
+    if (@typeInfo(@TypeOf(callback)).Fn.params.len == 0) {
+        _ = callback();
+    } else {
+        _ = callback(ctx);
+    }
+    std.debug.print("{}ns\n", .{timer.read()});
 }
