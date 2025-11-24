@@ -91,7 +91,8 @@ await test('include', async (t) => {
             .query('user')
             .include('id')
             .range(0, 1_000_000 + i)
-            .get(),
+            .get()
+            .inspect(),
           // .inspect(),
         )
       }
