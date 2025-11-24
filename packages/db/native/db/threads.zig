@@ -21,8 +21,6 @@ const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const Queue = std.array_list.Managed([]u8);
 
-// TODO make 1 struct
-
 // Slice from result
 pub inline fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
     const paddedSize: u32 = @truncate(size); // zero padding for growth
@@ -33,13 +31,6 @@ pub inline fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: u
             if (paddedSize > increasedSize) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
-
-            // std.debug.print("thread #{any} - increase size from {any}mb to {any}mb \n", .{
-            //     thread.id,
-            //     @divTrunc(thread.queryResults.len, 1_000_000),
-            //     @divTrunc(thread.queryResults.len + increasedSize, 1_000_000),
-            // });
-
             thread.queryResults = try std.heap.raw_c_allocator.realloc(
                 thread.queryResults,
                 thread.queryResults.len + increasedSize,
@@ -76,13 +67,6 @@ pub inline fn reserveResultSpace(comptime isQuery: bool, thread: *DbThread, size
             if (paddedSize > increasedSize) {
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
-
-            // std.debug.print("thread #{any} - increase size from {any}mb to {any}mb \n", .{
-            //     thread.id,
-            //     @divTrunc(thread.queryResults.len, 1_000_000),
-            //     @divTrunc(thread.queryResults.len + increasedSize, 1_000_000),
-            // });
-
             thread.queryResults = try std.heap.raw_c_allocator.realloc(
                 thread.queryResults,
                 thread.queryResults.len + increasedSize,
@@ -217,6 +201,9 @@ pub const DbThread = struct {
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
     pendingModifies: usize,
+    mutex: Mutex = .{},
+    flushDone: Condition = .{},
+    flushed: bool,
 };
 
 pub const Threads = struct {
@@ -330,7 +317,7 @@ pub const Threads = struct {
         }
         self.modifyDone.signal();
         if (!self.jsModifyBridgeStaged) {
-            self.ctx.jsBridge.call(t.BridgeResponse.modify);
+            self.ctx.jsBridge.call(t.BridgeResponse.modify, 0);
             self.jsModifyBridgeStaged = true;
         }
         if (self.nextQueryQueue.items.len > 0) {
@@ -422,6 +409,21 @@ pub const Threads = struct {
                 self.mutex.lock();
                 self.pendingQueries -= 1;
 
+                if (threadCtx.queryResultsIndex > 100_000_000) {
+                    // std.debug.print("Need to wait for flush condition on this thread query buffer is larger then 100mb {any}mb \n", .{
+                    //     @divFloor(threadCtx.queryResultsIndex, 1_000_000),
+                    // });
+                    threadCtx.*.flushed = false;
+                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, threadCtx.id);
+                    threadCtx.*.mutex.lock();
+                    self.mutex.unlock();
+                    while (!threadCtx.flushed) {
+                        threadCtx.flushDone.wait(&threadCtx.mutex);
+                    }
+                    self.mutex.lock();
+                    threadCtx.*.mutex.unlock();
+                }
+
                 // If results size is too large move stuff to next query
 
                 if (self.pendingQueries == 0) {
@@ -429,12 +431,7 @@ pub const Threads = struct {
 
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
-                        self.ctx.jsBridge.call(t.BridgeResponse.query);
-                    }
-
-                    if (threadCtx.queryResultsIndex > 100_000_000) {
-                        std.debug.print("Need to wait for flush condition on this thread buffer is larger then 100mb \n", .{});
-                        // add wait condition
+                        self.ctx.jsBridge.call(t.BridgeResponse.query, 0);
                     }
 
                     if (self.nextModifyQueue.items.len > 0) {
@@ -470,7 +467,12 @@ pub const Threads = struct {
                             const data = try newResult(false, threadCtx, 4, read(u32, m, 0), op);
                             const typeCode = read(u32, m, 0);
                             const schema = m[5..m.len];
-                            const err = selva.selva_db_create_type(self.ctx.selva, @truncate(typeCode), schema.ptr, schema.len);
+                            const err = selva.selva_db_create_type(
+                                self.ctx.selva,
+                                @truncate(typeCode),
+                                schema.ptr,
+                                schema.len,
+                            );
                             _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
                         },
                         else => {},
@@ -481,6 +483,22 @@ pub const Threads = struct {
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
+
+                    if (threadCtx.modifyResultsIndex > 50_000_000) {
+                        // std.debug.print("Need to wait for flush condition on this modify query buffer is larger then 50mb {any}mb \n", .{
+                        //     @divFloor(threadCtx.modifyResultsIndex, 1_000_000),
+                        // });
+                        threadCtx.*.flushed = false;
+                        self.ctx.jsBridge.call(t.BridgeResponse.flushModify, threadCtx.id);
+                        threadCtx.*.mutex.lock();
+                        self.mutex.unlock();
+                        while (!threadCtx.flushed) {
+                            threadCtx.flushDone.wait(&threadCtx.mutex);
+                        }
+                        self.mutex.lock();
+                        threadCtx.*.mutex.unlock();
+                    }
+
                     threadCtx.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
@@ -537,6 +555,10 @@ pub const Threads = struct {
             threadCtx.*.decompressor = deflate.createDecompressor();
             threadCtx.*.libdeflateBlockState = deflate.initBlockState(305000);
             threadCtx.*.pendingModifies = 0;
+            threadCtx.*.flushed = false;
+            threadCtx.*.mutex = .{};
+            threadCtx.*.flushDone = .{};
+
             threadContainer.* = threadCtx;
         }
 

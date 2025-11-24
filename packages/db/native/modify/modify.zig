@@ -92,18 +92,19 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
 }
 
-fn getLargeRef(node: Node.Node, fs: Db.FieldSchema, dstId: u32) ?Db.ReferenceLarge {
+fn getLargeRef(db: *Db.DbCtx, node: Node.Node, fs: Db.FieldSchema, dstId: u32) ?Db.ReferenceLarge {
     if (dstId == 0) { // assume reference
         return References.getSingleReference(node, fs);
     } else { // references
-        const refs = References.getReferences(node, fs);
-        const any = References.referencesGet(refs, dstId);
-        if (any.type == selva.SELVA_NODE_REFERENCE_LARGE) {
-            return any.p.large;
-        } else {
-            return null;
+        if (References.getReferences(true, db, node, fs)) |iterator| {
+            const refs = iterator.refs;
+            const any = References.referencesGet(refs, dstId);
+            if (any.type == selva.SELVA_NODE_REFERENCE_LARGE) {
+                return any.p.large;
+            }
         }
     }
+    return null;
 }
 
 fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
@@ -118,7 +119,7 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
     };
     ctx.fieldSchema = fs;
 
-    if (getLargeRef(ctx.node.?, fs, dstId)) |ref| {
+    if (getLargeRef(ctx.db, ctx.node.?, fs, dstId)) |ref| {
         const efc = Db.getEdgeFieldConstraint(fs);
         switchType(ctx, efc.edge_node_type) catch {
             return 0;

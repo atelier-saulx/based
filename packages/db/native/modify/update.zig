@@ -2,6 +2,7 @@ const std = @import("std");
 const selva = @import("../selva/selva.zig").c;
 const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
+const References = @import("../selva/references.zig");
 const sort = @import("../db/sort.zig");
 const Modify = @import("./common.zig");
 const utils = @import("../utils.zig");
@@ -27,7 +28,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             switch (@as(t.RefOp, @enumFromInt(data[4]))) {
                 // overwrite
                 t.RefOp.overwrite => {
-                    references.clearReferences(ctx);
+                    References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
                     return references.updateReferences(ctx, data);
                 },
                 // add
@@ -40,7 +41,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 },
                 // put
                 t.RefOp.putOverwrite => {
-                    references.clearReferences(ctx);
+                    References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
                     return references.putReferences(ctx, data);
                 },
                 // put

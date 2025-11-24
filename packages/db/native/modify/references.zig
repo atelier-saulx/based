@@ -84,21 +84,6 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     return len;
 }
 
-pub fn clearReferences(ctx: *ModifyCtx) void {
-    const refs = References.getReferences(ctx.node.?, ctx.fieldSchema.?);
-    if (refs) |r| {
-        if (r.nr_refs == 0) {
-            // Is empty already
-            return;
-        } else {
-            const refsIndex = r.index[0..r.nr_refs];
-            const edgeConstraint = Db.getEdgeFieldConstraint(ctx.fieldSchema.?);
-            Modify.markReferencesDirty(ctx, edgeConstraint.*.dst_node_type, refsIndex);
-        }
-        References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
-    }
-}
-
 pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
 
