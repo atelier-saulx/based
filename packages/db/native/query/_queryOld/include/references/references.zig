@@ -12,15 +12,6 @@ const defaultReferences = @import("./default.zig").defaultReferences;
 const utils = @import("../../../utils.zig");
 const t = @import("../../../types.zig");
 
-//  Multiple References Protocol Schema:
-
-// | Offset  | Field     | Size (bytes)| Description                          |
-// |---------|-----------|-------------|--------------------------------------|
-// | 0       | op        | 1           | Operation identifier (253)           |
-// | 1       | prop      | 1           | PropType identifier                      |
-// | 2       | refSize   | 4           | Reference size (u32)                 |
-// | 6       | totalRefs | 4           | Total number of references (u32)     |
-
 pub fn getRefsFields(
     ctx: *Query.QueryCtx,
     include: []u8,
@@ -29,6 +20,7 @@ pub fn getRefsFields(
     ref: ?Query.RefStruct,
     comptime isEdge: bool,
 ) usize {
+    // just header
     const filterSize: u16 = read(u16, include, 0);
     const sortSize: u16 = read(u16, include, 2);
     const offset: u32 = read(u32, include, 4);

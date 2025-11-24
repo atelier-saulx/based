@@ -267,11 +267,15 @@ export const enum includeOp {
   PARTIAL = 7,
 }
 
-// allow UINT8ARRAY
-export type IntermediateByteCode =
+export type IntermediateByteCodeLeaf =
   | {
       buffer: Uint8Array
       def: QueryDef
       needsMetaResolve?: boolean
     }
   | Uint8Array
+
+// allow UINT8ARRAY
+export type IntermediateByteCode =
+  | IntermediateByteCodeLeaf
+  | (IntermediateByteCodeLeaf | IntermediateByteCode)[]

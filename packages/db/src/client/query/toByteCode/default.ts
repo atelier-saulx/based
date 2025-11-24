@@ -3,70 +3,66 @@ import { QueryDef, QueryType, IntermediateByteCode } from '../types.js'
 import { getQuerySubType } from './subType.js'
 import {
   ID_PROP,
-  QueryDefaultHeaderByteSize,
+  QueryHeaderByteSize,
   SortHeaderByteSize,
-  SortOrder,
-  writeQueryDefaultHeader,
-  writeQueryDefaultHeaderProps,
+  writeQueryHeader,
   writeSortHeader,
 } from '../../../zigTsExports.js'
+import { searchToBuffer } from '../search/index.js'
+import { includeToBuffer } from '../include/toByteCode.js'
+import { DbClient } from '../../../index.js'
+import { byteSize } from './utils.js'
 
 export const defaultQuery = (
+  db: DbClient,
   def: QueryDef,
-  filterSize: number,
-  searchSize: number,
-  search: Uint8Array,
 ): IntermediateByteCode => {
-  let sortSize = 0
-  const idDescSort = def.sort?.prop === ID_PROP
+  const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
+  const hasSearch = !!def.search
+  const hasFilter = def.filter.size > 0
+  const searchSize = hasSearch ? def.search.size : 0
+  const sortSize = hasSort ? SortHeaderByteSize : 0
+  const filterSize = def.filter.size
 
-  if (def.sort && !idDescSort) {
-    sortSize = SortHeaderByteSize
-  }
-
-  console.log(sortSize, def.sort)
+  const include = includeToBuffer(db, def)
+  // also add reference
+  // also add references
+  // also add edge
 
   const buffer = new Uint8Array(
-    1 + QueryDefaultHeaderByteSize + filterSize + sortSize + searchSize,
+    QueryHeaderByteSize + searchSize + filterSize + sortSize,
   )
 
-  let index = 0
-  buffer[index++] = QueryType.default
-
-  index = writeQueryDefaultHeader(
+  let index = writeQueryHeader(
     buffer,
     {
+      op: QueryType.default,
+      prop: ID_PROP,
+      size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
       typeId: def.schema.id,
       offset: def.range.offset,
       limit: def.range.limit,
-      sortSize,
-      filterSize,
+      sort: hasSort,
+      includeEdge: false,
+      filterSize: def.filter.size,
       searchSize,
-      // to this thing pass the sort object...
-      subType: getQuerySubType(
-        filterSize,
-        sortSize,
-        searchSize,
-        def.sort?.order === SortOrder.desc,
-        idDescSort,
-        searchSize > 0 && search[0] === 1,
-      ),
+      subType: getQuerySubType(def),
     },
-    index,
+    0,
   )
 
-  if (sortSize) {
+  if (hasSort) {
     index = writeSortHeader(buffer, def.sort, index)
   }
 
-  if (filterSize) {
+  if (hasFilter) {
     buffer.set(filterToBuffer(def.filter, index), index)
-    index += filterSize
+    index += def.filter.size
   }
 
-  if (searchSize) {
-    buffer.set(search, index)
+  if (hasSearch) {
+    buffer.set(searchToBuffer(def.search), index)
   }
 
-  return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }
+  return [{ buffer, def, needsMetaResolve: def.filter.hasSubMeta }, include]
 }

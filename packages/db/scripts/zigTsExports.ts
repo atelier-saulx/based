@@ -855,6 +855,13 @@ const parseZig = (input: string): string => {
       }
     }
     output += `}\n\n`
+
+    // 6. Export Create Function
+    output += `export const create${name} = (header: ${name}): Uint8Array => {\n`
+    output += `  const buffer = new Uint8Array(${name}ByteSize)\n`
+    output += `  write${name}(buffer, header, 0)\n`
+    output += `  return buffer\n`
+    output += `}\n\n`
   }
 
   return output

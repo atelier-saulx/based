@@ -223,16 +223,6 @@ pub const LangCode = enum(u8) { NONE = 0, _ };
 pub const MAIN_PROP: u8 = 0;
 pub const ID_PROP: u8 = 255;
 
-pub const IncludeOp = enum(u8) {
-    default = 1,
-    referencesAggregation = 2,
-    edge = 3,
-    references = 4,
-    reference = 5,
-    meta = 6,
-    partial = 7,
-};
-
 pub const ReadRefOp = enum(u8) {
     references = @intFromEnum(ReadOp.references),
     reference = @intFromEnum(ReadOp.reference),
@@ -339,31 +329,64 @@ pub const QuerySubType = enum(u8) {
     vecSortIdDescFilter = 23, //      Filter: [ √ ],  Sort: [ID_DESC],  Search: [ VEC ]
 };
 
-pub const QueryDefaultHeader = packed struct {
+// include op needs overlap with this
+pub const QueryType = enum(u8) {
+    id = 0,
+    ids = 1,
+    default = 2,
+    alias = 3,
+    aggregates = 4,
+    aggregatesCount = 5,
+    references = 6,
+    reference = 7,
+};
+
+pub const IncludeOp = enum(u8) {
+    aggregates = 4,
+    aggregatesCount = 5,
+    references = 6,
+    reference = 7,
+
+    // ---------------------
+    default = 127,
+    referencesAggregation = 128,
+    meta = 129,
+    partial = 130,
+    // ---------------------
+};
+
+pub const QuerySingleHeader = packed struct {
+    op: QueryType,
+    size: u16, // cannot be more then 16kb? might be good enough
+    typeId: TypeId,
+    id: u32,
+    filterSize: u16,
+    aliasSize: u16,
+    includeEdge: bool, // this just tells it in references that it needs to loop trhough edge + ref
+    _padding: u7,
+};
+
+pub const QueryHeader = packed struct {
+    op: QueryType,
+    size: u16, // cannot be more then 16kb? might be good enough
+    prop: u8, // this is for ref
     typeId: TypeId,
     offset: u32,
     limit: u32,
-    sortSize: u16,
     filterSize: u16,
     searchSize: u16,
     subType: QuerySubType,
+    includeEdge: bool, // this just tells it in references that it needs to loop trhough edge + ref
+    sort: bool,
+    _padding: u6,
 };
 
-pub const QueryIdHeader = packed struct {
-    typeId: TypeId,
-    filterSize: u16,
+pub const QueryNodeResponse = packed struct {
+    id: u32,
+    size: u32,
 };
 
-pub const QueryIdsHeader = packed struct {
-    typeId: TypeId,
-    filterSize: u16,
-};
-
-pub const QueryAliasHeader = packed struct {
-    typeId: TypeId,
-    filterSize: u16,
-    valueSize: u16,
-};
+// Aggregates need 2 different HEADERS
 
 pub const FilterOp = enum(u8) {
     equal = 1,

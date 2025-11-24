@@ -4,21 +4,24 @@ const selva = @import("../selva.zig").c;
 const db = @import("../db/db.zig");
 const Node = @import("../db/node.zig");
 const Modify = @import("./common.zig");
-const create = @import("./create.zig");
-const delete = @import("./delete.zig");
+const createField = @import("./create.zig").createField;
+const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
+const deleteField = @import("./delete.zig").deleteField;
+const deleteTextLang = @import("./delete.zig").deleteTextLang;
 const subs = @import("./subscription.zig");
-const sort = @import("./sort.zig");
+const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
+const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
-const update = @import("./update.zig");
+const Update = @import("./update.zig");
 const dbSort = @import("../db/sort.zig");
 const config = @import("config");
 const errors = @import("../errors.zig");
 const threads = @import("../db/threads.zig");
 const t = @import("../types.zig");
 
-const updateField = update.updateField;
-const updatePartialField = update.updatePartialField;
-const increment = update.increment;
+const updateField = Update.updateField;
+const updatePartialField = Update.updatePartialField;
+const increment = Update.increment;
 const read = utils.read;
 const write = utils.write;
 const assert = std.debug.assert;
@@ -220,7 +223,7 @@ pub fn modify(
             },
             t.ModOp.deleteTextField => {
                 const lang: t.LangCode = @enumFromInt(operation[0]);
-                delete.deleteTextLang(&ctx, lang);
+                deleteTextLang(&ctx, lang);
                 i = i + 2;
             },
             t.ModOp.switchIdCreate => {
@@ -314,19 +317,19 @@ pub fn modify(
                 i = i + 3;
             },
             t.ModOp.addEmptySort => {
-                i += try sort.addEmptyToSortIndex(&ctx, operation) + 1;
+                i += try addEmptyToSortIndex(&ctx, operation) + 1;
             },
             t.ModOp.addEmptySortText => {
-                i += try sort.addEmptyTextToSortIndex(&ctx, operation) + 1;
+                i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
             t.ModOp.delete => {
-                i += try delete.deleteField(&ctx) + 1;
+                i += try deleteField(&ctx) + 1;
             },
             t.ModOp.deleteSortIndex => {
-                i += try delete.deleteFieldSortIndex(&ctx) + 1;
+                i += try deleteFieldSortIndex(&ctx) + 1;
             },
             t.ModOp.createProp => {
-                i += try create.createField(&ctx, operation) + offset;
+                i += try createField(&ctx, operation) + offset;
             },
             t.ModOp.updateProp => {
                 i += try updateField(&ctx, operation) + offset;
@@ -357,7 +360,7 @@ pub fn modify(
 
     var blocksOffset = resultLen + 4;
     blocksOffset = 7 - (blocksOffset % 8);
-    const blockSlice = try threads.appendToResult(false, threadCtx, 4 + blocksOffset + dirtyRangesSize);
+    const blockSlice = try threads.newFromResult(false, threadCtx, 4 + blocksOffset + dirtyRangesSize);
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
     write(u32, blockSlice, dirtyRangesSize, 0);
     utils.copy(u8, blockSlice, newDirtySlice, 4 + blocksOffset);

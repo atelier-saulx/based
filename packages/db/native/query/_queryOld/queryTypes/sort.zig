@@ -20,7 +20,7 @@ pub fn default(
     comptime hasFilter: bool,
     ctx: *Query.QueryCtx,
     sortIndex: ?*sort.SortIndexMeta,
-    header: *const t.QueryDefaultHeader,
+    header: *const t.QueryHeader,
     include: []u8,
     filterSlice: if (hasFilter) []u8 else void,
 ) !void {
@@ -71,7 +71,7 @@ pub fn default(
 pub fn idDesc(
     comptime hasFilter: bool,
     ctx: *Query.QueryCtx,
-    header: *const t.QueryDefaultHeader,
+    header: *const t.QueryHeader,
     include: []u8,
     filterSlice: if (hasFilter) []u8 else void,
 ) !void {

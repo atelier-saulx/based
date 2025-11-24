@@ -19,6 +19,7 @@ import {
   OpTypeEnum,
   BridgeResponseEnum,
   BridgeResponse,
+  OpTypeInverse,
 } from '../zigTsExports.js'
 
 export type StartOpts = {
@@ -43,6 +44,9 @@ const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
         const size = readUint32(v, i)
         const id = readUint32(v, i + 4)
         const type: OpTypeEnum = v[i + 8] as OpTypeEnum
+
+        console.log('DERP DERP', id, type, OpTypeInverse[type])
+
         db.execOpListeners(type, id, v.subarray(i + 9, i + size))
         i += size
       }

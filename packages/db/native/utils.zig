@@ -7,6 +7,18 @@ const selva = @import("./selva.zig").c;
 extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
 extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;
 
+pub inline fn increment(comptime T: type, buffer: []u8, value: T, offset: usize) void {
+    if (@typeInfo(T) != .Int) {
+        @compileError("increment expects an integer type, found " ++ @typeName(T));
+    }
+    const size = @bitSizeOf(T) / 8;
+    const target = buffer[offset..][0..size];
+    const ptr = @as(*align(1) T, @ptrCast(target.ptr));
+    // We use wrapping addition (+%=) to allow standard overflow behavior
+    // without crashing in Debug/ReleaseSafe modes.
+    ptr.* +%= value;
+}
+
 pub inline fn write(comptime T: type, buffer: []u8, value: T, offset: usize) void {
     const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
     target.* = @bitCast(value);
@@ -140,4 +152,8 @@ pub inline fn datePart(timestamp: []u8, part: t.Interval, tz: i16) []const u8 {
         .epoch => timestamp,
         else => timestamp, // do nothing = epoch
     };
+}
+
+pub inline fn sizeOf(typeToCheck: type) comptime_int {
+    return @bitSizeOf(typeToCheck) / 8;
 }

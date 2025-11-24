@@ -14,7 +14,7 @@ const t = @import("../../types.zig");
 pub fn default(
     comptime hasFilter: bool,
     ctx: *Query.QueryCtx,
-    header: *const t.QueryDefaultHeader,
+    header: *const t.QueryHeader,
     include: []u8,
     filterSlice: if (hasFilter) []u8 else void,
 ) !void {

@@ -21,7 +21,7 @@ const Mutex = std.Thread.Mutex;
 const Condition = std.Thread.Condition;
 const Queue = std.array_list.Managed([]u8);
 
-pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
+pub fn newFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
     const paddedSize: u32 = @truncate(size); // zero padding for growth
     var increasedSize: usize = if (isQuery) 1_000_000 else 100_000;
     if (isQuery) {
@@ -55,6 +55,12 @@ pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![
         thread.*.modifyResultsIndex = thread.modifyResultsIndex + paddedSize;
         return data;
     }
+}
+
+pub fn appendToResult(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !comptime_int {
+    const size = utils.sizeOf(T);
+    utils.write(u32, try newFromResult(isQuery, thread, size), value);
+    return size;
 }
 
 pub fn newResult(
@@ -260,9 +266,9 @@ pub const Threads = struct {
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
                     if (op == t.OpType.default) {
-                        var index: usize = 5;
-                        const header = readNext(t.QueryDefaultHeader, q, &index);
-                        if (header.sortSize != 0) {
+                        var index: usize = 4;
+                        const header = readNext(t.QueryHeader, q, &index);
+                        if (header.sort) {
                             const sortHeader = readNext(t.SortHeader, q, &index);
                             if (sort.getSortIndex(
                                 self.ctx.sortIndexes.get(header.typeId),
@@ -310,7 +316,10 @@ pub const Threads = struct {
                         try dump.saveCommon(threadCtx, self.ctx, q, op);
                     },
                     else => {
-                        try getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
+                        getQueryThreaded(self.ctx, q, threadCtx, sortIndex) catch |err| {
+                            std.log.err("Error query: {any}", .{err});
+                            // write query error response
+                        };
                     },
                 }
 

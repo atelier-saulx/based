@@ -1,16 +1,13 @@
-import { QuerySubTypeEnum } from '../../../zigTsExports.js'
+import { ID_PROP, QuerySubTypeEnum, SortOrder } from '../../../zigTsExports.js'
+import { QueryDef } from '../types.js'
 
-export const getQuerySubType = (
-  filterSize: number,
-  sortSize: number,
-  searchSize: number,
-  isDesc: boolean,
-  isIdSort: boolean,
-  isVector: boolean,
-): QuerySubTypeEnum => {
-  const hasSearch = searchSize > 0
-  const hasSort = sortSize > 0
-  const hasFilter = filterSize > 0
+export const getQuerySubType = (def: QueryDef): QuerySubTypeEnum => {
+  let isIdSort = def.sort?.prop === ID_PROP
+  const hasSort = !isIdSort && !!def.sort
+  const hasSearch = def.search?.size > 0
+  const hasFilter = def.filter.size > 0
+  const isVector = hasSearch && def.search.isVector
+  const isDesc = hasSort && def.sort.order == SortOrder.desc
   if (hasSearch && isVector) {
     if (isIdSort) return hasFilter ? 23 : 22
     if (hasSort) {
