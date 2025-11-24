@@ -308,7 +308,7 @@ async function getBlockHash(
     const msg = new Uint8Array(11)
 
     writeUint32(msg, id, 0)
-    msg[4] = OpType.saveCommon
+    msg[4] = OpType.blockHash
     writeUint32(msg, start, 5)
     writeUint16(msg, typeCode, 9)
 
