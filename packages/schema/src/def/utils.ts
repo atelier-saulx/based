@@ -75,8 +75,9 @@ export const schemaVectorBaseTypeToEnum = (
       return VectorBaseType.Float64
     case 'number':
       return VectorBaseType.Float64
+    default:
+      throw 'SchemaVector baseType'
   }
-  throw 'SchemaVector baseType'
 }
 
 export const cardinalityModeToEnum = (mode: SchemaCardinality['mode']) => {

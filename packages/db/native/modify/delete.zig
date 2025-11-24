@@ -1,12 +1,12 @@
-const Modify = @import("./common.zig");
-const Db = @import("../selva/db.zig");
+const Modify = @import("common.zig");
 const Node = @import("../selva/node.zig");
+const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
 const utils = @import("../utils.zig");
-const references = @import("./references.zig");
-const subs = @import("./subscription.zig");
+const references = @import("references.zig");
+const subs = @import("subscription.zig");
 const t = @import("../types.zig");
 
 const ModifyCtx = Modify.ModifyCtx;
@@ -23,19 +23,19 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
         var it = ctx.typeSortIndex.?.main.iterator();
         while (it.next()) |entry| {
             if (currentData == null) {
-                currentData = Db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             }
             sort.remove(ctx.thread.decompressor, entry.value_ptr.*, currentData.?, ctx.node.?);
         }
     } else if (ctx.currentSortIndex != null) {
-        const currentData = Db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+        const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
         sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
     } else if (ctx.fieldType == t.PropType.text) {
         var it = ctx.typeSortIndex.?.text.iterator();
         while (it.next()) |entry| {
             const sortIndex = entry.value_ptr.*;
             if (sortIndex.field == ctx.field) {
-                const textValue = Db.getText(
+                const textValue = Fields.getText(
                     ctx.typeEntry,
                     ctx.node.?,
                     ctx.fieldSchema.?,
@@ -58,7 +58,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 
     if (ctx.typeSortIndex != null) {
         if (ctx.currentSortIndex != null) {
-            const currentData = Db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+            const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
             sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
         } else if (ctx.fieldType == t.PropType.text) {
@@ -66,7 +66,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             while (it.next()) |entry| {
                 const sortIndex = entry.value_ptr.*;
                 if (sortIndex.field == ctx.field) {
-                    const textValue = Db.getText(
+                    const textValue = Fields.getText(
                         ctx.typeEntry,
                         ctx.node.?,
                         ctx.fieldSchema.?,
@@ -80,25 +80,25 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         }
     }
     if (ctx.fieldType == t.PropType.alias) {
-        Db.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
+        Fields.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
             if (e != error.SELVA_ENOENT) return e;
         };
     } else {
         if (ctx.fieldType == t.PropType.reference) {
             const fs = ctx.fieldSchema.?;
-            const dstType = try Db.getRefDstType(ctx.db, fs);
+            const dstType = try Node.getRefDstType(ctx.db, fs);
             const oldRefDst = Node.getNodeFromReference(dstType, References.getSingleReference(ctx.node.?, fs));
             if (oldRefDst) |dstNode| {
                 Modify.markDirtyRange(ctx, Node.getNodeTypeId(dstNode), Node.getNodeId(dstNode));
             }
         }
-        try Db.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
+        try Fields.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
     }
     return 0;
 }
 
 pub fn deleteTextLang(ctx: *ModifyCtx, lang: t.LangCode) void {
-    const textValue = Db.getText(
+    const textValue = Fields.getText(
         ctx.typeEntry,
         ctx.node.?,
         ctx.fieldSchema.?,
@@ -113,7 +113,7 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: t.LangCode) void {
             sort.remove(ctx.thread.decompressor, sI, textValue, ctx.node.?);
             sort.insert(ctx.thread.decompressor, sI, sort.EMPTY_SLICE, ctx.node.?);
         }
-        Db.deleteTextFieldTranslation(ctx, ctx.fieldSchema.?, lang) catch |e| {
+        Fields.deleteTextFieldTranslation(ctx, ctx.fieldSchema.?, lang) catch |e| {
             std.log.debug("Failed to delete a translation ({any}:{any}.{any}.{any}): {any}", .{ ctx.typeId, ctx.id, ctx.field, lang, e });
         };
     }

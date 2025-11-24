@@ -3,8 +3,6 @@ import { serializeReaderSchema } from '../src/db-read/schema/serialize.js'
 import { deSerializeSchema } from '../src/db-read/schema/deserialize.js'
 import type { ReaderSchema } from '../dist/db-read/types.js'
 import { deepEqual, equal } from 'node:assert'
-import { Schema, StrictSchema } from '@based/schema'
-import { updateTypeDefs } from '@based/schema/def'
 
 await test('schema serialization/deserialization', async (t) => {
   await t.test('schema with references', () => {

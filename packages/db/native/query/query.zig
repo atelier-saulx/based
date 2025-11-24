@@ -1,13 +1,13 @@
 const std = @import("std");
-const db = @import("../selva/db.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const Sort = @import("../db/sort.zig");
-const Query = @import("./common.zig");
+const Query = @import("common.zig");
 const utils = @import("../utils.zig");
-const multiple = @import("./multiple.zig");
+const multiple = @import("multiple.zig");
 const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 // -------- NAPI ---------- (put in js bridge maybe?)
 pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
@@ -19,7 +19,7 @@ pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value
 
 pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(2, env, info);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+    const dbCtx = try napi.get(*DbCtx, env, args[0]);
     const q = try napi.get([]u8, env, args[1]);
     try dbCtx.threads.query(q);
     return null;
@@ -27,7 +27,7 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
 // -------------------------
 
 pub fn getQueryThreaded(
-    dbCtx: *db.DbCtx,
+    dbCtx: *DbCtx,
     buffer: []u8,
     thread: *Thread.Thread,
     _: ?*Sort.SortIndexMeta,

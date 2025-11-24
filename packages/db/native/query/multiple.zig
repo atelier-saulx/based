@@ -2,9 +2,9 @@ const std = @import("std");
 const utils = @import("../utils.zig");
 const Query = @import("common.zig");
 const include = @import("include.zig");
-const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
 const Thread = @import("../thread/thread.zig");
+const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 
 pub fn default(
@@ -22,13 +22,13 @@ pub fn default(
     const sizeIndex = try ctx.thread.query.reserve(4);
 
     // this will be a nice iterator
-    const typeEntry = try db.getType(ctx.db, header.typeId);
+    const typeEntry = try Node.getType(ctx.db, header.typeId);
     var node = Node.getFirstNode(typeEntry);
 
     while (nodeCnt < header.limit) {
 
         // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
-        //     node = db.getNextNode(typeEntry, node.?);
+        //     node = Db.getNextNode(typeEntry, node.?);
         //     continue :checkItem;
         // }
 

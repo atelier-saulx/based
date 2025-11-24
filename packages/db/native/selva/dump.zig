@@ -1,4 +1,3 @@
-const db = @import("db.zig");
 const selva = @import("selva.zig").c;
 const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const utils = @import("../utils.zig");
@@ -6,9 +5,10 @@ const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 const std = @import("std");
 const read = utils.read;
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 // sdbFilename must be nul-terminated
-pub fn saveCommon(thread: *Thread.Thread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
+pub fn saveCommon(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
     const id = read(u32, q, 0);
     const data = try thread.query.result(4, id, op);
     const filename = q[5..q.len];
@@ -24,7 +24,7 @@ pub fn saveCommon(thread: *Thread.Thread, ctx: *db.DbCtx, q: []u8, op: t.OpType)
 }
 
 // sdbFilename must be nul-terminated
-pub fn saveBlock(thread: *Thread.Thread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
+pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
     const id = read(u32, q, 0);
     const data = try thread.query.result(26, id, op);
 
@@ -49,7 +49,7 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *db.DbCtx, q: []u8, op: t.OpType) 
 
 pub fn loadCommon(
     thread: *Thread.Thread,
-    dbCtx: *db.DbCtx,
+    dbCtx: *DbCtx,
     m: []u8,
     op: t.OpType,
 ) !void {
@@ -82,7 +82,7 @@ pub fn loadCommon(
 
 pub fn loadBlock(
     thread: *Thread.Thread,
-    dbCtx: *db.DbCtx,
+    dbCtx: *DbCtx,
     m: []u8,
     op: t.OpType,
 ) !void {
@@ -116,7 +116,7 @@ pub fn loadBlock(
 
 pub fn unloadBlock(
     thread: *Thread.Thread,
-    dbCtx: *db.DbCtx,
+    dbCtx: *DbCtx,
     m: []u8,
     op: t.OpType,
 ) !void {

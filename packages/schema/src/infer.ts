@@ -1,4 +1,4 @@
-import type { Schema } from './_types.js'
+import type { Schema } from './schema/schema.js'
 
 type TypedArray =
   | Uint8Array

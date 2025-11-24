@@ -1,11 +1,9 @@
 const std = @import("std");
-const napi = @import("./napi.zig");
+const napi = @import("napi.zig");
 const selva = @import("selva/selva.zig").c;
-const db = @import("selva/db.zig");
 const Node = @import("selva/Node.zig");
-
-const Type = Node.Type;
-const FieldSchema = db.FieldSchema;
+const Schema = @import("selva/schema.zig");
+const DbCtx = @import("db/ctx.zig").DbCtx;
 
 pub fn colvec(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return colvecInternal(env, info) catch |err| {
@@ -27,7 +25,7 @@ fn cb(_: selva.node_id_t, vec: ?*anyopaque, arg: ?*anyopaque) callconv(.c) void 
     }
 }
 
-fn native_foreach(te: Type, fs: FieldSchema, nodeId: selva.node_id_t, len: u32, res: *f32) void {
+fn native_foreach(te: Node.Type, fs: Schema.FieldSchema, nodeId: selva.node_id_t, len: u32, res: *f32) void {
     const cv = selva.colvec_get(te, fs);
     const block_capacity = selva.selva_get_block_capacity(te);
     const vec_size = cv.*.vec_size;
@@ -55,14 +53,14 @@ fn native_foreach(te: Type, fs: FieldSchema, nodeId: selva.node_id_t, len: u32, 
 
 fn colvecInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(5, env, info);
-    const dbCtx = try napi.get(*db.DbCtx, env, args[0]);
+    const dbCtx = try napi.get(*DbCtx, env, args[0]);
     const typeId = try napi.get(u16, env, args[1]);
     const field = try napi.get(u8, env, args[2]);
     const nodeId = try napi.get(u32, env, args[3]);
     const len = try napi.get(u32, env, args[4]);
 
-    const typeEntry = try db.getType(dbCtx, typeId);
-    const fs = try db.getFieldSchema(typeEntry, field);
+    const typeEntry = try Node.getType(dbCtx, typeId);
+    const fs = try Schema.getFieldSchema(typeEntry, field);
 
     var res: f32 = std.math.inf(f32);
     //_ = selva.colvec_foreach(typeEntry, fs, nodeId, len, &cb, &res);

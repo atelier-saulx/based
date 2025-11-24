@@ -1,15 +1,15 @@
 const std = @import("std");
 const selva = @import("../selva/selva.zig").c;
-const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
+const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");
 const sort = @import("../db/sort.zig");
-const Modify = @import("./common.zig");
+const Modify = @import("common.zig");
 const utils = @import("../utils.zig");
 const ModifyCtx = Modify.ModifyCtx;
-const references = @import("./references.zig");
-const reference = @import("./reference.zig");
-const subs = @import("./subscription.zig");
+const references = @import("references.zig");
+const reference = @import("reference.zig");
+const subs = @import("subscription.zig");
 const t = @import("../types.zig");
 
 const read = utils.read;
@@ -61,14 +61,14 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
-            try db.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
+            try Fields.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
             return len;
         },
         t.PropType.colVec => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
-            db.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
+            Fields.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
             return len;
         },
         t.PropType.cardinality => {
@@ -78,7 +78,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, offset);
             var currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
             if (currentData == null) {
-                currentData = try db.ensurePropTypeString(ctx, ctx.fieldSchema.?);
+                currentData = try Fields.ensurePropTypeString(ctx, ctx.fieldSchema.?);
                 selva.hll_init(currentData, hllPrecision, hllMode);
             }
             var i: usize = 4 + offset;
@@ -109,7 +109,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     var it = ctx.typeSortIndex.?.main.iterator();
                     while (it.next()) |entry| {
                         if (currentData == null) {
-                            currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                            currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                         }
                         const sI = entry.value_ptr.*;
                         sort.remove(ctx.thread.decompressor, sI, currentData.?, ctx.node.?);
@@ -117,7 +117,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
-                const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                 sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
@@ -127,15 +127,15 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     const lang: t.LangCode = @enumFromInt(slice[0]);
                     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
                     if (sIndex) |sortIndex| {
-                        const currentData: []u8 = db.getText(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType, lang);
+                        const currentData: []u8 = Fields.getText(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType, lang);
                         sort.remove(ctx.thread.decompressor, sortIndex, currentData, ctx.node.?);
                         sort.insert(ctx.thread.decompressor, sortIndex, slice, ctx.node.?);
                     }
                 }
-                try db.setText(ctx.node.?, ctx.fieldSchema.?, slice);
+                try Fields.setText(ctx.node.?, ctx.fieldSchema.?, slice);
             } else if (ctx.fieldType == t.PropType.alias) {
                 if (slice.len > 0) {
-                    const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
+                    const old = try Fields.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
                         if (ctx.currentSortIndex != null) {
                             sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
@@ -143,12 +143,12 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         Modify.markDirtyRange(ctx, ctx.typeId, old);
                     }
                 } else {
-                    db.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
+                    Fields.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
                         if (e != error.SELVA_ENOENT) return e;
                     };
                 }
             } else {
-                try db.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
+                try Fields.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
             }
 
             return len;
@@ -163,7 +163,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     const slice = data[4 .. len + 4];
-    const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+    const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     if (currentData.len != 0) {
         var j: usize = 0;
         while (j < len) {
@@ -312,7 +312,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: t.ModOp) !usize {
 
     const addition = data[3 .. 3 + propSize];
 
-    const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+    const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     const start = read(u16, data, 1);
     const value = currentData[start .. start + propSize];
 

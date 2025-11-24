@@ -1,12 +1,14 @@
 const deflate = @import("../deflate.zig");
 const selva = @import("../selva/selva.zig").c;
-const db = @import("../selva/db.zig");
+const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
+const Fields = @import("../selva/fields.zig");
 const std = @import("std");
 const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const errors = @import("../errors.zig");
 const read = utils.read;
+const DbCtx = @import("ctx.zig").DbCtx;
 
 pub const SortIndexMeta = struct {
     prop: t.PropType,
@@ -102,7 +104,7 @@ pub fn createSortIndexMeta(
 }
 
 fn getOrCreateFromCtx(
-    dbCtx: *db.DbCtx,
+    dbCtx: *DbCtx,
     typeId: t.TypeId,
     sortHeader: *const t.SortHeader,
     comptime desc: bool,
@@ -138,7 +140,7 @@ fn getOrCreateFromCtx(
 // true,
 // false,
 pub fn createSortIndex(
-    dbCtx: *db.DbCtx,
+    dbCtx: *DbCtx,
     decompressor: *deflate.Decompressor,
     typeId: t.TypeId,
     header: *const t.SortHeader,
@@ -146,8 +148,8 @@ pub fn createSortIndex(
     comptime desc: bool,
 ) !*SortIndexMeta {
     const sortIndex = try getOrCreateFromCtx(dbCtx, typeId, header, desc);
-    const typeEntry = try db.getType(dbCtx, typeId);
-    const fieldSchema = try db.getFieldSchema(typeEntry, header.prop);
+    const typeEntry = try Node.getType(dbCtx, typeId);
+    const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
 
     // fill sort index needs to a special field
     var node = Node.getFirstNode(typeEntry);
@@ -161,13 +163,13 @@ pub fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = if (header.propType == t.PropType.text) db.getText(
+        const data = if (header.propType == t.PropType.text) Fields.getText(
             typeEntry,
             node.?,
             fieldSchema,
             header.propType,
             header.lang,
-        ) else db.getField(
+        ) else Fields.getField(
             typeEntry,
             node.?,
             fieldSchema,
@@ -184,7 +186,7 @@ pub fn createSortIndex(
 }
 
 pub fn destroySortIndex(
-    dbCtx: *db.DbCtx,
+    dbCtx: *DbCtx,
     typeId: t.TypeId,
     field: u8,
     start: u16,
@@ -227,7 +229,7 @@ pub fn getSortIndex(
 }
 
 pub fn getTypeSortIndexes(
-    dbCtx: *db.DbCtx,
+    dbCtx: *DbCtx,
     typeId: t.TypeId,
 ) ?*TypeIndex {
     return dbCtx.sortIndexes.get(typeId);

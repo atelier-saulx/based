@@ -1,15 +1,15 @@
-const Modify = @import("./common.zig");
+const Modify = @import("common.zig");
 const selva = @import("../selva/selva.zig").c;
-const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
+const Fields = @import("../selva/fields.zig");
 const utils = @import("../utils.zig");
 const sort = @import("../db/sort.zig");
 const errors = @import("../errors.zig");
-const references = @import("./references.zig");
-const reference = @import("./reference.zig");
+const references = @import("references.zig");
+const reference = @import("reference.zig");
 const std = @import("std");
 const lib = @import("../lib.zig");
-const subs = @import("./subscription.zig");
+const subs = @import("subscription.zig");
 const t = @import("../types.zig");
 
 const read = utils.read;
@@ -44,14 +44,14 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
-            try db.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
+            try Fields.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
             return len;
         },
         t.PropType.colVec => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
-            db.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
+            Fields.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
             return len;
         },
         t.PropType.cardinality => {
@@ -59,7 +59,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const hllPrecision = data[1];
             const offset = 2;
             const len = read(u32, data, offset);
-            const hll = try db.ensurePropTypeString(ctx, ctx.fieldSchema.?);
+            const hll = try Fields.ensurePropTypeString(ctx, ctx.fieldSchema.?);
             selva.hll_init(hll, hllPrecision, hllMode);
             var i: usize = 4 + offset;
             while (i < (len * 8) + offset) {
@@ -77,7 +77,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             addSortIndexOnCreation(ctx, slice) catch null;
             if (ctx.fieldType == t.PropType.alias) {
                 if (slice.len > 0) {
-                    const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
+                    const old = try Fields.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
                         if (ctx.currentSortIndex != null) {
                             sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
@@ -86,7 +86,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
             } else {
-                try db.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
+                try Fields.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
             }
             return len;
         },

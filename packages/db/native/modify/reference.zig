@@ -1,20 +1,20 @@
-const Db = @import("../selva/db.zig");
+const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");
 const read = @import("../utils.zig").read;
-const Modify = @import("./common.zig");
+const Modify = @import("common.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const ModifyCtx = Modify.ModifyCtx;
-const edge = @import("./edges.zig");
+const edge = @import("edges.zig");
 const RefEdgeOp = @import("../types.zig").RefEdgeOp;
 
 pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     const op: RefEdgeOp = @enumFromInt(data[0]);
     const hasEdges = RefEdgeOp.hasEdges(op);
     const isTmpId = RefEdgeOp.isTmpId(op);
-    const refTypeId = Db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
-    const refTypeEntry = try Db.getType(ctx.db, refTypeId);
+    const refTypeId = Schema.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
+    const refTypeEntry = try Node.getType(ctx.db, refTypeId);
     var id = read(u32, data, 1);
 
     if (isTmpId) {
@@ -29,7 +29,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     var ref: ?References.ReferenceLarge = null;
 
     const oldRefDst = References.getSingleReference(ctx.node.?, ctx.fieldSchema.?);
-    const dstType = try Db.getRefDstType(ctx.db, ctx.fieldSchema.?);
+    const dstType = try Node.getRefDstType(ctx.db, ctx.fieldSchema.?);
     const dstNode = Node.getNodeFromReference(dstType, oldRefDst);
 
     if (dstNode) |d| {

@@ -1,5 +1,22 @@
 const std = @import("std");
 
+fn currentNodeHeaderPath(b: *std.Build) []u8 {
+    const alloc = std.heap.page_allocator;
+    const argv = [_][]const u8{ "node", "--version" };
+    const proc = std.process.Child.run(.{
+        .argv = &argv,
+        .allocator = alloc,
+    }) catch |err| {
+        std.debug.print("Failed to spawn child process: {s}\n", .{@errorName(err)});
+        return b.fmt("deps/node-v22.21.1/include/node", .{});
+    };
+    // on success, we own the output streams
+    defer alloc.free(proc.stdout);
+    defer alloc.free(proc.stderr);
+    const version = std.mem.trimRight(u8, proc.stdout, " \n\r\t%");
+    return b.fmt("deps/node-{s}/include/node", .{version});
+}
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const enable_debug = b.option(bool, "enable_debug", "Enable debugging prints") orelse false;
@@ -25,7 +42,27 @@ pub fn build(b: *std.Build) void {
 
     lib.linker_allow_shlib_undefined = true;
     lib.root_module.addOptions("config", options);
-    const node_hpath = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse "deps/node-v22.21.1/include/node";
+
+    const node_hpath = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse currentNodeHeaderPath(b);
+
+    // Extract node major version from the header path
+    var nodeVersion: []const u8 = "v22";
+    var it = std.mem.splitScalar(u8, node_hpath, '-');
+    _ = it.next(); // "node"
+    if (it.next()) |version_part| {
+        var version_it = std.mem.splitScalar(u8, version_part, '.');
+        if (version_it.next()) |major| {
+            nodeVersion = major;
+        }
+    }
+
+    const osName: []const u8 = if (target.result.os.tag == .macos) "darwin" else @tagName(target.result.os.tag);
+    const dest_path = b.fmt("../../dist/lib/{s}_{s}/libnode-{s}.node", .{
+        osName,
+        @tagName(target.result.cpu.arch),
+        nodeVersion,
+    });
+
     lib.addIncludePath(b.path(node_hpath));
 
     const rpath = b.option([]const u8, "rpath", "run-time search path") orelse "@loader_path";
@@ -37,28 +74,6 @@ pub fn build(b: *std.Build) void {
     lib.addLibraryPath(b.path(lib_selva_path));
     lib.linkSystemLibrary("selva");
     lib.linkLibC();
-
-    // Extract node major version from the header path
-    var node_version: []const u8 = "v22"; // default
-    var it = std.mem.splitScalar(u8, node_hpath, '-');
-    _ = it.next(); // "node"
-    if (it.next()) |version_part| {
-        var version_it = std.mem.splitScalar(u8, version_part, '.');
-        if (version_it.next()) |major| {
-            node_version = major;
-        }
-    }
-
-    var os_name: []const u8 = @tagName(target.result.os.tag);
-    if (target.result.os.tag == .macos) {
-        os_name = "darwin";
-    }
-
-    const dest_path = b.fmt("../../dist/lib/{s}_{s}/libnode-{s}.node", .{
-        os_name,
-        @tagName(target.result.cpu.arch),
-        node_version,
-    });
 
     const install_lib = b.addInstallArtifact(lib, .{
         .dest_sub_path = dest_path,
