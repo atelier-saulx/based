@@ -1,6 +1,5 @@
 const std = @import("std");
 const jsBridge = @import("./jsBridge.zig");
-const dump = @import("./dump.zig");
 const sort = @import("./sort.zig");
 const DbCtx = @import("./ctx.zig").DbCtx;
 const utils = @import("../utils.zig");
@@ -8,6 +7,8 @@ const Modify = @import("../modify/modify.zig");
 const selva = @import("../selva.zig").c;
 const db = @import("db.zig");
 const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
+const dump = @import("./dump.zig");
+const info = @import("./info.zig");
 const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 const deflate = @import("../deflate.zig");
 const t = @import("../types.zig");
@@ -300,19 +301,7 @@ pub const Threads = struct {
             if (queryBuf) |q| {
                 switch (op) {
                     t.OpType.blockHash => {
-                        const id = read(u32, q, 0);
-                        const data = try newResult(true, threadCtx, 20, id, op);
-                        const start = read(u32, q, 0);
-                        const typeCode = read(u16, q, 4);
-                        const typeEntry = selva.selva_get_type_by_index(self.ctx.selva.?, typeCode);
-                        var err: c_int = selva.SELVA_EINTYPE;
-
-                        if (typeEntry) |te| {
-                            var hash: SelvaHash128 = 0;
-                            err = db.getNodeBlockHash(self.ctx, te, start, &hash);
-                            _ = selva.memcpy(data[4..20].ptr, &hash, @sizeOf(@TypeOf(hash)));
-                        }
-                        _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                        try info.blockHash(threadCtx, self.ctx, q, op);
                     },
                     t.OpType.saveBlock => {
                         try dump.saveBlock(threadCtx, self.ctx, q, op);
