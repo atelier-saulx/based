@@ -53,7 +53,7 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
         const index: i32 = if (hasIndex) read(i32, data, i + 5) else -1;
 
-        var ref: Db.ReferenceAny = undefined;
+        var ref: References.ReferenceAny = undefined;
         if (Node.getNode(refTypeEntry, id)) |dstNode| {
             ref = try References.insertReference(ctx, ctx.node.?, ctx.fieldSchema.?, dstNode, index, hasIndex);
         } else {

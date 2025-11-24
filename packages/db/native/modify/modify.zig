@@ -94,7 +94,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
 }
 
-fn getLargeRef(db: *Db.DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?Db.ReferenceLarge {
+fn getLargeRef(db: *Db.DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?References.ReferenceLarge {
     if (dstId == 0) { // assume reference
         return References.getSingleReference(node, fs);
     } else { // references

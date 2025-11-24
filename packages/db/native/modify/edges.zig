@@ -25,7 +25,7 @@ fn isMainEmpty(val: []u8) bool {
 
 pub fn writeEdges(
     ctx: *ModifyCtx,
-    ref: Db.ReferenceLarge,
+    ref: References.ReferenceLarge,
     data: []u8,
 ) !void {
     var i: usize = 0;
