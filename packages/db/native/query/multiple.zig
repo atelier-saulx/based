@@ -51,20 +51,9 @@ pub fn default(
                 continue;
             }
 
-            const nodeHeaderSlice = try threads.sliceFromResult(
-                true,
-                ctx.thread,
-                utils.sizeOf(t.QueryNodeResponse),
-            );
-
-            var nodeHeader: t.QueryNodeResponse = .{ .id = Node.getNodeId(n), .size = 4 };
-            const currentSize = ctx.thread.queryResultsIndex;
-            // std.debug.print("DERP {any} \n", .{nodeHeader});
+            try threads.appendToResult(true, ctx.thread, Node.getNodeId(n));
 
             try include.include(n, ctx, nestedQuery);
-
-            nodeHeader.size += @truncate(ctx.thread.queryResultsIndex - currentSize);
-            utils.write(nodeHeaderSlice, nodeHeader, 0);
 
             nodeCnt += 1;
 

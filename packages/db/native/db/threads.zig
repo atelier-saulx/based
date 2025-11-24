@@ -56,11 +56,10 @@ pub fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) !
     }
 }
 
-pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, value: anytype) !usize {
+pub fn appendToResult(comptime isQuery: bool, thread: *DbThread, value: anytype) !void {
     const T = @TypeOf(value);
     const size = utils.sizeOf(T);
     utils.writeAs(T, try sliceFromResult(isQuery, thread, size), value, 0);
-    return size;
 }
 
 pub fn appendToResultAs(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !usize {

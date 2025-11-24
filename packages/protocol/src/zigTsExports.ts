@@ -1080,60 +1080,6 @@ export const createQueryHeader = (header: QueryHeader): Uint8Array => {
   return buffer
 }
 
-export type QueryNodeResponse = {
-  id: number
-  size: number
-}
-
-export const QueryNodeResponseByteSize = 8
-
-export const writeQueryNodeResponse = (
-  buf: Uint8Array,
-  header: QueryNodeResponse,
-  offset: number,
-): number => {
-  writeUint32(buf, header.id, offset)
-  offset += 4
-  writeUint32(buf, header.size, offset)
-  offset += 4
-  return offset
-}
-
-export const writeQueryNodeResponseProps = {
-  id: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset)
-  },
-  size: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 4)
-  },
-}
-
-export const readQueryNodeResponse = (
-  buf: Uint8Array,
-  offset: number,
-): QueryNodeResponse => {
-  const value: QueryNodeResponse = {
-    id: readUint32(buf, offset),
-    size: readUint32(buf, offset + 4),
-  }
-  return value
-}
-
-export const readQueryNodeResponseProps = {
-  id: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset)
-  },
-  size: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 4)
-  },
-}
-
-export const createQueryNodeResponse = (header: QueryNodeResponse): Uint8Array => {
-  const buffer = new Uint8Array(QueryNodeResponseByteSize)
-  writeQueryNodeResponse(buffer, header, 0)
-  return buffer
-}
-
 export const FilterOp = {
   equal: 1,
   has: 2,

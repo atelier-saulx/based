@@ -70,6 +70,11 @@ await test('include', async (t) => {
     nr: 1,
     name: 'Mr poop',
   })
+
+  const id2 = await db.create('user', {
+    nr: 2,
+    name: 'Mr flap',
+  })
   console.log('xxx')
 
   console.log('start query')

@@ -382,11 +382,6 @@ pub const QueryHeader = packed struct {
     _padding: u6,
 };
 
-pub const QueryNodeResponse = packed struct {
-    id: u32,
-    size: u32,
-};
-
 // Aggregates need 2 different HEADERS
 
 pub const FilterOp = enum(u8) {
