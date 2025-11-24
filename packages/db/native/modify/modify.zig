@@ -12,7 +12,7 @@ const update = @import("./update.zig");
 const dbSort = @import("../db/sort.zig");
 const config = @import("config");
 const errors = @import("../errors.zig");
-const newResult = @import("../db/threads.zig").newResult;
+const threads = @import("../db/threads.zig");
 const t = @import("../types.zig");
 
 const updateField = update.updateField;
@@ -54,12 +54,12 @@ fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     //ctx.id = 0;
 }
 
-fn writeoutPrevNodeId(ctx: *ModifyCtx, resultIndex: *u32, prevNodeId: u32, result: []u8) void {
+fn writeoutPrevNodeId(ctx: *ModifyCtx, resultLen: *u32, prevNodeId: u32, result: []u8) void {
     if (prevNodeId != 0) {
-        write(u32, result, prevNodeId, resultIndex.*);
-        write(u8, result, @intFromEnum(ctx.err), resultIndex.* + 4);
+        write(u32, result, prevNodeId, resultLen.*);
+        write(u8, result, @intFromEnum(ctx.err), resultLen.* + 4);
         ctx.err = errors.ClientError.null;
-        resultIndex.* += 5;
+        resultLen.* += 5;
     }
 }
 
@@ -150,6 +150,7 @@ pub fn modify(
     // utils.readNext(t.QueryDefaultHeader, q, &index);
     // var i/: usize = 0;
     const modifyId = read(u32, batch, 0);
+    const nodeCount = read(u32, batch, 13);
     var i: usize = 13 + 4; // 5 for id + type and 8 for schema checksum + 4 for operation count
     // currentOffset chek threadCtx.current
     var ctx: ModifyCtx = .{
@@ -173,11 +174,9 @@ pub fn modify(
 
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
-    // var expectedResultLen = read();
-    var resultIndex: u32 = 4; // reserve for writing result len
-
-    const tmpSizeToBeFixedImportant = batch.len;
-    const result = try newResult(false, threadCtx, tmpSizeToBeFixedImportant, modifyId, opType);
+    const expectedLen = 4 + nodeCount * 5; // len(4)+res(5)n
+    const result = try threads.newResult(false, threadCtx, expectedLen, modifyId, opType);
+    var resultLen: u32 = 4; // reserve for writing result len
 
     while (i < batch.len) {
         const op: t.ModOp = @enumFromInt(batch[i]);
@@ -224,18 +223,18 @@ pub fn modify(
                 i = i + 2;
             },
             t.ModOp.switchIdCreate => {
-                writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
+                writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
                 try newNode(&ctx);
                 i = i + 1;
             },
             t.ModOp.switchIdCreateRing => {
-                writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
+                writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
                 const maxNodeId = read(u32, operation, 0);
                 try newNodeRing(&ctx, maxNodeId);
                 i = i + 5;
             },
             t.ModOp.switchIdCreateUnsafe => {
-                writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
+                writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
                     dbCtx.ids[ctx.typeId - 1] = ctx.id;
@@ -247,7 +246,7 @@ pub fn modify(
             t.ModOp.switchIdUpdate => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
-                    writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
+                    writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
                     // if its zero then we don't want to switch (for upsert)
                     ctx.id = id;
                     ctx.node = db.getNode(ctx.typeEntry.?, ctx.id);
@@ -267,7 +266,7 @@ pub fn modify(
                 const dstId = read(u32, operation, 4);
                 const refField = read(u8, operation, 8);
                 const prevNodeId = try switchEdgeId(&ctx, srcId, dstId, refField);
-                writeoutPrevNodeId(&ctx, &resultIndex, prevNodeId, result);
+                writeoutPrevNodeId(&ctx, &resultLen, prevNodeId, result);
                 i = i + 10;
             },
             t.ModOp.upsert => {
@@ -299,9 +298,9 @@ pub fn modify(
                     const val = operation[j + 5 .. j + 5 + len];
                     if (db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = db.getNodeId(node);
-                        write(u32, batch, id, resultIndex);
-                        write(u8, batch, @intFromEnum(errors.ClientError.null), resultIndex + 4);
-                        resultIndex += 5;
+                        write(u32, batch, id, resultLen);
+                        write(u8, batch, @intFromEnum(errors.ClientError.null), resultLen + 4);
+                        resultLen += 5;
                         nextIndex = endIndex;
                         break;
                     }
@@ -345,15 +344,20 @@ pub fn modify(
     }
 
     db.expire(&ctx);
-    writeoutPrevNodeId(&ctx, &resultIndex, ctx.id, result);
+    writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
+    write(u32, result, resultLen, 0);
+
+    if (resultLen < expectedLen) {
+        @memset(result[resultLen..expectedLen], 0);
+    }
 
     const newDirtyRanges = ctx.dirtyRanges.values();
     const dirtyRangesSize: u32 = @truncate(newDirtyRanges.len * 8);
-    write(u32, result, resultIndex, 0);
-    write(u32, result, dirtyRangesSize, resultIndex);
-    resultIndex += 4; // just wrote 4
-    resultIndex = resultIndex - (resultIndex % 8); // round to multiple of 8
-    resultIndex += 7; // add 7 to compensate for the 9
+
+    var blocksOffset = resultLen + 4;
+    blocksOffset = 7 - (blocksOffset % 8);
+    const blockSlice = try threads.appendToResult(false, threadCtx, 4 + blocksOffset + dirtyRangesSize);
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
-    utils.copy(u8, result, newDirtySlice, resultIndex);
+    write(u32, blockSlice, dirtyRangesSize, 0);
+    utils.copy(u8, blockSlice, newDirtySlice, 4 + blocksOffset);
 }
