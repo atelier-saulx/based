@@ -117,38 +117,38 @@ function buildWithZig(
   )
 }
 
-function moveLibraryToPlatformDir(
-  destinationLibPath: string,
-  major: string,
-  platform: Platform,
-): void {
-  const originalPath = path.join(__dirname, 'zig-out', 'lib', 'lib.node')
-  const newPath = path.join(destinationLibPath, `libnode-${major}.node`)
+// function moveLibraryToPlatformDir(
+//   destinationLibPath: string,
+//   major: string,
+//   platform: Platform,
+// ): void {
+//   const originalPath = path.join(__dirname, 'zig-out', 'lib', 'lib.node')
+//   const newPath = path.join(destinationLibPath, `libnode-${major}.node`)
 
-  if (fs.existsSync(originalPath)) {
-    console.log(`Renaming library to ${newPath}...`)
-    fs.renameSync(originalPath, newPath)
+//   if (fs.existsSync(originalPath)) {
+//     console.log(`Renaming library to ${newPath}...`)
+//     fs.renameSync(originalPath, newPath)
 
-    if (platform.os === 'linux') {
-      if (os.platform() == 'darwin') {
-        const cmd = `/bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
-        execSync(
-          `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_${platform.arch} ${cmd}`,
-          {
-            stdio: 'inherit',
-          },
-        )
-      } else {
-        const cmd = `/bin/bash -c "cd dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
-        execSync(cmd, {
-          stdio: 'inherit',
-        })
-      }
-    }
-  } else {
-    throw new Error(`Library not found at ${originalPath}`)
-  }
-}
+//     if (platform.os === 'linux') {
+//       if (os.platform() == 'darwin') {
+//         const cmd = `/bin/bash -c "cd /usr/src/based-db/packages/db/dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
+//         execSync(
+//           `podman run --rm -v "$PWD/../..:/usr/src/based-db" based-db-clibs-build-linux_${platform.arch} ${cmd}`,
+//           {
+//             stdio: 'inherit',
+//           },
+//         )
+//       } else {
+//         const cmd = `/bin/bash -c "cd dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
+//         execSync(cmd, {
+//           stdio: 'inherit',
+//         })
+//       }
+//     }
+//   } else {
+//     throw new Error(`Library not found at ${originalPath}`)
+//   }
+// }
 
 function getDestinationLibraryPath(platform: Platform): string {
   let osName = platform.os === 'macos' ? 'darwin' : platform.os
@@ -176,10 +176,10 @@ async function main() {
         const destinationLibPath = getDestinationLibraryPath(platform)
 
         buildWithZig(target, nodeHeadersPath, rpath, destinationLibPath)
-        moveLibraryToPlatformDir(destinationLibPath, 'v' + major, platform)
+        // moveLibraryToPlatformDir(destinationLibPath, 'v' + major, platform)
 
-        console.log('Cleaning up zig-out directory...')
-        execSync(`rm -rf ${path.join(__dirname, 'zig-out')}`)
+        // console.log('Cleaning up zig-out directory...')
+        // execSync(`rm -rf ${path.join(__dirname, 'zig-out')}`)
       } catch (error) {
         console.error(
           `Error processing version v${major} for platform ${target}:`,

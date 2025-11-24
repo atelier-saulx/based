@@ -2,10 +2,9 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-
     const enable_debug = b.option(bool, "enable_debug", "Enable debugging prints") orelse false;
-
     const options = b.addOptions();
+
     options.addOption(bool, "enable_debug", enable_debug);
 
     const opt: std.builtin.OptimizeMode = switch (enable_debug) {
@@ -39,11 +38,34 @@ pub fn build(b: *std.Build) void {
     lib.linkSystemLibrary("selva");
     lib.linkLibC();
 
-    const install_lib = b.addInstallArtifact(lib, .{
-        .dest_sub_path = "./lib.node",
+    // Extract node major version from the header path
+    var node_version: []const u8 = "v22"; // default
+    var it = std.mem.splitScalar(u8, node_hpath, '-');
+    _ = it.next(); // "node"
+    if (it.next()) |version_part| {
+        var version_it = std.mem.splitScalar(u8, version_part, '.');
+        if (version_it.next()) |major| {
+            node_version = major;
+        }
+    }
+
+    var os_name: []const u8 = @tagName(target.result.os.tag);
+    if (target.result.os.tag == .macos) {
+        os_name = "darwin";
+    }
+
+    const dest_path = b.fmt("../../dist/lib/{s}_{s}/libnode-{s}.node", .{
+        os_name,
+        @tagName(target.result.cpu.arch),
+        node_version,
     });
 
-    b.getInstallStep().dependOn(&install_lib.step);
+    const install_lib = b.addInstallArtifact(lib, .{
+        .dest_sub_path = dest_path,
+    });
+    const install_step = b.getInstallStep();
+
+    install_step.dependOn(&install_lib.step);
 
     // This creates a "check" step that allows zls (Zig Language Server) to analyze the code.
     // It reuses the same module definition from the library being built.
