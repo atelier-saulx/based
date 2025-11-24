@@ -41,13 +41,14 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q = []
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 10000; i++) {
         q.push(
           db
             .query('user')
             .include('id')
+            .filter('nr', '>', i)
             // .range(10)
-            .range(0, 1e6 + i)
+            .range(0, 10)
             .get(),
           // .inspect(),
         )

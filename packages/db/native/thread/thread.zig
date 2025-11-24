@@ -38,27 +38,23 @@ pub const Threads = struct {
     ctx: *DbCtx,
     allocator: std.mem.Allocator,
 
-    pub fn waitForQuery(self: *Threads) void {
+    pub inline fn waitForQuery(self: *Threads) void {
         self.mutex.lock();
         defer self.mutex.unlock();
         while (self.pendingQueries > 0) {
-            std.debug.print("wait for q\n", .{});
             self.queryDone.wait(&self.mutex);
-            std.debug.print(" wait for q done\n", .{});
         }
     }
 
-    pub fn waitForModify(self: *Threads) void {
+    pub inline fn waitForModify(self: *Threads) void {
         self.mutex.lock();
         defer self.mutex.unlock();
         while (self.pendingModifies > 0) {
-            std.debug.print("wait for m\n", .{});
             self.modifyDone.wait(&self.mutex);
-            std.debug.print(" wait for m done\n", .{});
         }
     }
 
-    pub fn modifyIsReady(self: *Threads) bool {
+    pub inline fn modifyIsReady(self: *Threads) bool {
         self.mutex.lock();
         defer self.mutex.unlock();
         if (self.pendingModifies > 0) {
@@ -67,7 +63,7 @@ pub const Threads = struct {
         return true;
     }
 
-    pub fn queryIsReady(self: *Threads) bool {
+    pub inline fn queryIsReady(self: *Threads) bool {
         self.mutex.lock();
         defer self.mutex.unlock();
         if (self.pendingQueries > 0) {

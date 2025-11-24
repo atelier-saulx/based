@@ -5,6 +5,11 @@ import { styleText } from 'util'
 
 const MEASURES_PER_TEST = 10
 
+function writeAndReplace(text, lineEnd = '') {
+  process.stdout.write('\r' + text)
+  process.stdout.write(lineEnd)
+}
+
 type Options = {
   repeat?: number
   timeout?: number
@@ -71,7 +76,20 @@ export async function perf(
       ])
 
       const end = performance.now()
-      durations.push(end - start)
+      const duration = end - start
+
+      if (!options.silent) {
+        if (options.repeat > 1) {
+          writeAndReplace(
+            styleText(
+              'gray',
+              `Running ${label} ${i + 1}/${options.repeat} in ${Math.round(duration)}ms`,
+            ),
+          )
+        }
+      }
+
+      durations.push(duration)
     }
 
     clearTimeout(timeOut)
@@ -120,13 +138,15 @@ export async function perf(
         diffMessage = styleText('gray', ` similar performance`)
       }
     }
-    if (!options.silent)
-      console.log(
+    if (!options.silent) {
+      writeAndReplace(
         styleText(
           'gray',
           `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${options.repeat}x)${diffMessage}`,
         ),
+        '\n',
       )
+    }
     return totalTime
   } catch (err) {
     console.error(`Error in perf run "${label}":`, err)
