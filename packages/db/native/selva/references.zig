@@ -20,14 +20,6 @@ pub fn getSingleReference(node: st.Node, fieldSchema: st.FieldSchema) ?Reference
     return selva.selva_fields_get_reference(node, fieldSchema);
 }
 
-pub fn getReferences(node: st.Node, fieldSchema: st.FieldSchema) ?References {
-    return selva.selva_fields_get_references(node, fieldSchema);
-}
-
-pub fn clearReferences(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.FieldSchema) void {
-    selva.selva_fields_clear_references(ctx.db.selva, node, fieldSchema, st.markDirtyCb, ctx);
-}
-
 pub fn deleteReference(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.FieldSchema, id: u32) !void {
     try errors.selva(selva.selva_fields_del_ref(
         ctx.db.selva,
@@ -53,6 +45,66 @@ pub fn referencesHas(refs: References, dstNodeId: u32) bool {
 
 pub fn referencesGet(refs: ?References, dstNodeId: u32) ReferenceAny {
     return selva.selva_fields_references_get(refs.?, dstNodeId);
+}
+
+const ReferencesIterator1 = struct {
+    refs: References,
+    dstType: Node.Type,
+    i: u32 = 0,
+    fn next(self: *ReferencesIterator1) ?Node {
+        if (self.refs.size == selva.SELVA_NODE_REFERENCE_SMALL and self.i < self.refs.nr_refs) {
+            const ref = self.refs.unnamed_0.small[self.i];
+            const node = Node.getNode(self.dstType, ref.dst);
+            self.i = self.i + 1;
+            return node;
+        } else {
+            return null;
+        }
+    }
+};
+
+const ReferencesIterator2Result = struct {
+    node: Node,
+    edgeNode: Node,
+};
+
+const ReferencesIterator2 = struct {
+    refs: References,
+    dstType: Node.Type,
+    edgeType: Node.Type,
+    i: u32 = 0,
+    fn next(self: *ReferencesIterator2) ?ReferencesIterator2Result {
+        if (self.refs.size == selva.SELVA_NODE_REFERENCE_LARGE and self.i < self.refs.nr_refs) {
+            const ref = self.refs.unnamed_0.large[self.i];
+            const node = Node.getNode(self.dstType, ref.dst);
+            const edgeNode = Node.getNode(self.edgeType, ref.edge);
+            self.i = self.i + 1;
+            return ReferencesIterator2Result{ .node = node, .edgeNode = edgeNode };
+        } else {
+            return null;
+        }
+    }
+};
+
+pub fn getReferences(comptime includeEdge: bool, db: *Db.DbCtx, node: st.Node, fieldSchema: st.FieldSchema) if (includeEdge) ?ReferencesIterator1 else ?ReferencesIterator2 {
+    const refs = selva.selva_fields_get_references(node, fieldSchema);
+    if (refs == null or fieldSchema.type != selva.SELVA_FIELD_TYPE_REFERENCES) {
+        return null;
+    }
+
+    const dstType = Db.getRefDstType(db, fieldSchema) catch return null;
+    return switch (if (comptime includeEdge) ReferencesIterator1 else ReferencesIterator2) {
+        ReferencesIterator1 => return ReferencesIterator1{ .refs = refs, .dstType = dstType },
+        ReferencesIterator2 => {
+            const edgeType = Db.getEdgeType(db, fieldSchema) catch return null;
+            return ReferencesIterator2{ .refs = refs, .dstType = dstType, .edgeType = edgeType };
+        },
+        else => @compileError("Did wrong"),
+    };
+}
+
+pub fn clearReferences(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.FieldSchema) void {
+    selva.selva_fields_clear_references(ctx.db.selva, node, fieldSchema, st.markDirtyCb, ctx);
 }
 
 pub fn writeReference(ctx: *Modify.ModifyCtx, src: st.Node, fieldSchema: st.FieldSchema, dst: st.Node) !?ReferenceLarge {
@@ -176,25 +228,3 @@ pub fn getEdgeReferences(
 
     return selva.selva_fields_get_references(edge_node, fs);
 }
-
-//const ReferencesIteratorResult = struct {
-//    node: Node,
-//    edgeNode: Node,
-//};
-//
-//const ReferencesIterator1 = struct {
-//    refs:
-//    i: u32 = 0,
-//    fn next(self: *ReferencesIterator1) Node {
-//        self.node = null;
-//        return null;
-//    }
-//};
-//
-//const ReferencesIterator2 = struct {
-//    node: ?Node = null,
-//    fn next(self: *ReferencesIterator2) ?ReferencesIteratorResult {
-//        self.node = null;
-//        return null;
-//    }
-//};
