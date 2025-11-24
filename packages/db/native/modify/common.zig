@@ -1,5 +1,6 @@
 const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
+const Schema = @import("../selva/schema.zig");
 const errors = @import("../errors.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
@@ -15,7 +16,7 @@ pub const ModifyCtx = struct {
     typeSortIndex: ?*sort.TypeIndex,
     typeId: t.TypeId,
     typeEntry: ?Node.Type,
-    fieldSchema: ?db.FieldSchema,
+    fieldSchema: ?Schema.FieldSchema,
     node: ?Node.Node,
     fieldType: t.PropType,
     db: *db.DbCtx,
@@ -33,7 +34,7 @@ pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {
 }
 
 pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {
-    const blockCapacity = db.getBlockCapacity(ctx.db, typeId);
+    const blockCapacity = Node.getBlockCapacity(ctx.db, typeId);
     const tmp: u64 = nodeId - @as(u64, @intFromBool((nodeId % blockCapacity) == 0));
     const mtKey = (@as(u64, typeId) << 32) | ((tmp / blockCapacity) * blockCapacity + 1);
     ctx.dirtyRanges.put(mtKey, @floatFromInt(mtKey)) catch return;

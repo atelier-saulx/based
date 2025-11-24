@@ -2,18 +2,20 @@ const std = @import("std");
 const napi = @import("../napi.zig");
 const selva = @import("../selva/selva.zig").c;
 const Db = @import("../selva/db.zig");
+const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
+const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");
-const Modify = @import("./common.zig");
-const createField = @import("./create.zig").createField;
-const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
-const deleteField = @import("./delete.zig").deleteField;
-const deleteTextLang = @import("./delete.zig").deleteTextLang;
-const subs = @import("./subscription.zig");
-const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
-const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
+const Modify = @import("common.zig");
+const createField = @import("create.zig").createField;
+const deleteFieldSortIndex = @import("delete.zig").deleteFieldSortIndex;
+const deleteField = @import("delete.zig").deleteField;
+const deleteTextLang = @import("delete.zig").deleteTextLang;
+const subs = @import("subscription.zig");
+const addEmptyToSortIndex = @import("sort.zig").addEmptyToSortIndex;
+const addEmptyTextToSortIndex = @import("sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
-const Update = @import("./update.zig");
+const Update = @import("update.zig");
 const dbSort = @import("../db/sort.zig");
 const config = @import("config");
 const errors = @import("../errors.zig");
@@ -46,7 +48,7 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
 
 fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     ctx.typeId = typeId;
-    ctx.typeEntry = try Db.getType(ctx.db, ctx.typeId);
+    ctx.typeEntry = try Node.getType(ctx.db, ctx.typeId);
     ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
 
     ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
@@ -82,7 +84,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     ctx.node = Node.getNode(ctx.typeEntry.?, nextId);
 
     if (ctx.node) |oldNode| {
-        Db.flushNode(ctx, ctx.typeEntry.?, oldNode);
+        Node.flushNode(ctx, ctx.typeEntry.?, oldNode);
     } else {
         ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, nextId);
     }
@@ -92,7 +94,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
 }
 
-fn getLargeRef(db: *Db.DbCtx, node: Node.Node, fs: Db.FieldSchema, dstId: u32) ?Db.ReferenceLarge {
+fn getLargeRef(db: *Db.DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?Db.ReferenceLarge {
     if (dstId == 0) { // assume reference
         return References.getSingleReference(node, fs);
     } else { // references
@@ -114,13 +116,13 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
         return 0;
     }
 
-    const fs = Db.getFieldSchema(ctx.typeEntry, refField) catch {
+    const fs = Schema.getFieldSchema(ctx.typeEntry, refField) catch {
         return 0;
     };
     ctx.fieldSchema = fs;
 
     if (getLargeRef(ctx.db, ctx.node.?, fs, dstId)) |ref| {
-        const efc = Db.getEdgeFieldConstraint(fs);
+        const efc = Schema.getEdgeFieldConstraint(fs);
         switchType(ctx, efc.edge_node_type) catch {
             return 0;
         };
@@ -194,7 +196,7 @@ pub fn modify(
             t.ModOp.switchProp => {
                 ctx.field = operation[0];
                 i = i + 3;
-                ctx.fieldSchema = try Db.getFieldSchema(ctx.typeEntry.?, ctx.field);
+                ctx.fieldSchema = try Schema.getFieldSchema(ctx.typeEntry.?, ctx.field);
                 ctx.fieldType = @enumFromInt(operation[1]);
                 // TODO move this logic to the actual handlers (createProp, updateProp, etc)
                 if (ctx.fieldType == t.PropType.reference) {
@@ -218,7 +220,7 @@ pub fn modify(
             t.ModOp.deleteNode => {
                 if (ctx.node) |node| {
                     subs.stage(&ctx, subs.Op.deleteNode);
-                    Db.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
+                    Node.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
                     ctx.node = null;
                 }
                 i = i + 1;
@@ -284,7 +286,7 @@ pub fn modify(
                     const prop = read(u8, operation, j);
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
-                    if (Db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                    if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         write(operation, Node.getNodeId(node), updateIndex + 1);
                         nextIndex = updateIndex;
                         break;
@@ -302,7 +304,7 @@ pub fn modify(
                     const prop = read(u8, operation, j);
                     const len = read(u32, operation, j + 1);
                     const val = operation[j + 5 .. j + 5 + len];
-                    if (Db.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                    if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = Node.getNodeId(node);
                         write(batch, id, resultLen);
                         write(batch, errors.ClientError.null, resultLen + 4);
@@ -343,13 +345,13 @@ pub fn modify(
                 i += try increment(&ctx, operation, op) + 1;
             },
             t.ModOp.expire => {
-                Db.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
+                Node.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
                 i += 5;
             },
         }
     }
 
-    Db.expire(&ctx);
+    Node.expire(&ctx);
     writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
     write(result, resultLen, 0);
 
