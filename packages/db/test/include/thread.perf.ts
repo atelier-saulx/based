@@ -3,6 +3,7 @@ import { registerQuery } from '../../src/client/query/registerQuery.js'
 import { BasedDb } from '../../src/index.js'
 import native from '../../src/native.js'
 import test from '../shared/test.js'
+import { perf } from '../shared/assert.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -66,20 +67,37 @@ await test('include', async (t) => {
   //   x.push('xxw qweudhweiofh')
   // }
   console.log('???')
-  const id = await db.create('user', {
-    nr: 1,
-    name: 'Mr poop',
-  })
+  for (let i = 0; i < 1e6; i++) {
+    db.create('user', {
+      nr: 1,
+      name: 'Mr poop',
+    })
+  }
 
-  const id2 = await db.create('user', {
-    nr: 2,
-    name: 'Mr flap',
-  })
   console.log('xxx')
 
   console.log('start query')
-  ;(await db.query('user').get()).debug()
-  console.log('done query')
+
+  await db.drain()
+  // ;(await db.query('user').get()).debug()
+
+  await perf(
+    async () => {
+      const q = []
+
+      for (let i = 0; i < 1000; i++) {
+        q.push(
+          db
+            .query('user')
+            .range(0, 1e6 + i)
+            .get(),
+        )
+      }
+      await Promise.all(q)
+    },
+    '1B nodes',
+    { repeat: 10 },
+  )
 
   // console.log('done')
 

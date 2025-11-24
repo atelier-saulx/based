@@ -184,7 +184,6 @@ export class DbServer extends DbShared {
       const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4]
       const queryListeners = this.opListeners.get(op)
-      console.log('query id', id, op, OpTypeInverse[op])
       if (queryListeners.get(id)) {
         console.log('💤 Query allready staged dont exec again', id)
       } else {

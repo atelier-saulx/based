@@ -22,7 +22,7 @@ pub fn default(
 
     // assert(header.size == q.len);
 
-    std.debug.print("multiple.default {any} {any} \n", .{ header, q.len });
+    // std.debug.print("multiple.default {any} {any} \n", .{ header, q.len });
 
     var nodeCnt: u32 = 0;
     const nestedQuery = q[index..];
@@ -51,7 +51,10 @@ pub fn default(
                 continue;
             }
 
-            try threads.appendToResult(true, ctx.thread, Node.getNodeId(n));
+            const nodeHeader = try threads.sliceFromResult(true, ctx.thread, 5);
+            // utils.write(nodeHeader, t.ReadOp.id, 0);
+            nodeHeader[0] = @intFromEnum(t.ReadOp.id);
+            utils.write(nodeHeader, Node.getNodeId(n), 1);
 
             try include.include(n, ctx, nestedQuery);
 
@@ -63,5 +66,5 @@ pub fn default(
         }
     }
 
-    std.debug.print("results #{any} \n", .{nodeCnt});
+    // std.debug.print("results #{any} \n", .{nodeCnt});
 }

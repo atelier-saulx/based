@@ -10,7 +10,7 @@ const t = @import("../types.zig");
 
 // call this include
 pub fn include(
-    node: Node.Node,
+    _: Node.Node,
     _: *Query.QueryCtx, // prob just want to pass type entry on the queryctx..
     q: []u8, // call this q
     // size:
@@ -26,7 +26,7 @@ pub fn include(
 
     // here it will write the id
 
-    std.debug.print(" include -> {any} \n", .{node});
+    // std.debug.print(" include -> {any} \n", .{node});
 
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
