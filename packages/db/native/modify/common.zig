@@ -5,6 +5,7 @@ const sort = @import("../db/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
 const Subscription = @import("../db/subscription/common.zig");
+const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 
 pub const ModifyCtx = struct {
@@ -23,7 +24,7 @@ pub const ModifyCtx = struct {
     idSubs: ?[]Subscription.IdSubsItem,
     batch: []u8,
     err: errors.ClientError,
-    threadCtx: *db.DbThread,
+    threadCtx: *Thread.DbThread,
 };
 
 pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {

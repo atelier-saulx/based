@@ -6,7 +6,7 @@ const Sort = @import("../db/sort.zig");
 const Query = @import("./common.zig");
 const utils = @import("../utils.zig");
 const multiple = @import("./multiple.zig");
-const threads = @import("../db/threads.zig");
+const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 
 // -------- NAPI ---------- (put in js bridge maybe?)
@@ -29,7 +29,7 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
     buffer: []u8,
-    thread: *db.DbThread,
+    thread: *Thread.DbThread,
     _: ?*Sort.SortIndexMeta,
 ) !void {
     var index: usize = 0;
@@ -42,7 +42,7 @@ pub fn getQueryThreaded(
     const queryId = utils.readNext(u32, buffer, &index);
     const q = buffer[index .. buffer.len - 8]; // - checksum len
     const op = utils.read(t.OpType, q, 0);
-    _ = try threads.newResult(true, thread, 0, queryId, op);
+    _ = try Thread.newResult(true, thread, 0, queryId, op);
 
     switch (op) {
         t.OpType.default => {

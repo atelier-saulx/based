@@ -6,8 +6,8 @@ const valgrind = @import("../valgrind.zig");
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
 const Subscription = @import("./subscription/common.zig");
-const jsBridge = @import("./jsBridge.zig");
-const threads = @import("./threads.zig");
+const jsBridge = @import("../thread/jsBridge.zig");
+const threads = @import("../thread/thread.zig");
 const sort = @import("./sort.zig");
 
 const rand = std.crypto.random;

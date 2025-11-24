@@ -11,7 +11,6 @@ const Node = @import("node.zig");
 const References = @import("references.zig");
 const Modify = @import("../modify/common.zig");
 pub const DbCtx = @import("../db/ctx.zig").DbCtx;
-pub const DbThread = @import("../db/threads.zig").DbThread;
 
 const Type = Node.Type;
 pub const Aliases = st.Aliases;

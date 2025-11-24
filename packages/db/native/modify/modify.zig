@@ -17,7 +17,7 @@ const Update = @import("./update.zig");
 const dbSort = @import("../db/sort.zig");
 const config = @import("config");
 const errors = @import("../errors.zig");
-const threads = @import("../db/threads.zig");
+const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 
 const updateField = Update.updateField;
@@ -148,7 +148,7 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
 
 pub fn modify(
     // comptime isSubscriptionWorker: bool,
-    threadCtx: *Db.DbThread,
+    threadCtx: *Thread.DbThread,
     batch: []u8,
     dbCtx: *Db.DbCtx,
     opType: t.OpType,
@@ -181,7 +181,7 @@ pub fn modify(
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
     const expectedLen = 4 + nodeCount * 5; // len(4)+res(5)n
-    const result = try threads.newResult(false, threadCtx, expectedLen, modifyId, opType);
+    const result = try Thread.newResult(false, threadCtx, expectedLen, modifyId, opType);
     var resultLen: u32 = 4; // reserve for writing result len
 
     while (i < batch.len) {
@@ -362,7 +362,7 @@ pub fn modify(
 
     var blocksOffset = resultLen + 4;
     blocksOffset = 7 - (blocksOffset % 8);
-    const blockSlice = try threads.sliceFromResult(false, threadCtx, 4 + blocksOffset + dirtyRangesSize);
+    const blockSlice = try Thread.sliceFromResult(false, threadCtx, 4 + blocksOffset + dirtyRangesSize);
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
     write(blockSlice, dirtyRangesSize, 0);
     utils.copy(u8, blockSlice, newDirtySlice, 4 + blocksOffset);

@@ -19,10 +19,9 @@ fn callJsCallback(
     const dbCtx = @as(*db.DbCtx, @ptrCast(@alignCast(ctx.?)));
 
     if (dbCtx.selva == null) {
-        std.debug.print("REMOVED {any} \n", .{responseFn});
+        std.debug.print("REMOVED DB firing bridge... {any} \n", .{responseFn});
         return;
     }
-    // std.debug.print("callJsCallback {any} \n", .{responseFn});
 
     switch (responseFn.response) {
         t.BridgeResponse.modify => {
