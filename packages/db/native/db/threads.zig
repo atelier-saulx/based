@@ -34,11 +34,11 @@ pub inline fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: u
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
 
-            std.debug.print("thread #{any} - increase size from {any}mb to {any}mb \n", .{
-                thread.id,
-                @divTrunc(thread.queryResults.len, 1_000_000),
-                @divTrunc(thread.queryResults.len + increasedSize, 1_000_000),
-            });
+            // std.debug.print("thread #{any} - increase size from {any}mb to {any}mb \n", .{
+            //     thread.id,
+            //     @divTrunc(thread.queryResults.len, 1_000_000),
+            //     @divTrunc(thread.queryResults.len + increasedSize, 1_000_000),
+            // });
 
             thread.queryResults = try std.heap.raw_c_allocator.realloc(
                 thread.queryResults,
@@ -77,11 +77,11 @@ pub inline fn reserveResultSpace(comptime isQuery: bool, thread: *DbThread, size
                 increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
             }
 
-            std.debug.print("thread #{any} - increase size from {any}mb to {any}mb \n", .{
-                thread.id,
-                @divTrunc(thread.queryResults.len, 1_000_000),
-                @divTrunc(thread.queryResults.len + increasedSize, 1_000_000),
-            });
+            // std.debug.print("thread #{any} - increase size from {any}mb to {any}mb \n", .{
+            //     thread.id,
+            //     @divTrunc(thread.queryResults.len, 1_000_000),
+            //     @divTrunc(thread.queryResults.len + increasedSize, 1_000_000),
+            // });
 
             thread.queryResults = try std.heap.raw_c_allocator.realloc(
                 thread.queryResults,

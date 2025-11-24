@@ -48,13 +48,14 @@ export async function perf(
   const outputFile =
     options.outputFile ?? `perf_${testFileName}_${dbVersion}.json`
   const outputDir = './tmp_perf_logs'
-  const testFunction = process.env.TEST_TO_RUN ?? 'not inside a test'
+  const testFunction = process.env.TEST_NAME ?? 'not inside a test'
 
   const durations: number[] = []
   let timeOut
   try {
     for (let i = 0; i < repeat; i++) {
       const start = performance.now()
+      clearTimeout(timeOut)
 
       await Promise.race([
         callWrapper(fn),
@@ -99,23 +100,29 @@ export async function perf(
     const percentDiff =
       diff.previous !== undefined ? (diff.difference / diff.previous) * 100 : 0
 
-    const diffMessage =
-      !isNaN(diff.difference) && Math.abs(percentDiff) > diffThreshold
-        ? diff.difference > 0
-          ? styleText(
-              'red',
-              ` +${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
-            )
-          : styleText(
-              'green',
-              ` ${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
-            )
-        : ''
+    let diffMessage = styleText('gray', ` no previous found`)
+
+    if (!isNaN(diff.difference)) {
+      if (Math.abs(percentDiff) > diffThreshold) {
+        diffMessage =
+          diff.difference >= 0
+            ? styleText(
+                'red',
+                ` +${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+              )
+            : styleText(
+                'green',
+                ` ${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+              )
+      } else {
+        diffMessage = styleText('gray', ` similar performance`)
+      }
+    }
     if (!silent)
       console.log(
         styleText(
           'gray',
-          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x)${diffMessage}.`,
+          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x)${diffMessage}`,
         ),
       )
     return totalTime
@@ -145,10 +152,8 @@ async function saveResultToFile(
     if (!(await fs.stat(path.dirname(filePath)).catch(() => {}))) {
       await fs.mkdir(path.dirname(filePath))
     }
-    if (!(await fs.stat(absolutePath).catch(() => {}))) {
-      const content = await fs.readFile(absolutePath, 'utf-8')
-      fileContent = JSON.parse(content)
-    }
+    const content = await fs.readFile(absolutePath, 'utf-8')
+    fileContent = JSON.parse(content)
   } catch (e) {
     fileContent = {}
   }

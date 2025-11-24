@@ -47,6 +47,9 @@ const test = async (
     console.log(styleText('gray', 'skip ' + name))
     return
   }
+
+  process.env.TEST_NAME = name
+
   let hasErrored = false
   console.log(styleText('gray', `\nstart ${name}`))
   const d = performance.now()
