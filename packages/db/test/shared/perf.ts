@@ -51,7 +51,7 @@ export async function perf(
   const testFunction = process.env.TEST_NAME ?? 'not inside a test'
 
   const durations: number[] = []
-  let timeOut
+  let timeOut: ReturnType<typeof setTimeout>
   try {
     for (let i = 0; i < repeat; i++) {
       const start = performance.now()
