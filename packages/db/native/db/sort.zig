@@ -1,6 +1,5 @@
 const deflate = @import("../deflate.zig");
 const selva = @import("../selva/selva.zig").c;
-const Db = @import("../selva/db.zig");
 const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
@@ -9,6 +8,7 @@ const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const errors = @import("../errors.zig");
 const read = utils.read;
+const DbCtx = @import("ctx.zig").DbCtx;
 
 pub const SortIndexMeta = struct {
     prop: t.PropType,
@@ -104,7 +104,7 @@ pub fn createSortIndexMeta(
 }
 
 fn getOrCreateFromCtx(
-    dbCtx: *Db.DbCtx,
+    dbCtx: *DbCtx,
     typeId: t.TypeId,
     sortHeader: *const t.SortHeader,
     comptime desc: bool,
@@ -140,7 +140,7 @@ fn getOrCreateFromCtx(
 // true,
 // false,
 pub fn createSortIndex(
-    dbCtx: *Db.DbCtx,
+    dbCtx: *DbCtx,
     decompressor: *deflate.Decompressor,
     typeId: t.TypeId,
     header: *const t.SortHeader,
@@ -186,7 +186,7 @@ pub fn createSortIndex(
 }
 
 pub fn destroySortIndex(
-    dbCtx: *Db.DbCtx,
+    dbCtx: *DbCtx,
     typeId: t.TypeId,
     field: u8,
     start: u16,
@@ -229,7 +229,7 @@ pub fn getSortIndex(
 }
 
 pub fn getTypeSortIndexes(
-    dbCtx: *Db.DbCtx,
+    dbCtx: *DbCtx,
     typeId: t.TypeId,
 ) ?*TypeIndex {
     return dbCtx.sortIndexes.get(typeId);

@@ -1,6 +1,5 @@
 const std = @import("std");
 const selva = @import("../selva/selva.zig").c;
-const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");

@@ -3,7 +3,7 @@ const std = @import("std");
 const napi = @import("../napi.zig");
 const dump = @import("../selva/dump.zig");
 const selva = @import("../selva/selva.zig").c;
-const dbCtx = @import("./ctx.zig");
+const dbCtx = @import("ctx.zig");
 
 pub fn start(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return startInternal(env, info) catch |e| {

@@ -1,8 +1,8 @@
-const db = @import("../selva/db.zig");
 const selva = @import("../selva/selva.zig").c;
 const napi = @import("../napi.zig");
 const std = @import("std");
 const t = @import("../types.zig");
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const BridgeResponseStruct = struct {
     response: t.BridgeResponse,
@@ -16,7 +16,7 @@ fn callJsCallback(
     data: ?*anyopaque,
 ) callconv(.c) void {
     const responseFn = @as(*BridgeResponseStruct, @ptrCast(@alignCast(data.?)));
-    const dbCtx = @as(*db.DbCtx, @ptrCast(@alignCast(ctx.?)));
+    const dbCtx = @as(*DbCtx, @ptrCast(@alignCast(ctx.?)));
 
     if (dbCtx.selva == null) {
         std.debug.print("REMOVED DB firing bridge... {any} \n", .{responseFn});
@@ -140,7 +140,7 @@ pub const Callback = struct {
 
     pub fn init(
         env: napi.Env,
-        dbCtx: *db.DbCtx,
+        dbCtx: *DbCtx,
         jsFunc: napi.Value,
     ) !*Callback {
         const self = try std.heap.raw_c_allocator.create(Callback);

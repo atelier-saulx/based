@@ -2,7 +2,6 @@ const std = @import("std");
 const utils = @import("../utils.zig");
 const Query = @import("common.zig");
 const include = @import("include.zig");
-const Db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
 const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");

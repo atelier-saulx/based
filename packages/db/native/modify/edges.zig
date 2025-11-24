@@ -1,6 +1,5 @@
 const Modify = @import("common.zig");
 const selva = @import("../selva/selva.zig").c;
-const Db = @import("../selva/db.zig");
 const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");

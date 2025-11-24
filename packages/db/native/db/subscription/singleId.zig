@@ -1,11 +1,10 @@
 const std = @import("std");
-const Db = @import("../../selva/db.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
 const utils = @import("../../utils.zig");
-const Subscription = @import("./common.zig");
-const upsertSubType = @import("./shared.zig").upsertSubType;
-const removeSubTypeIfEmpty = @import("./shared.zig").removeSubTypeIfEmpty;
+const Subscription = @import("common.zig");
+const upsertSubType = @import("shared.zig").upsertSubType;
+const removeSubTypeIfEmpty = @import("shared.zig").removeSubTypeIfEmpty;
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 
@@ -190,7 +189,7 @@ pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
     return null;
 }
 
-pub fn removeSubscriptionMarked(ctx: *Db.DbCtx, sub: *Subscription.IdSubsItem) !void {
+pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !void {
     const id = sub.id;
     const typeId = sub.typeId;
 

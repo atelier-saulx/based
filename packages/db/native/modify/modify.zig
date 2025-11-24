@@ -1,7 +1,6 @@
 const std = @import("std");
 const napi = @import("../napi.zig");
 const selva = @import("../selva/selva.zig").c;
-const Db = @import("../selva/db.zig");
 const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
@@ -21,6 +20,7 @@ const config = @import("config");
 const errors = @import("../errors.zig");
 const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 const updateField = Update.updateField;
 const updatePartialField = Update.updatePartialField;
@@ -41,7 +41,7 @@ pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
 fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     const args = try napi.getArgs(2, env, info);
     const batch = try napi.get([]u8, env, args[0]);
-    const dbCtx = try napi.get(*Db.DbCtx, env, args[1]);
+    const dbCtx = try napi.get(*DbCtx, env, args[1]);
     try dbCtx.threads.modify(batch);
 }
 //  -----------------------
@@ -94,7 +94,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
 }
 
-fn getLargeRef(db: *Db.DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?References.ReferenceLarge {
+fn getLargeRef(db: *DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?References.ReferenceLarge {
     if (dstId == 0) { // assume reference
         return References.getSingleReference(node, fs);
     } else { // references
@@ -152,7 +152,7 @@ pub fn modify(
     // comptime isSubscriptionWorker: bool,
     threadCtx: *Thread.DbThread,
     batch: []u8,
-    dbCtx: *Db.DbCtx,
+    dbCtx: *DbCtx,
     opType: t.OpType,
 ) !void {
     // utils.readNext(t.QueryDefaultHeader, q, &index);

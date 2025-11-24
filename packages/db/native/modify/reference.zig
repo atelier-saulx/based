@@ -1,4 +1,3 @@
-const Db = @import("../selva/db.zig");
 const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");

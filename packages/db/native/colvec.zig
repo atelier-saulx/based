@@ -1,9 +1,9 @@
 const std = @import("std");
 const napi = @import("napi.zig");
 const selva = @import("selva/selva.zig").c;
-const Db = @import("selva/db.zig");
 const Node = @import("selva/Node.zig");
 const Schema = @import("selva/schema.zig");
+const DbCtx = @import("db/ctx.zig").DbCtx;
 
 pub fn colvec(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return colvecInternal(env, info) catch |err| {
@@ -53,7 +53,7 @@ fn native_foreach(te: Node.Type, fs: Schema.FieldSchema, nodeId: selva.node_id_t
 
 fn colvecInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(5, env, info);
-    const dbCtx = try napi.get(*Db.DbCtx, env, args[0]);
+    const dbCtx = try napi.get(*DbCtx, env, args[0]);
     const typeId = try napi.get(u16, env, args[1]);
     const field = try napi.get(u8, env, args[2]);
     const nodeId = try napi.get(u32, env, args[3]);
