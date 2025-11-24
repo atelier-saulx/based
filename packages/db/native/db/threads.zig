@@ -426,10 +426,17 @@ pub const Threads = struct {
 
                 if (self.pendingQueries == 0) {
                     self.queryDone.signal();
+
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
                         self.ctx.jsBridge.call(t.BridgeResponse.query);
                     }
+
+                    if (threadCtx.queryResultsIndex > 100_000_000) {
+                        std.debug.print("Need to wait for flush condition on this thread buffer is larger then 100mb \n", .{});
+                        // add wait condition
+                    }
+
                     if (self.nextModifyQueue.items.len > 0) {
                         const prevModifyQueue = self.modifyQueue;
                         self.modifyQueue = self.nextModifyQueue;

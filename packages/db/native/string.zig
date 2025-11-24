@@ -1,6 +1,6 @@
-const napi = @import("./napi.zig");
-const deflate = @import("./deflate.zig");
-const utils = @import("./utils.zig");
+const napi = @import("napi.zig");
+const deflate = @import("deflae.zig");
+const utils = @import("utils.zig");
 const std = @import("std");
 pub const c = @cImport({
     @cDefine("__zig", "1");

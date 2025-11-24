@@ -43,7 +43,7 @@ pub const ReferenceLarge = *c.SelvaNodeLargeReference;
 pub const ReferenceAny = c.SelvaNodeReferenceAny;
 pub const References = *const c.SelvaNodeReferences;
 
-pub fn strerror_zig(err: i32) [:0]const u8 {
+pub fn strerror(err: i32) [:0]const u8 {
     const s = c.selva_strerror(err);
     return s[0..std.mem.len(s) :0];
 }
