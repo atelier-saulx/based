@@ -111,7 +111,7 @@ pub const TypeIterator = struct {
             };
         }
     }
-    fn next(self: *TypeIterator) ?Node {
+    inline fn next(self: *TypeIterator) ?Node {
         const node = self.node;
         if (node) |n| {
             if (self.desc) {
