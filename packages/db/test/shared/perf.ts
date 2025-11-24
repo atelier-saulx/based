@@ -2,7 +2,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { performance } from 'perf_hooks'
 import { styleText } from 'util'
-import { difference } from '../../../schema/dist/parse/semver/difference.js'
 
 const MEASURES_PER_TEST = 10
 
