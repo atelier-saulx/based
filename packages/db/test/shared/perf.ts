@@ -166,8 +166,8 @@ async function saveResultToFile(
 
   const previous = fileContent[testName]
     .filter((m) => m.label == label)
-    .slice(-1)[0]?.avgDurationMs
-  const difference = data.avgDurationMs - previous
+    .slice(-1)[0]?.totalDurationMs
+  const difference = data.totalDurationMs - previous
   data.difference = difference
   data.previous = previous
 
