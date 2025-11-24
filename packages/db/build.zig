@@ -27,13 +27,18 @@ pub fn build(b: *std.Build) void {
     lib.linker_allow_shlib_undefined = true;
 
     lib.root_module.addOptions("config", options);
-
-    const node_hpath = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse "deps/node/include/node/";
+    //     {
+    //   target: 'aarch64-macos',
+    //   nodeHeadersPath: 'deps/node-v22.21.1',
+    //   rpath: '@loader_path',
+    //   libSelvaPath: 'dist/lib/darwin_aarch64'
+    // }
+    const node_hpath = b.option([]const u8, "node_hpath", "Path to the Node.js headers") orelse "deps/node-v22.21.1/include/node";
     lib.addIncludePath(b.path(node_hpath));
 
     const rpath = b.option([]const u8, "rpath", "run-time search path") orelse "@loader_path";
-    const lib_selva_path = b.option([]const u8, "libselvapath", "Path to the Selva Library") orelse "packages/db/dist/lib";
-    const headers_selva_path = b.option([]const u8, "headersselvapath", "Path to the Selva Headers") orelse "packages/db/dist/lib/include";
+    const lib_selva_path = b.option([]const u8, "libselvapath", "Path to the Selva Library") orelse "dist/lib/darwin_aarch64";
+    const headers_selva_path = b.option([]const u8, "headersselvapath", "Path to the Selva Headers") orelse "dist/lib/darwin_aarch64/include";
 
     lib.root_module.addRPathSpecial(rpath);
 
@@ -48,4 +53,9 @@ pub fn build(b: *std.Build) void {
     });
 
     b.getInstallStep().dependOn(&install_lib.step);
+
+    // This creates a "check" step that allows zls (Zig Language Server) to analyze the code.
+    // It reuses the same module definition from the library being built.
+    const check_step = b.step("check", "Check compilation for zls");
+    check_step.dependOn(&lib.step);
 }

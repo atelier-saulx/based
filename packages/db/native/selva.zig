@@ -27,10 +27,12 @@ pub const c = @cImport({
     @cInclude("selva/selva_lang.h");
     @cInclude("selva/strsearch.h");
     @cInclude("selva/vector.h");
+
     @cInclude("selva/thread.h");
     @cInclude("selva/membar.h");
     @cInclude("selva/mblen.h");
 });
+
 const std = @import("std");
 
 pub const SelvaHash128 = u128;

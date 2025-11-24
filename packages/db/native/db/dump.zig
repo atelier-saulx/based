@@ -26,7 +26,6 @@ pub fn saveCommon(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType
 
 // sdbFilename must be nul-terminated
 pub fn saveBlock(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
-    std.debug.print("\n--------saveBlock-------\n", .{});
     const id = read(u32, q, 0);
     const data = try threads.newResult(true, threadCtx, 26, id, op);
     const typeCode = read(u16, q, 9);
