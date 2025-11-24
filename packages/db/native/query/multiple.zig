@@ -19,7 +19,7 @@ pub fn default(
 
     var nodeCnt: u32 = 0;
     const nestedQuery = q[index..];
-    const sizeIndex = try Thread.reserveResultSpace(true, ctx.thread, 4);
+    const sizeIndex = try ctx.thread.query.reserve(4);
 
     // this will be a nice iterator
     const typeEntry = try db.getType(ctx.db, header.typeId);
@@ -45,8 +45,8 @@ pub fn default(
                 continue;
             }
 
-            try Thread.appendToResult(true, ctx.thread, t.ReadOp.id);
-            try Thread.appendToResult(true, ctx.thread, Node.getNodeId(n));
+            try ctx.thread.query.append(t.ReadOp.id);
+            try ctx.thread.query.append(Node.getNodeId(n));
 
             // const nodeHeader = try threads.sliceFromResult(true, ctx.thread, 5);
             // utils.write(nodeHeader, t.ReadOp.id, 0);
@@ -62,5 +62,5 @@ pub fn default(
         }
     }
 
-    Thread.writeToResult(true, ctx.thread, nodeCnt, sizeIndex);
+    ctx.thread.query.write(nodeCnt, sizeIndex);
 }

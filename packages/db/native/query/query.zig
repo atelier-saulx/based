@@ -29,7 +29,7 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
     buffer: []u8,
-    thread: *Thread.DbThread,
+    thread: *Thread.Thread,
     _: ?*Sort.SortIndexMeta,
 ) !void {
     var index: usize = 0;
@@ -42,7 +42,8 @@ pub fn getQueryThreaded(
     const queryId = utils.readNext(u32, buffer, &index);
     const q = buffer[index .. buffer.len - 8]; // - checksum len
     const op = utils.read(t.OpType, q, 0);
-    _ = try Thread.newResult(true, thread, 0, queryId, op);
+
+    _ = try thread.query.result(0, queryId, op);
 
     switch (op) {
         t.OpType.default => {

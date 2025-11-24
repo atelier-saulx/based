@@ -31,14 +31,13 @@ fn callJsCallback(
             var arrayBuffer: napi.Value = undefined;
             _ = napi.c.napi_create_external_arraybuffer(
                 env,
-                thread.modifyResults.ptr,
-                thread.modifyResultsIndex,
+                thread.modify.data.ptr,
+                thread.modify.index,
                 null,
                 null,
                 &arrayBuffer,
             );
-            thread.*.modifyResultsIndex = 0;
-            // IF TOO LARGE MAKE SMALLER
+            thread.*.modify.index = 0;
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
             var args = [_]napi.Value{ fnResponse, arrayBuffer };
@@ -53,15 +52,13 @@ fn callJsCallback(
             var arrayBuffer: napi.Value = undefined;
             _ = napi.c.napi_create_external_arraybuffer(
                 env,
-                thread.queryResults.ptr,
-                thread.queryResultsIndex,
+                thread.query.data.ptr,
+                thread.query.index,
                 null,
                 null,
                 &arrayBuffer,
             );
-            // std.debug.print("Reset query index (flush) #{d} \n", .{thread.id});
-
-            thread.*.queryResultsIndex = 0;
+            thread.*.query.index = 0;
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
             var args = [_]napi.Value{ fnResponse, arrayBuffer };
@@ -78,15 +75,13 @@ fn callJsCallback(
             var arrayBuffer: napi.Value = undefined;
             _ = napi.c.napi_create_external_arraybuffer(
                 env,
-                thread.modifyResults.ptr,
-                thread.modifyResultsIndex,
+                thread.modify.data.ptr,
+                thread.modify.index,
                 null,
                 null,
                 &arrayBuffer,
             );
-            // std.debug.print("Reset mod index (flush) #{d} \n", .{thread.id});
-
-            thread.*.modifyResultsIndex = 0;
+            thread.*.modify.index = 0;
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
             var args = [_]napi.Value{ fnResponse, arrayBuffer };
@@ -107,17 +102,14 @@ fn callJsCallback(
                 var arrayBuffer: napi.Value = undefined;
                 _ = napi.c.napi_create_external_arraybuffer(
                     env,
-                    thread.queryResults.ptr,
-                    thread.queryResultsIndex,
+                    thread.query.data.ptr,
+                    thread.query.index,
                     null,
                     null,
                     &arrayBuffer,
                 );
                 _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
-
-                // std.debug.print("Reset query index #{d} \n", .{thread.id});
-                thread.*.queryResultsIndex = 0;
-                // IF TOO LARGE MAKE SMALLER
+                thread.query.index = 0;
             }
             var fnResponse: napi.Value = undefined;
             _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
@@ -125,7 +117,6 @@ fn callJsCallback(
             var undefinedVal: napi.Value = undefined;
             _ = napi.c.napi_get_undefined(env, &undefinedVal);
             _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
-
             dbCtx.threads.jsQueryBridgeStaged = false;
             dbCtx.threads.mutex.unlock();
         },

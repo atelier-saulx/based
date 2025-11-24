@@ -3,5 +3,5 @@ const Thread = @import("../thread/thread.zig");
 
 pub const QueryCtx = struct {
     db: *db.DbCtx,
-    thread: *Thread.DbThread,
+    thread: *Thread.Thread,
 };

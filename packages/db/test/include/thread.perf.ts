@@ -36,6 +36,8 @@ await test('include', async (t) => {
 
   await db.drain()
 
+  db.query('user').include('id')
+
   await perf(
     async () => {
       const q = []
@@ -44,7 +46,7 @@ await test('include', async (t) => {
           db
             .query('user')
             .include('id')
-            .range(10)
+            // .range(10)
             .range(0, 1e6 + i)
             .get(),
           // .inspect(),
@@ -53,7 +55,7 @@ await test('include', async (t) => {
       await Promise.all(q)
     },
     '1B nodes',
-    { repeat: 10 },
+    { repeat: 100 },
   )
 
   console.log('done')

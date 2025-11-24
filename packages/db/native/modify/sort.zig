@@ -23,7 +23,7 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
             t.LangCode.NONE,
         );
         if (sI != null) {
-            sort.insert(ctx.threadCtx.decompressor, sI.?, sort.EMPTY_SLICE, ctx.node.?);
+            sort.insert(ctx.thread.decompressor, sI.?, sort.EMPTY_SLICE, ctx.node.?);
         }
     }
     return len + 2;
@@ -49,7 +49,7 @@ pub fn addEmptyTextToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
                 lang,
             );
             if (sI != null) {
-                sort.insert(ctx.threadCtx.decompressor, sI.?, sort.EMPTY_SLICE, ctx.node.?);
+                sort.insert(ctx.thread.decompressor, sI.?, sort.EMPTY_SLICE, ctx.node.?);
             }
             i += 1;
         }

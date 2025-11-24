@@ -90,8 +90,8 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             }
             if (ctx.currentSortIndex != null) {
                 const newCount = selva.hll_count(currentData);
-                sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
-                sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
+                sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
+                sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
             }
             return len * 8;
         },
@@ -112,14 +112,14 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                             currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                         }
                         const sI = entry.value_ptr.*;
-                        sort.remove(ctx.threadCtx.decompressor, sI, currentData.?, ctx.node.?);
-                        sort.insert(ctx.threadCtx.decompressor, sI, slice, ctx.node.?);
+                        sort.remove(ctx.thread.decompressor, sI, currentData.?, ctx.node.?);
+                        sort.insert(ctx.thread.decompressor, sI, slice, ctx.node.?);
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
                 const currentData = db.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
-                sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
-                sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
+                sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
+                sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
 
             if (ctx.fieldType == t.PropType.text) {
@@ -128,8 +128,8 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     const sIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
                     if (sIndex) |sortIndex| {
                         const currentData: []u8 = db.getText(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType, lang);
-                        sort.remove(ctx.threadCtx.decompressor, sortIndex, currentData, ctx.node.?);
-                        sort.insert(ctx.threadCtx.decompressor, sortIndex, slice, ctx.node.?);
+                        sort.remove(ctx.thread.decompressor, sortIndex, currentData, ctx.node.?);
+                        sort.insert(ctx.thread.decompressor, sortIndex, slice, ctx.node.?);
                     }
                 }
                 try db.setText(ctx.node.?, ctx.fieldSchema.?, slice);
@@ -138,7 +138,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     const old = try db.setAlias(ctx.typeEntry.?, ctx.id, ctx.field, slice);
                     if (old > 0) {
                         if (ctx.currentSortIndex != null) {
-                            sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
+                            sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
                         }
                         Modify.markDirtyRange(ctx, ctx.typeId, old);
                     }
@@ -176,9 +176,9 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                 if (ctx.typeSortIndex != null) {
                     const sI = ctx.typeSortIndex.?.main.get(start);
                     if (sI != null) {
-                        sort.remove(ctx.threadCtx.decompressor, sI.?, currentData, ctx.node.?);
+                        sort.remove(ctx.thread.decompressor, sI.?, currentData, ctx.node.?);
                         copy(u8, currentData, operation[4 .. 4 + l], start);
-                        sort.insert(ctx.threadCtx.decompressor, sI.?, currentData, ctx.node.?);
+                        sort.insert(ctx.thread.decompressor, sI.?, currentData, ctx.node.?);
                     } else {
                         copy(u8, currentData, operation[4 .. 4 + l], start);
                     }
@@ -186,8 +186,8 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                     copy(u8, currentData, operation[4 .. 4 + l], start);
                 }
             } else if (ctx.currentSortIndex != null) {
-                sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
-                sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
+                sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
+                sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
                 copy(u8, currentData, operation[4 .. 4 + l], start);
                 subs.stage(ctx, subs.Op.update);
             } else {
@@ -320,11 +320,11 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: t.ModOp) !usize {
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);
             if (sI != null) {
-                sort.remove(ctx.threadCtx.decompressor, sI.?, currentData, ctx.node.?);
+                sort.remove(ctx.thread.decompressor, sI.?, currentData, ctx.node.?);
             }
         }
     } else if (ctx.currentSortIndex != null) {
-        sort.remove(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, value, ctx.node.?);
+        sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, value, ctx.node.?);
     }
 
     const size = incrementBuffer(op, fieldType, value, addition);
@@ -333,13 +333,13 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: t.ModOp) !usize {
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);
             if (sI != null) {
-                sort.insert(ctx.threadCtx.decompressor, sI.?, currentData, ctx.node.?);
+                sort.insert(ctx.thread.decompressor, sI.?, currentData, ctx.node.?);
             }
         }
     } else {
         subs.stage(ctx, subs.Op.update);
         if (ctx.currentSortIndex != null) {
-            sort.insert(ctx.threadCtx.decompressor, ctx.currentSortIndex.?, value, ctx.node.?);
+            sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, value, ctx.node.?);
         }
     }
 

@@ -11,229 +11,31 @@ const dump = @import("../selva/dump.zig");
 const info = @import("../selva/info.zig");
 const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
 const deflate = @import("../deflate.zig");
+const common = @import("common.zig");
 const t = @import("../types.zig");
 
-const write = utils.write;
-const read = utils.read;
-const readNext = utils.readNext;
-const Thread = std.Thread;
-const Mutex = std.Thread.Mutex;
-const Condition = std.Thread.Condition;
+pub const Thread = common.Thread;
 const Queue = std.array_list.Managed([]u8);
 
-// Slice from result
-pub inline fn sliceFromResult(comptime isQuery: bool, thread: *DbThread, size: usize) ![]u8 {
-    const paddedSize: u32 = @truncate(size); // zero padding for growth
-    if (isQuery) {
-        const newLen = thread.queryResultsIndex + paddedSize;
-        if (thread.queryResults.len < newLen) {
-            var increasedSize: usize = 10_000_000;
-            if (paddedSize > increasedSize) {
-                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
-            }
-            thread.queryResults = try std.heap.raw_c_allocator.realloc(
-                thread.queryResults,
-                thread.queryResults.len + increasedSize,
-            );
-        }
-        const data = thread.queryResults[thread.queryResultsIndex..newLen];
-        thread.*.queryResultsIndex = newLen;
-        return data;
-    } else {
-        const newLen = thread.modifyResultsIndex + paddedSize;
-        if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
-            var increasedSize: usize = 100_000;
-            if (paddedSize > increasedSize) {
-                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
-            }
-            thread.modifyResults = try std.heap.raw_c_allocator.realloc(
-                thread.modifyResults,
-                thread.modifyResults.len + increasedSize,
-            );
-        }
-        const data = thread.modifyResults[thread.modifyResultsIndex..newLen];
-        thread.*.modifyResultsIndex = newLen;
-        return data;
-    }
-}
-
-// returns start index
-pub inline fn reserveResultSpace(comptime isQuery: bool, thread: *DbThread, size: usize) !usize {
-    const paddedSize: u32 = @truncate(size); // zero padding for growth
-    if (isQuery) {
-        const newLen = thread.queryResultsIndex + paddedSize;
-        if (thread.queryResults.len < newLen) {
-            var increasedSize: usize = 10_000_000;
-            if (paddedSize > increasedSize) {
-                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
-            }
-            thread.queryResults = try std.heap.raw_c_allocator.realloc(
-                thread.queryResults,
-                thread.queryResults.len + increasedSize,
-            );
-        }
-        const prev = thread.*.queryResultsIndex;
-        thread.*.queryResultsIndex = newLen;
-        return prev;
-    } else {
-        const newLen = thread.modifyResultsIndex + paddedSize;
-        if (thread.modifyResults.len < thread.modifyResultsIndex + paddedSize) {
-            var increasedSize: usize = 100_000;
-            if (paddedSize > increasedSize) {
-                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
-            }
-            thread.modifyResults = try std.heap.raw_c_allocator.realloc(
-                thread.modifyResults,
-                thread.modifyResults.len + increasedSize,
-            );
-        }
-        const prev = thread.*.queryResultsIndex;
-        thread.*.modifyResultsIndex = newLen;
-        return prev;
-    }
-}
-
-pub inline fn writeToResult(
-    comptime isQuery: bool,
-    thread: *DbThread,
-    value: anytype,
-    offset: usize,
-) void {
-    utils.write(if (isQuery) thread.queryResults else thread.modifyResults, value, offset);
-}
-
-pub inline fn writeToResultAs(
-    comptime T: type,
-    comptime isQuery: bool,
-    thread: *DbThread,
-    value: T,
-    offset: usize,
-) void {
-    utils.writeAs(T, if (isQuery) thread.queryResults else thread.modifyResults, value, offset);
-}
-
-pub inline fn appendToResult(comptime isQuery: bool, thread: *DbThread, value: anytype) !void {
-    utils.write(try sliceFromResult(isQuery, thread, utils.sizeOf(@TypeOf(value))), value, 0);
-}
-
-pub inline fn appendToResultAs(comptime T: type, comptime isQuery: bool, thread: *DbThread, value: T) !usize {
-    const size = utils.sizeOf(T);
-    utils.writeAs(T, try sliceFromResult(isQuery, thread, size), value, 0);
-    return size;
-}
-
-pub fn commitResult(comptime isQuery: bool, thread: *DbThread) void {
-    if (isQuery) {
-        utils.writeAs(
-            u32,
-            thread.queryResults,
-            thread.queryResultsIndex - thread.queryResultsIndexHeader,
-            thread.queryResultsIndexHeader,
-        );
-    } else {
-        utils.writeAs(
-            u32,
-            thread.modifyResults,
-            thread.modifyResultsIndex - thread.modifyResultsIndexHeader,
-            thread.modifyResultsIndexHeader,
-        );
-    }
-}
-
-pub fn newResult(
-    comptime isQuery: bool,
-    thread: *DbThread,
-    size: usize,
-    id: u32,
-    subType: t.OpType,
-) ![]u8 {
-    const offset = 9;
-    const paddedSize: u32 = @truncate(size + offset);
-    var increasedSize: usize = if (isQuery) 10_000_000 else 100_000;
-    if (isQuery) {
-        const newLen = thread.queryResultsIndex + paddedSize;
-        if (thread.queryResults.len < newLen) {
-            if (paddedSize > 1_000_000) {
-                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
-            }
-            thread.queryResults = try std.heap.raw_c_allocator.realloc(
-                thread.queryResults,
-                thread.queryResults.len + increasedSize,
-            );
-        }
-        thread.queryResultsIndexHeader = thread.queryResultsIndex;
-        utils.writeAs(u32, thread.queryResults, id, thread.queryResultsIndexHeader + 4);
-        thread.queryResults[thread.queryResultsIndex + 8] = @intFromEnum(subType);
-        const data = thread.queryResults[thread.queryResultsIndex + offset .. newLen];
-        thread.*.queryResultsIndex = newLen;
-        return data;
-    } else {
-        const newLen = thread.modifyResultsIndex + paddedSize;
-        if (thread.modifyResults.len < newLen) {
-            if (paddedSize > 100_000) {
-                increasedSize = (@divTrunc(paddedSize, increasedSize) + 1) * increasedSize;
-            }
-            thread.modifyResults = try std.heap.raw_c_allocator.realloc(
-                thread.modifyResults,
-                thread.modifyResults.len + increasedSize,
-            );
-        }
-        thread.modifyResultsIndexHeader = thread.modifyResultsIndex;
-        utils.writeAs(u32, thread.modifyResults, id, thread.modifyResultsIndexHeader + 4);
-        thread.modifyResults[thread.modifyResultsIndex + 8] = @intFromEnum(subType);
-        const data = thread.modifyResults[thread.modifyResultsIndex + offset .. newLen];
-        thread.*.modifyResultsIndex = newLen;
-        return data;
-    }
-}
-
-// -------------------- clean this up
-
-pub const DbThread = struct {
-    thread: Thread,
-    id: usize,
-    queryResults: []u8,
-    queryResultsIndex: usize,
-    queryResultsIndexHeader: usize,
-    modifyResults: []u8,
-    modifyResultsIndex: usize,
-    modifyResultsIndexHeader: usize,
-    decompressor: *deflate.Decompressor,
-    libdeflateBlockState: deflate.BlockState,
-    pendingModifies: usize,
-    mutex: Mutex = .{},
-    flushDone: Condition = .{},
-    flushed: bool,
-};
-
 pub const Threads = struct {
-    mutex: Mutex = .{},
-    threads: []*DbThread,
-
+    // get rid of all the auto init things
+    mutex: std.Thread.Mutex = .{},
+    threads: []*Thread,
     pendingQueries: usize = 0,
     pendingModifies: usize = 0,
-
-    wakeup: Condition = .{},
-    queryDone: Condition = .{},
-    modifyDone: Condition = .{},
-
-    sortDone: Condition = .{},
     makingSortIndexes: usize = 0,
-
+    wakeup: std.Thread.Condition = .{},
+    queryDone: std.Thread.Condition = .{},
+    modifyDone: std.Thread.Condition = .{},
+    sortDone: std.Thread.Condition = .{},
     modifyQueue: *Queue,
     nextModifyQueue: *Queue,
-
     queryQueue: *Queue,
     nextQueryQueue: *Queue,
-
     shutdown: bool = false,
-
     jsQueryBridgeStaged: bool = false,
-
     jsModifyBridgeStaged: bool = false,
-
     ctx: *DbCtx,
-
     allocator: std.mem.Allocator,
 
     pub fn waitForQuery(self: *Threads) void {
@@ -329,11 +131,11 @@ pub const Threads = struct {
         }
     }
 
-    fn worker(self: *Threads, threadCtx: *DbThread) !void {
+    fn worker(self: *Threads, thread: *Thread) !void {
         while (true) {
             var queryBuf: ?[]u8 = null;
             var modifyBuf: ?[]u8 = null;
-            var op: t.OpType = undefined;
+            var op: t.OpType = t.OpType.noOp;
             var sortIndex: ?*sort.SortIndexMeta = null;
 
             self.mutex.lock();
@@ -349,9 +151,9 @@ pub const Threads = struct {
                     op = @enumFromInt(q[4]);
                     if (op == t.OpType.default) {
                         var index: usize = 4;
-                        const header = readNext(t.QueryHeader, q, &index);
+                        const header = utils.readNext(t.QueryHeader, q, &index);
                         if (header.sort) {
-                            const sortHeader = readNext(t.SortHeader, q, &index);
+                            const sortHeader = utils.readNext(t.SortHeader, q, &index);
                             if (sort.getSortIndex(
                                 self.ctx.sortIndexes.get(header.typeId),
                                 sortHeader.prop,
@@ -365,7 +167,7 @@ pub const Threads = struct {
                                 // can now store sort indexes for refs as well!
                                 sortIndex = try sort.createSortIndex(
                                     self.ctx,
-                                    threadCtx.decompressor,
+                                    thread.decompressor,
                                     header.typeId,
                                     &sortHeader,
                                     true,
@@ -375,7 +177,7 @@ pub const Threads = struct {
                         }
                     }
                 }
-            } else if (self.modifyQueue.items.len > 0 and threadCtx.pendingModifies > 0) {
+            } else if (self.modifyQueue.items.len > 0 and thread.pendingModifies > 0) {
                 modifyBuf = self.modifyQueue.items[0];
                 if (modifyBuf) |m| {
                     op = @enumFromInt(m[4]);
@@ -389,58 +191,51 @@ pub const Threads = struct {
             if (queryBuf) |q| {
                 switch (op) {
                     t.OpType.blockHash => {
-                        try info.blockHash(threadCtx, self.ctx, q, op);
+                        try info.blockHash(thread, self.ctx, q, op);
                     },
                     t.OpType.saveBlock => {
-                        try dump.saveBlock(threadCtx, self.ctx, q, op);
+                        try dump.saveBlock(thread, self.ctx, q, op);
                     },
                     t.OpType.saveCommon => {
-                        try dump.saveCommon(threadCtx, self.ctx, q, op);
+                        try dump.saveCommon(thread, self.ctx, q, op);
+                    },
+                    t.OpType.noOp => {
+                        std.log.err("NO-OP received for query incorrect \n", .{});
                     },
                     else => {
-                        getQueryThreaded(self.ctx, q, threadCtx, sortIndex) catch |err| {
+                        getQueryThreaded(self.ctx, q, thread, sortIndex) catch |err| {
                             std.log.err("Error query: {any}", .{err});
                             // write query error response
                         };
                     },
                 }
 
-                commitResult(true, threadCtx);
+                thread.query.commit();
+
                 self.mutex.lock();
                 self.pendingQueries -= 1;
 
-                if (threadCtx.queryResultsIndex > 100_000_000) {
-                    // std.debug.print("Need to wait for flush condition on this thread query buffer is larger then 100mb {any}mb \n", .{
-                    //     @divFloor(threadCtx.queryResultsIndex, 1_000_000),
-                    // });
-                    threadCtx.*.flushed = false;
-                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, threadCtx.id);
-                    threadCtx.*.mutex.lock();
+                if (thread.query.index > 100_000_000) {
+                    thread.*.flushed = false;
+                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
                     self.mutex.unlock();
-                    while (!threadCtx.flushed) {
-                        threadCtx.flushDone.wait(&threadCtx.mutex);
-                    }
+                    thread.waitForFlush();
                     self.mutex.lock();
-                    threadCtx.*.mutex.unlock();
                 }
-
-                // If results size is too large move stuff to next query
 
                 if (self.pendingQueries == 0) {
                     self.queryDone.signal();
-
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
                         self.ctx.jsBridge.call(t.BridgeResponse.query, 0);
                     }
-
                     if (self.nextModifyQueue.items.len > 0) {
                         const prevModifyQueue = self.modifyQueue;
                         self.modifyQueue = self.nextModifyQueue;
                         self.nextModifyQueue = prevModifyQueue;
                         self.pendingModifies = self.modifyQueue.items.len;
-                        for (self.threads) |thread| {
-                            thread.*.pendingModifies = self.modifyQueue.items.len;
+                        for (self.threads) |threadIt| {
+                            threadIt.*.pendingModifies = self.modifyQueue.items.len;
                         }
                         self.wakeup.broadcast();
                     } else {}
@@ -449,23 +244,23 @@ pub const Threads = struct {
             }
 
             if (modifyBuf) |m| {
-                if (threadCtx.id == 0) {
+                if (thread.id == 0) {
                     switch (op) {
                         t.OpType.modify => {
-                            try Modify.modify(threadCtx, m, self.ctx, op);
+                            try Modify.modify(thread, m, self.ctx, op);
                         },
                         t.OpType.loadBlock => {
-                            try dump.loadBlock(threadCtx, self.ctx, m, op);
+                            try dump.loadBlock(thread, self.ctx, m, op);
                         },
                         t.OpType.unloadBlock => {
-                            try dump.unloadBlock(threadCtx, self.ctx, m, op);
+                            try dump.unloadBlock(thread, self.ctx, m, op);
                         },
                         t.OpType.loadCommon => {
-                            try dump.loadCommon(threadCtx, self.ctx, m, op);
+                            try dump.loadCommon(thread, self.ctx, m, op);
                         },
                         t.OpType.createType => {
-                            const data = try newResult(false, threadCtx, 4, read(u32, m, 0), op);
-                            const typeCode = read(u32, m, 0);
+                            const data = try thread.modify.result(4, utils.read(u32, m, 0), op);
+                            const typeCode = utils.read(u32, m, 0);
                             const schema = m[5..m.len];
                             const err = selva.selva_db_create_type(
                                 self.ctx.selva,
@@ -478,28 +273,21 @@ pub const Threads = struct {
                         else => {},
                     }
 
-                    commitResult(false, threadCtx);
+                    thread.modify.commit();
 
                     self.mutex.lock();
                     _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
 
-                    if (threadCtx.modifyResultsIndex > 50_000_000) {
-                        // std.debug.print("Need to wait for flush condition on this modify query buffer is larger then 50mb {any}mb \n", .{
-                        //     @divFloor(threadCtx.modifyResultsIndex, 1_000_000),
-                        // });
-                        threadCtx.*.flushed = false;
-                        self.ctx.jsBridge.call(t.BridgeResponse.flushModify, threadCtx.id);
-                        threadCtx.*.mutex.lock();
+                    if (thread.modify.index > 50_000_000) {
+                        thread.*.flushed = false;
+                        self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
                         self.mutex.unlock();
-                        while (!threadCtx.flushed) {
-                            threadCtx.flushDone.wait(&threadCtx.mutex);
-                        }
+                        thread.waitForFlush();
                         self.mutex.lock();
-                        threadCtx.*.mutex.unlock();
                     }
 
-                    threadCtx.pendingModifies -= 1;
+                    thread.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
                     }
@@ -507,7 +295,7 @@ pub const Threads = struct {
                 } else {
                     // Subscription worker
                     self.mutex.lock();
-                    threadCtx.pendingModifies -= 1;
+                    thread.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
                     }
@@ -536,7 +324,7 @@ pub const Threads = struct {
 
         self.* = .{
             .allocator = allocator,
-            .threads = try allocator.alloc(*DbThread, threadAmount),
+            .threads = try allocator.alloc(*Thread, threadAmount),
             .ctx = ctx,
             .modifyQueue = modifyQueue,
             .nextModifyQueue = nextModifyQueue,
@@ -545,21 +333,9 @@ pub const Threads = struct {
         };
 
         for (self.threads, 0..) |*threadContainer, id| {
-            const threadCtx = try allocator.create(DbThread);
-            threadCtx.*.id = id;
-            threadCtx.*.queryResultsIndex = 0;
-            threadCtx.*.queryResults = try std.heap.raw_c_allocator.alloc(u8, 0);
-            threadCtx.*.modifyResultsIndex = 0;
-            threadCtx.*.modifyResults = try std.heap.raw_c_allocator.alloc(u8, 0);
-            threadCtx.*.thread = try Thread.spawn(.{}, worker, .{ self, threadCtx });
-            threadCtx.*.decompressor = deflate.createDecompressor();
-            threadCtx.*.libdeflateBlockState = deflate.initBlockState(305000);
-            threadCtx.*.pendingModifies = 0;
-            threadCtx.*.flushed = false;
-            threadCtx.*.mutex = .{};
-            threadCtx.*.flushDone = .{};
-
-            threadContainer.* = threadCtx;
+            const thread = try Thread.init(id);
+            thread.*.thread = try std.Thread.spawn(.{}, worker, .{ self, thread });
+            threadContainer.* = thread;
         }
 
         return self;
@@ -571,10 +347,7 @@ pub const Threads = struct {
         self.wakeup.broadcast();
         self.mutex.unlock();
         for (self.threads) |threadContainer| {
-            threadContainer.thread.join();
-            std.heap.raw_c_allocator.free(threadContainer.queryResults);
-            std.heap.raw_c_allocator.free(threadContainer.modifyResults);
-            self.allocator.destroy(threadContainer);
+            threadContainer.deinit();
         }
         self.modifyQueue.*.deinit();
         self.nextModifyQueue.*.deinit();
