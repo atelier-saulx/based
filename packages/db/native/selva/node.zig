@@ -1,16 +1,17 @@
 const std = @import("std");
+const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const selva = @import("selva.zig");
 const Schema = @import("schema.zig");
 const errors = @import("../errors.zig");
 const utils = @import("../utils.zig");
 const Modify = @import("../modify/common.zig");
-const Db = @import("../db/ctx.zig");
 const t = @import("../types.zig");
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const Type = selva.Type;
 pub const Node = selva.Node;
 
-pub fn getType(ctx: *Db.DbCtx, typeId: t.TypeId) !Type {
+pub fn getType(ctx: *DbCtx, typeId: t.TypeId) !Type {
     const selvaTypeEntry: ?Type = selva.c.selva_get_type_by_index(
         ctx.selva.?,
         typeId,
@@ -21,7 +22,7 @@ pub fn getType(ctx: *Db.DbCtx, typeId: t.TypeId) !Type {
     return selvaTypeEntry.?;
 }
 
-pub inline fn getRefDstType(ctx: *Db.DbCtx, sch: anytype) !Type {
+pub inline fn getRefDstType(ctx: *DbCtx, sch: anytype) !Type {
     if (comptime @TypeOf(sch) == Schema.FieldSchema) {
         return getType(ctx, selva.c.selva_get_edge_field_constraint(sch).*.dst_node_type);
     } else if (comptime @TypeOf(sch) == Schema.EdgeFieldConstraint) {
@@ -32,7 +33,7 @@ pub inline fn getRefDstType(ctx: *Db.DbCtx, sch: anytype) !Type {
     }
 }
 
-pub inline fn getEdgeType(ctx: *Db.DbCtx, sch: anytype) !Type {
+pub inline fn getEdgeType(ctx: *DbCtx, sch: anytype) !Type {
     if (comptime @TypeOf(sch) == Schema.FieldSchema) {
         return getType(ctx, selva.c.selva_get_edge_field_constraint(sch).*.edge_node_type);
     } else if (comptime @TypeOf(sch) == Schema.EdgeFieldConstraint) {
@@ -43,7 +44,7 @@ pub inline fn getEdgeType(ctx: *Db.DbCtx, sch: anytype) !Type {
     }
 }
 
-pub inline fn getBlockCapacity(ctx: *Db.DbCtx, typeId: t.TypeId) u64 {
+pub inline fn getBlockCapacity(ctx: *DbCtx, typeId: t.TypeId) u64 {
     return selva.c.selva_get_block_capacity(selva.c.selva_get_type_by_index(ctx.selva, typeId));
 }
 
@@ -155,7 +156,7 @@ pub fn ensureRefEdgeNode(ctx: *Modify.ModifyCtx, node: Node, efc: selva.EdgeFiel
     }
 }
 
-pub fn getEdgeNode(db: *Db.DbCtx, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) ?Node {
+pub fn getEdgeNode(db: *DbCtx, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) ?Node {
     if (ref.*.edge == 0) {
         return null;
     }
@@ -180,4 +181,8 @@ pub fn expireNode(ctx: *Modify.ModifyCtx, typeId: t.TypeId, nodeId: u32, ts: i64
 pub fn expire(ctx: *Modify.ModifyCtx) void {
     // Expire things before query
     selva.c.selva_db_expire_tick(ctx.db.selva, selva.markDirtyCb, ctx, std.time.timestamp());
+}
+
+pub fn getNodeBlockHash(db: *DbCtx, typeEntry: Type, start: u32, hashOut: *SelvaHash128) c_int {
+    return selva.c.selva_node_block_hash(db.selva, typeEntry, start, hashOut);
 }

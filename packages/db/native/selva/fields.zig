@@ -10,7 +10,9 @@ const config = @import("config");
 const Node = @import("node.zig");
 const References = @import("references.zig");
 const Modify = @import("../modify/common.zig");
-pub const DbCtx = @import("../db/ctx.zig").DbCtx;
+const DbCtx = @import("../db/ctx.zig").DbCtx;
+
+pub const Aliases = selva.Aliases;
 
 const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;

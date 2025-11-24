@@ -2,10 +2,10 @@ const std = @import("std");
 const errors = @import("../errors.zig");
 const selva = @import("selva.zig");
 const t = @import("../types.zig");
-const Db = @import("db.zig");
 const Node = @import("node.zig");
 const Schema = @import("schema.zig");
 const Modify = @import("../modify/common.zig");
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const ReferenceSmall = selva.ReferenceSmall;
 pub const ReferenceLarge = selva.ReferenceLarge;
@@ -87,7 +87,7 @@ const ReferencesIterator2 = struct {
     }
 };
 
-pub fn getReferences(comptime includeEdge: bool, db: *Db.DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) if (!includeEdge) ?ReferencesIterator1 else ?ReferencesIterator2 {
+pub fn getReferences(comptime includeEdge: bool, db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) if (!includeEdge) ?ReferencesIterator1 else ?ReferencesIterator2 {
     const refs = selva.c.selva_fields_get_references(node, fieldSchema);
     if (refs == null or fieldSchema.type != selva.c.SELVA_FIELD_TYPE_REFERENCES) {
         return null;
@@ -192,7 +192,7 @@ pub fn swapReference(
 }
 
 pub fn getEdgeReference(
-    db: *Db.DbCtx,
+    db: *DbCtx,
     efc: Schema.EdgeFieldConstraint,
     ref: ReferenceLarge,
     field: u8,
@@ -212,7 +212,7 @@ pub fn getEdgeReference(
 
 // TODO This should be going away
 pub fn getEdgeReferences(
-    db: *Db.DbCtx,
+    db: *DbCtx,
     efc: Schema.EdgeFieldConstraint,
     ref: ReferenceLarge,
     field: u8,
