@@ -111,4 +111,4 @@ jobs:
           embed-author-url: ${{ github.server_url }}/${{ github.actor }}
           embed-author-icon-url: 'https://avatars.githubusercontent.com/u/${{ github.actor_id }}?v=4'
           embed-title: "${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}"
-          embed-description: 'Commit: ${{ github.event.head_commit.message }} (${{ github.sha }})'
+          embed-description: '[${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})'
