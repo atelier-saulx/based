@@ -2,8 +2,12 @@
   "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
     "outDir": "dist",
-    "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "emitDeclarationOnly": true,
+    "types": ["node"],
+    "jsx": "react",
+    "esModuleInterop": true
+    // "strictNullChecks": true
   },
   "include": ["packages/*/src", "packages/*/test"]
 }

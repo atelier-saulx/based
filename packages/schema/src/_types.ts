@@ -447,13 +447,10 @@ type GenericSchemaType<isStrict = false> = {
   props: SchemaProps<isStrict>
 }
 
-export type StrictSchemaType = GenericSchemaType<true>
+export type SchemaOutType = GenericSchemaType<true>
 export type SchemaType<isStrict = false> = isStrict extends true
-  ? StrictSchemaType
-  :
-      | StrictSchemaType
-      | GenericSchemaType<false>
-      | (SchemaProps & { props?: never })
+  ? SchemaOutType
+  : SchemaOutType | GenericSchemaType<false> | (SchemaProps & { props?: never })
 
 export type SchemaTypeName = Exclude<string, '_root'>
 export type SchemaTypes<isStrict = false> = Record<
@@ -484,9 +481,9 @@ type GenericSchema<isStrict = false> = {
   }[]
 }
 
-export type StrictSchema = GenericSchema<true>
-export type NonStrictSchema = GenericSchema<false>
-export type Schema = NonStrictSchema | StrictSchema
+export type SchemaOut = GenericSchema<true>
+export type NonSchemaOut = GenericSchema<false>
+export type Schema = NonSchemaOut | SchemaOut
 
 export type SchemaLocales = Record<
   LangName,

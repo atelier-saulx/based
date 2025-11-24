@@ -1,8 +1,9 @@
 import test from 'node:test'
 import { ok } from 'node:assert'
-import { serialize, deSerialize, StrictSchema, parse } from '../src/index.js'
+import { serialize, deSerialize, parse } from '../src/index.js'
 import eurovisionSchema from './schema/based.schema.js'
 import { deflateSync } from 'node:zlib'
+import type { SchemaOut } from '../dist/index.js'
 
 function deepEqual(a: any, b: any): boolean {
   if (a === b) return true
@@ -41,7 +42,8 @@ function deepEqual(a: any, b: any): boolean {
 }
 
 test('serialize and deserialize basic schema', () => {
-  const basicSchema: StrictSchema = {
+  const basicSchema: SchemaOut = {
+    hash: 0,
     locales: {
       en: { required: true },
       nl: {},
@@ -57,6 +59,7 @@ test('serialize and deserialize basic schema', () => {
             },
           },
           ref: {
+            type: 'reference',
             ref: 'other',
             prop: 'backref',
           },
@@ -69,7 +72,9 @@ test('serialize and deserialize basic schema', () => {
       other: {
         props: {
           backref: {
+            type: 'references',
             items: {
+              type: 'reference',
               ref: 'thing',
               prop: 'ref',
             },
@@ -101,7 +106,8 @@ test('serialize and deserialize complex (Eurovision) schema', () => {
 })
 
 test('serialize with readOnly option strips validation and defaults', () => {
-  const schema: StrictSchema = {
+  const schema: SchemaOut = {
+    hash: 0,
     types: {
       thing: {
         props: {
@@ -115,7 +121,8 @@ test('serialize with readOnly option strips validation and defaults', () => {
   const serialized = serialize(schema, { readOnly: true })
   const deserialized = deSerialize(serialized)
 
-  const expected: StrictSchema = {
+  const expected: SchemaOut = {
+    hash: 0,
     types: {
       thing: {
         props: {
@@ -142,7 +149,8 @@ test('big schema', () => {
     return props
   }
 
-  const basicSchema: StrictSchema = {
+  const basicSchema: SchemaOut = {
+    hash: 0,
     locales: {
       en: { required: true },
       nl: {},
@@ -163,7 +171,7 @@ test('big schema', () => {
 })
 
 test('Simple shared prop', () => {
-  const basicSchema: StrictSchema = parse({
+  const basicSchema: SchemaOut = parse({
     types: {
       article: {
         props: {

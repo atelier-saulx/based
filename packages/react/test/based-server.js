@@ -50,7 +50,7 @@ const server = new BasedServer({
       },
       app: {
         type: 'function',
-        httpResponse: (based, payload, d, send) => {
+        httpResponse: async (based, payload, d, send) => {
           send(d, {
             ['content-type']: 'text/html',
           })
