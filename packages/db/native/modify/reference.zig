@@ -1,5 +1,6 @@
-const db = @import("../db/db.zig");
+const Db = @import("../db/db.zig");
 const Node = @import("../db/node.zig");
+const References = @import("../db/references.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("./common.zig");
 const errors = @import("../errors.zig");
@@ -12,8 +13,8 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     const op: RefEdgeOp = @enumFromInt(data[0]);
     const hasEdges = RefEdgeOp.hasEdges(op);
     const isTmpId = RefEdgeOp.isTmpId(op);
-    const refTypeId = db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
-    const refTypeEntry = try db.getType(ctx.db, refTypeId);
+    const refTypeId = Db.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
+    const refTypeEntry = try Db.getType(ctx.db, refTypeId);
     var id = read(u32, data, 1);
 
     if (isTmpId) {
@@ -25,10 +26,10 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
         return 5;
     }
 
-    var ref: ?db.ReferenceLarge = null;
+    var ref: ?References.ReferenceLarge = null;
 
-    const oldRefDst = db.getSingleReference(ctx.node.?, ctx.fieldSchema.?);
-    const dstType = try db.getRefDstType(ctx.db, ctx.fieldSchema.?);
+    const oldRefDst = References.getSingleReference(ctx.node.?, ctx.fieldSchema.?);
+    const dstType = try Db.getRefDstType(ctx.db, ctx.fieldSchema.?);
     const dstNode = Node.getNodeFromReference(dstType, oldRefDst);
 
     if (dstNode) |d| {
@@ -39,7 +40,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
 
     if (ref == null) {
         if (Node.getNode(refTypeEntry, id)) |dst| {
-            ref = try db.writeReference(ctx, ctx.node.?, ctx.fieldSchema.?, dst);
+            ref = try References.writeReference(ctx, ctx.node.?, ctx.fieldSchema.?, dst);
         } else {
             return 5; //TODO WARN errors.SelvaError.SELVA_ENOENT
         }

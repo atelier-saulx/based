@@ -1,6 +1,7 @@
 const Modify = @import("./common.zig");
-const db = @import("../db/db.zig");
+const Db = @import("../db/db.zig");
 const Node = @import("../db/node.zig");
+const References = @import("../db/references.zig");
 const utils = @import("../utils.zig");
 const selva = @import("../selva.zig").c;
 const errors = @import("../errors.zig");
@@ -22,11 +23,11 @@ fn isMainEmpty(val: []u8) bool {
 
 pub fn writeEdges(
     ctx: *ModifyCtx,
-    ref: db.ReferenceLarge,
+    ref: Db.ReferenceLarge,
     data: []u8,
 ) !void {
     var i: usize = 0;
-    const edgeConstraint = db.getEdgeFieldConstraint(ctx.fieldSchema.?);
+    const edgeConstraint = Db.getEdgeFieldConstraint(ctx.fieldSchema.?);
     const edgeNode = try Node.ensureRefEdgeNode(ctx, ctx.node.?, edgeConstraint, ref);
     const edgeId = ref.*.edge;
     const edgeTypeId = edgeConstraint.*.edge_node_type;
@@ -40,7 +41,7 @@ pub fn writeEdges(
         const propType: t.PropType = @enumFromInt(data[i + 2]);
         i += 3;
 
-        const edgeFieldSchema = db.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
+        const edgeFieldSchema = Db.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
             std.log.err("Edge field schema not found\n", .{});
             return;
         };
@@ -53,7 +54,7 @@ pub fn writeEdges(
             const totalMainBufferLen = read(u16, data, i + 4);
             offset = 6;
             const mainBufferOffset = len - totalMainBufferLen;
-            const val = db.getField(null, edgeNode, edgeFieldSchema, propType);
+            const val = Db.getField(null, edgeNode, edgeFieldSchema, propType);
             if (!isMainEmpty(val)) {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
                 var j: usize = offset + i;
@@ -69,15 +70,15 @@ pub fn writeEdges(
                 }
             } else {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
-                try db.writeField(edgeNode, edgeFieldSchema, edgeData);
+                try Db.writeField(edgeNode, edgeFieldSchema, edgeData);
             }
         } else switch (propType) {
             t.PropType.reference => {
                 len = 4;
                 offset = 0;
                 const dstId = read(u32, data, i + offset);
-                if (Node.getNode(try db.getRefDstType(ctx.db, edgeFieldSchema), dstId)) |dstNode| {
-                    _ = try db.writeReference(ctx, edgeNode, edgeFieldSchema, dstNode);
+                if (Node.getNode(try Db.getRefDstType(ctx.db, edgeFieldSchema), dstId)) |dstNode| {
+                    _ = try References.writeReference(ctx, edgeNode, edgeFieldSchema, dstNode);
                 } else {
                     return errors.SelvaError.SELVA_ENOENT;
                 }
@@ -95,12 +96,12 @@ pub fn writeEdges(
                     utils.move(aligned, edgeData[0 .. edgeData.len - 3]);
                 }
                 const u32ids = read([]u32, aligned, 0);
-                try db.putReferences(ctx, edgeNode, edgeFieldSchema, u32ids);
+                try References.putReferences(ctx, edgeNode, edgeFieldSchema, u32ids);
             },
             t.PropType.cardinality => {
                 len = read(u32, data, i);
                 offset = 4;
-                const hll = try db.ensureEdgePropTypeString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
+                const hll = try Db.ensureEdgePropTypeString(ctx, ctx.node.?, edgeConstraint, ref, edgeFieldSchema);
                 selva.hll_init(hll, 8, true); // TBD: to get optionals from buffer
                 var it: usize = i + offset;
                 while (it < len) {
@@ -113,7 +114,7 @@ pub fn writeEdges(
                 len = read(u32, data, i);
                 offset = 4;
                 const edgeData = data[i + offset .. i + offset + len];
-                try db.writeField(edgeNode, edgeFieldSchema, edgeData);
+                try Db.writeField(edgeNode, edgeFieldSchema, edgeData);
             },
         }
         i += offset + len;

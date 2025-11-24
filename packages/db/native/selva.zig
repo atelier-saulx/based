@@ -32,6 +32,7 @@ pub const c = @cImport({
     @cInclude("selva/mblen.h");
 });
 const std = @import("std");
+const Modify = @import("./modify/common.zig");
 
 pub const SelvaHash128 = u128;
 pub const Node = *c.SelvaNode;
@@ -51,4 +52,9 @@ pub fn strerror_zig(err: i32) [:0]const u8 {
 
 pub fn selvaStringDestroy(str: ?c.selva_string) void {
     try c.selva_string_free(str);
+}
+
+pub fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.c) void {
+    const mctx: *Modify.ModifyCtx = @ptrCast(@alignCast(ctx));
+    Modify.markDirtyRange(mctx, typeId, nodeId);
 }
