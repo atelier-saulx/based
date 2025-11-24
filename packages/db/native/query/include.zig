@@ -1,9 +1,9 @@
 const std = @import("std");
 const Query = @import("./common.zig");
 const utils = @import("../utils.zig");
-const db = @import("../db/db.zig");
+const db = @import("../selva/db.zig");
+const Node = @import("../selva/node.zig");
 const threads = @import("../db/threads.zig");
-const Node = @import("../db/node.zig");
 const t = @import("../types.zig");
 // const f = @import("./prop.zig");
 // const o = @import("./opts.zig");

@@ -1,8 +1,8 @@
 const std = @import("std");
 const napi = @import("./napi.zig");
-const selva = @import("./selva.zig").c;
-const db = @import("./db/db.zig");
-const Node = @import("db/Node.zig");
+const selva = @import("selva/selva.zig").c;
+const db = @import("selva/db.zig");
+const Node = @import("selva/Node.zig");
 
 const Type = Node.Type;
 const FieldSchema = db.FieldSchema;

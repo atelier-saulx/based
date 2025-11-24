@@ -1,0 +1,13 @@
+.{
+    .name = .based,
+    .version = "0.0.0",
+    // Changing this has security and trust implications.
+    .fingerprint = 0xa2a8affc8faf139c,
+    .minimum_zig_version = "0.15.2",
+    .dependencies = .{
+        .db = .{
+            .path = "packages/db",
+        },
+    },
+    .paths = .{ "build.zig", "build.zig.zon", "packages/db/native" },
+}

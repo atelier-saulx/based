@@ -1,5 +1,5 @@
 const std = @import("std");
-const db = @import("../db/db.zig");
+const db = @import("../selva/db.zig");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
 const Sort = @import("../db/sort.zig");

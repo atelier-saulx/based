@@ -1,6 +1,6 @@
 const db = @import("db.zig");
-const selva = @import("../selva.zig").c;
-const SelvaHash128 = @import("../selva.zig").SelvaHash128;
+const selva = @import("selva.zig").c;
+const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const utils = @import("../utils.zig");
 const threads = @import("../db/threads.zig");
 const t = @import("../types.zig");
@@ -25,7 +25,6 @@ pub fn saveCommon(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType
 
 // sdbFilename must be nul-terminated
 pub fn saveBlock(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
-    std.debug.print("\n--------saveBlock-------\n", .{});
     const id = read(u32, q, 0);
     const data = try threads.newResult(true, threadCtx, 26, id, op);
     const start = read(u32, q, 5);

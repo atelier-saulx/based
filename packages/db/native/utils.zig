@@ -1,8 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const config = @import("config");
-const t = @import("./types.zig");
-const selva = @import("./selva.zig").c;
+const selva = @import("selva/selva.zig").c;
+const t = @import("types.zig");
 
 extern "c" fn memcpy(*anyopaque, *const anyopaque, usize) *anyopaque;
 extern "c" fn memmove(*anyopaque, *const anyopaque, usize) *anyopaque;

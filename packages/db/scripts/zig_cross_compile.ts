@@ -102,6 +102,12 @@ function buildWithZig(
   rpath: string,
   libSelvaPath: string,
 ) {
+  console.log({
+    target,
+    nodeHeadersPath,
+    rpath,
+    libSelvaPath,
+  })
   console.log(`Building for target ${target}...`)
   execSync(
     `zig build ${debugOption} -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ '-Drpath=${rpath}' -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,

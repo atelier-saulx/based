@@ -1,6 +1,6 @@
-const napi = @import("napi.zig");
 const std = @import("std");
-const selvaLib = @import("selva.zig").c;
+const napi = @import("napi.zig");
+const selvaLib = @import("selva/selva.zig").c;
 
 pub fn jsThrow(env: napi.Env, message: [:0]const u8) napi.Value {
     const result = napi.c.napi_throw_error(env, null, message);
