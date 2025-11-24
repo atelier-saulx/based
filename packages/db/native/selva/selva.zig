@@ -16,10 +16,7 @@ pub const c = @cImport({
     @cInclude("selva/sort.h");
     @cInclude("selva/types.h");
     @cInclude("selva_error.h");
-    @cInclude("selva/crc32c.h");
-    @cInclude("selva/selva_hash128.h");
     @cInclude("selva/selva_string.h");
-    @cInclude("selva/fast_memcmp.h");
     @cInclude("selva/hll.h");
     @cInclude("selva/colvec.h");
     @cInclude("selva/gmtime.h");
@@ -32,9 +29,8 @@ pub const c = @cImport({
     @cInclude("selva/mblen.h");
 });
 const std = @import("std");
-const Modify = @import("./modify/common.zig");
+const Modify = @import("../modify/common.zig");
 
-pub const SelvaHash128 = u128;
 pub const Node = *c.SelvaNode;
 pub const Aliases = *c.SelvaAliases;
 pub const Type = *c.SelvaTypeEntry;

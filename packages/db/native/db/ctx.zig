@@ -1,6 +1,6 @@
 const std = @import("std");
 const config = @import("config");
-const selva = @import("../selva.zig").c;
+const selva = @import("../selva/selva.zig").c;
 const deflate = @import("../deflate.zig");
 const valgrind = @import("../valgrind.zig");
 const napi = @import("../napi.zig");

@@ -1,7 +1,8 @@
 const std = @import("std");
 const t = @import("../types.zig");
-const selva = @import("../selva.zig").c;
-const st = @import("../selva.zig");
+const SelvaHash128 = @import("../string.zig").SelvaHash128;
+const selva = @import("selva.zig").c;
+const st = @import("selva.zig");
 const errors = @import("../errors.zig");
 const utils = @import("../utils.zig");
 const valgrind = @import("../valgrind.zig");
@@ -9,14 +10,13 @@ const config = @import("config");
 const Node = @import("node.zig");
 const References = @import("references.zig");
 const Modify = @import("../modify/common.zig");
-pub const DbCtx = @import("./ctx.zig").DbCtx;
-pub const DbThread = @import("./threads.zig").DbThread;
+pub const DbCtx = @import("../db/ctx.zig").DbCtx;
+pub const DbThread = @import("../db/threads.zig").DbThread;
 
 const Type = Node.Type;
 pub const Aliases = st.Aliases;
 pub const FieldSchema = st.FieldSchema;
 pub const EdgeFieldConstraint = st.EdgeFieldConstraint;
-const SelvaHash128 = st.SelvaHash128;
 
 // TODO Don't publish from here
 pub const ReferenceSmall = st.ReferenceSmall;

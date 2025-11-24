@@ -4,12 +4,12 @@ const sort = @import("./sort.zig");
 const DbCtx = @import("./ctx.zig").DbCtx;
 const utils = @import("../utils.zig");
 const Modify = @import("../modify/modify.zig");
-const selva = @import("../selva.zig").c;
-const db = @import("db.zig");
+const SelvaHash128 = @import("../string.zig").SelvaHash128;
+const selva = @import("../selva/selva.zig").c;
+const db = @import("../selva/db.zig");
+const dump = @import("../selva/dump.zig");
+const info = @import("../selva/info.zig");
 const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
-const dump = @import("./dump.zig");
-const info = @import("./info.zig");
-const SelvaHash128 = @import("../selva.zig").SelvaHash128;
 const deflate = @import("../deflate.zig");
 const t = @import("../types.zig");
 

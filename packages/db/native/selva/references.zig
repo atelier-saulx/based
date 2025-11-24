@@ -1,12 +1,12 @@
 const std = @import("std");
 const errors = @import("../errors.zig");
-const selva = @import("../selva.zig").c;
-const st = @import("../selva.zig");
+const selva = @import("selva.zig").c;
+const st = @import("selva.zig");
 const t = @import("../types.zig");
 const Db = @import("db.zig");
 const Node = @import("node.zig");
 const Modify = @import("../modify/common.zig");
-pub const DbCtx = @import("ctx.zig").DbCtx;
+pub const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const ReferenceSmall = st.ReferenceSmall;
 pub const ReferenceLarge = st.ReferenceLarge;

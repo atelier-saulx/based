@@ -1,12 +1,12 @@
-const db = @import("./db.zig");
 const deflate = @import("../deflate.zig");
-const selva = @import("../selva.zig").c;
+const selva = @import("../selva/selva.zig").c;
+const db = @import("../selva/db.zig");
+const Node = @import("../selva/node.zig");
 const std = @import("std");
 const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const errors = @import("../errors.zig");
 const read = utils.read;
-const Node = @import("node.zig");
 
 pub const SortIndexMeta = struct {
     prop: t.PropType,

@@ -1,10 +1,10 @@
 const std = @import("std");
-const selva = @import("../selva.zig").c;
-const st = @import("../selva.zig");
+const selva = @import("selva.zig").c;
+const st = @import("selva.zig");
 const errors = @import("../errors.zig");
 const utils = @import("../utils.zig");
 const Modify = @import("../modify/common.zig");
-const DbCtx = @import("./ctx.zig").DbCtx;
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 const t = @import("../types.zig");
 
 pub const Type = st.Type;
