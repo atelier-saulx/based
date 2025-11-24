@@ -3,6 +3,8 @@ pub const TypeId = u16;
 pub const BridgeResponse = enum(u32) {
     query = 1,
     modify = 2,
+    flushQuery = 3,
+    flushModify = 4,
 };
 
 pub const OpType = enum(u8) {
