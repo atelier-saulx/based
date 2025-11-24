@@ -223,7 +223,6 @@ pub const LangCode = enum(u8) { NONE = 0, _ };
 pub const MAIN_PROP: u8 = 0;
 pub const ID_PROP: u8 = 255;
 
-
 pub const ReadRefOp = enum(u8) {
     references = @intFromEnum(ReadOp.references),
     reference = @intFromEnum(ReadOp.reference),
@@ -358,7 +357,7 @@ pub const IncludeOp = enum(u8) {
 
 pub const QuerySingleHeader = packed struct {
     op: QueryType,
-    size: u16, // cannot be more then 16kb ? might be good enough
+    size: u16, // cannot be more then 16kb? might be good enough
     typeId: TypeId,
     id: u32,
     filterSize: u16,
@@ -369,7 +368,7 @@ pub const QuerySingleHeader = packed struct {
 
 pub const QueryHeader = packed struct {
     op: QueryType,
-    size: u16, // cannot be more then 16kb ? might be good enough
+    size: u16, // cannot be more then 16kb? might be good enough
     prop: u8, // this is for ref
     typeId: TypeId,
     offset: u32,
@@ -382,13 +381,10 @@ pub const QueryHeader = packed struct {
     _padding: u6,
 };
 
-
-
 pub const QueryNodeResponse = packed struct {
     id: u32,
-
-}
-
+    size: u32,
+};
 
 // Aggregates need 2 different HEADERS
 

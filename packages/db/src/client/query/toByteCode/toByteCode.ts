@@ -17,6 +17,7 @@ import { aggregatesQuery } from './aggregates.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
+import { byteSize, schemaChecksum } from './utils.js'
 
 export function defToBuffer(
   db: DbClient,
@@ -81,24 +82,6 @@ export function defToBuffer(
   }
 
   return result
-}
-
-const schemaChecksum = (def: QueryDef): IntermediateByteCode => {
-  const checksum = new Uint8Array(8)
-  writeUint64(checksum, def.schemaChecksum ?? 0, 0)
-  return { buffer: checksum, def }
-}
-
-const byteSize = (t: IntermediateByteCode) => {
-  if (Array.isArray(t)) {
-    return t.reduce((a, b) => {
-      return a + byteSize(b)
-    }, 0)
-  } else if (t instanceof Uint8Array) {
-    return t.byteLength
-  } else {
-    return t.buffer.byteLength
-  }
 }
 
 const combineIntermediateResults = (

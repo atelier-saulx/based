@@ -1,20 +1,12 @@
-import {
-  writeUint16,
-  writeInt16,
-  writeUint32,
-  writeInt32,
-  writeUint64,
-  writeInt64,
-  writeFloatLE,
-  writeDoubleLE,
-  readUint16,
-  readInt16,
-  readUint32,
-  readInt32,
-  readUint64,
-  readInt64,
-  readFloatLE,
-  readDoubleLE,
+import { 
+  writeUint16, writeInt16, 
+  writeUint32, writeInt32, 
+  writeUint64, writeInt64, 
+  writeFloatLE, writeDoubleLE,
+  readUint16, readInt16, 
+  readUint32, readInt32, 
+  readUint64, readInt64, 
+  readFloatLE, readDoubleLE
 } from '@based/utils'
 
 export type TypeId = number
@@ -33,8 +25,7 @@ export const BridgeResponseInverse = {
   query, 
   modify 
  */
-export type BridgeResponseEnum =
-  (typeof BridgeResponse)[keyof typeof BridgeResponse]
+export type BridgeResponseEnum = (typeof BridgeResponse)[keyof typeof BridgeResponse]
 
 export const OpType = {
   id: 0,
@@ -329,8 +320,7 @@ export const ReferencesSelectInverse = {
   any, 
   all 
  */
-export type ReferencesSelectEnum =
-  (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
+export type ReferencesSelectEnum = (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
 
 export const RefEdgeOp = {
   noEdgeNoIndexRealId: 0,
@@ -383,37 +373,6 @@ export type LangCodeEnum = 0 | (number & {})
 
 export const MAIN_PROP = 0
 export const ID_PROP = 255
-
-export const IncludeOp = {
-  default: 1,
-  referencesAggregation: 2,
-  edge: 3,
-  references: 4,
-  reference: 5,
-  meta: 6,
-  partial: 7,
-} as const
-
-export const IncludeOpInverse = {
-  1: 'default',
-  2: 'referencesAggregation',
-  3: 'edge',
-  4: 'references',
-  5: 'reference',
-  6: 'meta',
-  7: 'partial',
-} as const
-
-/**
-  default, 
-  referencesAggregation, 
-  edge, 
-  references, 
-  reference, 
-  meta, 
-  partial 
- */
-export type IncludeOpEnum = (typeof IncludeOp)[keyof typeof IncludeOp]
 
 export const ReadRefOp = {
   references: ReadOp.references,
@@ -668,27 +627,30 @@ export const writeSortHeaderProps = {
   },
 }
 
-export const readSortHeader = (buf: Uint8Array, offset: number): SortHeader => {
+export const readSortHeader = (
+  buf: Uint8Array,
+  offset: number,
+): SortHeader => {
   const value: SortHeader = {
-    order: buf[offset] as SortOrderEnum,
+    order: (buf[offset]) as SortOrderEnum,
     prop: buf[offset + 1],
-    propType: buf[offset + 2] as PropTypeEnum,
+    propType: (buf[offset + 2]) as PropTypeEnum,
     start: readUint16(buf, offset + 3),
     len: readUint16(buf, offset + 5),
-    lang: buf[offset + 7] as LangCodeEnum,
+    lang: (buf[offset + 7]) as LangCodeEnum,
   }
   return value
 }
 
 export const readSortHeaderProps = {
   order: (buf: Uint8Array, offset: number): SortOrderEnum => {
-    return buf[offset] as SortOrderEnum
+    return (buf[offset]) as SortOrderEnum
   },
   prop: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 1]
   },
   propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
-    return buf[offset + 2] as PropTypeEnum
+    return (buf[offset + 2]) as PropTypeEnum
   },
   start: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 3)
@@ -697,7 +659,7 @@ export const readSortHeaderProps = {
     return readUint16(buf, offset + 5)
   },
   lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
-    return buf[offset + 7] as LangCodeEnum
+    return (buf[offset + 7]) as LangCodeEnum
   },
 }
 
@@ -795,7 +757,7 @@ export const QueryType = {
   default: 2,
   alias: 3,
   aggregates: 4,
-  aggregatesCountType: 5,
+  aggregatesCount: 5,
   references: 6,
   reference: 7,
 } as const
@@ -806,7 +768,7 @@ export const QueryTypeInverse = {
   2: 'default',
   3: 'alias',
   4: 'aggregates',
-  5: 'aggregatesCountType',
+  5: 'aggregatesCount',
   6: 'references',
   7: 'reference',
 } as const
@@ -817,26 +779,167 @@ export const QueryTypeInverse = {
   default, 
   alias, 
   aggregates, 
-  aggregatesCountType, 
+  aggregatesCount, 
   references, 
   reference 
  */
 export type QueryTypeEnum = (typeof QueryType)[keyof typeof QueryType]
 
+export const IncludeOp = {
+  aggregates: 4,
+  aggregatesCount: 5,
+  references: 6,
+  reference: 7,
+  default: 127,
+  referencesAggregation: 128,
+  meta: 129,
+  partial: 130,
+} as const
+
+export const IncludeOpInverse = {
+  4: 'aggregates',
+  5: 'aggregatesCount',
+  6: 'references',
+  7: 'reference',
+  127: 'default',
+  128: 'referencesAggregation',
+  129: 'meta',
+  130: 'partial',
+} as const
+
+/**
+  aggregates, 
+  aggregatesCount, 
+  references, 
+  reference, 
+  default, 
+  referencesAggregation, 
+  meta, 
+  partial 
+ */
+export type IncludeOpEnum = (typeof IncludeOp)[keyof typeof IncludeOp]
+
+export type QuerySingleHeader = {
+  op: QueryTypeEnum
+  size: number
+  typeId: TypeId
+  id: number
+  filterSize: number
+  aliasSize: number
+  includeEdge: boolean
+}
+
+export const QuerySingleHeaderByteSize = 14
+
+export const writeQuerySingleHeader = (
+  buf: Uint8Array,
+  header: QuerySingleHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  writeUint16(buf, header.size, offset)
+  offset += 2
+  writeUint16(buf, header.typeId, offset)
+  offset += 2
+  writeUint32(buf, header.id, offset)
+  offset += 4
+  writeUint16(buf, header.filterSize, offset)
+  offset += 2
+  writeUint16(buf, header.aliasSize, offset)
+  offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.includeEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
+  return offset
+}
+
+export const writeQuerySingleHeaderProps = {
+  op: (buf: Uint8Array, value: QueryTypeEnum, offset: number) => {
+    buf[offset] = value
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 1)
+  },
+  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, value, offset + 3)
+  },
+  id: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 5)
+  },
+  filterSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 9)
+  },
+  aliasSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 11)
+  },
+  includeEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 13] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+}
+
+export const readQuerySingleHeader = (
+  buf: Uint8Array,
+  offset: number,
+): QuerySingleHeader => {
+  const value: QuerySingleHeader = {
+    op: (buf[offset]) as QueryTypeEnum,
+    size: readUint16(buf, offset + 1),
+    typeId: (readUint16(buf, offset + 3)) as TypeId,
+    id: readUint32(buf, offset + 5),
+    filterSize: readUint16(buf, offset + 9),
+    aliasSize: readUint16(buf, offset + 11),
+    includeEdge: (((buf[offset + 13] >>> 0) & 1)) === 1,
+  }
+  return value
+}
+
+export const readQuerySingleHeaderProps = {
+  op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
+    return (buf[offset]) as QueryTypeEnum
+  },
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 1)
+  },
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset + 3)) as TypeId
+  },
+  id: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 5)
+  },
+  filterSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 9)
+  },
+  aliasSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 11)
+  },
+  includeEdge: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 13] >>> 0) & 1)) === 1
+  },
+}
+
+export const createQuerySingleHeader = (header: QuerySingleHeader): Uint8Array => {
+  const buffer = new Uint8Array(QuerySingleHeaderByteSize)
+  writeQuerySingleHeader(buffer, header, 0)
+  return buffer
+}
+
 export type QueryHeader = {
   op: QueryTypeEnum
-  refProp: number
+  size: number
+  prop: number
   typeId: TypeId
   offset: number
   limit: number
-  edge: boolean
-  sort: boolean
   filterSize: number
   searchSize: number
   subType: QuerySubTypeEnum
+  includeEdge: boolean
+  sort: boolean
 }
 
-export const QueryHeaderByteSize = 18
+export const QueryHeaderByteSize = 20
 
 export const writeQueryHeader = (
   buf: Uint8Array,
@@ -845,7 +948,9 @@ export const writeQueryHeader = (
 ): number => {
   buf[offset] = header.op
   offset += 1
-  buf[offset] = header.refProp
+  writeUint16(buf, header.size, offset)
+  offset += 2
+  buf[offset] = header.prop
   offset += 1
   writeUint16(buf, header.typeId, offset)
   offset += 2
@@ -853,16 +958,16 @@ export const writeQueryHeader = (
   offset += 4
   writeUint32(buf, header.limit, offset)
   offset += 4
-  buf[offset] = 0
-  buf[offset] |= (((header.edge ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 1
-  buf[offset] |= ((0 >>> 0) & 63) << 2
-  offset += 1
   writeUint16(buf, header.filterSize, offset)
   offset += 2
   writeUint16(buf, header.searchSize, offset)
   offset += 2
   buf[offset] = header.subType
+  offset += 1
+  buf[offset] = 0
+  buf[offset] |= (((header.includeEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= ((0 >>> 0) & 63) << 2
   offset += 1
   return offset
 }
@@ -871,32 +976,35 @@ export const writeQueryHeaderProps = {
   op: (buf: Uint8Array, value: QueryTypeEnum, offset: number) => {
     buf[offset] = value
   },
-  refProp: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 1] = value
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 1)
+  },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 3] = value
   },
   typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, value, offset + 2)
+    writeUint16(buf, value, offset + 4)
   },
   offset: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 4)
+    writeUint32(buf, value, offset + 6)
   },
   limit: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 8)
-  },
-  edge: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 12] |= (((value ? 1 : 0) >>> 0) & 1) << 0
-  },
-  sort: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 12] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    writeUint32(buf, value, offset + 10)
   },
   filterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 13)
+    writeUint16(buf, value, offset + 14)
   },
   searchSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 15)
+    writeUint16(buf, value, offset + 16)
   },
   subType: (buf: Uint8Array, value: QuerySubTypeEnum, offset: number) => {
-    buf[offset + 17] = value
+    buf[offset + 18] = value
+  },
+  includeEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 19] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+  sort: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 19] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
 }
 
@@ -905,50 +1013,54 @@ export const readQueryHeader = (
   offset: number,
 ): QueryHeader => {
   const value: QueryHeader = {
-    op: buf[offset] as QueryTypeEnum,
-    refProp: buf[offset + 1],
-    typeId: readUint16(buf, offset + 2) as TypeId,
-    offset: readUint32(buf, offset + 4),
-    limit: readUint32(buf, offset + 8),
-    edge: ((buf[offset + 12] >>> 0) & 1) === 1,
-    sort: ((buf[offset + 12] >>> 1) & 1) === 1,
-    filterSize: readUint16(buf, offset + 13),
-    searchSize: readUint16(buf, offset + 15),
-    subType: buf[offset + 17] as QuerySubTypeEnum,
+    op: (buf[offset]) as QueryTypeEnum,
+    size: readUint16(buf, offset + 1),
+    prop: buf[offset + 3],
+    typeId: (readUint16(buf, offset + 4)) as TypeId,
+    offset: readUint32(buf, offset + 6),
+    limit: readUint32(buf, offset + 10),
+    filterSize: readUint16(buf, offset + 14),
+    searchSize: readUint16(buf, offset + 16),
+    subType: (buf[offset + 18]) as QuerySubTypeEnum,
+    includeEdge: (((buf[offset + 19] >>> 0) & 1)) === 1,
+    sort: (((buf[offset + 19] >>> 1) & 1)) === 1,
   }
   return value
 }
 
 export const readQueryHeaderProps = {
   op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
-    return buf[offset] as QueryTypeEnum
+    return (buf[offset]) as QueryTypeEnum
   },
-  refProp: (buf: Uint8Array, offset: number): number => {
-    return buf[offset + 1]
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 1)
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 3]
   },
   typeId: (buf: Uint8Array, offset: number): TypeId => {
-    return readUint16(buf, offset + 2) as TypeId
+    return (readUint16(buf, offset + 4)) as TypeId
   },
   offset: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 4)
+    return readUint32(buf, offset + 6)
   },
   limit: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 8)
-  },
-  edge: (buf: Uint8Array, offset: number): boolean => {
-    return ((buf[offset + 12] >>> 0) & 1) === 1
-  },
-  sort: (buf: Uint8Array, offset: number): boolean => {
-    return ((buf[offset + 12] >>> 1) & 1) === 1
+    return readUint32(buf, offset + 10)
   },
   filterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 13)
+    return readUint16(buf, offset + 14)
   },
   searchSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 15)
+    return readUint16(buf, offset + 16)
   },
   subType: (buf: Uint8Array, offset: number): QuerySubTypeEnum => {
-    return buf[offset + 17] as QuerySubTypeEnum
+    return (buf[offset + 18]) as QuerySubTypeEnum
+  },
+  includeEdge: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 19] >>> 0) & 1)) === 1
+  },
+  sort: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 19] >>> 1) & 1)) === 1
   },
 }
 
@@ -958,89 +1070,57 @@ export const createQueryHeader = (header: QueryHeader): Uint8Array => {
   return buffer
 }
 
-export type QuerySingleHeader = {
-  op: QueryTypeEnum
-  typeId: TypeId
+export type QueryNodeResponse = {
   id: number
-  filterSize: number
-  aliasSize: number
+  size: number
 }
 
-export const QuerySingleHeaderByteSize = 11
+export const QueryNodeResponseByteSize = 8
 
-export const writeQuerySingleHeader = (
+export const writeQueryNodeResponse = (
   buf: Uint8Array,
-  header: QuerySingleHeader,
+  header: QueryNodeResponse,
   offset: number,
 ): number => {
-  buf[offset] = header.op
-  offset += 1
-  writeUint16(buf, header.typeId, offset)
-  offset += 2
   writeUint32(buf, header.id, offset)
   offset += 4
-  writeUint16(buf, header.filterSize, offset)
-  offset += 2
-  writeUint16(buf, header.aliasSize, offset)
-  offset += 2
+  writeUint32(buf, header.size, offset)
+  offset += 4
   return offset
 }
 
-export const writeQuerySingleHeaderProps = {
-  op: (buf: Uint8Array, value: QueryTypeEnum, offset: number) => {
-    buf[offset] = value
-  },
-  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, value, offset + 1)
-  },
+export const writeQueryNodeResponseProps = {
   id: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 3)
+    writeUint32(buf, value, offset)
   },
-  filterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 7)
-  },
-  aliasSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 9)
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 4)
   },
 }
 
-export const readQuerySingleHeader = (
+export const readQueryNodeResponse = (
   buf: Uint8Array,
   offset: number,
-): QuerySingleHeader => {
-  const value: QuerySingleHeader = {
-    op: buf[offset] as QueryTypeEnum,
-    typeId: readUint16(buf, offset + 1) as TypeId,
-    id: readUint32(buf, offset + 3),
-    filterSize: readUint16(buf, offset + 7),
-    aliasSize: readUint16(buf, offset + 9),
+): QueryNodeResponse => {
+  const value: QueryNodeResponse = {
+    id: readUint32(buf, offset),
+    size: readUint32(buf, offset + 4),
   }
   return value
 }
 
-export const readQuerySingleHeaderProps = {
-  op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
-    return buf[offset] as QueryTypeEnum
-  },
-  typeId: (buf: Uint8Array, offset: number): TypeId => {
-    return readUint16(buf, offset + 1) as TypeId
-  },
+export const readQueryNodeResponseProps = {
   id: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 3)
+    return readUint32(buf, offset)
   },
-  filterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 7)
-  },
-  aliasSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 9)
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 4)
   },
 }
 
-export const createQuerySingleHeader = (
-  header: QuerySingleHeader,
-): Uint8Array => {
-  const buffer = new Uint8Array(QuerySingleHeaderByteSize)
-  writeQuerySingleHeader(buffer, header, 0)
+export const createQueryNodeResponse = (header: QueryNodeResponse): Uint8Array => {
+  const buffer = new Uint8Array(QueryNodeResponseByteSize)
+  writeQueryNodeResponse(buffer, header, 0)
   return buffer
 }
 
@@ -1189,8 +1269,7 @@ export const FilterVectorFnInverse = {
   cosineSimilarity, 
   euclideanDistance 
  */
-export type FilterVectorFnEnum =
-  (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
+export type FilterVectorFnEnum = (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
 
 export const FilterMaxVectorScore = 9999999
 export const FilterMaxStringScore = 255
@@ -1260,3 +1339,4 @@ export const AggTypeInverse = {
   hmean 
  */
 export type AggTypeEnum = (typeof AggType)[keyof typeof AggType]
+

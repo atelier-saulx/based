@@ -5,7 +5,8 @@ const napi = @import("../napi.zig");
 const Sort = @import("../db/sort.zig");
 const Query = @import("./common.zig");
 const utils = @import("../utils.zig");
-const results = @import("./results.zig");
+const multiple = @import("./multiple.zig");
+const threads = @import("../db/threads.zig");
 
 const t = @import("../types.zig");
 
@@ -28,77 +29,27 @@ pub fn getQueryBufInternalThread(env: napi.Env, info: napi.Info) !napi.Value {
 
 pub fn getQueryThreaded(
     dbCtx: *db.DbCtx,
-    q: []u8,
+    buffer: []u8,
     threadCtx: *db.DbThread,
-    sortIndex: ?*Sort.SortIndexMeta,
+    _: ?*Sort.SortIndexMeta,
 ) !void {
-    var arena = std.heap.ArenaAllocator.init(std.heap.raw_c_allocator);
-    defer arena.deinit();
-
-    const allocator = arena.allocator();
     var index: usize = 0;
 
     var ctx: Query.QueryCtx = .{
-        .id = utils.readNext(u32, q, &index),
-        .results = std.array_list.Managed(results.Result).init(allocator),
         .db = dbCtx,
-        .size = 0,
-        .totalResults = 0,
-        .aggResult = null,
-        .allocator = allocator,
         .threadCtx = threadCtx,
     };
 
-    const op = utils.read(t.OpType, q, index);
-    const len = q.len - 8;
+    const queryId = utils.readNext(u32, buffer, &index);
+    const q = buffer[index .. buffer.len - 8]; // - checksum len
+    const op = utils.read(t.OpType, q, 0);
+    _ = try threads.newResult(true, threadCtx, 0, queryId, op);
 
     switch (op) {
         t.OpType.default => {
-            const header = utils.readNext(t.QueryHeader, q, &index);
-
-            std.debug.print("Query: {any}...\n", .{header});
-
-            switch (header.subType) {
-                t.QuerySubType.default => {
-                    try QueryDefault.default(false, &ctx, &header, q[index..len], undefined);
-                },
-                // t.QuerySubType.filter => {
-                //     const filterSlice = utils.sliceNext(header.filterSize, q, &index);
-                //     try QueryDefault.default(true, &ctx, &header, q[index..len], filterSlice);
-                // },
-                // t.QuerySubType.sortAsc => {
-                //     index += utils.sizeOf(t.SortHeader);
-                //     try QuerySort.default(false, false, &ctx, sortIndex, &header, q[index..len], undefined);
-                // },
-                // t.QuerySubType.sortDesc => {
-                //     index += utils.sizeOf(t.SortHeader);
-                //     try QuerySort.default(true, false, &ctx, sortIndex, &header, q[index..len], undefined);
-                // },
-                // t.QuerySubType.sortAscFilter => {
-                //     index += utils.sizeOf(t.SortHeader);
-                //     const filterSlice = utils.sliceNext(header.filterSize, q, &index);
-                //     try QuerySort.default(false, true, &ctx, sortIndex, &header, q[index..len], filterSlice);
-                // },
-                // t.QuerySubType.sortDescFilter => {
-                //     index += utils.sizeOf(t.SortHeader);
-                //     const filterSlice = utils.sliceNext(header.filterSize, q, &index);
-                //     try QuerySort.default(true, true, &ctx, sortIndex, &header, q[index..len], filterSlice);
-                // },
-                // t.QuerySubType.sortIdDesc => {
-                //     index += utils.sizeOf(t.SortHeader);
-                //     try QuerySort.idDesc(false, &ctx, &header, q[index..len], undefined);
-                // },
-                // t.QuerySubType.sortIdDescFilter => {
-                //     index += utils.sizeOf(t.SortHeader);
-                //     const filterSlice = utils.sliceNext(header.filterSize, q, &index);
-                //     try QuerySort.idDesc(true, &ctx, &header, q[index..len], filterSlice);
-                // },
-                // else => {
-                //     std.debug.print("🤪 not handled yet {any}...\n", .{header.subType});
-                // },
-            }
+            try multiple.default(&ctx, q);
         },
-        t.OpType.ids => {},
+        t.OpType.ids => {}, // can treat this the same as refs maybe?
         t.OpType.id => {
             // const id = read(u32, q, 3);
             // const filterSize = read(u16, q, 7);
@@ -107,12 +58,10 @@ pub fn getQueryThreaded(
             // try QueryId.default(id, &ctx, typeId, filterBuf, include);
         },
         t.OpType.alias => {},
-        t.OpType.aggregates => {},
-        t.OpType.aggregatesCountType => {},
+        // t.OpType.aggregates => {},
+        // t.OpType.aggregatesCount => {},
         else => {
             return errors.DbError.INCORRECT_QUERY_TYPE;
         },
     }
-
-    try results.createResultsBuffer(&ctx, op);
 }

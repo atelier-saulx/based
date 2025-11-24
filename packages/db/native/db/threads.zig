@@ -316,7 +316,10 @@ pub const Threads = struct {
                         try dump.saveCommon(threadCtx, self.ctx, q, op);
                     },
                     else => {
-                        try getQueryThreaded(self.ctx, q, threadCtx, sortIndex);
+                        getQueryThreaded(self.ctx, q, threadCtx, sortIndex) catch |err| {
+                            std.log.err("Error query: {any}", .{err});
+                            // write query error response
+                        };
                     },
                 }
 

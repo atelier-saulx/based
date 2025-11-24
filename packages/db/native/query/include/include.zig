@@ -5,37 +5,28 @@ const db = @import("../../db/db.zig");
 const threads = @import("../../db/threads.zig");
 
 const t = @import("../../types.zig");
-const f = @import("./field.zig");
-const o = @import("./opts.zig");
-
-pub fn addNode(
-    node: db.Node,
-    ctx: *Query.QueryCtx,
-) !void {
-    utils.write(
-        u32,
-        try threads.appendToResult(true, ctx.threadCtx, 4),
-        db.getNodeId(node),
-    );
-}
+// const f = @import("./field.zig");
+// const o = @import("./opts.zig");
 
 // call this include
 pub fn include(
     node: db.Node, // instead of node pass target which is { node, edgeNode } now we can do .edges.
-    ctx: *Query.QueryCtx,
-    typeEntry: db.Type,
+    _: *Query.QueryCtx, // prob just want to pass type entry on the queryctx..
     q: []u8, // call this q
+    // size:
     // id: u32,
     // parentRef: ?Query.RefStruct,
     // this is then the only thing but also not nessecary
     // edges just need to handle in reference and references as a second argument there
     // score: ?[4]u8, // think about it
 ) !void {
-    var size: usize = 0;
+    // var size: usize = 0;
     var i: u16 = 0;
     // var idIsSet: bool = false;
 
     // here it will write the id
+
+    std.debug.print(" include -> {any} \n", .{node});
 
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
@@ -206,6 +197,9 @@ pub fn include(
                 //         } else if (optsSize != 0) {
                 //             i += optsSize;
                 //         }
+            },
+            else => {
+                //
             },
         }
     }

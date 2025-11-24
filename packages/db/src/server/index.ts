@@ -19,7 +19,7 @@ import {
 } from './schema.js'
 import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
-import { OpType, OpTypeEnum } from '../zigTsExports.js'
+import { OpType, OpTypeEnum, OpTypeInverse } from '../zigTsExports.js'
 
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
@@ -184,6 +184,7 @@ export class DbServer extends DbShared {
       const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4]
       const queryListeners = this.opListeners.get(op)
+      console.log('query id', id, op, OpTypeInverse[op])
       if (queryListeners.get(id)) {
         console.log('💤 Query allready staged dont exec again', id)
       } else {
