@@ -1,7 +1,10 @@
 const db = @import("db.zig");
 const selva = @import("../selva.zig").c;
+const SelvaHash128 = @import("../selva.zig").SelvaHash128;
+const utils = @import("../utils.zig");
+const newResult = @import("../db/threads.zig").newResult;
 const napi = @import("../napi.zig");
-const copy = @import("../utils.zig").copy;
+const t = @import("../types.zig");
 
 pub fn ofType(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(2, env, info) catch return null;
@@ -31,4 +34,20 @@ pub fn ofType(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     _ = napi.c.napi_set_element(env, arr, 1, v);
 
     return arr;
+}
+
+pub fn blockHash(threadCtx: *db.DbThread, ctx: *db.DbCtx, q: []u8, op: t.OpType) !void {
+    const id = utils.read(u32, q, 0);
+    const data = try newResult(true, threadCtx, 20, id, op);
+    const start = utils.read(u32, q, 0);
+    const typeCode = utils.read(u16, q, 4);
+    const typeEntry = selva.selva_get_type_by_index(ctx.selva.?, typeCode);
+    var err: c_int = selva.SELVA_EINTYPE;
+
+    if (typeEntry) |te| {
+        var hash: SelvaHash128 = 0;
+        err = db.getNodeBlockHash(ctx, te, start, &hash);
+        utils.byteCopy(data, &hash, 4);
+    }
+    utils.write(c_int, data, err, 0);
 }
