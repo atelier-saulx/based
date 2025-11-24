@@ -53,7 +53,7 @@ await test('vote including round', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  const voteCountrySchema: SchemaProp = countrySchema
+  const voteCountrySchema: any = countrySchema
 
   await db.setSchema({
     types: {

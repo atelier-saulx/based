@@ -3,24 +3,21 @@ const selva = @import("../selva.zig").c;
 const napi = @import("../napi.zig");
 const db = @import("../db/db.zig");
 const Modify = @import("./common.zig");
-const createField = @import("./create.zig").createField;
-const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
-const deleteField = @import("./delete.zig").deleteField;
-const deleteTextLang = @import("./delete.zig").deleteTextLang;
+const create = @import("./create.zig");
+const delete = @import("./delete.zig");
 const subs = @import("./subscription.zig");
-const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
-const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
+const sort = @import("./sort.zig");
 const utils = @import("../utils.zig");
-const Update = @import("./update.zig");
+const update = @import("./update.zig");
 const dbSort = @import("../db/sort.zig");
 const config = @import("config");
 const errors = @import("../errors.zig");
 const threads = @import("../db/threads.zig");
 const t = @import("../types.zig");
 
-const updateField = Update.updateField;
-const updatePartialField = Update.updatePartialField;
-const increment = Update.increment;
+const updateField = update.updateField;
+const updatePartialField = update.updatePartialField;
+const increment = update.increment;
 const read = utils.read;
 const write = utils.write;
 const assert = std.debug.assert;
@@ -150,7 +147,9 @@ pub fn modify(
     dbCtx: *db.DbCtx,
     opType: t.OpType,
 ) !void {
-    const modifyId = utils.read(u32, batch, 0);
+    // utils.readNext(t.QueryDefaultHeader, q, &index);
+    // var i/: usize = 0;
+    const modifyId = read(u32, batch, 0);
     var i: usize = 13 + 4; // 5 for id + type and 8 for schema checksum + 4 for operation count
     // currentOffset chek threadCtx.current
     var ctx: ModifyCtx = .{
@@ -174,6 +173,7 @@ pub fn modify(
 
     defer ctx.dirtyRanges.deinit();
     var offset: u32 = 0;
+    // var expectedResultLen = read();
     var resultIndex: u32 = 4; // reserve for writing result len
 
     const tmpSizeToBeFixedImportant = batch.len;
@@ -220,7 +220,7 @@ pub fn modify(
             },
             t.ModOp.deleteTextField => {
                 const lang: t.LangCode = @enumFromInt(operation[0]);
-                deleteTextLang(&ctx, lang);
+                delete.deleteTextLang(&ctx, lang);
                 i = i + 2;
             },
             t.ModOp.switchIdCreate => {
@@ -314,19 +314,19 @@ pub fn modify(
                 i = i + 3;
             },
             t.ModOp.addEmptySort => {
-                i += try addEmptyToSortIndex(&ctx, operation) + 1;
+                i += try sort.addEmptyToSortIndex(&ctx, operation) + 1;
             },
             t.ModOp.addEmptySortText => {
-                i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
+                i += try sort.addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
             t.ModOp.delete => {
-                i += try deleteField(&ctx) + 1;
+                i += try delete.deleteField(&ctx) + 1;
             },
             t.ModOp.deleteSortIndex => {
-                i += try deleteFieldSortIndex(&ctx) + 1;
+                i += try delete.deleteFieldSortIndex(&ctx) + 1;
             },
             t.ModOp.createProp => {
-                i += try createField(&ctx, operation) + offset;
+                i += try create.createField(&ctx, operation) + offset;
             },
             t.ModOp.updateProp => {
                 i += try updateField(&ctx, operation) + offset;

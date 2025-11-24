@@ -1,4 +1,4 @@
-import { Schema } from '@based/schema'
+import { Schema, type SchemaIn } from '@based/schema'
 import { BasedDb } from '../../src/index.js'
 
 const schCompanyName = { type: 'string', maxBytes: 40 } as const
@@ -303,7 +303,7 @@ export const defaultSchema = Object.freeze({
 
 export default async function createNorthwindDb(
   db: BasedDb,
-  schema: Schema = defaultSchema as Schema,
+  schema: SchemaIn = defaultSchema as SchemaIn,
 ) {
   await db.setSchema(schema)
 

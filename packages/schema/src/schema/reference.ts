@@ -1,5 +1,12 @@
 import { parseBase, type Base } from './base.js'
-import { assert, isBoolean, isString, type RequiredIfStrict } from './shared.js'
+import {
+  assert,
+  assertExpectedProps,
+  deleteUndefined,
+  isBoolean,
+  isString,
+  type RequiredIfStrict,
+} from './shared.js'
 import { parseProp, type SchemaProp } from './prop.js'
 import type { SchemaReferences } from './references.js'
 import type { SchemaOut } from './schema.js'
@@ -23,6 +30,7 @@ let parsingEdges: boolean
 export const parseReference = (
   def: Record<string, unknown>,
   locales: SchemaOut['locales'],
+  fromReferences = false,
 ): SchemaReference<true> => {
   assert(isString(def.ref), 'Ref should be string')
 
@@ -43,6 +51,7 @@ export const parseReference = (
     type: 'reference',
     ref: def.ref,
     prop: def.prop,
+    dependent: def.dependent,
   }
 
   parsingEdges = true
@@ -52,6 +61,11 @@ export const parseReference = (
     }
   }
   parsingEdges = false
+  if (fromReferences) {
+    deleteUndefined(result)
+    assertExpectedProps(result, def)
+    return result
+  }
 
   return parseBase<SchemaReference<true>>(def, result)
 }

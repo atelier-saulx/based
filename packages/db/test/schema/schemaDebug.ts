@@ -36,17 +36,10 @@ const removeInverseProps = (props) => {
 const cleanSchema = (schema: DbServer['schema']) => {
   const schemaCopy = deepCopy(schema)
 
-  delete schemaCopy.lastId
   delete schemaCopy.hash
 
   for (const type in schemaCopy.types) {
     cleanProps(schemaCopy.types[type].props)
-    if (type === '_root') {
-      // @ts-ignore
-      schemaCopy.props = schemaCopy.types[type].props
-      removeInverseProps(schemaCopy.props)
-      delete schemaCopy.types[type]
-    }
   }
   return schemaCopy
 }

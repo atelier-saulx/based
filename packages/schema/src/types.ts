@@ -1,4 +1,3 @@
-import { getPropType } from './parse/utils.js'
 import type { LangName } from './lang.js'
 import type { Validation } from './def/validation.js'
 
@@ -521,7 +520,8 @@ export const isPropType = <T extends SchemaPropTypes>(
   type: T,
   prop: SchemaProp,
 ): prop is SchemaPropTypeMap[T] => {
-  return getPropType(prop) === type
+  // @ts-ignore
+  return prop.type === type
 }
 
 export const MAX_ID = 4294967295

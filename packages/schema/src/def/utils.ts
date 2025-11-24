@@ -94,7 +94,7 @@ export const cardinalityModeToEnum = (mode: HLLRegisterRepresentation) => {
 }
 
 export function getPropLen(schemaProp: SchemaProp) {
-  let len = SIZE_MAP[getPropType(schemaProp)]
+  let len = SIZE_MAP[schemaProp.type]
   if (
     isPropType('string', schemaProp) ||
     isPropType('alias', schemaProp) ||

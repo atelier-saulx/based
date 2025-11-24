@@ -63,7 +63,13 @@ await test('noLoadDumps', async (t) => {
       .subordinates.length,
     750,
   )
-  deepEqual(await db.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
+  deepEqual(
+    await db
+      .query('employee', 2)
+      .include((s) => s('subordinates').count())
+      .get(),
+    { id: 2, subordinates: { count: 750 } },
+  )
 
   await db.drain()
   await db.save()
@@ -75,11 +81,11 @@ await test('noLoadDumps', async (t) => {
 
   const getBlock1 = () =>
     db2.server.blockMap.getBlock(
-      makeTreeKey(db2.client.schema.types['employee'].id, 1),
+      makeTreeKey(db2.client.schemaTypesParsed['employee'].id, 1),
     )
   const getBlock2 = () =>
     db2.server.blockMap.getBlock(
-      makeTreeKey(db2.client.schema.types['employee'].id, 1200),
+      makeTreeKey(db2.client.schemaTypesParsed['employee'].id, 1200),
     )
 
   deepEqual(await db2.query('employee').include('*').get().toObject(), [])
@@ -96,9 +102,15 @@ await test('noLoadDumps', async (t) => {
       .subordinates.length,
     511,
   )
-  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
+  deepEqual(
+    await db2
+      .query('employee', 2)
+      .include((s) => s('subordinates').count())
+      .get(),
+    { id: 2, subordinates: { count: 750 } },
+  )
 
-  deepEqual(getBlock1().status , 'inmem')
+  deepEqual(getBlock1().status, 'inmem')
   deepEqual(getBlock2().status === 'inmem', false)
 
   await db2.server.loadBlock('employee', 1100)
@@ -108,12 +120,28 @@ await test('noLoadDumps', async (t) => {
       .subordinates.length,
     750,
   )
-  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
+  deepEqual(
+    await db2
+      .query('employee', 2)
+      .include((s) => s('subordinates').count())
+      .get(),
+    { id: 2, subordinates: { count: 750 } },
+  )
 
   await db2.server.unloadBlock('employee', 1100)
   deepEqual(getBlock2().status === 'inmem', false)
-  deepEqual((await db2.query('employee', 2).include('subordinates').get().toObject()).subordinates.length, 511)
-  deepEqual(await db2.query('employee', 2).include((s) => s('subordinates').count()).get(), { id: 2, subordinates: { count: 750 } })
+  deepEqual(
+    (await db2.query('employee', 2).include('subordinates').get().toObject())
+      .subordinates.length,
+    511,
+  )
+  deepEqual(
+    await db2
+      .query('employee', 2)
+      .include((s) => s('subordinates').count())
+      .get(),
+    { id: 2, subordinates: { count: 750 } },
+  )
 
   // for (const type of db2.server.blockMap.types()) {
   //   for (const block of db2.server.blockMap.blocks(type)) {

@@ -1,5 +1,5 @@
 import { updateTypeDefs } from '@based/schema/def'
-import { DbSchema, serialize } from '@based/schema'
+import { serialize, type SchemaOut } from '@based/schema'
 import { DbServer } from './index.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
@@ -12,7 +12,7 @@ import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
 import { readUint32, writeUint32 } from '@based/utils'
 import { OpType } from '../zigTsExports.js'
 
-export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
+export const setSchemaOnServer = (server: DbServer, schema: SchemaOut) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
   server.schema = schema
   server.schemaTypesParsed = schemaTypesParsed
@@ -20,7 +20,7 @@ export const setSchemaOnServer = (server: DbServer, schema: DbSchema) => {
   server.ids = native.getSchemaIds(server.dbCtxExternal)
 }
 
-export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
+export const writeSchemaFile = async (server: DbServer, schema: SchemaOut) => {
   if (server.fileSystemPath) {
     const schemaFilePath = join(server.fileSystemPath, SCHEMA_FILE)
     try {
@@ -31,7 +31,11 @@ export const writeSchemaFile = async (server: DbServer, schema: DbSchema) => {
   }
 }
 
-export async function createSelvaType(server: DbServer, typeId: number, schema: Uint8Array): Promise<void> {
+export async function createSelvaType(
+  server: DbServer,
+  typeId: number,
+  schema: Uint8Array,
+): Promise<void> {
   const msg = new Uint8Array(5 + schema.byteLength)
 
   writeUint32(msg, typeId, 0)
@@ -60,22 +64,24 @@ export async function createSelvaType(server: DbServer, typeId: number, schema: 
  * instance. If a `common.sdb` file is loaded then calling this function isn't
  * necessary because `common.sdb` already contains the required schema.
  */
-export const setNativeSchema = async (server: DbServer, schema: DbSchema) => {
+export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
   const types = Object.keys(server.schemaTypesParsed)
   const s = schemaToSelvaBuffer(server.schemaTypesParsed)
   let maxTid = 0
 
-  await Promise.all(s.map(async (ab, i) => {
-    const type = server.schemaTypesParsed[types[i]]
-    maxTid = Math.max(maxTid, type.id)
-    try {
-      await createSelvaType(server, type.id, new Uint8Array(ab))
-    } catch (err) {
-      throw new Error(
-        `Cannot update schema on selva (native) ${type.type} ${err.message}`,
-      )
-    }
-  }))
+  await Promise.all(
+    s.map(async (ab, i) => {
+      const type = server.schemaTypesParsed[types[i]]
+      maxTid = Math.max(maxTid, type.id)
+      try {
+        await createSelvaType(server, type.id, new Uint8Array(ab))
+      } catch (err) {
+        throw new Error(
+          `Cannot update schema on selva (native) ${type.type} ${err.message}`,
+        )
+      }
+    }),
+  )
 
   // Init the last ids
   native.setSchemaIds(new Uint32Array(maxTid), server.dbCtxExternal)

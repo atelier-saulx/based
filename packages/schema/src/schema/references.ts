@@ -6,7 +6,7 @@ import { assert, isRecord, type RequiredIfStrict } from './shared.js'
 export type SchemaReferences<strict = true> = Base &
   RequiredIfStrict<{ type: 'references' }, strict> & {
     capped?: number
-    items: SchemaReference<strict>
+    items: Omit<SchemaReference<strict>, keyof Base>
   }
 
 export const parseReferences = (
@@ -16,6 +16,6 @@ export const parseReferences = (
   assert(isRecord(def.items), 'Items should be record')
   return parseBase<SchemaReferences>(def, {
     type: 'references',
-    items: parseReference(def.items, locales),
+    items: parseReference(def.items, locales, true),
   })
 }

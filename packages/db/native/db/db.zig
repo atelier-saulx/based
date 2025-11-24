@@ -1,7 +1,6 @@
 const std = @import("std");
 const t = @import("../types.zig");
 const errors = @import("../errors.zig");
-const sort = @import("./sort.zig");
 const selva = @import("../selva.zig").c;
 const Modify = @import("../modify/common.zig");
 const utils = @import("../utils.zig");
@@ -12,8 +11,6 @@ pub const DbCtx = @import("./ctx.zig").DbCtx;
 pub const DbThread = @import("./threads.zig").DbThread;
 
 const assert = std.debug.assert;
-const read = utils.read;
-const move = utils.move;
 
 pub const Node = *selva.SelvaNode;
 pub const Aliases = *selva.SelvaAliases;
@@ -29,10 +26,6 @@ const emptySlice = &.{};
 const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
-
-pub fn createType(ctx: *DbCtx, typeId: t.TypeId, schema: []u8) !void {
-    try errors.selva(selva.selva_db_create_type(ctx.selva, typeId, schema.ptr, schema.len));
-}
 
 pub fn getType(ctx: *DbCtx, typeId: t.TypeId) !Type {
     const selvaTypeEntry: ?Type = selva.selva_get_type_by_index(
@@ -511,7 +504,7 @@ pub inline fn getNodeIdAsSlice(node: Node) []u8 {
 }
 
 pub inline fn getNodeId(node: Node) u32 {
-    return read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
+    return utils.read(u32, @as([*]u8, @ptrCast(node))[0..4], 0);
 }
 
 pub fn getFirstNode(typeEntry: Type) ?Node {

@@ -11,7 +11,7 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
-import { DbSchema, MigrateFns, serialize } from '@based/schema'
+import { SchemaOut, MigrateFns, serialize } from '@based/schema'
 import { semver } from '@based/schema'
 const { satisfies, parseRange, parse } = semver
 
@@ -39,7 +39,7 @@ const parseTransform = (transform?: MigrateFns) => {
   return res
 }
 
-const stripHooks = (schema: DbSchema): DbSchema => {
+const stripHooks = (schema: SchemaOut): SchemaOut => {
   const res = {}
   for (const i in schema) {
     if (i === 'types') {
@@ -52,13 +52,13 @@ const stripHooks = (schema: DbSchema): DbSchema => {
       res[i] = schema[i]
     }
   }
-  return res as DbSchema
+  return res as SchemaOut
 }
 
 export const migrate = async (
   server: DbServer,
-  fromSchema: DbSchema,
-  toSchema: DbSchema,
+  fromSchema: SchemaOut,
+  toSchema: SchemaOut,
   transform?: MigrateFns,
 ): Promise<void> => {
   const migrationId = toSchema.hash

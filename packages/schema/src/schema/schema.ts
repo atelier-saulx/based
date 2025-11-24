@@ -1,5 +1,6 @@
 import {
   assert,
+  assertExpectedProps,
   deleteUndefined,
   isBoolean,
   isFunction,
@@ -8,8 +9,7 @@ import {
   type RequiredIfStrict,
 } from './shared.js'
 import { parseType, type SchemaType } from './type.js'
-import { langCodesMap, type LangName } from './lang.js'
-import type { SchemaProp } from './prop.js'
+import { langCodesMap, type LangName } from '../lang.js'
 import { hash } from '@based/hash'
 import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
@@ -19,7 +19,7 @@ export type SchemaLocale = {
   required?: boolean
   fallback?: LangName // not multiple - 1 is enough else it becomes too complex
 }
-type SchemaLocales = Partial<Record<LangName, true | SchemaLocale>>
+export type SchemaLocales = Partial<Record<LangName, true | SchemaLocale>>
 
 type MigrateFn = (
   node: Record<string, any>,
@@ -83,19 +83,23 @@ let value: any
 const _track = <P extends Record<string, unknown>>(
   input: P,
   depth: number,
+  target: P,
 ): P =>
   new Proxy(input, {
     get(obj, key: string) {
       let val = obj[key]
+      if (tracking !== target) {
+        return val
+      }
       value = val
       path[depth] = key
       if (path.length > depth + 1) path = path.slice(0, depth + 1)
-      return isRecord(val) ? _track(val, depth + 1) : val
+      return isRecord(val) ? _track(val, depth + 1, target) : val
     },
   })
 const track = <P extends Record<string, unknown>>(input: P): P => {
   tracking = input
-  return _track(input, 0)
+  return _track(input, 0, input)
 }
 
 export const parseSchema = (input: SchemaIn): SchemaOut => {
@@ -107,13 +111,16 @@ export const parseSchema = (input: SchemaIn): SchemaOut => {
       v.version === undefined || isString(v.version),
       'Version should be string',
     )
-    assert(v.locales === undefined || isLocales(v.locales), 'Invalid locales')
+    const locales = v.locales
+    assert(locales === undefined || isLocales(locales), 'Invalid locales')
     assert(
       v.migrations === undefined || isMigrations(v.migrations),
       'Invalid migrations',
     )
     assert(
-      v.defaultTimezone === undefined || isString(v.defaultTimezone),
+      v.defaultTimezone === undefined ||
+        (isString(v.defaultTimezone) &&
+          Intl.DateTimeFormat(undefined, { timeZone: v.defaultTimezone })),
       'Invalid Default Timezone',
     )
 
@@ -121,16 +128,18 @@ export const parseSchema = (input: SchemaIn): SchemaOut => {
     for (const key in v.types) {
       const type = v.types[key]
       assert(isRecord(type), 'Type should be object')
-      types[key] = parseType(type, v.locales)
+      types[key] = parseType(type, locales)
     }
 
     const result = deleteUndefined({
       version: v.version,
-      locales: v.locales,
+      locales: locales,
       defaultTimezone: v.defaultTimezone,
       migrations: v.migrations,
       types,
     }) as SchemaOut
+
+    assertExpectedProps(result, v)
 
     const tracked = track(result)
     for (const type in tracked.types) {
@@ -140,8 +149,12 @@ export const parseSchema = (input: SchemaIn): SchemaOut => {
     }
 
     result.hash = hash(result)
+
     return result
   } catch (e) {
-    throw Error(`${path.join('.')}: ${inspect(value)} - ${e}`, { cause: e })
+    if (tracking) {
+      e = Error(`${path.join('.')}: ${inspect(value)} - ${e}`, { cause: e })
+    }
+    throw e
   }
 }

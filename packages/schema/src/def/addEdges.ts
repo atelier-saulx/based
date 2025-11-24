@@ -1,4 +1,4 @@
-import { getPropType, getValidator, SchemaReference } from '../index.js'
+import { getValidator, SchemaReference } from '../index.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { fillEmptyMain } from './fillEmptyMain.js'
 import {
@@ -29,7 +29,7 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         prop.edgesSeperateCnt = 0
       }
       const edgeProp = refProp[key]
-      const edgeType = getPropType(edgeProp)
+      const edgeType = edgeProp.type
       const len = getPropLen(edgeProp)
       const separate = isSeparate(edgeProp, len)
       if (separate) {

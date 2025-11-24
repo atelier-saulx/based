@@ -3,7 +3,6 @@ import {
   SchemaProps,
   SchemaPropsOneWay,
   StrictSchema,
-  getPropType,
 } from '@based/schema'
 
 export const mermaid2 = (schema: StrictSchema) => {
@@ -25,7 +24,7 @@ export const mermaid2 = (schema: StrictSchema) => {
         entity += `\n${prop.items.ref} ${indent}${key}`
         relations += `\n${type} ||--o{ ${prop.items.ref} : ${key}`
       } else {
-        entity += `\n${getPropType(prop)} ${indent}${key}`
+        entity += `\n${prop.type} ${indent}${key}`
         if (isPropType('object', prop)) {
           entity += parse(type, prop.props, `${indent}_`)
         } else if (isPropType('enum', prop)) {
@@ -76,7 +75,7 @@ export const mermaid = (schema: StrictSchema) => {
       } else if (isPropType('references', prop)) {
         mermaid += `\n${type} --> ${prop.items.ref} : ${key}[]`
       } else {
-        const propType = getPropType(prop)
+        const propType = prop.type
         mermaid += `\n${type} : ${indent}${key} __${propType}__`
         if (isPropType('object', prop)) {
           parse(type, prop.props, `${indent}.`)
