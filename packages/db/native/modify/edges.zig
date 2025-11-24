@@ -1,11 +1,12 @@
-const Modify = @import("./common.zig");
+const Modify = @import("common.zig");
 const selva = @import("../selva/selva.zig").c;
 const Db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
+const Schema = @import("../selva/schema.zig");
 const References = @import("../selva/references.zig");
 const utils = @import("../utils.zig");
 const errors = @import("../errors.zig");
-const update = @import("./update.zig");
+const update = @import("update.zig");
 const std = @import("std");
 const t = @import("../types.zig");
 
@@ -27,7 +28,7 @@ pub fn writeEdges(
     data: []u8,
 ) !void {
     var i: usize = 0;
-    const edgeConstraint = Db.getEdgeFieldConstraint(ctx.fieldSchema.?);
+    const edgeConstraint = Schema.getEdgeFieldConstraint(ctx.fieldSchema.?);
     const edgeNode = try Node.ensureRefEdgeNode(ctx, ctx.node.?, edgeConstraint, ref);
     const edgeId = ref.*.edge;
     const edgeTypeId = edgeConstraint.*.edge_node_type;
@@ -41,7 +42,7 @@ pub fn writeEdges(
         const propType: t.PropType = @enumFromInt(data[i + 2]);
         i += 3;
 
-        const edgeFieldSchema = Db.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
+        const edgeFieldSchema = Schema.getEdgeFieldSchema(ctx.db, edgeConstraint, prop) catch {
             std.log.err("Edge field schema not found\n", .{});
             return;
         };

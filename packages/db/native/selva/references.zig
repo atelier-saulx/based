@@ -5,6 +5,7 @@ const st = @import("selva.zig");
 const t = @import("../types.zig");
 const Db = @import("db.zig");
 const Node = @import("node.zig");
+const Schema = @import("schema.zig");
 const Modify = @import("../modify/common.zig");
 
 pub const ReferenceSmall = st.ReferenceSmall;
@@ -16,11 +17,11 @@ pub fn preallocReferences(ctx: *Modify.ModifyCtx, len: u64) void {
     _ = selva.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
 }
 
-pub fn getSingleReference(node: st.Node, fieldSchema: st.FieldSchema) ?ReferenceLarge {
+pub fn getSingleReference(node: st.Node, fieldSchema: Schema.FieldSchema) ?ReferenceLarge {
     return selva.selva_fields_get_reference(node, fieldSchema);
 }
 
-pub fn deleteReference(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.FieldSchema, id: u32) !void {
+pub fn deleteReference(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: Schema.FieldSchema, id: u32) !void {
     try errors.selva(selva.selva_fields_del_ref(
         ctx.db.selva,
         node,
@@ -87,7 +88,7 @@ const ReferencesIterator2 = struct {
     }
 };
 
-pub fn getReferences(comptime includeEdge: bool, db: *Db.DbCtx, node: st.Node, fieldSchema: st.FieldSchema) if (!includeEdge) ?ReferencesIterator1 else ?ReferencesIterator2 {
+pub fn getReferences(comptime includeEdge: bool, db: *Db.DbCtx, node: st.Node, fieldSchema: Schema.FieldSchema) if (!includeEdge) ?ReferencesIterator1 else ?ReferencesIterator2 {
     const refs = selva.selva_fields_get_references(node, fieldSchema);
     if (refs == null or fieldSchema.type != selva.SELVA_FIELD_TYPE_REFERENCES) {
         return null;
@@ -104,11 +105,11 @@ pub fn getReferences(comptime includeEdge: bool, db: *Db.DbCtx, node: st.Node, f
     };
 }
 
-pub fn clearReferences(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.FieldSchema) void {
+pub fn clearReferences(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: Schema.FieldSchema) void {
     selva.selva_fields_clear_references(ctx.db.selva, node, fieldSchema, st.markDirtyCb, ctx);
 }
 
-pub fn writeReference(ctx: *Modify.ModifyCtx, src: st.Node, fieldSchema: st.FieldSchema, dst: st.Node) !?ReferenceLarge {
+pub fn writeReference(ctx: *Modify.ModifyCtx, src: st.Node, fieldSchema: Schema.FieldSchema, dst: st.Node) !?ReferenceLarge {
     var refAny: selva.SelvaNodeReferenceAny = undefined;
 
     errors.selva(selva.selva_fields_reference_set(
@@ -138,7 +139,7 @@ pub fn writeReference(ctx: *Modify.ModifyCtx, src: st.Node, fieldSchema: st.Fiel
     return refAny.p.large;
 }
 
-pub fn putReferences(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.FieldSchema, ids: []u32) !void {
+pub fn putReferences(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: Schema.FieldSchema, ids: []u32) !void {
     try errors.selva(selva.selva_fields_references_insert_tail(ctx.db.selva, node, fieldSchema, try Db.getRefDstType(ctx.db, fieldSchema), ids.ptr, ids.len, st.markDirtyCb, ctx));
 
     const efc = selva.selva_get_edge_field_constraint(fieldSchema);
@@ -149,7 +150,7 @@ pub fn putReferences(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.Fiel
 }
 
 // @param index 0 = first; -1 = last.
-pub fn insertReference(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.FieldSchema, dstNode: st.Node, index: isize, reorder: bool) !selva.SelvaNodeReferenceAny {
+pub fn insertReference(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: Schema.FieldSchema, dstNode: st.Node, index: isize, reorder: bool) !selva.SelvaNodeReferenceAny {
     const te_dst = selva.selva_get_type_by_node(ctx.db.selva, dstNode);
     var ref: selva.SelvaNodeReferenceAny = undefined;
     const insertFlags: selva.selva_fields_references_insert_flags = if (reorder) selva.SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER else 0;
@@ -169,8 +170,8 @@ pub fn insertReference(ctx: *Modify.ModifyCtx, node: st.Node, fieldSchema: st.Fi
 }
 
 pub fn moveReference(
-    node: st.Node,
-    fieldSchema: st.FieldSchema,
+    node: Node.Node,
+    fieldSchema: Schema.FieldSchema,
     index_old: isize,
     index_new: isize,
 ) !void {
@@ -183,8 +184,8 @@ pub fn moveReference(
 }
 
 pub fn swapReference(
-    node: st.Node,
-    fieldSchema: st.FieldSchema,
+    node: Node.Node,
+    fieldSchema: Schema.FieldSchema,
     index_a: selva.user_ssize_t,
     index_b: selva.user_ssize_t,
 ) !void {
@@ -202,7 +203,7 @@ pub fn getEdgeReference(
         return null;
     }
 
-    const fs = Db.getEdgeFieldSchema(db, efc, field) catch null;
+    const fs = Schema.getEdgeFieldSchema(db, efc, field) catch null;
     if (fs == null) {
         return null;
     }
@@ -213,7 +214,7 @@ pub fn getEdgeReference(
 // TODO This should be going away
 pub fn getEdgeReferences(
     db: *Db.DbCtx,
-    efc: st.EdgeFieldConstraint,
+    efc: Schema.EdgeFieldConstraint,
     ref: ReferenceLarge,
     field: u8,
 ) ?References {
@@ -222,7 +223,7 @@ pub fn getEdgeReferences(
         return null;
     }
 
-    const fs = Db.getEdgeFieldSchema(db, efc, field) catch null;
+    const fs = Schema.getEdgeFieldSchema(db, efc, field) catch null;
     if (fs == null) {
         return null;
     }

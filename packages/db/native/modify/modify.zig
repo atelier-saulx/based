@@ -3,17 +3,18 @@ const napi = @import("../napi.zig");
 const selva = @import("../selva/selva.zig").c;
 const Db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
+const Schema = @import("../selva/schema.zig");
 const References = @import("../selva/references.zig");
-const Modify = @import("./common.zig");
-const createField = @import("./create.zig").createField;
-const deleteFieldSortIndex = @import("./delete.zig").deleteFieldSortIndex;
-const deleteField = @import("./delete.zig").deleteField;
-const deleteTextLang = @import("./delete.zig").deleteTextLang;
-const subs = @import("./subscription.zig");
-const addEmptyToSortIndex = @import("./sort.zig").addEmptyToSortIndex;
-const addEmptyTextToSortIndex = @import("./sort.zig").addEmptyTextToSortIndex;
+const Modify = @import("common.zig");
+const createField = @import("create.zig").createField;
+const deleteFieldSortIndex = @import("delete.zig").deleteFieldSortIndex;
+const deleteField = @import("delete.zig").deleteField;
+const deleteTextLang = @import("delete.zig").deleteTextLang;
+const subs = @import("subscription.zig");
+const addEmptyToSortIndex = @import("sort.zig").addEmptyToSortIndex;
+const addEmptyTextToSortIndex = @import("sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
-const Update = @import("./update.zig");
+const Update = @import("update.zig");
 const dbSort = @import("../db/sort.zig");
 const config = @import("config");
 const errors = @import("../errors.zig");
@@ -92,7 +93,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
     Modify.markDirtyRange(ctx, ctx.typeId, nextId);
 }
 
-fn getLargeRef(db: *Db.DbCtx, node: Node.Node, fs: Db.FieldSchema, dstId: u32) ?Db.ReferenceLarge {
+fn getLargeRef(db: *Db.DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?Db.ReferenceLarge {
     if (dstId == 0) { // assume reference
         return References.getSingleReference(node, fs);
     } else { // references
@@ -114,13 +115,13 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
         return 0;
     }
 
-    const fs = Db.getFieldSchema(ctx.typeEntry, refField) catch {
+    const fs = Schema.getFieldSchema(ctx.typeEntry, refField) catch {
         return 0;
     };
     ctx.fieldSchema = fs;
 
     if (getLargeRef(ctx.db, ctx.node.?, fs, dstId)) |ref| {
-        const efc = Db.getEdgeFieldConstraint(fs);
+        const efc = Schema.getEdgeFieldConstraint(fs);
         switchType(ctx, efc.edge_node_type) catch {
             return 0;
         };
@@ -194,7 +195,7 @@ pub fn modify(
             t.ModOp.switchProp => {
                 ctx.field = operation[0];
                 i = i + 3;
-                ctx.fieldSchema = try Db.getFieldSchema(ctx.typeEntry.?, ctx.field);
+                ctx.fieldSchema = try Schema.getFieldSchema(ctx.typeEntry.?, ctx.field);
                 ctx.fieldType = @enumFromInt(operation[1]);
                 // TODO move this logic to the actual handlers (createProp, updateProp, etc)
                 if (ctx.fieldType == t.PropType.reference) {

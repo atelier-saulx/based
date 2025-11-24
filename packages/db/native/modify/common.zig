@@ -1,5 +1,6 @@
 const db = @import("../selva/db.zig");
 const Node = @import("../selva/node.zig");
+const Schema = @import("../selva/schema.zig");
 const errors = @import("../errors.zig");
 const sort = @import("../db/sort.zig");
 const std = @import("std");
@@ -15,7 +16,7 @@ pub const ModifyCtx = struct {
     typeSortIndex: ?*sort.TypeIndex,
     typeId: t.TypeId,
     typeEntry: ?Node.Type,
-    fieldSchema: ?db.FieldSchema,
+    fieldSchema: ?Schema.FieldSchema,
     node: ?Node.Node,
     fieldType: t.PropType,
     db: *db.DbCtx,
