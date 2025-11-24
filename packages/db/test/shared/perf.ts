@@ -104,7 +104,6 @@ export async function perf(
 
     let diffMessage = styleText('gray', ` no previous found`)
 
-    console.log('🎃', Math.abs(percentDiff), options.diffThreshold)
     if (!isNaN(diff.difference)) {
       if (Math.abs(percentDiff) > options.diffThreshold) {
         diffMessage =
