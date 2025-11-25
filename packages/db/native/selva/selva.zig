@@ -10,6 +10,7 @@ pub const c = @cImport({
     @cDefine("false", "(_Bool)0");
 
     @cInclude("cdefs.h");
+    @cInclude("string.h");
     @cInclude("selva/db.h");
     @cInclude("selva/fields.h");
     @cInclude("selva/node_id_set.h");
