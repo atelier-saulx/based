@@ -220,7 +220,7 @@ export function create(
   db: DbClient,
   type: string,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ): Promise<number> {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx

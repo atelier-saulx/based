@@ -37,7 +37,7 @@ export function upsert(
   db: DbClient,
   type: string,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ): Promise<number> {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx
@@ -66,7 +66,7 @@ export function insert(
   db: DbClient,
   type: string,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ) {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx

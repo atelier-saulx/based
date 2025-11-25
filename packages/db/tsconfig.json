@@ -7,7 +7,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "rootDir": "./",
     "composite": true,
-    "strictNullChecks": false
+    "strictNullChecks": true
   },
   "include": ["./src", "./test"],
   "exclude": ["./dist"]

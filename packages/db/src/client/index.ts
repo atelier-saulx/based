@@ -84,11 +84,11 @@ export class DbClient extends DbShared {
       transformFns,
     )
     if (this.stopped) {
-      return this.schema.hash
+      return this.schema?.hash ?? 0
     }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
-      return this.schema.hash
+      return this.schema?.hash ?? 0
     }
     return schemaChecksum
   }
@@ -183,8 +183,6 @@ export class DbClient extends DbShared {
     opts?: ModifyOpts,
   ): Promise<number>
 
-  update(value: Record<string, any>, opts?: ModifyOpts): Promise<number>
-
   update(
     typeOrValue: string | any,
     idOverwriteOrValue:
@@ -260,7 +258,7 @@ export class DbClient extends DbShared {
 
   destroy() {
     this.stop()
-    delete this.listeners
+    this.listeners = {}
   }
 
   stop() {

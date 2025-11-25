@@ -13,7 +13,7 @@ export class SubStore {
   subscribe(q: BasedDbQuery) {
     const onData = (res: Uint8Array) => {
       if (!this.response) {
-        this.response = new BasedQueryResponse(q.def, res, 0)
+        this.response = new BasedQueryResponse(q.def!, res, 0)
       } else {
         this.response.result = res
         this.response.end = res.byteLength

@@ -13,7 +13,7 @@ export const getAll = (
       prop.typeIndex !== PropType.reference &&
       prop.typeIndex !== PropType.references
     ) {
-      fields.push({ field: prop.path.join('.'), opts })
+      fields.push({ field: prop.path!.join('.'), opts })
     }
   }
   return fields
@@ -31,7 +31,7 @@ export const getAllRefs = (
       prop.typeIndex === PropType.reference ||
       prop.typeIndex === PropType.references
     ) {
-      const refPath = prop.path.join('.') + affix
+      const refPath = prop.path!.join('.') + affix
       fields.push({ field: refPath, opts })
 
       if (prop.edges) {
@@ -52,8 +52,8 @@ export const includeField = (def: QueryDef, include: IncludeField) => {
       def.type === QueryDefType.References
     ) {
       const fields: IncludeField[] = []
-      if (def.target.propDef.edges) {
-        for (const edge in def.target.propDef.edges) {
+      if (def.target.propDef!.edges) {
+        for (const edge in def.target.propDef!.edges) {
           fields.push({ field: edge, opts })
         }
       }
@@ -113,17 +113,17 @@ export const includeProp = (
       })
     }
 
-    const langs = def.include.props.get(prop.prop).opts
+    const langs = def.include.props.get(prop.prop)!.opts!
     if (def.lang.fallback.length > 0) {
       for (const fallback of def.lang.fallback) {
-        if (!langs.fallBacks.includes(fallback)) {
-          langs.fallBacks.push(fallback)
+        if (!langs.fallBacks!.includes(fallback)) {
+          langs.fallBacks!.push(fallback)
         }
       }
     }
     const langCode = def.lang.lang ?? 0
-    langs.codes.add(langCode)
-    if (langCode === 0 || langs.codes.size > 1) {
+    langs.codes!.add(langCode)
+    if (langCode === 0 || langs.codes!.size > 1) {
       langs.fallBacks = []
     }
   } else {
@@ -131,7 +131,7 @@ export const includeProp = (
       def.include.props.set(prop.prop, { def: prop, opts })
     } else {
       def.include.main.len += prop.len
-      def.include.main.include.set(prop.start, [0, prop as PropDef, opts])
+      def.include.main.include.set(prop.start!, [0, prop as PropDef, opts!])
       return true
     }
   }

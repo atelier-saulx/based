@@ -45,7 +45,7 @@ const referencesFilter = (
       } else if (p[0] === '$') {
         let edges = conditions.fromRef && conditions.fromRef.edges
         if (!edges && 'propDef' in def.target) {
-          edges = def.target.propDef.edges
+          edges = def.target.propDef!.edges
         }
         if (edges) {
           const edgeDef = edges[p]
@@ -77,7 +77,7 @@ const referencesFilter = (
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
-        const schema = db.schemaTypesParsed[t.inverseTypeName]
+        const schema = db.schemaTypesParsed[t.inverseTypeName!]
         size += t.typeIndex === PropType.references ? 11 : 6
         refConditions = {
           conditions: {
@@ -87,7 +87,7 @@ const referencesFilter = (
             size: 0,
             hasSubMeta: false,
           },
-          select: referencesSelect || {
+          select: referencesSelect! || {
             type: ReferenceSelect.Any,
             prop: t,
           },
@@ -97,7 +97,7 @@ const referencesFilter = (
       size += filterRaw(
         db,
         [path.slice(i + 1).join('.'), ctx, value],
-        refConditions.conditions.schema,
+        refConditions.conditions.schema!,
         refConditions.conditions,
         def,
       )
@@ -113,6 +113,8 @@ const referencesFilter = (
     filterFieldDoesNotExist(def, fieldStr)
     return 0
   }
+
+  return 0
 }
 
 export const filterRaw = (
@@ -164,7 +166,7 @@ export const filter = (
 ) => {
   for (const f of filterAst) {
     if (IsFilter(f)) {
-      conditions.size += filterRaw(db, f, def.schema, conditions, def)
+      conditions.size += filterRaw(db, f, def.schema!, conditions, def)
     } else {
       filterOr(db, def, f, conditions)
     }

@@ -91,7 +91,7 @@ export const createFixedFilterBuffer = (
   value: any,
   sort: boolean,
 ): FilterCondition => {
-  const start = prop.start
+  const start = prop.start!
   if (Array.isArray(value)) {
     const len = value.length
     // Add 8 extra bytes for alignment
@@ -124,7 +124,7 @@ export const createFixedFilterBuffer = (
           if (!result.subscriptionMeta.now) {
             result.subscriptionMeta = { now: [] }
           }
-          result.subscriptionMeta.now.push(
+          result.subscriptionMeta.now!.push(
             createNowMeta(prop, parsedValue, ctx),
           )
         }

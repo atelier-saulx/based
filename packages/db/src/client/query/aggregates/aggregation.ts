@@ -51,7 +51,7 @@ export const aggregateToBuffer = (
   i += 2
   writeUint16(aggBuffer, aggregates.totalAccumulatorSize, i)
   i += 2
-  aggBuffer[i] = setMode[aggregates?.option?.mode] || 0
+  aggBuffer[i] = setMode[aggregates?.option?.mode!] || 0
   i += 1
   for (const [prop, aggregatesArray] of aggregates.aggregates.entries()) {
     aggBuffer[i] = prop
@@ -65,7 +65,7 @@ export const aggregateToBuffer = (
       i += 1
       aggBuffer[i] = agg.propDef.typeIndex
       i += 1
-      writeUint16(aggBuffer, agg.propDef.start, i)
+      writeUint16(aggBuffer, agg.propDef.start!, i)
       i += 2
       writeUint16(aggBuffer, agg.resultPos, i)
       i += 2
@@ -97,7 +97,7 @@ export const groupBy = (
   field: string,
   StepInput?: StepInput,
 ) => {
-  const def = q.def
+  const def = q.def!
   const fieldDef = def.schema!.props[field]
   if (!fieldDef) {
     aggregationFieldDoesNotExist(def, field)
@@ -118,15 +118,15 @@ export const groupBy = (
   if (!def.aggregate) {
     ensureAggregate(def)
   }
-
-  if (!def.aggregate.groupBy) {
-    def.aggregate.size += 13 // field, srcPropType, start, len, stepType, stepRange, timezone
+  const aggregate = def.aggregate!
+  if (!aggregate.groupBy) {
+    aggregate.size += 13 // field, srcPropType, start, len, stepType, stepRange, timezone
   }
-  def.aggregate.groupBy = fieldDef
-  def.aggregate.groupBy.stepRange = undefined
-  def.aggregate.groupBy.stepType = undefined
-  def.aggregate.groupBy.tz = undefined
-  def.aggregate.groupBy.display = undefined
+  aggregate.groupBy = fieldDef
+  aggregate.groupBy.stepRange = undefined
+  aggregate.groupBy.stepType = undefined
+  aggregate.groupBy.tz = undefined
+  aggregate.groupBy.display = undefined
 
   if (
     typeof StepInput === 'object' &&
@@ -134,24 +134,24 @@ export const groupBy = (
     'step' in StepInput
   ) {
     if (typeof StepInput.timeZone == 'string') {
-      def.aggregate.groupBy.tz = getTimeZoneOffsetInMinutes(StepInput.timeZone)
+      aggregate.groupBy.tz = getTimeZoneOffsetInMinutes(StepInput.timeZone)
     }
     if (typeof StepInput?.step == 'string') {
       const intervalEnumKey = StepInput.step as IntervalString
-      def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
+      aggregate.groupBy.stepType = Interval[intervalEnumKey]
     } else {
-      validateStepRange(def, StepInput?.step)
-      def.aggregate.groupBy.stepRange = StepInput.step
+      validateStepRange(def, StepInput?.step!)
+      aggregate.groupBy.stepRange = StepInput.step
     }
   } else if (typeof StepInput == 'number') {
     validateStepRange(def, StepInput)
-    def.aggregate.groupBy.stepRange = StepInput
+    aggregate.groupBy.stepRange = StepInput
   } else {
     const intervalEnumKey = StepInput as IntervalString
-    def.aggregate.groupBy.stepType = Interval[intervalEnumKey]
+    aggregate.groupBy.stepType = Interval[intervalEnumKey]
   }
   if (typeof StepInput === 'object' && StepInput?.display) {
-    def.aggregate.groupBy.display = StepInput?.display
+    aggregate.groupBy.display = StepInput?.display
   }
 }
 
@@ -160,31 +160,32 @@ const updateAggregateDefs = (
   propDef: PropDef | PropDefEdge,
   aggType: AggregateType,
 ) => {
-  const aggregates = def.aggregate.aggregates
+  const aggregate = def.aggregate!
+  const aggregates = aggregate.aggregates
   if (!aggregates.get(propDef.prop)) {
     aggregates.set(propDef.prop, [])
-    def.aggregate.size += 3 // field + fieldAggSize
+    aggregate.size += 3 // field + fieldAggSize
   }
 
-  const aggregateField = aggregates.get(propDef.prop)
+  const aggregateField = aggregates.get(propDef.prop)!
   aggregateField.push({
     type: aggType,
     propDef: propDef,
-    resultPos: def.aggregate.totalResultsSize,
-    accumulatorPos: def.aggregate.totalAccumulatorSize,
-    isEdge: isEdge(propDef.path[0]),
+    resultPos: aggregate.totalResultsSize,
+    accumulatorPos: aggregate.totalAccumulatorSize,
+    isEdge: isEdge(propDef.path![0]),
   })
 
   const specificSizes = aggregateTypeMap.get(aggType)
   if (specificSizes) {
-    def.aggregate.totalResultsSize += specificSizes.resultsSize
-    def.aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
+    aggregate.totalResultsSize += specificSizes.resultsSize
+    aggregate.totalAccumulatorSize += specificSizes.accumulatorSize
   } else {
-    def.aggregate.totalResultsSize += 8
-    def.aggregate.totalAccumulatorSize += 8
+    aggregate.totalResultsSize += 8
+    aggregate.totalAccumulatorSize += 8
   }
   // needs to add an extra field WRITE TO
-  def.aggregate.size += 9 // aggType + propType + start + resultPos + accumulatorPos + isEdge
+  aggregate.size += 9 // aggType + propType + start + resultPos + accumulatorPos + isEdge
 }
 
 const isCount = (propString: string, aggType: AggregateType) => {
@@ -207,7 +208,7 @@ const getPropDefinition = (
 ): PropDef | PropDefEdge | undefined => {
   if (isCount(propName, type)) {
     return {
-      schema: null,
+      schema: null as any,
       prop: 255,
       path: [propName],
       __isPropDef: true,
@@ -219,7 +220,7 @@ const getPropDefinition = (
       default: 0,
     } as PropDef
   }
-  return resolvedPropDef || def.schema.props[propName]
+  return resolvedPropDef || def.schema!.props[propName]
 }
 
 const IN_RECURSION = Symbol('IN_RECURSION')
@@ -232,18 +233,19 @@ const processPropPath = (
   originalPropName: string,
   type: AggregateType,
 ): PropDef | PropDefEdge | undefined | typeof IN_RECURSION => {
-  let t: PropDef | SchemaPropTree = query.def.schema.tree
+  const def = query.def!
+  let t: PropDef | SchemaPropTree = def.schema!.tree
 
   for (let i = 0; i < path.length; i++) {
     const propName = path[i]
 
     if (isEdge(propName)) {
       // @ts-ignore
-      const edgePropDef = query.def.target?.propDef?.edges[propName]
+      const edgePropDef = def.target?.propDef?.edges[propName]
       if (edgePropDef) {
         return edgePropDef
       } else {
-        edgeNotImplemented(query.def, propName)
+        edgeNotImplemented(def, propName)
         return undefined
       }
     }
@@ -262,7 +264,7 @@ const processPropPath = (
       }
 
       if (remainingPath) {
-        addAggregate(query, type, [remainingPath], query.def.aggregate.option)
+        addAggregate(query, type, [remainingPath], def.aggregate!.option)
       }
 
       return IN_RECURSION
@@ -277,13 +279,13 @@ export const addAggregate = (
   propNames: string[],
   option?: aggFnOptions,
 ) => {
-  const def = query.def
-  let hookPropNames: Set<string>
+  const def = query.def!
+  let hookPropNames: Set<string> | undefined
 
   ensureAggregate(def)
 
   if (option?.mode) {
-    def.aggregate.option = option
+    def.aggregate!.option = option
   }
 
   for (const propName of propNames) {
@@ -309,8 +311,8 @@ export const addAggregate = (
       }
       updateAggregateDefs(def, propDef, type)
 
-      if (def.schema.hooks?.aggregate) {
-        def.schema.hooks.aggregate(query, hookPropNames || new Set(propNames))
+      if (def.schema!.hooks?.aggregate) {
+        def.schema!.hooks.aggregate(query, hookPropNames || new Set(propNames))
       }
     }
   }
@@ -323,16 +325,17 @@ export const isRootCountOnly = (def: QueryDef, filterSize: number) => {
   if (def.type !== QueryDefType.Root) {
     return false
   }
-  if (def.aggregate.groupBy) {
+  const aggregate = def.aggregate!
+  if (aggregate.groupBy) {
     return false
   }
-  if (def.aggregate.aggregates.size !== 1) {
+  if (aggregate.aggregates.size !== 1) {
     return false
   }
-  if (!def.aggregate.aggregates.has(255)) {
+  if (!aggregate.aggregates.has(255)) {
     return false
   }
-  const aggs = def.aggregate.aggregates.get(255)
+  const aggs = aggregate.aggregates.get(255)!
   if (aggs.length !== 1) {
     return false
   }

@@ -25,6 +25,6 @@ export const writeMainValue = (ctx: Ctx, def: PropDef, val: any) => {
     typeof val === 'object' && val !== null && 'increment' in val
       ? val.increment
       : val,
-    ctx.cursor.main + def.start,
+    ctx.cursor.main! + def.start,
   )
 }

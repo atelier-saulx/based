@@ -41,7 +41,7 @@ const createRefQueryDef = (
       ? QueryDefType.Reference
       : QueryDefType.References,
     {
-      type: t.inverseTypeName,
+      type: t.inverseTypeName!,
       propDef: t,
     },
     def.skipValidation,

@@ -42,8 +42,8 @@ export const includeToBuffer = (
   if (def.include.main.len > 0) {
     const len =
       def.type === QueryDefType.Edge
-        ? def.target.ref.edgeMainLen
-        : def.schema.mainLen
+        ? def.target.ref!.edgeMainLen
+        : def.schema!.mainLen
 
     if (def.include.main.len === len) {
       // Get all main fields
@@ -72,7 +72,7 @@ export const includeToBuffer = (
 
   const propSize = def.include.props.size ?? 0
 
-  if (mainBuffer) {
+  if (mainBuffer!) {
     if (mainBuffer.byteLength !== 0) {
       const buf = new Uint8Array(5)
       // writeIncludeHeader(
@@ -111,7 +111,7 @@ export const includeToBuffer = (
       if (propDef.opts?.meta) {
         if (propDef.opts.codes) {
           if (propDef.opts.codes.has(0)) {
-            for (const code in def.schema.locales) {
+            for (const code in def.schema!.locales) {
               // const buf = new Uint8Array(4)
               // writeIncludeHeader(
               //   buf,
@@ -160,7 +160,7 @@ export const includeToBuffer = (
       if (propDef.opts?.meta !== 'only') {
         const hasOpts = !!propDef.opts?.end
         if (propType === PropType.text) {
-          const codes = propDef.opts.codes
+          const codes = propDef.opts!.codes!
           if (codes.has(0)) {
             // const b = new Uint8Array(hasOpts ? 12 : 4)
             // writeIncludeHeader(

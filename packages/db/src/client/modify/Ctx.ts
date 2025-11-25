@@ -29,7 +29,7 @@ export class Ctx {
   operation: ModOpEnum
   main: Map<PropDef, any> = new Map()
   draining: Promise<void>
-  scheduled: Promise<void>
+  scheduled: Promise<void> | undefined
   locale: LangCode
   sort: number = 0
   sortText: number = 0

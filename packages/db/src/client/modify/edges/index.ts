@@ -37,7 +37,7 @@ export const writeEdges = (
 
   let hasIncr = false
   let mainSize = 0
-  let mainFields: (PropDefEdge | any | EdgeOperation)[]
+  let mainFields: (PropDefEdge | any | EdgeOperation)[] | undefined
   let operation: EdgeOperation
 
   setDefaultEdges(def, obj)
@@ -47,7 +47,7 @@ export const writeEdges = (
     if (key === 'id' || key === '$index' || val === undefined) {
       continue
     }
-    const edge = def.edges[key]
+    const edge = def.edges![key]
     if (!edge) {
       throw [def, obj]
     }
@@ -80,10 +80,10 @@ export const writeEdges = (
       if (mainFields) {
         const len = mainFields.length
         for (let i = 0; i < len; i += 3) {
-          if (edge.start < mainFields[i].start) {
+          if (edge.start! < mainFields[i].start) {
             mainFields.splice(i, 0, edge, val, operation)
             break
-          } else if (mainFields[len - i - 3].start < edge.start) {
+          } else if (mainFields[len - i - 3].start < edge.start!) {
             mainFields.splice(len - i, 0, edge, val, operation)
             break
           }
@@ -99,9 +99,9 @@ export const writeEdges = (
       reserve(ctx, 3 + 4 + mainSize)
       writeEdgeHeaderMain(ctx)
       writeU32(ctx, mainSize)
-      for (let i = 0; i < mainFields.length; i += 3) {
-        const edge: PropDefEdge = mainFields[i]
-        const val = mainFields[i + 1]
+      for (let i = 0; i < mainFields!.length; i += 3) {
+        const edge: PropDefEdge = mainFields![i]
+        const val = mainFields![i + 1]
         writeFixed(ctx, edge, val)
       }
     } else {
@@ -109,16 +109,16 @@ export const writeEdges = (
       const mainFieldsStartSize = mainFields.length * 2
       reserve(
         ctx,
-        PROP_CURSOR_SIZE + 4 + 2 + mainFieldsStartSize + def.edgeMainLen,
+        PROP_CURSOR_SIZE + 4 + 2 + mainFieldsStartSize + def.edgeMainLen!,
       )
       writeEdgeHeaderPartial(ctx)
-      writeU32(ctx, mainFieldsStartSize + def.edgeMainLen)
-      writeU16(ctx, def.edgeMainLen)
+      writeU32(ctx, mainFieldsStartSize + def.edgeMainLen!)
+      writeU16(ctx, def.edgeMainLen!)
       // Index of start of fields
       const sIndex = ctx.index
       ctx.index += mainFieldsStartSize
       // Add zeroes
-      ctx.buf.set(def.edgeMainEmpty, ctx.index)
+      ctx.buf.set(def.edgeMainEmpty!, ctx.index)
       // Keep track of written bytes from append fixed
       let startMain = ctx.index
       for (let i = 0; i < mainFields.length; i += 3) {
@@ -126,16 +126,16 @@ export const writeEdges = (
         const value = mainFields[i + 1]
         const operation = mainFields[i + 2]
         const sIndexI = i * 2 + sIndex
-        writeUint16(ctx.buf, edge.start, sIndexI)
+        writeUint16(ctx.buf, edge.start!, sIndexI)
         writeUint16(ctx.buf, edge.len, sIndexI + 2)
         ctx.buf[sIndexI + 4] = operation
         ctx.buf[sIndexI + 5] = edge.typeIndex
-        ctx.index = startMain + edge.start
+        ctx.index = startMain + edge.start!
         // Add null support (defaults)
         writeFixed(ctx, edge, value)
       }
       // Correction append fixed value writes the len
-      ctx.index = startMain + def.edgeMainLen
+      ctx.index = startMain + def.edgeMainLen!
     }
   }
 

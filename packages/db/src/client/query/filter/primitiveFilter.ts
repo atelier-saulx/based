@@ -86,11 +86,11 @@ export const primitiveFilter = (
     parsedCondition = createVariableFilterBuffer(value, prop, ctx, lang)
   }
   // ADD OR if array for value
-  let arr = bufferMap.get(fieldIndexChar)
+  let arr = bufferMap!.get(fieldIndexChar)
   if (!arr) {
     size += 3 // [field] [size 2]
     arr = []
-    bufferMap.set(fieldIndexChar, arr)
+    bufferMap!.set(fieldIndexChar, arr)
   }
   size += parsedCondition.buffer.byteLength
 

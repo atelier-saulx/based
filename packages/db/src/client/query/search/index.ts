@@ -48,7 +48,7 @@ export const search = (
   q: string,
   s?: Search,
 ) => {
-  const def = queryBranch.def
+  const def = queryBranch.def!
   const bufs: Uint8Array[] = []
   let nrBlocks = 0
   let totalByteLength = 1

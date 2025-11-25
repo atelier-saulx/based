@@ -82,7 +82,7 @@ export function defToBuffer(
       const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
       const hasSearch = !!def.search
       const hasFilter = def.filter.size > 0
-      const searchSize = hasSearch ? def.search.size : 0
+      const searchSize = hasSearch ? def.search!.size : 0
       const sortSize = hasSort ? SortHeaderByteSize : 0
       const filterSize = def.filter.size
 
@@ -101,7 +101,7 @@ export function defToBuffer(
           op: QueryType.default,
           prop: ID_PROP,
           size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
-          typeId: def.schema.id,
+          typeId: def.schema!.id,
           offset: def.range.offset,
           limit: def.range.limit,
           sort: hasSort,
@@ -115,7 +115,7 @@ export function defToBuffer(
       )
 
       if (hasSort) {
-        index = writeSortHeader(buffer, def.sort, index)
+        index = writeSortHeader(buffer, def.sort!, index)
       }
 
       if (hasFilter) {
@@ -124,7 +124,7 @@ export function defToBuffer(
       }
 
       if (hasSearch) {
-        buffer.set(searchToBuffer(def.search), index)
+        buffer.set(searchToBuffer(def.search!), index)
       }
 
       result.push([
@@ -166,8 +166,9 @@ const combineIntermediateResults = (
 }
 
 export const queryToBuffer = (query: BasedDbQuery) => {
-  const bufs = defToBuffer(query.db, query.def)
-  bufs.push(schemaChecksum(query.def))
+  const def = query.def!
+  const bufs = defToBuffer(query.db, def)
+  bufs.push(schemaChecksum(def))
   const queryIdSize = 4
   const totalByteLength = byteSize(bufs) + queryIdSize
   const res = new Uint8Array(totalByteLength)

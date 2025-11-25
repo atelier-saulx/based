@@ -105,17 +105,18 @@ export const collectTypes = (
 }
 
 export const registerSubscription = (query: BasedDbQuery) => {
-  if (query.def.queryType === QueryType.id) {
+  const def = query.def!
+  if (def.queryType === QueryType.id) {
     // @ts-ignore
-    const id = query.def.target.id
-    const fields = collectFields(query.def)
-    const typeId = query.def.schema!.id
+    const id = def.target.id
+    const fields = collectFields(def)
+    const typeId = def.schema!.id
     const subId = native.crc32(
-      query.buffer.subarray(ID_OFFSET + 4, query.buffer.byteLength - 4),
+      query.buffer!.subarray(ID_OFFSET + 4, query.buffer!.byteLength - 4),
     )
     const headerLen = 18
-    const types = collectTypes(query.def)
-    const nowQueries = collectFilters(query.def.filter, fields)
+    const types = collectTypes(def)
+    const nowQueries = collectFilters(def.filter, fields)
     const buffer = new Uint8Array(
       headerLen +
         fields.separate.size +
@@ -154,9 +155,9 @@ export const registerSubscription = (query: BasedDbQuery) => {
     }
     query.subscriptionBuffer = buffer
   } else {
-    const typeId = query.def.schema!.id
-    const types = collectTypes(query.def)
-    const nowQueries = collectFilters(query.def.filter, {
+    const typeId = def.schema!.id
+    const types = collectTypes(def)
+    const nowQueries = collectFilters(def.filter, {
       separate: new Set(),
       main: new Set(),
     })

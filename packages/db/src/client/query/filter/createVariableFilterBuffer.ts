@@ -34,7 +34,7 @@ const parseValue = (
       throw new Error('Vector should be an arrayBuffer')
     }
     const vector = new Uint8Array(value)
-    let fn = new Uint8Array([getVectorFn(ctx.opts.fn)])
+    let fn = new Uint8Array([getVectorFn(ctx.opts.fn)!])
     const score: Uint8Array = ctx.opts.score
       ? new Uint8Array(new Float32Array([ctx.opts.score]).buffer)
       : DEFAULT_SCORE
@@ -97,7 +97,7 @@ export const createVariableFilterBuffer = (
   if (Array.isArray(value)) {
     if (ctx.operation !== EQUAL || !prop.separate) {
       mode = MODE_OR_VAR
-      const values = []
+      const values: Uint8Array[] = []
       for (const v of value) {
         const parsedValue = parseValue(v, prop, ctx, lang)
         const size = new Uint8Array(2)
@@ -106,7 +106,7 @@ export const createVariableFilterBuffer = (
       }
       val = concatUint8Arr(values)
     } else {
-      const x = []
+      const x: Uint8Array[] = []
       for (const v of value) {
         x.push(parseValue(v, prop, ctx, lang))
       }
@@ -167,12 +167,12 @@ export const createVariableFilterBuffer = (
       }
     } else {
       parsedCondition = {
-        buffer: writeVarFilter(mode, val, ctx, prop, prop.start, prop.len),
+        buffer: writeVarFilter(mode, val, ctx, prop, prop.start!, prop.len),
         propDef: prop,
       }
     }
   }
-  return parsedCondition
+  return parsedCondition!
 }
 
 function writeVarFilter(
