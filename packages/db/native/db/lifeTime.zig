@@ -17,14 +17,6 @@ pub fn stop(napi_env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return stopInternal(napi_env, info) catch return null;
 }
 
-fn getOptPath(
-    env: napi.Env,
-    value: napi.Value,
-) !?[]u8 {
-    const t = try napi.getType(env, value);
-    return if (!(t == napi.c.napi_null or t == napi.c.napi_undefined)) try napi.get([]u8, env, value) else null;
-}
-
 fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     // does this make double things with valgrind? Ask marco
     dbCtx.init();
