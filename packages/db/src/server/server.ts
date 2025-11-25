@@ -1,5 +1,5 @@
 import type { ActiveObservable } from './query/index.js'
-import uws from '@based/uws'
+import uws from '../../../uws/index.js'
 import initNetwork from './incoming/index.js'
 import { BasedFunctions, FunctionConfig } from './functions/index.js'
 import { BasedAuth, AuthConfig } from './auth/index.js'

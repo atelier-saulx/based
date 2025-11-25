@@ -1,4 +1,4 @@
-import uws from '@based/uws'
+import uws from '../../../../../uws/index.js'
 import { BasedServer } from '../../server.js'
 import { basicFunction } from './basicFunction.js'
 import { httpStreamFunction } from './streamFunction/index.js'

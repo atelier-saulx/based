@@ -1,4 +1,4 @@
-import uws from '@based/uws'
+import uws from '../../../../uws/index.js'
 import { parseAuthState } from '../auth/index.js'
 import { blockIncomingRequest } from '../security.js'
 import { BasedServer } from '../server.js'

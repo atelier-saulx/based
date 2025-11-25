@@ -5,7 +5,7 @@ import type {
   WebSocketSession,
 } from '../functions/index.js'
 import type { BasedServer } from './server.js'
-import uws from '@based/uws'
+import uws from '../../../uws/index.js'
 
 enum IsBlocked {
   notBlocked = 0,
