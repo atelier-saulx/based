@@ -1,5 +1,5 @@
 import { BasedDb } from '../../src/index.js'
-import { makeTreeKey } from '../../src/server/blockMap.js'
+import { makeTreeKey } from '../../src/db-server/blockMap.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
 

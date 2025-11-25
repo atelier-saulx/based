@@ -4,7 +4,7 @@ import { join, dirname, resolve } from 'path'
 import { BasedDb } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '../../src/utils/index.js'
-import { destructureTreeKey, BlockMap } from '../../src/server/blockMap.js'
+import { destructureTreeKey, BlockMap } from '../../src/db-server/blockMap.js'
 import fs from 'node:fs/promises'
 
 export const counts = {

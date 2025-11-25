@@ -9,5 +9,6 @@
     "strictNullChecks": true,
     "noEmit": true
   },
-  "include": ["src", "test", "scripts"]
+  "include": ["src", "test", "scripts"],
+  "exclude": ["dist"]
 }

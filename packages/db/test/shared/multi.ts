@@ -1,5 +1,5 @@
 import { DbClient, DbClientHooks } from '../../src/index.js'
-import { DbServer } from '../../src/server/index.js'
+import { DbServer } from '../../src/db-server/index.js'
 import { setTimeout } from 'node:timers/promises'
 
 export const start = async (t, clientsN = 2) => {
