@@ -36,10 +36,8 @@ function setSchemaIds(db: DbServer, ids: Uint32Array): Promise<void> {
   msg[4] = OpType.setSchemaIds
   msg.set(new Uint8Array(ids.buffer, ids.byteOffset), 5)
 
-  console.log('SET1', id, ids)
   return new Promise<void>((resolve) => {
     db.addOpOnceListener(OpType.setSchemaIds, id, () => {
-      console.log('SET2', id)
       resolve()
     })
     native.modifyThread(msg, db.dbCtxExternal)

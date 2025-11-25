@@ -14,9 +14,7 @@ import type { PropDef } from '../../../schema/index.js'
 
 export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex
-  if (type === PropType.string) {
-    writeString(ctx, def, val, 0)
-  } else if (type === PropType.text) {
+  if (type === PropType.text) {
     writeText(ctx, def, val)
   } else if (type === PropType.reference) {
     writeReference(ctx, def, val)
