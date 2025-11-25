@@ -1,9 +1,9 @@
 const std = @import("std");
-const Query = @import("./common.zig");
-const selva = @import("../selva/selva.zig").c;
-const utils = @import("../utils.zig");
-const deflate = @import("../deflate.zig");
-const t = @import("../types.zig");
+const Query = @import("../common.zig");
+const selva = @import("../../selva/selva.zig").c;
+const utils = @import("../../utils.zig");
+const deflate = @import("../../deflate.zig");
+const t = @import("../../types.zig");
 
 pub fn parse(
     value: []u8,

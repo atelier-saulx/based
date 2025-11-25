@@ -14,12 +14,13 @@ await test('include', async (t) => {
   // t.after(() => t.backup(db))
 
   await db.setSchema({
+    locales: { en: true, de: true },
     types: {
       user: {
         props: {
           name: 'string',
           nr: 'uint32',
-          // flap: { type: 'string', compression: 'none' },
+          body: 'text',
         },
       },
     },
@@ -29,22 +30,25 @@ await test('include', async (t) => {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
+      body: { de: 'Scheiß!!', en: 'poopTIMES!' },
     })
   }
 
   console.log('start query')
 
   await db.drain()
-  ;(await db.query('user').include('name').range(0, 1).get()).debug()
+  ;(
+    await db.query('user').include('name', 'body').range(0, 1).get().inspect()
+  ).debug()
 
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 100; i++) {
         q.push(
           db
             .query('user')
-            .include('name')
+            .include('name', 'body')
             .range(0, 1e6 + i)
             .get(),
         )

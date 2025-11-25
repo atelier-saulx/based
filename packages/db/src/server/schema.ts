@@ -2,21 +2,59 @@ import { serialize, updateTypeDefs, type SchemaOut } from '@based/schema'
 import { DbServer } from './index.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
-import native from '../native.js'
+import native, { idGenerator } from '../native.js'
 import { SCHEMA_FILE } from '../types.js'
-import { writeCreate } from '../client/modify/create/index.js'
-import { Ctx } from '../client/modify/Ctx.js'
-import { consume } from '../client/modify/drain.js'
 import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
 import { readUint32, writeUint32 } from '@based/utils'
 import { OpType } from '../zigTsExports.js'
 
-export const setSchemaOnServer = (server: DbServer, schema: SchemaOut) => {
+const schemaOpId = idGenerator()
+
+async function getSchemaIds(db: DbServer): Promise<Uint32Array> {
+  const id = schemaOpId.next().value
+  const msg = new Uint8Array(5)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.getSchemaIds
+
+  return new Promise<Uint32Array>((resolve) => {
+    db.addOpOnceListener(OpType.getSchemaIds, id, (buf: Uint8Array) => {
+      const ids = new Uint32Array(buf.length / Uint32Array.BYTES_PER_ELEMENT)
+      const tmp = new Uint8Array(ids.buffer)
+      tmp.set(buf)
+      resolve(ids)
+    })
+    native.getQueryBufThread(msg, db.dbCtxExternal)
+  })
+}
+
+function setSchemaIds(db: DbServer, ids: Uint32Array): Promise<void> {
+  const id = schemaOpId.next().value
+  const msg = new Uint8Array(5 + ids.byteLength)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.setSchemaIds
+  msg.set(new Uint8Array(ids.buffer, ids.byteOffset), 5)
+
+  console.log('SET1', id, ids)
+  return new Promise<void>((resolve) => {
+    db.addOpOnceListener(OpType.setSchemaIds, id, () => {
+      console.log('SET2', id)
+      resolve()
+    })
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
+}
+
+export const setSchemaOnServer = async (
+  server: DbServer,
+  schema: SchemaOut,
+) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
   server.schema = schema
   server.schemaTypesParsed = schemaTypesParsed
   server.schemaTypesParsedById = schemaTypesParsedById
-  server.ids = native.getSchemaIds(server.dbCtxExternal)
+  server.ids = await getSchemaIds(server)
 }
 
 export const writeSchemaFile = async (server: DbServer, schema: SchemaOut) => {
@@ -37,6 +75,7 @@ export async function createSelvaType(
 ): Promise<void> {
   const msg = new Uint8Array(5 + schema.byteLength)
 
+  console.log('CREATE TYPE', typeId)
   writeUint32(msg, typeId, 0)
   msg[4] = OpType.createType
   msg.set(schema, 5)
@@ -82,17 +121,7 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
     }),
   )
 
-  // Init the last ids
-  native.setSchemaIds(new Uint32Array(maxTid), server.dbCtxExternal)
-
-  // Insert a root node
-  if (schema.types._root) {
-    const tmpArr = new Uint8Array(new ArrayBuffer(1e3, { maxByteLength: 10e3 }))
-    const tmpCtx = new Ctx(schema.hash, tmpArr)
-    writeCreate(tmpCtx, server.schemaTypesParsed._root, {})
-    const buf = consume(tmpCtx)
-    server.modify(buf)
-  }
+  await setSchemaIds(server, new Uint32Array(maxTid))
 
   server.blockMap.updateTypes(server.schemaTypesParsed)
   if (server.fileSystemPath) {

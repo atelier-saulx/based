@@ -1,3 +1,4 @@
+import { availableParallelism } from 'node:os'
 import { DbServer } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
@@ -10,7 +11,6 @@ import {
   loadCommon,
   loadBlockRaw,
 } from './blocks.js'
-import { asyncExitHook } from 'exit-hook'
 import { BLOCK_CAPACITY_DEFAULT, deSerialize } from '@based/schema'
 import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
@@ -19,7 +19,6 @@ import {
   OpTypeEnum,
   BridgeResponseEnum,
   BridgeResponse,
-  OpTypeInverse,
 } from '../zigTsExports.js'
 
 export type StartOpts = {
@@ -89,6 +88,8 @@ export async function start(db: DbServer, opts?: StartOpts) {
 
   await mkdir(path, { recursive: true }).catch(noop)
 
+  let nrThreads: number
+  nrThreads = ((nrThreads = availableParallelism()), nrThreads < 2 ? 2 : nrThreads - 1)
   db.dbCtxExternal = native.start((id: BridgeResponseEnum, buffer: any) => {
     if (id === BridgeResponse.query) {
       handleQueryResponse(db, buffer)
@@ -99,7 +100,7 @@ export async function start(db: DbServer, opts?: StartOpts) {
     } else if (id === BridgeResponse.flushModify) {
       handleModifyResponse(db, buffer)
     }
-  })
+  }, nrThreads)
 
   const writelog = await readWritelog(join(path, WRITELOG_FILE))
   let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]
@@ -190,24 +191,6 @@ export async function start(db: DbServer, opts?: StartOpts) {
 
   // From now on we can use normal block saving and loading
   registerBlockIoListeners(db)
-
-  if (!opts?.hosted) {
-    db.unlistenExit = asyncExitHook(
-      async (signal) => {
-        const blockSig = () => {}
-        const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
-        // A really dumb way to block signals temporarily while saving.
-        // This is needed because there is no way to set the process signal mask
-        // in Node.js.
-        signals.forEach((sig) => process.on(sig, blockSig))
-        db.emit('info', `Exiting with signal: ${signal}`)
-        await db.save()
-        db.emit('info', 'Successfully saved.')
-        signals.forEach((sig) => process.off(sig, blockSig))
-      },
-      { wait: 5000 },
-    )
-  }
 
   // use timeout
   if (db.saveIntervalInSeconds && db.saveIntervalInSeconds > 0) {

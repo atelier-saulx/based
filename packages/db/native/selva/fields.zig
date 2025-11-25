@@ -240,8 +240,7 @@ pub inline fn textIterator(
         return TextIterator{ .value = emptyArray };
     }
     const textTmp: *[*]const [selva.c.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
-    const text = textTmp.*[0..value[8]];
-    return TextIterator{ .value = text };
+    return TextIterator{ .value = textTmp.*[0..value[8]] };
 }
 
 pub inline fn getText(

@@ -18,12 +18,14 @@ pub const OpType = enum(u8) {
     blockHash = 42,
     saveBlock = 67,
     saveCommon = 69,
+    getSchemaIds = 70,
     // Modify
     modify = 127,
     loadBlock = 128,
     unloadBlock = 129,
     loadCommon = 130,
     createType = 131,
+    setSchemaIds = 132,
 
     // --------------------
     noOp = 255,
@@ -368,10 +370,19 @@ pub const IncludeHeader = packed struct {
     propType: PropType,
 };
 
+pub const LangFallback = packed struct {
+    end: u32,
+    isChars: bool,
+    hasLangFallback: bool,
+    _padding: u6,
+    lang: LangCode,
+};
+
 pub const IncludeOptsHeader = packed struct {
     end: u32,
     isChars: bool,
-    _padding: u7,
+    hasLangFallback: bool,
+    _padding: u6,
     lang: LangCode,
 };
 

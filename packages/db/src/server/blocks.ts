@@ -1,4 +1,4 @@
-import native from '../native.js'
+import native, { idGenerator } from '../native.js'
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import {
@@ -11,7 +11,6 @@ import {
 } from '@based/utils'
 import {
   BLOCK_HASH_SIZE,
-  BlockHash,
   BlockMap,
   makeTreeKey,
   destructureTreeKey,
@@ -50,20 +49,6 @@ const SELVA_ENOENT = -8
 
 const SAVE_BLOCK_ID = 0
 const LOAD_BLOCK_ID = 0
-
-function* idGenerator(): Generator<number> {
-  let i = Number.MAX_SAFE_INTEGER
-
-  while (true) {
-    if (i >= Number.MAX_SAFE_INTEGER) {
-      i = 1
-    } else {
-      i++
-    }
-
-    yield i
-  }
-}
 
 const loadSaveCommonId = idGenerator()
 const loadBlockRawId = idGenerator()

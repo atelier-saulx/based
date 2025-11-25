@@ -104,7 +104,7 @@ pub const Threads = struct {
         }
     }
 
-    fn modifyNotPending(
+    inline fn modifyNotPending(
         self: *Threads,
     ) void {
         for (self.threads) |thread| {
@@ -112,6 +112,7 @@ pub const Threads = struct {
                 return;
             }
         }
+        _ = self.modifyQueue.swapRemove(0);
         self.modifyDone.signal();
         if (!self.jsModifyBridgeStaged) {
             self.ctx.jsBridge.call(t.BridgeResponse.modify, 0);
@@ -194,6 +195,12 @@ pub const Threads = struct {
                     t.OpType.saveCommon => {
                         try dump.saveCommon(thread, self.ctx, q, op);
                     },
+                    t.OpType.getSchemaIds => {
+                        const data = try thread.query.result(self.ctx.ids.len * 4, utils.read(u32, q, 0), op);
+                        if (self.ctx.ids.len > 0) {
+                            utils.byteCopy(data, @as([*]u8, @ptrCast(self.ctx.ids.ptr)), 0);
+                        }
+                    },
                     t.OpType.noOp => {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
@@ -204,24 +211,18 @@ pub const Threads = struct {
                         };
                     },
                 }
-
                 thread.query.commit();
 
                 self.mutex.lock();
                 self.pendingQueries -= 1;
 
-                if (thread.query.index > 100_000_000) {
-                    thread.*.flushed = false;
-                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
-                    self.mutex.unlock();
-                    thread.waitForFlush();
-                    self.mutex.lock();
-                }
-
                 if (self.pendingQueries == 0) {
                     self.queryDone.signal();
                     if (!self.jsQueryBridgeStaged) {
                         self.jsQueryBridgeStaged = true;
+                        for (self.threads) |tx| {
+                            tx.flushed = false;
+                        }
                         self.ctx.jsBridge.call(t.BridgeResponse.query, 0);
                     }
                     if (self.nextModifyQueue.items.len > 0) {
@@ -234,7 +235,21 @@ pub const Threads = struct {
                         }
                         self.wakeup.broadcast();
                     } else {}
+                } else if (thread.query.index > 100_000_000) {
+                    // std.debug.print("FLUSH Q {d} \n", .{thread.id});
+                    thread.flushed = false;
+                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
+                    thread.mutex.lock();
+                    self.mutex.unlock();
+                    while (!thread.flushed) {
+                        // std.debug.print(" wait for flush Q {d} \n", .{thread.id});
+                        thread.flushDone.wait(&thread.mutex);
+                        // std.debug.print(" flush done {d} \n", .{thread.id});
+                    }
+                    self.mutex.lock();
+                    thread.mutex.unlock();
                 }
+
                 self.mutex.unlock();
             }
 
@@ -263,28 +278,35 @@ pub const Threads = struct {
                                 schema.ptr,
                                 schema.len,
                             );
-                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                            utils.write(data, err, 0);
+                        },
+                        t.OpType.setSchemaIds => {
+                            _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
+                            const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(m[5..m.len])));
+                            const len = (m.len - 5) / @sizeOf(u32);
+                            self.ctx.ids = try self.ctx.allocator.dupe(u32, ptr[0..len]);
                         },
                         else => {},
                     }
-
                     thread.modify.commit();
 
                     self.mutex.lock();
-                    _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
-
-                    if (thread.modify.index > 50_000_000) {
-                        thread.*.flushed = false;
-                        self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
-                        self.mutex.unlock();
-                        thread.waitForFlush();
-                        self.mutex.lock();
-                    }
-
                     thread.pendingModifies -= 1;
+
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
+                    } else if (thread.modify.index > 50_000_000) {
+                        std.debug.print("FLUSH M {d} \n", .{thread.id});
+                        thread.*.flushed = false;
+                        self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
+                        thread.mutex.lock();
+                        self.mutex.unlock();
+                        while (!thread.flushed) {
+                            thread.flushDone.wait(&thread.mutex);
+                        }
+                        self.mutex.lock();
+                        thread.mutex.unlock();
                     }
                     self.mutex.unlock();
                 } else {

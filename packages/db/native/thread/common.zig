@@ -14,14 +14,6 @@ pub const Thread = struct {
     modify: *results.Result,
     query: *results.Result,
 
-    pub inline fn waitForFlush(self: *Thread) void {
-        self.*.mutex.lock();
-        while (!self.flushed) {
-            self.flushDone.wait(&self.mutex);
-        }
-        self.*.mutex.unlock();
-    }
-
     pub fn init(id: usize) !*Thread {
         const thread = try std.heap.raw_c_allocator.create(Thread);
         thread.*.id = id;

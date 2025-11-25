@@ -8,7 +8,6 @@ import {
   makeTreeKeyFromNodeId,
 } from './blockMap.js'
 import { migrate } from './migrate/index.js'
-import exitHook from 'exit-hook'
 import { debugServer } from '../utils.js'
 import { readUint32, wait, writeUint32 } from '@based/utils'
 import { DbShared } from '../shared/DbBase.js'
@@ -40,7 +39,6 @@ export class DbServer extends DbShared {
   modifyQueue: Map<Function, Uint8Array> = new Map()
   queryQueue: Map<Function, Uint8Array> = new Map()
   stopped: boolean // = true does not work
-  unlistenExit: ReturnType<typeof exitHook>
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout
   delayInMs?: number
@@ -249,10 +247,10 @@ export class DbServer extends DbShared {
 
     setSchemaOnServer(this, schema)
     await setNativeSchema(this, schema)
+    console.log('haha')
     await writeSchemaFile(this, schema)
+    console.log('hehe')
 
-    console.warn('WAITING 500MS AFTER SCHEMA FOR FIXFIX')
-    await wait(500)
     process.nextTick(() => {
       this.emit('schema', this.schema!)
     })
@@ -267,7 +265,6 @@ export class DbServer extends DbShared {
     clearTimeout(this.subscriptions.updateHandler!)
     this.subscriptions.updateHandler = null
     this.stopped = true
-    this.unlistenExit()
 
     if (this.saveInterval) {
       clearInterval(this.saveInterval)

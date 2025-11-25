@@ -1,15 +1,21 @@
 // @ts-ignore
 import db from '@based/db/native'
-import { DECODER } from '@based/utils'
 
-const selvaIoErrlog = new Uint8Array(256)
 var compressor = db.createCompressor()
 var decompressor = db.createDecompressor()
 
-function SelvaIoErrlogToString(buf: Uint8Array) {
-  let i: number
-  let len = (i = buf.indexOf(0)) >= 0 ? i : buf.byteLength
-  return DECODER.decode(selvaIoErrlog.slice(0, len))
+export function* idGenerator(): Generator<number> {
+  let i = Number.MAX_SAFE_INTEGER
+
+  while (true) {
+    if (i >= Number.MAX_SAFE_INTEGER) {
+      i = 1
+    } else {
+      i++
+    }
+
+    yield i
+  }
 }
 
 const native = {
@@ -55,20 +61,12 @@ const native = {
     return x
   },
 
-  start: (bridge: (id: number, payload: any) => void) => {
-    return db.start(bridge)
+  start: (bridge: (id: number, payload: any) => void, nrThreads: number) => {
+    return db.start(bridge, nrThreads)
   },
 
   stop: (dbCtx: any) => {
     return db.stop(dbCtx)
-  },
-
-  setSchemaIds: (ids: Uint32Array, dbCtx: any) => {
-    return db.setSchemaIds(ids, dbCtx)
-  },
-
-  getSchemaIds: (dbCtx: any): Uint32Array => {
-    return new Uint32Array(db.getSchemaIds(dbCtx))
   },
 
   createCompressor() {
