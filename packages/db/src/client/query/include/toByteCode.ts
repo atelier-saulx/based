@@ -202,7 +202,9 @@ export const includeToBuffer = (
         } else if (hasEndOption) {
           const isChars =
             propDef.opts?.bytes ||
-            (propType !== PropType.json && propType !== PropType.string)
+            (propType !== PropType.json &&
+              propType !== PropType.string &&
+              propType !== PropType.text)
               ? false
               : true
           result.push(

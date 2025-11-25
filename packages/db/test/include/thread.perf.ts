@@ -31,38 +31,47 @@ await test('include', async (t) => {
     },
   })
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 100; i++) {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
-      body: { de: 'Scheiß!!', en: 'poopTIMES!' },
+      body: {
+        de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+        en: 'poopTIMES!',
+      },
     })
   }
 
   console.log('start query')
 
   await db.drain()
-  ;(
-    await db.query('user').include('name', 'body').range(0, 1).get().inspect()
-  ).debug()
 
-  await perf(
-    async () => {
-      const q: any[] = []
-      for (let i = 0; i < 100; i++) {
-        q.push(
-          db
-            .query('user')
-            .include('name', 'body')
-            .range(0, 1e6 + i)
-            .get(),
-        )
-      }
-      await Promise.all(q)
-    },
-    'Nodes',
-    { repeat: 10 },
-  )
+  await db
+    .query('user')
+    .include('name', 'body', { end: 10 })
+    .range(0, 1)
+    .get()
+    .inspect()
+
+  await db.query('user').include('name', 'body').range(0, 1).get().inspect()
+
+  // await perf(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 100; i++) {
+  //       q.push(
+  //         db
+  //           .query('user')
+  //           .include('name', 'body')
+  //           .range(0, 1e6 + i)
+  //           .get(),
+  //       )
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'Nodes',
+  //   { repeat: 10 },
+  // )
 
   console.log('done')
 
