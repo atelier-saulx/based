@@ -1,5 +1,4 @@
 import type { BasedServer } from '../server.js'
-import { Optional } from 'utility-types'
 import {
   BasedRoute,
   BasedFunctionConfig,
@@ -209,7 +208,7 @@ export class BasedFunctions {
   }
 
   completeSpec(
-    spec: Optional<BasedFunctionConfig, 'name'>,
+    spec: Omit<BasedFunctionConfig, 'name'>,
     name?: string,
   ): null | BasedFunctionConfigComplete {
     this.generateRoute(spec, name)
@@ -222,7 +221,7 @@ export class BasedFunctions {
   }
 
   generateRoute(
-    route: Optional<BasedRoute, 'name'>,
+    route: Omit<BasedRoute, 'name'>,
     name?: string,
   ): null | BasedRouteComplete {
     const nRoute = route as BasedRouteComplete

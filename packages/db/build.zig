@@ -1,18 +1,25 @@
 const std = @import("std");
 
+fn runCommand(b: *std.Build, alloc: std.mem.Allocator, argv: []const []const u8) ![]u8 {
+    const proc = try std.process.Child.run(.{
+        .argv = argv,
+        .allocator = alloc,
+    });
+    // The caller is now responsible for freeing proc.stdout.
+    // We can free stderr right away as we don't use it.
+    defer alloc.free(proc.stderr);
+    defer alloc.free(proc.stdout);
+    const result = std.mem.trimRight(u8, proc.stdout, " \n\r\t");
+    return b.fmt("{s}", .{result});
+}
+
 fn currentNodeHeaderPath(b: *std.Build) ![]u8 {
     const alloc = std.heap.page_allocator;
     const argv = [_][]const u8{ "which", "node" };
-    const proc = try std.process.Child.run(.{
-        .argv = &argv,
-        .allocator = alloc,
-    });
-    defer alloc.free(proc.stdout);
-    defer alloc.free(proc.stderr);
-    var result = std.mem.trimEnd(u8, proc.stdout, " \n\r\t%");
+    var result = try runCommand(b, alloc, &argv);
     const suffix = "/bin/node";
     if (std.mem.endsWith(u8, result, suffix)) {
-        result = result[0 .. result.len - suffix.len];
+        return b.fmt("{s}/include/node", .{result[0 .. result.len - suffix.len]});
     }
     return b.fmt("{s}/include/node", .{result});
 }
@@ -20,14 +27,7 @@ fn currentNodeHeaderPath(b: *std.Build) ![]u8 {
 fn currentNapiVersion(b: *std.Build) ![]u8 {
     const alloc = std.heap.page_allocator;
     const argv = [_][]const u8{ "node", "-p", "process.versions.napi" };
-    const proc = try std.process.Child.run(.{
-        .argv = &argv,
-        .allocator = alloc,
-    });
-
-    defer alloc.free(proc.stdout);
-    defer alloc.free(proc.stderr);
-    const result = std.mem.trimEnd(u8, proc.stdout, " \n\r\t%");
+    const result = try runCommand(b, alloc, &argv);
     return b.fmt("{s}", .{result});
 }
 
