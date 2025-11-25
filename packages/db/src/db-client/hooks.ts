@@ -50,9 +50,13 @@ export const getDefaultHooks = (
       })
     },
     flushModify(buf: Uint8Array) {
-      const res = server.modify(buf)
+      const x = buf.slice(0)
+      const res = server.modify(x)
       if (res instanceof Promise) {
-        return res.then((res) => res && new Uint8Array(res))
+        return res.then((res) => {
+          server.keepRefAliveTillThisPoint(x)
+          return res && new Uint8Array(res)
+        })
       }
       return Promise.resolve(res && new Uint8Array(res))
     },

@@ -19,7 +19,7 @@ await test('include', async (t) => {
         props: {
           name: 'string',
           nr: 'uint32',
-          body: 'text',
+          body: { type: 'text' }, // compression: 'none'
         },
       },
     },
@@ -34,6 +34,10 @@ await test('include', async (t) => {
         en: italy,
       },
     })
+    // if (i % 100) {
+    // console.log('DRAIN!')
+    // await db.drain()
+    // }
   }
 
   console.log('start query')
@@ -42,9 +46,9 @@ await test('include', async (t) => {
 
   await db
     .query('user')
-    .locale('de')
+    // .locale('de')
     .include('name', 'body', { end: 10 })
-    .range(0, 1)
+    .range(0, 10)
     .get()
     .inspect()
 
@@ -53,15 +57,15 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 10; i++) {
         q.push(
           db
             .query('user')
             .include('name', 'body')
             // .include('name', 'body', { end: 2 })
             .range(0, 1e6 + i)
-            .get(),
-          // .inspect(),
+            .get()
+            .inspect(),
           // .inspect(),
         )
       }
