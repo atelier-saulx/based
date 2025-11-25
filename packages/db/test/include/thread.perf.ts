@@ -31,12 +31,13 @@ await test('include', async (t) => {
     },
   })
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 10000; i++) {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
       body: {
-        de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+        de: 'xwed. w🇿🇼🇺🇸eufhweo fhewoiewfh efiowehfioepwhfew efiowehfioepwhfew efiowehfioepwhfew efiowehfioepwhfew efiowehfioepwhfew',
+        // de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
         en: 'poopTIMES!',
       },
     })
@@ -55,23 +56,23 @@ await test('include', async (t) => {
 
   await db.query('user').include('name', 'body').range(0, 1).get().inspect()
 
-  // await perf(
-  //   async () => {
-  //     const q: any[] = []
-  //     for (let i = 0; i < 100; i++) {
-  //       q.push(
-  //         db
-  //           .query('user')
-  //           .include('name', 'body')
-  //           .range(0, 1e6 + i)
-  //           .get(),
-  //       )
-  //     }
-  //     await Promise.all(q)
-  //   },
-  //   'Nodes',
-  //   { repeat: 10 },
-  // )
+  await perf(
+    async () => {
+      const q: any[] = []
+      for (let i = 0; i < 100; i++) {
+        q.push(
+          db
+            .query('user')
+            .include('name', 'body', { end: 6 })
+            .range(0, 1e6 + i)
+            .get(),
+        )
+      }
+      await Promise.all(q)
+    },
+    'Nodes',
+    { repeat: 10 },
+  )
 
   console.log('done')
 
