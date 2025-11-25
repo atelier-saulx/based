@@ -358,21 +358,21 @@ pub const IncludeOp = enum(u8) {
     meta = 129,
     partial = 130,
     // ---------------------
+    defaultWithOpts = 131,
+    // ---------------------
 };
 
 pub const IncludeHeader = packed struct {
     op: IncludeOp,
     prop: u8,
     propType: PropType,
-    hasOpts: bool,
-    _padding: u7,
 };
 
 pub const IncludeOptsHeader = packed struct {
     end: u32,
     isChars: bool,
-    lang: LangCode,
     _padding: u7,
+    lang: LangCode,
 };
 
 pub const IncludeResponse = packed struct {

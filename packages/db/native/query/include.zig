@@ -9,7 +9,7 @@ const opts = @import("./opts.zig");
 const t = @import("../types.zig");
 
 pub inline fn appendInclude(thread: *Thread.Thread, prop: u8, value: []u8) !void {
-    if (value.len == 0) {
+    if (value.len != 0) {
         return;
     }
     const header: t.IncludeResponse = .{
@@ -29,13 +29,8 @@ pub fn include(
     typeEntry: Node.Type,
 ) !void {
     var i: usize = 0;
-
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
-
-        std.debug.print(" include -> {any} \n", .{op});
-
-        // i += 1;
         switch (op) {
             // t.IncludeOp.references => {
             // call multiple
@@ -118,36 +113,37 @@ pub fn include(
                 //     }
                 // }
             },
+            t.IncludeOp.defaultWithOpts => {},
             t.IncludeOp.default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
                 const value = Fields.getField(typeEntry, node, fieldSchema, header.propType);
 
-                if (header.hasOpts) {
-                    const optsHeader = utils.readNext(t.IncludeOptsHeader, q, &i);
-                    switch (header.propType) {
-                        t.PropType.binary,
-                        t.PropType.string,
-                        t.PropType.json,
-                        => {
-                            try appendInclude(ctx.thread, header.prop, opts.parse(value, &optsHeader));
-                        },
-                        else => {
-                            // more
-                        },
-                    }
-                } else {
-                    switch (header.propType) {
-                        t.PropType.text,
-                        => {},
-                        t.PropType.binary, t.PropType.string, t.PropType.json => {
-                            try appendInclude(ctx.thread, header.prop, value[0 .. value.len - 4]);
-                        },
-                        else => {
-                            try appendInclude(ctx.thread, header.prop, value);
-                        },
-                    }
+                // if (header.hasOpts) {
+                //     const optsHeader = utils.readNext(t.IncludeOptsHeader, q, &i);
+                //     switch (header.propType) {
+                //         t.PropType.binary,
+                //         t.PropType.string,
+                //         t.PropType.json,
+                //         => {
+                //             try appendInclude(ctx.thread, header.prop, opts.parse(value, &optsHeader));
+                //         },
+                //         else => {
+                //             // more
+                //         },
+                //     }
+                // } else {
+                switch (header.propType) {
+                    t.PropType.text,
+                    => {},
+                    t.PropType.binary, t.PropType.string, t.PropType.json => {
+                        try appendInclude(ctx.thread, header.prop, value[0 .. value.len - 4]);
+                    },
+                    else => {
+                        try appendInclude(ctx.thread, header.prop, value);
+                    },
                 }
+                // }
 
                 //         var result: ?*results.Result = null;
                 //         const field: u8 = include[i];

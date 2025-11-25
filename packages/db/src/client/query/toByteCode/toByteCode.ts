@@ -114,24 +114,6 @@ export function defToBuffer(
         0,
       )
 
-      console.log(
-        'HERE PUT',
-        createQueryHeader({
-          op: QueryType.default,
-          prop: ID_PROP,
-          size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
-          typeId: def.schema.id,
-          offset: def.range.offset,
-          limit: def.range.limit,
-          sort: hasSort,
-          includeEdge: false,
-          edgeIncludeOffset: 0,
-          filterSize: def.filter.size,
-          searchSize,
-          subType: getQuerySubType(def),
-        }),
-      )
-
       if (hasSort) {
         index = writeSortHeader(buffer, def.sort, index)
       }
@@ -144,8 +126,6 @@ export function defToBuffer(
       if (hasSearch) {
         buffer.set(searchToBuffer(def.search), index)
       }
-
-      console.log({ include })
 
       result.push([
         { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
