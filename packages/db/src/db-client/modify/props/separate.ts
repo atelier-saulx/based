@@ -2,7 +2,6 @@ import { Ctx } from '../Ctx.js'
 import { writeReference } from './reference.js'
 import { writeText } from './text.js'
 import { writeReferences } from './references.js'
-import { writeBinary } from './binary.js'
 import { writeCardinality } from './cardinality.js'
 import { writeVector } from './vector.js'
 import { writeJson } from './json.js'
@@ -18,8 +17,6 @@ export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
     writeReference(ctx, def, val)
   } else if (type === PropType.references) {
     writeReferences(ctx, def, val)
-  } else if (type === PropType.binary) {
-    writeBinary(ctx, def, val)
   } else if (type === PropType.cardinality) {
     writeCardinality(ctx, def, val)
   } else if (type === PropType.vector || type === PropType.colVec) {
