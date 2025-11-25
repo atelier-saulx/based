@@ -30,7 +30,7 @@ export type SubscriptionId = {
 export type Subscriptions = {
   updateId: number
   active: number
-  updateHandler: ReturnType<typeof setTimeout>
+  updateHandler: ReturnType<typeof setTimeout> | null
   ids: Map<number, SubscriptionId>
   fullType: Map<number, SubscriptionFullType>
   now: { listeners: Set<() => void>; lastUpdated: number }
@@ -122,7 +122,7 @@ const addToMultiSub = (
     server.subscriptions.fullType.set(typeId, fullType)
     native.addMultiSubscription(server.dbCtxExternal, typeId)
   } else {
-    fullType = server.subscriptions.fullType.get(typeId)
+    fullType = server.subscriptions.fullType.get(typeId)!
     listeners = fullType.listeners
   }
   listeners.add(runQuery)
@@ -265,14 +265,14 @@ export const registerSubscription = (
         server.subscriptions.now.listeners.add(subContainer.nowListener)
       }
     } else {
-      subContainer = server.subscriptions.ids.get(subId)
+      subContainer = server.subscriptions.ids.get(subId)!
     }
     if (!subContainer.ids.has(id)) {
       listeners = new Set()
       subContainer.ids.set(id, listeners)
       native.addIdSubscription(server.dbCtxExternal, sub)
     } else {
-      listeners = subContainer.ids.get(id)
+      listeners = subContainer.ids.get(id)!
     }
     listeners.add(runQuery)
 
@@ -290,17 +290,17 @@ export const registerSubscription = (
       if (subContainer.ids.size === 0) {
         if (subContainer.types) {
           for (const typeId of subContainer.types) {
-            removeFromMultiSub(server, typeId, subContainer.typesListener)
+            removeFromMultiSub(server, typeId, subContainer.typesListener!)
           }
         }
         if (now) {
-          server.subscriptions.now.listeners.delete(subContainer.nowListener)
+          server.subscriptions.now.listeners.delete(subContainer.nowListener!)
         }
         server.subscriptions.ids.delete(subId)
       }
       server.subscriptions.active--
       if (server.subscriptions.active === 0) {
-        clearTimeout(server.subscriptions.updateHandler)
+        clearTimeout(server.subscriptions.updateHandler!)
         server.subscriptions.updateHandler = null
       }
     }
@@ -346,7 +346,7 @@ export const registerSubscription = (
       }
       server.subscriptions.active--
       if (server.subscriptions.active === 0) {
-        clearTimeout(server.subscriptions.updateHandler)
+        clearTimeout(server.subscriptions.updateHandler!)
         server.subscriptions.updateHandler = null
       }
     }

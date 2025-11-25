@@ -11,6 +11,6 @@ export type Listener<T> = (data: T) => void
 
 export class DbShared extends Emitter {
   schema?: SchemaOut
-  schemaTypesParsed?: Record<string, SchemaTypeDef> = {}
-  schemaTypesParsedById?: Record<number, SchemaTypeDef> = {}
+  schemaTypesParsed: Record<string, SchemaTypeDef> = {}
+  schemaTypesParsedById: Record<number, SchemaTypeDef> = {}
 }

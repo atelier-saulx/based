@@ -42,7 +42,7 @@ await test.skip('instantModify', async (t) => {
 
   let i = 100
   let id = 1
-  const items = []
+  const items: any[] = []
   while (i--) {
     const item = {
       name: 'alias',
@@ -76,7 +76,7 @@ await test.skip('instantModify', async (t) => {
   await db.save()
 
   // now capture the updates
-  const updates = []
+  const updates: any[] = []
   // @ts-ignore
   db.client.hooks.flushModify = (buf) => {
     updates.push(new Uint8Array(buf))

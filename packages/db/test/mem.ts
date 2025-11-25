@@ -37,7 +37,7 @@ await test('mem', async (t) => {
       name: 'BASIC ' + j,
     })
 
-    const ids = []
+    const ids: any[] = []
     let cnt = 0
     for (let i = 0; i < amount; i++) {
       const x = ids[rnd(0, ids.length - 1)]

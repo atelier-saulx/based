@@ -37,7 +37,7 @@ await test('schema hash', async (t) => {
     },
   })
 
-  const hash1 = db.server.schema.hash
+  const hash1 = db.server.schema!.hash
 
   await db.setSchema({
     types: {
@@ -48,7 +48,7 @@ await test('schema hash', async (t) => {
     },
   })
 
-  const hash2 = db.server.schema.hash
+  const hash2 = db.server.schema!.hash
 
   if (!hash1 || !hash2 || hash1 === hash2) {
     throw new Error('Incorrect hash')

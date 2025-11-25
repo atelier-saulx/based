@@ -37,7 +37,7 @@ await test('schema problems modify', async (t) => {
     types,
   })
 
-  const q = []
+  const q: any[] = []
 
   q.push(
     clientWorker(

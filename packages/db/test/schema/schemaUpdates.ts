@@ -130,7 +130,7 @@ await test('rapid schema updates', async (t) => {
   })
 
   let field = 10
-  const promises = []
+  const promises: any[] = []
   while (field--) {
     await setTimeout(10 + Math.random() * 100)
     promises.push(

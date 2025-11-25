@@ -28,7 +28,7 @@ await test('E-commerce Simulation', async (t) => {
 
   await db.start({ clean: true })
 
-  let intervalId: NodeJS.Timeout | null = null
+  let intervalId: NodeJS.Timeout | undefined = undefined
 
   t.after(() => {
     clearInterval(intervalId)
@@ -129,10 +129,10 @@ await test('E-commerce Simulation', async (t) => {
   const initialUsers = 100 * magnitude
   const initialProducts = 500 * magnitude
 
-  const categoryIdsArr = []
-  const productIdsArr = []
-  const reviewIdsArr = []
-  const userIdsArr = []
+  const categoryIdsArr: any[] = []
+  const productIdsArr: any[] = []
+  const reviewIdsArr: any[] = []
+  const userIdsArr: any[] = []
 
   for (let i = 0; i < initialCategories; i++) {
     const catId = db.create('category', {
@@ -428,7 +428,7 @@ await test('E-commerce Simulation', async (t) => {
   }
 
   // make util for this
-  let testErr: Error
+  let testErr: Error | undefined
   let measure = performance.now()
   let lastOperations = operationsCount
   intervalId = setInterval(async () => {
@@ -449,7 +449,7 @@ await test('E-commerce Simulation', async (t) => {
       totalAliasUpdateTime = 0
     }
 
-    let q = []
+    let q: any[] = []
     for (let i = 0; i < concurrency; i++) {
       q.push(simulationStep(i))
     }

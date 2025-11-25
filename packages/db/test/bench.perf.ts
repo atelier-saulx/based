@@ -46,7 +46,7 @@ await test('test embedded', async (t) => {
   console.log(toxps(N, ctime), 'c/s')
 
   const arr = Array.from({ length: N2 })
-  let res = undefined
+  let res: any = undefined
   const qtime = await perf(async () => {
     res = (
       await Promise.all(
@@ -105,7 +105,7 @@ await test('test client-server', async (t) => {
 
   const arr = Array.from({ length: N2 })
 
-  let res = undefined
+  let res: any = undefined
   const qtime = await perf(async () => {
     res = (
       await Promise.all(

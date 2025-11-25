@@ -4,7 +4,6 @@ import { DbServer } from '../../src/index.js'
 import { fileURLToPath } from 'node:url'
 import { DbShared } from '../../src/shared/DbBase.js'
 import { Emitter } from '../../src/shared/Emitter.js'
-import { readdir } from 'node:fs/promises'
 
 const lazyParse = (val: any) => {
   if (typeof val === 'object' && val !== null) {
@@ -19,7 +18,7 @@ const lazyParse = (val: any) => {
   return val
 }
 
-export const serverChildProcess = (path: string) => {
+export const serverChildProcess = (path: string): DbServer => {
   const p = new Worker(fileURLToPath(import.meta.url), {
     workerData: {
       CHILD_PATH: path,
@@ -66,7 +65,7 @@ export const serverChildProcess = (path: string) => {
     }
   })
 
-  return shim
+  return shim as DbServer
 }
 
 if (process.env.CHILD_PATH) {
@@ -78,11 +77,11 @@ if (process.env.CHILD_PATH) {
     args = lazyParse(args)
     if (args.at(-1) === 'LISTENER') {
       args[args.length - 1] = (...res) => {
-        process.send([id - 1, res])
+        process.send!([id - 1, res])
       }
     }
     const res = await server[cmd](...args)
-    process.send([id, res])
+    process.send!([id, res])
 
     if (cmd === 'destroy') {
       process.exit()
@@ -94,7 +93,7 @@ if (process.env.CHILD_PATH) {
       CHILD_PATH: workerData.CHILD_PATH,
     },
   })
-  p.on('message', (msg) => parentPort.postMessage(msg))
+  p.on('message', (msg) => parentPort!.postMessage(msg))
   p.on('exit', () => process.exit())
-  parentPort.on('message', (msg) => p.send(msg))
+  parentPort!.on('message', (msg) => p.send(msg))
 }

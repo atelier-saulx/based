@@ -5,7 +5,7 @@ import { text } from '../shared/examples.js'
 import { randomString } from '@based/utils'
 
 await test('compression / large strings', async (t) => {
-  let db: BasedDb
+  let db: BasedDb | null
   t.after(() => {
     if (db) {
       return db.destroy()

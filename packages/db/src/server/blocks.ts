@@ -93,7 +93,7 @@ export function registerBlockIoListeners(db: DbServer) {
       const block = db.blockMap.updateBlock(key, hash)
       const errMsg = `Save ${typeId}:${start} failed: ${native.selvaStrerror(err)}`
       db.emit('error', errMsg)
-      block.ioPromise.reject(errMsg)
+      block.ioPromise?.reject(errMsg)
     } else {
       const block = db.blockMap.updateBlock(key, hash)
       block.ioPromise?.resolve()
@@ -112,14 +112,14 @@ export function registerBlockIoListeners(db: DbServer) {
       const prevHash = block.hash
       if (equals(prevHash, hash)) {
         const block = db.blockMap.updateBlock(key, hash)
-        block.ioPromise.resolve()
+        block.ioPromise?.resolve()
       } else {
-        block.ioPromise.reject(new Error('Block hash mismatch'))
+        block.ioPromise?.reject(new Error('Block hash mismatch'))
       }
     } else {
       const errlog = DECODER.decode(buf.slice(16))
       db.emit('error', errlog)
-      block.ioPromise.reject(
+      block.ioPromise?.reject(
         new Error(
           `Load ${typeId}:${start} failed: ${native.selvaStrerror(err)}`,
         ),

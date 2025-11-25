@@ -43,16 +43,17 @@ await test('subscription perf', async (t) => {
   let cnt = 0
   for (let i = 0; i < 15; i++) {
     p.push(
+      // @ts-ignore
       clientWorker(
         t,
         db,
-        async (client, { ctx, buffer, amount }, { native, utils }) => {
+        (async (client, { ctx, buffer, amount }, { native, utils }) => {
           const dbCtx = native.externalFromInt(ctx)
           for (let i = 0; i < amount; i++) {
             utils.writeUint32(buffer, i + 1, 4)
             // native.getQueryBuf(buffer, dbCtx)
           }
-        },
+        }) as any,
         {
           ctx: native.intFromExternal(db.server.dbCtxExternal),
           buffer: q.buffer,
@@ -99,8 +100,8 @@ await test('native single id perf', async (t) => {
 
   d = Date.now()
   for (let i = 1; i < 1e6; i++) {
-    writeUint32(q.subscriptionBuffer, i, 7)
-    native.addIdSubscription(db.server.dbCtxExternal, q.subscriptionBuffer)
+    writeUint32(q.subscriptionBuffer!, i, 7)
+    native.addIdSubscription(db.server.dbCtxExternal, q.subscriptionBuffer!)
   }
   console.log(Date.now() - d, 'ms to add 1M subs')
 

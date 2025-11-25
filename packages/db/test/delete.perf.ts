@@ -38,7 +38,7 @@ await test('delete performance', async (t) => {
     },
   })
   const amount = 1e6
-  const users = []
+  const users: any[] = []
 
   await perf(async () => {
     for (let i = 0; i < amount; i++) {
@@ -58,7 +58,7 @@ await test('delete performance', async (t) => {
   deepEqual((await db.query('user').get()).toObject(), [])
 
   const amountArticles = 1e6
-  const articles = []
+  const articles: any[] = []
 
   const t1 = await perf(async () => {
     for (let i = 0; i < amountArticles; i++) {
@@ -78,7 +78,7 @@ await test('delete performance', async (t) => {
 
   deepEqual((await db.query('article').get()).toObject(), [])
 
-  const articles2 = []
+  const articles2: any[] = []
 
   const t3 = await perf(async () => {
     for (let i = 0; i < amountArticles; i++) {

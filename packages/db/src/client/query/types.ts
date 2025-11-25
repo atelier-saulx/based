@@ -60,7 +60,7 @@ export const getReferenceSelect = (
   if (p[p.length - 1] === ']') {
     const [refsField, indexNotation] = p.split('[')
     const index = indexNotation.slice(0, -1)
-    const ref = def.schema.props[refsField]
+    const ref = def.schema!.props[refsField]
     if (index === '*') {
       return { type: ReferenceSelect.All, prop: ref }
     }

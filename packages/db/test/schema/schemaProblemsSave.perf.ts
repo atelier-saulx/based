@@ -4,7 +4,7 @@ import { randomString, wait } from '@based/utils'
 import { type Schema } from '@based/schema'
 
 await test('schema problems save', async (t) => {
-  let db = new BasedDb({
+  let db: BasedDb | null = new BasedDb({
     path: t.tmp,
   })
 
@@ -81,8 +81,8 @@ await test('schema problems save', async (t) => {
   const int = setInterval(async () => {
     let d = db
     db = null
-    await d.save()
-    await d.stop()
+    await d?.save()
+    await d?.stop()
     d = new BasedDb({
       path: t.tmp,
     })

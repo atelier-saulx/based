@@ -1421,7 +1421,7 @@ await test('full join', async (t) => {
     .include('customer.id')
     .get()
     .toObject()
-  const result = []
+  const result: any[] = []
 
   // LEFT JOIN: Customers with Orders
   customers.forEach((customer) => {
@@ -1482,7 +1482,7 @@ await test('self join', async (t) => {
   // WHERE A.customer_id <> B.customer_id
   // AND A.city = B.city
   // ORDER BY A.city;
-  const result = []
+  const result: any[] = []
   ;(
     (await db
       .query('customers')

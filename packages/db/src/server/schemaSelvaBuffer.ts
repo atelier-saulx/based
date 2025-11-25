@@ -90,7 +90,7 @@ const propDefBuffer = (
     const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
-    const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType]
+    const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
 
     view.setUint16(1, prop.len / baseSize, true) // elements
     view.setUint16(3, baseSize, true) // element size
@@ -98,12 +98,12 @@ const propDefBuffer = (
   } else if (type === PropType.reference || type === PropType.references) {
     const buf = new Uint8Array(11)
     const view = new DataView(buf.buffer)
-    const dstType: SchemaTypeDef = schema[prop.inverseTypeName]
+    const dstType: SchemaTypeDef = schema[prop.inverseTypeName!]
 
     buf[0] = selvaType // field type
     buf[1] = makeEdgeConstraintFlags(prop) // flags
     view.setUint16(2, dstType.id, true) // dst_node_type
-    buf[4] = prop.inversePropNumber // inverse_field
+    buf[4] = prop.inversePropNumber! // inverse_field
     view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // edge_node_type
     view.setUint32(7, prop.referencesCapped ?? 0, true)
 

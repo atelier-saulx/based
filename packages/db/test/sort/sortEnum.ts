@@ -32,12 +32,12 @@ await test('sort Enum', async (t) => {
 
   const dbTime = await db.drain()
 
-  const randoIds = []
+  const randoIds: any[] = []
   for (let i = 0; i < 100; i++) {
     randoIds.push(~~(Math.random() * 3e6) + 1)
   }
 
-  const q = []
+  const q: any[] = []
   for (let i = 0; i < 500; i++) {
     q.push(db.query('user', randoIds).get())
   }

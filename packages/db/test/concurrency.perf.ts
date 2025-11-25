@@ -34,10 +34,10 @@ await test('concurrency', async (t) => {
 
   let id = 0
   let queries = 0
-  let refs = []
-  let timer = setTimeout(() => {
+  let refs: any[] = []
+  let timer: NodeJS.Timeout | undefined = setTimeout(() => {
     // db.destroy()
-    timer = null
+    timer = undefined
   }, 5e3)
 
   let len = 0
