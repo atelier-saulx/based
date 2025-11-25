@@ -6,8 +6,8 @@
     "emitDeclarationOnly": true,
     "types": ["node"],
     "jsx": "react",
-    "esModuleInterop": true
-    // "strictNullChecks": true
+    "esModuleInterop": true,
+    "strictNullChecks": true
   },
   "include": ["packages/*/src", "packages/*/test"]
 }
