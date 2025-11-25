@@ -3,33 +3,39 @@ const Query = @import("common.zig");
 const utils = @import("../utils.zig");
 const Node = @import("../selva/node.zig");
 const Thread = @import("../thread/thread.zig");
+const Schema = @import("../selva/schema.zig");
+const Fields = @import("../selva/fields.zig");
+const opts = @import("./opts.zig");
 const t = @import("../types.zig");
-// const f = @import("./prop.zig");
-// const o = @import("./opts.zig");
 
-// call this include
+pub inline fn appendInclude(thread: *Thread.Thread, prop: u8, value: []u8) !void {
+    if (value.len == 0) {
+        return;
+    }
+    const header: t.IncludeResponse = .{
+        .prop = prop,
+        .size = @truncate(value.len),
+    };
+    const headerSize = utils.sizeOf(t.IncludeResponse);
+    const newSlice = try thread.query.slice(headerSize + value.len);
+    utils.write(newSlice, header, 0);
+    utils.write(newSlice, value, headerSize);
+}
+
 pub fn include(
-    _: Node.Node,
-    _: *Query.QueryCtx, // prob just want to pass type entry on the queryctx..
-    q: []u8, // call this q
-    // size:
-    // id: u32,
-    // parentRef: ?Query.RefStruct,
-    // this is then the only thing but also not nessecary
-    // edges just need to handle in reference and references as a second argument there
-    // score: ?[4]u8, // think about it
+    node: Node.Node,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+    typeEntry: Node.Type,
 ) !void {
-    // var size: usize = 0;
-    var i: u16 = 0;
-    // var idIsSet: bool = false;
-
-    // here it will write the id
-
-    // std.debug.print(" include -> {any} \n", .{node});
+    var i: usize = 0;
 
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
-        i += 1;
+
+        std.debug.print(" include -> {any} \n", .{op});
+
+        // i += 1;
         switch (op) {
             // t.IncludeOp.references => {
             // call multiple
@@ -113,6 +119,36 @@ pub fn include(
                 // }
             },
             t.IncludeOp.default => {
+                const header = utils.readNext(t.IncludeHeader, q, &i);
+                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+                const value = Fields.getField(typeEntry, node, fieldSchema, header.propType);
+
+                if (header.hasOpts) {
+                    const optsHeader = utils.readNext(t.IncludeOptsHeader, q, &i);
+                    switch (header.propType) {
+                        t.PropType.binary,
+                        t.PropType.string,
+                        t.PropType.json,
+                        => {
+                            try appendInclude(ctx.thread, header.prop, opts.parse(value, &optsHeader));
+                        },
+                        else => {
+                            // more
+                        },
+                    }
+                } else {
+                    switch (header.propType) {
+                        t.PropType.text,
+                        => {},
+                        t.PropType.binary, t.PropType.string, t.PropType.json => {
+                            try appendInclude(ctx.thread, header.prop, value[0 .. value.len - 4]);
+                        },
+                        else => {
+                            try appendInclude(ctx.thread, header.prop, value);
+                        },
+                    }
+                }
+
                 //         var result: ?*results.Result = null;
                 //         const field: u8 = include[i];
                 //         const prop: t.PropType = @enumFromInt(include[i + 1]);
@@ -187,11 +223,4 @@ pub fn include(
             },
         }
     }
-
-    // if (!idIsSet) {
-    //     idIsSet = true;
-    //     size += try addIdOnly(ctx, id, score);
-    // }
-
-    // return size;
 }

@@ -35,28 +35,18 @@ await test('include', async (t) => {
   console.log('start query')
 
   await db.drain()
-
-  db.query('user').include('id')
+  ;(await db.query('user').include('name').range(0, 1).get()).debug()
 
   await perf(
     async () => {
       const q = []
-      for (let i = 0; i < 10000; i++) {
-        q.push(
-          db
-            .query('user')
-            .include('id')
-            .filter('nr', '>', i)
-            // .range(10)
-            .range(0, 10)
-            .get(),
-          // .inspect(),
-        )
+      for (let i = 0; i < 1; i++) {
+        q.push(db.query('user').include('name').range(0, 2).get().inspect())
       }
       await Promise.all(q)
     },
-    '1B nodes',
-    { repeat: 100 },
+    'Nodes',
+    { repeat: 1 },
   )
 
   console.log('done')

@@ -1,19 +1,13 @@
 const std = @import("std");
-const Query = @import("../common.zig");
-const selva = @import("../../selva.zig").c;
-const utils = @import("../../utils.zig");
-const decompressFirstBytes = @import("../../deflate.zig").decompressFirstBytes;
+const Query = @import("./common.zig");
+const selva = @import("../selva/selva.zig").c;
+const utils = @import("../utils.zig");
+const deflate = @import("../deflate.zig");
+const t = @import("../types.zig");
 
-pub const IncludeOpts = struct { end: u32, isChars: bool };
-
-pub inline fn getOpts(v: []u8, i: *u16) *const IncludeOpts {
-    return &.{ .end = utils.read(u32, v, i.* + 1), .isChars = v[i.*] == 1 };
-}
-
-// Non string slice (bytes)
-pub fn parseOpts(
+pub fn parse(
     value: []u8,
-    opts: *const IncludeOpts,
+    opts: *const t.IncludeOptsHeader,
 ) []u8 {
     if (opts.end != 0) {
         if (value.len < opts.end) {
@@ -37,7 +31,7 @@ pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u
 fn parseCharEndDeflate(
     ctx: *Query.QueryCtx,
     value: []u8,
-    opts: *const IncludeOpts,
+    opts: *const t.IncludeOptsHeader,
     extraSize: *usize,
 ) []u8 {
     const size = utils.read(u32, value, 2);
@@ -51,7 +45,11 @@ fn parseCharEndDeflate(
     };
     alloc[0] = value[0];
     alloc[1] = 0;
-    const v = decompressFirstBytes(ctx.threadCtx.decompressor, value, alloc[2..]) catch |err| {
+    const v = deflate.decompressFirstBytes(
+        ctx.threadCtx.decompressor,
+        value,
+        alloc[2..],
+    ) catch |err| {
         std.log.err("Error decompressing parseCharEndDeflate {any} \n", .{err});
         return &.{};
     };
@@ -105,7 +103,7 @@ fn parseCharEndDeflate(
 pub fn parseOptsString(
     ctx: *Query.QueryCtx,
     value: []u8,
-    opts: *const IncludeOpts,
+    opts: *const t.IncludeOptsHeader,
 ) ![]u8 {
     if (opts.end != 0) {
         if (!opts.isChars) {
@@ -113,7 +111,11 @@ pub fn parseOptsString(
                 const v = try ctx.allocator.alloc(u8, opts.end + 2);
                 v[0] = value[0];
                 v[1] = 0;
-                _ = try decompressFirstBytes(ctx.threadCtx.decompressor, value, v[2..]);
+                _ = try deflate.decompressFirstBytes(
+                    ctx.thread.decompressor,
+                    value,
+                    v[2..],
+                );
                 return v;
             } else if (value.len - 4 < opts.end + 2) {
                 return value[0 .. value.len - 4];

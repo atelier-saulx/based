@@ -360,6 +360,38 @@ pub const IncludeOp = enum(u8) {
     // ---------------------
 };
 
+pub const IncludeHeader = packed struct {
+    op: IncludeOp,
+    prop: u8,
+    propType: PropType,
+    hasOpts: bool,
+    _padding: u7,
+};
+
+pub const IncludeOptsHeader = packed struct {
+    end: u32,
+    isChars: bool,
+    lang: LangCode,
+    _padding: u7,
+};
+
+pub const IncludeResponse = packed struct {
+    prop: u8,
+    size: u32,
+};
+
+// pub const IncludeHeaderPartial = packed struct {
+//     op: IncludeOp,
+//     prop: u8,
+//     propType: PropType,
+// };
+
+// pub const IncludeHeaderMeta = packed struct {
+//     op: IncludeOp,
+//     prop: u8,
+//     propType: PropType,
+// };
+
 pub const QuerySingleHeader = packed struct {
     op: QueryType,
     size: u16, // cannot be more then 16kb? might be good enough

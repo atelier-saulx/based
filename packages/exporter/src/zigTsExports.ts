@@ -828,6 +828,151 @@ export const IncludeOpInverse = {
  */
 export type IncludeOpEnum = (typeof IncludeOp)[keyof typeof IncludeOp]
 
+export type IncludeHeader = {
+  op: IncludeOpEnum
+  prop: number
+  propType: PropTypeEnum
+  hasOpts: boolean
+}
+
+export const IncludeHeaderByteSize = 4
+
+export const writeIncludeHeader = (
+  buf: Uint8Array,
+  header: IncludeHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  buf[offset] = header.prop
+  offset += 1
+  buf[offset] = header.propType
+  offset += 1
+  buf[offset] = 0
+  buf[offset] |= (((header.hasOpts ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
+  return offset
+}
+
+export const writeIncludeHeaderProps = {
+  op: (buf: Uint8Array, value: IncludeOpEnum, offset: number) => {
+    buf[offset] = value
+  },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 2] = value
+  },
+  hasOpts: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+}
+
+export const readIncludeHeader = (
+  buf: Uint8Array,
+  offset: number,
+): IncludeHeader => {
+  const value: IncludeHeader = {
+    op: (buf[offset]) as IncludeOpEnum,
+    prop: buf[offset + 1],
+    propType: (buf[offset + 2]) as PropTypeEnum,
+    hasOpts: (((buf[offset + 3] >>> 0) & 1)) === 1,
+  }
+  return value
+}
+
+export const readIncludeHeaderProps = {
+  op: (buf: Uint8Array, offset: number): IncludeOpEnum => {
+    return (buf[offset]) as IncludeOpEnum
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 2]) as PropTypeEnum
+  },
+  hasOpts: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 3] >>> 0) & 1)) === 1
+  },
+}
+
+export const createIncludeHeader = (header: IncludeHeader): Uint8Array => {
+  const buffer = new Uint8Array(IncludeHeaderByteSize)
+  writeIncludeHeader(buffer, header, 0)
+  return buffer
+}
+
+export type IncludeOptsHeader = {
+  end: number
+  isChars: boolean
+  lang: LangCodeEnum
+}
+
+export const IncludeOptsHeaderByteSize = 6
+
+export const writeIncludeOptsHeader = (
+  buf: Uint8Array,
+  header: IncludeOptsHeader,
+  offset: number,
+): number => {
+  writeUint32(buf, header.end, offset)
+  offset += 4
+  buf[offset] = 0
+  buf[offset] |= (((header.isChars ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((header.lang >>> 0) & 127) << 1
+  offset += 1
+  buf[offset] = 0
+  buf[offset] |= ((header.lang >>> 7) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
+  return offset
+}
+
+export const writeIncludeOptsHeaderProps = {
+  end: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset)
+  },
+  isChars: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+  lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
+    buf[offset + 4] |= ((value >>> 0) & 127) << 1
+    buf[offset + 5] |= ((value >>> 7) & 1) << 0
+  },
+}
+
+export const readIncludeOptsHeader = (
+  buf: Uint8Array,
+  offset: number,
+): IncludeOptsHeader => {
+  const value: IncludeOptsHeader = {
+    end: readUint32(buf, offset),
+    isChars: (((buf[offset + 4] >>> 0) & 1)) === 1,
+    lang: ((((buf[offset + 4] >>> 1) & 127) | (((buf[offset + 5] >>> 0) & 1) << 7))) as LangCodeEnum,
+  }
+  return value
+}
+
+export const readIncludeOptsHeaderProps = {
+  end: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset)
+  },
+  isChars: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 4] >>> 0) & 1)) === 1
+  },
+  lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
+    return ((((buf[offset + 4] >>> 1) & 127) | (((buf[offset + 5] >>> 0) & 1) << 7))) as LangCodeEnum
+  },
+}
+
+export const createIncludeOptsHeader = (header: IncludeOptsHeader): Uint8Array => {
+  const buffer = new Uint8Array(IncludeOptsHeaderByteSize)
+  writeIncludeOptsHeader(buffer, header, 0)
+  return buffer
+}
+
 export type QuerySingleHeader = {
   op: QueryTypeEnum
   size: number

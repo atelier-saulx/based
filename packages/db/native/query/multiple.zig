@@ -15,13 +15,19 @@ pub fn default(
     var index: usize = 0;
     const header = utils.readNext(t.QueryHeader, q, &index);
 
-    var correctedForOffset: u32 = header.offset;
-
-    var nodeCnt: u32 = 0;
     const nestedQuery = q[index..];
-    const sizeIndex = try ctx.thread.query.reserve(4);
+    std.debug.print("flap\n {any}\n {any}\n {any}\n {any}\n {any}\n", .{
+        header,
+        utils.sizeOf(t.QueryHeader),
+        index,
+        nestedQuery,
+        q,
+    });
 
     // this will be a nice iterator
+    var correctedForOffset: u32 = header.offset;
+    var nodeCnt: u32 = 0;
+    const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var node = Node.getFirstNode(typeEntry);
 
@@ -47,12 +53,7 @@ pub fn default(
 
             try ctx.thread.query.append(t.ReadOp.id);
             try ctx.thread.query.append(Node.getNodeId(n));
-
-            // const nodeHeader = try threads.sliceFromResult(true, ctx.thread, 5);
-            // utils.write(nodeHeader, t.ReadOp.id, 0);
-            // utils.write(nodeHeader, Node.getNodeId(n), 1);
-
-            try include.include(n, ctx, nestedQuery);
+            try include.include(n, ctx, nestedQuery, typeEntry);
 
             nodeCnt += 1;
 
