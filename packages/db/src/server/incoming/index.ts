@@ -1,5 +1,5 @@
 import type { BasedServer, ServerOptions } from '../server.js'
-import uws from '../../../../uws/index.js'
+import uws from '../../uws/index.js'
 import { upgradeAuthorize, upgrade } from './upgrade.js'
 import { message } from './ws/index.js'
 import { unsubscribeWsIgnoreClient } from '../query/index.js'
