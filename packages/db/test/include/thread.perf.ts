@@ -19,13 +19,13 @@ await test('include', async (t) => {
         props: {
           name: 'string',
           nr: 'uint32',
-          body: { type: 'text' }, // compression: 'none'
+          body: { type: 'text', compression: 'deflate' }, // compression: 'none'
         },
       },
     },
   })
 
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 1000; i++) {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
@@ -34,46 +34,44 @@ await test('include', async (t) => {
         en: italy,
       },
     })
-    // if (i % 100) {
-    // console.log('DRAIN!')
-    // await db.drain()
-    // }
   }
 
   console.log('start query')
 
   await db.drain()
 
+  console.log('drain done')
+
   await db
     .query('user')
-    // .locale('de')
-    .include('name', 'body', { end: 10 })
-    .range(0, 10)
+    .locale('de')
+    .include('name', 'body')
+    .range(0, 1000)
     .get()
     .inspect()
 
   // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
 
-  await perf(
-    async () => {
-      const q: any[] = []
-      for (let i = 0; i < 10; i++) {
-        q.push(
-          db
-            .query('user')
-            .include('name', 'body')
-            // .include('name', 'body', { end: 2 })
-            .range(0, 1e6 + i)
-            .get()
-            .inspect(),
-          // .inspect(),
-        )
-      }
-      await Promise.all(q)
-    },
-    'Nodes',
-    { repeat: 10 },
-  )
+  // await perf(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 10; i++) {
+  //       q.push(
+  //         db
+  //           .query('user')
+  //           .include('name', 'body')
+  //           // .include('name', 'body', { end: 2 })
+  //           .range(0, 1000 + i)
+  //           .get()
+  //           .inspect(),
+  //         // .inspect(),
+  //       )
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'Nodes',
+  //   { repeat: 10 },
+  // )
 
   console.log('done')
 
