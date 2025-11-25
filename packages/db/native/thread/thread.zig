@@ -137,6 +137,7 @@ pub const Threads = struct {
             self.mutex.lock();
 
             if (self.shutdown) {
+                std.debug.print("#{any} SHUT DOWN \n", .{thread.id});
                 self.mutex.unlock();
                 return;
             }
@@ -236,17 +237,12 @@ pub const Threads = struct {
                         self.wakeup.broadcast();
                     } else {}
                 } else if (thread.query.index > 100_000_000 and !self.jsQueryBridgeStaged) {
-                    // std.debug.print("FLUSH Q {d} \n", .{thread.id});
                     thread.mutex.lock();
+                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
                     thread.flushed = false;
                     self.mutex.unlock();
-
-                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
-
                     while (!thread.flushed) {
-                        // std.debug.print(" wait for flush Q {d} \n", .{thread.id});
                         thread.flushDone.wait(&thread.mutex);
-                        // std.debug.print(" flush done {d} \n", .{thread.id});
                     }
                     self.mutex.lock();
                     thread.mutex.unlock();
@@ -298,11 +294,10 @@ pub const Threads = struct {
 
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
-                    } else if (thread.modify.index > 50_000_000) {
-                        std.debug.print("FLUSH M {d} \n", .{thread.id});
-                        thread.*.flushed = false;
-                        self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
+                    } else if (thread.modify.index > 50_000_000 and !self.jsModifyBridgeStaged) {
                         thread.mutex.lock();
+                        self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
+                        thread.flushed = false;
                         self.mutex.unlock();
                         while (!thread.flushed) {
                             thread.flushDone.wait(&thread.mutex);
@@ -363,6 +358,12 @@ pub const Threads = struct {
     pub fn deinit(self: *Threads) void {
         self.mutex.lock();
         self.shutdown = true;
+        for (self.threads) |threadContainer| {
+            threadContainer.mutex.lock();
+            threadContainer.flushed = true;
+            threadContainer.flushDone.signal();
+            threadContainer.mutex.unlock();
+        }
         self.wakeup.broadcast();
         self.mutex.unlock();
         for (self.threads) |threadContainer| {

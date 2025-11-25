@@ -49,7 +49,7 @@ fn callJsCallback(
         },
         t.BridgeResponse.flushQuery => {
             const thread = dbCtx.threads.threads[responseFn.threadId];
-            std.debug.print("CALLBACK FLUSH #{any} \n", .{responseFn.threadId});
+            // std.debug.print("CALLBACK FLUSH #{any} \n", .{responseFn.threadId});
             var arrayBuffer: napi.Value = undefined;
             _ = napi.c.napi_create_external_arraybuffer(
                 env,
@@ -68,12 +68,12 @@ fn callJsCallback(
             _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
             thread.mutex.lock();
             thread.flushed = true;
-            std.debug.print("SEND SIGNAL #{any} \n", .{responseFn.threadId});
+            // std.debug.print("SEND SIGNAL #{any} \n", .{responseFn.threadId});
             thread.flushDone.signal();
             thread.mutex.unlock();
         },
         t.BridgeResponse.query => {
-            std.debug.print("query resp \n", .{});
+            // std.debug.print("query resp \n", .{});
 
             dbCtx.threads.waitForQuery();
             var jsArray: napi.Value = undefined;
@@ -183,7 +183,7 @@ pub const Callback = struct {
         response: t.BridgeResponse,
         threadId: usize,
     ) void {
-        std.debug.print("call js {any} \n", .{response});
+        // std.debug.print("call js {any} \n", .{response});
 
         const result = std.heap.raw_c_allocator.create(BridgeResponseStruct) catch return;
         result.*.response = response;

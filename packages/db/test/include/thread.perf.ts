@@ -2,6 +2,7 @@ import { wait } from '../../src/utils/index.js'
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
+import { italy } from '../shared/examples.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -30,7 +31,7 @@ await test('include', async (t) => {
       name: 'Mr poop',
       body: {
         de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
-        en: 'poopTIMES!',
+        en: italy,
       },
     })
   }
@@ -47,7 +48,7 @@ await test('include', async (t) => {
     .get()
     .inspect()
 
-  await db.query('user').include('name', 'body').range(0, 1).get().inspect()
+  // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
 
   await perf(
     async () => {
@@ -59,8 +60,8 @@ await test('include', async (t) => {
             .include('name', 'body')
             // .include('name', 'body', { end: 2 })
             .range(0, 1e6 + i)
-            .get()
-            .inspect(),
+            .get(),
+          // .inspect(),
           // .inspect(),
         )
       }
@@ -72,5 +73,5 @@ await test('include', async (t) => {
 
   console.log('done')
 
-  await wait(100)
+  // await wait(100)
 })
