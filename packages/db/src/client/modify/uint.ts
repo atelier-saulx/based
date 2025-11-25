@@ -1,4 +1,4 @@
-import { writeInt64, writeUint16, writeUint32 } from '@based/utils'
+import { writeInt64, writeUint16, writeUint32 } from '../../utils/uint8.js'
 import { Ctx } from './Ctx.js'
 
 export const writeU64 = (ctx: Ctx, val: number) => {

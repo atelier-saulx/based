@@ -1,4 +1,4 @@
-import { writeInt64, writeUint16, writeUint32 } from '@based/utils'
+import { writeInt64, writeUint16, writeUint32 } from '../../../utils/index.js'
 import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 

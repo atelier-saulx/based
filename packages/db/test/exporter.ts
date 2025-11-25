@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
-import { wait } from '@based/utils'
+import { wait } from '../src/utils/index.js'
 import { italy } from './shared/examples.js'
 
 await test.skip('csv performance', async (t) => {

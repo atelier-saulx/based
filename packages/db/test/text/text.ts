@@ -3,7 +3,7 @@ import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
 import { deepEqual } from '../shared/assert.js'
 import { notEqual } from 'node:assert'
-import { wait } from '@based/utils'
+import { wait } from '../../src/utils/index.js'
 
 await test('simple', async (t) => {
   const db = new BasedDb({

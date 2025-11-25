@@ -1,9 +1,8 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { SchemaProps } from '@based/schema'
-import { serializeReaderSchema as serialize } from '@based/protocol/db-read/serialize-schema'
-import { deSerializeSchema, resultToObject } from '@based/protocol/db-read'
+import { SchemaProps, serialize } from '../src/schema/index.js'
+import { deSerializeSchema, resultToObject } from '../src/protocol/index.js'
 
 await test('big nodes', async (t) => {
   const db = new BasedDb({

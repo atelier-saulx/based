@@ -4,7 +4,7 @@ import { reserve } from '../resize.js'
 import { writeFixed } from './fixed.js'
 import { Ctx } from '../Ctx.js'
 import { ModOp } from '../../../zigTsExports.js'
-import type { PropDef } from '@based/schema'
+import type { PropDef } from '../../../schema/index.js'
 
 export const writeIncrement = (ctx: Ctx, def: PropDef, val: any) => {
   if (typeof val.increment !== 'number') {

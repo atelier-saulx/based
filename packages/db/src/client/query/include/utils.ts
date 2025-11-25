@@ -13,7 +13,7 @@ import {
   type PropDef,
   type PropDefEdge,
   type SchemaPropTree,
-} from '@based/schema'
+} from '../../../schema/index.js'
 
 export const getAllFieldFromObject = (
   tree: SchemaPropTree | PropDef,

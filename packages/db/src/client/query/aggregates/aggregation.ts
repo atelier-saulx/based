@@ -1,4 +1,4 @@
-import { writeUint16, writeInt16, writeUint32 } from '@based/utils'
+import { writeUint16, writeInt16, writeUint32 } from '../../../utils/index.js'
 import { QueryDef, QueryDefAggregation, QueryDefType } from '../types.js'
 import { GroupBy, StepInput, aggFnOptions, setMode } from './types.js'
 import {
@@ -12,14 +12,14 @@ import {
   IntervalString,
 } from '../aggregates/types.js'
 import { QueryBranch } from '../BasedDbQuery.js'
-import { AggregateType } from '@based/protocol/db-read'
 import {
   isPropDef,
   type PropDef,
   type PropDefEdge,
   type SchemaPropTree,
-} from '@based/schema'
+} from '../../../schema/index.js'
 import { PropType } from '../../../zigTsExports.js'
+import { AggregateType } from '../../../protocol/index.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,

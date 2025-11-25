@@ -1,5 +1,4 @@
 import { Ctx } from '../Ctx.js'
-import { LangCode, type PropDef } from '@based/schema'
 import { RANGE_ERR } from '../types.js'
 import {
   FULL_CURSOR_SIZE,
@@ -7,12 +6,13 @@ import {
   writePropCursor,
 } from '../cursor.js'
 import { reserve } from '../resize.js'
-import { ENCODER, writeUint32 } from '@based/utils'
 import { write } from '../../string.js'
 import { writeU8, writeU8Array } from '../uint.js'
 import { markString } from '../create/mark.js'
 import { validate } from '../validate.js'
 import { ModOp } from '../../../zigTsExports.js'
+import type { LangCode, PropDef } from '../../../schema/index.js'
+import { ENCODER, writeUint32 } from '../../../utils/uint8.js'
 
 export const deleteString = (ctx: Ctx, def: PropDef, lang: LangCode): void => {
   if (ctx.operation !== ModOp.updateProp) {

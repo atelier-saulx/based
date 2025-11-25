@@ -1,9 +1,9 @@
 import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import { ENCODER } from '@based/utils'
+import { ENCODER } from '../../utils/index.js'
 import { PropType, type PropTypeEnum } from '../../zigTsExports.js'
-import type { PropDef, PropDefEdge } from '@based/schema'
+import type { PropDef, PropDefEdge } from '../../schema/index.js'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 

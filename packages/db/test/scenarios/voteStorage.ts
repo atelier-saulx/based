@@ -1,6 +1,6 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { SchemaProp, SchemaType } from '@based/schema'
+import { SchemaProp, SchemaType } from '../../src/schema/index.js'
 import { deepEqual } from '../shared/assert.js'
 import { inspect } from 'util'
 

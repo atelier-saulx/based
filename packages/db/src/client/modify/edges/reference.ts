@@ -3,8 +3,8 @@ import { reserve } from '../resize.js'
 import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 import { validate } from '../validate.js'
-import type { PropDefEdge } from '@based/schema'
 import { PropType } from '../../../zigTsExports.js'
+import type { PropDefEdge } from '../../../schema/index.js'
 
 export const writeReferenceEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (val === null) {

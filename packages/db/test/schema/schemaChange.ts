@@ -1,7 +1,7 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
-import { deepCopy } from '@based/utils'
-import type { SchemaIn } from '@based/schema'
+import { deepCopy } from '../../src/utils/index.js'
+import type { SchemaIn } from '../../src/schema/index.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('set schema dont migrate', async (t) => {

@@ -28,7 +28,7 @@ import {
   type PropDef,
   type PropDefEdge,
   type SchemaTypeDef,
-} from '@based/schema'
+} from '../../schema/index.js'
 import { StepInput } from './aggregates/types.js'
 import { PropType } from '../../zigTsExports.js'
 

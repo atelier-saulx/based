@@ -1,9 +1,9 @@
 import { BasedDb } from '../src/index.js'
-import { crc32c } from '@based/hash'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
-import { langCodesMap } from '@based/schema'
+import { langCodesMap } from '../src/schema/index.js'
+import crc32c from '../src/hash/crc32c.js'
 
 const ENCODER = new TextEncoder()
 

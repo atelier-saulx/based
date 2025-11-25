@@ -3,35 +3,9 @@ import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
 import { BasedDb, BasedQueryResponse } from '../dist/src/index.js'
 import { formatTable } from '../dist/src/table.js'
-import {
-  ALIAS,
-  ALIASES,
-  BINARY,
-  BOOLEAN,
-  CARDINALITY,
-  COLVEC,
-  ENUM,
-  INT16,
-  INT32,
-  INT8,
-  MICRO_BUFFER,
-  NULL,
-  NUMBER,
-  OBJECT,
-  REFERENCE,
-  REFERENCES,
-  STRING,
-  TEXT,
-  TIMESTAMP,
-  UINT16,
-  UINT32,
-  UINT8,
-  VECTOR,
-  JSON as SCHEMA_JSON,
-} from '@based/schema/def'
-import { readDoubleLE, readUint32 } from '@based/utils'
-import {AggregateType} from '@based/protocol/db-read'
-
+import { PropType, type PropTypeEnum } from '../dist/src/zigTsExports.js'
+import { AggregateType } from '../dist/src/protocol/index.js'
+import { readDoubleLE, readUint32 } from '../dist/src/utils/index.js'
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const defaultDataPath = resolve(join(__dirname, '../tmp'))
 let dataPath = defaultDataPath
@@ -39,33 +13,35 @@ let dataPath = defaultDataPath
 if (process.argv.length >= 3) {
   dataPath = process.argv[process.argv.length - 1]
 }
+
 console.log(`path: ${dataPath}`)
 
-const typeIndex2Align = {}
-typeIndex2Align[NULL] = 'l'
-typeIndex2Align[TIMESTAMP] = 'r'
-typeIndex2Align[NUMBER] = '.'
-typeIndex2Align[CARDINALITY] = 'r'
-typeIndex2Align[INT8] = 'r'
-typeIndex2Align[UINT8] = 'r'
-typeIndex2Align[INT16] = 'r'
-typeIndex2Align[UINT16] = 'r'
-typeIndex2Align[INT32] = 'r'
-typeIndex2Align[UINT32] = 'r'
-typeIndex2Align[BOOLEAN] = 'c'
-typeIndex2Align[ENUM] = 'c'
-typeIndex2Align[STRING] = 'l'
-typeIndex2Align[TEXT] = 'l'
-typeIndex2Align[REFERENCE] = 'l'
-typeIndex2Align[REFERENCES] = 'l'
-typeIndex2Align[MICRO_BUFFER] = 'l'
-typeIndex2Align[ALIAS] = 'l'
-typeIndex2Align[ALIASES] = 'l'
-typeIndex2Align[BINARY] = 'l'
-typeIndex2Align[VECTOR] = 'l'
-typeIndex2Align[SCHEMA_JSON] = 'l'
-typeIndex2Align[OBJECT] = 'l'
-typeIndex2Align[COLVEC] = 'l'
+const typeIndex2Align = {
+  [PropType.null]: 'l',
+  [PropType.timestamp]: 'r',
+  [PropType.number]: '.',
+  [PropType.cardinality]: 'r',
+  [PropType.int8]: 'r',
+  [PropType.uint8]: 'r',
+  [PropType.int16]: 'r',
+  [PropType.uint16]: 'r',
+  [PropType.int32]: 'r',
+  [PropType.uint32]: 'r',
+  [PropType.boolean]: 'c',
+  [PropType.enum]: 'c',
+  [PropType.string]: 'l',
+  [PropType.text]: 'l',
+  [PropType.reference]: 'l',
+  [PropType.references]: 'l',
+  [PropType.microBuffer]: 'l',
+  [PropType.alias]: 'l',
+  [PropType.aliases]: 'l',
+  [PropType.binary]: 'l',
+  [PropType.vector]: 'l',
+  [PropType.json]: 'l',
+  [PropType.object]: 'l',
+  [PropType.colVec]: 'l',
+}
 
 async function tabled(
   response: Promise<BasedQueryResponse> | BasedQueryResponse,
@@ -112,7 +88,7 @@ async function tabled(
         const row: Array<string | number> = []
         for (const agg of ary) {
           // Update the header
-          const hdr = `${agg.propDef.path.join('.')} (${AggregateType[agg.type].toLowerCase()})`
+          const hdr = `${agg.propDef.path!.join('.')} (${AggregateType[agg.type].toLowerCase()})`
           const idx = !header.includes(hdr)
             ? header.push(hdr) - 1
             : header.indexOf(hdr)
@@ -137,16 +113,17 @@ async function tabled(
     for (const k of Object.keys(schema.props)) {
       const prop = schema.props[k]
       header.push(prop.path.join('.'))
+      // @ts-ignore
       align.push(typeIndex2Align[prop.typeIndex])
     }
-    r.forEach((v) => {
+    r.forEach((v: any) => {
       data[0].rows.push([
         v.id,
         ...Object.keys(schema.props).map((k) => {
           const value = k.includes('.')
             ? k.split('.').reduce((acc, cur) => acc[cur], v)
             : v[k]
-          if (schema.props[k].typeIndex === TEXT) {
+          if (schema.props[k].typeIndex === PropType.text) {
             return JSON.stringify(value)
           }
           return `${value}`
@@ -158,7 +135,7 @@ async function tabled(
   console.log(formatTable(header, align, data))
 }
 
-function initializeContext(context) {
+function initializeContext(context: any) {
   if (context.db) {
     context.db.stop(true)
   }
@@ -184,7 +161,7 @@ r.defineCommand('savedb', {
   },
 })
 r.defineCommand('schema', {
-    help: 'Print the current schema (args: [\'short\'])',
+  help: "Print the current schema (args: ['short'])",
   action(arg) {
     const types = this.context.db.server?.schema?.types
     if (arg === 'short') {
@@ -194,7 +171,7 @@ r.defineCommand('schema', {
     } else {
       console.dir(types, { depth: 100 })
     }
-  }
+  },
 })
 r.on('reset', initializeContext)
 initializeContext(r.context)

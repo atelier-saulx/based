@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import { BasedDb } from '../src/index.js'
 import native from '../src/native.js'
 import test from './shared/test.js'
-import { langCodesMap, Schema } from '@based/schema'
+import { langCodesMap, Schema } from '../src/schema/index.js'
 
 await test('locales', async (t) => {
   const db = new BasedDb({

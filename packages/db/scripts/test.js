@@ -2,8 +2,7 @@ import fs from 'node:fs/promises'
 import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
-import { wait } from '@based/utils'
-
+import { wait } from '../dist/src/utils/index.js'
 import { printSummary } from '../dist/test/shared/test.js'
 import { relative } from 'node:path'
 

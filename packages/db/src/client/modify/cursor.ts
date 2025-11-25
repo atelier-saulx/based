@@ -1,7 +1,7 @@
 import { Ctx } from './Ctx.js'
 import { writeU8, writeU8Array } from './uint.js'
 import { ModOp, PropType } from '../../zigTsExports.js'
-import type { PropDef } from '@based/schema'
+import type { PropDef } from '../../schema/index.js'
 
 export const TYPE_CURSOR_SIZE = 3
 export const PROP_CURSOR_SIZE = 3

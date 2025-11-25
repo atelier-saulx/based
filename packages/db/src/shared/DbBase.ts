@@ -1,4 +1,4 @@
-import { SchemaOut, type SchemaTypeDef } from '@based/schema'
+import type { SchemaOut, SchemaTypeDef } from '../schema/index.js'
 import { Emitter } from './Emitter.js'
 
 export type EventMap = {

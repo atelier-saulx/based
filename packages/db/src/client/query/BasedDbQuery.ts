@@ -15,11 +15,9 @@ import {
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { FilterBranch } from './filter/FilterBranch.js'
 import { search, Search, vectorSearch } from './search/index.js'
-import native from '../../native.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
-import { LangCode, langCodesMap, LangName } from '@based/schema'
 import { FilterBranchFn, FilterOpts } from './filter/types.js'
 import { convertFilter } from './filter/convertFilter.js'
 import { validateLocale, validateRange } from './validation.js'
@@ -28,7 +26,12 @@ import { StepInput, aggFnOptions } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
 import { include } from './include/include.js'
-import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
+import {
+  langCodesMap,
+  type LangCode,
+  type LangName,
+} from '../../schema/lang.js'
+import { AggregateType, type ReaderSchema } from '../../protocol/index.js'
 
 export { QueryByAliasObj }
 

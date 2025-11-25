@@ -1,6 +1,6 @@
 import { Ctx } from '../Ctx.js'
 import { ModOp, PropType } from '../../../zigTsExports.js'
-import type { PropDefEdge } from '@based/schema'
+import type { PropDefEdge } from '../../../schema/index.js'
 
 export const writeEdgeHeader = (ctx: Ctx, edge: PropDefEdge, type: number) => {
   ctx.buf[ctx.index] = ModOp.updateProp

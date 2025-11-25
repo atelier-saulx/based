@@ -3,15 +3,15 @@ import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { debug } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
-import { readFloatLE, readUint32 } from '@based/utils'
+import { readFloatLE, readUint32 } from '../../utils/uint8.js'
 import {
-  resultToObject,
-  Item,
-  readProps,
-  readId,
   readChecksum,
+  readId,
+  readProps,
   readVersion,
-} from '@based/protocol/db-read'
+  resultToObject,
+  type Item,
+} from '../../protocol/index.js'
 
 export { time, size, inspectData }
 
@@ -101,13 +101,14 @@ export class BasedQueryResponse {
         item.$searchScore = readFloatLE(result, i)
         i += 4
       }
-      const l = readProps(
-        this.def.readSchema!,
-        result,
-        i,
-        result.byteLength - 4,
-        item,
-      )
+      const l =
+        readProps(
+          this.def.readSchema!,
+          result,
+          i,
+          result.byteLength - 4,
+          item,
+        ) ?? 0
       i += l
       yield item
     }

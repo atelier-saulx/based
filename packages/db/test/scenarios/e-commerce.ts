@@ -2,7 +2,7 @@ import { errors } from '../../src/client/modify/error.js'
 import { BasedDb } from '../../src/index.js'
 import { throws, equal, isSorted } from '../shared/assert.js'
 import test from '../shared/test.js'
-import { randomString, wait } from '@based/utils'
+import { randomString, wait } from '../../src/utils/index.js'
 
 const randomPrice = () => Math.round((Math.random() * 100 + 5) * 100) / 100
 const randomStock = () => Math.floor(Math.random() * 500)

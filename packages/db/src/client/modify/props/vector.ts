@@ -4,7 +4,7 @@ import { validate } from '../validate.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { reserve } from '../resize.js'
 import { writeU8 } from '../uint.js'
-import type { PropDef } from '@based/schema'
+import type { PropDef } from '../../../schema/index.js'
 
 export const writeVector = (ctx: Ctx, def: PropDef, val: any) => {
   if (val === null) {

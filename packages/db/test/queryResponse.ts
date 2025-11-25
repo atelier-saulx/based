@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { notEqual } from 'assert'
-import { extractNumber } from '@based/utils'
+import { extractNumber } from '../src/utils/index.js'
 
 await test('correct version', async (t) => {
   const db = new BasedDb({

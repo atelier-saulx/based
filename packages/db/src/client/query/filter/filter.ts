@@ -17,7 +17,7 @@ import {
   type PropDefEdge,
   type SchemaPropTree,
   type SchemaTypeDef,
-} from '@based/schema'
+} from '../../../schema/index.js'
 import { filterFieldDoesNotExist, filterInvalidLang } from '../validation.js'
 import { PropType } from '../../../zigTsExports.js'
 

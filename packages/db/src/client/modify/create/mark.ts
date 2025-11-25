@@ -1,6 +1,6 @@
 import { Ctx } from '../Ctx.js'
-import { LangCode, type PropDef } from '@based/schema'
 import { ModOp } from '../../../zigTsExports.js'
+import type { LangCode, PropDef } from '../../../schema/index.js'
 
 export const markString = (ctx: Ctx, def: PropDef) => {
   if (ctx.operation === ModOp.createProp) {

@@ -1,10 +1,3 @@
-import {
-  ReaderLocales,
-  ReaderMeta,
-  ReaderPropDef,
-  ReaderSchema,
-  ReaderSchemaEnum,
-} from '@based/protocol/db-read'
 import { IncludeOpts, QueryDef, Target } from './types.js'
 import { PropType } from '../../zigTsExports.js'
 import {
@@ -12,7 +5,14 @@ import {
   langCodesMap,
   type PropDef,
   type PropDefEdge,
-} from '@based/schema'
+} from '../../schema/index.js'
+import {
+  ReaderMeta,
+  ReaderSchemaEnum,
+  type ReaderLocales,
+  type ReaderPropDef,
+  type ReaderSchema,
+} from '../../protocol/index.js'
 
 const createReaderPropDef = (
   p: PropDef | PropDefEdge,

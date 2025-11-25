@@ -1,7 +1,7 @@
-import { writeUint64 } from '@based/utils'
-import type { LangCode, PropDef, SchemaTypeDef } from '@based/schema'
 import type { Tmp } from './Tmp.js'
 import { OpType, type ModOpEnum } from '../../zigTsExports.js'
+import type { LangCode, PropDef, SchemaTypeDef } from '../../schema/index.js'
+import { writeUint64 } from '../../utils/uint8.js'
 
 export const MODIFY_HEADER_SIZE = 1 + 4 + 8 + 4
 

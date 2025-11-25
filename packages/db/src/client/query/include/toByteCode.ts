@@ -1,14 +1,11 @@
 import { DbClient } from '../../index.js'
 import { IntermediateByteCode, QueryDef, QueryDefType } from '../types.js'
 import { walkDefs } from './walk.js'
-import { langCodesMap } from '@based/schema'
-import { writeUint16, writeUint32 } from '@based/utils'
+import { writeUint16 } from '../../../utils/index.js'
 import { getEnd } from './utils.js'
 import {
   PropType,
-  writeIncludeHeader,
   IncludeOp,
-  writeIncludeOptsHeader,
   createIncludeHeader,
   createIncludeOptsHeader,
   LangCode,

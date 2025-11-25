@@ -3,7 +3,7 @@ import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
 import { deepEqual, equal } from '../shared/assert.js'
-import { equals } from '@based/utils'
+import { equals } from '../../src/utils/index.js'
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
@@ -197,11 +197,7 @@ await test('reference changes', async (t) => {
   await db.drain()
   let dirties = 0
   db.server.blockMap.foreachDirtyBlock(() => dirties++)
-  equal(
-    dirties,
-    1,
-    'creating new users creates a dirty range',
-  )
+  equal(dirties, 1, 'creating new users creates a dirty range')
 
   db.create('doc', {
     title: 'The Wonders of AI',
@@ -210,11 +206,7 @@ await test('reference changes', async (t) => {
   await db.drain()
   dirties = 0
   db.server.blockMap.foreachDirtyBlock(() => dirties++)
-  equal(
-    dirties,
-    2,
-    'creating nodes in two types makes both dirty',
-  )
+  equal(dirties, 2, 'creating nodes in two types makes both dirty')
 
   await db.save()
   equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')

@@ -1,8 +1,8 @@
-import { SchemaMigrateFns, type SchemaOut } from '@based/schema'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
 import { registerSubscription } from './server/subscription.js'
 import type { BasedDbQuery } from './client/query/BasedDbQuery.js'
+import type { SchemaMigrateFns, SchemaOut } from './schema/index.js'
 
 export type DbClientHooks = {
   setSchema(

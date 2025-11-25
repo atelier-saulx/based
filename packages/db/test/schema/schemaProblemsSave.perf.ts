@@ -1,7 +1,7 @@
 import test from '../shared/test.js'
 import { BasedDb } from '../../src/index.js'
-import { randomString, wait } from '@based/utils'
-import { type Schema } from '@based/schema'
+import { randomString, wait } from '../../src/utils/index.js'
+import { type Schema } from '../../src/schema/index.js'
 
 await test('schema problems save', async (t) => {
   let db: BasedDb | null = new BasedDb({

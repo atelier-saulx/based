@@ -1,11 +1,11 @@
 import { stringCompress } from './client/string.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
-import { wait } from '@based/utils'
 import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import { type BasedDbOpts } from './types.js'
+import wait from './utils/wait.js'
 export { stringCompress }
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'

@@ -2,7 +2,7 @@ import { equal } from 'node:assert'
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { throws, deepEqual } from '../shared/assert.js'
-import { fastPrng } from '@based/utils'
+import { fastPrng } from '../../src/utils/index.js'
 
 await test('sum top level', async (t) => {
   const db = new BasedDb({

@@ -5,8 +5,8 @@ import { writeU32 } from '../uint.js'
 import { writeEdgeHeader } from './header.js'
 import { PROP_CURSOR_SIZE } from '../cursor.js'
 import { validate } from '../validate.js'
-import type { PropDefEdge } from '@based/schema'
 import { PropType } from '../../../zigTsExports.js'
+import type { PropDefEdge } from '../../../schema/index.js'
 
 export const writeBinaryEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   let size = 0

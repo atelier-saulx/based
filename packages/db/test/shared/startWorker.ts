@@ -1,12 +1,12 @@
 import { Worker, MessageChannel } from 'node:worker_threads'
 import fs from 'node:fs/promises'
-import { hash } from '@based/hash'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
 import { DbClient } from '../../src/client/index.js'
 import { BasedDb } from '../../src/index.js'
 import native from '../../src/native.js'
-import * as utils from '@based/utils'
+import * as utils from '../../src/utils/index.js'
+import hash from '../../src/hash/hash.js'
 
 const exists = async (path: string) => await fs.stat(path).catch((e) => false)
 

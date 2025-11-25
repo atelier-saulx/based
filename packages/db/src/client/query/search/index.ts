@@ -1,4 +1,3 @@
-import { langCodesMap } from '@based/schema'
 import { QueryDefSearch, QueryDef } from '../types.js'
 import { FilterOpts, getVectorFn } from '../filter/types.js'
 import {
@@ -6,9 +5,10 @@ import {
   searchIncorrecQueryValue,
   searchIncorrectType,
 } from '../validation.js'
-import { ENCODER, concatUint8Arr } from '@based/utils'
+import { ENCODER, concatUint8Arr } from '../../../utils/index.js'
 import { QueryBranch } from '../BasedDbQuery.js'
 import { PropType } from '../../../zigTsExports.js'
+import { langCodesMap } from '../../../schema/lang.js'
 
 export type Search =
   | string[]

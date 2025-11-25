@@ -1,7 +1,7 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
-import { convertToTimestamp } from '@based/utils'
+import { convertToTimestamp } from '../src/utils/index.js'
 
 const derp = new Set([
   '$nice',

@@ -11,8 +11,7 @@ import {
   loadCommon,
   loadBlockRaw,
 } from './blocks.js'
-import { BLOCK_CAPACITY_DEFAULT, deSerialize } from '@based/schema'
-import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
+import { bufToHex, equals, hexToBuf, readUint32, wait } from '../utils/index.js'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 import {
@@ -20,6 +19,8 @@ import {
   BridgeResponseEnum,
   BridgeResponse,
 } from '../zigTsExports.js'
+import { deSerialize } from '../schema/serialize.js'
+import { BLOCK_CAPACITY_DEFAULT } from '../schema/index.js'
 
 export type StartOpts = {
   clean?: boolean
@@ -89,7 +90,8 @@ export async function start(db: DbServer, opts?: StartOpts) {
   await mkdir(path, { recursive: true }).catch(noop)
 
   let nrThreads: number
-  nrThreads = ((nrThreads = availableParallelism()), nrThreads < 2 ? 2 : nrThreads - 1)
+  nrThreads =
+    ((nrThreads = availableParallelism()), nrThreads < 2 ? 2 : nrThreads - 1)
   db.dbCtxExternal = native.start((id: BridgeResponseEnum, buffer: any) => {
     if (id === BridgeResponse.query) {
       handleQueryResponse(db, buffer)

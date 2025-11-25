@@ -1,4 +1,4 @@
-import type { SchemaTypeDef } from '@based/schema'
+import type { SchemaTypeDef } from '../schema/index.js'
 import createDbHash from './dbHash.js'
 
 export const destructureTreeKey = (key: number) => [
