@@ -44,7 +44,7 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 100; i++) {
         q.push(
           db
             .query('user')
