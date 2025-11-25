@@ -18,13 +18,13 @@ export const convertFilter = (
   value?: any,
   opts?: FilterOpts | undefined,
 ): FilterAst => {
-  const def = query.def
-  const propHooks = def.schema.props[field]?.hooks
-  const hooks = def.schema.hooks
+  const def = query.def!
+  const propHooks = def.schema!.props[field]?.hooks
+  const hooks = def.schema!.hooks
   const propFilterHook = propHooks?.filter
   const filterHook = hooks?.filter
   if (propFilterHook) {
-    propHooks.filter = null
+    propHooks.filter = undefined
     if (typeof operator === 'boolean') {
       propFilterHook(query, field, '=', operator)
     } else {
@@ -33,7 +33,7 @@ export const convertFilter = (
     propHooks.filter = propFilterHook
   }
   if (filterHook) {
-    hooks.filter = null
+    hooks.filter = undefined
     if (typeof operator === 'boolean') {
       filterHook(query, field, '=', operator)
     } else {
@@ -59,7 +59,8 @@ export const convertFilter = (
       return [[field, toFilterCtx(def, 'exists', opts), undefined]]
     }
 
-    return
+    // TODO fix type
+    return undefined as any
   }
   if (operator === '!..') {
     return [

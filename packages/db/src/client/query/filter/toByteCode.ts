@@ -28,8 +28,8 @@ const writeConditions = (
     conditionSize += condition.buffer.byteLength
     result.set(condition.buffer, lastWritten)
     if ('subscriptionMeta' in condition) {
-      if ('now' in condition.subscriptionMeta) {
-        for (const n of condition.subscriptionMeta.now) {
+      if ('now' in condition.subscriptionMeta!) {
+        for (const n of condition.subscriptionMeta.now!) {
           n.resolvedByteIndex = n.byteIndex + lastWritten + metaOffset
         }
       }
@@ -69,7 +69,7 @@ export const fillConditionsBuffer = (
       lastWritten += 1
       result[lastWritten] = refField
       lastWritten += 1
-      writeUint16(result, refConditions.conditions.schema.id, lastWritten)
+      writeUint16(result, refConditions.conditions.schema!.id, lastWritten)
       lastWritten += 2
       if (isReferences) {
         result[lastWritten] = refConditions.select.type

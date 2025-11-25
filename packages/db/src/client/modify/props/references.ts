@@ -39,6 +39,7 @@ const hasEdgeOrIndex = (def: PropDef, obj: Record<string, any>): boolean => {
       }
     }
   }
+  return false
 }
 
 const hasAnEdge = (def: PropDef, obj: Record<string, any>): boolean => {
@@ -52,6 +53,7 @@ const hasAnEdge = (def: PropDef, obj: Record<string, any>): boolean => {
       }
     }
   }
+  return false
 }
 
 const putReferences = (
@@ -195,11 +197,11 @@ const putOrUpdateReferences = (
   if (index === 0) {
     // did nothing
     ctx.index = start
-    ctx.cursor.prop = null
+    ctx.cursor.prop = undefined
     updateReferences(ctx, def, val, 0, val.length, refOp)
   } else {
     // did partial
-    ctx.cursor.prop = null
+    ctx.cursor.prop = undefined
     updateReferences(ctx, def, val, index, val.length - index, refOp)
   }
 }

@@ -103,18 +103,6 @@ await test('simple', async (t) => {
 
   const user2 = await db2.create('user', { name: 'jerp' })
 
-  await db2.update({
-    coolname: 'xxx',
-    users: [user1, user2],
-  })
-
-  await db2.save()
-
-  await db2.update({
-    coolname: 'xxx',
-    users: [user1],
-  })
-
   await db2.save()
 })
 

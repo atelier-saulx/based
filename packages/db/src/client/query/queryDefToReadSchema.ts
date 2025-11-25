@@ -20,7 +20,7 @@ const createReaderPropDef = (
   opts?: IncludeOpts,
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
-    path: p.__isEdge ? p.path.slice(1) : p.path,
+    path: p.__isEdge ? p.path!.slice(1) : p.path,
     typeIndex: opts?.raw ? PropType.binary : p.typeIndex,
     readBy: 0,
   }
@@ -39,11 +39,11 @@ const createReaderPropDef = (
     readerPropDef.cardinalityMode = p.cardinalityMode
     readerPropDef.cardinalityPrecision = p.cardinalityPrecision
   }
-  if (p.typeIndex === PropType.text) {
+  if (p.typeIndex === PropType.text && opts?.codes) {
     if (opts.codes.has(0)) {
       readerPropDef.locales = locales
     } else {
-      if (opts.codes.size === 1 && opts.codes.has(opts.localeFromDef)) {
+      if (opts.codes.size === 1 && opts.codes.has(opts.localeFromDef!)) {
         // dont add locales - interpets it as a normal prop
       } else {
         readerPropDef.locales = {}
@@ -70,8 +70,8 @@ export const convertToReaderSchema = (
 ): ReaderSchema => {
   if (!locales) {
     locales = {}
-    for (const lang in q.schema.locales) {
-      locales[langCodesMap.get(lang)] = lang
+    for (const lang in q.schema!.locales) {
+      locales[langCodesMap.get(lang)!] = lang
     }
   }
   const t = q.type
@@ -103,7 +103,7 @@ export const convertToReaderSchema = (
     for (const aggArray of q.aggregate.aggregates.values()) {
       for (const agg of aggArray) {
         a.aggregates.push({
-          path: agg.propDef.path,
+          path: agg.propDef.path!,
           type: agg.type,
           resultPos: agg.resultPos,
         })
@@ -131,7 +131,7 @@ export const convertToReaderSchema = (
       let body = ''
       for (const def of q.schema.propHooks.read) {
         const target = `r.${def.path.join('.')}`
-        body += `if(r.${def.path.join('?.')}!=null)${target}=(${normalizeHookFn(def.hooks.read)})(${target},r);`
+        body += `if(r.${def.path.join('?.')}!=null)${target}=(${normalizeHookFn(def.hooks!.read!)})(${target},r);`
       }
 
       if (q.schema?.hooks?.read) {
@@ -155,7 +155,7 @@ export const convertToReaderSchema = (
     }
     for (const [k, v] of q.references.entries()) {
       const target = v.target as Target
-      const propDef = target.propDef
+      const propDef = target.propDef!
       readerSchema.refs[k] = {
         schema: convertToReaderSchema(v, locales),
         prop: createReaderPropDef(propDef, locales),

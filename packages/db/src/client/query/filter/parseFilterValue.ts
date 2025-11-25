@@ -33,11 +33,11 @@ export const parseFilterValue = (
   } else if (prop.typeIndex === PropType.boolean) {
     return value ? 1 : 0
   } else if (prop.typeIndex === PropType.enum) {
-    return prop.reverseEnum[value] + 1
+    return prop.reverseEnum![value] + 1
   } else if (prop.typeIndex === PropType.timestamp) {
     const v = convertToTimestamp(value)
     if (typeof v !== 'number') {
-      throw new Error(`Incorrect value for timestamp ${prop.path.join('.')}`)
+      throw new Error(`Incorrect value for timestamp ${prop.path!.join('.')}`)
     }
     return v
   }

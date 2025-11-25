@@ -19,7 +19,7 @@ export const consume = (ctx: Ctx): Uint8Array => {
     throw new Error('Invalid size - modify buffer length mismatch')
   }
   const payload = ctx.buf.subarray(0, ctx.index)
-  writeUint32(ctx.buf, ctx.batch.count, 5 + 8)
+  writeUint32(ctx.buf, ctx.batch.count ?? 0, 5 + 8)
   reset(ctx)
   return payload
 }
@@ -47,7 +47,7 @@ export const drain = (db: DbClient, ctx: Ctx) => {
         if (batch.promises) {
           start = ctx.index
           batch.promises.forEach(batch.error ? rejectTmp : resolveTmp)
-          batch.promises = null
+          batch.promises = undefined
         }
       })
       .then(() => {
@@ -69,12 +69,12 @@ export const schedule = (db: DbClient, ctx: Ctx) => {
   ctx.scheduled = new Promise<void>((resolve) => {
     if (db.flushTime === 0) {
       process.nextTick(() => {
-        ctx.scheduled = null
+        ctx.scheduled = undefined
         resolve(drain(db, ctx))
       })
     } else {
       setTimeout(() => {
-        ctx.scheduled = null
+        ctx.scheduled = undefined
         resolve(drain(db, ctx))
       }, db.flushTime)
     }

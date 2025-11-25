@@ -10,7 +10,6 @@ import {
   loadCommon,
   loadBlockRaw,
 } from './blocks.js'
-import { asyncExitHook } from 'exit-hook'
 import { BLOCK_CAPACITY_DEFAULT, deSerialize } from '@based/schema'
 import { bufToHex, equals, hexToBuf, readUint32, wait } from '@based/utils'
 import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
@@ -19,7 +18,6 @@ import {
   OpTypeEnum,
   BridgeResponseEnum,
   BridgeResponse,
-  OpTypeInverse,
 } from '../zigTsExports.js'
 
 export type StartOpts = {
@@ -190,24 +188,6 @@ export async function start(db: DbServer, opts?: StartOpts) {
 
   // From now on we can use normal block saving and loading
   registerBlockIoListeners(db)
-
-  if (!opts?.hosted) {
-    db.unlistenExit = asyncExitHook(
-      async (signal) => {
-        const blockSig = () => {}
-        const signals = ['SIGINT', 'SIGTERM', 'SIGHUP']
-        // A really dumb way to block signals temporarily while saving.
-        // This is needed because there is no way to set the process signal mask
-        // in Node.js.
-        signals.forEach((sig) => process.on(sig, blockSig))
-        db.emit('info', `Exiting with signal: ${signal}`)
-        await db.save()
-        db.emit('info', 'Successfully saved.')
-        signals.forEach((sig) => process.off(sig, blockSig))
-      },
-      { wait: 5000 },
-    )
-  }
 
   // use timeout
   if (db.saveIntervalInSeconds && db.saveIntervalInSeconds > 0) {

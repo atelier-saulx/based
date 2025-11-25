@@ -14,7 +14,7 @@ export const writeTypeCursor = (ctx: Ctx) => {
     writeU8(ctx, ModOp.switchType)
     writeU8Array(ctx, ctx.schema.idUint8)
     ctx.cursor.type = ctx.schema.id
-    ctx.cursor.prop = null
+    ctx.cursor.prop = undefined
   }
 }
 

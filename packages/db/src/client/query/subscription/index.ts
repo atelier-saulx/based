@@ -13,7 +13,7 @@ export class SubStore {
   subscribe(q: BasedDbQuery) {
     const onData = (res: Uint8Array) => {
       if (!this.response) {
-        this.response = new BasedQueryResponse(q.def, res, 0)
+        this.response = new BasedQueryResponse(q.def!, res, 0)
       } else {
         this.response.result = res
         this.response.end = res.byteLength
@@ -70,7 +70,7 @@ export class SubStore {
   resubscribe(q: BasedDbQuery) {
     this.onClose()
     q.reset()
-    this.response = null
+    this.response = undefined
     this.subscribe(q)
   }
 }
@@ -86,7 +86,7 @@ export const subscribe = (
     store.subscribe(q)
     q.db.subs.set(q, store)
   } else {
-    const store = q.db.subs.get(q)
+    const store = q.db.subs.get(q)!
     store.listeners.set(onData, onError)
   }
   return () => {

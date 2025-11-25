@@ -27,13 +27,13 @@ const promisify = (tmp: Tmp) => {
 export const resolveTmp = (tmp: Tmp) => {
   const id = tmp.id
   if (id) {
-    return tmp.resolve(tmp.id)
+    return tmp.resolve!(tmp.id)
   }
   return rejectTmp(tmp)
 }
 
 export const rejectTmp = (tmp: Tmp) => {
-  return tmp.reject(tmp.error)
+  return tmp.reject!(tmp.error)
 }
 
 export class Tmp implements Promise<number> {
@@ -47,7 +47,7 @@ export class Tmp implements Promise<number> {
   #schema: SchemaTypeDef
   #id: number
   #err: number
-  get error(): Error {
+  get error(): Error | undefined {
     if (this.batch.ready && !this.id) {
       if (this.#err in errorMap) {
         return new errorMap[this.#err](this.#id, this.#schema)
@@ -55,7 +55,7 @@ export class Tmp implements Promise<number> {
       return this.batch.error || Error('Modify error')
     }
   }
-  get id(): number {
+  get id(): number | undefined {
     if (this.batch.res) {
       this.#err ??= this.batch.res[this.tmpId * 5 + 4]
       this.#id ??= readUint32(this.batch.res, this.tmpId * 5)

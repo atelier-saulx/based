@@ -107,7 +107,7 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
 
 export const parseUint8Array = (p: any) => {
   if (ArrayBuffer.isView(p)) {
-    const x = []
+    const x: any[] = []
     // @ts-ignore
     for (let i = 0; i < p.length; i++) {
       x[i] = p[i]
@@ -155,12 +155,12 @@ const inspectObject = (
     str = prefix + '{\n'
   }
   const prefixBody = ''.padEnd(level + 3, ' ')
-  let edges = []
+  let edges: any[] = []
   // use reader schema
   for (const k in object) {
     const key = path ? path + '.' + k : k
     let def: PropDef | PropDefEdge
-    def = q.props[key]
+    def = q.props![key]
     let v = object[k]
     let isEdge = k[0] === '$'
 
@@ -206,7 +206,7 @@ const inspectObject = (
         } else {
           str += inspectData(
             v,
-            q.references.get(def.prop),
+            q.references.get(def.prop)!,
             level + 2,
             false,
             depth,
@@ -222,7 +222,7 @@ const inspectObject = (
           } else {
             str += inspectObject(
               v,
-              q.references.get(def.prop),
+              q.references.get(def.prop)!,
               '',
               level + 2,
               false,
@@ -299,7 +299,7 @@ const inspectObject = (
       str += prefixBody + picocolors.bold(`${edge.k}: `)
       str += inspectObject(
         edge.v,
-        q.edges.references.get(edge.def.prop),
+        q.edges!.references.get(edge.def.prop)!,
         '',
         level + 2,
         false,
@@ -312,7 +312,7 @@ const inspectObject = (
       str +=
         inspectData(
           edge.v,
-          q.edges.references.get(edge.def.prop),
+          q.edges!.references.get(edge.def.prop)!,
           level + 3,
           false,
           depth + 2,
@@ -429,7 +429,7 @@ export const displayTarget = (def: QueryDef) => {
 
   const target =
     hasId || hasIds
-      ? def.schema.type +
+      ? def.schema!.type +
         ':' +
         (hasIds
           ? // @ts-ignore
@@ -438,6 +438,6 @@ export const displayTarget = (def: QueryDef) => {
             ? safeStringify(def.target.alias, 30)
             : // @ts-ignore
               def.target.id)
-      : def.schema.type
+      : def.schema!.type
   return target
 }

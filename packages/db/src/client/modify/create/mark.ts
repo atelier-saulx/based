@@ -7,7 +7,7 @@ export const markString = (ctx: Ctx, def: PropDef) => {
     ctx.schema.separateSort.bufferTmp[def.prop] = 2
     ctx.sort++
     if (ctx.schema.hasSeperateDefaults) {
-      ctx.schema.separateDefaults.bufferTmp[def.prop] = 1
+      ctx.schema.separateDefaults!.bufferTmp[def.prop] = 1
       ctx.defaults++
     }
   }
@@ -19,8 +19,8 @@ export const markDefaults = (ctx: Ctx, def: PropDef, val: any) => {
     ctx.schema.hasSeperateDefaults &&
     val !== null
   ) {
-    if (!ctx.schema.separateDefaults.bufferTmp[def.prop]) {
-      ctx.schema.separateDefaults.bufferTmp[def.prop] = 1
+    if (!ctx.schema.separateDefaults!.bufferTmp[def.prop]) {
+      ctx.schema.separateDefaults!.bufferTmp[def.prop] = 1
       ctx.defaults++
     }
   }
@@ -40,12 +40,12 @@ export const markTextValue = (
 ) => {
   if (ctx.operation === ModOp.createProp) {
     const index = def.prop * (1 + ctx.schema.localeSize)
-    const langIndex = ctx.schema.separateTextSort.localeToIndex.get(locale)
+    const langIndex = ctx.schema.separateTextSort.localeToIndex.get(locale)!
     ctx.schema.separateTextSort.bufferTmp[index] -= 1
     ctx.schema.separateTextSort.bufferTmp[index + langIndex] = 0
     ctx.sortText++
     if (ctx.schema.hasSeperateDefaults) {
-      ctx.schema.separateDefaults.bufferTmp[def.prop]++
+      ctx.schema.separateDefaults!.bufferTmp[def.prop]++
       if (textStringValue) {
         ctx.defaults++
       }

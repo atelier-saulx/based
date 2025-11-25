@@ -43,7 +43,7 @@ await test('include', async (t) => {
 
   await perf(
     async () => {
-      const q = []
+      const q: any[] = []
       for (let i = 0; i < 1000; i++) {
         q.push(
           db

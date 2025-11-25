@@ -53,7 +53,7 @@ export const writeUpdate = (
   schema: SchemaTypeDef,
   id: number,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ) => {
   validatePayload(payload)
 
@@ -67,7 +67,7 @@ export const writeUpdate = (
         val = val?.[key]
       }
       if (val !== undefined) {
-        obj[key] = def.hooks.update(val, obj)
+        obj[key!] = def.hooks!.update!(val, obj)
       }
     }
   }
@@ -78,7 +78,7 @@ export const writeUpdate = (
 
   ctx.schema = schema
   ctx.operation = ModOp.updateProp
-  ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
+  ctx.locale = (opts?.locale && langCodesMap.get(opts.locale)) || 0
 
   if (ctx.main.size) {
     ctx.main.clear()
@@ -98,7 +98,7 @@ export function update(
   type: string,
   id: number,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ): Promise<number> {
   const schema = getValidSchema(db, type)
   const ctx = db.modifyCtx

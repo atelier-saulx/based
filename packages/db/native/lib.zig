@@ -2,7 +2,6 @@ const std = @import("std");
 const selva = @import("selva/selva.zig");
 const dump = @import("selva/dump.zig");
 const info = @import("selva/info.zig");
-const schema = @import("selva/schema.zig");
 const errors = @import("errors.zig");
 const query = @import("query/query.zig");
 const modify = @import("modify/modify.zig");
@@ -131,9 +130,6 @@ fn stringToUint8Array(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
 export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value {
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
-
-    registerFunction(env, exports, "setSchemaIds", schema.setSchemaIds) catch return null;
-    registerFunction(env, exports, "getSchemaIds", schema.getSchemaIds) catch return null;
 
     registerFunction(env, exports, "getQueryBufThread", query.getQueryBufThread) catch return null;
     registerFunction(env, exports, "modifyThread", modify.modifyThread) catch return null;

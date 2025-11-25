@@ -8,8 +8,8 @@ import { convertToReaderSchema } from './queryDefToReadSchema.js'
 
 export const registerQuery = (q: BasedDbQuery): Uint8Array => {
   if (!q.buffer) {
-    const commands = q.queryCommands
-    q.queryCommands = null
+    const commands = q.queryCommands!
+    q.queryCommands = undefined
     const def = createQueryDef(
       q.db,
       QueryDefType.Root,
@@ -45,6 +45,6 @@ export const registerQuery = (q: BasedDbQuery): Uint8Array => {
     handleErrors(q.def)
     return buf
   }
-  handleErrors(q.def)
+  handleErrors(q.def!)
   return q.buffer
 }

@@ -49,9 +49,9 @@ map[PropType.enum] = (ctx, val, def) => {
   if (val === null) {
     reserve(ctx, 1)
     writeU8(ctx, def.default)
-  } else if (val in def.reverseEnum) {
+  } else if (val in def.reverseEnum!) {
     reserve(ctx, 1)
-    writeU8(ctx, def.reverseEnum[val] + 1)
+    writeU8(ctx, def.reverseEnum![val] + 1)
   } else {
     throw [def, val]
   }

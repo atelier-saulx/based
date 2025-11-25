@@ -18,7 +18,7 @@ export const createReferenceFilter = (
   writeUint16(buffer, len, 5)
   buffer[7] = ctx.operation
   buffer[8] = 0
-  writeUint16(buffer, prop.inverseTypeId, 9)
+  writeUint16(buffer, prop.inverseTypeId!, 9)
   if (isArray) {
     buffer[11] = ALIGNMENT_NOT_SET
     for (let i = 0; i < len; i++) {

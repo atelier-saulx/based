@@ -18,12 +18,14 @@ pub const OpType = enum(u8) {
     blockHash = 42,
     saveBlock = 67,
     saveCommon = 69,
+    getSchemaIds = 70,
     // Modify
     modify = 127,
     loadBlock = 128,
     unloadBlock = 129,
     loadCommon = 130,
     createType = 131,
+    setSchemaIds = 132,
 
     // --------------------
     noOp = 255,

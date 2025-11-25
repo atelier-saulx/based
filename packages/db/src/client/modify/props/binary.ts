@@ -9,7 +9,7 @@ import { Ctx } from '../Ctx.js'
 import type { PropDef } from '@based/schema'
 import { PropType } from '../../../zigTsExports.js'
 
-export const getBuffer = (val: any): Uint8Array => {
+export const getBuffer = (val: any): Uint8Array | undefined => {
   if (typeof val === 'string') {
     return ENCODER.encode(val)
   }

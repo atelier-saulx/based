@@ -4,7 +4,8 @@ const process = require('process')
 
 const platform = os.platform()
 const arch = os.arch()
-const nodeMajorVersion = parseInt(process.version.match(/^v?(\d+)/)[1], 10)
+const versionMatch = process?.version?.match(/^v?(\d+)/)?.[1] || ''
+const nodeMajorVersion = parseInt(versionMatch, 10)
 
 const baseDir = path.join(__dirname, 'dist/lib')
 let platformDir

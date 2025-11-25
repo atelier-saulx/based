@@ -8,6 +8,7 @@ export const include = (
   query: QueryBranch<any>,
   fields: (string | BranchInclude | IncludeOpts | (string | IncludeOpts)[])[],
 ) => {
+  const def = query.def!
   for (let i = 0; i < fields.length; i++) {
     const f = fields[i]
     const opts =
@@ -20,18 +21,18 @@ export const include = (
     }
 
     if (typeof f === 'string') {
-      includeField(query.def, { field: f, opts })
+      includeField(def, { field: f, opts })
     } else if (typeof f === 'function') {
       f((field: string) => {
         if (field[0] === '$') {
           // @ts-ignore
-          const prop = query.def.target?.propDef?.edges[field]
+          const prop = def.target?.propDef?.edges[field]
           if (
             prop &&
             (prop.typeIndex === PropType.reference ||
               prop.typeIndex === PropType.references)
           ) {
-            const refDef = createOrGetEdgeRefQueryDef(query.db, query.def, prop)
+            const refDef = createOrGetEdgeRefQueryDef(query.db, def, prop)
             // @ts-ignore
             return new QueryBranch(query.db, refDef)
           }
@@ -39,13 +40,13 @@ export const include = (
             `No edge reference or edge references field named "${field}"`,
           )
         } else {
-          const prop = query.def.props[field]
+          const prop = def.props![field]
           if (
             prop &&
             (prop.typeIndex === PropType.reference ||
               prop.typeIndex === PropType.references)
           ) {
-            const refDef = createOrGetRefQueryDef(query.db, query.def, prop)
+            const refDef = createOrGetRefQueryDef(query.db, def, prop)
             // @ts-ignore
             return new QueryBranch(query.db, refDef)
           }
@@ -54,7 +55,7 @@ export const include = (
       })
     } else if (Array.isArray(f)) {
       if (f.length === 0) {
-        includeField(query.def, { field: 'id', opts })
+        includeField(def, { field: 'id', opts })
       } else {
         include(query, f)
       }

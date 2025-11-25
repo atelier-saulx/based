@@ -43,8 +43,8 @@ export type QueryCommand = {
 
 export class QueryBranch<T> {
   db: DbClient
-  def: QueryDef
-  queryCommands: QueryCommand[]
+  def?: QueryDef
+  queryCommands?: QueryCommand[]
 
   constructor(db: DbClient, def?: QueryDef) {
     this.db = db
@@ -58,7 +58,7 @@ export class QueryBranch<T> {
         args: [field, order],
       })
     } else {
-      sort(this.def, field, order)
+      sort(this.def!, field, order)
     }
     // @ts-ignore
     return this
@@ -81,7 +81,7 @@ export class QueryBranch<T> {
         // @ts-ignore
         return this
       }
-      filter(this.db, this.def, f, this.def.filter)
+      filter(this.db, this.def!, f, this.def!.filter)
     }
     // @ts-ignore
     return this
@@ -367,18 +367,19 @@ export class QueryBranch<T> {
         args: [field, operator, value, opts],
       })
     } else {
+      const def = this.def!
       if (typeof field === 'function') {
         const f = new FilterBranch(
           this.db,
-          filterOr(this.db, this.def, [], this.def.filter),
-          this.def,
+          filterOr(this.db, def, [], def.filter),
+          def,
         )
         field(f)
-        this.def.filter.size += f.filterBranch.size
+        def.filter.size += f.filterBranch.size
       } else {
         const f = convertFilter(this, field, operator, value, opts)
         if (f) {
-          filterOr(this.db, this.def, f, this.def.filter)
+          filterOr(this.db, def, f, def.filter)
         }
       }
     }
@@ -392,14 +393,15 @@ export class QueryBranch<T> {
     } else {
       const offset = start
       const limit = end - start
-      if (validateRange(this.def, offset, limit)) {
-        this.def.range.offset = 0
-        this.def.range.limit = DEF_RANGE_PROP_LIMIT
+      const def = this.def!
+      if (validateRange(def, offset, limit)) {
+        def.range.offset = 0
+        def.range.limit = DEF_RANGE_PROP_LIMIT
         // @ts-ignore
         return this
       }
-      this.def.range.offset = offset
-      this.def.range.limit = limit
+      def.range.offset = offset
+      def.range.limit = limit
     }
     // @ts-ignore
     return this
@@ -430,22 +432,23 @@ export class QueryBranch<T> {
       this.queryCommands.push({ method: 'include', args: fields })
     } else {
       include(this, fields)
-      if (this.def.schema.propHooks?.include) {
-        for (const field of this.def.include.stringFields.keys()) {
-          const hooks = this.def.schema.props[field]?.hooks
+      const def = this.def!
+      if (def.schema!.propHooks?.include) {
+        for (const field of def.include.stringFields.keys()) {
+          const hooks = def.schema!.props[field]?.hooks
           const includeHook = hooks?.include
           if (includeHook) {
-            hooks.include = null
-            includeHook(this, this.def.include.stringFields)
+            hooks.include = undefined
+            includeHook(this, def.include.stringFields)
             hooks.include = includeHook
           }
         }
       }
-      const includeHook = this.def.schema.hooks?.include
+      const includeHook = def.schema!.hooks?.include
       if (includeHook) {
-        this.def.schema.hooks.include = null
-        includeHook(this, this.def.include.stringFields)
-        this.def.schema.hooks.include = includeHook
+        def.schema!.hooks!.include = undefined
+        includeHook(this, def.include.stringFields)
+        def.schema!.hooks!.include = includeHook
       }
     }
     // @ts-ignore
@@ -481,7 +484,7 @@ class GetPromise extends Promise<BasedQueryResponse> {
 }
 
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
-  skipValidation = false
+  skipValidation?: boolean = false
   target: QueryTarget
   readSchema: ReaderSchema
   constructor(
@@ -527,9 +530,10 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         args: [index],
       })
     } else {
-      this.def.selectFirstResult = true
-      this.def.range.limit = 1
-      this.def.range.offset = index
+      const def = this.def!
+      def.selectFirstResult = true
+      def.range.limit = 1
+      def.range.offset = index
     }
     return this
   }
@@ -557,7 +561,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
 
     await this.db.isModified()
 
-    if (this.db.schema?.hash !== this.def.schemaChecksum) {
+    if (this.db.schema?.hash !== this.def!.schemaChecksum) {
       this.reset()
       return this.#getInternal(resolve, reject)
     }
@@ -591,7 +595,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     } else if (res instanceof Error) {
       reject(res)
     } else {
-      resolve(new BasedQueryResponse(this.def, res, performance.now() - d))
+      resolve(new BasedQueryResponse(this.def!, res, performance.now() - d))
     }
   }
 
@@ -613,18 +617,19 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         args: [locale],
       })
     } else {
+      const def = this.def!
       if (fallBack === undefined) {
         // Uses fallback from schema if available
-        const localeDescriptor = this.def.schema.locales[locale]
+        const localeDescriptor = def.schema!.locales[locale]
         fallBack =
           typeof localeDescriptor === 'object'
             ? localeDescriptor.fallback || false
             : false
       }
-      validateLocale(this.def, locale)
+      validateLocale(def, locale)
       const fallBackCode: LangCode[] =
-        fallBack === false ? [] : [langCodesMap.get(fallBack)]
-      this.def.lang = {
+        fallBack === false ? [] : [langCodesMap.get(fallBack)!]
+      def.lang = {
         lang: langCodesMap.get(locale) ?? 0,
         fallback: fallBackCode,
       }
@@ -639,7 +644,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
         try {
           onData(res)
         } catch (err) {
-          const def = this.def
+          const def = this.def!
           let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
           name += `  Error executing onData handler in subscription\n`
           name += `  ${err.message}\n`
