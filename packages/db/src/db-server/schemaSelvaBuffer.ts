@@ -1,5 +1,4 @@
 import {
-  ENCODER,
   writeDoubleLE,
   writeUint16,
   writeUint32,
@@ -15,6 +14,7 @@ import {
   type SchemaTypeDef,
 } from '../schema/index.js'
 import { NOT_COMPRESSED } from '../protocol/index.js'
+import { TypeIndex } from '../schema/def/typeIndexes.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -61,6 +61,21 @@ function makeEdgeConstraintFlags(prop: PropDef): number {
   flags |= prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00
 
   return flags
+}
+
+function setDefaultString(dst: Uint8Array, s: Uint8Array | string, offset: number): void {
+  if (s instanceof Uint8Array) {
+    dst.set(s, offset)
+  } else {
+    const value = s.normalize('NFKD')
+    dst[offset] = 0 // lang
+    dst[offset + 1] = NOT_COMPRESSED
+    const l = native.stringToUint8Array(value, dst, offset + 2)
+    let crc = native.crc32(
+      dst.subarray(offset + 2, offset + 2 + l),
+    )
+    writeUint32(dst, crc, offset + 2 + l)
+  }
 }
 
 const propDefBuffer = (
@@ -112,11 +127,17 @@ const propDefBuffer = (
     type === PropType.cardinality ||
     type === PropType.json
   ) {
-    return [selvaType, prop.len < 50 ? prop.len : 0]
+    const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : native.stringByteLength(prop.default) + 2
+    const buf = new Uint8Array(6 + defaultLen)
+
+    buf[0] = selvaType
+    buf[1] = prop.len < 50 ? prop.len : 0
+    writeUint32(buf, defaultLen, 2)
+    setDefaultString(buf, prop.default, 6)
+
+    return [...buf]
   }
-  {
-    return [selvaType]
-  }
+  return [selvaType]
 }
 
 // TODO rewrite
@@ -127,7 +148,7 @@ export function schemaToSelvaBuffer(schema: {
     const props = Object.values(t.props)
     const rest: PropDef[] = []
     const nrFields = 1 + sepPropCount(props)
-    let refFields = 0
+    let nrFixedFields = 1
     let virtualFields = 0
 
     if (nrFields >= 250) {
@@ -145,7 +166,7 @@ export function schemaToSelvaBuffer(schema: {
           f.typeIndex === PropType.reference ||
           f.typeIndex === PropType.references
         ) {
-          refFields++
+          nrFixedFields++
         } else if (
           f.typeIndex === PropType.alias ||
           f.typeIndex === PropType.aliases ||
@@ -185,34 +206,27 @@ export function schemaToSelvaBuffer(schema: {
               break
             case PropType.binary:
             case PropType.string:
-              if (f.default instanceof Uint8Array) {
-                buf.set(f.default, f.start)
-              } else {
-                const value = f.default.normalize('NFKD')
-                buf[f.start] = 0 // lang
-                buf[f.start + 1] = NOT_COMPRESSED
-                const { written: l } = ENCODER.encodeInto(
-                  value,
-                  buf.subarray(f.start + 2),
-                )
-                let crc = native.crc32(
-                  buf.subarray(f.start + 2, f.start + 2 + l),
-                )
-                writeUint32(buf, crc, f.start + 2 + l)
-              }
+              setDefaultString(buf, f.default, f.start)
               break
           }
         }
       }
     }
 
+    // Add props with defaults as fixed
+    const supportedDefaults: TypeIndex[] = [
+        PropType.binary,
+        PropType.string,
+    ]
+    nrFixedFields += rest.reduce((prev, prop) => prev + ((supportedDefaults.includes(prop.typeIndex) && prop.default) ? 1 : 0), 0)
+
     rest.sort((a, b) => a.prop - b.prop)
     return Uint8Array.from([
       ...blockCapacity(t.blockCapacity), // u32 blockCapacity
       nrFields, // u8 nrFields
-      1 + refFields, // u8 nrFixedFields
+      nrFixedFields, // u8 nrFixedFields
       virtualFields, // u8 nrVirtualFields
-      7, // u8 version (generally follows the sdb version)
+      8, // u8 version (generally follows the sdb version)
       ...propDefBuffer(schema, main),
       ...rest.map((f) => propDefBuffer(schema, f)).flat(1),
     ]).buffer

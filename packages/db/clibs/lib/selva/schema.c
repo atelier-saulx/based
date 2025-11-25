@@ -29,8 +29,9 @@
 
 struct schemabuf_parser_ctx {
     struct SelvaTypeEntry *te;
+    const uint8_t *schema_buf; /*!< Original schema buf. */
     const uint8_t *buf; /*!< Current position in the schema buf. */
-    size_t len;
+    size_t len; /*!< Remaining bytes in buf. */
     size_t alias_index;
     size_t colvec_index;
     unsigned version;
@@ -106,10 +107,10 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
     };
 
     if (ctx->version >= 8) {
-        typeof(fs->string.default_len) default_len;
+        uint32_t default_len;
 
         memcpy(&default_len, ctx->buf + off, sizeof(default_len));
-        off += sizeof(fs->string.default_len);
+        off += sizeof(default_len);
         fs->string.default_len = default_len;
 
         if (default_len > 0) { /* has default */
@@ -118,7 +119,7 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
             }
 
             /* default is copied straight from the schema buffer. */
-            fs->string.default_off = off;
+            fs->string.default_off = ctx->buf - ctx->schema_buf  + off;
             off += default_len;
         }
     }
@@ -463,6 +464,7 @@ int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t le
 {
     struct SelvaFieldsSchema *fields_schema = &ns->fields_schema;
     struct schemabuf_parser_ctx ctx = {
+        .schema_buf = buf,
         .te = containerof(ns, struct SelvaTypeEntry, ns),
         .alias_index = 0,
     };

@@ -85,3 +85,48 @@ await test('include', async (t) => {
 
   // await wait(100)
 })
+
+await test('default', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop(true))
+  //t.after(() => t.backup(db))
+
+  await db.setSchema({
+    locales: { en: true, de: true },
+    types: {
+      user: {
+        props: {
+          name: {
+            type: 'string',
+            default: 'dingdong'.repeat(100)
+          },
+          city: {
+            type: 'string',
+            maxBytes: 16,
+            default: 'N/A'
+          },
+          bio: {
+            type: 'string',
+            maxBytes: 1024,
+            default: 'habablababalba'
+          },
+          nr: { type: 'uint32', default: 95 },
+          body: { type: 'text', default: { en: 'ding', de: 'dong' } }, // compression: 'none'
+        },
+      },
+    },
+  })
+
+  for (let i = 0; i < 10; i++) {
+    db.create('user', {})
+  }
+
+  console.log('start')
+  await perf(async () => {
+    await db.query('user').include('name', 'bio').get().inspect()
+  }, 'Dun', { repeat: 1 })
+  console.log('done')
+})

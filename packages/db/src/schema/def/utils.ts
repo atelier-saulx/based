@@ -1,24 +1,26 @@
 import type { SchemaCardinality, SchemaProp, SchemaVector } from '../index.js'
 import {
+  ALIAS,
+  ALIASES,
+  BINARY,
+  COLVEC,
   INT16,
   INT32,
   INT8,
+  NUMBER,
+  PropDef,
+  PropDefEdge,
+  REFERENCE,
+  REFERENCES,
+  REVERSE_SIZE_MAP,
+  SIZE_MAP,
+  STRING,
+  TIMESTAMP,
   UINT16,
   UINT32,
   UINT8,
-  NUMBER,
-  TIMESTAMP,
-  PropDef,
-  PropDefEdge,
-  SIZE_MAP,
   VECTOR_BASE_TYPE_SIZE_MAP,
   VectorBaseType,
-  REVERSE_SIZE_MAP,
-  REFERENCES,
-  REFERENCE,
-  ALIAS,
-  ALIASES,
-  COLVEC,
 } from './types.js'
 import { convertToTimestamp } from '../../utils/index.js'
 
@@ -149,6 +151,9 @@ export const propIndexOffset = (prop: PropDef) => {
   }
 
   switch (prop.typeIndex) {
+    case STRING:
+    case BINARY:
+      return prop.default ? -400 : 0
     case REFERENCES:
     case REFERENCE:
       return -300
