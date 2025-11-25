@@ -1,4 +1,4 @@
-import { hash, hashObjectIgnoreKeyOrder } from '@based/hash'
+import { hash, hashObjectIgnoreKeyOrder } from '../hash/index.js'
 
 type Listener = (r: any) => any
 

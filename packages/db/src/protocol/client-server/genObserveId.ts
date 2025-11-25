@@ -1,4 +1,4 @@
-import { hashObjectIgnoreKeyOrder, hash, hashUint8Array } from '@based/hash'
+import { hash, hashObjectIgnoreKeyOrder } from '../../hash/index.js'
 import { ENCODER } from '../../utils/uint8.js'
 
 const calculateHash32 = (name: string, uint8Array: Uint8Array, seed = 0) => {

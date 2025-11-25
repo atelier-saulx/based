@@ -14,7 +14,7 @@ await test('db should get cleaned', async (t) => {
     await db.drain()
     await db.save()
     const db2 = new BasedDb({
-        path: t.tmp,
+      path: t.tmp,
     })
     await db2.start({ noLoadDumps: true })
     t.after(() => db2.destroy())

@@ -79,13 +79,16 @@
  * - Remove EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP and always save both sides of refs
  *
  * **6**
- * - Add support for default value in micro buffers
+ * - Add support for default value in SELVA_FIELD_TYPE_MICRO_BUFFER
  *
  * **7**
  * - Capped references
+ *
+ * **8**
+ * - Add support for default value in SELVA_FIELD_TYPE_STRING
  */
 
-#define SDB_VERSION 6 /*!< Bump this if the serialization format changes. */
+#define SDB_VERSION 8 /*!< Bump this if the serialization format changes. */
 #define SDB_COMPRESSION_LEVEL 1
 #define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)

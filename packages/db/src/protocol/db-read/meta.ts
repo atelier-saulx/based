@@ -1,6 +1,6 @@
+import { crc32c } from '../../hash/index.js'
 import { combineToNumber, readUint32 } from '../../utils/index.js'
 import { Meta } from './types.js'
-import { crc32c } from '@based/hash'
 
 export const readMetaSeperate = (result: Uint8Array, i: number): Meta => {
   const compressed = result[i] === 1

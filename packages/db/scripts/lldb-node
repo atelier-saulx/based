@@ -3,4 +3,4 @@
 # https://github.com/llvm/llvm-project/issues/53673
 # https://github.com/llvm/llvm-project/issues/69127
 #exec lldb -b -o run -o "process handle SIGINT -p true" -o "continue" --one-line-on-crash bt -o "script import os; os._exit(0)" node "$@"
-exec lldb -b -o run --one-line-on-crash bt -o "script import os; os._exit(0)" -- node "$@"
+exec lldb -b -o run --one-line-on-crash bt -o "script import os; os._exit(0)" -- node --import=tsx "$@"

@@ -10,9 +10,9 @@ import {
 } from './shared.js'
 import { parseType, type SchemaType } from './type.js'
 import { langCodesMap, type LangName } from '../lang.js'
-import { hash } from '@based/hash'
 import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
+import hash from '../../hash/hash.js'
 
 export type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 export type SchemaLocale = {

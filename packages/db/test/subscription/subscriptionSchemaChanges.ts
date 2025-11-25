@@ -1,7 +1,7 @@
 import { wait } from '../../src/utils/index.js'
-import { DbClient } from '../../src/client/index.js'
+import { DbClient } from '../../src/db-client/index.js'
 import { BasedDb, getDefaultHooks } from '../../src/index.js'
-import { DbServer } from '../../src/server/index.js'
+import { DbServer } from '../../src/db-server/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from '../shared/assert.js'
 

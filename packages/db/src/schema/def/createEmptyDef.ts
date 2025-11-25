@@ -1,7 +1,7 @@
-import { hashObjectIgnoreKeyOrder } from '@based/hash'
 import type { SchemaObject } from '../schema/object.js'
 import type { SchemaType } from '../schema/type.js'
 import type { SchemaLocales } from '../schema/schema.js'
+import { hashObjectIgnoreKeyOrder } from '../../hash/index.js'
 
 export const createEmptyDef = (
   typeName: string,

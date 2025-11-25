@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { throws } from './shared/assert.js'
-import { makeTreeKey } from '../src/server/blockMap.js'
+import { makeTreeKey } from '../src/db-server/blockMap.js'
 
 await test('partial', async (t) => {
   const db = new BasedDb({

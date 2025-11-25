@@ -1,4 +1,4 @@
-import { errors } from '../../src/client/modify/error.js'
+import { errors } from '../../src/db-client/modify/error.js'
 import { BasedDb } from '../../src/index.js'
 import { throws, equal, isSorted } from '../shared/assert.js'
 import test from '../shared/test.js'

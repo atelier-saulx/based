@@ -3,9 +3,9 @@ import native from '../../src/native.js'
 import { clientWorker } from '../shared/startWorker.js'
 import { BasedDb } from '../../src/index.js'
 import { italy } from '../shared/examples.js'
-import { registerSubscription } from '../../src/client/query/subscription/toByteCode.js'
+import { registerSubscription } from '../../src/db-client/query/subscription/toByteCode.js'
 import { writeUint32 } from '../../src/utils/index.js'
-import { registerQuery } from '../../src/client/query/registerQuery.js'
+import { registerQuery } from '../../src/db-client/query/registerQuery.js'
 
 await test('subscription perf', async (t) => {
   const db = new BasedDb({

@@ -1,11 +1,11 @@
 import repl from 'node:repl'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb, BasedQueryResponse } from '../dist/src/index.js'
-import { formatTable } from '../dist/src/table.js'
-import { PropType, type PropTypeEnum } from '../dist/src/zigTsExports.js'
-import { AggregateType } from '../dist/src/protocol/index.js'
-import { readDoubleLE, readUint32 } from '../dist/src/utils/index.js'
+import { PropType } from '../src/zigTsExports.js'
+import { BasedDb, type BasedQueryResponse } from '../src/index.js'
+import { AggregateType } from '../src/protocol/index.js'
+import { readDoubleLE, readUint32 } from '../src/utils/uint8.js'
+import { formatTable } from './table.js'
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 const defaultDataPath = resolve(join(__dirname, '../tmp'))
 let dataPath = defaultDataPath

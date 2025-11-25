@@ -4,7 +4,7 @@ import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
 import NAMES from '../shared/names.js'
-import { makeTreeKey, Block } from '../../src/server/blockMap.js'
+import { makeTreeKey, Block } from '../../src/db-server/blockMap.js'
 
 function makeEmployee(i: number): {
   name: string

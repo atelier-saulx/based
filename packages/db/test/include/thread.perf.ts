@@ -1,14 +1,8 @@
-import {
-  combineToNumber,
-  readUint32,
-  wait,
-  writeUint32,
-} from '../../src/utils/index.js'
-import { registerQuery } from '../../src/client/query/registerQuery.js'
-import { BasedDb } from '../../src/index.js'
-import native from '../../src/native.js'
+import { wait } from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
+import { italy } from '../shared/examples.js'
+import { BasedDb } from '../../src/index.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -25,46 +19,61 @@ await test('include', async (t) => {
         props: {
           name: 'string',
           nr: 'uint32',
-          body: 'text',
+          body: { type: 'text', compression: 'deflate' }, // compression: 'none'
         },
       },
     },
   })
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1000; i++) {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
-      body: { de: 'Scheiß!!', en: 'poopTIMES!' },
+      body: {
+        de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+        en: italy,
+      },
     })
   }
 
   console.log('start query')
 
   await db.drain()
-  ;(
-    await db.query('user').include('name', 'body').range(0, 1).get().inspect()
-  ).debug()
 
-  await perf(
-    async () => {
-      const q: any[] = []
-      for (let i = 0; i < 100; i++) {
-        q.push(
-          db
-            .query('user')
-            .include('name', 'body')
-            .range(0, 1e6 + i)
-            .get(),
-        )
-      }
-      await Promise.all(q)
-    },
-    'Nodes',
-    { repeat: 10 },
-  )
+  console.log('drain done')
+
+  await db
+    .query('user')
+    .locale('de')
+    .include('name', 'body')
+    .range(0, 1000)
+    .get()
+    .inspect()
+
+  // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
+
+  // await perf(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 10; i++) {
+  //       q.push(
+  //         db
+  //           .query('user')
+  //           .include('name', 'body')
+  //           // .include('name', 'body', { end: 2 })
+  //           .range(0, 1000 + i)
+  //           .get()
+  //           .inspect(),
+  //         // .inspect(),
+  //       )
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'Nodes',
+  //   { repeat: 10 },
+  // )
 
   console.log('done')
 
-  await wait(100)
+  // await wait(100)
 })
