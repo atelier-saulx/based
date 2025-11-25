@@ -12,6 +12,20 @@ function SelvaIoErrlogToString(buf: Uint8Array) {
   return DECODER.decode(selvaIoErrlog.slice(0, len))
 }
 
+export function* idGenerator(): Generator<number> {
+  let i = Number.MAX_SAFE_INTEGER
+
+  while (true) {
+    if (i >= Number.MAX_SAFE_INTEGER) {
+      i = 1
+    } else {
+      i++
+    }
+
+    yield i
+  }
+}
+
 const native = {
   addMultiSubscription: (dbCtx: any, typeId: number): void => {
     return db.addMultiSubscription(dbCtx, typeId)
@@ -61,14 +75,6 @@ const native = {
 
   stop: (dbCtx: any) => {
     return db.stop(dbCtx)
-  },
-
-  setSchemaIds: (ids: Uint32Array, dbCtx: any) => {
-    return db.setSchemaIds(ids, dbCtx)
-  },
-
-  getSchemaIds: (dbCtx: any): Uint32Array => {
-    return new Uint32Array(db.getSchemaIds(dbCtx))
   },
 
   createCompressor() {

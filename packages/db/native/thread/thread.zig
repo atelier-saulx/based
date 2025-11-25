@@ -194,6 +194,12 @@ pub const Threads = struct {
                     t.OpType.saveCommon => {
                         try dump.saveCommon(thread, self.ctx, q, op);
                     },
+                    t.OpType.getSchemaIds => {
+                        const data = try thread.query.result(self.ctx.ids.len * 4, utils.read(u32, q, 0), op);
+                        if (self.ctx.ids.len > 0) {
+                            utils.byteCopy(data, @as([*]u8, @ptrCast(self.ctx.ids.ptr)), 0);
+                        }
+                    },
                     t.OpType.noOp => {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
@@ -263,7 +269,14 @@ pub const Threads = struct {
                                 schema.ptr,
                                 schema.len,
                             );
-                            _ = selva.memcpy(data[0..4].ptr, &err, @sizeOf(@TypeOf(err)));
+                            utils.write(data, err, 0);
+                        },
+                        t.OpType.setSchemaIds => {
+                            _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
+                            const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(m[5..m.len])));
+                            const len = (m.len - 5) / @sizeOf(u32);
+                            self.ctx.ids = try self.ctx.allocator.dupe(u32, ptr[0..len]);
+                            std.log.err("donedo {any}", .{utils.read(u32, m, 0)});
                         },
                         else => {},
                     }

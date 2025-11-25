@@ -247,7 +247,9 @@ export class DbServer extends DbShared {
 
     setSchemaOnServer(this, schema)
     await setNativeSchema(this, schema)
+    console.log('haha')
     await writeSchemaFile(this, schema)
+    console.log('hehe')
 
     console.warn('WAITING 500MS AFTER SCHEMA FOR FIXFIX')
     await wait(500)

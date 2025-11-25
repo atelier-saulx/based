@@ -43,11 +43,13 @@ export const OpType = {
   blockHash: 42,
   saveBlock: 67,
   saveCommon: 69,
+  getSchemaIds: 70,
   modify: 127,
   loadBlock: 128,
   unloadBlock: 129,
   loadCommon: 130,
   createType: 131,
+  setSchemaIds: 132,
   noOp: 255,
 } as const
 
@@ -61,11 +63,13 @@ export const OpTypeInverse = {
   42: 'blockHash',
   67: 'saveBlock',
   69: 'saveCommon',
+  70: 'getSchemaIds',
   127: 'modify',
   128: 'loadBlock',
   129: 'unloadBlock',
   130: 'loadCommon',
   131: 'createType',
+  132: 'setSchemaIds',
   255: 'noOp',
 } as const
 
@@ -79,11 +83,13 @@ export const OpTypeInverse = {
   blockHash, 
   saveBlock, 
   saveCommon, 
+  getSchemaIds, 
   modify, 
   loadBlock, 
   unloadBlock, 
   loadCommon, 
   createType, 
+  setSchemaIds, 
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
