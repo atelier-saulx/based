@@ -12,8 +12,9 @@
 #include "tree.h"
 #include "selva/align.h"
 #include "selva/endian.h"
-#include "selva_error.h"
 #include "selva/fields.h"
+#include "selva/selva_string.h"
+#include "selva_error.h"
 #include "bits.h"
 #include "db_panic.h"
 #include "db.h"
@@ -44,7 +45,7 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
 {
     uint16_t len;
     size_t off = 1;
-    const size_t min_buf_len = 1 + (ctx->version >= 6) + sizeof(len);
+    const size_t min_buf_len = 1 + sizeof(len) + (ctx->version >= 6);
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
 
     if (ctx->len < min_buf_len) {
@@ -64,11 +65,12 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
     };
 
     if (ctx->version >= 6) {
-        if (ctx->buf[off++]) {
-            if (ctx->len < min_buf_len + len) {
+        if (ctx->buf[off++]) { /* has default */
+            if (ctx->len < off + len) {
                 return SELVA_EINVAL;
             }
 
+            /* default is copied straight from the schema buffer. */
             fs->smb.default_off = off;
             off += len;
         }
@@ -79,14 +81,17 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
 
 static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     uint8_t fixed_len;
+    size_t off = 1;
+    const size_t min_buf_len = 1 + sizeof(fixed_len) + (ctx->version >= 7);
+    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
 
-    if (ctx->len < 1 + sizeof(fixed_len)) {
+    if (ctx->len < min_buf_len) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&fixed_len, ctx->buf + 1, sizeof(fixed_len));
+    memcpy(&fixed_len, ctx->buf + off, sizeof(fixed_len));
+    off += sizeof(fixed_len);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
@@ -100,7 +105,25 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
         },
     };
 
-    return 1 + sizeof(fixed_len);
+    if (ctx->version >= 8) {
+        typeof(fs->string.default_len) default_len;
+
+        memcpy(&default_len, ctx->buf + off, sizeof(default_len));
+        off += sizeof(fs->string.default_len);
+        fs->string.default_len = default_len;
+
+        if (default_len > 0) { /* has default */
+            if (ctx->len < off) {
+                return SELVA_EINVAL;
+            }
+
+            /* default is copied straight from the schema buffer. */
+            fs->string.default_off = off;
+            off += default_len;
+        }
+    }
+
+    return off;
 }
 
 static int type2fs_text(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
@@ -300,7 +323,7 @@ static void make_field_map_template(struct SelvaFieldsSchema *schema)
 
     /*
      * Field order:
-     * 1. fixed fields are
+     * 1. fixed fields
      * 2. dynamic fields
      * 3. virtual fields
      */
@@ -347,7 +370,10 @@ static bool has_defaults(struct SelvaFieldsSchema *schema)
 }
 
 /**
- * Set fixed field defaults
+ * Set fixed field defaults.
+ * Defaults that are just plain bytes will be set here in the fields
+ * template buffer. Defaults that require a dynamic memory allocation per each
+ * node must be initialized in fields.c:selva_fields_init().
  */
 static void make_fixed_fields_template(struct SelvaFieldsSchema *schema, const uint8_t *schema_buf)
 {
@@ -358,9 +384,28 @@ static void make_fixed_fields_template(struct SelvaFieldsSchema *schema, const u
 
         for (size_t i = 0; i < nr_fixed_fields; i++) {
             const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
+            void *field_data = fixed_data_buf + (nfo[i].off << SELVA_FIELDS_OFF);
 
             if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) {
-                memcpy(fixed_data_buf + (nfo[i].off << SELVA_FIELDS_OFF), schema_buf + fs->smb.default_off, fs->smb.len);
+                memcpy(field_data, schema_buf + fs->smb.default_off, fs->smb.len);
+            } else if (fs->type == SELVA_FIELD_TYPE_STRING && fs->string.default_off > 0) {
+                if (fs->string.fixed_len > 0) {
+                    struct selva_string *s = (struct selva_string *)field_data;
+                    const void *default_str = schema_buf + fs->string.default_off;
+                    size_t default_len = fs->string.default_len;
+                    int err;
+
+                    err = selva_string_init(s, nullptr, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
+                    if (unlikely(err)) {
+                        db_panic("Failed to init string default");
+                    }
+                    err = selva_string_replace(s, default_str, default_len);
+                    if (unlikely(err)) {
+                        db_panic("Failed to set string default");
+                    }
+                } else {
+                    /* Handled in selva_fields_init() */
+                }
             }
         }
 

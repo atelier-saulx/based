@@ -538,7 +538,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaDb *db, struct SelvaTypeEntry *t
         }
     }
 
-    selva_fields_init_node(db, type, node);
+    selva_fields_init_node(type, node);
 
     block->nr_nodes_in_block++;
     type->nr_nodes++;

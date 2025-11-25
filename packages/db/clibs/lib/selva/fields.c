@@ -2056,8 +2056,11 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
     (void)clear_references(db, node, fs, dirty_cb, dirty_ctx);
 }
 
-static void selva_fields_init(const struct SelvaFieldsSchema *schema, struct SelvaFields *fields)
+static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fields)
 {
+    const struct SelvaFieldsSchema *schema = &te->ns.fields_schema;
+    const uint8_t *schema_buf = te->schema_buf;
+
     fields->nr_fields = schema->nr_fields - schema->nr_virtual_fields;
 
     size_t data_len = schema->template.fixed_data_len;
@@ -2067,6 +2070,29 @@ static void selva_fields_init(const struct SelvaFieldsSchema *schema, struct Sel
 
         if (schema->template.fixed_data_buf) {
             memcpy(fields->data, schema->template.fixed_data_buf, data_len);
+
+            /*
+             * Handle defaults that needs to allocate memory per each node.
+             */
+            for (size_t i = 0; i < schema->nr_fixed_fields; i++) {
+                const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
+
+                if (fs->type == SELVA_FIELD_TYPE_STRING) {
+                    if (fs->string.default_off > 0) {
+                        struct SelvaFieldInfo *nfo;
+                        const void *default_str = schema_buf + fs->string.default_off;
+                        size_t default_len = fs->string.default_len;
+                        int err;
+
+                        nfo = ensure_field(fields, fs);
+                        err = set_field_string(fields, fs, nfo, default_str, default_len);
+                        if (unlikely(err)) {
+                            /* TODO panic is not nice here. */
+                            db_panic("Failed to set string default");
+                        }
+                    }
+                }
+            }
         } else {
             memset(fields->data, 0, data_len);
         }
@@ -2077,9 +2103,9 @@ static void selva_fields_init(const struct SelvaFieldsSchema *schema, struct Sel
     memcpy(fields->fields_map, schema->template.field_map_buf, schema->template.field_map_len);
 }
 
-void selva_fields_init_node(struct SelvaDb *, struct SelvaTypeEntry *te, struct SelvaNode *node)
+void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
-    selva_fields_init(&te->ns.fields_schema, &node->fields);
+    selva_fields_init(te, &node->fields);
     if (te->ns.nr_colvecs > 0) {
         colvec_init_node(te, node);
     }
