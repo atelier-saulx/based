@@ -2,11 +2,11 @@ import { DbServer } from './index.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import native, { idGenerator } from '../native.js'
-import { SCHEMA_FILE } from '../types.js'
 import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
 import { readUint32, writeUint32 } from '../utils/index.js'
 import { OpType } from '../zigTsExports.js'
 import { serialize, updateTypeDefs, type SchemaOut } from '../schema/index.js'
+import { SCHEMA_FILE } from '../index.js'
 
 const schemaOpId = idGenerator()
 

@@ -1,8 +1,8 @@
 import { wait } from '../../src/utils/index.js'
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
+import { BasedDb } from '../../src/index.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({

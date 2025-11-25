@@ -2,7 +2,7 @@ import { wait } from '../../src/utils/index.js'
 import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
-import { getDefaultHooks } from '../../src/hooks.js'
+import { getDefaultHooks } from '../../src/client/hooks.js'
 import { equal } from 'assert'
 
 const start = async (t, clientsN = 2) => {

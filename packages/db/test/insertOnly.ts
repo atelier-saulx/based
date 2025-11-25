@@ -34,13 +34,15 @@ await test('colvec requires insertOnly', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  await throws(() => db.setSchema({
-    types: {
-      audit: {
-        props: {
-          v: { type: 'colvec', size: 3, baseType: 'float32' },
+  await throws(() =>
+    db.setSchema({
+      types: {
+        audit: {
+          props: {
+            v: { type: 'colvec', size: 3, baseType: 'float32' },
+          },
         },
       },
-    },
-  }))
+    }),
+  )
 })

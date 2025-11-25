@@ -1,24 +1,35 @@
 import { stringCompress } from './client/string.js'
 import { DbServer } from './server/index.js'
 import { DbClient } from './client/index.js'
-import { debugMode, debugServer } from './utils.js'
-import { getDefaultHooks } from './hooks.js'
+import { debugMode, debugServer } from './utils/debug.js'
+import { getDefaultHooks } from './client/hooks.js'
 import { Emitter } from './shared/Emitter.js'
-import { type BasedDbOpts } from './types.js'
 import wait from './utils/wait.js'
 export { stringCompress }
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'
 export { crc32 } from './client/crc32.js'
 export { default as createHash } from './server/dbHash.js'
-export * from './utils.js'
+export * from './utils/debug.js'
 export * from './client/query/query.js'
 export * from './client/query/BasedDbQuery.js'
 export * from './client/query/BasedQueryResponse.js'
-export * from './hooks.js'
+export * from './client/hooks.js'
 export * from './server/subscription.js'
 
-export { getDefaultHooks, BasedDbOpts }
+export const SCHEMA_FILE_DEPRECATED = 'schema.json'
+export const SCHEMA_FILE = 'schema.bin'
+export const WRITELOG_FILE = 'writelog.json'
+export const COMMON_SDB_FILE = 'common.sdb'
+
+export type BasedDbOpts = {
+  path: string
+  maxModifySize?: number
+  debug?: boolean | 'server' | 'client'
+  saveIntervalInSeconds?: number
+}
+
+export { getDefaultHooks }
 
 export class BasedDb extends Emitter {
   client: DbClient

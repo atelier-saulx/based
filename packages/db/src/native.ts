@@ -1,4 +1,3 @@
-// @ts-ignore
 import db from './zigAddon.js'
 
 var compressor = db.createCompressor()

@@ -7,7 +7,7 @@ import {
   makeTreeKeyFromNodeId,
 } from './blockMap.js'
 import { migrate } from './migrate/index.js'
-import { debugServer } from '../utils.js'
+import { debugServer } from '../utils/debug.js'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,
@@ -47,7 +47,14 @@ export class DbServer extends DbShared {
   saveInterval?: NodeJS.Timeout
   delayInMs?: number
 
-  ids: Uint32Array // whats this
+  // schema ids
+  ids: Uint32Array
+
+  // hack to prevent gc to clean up a var
+  forceRefCnt: number = 0
+  keepRefAliveTillThisPoint(x: Uint8Array) {
+    this.forceRefCnt = x.byteLength
+  }
 
   constructor({
     path,

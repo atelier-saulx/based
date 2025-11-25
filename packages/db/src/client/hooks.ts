@@ -1,9 +1,8 @@
-import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
-import { DbServer } from './server/index.js'
-import { registerSubscription } from './server/subscription.js'
-import type { BasedDbQuery } from './client/query/BasedDbQuery.js'
-import type { SchemaMigrateFns, SchemaOut } from './schema/index.js'
-import native from './native.js'
+import { OnClose, OnData, OnError } from './query/subscription/types.js'
+import { DbServer } from '../server/index.js'
+import { registerSubscription } from '../server/subscription.js'
+import type { BasedDbQuery } from './query/BasedDbQuery.js'
+import type { SchemaMigrateFns, SchemaOut } from '../schema/index.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -55,7 +54,7 @@ export const getDefaultHooks = (
       const res = server.modify(x)
       if (res instanceof Promise) {
         return res.then((res) => {
-          console.log(x.byteLength)
+          server.keepRefAliveTillThisPoint(x)
           return res && new Uint8Array(res)
         })
       }

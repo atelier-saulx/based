@@ -4,7 +4,7 @@ import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
 import { equal } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
-import { getDefaultHooks } from '../../src/hooks.js'
+import { getDefaultHooks } from '../../src/client/hooks.js'
 
 const start = async (t, clientsN = 2, subTime = 100) => {
   const server = new DbServer({
