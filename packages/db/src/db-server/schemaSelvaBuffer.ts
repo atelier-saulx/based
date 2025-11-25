@@ -44,6 +44,13 @@ selvaTypeMap[PropType.colVec] = selvaFieldType.COLVEC
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 
+const supportedDefaults: TypeIndex[] = [
+    PropType.binary,
+    PropType.string,
+    PropType.vector,
+    PropType.json, // same as binary (Uint8Array)
+]
+
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
   const view = new DataView(buf.buffer)
@@ -127,15 +134,25 @@ const propDefBuffer = (
     type === PropType.cardinality ||
     type === PropType.json
   ) {
-    const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : native.stringByteLength(prop.default) + 2
-    const buf = new Uint8Array(6 + defaultLen)
+    if (supportedDefaults.includes(type)) {
+        const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : native.stringByteLength(prop.default) + 2
+        const buf = new Uint8Array(6 + defaultLen)
 
-    buf[0] = selvaType
-    buf[1] = prop.len < 50 ? prop.len : 0
-    writeUint32(buf, defaultLen, 2)
-    setDefaultString(buf, prop.default, 6)
+        buf[0] = selvaType
+        buf[1] = prop.len < 50 ? prop.len : 0
+        writeUint32(buf, defaultLen, 2)
+        setDefaultString(buf, prop.default, 6)
 
-    return [...buf]
+        return [...buf]
+    } else {
+        const buf = new Uint8Array(6)
+
+        buf[0] = selvaType
+        buf[1] = prop.len < 50 ? prop.len : 0
+        writeUint32(buf, 0, 2) // no default
+
+        return [...buf]
+    }
   }
   return [selvaType]
 }
@@ -214,11 +231,6 @@ export function schemaToSelvaBuffer(schema: {
     }
 
     // Add props with defaults as fixed
-    const supportedDefaults: TypeIndex[] = [
-        PropType.binary,
-        PropType.string,
-        PropType.vector,
-    ]
     nrFixedFields += rest.reduce((prev, prop) => prev + ((supportedDefaults.includes(prop.typeIndex) && prop.default) ? 1 : 0), 0)
 
     rest.sort((a, b) => a.prop - b.prop)

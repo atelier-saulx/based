@@ -7,6 +7,7 @@ import {
   INT16,
   INT32,
   INT8,
+  JSON as JSON_TYPE,
   MICRO_BUFFER,
   NUMBER,
   PropDef,
@@ -158,6 +159,7 @@ export const propIndexOffset = (prop: PropDef) => {
       return prop.default ? -500 : 0
     case STRING:
     case BINARY:
+    case JSON_TYPE:
       return prop.default ? -400 : 0
     case REFERENCES:
     case REFERENCE:
