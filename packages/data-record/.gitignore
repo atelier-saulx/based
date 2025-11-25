@@ -1,5 +1,0 @@
-/lib
-/coverage
-node_modules
-isolate*.log
-yarn-error.log
