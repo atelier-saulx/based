@@ -16,6 +16,7 @@ import {
   REVERSE_SIZE_MAP,
   REFERENCES,
   REFERENCE,
+  STRING,
   ALIAS,
   ALIASES,
   COLVEC,
@@ -149,6 +150,8 @@ export const propIndexOffset = (prop: PropDef) => {
   }
 
   switch (prop.typeIndex) {
+    case STRING:
+      return prop.default ? -400 : 0
     case REFERENCES:
     case REFERENCE:
       return -300

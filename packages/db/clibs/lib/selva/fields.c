@@ -2063,6 +2063,8 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
 
     fields->nr_fields = schema->nr_fields - schema->nr_virtual_fields;
 
+    memcpy(fields->fields_map, schema->template.field_map_buf, schema->template.field_map_len);
+
     size_t data_len = schema->template.fixed_data_len;
     if (data_len > 0) {
         fields->data_len = data_len;
@@ -2079,9 +2081,9 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
 
                 if (fs->type == SELVA_FIELD_TYPE_STRING) {
                     if (fs->string.default_off > 0) {
-                        struct SelvaFieldInfo *nfo;
                         const void *default_str = schema_buf + fs->string.default_off;
                         size_t default_len = fs->string.default_len;
+                        struct SelvaFieldInfo *nfo;
                         int err;
 
                         nfo = ensure_field(fields, fs);
@@ -2100,7 +2102,6 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
         fields->data_len = 0;
         fields->data = nullptr;
     }
-    memcpy(fields->fields_map, schema->template.field_map_buf, schema->template.field_map_len);
 }
 
 void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
