@@ -1,25 +1,34 @@
 const std = @import("std");
 const Query = @import("common.zig");
-const utils = @import("../utils.zig");
-const Node = @import("../selva/node.zig");
-const Thread = @import("../thread/thread.zig");
-const Schema = @import("../selva/schema.zig");
-const Fields = @import("../selva/fields.zig");
-const opts = @import("./opts.zig");
-const t = @import("../types.zig");
+const utils = @import("../../utils.zig");
+const Node = @import("../../selva/node.zig");
+const Thread = @import("../../thread/thread.zig");
+const Schema = @import("../../selva/schema.zig");
+const Fields = @import("../../selva/fields.zig");
+const opts = @import("../opts.zig");
+const t = @import("../../types.zig");
 
 pub inline fn appendInclude(thread: *Thread.Thread, prop: u8, value: []u8) !void {
-    if (value.len != 0) {
+    if (value.len == 0) {
         return;
     }
-    const header: t.IncludeResponse = .{
-        .prop = prop,
-        .size = @truncate(value.len),
-    };
+    const header: t.IncludeResponse = .{ .prop = prop, .size = @truncate(value.len) };
     const headerSize = utils.sizeOf(t.IncludeResponse);
     const newSlice = try thread.query.slice(headerSize + value.len);
     utils.write(newSlice, header, 0);
     utils.write(newSlice, value, headerSize);
+}
+
+pub inline fn appendIncludStripCrc32(thread: *Thread.Thread, prop: u8, value: []u8) !void {
+    if (value.len == 0) {
+        return;
+    }
+    const size = value.len - 4;
+    const header: t.IncludeResponse = .{ .prop = prop, .size = @truncate(size) };
+    const headerSize = utils.sizeOf(t.IncludeResponse);
+    const newSlice = try thread.query.slice(headerSize + size);
+    utils.write(newSlice, header, 0);
+    utils.write(newSlice, value[0..size], headerSize);
 }
 
 pub fn include(
@@ -113,31 +122,37 @@ pub fn include(
                 //     }
                 // }
             },
-            t.IncludeOp.defaultWithOpts => {},
+            t.IncludeOp.defaultWithOpts => {
+                const header = utils.readNext(t.IncludeHeader, q, &i);
+                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+                const value = Fields.getField(typeEntry, node, fieldSchema, header.propType);
+                const optsHeader = utils.readNext(t.IncludeOptsHeader, q, &i);
+                switch (header.propType) {
+                    t.PropType.binary,
+                    t.PropType.string,
+                    t.PropType.json,
+                    => {
+                        try appendInclude(ctx.thread, header.prop, opts.parse(value, &optsHeader));
+                    },
+                    else => {
+                        // more
+                    },
+                }
+            },
             t.IncludeOp.default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
                 const value = Fields.getField(typeEntry, node, fieldSchema, header.propType);
-
-                // if (header.hasOpts) {
-                //     const optsHeader = utils.readNext(t.IncludeOptsHeader, q, &i);
-                //     switch (header.propType) {
-                //         t.PropType.binary,
-                //         t.PropType.string,
-                //         t.PropType.json,
-                //         => {
-                //             try appendInclude(ctx.thread, header.prop, opts.parse(value, &optsHeader));
-                //         },
-                //         else => {
-                //             // more
-                //         },
-                //     }
-                // } else {
                 switch (header.propType) {
                     t.PropType.text,
-                    => {},
+                    => {
+                        var iter = Fields.textIterator(value);
+                        while (iter.next()) |textValue| {
+                            try appendIncludStripCrc32(ctx.thread, header.prop, textValue);
+                        }
+                    },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        try appendInclude(ctx.thread, header.prop, value[0 .. value.len - 4]);
+                        try appendIncludStripCrc32(ctx.thread, header.prop, value);
                     },
                     else => {
                         try appendInclude(ctx.thread, header.prop, value);
