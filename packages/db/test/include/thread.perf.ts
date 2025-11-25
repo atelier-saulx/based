@@ -13,7 +13,12 @@ await test('include', async (t) => {
   // t.after(() => t.backup(db))
 
   await db.setSchema({
-    locales: { en: true, de: true },
+    locales: {
+      en: { required: true },
+      de: { fallback: 'en' },
+      fr: { fallback: 'en' },
+      nl: { fallback: 'de' },
+    },
     types: {
       user: {
         props: {
@@ -44,34 +49,37 @@ await test('include', async (t) => {
 
   await db
     .query('user')
-    .locale('de')
+    .locale('nl')
     .include('name', 'body')
+
+    // .include('name', 'body.de', 'body.nl')
     .range(0, 1000)
     .get()
     .inspect()
 
   // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
 
-  // await perf(
-  //   async () => {
-  //     const q: any[] = []
-  //     for (let i = 0; i < 10; i++) {
-  //       q.push(
-  //         db
-  //           .query('user')
-  //           .include('name', 'body')
-  //           // .include('name', 'body', { end: 2 })
-  //           .range(0, 1000 + i)
-  //           .get()
-  //           .inspect(),
-  //         // .inspect(),
-  //       )
-  //     }
-  //     await Promise.all(q)
-  //   },
-  //   'Nodes',
-  //   { repeat: 10 },
-  // )
+  await perf(
+    async () => {
+      const q: any[] = []
+      for (let i = 0; i < 1000; i++) {
+        q.push(
+          db
+            .query('user')
+            .locale('de')
+            .include('name', 'body')
+            // .include('name', 'body', { end: 2 })
+            .range(0, 1000 + i)
+            .get(),
+          // .inspect(),
+          // .inspect(),
+        )
+      }
+      await Promise.all(q)
+    },
+    'Nodes',
+    { repeat: 10 },
+  )
 
   console.log('done')
 

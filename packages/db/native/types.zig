@@ -370,21 +370,20 @@ pub const IncludeHeader = packed struct {
     propType: PropType,
 };
 
-pub const LangFallback = packed struct {
+pub const IncludeOpts = packed struct {
     end: u32,
     isChars: bool,
-    hasLangFallback: bool,
+    next: bool,
     _padding: u6,
+    fallback: LangCode,
     lang: LangCode,
 };
 
-pub const IncludeOptsHeader = packed struct {
-    end: u32,
-    isChars: bool,
-    hasLangFallback: bool,
-    _padding: u6,
-    lang: LangCode,
-};
+// pub const IncludeLangOpts = packed struct {
+//     nextLangOpt: bool,
+//     _padding: u6,
+//     lang: LangCode,
+// };
 
 pub const IncludeResponse = packed struct {
     prop: u8,

@@ -94,7 +94,7 @@ pub fn include(
                 //                 r.*.value = s;
                 //                 size += 12 + try f.add(ctx, id, score, idIsSet, r);
                 //                 idIsSet = true;
-                //             }
+                //             }§
                 //         },
                 //         else => {},
                 //     }
@@ -104,8 +104,7 @@ pub fn include(
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
                 const value = Fields.getField(typeEntry, node, fieldSchema, header.propType);
-                const optsHeader = utils.readNext(t.IncludeOptsHeader, q, &i);
-
+                var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                 switch (header.propType) {
                     t.PropType.binary,
                     t.PropType.string,
@@ -115,9 +114,29 @@ pub fn include(
                     },
                     t.PropType.text,
                     => {
-                        var iter = Fields.textIterator(value);
-                        while (iter.next()) |textValue| {
-                            try opts.string(ctx.thread, header.prop, textValue, &optsHeader);
+                        if (optsHeader.lang == t.LangCode.NONE) {
+                            var iter = Fields.textIterator(value);
+                            while (iter.next()) |textValue| {
+                                try opts.string(ctx.thread, header.prop, textValue, &optsHeader);
+                            }
+                        } else if (optsHeader.next) {
+                            while (optsHeader.next) {
+                                try opts.string(
+                                    ctx.thread,
+                                    header.prop,
+                                    Fields.getTextFromValue(value, optsHeader.lang),
+                                    &optsHeader,
+                                );
+                                optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+                            }
+                        } else {
+                            // TODO: Support multiple fallbacks
+                            try opts.string(
+                                ctx.thread,
+                                header.prop,
+                                Fields.getTextFallback(value, optsHeader.lang, optsHeader.fallback),
+                                &optsHeader,
+                            );
                         }
                     },
                     else => {
@@ -144,76 +163,6 @@ pub fn include(
                         try append.default(ctx.thread, header.prop, value);
                     },
                 }
-                // }
-
-                //         var result: ?*results.Result = null;
-                //         const field: u8 = include[i];
-                //         const prop: t.PropType = @enumFromInt(include[i + 1]);
-                //         const optsSize = include[i + 2];
-                //         i += 3;
-                //         result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.default);
-                //         if (result) |r| {
-                //             switch (prop) {
-                //                 t.PropType.binary,
-                //                 t.PropType.string,
-                //                 t.PropType.json,
-                //                 => {
-                //                     if (optsSize != 0) {
-                //                         size += try f.selvaString(ctx, isEdge, r, true, o.getOpts(include, &i));
-                //                         i += optsSize;
-                //                     } else {
-                //                         size += try f.selvaString(ctx, isEdge, r, false, undefined);
-                //                     }
-                //                     size += try f.add(ctx, id, score, idIsSet, r);
-                //                     idIsSet = true;
-                //                 },
-                //                 t.PropType.text => {
-                //                     var s: usize = undefined;
-                //                     if (optsSize == 0) {
-                //                         s = try f.textAll(isEdge, ctx, id, score, r, idIsSet, false, undefined);
-                //                     } else {
-                //                         const code: t.LangCode = @enumFromInt(include[i]);
-                //                         const fallbackSize = include[i + 1];
-                //                         const hasEnd = include[i + 2] == 1;
-                //                         if (hasEnd) {
-                //                             i += optsSize - 5;
-                //                             const opts = o.getOpts(include, &i);
-                //                             i += 5;
-                //                             s = try f.switchText(isEdge, code, ctx, id, score, fallbackSize, include, &i, r, idIsSet, true, opts);
-                //                         } else {
-                //                             i += optsSize;
-                //                             s = try f.switchText(isEdge, code, ctx, id, score, fallbackSize, include, &i, r, idIsSet, false, undefined);
-                //                         }
-                //                     }
-                //                     if (s != 0) {
-                //                         idIsSet = true;
-                //                         size += s;
-                //                     }
-                //                 },
-                //                 t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
-                //                     if (optsSize == 0) {
-                //                         size += try f.fixed(isEdge, r, false, undefined);
-                //                     } else {
-                //                         size += try f.fixed(isEdge, r, true, o.getOpts(include, &i));
-                //                         i += optsSize;
-                //                     }
-                //                     size += try f.add(ctx, id, score, idIsSet, r);
-                //                     idIsSet = true;
-                //                 },
-                //                 else => {
-                //                     if (optsSize == 0) {
-                //                         size += try f.default(isEdge, r, false, undefined);
-                //                     } else {
-                //                         size += try f.default(isEdge, r, true, o.getOpts(include, &i));
-                //                         i += optsSize;
-                //                     }
-                //                     size += try f.add(ctx, id, score, idIsSet, r);
-                //                     idIsSet = true;
-                //                 },
-                //             }
-                //         } else if (optsSize != 0) {
-                //             i += optsSize;
-                //         }
             },
             else => {
                 //
