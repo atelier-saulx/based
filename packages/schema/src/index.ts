@@ -45,7 +45,9 @@ export * from './serialize.js'
 export * from './infer.js'
 export * as semver from './semver/mod.js'
 
-export const parse = (schema: SchemaIn) => ({ schema: parseSchema(schema) })
+export const parse = (schema: SchemaIn): { schema: SchemaOut } => ({
+  schema: parseSchema(schema),
+})
 export const MAX_ID = 4294967295
 export const MIN_ID = 1
 

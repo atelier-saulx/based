@@ -62,7 +62,8 @@ dist/
 src/
     cli/
     client/
-    db/
+    db-client/
+
     react/
     schema/
     server/

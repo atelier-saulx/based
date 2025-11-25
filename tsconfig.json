@@ -9,5 +9,5 @@
     "esModuleInterop": true,
     "strictNullChecks": true
   },
-  "include": ["packages/*/src", "packages/*/test"]
+  "include": ["packages/db/src", "packages/db/test", "src"]
 }

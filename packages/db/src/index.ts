@@ -5,7 +5,7 @@ import { wait } from '@based/utils'
 import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
-import { BasedDbOpts } from './types.js'
+import { type BasedDbOpts } from './types.js'
 export { stringCompress }
 export { DbClient, DbServer }
 export { xxHash64 } from './client/xxHash64.js'
@@ -122,7 +122,7 @@ export class BasedDb extends Emitter {
     return this.client.isModified.apply(this.client, arguments)
   }
 
-  async destroy() {
+  async destroy(): Promise<void> {
     await this.isModified()
     // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
     // Todo: clear all active queries, queues ETC

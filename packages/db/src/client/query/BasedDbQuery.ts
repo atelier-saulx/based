@@ -5,7 +5,7 @@ import {
   Operator,
   sort,
   filterOr,
-  QueryByAliasObj,
+  type QueryByAliasObj,
   isAlias,
   addAggregate,
   groupBy,

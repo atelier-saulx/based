@@ -6,8 +6,8 @@ import {
   ReferenceSelectValue,
 } from '../types.js'
 import { primitiveFilter } from './primitiveFilter.js'
-import { Operator } from './types.js'
-import { Filter, FilterAst, IsFilter } from './types.js'
+import { type Operator } from './types.js'
+import { type Filter, type FilterAst, IsFilter } from './types.js'
 import { DbClient } from '../../index.js'
 import {
   ID_FIELD_DEF,

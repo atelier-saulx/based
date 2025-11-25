@@ -24,7 +24,7 @@ export const clientWorker = async <T extends any>(
     p: { native: Native; utils: Utils },
   ) => Promise<void>,
   data?: T,
-) => {
+): Promise<void> => {
   const path = join(__dirname, '/tmp')
   if (!(await exists(path))) {
     await fs.mkdir(path).catch(() => {})

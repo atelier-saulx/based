@@ -34,10 +34,10 @@ export type T = {
   tmp: string
 }
 
-const test = async (
-  name: string,
-  fn: (t: T) => Promise<void>,
-): Promise<any> => {
+const test: {
+  (name: string, fn: (t: T) => Promise<void>): Promise<any>
+  skip(name: string, fn: (t: T) => Promise<void>): undefined
+} = async (name: string, fn: (t: T) => Promise<void>): Promise<any> => {
   if (
     process.env.TEST_TO_RUN &&
     !name.toLowerCase().includes(process.env.TEST_TO_RUN.toLowerCase())
@@ -258,13 +258,13 @@ const test = async (
   }
 }
 
-test.skip = async (name: string, fn: (t: T) => Promise<void>) => {
+test.skip = (name: string, fn: (t: T) => Promise<void>): undefined => {
   counts.skipped++
   console.log('')
   console.log(styleText('gray', 'skip ' + name))
 }
 
-export const printSummary = () => {
+export const printSummary = (): undefined => {
   const nuno =
     Math.random() * 100 > 98
       ? `
