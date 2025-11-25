@@ -1,4 +1,4 @@
-import { BasedFunctionConfig } from '@based/functions'
+import type { BasedFunctionConfig } from '../functions/index.js'
 import { updateTypesPath } from './updateTypesPath.js'
 import { createRequire } from 'node:module'
 
@@ -15,8 +15,8 @@ export const updateTypes = async (
     functionPath?: string
   } = {},
 ): Promise<{
-  clientPath: string | void
-  functionPath: string | void
+  clientPath: string | undefined
+  functionPath: string | undefined
 }> => {
   require ??= createRequire(import.meta.url)
   const inputClientPath =
@@ -27,8 +27,8 @@ export const updateTypes = async (
     opts.functionPath ||
     require.resolve('@based/functions', { paths: [process.cwd()] })
 
-  let clientPath: string | void
-  let functionPath: string | void
+  let clientPath: string | undefined
+  let functionPath: string | undefined
 
   if (inputClientPath) {
     const declarationPath = inputClientPath.replace('/index.js', '/index.d.ts')
@@ -50,6 +50,7 @@ export const updateTypes = async (
       console.error(
         'Cannot find original declaration file - you may need to upgrade to @based/client ^4.8.8',
       )
+      return undefined
     })
   }
 
@@ -71,6 +72,7 @@ export const updateTypes = async (
       console.error(
         'Cannot find original declaration file - you may need to upgrade to @based/functions ^2.2.4',
       )
+      return undefined
     })
   }
 

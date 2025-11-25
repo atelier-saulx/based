@@ -1,4 +1,4 @@
-import type { SchemaOut, SchemaProps } from '@based/schema'
+import type { SchemaOut, SchemaProps } from './schema/index.js'
 
 export const mermaid2 = (schema: SchemaOut) => {
   let mermaid = 'erDiagram'

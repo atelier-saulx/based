@@ -1,5 +1,5 @@
-import { BasedFunctionConfig } from "@based/functions"
-import { readFile, writeFile } from "fs/promises"
+import { readFile, writeFile } from 'fs/promises'
+import type { BasedFunctionConfig } from '../functions/index.js'
 
 export const updateTypesPath = async (
   fns: (
@@ -11,38 +11,38 @@ export const updateTypesPath = async (
     imports?: string[]
     originalDeclartionPath: string
     declarationPath: string
-  }
-): Promise<string | void> => {
-  let decFile = ""
+  },
+): Promise<string | undefined> => {
+  let decFile = ''
 
   try {
-    decFile = (await readFile(opts.originalDeclartionPath)).toString("utf-8")
+    decFile = (await readFile(opts.originalDeclartionPath)).toString('utf-8')
   } catch (err) {
     throw new Error(`Cannot find ${opts.originalDeclartionPath}`)
   }
 
-  let imports = opts.imports ? opts.imports.join("\n") + "\n" : "\n"
-  let callFns = "\n"
-  let queryFns = "\n"
+  let imports = opts.imports ? opts.imports.join('\n') + '\n' : '\n'
+  let callFns = '\n'
+  let queryFns = '\n'
   let fnCnt = 0
   let queryCnt = 0
-  let queryMap = "\n"
+  let queryMap = '\n'
   let needsParsing = opts.imports ?? false
 
-  const abstractPrefix = opts.isAbstract ? "abstract " : ""
+  const abstractPrefix = opts.isAbstract ? 'abstract ' : ''
 
   for (const fn of fns) {
-    if (fn.config.type === "function") {
+    if (fn.config.type === 'function') {
       needsParsing = true
       fnCnt++
-      if ("path" in fn) {
-        const name = "FN_Type_" + fnCnt
+      if ('path' in fn) {
+        const name = 'FN_Type_' + fnCnt
         imports += `import type ${name} from '${fn.path}';\n`
         callFns += `
       ${abstractPrefix}call(
         name: '${fn.config.name}',
         payload: Parameters<typeof ${name}>[1],
-        ${opts.isAbstract ? "ctx?: Context" : "opts?: CallOptions"}
+        ${opts.isAbstract ? 'ctx?: Context' : 'opts?: CallOptions'}
       ): ReturnType<typeof ${name}>;      
     `
       } else {
@@ -50,14 +50,14 @@ export const updateTypesPath = async (
         ${abstractPrefix}call(
           name: '${fn.config.name}',
           payload: ${fn.payload},
-          ${opts.isAbstract ? "ctx?: Context" : "opts?: CallOptions"}
+          ${opts.isAbstract ? 'ctx?: Context' : 'opts?: CallOptions'}
         ): Promise<${fn.result}>      
       `
       }
-    } else if (fn.config.type === "query") {
+    } else if (fn.config.type === 'query') {
       queryCnt++
-      if ("path" in fn) {
-        const name = "Q_Type_" + queryCnt
+      if ('path' in fn) {
+        const name = 'Q_Type_' + queryCnt
         imports += `import type ${name} from '${fn.path}';\n`
         queryMap += `'${fn.config.name}': { payload: Parameters<typeof ${name}>[1], result: Parameters<Parameters<typeof ${name}>[2]>[0] },`
         queryFns += `
@@ -76,13 +76,13 @@ export const updateTypesPath = async (
     if (fnCnt > 0) {
       if (opts.isAbstract) {
         x = x.replace(
-          "abstract call(name: string, payload?: any, ctx?: Context): Promise<any>;",
-          callFns
+          'abstract call(name: string, payload?: any, ctx?: Context): Promise<any>;',
+          callFns,
         )
       } else {
         x = x.replace(
-          "call(name: string, payload?: any, opts?: CallOptions): Promise<any>;",
-          callFns
+          'call(name: string, payload?: any, opts?: CallOptions): Promise<any>;',
+          callFns,
         )
       }
     }
@@ -90,17 +90,17 @@ export const updateTypesPath = async (
       if (opts.isAbstract) {
         x = x.replace(
           `abstract query(name: string, payload?: any): BasedQuery;`,
-          queryFns
+          queryFns,
         )
       } else {
         x = x.replace(
           `query(name: string, payload?: any, opts?: QueryOptions): BasedQuery;`,
-          queryFns
+          queryFns,
         )
       }
       x = x.replace(
         /export type QueryMap = ([^@]*?)\};?([^@]*?)\};?\s*\};?/gm,
-        `export type QueryMap = {${queryMap}}`
+        `export type QueryMap = {${queryMap}}`,
       )
     }
     await writeFile(opts.declarationPath, x)
