@@ -48,6 +48,7 @@ pub fn init() void {
 pub fn createDbCtx(
     env: napi.Env,
     bridge: napi.Value,
+    nrThreads: u16,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     errdefer db_backing_allocator.destroy(arena);
@@ -70,7 +71,7 @@ pub fn createDbCtx(
 
     // config thread amount
     dbCtxPointer.* = .{
-        .threads = try threads.Threads.init(allocator, try std.Thread.getCpuCount() - 1, dbCtxPointer),
+        .threads = try threads.Threads.init(allocator, nrThreads, dbCtxPointer),
         .id = rand.int(u32),
         .arena = arena,
         .allocator = allocator,

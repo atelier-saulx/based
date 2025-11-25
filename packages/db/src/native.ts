@@ -61,8 +61,8 @@ const native = {
     return x
   },
 
-  start: (bridge: (id: number, payload: any) => void) => {
-    return db.start(bridge)
+  start: (bridge: (id: number, payload: any) => void, nrThreads: number) => {
+    return db.start(bridge, nrThreads)
   },
 
   stop: (dbCtx: any) => {

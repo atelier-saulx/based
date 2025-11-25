@@ -1,3 +1,4 @@
+import { availableParallelism } from 'node:os'
 import { DbServer } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
@@ -87,6 +88,8 @@ export async function start(db: DbServer, opts?: StartOpts) {
 
   await mkdir(path, { recursive: true }).catch(noop)
 
+  let nrThreads: number
+  nrThreads = ((nrThreads = availableParallelism()), nrThreads < 2 ? 2 : nrThreads - 1)
   db.dbCtxExternal = native.start((id: BridgeResponseEnum, buffer: any) => {
     if (id === BridgeResponse.query) {
       handleQueryResponse(db, buffer)
@@ -97,7 +100,7 @@ export async function start(db: DbServer, opts?: StartOpts) {
     } else if (id === BridgeResponse.flushModify) {
       handleModifyResponse(db, buffer)
     }
-  })
+  }, nrThreads)
 
   const writelog = await readWritelog(join(path, WRITELOG_FILE))
   let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]
