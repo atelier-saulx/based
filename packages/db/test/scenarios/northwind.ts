@@ -1,4 +1,4 @@
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/db.js'
 // import { mermaid } from '@based/schema-diagram'
 import { deepCopy } from '../../src/utils/index.js'
 import test from '../shared/test.js'

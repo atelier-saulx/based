@@ -1,4 +1,4 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb } from '../src/db.js'
 import test from './shared/test.js'
 
 // Some externals can cause issues with GC and the event loop.
@@ -14,7 +14,7 @@ await test('db should get cleaned', async (t) => {
     await db.drain()
     await db.save()
     const db2 = new BasedDb({
-        path: t.tmp,
+      path: t.tmp,
     })
     await db2.start({ noLoadDumps: true })
     t.after(() => db2.destroy())

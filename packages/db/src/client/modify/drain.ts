@@ -1,4 +1,4 @@
-import { DbClient } from '../../index.js'
+import { DbClient } from '../../db.js'
 import { writeUint32 } from '../../utils/uint8.js'
 import { Ctx, MODIFY_HEADER_SIZE } from './Ctx.js'
 import { rejectTmp, resolveTmp } from './Tmp.js'

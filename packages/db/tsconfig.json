@@ -8,5 +8,6 @@
     "rootDir": ".",
     "strictNullChecks": true,
     "noEmit": true
-  }
+  },
+  "include": ["src", "test", "scripts"]
 }

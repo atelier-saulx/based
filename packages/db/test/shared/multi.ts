@@ -1,4 +1,4 @@
-import { DbClient, DbClientHooks } from '../../src/index.js'
+import { DbClient, DbClientHooks } from '../../src/db.js'
 import { DbServer } from '../../src/server/index.js'
 import { setTimeout } from 'node:timers/promises'
 

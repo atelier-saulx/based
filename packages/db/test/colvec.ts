@@ -1,5 +1,5 @@
 import test from './shared/test.js'
-import { BasedDb } from '../src/index.js'
+import { BasedDb } from '../src/db.js'
 import { deepEqual, perf } from './shared/assert.js'
 
 await test.skip('colvec', async (t) => {

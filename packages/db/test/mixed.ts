@@ -1,5 +1,5 @@
 import { setTimeout } from 'timers/promises'
-import { BasedDb } from '../src/index.js'
+import { BasedDb } from '../src/db.js'
 import test from './shared/test.js'
 
 await test.skip('mixed', async (t) => {
@@ -13,7 +13,7 @@ await test.skip('mixed', async (t) => {
 
     t.after(() => t.backup(db))
 
-//    await populate.default(db)
+    //    await populate.default(db)
     await setTimeout(1e3)
     await db.update('phase', 1, {
       scenarios: {

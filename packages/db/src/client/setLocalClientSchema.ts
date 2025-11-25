@@ -1,4 +1,4 @@
-import { DbClient } from '../index.js'
+import { DbClient } from '../db.js'
 import { cancel } from './modify/drain.js'
 import { Ctx, MODIFY_HEADER_SIZE } from './modify/Ctx.js'
 import { updateTypeDefs, type SchemaOut } from '../schema/index.js'

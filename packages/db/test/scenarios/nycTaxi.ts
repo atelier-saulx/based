@@ -1,4 +1,4 @@
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/db.js'
 import test from '../shared/test.js'
 import { join } from 'path'
 import { readdir, readFile } from 'node:fs/promises'

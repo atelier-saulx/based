@@ -1,4 +1,4 @@
-import { DbClient } from '../../../index.js'
+import { DbClient } from '../../../db.js'
 import { ModifyOpts } from '../types.js'
 import { getValidSchema } from '../validate.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'

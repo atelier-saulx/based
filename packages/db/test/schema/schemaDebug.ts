@@ -1,5 +1,5 @@
 import { serverChildProcess } from '../shared/serverChildProcess.js'
-import { DbClient, DbClientHooks, DbServer } from '../../src/index.js'
+import { DbClient, DbClientHooks, DbServer } from '../../src/db.js'
 import test from '../shared/test.js'
 import { deepCopy, deepMerge, wait } from '../../src/utils/index.js'
 import { copy, emptyDir } from 'fs-extra/esm'

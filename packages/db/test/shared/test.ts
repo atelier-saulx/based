@@ -1,7 +1,7 @@
 import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/db.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '../../src/utils/index.js'
 import { destructureTreeKey, BlockMap } from '../../src/server/blockMap.js'

@@ -1,12 +1,13 @@
 {
-  "name": "@based/db",
-  "version": "0.2.6",
+  "name": "@based/sdk",
+  "version": "1.1.5",
   "type": "module",
-  "main": "./dist/src/index.js",
+  "main": "./dist/sdk.mjs",
   "scripts": {
     "build": "make -C clibs && npm run build-zig && npm run build-ts",
     "build-zig-ts-exports": "node --import=tsx scripts/zigTsExports.ts",
     "build-ts": "tsc -p tsconfig.build.json",
+    "_build-ts": "npx tsdown --dts",
     "build-zig": "npm run build-zig-ts-exports && node --import=tsx scripts/zig_cross_compile.ts",
     "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64) && npm run build-zig linux-aarch64 && tsc",
     "build-release-debug": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
@@ -30,12 +31,10 @@
   },
   "sideEffects": false,
   "files": [
-    "dist/src",
-    "dist/lib",
+    "dist",
     "!*.map",
     "README.md",
-    "package.json",
-    "zigAddon.cjs"
+    "package.json"
   ],
   "optionalDependencies": {
     "@based/locale-x86-64-gnu": "*"
@@ -48,5 +47,10 @@
     "tar": "^7.4.3",
     "tsx": "^4.20.6",
     "typescript": "^5.6.3"
+  },
+  "exports": {
+    ".": "./dist/sdk.mjs",
+    "./db": "./dist/db.mjs",
+    "./schema": "./dist/schema.mjs"
   }
 }

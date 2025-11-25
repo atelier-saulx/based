@@ -1,6 +1,6 @@
 import { fork } from 'node:child_process'
 import { parentPort, Worker, workerData } from 'node:worker_threads'
-import { DbServer } from '../../src/index.js'
+import { DbServer } from '../../src/db.js'
 import { fileURLToPath } from 'node:url'
 import { DbShared } from '../../src/shared/DbBase.js'
 import { Emitter } from '../../src/shared/Emitter.js'

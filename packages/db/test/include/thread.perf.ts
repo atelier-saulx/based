@@ -1,14 +1,6 @@
-import {
-  combineToNumber,
-  readUint32,
-  wait,
-  writeUint32,
-} from '../../src/utils/index.js'
-import { registerQuery } from '../../src/client/query/registerQuery.js'
-import { BasedDb } from '../../src/index.js'
-import native from '../../src/native.js'
+import { wait } from '../../src/utils/index.js'
+import { BasedDb } from '@based/sdk'
 import test from '../shared/test.js'
-import { perf } from '../shared/assert.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({

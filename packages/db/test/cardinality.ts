@@ -1,4 +1,4 @@
-import { BasedDb, xxHash64 } from '../src/index.js'
+import { BasedDb, xxHash64 } from '../src/db.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 

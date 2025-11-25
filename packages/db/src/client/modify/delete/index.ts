@@ -1,4 +1,4 @@
-import { DbClient } from '../../../index.js'
+import { DbClient } from '../../../db.js'
 import { getValidSchema, validateId } from '../validate.js'
 import {
   FULL_CURSOR_SIZE,

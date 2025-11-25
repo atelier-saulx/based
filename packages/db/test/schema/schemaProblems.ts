@@ -1,5 +1,5 @@
 import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/db.js'
 import { clientWorker } from '../shared/startWorker.js'
 import { equal } from '../shared/assert.js'
 

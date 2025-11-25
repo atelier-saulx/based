@@ -1,4 +1,4 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb } from '../src/db.js'
 import test from './shared/test.js'
 
 await test('empty db and no schema', async (t) => {
@@ -47,14 +47,14 @@ await test('empty db and deleted nodes', async (t) => {
   })
 
   const res = await db.create('user', {
-    file: new Uint8Array([1, 3, 3, 7])
+    file: new Uint8Array([1, 3, 3, 7]),
   })
   await db.delete('user', res)
 
   await db.save()
 
   const res1 = await db.create('user', {
-    file: new Uint8Array([1, 3, 3, 7])
+    file: new Uint8Array([1, 3, 3, 7]),
   })
   await db.save()
   await db.delete('user', res1)

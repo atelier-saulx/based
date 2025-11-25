@@ -12,7 +12,6 @@ import {
   loadBlockRaw,
 } from './blocks.js'
 import { bufToHex, equals, hexToBuf, readUint32, wait } from '../utils/index.js'
-import { SCHEMA_FILE, WRITELOG_FILE, SCHEMA_FILE_DEPRECATED } from '../types.js'
 import { setSchemaOnServer } from './schema.js'
 import {
   OpTypeEnum,
@@ -21,6 +20,7 @@ import {
 } from '../zigTsExports.js'
 import { deSerialize } from '../schema/serialize.js'
 import { BLOCK_CAPACITY_DEFAULT } from '../schema/index.js'
+import { SCHEMA_FILE, SCHEMA_FILE_DEPRECATED, WRITELOG_FILE } from '../db.js'
 
 export type StartOpts = {
   clean?: boolean

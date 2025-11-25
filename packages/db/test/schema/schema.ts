@@ -1,5 +1,5 @@
 import test from '../shared/test.js'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/db.js'
 import { setTimeout } from 'node:timers/promises'
 import { deepEqual, throws } from '../shared/assert.js'
 

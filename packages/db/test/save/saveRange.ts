@@ -1,5 +1,5 @@
 import { readdir } from 'node:fs/promises'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/db.js'
 import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
 import { deepEqual, equal } from '../shared/assert.js'

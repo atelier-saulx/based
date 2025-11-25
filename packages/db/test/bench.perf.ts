@@ -1,4 +1,4 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb } from '../src/db.js'
 import { Sema } from 'async-sema'
 import test from './shared/test.js'
 import { start as startMulti } from './shared/multi.js'

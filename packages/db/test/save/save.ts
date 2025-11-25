@@ -1,4 +1,4 @@
-import { BasedDb, filter } from '../../src/index.js'
+import { BasedDb, filter } from '../../src/db.js'
 import { deepEqual, equal } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { setTimeout } from 'node:timers/promises'

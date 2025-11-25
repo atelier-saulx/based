@@ -1,5 +1,5 @@
 import test from './shared/test.js'
-import { crc32 as nativeCrc32 } from '../src/index.js'
+import { crc32 as nativeCrc32 } from '../src/db.js'
 import crc32c from '../src/hash/crc32c.js'
 
 const ENCODER = new TextEncoder()

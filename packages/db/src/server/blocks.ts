@@ -19,9 +19,9 @@ import {
 } from './blockMap.js'
 import { DbServer } from './index.js'
 import { writeFile } from 'node:fs/promises'
-import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
 import { OpType } from '../zigTsExports.js'
 import type { SchemaTypeDef } from '../schema/index.js'
+import { COMMON_SDB_FILE, WRITELOG_FILE } from '../db.js'
 
 type RangeDump = {
   file: string

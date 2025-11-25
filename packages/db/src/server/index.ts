@@ -7,7 +7,7 @@ import {
   makeTreeKeyFromNodeId,
 } from './blockMap.js'
 import { migrate } from './migrate/index.js'
-import { debugServer } from '../utils.js'
+import { debugServer } from '../utils/debug.js'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,

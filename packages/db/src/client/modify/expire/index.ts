@@ -1,6 +1,6 @@
 import { getValidSchema, validateId } from '../validate.js'
 import { handleError } from '../error.js'
-import { DbClient } from '../../../index.js'
+import { DbClient } from '../../../db.js'
 import { reserve } from '../resize.js'
 import {
   NODE_CURSOR_SIZE,

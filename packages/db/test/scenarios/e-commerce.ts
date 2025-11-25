@@ -1,5 +1,5 @@
 import { errors } from '../../src/client/modify/error.js'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb } from '../../src/db.js'
 import { throws, equal, isSorted } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { randomString, wait } from '../../src/utils/index.js'
