@@ -15,7 +15,7 @@
     "watch-native": "npm run build-c && npm run watch-zig",
     "watch-zig-ts-exports": "tsx --watch-path=./native/types.zig scripts/zigTsExports.ts ",
     "watch": "npm run concurrently npm:watch-native npm:watch-ts npm:watch-zig-ts-exports",
-    "concurrently": "concurrently -c 'green,blue,cyan'",
+    "concurrently": "concurrently -c 'grey,blue,cyan'",
     "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64) && npm run build-zig linux-aarch64 && tsc",
     "build-release-debug": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
     "build-release": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
