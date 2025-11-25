@@ -37,9 +37,6 @@ pub const Result = struct {
         const paddedSize: u32 = @truncate(size + offset);
         self.headerIndex = self.index;
         self.index = try self.grow(paddedSize);
-
-        // std.debug.print("---> index: {any} h: {any} \n", .{ self.index, self.headerIndex });
-
         utils.writeAs(u32, self.data, id, self.headerIndex + 4);
         self.data[self.headerIndex + 8] = @intFromEnum(opType);
         return self.data[self.headerIndex + offset .. self.index];

@@ -1,11 +1,13 @@
 const std = @import("std");
-const Query = @import("../common.zig");
 const selva = @import("../../selva/selva.zig").c;
 const utils = @import("../../utils.zig");
 const deflate = @import("../../deflate.zig");
+const Thread = @import("../../thread/thread.zig");
+const append = @import("append.zig");
+
 const t = @import("../../types.zig");
 
-pub fn parse(
+pub inline fn parse(
     value: []u8,
     opts: *const t.IncludeOptsHeader,
 ) []u8 {
@@ -19,7 +21,7 @@ pub fn parse(
     return value;
 }
 
-pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u8) bool {
+inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u8) bool {
     return i.* + 8 < len.* and
         charLen.* == 3 and
         value[i.*] == 240 and
@@ -29,30 +31,22 @@ pub inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u
 }
 
 fn parseCharEndDeflate(
-    ctx: *Query.QueryCtx,
+    thread: *Thread.Thread,
     value: []u8,
     opts: *const t.IncludeOptsHeader,
     extraSize: *usize,
-) []u8 {
+    startIndex: usize,
+) !usize {
     const size = utils.read(u32, value, 2);
     const allocLen: usize = opts.end + 2 + extraSize.*;
     if (size < allocLen) {
-        return value;
+        try thread.query.append(value);
+        return value.len;
     }
-    const alloc = ctx.allocator.alloc(u8, allocLen) catch |err| {
-        std.log.err("Error allocating mem parseCharEndDeflate {any} \n", .{err});
-        return &.{};
-    };
+    const alloc = try thread.query.slice(allocLen);
     alloc[0] = value[0];
     alloc[1] = 0;
-    const v = deflate.decompressFirstBytes(
-        ctx.threadCtx.decompressor,
-        value,
-        alloc[2..],
-    ) catch |err| {
-        std.log.err("Error decompressing parseCharEndDeflate {any} \n", .{err});
-        return &.{};
-    };
+    const v = try deflate.decompressFirstBytes(thread.decompressor, value, alloc[2..]);
     var i: usize = 0;
     var prevChar: usize = i;
     var chars: u32 = 0;
@@ -93,44 +87,45 @@ fn parseCharEndDeflate(
         }
     }
     if (i >= v.len) {
-        ctx.allocator.destroy(&alloc);
+        thread.query.index = startIndex;
         extraSize.* = extraSize.* * 2;
-        return parseCharEndDeflate(ctx, value, opts, extraSize);
+        return parseCharEndDeflate(thread, value, opts, extraSize, startIndex);
     }
-    return alloc[0 .. i + 2];
+    return i + 2;
 }
 
-pub fn parseOptsString(
-    ctx: *Query.QueryCtx,
+pub fn string(
+    thread: *Thread.Thread,
+    prop: u8,
     value: []u8,
     opts: *const t.IncludeOptsHeader,
-) ![]u8 {
-    if (opts.end != 0) {
-        if (!opts.isChars) {
-            if (value[1] == 1) {
-                const v = try ctx.allocator.alloc(u8, opts.end + 2);
-                v[0] = value[0];
-                v[1] = 0;
-                _ = try deflate.decompressFirstBytes(
-                    ctx.thread.decompressor,
-                    value,
-                    v[2..],
-                );
-                return v;
-            } else if (value.len - 4 < opts.end + 2) {
-                return value[0 .. value.len - 4];
-            } else {
-                const v = value[0 .. opts.end + 2];
-                return v;
-            }
-        } else if (value[1] == 1) {
+) !void {
+    if (value.len == 0) {
+        return;
+    }
+
+    if (opts.end == 0) {
+        // Does this mean ignore END ?
+        try append.stripCrc32(thread, prop, value);
+        return;
+    }
+
+    std.debug.print("opts {any} \n", .{opts});
+
+    if (opts.isChars) {
+        if (value[1] == 1) {
             var extraSize: usize = undefined;
             if (opts.end > 10) {
                 extraSize = opts.end / 8 + 8;
             } else {
                 extraSize = 8;
             }
-            return parseCharEndDeflate(ctx, value, opts, &extraSize);
+            const headerIndex = try thread.query.reserve(utils.sizeOf(t.IncludeResponse));
+            const startIndex = thread.query.index;
+            const size = try parseCharEndDeflate(thread, value, opts, &extraSize, startIndex);
+            thread.query.index = startIndex + size;
+            const header: t.IncludeResponse = .{ .prop = prop, .size = @truncate(size) };
+            thread.query.write(header, headerIndex);
         } else {
             var i: usize = 2;
             var prevChar: usize = i;
@@ -138,7 +133,8 @@ pub fn parseOptsString(
             const len: usize = value.len - 4;
             while (i < len) {
                 if (chars == opts.end) {
-                    return value[0..i];
+                    try append.default(thread, prop, value[0..i]);
+                    return;
                 }
                 var charLen = selva.selva_mblen(value[i]);
                 if (charLen > 0) {
@@ -162,8 +158,22 @@ pub fn parseOptsString(
                     prevChar = i;
                 }
             }
-            return value[0..i];
+            try append.default(thread, prop, value[0..i]);
         }
+        return;
     }
-    return value[0 .. value.len - 4];
+
+    if (value[1] == 1) {
+        const size = opts.end + 2;
+        const header: t.IncludeResponse = .{ .prop = prop, .size = size };
+        try thread.query.append(header);
+        const v = try thread.query.slice(opts.end + 2);
+        v[0] = value[0];
+        v[1] = 0;
+        _ = try deflate.decompressFirstBytes(thread.decompressor, value, v[2..]);
+    } else if (value.len - 4 < opts.end + 2) {
+        try append.stripCrc32(thread, prop, value);
+    } else {
+        try append.default(thread, prop, value[0 .. opts.end + 2]);
+    }
 }

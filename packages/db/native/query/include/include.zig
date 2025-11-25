@@ -6,30 +6,8 @@ const Thread = @import("../../thread/thread.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const opts = @import("./opts.zig");
+const append = @import("./append.zig");
 const t = @import("../../types.zig");
-
-pub inline fn appendInclude(thread: *Thread.Thread, prop: u8, value: []u8) !void {
-    if (value.len == 0) {
-        return;
-    }
-    const header: t.IncludeResponse = .{ .prop = prop, .size = @truncate(value.len) };
-    const headerSize = utils.sizeOf(t.IncludeResponse);
-    const newSlice = try thread.query.slice(headerSize + value.len);
-    utils.write(newSlice, header, 0);
-    utils.write(newSlice, value, headerSize);
-}
-
-pub inline fn appendIncludStripCrc32(thread: *Thread.Thread, prop: u8, value: []u8) !void {
-    if (value.len == 0) {
-        return;
-    }
-    const size = value.len - 4;
-    const header: t.IncludeResponse = .{ .prop = prop, .size = @truncate(size) };
-    const headerSize = utils.sizeOf(t.IncludeResponse);
-    const newSlice = try thread.query.slice(headerSize + size);
-    utils.write(newSlice, header, 0);
-    utils.write(newSlice, value[0..size], headerSize);
-}
 
 pub fn include(
     node: Node.Node,
@@ -133,10 +111,17 @@ pub fn include(
                     t.PropType.string,
                     t.PropType.json,
                     => {
-                        try appendInclude(ctx.thread, header.prop, opts.parse(value, &optsHeader));
+                        try opts.string(ctx.thread, header.prop, value, &optsHeader);
+                    },
+                    t.PropType.text,
+                    => {
+                        var iter = Fields.textIterator(value);
+                        while (iter.next()) |textValue| {
+                            try opts.string(ctx.thread, header.prop, textValue, &optsHeader);
+                        }
                     },
                     else => {
-                        // more
+                        try append.default(ctx.thread, header.prop, opts.parse(value, &optsHeader));
                     },
                 }
             },
@@ -149,14 +134,14 @@ pub fn include(
                     => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
-                            try appendIncludStripCrc32(ctx.thread, header.prop, textValue);
+                            try append.stripCrc32(ctx.thread, header.prop, textValue);
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        try appendIncludStripCrc32(ctx.thread, header.prop, value);
+                        try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     else => {
-                        try appendInclude(ctx.thread, header.prop, value);
+                        try append.default(ctx.thread, header.prop, value);
                     },
                 }
                 // }
