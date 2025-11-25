@@ -14,6 +14,7 @@ import {
   type SchemaTypeDef,
 } from '../schema/index.js'
 import { NOT_COMPRESSED } from '../protocol/index.js'
+import { TypeIndex } from '../schema/def/typeIndexes.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -213,7 +214,11 @@ export function schemaToSelvaBuffer(schema: {
     }
 
     // Add props with defaults as fixed
-    nrFixedFields += rest.reduce((prev, prop) => prev + ((prop.typeIndex == PropType.string && prop.default) ? 1 : 0), 0)
+    const supportedDefaults: TypeIndex[] = [
+        PropType.binary,
+        PropType.string,
+    ]
+    nrFixedFields += rest.reduce((prev, prop) => prev + ((supportedDefaults.includes(prop.typeIndex) && prop.default) ? 1 : 0), 0)
 
     rest.sort((a, b) => a.prop - b.prop)
     return Uint8Array.from([
