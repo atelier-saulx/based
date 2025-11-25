@@ -49,9 +49,7 @@ fn callJsCallback(
         },
         t.BridgeResponse.flushQuery => {
             const thread = dbCtx.threads.threads[responseFn.threadId];
-
-            // std.debug.print("CALLBACK FLUSH #{any} \n", .{responseFn.threadId});
-
+            std.debug.print("CALLBACK FLUSH #{any} \n", .{responseFn.threadId});
             var arrayBuffer: napi.Value = undefined;
             _ = napi.c.napi_create_external_arraybuffer(
                 env,
@@ -70,9 +68,43 @@ fn callJsCallback(
             _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
             thread.mutex.lock();
             thread.flushed = true;
-            // std.debug.print("SEND SIGNAL #{any} \n", .{responseFn.threadId});
+            std.debug.print("SEND SIGNAL #{any} \n", .{responseFn.threadId});
             thread.flushDone.signal();
             thread.mutex.unlock();
+        },
+        t.BridgeResponse.query => {
+            std.debug.print("query resp \n", .{});
+
+            dbCtx.threads.waitForQuery();
+            var jsArray: napi.Value = undefined;
+            _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
+            dbCtx.threads.mutex.lock();
+            for (dbCtx.threads.threads, 0..) |thread, index| {
+                var arrayBuffer: napi.Value = undefined;
+                _ = napi.c.napi_create_external_arraybuffer(
+                    env,
+                    thread.query.data.ptr,
+                    thread.query.index,
+                    null,
+                    null,
+                    &arrayBuffer,
+                );
+                _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
+
+                // thread.mutex.lock();
+                thread.flushed = true;
+                // thread.flushDone.signal();
+                thread.query.index = 0;
+                // thread.mutex.unlock();
+            }
+            var fnResponse: napi.Value = undefined;
+            _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
+            var args = [_]napi.Value{ fnResponse, jsArray };
+            var undefinedVal: napi.Value = undefined;
+            _ = napi.c.napi_get_undefined(env, &undefinedVal);
+            _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
+            dbCtx.threads.jsQueryBridgeStaged = false;
+            dbCtx.threads.mutex.unlock();
         },
         t.BridgeResponse.flushModify => {
             const thread = dbCtx.threads.threads[responseFn.threadId];
@@ -96,33 +128,6 @@ fn callJsCallback(
             thread.flushed = true;
             thread.flushDone.signal();
             thread.mutex.unlock();
-        },
-        t.BridgeResponse.query => {
-            dbCtx.threads.waitForQuery();
-            var jsArray: napi.Value = undefined;
-            _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
-            dbCtx.threads.mutex.lock();
-            for (dbCtx.threads.threads, 0..) |thread, index| {
-                var arrayBuffer: napi.Value = undefined;
-                _ = napi.c.napi_create_external_arraybuffer(
-                    env,
-                    thread.query.data.ptr,
-                    thread.query.index,
-                    null,
-                    null,
-                    &arrayBuffer,
-                );
-                _ = napi.c.napi_set_element(env, jsArray, @truncate(index), arrayBuffer);
-                thread.query.index = 0;
-            }
-            var fnResponse: napi.Value = undefined;
-            _ = napi.c.napi_create_uint32(env, @intFromEnum(responseFn.response), &fnResponse);
-            var args = [_]napi.Value{ fnResponse, jsArray };
-            var undefinedVal: napi.Value = undefined;
-            _ = napi.c.napi_get_undefined(env, &undefinedVal);
-            _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
-            dbCtx.threads.jsQueryBridgeStaged = false;
-            dbCtx.threads.mutex.unlock();
         },
     }
 
@@ -178,6 +183,8 @@ pub const Callback = struct {
         response: t.BridgeResponse,
         threadId: usize,
     ) void {
+        std.debug.print("call js {any} \n", .{response});
+
         const result = std.heap.raw_c_allocator.create(BridgeResponseStruct) catch return;
         result.*.response = response;
         result.*.threadId = threadId;

@@ -1,12 +1,5 @@
-import {
-  combineToNumber,
-  readUint32,
-  wait,
-  writeUint32,
-} from '../../src/utils/index.js'
-import { registerQuery } from '../../src/client/query/registerQuery.js'
+import { wait } from '../../src/utils/index.js'
 import { BasedDb } from '../../src/index.js'
-import native from '../../src/native.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 
@@ -36,8 +29,7 @@ await test('include', async (t) => {
       nr: i,
       name: 'Mr poop',
       body: {
-        de: 'xwed. w🇿🇼🇺🇸eufhweo fhewoiewfh efiowehfioepwhfew efiowehfioepwhfew efiowehfioepwhfew efiowehfioepwhfew efiowehfioepwhfew',
-        // de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+        de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
         en: 'poopTIMES!',
       },
     })
@@ -49,6 +41,7 @@ await test('include', async (t) => {
 
   await db
     .query('user')
+    .locale('de')
     .include('name', 'body', { end: 10 })
     .range(0, 1)
     .get()
@@ -59,13 +52,16 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 1000; i++) {
         q.push(
           db
             .query('user')
-            .include('name', 'body', { end: 6 })
+            .include('name', 'body')
+            // .include('name', 'body', { end: 2 })
             .range(0, 1e6 + i)
-            .get(),
+            .get()
+            .inspect(),
+          // .inspect(),
         )
       }
       await Promise.all(q)

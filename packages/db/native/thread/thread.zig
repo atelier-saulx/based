@@ -235,12 +235,14 @@ pub const Threads = struct {
                         }
                         self.wakeup.broadcast();
                     } else {}
-                } else if (thread.query.index > 100_000_000) {
+                } else if (thread.query.index > 100_000_000 and !self.jsQueryBridgeStaged) {
                     // std.debug.print("FLUSH Q {d} \n", .{thread.id});
-                    thread.flushed = false;
-                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
                     thread.mutex.lock();
+                    thread.flushed = false;
                     self.mutex.unlock();
+
+                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
+
                     while (!thread.flushed) {
                         // std.debug.print(" wait for flush Q {d} \n", .{thread.id});
                         thread.flushDone.wait(&thread.mutex);
