@@ -61,11 +61,13 @@ struct SelvaFieldSchema {
     union {
         struct {
             size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
+            uint32_t default_off;
+            uint32_t default_len;
         } string; /*!< SELVA_FIELD_TYPE_STRING */
         struct EdgeFieldConstraint edge_constraint; /*!< SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_REFERENCES, SELVA_FIELD_TYPE_WEAK_REFERENCE, and SELVA_FIELD_TYPE_WEAK_REFERENCES. */
         struct {
-            uint16_t len; /*!< Size of the smb. */
             uint32_t default_off; /*!< Offset to the default in  the raw schema buffer. */
+            uint16_t len; /*!< Size of the smb. */
         } smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
         size_t alias_index; /*!< Index in aliases for SELVA_FIELD_TYPE_ALIAS and SELVA_FIELD_TYPE_ALIASES. */
         struct {

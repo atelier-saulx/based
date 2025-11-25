@@ -303,7 +303,7 @@ struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_i
  * Get or create a node by id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_upsert_node(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
+struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
 
 /**
  * **Example**

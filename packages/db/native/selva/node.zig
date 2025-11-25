@@ -64,8 +64,8 @@ pub inline fn getNodeTypeId(node: Node) t.TypeId {
     return selva.c.selva_get_node_type(node);
 }
 
-pub inline fn upsertNode(ctx: *Modify.ModifyCtx, typeEntry: selva.Type, id: u32) !Node {
-    const node = selva.c.selva_upsert_node(ctx.db.selva, typeEntry, id);
+pub inline fn upsertNode(_: *Modify.ModifyCtx, typeEntry: selva.Type, id: u32) !Node {
+    const node = selva.c.selva_upsert_node(typeEntry, id);
     if (node == null) {
         return errors.SelvaError.SELVA_CANNOT_UPSERT;
     }

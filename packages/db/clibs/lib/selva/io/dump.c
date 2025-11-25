@@ -623,7 +623,7 @@ static int load_field_weak_reference_v3(struct selva_io *io, struct SelvaDb *db,
     struct SelvaNode *dst_node;
 
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
-    dst_node = selva_upsert_node(db, dst_te, dst_id);
+    dst_node = selva_upsert_node(dst_te, dst_id);
     return selva_fields_reference_set(db, node, fs, dst_node, nullptr, selva_faux_dirty_cb, nullptr);
 }
 
@@ -644,7 +644,7 @@ static int load_field_weak_references_v3(struct selva_io *io, struct SelvaDb *db
         int err;
 
         io->sdb_read(&reference, sizeof(reference), 1, io);
-        dst_node = selva_upsert_node(db, dst_te, reference.dst_id);
+        dst_node = selva_upsert_node(dst_te, reference.dst_id);
         err = selva_fields_references_insert(db, node, fs, i, insert_flags, dst_te, dst_node, nullptr, nullptr, nullptr);
         if (err) {
             return err;
@@ -666,7 +666,7 @@ static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode
 
     if (likely(dst_id != 0)) {
         /* TODO In the future we want to just have an id here. */
-        dst_node = selva_upsert_node(db, dst_te, dst_id);
+        dst_node = selva_upsert_node(dst_te, dst_id);
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
             err = selva_fields_reference_set(db, node, fs, dst_node, &ref, selva_faux_dirty_cb, nullptr);
         } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
@@ -903,7 +903,7 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
     node_id_t node_id;
     io->sdb_read(&node_id, sizeof(node_id), 1, io);
 
-    struct SelvaNode *node = selva_upsert_node(db, te, node_id);
+    struct SelvaNode *node = selva_upsert_node(te, node_id);
     assert(node->type == te->type);
     err = load_node_fields(io, db, te, node);
     if (err) {
