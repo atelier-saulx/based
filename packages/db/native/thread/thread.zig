@@ -295,6 +295,7 @@ pub const Threads = struct {
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
                     } else if (thread.modify.index > 50_000_000 and !self.jsModifyBridgeStaged) {
+                        std.debug.print("FLUSH MOD \n", .{});
                         thread.mutex.lock();
                         self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
                         thread.flushed = false;
