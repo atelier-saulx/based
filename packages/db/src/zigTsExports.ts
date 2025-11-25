@@ -901,153 +901,88 @@ export const createIncludeHeader = (header: IncludeHeader): Uint8Array => {
   return buffer
 }
 
-export type LangFallback = {
+export type IncludeOpts = {
   end: number
   isChars: boolean
-  hasLangFallback: boolean
+  next: boolean
+  fallback: LangCodeEnum
   lang: LangCodeEnum
 }
 
-export const LangFallbackByteSize = 6
+export const IncludeOptsByteSize = 7
 
-export const writeLangFallback = (
+export const writeIncludeOpts = (
   buf: Uint8Array,
-  header: LangFallback,
+  header: IncludeOpts,
   offset: number,
 ): number => {
   writeUint32(buf, header.end, offset)
   offset += 4
   buf[offset] = 0
   buf[offset] |= (((header.isChars ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.hasLangFallback ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= (((header.next ? 1 : 0) >>> 0) & 1) << 1
   buf[offset] |= ((0 >>> 0) & 63) << 2
+  offset += 1
+  buf[offset] = header.fallback
   offset += 1
   buf[offset] = header.lang
   offset += 1
   return offset
 }
 
-export const writeLangFallbackProps = {
+export const writeIncludeOptsProps = {
   end: (buf: Uint8Array, value: number, offset: number) => {
     writeUint32(buf, value, offset)
   },
   isChars: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  hasLangFallback: (buf: Uint8Array, value: boolean, offset: number) => {
+  next: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
-  lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
+  fallback: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
     buf[offset + 5] = value
+  },
+  lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
+    buf[offset + 6] = value
   },
 }
 
-export const readLangFallback = (
+export const readIncludeOpts = (
   buf: Uint8Array,
   offset: number,
-): LangFallback => {
-  const value: LangFallback = {
+): IncludeOpts => {
+  const value: IncludeOpts = {
     end: readUint32(buf, offset),
     isChars: (((buf[offset + 4] >>> 0) & 1)) === 1,
-    hasLangFallback: (((buf[offset + 4] >>> 1) & 1)) === 1,
-    lang: (buf[offset + 5]) as LangCodeEnum,
+    next: (((buf[offset + 4] >>> 1) & 1)) === 1,
+    fallback: (buf[offset + 5]) as LangCodeEnum,
+    lang: (buf[offset + 6]) as LangCodeEnum,
   }
   return value
 }
 
-export const readLangFallbackProps = {
+export const readIncludeOptsProps = {
   end: (buf: Uint8Array, offset: number): number => {
     return readUint32(buf, offset)
   },
   isChars: (buf: Uint8Array, offset: number): boolean => {
     return (((buf[offset + 4] >>> 0) & 1)) === 1
   },
-  hasLangFallback: (buf: Uint8Array, offset: number): boolean => {
+  next: (buf: Uint8Array, offset: number): boolean => {
     return (((buf[offset + 4] >>> 1) & 1)) === 1
   },
-  lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
+  fallback: (buf: Uint8Array, offset: number): LangCodeEnum => {
     return (buf[offset + 5]) as LangCodeEnum
   },
-}
-
-export const createLangFallback = (header: LangFallback): Uint8Array => {
-  const buffer = new Uint8Array(LangFallbackByteSize)
-  writeLangFallback(buffer, header, 0)
-  return buffer
-}
-
-export type IncludeOptsHeader = {
-  end: number
-  isChars: boolean
-  hasLangFallback: boolean
-  lang: LangCodeEnum
-}
-
-export const IncludeOptsHeaderByteSize = 6
-
-export const writeIncludeOptsHeader = (
-  buf: Uint8Array,
-  header: IncludeOptsHeader,
-  offset: number,
-): number => {
-  writeUint32(buf, header.end, offset)
-  offset += 4
-  buf[offset] = 0
-  buf[offset] |= (((header.isChars ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.hasLangFallback ? 1 : 0) >>> 0) & 1) << 1
-  buf[offset] |= ((0 >>> 0) & 63) << 2
-  offset += 1
-  buf[offset] = header.lang
-  offset += 1
-  return offset
-}
-
-export const writeIncludeOptsHeaderProps = {
-  end: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset)
-  },
-  isChars: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 0
-  },
-  hasLangFallback: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 1
-  },
-  lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
-    buf[offset + 5] = value
-  },
-}
-
-export const readIncludeOptsHeader = (
-  buf: Uint8Array,
-  offset: number,
-): IncludeOptsHeader => {
-  const value: IncludeOptsHeader = {
-    end: readUint32(buf, offset),
-    isChars: (((buf[offset + 4] >>> 0) & 1)) === 1,
-    hasLangFallback: (((buf[offset + 4] >>> 1) & 1)) === 1,
-    lang: (buf[offset + 5]) as LangCodeEnum,
-  }
-  return value
-}
-
-export const readIncludeOptsHeaderProps = {
-  end: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset)
-  },
-  isChars: (buf: Uint8Array, offset: number): boolean => {
-    return (((buf[offset + 4] >>> 0) & 1)) === 1
-  },
-  hasLangFallback: (buf: Uint8Array, offset: number): boolean => {
-    return (((buf[offset + 4] >>> 1) & 1)) === 1
-  },
   lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
-    return (buf[offset + 5]) as LangCodeEnum
+    return (buf[offset + 6]) as LangCodeEnum
   },
 }
 
-export const createIncludeOptsHeader = (header: IncludeOptsHeader): Uint8Array => {
-  const buffer = new Uint8Array(IncludeOptsHeaderByteSize)
-  writeIncludeOptsHeader(buffer, header, 0)
+export const createIncludeOpts = (header: IncludeOpts): Uint8Array => {
+  const buffer = new Uint8Array(IncludeOptsByteSize)
+  writeIncludeOpts(buffer, header, 0)
   return buffer
 }
 

@@ -9,7 +9,7 @@ const t = @import("../../types.zig");
 
 pub inline fn parse(
     value: []u8,
-    opts: *const t.IncludeOptsHeader,
+    opts: *const t.IncludeOpts,
 ) []u8 {
     if (opts.end != 0) {
         if (value.len < opts.end) {
@@ -33,7 +33,7 @@ inline fn isFlagEmoj(i: *usize, len: *const usize, charLen: *u32, value: []u8) b
 fn parseCharEndDeflate(
     thread: *Thread.Thread,
     value: []u8,
-    opts: *const t.IncludeOptsHeader,
+    opts: *const t.IncludeOpts,
     extraSize: *usize,
     startIndex: usize,
 ) !usize {
@@ -98,7 +98,7 @@ pub fn string(
     thread: *Thread.Thread,
     prop: u8,
     value: []u8,
-    opts: *const t.IncludeOptsHeader,
+    opts: *const t.IncludeOpts,
 ) !void {
     if (value.len == 0) {
         return;

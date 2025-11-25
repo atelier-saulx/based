@@ -7,7 +7,7 @@ import {
   PropType,
   IncludeOp,
   createIncludeHeader,
-  createIncludeOptsHeader,
+  createIncludeOpts,
   LangCode,
 } from '../../../zigTsExports.js'
 
@@ -157,67 +157,47 @@ export const includeToBuffer = (
       if (propDef.opts?.meta !== 'only') {
         const hasEndOption = !!propDef.opts?.end
         const codes = propDef.opts!?.codes!
-
         if (propType === PropType.text && !codes?.has(0)) {
-          for (const code of codes) {
-            const fallBackSize = propDef.opts!.fallBacks!.length
-
-            if (fallBackSize) {
-              console.log('derp', fallBackSize)
-            }
-
-            // const endCode = getEnd(propDef.opts, code)
-            // const b = new Uint8Array(7 + (endCode ? 5 : 0) + fallBackSize)
-            // writeIncludeHeader(
-            //   b,
-            //   {
-            //     op: IncludeOp.default,
-            //     prop,
-            //     propType: propType,
-            //   },
-            //   0,
-            // )
-            // let i = 0
-            // if (endCode) {
-            //   b[3] = fallBackSize + 8 // opts
-            //   b[4] = code // say if there is a end option
-            //   b[5] = fallBackSize
-            //   b[6] = 1 // has end
-            //   b[7] = propDef.opts?.bytes ? 0 : 1 // is string use chars (can be optional)
-            //   writeUint32(b, endCode, 8)
-            //   i = 11
-            // } else {
-            //   b[3] = fallBackSize + 3 // opts
-            //   b[4] = code // say if there is a end option
-            //   b[5] = fallBackSize
-            //   b[6] = 0 // no end
-            //   i = 7
-            // }
-            // for (const fallback of propDef.opts.fallBacks) {
-            //   b[i] = fallback
-            //   i++
-            // }
-            // result.push(b)
-          }
-        } else if (hasEndOption) {
-          const isChars =
-            propDef.opts?.bytes ||
-            (propType !== PropType.json &&
-              propType !== PropType.string &&
-              propType !== PropType.text)
-              ? false
-              : true
+          const hasFallbacks = propDef.opts!.fallBacks!.length > 0
           result.push(
             createIncludeHeader({
               op: IncludeOp.defaultWithOpts,
               prop,
               propType: propType,
             }),
-            createIncludeOptsHeader({
-              isChars,
+          )
+          let i = 0
+          for (const code of codes) {
+            i++
+            result.push(
+              createIncludeOpts({
+                next: i !== codes.size,
+                end: getEnd(propDef.opts),
+                isChars: !propDef.opts?.bytes,
+                lang: code,
+                fallback: hasFallbacks
+                  ? propDef.opts!.fallBacks![0]
+                  : LangCode.NONE,
+              }),
+            )
+          }
+        } else if (hasEndOption) {
+          result.push(
+            createIncludeHeader({
+              op: IncludeOp.defaultWithOpts,
+              prop,
+              propType: propType,
+            }),
+            createIncludeOpts({
+              next: false,
               end: getEnd(propDef.opts),
+              isChars:
+                !propDef.opts?.bytes &&
+                (propType === PropType.json ||
+                  propType === PropType.string ||
+                  propType === PropType.text),
               lang: LangCode.NONE,
-              hasLangFallback: false,
+              fallback: LangCode.NONE,
             }),
           )
         } else {

@@ -194,6 +194,39 @@ pub inline fn getTextFromValueFallback(
     return @as([*]u8, undefined)[0..0];
 }
 
+pub inline fn getTextFallback(
+    value: []u8,
+    code: t.LangCode,
+    fallback: t.LangCode,
+) []u8 {
+    if (value.len == 0) {
+        return value;
+    }
+    var lastFallbackValue: []u8 = undefined;
+    var hasFallback: bool = false;
+    var index: usize = 0;
+    const textTmp: *[*]const [selva.c.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+    const text = textTmp.*[0..value[8]];
+    while (index < text.len) {
+        var len: usize = undefined;
+        const str: [*]const u8 = selva.c.selva_string_to_buf(@ptrCast(&text[index]), &len);
+        const s = @as([*]u8, @constCast(str));
+        const langCode: t.LangCode = @enumFromInt(s[0]);
+        if (langCode == code) {
+            return s[0..len];
+        }
+        if (langCode == fallback) {
+            hasFallback = true;
+            lastFallbackValue = s[0..len];
+        }
+        index += 1;
+    }
+    if (hasFallback) {
+        return lastFallbackValue;
+    }
+    return @as([*]u8, undefined)[0..0];
+}
+
 pub inline fn getTextFromValue(value: []u8, code: t.LangCode) []u8 {
     if (value.len == 0) {
         return value;
