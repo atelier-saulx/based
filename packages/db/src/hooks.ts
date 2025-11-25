@@ -3,6 +3,7 @@ import { DbServer } from './server/index.js'
 import { registerSubscription } from './server/subscription.js'
 import type { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import type { SchemaMigrateFns, SchemaOut } from './schema/index.js'
+import native from './native.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -50,9 +51,13 @@ export const getDefaultHooks = (
       })
     },
     flushModify(buf: Uint8Array) {
-      const res = server.modify(buf)
+      const x = buf.slice(0)
+      const res = server.modify(x)
       if (res instanceof Promise) {
-        return res.then((res) => res && new Uint8Array(res))
+        return res.then((res) => {
+          console.log(x.byteLength)
+          return res && new Uint8Array(res)
+        })
       }
       return Promise.resolve(res && new Uint8Array(res))
     },

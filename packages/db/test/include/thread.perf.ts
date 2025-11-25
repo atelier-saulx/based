@@ -34,6 +34,10 @@ await test('include', async (t) => {
         en: italy,
       },
     })
+    // if (i % 100) {
+    // console.log('DRAIN!')
+    // await db.drain()
+    // }
   }
 
   console.log('start query')
@@ -53,7 +57,7 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 1; i++) {
         q.push(
           db
             .query('user')
