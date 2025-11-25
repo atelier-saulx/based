@@ -89,7 +89,6 @@ export async function start(db: DbServer, opts?: StartOpts) {
   await mkdir(path, { recursive: true }).catch(noop)
 
   db.dbCtxExternal = native.start((id: BridgeResponseEnum, buffer: any) => {
-    console.log('INCOMING', BridgeResponseInverse[id])
     if (id === BridgeResponse.query) {
       handleQueryResponse(db, buffer)
     } else if (id === BridgeResponse.modify) {
