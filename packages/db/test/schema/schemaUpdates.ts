@@ -3,7 +3,7 @@ import { DbClient } from '../../src/client/index.js'
 import { DbServer } from '../../src/server/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
-import { BasedDb, getDefaultHooks } from '../../src/db.js'
+import { BasedDb, getDefaultHooks } from '../../src/index.js'
 import { wait } from '../../src/utils/index.js'
 
 await test('client server schema updates', async (t) => {

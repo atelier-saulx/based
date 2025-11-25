@@ -1,7 +1,7 @@
-import { BasedDb } from '../src/db.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
-import { crc32 as nativeCrc32 } from '../src/db.js'
+import { crc32 as nativeCrc32 } from '../src/index.js'
 import { langCodesMap } from '../src/schema/index.js'
 import crc32c from '../src/hash/crc32c.js'
 

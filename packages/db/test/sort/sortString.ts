@@ -1,4 +1,4 @@
-import { BasedDb } from '../../src/db.js'
+import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal, isSorted } from '../shared/assert.js'
 import { text } from '../shared/examples.js'

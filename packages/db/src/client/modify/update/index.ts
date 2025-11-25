@@ -1,6 +1,6 @@
 import { Ctx } from '../Ctx.js'
 import { ModifyOpts } from '../types.js'
-import { DbClient } from '../../../db.js'
+import { DbClient } from '../../../index.js'
 import { getValidSchema, validateId, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
 import { Tmp } from '../Tmp.js'

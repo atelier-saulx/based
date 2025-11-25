@@ -21,7 +21,7 @@ import { DbServer } from './index.js'
 import { writeFile } from 'node:fs/promises'
 import { OpType } from '../zigTsExports.js'
 import type { SchemaTypeDef } from '../schema/index.js'
-import { COMMON_SDB_FILE, WRITELOG_FILE } from '../db.js'
+import { COMMON_SDB_FILE, WRITELOG_FILE } from '../index.js'
 
 type RangeDump = {
   file: string

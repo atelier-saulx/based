@@ -1,7 +1,7 @@
 import test from '../shared/test.js'
 import native from '../../src/native.js'
 import { clientWorker } from '../shared/startWorker.js'
-import { BasedDb } from '../../src/db.js'
+import { BasedDb } from '../../src/index.js'
 import { italy } from '../shared/examples.js'
 import { registerSubscription } from '../../src/client/query/subscription/toByteCode.js'
 import { writeUint32 } from '../../src/utils/index.js'

@@ -1,5 +1,5 @@
 import { deepEqual } from 'assert'
-import { BasedDb } from '../src/db.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
 await test('copy', async (t) => {

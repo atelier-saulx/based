@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { BasedDb } from '../src/db.js'
+import { BasedDb } from '../src/index.js'
 import native from '../src/native.js'
 import test from './shared/test.js'
 import { langCodesMap, Schema } from '../src/schema/index.js'

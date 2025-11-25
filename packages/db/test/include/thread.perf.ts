@@ -1,6 +1,8 @@
 import { wait } from '../../src/utils/index.js'
-import { BasedDb } from '@based/sdk'
 import test from '../shared/test.js'
+import { perf } from '../shared/assert.js'
+import { italy } from '../shared/examples.js'
+import { BasedDb } from '../../src/index.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -23,13 +25,13 @@ await test('include', async (t) => {
     },
   })
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 10000; i++) {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
       body: {
         de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
-        en: 'poopTIMES!',
+        en: italy,
       },
     })
   }
@@ -40,32 +42,36 @@ await test('include', async (t) => {
 
   await db
     .query('user')
+    .locale('de')
     .include('name', 'body', { end: 10 })
     .range(0, 1)
     .get()
     .inspect()
 
-  await db.query('user').include('name', 'body').range(0, 1).get().inspect()
+  // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
 
-  // await perf(
-  //   async () => {
-  //     const q: any[] = []
-  //     for (let i = 0; i < 100; i++) {
-  //       q.push(
-  //         db
-  //           .query('user')
-  //           .include('name', 'body')
-  //           .range(0, 1e6 + i)
-  //           .get(),
-  //       )
-  //     }
-  //     await Promise.all(q)
-  //   },
-  //   'Nodes',
-  //   { repeat: 10 },
-  // )
+  await perf(
+    async () => {
+      const q: any[] = []
+      for (let i = 0; i < 1000; i++) {
+        q.push(
+          db
+            .query('user')
+            .include('name', 'body')
+            // .include('name', 'body', { end: 2 })
+            .range(0, 1e6 + i)
+            .get(),
+          // .inspect(),
+          // .inspect(),
+        )
+      }
+      await Promise.all(q)
+    },
+    'Nodes',
+    { repeat: 10 },
+  )
 
   console.log('done')
 
-  await wait(100)
+  // await wait(100)
 })

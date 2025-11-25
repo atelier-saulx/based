@@ -20,7 +20,7 @@ import {
 } from '../zigTsExports.js'
 import { deSerialize } from '../schema/serialize.js'
 import { BLOCK_CAPACITY_DEFAULT } from '../schema/index.js'
-import { SCHEMA_FILE, SCHEMA_FILE_DEPRECATED, WRITELOG_FILE } from '../db.js'
+import { SCHEMA_FILE, SCHEMA_FILE_DEPRECATED, WRITELOG_FILE } from '../index.js'
 
 export type StartOpts = {
   clean?: boolean

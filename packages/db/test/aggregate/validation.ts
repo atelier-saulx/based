@@ -1,5 +1,5 @@
 import { equal } from 'node:assert'
-import { BasedDb } from '../../src/db.js'
+import { BasedDb } from '../../src/index.js'
 import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
 import { throws, deepEqual } from '../shared/assert.js'

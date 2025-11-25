@@ -1,5 +1,5 @@
 import { fastPrng, wait } from '../src/utils/index.js'
-import { BasedDb } from '../src/db.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 

@@ -1,5 +1,5 @@
 import { equal } from './shared/assert.js'
-import { BasedDb } from '../src/db.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
 await test('dependent', async (t) => {

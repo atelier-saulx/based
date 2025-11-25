@@ -1,5 +1,5 @@
 import test from '../shared/test.js'
-import { BasedDb } from '../../src/db.js'
+import { BasedDb } from '../../src/index.js'
 import { deepCopy } from '../../src/utils/index.js'
 import type { SchemaIn } from '../../src/schema/index.js'
 import { deepEqual } from '../shared/assert.js'

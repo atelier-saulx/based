@@ -9,7 +9,7 @@ import {
 } from '../cursor.js'
 import { writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
-import { DbClient } from '../../../db.js'
+import { DbClient } from '../../../index.js'
 import { schedule } from '../drain.js'
 import { ModifyOpts } from '../types.js'
 import { writeSeparate } from '../props/separate.js'

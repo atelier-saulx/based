@@ -1,4 +1,4 @@
-import { BasedDb, groupBy } from '../../src/db.js'
+import { BasedDb, groupBy } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 

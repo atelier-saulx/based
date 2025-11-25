@@ -2,7 +2,7 @@ import { equal, notEqual } from 'node:assert'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
-import { BasedDb } from '../../src/db.js'
+import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 

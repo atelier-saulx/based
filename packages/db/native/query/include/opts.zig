@@ -110,8 +110,6 @@ pub fn string(
         return;
     }
 
-    std.debug.print("opts {any} \n", .{opts});
-
     if (opts.isChars) {
         if (value[1] == 1) {
             var extraSize: usize = undefined;

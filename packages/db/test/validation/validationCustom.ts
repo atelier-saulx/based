@@ -1,4 +1,4 @@
-import { BasedDb } from '../../src/db.js'
+import { BasedDb } from '../../src/index.js'
 import { throws } from '../shared/assert.js'
 import test from '../shared/test.js'
 

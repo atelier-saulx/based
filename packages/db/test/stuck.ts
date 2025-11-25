@@ -1,4 +1,4 @@
-import { BasedDb } from '../src/db.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 
 // Some externals can cause issues with GC and the event loop.

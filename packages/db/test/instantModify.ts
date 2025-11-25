@@ -1,5 +1,5 @@
 import { wait } from '../src/utils/index.js'
-import { BasedDb } from '../src/db.js'
+import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'

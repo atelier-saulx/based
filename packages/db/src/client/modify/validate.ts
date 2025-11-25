@@ -1,4 +1,4 @@
-import { DbClient } from '../../db.js'
+import { DbClient } from '../../index.js'
 import {
   isValidId,
   type PropDef,

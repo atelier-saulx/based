@@ -6,7 +6,7 @@ import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
 import { readUint32, writeUint32 } from '../utils/index.js'
 import { OpType } from '../zigTsExports.js'
 import { serialize, updateTypeDefs, type SchemaOut } from '../schema/index.js'
-import { SCHEMA_FILE } from '../db.js'
+import { SCHEMA_FILE } from '../index.js'
 
 const schemaOpId = idGenerator()
 

@@ -1,5 +1,5 @@
 import { notEqual } from 'node:assert'
-import { BasedDb } from '../src/db.js'
+import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 

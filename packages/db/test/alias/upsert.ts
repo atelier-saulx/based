@@ -1,4 +1,4 @@
-import { BasedDb, DbClient, getDefaultHooks } from '../../src/db.js'
+import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
 import { equal } from '../shared/assert.js'
 import test from '../shared/test.js'
 

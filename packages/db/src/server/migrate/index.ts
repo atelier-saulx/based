@@ -1,4 +1,4 @@
-import { BasedDb } from '../../db.js'
+import { BasedDb } from '../../index.js'
 import { dirname, join } from 'path'
 import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
