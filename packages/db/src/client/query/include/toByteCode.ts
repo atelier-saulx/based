@@ -235,6 +235,7 @@ export const includeToBuffer = (
                   : true,
               end: getEnd(propDef.opts),
               lang: LangCode.NONE,
+              hasLangFallback: false,
             }),
           )
         } else {

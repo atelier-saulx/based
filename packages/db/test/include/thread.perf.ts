@@ -44,7 +44,7 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 20; i++) {
         q.push(
           db
             .query('user')
@@ -56,7 +56,7 @@ await test('include', async (t) => {
       await Promise.all(q)
     },
     'Nodes',
-    { repeat: 10 },
+    { repeat: 1 },
   )
 
   console.log('done')

@@ -46,8 +46,10 @@ function setSchemaIds(db: DbServer, ids: Uint32Array): Promise<void> {
   })
 }
 
-
-export const setSchemaOnServer = async (server: DbServer, schema: SchemaOut) => {
+export const setSchemaOnServer = async (
+  server: DbServer,
+  schema: SchemaOut,
+) => {
   const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
   server.schema = schema
   server.schemaTypesParsed = schemaTypesParsed
@@ -73,6 +75,7 @@ export async function createSelvaType(
 ): Promise<void> {
   const msg = new Uint8Array(5 + schema.byteLength)
 
+  console.log('CREATE TYPE', typeId)
   writeUint32(msg, typeId, 0)
   msg[4] = OpType.createType
   msg.set(schema, 5)

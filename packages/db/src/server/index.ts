@@ -251,8 +251,6 @@ export class DbServer extends DbShared {
     await writeSchemaFile(this, schema)
     console.log('hehe')
 
-    console.warn('WAITING 500MS AFTER SCHEMA FOR FIXFIX')
-    await wait(500)
     process.nextTick(() => {
       this.emit('schema', this.schema!)
     })

@@ -68,8 +68,10 @@ pub fn createDbCtx(
         db_backing_allocator.destroy(arena);
     }
 
+    // try std.Thread.getCpuCount() - 1
+
     dbCtxPointer.* = .{
-        .threads = try threads.Threads.init(allocator, try std.Thread.getCpuCount() - 1, dbCtxPointer),
+        .threads = try threads.Threads.init(allocator, 30, dbCtxPointer),
         .id = rand.int(u32),
         .arena = arena,
         .allocator = allocator,

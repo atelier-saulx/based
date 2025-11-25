@@ -1,11 +1,11 @@
 const std = @import("std");
-const Query = @import("common.zig");
+const Query = @import("../common.zig");
 const utils = @import("../../utils.zig");
 const Node = @import("../../selva/node.zig");
 const Thread = @import("../../thread/thread.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
-const opts = @import("../opts.zig");
+const opts = @import("./opts.zig");
 const t = @import("../../types.zig");
 
 pub inline fn appendInclude(thread: *Thread.Thread, prop: u8, value: []u8) !void {

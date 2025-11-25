@@ -104,7 +104,7 @@ pub const Threads = struct {
         }
     }
 
-    fn modifyNotPending(
+    inline fn modifyNotPending(
         self: *Threads,
     ) void {
         for (self.threads) |thread| {
@@ -112,6 +112,7 @@ pub const Threads = struct {
                 return;
             }
         }
+        _ = self.modifyQueue.swapRemove(0);
         self.modifyDone.signal();
         if (!self.jsModifyBridgeStaged) {
             self.ctx.jsBridge.call(t.BridgeResponse.modify, 0);
@@ -276,16 +277,14 @@ pub const Threads = struct {
                             const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(m[5..m.len])));
                             const len = (m.len - 5) / @sizeOf(u32);
                             self.ctx.ids = try self.ctx.allocator.dupe(u32, ptr[0..len]);
-                            std.log.err("donedo {any}", .{utils.read(u32, m, 0)});
                         },
                         else => {},
                     }
-
                     thread.modify.commit();
 
                     self.mutex.lock();
-                    _ = self.modifyQueue.swapRemove(0);
                     self.pendingModifies -= 1;
+                    thread.pendingModifies -= 1;
 
                     if (thread.modify.index > 50_000_000) {
                         thread.*.flushed = false;
@@ -295,7 +294,6 @@ pub const Threads = struct {
                         self.mutex.lock();
                     }
 
-                    thread.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
                     }
