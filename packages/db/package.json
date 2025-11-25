@@ -3,18 +3,22 @@
   "version": "1.1.5",
   "type": "module",
   "main": "./dist/sdk.js",
+  "//temporarily-private-for-dev": true,
+  "private": true,
   "scripts": {
     "build-c": "make -C clibs",
     "build-zig": "zig build",
     "build-ts": "tsc -p tsconfig.build.json",
     "build-native": "npm run build-c && npm run build-zig",
-    "build-zig-ts-exports": "tsx scripts/zigTsExports.ts",
-    "build": "npm run concurrently npm:build-native npm:build-ts npm:build-zig-ts-exports",
+    "build-exports": "tsx scripts/zigTsExports.ts",
+    "build-ts-bundle": "tsdown --dts",
+    "build": "npm run concurrently npm:build-native npm:build-ts npm:build-exports",
     "watch-zig": "zig build --watch",
     "watch-ts": "tsc -p tsconfig.build.json --watch",
     "watch-native": "npm run build-c && npm run watch-zig",
-    "watch-zig-ts-exports": "tsx --watch-path=./native/types.zig scripts/zigTsExports.ts ",
-    "watch": "npm run concurrently npm:watch-native npm:watch-ts npm:watch-zig-ts-exports",
+    "watch-exports": "tsx --watch-path=./native/types.zig scripts/zigTsExports.ts ",
+    "watch": "npm run concurrently npm:watch-native npm:watch-ts npm:watch-exports",
+    
     "concurrently": "concurrently -c 'grey,blue,cyan'",
     "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64) && npm run build-zig linux-aarch64 && tsc",
     "build-release-debug": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
@@ -55,13 +59,14 @@
     "jsondiffpatch": "^0.7.3",
     "prettier": "^3.6.2",
     "tar": "^7.4.3",
+    "tsdown": "^0.16.7",
     "tsx": "^4.20.6",
     "typescript": "^5.6.3"
   },
   "exports": {
     ".": "./dist/sdk.js",
     "./db": "./dist/index.js",
-    "./schema": "./dist/schema/index.js"
+    "./schema": "./dist/schema.js"
   },
   "dependencies": {
     "@based/opts": "^1.1.0",
