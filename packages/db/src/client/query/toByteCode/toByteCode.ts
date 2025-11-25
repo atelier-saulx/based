@@ -2,22 +2,26 @@ import {
   IntermediateByteCode,
   QueryDef,
   QueryDefType,
-  includeOp,
+  QueryType,
 } from '../types.js'
 import { includeToBuffer } from '../include/toByteCode.js'
 import { DbClient } from '../../index.js'
-import { writeUint32, writeUint64 } from '@based/utils'
-import { defaultQuery } from './default.js'
-import { idQuery } from './id.js'
-import { aliasQuery } from './alias.js'
-import { idsQuery } from './ids.js'
-import { referencesQuery } from './references.js'
-import { referenceQuery } from './reference.js'
-import { aggregatesQuery } from './aggregates.js'
+import { writeUint32 } from '@based/utils'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
 import { byteSize, schemaChecksum } from './utils.js'
+import { filterToBuffer } from '../query.js'
+import { getQuerySubType } from './subType.js'
+import {
+  createQueryHeader,
+  ID_PROP,
+  QueryHeaderByteSize,
+  SortHeaderByteSize,
+  writeQueryHeader,
+  writeSortHeader,
+} from '../../../zigTsExports.js'
+import { searchToBuffer } from '../search/index.js'
 
 export function defToBuffer(
   db: DbClient,
@@ -56,6 +60,8 @@ export function defToBuffer(
   //   return result
   // }
 
+  // def.type === aggret
+
   if (def.type === QueryDefType.Root) {
     if (def.target.resolvedAlias) {
       // result.push(aliasQuery(def))
@@ -73,7 +79,78 @@ export function defToBuffer(
       //   }
       //   result.push(idsQuery(def))
     } else {
-      result.push(defaultQuery(db, def))
+      const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
+      const hasSearch = !!def.search
+      const hasFilter = def.filter.size > 0
+      const searchSize = hasSearch ? def.search.size : 0
+      const sortSize = hasSort ? SortHeaderByteSize : 0
+      const filterSize = def.filter.size
+
+      const include = includeToBuffer(db, def)
+      // also add reference
+      // also add references
+      // also add edge
+
+      const buffer = new Uint8Array(
+        QueryHeaderByteSize + searchSize + filterSize + sortSize,
+      )
+
+      let index = writeQueryHeader(
+        buffer,
+        {
+          op: QueryType.default,
+          prop: ID_PROP,
+          size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
+          typeId: def.schema.id,
+          offset: def.range.offset,
+          limit: def.range.limit,
+          sort: hasSort,
+          includeEdge: false,
+          edgeIncludeOffset: 0,
+          filterSize: def.filter.size,
+          searchSize,
+          subType: getQuerySubType(def),
+        },
+        0,
+      )
+
+      console.log(
+        'HERE PUT',
+        createQueryHeader({
+          op: QueryType.default,
+          prop: ID_PROP,
+          size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
+          typeId: def.schema.id,
+          offset: def.range.offset,
+          limit: def.range.limit,
+          sort: hasSort,
+          includeEdge: false,
+          edgeIncludeOffset: 0,
+          filterSize: def.filter.size,
+          searchSize,
+          subType: getQuerySubType(def),
+        }),
+      )
+
+      if (hasSort) {
+        index = writeSortHeader(buffer, def.sort, index)
+      }
+
+      if (hasFilter) {
+        buffer.set(filterToBuffer(def.filter, index), index)
+        index += def.filter.size
+      }
+
+      if (hasSearch) {
+        buffer.set(searchToBuffer(def.search), index)
+      }
+
+      console.log({ include })
+
+      result.push([
+        { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
+        include,
+      ])
     }
   } else if (def.type === QueryDefType.References) {
     // result.push(referencesQuery(def, size))

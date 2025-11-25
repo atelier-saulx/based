@@ -55,6 +55,10 @@ pub inline fn writeAs(T: type, buffer: []u8, value: anytype, offset: usize) void
 pub inline fn write(buffer: []u8, value: anytype, offset: usize) void {
     const T = @TypeOf(value);
     switch (@typeInfo(T)) {
+        .pointer => |info| {
+            const ChildType = info.child;
+            copy(ChildType, buffer, value, offset);
+        },
         .@"enum" => |info| {
             const TagType = info.tag_type;
             const target = buffer[offset..][0 .. @bitSizeOf(TagType) / 8];

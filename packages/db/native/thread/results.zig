@@ -74,7 +74,19 @@ pub const Result = struct {
     }
 
     pub inline fn append(self: *Result, value: anytype) !void {
-        utils.write(try self.slice(utils.sizeOf(@TypeOf(value))), value, 0);
+        const T = @TypeOf(value);
+        switch (@typeInfo(T)) {
+            .pointer => |info| {
+                if (info.size == .slice) {
+                    utils.write(try self.slice(value.len), value, 0);
+                } else {
+                    @compileError("Read: Only slice pointers supported for now... " ++ @typeName(T));
+                }
+            },
+            else => {
+                utils.write(try self.slice(utils.sizeOf(T)), value, 0);
+            },
+        }
     }
 
     pub inline fn appendAs(self: *Result, comptime T: type, value: T) !usize {

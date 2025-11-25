@@ -1,7 +1,13 @@
 import { writeInt64, writeUint16, writeUint32 } from '@based/utils'
 import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
-import { ID } from '../toByteCode/offsets.js'
+
+// replace with single
+// import { ID } from '../toByteCode/offsets.js'
+
+// CHANGE WITH HEADER
+const ID_OFFSET = 3
+
 import { FilterMetaNow, QueryDef, QueryDefFilter, QueryType } from '../types.js'
 import { SubscriptionType } from './types.js'
 
@@ -105,7 +111,7 @@ export const registerSubscription = (query: BasedDbQuery) => {
     const fields = collectFields(query.def)
     const typeId = query.def.schema!.id
     const subId = native.crc32(
-      query.buffer!.subarray(ID.id + 4, query.buffer!.byteLength - 4),
+      query.buffer.subarray(ID_OFFSET + 4, query.buffer.byteLength - 4),
     )
     const headerLen = 18
     const types = collectTypes(query.def)

@@ -257,16 +257,6 @@ export const isAlias = (
   )
 }
 
-export const enum includeOp {
-  DEFAULT = 1,
-  REFS_AGGREGATION = 2,
-  EDGE = 3,
-  REFERENCES = 4,
-  REFERENCE = 5,
-  META = 6, // this can be a small buffer as well
-  PARTIAL = 7,
-}
-
 export type IntermediateByteCodeLeaf =
   | {
       buffer: Uint8Array
