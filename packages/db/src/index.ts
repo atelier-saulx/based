@@ -1,6 +1,6 @@
 import { stringCompress } from './client/string.js'
 import { DbServer } from './server/index.js'
-import { DbClient } from './client/index.js'
+import { DbClient, QueryId } from './client/index.js'
 import { debugMode, debugServer } from './utils.js'
 import { getDefaultHooks } from './hooks.js'
 import { Emitter } from './shared/Emitter.js'
@@ -17,11 +17,15 @@ export * from './client/query/BasedDbQuery.js'
 export * from './client/query/BasedQueryResponse.js'
 export * from './hooks.js'
 export * from './server/subscription.js'
+import { ParseSchemaDef } from './client/query/typeInference.js'
+import { BasedDbQuery } from './client/query/BasedDbQuery.js'
 
 export { getDefaultHooks, BasedDbOpts }
 
-export class BasedDb extends Emitter {
-  client: DbClient
+export class BasedDb<
+  SchemaDef extends { types: any } = { types: any },
+> extends Emitter {
+  client: DbClient<SchemaDef>
   server: DbServer
   fileSystemPath: string
 
@@ -32,7 +36,7 @@ export class BasedDb extends Emitter {
       path: opts.path,
       saveIntervalInSeconds: opts.saveIntervalInSeconds,
     })
-    const client = new DbClient({
+    const client = new DbClient<SchemaDef>({
       maxModifySize: opts.maxModifySize,
       hooks: getDefaultHooks(server),
     })
@@ -79,8 +83,21 @@ export class BasedDb extends Emitter {
     return this.client.expire.apply(this.client, arguments)
   }
 
-  query: DbClient['query'] = function (this: BasedDb) {
-    return this.client.query.apply(this.client, arguments)
+  // query: DbClient['query'] = function (this: BasedDb) {
+  //   return this.client.query.apply(this.client, arguments)
+  // }
+  // Overload 1: Typed Query
+  query<K extends keyof ParseSchemaDef<SchemaDef> & string>(
+    type: K,
+    id?: QueryId,
+  ): BasedDbQuery<ParseSchemaDef<SchemaDef>[K], {}>
+
+  // Overload 2: Root Query
+  query(): BasedDbQuery<ParseSchemaDef<SchemaDef>, {}>
+
+  // Implementation (Forwarding logic)
+  query(type?: string, id?: QueryId): BasedDbQuery<any, any> {
+    return this.client.query.apply(this.client, arguments as any)
   }
 
   schemaIsSet: DbClient['schemaIsSet'] = function (this: BasedDb) {

@@ -32,19 +32,28 @@ import {
   type LangName,
 } from '../../schema/lang.js'
 import { AggregateType, type ReaderSchema } from '../../protocol/index.js'
+import { Unpacked } from './typeInference.js'
 
 export { QueryByAliasObj }
 
-export type SelectFn = (field: string) => BasedDbReferenceQuery
+// export type SelectFn = (field: string) => BasedDbReferenceQuery // TODO: BasedDbReferenceQuery
+export type SelectFn<T> = <K extends keyof T>(
+  field: K,
+) => BasedDbQuery<T, Pick<T, K>>
 
-export type BranchInclude = (select: SelectFn) => any
+// export type BranchInclude = (select: SelectFn) => any // TODO: to check
+export type BranchInclude<SchemaType> = <SubSelection>(
+  select: (
+    q: BasedDbQuery<SchemaType, {}>,
+  ) => BasedDbQuery<SchemaType, SubSelection>,
+) => SubSelection
 
 export type QueryCommand = {
   method: string
   args: any[]
 }
 
-export class QueryBranch<T> {
+export class QueryBranch<SchemaType = any, Result = {}> {
   db: DbClient
   def?: QueryDef
   queryCommands?: QueryCommand[]
@@ -54,7 +63,7 @@ export class QueryBranch<T> {
     this.def = def
   }
 
-  sort(field: string, order: 'asc' | 'desc' = 'asc'): T {
+  sort(field: string, order: 'asc' | 'desc' = 'asc'): this {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'sort',
@@ -72,7 +81,7 @@ export class QueryBranch<T> {
     operator?: O | boolean,
     value?: any,
     opts?: FilterOpts<O>,
-  ): T {
+  ): this {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'filter',
@@ -90,20 +99,20 @@ export class QueryBranch<T> {
     return this
   }
 
-  search(query: string, ...fields: Search[]): T
+  search(query: string, ...fields: Search[]): this
 
   search(
     query: ArrayBufferView,
     field: string,
     opts?: Omit<FilterOpts, 'lowerCase'>,
-  ): T
+  ): this
 
   search(
     query: string | ArrayBufferView,
-    field?: Search | string,
+    field?: Search | keyof SchemaType,
     opts?: Omit<FilterOpts, 'lowerCase'> | Search,
     ...fields: Search[]
-  ): T {
+  ): this {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'search',
@@ -164,7 +173,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  groupBy(field: string, step?: StepInput): T {
+  groupBy(field: string, step?: StepInput): this {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'groupBy',
@@ -178,7 +187,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  count(): T {
+  count(): this {
     const fields: string[] = ['count']
     if (this.queryCommands) {
       this.queryCommands.push({
@@ -192,7 +201,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  sum(...fields: string[]): T {
+  sum(...fields: string[]): this {
     if (fields.length === 0) {
       throw new Error('Empty sum() called')
     }
@@ -209,7 +218,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  cardinality(...fields: string[]): T {
+  cardinality(...fields: string[]): this {
     if (fields.length === 0) {
       throw new Error('Empty cardinality() called')
     }
@@ -226,7 +235,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  stddev(...args: (string | aggFnOptions)[]): T {
+  stddev(...args: (string | aggFnOptions)[]): this {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'stddev',
@@ -255,7 +264,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  var(...args: (string | aggFnOptions)[]): T {
+  var(...args: (string | aggFnOptions)[]): this {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'var',
@@ -284,7 +293,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  avg(...fields: string[]): T {
+  avg(...fields: string[]): this {
     if (fields.length === 0) {
       throw new Error('Empty average function called')
     }
@@ -300,7 +309,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  harmonicMean(...fields: string[]): T {
+  harmonicMean(...fields: string[]): this {
     if (fields.length === 0) {
       throw new Error('Empty harmonic mean function called')
     }
@@ -317,7 +326,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  max(...fields: string[]): T {
+  max(...fields: string[]): this {
     if (fields.length === 0) {
       throw new Error('Empty maximum function called')
     }
@@ -334,7 +343,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  min(...fields: string[]): T {
+  min(...fields: string[]): this {
     if (fields.length === 0) {
       throw new Error('Empty minimum function called')
     }
@@ -351,19 +360,19 @@ export class QueryBranch<T> {
     return this
   }
 
-  or(fn: FilterBranchFn): T
+  or(fn: FilterBranchFn): this
   or(
     field: string,
     operator?: Operator | boolean,
     value?: any,
     opts?: FilterOpts,
-  ): T
+  ): this
   or(
     field: string | FilterBranchFn,
     operator?: Operator | boolean,
     value?: any,
     opts?: FilterOpts,
-  ): T {
+  ): this {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'or',
@@ -390,7 +399,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  range(start: number, end: number = DEF_RANGE_PROP_LIMIT): T {
+  range(start: number, end: number = DEF_RANGE_PROP_LIMIT): this {
     if (this.queryCommands) {
       this.queryCommands.push({ method: 'range', args: [start, end] })
     } else {
@@ -423,14 +432,24 @@ export class QueryBranch<T> {
   //   return this
   // }
 
-  include(
-    ...fields: (
-      | string
-      | BranchInclude
-      | IncludeOpts
-      | (string | IncludeOpts)[]
-    )[]
-  ): T {
+  include<K extends keyof SchemaType>(
+    ...fields: (K | IncludeOpts)[]
+  ): BasedDbQuery<SchemaType, Result & Pick<SchemaType, K>>
+
+  include<K extends keyof SchemaType, SubSelection>(
+    relation: K,
+    branch: (
+      q: BasedDbQuery<Unpacked<SchemaType[K]>, {}>,
+    ) => BasedDbQuery<any, SubSelection>,
+  ): BasedDbQuery<
+    SchemaType,
+    Result & {
+      [P in K]: SchemaType[K] extends any[] ? SubSelection[] : SubSelection
+    }
+  >
+  include(...fields: (string | IncludeOpts)[]): BasedDbQuery<SchemaType, any>
+
+  include(...fields: any[]): any {
     if (this.queryCommands) {
       this.queryCommands.push({ method: 'include', args: fields })
     } else {
@@ -486,7 +505,9 @@ class GetPromise extends Promise<BasedQueryResponse> {
   }
 }
 
-export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
+export class BasedDbQuery<SchemaType = any, Result = {}> extends QueryBranch<
+  BasedDbQuery<SchemaType, Result>
+> {
   skipValidation?: boolean = false
   target: QueryTarget
   readSchema: ReaderSchema

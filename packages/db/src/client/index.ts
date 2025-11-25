@@ -18,6 +18,7 @@ import {
   type SchemaMigrateFns,
   type SchemaOut,
 } from '../schema/index.js'
+import { ParseSchemaDef } from './query/typeInference.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -26,7 +27,20 @@ type DbClientOpts = {
   debug?: boolean
 }
 
-export class DbClient extends DbShared {
+export type QueryId =
+  | number
+  | Promise<number>
+  | (number | Promise<number>)[]
+  | QueryByAliasObj
+  | QueryByAliasObj[]
+  | Uint32Array
+  | { [alias: string]: string }
+
+// force SchemaDef to extend { types: any } so ParseSchemaDef is happy.
+// default it to { types: any } so existing code using 'new DbClient()' doesn't break.
+export class DbClient<
+  SchemaDef extends { types: any } = { types: any },
+> extends DbShared {
   constructor({
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -140,29 +154,14 @@ export class DbClient extends DbShared {
     return this.create(type, props)
   }
 
-  query(
-    type: string,
-    id?:
-      | number
-      | Promise<number>
-      | (number | Promise<number>)[]
-      | QueryByAliasObj
-      | QueryByAliasObj[]
-      | Uint32Array,
-  ): BasedDbQuery
+  query<K extends keyof ParseSchemaDef<SchemaDef> & string>(
+    type: K,
+    id?: QueryId,
+  ): BasedDbQuery<ParseSchemaDef<SchemaDef>[K], {}>
 
-  query(): BasedDbQuery
+  query(): BasedDbQuery<ParseSchemaDef<SchemaDef>, {}>
 
-  query(
-    type?: string,
-    id?:
-      | number
-      | number[]
-      | QueryByAliasObj
-      | QueryByAliasObj[]
-      | Uint32Array
-      | { [alias: string]: string }, // alias
-  ): BasedDbQuery {
+  query(type?: string, id?: QueryId): BasedDbQuery {
     if (type === undefined) {
       return new BasedDbQuery(this, '_root', 1)
     }
