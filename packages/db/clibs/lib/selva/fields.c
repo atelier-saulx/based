@@ -1769,7 +1769,7 @@ int selva_fields_references_swap(
     return 0;
 }
 
-static struct SelvaNode *next_ref_edge_node(struct SelvaDb *db, struct SelvaTypeEntry *edge_type, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+static struct SelvaNode *next_ref_edge_node(struct SelvaTypeEntry *edge_type, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
     node_id_t next_id = (edge_type->max_node) ? edge_type->max_node->node_id + 1 : 1;
     struct SelvaNode *edge;
@@ -1780,7 +1780,7 @@ static struct SelvaNode *next_ref_edge_node(struct SelvaDb *db, struct SelvaType
         next_id++;
     }
 
-    edge = selva_upsert_node(db, edge_type, next_id);
+    edge = selva_upsert_node(edge_type, next_id);
     if (dirty_cb) {
         dirty_cb(dirty_ctx, edge_type->type, next_id);
     }
@@ -1816,8 +1816,8 @@ struct SelvaNode *selva_fields_ensure_ref_edge(
         assert(edge);
     } else if (ref->edge == 0 || edge_id != 0) {
         edge = (edge_id != 0)
-            ? selva_upsert_node(db, edge_type, edge_id)
-            : next_ref_edge_node(db, edge_type, dirty_cb, dirty_ctx);
+            ? selva_upsert_node(edge_type, edge_id)
+            : next_ref_edge_node(edge_type, dirty_cb, dirty_ctx);
         if (!edge) {
             return nullptr;
         }
