@@ -25,7 +25,7 @@ await test('include', async (t) => {
     },
   })
 
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 1000; i++) {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
@@ -48,7 +48,7 @@ await test('include', async (t) => {
     .query('user')
     .locale('de')
     .include('name', 'body', { end: 10 })
-    .range(0, 1)
+    .range(0, 10)
     .get()
     .inspect()
 
