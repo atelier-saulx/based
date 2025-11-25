@@ -19,13 +19,13 @@ await test('include', async (t) => {
         props: {
           name: 'string',
           nr: 'uint32',
-          body: 'text',
+          body: { type: 'text' }, // compression: 'none'
         },
       },
     },
   })
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 10000; i++) {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
@@ -46,7 +46,7 @@ await test('include', async (t) => {
 
   await db
     .query('user')
-    .locale('de')
+    // .locale('de')
     .include('name', 'body', { end: 10 })
     .range(0, 10)
     .get()
@@ -57,15 +57,15 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1; i++) {
+      for (let i = 0; i < 10; i++) {
         q.push(
           db
             .query('user')
             .include('name', 'body')
             // .include('name', 'body', { end: 2 })
             .range(0, 1e6 + i)
-            .get(),
-          // .inspect(),
+            .get()
+            .inspect(),
           // .inspect(),
         )
       }
