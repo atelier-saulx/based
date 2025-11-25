@@ -40,13 +40,19 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q = []
-      for (let i = 0; i < 1; i++) {
-        q.push(db.query('user').include('name').range(0, 2).get().inspect())
+      for (let i = 0; i < 1000; i++) {
+        q.push(
+          db
+            .query('user')
+            .include('name')
+            .range(0, 1e6 + i)
+            .get(),
+        )
       }
       await Promise.all(q)
     },
     'Nodes',
-    { repeat: 1 },
+    { repeat: 10 },
   )
 
   console.log('done')

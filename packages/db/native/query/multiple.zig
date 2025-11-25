@@ -14,15 +14,7 @@ pub fn default(
 ) !void {
     var index: usize = 0;
     const header = utils.readNext(t.QueryHeader, q, &index);
-
     const nestedQuery = q[index..];
-    std.debug.print("flap\n {any}\n {any}\n {any}\n {any}\n {any}\n", .{
-        header,
-        utils.sizeOf(t.QueryHeader),
-        index,
-        nestedQuery,
-        q,
-    });
 
     // this will be a nice iterator
     var correctedForOffset: u32 = header.offset;

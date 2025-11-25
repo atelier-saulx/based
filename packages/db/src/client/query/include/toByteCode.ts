@@ -220,28 +220,31 @@ export const includeToBuffer = (
               // result.push(b)
             }
           }
+        } else if (hasOpts) {
+          result.push(
+            createIncludeHeader({
+              op: IncludeOp.defaultWithOpts,
+              prop,
+              propType: propType,
+            }),
+            createIncludeOptsHeader({
+              isChars:
+                propDef.opts?.bytes ||
+                (propType !== PropType.json && propType !== PropType.string)
+                  ? false
+                  : true,
+              end: getEnd(propDef.opts),
+              lang: LangCode.NONE,
+            }),
+          )
         } else {
           result.push(
             createIncludeHeader({
               op: IncludeOp.default,
               prop,
               propType: propType,
-              hasOpts,
             }),
           )
-          if (hasOpts) {
-            result.push(
-              createIncludeOptsHeader({
-                isChars:
-                  propDef.opts?.bytes ||
-                  (propType !== PropType.json && propType !== PropType.string)
-                    ? false
-                    : true,
-                end: getEnd(propDef.opts),
-                lang: LangCode.NONE,
-              }),
-            )
-          }
         }
       }
     }
