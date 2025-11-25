@@ -44,11 +44,11 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 1000; i++) {
         q.push(
           db
             .query('user')
-            .include('body')
+            .include('name', 'body')
             .range(0, 1e6 + i)
             .get(),
         )

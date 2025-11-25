@@ -49,6 +49,9 @@ fn callJsCallback(
         },
         t.BridgeResponse.flushQuery => {
             const thread = dbCtx.threads.threads[responseFn.threadId];
+
+            // std.debug.print("CALLBACK FLUSH #{any} \n", .{responseFn.threadId});
+
             var arrayBuffer: napi.Value = undefined;
             _ = napi.c.napi_create_external_arraybuffer(
                 env,
@@ -67,6 +70,7 @@ fn callJsCallback(
             _ = napi.c.napi_call_function(env, undefinedVal, jsCallback, 2, &args, null);
             thread.mutex.lock();
             thread.flushed = true;
+            // std.debug.print("SEND SIGNAL #{any} \n", .{responseFn.threadId});
             thread.flushDone.signal();
             thread.mutex.unlock();
         },
