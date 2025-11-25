@@ -6,8 +6,8 @@
     "allowJs": true,
     "noPropertyAccessFromIndexSignature": false,
     "rootDir": "./",
-    "composite": true
-    // "strictNullChecks": true
+    "composite": true,
+    "strictNullChecks": false
   },
   "include": ["./src", "./test"],
   "exclude": ["./dist"]

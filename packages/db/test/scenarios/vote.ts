@@ -287,7 +287,10 @@ await test('schema with many uint8 fields', async (t) => {
       })
     }
 
-    const timer = { sub: null, create: null }
+    const timer: {
+      sub?: NodeJS.Timeout
+      create?: NodeJS.Timeout
+    } = { sub: undefined, create: undefined }
 
     const getStuff = async () => {
       if (allPaymentsDone) {
@@ -363,7 +366,7 @@ await test('schema with many uint8 fields', async (t) => {
     return timer
   }
 
-  const x = []
+  const x: any[] = []
   for (let i = 0; i < maxHubs; i++) {
     x.push(startHub(i))
   }

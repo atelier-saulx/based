@@ -12,15 +12,6 @@ dist/
 src/
     cli/
         ...
-            clibs/
-            include/
-                selva/
-                ...
-            lib/
-                deflate/
-                jemmalloc/
-                selva/
-                xxHash/
     client/
         ...
     protocol/
@@ -31,7 +22,15 @@ src/
         ...
         uws/
     db/
-
+        clibs/
+            include/
+                selva/
+                ...
+            lib/
+                deflate/
+                jemmalloc/
+                selva/
+                xxHash/
         native/
             ...
         client/
@@ -47,6 +46,19 @@ test/
 # phase 3
 
 ```
-lib/
+dist/
+
 src/
+    cli/
+    client/
+    db/
+    react/
+    schema/
+    server/
+    utils/
+scripts/
+    build/
+    test/
+    release/
+test/
 ```

@@ -197,7 +197,7 @@ await test('update', async (t) => {
     },
   ])
 
-  const ids = []
+  const ids: any[] = []
   let snurpId = 1
   for (; snurpId <= 1e6; snurpId++) {
     ids.push(snurpId)
@@ -250,7 +250,7 @@ await test('update', async (t) => {
     ],
   )
 
-  const promises = []
+  const promises: any[] = []
   for (var j = 0; j < 1; j++) {
     for (var i = 0; i < 1e5; i++) {
       promises.push(db.query('snurp', i).include('a').get())

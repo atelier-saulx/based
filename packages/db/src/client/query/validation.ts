@@ -251,7 +251,7 @@ export const validateFilter = (
       f[2] = values.id
     }
 
-    if (validateVal(def, f, prop.validation)) {
+    if (validateVal(def, f, prop.validation!)) {
       return true
     }
   } else if (t === PropType.vector) {
@@ -328,7 +328,7 @@ export const validateType = (db: DbClient, def: QueryDef, type: string) => {
       code: ERR_TARGET_INVAL_TYPE,
       payload: type,
     })
-    EMPTY_SCHEMA_DEF.locales = db.schema.locales
+    EMPTY_SCHEMA_DEF.locales = db.schema!.locales!
     return EMPTY_SCHEMA_DEF
   }
   return r
@@ -371,7 +371,7 @@ export const includeLangDoesNotExist = (def: QueryDef, field: string) => {
 
 export const validateLocale = (def: QueryDef, lang: string) => {
   const schema = def.schema
-  if (!(lang in schema.locales)) {
+  if (!(lang in schema!.locales)) {
     def.errors.push({
       code: ERR_INVALID_LANG,
       payload: lang,
@@ -384,7 +384,7 @@ export const validateSort = (
   field: string,
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
-  let propDef = field === 'id' ? ID_FIELD_DEF : def.props[field]
+  let propDef = field === 'id' ? ID_FIELD_DEF : def.props![field]
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
@@ -399,10 +399,10 @@ export const validateSort = (
     if (field.includes('.')) {
       const path = field.split('.')
       const x = path.slice(0, -1).join('.')
-      propDef = def.props[x]
+      propDef = def.props![x]
       if (propDef && propDef.typeIndex === PropType.text) {
         const k = path[path.length - 1]
-        lang = langCodesMap.get(k)
+        lang = langCodesMap.get(k)!
         isText = true
       }
     }
@@ -458,7 +458,7 @@ export const validateAlias = (
   alias: QueryByAliasObj,
   path?: string,
 ): { def: PropDef; value: string } => {
-  const schema = def.schema
+  const schema = def.schema!
   for (const k in alias) {
     if (typeof alias[k] === 'string') {
       const p = path ? `${path}.${k}` : k
@@ -564,7 +564,7 @@ export const handleErrors = (def: QueryDef) => {
 }
 
 export const EMPTY_ALIAS_PROP_DEF: PropDef = {
-  schema: null,
+  schema: null as any,
   prop: 1,
   typeIndex: PropType.alias,
   __isPropDef: true,
@@ -577,7 +577,7 @@ export const EMPTY_ALIAS_PROP_DEF: PropDef = {
 }
 
 export const ERROR_STRING: PropDef = {
-  schema: null,
+  schema: null as any,
   prop: 1,
   typeIndex: PropType.string,
   __isPropDef: true,
@@ -590,7 +590,7 @@ export const ERROR_STRING: PropDef = {
 }
 
 export const ERROR_VECTOR: PropDef = {
-  schema: null,
+  schema: null as any,
   prop: 1,
   typeIndex: PropType.vector,
   __isPropDef: true,

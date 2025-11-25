@@ -53,7 +53,7 @@ await test('migration', async (t) => {
   })
 
   let i = 10
-  const _users = []
+  const _users: any[] = []
   while (i--) {
     _users.push(
       await db.create('user', {
@@ -466,10 +466,10 @@ await test('migration', async (t) => {
     },
   ])
 
-  const lastSchema = schemas.at(-1)
-  lastSchema.types.user.props.age = 'string'
-  const checksum1 = db.client.schema.hash
+  const lastSchema = schemas.at(-1)!
+  lastSchema.types.user.props!.age = 'string'
+  const checksum1 = db.client.schema!.hash
   await db.setSchema(lastSchema)
-  const checksum2 = db.client.schema.hash
+  const checksum2 = db.client.schema!.hash
   notEqual(checksum1, checksum2)
 })

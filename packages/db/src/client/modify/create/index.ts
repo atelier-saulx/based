@@ -30,10 +30,10 @@ const writeDefaults = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateDefaults) {
     return
   }
-  if (ctx.defaults !== ctx.schema.separateDefaults.props.size) {
-    for (const def of ctx.schema.separateDefaults.props.values()) {
+  if (ctx.defaults !== ctx.schema.separateDefaults!.props.size) {
+    for (const def of ctx.schema.separateDefaults!.props.values()) {
       const type = def.typeIndex
-      if (ctx.schema.separateDefaults.bufferTmp[def.prop] === 0) {
+      if (ctx.schema.separateDefaults!.bufferTmp[def.prop] === 0) {
         writeSeparate(ctx, def, def.default)
         continue
       }
@@ -141,7 +141,7 @@ export const writeCreate = (
   ctx: Ctx,
   schema: SchemaTypeDef,
   payload: any,
-  opts: ModifyOpts,
+  opts?: ModifyOpts,
 ) => {
   validatePayload(payload)
 
@@ -155,7 +155,7 @@ export const writeCreate = (
         val = val?.[key]
       }
       if (val !== undefined) {
-        obj[key] = def.hooks.create(val, obj)
+        obj[key!] = def.hooks!.create!(val, obj)
       }
     }
   }
@@ -182,9 +182,9 @@ export const writeCreate = (
   ctx.schema = schema
   ctx.operation = ModOp.createProp
   ctx.unsafe = opts?.unsafe
-  ctx.locale = opts?.locale && langCodesMap.get(opts.locale)
+  ctx.locale = (opts?.locale && langCodesMap.get(opts.locale)) || 0
   // TODO: can we remove this (and just init main buffer here?)
-  ctx.cursor.main = null
+  ctx.cursor.main = undefined
 
   reserve(ctx, FULL_CURSOR_SIZE)
   writeTypeCursor(ctx)

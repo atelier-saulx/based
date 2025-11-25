@@ -249,7 +249,7 @@ await test('string + refs', async (t) => {
     },
   })
 
-  const users = []
+  const users: any[] = []
 
   for (let i = 0; i < 1; i++) {
     const blup = db.create('blup', {
@@ -388,7 +388,7 @@ await test('Big string disable compression', async (t) => {
     'Get multiple big strings (uncompressed)',
   )
 
-  const xuz = []
+  const xuz: any[] = []
   for (let i = 0; i < 10; i++) {
     xuz.push(ENCODER.encode(euobserver))
   }

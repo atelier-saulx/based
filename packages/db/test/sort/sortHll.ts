@@ -141,7 +141,7 @@ await test('sortCardinality', async (t) => {
   let successTrials = 0
 
   for (let trial = 0; trial < numTrials; trial++) {
-    let brazos = []
+    let brazos: any[] = []
     let num_brazos = 1e4
     for (let i = 0; i < num_brazos; i++) {
       brazos.push(names[Math.floor(Math.random() * names.length)] + i)

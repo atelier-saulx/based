@@ -15,7 +15,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 type Native = typeof native
 type Utils = typeof utils
 
-export const clientWorker = async <T>(
+export const clientWorker = async <T extends any>(
   t: any,
   db: BasedDb,
   fn: (

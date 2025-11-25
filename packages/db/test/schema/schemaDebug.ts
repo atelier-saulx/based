@@ -4,6 +4,7 @@ import test from '../shared/test.js'
 import { deepCopy, deepMerge, wait } from '@based/utils'
 import { copy, emptyDir } from 'fs-extra/esm'
 import { deepEqual, equal } from '../shared/assert.js'
+import type { SchemaOut } from '@based/schema'
 
 const cleanProps = (props) => {
   for (const i in props) {
@@ -33,9 +34,10 @@ const removeInverseProps = (props) => {
   }
 }
 
-const cleanSchema = (schema: DbServer['schema']) => {
+const cleanSchema = (schema: SchemaOut) => {
   const schemaCopy = deepCopy(schema)
 
+  // @ts-ignore
   delete schemaCopy.hash
 
   for (const type in schemaCopy.types) {

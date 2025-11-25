@@ -162,7 +162,7 @@ await test('sort multicore', async (t) => {
     'asc',
   )
 
-  const q = []
+  const q: any[] = []
   for (let j = 0; j < 2; j++) {
     q.push(
       (async () => {

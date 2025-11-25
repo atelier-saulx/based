@@ -105,7 +105,7 @@ export const migrate = async (
   }
 
   const tmpDb = new BasedDb({
-    path: null,
+    path: '',
   })
 
   await tmpDb.start({
@@ -231,5 +231,5 @@ export const migrate = async (
   // })
   await writeSchemaFile(server, toSchema)
   server.migrating = 0
-  process.nextTick(() => server.emit('schema', server.schema))
+  process.nextTick(() => server.emit('schema', server.schema!))
 }

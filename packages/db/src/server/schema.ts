@@ -89,7 +89,7 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
   if (schema.types._root) {
     const tmpArr = new Uint8Array(new ArrayBuffer(1e3, { maxByteLength: 10e3 }))
     const tmpCtx = new Ctx(schema.hash, tmpArr)
-    writeCreate(tmpCtx, server.schemaTypesParsed._root, {}, null)
+    writeCreate(tmpCtx, server.schemaTypesParsed._root, {})
     const buf = consume(tmpCtx)
     server.modify(buf)
   }

@@ -76,7 +76,7 @@ export function formatTable(
   hsep = '    ',
 ): string {
   const nrCols = header.length
-  const padding = []
+  const padding: number[] = []
   let out = '\n'
 
   for (let i = 0; i < nrCols; i++) {

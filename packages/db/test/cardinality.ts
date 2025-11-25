@@ -176,7 +176,7 @@ await test('hll', async (t) => {
 
   const feeling = ['foolish', 'superficial', 'deep', 'moving', 'fake']
 
-  let feelings = []
+  let feelings: any[] = []
   for (let i = 0; i < 1e6; i++) {
     feelings.push(
       xxHash64(

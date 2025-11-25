@@ -187,8 +187,8 @@ await test('simple', async (t) => {
   })
 
   const now = Date.now()
-  let lastNode: ReturnType<typeof db.create>
-  const m = []
+  let lastNode: ReturnType<typeof db.create> | undefined
+  const m: any[] = []
   for (let i = 0; i < 1e5; i++) {
     lastNode = db.create('machine', {
       env,
@@ -210,7 +210,7 @@ await test('simple', async (t) => {
   })
 
   await db.drain()
-  const lastId = await lastNode
+  const lastId = (await lastNode) ?? 0
   const x = [300, 400, 10, 20, 1, 2, 99, 9999, 888, 6152]
 
   equal(

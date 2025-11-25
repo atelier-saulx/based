@@ -1,7 +1,7 @@
 import { inspect, styleText } from 'node:util'
 import { DbServer } from './server/index.js'
 
-export const debugMode = (target, getInfo = null) => {
+export const debugMode = (target, getInfo?: (key: string) => any) => {
   const opts = { showHidden: false, depth: null, colors: true }
   const info = (v) => (typeof v === 'object' ? inspect(v, opts) : v)
   const proto = target.constructor.prototype

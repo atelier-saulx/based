@@ -14,7 +14,7 @@ export type DbClientHooks = {
   subscribe(
     q: BasedDbQuery,
     onData: (buf: Uint8Array) => ReturnType<OnData>,
-    onError?: OnError,
+    onError: OnError,
   ): OnClose
   subscribeSchema(cb: (schema: SchemaOut) => void): void
 }
@@ -31,8 +31,8 @@ export const getDefaultHooks = (
     ) {
       return registerSubscription(
         server,
-        q.buffer,
-        q.subscriptionBuffer,
+        q.buffer!,
+        q.subscriptionBuffer!,
         onData,
         onError,
         subInterval,

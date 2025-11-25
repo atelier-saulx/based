@@ -36,7 +36,7 @@ export type T = {
 
 const test = async (
   name: string,
-  fn: (t?: T) => Promise<void>,
+  fn: (t: T) => Promise<void>,
 ): Promise<any> => {
   if (
     process.env.TEST_TO_RUN &&
@@ -53,7 +53,7 @@ const test = async (
   let hasErrored = false
   console.log(styleText('gray', `\nstart ${name}`))
   const d = performance.now()
-  const afters = []
+  const afters: any[] = []
   const t: T = {
     after: (fn: () => Promise<void> | void, push?: boolean) => {
       if (push) {
@@ -75,9 +75,9 @@ const test = async (
 
       const fields = ['*', '**']
       const make = async (db) => {
-        const checksums = []
-        const data = []
-        const counts = []
+        const checksums: any[] = []
+        const data: any[] = []
+        const counts: any[] = []
 
         for (const type in db.server.schema?.types) {
           let x = await db.query(type).include(fields).get()
@@ -158,7 +158,7 @@ const test = async (
           deepEqual(
             b[di],
             a[di],
-            `Mismatch after backup (len:${b.length}) ${Object.keys(db.server.schema.types)[di]}`,
+            `Mismatch after backup (len:${b.length}) ${Object.keys(db.server.schema!.types)[di]}`,
           )
         }
         const ci = findFirstDiffPos(counts, c)
@@ -166,7 +166,7 @@ const test = async (
           deepEqual(
             c[ci],
             counts[ci],
-            `Mismatching count after backup (len:${b.length}) ${Object.keys(db.server.schema.types)[ci]}`,
+            `Mismatching count after backup (len:${b.length}) ${Object.keys(db.server.schema!.types)[ci]}`,
           )
         }
       }
@@ -227,7 +227,7 @@ const test = async (
   }
 
   try {
-    const errs = []
+    const errs: any[] = []
     for (let i = 0; i < afters.length; i++) {
       try {
         await afters[i]()
@@ -258,7 +258,7 @@ const test = async (
   }
 }
 
-test.skip = async (name: string, fn: (t?: T) => Promise<void>) => {
+test.skip = async (name: string, fn: (t: T) => Promise<void>) => {
   counts.skipped++
   console.log('')
   console.log(styleText('gray', 'skip ' + name))

@@ -6,13 +6,17 @@ import test from '../shared/test.js'
 import NAMES from '../shared/names.js'
 import { makeTreeKey, Block } from '../../src/server/blockMap.js'
 
-function makeEmployee(i: number) {
+function makeEmployee(i: number): {
+  name: string
+  email: string
+  reportsTo?: number
+} {
   const name = NAMES[i % NAMES.length]
   const email = `${name.toLowerCase().replace(' ', '.')}@yari.yo`
   return {
     name,
     email,
-    reportsTo: null,
+    reportsTo: undefined,
   }
 }
 
@@ -81,11 +85,11 @@ await test('noLoadDumps', async (t) => {
 
   const getBlock1 = () =>
     db2.server.blockMap.getBlock(
-      makeTreeKey(db2.client.schemaTypesParsed['employee'].id, 1),
+      makeTreeKey(db2.client.schemaTypesParsed!.employee.id, 1),
     )
   const getBlock2 = () =>
     db2.server.blockMap.getBlock(
-      makeTreeKey(db2.client.schemaTypesParsed['employee'].id, 1200),
+      makeTreeKey(db2.client.schemaTypesParsed!.employee.id, 1200),
     )
 
   deepEqual(await db2.query('employee').include('*').get().toObject(), [])
@@ -214,7 +218,7 @@ await test('references', async (t) => {
   // the same hash as it originally had when the type was fully loaded.
   // There is no assert for that directly because loadBlock would throw.
   const p = db.server.loadBlock('employee', 1)
-  let block1: Block
+  let block1: Block | undefined
   for (const type of db.server.blockMap.types()) {
     for (const block of db.server.blockMap.blocks(type)) {
       if (block.key === 8589934593) {
@@ -225,6 +229,6 @@ await test('references', async (t) => {
     }
   }
   await p
-  assert(!block1.ioPromise)
-  deepEqual(block1.status, 'inmem')
+  assert(!block1?.ioPromise)
+  deepEqual(block1?.status, 'inmem')
 })

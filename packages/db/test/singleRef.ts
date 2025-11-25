@@ -134,7 +134,7 @@ await test('single simple', async (t) => {
     user: x,
   })
 
-  const ids = []
+  const ids: any[] = []
   for (let i = 0; i < 1e5; i++) {
     ids.push(db.create('simple', {}))
   }
@@ -417,7 +417,7 @@ await test('nested', async (t) => {
   })
 
   const amount = 1e5
-  let lastRes: ReturnType<typeof db.create>
+  let lastRes: ReturnType<typeof db.create> | undefined
   for (let i = 0; i < amount; i++) {
     lastRes = db.create('simple', {
       user,
@@ -482,7 +482,7 @@ await test('nested', async (t) => {
       await db
         .query('simple') // lastRes
         .include('user.myBlup')
-        .range((await lastRes) - 1, await lastRes)
+        .range((await lastRes!) - 1, await lastRes)
         .get()
     ).toObject(),
     [
@@ -527,7 +527,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user.myBlup', 'lilBlup', 'user.name')
-        .range((await lastRes) - 1, await lastRes)
+        .range((await lastRes!) - 1, await lastRes)
         .get()
     ).toObject(),
     [
@@ -566,7 +566,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user.myBlup', 'lilBlup')
-        .range((await lastRes) - 1, await lastRes)
+        .range((await lastRes!) - 1, await lastRes)
         .get()
     ).toObject(),
     [
@@ -594,7 +594,7 @@ await test('nested', async (t) => {
       await db
         .query('simple')
         .include('user', 'user.myBlup')
-        .range((await lastRes) - 1, await lastRes)
+        .range((await lastRes!) - 1, await lastRes)
         .get()
     ).toObject(),
     [

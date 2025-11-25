@@ -10,7 +10,7 @@ export const referencesQuery = (
 ): IntermediateByteCode => {
   const filterSize = def.filter.size || 0
 
-  let sort: Uint8Array
+  let sort: Uint8Array | undefined
   let sortSize = 0
   if (def.sort) {
     console.error('MAKE')
@@ -40,7 +40,7 @@ export const referencesQuery = (
     index += sortSize
   }
 
-  writeUint16(buffer, def.schema.id, index)
+  writeUint16(buffer, def.schema!.id, index)
   buffer[index + 2] = (def.target as any).propDef.prop
 
   return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }

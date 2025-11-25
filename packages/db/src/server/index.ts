@@ -32,7 +32,7 @@ export class DbServer extends DbShared {
     updateId: 1,
     now: { listeners: new Set(), lastUpdated: 1 },
   }
-  migrating: number = null
+  migrating: number
   saveInProgress: boolean = false
   fileSystemPath: string
   blockMap: BlockMap
@@ -128,32 +128,32 @@ export class DbServer extends DbShared {
   > = new Map()
 
   addOpListener(op: OpTypeEnum, id: number, cb: (x: any) => void) {
-    const type = this.opListeners.get(op)
+    const type = this.opListeners.get(op)!
     if (!type.has(id)) {
       type.set(id, {
         persistent: new Set(),
         once: [],
       })
     }
-    const s = type.get(id)
+    const s = type.get(id)!
     s.persistent.add(cb)
   }
 
   addOpOnceListener(op: OpTypeEnum, id: number, cb: (q: Uint8Array) => void) {
-    const type = this.opListeners.get(op)
+    const type = this.opListeners.get(op)!
     if (!type.has(id)) {
       type.set(id, {
         persistent: new Set(),
         once: [],
       })
     }
-    const s = type.get(id)
+    const s = type.get(id)!
     s.once.push(cb)
   }
 
   removeOpListener(op: OpTypeEnum, id: number, cb: (x: any) => void) {
-    const type = this.opListeners.get(op)
-    const s = type.get(id)
+    const type = this.opListeners.get(op)!
+    const s = type.get(id)!
     s.persistent.delete(cb)
     if (s.persistent.size === 0 && s.once.length === 0) {
       type.delete(id)
@@ -161,7 +161,7 @@ export class DbServer extends DbShared {
   }
 
   execOpListeners(op: OpTypeEnum, id: number, q: Uint8Array) {
-    const type = this.opListeners.get(op)
+    const type = this.opListeners.get(op)!
     const s = type.get(id)
     if (!s) {
       return
@@ -183,7 +183,7 @@ export class DbServer extends DbShared {
     return new Promise((resolve) => {
       const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4]
-      const queryListeners = this.opListeners.get(op)
+      const queryListeners = this.opListeners.get(op)!
       if (queryListeners.get(id)) {
         console.log('💤 Query allready staged dont exec again', id)
       } else {
@@ -254,7 +254,7 @@ export class DbServer extends DbShared {
     console.warn('WAITING 500MS AFTER SCHEMA FOR FIXFIX')
     await wait(500)
     process.nextTick(() => {
-      this.emit('schema', this.schema)
+      this.emit('schema', this.schema!)
     })
 
     return schema.hash
@@ -264,14 +264,14 @@ export class DbServer extends DbShared {
     if (this.stopped) {
       return
     }
-    clearTimeout(this.subscriptions.updateHandler)
+    clearTimeout(this.subscriptions.updateHandler!)
     this.subscriptions.updateHandler = null
     this.stopped = true
     this.unlistenExit()
 
     if (this.saveInterval) {
       clearInterval(this.saveInterval)
-      this.saveInterval = null
+      this.saveInterval = undefined
     }
 
     try {

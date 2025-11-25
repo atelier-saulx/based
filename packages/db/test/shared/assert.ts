@@ -117,8 +117,6 @@ export const throws = async (
     await fn()
   } catch (err) {
     didThrow = true
-    const e = new Error('')
-    e.stack.split('\n').slice(-1).join('')
     if (logErr == true) {
       console.log('')
       if (label) {

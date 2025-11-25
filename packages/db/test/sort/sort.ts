@@ -211,7 +211,7 @@ await test('basic', async (t) => {
     { id: 1, email: 'blap@blap.blap.blap', age: 201 },
   ])
 
-  const ids = []
+  const ids: any[] = []
   for (let i = 0; i < 10; i++) {
     ids.push(i + 1)
     db.create('user', {
@@ -261,7 +261,7 @@ await test('basic', async (t) => {
     'Sort by ids after creation (desc)',
   )
 
-  const ids2 = []
+  const ids2: any[] = []
   for (let i = 1; i < 1000; i++) {
     ids2.push(i)
   }

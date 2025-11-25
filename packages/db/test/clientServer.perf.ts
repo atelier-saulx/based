@@ -2,7 +2,7 @@ import test from './shared/test.js'
 import { start } from './shared/multi.js'
 
 await test('client server rapid fire', async (t) => {
-  const promises = []
+  const promises: any[] = []
   const clientsN = 2
   const nodesN = 100
   const multi = 2
@@ -23,7 +23,7 @@ await test('client server rapid fire', async (t) => {
   })
 
   await new Promise<void>((resolve) => {
-    const userIds = []
+    const userIds: any[] = []
     let i = nodesN
     let interval = setInterval(async () => {
       if (i) {

@@ -183,7 +183,7 @@ await test('subscriptionIdRemove', async (t) => {
   let correctCounts = 0
   let incorrectCounts = 0
   let raceCaseCount = 0
-  const errors = []
+  const errors: any[] = []
 
   for (const [userId, user] of users.entries()) {
     if (!user.active) {

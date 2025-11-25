@@ -75,7 +75,7 @@ await test('votesEdges', async (t) => {
 
   const amount = 1e6
 
-  const contestants = []
+  const contestants: any[] = []
   for (let i = 0; i < 20; i++) {
     contestants.push(await db.create('contestant'))
   }

@@ -74,7 +74,7 @@ await test('big nodes', async (t) => {
 
   const megaInclude = await db.query('mega').get()
 
-  const serializedSchema = serialize(megaInclude.def.readSchema)
+  const serializedSchema = serialize(megaInclude.def.readSchema!)
   const deserializedSchema = deSerializeSchema(serializedSchema)
 
   const obj = resultToObject(
@@ -88,7 +88,7 @@ await test('big nodes', async (t) => {
 
   const megaIncludeSelective = await db.query('mega').include('f4092').get()
 
-  const serializedSchemaSmall = serialize(megaIncludeSelective.def.readSchema)
+  const serializedSchemaSmall = serialize(megaIncludeSelective.def.readSchema!)
   const deserializedSchemaSmall = deSerializeSchema(serializedSchemaSmall)
 
   const obj2 = resultToObject(

@@ -49,14 +49,14 @@ export async function perf(
   options.silent ??= false
   options.diffThreshold ??= 10
 
-  const testFileName = path.basename(process.env.TEST_FILENAME)
+  const testFileName = path.basename(process.env.TEST_FILENAME!)
   const dbVersion = process.env.npm_package_version
   const outputFile =
     options.outputFile ?? `perf_${testFileName}_${dbVersion}.json`
   const outputDir = './tmp_perf_logs'
   const testFunction = process.env.TEST_NAME ?? 'not inside a test'
   const durations: number[] = []
-  let timeOut: ReturnType<typeof setTimeout>
+  let timeOut: ReturnType<typeof setTimeout> | undefined
 
   try {
     for (let i = 0; i < options.repeat; i++) {
@@ -103,7 +103,7 @@ export async function perf(
 
     const result: Result = {
       timestamp: new Date().toISOString(),
-      dbVersion: dbVersion,
+      dbVersion: dbVersion!,
       label,
       avgDurationMs: Number(avgTime.toFixed(4)),
       totalDurationMs: Number(totalTime.toFixed(4)),
@@ -150,7 +150,7 @@ export async function perf(
     return totalTime
   } catch (err) {
     console.error(`Error in perf run "${label}":`, err)
-    return
+    return 0
   }
 }
 

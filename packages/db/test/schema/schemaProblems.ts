@@ -22,7 +22,7 @@ await test.skip('schema problems', async (t) => {
     clearInterval(int)
   })
 
-  const q = []
+  const q: any[] = []
   q.push(
     clientWorker(t, db, async (c) => {
       await c.query('flap').get().inspect()

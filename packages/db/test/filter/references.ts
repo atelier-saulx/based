@@ -70,7 +70,7 @@ await test('filter references drones', async (t) => {
   // drones.inspect()
   // drones2.inspect()
 
-  const dronesResult = []
+  const dronesResult: any[] = []
   for (let i = 0; i < 1000; i++) {
     dronesResult.push({ id: i + 499001, name: 'Drone ' + i })
   }

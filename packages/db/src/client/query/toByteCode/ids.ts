@@ -29,7 +29,7 @@ export const idsQuery = (def: QueryDef): IntermediateByteCode => {
 
   let index = 0
   buffer[IDS.queryType] = QueryType.ids
-  writeUint16(buffer, def.schema.id, IDS.type)
+  writeUint16(buffer, def.schema!.id, IDS.type)
   writeUint32(buffer, idsSize, IDS.idsSize)
   buffer.set(new Uint8Array((def.target as any).ids.buffer), IDS.idsValue)
 
@@ -49,14 +49,14 @@ export const idsQuery = (def: QueryDef): IntermediateByteCode => {
   writeUint16(buffer, sortSize, index)
   index += 2
   if (sortSize) {
-    buffer.set(sort, index)
+    buffer.set(sort!, index)
     index += sortSize
   }
 
   writeUint16(buffer, searchSize, index)
   index += 2
   if (searchSize) {
-    buffer.set(search, index)
+    buffer.set(search!, index)
   }
 
   return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }

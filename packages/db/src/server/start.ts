@@ -79,7 +79,7 @@ const handleModifyResponse = (db: DbServer, arr: ArrayBuffer) => {
   }
 }
 
-export async function start(db: DbServer, opts: StartOpts) {
+export async function start(db: DbServer, opts?: StartOpts) {
   const path = db.fileSystemPath
   const noop = () => {}
 
@@ -210,7 +210,7 @@ export async function start(db: DbServer, opts: StartOpts) {
   }
 
   // use timeout
-  if (db.saveIntervalInSeconds > 0) {
+  if (db.saveIntervalInSeconds && db.saveIntervalInSeconds > 0) {
     db.saveInterval ??= setInterval(() => {
       db.save()
     }, db.saveIntervalInSeconds * 1e3)

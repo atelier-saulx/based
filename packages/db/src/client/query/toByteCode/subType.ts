@@ -4,10 +4,10 @@ import { QueryDef } from '../types.js'
 export const getQuerySubType = (def: QueryDef): QuerySubTypeEnum => {
   let isIdSort = def.sort?.prop === ID_PROP
   const hasSort = !isIdSort && !!def.sort
-  const hasSearch = def.search?.size > 0
+  const hasSearch = def.search?.size && def.search.size > 0
   const hasFilter = def.filter.size > 0
-  const isVector = hasSearch && def.search.isVector
-  const isDesc = hasSort && def.sort.order == SortOrder.desc
+  const isVector = hasSearch && def.search!.isVector
+  const isDesc = hasSort && def.sort!.order == SortOrder.desc
   if (hasSearch && isVector) {
     if (isIdSort) return hasFilter ? 23 : 22
     if (hasSort) {

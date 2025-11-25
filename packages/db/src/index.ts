@@ -24,12 +24,10 @@ export class BasedDb extends Emitter {
   client: DbClient
   server: DbServer
   fileSystemPath: string
-  maxModifySize: number
 
   constructor(opts: BasedDbOpts) {
     super()
     this.fileSystemPath = opts.path
-    this.maxModifySize = opts.maxModifySize
     const server = new DbServer({
       path: opts.path,
       saveIntervalInSeconds: opts.saveIntervalInSeconds,
