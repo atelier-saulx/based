@@ -1,6 +1,5 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import { SchemaMigrateFns, MAX_ID, type SchemaOut } from '@based/schema'
 import { start, StartOpts } from './start.js'
 import {
   BlockMap,
@@ -9,7 +8,6 @@ import {
 } from './blockMap.js'
 import { migrate } from './migrate/index.js'
 import { debugServer } from '../utils.js'
-import { readUint32, wait, writeUint32 } from '@based/utils'
 import { DbShared } from '../shared/DbBase.js'
 import {
   setNativeSchema,
@@ -19,6 +17,12 @@ import {
 import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
 import { OpType, OpTypeEnum, OpTypeInverse } from '../zigTsExports.js'
+import {
+  MAX_ID,
+  type SchemaMigrateFns,
+  type SchemaOut,
+} from '../schema/index.js'
+import { readUint32, writeUint32 } from '../utils/uint8.js'
 
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx

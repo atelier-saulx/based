@@ -1,6 +1,5 @@
-// @ts-ignore
-import db from '../../../basedDbNative.cjs'
-import { bufToHex } from '@based/utils'
+import db from '../zigAddon.js'
+import { bufToHex } from '../utils/index.js'
 
 export default function createHash() {
   const state = db.hashCreate()

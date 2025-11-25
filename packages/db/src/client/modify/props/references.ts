@@ -5,7 +5,6 @@ import { writeU32, writeU8 } from '../uint.js'
 import { Tmp } from '../Tmp.js'
 import { validate } from '../validate.js'
 import { writeEdges } from '../edges/index.js'
-import { writeUint32 } from '@based/utils'
 import {
   EDGE_INDEX_REALID,
   EDGE_INDEX_TMPID,
@@ -23,7 +22,8 @@ import {
   RefOp,
 } from '../types.js'
 import { ModOp } from '../../../zigTsExports.js'
-import type { PropDef } from '@based/schema'
+import type { PropDef } from '../../../schema/index.js'
+import { writeUint32 } from '../../../utils/uint8.js'
 
 const clearReferences = (ctx: Ctx, def: PropDef) => {
   reserve(ctx, PROP_CURSOR_SIZE + 1)

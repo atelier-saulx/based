@@ -2,7 +2,6 @@ import { Ctx } from '../Ctx.js'
 import { ModifyOpts } from '../types.js'
 import { DbClient } from '../../../index.js'
 import { getValidSchema, validateId, validatePayload } from '../validate.js'
-import { langCodesMap, type SchemaTypeDef } from '@based/schema'
 import { handleError } from '../error.js'
 import { Tmp } from '../Tmp.js'
 import { writeObject } from '../props/object.js'
@@ -13,11 +12,13 @@ import {
   writeMainCursor,
   writeTypeCursor,
 } from '../cursor.js'
-import { getByPath, writeUint32 } from '@based/utils'
 import { writeU16, writeU32, writeU8 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
 import { schedule } from '../drain.js'
 import { ModOp } from '../../../zigTsExports.js'
+import { langCodesMap, type SchemaTypeDef } from '../../../schema/index.js'
+import { getByPath } from '../../../utils/path.js'
+import { writeUint32 } from '../../../utils/uint8.js'
 
 const writeUpdateTs = (ctx: Ctx, payload: any) => {
   if (ctx.schema.updateTs) {

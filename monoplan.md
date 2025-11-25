@@ -39,7 +39,18 @@ src/
         server/
             ...
     utils/
+    client.ts
+    db.ts
+    errors.ts
+    functions.ts
+    hash.ts
     index.ts
+    protocol.ts
+    react.ts
+    schema.ts
+    server.ts
+    type-gen.ts
+    utils.ts
 test/
 ```
 
@@ -51,7 +62,8 @@ dist/
 src/
     cli/
     client/
-    db/
+    db-client/
+
     react/
     schema/
     server/

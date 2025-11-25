@@ -11,8 +11,12 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
-import { SchemaOut, SchemaMigrateFns, serialize } from '@based/schema'
-import { semver } from '@based/schema'
+import {
+  semver,
+  serialize,
+  type SchemaMigrateFns,
+  type SchemaOut,
+} from '../../schema/index.js'
 const { satisfies, parseRange, parse } = semver
 
 export type MigrateRange = { typeId: number; start: number; end: number }

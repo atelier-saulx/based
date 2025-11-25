@@ -15,7 +15,7 @@ import {
   langCodesMap,
   type PropDef,
   type SchemaPropTree,
-} from '@based/schema'
+} from '../../../schema/index.js'
 import { includeDoesNotExist, includeLangDoesNotExist } from '../validation.js'
 import { PropType } from '../../../zigTsExports.js'
 

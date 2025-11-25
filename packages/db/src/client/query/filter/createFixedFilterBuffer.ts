@@ -14,9 +14,9 @@ import {
   writeInt64,
   writeUint16,
   writeUint32,
-} from '@based/utils'
+} from '../../../utils/index.js'
 import { FilterCondition, FilterMetaNow } from '../types.js'
-import type { PropDef, PropDefEdge } from '@based/schema'
+import type { PropDef, PropDefEdge } from '../../../schema/index.js'
 import { PropType } from '../../../zigTsExports.js'
 
 const isNowQuery = (

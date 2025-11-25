@@ -1,13 +1,10 @@
 import {
-  convertToTimestamp,
   ENCODER,
   writeDoubleLE,
-  writeFloatLE,
   writeUint16,
   writeUint32,
   writeUint64,
-} from '@based/utils'
-import { NOT_COMPRESSED } from '@based/protocol'
+} from '../utils/index.js'
 import native from '../native.js'
 import { PropType } from '../zigTsExports.js'
 import {
@@ -16,7 +13,8 @@ import {
   type PropDef,
   type PropDefEdge,
   type SchemaTypeDef,
-} from '@based/schema'
+} from '../schema/index.js'
+import { NOT_COMPRESSED } from '../protocol/index.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,

@@ -1,4 +1,4 @@
-import { writeInt32, writeUint16, writeUint32 } from '@based/utils'
+import { writeInt32, writeUint16, writeUint32 } from '../../../utils/index.js'
 import { QueryDefFilter, FilterCondition } from '../types.js'
 import {
   META_EDGE,

@@ -1,7 +1,7 @@
 import { workerData } from 'node:worker_threads'
 import { DbClient, DbClientHooks } from '../../src/index.js'
 import native from '../../src/native.js'
-import * as utils from '@based/utils'
+import * as utils from '../../src/utils/index.js'
 
 const fn = await import(workerData.file)
 

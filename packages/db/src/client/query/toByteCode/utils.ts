@@ -1,4 +1,4 @@
-import { writeUint64 } from '@based/utils'
+import { writeUint64 } from '../../../utils/index.js'
 import { IntermediateByteCode, QueryDef } from '../types.js'
 
 export const schemaChecksum = (def: QueryDef): IntermediateByteCode => {

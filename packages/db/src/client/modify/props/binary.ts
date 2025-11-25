@@ -4,10 +4,10 @@ import { validate } from '../validate.js'
 import native from '../../../native.js'
 import { reserve } from '../resize.js'
 import { deleteProp } from './delete.js'
-import { ENCODER } from '@based/utils'
 import { Ctx } from '../Ctx.js'
-import type { PropDef } from '@based/schema'
 import { PropType } from '../../../zigTsExports.js'
+import type { PropDef } from '../../../schema/index.js'
+import { ENCODER } from '../../../utils/uint8.js'
 
 export const getBuffer = (val: any): Uint8Array | undefined => {
   if (typeof val === 'string') {

@@ -4,7 +4,6 @@ import { getValidSchema } from '../validate.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
 import { reserve } from '../resize.js'
 import { Ctx } from '../Ctx.js'
-import { ENCODER, writeUint32 } from '@based/utils'
 import { writeCreate } from '../create/index.js'
 import { handleError } from '../error.js'
 import { writeUpdate } from '../update/index.js'
@@ -12,7 +11,8 @@ import { schedule } from '../drain.js'
 import { TYPE_CURSOR_SIZE, writeTypeCursor } from '../cursor.js'
 import { Tmp } from '../Tmp.js'
 import { ModOp, PropType } from '../../../zigTsExports.js'
-import { isPropDef, type SchemaPropTree } from '@based/schema'
+import { isPropDef, type SchemaPropTree } from '../../../schema/index.js'
+import { ENCODER, writeUint32 } from '../../../utils/uint8.js'
 
 const writeAliases = (ctx: Ctx, tree: SchemaPropTree, obj: any) => {
   for (const key in obj) {

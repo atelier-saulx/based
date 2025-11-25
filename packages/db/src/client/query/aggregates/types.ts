@@ -1,4 +1,4 @@
-import { AggregateType } from '@based/protocol/db-read'
+import { AggregateType } from '../../../protocol/index.js'
 
 export const enum AccumulatorSize {
   // comptime

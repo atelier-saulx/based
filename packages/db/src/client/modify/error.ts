@@ -1,11 +1,11 @@
+import { DbClient } from '../../index.js'
 import {
   REVERSE_TYPE_INDEX_MAP,
   type PropDef,
   type PropDefEdge,
   type SchemaPropTree,
   type SchemaTypeDef,
-} from '@based/schema'
-import { DbClient } from '../../index.js'
+} from '../../schema/index.js'
 import { create } from './create/index.js'
 import { Ctx } from './Ctx.js'
 import { del } from './delete/index.js'

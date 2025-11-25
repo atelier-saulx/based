@@ -7,7 +7,7 @@ import {
   readUint32, readInt32, 
   readUint64, readInt64, 
   readFloatLE, readDoubleLE
-} from '@based/utils'
+} from './utils/index.js'
 
 export type TypeId = number
 

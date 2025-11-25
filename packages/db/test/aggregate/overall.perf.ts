@@ -2,7 +2,7 @@ import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 import { deepEqual } from '../shared/assert.js'
-import { fastPrng } from '@based/utils'
+import { fastPrng } from '../../src/utils/index.js'
 import { equal } from 'node:assert'
 
 await test('overall performance', async (t) => {

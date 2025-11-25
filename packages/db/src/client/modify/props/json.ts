@@ -1,4 +1,4 @@
-import type { PropDef } from '@based/schema'
+import type { PropDef } from '../../../schema/index.js'
 import { Ctx } from '../Ctx.js'
 import { writeBinary } from './binary.js'
 

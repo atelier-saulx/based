@@ -9,8 +9,8 @@ import { writeCardinality } from './cardinality.js'
 import { writeVector } from './vector.js'
 import { writeJson } from './json.js'
 import { markDefaults } from '../create/mark.js'
-import type { PropDef } from '@based/schema'
 import { PropType } from '../../../zigTsExports.js'
+import type { PropDef } from '../../../schema/index.js'
 
 export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
   const type = def.typeIndex

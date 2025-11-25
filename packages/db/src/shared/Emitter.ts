@@ -1,4 +1,4 @@
-import type { SchemaOut } from '@based/schema'
+import type { SchemaOut } from '../schema/index.js'
 
 export type EventMap = {
   schema: SchemaOut

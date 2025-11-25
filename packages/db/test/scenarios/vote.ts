@@ -1,7 +1,7 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { wait } from '@based/utils'
-import { SchemaProp } from '@based/schema'
+import { wait } from '../../src/utils/index.js'
+import { SchemaProp } from '../../src/schema/index.js'
 import { allCountryCodes } from '../shared/examples.js'
 import { clearTimeout } from 'timers'
 

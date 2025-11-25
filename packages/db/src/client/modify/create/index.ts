@@ -7,24 +7,25 @@ import {
   writeMainCursor,
   writeTypeCursor,
 } from '../cursor.js'
-import { getByPath, writeUint16 } from '@based/utils'
 import { writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
 import { schedule } from '../drain.js'
 import { ModifyOpts } from '../types.js'
-import {
-  inverseLangMap,
-  LangCode,
-  langCodesMap,
-  type SchemaTypeDef,
-} from '@based/schema'
 import { writeSeparate } from '../props/separate.js'
 import { writeString } from '../props/string.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { getValidSchema, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
 import { ModOp, PropType } from '../../../zigTsExports.js'
+import {
+  inverseLangMap,
+  langCodesMap,
+  type LangCode,
+} from '../../../schema/lang.js'
+import type { SchemaTypeDef } from '../../../schema/index.js'
+import { writeUint16 } from '../../../utils/uint8.js'
+import { getByPath } from '../../../utils/path.js'
 
 const writeDefaults = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateDefaults) {

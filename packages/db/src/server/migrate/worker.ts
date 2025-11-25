@@ -5,12 +5,10 @@
 // } from 'node:worker_threads'
 // import native from '../../native.js'
 // import { BasedDb } from '../../index.js'
-// import { CARDINALITY, REFERENCE, REFERENCES } from '@based/schema/def'
 // import { setSchemaOnServer } from '../schema.js'
 // import { setToSleep } from './utils.js'
 // import { setLocalClientSchema } from '../../client/setLocalClientSchema.js'
 // import { MigrateRange } from './index.js'
-// import { DbSchema, deSerialize } from '@based/schema'
 
 // if (isMainThread) {
 //   console.warn('running worker.ts in mainthread')

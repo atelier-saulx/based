@@ -1,4 +1,4 @@
-import { convertToTimestamp } from '@based/utils'
+import { convertToTimestamp } from '../../src/utils/index.js'
 import { BasedDb } from '../../src/index.js'
 import { throws } from '../shared/assert.js'
 import test from '../shared/test.js'

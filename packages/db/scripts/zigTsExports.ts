@@ -16,7 +16,7 @@ const parseZig = (input: string): string => {
   readUint32, readInt32, 
   readUint64, readInt64, 
   readFloatLE, readDoubleLE
-} from '@based/utils'\n\n`
+} from './utils/index.js'\n\n`
 
   // Symbol tables
   const typeSizes: Record<string, number> = {
@@ -872,14 +872,6 @@ const zigCodeString = zigCode.toString()
 const zigTsExports = parseZig(zigCodeString)
 await Promise.all([
   fs.writeFile(join(__dirname, '../src/zigTsExports.ts'), zigTsExports),
-  fs.writeFile(
-    join(__dirname, '../../protocol/src/zigTsExports.ts'),
-    zigTsExports,
-  ),
-  fs.writeFile(
-    join(__dirname, '../../exporter/src/zigTsExports.ts'),
-    zigTsExports,
-  ),
 ])
 
 console.log('build zig types file in ts (src/zigTsExports)')

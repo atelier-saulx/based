@@ -1,7 +1,11 @@
-import type { PropDef, PropDefEdge } from '@based/schema'
 import { crc32 } from '../../crc32.js'
-import { convertToTimestamp, ENCODER, writeUint32 } from '@based/utils'
+import {
+  convertToTimestamp,
+  ENCODER,
+  writeUint32,
+} from '../../../utils/index.js'
 import { PropType } from '../../../zigTsExports.js'
+import type { PropDef, PropDefEdge } from '../../../schema/index.js'
 // -------------------------------------------
 // conditions normal
 // field, [size 2]

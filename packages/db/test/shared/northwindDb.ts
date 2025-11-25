@@ -1,4 +1,4 @@
-import { Schema, type SchemaIn } from '@based/schema'
+import { Schema, type SchemaIn } from '../../src/schema/index.js'
 import { BasedDb } from '../../src/index.js'
 
 const schCompanyName = { type: 'string', maxBytes: 40 } as const

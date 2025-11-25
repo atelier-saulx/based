@@ -4,8 +4,8 @@ import { writeStringEdge } from './string.js'
 import { writeReferenceEdge } from './reference.js'
 import { writeReferencesEdge } from './references.js'
 import { writeCardinalityEdge } from './cardinality.js'
-import type { PropDefEdge } from '@based/schema'
 import { PropType } from '../../../zigTsExports.js'
+import type { PropDefEdge } from '../../../schema/index.js'
 
 export const writeSeparateEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (edge.typeIndex === PropType.binary) {

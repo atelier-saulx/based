@@ -3,12 +3,12 @@ import { deleteProp } from './delete.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
 import { validate } from '../validate.js'
 import { xxHash64 } from '../../xxHash64.js'
-import { ENCODER } from '@based/utils'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { writeBinary } from './binary.js'
 import { ModOp } from '../../../zigTsExports.js'
-import type { PropDef, PropDefEdge } from '@based/schema'
+import type { PropDef, PropDefEdge } from '../../../schema/index.js'
+import { ENCODER } from '../../../utils/uint8.js'
 
 export const writeCardinalityRaw = (
   ctx: Ctx,

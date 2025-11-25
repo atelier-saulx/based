@@ -3,11 +3,11 @@ import { writeSeparateEdge } from './separate.js'
 import { writeEdgeHeaderMain, writeEdgeHeaderPartial } from './header.js'
 import { writeU16, writeU32 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
-import { writeUint16, writeUint32 } from '@based/utils'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE } from '../cursor.js'
 import { ModOp } from '../../../zigTsExports.js'
-import type { PropDef, PropDefEdge } from '@based/schema'
+import type { PropDef, PropDefEdge } from '../../../schema/index.js'
+import { writeUint16, writeUint32 } from '../../../utils/uint8.js'
 
 const setDefaultEdges = (def: PropDef, val: Record<string, any>) => {
   if (def.hasDefaultEdges) {

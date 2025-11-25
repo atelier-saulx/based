@@ -1,9 +1,9 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { SchemaProp, SchemaType } from '@based/schema'
+import { SchemaProp, SchemaType } from '../../src/schema/index.js'
 import { clientWorker } from '../shared/startWorker.js'
 import { allCountryCodes } from '../shared/examples.js'
-import { wait } from '@based/utils'
+import { wait } from '../../src/utils/index.js'
 
 const NR_VOTES = 7.5e6
 const NR_WORKERS = 15

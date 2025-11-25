@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { fastPrng } from '@based/utils'
+import { fastPrng } from '../../src/utils/index.js'
 import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'

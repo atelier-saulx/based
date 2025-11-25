@@ -2,13 +2,14 @@ import native, { idGenerator } from '../native.js'
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import {
+  bufToHex,
   DECODER,
   equals,
   readUint16,
   readUint32,
   writeUint16,
   writeUint32,
-} from '@based/utils'
+} from '../utils/index.js'
 import {
   BLOCK_HASH_SIZE,
   BlockMap,
@@ -18,10 +19,9 @@ import {
 } from './blockMap.js'
 import { DbServer } from './index.js'
 import { writeFile } from 'node:fs/promises'
-import { bufToHex } from '@based/utils'
 import { COMMON_SDB_FILE, WRITELOG_FILE } from '../types.js'
 import { OpType } from '../zigTsExports.js'
-import type { SchemaTypeDef } from '@based/schema'
+import type { SchemaTypeDef } from '../schema/index.js'
 
 type RangeDump = {
   file: string

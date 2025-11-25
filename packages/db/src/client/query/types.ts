@@ -4,12 +4,12 @@ import {
   type PropDef,
   type PropDefEdge,
   type SchemaTypeDef,
-} from '@based/schema'
+} from '../../schema/index.js'
 import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
-import { AggregateType, ReaderSchema } from '@based/protocol/db-read'
 import { SortHeader } from '../../zigTsExports.js'
+import type { AggregateType, ReaderSchema } from '../../protocol/index.js'
 
 export type IncludeOpts = {
   end?: { [langCode: string]: number } | number

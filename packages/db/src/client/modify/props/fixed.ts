@@ -1,11 +1,12 @@
 import { Ctx } from '../Ctx.js'
-import { convertToTimestamp, ENCODER, writeDoubleLE } from '@based/utils'
 import { getBuffer } from './binary.js'
 import { reserve } from '../resize.js'
 import { writeU16, writeU32, writeU64, writeU8, writeU8Array } from '../uint.js'
 import { validate } from '../validate.js'
-import type { PropDef, PropDefEdge } from '@based/schema'
 import { PropType } from '../../../zigTsExports.js'
+import type { PropDef, PropDefEdge } from '../../../schema/index.js'
+import { ENCODER, writeDoubleLE } from '../../../utils/uint8.js'
+import { convertToTimestamp } from '../../../utils/timestamp.js'
 
 const map: Record<
   number,

@@ -12,7 +12,7 @@ import { writeEdges } from '../edges/index.js'
 import { deleteProp } from './delete.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { validate } from '../validate.js'
-import type { PropDef } from '@based/schema'
+import type { PropDef } from '../../../schema/index.js'
 
 const writeReferenceId = (
   ctx: Ctx,

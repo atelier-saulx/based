@@ -1,4 +1,4 @@
-import { SchemaIn } from '@based/schema'
+import { SchemaIn } from '../src/schema/index.js'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal, notEqual, throws } from './shared/assert.js'

@@ -1,10 +1,10 @@
 import { BasedDb } from '../../src/index.js'
 // import { mermaid } from '@based/schema-diagram'
-import { deepCopy } from '@based/utils'
-import { Schema, type SchemaIn } from '@based/schema'
+import { deepCopy } from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import createNorthwindDb, { defaultSchema } from '../shared/northwindDb.js'
 import { deepEqual } from '../shared/assert.js'
+import type { SchemaIn } from '../../src/schema/index.js'
 
 await test('Basic SQL', async (t) => {
   const db = new BasedDb({
@@ -1397,7 +1397,7 @@ await test('full join', async (t) => {
 
   db.delete(
     'customers',
-    (await db.query('customers', { customerId: 'WELLI' }).get()).id,
+    (await db.query('customers', { customerId: 'WELLI' }).get()).id!,
   )
 
   // Delete orders by WANDK

@@ -1,12 +1,17 @@
-import { readInt64, readUint16, readUint32, writeInt64 } from '@based/utils'
+import {
+  readInt64,
+  readUint16,
+  readUint32,
+  writeInt64,
+} from '../utils/index.js'
 import {
   OnError,
   SubscriptionType,
 } from '../client/query/subscription/types.js'
 import { DbServer } from '../index.js'
 import native from '../native.js'
-import { MAX_ID } from '@based/schema'
 import { styleText } from 'util'
+import { MAX_ID } from '../schema/index.js'
 
 type OnData = (res: Uint8Array) => void
 

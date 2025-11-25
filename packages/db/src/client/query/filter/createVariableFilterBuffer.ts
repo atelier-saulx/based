@@ -12,10 +12,15 @@ import {
 } from './types.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { crc32 } from '../../crc32.js'
-import { ENCODER, concatUint8Arr, writeUint16, writeUint32 } from '@based/utils'
+import {
+  ENCODER,
+  concatUint8Arr,
+  writeUint16,
+  writeUint32,
+} from '../../../utils/index.js'
 import { FilterCondition, QueryDef } from '../types.js'
-import type { PropDef, PropDefEdge } from '@based/schema'
 import { PropType } from '../../../zigTsExports.js'
+import type { PropDef, PropDefEdge } from '../../../schema/index.js'
 
 const DEFAULT_SCORE = new Uint8Array(new Float32Array([0.5]).buffer)
 

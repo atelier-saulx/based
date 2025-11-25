@@ -11,13 +11,13 @@ import { createVariableFilterBuffer } from './createVariableFilterBuffer.js'
 import { createFixedFilterBuffer } from './createFixedFilterBuffer.js'
 import { createReferenceFilter } from './createReferenceFilter.js'
 import { validateFilter } from '../validation.js'
+import { PropType } from '../../../zigTsExports.js'
 import {
   REVERSE_TYPE_INDEX_MAP,
   type PropDef,
   type PropDefEdge,
-} from '@based/schema'
-import { PropType } from '../../../zigTsExports.js'
-import { REVERSE_SIZE_MAP } from '@based/schema/dist/def/types.js'
+} from '../../../schema/index.js'
+import { REVERSE_SIZE_MAP } from '../../../schema/def/types.js'
 
 export const primitiveFilter = (
   def: QueryDef,

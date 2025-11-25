@@ -2,7 +2,7 @@ import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal, isSorted } from '../shared/assert.js'
 import { text } from '../shared/examples.js'
-import { randomString } from '@based/utils'
+import { randomString } from '../../src/utils/index.js'
 
 await test('compression / large strings', async (t) => {
   let db: BasedDb | null

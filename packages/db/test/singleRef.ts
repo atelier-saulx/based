@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { setTimeout } from 'timers/promises'
-import { wait } from '@based/utils'
+import { wait } from '../src/utils/index.js'
 
 await test('single special cases', async (t) => {
   const db = new BasedDb({

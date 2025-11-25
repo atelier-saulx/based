@@ -46,6 +46,7 @@
     "concurrently": "^9.2.1",
     "http-proxy": "^1.18.1",
     "prettier": "^3.2.5",
+    "tsdown": "^0.16.6",
     "typescript": "^5.8.3"
   }
 }

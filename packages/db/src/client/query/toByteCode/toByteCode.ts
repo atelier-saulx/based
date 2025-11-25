@@ -6,7 +6,7 @@ import {
 } from '../types.js'
 import { includeToBuffer } from '../include/toByteCode.js'
 import { DbClient } from '../../index.js'
-import { writeUint32 } from '@based/utils'
+import { writeUint32 } from '../../../utils/index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'

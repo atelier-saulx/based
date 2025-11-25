@@ -3,7 +3,7 @@ import { BasedDb } from '../../src/index.js'
 import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
 import { throws, deepEqual } from '../shared/assert.js'
-import { fastPrng } from '@based/utils'
+import { fastPrng } from '../../src/utils/index.js'
 
 await test('group by datetime intervals', async (t) => {
   const db = new BasedDb({
