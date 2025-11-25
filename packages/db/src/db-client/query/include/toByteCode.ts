@@ -206,6 +206,7 @@ export const includeToBuffer = (
               op: IncludeOp.default,
               prop,
               propType: propType,
+              information: 10,
             }),
           )
         }
