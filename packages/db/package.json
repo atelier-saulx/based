@@ -45,8 +45,7 @@
     "@based/hash": "1.1.0",
     "@based/schema": "5.1.3",
     "@based/utils": "1.2.0",
-    "@based/protocol": "0.1.3",
-    "exit-hook": "^4.0.0"
+    "@based/protocol": "0.1.3"
   },
   "optionalDependencies": {
     "@based/locale-x86-64-gnu": "*"
