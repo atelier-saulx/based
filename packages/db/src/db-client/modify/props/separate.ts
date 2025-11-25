@@ -19,7 +19,7 @@ export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
     writeReferences(ctx, def, val)
   } else if (type === PropType.cardinality) {
     writeCardinality(ctx, def, val)
-  } else if (type === PropType.vector || type === PropType.colVec) {
+  } else if (type === PropType.colVec) {
     writeVector(ctx, def, val)
   } else if (type === PropType.json) {
     writeJson(ctx, def, val)

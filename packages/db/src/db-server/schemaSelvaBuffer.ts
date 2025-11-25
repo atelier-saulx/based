@@ -217,6 +217,7 @@ export function schemaToSelvaBuffer(schema: {
     const supportedDefaults: TypeIndex[] = [
         PropType.binary,
         PropType.string,
+        PropType.vector,
     ]
     nrFixedFields += rest.reduce((prev, prop) => prev + ((supportedDefaults.includes(prop.typeIndex) && prop.default) ? 1 : 0), 0)
 
