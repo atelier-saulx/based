@@ -7,6 +7,7 @@ import {
   INT16,
   INT32,
   INT8,
+  MICRO_BUFFER,
   NUMBER,
   PropDef,
   PropDefEdge,
@@ -19,6 +20,7 @@ import {
   UINT16,
   UINT32,
   UINT8,
+  VECTOR,
   VECTOR_BASE_TYPE_SIZE_MAP,
   VectorBaseType,
 } from './types.js'
@@ -151,6 +153,9 @@ export const propIndexOffset = (prop: PropDef) => {
   }
 
   switch (prop.typeIndex) {
+    case MICRO_BUFFER:
+    case VECTOR:
+      return prop.default ? -500 : 0
     case STRING:
     case BINARY:
       return prop.default ? -400 : 0

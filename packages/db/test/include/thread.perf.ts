@@ -115,6 +115,13 @@ await test('default', async (t) => {
           },
           nr: { type: 'uint32', default: 95 },
           body: { type: 'text', default: { en: 'ding', de: 'dong' } }, // compression: 'none'
+          special: {
+            type: 'vector',
+            size: 4,
+            baseType: 'number',
+            // TODO
+            //default: new Uint8Array([0, 0, 0, 0]),
+          },
         },
       },
     },
