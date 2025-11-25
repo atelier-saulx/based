@@ -5,10 +5,8 @@
     "esModuleInterop": true,
     "allowJs": true,
     "noPropertyAccessFromIndexSignature": false,
-    "rootDir": "./",
-    "composite": true,
-    "strictNullChecks": true
-  },
-  "include": ["./src", "./test"],
-  "exclude": ["./dist"]
+    "rootDir": ".",
+    "strictNullChecks": true,
+    "noEmit": true
+  }
 }

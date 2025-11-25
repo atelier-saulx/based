@@ -2,9 +2,9 @@ import fs from 'node:fs/promises'
 import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname } from 'path'
-import { wait } from '../dist/src/utils/index.js'
-import { printSummary } from '../dist/test/shared/test.js'
 import { relative } from 'node:path'
+import wait from '../src/utils/wait.js'
+import { printSummary } from '../test/shared/test.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const IGNORE_PATTERNS = new Set(['.perf'])
@@ -23,15 +23,15 @@ const match = args
   .filter((a) => !['--perf', '--all', '--scn'].includes(a))
   .map((t) => t.replace('.ts', '.js'))
 
-const testsToRun = []
+const testsToRun: any[] = []
 
-const p = join(__dirname, '../dist/test')
+const p = join(__dirname, '../test')
 
 const walk = async (dir = p) => {
   const files = await fs.readdir(dir)
-  const promises = []
+  const promises: any[] = []
   for (const f of files) {
-    if (f.endsWith('.js')) {
+    if (f.endsWith('.ts')) {
       const path = join(dir, f)
       if (match.length > 0) {
         const relPath = relative(p, path)

@@ -1,13 +1,14 @@
-const os = require('os')
-const path = require('path')
-const process = require('process')
+import { createRequire } from 'node:module'
+import os from 'node:os'
+import path from 'node:path'
+import process from 'node:process'
 
+const require = createRequire(import.meta.url)
 const platform = os.platform()
 const arch = os.arch()
 const versionMatch = process?.version?.match(/^v?(\d+)/)?.[1] || ''
 const nodeMajorVersion = parseInt(versionMatch, 10)
 
-const baseDir = path.join(__dirname, 'dist/lib')
 let platformDir
 
 switch (platform) {
@@ -22,10 +23,9 @@ switch (platform) {
 }
 
 const libPath = path.join(
-  baseDir,
+  '../dist/lib',
   platformDir,
   `libnode-v${nodeMajorVersion}.node`,
 )
-const addon = require(libPath)
 
-module.exports = addon
+export default require(libPath)

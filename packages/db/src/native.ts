@@ -1,5 +1,5 @@
 // @ts-ignore
-import db from '@based/db/native'
+import db from './zigAddon.js'
 
 var compressor = db.createCompressor()
 var decompressor = db.createDecompressor()
