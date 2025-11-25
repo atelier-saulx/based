@@ -21,8 +21,6 @@ export const writeSeparate = (ctx: Ctx, def: PropDef, val: any) => {
     writeCardinality(ctx, def, val)
   } else if (type === PropType.colVec) {
     writeVector(ctx, def, val)
-  } else if (type === PropType.json) {
-    writeJson(ctx, def, val)
   }
   markDefaults(ctx, def, val)
 }
