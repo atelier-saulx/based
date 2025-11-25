@@ -111,4 +111,6 @@ await test('dev', async (t) => {
   //   lele: 11,
   // })
   // await db.query('lunch').sum('lala', 'lele').get().inspect()
+
+  // await db.query("lunch").include("week")
 })

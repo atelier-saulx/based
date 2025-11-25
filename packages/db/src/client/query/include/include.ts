@@ -4,9 +4,15 @@ import { includeField } from './props.js'
 import { createOrGetEdgeRefQueryDef, createOrGetRefQueryDef } from './utils.js'
 import { PropType } from '../../../zigTsExports.js'
 
+// TODO: BranchInclude should be now stricted typed no?
 export const include = (
-  query: QueryBranch<any>,
-  fields: (string | BranchInclude | IncludeOpts | (string | IncludeOpts)[])[],
+  query: QueryBranch<any, any>, // TODO:
+  fields: (
+    | string
+    | BranchInclude<any>
+    | IncludeOpts
+    | (string | IncludeOpts)[]
+  )[],
 ) => {
   const def = query.def!
   for (let i = 0; i < fields.length; i++) {
