@@ -11,7 +11,7 @@
     "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64) && npm run build-zig linux-aarch64 && tsc",
     "build-release-debug": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
     "build-release": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
-    "watch": "npm run build-ts --watch",
+    "watch": "npm run build-ts -- --watch",
     "clean-selva": "make -C clibs clean",
     "clean": "rm -rf ./dist ./node_modules .zig-cache .zig-out ./tmp ./tsconfig.tsbuildinfo && npm run clean-selva",
     "test": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./scripts/test.ts",
