@@ -24,28 +24,28 @@ export const walkDefs = (
   def: QueryDef,
   include: IncludeField,
 ) => {
-  const prop = def.props[include.field]
+  const prop = def.props![include.field]
   const path = include.field.split('.')
   let referencesSelect: ReferenceSelectValue | void
 
   if (!prop) {
-    let t: PropDef | SchemaPropTree = def.schema.tree
+    let t: PropDef | SchemaPropTree = def.schema!.tree
     for (let i = 0; i < path.length; i++) {
       let p = path[i]
       referencesSelect = getReferenceSelect(p, def)
       if (referencesSelect) {
         const refDef = createOrGetRefQueryDef(db, def, referencesSelect.prop)
 
-        if (referencesSelect.index > -1) {
+        if (referencesSelect.index! > -1) {
           refDef.range.limit = 1
-          refDef.range.offset = referencesSelect.index
+          refDef.range.offset = referencesSelect.index!
         }
         // range at the end (start at end)
 
         const f = path.slice(i + 1).join('.')
         if (!f) {
           includeAllProps(refDef, include.opts)
-        } else if (!includeProp(refDef, refDef.props[f], include.opts)) {
+        } else if (!includeProp(refDef, refDef.props![f], include.opts)) {
           includeField(refDef, { field: f, opts: include.opts })
         }
         return
@@ -55,13 +55,13 @@ export const walkDefs = (
             db,
             QueryDefType.Edge,
             {
-              ref: def.target.propDef,
+              ref: def.target.propDef!,
             },
             def.skipValidation,
           )
           def.edges.lang = def.lang
         }
-        const edgeProp = def.edges.props[p]
+        const edgeProp = def.edges.props![p]
 
         if (!edgeProp) {
           includeDoesNotExist(def, include.field)
@@ -77,7 +77,7 @@ export const walkDefs = (
             includeAllProps(refDef)
           } else {
             const f = path.slice(i + 1).join('.')
-            if (!includeProp(refDef, refDef.props[f], include.opts)) {
+            if (!includeProp(refDef, refDef.props![f], include.opts)) {
               includeField(refDef, { field: f, opts: include.opts })
             }
             return
@@ -99,7 +99,7 @@ export const walkDefs = (
       if (isPropDef(t) && t.typeIndex === PropType.text) {
         const lang = path[path.length - 1]
         const langCode = langCodesMap.get(lang)
-        if (!langCode || !db.schema.locales[lang]) {
+        if (!langCode || !db.schema!.locales![lang]) {
           includeLangDoesNotExist(def, include.field)
           return
         }
@@ -114,16 +114,16 @@ export const walkDefs = (
           def.include.props.set(t.prop, { def: t, opts })
         }
 
-        const opts = def.include.props.get(t.prop).opts
+        const opts = def.include.props.get(t.prop)!.opts!
 
         if (include.opts?.end) {
           if (typeof include.opts?.end === 'number') {
-            opts.end[lang] = include.opts?.end
+            opts.end![lang] = include.opts?.end
           } else if (typeof opts.end === 'object') {
             opts.end = { ...opts.end, ...include.opts.end }
           }
         }
-        opts.codes.add(langCode)
+        opts.codes!.add(langCode)
         return
       } else if (
         isPropDef(t) &&
@@ -132,14 +132,14 @@ export const walkDefs = (
       ) {
         const refDef = createOrGetRefQueryDef(db, def, t)
         const f = path.slice(i + 1).join('.')
-        if (!includeProp(refDef, refDef.props[f], include.opts)) {
+        if (!includeProp(refDef, refDef.props![f], include.opts)) {
           includeField(refDef, { field: f, opts: include.opts })
         }
         return
       }
     }
 
-    const tree = def.schema.tree[path[0]]
+    const tree = def.schema!.tree[path[0]]
     if (tree) {
       const endFields = getAllFieldFromObject(tree)
       for (const field of endFields) {

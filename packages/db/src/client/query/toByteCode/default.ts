@@ -20,7 +20,7 @@ export const defaultQuery = (
   const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
   const hasSearch = !!def.search
   const hasFilter = def.filter.size > 0
-  const searchSize = hasSearch ? def.search.size : 0
+  const searchSize = hasSearch ? def.search!.size : 0
   const sortSize = hasSort ? SortHeaderByteSize : 0
   const filterSize = def.filter.size
 
@@ -39,7 +39,7 @@ export const defaultQuery = (
       op: QueryType.default,
       prop: ID_PROP,
       size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
-      typeId: def.schema.id,
+      typeId: def.schema!.id,
       offset: def.range.offset,
       limit: def.range.limit,
       sort: hasSort,
@@ -53,7 +53,7 @@ export const defaultQuery = (
   )
 
   if (hasSort) {
-    index = writeSortHeader(buffer, def.sort, index)
+    index = writeSortHeader(buffer, def.sort!, index)
   }
 
   if (hasFilter) {
@@ -62,7 +62,7 @@ export const defaultQuery = (
   }
 
   if (hasSearch) {
-    buffer.set(searchToBuffer(def.search), index)
+    buffer.set(searchToBuffer(def.search!), index)
   }
 
   return [{ buffer, def, needsMetaResolve: def.filter.hasSubMeta }, include]

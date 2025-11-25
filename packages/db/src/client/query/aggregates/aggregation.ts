@@ -95,24 +95,24 @@ const ensureAggregate = (def: QueryDef) => {
 export const groupBy = (
   q: QueryBranch<any>,
   field: string,
-  StepInput: StepInput,
+  StepInput?: StepInput,
 ) => {
   const def = q.def
-  const fieldDef = def.schema.props[field]
+  const fieldDef = def.schema!.props[field]
   if (!fieldDef) {
     aggregationFieldDoesNotExist(def, field)
   }
-  const groupByPropHook = fieldDef.hooks?.groupBy
-  if (groupByPropHook) {
-    fieldDef.hooks.groupBy = null
-    groupByPropHook(q, field)
-    fieldDef.hooks.groupBy = groupByPropHook
+  if (fieldDef.hooks?.groupBy) {
+    const hook = fieldDef.hooks.groupBy
+    fieldDef.hooks.groupBy = undefined
+    hook(q, field)
+    fieldDef.hooks.groupBy = hook
   }
-  const groupByHook = def.schema.hooks?.groupBy
-  if (groupByHook) {
-    def.schema.hooks.groupBy = null
-    groupByHook(q, field)
-    def.schema.hooks.groupBy = groupByHook
+  if (def.schema!.hooks?.groupBy) {
+    const hook = def.schema!.hooks.groupBy
+    def.schema!.hooks.groupBy = undefined
+    hook(q, field)
+    def.schema!.hooks.groupBy = hook
   }
 
   if (!def.aggregate) {

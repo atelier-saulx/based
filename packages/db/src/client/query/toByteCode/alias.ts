@@ -9,7 +9,7 @@ export const aliasQuery = (def: QueryDef): IntermediateByteCode => {
   const aliasLen = aliasStr.byteLength
   const buf = new Uint8Array(8 + filterSize + aliasLen)
   buf[0] = QueryType.alias
-  writeUint16(buf, def.schema.id, 1)
+  writeUint16(buf, def.schema!.id, 1)
   buf[3] = alias.def.prop
   buf[4] = aliasLen
   buf[5] = aliasLen >>> 8

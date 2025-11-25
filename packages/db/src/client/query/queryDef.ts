@@ -25,7 +25,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     filter: { conditions: new Map(), size: 0, hasSubMeta: false },
     range: { offset: 0, limit: 0 },
     lang: {
-      lang: langCodesMap.get('none'),
+      lang: langCodesMap.get('none')!,
       fallback: [],
     },
     include: {
@@ -62,7 +62,7 @@ export function createQueryDef<T extends QueryDefType>(
   if (type === QueryDefType.Edge) {
     const t = target as EdgeTarget
     const q = queryDef as QueryDefEdges
-    q.props = t.ref.edges
+    q.props = t.ref!.edges
     q.type = type
     q.target = t
     return q as CreateQueryDefReturn<T>

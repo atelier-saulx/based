@@ -29,7 +29,7 @@ export const collectFilters = (
       fields.separate.add(prop)
       if (prop === 0) {
         for (const condition of conditions) {
-          fields.main.add(condition.propDef.start)
+          fields.main.add(condition.propDef.start!)
         }
       }
     }
@@ -45,7 +45,7 @@ export const collectFilters = (
   if (filter.references) {
     for (const ref of filter.references.values()) {
       for (const prop of filter.conditions.keys()) {
-        fields.separate.add(prop)
+        fields!.separate.add(prop)
       }
       collectFilters(ref.conditions, undefined, nowQueries)
     }
@@ -79,19 +79,19 @@ export const collectTypes = (
   types: Set<number> = new Set(),
 ) => {
   if ('references' in def) {
-    for (const ref of def.references.values()) {
+    for (const ref of def.references!.values()) {
       if ('schema' in ref) {
-        types.add(ref.schema.id)
+        types.add(ref.schema!.id)
         collectTypes(ref, types)
       } else {
-        types.add(ref.conditions.schema.id)
+        types.add(ref.conditions.schema!.id)
         collectTypes(ref.conditions, types)
       }
     }
   }
   if ('filter' in def && 'references' in def.filter) {
-    for (const ref of def.filter.references.values()) {
-      types.add(ref.conditions.schema.id)
+    for (const ref of def.filter.references!.values()) {
+      types.add(ref.conditions.schema!.id)
       collectTypes(ref.conditions)
     }
   }
@@ -103,9 +103,9 @@ export const registerSubscription = (query: BasedDbQuery) => {
     // @ts-ignore
     const id = query.def.target.id
     const fields = collectFields(query.def)
-    const typeId = query.def.schema.id
+    const typeId = query.def.schema!.id
     const subId = native.crc32(
-      query.buffer.subarray(ID.id + 4, query.buffer.byteLength - 4),
+      query.buffer!.subarray(ID.id + 4, query.buffer!.byteLength - 4),
     )
     const headerLen = 18
     const types = collectTypes(query.def)
@@ -148,7 +148,7 @@ export const registerSubscription = (query: BasedDbQuery) => {
     }
     query.subscriptionBuffer = buffer
   } else {
-    const typeId = query.def.schema.id
+    const typeId = query.def.schema!.id
     const types = collectTypes(query.def)
     const nowQueries = collectFilters(query.def.filter, {
       separate: new Set(),

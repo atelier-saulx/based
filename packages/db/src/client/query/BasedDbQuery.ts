@@ -44,7 +44,7 @@ export type QueryCommand = {
 export class QueryBranch<T> {
   db: DbClient
   def: QueryDef
-  queryCommands: QueryCommand[]
+  queryCommands?: QueryCommand[]
 
   constructor(db: DbClient, def?: QueryDef) {
     this.db = db

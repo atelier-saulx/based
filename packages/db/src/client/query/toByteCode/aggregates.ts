@@ -12,7 +12,7 @@ import {
 } from '../aggregates/aggregation.js'
 
 export const aggregatesQuery = (def: QueryDef): IntermediateByteCode => {
-  const aggregateSize = def.aggregate.size || 0
+  const aggregateSize = def.aggregate?.size || 0
   if (aggregateSize === 0) {
     throw new Error('Wrong aggregate size (0)')
   }
@@ -37,10 +37,10 @@ export const aggregatesQuery = (def: QueryDef): IntermediateByteCode => {
     }
 
     // required to get typeEntry and fieldSchema
-    buf[9 + filterSize] = def.schema.idUint8[0] // typeId
-    buf[9 + 1 + filterSize] = def.schema.idUint8[1] // typeId
-    buf[9 + 2 + filterSize] = def.target.propDef.prop // refField
-    const aggregateBuffer = aggregateToBuffer(def.aggregate)
+    buf[9 + filterSize] = def.schema!.idUint8[0] // typeId
+    buf[9 + 1 + filterSize] = def.schema!.idUint8[1] // typeId
+    buf[9 + 2 + filterSize] = def.target.propDef!.prop // refField
+    const aggregateBuffer = aggregateToBuffer(def.aggregate!)
     buf.set(aggregateBuffer, 9 + 3 + filterSize)
     return { buffer: buf, def, needsMetaResolve: def.filter.hasSubMeta }
   } else {
@@ -48,8 +48,8 @@ export const aggregatesQuery = (def: QueryDef): IntermediateByteCode => {
     buf[0] = isRootCountOnly(def, filterSize)
       ? QueryType.aggregatesCountType
       : QueryType.aggregates
-    buf[1] = def.schema.idUint8[0]
-    buf[2] = def.schema.idUint8[1]
+    buf[1] = def.schema!.idUint8[0]
+    buf[2] = def.schema!.idUint8[1]
     buf[3] = def.range.offset
     buf[4] = def.range.offset >>> 8
     buf[5] = def.range.offset >>> 16
@@ -63,7 +63,7 @@ export const aggregatesQuery = (def: QueryDef): IntermediateByteCode => {
     if (filterSize) {
       buf.set(filterToBuffer(def.filter, 13), 13)
     }
-    const aggregateBuffer = aggregateToBuffer(def.aggregate)
+    const aggregateBuffer = aggregateToBuffer(def.aggregate!)
     buf[14 + filterSize] = aggregateSize
     buf[15 + filterSize] = aggregateSize >>> 8
     buf.set(aggregateBuffer, 16 + filterSize)
