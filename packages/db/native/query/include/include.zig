@@ -127,6 +127,7 @@ pub fn include(
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
                 const value = Fields.getField(typeEntry, node, fieldSchema, header.propType);
                 const optsHeader = utils.readNext(t.IncludeOptsHeader, q, &i);
+
                 switch (header.propType) {
                     t.PropType.binary,
                     t.PropType.string,

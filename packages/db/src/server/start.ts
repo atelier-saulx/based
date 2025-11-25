@@ -18,7 +18,6 @@ import {
   OpTypeEnum,
   BridgeResponseEnum,
   BridgeResponse,
-  BridgeResponseInverse,
 } from '../zigTsExports.js'
 
 export type StartOpts = {

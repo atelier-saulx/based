@@ -211,20 +211,22 @@ pub const Threads = struct {
                         };
                     },
                 }
-
                 thread.query.commit();
-
                 self.mutex.lock();
                 self.pendingQueries -= 1;
-
                 if (thread.query.index > 100_000_000) {
+                    std.debug.print("FLUS", .{});
                     thread.*.flushed = false;
                     self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
-                    self.mutex.unlock();
-                    thread.waitForFlush();
-                    self.mutex.lock();
-                }
 
+                    thread.mutex.lock();
+                    self.mutex.unlock();
+                    while (!thread.flushed) {
+                        thread.flushDone.wait(&thread.mutex);
+                    }
+                    self.mutex.lock();
+                    thread.mutex.unlock();
+                }
                 if (self.pendingQueries == 0) {
                     self.queryDone.signal();
                     if (!self.jsQueryBridgeStaged) {
@@ -289,9 +291,14 @@ pub const Threads = struct {
                     if (thread.modify.index > 50_000_000) {
                         thread.*.flushed = false;
                         self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
+
+                        thread.mutex.lock();
                         self.mutex.unlock();
-                        thread.waitForFlush();
+                        while (!thread.flushed) {
+                            thread.flushDone.wait(&thread.mutex);
+                        }
                         self.mutex.lock();
+                        thread.mutex.unlock();
                     }
 
                     if (self.pendingModifies == 0) {

@@ -48,7 +48,7 @@ await test('include', async (t) => {
         q.push(
           db
             .query('user')
-            .include('name')
+            .include('body')
             .range(0, 1e6 + i)
             .get(),
         )
@@ -56,7 +56,7 @@ await test('include', async (t) => {
       await Promise.all(q)
     },
     'Nodes',
-    { repeat: 1 },
+    { repeat: 10 },
   )
 
   console.log('done')

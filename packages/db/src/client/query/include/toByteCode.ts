@@ -158,11 +158,19 @@ export const includeToBuffer = (
       }
 
       if (propDef.opts?.meta !== 'only') {
-        const hasOpts = !!propDef.opts?.end
-        if (propType === PropType.text) {
-          const codes = propDef.opts!.codes!
-          if (codes.has(0)) {
-            // const b = new Uint8Array(hasOpts ? 12 : 4)
+        const hasEndOption = !!propDef.opts?.end
+        const codes = propDef.opts!?.codes!
+
+        if (propType === PropType.text && !codes?.has(0)) {
+          for (const code of codes) {
+            const fallBackSize = propDef.opts!.fallBacks!.length
+
+            if (fallBackSize) {
+              console.log('derp', fallBackSize)
+            }
+
+            // const endCode = getEnd(propDef.opts, code)
+            // const b = new Uint8Array(7 + (endCode ? 5 : 0) + fallBackSize)
             // writeIncludeHeader(
             //   b,
             //   {
@@ -172,55 +180,34 @@ export const includeToBuffer = (
             //   },
             //   0,
             // )
-            // if (hasOpts) {
-            //   b[3] = 8 // opts len
-            //   b[4] = 0 // lang code // just add this into the header
-            //   b[5] = 0 // fallbackSize
+            // let i = 0
+            // if (endCode) {
+            //   b[3] = fallBackSize + 8 // opts
+            //   b[4] = code // say if there is a end option
+            //   b[5] = fallBackSize
             //   b[6] = 1 // has end
-            //   b[7] = propDef.opts?.bytes ? 0 : 1 // is string
-            //   writeUint32(b, getEnd(propDef.opts), 8)
+            //   b[7] = propDef.opts?.bytes ? 0 : 1 // is string use chars (can be optional)
+            //   writeUint32(b, endCode, 8)
+            //   i = 11
             // } else {
-            //   b[3] = 0 // opts len
+            //   b[3] = fallBackSize + 3 // opts
+            //   b[4] = code // say if there is a end option
+            //   b[5] = fallBackSize
+            //   b[6] = 0 // no end
+            //   i = 7
+            // }
+            // for (const fallback of propDef.opts.fallBacks) {
+            //   b[i] = fallback
+            //   i++
             // }
             // result.push(b)
-          } else {
-            for (const code of codes) {
-              // const fallBackSize = propDef.opts.fallBacks.length
-              // const endCode = getEnd(propDef.opts, code)
-              // const b = new Uint8Array(7 + (endCode ? 5 : 0) + fallBackSize)
-              // writeIncludeHeader(
-              //   b,
-              //   {
-              //     op: IncludeOp.default,
-              //     prop,
-              //     propType: propType,
-              //   },
-              //   0,
-              // )
-              // let i = 0
-              // if (endCode) {
-              //   b[3] = fallBackSize + 8 // opts
-              //   b[4] = code // say if there is a end option
-              //   b[5] = fallBackSize
-              //   b[6] = 1 // has end
-              //   b[7] = propDef.opts?.bytes ? 0 : 1 // is string use chars (can be optional)
-              //   writeUint32(b, endCode, 8)
-              //   i = 11
-              // } else {
-              //   b[3] = fallBackSize + 3 // opts
-              //   b[4] = code // say if there is a end option
-              //   b[5] = fallBackSize
-              //   b[6] = 0 // no end
-              //   i = 7
-              // }
-              // for (const fallback of propDef.opts.fallBacks) {
-              //   b[i] = fallback
-              //   i++
-              // }
-              // result.push(b)
-            }
           }
-        } else if (hasOpts) {
+        } else if (hasEndOption) {
+          const isChars =
+            propDef.opts?.bytes ||
+            (propType !== PropType.json && propType !== PropType.string)
+              ? false
+              : true
           result.push(
             createIncludeHeader({
               op: IncludeOp.defaultWithOpts,
@@ -228,11 +215,7 @@ export const includeToBuffer = (
               propType: propType,
             }),
             createIncludeOptsHeader({
-              isChars:
-                propDef.opts?.bytes ||
-                (propType !== PropType.json && propType !== PropType.string)
-                  ? false
-                  : true,
+              isChars,
               end: getEnd(propDef.opts),
               lang: LangCode.NONE,
               hasLangFallback: false,
