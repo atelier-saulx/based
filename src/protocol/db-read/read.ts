@@ -98,7 +98,6 @@ const readInstruction = (
   i: number,
   item: Item,
 ): number => {
-  console.log('INSTRUCTION', instruction)
   if (instruction === READ_META) {
     return meta(q, result, i, item)
   } else if (instruction === READ_AGGREGATION) {
