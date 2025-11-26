@@ -8,7 +8,6 @@ import {
 import { reserve } from '../resize.js'
 import { write } from '../../string.js'
 import { writeU8, writeU8Array } from '../uint.js'
-import { markString } from '../create/mark.js'
 import { validate } from '../validate.js'
 import { LangCodeEnum, ModOp } from '../../../zigTsExports.js'
 import type { PropDef } from '../../../schema/index.js'
@@ -63,5 +62,4 @@ export const writeString = (
     ctx.index += size
   }
   writeUint32(ctx.buf, size, index)
-  markString(ctx, def)
 }

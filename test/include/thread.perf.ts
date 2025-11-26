@@ -102,7 +102,7 @@ await test('default', async (t) => {
         props: {
           name: {
             type: 'string',
-            default: 'dingdong'.repeat(100),
+            default: 'habablababalba',
           },
           city: {
             type: 'string',
@@ -111,8 +111,17 @@ await test('default', async (t) => {
           },
           bio: {
             type: 'string',
+            default: 'dingdong'.repeat(100),
+          },
+          hack: {
+            type: 'string',
             maxBytes: 1024,
-            default: 'habablababalba',
+            default: 'dingdong'.repeat(100),
+          },
+          hack2: {
+            type: 'string',
+            maxBytes: 1024,
+            default: 'hack',
           },
           nr: { type: 'uint32', default: 95 },
           body: { type: 'text', default: { en: 'ding', de: 'dong' } }, // compression: 'none'
@@ -135,7 +144,10 @@ await test('default', async (t) => {
   console.log('start')
   await perf(
     async () => {
-      await db.query('user').include('name', 'bio').get().inspect()
+      await db.query('user').include('name', 'bio', 'hack', 'hack2').get().inspect()
+      //const x = await db.query('user').include('name', 'bio', 'hack', 'hack2').get().toObject()
+      //console.log(x.name === x.bio)
+      //console.log(x.hack === x.bio)
     },
     'Dun',
     { repeat: 1 },
