@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { test, throws } from '../shared/index.js'
+import { test, throws } from '../../shared/index.js'
 import { parse } from '@based/sdk'
 
 await test('defaultTimezone', async () => {

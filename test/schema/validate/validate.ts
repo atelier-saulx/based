@@ -1,4 +1,4 @@
-import { deepEqual, equal, test } from '../shared/index.js'
+import { deepEqual, equal, test } from '../../shared/index.js'
 import { parse, validate } from '@based/sdk'
 
 await test('validate', async () => {

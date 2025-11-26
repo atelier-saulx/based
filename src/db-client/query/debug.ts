@@ -1,8 +1,8 @@
-import picocolors from 'picocolors'
 import { QueryDef, QueryDefType } from './types.js'
 import { concatUint8Arr } from '../../utils/index.js'
 import { isPropDef } from '../../schema/index.js'
 import { PropTypeInverse } from '../../zigTsExports.js'
+import { styleText } from 'node:util'
 
 export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
   const loggableObject: any = { type: 'bla', schema: null }
@@ -86,7 +86,8 @@ export const debug = (
     const a = [...new Uint8Array(x.slice(start, end))]
     for (let i = 0; i < Math.ceil((end - start) / w); i++) {
       console.log(
-        picocolors.gray(
+        styleText(
+          'gray',
           a
             .slice(i * w, (i + 1) * w)
             .map((v, j) => {
@@ -101,19 +102,19 @@ export const debug = (
           .map((v) => String(v).padStart(len - 1, '0'))
           .map((v, j) => {
             if (a[j + i * w] === 253) {
-              return picocolors.magenta(v)
+              return styleText('magenta', v)
             }
             if (a[j + i * w] === 255) {
-              return picocolors.blue(v)
+              return styleText('blue', v)
             }
             if (a[j + i * w] === 254) {
-              return picocolors.green(v)
+              return styleText('green', v)
             }
             if (a[j + i * w] === 252) {
-              return picocolors.red(v)
+              return styleText('red', v)
             }
             if (a[j + i * w] === 250) {
-              return picocolors.redBright(v)
+              return styleText('redBright', v)
             }
             return v
           })

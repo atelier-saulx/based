@@ -24,12 +24,10 @@ import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { StepInput, aggFnOptions } from './aggregates/types.js'
 import { displayTarget } from './display.js'
-import picocolors from 'picocolors'
 import { include } from './include/include.js'
 import { AggregateType, type ReaderSchema } from '../../protocol/index.js'
 import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
-import { SchemaOut } from '../../schema.js'
-import { SchemaLocale } from '../../schema/schema/locales.js'
+import { styleText } from 'node:util'
 
 export { QueryByAliasObj }
 
@@ -648,7 +646,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
           onData(res)
         } catch (err) {
           const def = this.def!
-          let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
+          let name = styleText('red', `QueryError[${displayTarget(def)}]\n`)
           name += `  Error executing onData handler in subscription\n`
           name += `  ${err.message}\n`
           console.error(name)
