@@ -203,7 +203,6 @@ pub fn include(
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        std.debug.print("flap {s} \n", .{value});
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     else => {

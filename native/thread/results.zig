@@ -97,7 +97,6 @@ pub const Result = struct {
         const index = self.index;
         const start = self.headerIndex + 9;
         if (index != start) {
-            std.debug.print("derp", .{});
             try self.append(String.c.crc32c(0, self.data[start..index].ptr, index));
         }
     }
