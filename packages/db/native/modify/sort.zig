@@ -19,7 +19,7 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
             ctx.typeSortIndex,
             field,
             0,
-            t.LangCode.NONE,
+            t.LangCode.none,
         );
         if (sI != null) {
             sort.insert(ctx.thread.decompressor, sI.?, sort.EMPTY_SLICE, ctx.node.?);
