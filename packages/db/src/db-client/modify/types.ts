@@ -1,5 +1,4 @@
-import type { LangName } from '../../schema/lang.js'
-import { ModOp } from '../../zigTsExports.js'
+import { LangCode, ModOp } from '../../zigTsExports.js'
 
 export const RANGE_ERR = 1
 export const MOD_OPS_TO_STRING = {
@@ -15,7 +14,7 @@ export const enum SIZE {
 
 export type ModifyOpts = {
   unsafe?: boolean
-  locale?: LangName
+  locale?: keyof typeof LangCode
 }
 
 export const NOEDGE_NOINDEX_REALID = 0

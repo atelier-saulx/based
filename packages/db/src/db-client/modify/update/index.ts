@@ -15,8 +15,8 @@ import {
 import { writeU16, writeU32, writeU8 } from '../uint.js'
 import { writeFixed } from '../props/fixed.js'
 import { schedule } from '../drain.js'
-import { ModOp } from '../../../zigTsExports.js'
-import { langCodesMap, type SchemaTypeDef } from '../../../schema/index.js'
+import { LangCode, ModOp } from '../../../zigTsExports.js'
+import { type SchemaTypeDef } from '../../../schema/index.js'
 import { getByPath } from '../../../utils/path.js'
 import { writeUint32 } from '../../../utils/uint8.js'
 
@@ -79,7 +79,7 @@ export const writeUpdate = (
 
   ctx.schema = schema
   ctx.operation = ModOp.updateProp
-  ctx.locale = (opts?.locale && langCodesMap.get(opts.locale)) || 0
+  ctx.locale = (opts?.locale && LangCode[opts.locale]) || 0
 
   if (ctx.main.size) {
     ctx.main.clear()

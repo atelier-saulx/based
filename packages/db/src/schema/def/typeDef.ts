@@ -9,15 +9,9 @@ import { setByPath } from '../../utils/index.js'
 import {
   PropDef,
   SchemaTypeDef,
-  TYPE_INDEX_MAP,
-  REFERENCES,
-  REFERENCE,
-  NUMBER,
   BLOCK_CAPACITY_MAX,
   BLOCK_CAPACITY_DEFAULT,
   BLOCK_CAPACITY_MIN,
-  VECTOR,
-  COLVEC,
 } from './types.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { makeSeparateTextSort } from './makeSeparateTextSort.js'
@@ -35,6 +29,7 @@ import { addEdges } from './addEdges.js'
 import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import type { SchemaType } from '../schema/type.js'
+import { PropType } from '../../zigTsExports.js'
 
 export const updateTypeDefs = (schema: SchemaOut) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -53,7 +48,10 @@ export const updateTypeDefs = (schema: SchemaOut) => {
 
   for (const schema of Object.values(schemaTypesParsed)) {
     for (const prop of Object.values(schema.props)) {
-      if (prop.typeIndex === REFERENCE || prop.typeIndex === REFERENCES) {
+      if (
+        prop.typeIndex === PropType.reference ||
+        prop.typeIndex === PropType.references
+      ) {
         // FIXME Now references in edgeType are missing __isEdge
         // However, we can soon just delete weak refs
         if (!prop.__isEdge && !prop.inversePropName) {
@@ -194,7 +192,7 @@ const createSchemaTypeDef = (
       }
     }
     const isseparate = isSeparate(schemaProp, len)
-    const typeIndex = TYPE_INDEX_MAP[propType]
+    const typeIndex = PropType[propType]
     result.cnt ??= 0
     const prop: PropDef = {
       schema: schemaProp,
@@ -232,10 +230,13 @@ const createSchemaTypeDef = (
       schemaProp.step = prop.step = parseMinMaxStep(schemaProp.step)
     }
 
-    if (prop.typeIndex !== NUMBER && prop.step === undefined) {
+    if (prop.typeIndex !== PropType.number && prop.step === undefined) {
       prop.step = 1
     }
-    if (prop.typeIndex === VECTOR || prop.typeIndex === COLVEC) {
+    if (
+      prop.typeIndex === PropType.vector ||
+      prop.typeIndex === PropType.colVec
+    ) {
       prop.vectorBaseType = schemaVectorBaseTypeToEnum(
         ('baseType' in schemaProp && schemaProp.baseType) || 'number',
       )

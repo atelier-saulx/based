@@ -1,6 +1,4 @@
 import {
-  LangCode,
-  LangName,
   type PropDef,
   type PropDefEdge,
   type SchemaTypeDef,
@@ -8,16 +6,18 @@ import {
 import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
-import { SortHeader } from '../../zigTsExports.js'
+import { LangCode, LangCodeEnum, SortHeader } from '../../zigTsExports.js'
 import type { AggregateType, ReaderSchema } from '../../protocol/index.js'
 
+type LangName = keyof typeof LangCode
+
 export type IncludeOpts = {
-  end?: { [langCode: string]: number } | number
+  end?: Partial<Record<LangName, number>> | number
   bytes?: boolean
-  meta?: 'only' | true | false // add more opts?
-  codes?: Set<LangCode>
-  fallBacks?: LangCode[]
-  localeFromDef?: LangCode
+  meta?: 'only' | true | false // add more opts? make
+  codes?: Set<LangCodeEnum>
+  fallBacks?: LangCodeEnum[]
+  localeFromDef?: LangCodeEnum
   raw?: true
 }
 
@@ -146,7 +146,7 @@ export type QueryDefSearch =
         weight: number
         field: number
         start: number
-        lang: { lang: LangCode; fallback: LangCode[] }
+        lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }
         typeIndex: number
       }[]
     }
@@ -190,7 +190,7 @@ export type QueryDefShared = {
   queryType: QueryType
   schemaChecksum?: number
   errors: QueryError[]
-  lang: { lang: LangCode; fallback: LangCode[] }
+  lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }
   filter: QueryDefFilter
   aggregate: null | QueryDefAggregation
   search: null | QueryDefSearch

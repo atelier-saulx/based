@@ -1,10 +1,5 @@
-import {
-  SchemaTypeDef,
-  STRING,
-  ALIAS,
-  CARDINALITY,
-  type SchemaSortUndefinedHandler,
-} from './types.js'
+import { PropType } from '../../zigTsExports.js'
+import { SchemaTypeDef, type SchemaSortUndefinedHandler } from './types.js'
 
 export function makeSeparateSort(result: Partial<SchemaTypeDef>) {
   result.hasSeperateSort = true
@@ -12,9 +7,9 @@ export function makeSeparateSort(result: Partial<SchemaTypeDef>) {
   result.separate ??= []
   for (const f of result.separate) {
     if (
-      f.typeIndex === STRING ||
-      f.typeIndex === ALIAS ||
-      f.typeIndex === CARDINALITY
+      f.typeIndex === PropType.string ||
+      f.typeIndex === PropType.alias ||
+      f.typeIndex === PropType.cardinality
     ) {
       if (f.prop > max) {
         max = f.prop
@@ -26,9 +21,9 @@ export function makeSeparateSort(result: Partial<SchemaTypeDef>) {
   separateSort.buffer = new Uint8Array(max + 1)
   for (const f of result.separate) {
     if (
-      f.typeIndex === STRING ||
-      f.typeIndex === ALIAS ||
-      f.typeIndex === CARDINALITY
+      f.typeIndex === PropType.string ||
+      f.typeIndex === PropType.alias ||
+      f.typeIndex === PropType.cardinality
     ) {
       separateSort.buffer[f.prop] = 1
       separateSort.props.push(f)

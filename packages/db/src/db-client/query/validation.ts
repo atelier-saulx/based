@@ -10,7 +10,7 @@ import {
   VECTOR_FNS,
 } from './filter/types.js'
 import { Filter } from './query.js'
-import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.js'
+import { MAX_IDS_PER_QUERY } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 import { displayTarget, safeStringify } from './display.js'
 import {
@@ -19,18 +19,20 @@ import {
   ID_FIELD_DEF,
   isValidId,
   isValidString,
-  LangCode,
-  langCodesMap,
   MAX_ID,
   propIsNumerical,
-  REVERSE_TYPE_INDEX_MAP,
   Validation,
   type PropDef,
   type PropDefEdge,
   type SchemaTypeDef,
-} from '../../schema/index.js'
+} from '../../schema/index.js' // max id etc also jsut from zig
 import { StepInput } from './aggregates/types.js'
-import { PropType } from '../../zigTsExports.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  PropType,
+  PropTypeInverse,
+} from '../../zigTsExports.js'
 
 export type QueryError = {
   code: number
@@ -99,7 +101,7 @@ const messages = {
   [ERR_SORT_ORDER]: (p) =>
     `Sort: incorrect order option "${safeStringify(p.order)}" passed to sort "${p.field}"`,
   [ERR_SORT_TYPE]: (p) =>
-    `Sort: cannot sort on type "${REVERSE_TYPE_INDEX_MAP[p.typeIndex]}" on field "${p.path.join('.')}"`,
+    `Sort: cannot sort on type "${PropTypeInverse[p.typeIndex]}" on field "${p.path.join('.')}"`,
   [ERR_RANGE_INVALID_OFFSET]: (p) =>
     `Range: incorrect start "${safeStringify(p)}"`,
   [ERR_RANGE_INVALID_LIMIT]: (p) =>
@@ -393,7 +395,7 @@ export const validateSort = (
   }
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
 
-  let lang: LangCode = 0
+  let lang: LangCodeEnum = 0
   if (!propDef) {
     let isText = false
     if (field.includes('.')) {
@@ -402,7 +404,7 @@ export const validateSort = (
       propDef = def.props![x]
       if (propDef && propDef.typeIndex === PropType.text) {
         const k = path[path.length - 1]
-        lang = langCodesMap.get(k)!
+        lang = LangCode[k]!
         isText = true
       }
     }

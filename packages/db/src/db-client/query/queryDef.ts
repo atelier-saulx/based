@@ -1,4 +1,4 @@
-import { langCodesMap } from '../../schema/lang.js'
+import { LangCode } from '../../zigTsExports.js'
 import { DbClient } from '../index.js'
 import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
 import {
@@ -25,7 +25,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     filter: { conditions: new Map(), size: 0, hasSubMeta: false },
     range: { offset: 0, limit: 0 },
     lang: {
-      lang: langCodesMap.get('none')!,
+      lang: LangCode.none,
       fallback: [],
     },
     include: {

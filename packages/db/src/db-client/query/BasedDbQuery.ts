@@ -26,12 +26,8 @@ import { StepInput, aggFnOptions } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import picocolors from 'picocolors'
 import { include } from './include/include.js'
-import {
-  langCodesMap,
-  type LangCode,
-  type LangName,
-} from '../../schema/lang.js'
 import { AggregateType, type ReaderSchema } from '../../protocol/index.js'
+import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
 
 export { QueryByAliasObj }
 
@@ -613,7 +609,7 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     registerQuery(this)
   }
 
-  locale(locale: LangName, fallBack?: LangFallback) {
+  locale(locale: keyof typeof LangCode, fallBack?: LangFallback) {
     if (this.queryCommands) {
       this.queryCommands.unshift({
         method: 'locale',
@@ -630,10 +626,12 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
             : false
       }
       validateLocale(def, locale)
-      const fallBackCode: LangCode[] =
-        fallBack === false ? [] : [langCodesMap.get(fallBack)!]
+      const fallBackCode: LangCodeEnum[] =
+        fallBack === false || fallBack === undefined
+          ? []
+          : [LangCode[fallBack]!]
       def.lang = {
-        lang: langCodesMap.get(locale) ?? 0,
+        lang: LangCode[locale] ?? 0,
         fallback: fallBackCode,
       }
     }

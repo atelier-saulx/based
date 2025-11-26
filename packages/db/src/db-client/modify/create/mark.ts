@@ -1,6 +1,6 @@
 import { Ctx } from '../Ctx.js'
-import { ModOp } from '../../../zigTsExports.js'
-import type { LangCode, PropDef } from '../../../schema/index.js'
+import { LangCodeEnum, ModOp } from '../../../zigTsExports.js'
+import type { PropDef } from '../../../schema/index.js'
 
 export const markString = (ctx: Ctx, def: PropDef) => {
   if (ctx.operation === ModOp.createProp) {
@@ -35,7 +35,7 @@ export const markTextObj = (ctx: Ctx) => {
 export const markTextValue = (
   ctx: Ctx,
   def: PropDef,
-  locale: LangCode,
+  locale: LangCodeEnum,
   textStringValue: boolean,
 ) => {
   if (ctx.operation === ModOp.createProp) {

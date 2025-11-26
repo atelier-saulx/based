@@ -10,11 +10,15 @@ import { write } from '../../string.js'
 import { writeU8, writeU8Array } from '../uint.js'
 import { markString } from '../create/mark.js'
 import { validate } from '../validate.js'
-import { ModOp } from '../../../zigTsExports.js'
-import type { LangCode, PropDef } from '../../../schema/index.js'
+import { LangCodeEnum, ModOp } from '../../../zigTsExports.js'
+import type { PropDef } from '../../../schema/index.js'
 import { ENCODER, writeUint32 } from '../../../utils/uint8.js'
 
-export const deleteString = (ctx: Ctx, def: PropDef, lang: LangCode): void => {
+export const deleteString = (
+  ctx: Ctx,
+  def: PropDef,
+  lang: LangCodeEnum,
+): void => {
   if (ctx.operation !== ModOp.updateProp) {
     return
   }
@@ -34,7 +38,7 @@ export const writeString = (
   ctx: Ctx,
   def: PropDef,
   val: any,
-  lang: LangCode,
+  lang: LangCodeEnum,
 ): void => {
   const isUint8 = val instanceof Uint8Array
   if (val === null || val === '' || (isUint8 && val.byteLength === 0)) {

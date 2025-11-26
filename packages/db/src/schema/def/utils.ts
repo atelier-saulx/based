@@ -1,31 +1,22 @@
-import type { SchemaCardinality, SchemaProp, SchemaVector } from '../index.js'
 import {
-  ALIAS,
-  ALIASES,
-  BINARY,
-  COLVEC,
-  INT16,
-  INT32,
-  INT8,
-  JSON as JSON_TYPE,
-  MICRO_BUFFER,
-  NUMBER,
+  type SchemaCardinality,
+  type SchemaProp,
+  type SchemaVector,
+} from '../index.js'
+import {
   PropDef,
   PropDefEdge,
-  REFERENCE,
-  REFERENCES,
   REVERSE_SIZE_MAP,
   SIZE_MAP,
-  STRING,
-  TIMESTAMP,
-  UINT16,
-  UINT32,
-  UINT8,
-  VECTOR,
   VECTOR_BASE_TYPE_SIZE_MAP,
-  VectorBaseType,
 } from './types.js'
 import { convertToTimestamp } from '../../utils/index.js'
+import {
+  PropType,
+  VectorBaseType,
+  VectorBaseTypeEnum,
+  VectorBaseTypeInverse,
+} from '../../zigTsExports.js'
 
 export function isSeparate(schemaProp: SchemaProp<true>, len: number) {
   return (
@@ -33,25 +24,17 @@ export function isSeparate(schemaProp: SchemaProp<true>, len: number) {
   )
 }
 
-export const propIsSigned = (prop: PropDef | PropDefEdge): boolean => {
-  const t = prop.typeIndex
-  if (t === INT16 || t === INT32 || t === INT8) {
-    return true
-  }
-  return false
-}
-
 export const propIsNumerical = (prop: PropDef | PropDefEdge) => {
   const t = prop.typeIndex
   if (
-    t === INT16 ||
-    t === INT32 ||
-    t === INT8 ||
-    t === UINT8 ||
-    t === UINT16 ||
-    t === UINT32 ||
-    t === NUMBER ||
-    t === TIMESTAMP
+    t === PropType.int8 ||
+    t === PropType.int16 ||
+    t === PropType.int32 ||
+    t === PropType.uint8 ||
+    t === PropType.uint16 ||
+    t === PropType.uint32 ||
+    t === PropType.number ||
+    t === PropType.timestamp
   ) {
     return true
   }
@@ -60,29 +43,11 @@ export const propIsNumerical = (prop: PropDef | PropDefEdge) => {
 
 export const schemaVectorBaseTypeToEnum = (
   vector: SchemaVector['baseType'],
-): VectorBaseType => {
-  switch (vector) {
-    case 'int8':
-      return VectorBaseType.Int8
-    case 'uint8':
-      return VectorBaseType.Uint8
-    case 'int16':
-      return VectorBaseType.Int16
-    case 'uint16':
-      return VectorBaseType.Uint16
-    case 'int32':
-      return VectorBaseType.Int32
-    case 'uint32':
-      return VectorBaseType.Uint32
-    case 'float32':
-      return VectorBaseType.Float32
-    case 'float64':
-      return VectorBaseType.Float64
-    case 'number':
-      return VectorBaseType.Float64
-    default:
-      throw 'SchemaVector baseType'
+): VectorBaseTypeEnum => {
+  if (vector === 'number' || vector === undefined) {
+    return VectorBaseType.float64
   }
+  return VectorBaseTypeInverse[vector]
 }
 
 export const cardinalityModeToEnum = (mode: SchemaCardinality['mode']) => {
@@ -111,7 +76,7 @@ export function getPropLen(schemaProp: SchemaProp<true>) {
       schemaProp.size *
       VECTOR_BASE_TYPE_SIZE_MAP[
         schemaVectorBaseTypeToEnum(schemaProp.baseType) ??
-          VectorBaseType.Float64
+          VectorBaseType.float64
       ]
   }
 
@@ -152,21 +117,20 @@ export const propIndexOffset = (prop: PropDef) => {
   if (!prop.separate) {
     return 0
   }
-
   switch (prop.typeIndex) {
-    case MICRO_BUFFER:
-    case VECTOR:
+    case PropType.microBuffer:
+    case PropType.vector:
       return prop.default ? -500 : 0
-    case STRING:
-    case BINARY:
-    case JSON_TYPE:
+    case PropType.string:
+    case PropType.binary:
+    case PropType.json:
       return prop.default ? -400 : 0
-    case REFERENCES:
-    case REFERENCE:
+    case PropType.references:
+    case PropType.reference:
       return -300
-    case ALIAS:
-    case ALIASES:
-    case COLVEC:
+    case PropType.alias:
+    case PropType.aliases:
+    case PropType.colVec:
       return 300
     default:
       return 0

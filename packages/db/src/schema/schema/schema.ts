@@ -9,10 +9,12 @@ import {
   type RequiredIfStrict,
 } from './shared.js'
 import { parseType, type SchemaType } from './type.js'
-import { langCodesMap, type LangName } from '../lang.js'
 import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
 import hash from '../../hash/hash.js'
+import { LangCode } from '../../zigTsExports.js'
+
+type LangName = keyof typeof LangCode
 
 export type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 export type SchemaLocale = {
@@ -53,7 +55,7 @@ const isMigrations = (v: unknown): v is SchemaMigrations =>
 const isLocales = (v: unknown): v is SchemaLocales =>
   isRecord(v) &&
   Object.entries(v).every(([k, v]) => {
-    if (langCodesMap.has(k)) {
+    if (LangCode[k]) {
       // TODO make more strict!
       return isBoolean(v) || isRecord(v)
     }

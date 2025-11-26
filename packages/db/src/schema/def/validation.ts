@@ -1,33 +1,4 @@
 import { convertToTimestamp } from '../../utils/index.js'
-import {
-  TypeIndex,
-  ALIAS,
-  BINARY,
-  JSON,
-  BOOLEAN,
-  CARDINALITY,
-  TIMESTAMP,
-  INT16,
-  INT32,
-  INT8,
-  UINT8,
-  UINT16,
-  UINT32,
-  NUMBER,
-  ENUM,
-  ID,
-  MICRO_BUFFER,
-  REFERENCE,
-  REFERENCES,
-  STRING,
-  TEXT,
-  ALIASES,
-  VECTOR,
-  COLVEC,
-  NULL,
-  OBJECT,
-  TYPE_INDEX_MAP,
-} from './types.js'
 import v from 'validator'
 import type { SchemaProp } from '../schema/prop.js'
 import type { SchemaTimestamp } from '../schema/timestamp.js'
@@ -41,11 +12,13 @@ import {
   type SchemaProps,
   type SchemaString,
 } from '../index.js'
+import { PropType, PropTypeEnum } from '../../zigTsExports.js'
 
 export type Validation = (
   payload: any,
   schema: SchemaProp<true>,
 ) => boolean | string
+
 const EPSILON = 1e-9 // Small tolerance for floating point comparisons
 
 export const validators = {
@@ -122,35 +95,35 @@ export const validators = {
   clike: () => true,
 } as const
 
-export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
-  [NULL]: () => true,
-  [OBJECT]: () => true,
-  [COLVEC]: () => true,
-  [ALIAS]: (value) => {
+export const VALIDATION_MAP: Record<PropTypeEnum, Validation> = {
+  [PropType.null]: () => true,
+  [PropType.object]: () => true,
+  [PropType.colVec]: () => true,
+  [PropType.alias]: (value) => {
     if (typeof value !== 'string') {
       return false
     }
     return true
   },
-  [BINARY]: (value) => {
+  [PropType.binary]: (value) => {
     if (value instanceof Uint8Array) {
       return true
     }
     return false
   },
-  [BOOLEAN]: (value) => {
+  [PropType.boolean]: (value) => {
     if (typeof value !== 'boolean') {
       return false
     }
     return true
   },
-  [CARDINALITY]: (val) => {
+  [PropType.cardinality]: (val) => {
     return (
       typeof val === 'string' ||
       (val instanceof Uint8Array && val.byteLength === 8)
     )
   },
-  [TIMESTAMP]: (value, t: SchemaTimestamp<true>) => {
+  [PropType.timestamp]: (value, t: SchemaTimestamp<true>) => {
     if (
       typeof value !== 'number' ||
       (t.step && value % t.step !== 0) ||
@@ -178,7 +151,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [INT16]: (value, t: SchemaNumber) => {
+  [PropType.int16]: (value, t: SchemaNumber) => {
     if (
       typeof value !== 'number' ||
       (t.step && value % t.step !== 0) ||
@@ -197,7 +170,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [INT32]: (value, t: SchemaNumber) => {
+  [PropType.int32]: (value, t: SchemaNumber) => {
     if (
       typeof value !== 'number' ||
       (t.step && value % t.step !== 0) ||
@@ -216,7 +189,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [INT8]: (value, t: SchemaNumber) => {
+  [PropType.int8]: (value, t: SchemaNumber) => {
     // use % for steps size
     if (
       typeof value !== 'number' ||
@@ -236,7 +209,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [UINT8]: (value, t: SchemaNumber) => {
+  [PropType.uint8]: (value, t: SchemaNumber) => {
     if (
       typeof value !== 'number' ||
       (t.step && value % t.step !== 0) ||
@@ -255,7 +228,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [UINT16]: (value, t: SchemaNumber) => {
+  [PropType.uint16]: (value, t: SchemaNumber) => {
     if (
       typeof value !== 'number' ||
       (t.step && value % t.step !== 0) ||
@@ -274,7 +247,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [UINT32]: (value, t: SchemaNumber) => {
+  [PropType.uint32]: (value, t: SchemaNumber) => {
     if (
       typeof value !== 'number' ||
       (t.step && value % t.step !== 0) ||
@@ -293,7 +266,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [NUMBER]: (value, t: SchemaNumber) => {
+  [PropType.number]: (value, t: SchemaNumber) => {
     if (t.step) {
       const div = value / t.step
       if (Math.abs(div - Math.round(div)) > EPSILON) {
@@ -311,7 +284,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [ENUM]: (value, t: SchemaEnum<true>) => {
+  [PropType.enum]: (value, t: SchemaEnum<true>) => {
     if (value === null) {
       return true
     }
@@ -323,23 +296,23 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return false
   },
-  [ID]: (value) => {
+  [PropType.id]: (value) => {
     if (typeof value !== 'number' || value % 1 !== 0) {
       return false
     }
     return true
   },
-  [JSON]: (value) => {
+  [PropType.json]: (value) => {
     // mep
     return true
   },
-  [MICRO_BUFFER]: (value) => {
+  [PropType.microBuffer]: (value) => {
     if (!(value instanceof Uint8Array)) {
       return false
     }
     return true
   },
-  [REFERENCE]: (v) => {
+  [PropType.reference]: (v) => {
     if (typeof v !== 'number') {
       return false
     }
@@ -348,7 +321,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [REFERENCES]: (v) => {
+  [PropType.references]: (v) => {
     if (typeof v !== 'number') {
       return false
     }
@@ -357,7 +330,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [STRING]: (v, t: SchemaString) => {
+  [PropType.string]: (v, t: SchemaString) => {
     if (v instanceof Uint8Array) {
       return !!v[1]
     }
@@ -375,7 +348,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [ALIASES]: (value) => {
+  [PropType.aliases]: (value) => {
     if (!Array.isArray(value)) {
       return false
     }
@@ -387,7 +360,7 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     }
     return true
   },
-  [VECTOR]: (value) => {
+  [PropType.vector]: (value) => {
     // Array should be supported
     if (!(value instanceof Float32Array)) {
       return false
@@ -395,10 +368,10 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
     return true
   },
   // @ts-ignore
-  [TEXT]: null,
+  [PropType.text]: null,
 }
 
-VALIDATION_MAP[TEXT] = VALIDATION_MAP[STRING]
+VALIDATION_MAP[PropType.text] = VALIDATION_MAP[PropType.string]
 
 export const defaultValidation = () => true
 
@@ -518,7 +491,8 @@ const validateObj = (
 export const getValidator = (prop: SchemaProp<true>): Validation => {
   const validator =
     // @ts-ignore
-    VALIDATION_MAP[TYPE_INDEX_MAP[prop.type]] ?? defaultValidation
+    VALIDATION_MAP[PropType[prop.type as keyof typeof PropType]] ??
+    defaultValidation
   const custom = prop.validation
   if (custom) {
     return (a, b) => {

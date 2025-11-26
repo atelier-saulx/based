@@ -2,7 +2,7 @@ import { deepEqual as uDeepEqual } from '../../src/utils/index.js'
 import { styleText } from 'node:util'
 import util from 'node:util'
 import { BasedQueryResponse } from '../../src/db-client/query/BasedQueryResponse.js'
-import { REVERSE_TYPE_INDEX_MAP } from '../../src/schema/index.js'
+import { PropTypeInverse } from '../../src/zigTsExports.js'
 export { perf } from './perf.js'
 
 // add fn
@@ -55,7 +55,7 @@ export const isSorted = (
   const propDef = a.def?.schema?.props?.[field]
 
   if (propDef) {
-    fieldType = ' ' + REVERSE_TYPE_INDEX_MAP[propDef.typeIndex]
+    fieldType = ' ' + PropTypeInverse[propDef.typeIndex]
   }
 
   for (const result of a) {

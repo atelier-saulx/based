@@ -1,7 +1,8 @@
 import { Ctx } from '../Ctx.js'
 import { deleteString, writeString } from './string.js'
 import { markTextValue, markTextObj } from '../create/mark.js'
-import type { LangCode, PropDef } from '../../../schema/index.js'
+import type { PropDef } from '../../../schema/index.js'
+import { LangCodeEnum } from '../../../zigTsExports.js'
 
 export const writeText = (ctx: Ctx, def: PropDef, val: any): void => {
   if (val === null) {
@@ -30,7 +31,7 @@ export const writeText = (ctx: Ctx, def: PropDef, val: any): void => {
         throw [def, val, 'Invalid locale']
       }
       const text = val[lang]
-      const locale = langU8[1] as LangCode
+      const locale = langU8[1] as LangCodeEnum
       writeString(ctx, def, text, locale)
       markTextValue(ctx, def, locale, false)
     }

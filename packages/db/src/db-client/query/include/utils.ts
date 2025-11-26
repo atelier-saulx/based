@@ -1,15 +1,12 @@
-import { PropType } from '../../../zigTsExports.js'
+import {
+  LangCodeEnum,
+  LangCodeInverse,
+  PropType,
+} from '../../../zigTsExports.js'
 import { DbClient } from '../../index.js'
 import { createQueryDef } from '../queryDef.js'
+import { IncludeOpts, QueryDef, QueryDefType } from '../types.js'
 import {
-  IncludeOpts,
-  QueryDef,
-  QueryDefType,
-  ReferenceSelectValue,
-} from '../types.js'
-import {
-  inverseLangMap,
-  LangCode,
   type PropDef,
   type PropDefEdge,
   type SchemaPropTree,
@@ -82,13 +79,13 @@ export const createOrGetEdgeRefQueryDef = (
   return refDef
 }
 
-export const getEnd = (opts?: IncludeOpts, lang?: LangCode): number => {
+export const getEnd = (opts?: IncludeOpts, lang?: LangCodeEnum): number => {
   if (!opts || !opts.end) {
     return 0
   }
   if (typeof opts.end === 'object') {
     if (lang) {
-      return opts.end[inverseLangMap.get(lang)] ?? opts.end[0] ?? undefined
+      return opts.end[LangCodeInverse[lang]] ?? opts.end[0] ?? undefined
     }
     return opts.end[0] ?? undefined
   }

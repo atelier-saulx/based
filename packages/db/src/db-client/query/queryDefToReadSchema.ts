@@ -1,11 +1,6 @@
 import { IncludeOpts, QueryDef, Target } from './types.js'
-import { PropType } from '../../zigTsExports.js'
-import {
-  inverseLangMap,
-  langCodesMap,
-  type PropDef,
-  type PropDefEdge,
-} from '../../schema/index.js'
+import { LangCode, LangCodeInverse, PropType } from '../../zigTsExports.js'
+import { type PropDef, type PropDefEdge } from '../../schema/index.js'
 import {
   ReaderMeta,
   ReaderSchemaEnum,
@@ -48,7 +43,7 @@ const createReaderPropDef = (
       } else {
         readerPropDef.locales = {}
         for (const code of opts.codes) {
-          readerPropDef.locales[code] = inverseLangMap.get(code)
+          readerPropDef.locales[code] = LangCodeInverse[code]
         }
       }
     }
@@ -71,7 +66,7 @@ export const convertToReaderSchema = (
   if (!locales) {
     locales = {}
     for (const lang in q.schema!.locales) {
-      locales[langCodesMap.get(lang)!] = lang
+      locales[LangCode[lang]] = lang
     }
   }
   const t = q.type

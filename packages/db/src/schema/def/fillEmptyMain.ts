@@ -1,20 +1,6 @@
 import { convertToTimestamp, writeInt64 } from '../../utils/index.js'
-import {
-  BINARY,
-  BOOLEAN,
-  ENUM,
-  INT16,
-  INT32,
-  INT8,
-  NUMBER,
-  PropDef,
-  PropDefEdge,
-  STRING,
-  TIMESTAMP,
-  UINT16,
-  UINT32,
-  UINT8,
-} from './types.js'
+import { PropType } from '../../zigTsExports.js'
+import { PropDef, PropDefEdge } from './types.js'
 
 export const ENCODER = new TextEncoder()
 
@@ -31,30 +17,30 @@ export const fillEmptyMain = (
     const s = f.start ?? 0
     let val = f.default
 
-    if (t === ENUM) {
+    if (t === PropType.enum) {
       mainEmpty[s] = f.default ?? 0
-    } else if (t === INT8 || t === UINT8) {
+    } else if (t === PropType.int8 || t === PropType.uint8) {
       mainEmpty[s] = val
-    } else if (t === BOOLEAN) {
+    } else if (t === PropType.boolean) {
       mainEmpty[s] = val ? 1 : 0
-    } else if (t === UINT32 || t === INT32) {
+    } else if (t === PropType.uint32 || t === PropType.int32) {
       mainEmpty[s] = val
       mainEmpty[s + 1] = val >>>= 8
       mainEmpty[s + 2] = val >>>= 8
       mainEmpty[s + 3] = val >>>= 8
-    } else if (t === UINT16 || t === INT16) {
+    } else if (t === PropType.uint16 || t === PropType.int16) {
       mainEmpty[s] = val
       mainEmpty[s + 1] = val >>>= 8
-    } else if (t === TIMESTAMP) {
+    } else if (t === PropType.timestamp) {
       writeInt64(mainEmpty, convertToTimestamp(val), s)
-    } else if (t === NUMBER) {
+    } else if (t === PropType.number) {
       const view = new DataView(mainEmpty.buffer, s, 8)
       view.setFloat64(0, val, true)
-    } else if (t === STRING) {
+    } else if (t === PropType.string) {
       val = ENCODER.encode(val)
       mainEmpty[s] = val.byteLength
       mainEmpty.set(val, s + 1)
-    } else if (t === BINARY) {
+    } else if (t === PropType.binary) {
       if (val !== undefined) {
         mainEmpty.set(val, s)
       }

@@ -1,4 +1,4 @@
-import type { PropTypeEnum } from '../../../zigTsExports.js'
+import type { PropTypeEnum, VectorBaseTypeEnum } from '../../../zigTsExports.js'
 import {
   ReaderPropDef,
   ReaderSchema,
@@ -170,7 +170,7 @@ const deSerializeProp = (
     }
   }
   if (map & PROPERTY_BIT_MAP.vectorBaseType) {
-    prop.vectorBaseType = p[index] + 1
+    prop.vectorBaseType = (p[index] + 1) as VectorBaseTypeEnum
     index++
   }
   if (map & PROPERTY_BIT_MAP.len) {

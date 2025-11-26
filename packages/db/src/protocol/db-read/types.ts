@@ -1,5 +1,5 @@
-import type { SchemaHooks, VectorBaseType } from '../../schema/index.js'
-import type { PropTypeEnum } from '../../zigTsExports.js'
+import type { SchemaHooks } from '../../schema/index.js'
+import type { PropTypeEnum, VectorBaseTypeEnum } from '../../zigTsExports.js'
 
 export type Item = {
   id: number
@@ -51,7 +51,7 @@ export type ReaderPropDef = {
   typeIndex: PropTypeEnum
   meta?: ReaderMeta
   enum?: any[]
-  vectorBaseType?: VectorBaseType
+  vectorBaseType?: VectorBaseTypeEnum
   len?: number
   readBy: number
   locales?: { [langCode: string]: string }

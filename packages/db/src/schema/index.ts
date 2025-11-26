@@ -7,12 +7,10 @@ import {
   type PropDefEdge,
   type SchemaPropTree,
   type SchemaTypeDef,
-  REVERSE_TYPE_INDEX_MAP,
   ID_FIELD_DEF,
   VECTOR_BASE_TYPE_SIZE_MAP,
   EMPTY_MICRO_BUFFER,
   BLOCK_CAPACITY_DEFAULT,
-  VectorBaseType,
 } from './def/types.js'
 import { propIsNumerical } from './def/utils.js'
 import { parseSchema, type SchemaIn, type SchemaOut } from './schema/schema.js'
@@ -37,10 +35,7 @@ export * from './schema/text.js'
 export * from './schema/timestamp.js'
 export * from './schema/type.js'
 export * from './schema/vector.js'
-
-export * from './lang.js'
 export * from './def/validation.js'
-// export * from './def/types.js'
 export * from './serialize.js'
 export * from './infer.js'
 export * as semver from './semver/mod.js'
@@ -56,7 +51,6 @@ export type { SchemaIn, SchemaOut }
 // defs (to be removed/updated) ==============
 export type { SchemaTypeDef, PropDef, PropDefEdge, SchemaPropTree }
 export {
-  REVERSE_TYPE_INDEX_MAP,
   isPropDef,
   ID_FIELD_DEF,
   propIsNumerical,
@@ -66,6 +60,5 @@ export {
   EMPTY_MICRO_BUFFER,
   updateTypeDefs,
   BLOCK_CAPACITY_DEFAULT,
-  VectorBaseType,
 }
 // ===========================================

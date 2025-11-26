@@ -137,7 +137,7 @@ pub const Threads = struct {
             self.mutex.lock();
 
             if (self.shutdown) {
-                std.debug.print("#{any} SHUT DOWN \n", .{thread.id});
+                // std.debug.print("#{any} SHUT DOWN \n", .{thread.id});
                 self.mutex.unlock();
                 return;
             }
