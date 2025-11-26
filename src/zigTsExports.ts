@@ -1555,7 +1555,7 @@ export type IncludeResponseMeta = {
   op: ReadOpEnum
   prop: number
   lang: LangCodeEnum
-  compressed: number
+  compressed: boolean
   crc32: number
   size: number
 }
@@ -1573,7 +1573,9 @@ export const writeIncludeResponseMeta = (
   offset += 1
   buf[offset] = header.lang
   offset += 1
-  buf[offset] = header.compressed
+  buf[offset] = 0
+  buf[offset] |= (((header.compressed ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
   offset += 1
   writeUint32(buf, header.crc32, offset)
   offset += 4
@@ -1592,8 +1594,8 @@ export const writeIncludeResponseMetaProps = {
   lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
     buf[offset + 2] = value
   },
-  compressed: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 3] = value
+  compressed: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
   crc32: (buf: Uint8Array, value: number, offset: number) => {
     writeUint32(buf, value, offset + 4)
@@ -1611,7 +1613,7 @@ export const readIncludeResponseMeta = (
     op: (buf[offset]) as ReadOpEnum,
     prop: buf[offset + 1],
     lang: (buf[offset + 2]) as LangCodeEnum,
-    compressed: buf[offset + 3],
+    compressed: (((buf[offset + 3] >>> 0) & 1)) === 1,
     crc32: readUint32(buf, offset + 4),
     size: readUint32(buf, offset + 8),
   }
@@ -1628,8 +1630,8 @@ export const readIncludeResponseMetaProps = {
   lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
     return (buf[offset + 2]) as LangCodeEnum
   },
-  compressed: (buf: Uint8Array, offset: number): number => {
-    return buf[offset + 3]
+  compressed: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 3] >>> 0) & 1)) === 1
   },
   crc32: (buf: Uint8Array, offset: number): number => {
     return readUint32(buf, offset + 4)

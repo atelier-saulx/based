@@ -2,6 +2,7 @@ import { combineToNumber, readFloatLE, readUint32 } from '../../utils/index.js'
 import {
   AggItem,
   Item,
+  Meta,
   ReaderSchema,
   ReaderSchemaEnum,
   ReadInstruction,
@@ -15,30 +16,43 @@ import {
   READ_EDGE,
   READ_ID,
 } from './types.js'
-import { readMetaSeperate } from './meta.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
 import { undefinedProps } from './undefined.js'
-import { PropType } from '../../zigTsExports.js'
+import {
+  IncludeResponseMeta,
+  IncludeResponseMetaByteSize,
+  PropType,
+  readIncludeResponseMeta,
+} from '../../zigTsExports.js'
 
 export * from './types.js'
 export * from './string.js'
 export * from './schema/deserialize.js'
 
 const meta: ReadInstruction = (q, result, i, item) => {
-  const field = result[i]
-  i++
-  const prop = q.props[field]
-  const lang = result[i]
-  i++
-  prop.readBy = q.readId
-  if (prop.typeIndex === PropType.text && prop.locales) {
-    addLangMetaProp(prop, readMetaSeperate(result, i), item, lang)
-  } else {
-    addMetaProp(prop, readMetaSeperate(result, i), item)
+  const metaResponse: IncludeResponseMeta = readIncludeResponseMeta(
+    result,
+    i - 1,
+  )
+  const prop = metaResponse.prop
+  const propDef = q.props[prop]
+  const lang = metaResponse.lang
+  const propType = propDef.typeIndex
+  const meta: Meta = {
+    crc32: metaResponse.crc32,
+    compressed: metaResponse.compressed,
+    size: metaResponse.size,
+    checksum: combineToNumber(metaResponse.crc32, metaResponse.size),
   }
-  i += 9
+  i += IncludeResponseMetaByteSize - 1
+  propDef.readBy = q.readId
+  if (propType === PropType.text && propDef.locales) {
+    addLangMetaProp(propDef, meta, item, lang)
+  } else {
+    addMetaProp(propDef, meta, item)
+  }
   return i
 }
 
@@ -135,7 +149,7 @@ export const readProps = (
     i = readInstruction(instruction, q, result, i, item)
   }
   // For the last id
-  undefinedProps(q, item)
+  // undefinedProps(q, item)
   return i
 }
 
@@ -165,6 +179,8 @@ export const resultToObject = (
   while (i < end) {
     const id = readUint32(result, i)
     i += 4
+
+    console.log('ID', id)
 
     let item: Item = { id }
 

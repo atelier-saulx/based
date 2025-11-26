@@ -46,25 +46,25 @@ await test('include', async (t) => {
 
   await db.drain()
 
-  const x = await db
-    .query('user')
-    // .locale('nl', ['fr', 'no', 'de'])
-    .include('name')
+  // const x = await db
+  //   .query('user')
+  //   // .locale('nl', ['fr', 'no', 'de'])
+  //   .include('name')
 
-    // .include('name', 'body.de', 'body.nl')
-    .range(0, 2)
-    .get()
+  //   // .include('name', 'body.de', 'body.nl')
+  //   .range(0, 2)
+  //   .get()
 
-  x.debug()
+  // x.debug()
 
   console.log('drain done')
   ;(
     await db
       .query('user')
       // .locale('nl', ['fr', 'no', 'de'])
-      .include('name')
+      // .include('name')
 
-      // .include('name', 'body.de', 'body.nl')
+      .include('name', { meta: 'only' })
       .range(0, 2)
       .get()
   )

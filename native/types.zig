@@ -543,7 +543,8 @@ pub const IncludeResponseMeta = packed struct {
     op: ReadOp,
     prop: u8,
     lang: LangCode,
-    compressed: u8,
+    compressed: bool,
+    _padding: u7,
     crc32: u32,
     size: u32,
 };
