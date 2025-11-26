@@ -17,7 +17,8 @@ await test('include', async (t) => {
       en: true,
       de: { fallback: ['en'] },
       fr: { fallback: ['en'] },
-      nl: { fallback: ['fr', 'de', 'en'] },
+      nl: { fallback: ['fr', 'en', 'de'] },
+      no: true,
     },
     types: {
       user: {
@@ -49,11 +50,11 @@ await test('include', async (t) => {
 
   await db
     .query('user')
-    .locale('nl', ['fr', 'de'])
+    .locale('nl', ['fr', 'no', 'de'])
     .include('name', 'body')
 
     // .include('name', 'body.de', 'body.nl')
-    .range(0, 2)
+    .range(0, 1)
     .get()
     .inspect()
 
@@ -66,7 +67,7 @@ await test('include', async (t) => {
         q.push(
           db
             .query('user')
-            .locale('de', [])
+            .locale('nl', ['fr', 'no', 'de'])
             .include('name', 'body')
             // .include('name', 'body', { end: 2 })
             .range(0, 1000 + i)
