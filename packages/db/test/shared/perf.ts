@@ -1,16 +1,21 @@
-import * as fs from 'fs'
+import * as fs from 'fs/promises'
 import * as path from 'path'
 import { performance } from 'perf_hooks'
 import { styleText } from 'util'
-import { difference } from '../../../schema/dist/parse/semver/difference.js'
 
 const MEASURES_PER_TEST = 10
+
+function writeAndReplace(text, lineEnd = '') {
+  process.stdout.write('\r' + text)
+  process.stdout.write(lineEnd)
+}
 
 type Options = {
   repeat?: number
   timeout?: number
   silent?: boolean
   outputFile?: string
+  diffThreshold?: number
 }
 
 type Result = {
@@ -39,49 +44,70 @@ export async function perf(
   label: string,
   options: Options = {},
 ): Promise<number> {
-  const repeat = options.repeat ?? 1
-  const timeout = options.timeout ?? 5000
-  const silent = options.silent ?? false
-  const testFileName = path.basename(process.env.TEST_FILENAME)
+  options.repeat ??= 1
+  options.timeout ??= 5000
+  options.silent ??= false
+  options.diffThreshold ??= 10
+
+  const testFileName = path.basename(process.env.TEST_FILENAME!)
   const dbVersion = process.env.npm_package_version
   const outputFile =
     options.outputFile ?? `perf_${testFileName}_${dbVersion}.json`
   const outputDir = './tmp_perf_logs'
-  const testFunction = process.env.TEST_TO_RUN ?? 'not inside a test'
-
+  const testFunction = process.env.TEST_NAME ?? 'not inside a test'
   const durations: number[] = []
+  let timeOut: ReturnType<typeof setTimeout> | undefined
 
   try {
-    for (let i = 0; i < repeat; i++) {
+    for (let i = 0; i < options.repeat; i++) {
       const start = performance.now()
+      clearTimeout(timeOut)
 
       await Promise.race([
         callWrapper(fn),
-        new Promise((_, reject) =>
-          setTimeout(
-            () => reject(new Error(`Timeout of ${timeout}ms exceeded`)),
-            timeout,
-          ),
+        new Promise(
+          (_, reject) =>
+            (timeOut = setTimeout(
+              () =>
+                reject(new Error(`Timeout of ${options.timeout}ms exceeded`)),
+              options.timeout,
+            )),
         ),
       ])
 
       const end = performance.now()
-      durations.push(end - start)
+      const duration = end - start
+
+      if (!options.silent) {
+        if (options.repeat > 1) {
+          writeAndReplace(
+            styleText(
+              'gray',
+              `Running ${label} ${i + 1}/${options.repeat} in ${Math.round(duration)}ms`,
+            ),
+          )
+        }
+      }
+
+      durations.push(duration)
     }
+
+    clearTimeout(timeOut)
 
     const totalTime = durations.reduce((a, b) => a + b, 0)
     const avgTime = totalTime / durations.length
 
     const scriptName = process.env.npm_lifecycle_event || ''
+
     const isDebugMode = scriptName.includes('debug')
 
     const result: Result = {
       timestamp: new Date().toISOString(),
-      dbVersion: dbVersion,
+      dbVersion: dbVersion!,
       label,
       avgDurationMs: Number(avgTime.toFixed(4)),
       totalDurationMs: Number(totalTime.toFixed(4)),
-      repetitions: repeat,
+      repetitions: options.repeat,
       isDebugMode: isDebugMode,
     }
 
@@ -93,29 +119,38 @@ export async function perf(
     )
     const percentDiff =
       diff.previous !== undefined ? (diff.difference / diff.previous) * 100 : 0
-    const diffMessage =
-      diff.difference > 0
-        ? styleText(
-            'red',
-            `+${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
-          )
-        : !isNaN(diff.difference)
-          ? styleText(
-              'green',
-              `${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
-            )
-          : ''
-    if (!silent)
-      console.log(
+
+    let diffMessage = styleText('gray', ` no previous found`)
+
+    if (!isNaN(diff.difference)) {
+      if (Math.abs(percentDiff) > options.diffThreshold) {
+        diffMessage =
+          diff.difference >= 0
+            ? styleText(
+                'red',
+                ` +${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+              )
+            : styleText(
+                'green',
+                ` ${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
+              )
+      } else {
+        diffMessage = styleText('gray', ` similar performance`)
+      }
+    }
+    if (!options.silent) {
+      writeAndReplace(
         styleText(
           'gray',
-          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${repeat}x) ${diffMessage}.`,
+          `${styleText('bold', styleText('white', label))} Avg ${avgTime.toFixed(2)}ms, Total ${totalTime.toFixed(2)}ms (${options.repeat}x)${diffMessage}`,
         ),
+        '\n',
       )
+    }
     return totalTime
   } catch (err) {
     console.error(`Error in perf run "${label}":`, err)
-    return
+    return 0
   }
 }
 
@@ -136,13 +171,11 @@ async function saveResultToFile(
   let fileContent: FileStructure = {}
 
   try {
-    if (!fs.existsSync(path.dirname(filePath))) {
-      fs.mkdirSync(path.dirname(filePath))
+    if (!(await fs.stat(path.dirname(filePath)).catch(() => {}))) {
+      await fs.mkdir(path.dirname(filePath))
     }
-    if (fs.existsSync(absolutePath)) {
-      const content = fs.readFileSync(absolutePath, 'utf-8')
-      fileContent = JSON.parse(content)
-    }
+    const content = await fs.readFile(absolutePath, 'utf-8')
+    fileContent = JSON.parse(content)
   } catch (e) {
     fileContent = {}
   }
@@ -153,8 +186,8 @@ async function saveResultToFile(
 
   const previous = fileContent[testName]
     .filter((m) => m.label == label)
-    .slice(-1)[0]?.avgDurationMs
-  const difference = data.avgDurationMs - previous
+    .slice(-1)[0]?.totalDurationMs
+  const difference = data.totalDurationMs - previous
   data.difference = difference
   data.previous = previous
 
@@ -169,7 +202,7 @@ async function saveResultToFile(
       .slice(-MEASURES_PER_TEST)
   }
 
-  fs.writeFileSync(absolutePath, JSON.stringify(fileContent, null, 2))
+  await fs.writeFile(absolutePath, JSON.stringify(fileContent, null, 2))
 
   return { difference: difference, previous: previous }
 }
