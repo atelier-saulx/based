@@ -160,3 +160,7 @@ aggregationNotes.md
 .vscode
 /packages/*/package-lock.json
 .zig-cache
+
+/build
+*.trace
+*_perf_logs

@@ -1,52 +1,90 @@
 {
-  "name": "@based/workspaces",
-  "version": "0.1.3",
-  "author": "Based",
-  "license": "MIT",
-  "private": true,
+  "name": "@based/sdk",
+  "version": "1.1.5",
   "type": "module",
-  "homepage": "https://github.com/atelier-saulx/based#readme",
-  "bugs": {
-    "url": "https://github.com/atelier-saulx/based/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/atelier-saulx/based"
-  },
-  "prettier": "@saulx/prettier-config",
-  "description": "Based",
-  "keywords": [
-    "based",
-    "saulx"
-  ],
-  "workspaces": [
-    "packages/*"
-  ],
+  "main": "./dist/sdk.js",
+  "//temporarily-private-for-dev": true,
+  "private": true,
   "scripts": {
-    "watch": "node ./scripts/concurrently watch",
-    "build": "if test \"$OSTYPE\" '==' 'linux-gnu'; then npm run build-locale; fi; set -e; for pkg in hash utils schema protocol db functions errors schema-diagram server client react s3 hub type-gen cli exporter sdk; do npm run build -w \"@based/$pkg\"; done",
-    "reset": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo;",
-    "test": "npm run test --workspaces --if-present; exit_code=$?; exit_code=$?; [ $exit_code -eq 0 ] && echo \"All tests passed\" || echo \"Some test in the workspace fails with error code $exit_code\"",
-    "clean": "git clean -dfx",
-    "build-podman": "cd podman && ./build.sh",
-    "build-locale": "cd packages/locale && ./build.sh",
-    "build-release-debug": "npm run reset; npm run build-podman && npm run build-locale release && npm run build && (cd packages/db && npm run build-release-debug)",
-    "build-release": "npm run reset; npm run build-podman && npm run build-locale release && npm run build && (cd packages/db && npm run build-release)",
-    "build-sdk": "npm run build -w @based/sdk",
-    "check": "for i in packages/*; do npx npm-check-updates -f @based/* -x @based/client-old --cwd $i; done",
-    "upgrade": "for i in packages/*; do npx npm-check-updates -f @based/* -x @based/client-old --cwd $i -u; done"
+    "build-c": "make -C clibs",
+    "build-zig": "zig build",
+    "build-ts": "tsc -p tsconfig.build.json",
+    "build-native": "npm run build-c && npm run build-zig",
+    "build-exports": "tsx scripts/zigTsExports.ts",
+    "build-ts-bundle": "tsdown --dts",
+    "build": "npm run concurrently npm:build-native npm:build-ts npm:build-exports",
+    "watch-zig": "zig build --watch",
+    "watch-ts": "tsc -p tsconfig.build.json --watch",
+    "watch-native": "npm run build-c && npm run watch-zig",
+    "watch-exports": "tsx --watch-path=./native/types.zig scripts/zigTsExports.ts ",
+    "watch": "npm run concurrently npm:watch-native npm:watch-ts npm:watch-exports",
+    
+    "concurrently": "concurrently -c 'grey,blue,cyan'",
+    "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64) && npm run build-zig linux-aarch64 && tsc",
+    "build-release-debug": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
+    "build-release": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
+    "clean-selva": "make -C clibs clean",
+    "clean": "rm -rf ./dist ./node_modules .zig-cache .zig-out ./tmp ./tsconfig.tsbuildinfo && npm run clean-selva",
+    "test": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./scripts/test.ts",
+    "test-gdb": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node --import=tsx ./scripts/test.ts",
+    "test-fast": "LOCPATH=../locale/locale-x86_64-gnu/locale node --import=tsx ./scripts/test.ts",
+    "test-fast-linux_aarch64-schema": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast schemadebug'",
+    "test-fast-linux_aarch64": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast'",
+    "test-fast-linux_aarch64-gdb": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node ./scripts/test.ts'",
+    "test-fast-linux_aarch64-valgrind": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-aarch64-gnu/locale valgrind --leak-check=full node ./scripts/test.ts'",
+    "test-vector": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast -- mem.js'",
+    "test-zig": "npm run build-zig && npm run build-ts && npm run test-fast",
+    "test-zig-debug": "npm run build-zig -- debug && npm run build-ts && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node --force-node-api-uncaught-exceptions-policy ./scripts/test.ts",
+    "test-ts": "npm run build-ts && node --import=tsx ./scripts/test.ts",
+    "perf": "npm run build && node benchmarks/references.js && node benchmarks/transfermarkt/transfermarkt-based.js",
+    "repl": "LOCPATH=../locale/locale-x86_64-gnu/locale node --import=tsx  ./scripts/repl.ts"
   },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org"
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "!*.map",
+    "README.md",
+    "package.json"
+  ],
+  "optionalDependencies": {
+    "@based/locale-x86-64-gnu": "*"
   },
   "devDependencies": {
-    "@saulx/prettier-config": "^2.0.0",
-    "@saulx/tsconfig": "^1.1.0",
-    "@types/node": "^22.9.0",
+    "@saulx/tsconfig": "^1.1.3",
+    "@types/node": "^22.5.3",
+    "@types/react": "^18.3.1",
+    "async-sema": "3.1.1",
     "concurrently": "^9.2.1",
-    "http-proxy": "^1.18.1",
-    "prettier": "^3.2.5",
-    "tsdown": "^0.16.6",
-    "typescript": "^5.8.3"
-  }
+    "fs-extra": "^11.1.1",
+    "jsondiffpatch": "^0.7.3",
+    "prettier": "^3.6.2",
+    "tar": "^7.4.3",
+    "tsdown": "^0.16.7",
+    "tsx": "^4.20.6",
+    "typescript": "^5.6.3"
+  },
+  "exports": {
+    ".": "./dist/sdk.js",
+    "./db": "./dist/index.js",
+    "./schema": "./dist/schema.js"
+  },
+  "dependencies": {
+    "@based/opts": "^1.1.0",
+    "@saulx/diff": "^2.0.3",
+    "fflate": "^0.8.2",
+    "isomorphic-ws": "^5.0.0",
+    "mime-types": "^3.0.2",
+    "picocolors": "^1.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "utility-types": "^3.11.0",
+    "validator": "^13.15.23"
+  },
+  "engineStrict": true,
+  "engines": {
+    "node": "24",
+    "npm": "11"
+  },
+  "os": ["darwin", "linux"],
+  "cpu": ["x64", "arm64"]
 }

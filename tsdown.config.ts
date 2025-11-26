@@ -1,10 +1,12 @@
 import { defineConfig } from 'tsdown'
 
 export default defineConfig({
-  // minify: true,
+  clean: ['dist/**', '!dist/lib/**'],
+  minify: true,
+  fixedExtension: false,
   entry: {
-    sdk: './src/index.ts',
-    db: './src/db.ts',
-    schema: './src/schema.ts',
+    sdk: './src/sdk.ts',
+    db: './src/index.ts',
+    schema: './src/schema/index.ts',
   },
 })
