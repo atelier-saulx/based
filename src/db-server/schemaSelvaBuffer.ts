@@ -38,12 +38,12 @@ selvaTypeMap[PropType.colVec] = selvaFieldType.COLVEC
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 
-const supportedDefaults: PropTypeEnum[] = [
+const supportedDefaults = new Set<PropTypeEnum>([
   PropType.binary,
   PropType.string,
   PropType.vector,
   PropType.json, // same as binary (Uint8Array)
-]
+])
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
@@ -152,7 +152,7 @@ const propDefBuffer = (
     type === PropType.cardinality ||
     type === PropType.json
   ) {
-    if (supportedDefaults.includes(type)) {
+    if (prop.default && supportedDefaults.has(type)) {
         const STRING_EXTRA_MAX = 10
         const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : native.stringByteLength(prop.default) + STRING_EXTRA_MAX
         const buf = new Uint8Array(6 + defaultLen)
@@ -219,7 +219,7 @@ export function schemaToSelvaBuffer(schema: {
     nrFixedFields += rest.reduce(
       (prev, prop) =>
         prev +
-        (supportedDefaults.includes(prop.typeIndex) && prop.default ? 1 : 0),
+        (supportedDefaults.has(prop.typeIndex) && prop.default ? 1 : 0),
       0,
     )
 
