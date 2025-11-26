@@ -83,9 +83,7 @@ export const convertToReaderSchema = (
     type: isEdge
       ? ReaderSchemaEnum.edge
       : isSingle
-        ? q.target.type === '_root'
-          ? ReaderSchemaEnum.rootProps
-          : ReaderSchemaEnum.single
+        ? ReaderSchemaEnum.single
         : ReaderSchemaEnum.default,
   }
 

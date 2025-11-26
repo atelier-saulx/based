@@ -8,6 +8,7 @@ const multiple = @import("multiple.zig");
 const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
+const Selva = @import("../selva");
 
 // -------- NAPI ---------- (put in js bridge maybe?)
 pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
@@ -64,4 +65,7 @@ pub fn getQueryThreaded(
             return errors.DbError.INCORRECT_QUERY_TYPE;
         },
     }
+
+    // write checksum
+    try ctx.thread.query.checksum();
 }

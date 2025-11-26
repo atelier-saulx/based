@@ -35,6 +35,8 @@ export const readProp = (
 ) => {
   const prop = q.props[instruction]
 
+  console.log(instruction, prop)
+
   prop.readBy = q.readId
   if (prop.typeIndex === PropType.cardinality) {
     const size = readUint32(result, i)
@@ -50,6 +52,7 @@ export const readProp = (
     i += size + 4
   } else if (prop.typeIndex === PropType.string) {
     const size = readUint32(result, i)
+    console.log('------>', i, size, size + 4)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex == PropType.text) {

@@ -23,8 +23,8 @@ await test('include', async (t) => {
     types: {
       user: {
         props: {
-          name: { type: 'string', default: 'xxxx' },
-          nr: 'uint32',
+          name: { type: 'string' }, // default: 'xxxx'
+          // nr: 'uint32',
           body: { type: 'text', compression: 'deflate' }, // compression: 'none'
         },
       },
@@ -33,8 +33,8 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 1000; i++) {
     db.create('user', {
-      nr: i,
-      name: 'Mr poop !',
+      // nr: i,
+      name: 'A',
       body: {
         de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
         en: italy,
@@ -46,17 +46,30 @@ await test('include', async (t) => {
 
   await db.drain()
 
-  console.log('drain done')
-
-  await db
+  const x = await db
     .query('user')
     // .locale('nl', ['fr', 'no', 'de'])
     .include('name')
 
     // .include('name', 'body.de', 'body.nl')
-    .range(0, 1)
+    .range(0, 2)
     .get()
-    .inspect(10, true)
+
+  x.debug()
+
+  console.log('drain done')
+  ;(
+    await db
+      .query('user')
+      // .locale('nl', ['fr', 'no', 'de'])
+      .include('name')
+
+      // .include('name', 'body.de', 'body.nl')
+      .range(0, 2)
+      .get()
+  )
+    .inspect(2, true)
+    .debug()
   // .toObject(),
 
   // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
@@ -145,7 +158,11 @@ await test('default', async (t) => {
   console.log('start')
   await perf(
     async () => {
-      await db.query('user').include('name', 'bio', 'hack', 'hack2').get().inspect()
+      await db
+        .query('user')
+        .include('name', 'bio', 'hack', 'hack2')
+        .get()
+        .inspect()
       //const x = await db.query('user').include('name', 'bio', 'hack', 'hack2').get().toObject()
       //console.log(x.name === x.bio)
       //console.log(x.hack === x.bio)

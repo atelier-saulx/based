@@ -98,6 +98,7 @@ const readInstruction = (
   i: number,
   item: Item,
 ): number => {
+  console.log('INSTRUCTION', instruction)
   if (instruction === READ_META) {
     return meta(q, result, i, item)
   } else if (instruction === READ_AGGREGATION) {
@@ -136,6 +137,7 @@ export const readProps = (
   }
   // For the last id
   undefinedProps(q, item)
+  return i
 }
 
 export const resultToObject = (
@@ -149,6 +151,7 @@ export const resultToObject = (
   }
 
   const len = readUint32(result, offset)
+
   if (len === 0) {
     if (q.type === ReaderSchemaEnum.single) {
       return null
@@ -163,13 +166,16 @@ export const resultToObject = (
   while (i < end) {
     const id = readUint32(result, i)
     i += 4
+
     let item: Item = { id }
+
     if (q.search) {
       item.$searchScore = readFloatLE(result, i)
       i += 4
     }
     const l = readProps(q, result, i, end, item) ?? 0
     i += l
+
     if (readHook) {
       const res = readHook(item)
       if (res === null) {
@@ -181,10 +187,7 @@ export const resultToObject = (
     }
   }
 
-  if (q.type === ReaderSchemaEnum.rootProps) {
-    delete items[0].id
-    return items[0]
-  } else if (q.type === ReaderSchemaEnum.single) {
+  if (q.type === ReaderSchemaEnum.single) {
     return items[0]
   }
 

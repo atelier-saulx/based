@@ -29,7 +29,6 @@ export enum ReaderSchemaEnum {
   edge = 1,
   default = 2,
   single = 3,
-  rootProps = 4,
 }
 
 export enum ReaderMeta {
