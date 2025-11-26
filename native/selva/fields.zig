@@ -19,7 +19,7 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
-pub fn getCardinalityField(node: Node.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
+pub fn getCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
     if (selva.c.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
         const countDistinct = selva.c.hll_count(@ptrCast(stored));
         return countDistinct[0..4];
@@ -42,7 +42,7 @@ pub fn getCardinalityReference(ctx: *DbCtx, efc: Schema.EdgeFieldConstraint, ref
     }
 }
 
-pub fn getField(
+pub fn get(
     typeEntry: ?Node.Type,
     node: Node.Node,
     fieldSchema: Schema.FieldSchema,
@@ -59,7 +59,7 @@ pub fn getField(
         const res = selva.c.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
     } else if (fieldType == t.PropType.cardinality) {
-        return getCardinalityField(node, fieldSchema) orelse emptySlice;
+        return getCardinality(node, fieldSchema) orelse emptySlice;
     } else if (fieldType == t.PropType.colVec) {
         const nodeId = Node.getNodeId(node);
         const vec = selva.c.colvec_get_vec(typeEntry, nodeId, fieldSchema);
@@ -71,7 +71,7 @@ pub fn getField(
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub fn writeField(node: Node.Node, fieldSchema: Schema.FieldSchema, data: []u8) !void {
+pub fn write(node: Node.Node, fieldSchema: Schema.FieldSchema, data: []u8) !void {
     try errors.selva(switch (fieldSchema.*.type) {
         selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.c.selva_fields_set_micro_buffer(node, fieldSchema, data.ptr, data.len),
         selva.c.SELVA_FIELD_TYPE_STRING => selva.c.selva_fields_set_string(node, fieldSchema, data.ptr, data.len),
@@ -153,7 +153,7 @@ pub fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.Fi
     return errors.selva(selva.c.selva_fields_set_text(ctx.node, fieldSchema, &selva.c.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.c.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
 }
 
-pub inline fn getTextFromValueFallback(
+pub inline fn textFromValueFallback(
     value: []u8,
     code: t.LangCode,
     fallbacks: []u8,
@@ -194,7 +194,7 @@ pub inline fn getTextFromValueFallback(
     return @as([*]u8, undefined)[0..0];
 }
 
-pub inline fn getTextFromValue(value: []u8, code: t.LangCode) []u8 {
+pub inline fn textFromValue(value: []u8, code: t.LangCode) []u8 {
     if (value.len == 0) {
         return value;
     }
@@ -251,8 +251,8 @@ pub inline fn getText(
     langCode: t.LangCode,
 ) []u8 {
     // fallbacks
-    const data = getField(typeEntry, node, fieldSchema, fieldType);
-    return getTextFromValue(data, langCode);
+    const data = get(typeEntry, node, fieldSchema, fieldType);
+    return textFromValue(data, langCode);
 }
 
 pub fn setAlias(typeEntry: Node.Type, id: u32, field: u8, aliasName: []u8) !u32 {
