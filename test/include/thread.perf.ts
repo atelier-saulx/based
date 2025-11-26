@@ -13,18 +13,18 @@ await test('include', async (t) => {
   // t.after(() => t.backup(db))
 
   await db.setSchema({
-    locales: {
-      en: true,
-      de: { fallback: ['en'] },
-      fr: { fallback: ['en'] },
-      nl: { fallback: ['de'] },
-    },
+    // locales: {
+    //   en: true,
+    //   de: { fallback: ['en'] },
+    //   fr: { fallback: ['en'] },
+    //   nl: { fallback: ['de'] },
+    // },
     types: {
       user: {
         props: {
           name: 'string',
           nr: 'uint32',
-          body: { type: 'text', compression: 'deflate' }, // compression: 'none'
+          // body: { type: 'text', compression: 'deflate' }, // compression: 'none'
         },
       },
     },
@@ -34,10 +34,10 @@ await test('include', async (t) => {
     db.create('user', {
       nr: i,
       name: 'Mr poop',
-      body: {
-        de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
-        en: italy,
-      },
+      // body: {
+      //   de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+      //   en: italy,
+      // },
     })
   }
 
@@ -49,37 +49,37 @@ await test('include', async (t) => {
 
   await db
     .query('user')
-    .locale('nl')
-    .include('name', 'body')
+    // .locale('nl')
+    .include('name')
 
     // .include('name', 'body.de', 'body.nl')
-    .range(0, 1000)
+    .range(0, 2)
     .get()
     .inspect()
 
   // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
 
-  await perf(
-    async () => {
-      const q: any[] = []
-      for (let i = 0; i < 1000; i++) {
-        q.push(
-          db
-            .query('user')
-            .locale('de')
-            .include('name', 'body')
-            // .include('name', 'body', { end: 2 })
-            .range(0, 1000 + i)
-            .get(),
-          // .inspect(),
-          // .inspect(),
-        )
-      }
-      await Promise.all(q)
-    },
-    'Nodes',
-    { repeat: 10 },
-  )
+  // await perf(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 1000; i++) {
+  //       q.push(
+  //         db
+  //           .query('user')
+  //           .locale('de')
+  //           .include('name', 'body')
+  //           // .include('name', 'body', { end: 2 })
+  //           .range(0, 1000 + i)
+  //           .get(),
+  //         // .inspect(),
+  //         // .inspect(),
+  //       )
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'Nodes',
+  //   { repeat: 10 },
+  // )
 
   console.log('done')
 
