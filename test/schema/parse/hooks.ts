@@ -1,4 +1,4 @@
-import { deepEqual, test } from '../shared/index.js'
+import { deepEqual, test } from '../../shared/index.js'
 import { deSerialize, parse, serialize } from '@based/sdk'
 
 await test('hooks', async () => {

@@ -1,15 +1,13 @@
-import { test, throws } from '../shared/index.js'
+import { test, throws } from '../../shared/index.js'
 import { parse } from '@based/sdk'
 
 await test('text', async () => {
   parse({
     locales: {
-      en: {
-        required: true,
-      },
+      en: {},
       de: {},
       nl: {
-        fallback: 'en',
+        fallback: ['en'],
       },
     },
     types: {

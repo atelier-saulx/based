@@ -1,4 +1,3 @@
-import picocolors from 'picocolors'
 import { DbClient } from '../index.js'
 import {
   EQUAL,
@@ -33,6 +32,7 @@ import {
   PropType,
   PropTypeInverse,
 } from '../../zigTsExports.js'
+import { styleText } from 'node:util'
 
 export type QueryError = {
   code: number
@@ -74,12 +74,12 @@ export const ERR_AGG_NOT_IMPLEMENTED = 29
 const messages = {
   [ERR_TARGET_INVAL_TYPE]: (p) => `Type "${p}" does not exist`,
   [ERR_TARGET_INVAL_ALIAS]: (p) => {
-    return `Invalid alias provided to query\n  ${picocolors.italic(safeStringify(p, 100))}`
+    return `Invalid alias provided to query\n  ${styleText('italic', safeStringify(p, 100))}`
   },
   [ERR_TARGET_EXCEED_MAX_IDS]: (p) =>
     `Exceeds max ids ${~~(p.length / 1e3)}k (max ${MAX_IDS_PER_QUERY / 1e3}k)`,
   [ERR_TARGET_INVAL_IDS]: (p) =>
-    `Ids should be of type array or Uint32Array with valid ids \n  ${picocolors.italic(safeStringify(p, 100))}`,
+    `Ids should be of type array or Uint32Array with valid ids \n  ${styleText('italic', safeStringify(p, 100))}`,
   [ERR_TARGET_INVAL_ID]: (p) =>
     `Invalid id should be a number larger then 0 "${p}"`,
   [ERR_INCLUDE_ENOENT]: (p) => `Include: field does not exist "${p}"`,
@@ -550,7 +550,7 @@ export const validateIds = (def: QueryDef, ids: any): Uint32Array => {
 
 export const handleErrors = (def: QueryDef) => {
   if (def.errors.length) {
-    let name = picocolors.red(`QueryError[${displayTarget(def)}]\n`)
+    let name = styleText('red', `QueryError[${displayTarget(def)}]\n`)
     for (const err of def.errors) {
       try {
         name += `  ${messages[err.code](err.payload)}\n`

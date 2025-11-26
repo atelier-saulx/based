@@ -1,9 +1,9 @@
-import picocolors from 'picocolors'
 import { QueryDef } from './types.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { ENCODER } from '../../utils/index.js'
 import { PropType, type PropTypeEnum } from '../../zigTsExports.js'
 import type { PropDef, PropDefEdge } from '../../schema/index.js'
+import { styleText } from 'node:util'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 
@@ -20,9 +20,9 @@ const sizeCalc = (size: number) => {
 export const size = (size: number) => {
   const str = sizeCalc(size)
   if (size > 1e3 * 1e3 * 25) {
-    return picocolors.red(str)
+    return styleText('red', str)
   } else {
-    return picocolors.green(str)
+    return styleText('green', str)
   }
 }
 
@@ -36,17 +36,17 @@ const timeCalc = (time: number) => {
 export const time = (time: number) => {
   const str = timeCalc(time)
   if (time > 1e3) {
-    return picocolors.red(str)
+    return styleText('red', str)
   } else {
-    return picocolors.green(str)
+    return styleText('green', str)
   }
 }
 
 export const printNumber = (nr: number) => {
   if (nr > 1000) {
-    return picocolors.blue(nr.toLocaleString())
+    return styleText('blue', nr.toLocaleString())
   }
-  return picocolors.blue(nr)
+  return styleText('blue', String(nr))
 }
 
 export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
@@ -58,10 +58,11 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
       return `${v}`.padStart(3, '0') + ' '
     })
     return (
-      picocolors.blue(x.join('')) +
-      (isLarger ? picocolors.dim('... ') : '') +
-      picocolors.italic(
-        picocolors.dim(`${~~((v.byteLength / 1e3) * 100) / 100}kb`),
+      styleText('blue', x.join('')) +
+      (isLarger ? styleText('dim', '... ') : '') +
+      styleText(
+        'italic',
+        styleText('dim', `${~~((v.byteLength / 1e3) * 100) / 100}kb`),
       )
     )
   }
@@ -73,32 +74,33 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
   ) {
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
-      const chars = picocolors.italic(
-        picocolors.dim(`${~~((byteLength / 1e3) * 100) / 100}kb`),
+      const chars = styleText(
+        'italic',
+        styleText('dim', `${~~((byteLength / 1e3) * 100) / 100}kb`),
       )
       v =
         v.slice(0, 50).replace(/\n/g, '\\n ') +
-        picocolors.dim('...') +
+        styleText('dim', '...') +
         '" ' +
         chars
     }
 
     if (type === PropType.alias) {
-      return `"${v}" ${picocolors.italic(picocolors.dim('alias'))}`
+      return `"${v}" ${styleText('italic', styleText('dim', 'alias'))}`
     }
 
     return `"${v}"`
   }
 
   if (type === PropType.cardinality) {
-    return `${picocolors.blue(v)} ${picocolors.italic(picocolors.dim('unique'))}`
+    return `${styleText('blue', v)} ${styleText('italic', styleText('dim', 'unique'))}`
   }
 
   if (type === PropType.timestamp) {
     if (v === 0) {
-      return `0 ${picocolors.italic(picocolors.dim('No date'))}`
+      return `0 ${styleText('italic', styleText('dim', 'No date'))}`
     } else {
-      return `${v} ${picocolors.italic(picocolors.dim(new Date(v).toString().replace(/\(.+\)/, '')))}`
+      return `${v} ${styleText('italic', styleText('dim', new Date(v).toString().replace(/\(.+\)/, '')))}`
     }
   }
 
@@ -181,15 +183,15 @@ const inspectObject = (
       // skip
     } else if (key === 'id') {
       str +=
-        picocolors.blue(v) +
+        styleText('blue', v) +
         // @ts-ignore
-        picocolors.italic(picocolors.dim(` ${q.target.type}`))
+        styleText('italic', styleText('dim', ` ${q.target.type}`))
       str += ',\n'
     } else if (!def) {
       if (typeof v === 'number') {
         if (q.aggregate) {
           str += printNumber(v)
-          str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
+          str += styleText('italic', styleText('dim', ` ${k.toLowerCase()}`))
           str += ',\n'
         } else {
           str += printNumber(v) + '\n'
@@ -202,7 +204,7 @@ const inspectObject = (
       if (def.typeIndex === PropType.references) {
         if (q.aggregate) {
           str += printNumber(v)
-          str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
+          str += styleText('italic', styleText('dim', ` ${k.toLowerCase()}`))
         } else {
           str += inspectData(
             v,
@@ -218,7 +220,7 @@ const inspectObject = (
         } else {
           if (q.aggregate) {
             str += printNumber(v)
-            str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
+            str += styleText('italic', styleText('dim', ` ${k.toLowerCase()}`))
           } else {
             str += inspectObject(
               v,
@@ -271,7 +273,7 @@ const inspectObject = (
         if (typeof v === 'number') {
           if (q.aggregate) {
             str += printNumber(v)
-            str += picocolors.italic(picocolors.dim(` ${k.toLowerCase()}`))
+            str += styleText('italic', styleText('dim', ` ${k.toLowerCase()}`))
           } else {
             str += printNumber(v)
           }
@@ -296,7 +298,7 @@ const inspectObject = (
 
   for (const edge of edges) {
     if (edge.def.typeIndex === PropType.reference) {
-      str += prefixBody + picocolors.bold(`${edge.k}: `)
+      str += prefixBody + styleText('bold', `${edge.k}: `)
       str += inspectObject(
         edge.v,
         q.edges!.references.get(edge.def.prop)!,
@@ -308,7 +310,7 @@ const inspectObject = (
         depth,
       )
     } else if (edge.def.typeIndex === PropType.references) {
-      str += prefixBody + picocolors.bold(`${edge.k}: `)
+      str += prefixBody + styleText('bold', `${edge.k}: `)
       str +=
         inspectData(
           edge.v,
@@ -320,7 +322,7 @@ const inspectObject = (
     } else {
       str +=
         prefixBody +
-        picocolors.bold(`${edge.k}: `) +
+        styleText('bold', `${edge.k}: `) +
         prettyPrintVal(edge.v, edge.def.typeIndex) +
         ',\n'
     }
@@ -395,8 +397,10 @@ export const inspectData = (
     const morePrefix = ''.padStart(top ? 2 : level + 3, ' ')
     str +=
       ',\n' +
-      picocolors.dim(
-        picocolors.italic(
+      styleText(
+        'dim',
+        styleText(
+          'italic',
           prefix +
             morePrefix +
             `...${length - max} More item${length - max !== 1 ? 's' : ''}\n`,

@@ -1,5 +1,5 @@
 import { deSerialize, parse, serialize, type SchemaOut } from '@based/sdk'
-import { test } from '../shared/index.js'
+import { test } from '../../shared/index.js'
 import eurovisionSchema from './schema/based.schema.js'
 import { ok } from 'assert'
 
