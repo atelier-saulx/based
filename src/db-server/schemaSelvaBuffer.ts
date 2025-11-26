@@ -141,7 +141,6 @@ const propDefBuffer = (
   return [selvaType]
 }
 
-// TODO rewrite
 export function schemaToSelvaBuffer(schema: {
   [key: string]: SchemaTypeDef
 }): ArrayBuffer[] {
