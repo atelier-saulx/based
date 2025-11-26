@@ -89,6 +89,8 @@ export const addMetaProp = (p: ReaderPropDef, meta: Meta, item: Item) => {
   const path = p.path
   const len = path.length - 1
   let select: any = item
+
+  console.log(item)
   for (let i = 0; i <= len; i++) {
     const field = path[i]
     if (i === len) {

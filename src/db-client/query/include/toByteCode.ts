@@ -149,17 +149,9 @@ export const includeToBuffer = (
         }
       }
 
-      if (!opts) {
-        result.push(
-          createIncludeHeader({
-            op: IncludeOp.default,
-            prop,
-            propType: propType,
-          }),
-        )
-      } else if (opts.meta !== 'only') {
-        const hasEndOption = !!opts.end
-        const codes = opts.codes
+      if (opts?.meta !== 'only') {
+        const hasEndOption = !!opts?.end
+        const codes = opts?.codes
         if (codes && !codes.has(0)) {
           const fallBacks = createLangFallbacks(opts)
           result.push(
@@ -200,6 +192,14 @@ export const includeToBuffer = (
                   propType === PropType.text),
               lang: LangCode.none,
               langFallbackSize: 0,
+            }),
+          )
+        } else {
+          result.push(
+            createIncludeHeader({
+              op: IncludeOp.default,
+              prop,
+              propType: propType,
             }),
           )
         }

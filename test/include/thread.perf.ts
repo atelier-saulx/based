@@ -46,30 +46,30 @@ await test('include', async (t) => {
 
   await db.drain()
 
-  // const x = await db
-  //   .query('user')
-  //   // .locale('nl', ['fr', 'no', 'de'])
-  //   .include('name')
-
-  //   // .include('name', 'body.de', 'body.nl')
-  //   .range(0, 2)
-  //   .get()
-
-  // x.debug()
-
-  console.log('drain done')
-  ;(
-    await db
-      .query('user')
-      // .locale('nl', ['fr', 'no', 'de'])
-      // .include('name')
-
-      .include('name', { meta: 'only' })
-      .range(0, 2)
-      .get()
-  )
+  const x = await db
+    .query('user')
+    .locale('nl', ['fr', 'no', 'de'])
+    .include('name', { meta: true })
+    // .include('name')
+    .range(0, 2)
+    .get()
     .inspect(2, true)
-    .debug()
+
+  x.debug()
+
+  // console.log('drain done')
+  // ;(
+  //   await db
+  //     .query('user')
+  //     // .locale('nl', ['fr', 'no', 'de'])
+  //     // .include('name')
+
+  //     .include('name', { meta: 'only' })
+  //     .range(0, 2)
+  //     .get()
+  // )
+  //   .inspect(2, true)
+  //   .debug()
   // .toObject(),
 
   // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
