@@ -1,6 +1,5 @@
 import { Ctx } from '../Ctx.js'
 import { deleteString, writeString } from './string.js'
-import { markTextValue, markTextObj } from '../create/mark.js'
 import type { PropDef } from '../../../schema/index.js'
 import { LangCodeEnum } from '../../../zigTsExports.js'
 
@@ -18,13 +17,10 @@ export const writeText = (ctx: Ctx, def: PropDef, val: any): void => {
     }
 
     writeString(ctx, def, val, ctx.locale)
-    markTextValue(ctx, def, ctx.locale, true)
     return
   }
 
   if (typeof val === 'object') {
-    markTextObj(ctx)
-
     for (const lang in val) {
       const langU8 = ctx.schema.separateTextSort.localeStringToIndex.get(lang)
       if (!langU8) {
@@ -33,7 +29,6 @@ export const writeText = (ctx: Ctx, def: PropDef, val: any): void => {
       const text = val[lang]
       const locale = langU8[1] as LangCodeEnum
       writeString(ctx, def, text, locale)
-      markTextValue(ctx, def, locale, false)
     }
     return
   }

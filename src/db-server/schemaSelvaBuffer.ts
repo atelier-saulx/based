@@ -1,6 +1,6 @@
 import { writeUint32, } from '../utils/index.js'
 import native from '../native.js'
-import { LangCode, LangCodeEnum, PropType, PropTypeEnum } from '../zigTsExports.js'
+import { LangCode, PropType, PropTypeEnum } from '../zigTsExports.js'
 import {
   EMPTY_MICRO_BUFFER,
   VECTOR_BASE_TYPE_SIZE_MAP,
@@ -8,7 +8,7 @@ import {
   type PropDefEdge,
   type SchemaTypeDef,
 } from '../schema/index.js'
-import { COMPRESSED, NOT_COMPRESSED } from '../protocol/index.js'
+import { writeRaw as stringWrite } from '../db-client/string.js'
 import { fillEmptyMain } from '../schema/def/fillEmptyMain.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
@@ -65,45 +65,6 @@ function makeEdgeConstraintFlags(prop: PropDef): number {
   return flags
 }
 
-function setDefaultString(dst: Uint8Array, s: Uint8Array | string, offset: number, lang: LangCodeEnum, noCompression: boolean): number {
-  if (s instanceof Uint8Array) {
-    dst.set(s, offset)
-    return dst.byteLength
-  } else if (noCompression) {
-    const value = s.normalize('NFKD')
-    dst[offset] = lang
-    dst[offset + 1] = NOT_COMPRESSED
-    const l = native.stringToUint8Array(value, dst, offset + 2)
-    let crc = native.crc32(dst.subarray(offset + 2, offset + 2 + l))
-    writeUint32(dst, crc, offset + 2 + l)
-    return l + 6;
-  } else { // Try to compress
-    const value = s.normalize('NFKD')
-    const l = native.stringByteLength(value)
-
-    if (l <= 200) {
-      return setDefaultString(dst, s, offset, lang, true)
-    }
-
-    dst[offset] = lang
-    dst[offset + 1] = COMPRESSED
-
-    const insertPos = offset + 6 + l
-    const endPos = insertPos + l
-    native.stringToUint8Array(value, dst, insertPos)
-    const crc = native.crc32(dst.subarray(insertPos, endPos))
-    const size = native.compress(dst, offset + 6, l)
-    if (size == 0) {
-      // Didn't compress
-      return setDefaultString(dst, s, offset, lang, true)
-    }
-
-    writeUint32(dst, l, offset + 2) // uncompressed size
-    writeUint32(dst, crc, offset + size + 6)
-    return size + 10
-  }
-}
-
 const propDefBuffer = (
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
@@ -155,12 +116,12 @@ const propDefBuffer = (
   ) {
     if (prop.default && supportedDefaults.has(type)) {
         const STRING_EXTRA_MAX = 10
-        const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : native.stringByteLength(prop.default) + STRING_EXTRA_MAX
+        const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : 2 * native.stringByteLength(prop.default) + STRING_EXTRA_MAX
         let buf = new Uint8Array(6 + defaultLen)
 
         buf[0] = selvaType
         buf[1] = prop.len < 50 ? prop.len : 0
-        const l = setDefaultString(buf, prop.default, 6, LangCode.none, false)
+        const l = stringWrite(buf, prop.default, 6, LangCode.none, false)
         if (l != buf.length) {
           buf = buf.subarray(0, 6 + l)
         }

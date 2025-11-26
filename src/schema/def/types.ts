@@ -132,7 +132,6 @@ export type SchemaTypeDef = {
     localeToIndex: Map<LangCodeEnum, number>
   }
   hasSeperateDefaults: boolean
-  separateDefaults?: { props: Map<number, PropDef>; bufferTmp: Uint8Array }
   createTs?: PropDef[]
   updateTs?: PropDef[]
   locales: Partial<SchemaLocales>

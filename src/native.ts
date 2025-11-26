@@ -81,6 +81,7 @@ const native = {
     return db.compress(compressor, buf, offset, stringSize)
   },
 
+  // buf needs to be 2x stringSize!
   compress: (buf: Uint8Array, offset: number, stringSize: number) => {
     return db.compress(compressor, buf, offset, stringSize)
   },

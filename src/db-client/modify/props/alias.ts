@@ -4,7 +4,6 @@ import { validate } from '../validate.js'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
-import { markString } from '../create/mark.js'
 import type { PropDef } from '../../../schema/index.js'
 import { ENCODER } from '../../../utils/uint8.js'
 
@@ -27,5 +26,4 @@ export const writeAlias = (ctx: Ctx, def: PropDef, val: any) => {
   writeU8(ctx, ctx.operation)
   writeU32(ctx, buf.byteLength)
   writeU8Array(ctx, buf)
-  markString(ctx, def)
 }

@@ -28,44 +28,45 @@ import type { SchemaTypeDef } from '../../../schema/index.js'
 import { writeUint16 } from '../../../utils/uint8.js'
 import { getByPath } from '../../../utils/path.js'
 
-const writeDefaults = (ctx: Ctx) => {
-  if (!ctx.schema.hasSeperateDefaults) {
-    return
-  }
-  if (ctx.defaults !== ctx.schema.separateDefaults!.props.size) {
-    for (const def of ctx.schema.separateDefaults!.props.values()) {
-      const type = def.typeIndex
-      if (ctx.schema.separateDefaults!.bufferTmp[def.prop] === 0) {
-        writeSeparate(ctx, def, def.default)
-        continue
-      }
-
-      if (type !== PropType.text) {
-        continue
-      }
-
-      const buf = ctx.schema.separateTextSort.bufferTmp
-      const amount = ctx.schema.localeSize + 1
-      const len = amount * ctx.schema.separateTextSort.props.length
-      for (const sortDef of ctx.schema.separateTextSort.props) {
-        const index = sortDef.prop * amount
-        if (buf[index] === 0) {
-          continue
-        }
-        for (let i = index + 1; i < len + index; i++) {
-          const lang = buf[i] as LangCodeEnum
-          if (lang === 0) {
-            continue
-          }
-          const val = def.default[LangCodeInverse[lang]]
-          if (val !== undefined) {
-            writeString(ctx, def, val, lang)
-          }
-        }
-      }
-    }
-  }
-}
+// FIXME text sort
+//const writeDefaults = (ctx: Ctx) => {
+//  if (!ctx.schema.hasSeperateDefaults) {
+//    return
+//  }
+//  if (ctx.defaults !== ctx.schema.separateDefaults!.props.size) {
+//    for (const def of ctx.schema.separateDefaults!.props.values()) {
+//      const type = def.typeIndex
+//      if (ctx.schema.separateDefaults!.bufferTmp[def.prop] === 0) {
+//        writeSeparate(ctx, def, def.default)
+//        continue
+//      }
+//
+//      if (type !== PropType.text) {
+//        continue
+//      }
+//
+//      const buf = ctx.schema.separateTextSort.bufferTmp
+//      const amount = ctx.schema.localeSize + 1
+//      const len = amount * ctx.schema.separateTextSort.props.length
+//      for (const sortDef of ctx.schema.separateTextSort.props) {
+//        const index = sortDef.prop * amount
+//        if (buf[index] === 0) {
+//          continue
+//        }
+//        for (let i = index + 1; i < len + index; i++) {
+//          const lang = buf[i] as LangCodeEnum
+//          if (lang === 0) {
+//            continue
+//          }
+//          const val = def.default[LangCodeInverse[lang]]
+//          if (val !== undefined) {
+//            writeString(ctx, def, val, lang)
+//          }
+//        }
+//      }
+//    }
+//  }
+//}
 
 const writeSortable = (ctx: Ctx) => {
   if (!ctx.schema.hasSeperateSort) {
@@ -168,7 +169,6 @@ export const writeCreate = (
 
   if (ctx.defaults) {
     ctx.defaults = 0
-    schema.separateDefaults?.bufferTmp.fill(0)
   }
 
   if (ctx.sort) {
@@ -210,7 +210,6 @@ export const writeCreate = (
     writeMainCursor(ctx)
   }
   writeCreateTs(ctx, payload)
-  writeDefaults(ctx)
   writeSortable(ctx)
   writeSortableText(ctx)
   while (ctx.index < ctx.start + 5) {
