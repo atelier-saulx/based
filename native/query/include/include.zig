@@ -124,19 +124,34 @@ pub fn include(
                                 try opts.string(ctx.thread, header.prop, Fields.textFromValue(value, optsHeader.lang), &optsHeader);
                                 optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                             }
-                        } else if (optsHeader.langFallbackSize > 0) {
-                            try opts.string(
-                                ctx.thread,
-                                header.prop,
-                                Fields.textFromValueFallback(
-                                    value,
-                                    optsHeader.lang,
-                                    utils.sliceNext(optsHeader.langFallbackSize, q, &i),
-                                ),
-                                &optsHeader,
-                            );
-                        } else {
-                            try opts.string(ctx.thread, header.prop, Fields.textFromValue(value, optsHeader.lang), &optsHeader);
+                        } else switch (optsHeader.langFallbackSize) {
+                            0 => {
+                                try opts.string(ctx.thread, header.prop, Fields.textFromValue(value, optsHeader.lang), &optsHeader);
+                            },
+                            1 => {
+                                try opts.string(
+                                    ctx.thread,
+                                    header.prop,
+                                    Fields.textFromValueFallback(
+                                        value,
+                                        optsHeader.lang,
+                                        utils.readNext(t.LangCode, q, &i),
+                                    ),
+                                    &optsHeader,
+                                );
+                            },
+                            else => {
+                                try opts.string(
+                                    ctx.thread,
+                                    header.prop,
+                                    Fields.textFromValueFallbacks(
+                                        value,
+                                        optsHeader.lang,
+                                        utils.sliceNextAs(t.LangCode, optsHeader.langFallbackSize, q, &i),
+                                    ),
+                                    &optsHeader,
+                                );
+                            },
                         }
                     },
                     else => {

@@ -88,8 +88,9 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
         .pointer => |info| {
             if (info.size == .slice) {
                 const ChildType = info.child;
-                const s = @bitSizeOf(T) / 8;
-                const value: T = @as([*]ChildType, @ptrCast(@alignCast(buffer.ptr)))[0..@divFloor(buffer.len, s)];
+                const size = @bitSizeOf(T) / 8;
+                // [offset..] ??
+                const value: T = @as([*]ChildType, @ptrCast(@alignCast(buffer[offset..].ptr)))[0..@divFloor(buffer.len, size)];
                 return value;
             } else {
                 @compileError("Read: Only slice pointers supported for now... " ++ @typeName(T));
@@ -118,6 +119,13 @@ pub inline fn readNext(T: type, buffer: []u8, offset: *usize) T {
 pub inline fn sliceNext(size: usize, q: []u8, offset: *usize) []u8 {
     const value = q[offset.* .. offset.* + size];
     offset.* += size;
+    return value;
+}
+
+pub inline fn sliceNextAs(T: type, size: usize, buffer: []u8, offset: *usize) []T {
+    const s = @bitSizeOf(T) / 8 * size;
+    const value: []T = @as([*]T, @ptrCast(@alignCast(buffer.ptr)))[offset.* .. s + offset.*];
+    offset.* += s;
     return value;
 }
 
