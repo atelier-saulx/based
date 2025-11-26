@@ -114,29 +114,37 @@ pub fn include(
                     },
                     t.PropType.text,
                     => {
-                        if (optsHeader.lang == t.LangCode.none) {
-                            var iter = Fields.textIterator(value);
-                            while (iter.next()) |textValue| {
-                                try opts.string(ctx.thread, header.prop, textValue, &optsHeader);
-                            }
-                        } else if (optsHeader.next) {
-                            while (optsHeader.next) {
-                                try opts.string(ctx.thread, header.prop, Fields.textFromValue(value, optsHeader.lang), &optsHeader);
-                                optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-                            }
-                        } else switch (optsHeader.langFallbackSize) {
+                        switch (optsHeader.langFallbackSize) {
                             0 => {
-                                try opts.string(ctx.thread, header.prop, Fields.textFromValue(value, optsHeader.lang), &optsHeader);
+                                if (optsHeader.lang == t.LangCode.none) {
+                                    var iter = Fields.textIterator(value);
+                                    while (iter.next()) |textValue| {
+                                        try opts.string(ctx.thread, header.prop, textValue, &optsHeader);
+                                    }
+                                } else if (optsHeader.next) {
+                                    while (optsHeader.next) {
+                                        try opts.string(
+                                            ctx.thread,
+                                            header.prop,
+                                            Fields.textFromValue(value, optsHeader.lang),
+                                            &optsHeader,
+                                        );
+                                        optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+                                    }
+                                } else {
+                                    try opts.string(
+                                        ctx.thread,
+                                        header.prop,
+                                        Fields.textFromValue(value, optsHeader.lang),
+                                        &optsHeader,
+                                    );
+                                }
                             },
                             1 => {
                                 try opts.string(
                                     ctx.thread,
                                     header.prop,
-                                    Fields.textFromValueFallback(
-                                        value,
-                                        optsHeader.lang,
-                                        utils.readNext(t.LangCode, q, &i),
-                                    ),
+                                    Fields.textFromValueFallback(value, optsHeader.lang, utils.readNext(t.LangCode, q, &i)),
                                     &optsHeader,
                                 );
                             },
@@ -172,7 +180,6 @@ pub fn include(
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        std.debug.print("flap => {any} \n", .{value});
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     else => {

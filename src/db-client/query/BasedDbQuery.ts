@@ -28,6 +28,8 @@ import picocolors from 'picocolors'
 import { include } from './include/include.js'
 import { AggregateType, type ReaderSchema } from '../../protocol/index.js'
 import { LangCode, LangCodeEnum } from '../../zigTsExports.js'
+import { SchemaOut } from '../../schema.js'
+import { SchemaLocale } from '../../schema/schema/locales.js'
 
 export { QueryByAliasObj }
 
@@ -609,30 +611,30 @@ export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
     registerQuery(this)
   }
 
-  locale(locale: keyof typeof LangCode, fallBack?: LangFallback) {
+  locale(locale: keyof typeof LangCode, fallBacks?: LangFallback[]) {
     if (this.queryCommands) {
       this.queryCommands.unshift({
         method: 'locale',
-        args: [locale],
+        args: [locale, fallBacks],
       })
     } else {
       const def = this.def!
-      if (fallBack === undefined) {
+      if (fallBacks === undefined) {
         // Uses fallback from schema if available
-        const localeDescriptor = def.schema!.locales[locale]
-        fallBack =
+        const localeDescriptor = def.schema!.locales![locale]
+        fallBacks =
           typeof localeDescriptor === 'object'
             ? localeDescriptor.fallback || false
             : false
       }
       validateLocale(def, locale)
-      const fallBackCode: LangCodeEnum[] =
-        fallBack === false || fallBack === undefined
-          ? []
-          : [LangCode[fallBack]!]
       def.lang = {
         lang: LangCode[locale] ?? 0,
-        fallback: fallBackCode,
+        fallback:
+          fallBacks === undefined
+            ? []
+            : // @ts-ignore
+              fallBacks.map((code: LangCodeEnum) => LangCode[code]),
       }
     }
     return this

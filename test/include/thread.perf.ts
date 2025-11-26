@@ -13,18 +13,18 @@ await test('include', async (t) => {
   // t.after(() => t.backup(db))
 
   await db.setSchema({
-    // locales: {
-    //   en: true,
-    //   de: { fallback: ['en'] },
-    //   fr: { fallback: ['en'] },
-    //   nl: { fallback: ['de'] },
-    // },
+    locales: {
+      en: true,
+      de: { fallback: ['en'] },
+      fr: { fallback: ['en'] },
+      nl: { fallback: ['fr', 'de', 'en'] },
+    },
     types: {
       user: {
         props: {
-          name: 'string',
-          // nr: 'uint32',
-          // body: { type: 'text', compression: 'deflate' }, // compression: 'none'
+          name: { type: 'string', default: 'xxxx' },
+          nr: 'uint32',
+          body: { type: 'text', compression: 'deflate' }, // compression: 'none'
         },
       },
     },
@@ -32,12 +32,12 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 1000; i++) {
     db.create('user', {
-      // nr: i,
+      nr: i,
       name: 'Mr poop !',
-      // body: {
-      //   de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
-      //   en: italy,
-      // },
+      body: {
+        de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+        en: italy,
+      },
     })
   }
 
@@ -49,8 +49,8 @@ await test('include', async (t) => {
 
   await db
     .query('user')
-    // .locale('nl')
-    .include('name')
+    .locale('nl', ['fr', 'de'])
+    .include('name', 'body')
 
     // .include('name', 'body.de', 'body.nl')
     .range(0, 2)
