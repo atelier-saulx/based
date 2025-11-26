@@ -1,5 +1,11 @@
 import { DbClient } from '../../index.js'
-import { IntermediateByteCode, QueryDef, QueryDefType } from '../types.js'
+import {
+  IncludeField,
+  IncludeOpts,
+  IntermediateByteCode,
+  QueryDef,
+  QueryDefType,
+} from '../types.js'
 import { walkDefs } from './walk.js'
 import { writeUint16 } from '../../../utils/index.js'
 import { getEnd } from './utils.js'
@@ -12,6 +18,14 @@ import {
 } from '../../../zigTsExports.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
+
+export const createLangFallbacks = (opts: IncludeOpts) => {
+  const langFallbacks = new Uint8Array(opts.fallBacks!.length || 0)
+  for (let i = 0; i < opts!.fallBacks!.length || 0; i++) {
+    langFallbacks[i] = opts!.fallBacks![i]
+  }
+  return langFallbacks
+}
 
 export const includeToBuffer = (
   db: DbClient,
@@ -102,6 +116,8 @@ export const includeToBuffer = (
 
   if (propSize) {
     for (const [prop, propDef] of def.include.props.entries()) {
+      const opts = propDef.opts
+
       const propType = propDef.opts?.raw
         ? PropType.binary
         : propDef.def.typeIndex // replace this with proptype
@@ -154,11 +170,20 @@ export const includeToBuffer = (
         }
       }
 
-      if (propDef.opts?.meta !== 'only') {
-        const hasEndOption = !!propDef.opts?.end
-        const codes = propDef.opts!?.codes!
-        if (propType === PropType.text && !codes?.has(0)) {
-          const hasFallbacks = propDef.opts!.fallBacks!.length > 0
+      if (!opts) {
+        result.push(
+          createIncludeHeader({
+            op: IncludeOp.default,
+            prop,
+            propType: propType,
+          }),
+        )
+      } else if (opts.meta !== 'only') {
+        const hasEndOption = !!opts.end
+        const codes = opts.codes
+        if (codes && !codes.has(0)) {
+          const fallBacks = createLangFallbacks(opts)
+          console.log({ fallBacks })
           result.push(
             createIncludeHeader({
               op: IncludeOp.defaultWithOpts,
@@ -175,10 +200,9 @@ export const includeToBuffer = (
                 end: getEnd(propDef.opts),
                 isChars: !propDef.opts?.bytes,
                 lang: code,
-                fallback: hasFallbacks
-                  ? propDef.opts!.fallBacks![0]
-                  : LangCode.NONE,
+                langFallbackSize: fallBacks.byteLength,
               }),
+              fallBacks,
             )
           }
         } else if (hasEndOption) {
@@ -196,16 +220,8 @@ export const includeToBuffer = (
                 (propType === PropType.json ||
                   propType === PropType.string ||
                   propType === PropType.text),
-              lang: LangCode.NONE,
-              fallback: LangCode.NONE,
-            }),
-          )
-        } else {
-          result.push(
-            createIncludeHeader({
-              op: IncludeOp.default,
-              prop,
-              propType: propType,
+              lang: LangCode.none,
+              langFallbackSize: 0,
             }),
           )
         }

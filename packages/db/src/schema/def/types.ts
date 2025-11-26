@@ -1,5 +1,4 @@
 import type {
-  LangCode,
   SchemaHooks,
   SchemaLocales,
   SchemaProp,
@@ -7,82 +6,21 @@ import type {
 } from '../index.js'
 import { Validation } from './validation.js'
 import {
-  ALIAS,
-  ALIASES,
-  BINARY,
-  BOOLEAN,
-  CARDINALITY,
-  COLVEC,
-  ENUM,
-  INT16,
-  INT32,
-  INT8,
-  JSON,
-  MICRO_BUFFER,
-  NULL,
-  NUMBER,
-  OBJECT,
-  REFERENCE,
-  REFERENCES,
-  STRING,
-  TEXT,
-  TIMESTAMP,
-  UINT16,
-  UINT32,
-  UINT8,
-  VECTOR,
-  TypeIndex,
+  PropType,
+  PropTypeEnum,
   VectorBaseType,
-  ID,
-} from './typeIndexes.js'
-
-export * from './typeIndexes.js'
-
-export const TYPE_INDEX_MAP: Record<string, TypeIndex> = {
-  alias: ALIAS,
-  aliases: ALIASES,
-  microbuffer: MICRO_BUFFER,
-  references: REFERENCES,
-  reference: REFERENCE,
-  timestamp: TIMESTAMP,
-  boolean: BOOLEAN,
-  number: NUMBER,
-  string: STRING,
-  text: TEXT,
-  uint16: UINT16,
-  uint32: UINT32,
-  int16: INT16,
-  int32: INT32,
-  uint8: UINT8,
-  enum: ENUM,
-  int8: INT8,
-  id: NULL,
-  binary: BINARY,
-  vector: VECTOR,
-  cardinality: CARDINALITY,
-  json: JSON,
-  object: OBJECT,
-  colvec: COLVEC,
-}
-
-export const enum typeNumberTypes {
-  number = NUMBER,
-  uint16 = UINT16,
-  uint32 = UINT32,
-  int16 = INT16,
-  int32 = INT32,
-  uint8 = UINT8,
-  int8 = INT8,
-  cardinality = CARDINALITY,
-}
-
-export type InternalSchemaProp = keyof typeof TYPE_INDEX_MAP
+  VectorBaseTypeEnum,
+  LangCodeEnum,
+  PropTypeInverse,
+  ID_PROP,
+  MAIN_PROP,
+} from '../../zigTsExports.js'
 
 export type PropDef = {
   __isPropDef: true
   schema: SchemaProp<true>
   prop: number // (0-250)
-  typeIndex: TypeIndex
+  typeIndex: PropTypeEnum
   separate: boolean
   path: string[]
   start: number
@@ -100,7 +38,7 @@ export type PropDef = {
   inversePropNumber?: number
   referencesCapped?: number
   // vectors
-  vectorBaseType?: VectorBaseType
+  vectorBaseType?: VectorBaseTypeEnum
   vectorSize?: number
   // cardinality
   cardinalityMode?: number
@@ -131,7 +69,7 @@ export type PropDef = {
 
 export type PropDefEdge = Partial<PropDef> & {
   __isPropDef: true
-  typeIndex: TypeIndex
+  typeIndex: PropTypeEnum
   schema: SchemaProp<true>
   len: number
   prop: number // (0-250)
@@ -142,7 +80,7 @@ export type PropDefEdge = Partial<PropDef> & {
 
 export type PropDefAggregate = Partial<PropDef> & {
   __isPropDef: true
-  typeIndex: TypeIndex
+  typeIndex: PropTypeEnum
   len: number
   prop: number // (0-250)
   name: string
@@ -195,7 +133,7 @@ export type SchemaTypeDef = {
   separateTextSort: SchemaSortUndefinedHandler & {
     noUndefined: Uint8Array
     localeStringToIndex: Map<string, Uint8Array> // [langCode][index]
-    localeToIndex: Map<LangCode, number>
+    localeToIndex: Map<LangCodeEnum, number>
   }
   hasSeperateDefaults: boolean
   separateDefaults?: { props: Map<number, PropDef>; bufferTmp: Uint8Array }
@@ -209,18 +147,19 @@ export type SchemaTypeDef = {
   }
 }
 
-export const VECTOR_BASE_TYPE_SIZE_MAP: Record<VectorBaseType, number> = {
-  [VectorBaseType.Int8]: 1,
-  [VectorBaseType.Uint8]: 1,
-  [VectorBaseType.Int16]: 2,
-  [VectorBaseType.Uint16]: 2,
-  [VectorBaseType.Int32]: 4,
-  [VectorBaseType.Uint32]: 4,
-  [VectorBaseType.Float32]: 4,
-  [VectorBaseType.Float64]: 8,
+export const VECTOR_BASE_TYPE_SIZE_MAP: Record<VectorBaseTypeEnum, number> = {
+  [VectorBaseType.int8]: 1,
+  [VectorBaseType.uint8]: 1,
+  [VectorBaseType.int16]: 2,
+  [VectorBaseType.uint16]: 2,
+  [VectorBaseType.int32]: 4,
+  [VectorBaseType.uint32]: 4,
+  [VectorBaseType.float32]: 4,
+  [VectorBaseType.float64]: 8,
 }
 
-export const SIZE_MAP: Record<InternalSchemaProp, number> = {
+export const SIZE_MAP: Record<keyof typeof PropType, number> = {
+  null: 0,
   timestamp: 8, // 64bit
   // double-precision 64-bit binary format IEEE 754 value
   number: 8, // 64bit
@@ -237,7 +176,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   text: 0, // separate
   cardinality: 0, // separate
   references: 0, // separate
-  microbuffer: 0, // separate
+  microBuffer: 0, // separate
   alias: 0,
   aliases: 0,
   id: 4,
@@ -245,31 +184,28 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   vector: 0, // separate
   json: 0,
   object: 0,
-  colvec: 0, // separate
+  colVec: 0,
 }
 
 const reverseMap: any = {}
-for (const k in TYPE_INDEX_MAP) {
-  reverseMap[TYPE_INDEX_MAP[k]] = k
+for (const k in PropType) {
+  reverseMap[PropType[k]] = k
 }
 
 // @ts-ignore
 export const REVERSE_SIZE_MAP: Record<TypeIndex, number> = {}
 
 for (const k in SIZE_MAP) {
-  REVERSE_SIZE_MAP[TYPE_INDEX_MAP[k]] = SIZE_MAP[k]
+  REVERSE_SIZE_MAP[PropType[k]] = SIZE_MAP[k]
 }
-
-export const REVERSE_TYPE_INDEX_MAP: Record<TypeIndex, InternalSchemaProp> =
-  reverseMap
 
 export const ID_FIELD_DEF: PropDef = {
   schema: null as any,
-  typeIndex: NULL,
+  typeIndex: PropType.null,
   separate: true,
   path: ['id'],
   start: 0,
-  prop: ID,
+  prop: ID_PROP,
   default: 0,
   len: 4,
   validation: () => true,
@@ -278,10 +214,10 @@ export const ID_FIELD_DEF: PropDef = {
 
 export const EMPTY_MICRO_BUFFER: PropDef = {
   schema: null as any,
-  typeIndex: MICRO_BUFFER,
+  typeIndex: PropType.microBuffer,
   separate: true,
   path: [''],
-  start: 0,
+  start: MAIN_PROP,
   default: undefined,
   prop: 0,
   len: 1,
@@ -289,8 +225,8 @@ export const EMPTY_MICRO_BUFFER: PropDef = {
   __isPropDef: true,
 }
 
-export const getPropTypeName = (propType: TypeIndex): InternalSchemaProp => {
-  return REVERSE_TYPE_INDEX_MAP[propType]
+export const getPropTypeName = (propType: PropTypeEnum) => {
+  return PropTypeInverse[propType]
 }
 
 export const isPropDef = (prop: any): prop is PropDef => {

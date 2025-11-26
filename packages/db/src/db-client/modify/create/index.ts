@@ -17,12 +17,13 @@ import { writeString } from '../props/string.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { getValidSchema, validatePayload } from '../validate.js'
 import { handleError } from '../error.js'
-import { ModOp, PropType } from '../../../zigTsExports.js'
 import {
-  inverseLangMap,
-  langCodesMap,
-  type LangCode,
-} from '../../../schema/lang.js'
+  LangCode,
+  LangCodeEnum,
+  LangCodeInverse,
+  ModOp,
+  PropType,
+} from '../../../zigTsExports.js'
 import type { SchemaTypeDef } from '../../../schema/index.js'
 import { writeUint16 } from '../../../utils/uint8.js'
 import { getByPath } from '../../../utils/path.js'
@@ -52,11 +53,11 @@ const writeDefaults = (ctx: Ctx) => {
           continue
         }
         for (let i = index + 1; i < len + index; i++) {
-          const lang = buf[i] as LangCode
+          const lang = buf[i] as LangCodeEnum
           if (lang === 0) {
             continue
           }
-          const val = def.default[inverseLangMap.get(lang)]
+          const val = def.default[LangCodeInverse[lang]]
           if (val !== undefined) {
             writeString(ctx, def, val, lang)
           }
@@ -183,7 +184,7 @@ export const writeCreate = (
   ctx.schema = schema
   ctx.operation = ModOp.createProp
   ctx.unsafe = opts?.unsafe
-  ctx.locale = (opts?.locale && langCodesMap.get(opts.locale)) || 0
+  ctx.locale = (opts?.locale && LangCode[opts.locale]) || 0
   // TODO: can we remove this (and just init main buffer here?)
   ctx.cursor.main = undefined
 

@@ -121,22 +121,22 @@ pub fn include(
                             }
                         } else if (optsHeader.next) {
                             while (optsHeader.next) {
-                                try opts.string(
-                                    ctx.thread,
-                                    header.prop,
-                                    Fields.getTextFromValue(value, optsHeader.lang),
-                                    &optsHeader,
-                                );
+                                try opts.string(ctx.thread, header.prop, Fields.getTextFromValue(value, optsHeader.lang), &optsHeader);
                                 optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                             }
-                        } else {
-                            // TODO: Support multiple fallbacks
+                        } else if (optsHeader.langFallbackSize > 0) {
                             try opts.string(
                                 ctx.thread,
                                 header.prop,
-                                Fields.getTextFallback(value, optsHeader.lang, optsHeader.fallback),
+                                Fields.getTextFromValueFallback(
+                                    value,
+                                    optsHeader.lang,
+                                    utils.sliceNext(optsHeader.langFallbackSize, q, &i),
+                                ),
                                 &optsHeader,
                             );
+                        } else {
+                            try opts.string(ctx.thread, header.prop, Fields.getTextFromValue(value, optsHeader.lang), &optsHeader);
                         }
                     },
                     else => {

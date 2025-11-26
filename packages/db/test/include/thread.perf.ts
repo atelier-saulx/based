@@ -59,27 +59,27 @@ await test('include', async (t) => {
 
   // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
 
-  await perf(
-    async () => {
-      const q: any[] = []
-      for (let i = 0; i < 1000; i++) {
-        q.push(
-          db
-            .query('user')
-            .locale('de')
-            .include('name', 'body')
-            // .include('name', 'body', { end: 2 })
-            .range(0, 1000 + i)
-            .get(),
-          // .inspect(),
-          // .inspect(),
-        )
-      }
-      await Promise.all(q)
-    },
-    'Nodes',
-    { repeat: 10 },
-  )
+  // await perf(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 1000; i++) {
+  //       q.push(
+  //         db
+  //           .query('user')
+  //           .locale('de')
+  //           .include('name', 'body')
+  //           // .include('name', 'body', { end: 2 })
+  //           .range(0, 1000 + i)
+  //           .get(),
+  //         // .inspect(),
+  //         // .inspect(),
+  //       )
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'Nodes',
+  //   { repeat: 10 },
+  // )
 
   console.log('done')
 
@@ -101,17 +101,17 @@ await test('default', async (t) => {
         props: {
           name: {
             type: 'string',
-            default: 'dingdong'.repeat(100)
+            default: 'dingdong'.repeat(100),
           },
           city: {
             type: 'string',
             maxBytes: 16,
-            default: 'N/A'
+            default: 'N/A',
           },
           bio: {
             type: 'string',
             maxBytes: 1024,
-            default: 'habablababalba'
+            default: 'habablababalba',
           },
           nr: { type: 'uint32', default: 95 },
           body: { type: 'text', default: { en: 'ding', de: 'dong' } }, // compression: 'none'
@@ -132,8 +132,12 @@ await test('default', async (t) => {
   }
 
   console.log('start')
-  await perf(async () => {
-    await db.query('user').include('name', 'bio').get().inspect()
-  }, 'Dun', { repeat: 1 })
+  await perf(
+    async () => {
+      await db.query('user').include('name', 'bio').get().inspect()
+    },
+    'Dun',
+    { repeat: 1 },
+  )
   console.log('done')
 })

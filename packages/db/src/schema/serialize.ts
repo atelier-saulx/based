@@ -1,4 +1,3 @@
-import { ENUM, REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
 import {
   readDoubleLE,
   readUint16,
@@ -11,6 +10,7 @@ import {
   ENCODER,
   DECODER,
 } from '../utils/index.js'
+import { PropType, PropTypeInverse } from '../zigTsExports.js'
 import type { SchemaOut } from './schema/schema.js'
 import { stringFormats } from './schema/string.js'
 
@@ -237,12 +237,12 @@ const walk = (
   const isArray = Array.isArray(obj)
   const isFromObj = prev2?.type === 'object' || fromObject === false
   const isSchemaProp =
-    ('enum' in obj || ('type' in obj && TYPE_INDEX_MAP[obj.type])) && isFromObj
+    ('enum' in obj || ('type' in obj && PropType[obj.type])) && isFromObj
 
   ensureCapacity(1 + 5) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
-    const typeIndex = TYPE_INDEX_MAP['enum' in obj ? 'enum' : obj.type]
+    const typeIndex = PropType['enum' in obj ? 'enum' : obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
@@ -468,8 +468,8 @@ export const deSerializeInner = (
 
   if (isSchemaProp) {
     const type = buf[i]
-    const parsedType = REVERSE_TYPE_INDEX_MAP[type]
-    if (type !== ENUM) {
+    const parsedType = PropTypeInverse[type]
+    if (type !== PropType.enum) {
       obj.type = parsedType
     }
     i += 1

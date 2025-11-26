@@ -5,7 +5,7 @@ import {
   writeUint64,
 } from '../utils/index.js'
 import native from '../native.js'
-import { PropType } from '../zigTsExports.js'
+import { PropType, PropTypeEnum } from '../zigTsExports.js'
 import {
   EMPTY_MICRO_BUFFER,
   VECTOR_BASE_TYPE_SIZE_MAP,
@@ -14,7 +14,6 @@ import {
   type SchemaTypeDef,
 } from '../schema/index.js'
 import { NOT_COMPRESSED } from '../protocol/index.js'
-import { TypeIndex } from '../schema/def/typeIndexes.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -44,6 +43,13 @@ selvaTypeMap[PropType.colVec] = selvaFieldType.COLVEC
 
 const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 
+const supportedDefaults: PropTypeEnum[] = [
+  PropType.binary,
+  PropType.string,
+  PropType.vector,
+  PropType.json, // same as binary (Uint8Array)
+]
+
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
   const view = new DataView(buf.buffer)
@@ -63,7 +69,11 @@ function makeEdgeConstraintFlags(prop: PropDef): number {
   return flags
 }
 
-function setDefaultString(dst: Uint8Array, s: Uint8Array | string, offset: number): void {
+function setDefaultString(
+  dst: Uint8Array,
+  s: Uint8Array | string,
+  offset: number,
+): void {
   if (s instanceof Uint8Array) {
     dst.set(s, offset)
   } else {
@@ -71,9 +81,7 @@ function setDefaultString(dst: Uint8Array, s: Uint8Array | string, offset: numbe
     dst[offset] = 0 // lang
     dst[offset + 1] = NOT_COMPRESSED
     const l = native.stringToUint8Array(value, dst, offset + 2)
-    let crc = native.crc32(
-      dst.subarray(offset + 2, offset + 2 + l),
-    )
+    let crc = native.crc32(dst.subarray(offset + 2, offset + 2 + l))
     writeUint32(dst, crc, offset + 2 + l)
   }
 }
@@ -127,15 +135,28 @@ const propDefBuffer = (
     type === PropType.cardinality ||
     type === PropType.json
   ) {
-    const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : native.stringByteLength(prop.default) + 2
-    const buf = new Uint8Array(6 + defaultLen)
+    if (supportedDefaults.includes(type)) {
+      const defaultLen =
+        prop.default instanceof Uint8Array
+          ? prop.default.byteLength
+          : native.stringByteLength(prop.default) + 2
+      const buf = new Uint8Array(6 + defaultLen)
 
-    buf[0] = selvaType
-    buf[1] = prop.len < 50 ? prop.len : 0
-    writeUint32(buf, defaultLen, 2)
-    setDefaultString(buf, prop.default, 6)
+      buf[0] = selvaType
+      buf[1] = prop.len < 50 ? prop.len : 0
+      writeUint32(buf, defaultLen, 2)
+      setDefaultString(buf, prop.default, 6)
 
-    return [...buf]
+      return [...buf]
+    } else {
+      const buf = new Uint8Array(6)
+
+      buf[0] = selvaType
+      buf[1] = prop.len < 50 ? prop.len : 0
+      writeUint32(buf, 0, 2) // no default
+
+      return [...buf]
+    }
   }
   return [selvaType]
 }
@@ -214,12 +235,12 @@ export function schemaToSelvaBuffer(schema: {
     }
 
     // Add props with defaults as fixed
-    const supportedDefaults: TypeIndex[] = [
-        PropType.binary,
-        PropType.string,
-        PropType.vector,
-    ]
-    nrFixedFields += rest.reduce((prev, prop) => prev + ((supportedDefaults.includes(prop.typeIndex) && prop.default) ? 1 : 0), 0)
+    nrFixedFields += rest.reduce(
+      (prev, prop) =>
+        prev +
+        (supportedDefaults.includes(prop.typeIndex) && prop.default ? 1 : 0),
+      0,
+    )
 
     rest.sort((a, b) => a.prop - b.prop)
     return Uint8Array.from([

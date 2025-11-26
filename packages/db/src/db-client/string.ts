@@ -1,9 +1,9 @@
 import native from '../native.js'
 import { Ctx } from './modify/Ctx.js'
 import { resize } from './modify/resize.js'
-import type { LangCode } from '../schema/index.js'
 import { ENCODER, makeTmpBuffer, writeUint32 } from '../utils/uint8.js'
 import { COMPRESSED, NOT_COMPRESSED } from '../protocol/index.js'
+import { LangCodeEnum } from '../zigTsExports.js'
 
 const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page size?
 
@@ -12,7 +12,7 @@ export const write = (
   value: string,
   offset: number,
   noCompression: boolean,
-  lang?: LangCode,
+  lang?: LangCodeEnum,
 ): number | null => {
   const buf = ctx.buf
 

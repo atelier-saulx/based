@@ -12,12 +12,13 @@ import { includeProp, includeAllProps, includeField } from './props.js'
 import { DbClient } from '../../index.js'
 import {
   isPropDef,
-  langCodesMap,
   type PropDef,
   type SchemaPropTree,
 } from '../../../schema/index.js'
 import { includeDoesNotExist, includeLangDoesNotExist } from '../validation.js'
-import { PropType } from '../../../zigTsExports.js'
+import { LangCode, PropType } from '../../../zigTsExports.js'
+
+type LangName = keyof typeof LangCode
 
 export const walkDefs = (
   db: DbClient,
@@ -97,8 +98,8 @@ export const walkDefs = (
       }
 
       if (isPropDef(t) && t.typeIndex === PropType.text) {
-        const lang = path[path.length - 1]
-        const langCode = langCodesMap.get(lang)
+        const lang = path[path.length - 1] as LangName
+        const langCode = LangCode[lang]
         if (!langCode || !db.schema!.locales![lang]) {
           includeLangDoesNotExist(def, include.field)
           return

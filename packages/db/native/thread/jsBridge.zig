@@ -74,7 +74,6 @@ fn callJsCallback(
         },
         t.BridgeResponse.query => {
             // std.debug.print("query resp \n", .{});
-
             dbCtx.threads.waitForQuery();
             var jsArray: napi.Value = undefined;
             _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);

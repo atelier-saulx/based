@@ -1,11 +1,11 @@
 import { DbClient } from '../../index.js'
 import {
-  REVERSE_TYPE_INDEX_MAP,
   type PropDef,
   type PropDefEdge,
   type SchemaPropTree,
   type SchemaTypeDef,
 } from '../../schema/index.js'
+import { PropType, PropTypeEnum } from '../../zigTsExports.js'
 import { create } from './create/index.js'
 import { Ctx } from './Ctx.js'
 import { del } from './delete/index.js'
@@ -52,7 +52,7 @@ const parseErrorArr = (
     if (msg) {
       return `Invalid value at '${(prop.path as any).join('.')}'. Expected ${msg} received '${parseVal(val)}'`
     }
-    return `Invalid value at '${(prop.path as any).join('.')}'. Expected ${REVERSE_TYPE_INDEX_MAP[prop.typeIndex as number]}, received '${parseVal(val)}'`
+    return `Invalid value at '${(prop.path as any).join('.')}'. Expected ${PropType[prop.typeIndex as PropTypeEnum]}, received '${parseVal(val)}'`
   }
   return `Unknown property '${val}'. Expected one of: ${Object.keys(prop).join(', ')}`
 }

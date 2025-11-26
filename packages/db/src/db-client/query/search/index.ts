@@ -7,8 +7,7 @@ import {
 } from '../validation.js'
 import { ENCODER, concatUint8Arr } from '../../../utils/index.js'
 import { QueryBranch } from '../BasedDbQuery.js'
-import { PropType } from '../../../zigTsExports.js'
-import { langCodesMap } from '../../../schema/lang.js'
+import { LangCode, PropType } from '../../../zigTsExports.js'
 
 export type Search =
   | string[]
@@ -118,9 +117,8 @@ export const search = (
         const k = key.split('.')
         prop = def.props![k.slice(0, -1).join('.')]
         if (prop && prop.typeIndex === PropType.text) {
-          lang = langCodesMap.get(k[k.length - 1])!
+          lang = LangCode[k[k.length - 1]]
           fallback = []
-          // handle incorrect LANG
         } else {
           prop = searchDoesNotExist(def, key, false)
         }

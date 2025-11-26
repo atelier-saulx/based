@@ -1,4 +1,3 @@
-// import native from '../native.js'
 import { readUint32, makeTmpBuffer, DECODER } from '../../utils/index.js'
 import { COMPRESSED, NOT_COMPRESSED } from './types.js'
 import { inflateSync } from 'fflate'

@@ -1,6 +1,6 @@
 import type { Tmp } from './Tmp.js'
-import { OpType, type ModOpEnum } from '../../zigTsExports.js'
-import type { LangCode, PropDef, SchemaTypeDef } from '../../schema/index.js'
+import { LangCodeEnum, OpType, type ModOpEnum } from '../../zigTsExports.js'
+import type { PropDef, SchemaTypeDef } from '../../schema/index.js'
 import { writeUint64 } from '../../utils/uint8.js'
 
 export const MODIFY_HEADER_SIZE = 1 + 4 + 8 + 4
@@ -30,7 +30,7 @@ export class Ctx {
   main: Map<PropDef, any> = new Map()
   draining: Promise<void>
   scheduled: Promise<void> | undefined
-  locale: LangCode
+  locale: LangCodeEnum
   sort: number = 0
   sortText: number = 0
   defaults: number = 0

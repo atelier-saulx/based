@@ -1,15 +1,8 @@
+import { PropType } from '../../zigTsExports.js'
 import { getValidator, SchemaReference } from '../index.js'
 import { DEFAULT_MAP } from './defaultMap.js'
 import { fillEmptyMain } from './fillEmptyMain.js'
-import {
-  PropDef,
-  TYPE_INDEX_MAP,
-  PropDefEdge,
-  REFERENCES,
-  REFERENCE,
-  ENUM,
-  NUMBER,
-} from './types.js'
+import { PropDef, PropDefEdge } from './types.js'
 import {
   getPropLen,
   isSeparate,
@@ -29,20 +22,19 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         prop.edgesSeperateCnt = 0
       }
       const edgeProp = refProp[key]
-      const edgeType = edgeProp.type
+      const edgeType: keyof typeof PropType = edgeProp.type
       const len = getPropLen(edgeProp)
       const separate = isSeparate(edgeProp, len)
       if (separate) {
         prop.edgesSeperateCnt ??= 0
         prop.edgesSeperateCnt++
       }
-      const typeIndex = TYPE_INDEX_MAP[edgeType]
+      const typeIndex = PropType[edgeType]
 
       if (edgeProp.default !== undefined) {
         prop.hasDefaultEdges = true
       }
 
-      // add default
       const edge: PropDefEdge = {
         schema: edgeProp,
         __isPropDef: true,
@@ -55,7 +47,6 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         separate,
         path: [...prop.path, key],
         default: edgeProp.default ?? DEFAULT_MAP[typeIndex],
-        // start: prop.edgeMainLen,
       }
 
       if (!separate) {
@@ -74,11 +65,11 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
         edgeProp.step = edge.step = parseMinMaxStep(edgeProp.step)
       }
 
-      if (edge.typeIndex !== NUMBER && edge.step === undefined) {
+      if (edge.typeIndex !== PropType.number && edge.step === undefined) {
         edge.step = 1
       }
 
-      if (edge.typeIndex === ENUM) {
+      if (edge.typeIndex === PropType.enum) {
         edge.enum = Array.isArray(refProp[key])
           ? refProp[key]
           : refProp[key].enum
@@ -88,9 +79,9 @@ export const addEdges = (prop: PropDef, refProp: SchemaReference) => {
           // @ts-ignore
           edge.reverseEnum[edge.enum[i]] = i
         }
-      } else if (edge.typeIndex === REFERENCES) {
+      } else if (edge.typeIndex === PropType.references) {
         edge.inverseTypeName = refProp[key].items.ref
-      } else if (edge.typeIndex === REFERENCE) {
+      } else if (edge.typeIndex === PropType.reference) {
         edge.inverseTypeName = refProp[key].ref
       }
       prop.edges[key] = edge

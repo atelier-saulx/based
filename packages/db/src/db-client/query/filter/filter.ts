@@ -12,14 +12,13 @@ import { DbClient } from '../../index.js'
 import {
   ID_FIELD_DEF,
   isPropDef,
-  langCodesMap,
   type PropDef,
   type PropDefEdge,
   type SchemaPropTree,
   type SchemaTypeDef,
 } from '../../../schema/index.js'
 import { filterFieldDoesNotExist, filterInvalidLang } from '../validation.js'
-import { PropType } from '../../../zigTsExports.js'
+import { LangCode, PropType } from '../../../zigTsExports.js'
 
 export { Operator, Filter }
 
@@ -134,7 +133,7 @@ export const filterRaw = (
       fieldDef = schema.props[f]
       if (fieldDef && fieldDef.typeIndex === PropType.text) {
         const lang = s[s.length - 1]
-        const code = langCodesMap.get(lang)
+        const code = LangCode[lang]
         if (!code || !schema.locales[lang]) {
           filterInvalidLang(def, field)
           return 0

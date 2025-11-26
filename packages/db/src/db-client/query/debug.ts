@@ -1,7 +1,8 @@
 import picocolors from 'picocolors'
 import { QueryDef, QueryDefType } from './types.js'
 import { concatUint8Arr } from '../../utils/index.js'
-import { isPropDef, REVERSE_TYPE_INDEX_MAP } from '../../schema/index.js'
+import { isPropDef } from '../../schema/index.js'
+import { PropTypeInverse } from '../../zigTsExports.js'
 
 export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
   const loggableObject: any = { type: 'bla', schema: null }
@@ -28,7 +29,7 @@ export const debugQueryDef = (q: QueryDef, returnIt?: boolean) => {
         return debugQueryDef(a, true)
       }
       if (isPropDef(a)) {
-        return `${a.path.join('.')}: ${a.prop} ${REVERSE_TYPE_INDEX_MAP[a.typeIndex]}`
+        return `${a.path.join('.')}: ${a.prop} ${PropTypeInverse[a.typeIndex]}`
       } else {
         const b = Array.isArray(a) ? [] : {}
         walk(a, b)

@@ -1,12 +1,12 @@
-import { langCodesMap, type LangCode } from '../lang.js'
-import { SchemaTypeDef, TEXT } from './types.js'
+import { LangCode, PropType } from '../../zigTsExports.js'
+import { SchemaTypeDef } from './types.js'
 
 export function makeSeparateTextSort(result: SchemaTypeDef) {
   result.hasSeperateTextSort = true
   let max = 0
   result.separate ??= []
   for (const f of result.separate) {
-    if (f.typeIndex === TEXT) {
+    if (f.typeIndex === PropType.text) {
       if (f.prop > max) {
         max = f.prop
       }
@@ -17,7 +17,7 @@ export function makeSeparateTextSort(result: SchemaTypeDef) {
   result.separateTextSort.buffer = new Uint8Array(bufLen)
   let index = 0
   for (const code in result.locales) {
-    const codeLang = langCodesMap.get(code) as LangCode
+    const codeLang = LangCode[code]
     result.separateTextSort.localeStringToIndex.set(
       code,
       new Uint8Array([index + 1, codeLang]),
@@ -26,7 +26,7 @@ export function makeSeparateTextSort(result: SchemaTypeDef) {
     index++
   }
   for (const f of result.separate) {
-    if (f.typeIndex === TEXT) {
+    if (f.typeIndex === PropType.text) {
       const index = f.prop * (result.localeSize + 1)
       result.separateTextSort.buffer[index] = result.localeSize
       for (const [, locales] of result.separateTextSort.localeStringToIndex) {

@@ -1,5 +1,4 @@
-import { inspect } from 'node:util'
-import picocolors from 'picocolors'
+import { inspect, styleText } from 'node:util'
 import { QueryDef } from './types.js'
 import { debug } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
@@ -61,7 +60,7 @@ export class BasedQueryResponse {
     )
     str += '\n'
     str += dataStr
-    return `${picocolors.bold(`BasedQueryResponse[${target}]`)} {${str}\n}\n`
+    return `${styleText('bold', `BasedQueryResponse[${target}]`)} {${str}\n}\n`
   }
 
   debug() {
