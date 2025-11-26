@@ -1,5 +1,10 @@
 import type { PropDef, PropDefEdge } from '../../../schema/index.js'
-import { LangCode, LangCodeEnum, PropType } from '../../../zigTsExports.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  LangCodeInverse,
+  PropType,
+} from '../../../zigTsExports.js'
 import { IncludeField, IncludeOpts, QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (
@@ -102,26 +107,11 @@ export const includeProp = (
 
   if (prop.typeIndex === PropType.text) {
     if (!def.include.props.has(prop.prop)) {
-      const fallBacks: LangCodeEnum[] = []
-      if (def.lang.lang !== LangCode.none) {
-        console.log('set fallbacks')
-        // let lang = def.lang.lang
-        // while (lang) {
-        //   const langDef = def.schema?.locales[lang]
-        //   console.log({ langDef, lang })
-        //   if (langDef.fallback) {
-        //     lang = langDef.fallback
-        //   } else {
-        //     break
-        //   }
-        // }
-      }
-
       def.include.props.set(prop.prop, {
         def: prop,
         opts: {
           codes: new Set(),
-          fallBacks,
+          fallBacks: def.lang.fallback,
           localeFromDef: def.lang.lang,
           ...opts,
         },
