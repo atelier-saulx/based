@@ -363,7 +363,8 @@ static bool has_defaults(struct SelvaFieldsSchema *schema)
     for (size_t i = 0; i < nr_fixed_fields; i++) {
         const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
 
-        if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) {
+        if ((fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) ||
+            (fs->type == SELVA_FIELD_TYPE_STRING && fs->string.default_off > 0)) {
             return true;
         }
     }

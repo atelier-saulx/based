@@ -155,12 +155,16 @@ const propDefBuffer = (
     if (prop.default && supportedDefaults.has(type)) {
         const STRING_EXTRA_MAX = 10
         const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : native.stringByteLength(prop.default) + STRING_EXTRA_MAX
-        const buf = new Uint8Array(6 + defaultLen)
+        let buf = new Uint8Array(6 + defaultLen)
 
         buf[0] = selvaType
         buf[1] = prop.len < 50 ? prop.len : 0
-        writeUint32(buf, defaultLen, 2)
-        setDefaultString(buf, prop.default, 6, LangCode.none, false)
+        const l = setDefaultString(buf, prop.default, 6, LangCode.none, false)
+        if (l != buf.length) {
+          console.log('fix', l, buf.length)
+          buf = buf.subarray(0, 6 + l)
+        }
+        writeUint32(buf, l, 2)
 
       return [...buf]
     } else {
@@ -197,31 +201,27 @@ export function schemaToSelvaBuffer(schema: {
     }
 
     for (const f of props) {
-      if (f.separate) {
-        if (
-          f.typeIndex === PropType.reference ||
-          f.typeIndex === PropType.references
-        ) {
-          nrFixedFields++
-        } else if (
-          f.typeIndex === PropType.alias ||
-          f.typeIndex === PropType.aliases ||
-          f.typeIndex === PropType.colVec
-        ) {
-          // We assume that these are always the last props!
-          virtualFields++
-        }
-        rest.push(f)
+      if (!f.separate) {
+        continue
       }
-    }
 
-    // Add props with defaults as fixed
-    nrFixedFields += rest.reduce(
-      (prev, prop) =>
-        prev +
-        (supportedDefaults.has(prop.typeIndex) && prop.default ? 1 : 0),
-      0,
-    )
+      if (f.default && supportedDefaults.has(f.typeIndex)) {
+        nrFixedFields++
+      } else if (
+        f.typeIndex === PropType.reference ||
+        f.typeIndex === PropType.references
+      ) {
+        nrFixedFields++
+      } else if (
+        f.typeIndex === PropType.alias ||
+        f.typeIndex === PropType.aliases ||
+        f.typeIndex === PropType.colVec
+      ) {
+        // We assume that these are always the last props!
+        virtualFields++
+      }
+      rest.push(f)
+    }
 
     rest.sort((a, b) => a.prop - b.prop)
     return Uint8Array.from([
