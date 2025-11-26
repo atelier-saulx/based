@@ -69,36 +69,59 @@ pub fn include(
                 //     idIsSet = true;
                 // }
             },
+
+            //     fn addChecksum(item: *Result, data: []u8, i: *usize) void {
+            //     data[i.*] = @intFromEnum(t.ReadOp.META);
+            //     i.* += 1;
+            //     data[i.*] = item.*.prop;
+            //     i.* += 1;
+            //     const v = item.*.value;
+            //     data[i.*] = v[0];
+            //     i.* += 1;
+            //     data[i.*] = v[1];
+            //     i.* += 1;
+            //     utils.copy(data[i.* .. i.* + 4], v[v.len - 4 .. v.len]);
+            //     if (v[1] == 1) {
+            //         utils.copy(data[i.* + 4 .. i.* + 8], v[2..6]);
+            //     } else {
+            //         writeInt(u32, data, i.* + 4, v.len);
+            //     }
+            //     i.* += 8;
+            // }
+
             t.IncludeOp.meta => {
-                // var result: ?*results.Result = null;
-                // const field: u8 = include[i];
-                // const prop: t.PropType = @enumFromInt(include[i + 1]);
-                // const langCode: t.LangCode = @enumFromInt(include[i + 2]);
-                // i += 3;
-                // result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.meta);
-                // if (result) |r| {
-                //     switch (prop) {
-                //         t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
-                //             if (isEdge) {
-                //                 size += 1;
-                //             }
-                //             size += 12 + try f.add(ctx, id, score, idIsSet, r);
-                //             idIsSet = true;
-                //         },
-                //         t.PropType.text => {
-                //             if (isEdge) {
-                //                 size += 1;
-                //             }
-                //             const s = db.getTextFromValue(r.*.value, langCode);
-                //             if (s.len != 0) {
-                //                 r.*.value = s;
-                //                 size += 12 + try f.add(ctx, id, score, idIsSet, r);
-                //                 idIsSet = true;
-                //             }§
-                //         },
-                //         else => {},
-                //     }
-                // }
+                const header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
+
+                switch (header.propType) {
+                    t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
+                        if (value.len > 0) {
+                            _ = try ctx.thread.query.appendAs(t.IncludeResponseMeta, .{
+                                .op = t.ReadOp.meta,
+                                .prop = header.prop,
+                                .lang = @enumFromInt(value[0]),
+                                .compressed = value[1],
+                                .crc32 = utils.read(u32, value, value.len - 4),
+                                .size = if (value[1] == 1) utils.read(u32, value, 2) else @truncate(value.len - 6),
+                            });
+                        }
+                    },
+                    t.PropType.text => {
+                        const s = Fields.textFromValue(value, header.lang);
+                        if (s.len > 0) {
+                            _ = try ctx.thread.query.appendAs(t.IncludeResponseMeta, .{
+                                .op = t.ReadOp.meta,
+                                .prop = header.prop,
+                                .lang = header.lang,
+                                .compressed = s[1],
+                                .crc32 = utils.read(u32, s, s.len - 4),
+                                .size = if (s[1] == 1) utils.read(u32, s, 2) else @truncate(s.len - 6),
+                            });
+                        }
+                    },
+                    else => {},
+                }
             },
             t.IncludeOp.defaultWithOpts => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
@@ -180,6 +203,7 @@ pub fn include(
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
+                        std.debug.print("flap {any} \n", .{value});
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     else => {

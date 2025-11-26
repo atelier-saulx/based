@@ -15,6 +15,7 @@ import {
   createIncludeHeader,
   createIncludeOpts,
   LangCode,
+  createIncludeMetaHeader,
 } from '../../../zigTsExports.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
@@ -115,58 +116,36 @@ export const includeToBuffer = (
   }
 
   if (propSize) {
+    // make this a function (the nested)
     for (const [prop, propDef] of def.include.props.entries()) {
       const opts = propDef.opts
-
       const propType = propDef.opts?.raw
         ? PropType.binary
-        : propDef.def.typeIndex // replace this with proptype
+        : propDef.def.typeIndex
       if (propDef.opts?.meta) {
         if (propDef.opts.codes) {
-          if (propDef.opts.codes.has(0)) {
-            for (const code in def.schema!.locales) {
-              // const buf = new Uint8Array(4)
-              // writeIncludeHeader(
-              //   buf,
-              //   {
-              //     op: IncludeOp.meta,
-              //     prop,
-              //     propType: propType,
-              //   },
-              //   0,
-              // )
-              // buf[3] = langCodesMap.get(code)
-              // result.push(buf)
-            }
-          } else {
-            for (const code of propDef.opts.codes) {
-              // const buf = new Uint8Array(4)
-              // writeIncludeHeader(
-              //   buf,
-              //   {
-              //     op: IncludeOp.meta,
-              //     prop,
-              //     propType: propType,
-              //   },
-              //   0,
-              // )
-              // buf[3] = code
-              // result.push(buf)
-            }
+          const codes = propDef.opts.codes.has(0)
+            ? Object.values(def.schema!.locales).map((c) => LangCode[c])
+            : propDef.opts.codes
+          for (const code of codes) {
+            result.push(
+              createIncludeMetaHeader({
+                op: IncludeOp.meta,
+                prop,
+                propType: propType,
+                lang: LangCode[code],
+              }),
+            )
           }
         } else {
-          const buf = new Uint8Array(4)
-          // writeIncludeHeader(
-          //   buf,
-          //   {
-          //     op: IncludeOp.meta,
-          //     prop,
-          //     propType: propType,
-          //   },
-          //   0,
-          // )
-          buf[3] = 0
-          result.push(buf)
+          result.push(
+            createIncludeMetaHeader({
+              op: IncludeOp.meta,
+              prop,
+              propType: propType,
+              lang: LangCode.none,
+            }),
+          )
         }
       }
 

@@ -518,6 +518,13 @@ pub const IncludeHeader = packed struct {
     propType: PropType,
 };
 
+pub const IncludeMetaHeader = packed struct {
+    op: IncludeOp,
+    prop: u8,
+    propType: PropType,
+    lang: LangCode,
+};
+
 pub const IncludeOpts = packed struct {
     end: u32,
     isChars: bool,
@@ -529,6 +536,15 @@ pub const IncludeOpts = packed struct {
 
 pub const IncludeResponse = packed struct {
     prop: u8,
+    size: u32,
+};
+
+pub const IncludeResponseMeta = packed struct {
+    op: ReadOp,
+    prop: u8,
+    lang: LangCode,
+    compressed: u8,
+    crc32: u32,
     size: u32,
 };
 
