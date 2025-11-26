@@ -105,6 +105,16 @@ export const includeProp = (
       const fallBacks: LangCodeEnum[] = []
       if (def.lang.lang !== LangCode.none) {
         console.log('set fallbacks')
+        // let lang = def.lang.lang
+        // while (lang) {
+        //   const langDef = def.schema?.locales[lang]
+        //   console.log({ langDef, lang })
+        //   if (langDef.fallback) {
+        //     lang = langDef.fallback
+        //   } else {
+        //     break
+        //   }
+        // }
       }
 
       def.include.props.set(prop.prop, {

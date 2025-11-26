@@ -219,7 +219,7 @@ pub fn getSortIndex(
         return null;
     }
     const tI = typeSortIndexes.?;
-    if (lang != t.LangCode.NONE) {
+    if (lang != t.LangCode.none) {
         return tI.text.get(getTextKey(field, lang));
     } else if (field == 0) {
         return tI.main.get(start);

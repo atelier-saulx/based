@@ -213,7 +213,7 @@ pub fn modify(
                         ctx.typeSortIndex,
                         ctx.field,
                         0,
-                        t.LangCode.NONE,
+                        t.LangCode.none,
                     );
                 } else {
                     ctx.currentSortIndex = null;

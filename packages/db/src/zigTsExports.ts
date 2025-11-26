@@ -173,6 +173,8 @@ export type ModOpEnum = (typeof ModOp)[keyof typeof ModOp]
 export const PropType = {
   null: 0,
   timestamp: 1,
+  created: 2,
+  updated: 3,
   number: 4,
   cardinality: 5,
   uint8: 6,
@@ -201,6 +203,8 @@ export const PropType = {
 export const PropTypeInverse = {
   0: 'null',
   1: 'timestamp',
+  2: 'created',
+  3: 'updated',
   4: 'number',
   5: 'cardinality',
   6: 'uint8',
@@ -229,6 +233,8 @@ export const PropTypeInverse = {
 /**
   null, 
   timestamp, 
+  created, 
+  updated, 
   number, 
   cardinality, 
   uint8, 

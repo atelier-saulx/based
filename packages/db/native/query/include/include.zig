@@ -114,7 +114,7 @@ pub fn include(
                     },
                     t.PropType.text,
                     => {
-                        if (optsHeader.lang == t.LangCode.NONE) {
+                        if (optsHeader.lang == t.LangCode.none) {
                             var iter = Fields.textIterator(value);
                             while (iter.next()) |textValue| {
                                 try opts.string(ctx.thread, header.prop, textValue, &optsHeader);
