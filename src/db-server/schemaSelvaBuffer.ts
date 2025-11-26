@@ -155,7 +155,7 @@ const propDefBuffer = (
   ) {
     if (prop.default && supportedDefaults.has(type)) {
         const STRING_EXTRA_MAX = 10
-        const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : native.stringByteLength(prop.default) + STRING_EXTRA_MAX
+        const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : 2 * native.stringByteLength(prop.default) + STRING_EXTRA_MAX
         let buf = new Uint8Array(6 + defaultLen)
 
         buf[0] = selvaType
