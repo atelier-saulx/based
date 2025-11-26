@@ -27,9 +27,6 @@ export function writeRaw(dst: Uint8Array, s: Uint8Array | string, offset: number
       return writeRaw(dst, s, offset, lang, true)
     }
 
-    dst[offset] = lang
-    dst[offset + 1] = COMPRESSED
-
     const insertPos = offset + 6 + l
     const endPos = insertPos + l
     native.stringToUint8Array(value, dst, insertPos)
@@ -40,6 +37,8 @@ export function writeRaw(dst: Uint8Array, s: Uint8Array | string, offset: number
       return writeRaw(dst, s, offset, lang, true)
     }
 
+    dst[offset] = lang
+    dst[offset + 1] = COMPRESSED
     writeUint32(dst, l, offset + 2) // uncompressed size
     writeUint32(dst, crc, offset + size + 6)
     return size + 10
