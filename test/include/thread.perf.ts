@@ -14,10 +14,10 @@ await test('include', async (t) => {
 
   await db.setSchema({
     locales: {
-      en: { required: true },
-      de: { fallback: 'en' },
-      fr: { fallback: 'en' },
-      nl: { fallback: 'de' },
+      en: true,
+      de: { fallback: ['en'] },
+      fr: { fallback: ['en'] },
+      nl: { fallback: ['de'] },
     },
     types: {
       user: {
