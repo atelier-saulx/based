@@ -23,7 +23,7 @@ await test('include', async (t) => {
       user: {
         props: {
           name: 'string',
-          nr: 'uint32',
+          // nr: 'uint32',
           // body: { type: 'text', compression: 'deflate' }, // compression: 'none'
         },
       },
@@ -33,7 +33,7 @@ await test('include', async (t) => {
   for (let i = 0; i < 1000; i++) {
     db.create('user', {
       nr: i,
-      name: 'Mr poop',
+      name: 'Mr poop !',
       // body: {
       //   de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
       //   en: italy,
