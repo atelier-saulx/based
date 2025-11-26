@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 fn runCommand(b: *std.Build, argv: []const []const u8) ![]u8 {
     const alloc = std.heap.page_allocator;
@@ -29,6 +30,16 @@ fn currentNapiVersion(b: *std.Build) ![]u8 {
 }
 
 pub fn build(b: *std.Build) !void {
+    comptime {
+        const required_zig = "0.15.2";
+        const current_zig = builtin.zig_version;
+        const min_zig = std.SemanticVersion.parse(required_zig) catch unreachable;
+        if (current_zig.order(min_zig) == .lt) {
+            const msg = std.fmt.comptimePrint("Zig version {s} or newer is required to build this project.", .{required_zig});
+            @compileError(msg);
+        }
+    }
+
     const target = b.standardTargetOptions(.{});
     const options = b.addOptions();
     const enable_debug = b.option(bool, "enable_debug", "Enable debugging prints") orelse false;
