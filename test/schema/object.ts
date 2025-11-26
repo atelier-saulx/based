@@ -1,7 +1,7 @@
-import test from 'node:test'
-import { parse } from '@based/schema'
+import { test } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('object', () => {
+await test('object', async () => {
   parse({
     types: {
       myType: {

@@ -1,9 +1,7 @@
-import test from 'node:test'
-import { deepEqual, equal } from 'node:assert'
-import { parse } from '@based/schema'
-import { validate } from '../src/index.js'
+import { deepEqual, equal, test } from '../shared/index.js'
+import { parse, validate } from '@based/sdk'
 
-await test('validate - basic', () => {
+await test('validate', async () => {
   const { schema } = parse({
     types: {
       user: {
@@ -56,7 +54,7 @@ await test('validate - basic', () => {
   )
 })
 
-await test('validate - messages', () => {
+await test('validate - messages', async () => {
   const { schema } = parse({
     types: {
       user: {
@@ -117,7 +115,7 @@ await test('validate - messages', () => {
   )
 })
 
-await test('validate - reference', () => {
+await test('validate - reference', async () => {
   const { schema } = parse({
     types: {
       user: {
@@ -153,7 +151,7 @@ await test('validate - reference', () => {
   )
 })
 
-await test('validate - references', () => {
+await test('validate - references', async () => {
   const { schema } = parse({
     types: {
       user: {

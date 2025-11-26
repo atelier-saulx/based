@@ -1,8 +1,7 @@
-import test from 'node:test'
-import { deepEqual, throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { deepEqual, test, throws } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('references', (t) => {
+await test('references', async () => {
   parse({
     types: {
       article: {
@@ -127,7 +126,7 @@ await test('references', (t) => {
     },
   })
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         author: {
@@ -144,7 +143,7 @@ await test('references', (t) => {
     })
   }, 'Disallow missing type for ref')
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         myType: {
@@ -159,7 +158,7 @@ await test('references', (t) => {
     })
   }, 'Disallow missing type for refs')
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         article: {
@@ -194,7 +193,7 @@ await test('references', (t) => {
     })
   }, 'Disallow mixed ref types')
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         article: {
@@ -222,7 +221,7 @@ await test('references', (t) => {
   }, 'Disallow incorrect location of required prop')
 })
 
-await test('edges', () => {
+await test('edges', async () => {
   parse({
     types: {
       event: {
@@ -262,7 +261,7 @@ await test('edges', () => {
   })
 })
 
-await test('references no auto on same prop', (t) => {
+await test('references no auto on same prop', async (t) => {
   parse({
     types: {
       contributor: {
@@ -279,7 +278,7 @@ await test('references no auto on same prop', (t) => {
     },
   })
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         contributor: {

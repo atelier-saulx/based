@@ -1,8 +1,8 @@
-import test from 'node:test'
-import { parse } from '@based/schema'
-import assert, { throws } from 'assert'
+import assert from 'assert'
+import { test, throws } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('defaultTimezone', () => {
+await test('defaultTimezone', async () => {
   let parsed = parse({
     types: {
       user: {
@@ -12,10 +12,11 @@ await test('defaultTimezone', () => {
       },
     },
   })
+
   assert(parsed.schema.defaultTimezone === undefined)
 
   parsed = parse({
-      defaultTimezone: 'Europe/Helsinki',
+    defaultTimezone: 'Europe/Helsinki',
     types: {
       user: {
         props: {
@@ -24,28 +25,33 @@ await test('defaultTimezone', () => {
       },
     },
   })
+
   assert(parsed.schema.defaultTimezone === 'Europe/Helsinki')
 
-  throws(() => parse({
-    defaultTimezone: 'Europe/Turku',
-    types: {
-      user: {
-        props: {
-          timestamp: { type: 'timestamp' },
+  throws(async () =>
+    parse({
+      defaultTimezone: 'Europe/Turku',
+      types: {
+        user: {
+          props: {
+            timestamp: { type: 'timestamp' },
+          },
         },
       },
-    },
-  }))
+    }),
+  )
 
-  throws(() => parse({
-    // @ts-ignore
-    defaultTimezone: 2,
-    types: {
-      user: {
-        props: {
-          timestamp: { type: 'timestamp' },
+  throws(async () =>
+    parse({
+      // @ts-ignore
+      defaultTimezone: 2,
+      types: {
+        user: {
+          props: {
+            timestamp: { type: 'timestamp' },
+          },
         },
       },
-    },
-  }))
+    }),
+  )
 })

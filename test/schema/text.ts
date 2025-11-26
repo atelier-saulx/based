@@ -1,8 +1,7 @@
-import test from 'node:test'
-import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { test, throws } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('text', () => {
+await test('text', async () => {
   parse({
     locales: {
       en: {
@@ -22,7 +21,7 @@ await test('text', () => {
     },
   })
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         myType: {
@@ -34,7 +33,7 @@ await test('text', () => {
     })
   }, 'type text requires locales to be defined')
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         product: {

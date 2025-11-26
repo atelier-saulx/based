@@ -1,9 +1,4 @@
-import type {
-  SchemaHooks,
-  SchemaLocales,
-  SchemaProp,
-  SchemaPropHooks,
-} from '../index.js'
+import type { SchemaHooks, SchemaProp, SchemaPropHooks } from '../index.js'
 import { Validation } from './validation.js'
 import {
   PropType,
@@ -15,6 +10,7 @@ import {
   ID_PROP,
   MAIN_PROP,
 } from '../../zigTsExports.js'
+import type { SchemaLocales } from '../schema/locales.js'
 
 export type PropDef = {
   __isPropDef: true

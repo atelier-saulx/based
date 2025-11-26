@@ -1,7 +1,7 @@
-import test from 'node:test'
-import { parse } from '@based/schema'
+import { test } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('cardinality', () => {
+await test('cardinality', async () => {
   parse({
     types: {
       myType: {
@@ -21,7 +21,7 @@ await test('cardinality', () => {
   })
 })
 
-await test('cardinality props', () => {
+await test('cardinality props', async () => {
   parse({
     types: {
       myType: {

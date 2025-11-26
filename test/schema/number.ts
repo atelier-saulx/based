@@ -1,8 +1,7 @@
-import test from 'node:test'
-import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { test, throws } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('number', () => {
+await test('number', async () => {
   parse({
     types: {
       myType: {
@@ -17,7 +16,7 @@ await test('number', () => {
     },
   })
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         myType: {
@@ -33,7 +32,7 @@ await test('number', () => {
     })
   }, 'should throw with out of range default')
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         myType: {

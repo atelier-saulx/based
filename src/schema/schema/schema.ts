@@ -12,17 +12,8 @@ import { parseType, type SchemaType } from './type.js'
 import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
 import hash from '../../hash/hash.js'
-import { LangCode } from '../../zigTsExports.js'
-
-type LangName = keyof typeof LangCode
-
+import { parseLocales, type SchemaLocales } from './locales.js'
 export type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
-export type SchemaLocale = {
-  required?: boolean
-  fallback?: LangName // not multiple - 1 is enough else it becomes too complex
-}
-export type SchemaLocales = Partial<Record<LangName, true | SchemaLocale>>
-
 export type SchemaMigrateFn = (
   node: Record<string, any>,
 ) => Record<string, any> | [string, Record<string, any>]
@@ -36,7 +27,7 @@ export type Schema<strict = false> = {
   types: SchemaTypes<strict>
   defaultTimezone?: string
   migrations?: SchemaMigrations
-  locales?: SchemaLocales
+  locales?: SchemaLocales<strict>
 } & RequiredIfStrict<{ hash: number }, strict>
 
 export type SchemaIn = Schema<false> | Schema<true>
@@ -51,15 +42,6 @@ const isMigrations = (v: unknown): v is SchemaMigrations =>
       isRecord(m.migrate) &&
       Object.values(m.migrate).every(isFunction),
   )
-
-const isLocales = (v: unknown): v is SchemaLocales =>
-  isRecord(v) &&
-  Object.entries(v).every(([k, v]) => {
-    if (LangCode[k]) {
-      // TODO make more strict!
-      return isBoolean(v) || isRecord(v)
-    }
-  })
 
 const getPath = (
   obj: Record<string, unknown>,
@@ -108,13 +90,12 @@ export const parseSchema = (input: SchemaIn): SchemaOut => {
   const v: unknown = track(input)
   assert(isRecord(v), 'Schema should be record')
   try {
+    const locales = parseLocales(v.locales)
     assert(isRecord(v.types), 'Types should be record')
     assert(
       v.version === undefined || isString(v.version),
       'Version should be string',
     )
-    const locales = v.locales
-    assert(locales === undefined || isLocales(locales), 'Invalid locales')
     assert(
       v.migrations === undefined || isMigrations(v.migrations),
       'Invalid migrations',
@@ -125,7 +106,6 @@ export const parseSchema = (input: SchemaIn): SchemaOut => {
           Intl.DateTimeFormat(undefined, { timeZone: v.defaultTimezone })),
       'Invalid Default Timezone',
     )
-
     let types: SchemaTypes<true> = {}
     for (const key in v.types) {
       const type = v.types[key]
