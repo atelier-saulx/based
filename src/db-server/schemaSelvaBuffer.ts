@@ -9,6 +9,7 @@ import {
   type SchemaTypeDef,
 } from '../schema/index.js'
 import { COMPRESSED, NOT_COMPRESSED } from '../protocol/index.js'
+import { fillEmptyMain } from '../schema/def/fillEmptyMain.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -161,10 +162,9 @@ const propDefBuffer = (
         buf[1] = prop.len < 50 ? prop.len : 0
         const l = setDefaultString(buf, prop.default, 6, LangCode.none, false)
         if (l != buf.length) {
-          console.log('fix', l, buf.length)
           buf = buf.subarray(0, 6 + l)
         }
-        writeUint32(buf, l, 2)
+        writeUint32(buf, l, 2) // default len
 
       return [...buf]
     } else {
@@ -185,7 +185,7 @@ export function schemaToSelvaBuffer(schema: {
   [key: string]: SchemaTypeDef
 }): ArrayBuffer[] {
   return Object.values(schema).map((t) => {
-    const props = Object.values(t.props)
+    const props: PropDef[] = Object.values(t.props)
     const rest: PropDef[] = []
     const nrFields = 1 + sepPropCount(props)
     let nrFixedFields = 1
@@ -195,9 +195,11 @@ export function schemaToSelvaBuffer(schema: {
       throw new Error('Too many fields')
     }
 
+    const mainLen = t.mainLen === 0 ? 1 : t.mainLen
     const main = {
       ...EMPTY_MICRO_BUFFER,
-      len: t.mainLen === 0 ? 1 : t.mainLen,
+      default: fillEmptyMain(props, mainLen),
+      len: mainLen,
     }
 
     for (const f of props) {
