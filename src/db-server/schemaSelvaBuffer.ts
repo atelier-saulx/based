@@ -1,4 +1,7 @@
-import { writeUint32, } from '../utils/index.js'
+import {
+    writeUint16,
+    writeUint32,
+} from '../utils/index.js'
 import native from '../native.js'
 import { LangCode, PropType, PropTypeEnum } from '../zigTsExports.js'
 import {
@@ -8,7 +11,7 @@ import {
   type PropDefEdge,
   type SchemaTypeDef,
 } from '../schema/index.js'
-import { writeRaw as stringWrite } from '../db-client/string.js'
+import { writeRaw as writeString } from '../db-client/string.js'
 import { fillEmptyMain } from '../schema/def/fillEmptyMain.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
@@ -48,8 +51,7 @@ const supportedDefaults = new Set<PropTypeEnum>([
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
-  const view = new DataView(buf.buffer)
-  view.setUint32(0, blockCapacity, true)
+  writeUint32(buf, blockCapacity, 0)
   return buf
 }
 
@@ -74,10 +76,9 @@ const propDefBuffer = (
 
   if (prop.len && (type === PropType.microBuffer || type === PropType.vector)) {
     const buf = new Uint8Array(4)
-    const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
-    view.setUint16(1, prop.len, true)
+    writeUint16(buf, prop.len, 1)
     if (prop.default) {
       buf[3] = 1 // has default
       return [...buf, ...prop.default]
@@ -87,25 +88,23 @@ const propDefBuffer = (
     }
   } else if (prop.len && type === PropType.colVec) {
     const buf = new Uint8Array(5)
-    const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
     const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
 
-    view.setUint16(1, prop.len / baseSize, true) // elements
-    view.setUint16(3, baseSize, true) // element size
+    writeUint16(buf, prop.len / baseSize, 1) // elements
+    writeUint16(buf, baseSize, 3) // element size
     return [...buf]
   } else if (type === PropType.reference || type === PropType.references) {
     const buf = new Uint8Array(11)
-    const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName!]
 
     buf[0] = selvaType // field type
     buf[1] = makeEdgeConstraintFlags(prop) // flags
-    view.setUint16(2, dstType.id, true) // dst_node_type
+    writeUint16(buf, dstType.id, 2) // dst_node_type
     buf[4] = prop.inversePropNumber! // inverse_field
-    view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // edge_node_type
-    view.setUint32(7, prop.referencesCapped ?? 0, true)
+    writeUint16(buf, prop.edgeNodeTypeId ?? 0, 5) // edge_node_type
+    writeUint32(buf, prop.referencesCapped ?? 0, 7)
 
     return [...buf]
   } else if (
@@ -121,7 +120,7 @@ const propDefBuffer = (
 
         buf[0] = selvaType
         buf[1] = prop.len < 50 ? prop.len : 0
-        const l = stringWrite(buf, prop.default, 6, LangCode.none, false)
+        const l = writeString(buf, prop.default, 6, LangCode.none, false)
         if (l != buf.length) {
           buf = buf.subarray(0, 6 + l)
         }
