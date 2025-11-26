@@ -23,12 +23,12 @@ pub fn deleteFieldSortIndex(ctx: *ModifyCtx) !usize {
         var it = ctx.typeSortIndex.?.main.iterator();
         while (it.next()) |entry| {
             if (currentData == null) {
-                currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                currentData = Fields.get(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             }
             sort.remove(ctx.thread.decompressor, entry.value_ptr.*, currentData.?, ctx.node.?);
         }
     } else if (ctx.currentSortIndex != null) {
-        const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+        const currentData = Fields.get(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
         sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
     } else if (ctx.fieldType == t.PropType.text) {
         var it = ctx.typeSortIndex.?.text.iterator();
@@ -58,7 +58,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
 
     if (ctx.typeSortIndex != null) {
         if (ctx.currentSortIndex != null) {
-            const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+            const currentData = Fields.get(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
             sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
             sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, sort.EMPTY_SLICE, ctx.node.?);
         } else if (ctx.fieldType == t.PropType.text) {

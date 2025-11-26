@@ -103,7 +103,7 @@ pub fn include(
             t.IncludeOp.defaultWithOpts => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-                const value = Fields.getField(typeEntry, node, fieldSchema, header.propType);
+                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                 switch (header.propType) {
                     t.PropType.binary,
@@ -121,14 +121,14 @@ pub fn include(
                             }
                         } else if (optsHeader.next) {
                             while (optsHeader.next) {
-                                try opts.string(ctx.thread, header.prop, Fields.getTextFromValue(value, optsHeader.lang), &optsHeader);
+                                try opts.string(ctx.thread, header.prop, Fields.textFromValue(value, optsHeader.lang), &optsHeader);
                                 optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                             }
                         } else if (optsHeader.langFallbackSize > 0) {
                             try opts.string(
                                 ctx.thread,
                                 header.prop,
-                                Fields.getTextFromValueFallback(
+                                Fields.textFromValueFallback(
                                     value,
                                     optsHeader.lang,
                                     utils.sliceNext(optsHeader.langFallbackSize, q, &i),
@@ -136,7 +136,7 @@ pub fn include(
                                 &optsHeader,
                             );
                         } else {
-                            try opts.string(ctx.thread, header.prop, Fields.getTextFromValue(value, optsHeader.lang), &optsHeader);
+                            try opts.string(ctx.thread, header.prop, Fields.textFromValue(value, optsHeader.lang), &optsHeader);
                         }
                     },
                     else => {
@@ -147,7 +147,7 @@ pub fn include(
             t.IncludeOp.default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-                const value = Fields.getField(typeEntry, node, fieldSchema, header.propType);
+                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
                 switch (header.propType) {
                     t.PropType.text,
                     => {

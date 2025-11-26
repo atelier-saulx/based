@@ -86,7 +86,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
             } else {
-                try Fields.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
+                try Fields.write(ctx.node.?, ctx.fieldSchema.?, slice);
             }
             return len;
         },

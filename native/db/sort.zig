@@ -169,7 +169,7 @@ pub fn createSortIndex(
             fieldSchema,
             header.propType,
             header.lang,
-        ) else Fields.getField(
+        ) else Fields.get(
             typeEntry,
             node.?,
             fieldSchema,

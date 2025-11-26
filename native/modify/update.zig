@@ -109,7 +109,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     var it = ctx.typeSortIndex.?.main.iterator();
                     while (it.next()) |entry| {
                         if (currentData == null) {
-                            currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                            currentData = Fields.get(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                         }
                         const sI = entry.value_ptr.*;
                         sort.remove(ctx.thread.decompressor, sI, currentData.?, ctx.node.?);
@@ -117,7 +117,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     }
                 }
             } else if (ctx.currentSortIndex != null) {
-                const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+                const currentData = Fields.get(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
                 sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
             }
@@ -148,7 +148,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     };
                 }
             } else {
-                try Fields.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
+                try Fields.write(ctx.node.?, ctx.fieldSchema.?, slice);
             }
 
             return len;
@@ -163,7 +163,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     }
 
     const slice = data[4 .. len + 4];
-    const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+    const currentData = Fields.get(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     if (currentData.len != 0) {
         var j: usize = 0;
         while (j < len) {
@@ -312,7 +312,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: t.ModOp) !usize {
 
     const addition = data[3 .. 3 + propSize];
 
-    const currentData = Fields.getField(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
+    const currentData = Fields.get(ctx.typeEntry, ctx.node.?, ctx.fieldSchema.?, ctx.fieldType);
     const start = read(u16, data, 1);
     const value = currentData[start .. start + propSize];
 

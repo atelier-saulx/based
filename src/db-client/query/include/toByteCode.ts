@@ -21,8 +21,8 @@ const EMPTY_BUFFER = new Uint8Array(0)
 
 export const createLangFallbacks = (opts: IncludeOpts) => {
   const langFallbacks = new Uint8Array(opts.fallBacks!.length || 0)
-  for (let i = 0; i < opts!.fallBacks!.length || 0; i++) {
-    langFallbacks[i] = opts!.fallBacks![i]
+  for (let i = 0; i < opts.fallBacks!.length || 0; i++) {
+    langFallbacks[i] = opts.fallBacks![i]
   }
   return langFallbacks
 }
@@ -183,7 +183,6 @@ export const includeToBuffer = (
         const codes = opts.codes
         if (codes && !codes.has(0)) {
           const fallBacks = createLangFallbacks(opts)
-          console.log({ fallBacks })
           result.push(
             createIncludeHeader({
               op: IncludeOp.defaultWithOpts,
