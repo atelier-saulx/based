@@ -183,7 +183,7 @@ const inspectObject = (
       // skip
     } else if (key === 'id') {
       str +=
-        styleText('blue', v) +
+        styleText('blue', String(v)) +
         // @ts-ignore
         styleText('italic', styleText('dim', ` ${q.target.type}`))
       str += ',\n'
