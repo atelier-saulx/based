@@ -1,6 +1,5 @@
 import {
   SchemaObject,
-  SchemaLocales,
   SchemaHooks,
   getValidator,
   type SchemaOut,
@@ -30,6 +29,7 @@ import { createEmptyDef } from './createEmptyDef.js'
 import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import type { SchemaType } from '../schema/type.js'
 import { PropType } from '../../zigTsExports.js'
+import type { SchemaLocales } from '../schema/locales.js'
 
 export const updateTypeDefs = (schema: SchemaOut) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}

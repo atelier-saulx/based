@@ -1,8 +1,7 @@
-import test from 'node:test'
-import { throws } from 'node:assert'
-import { parse } from '@based/schema'
+import { test, throws } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('enum', () => {
+await test('enum', async () => {
   parse({
     types: {
       myType: {
@@ -22,7 +21,7 @@ await test('enum', () => {
     },
   })
 
-  throws(() => {
+  throws(async () => {
     parse({
       types: {
         myType: {

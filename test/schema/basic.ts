@@ -1,7 +1,7 @@
-import test from 'node:test'
-import { parse } from '@based/schema'
+import test from '../shared/test.js'
+import { parse } from '@based/sdk'
 
-await test('basic', () => {
+await test('basic', async () => {
   parse({
     locales: {
       en: {},

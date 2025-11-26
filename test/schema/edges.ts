@@ -1,8 +1,7 @@
-import test from 'node:test'
-import { parse } from '@based/schema'
-import { deepEqual } from 'assert'
+import { deepEqual, test } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('edges', () => {
+await test('edges', async () => {
   try {
     const { schema } = parse({
       types: {

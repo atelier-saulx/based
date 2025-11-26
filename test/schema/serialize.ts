@@ -1,9 +1,7 @@
-import test from 'node:test'
-import { ok } from 'node:assert'
-import { serialize, deSerialize, parse } from '../src/index.js'
+import { deSerialize, parse, serialize, type SchemaOut } from '@based/sdk'
+import { test } from '../shared/index.js'
 import eurovisionSchema from './schema/based.schema.js'
-import { deflateSync } from 'node:zlib'
-import type { SchemaOut } from '../dist/index.js'
+import { ok } from 'assert'
 
 function deepEqual(a: any, b: any): boolean {
   if (a === b) return true
@@ -41,7 +39,7 @@ function deepEqual(a: any, b: any): boolean {
   return false
 }
 
-test('serialize and deserialize basic schema', () => {
+test('serialize and deserialize basic schema', async () => {
   const basicSchema: SchemaOut = {
     hash: 0,
     locales: {
@@ -90,7 +88,7 @@ test('serialize and deserialize basic schema', () => {
   ok(deepEqual(basicSchema, deserialized), 'Basic schema did not match')
 })
 
-test('serialize and deserialize complex (Eurovision) schema', () => {
+test('serialize and deserialize complex (Eurovision) schema', async () => {
   const serialized = serialize(eurovisionSchema)
   const deserialized = deSerialize(serialized)
 
@@ -105,7 +103,7 @@ test('serialize and deserialize complex (Eurovision) schema', () => {
   // )
 })
 
-test('serialize with readOnly option strips validation and defaults', () => {
+test('serialize with readOnly option strips validation and defaults', async () => {
   const schema: SchemaOut = {
     hash: 0,
     types: {
@@ -140,7 +138,7 @@ test('serialize with readOnly option strips validation and defaults', () => {
 
 // optimize this with an extra map
 // keep serialized schema in MEM
-test('big schema', () => {
+test('big schema', async () => {
   const makeALot = (n: number) => {
     const props: any = {}
     for (let i = 0; i < n; i++) {
@@ -170,7 +168,7 @@ test('big schema', () => {
   ok(deepEqual(basicSchema, deserialized), 'Big schema did not match')
 })
 
-test('Simple shared prop', () => {
+test('Simple shared prop', async () => {
   const basicSchema: SchemaOut = parse({
     types: {
       article: {
@@ -191,20 +189,20 @@ test('Simple shared prop', () => {
   ok(deepEqual(basicSchema, deserialized), 'Mismatch')
 })
 
-test('empty schema', () => {
+test('empty schema', async () => {
   const serialized = serialize({})
   const deserialized = deSerialize(serialized)
   ok(deepEqual({}, deserialized), 'Mismatch')
 })
 
-test('schema with 1 unit8array', () => {
+test('schema with 1 unit8array', async () => {
   const x = { x: new Uint8Array([1, 2, 3]) }
   const serialized = serialize(x)
   const deserialized = deSerialize(serialized)
   ok(deepEqual(x, deserialized), 'Mismatch')
 })
 
-test('schema with 1 unit8array array', () => {
+test('schema with 1 unit8array array', async () => {
   const x = {
     x: [{ x: new Uint8Array([1, 2, 3]) }, { x: new Uint8Array([1, 2, 3]) }],
   }
@@ -213,19 +211,19 @@ test('schema with 1 unit8array array', () => {
   ok(deepEqual(x, deserialized), 'Mismatch')
 })
 
-test('empty uint8Array', () => {
+test('empty uint8Array', async () => {
   const deserialized = deSerialize(new Uint8Array())
   ok(deepEqual({}, deserialized), 'Mismatch')
 })
 
-test('schema with hash', () => {
+test('schema with hash', async () => {
   const serialized = serialize({ hash: 14986952164472 })
   const deserialized = deSerialize(serialized)
   ok(deepEqual({ hash: 14986952164472 }, deserialized), 'Mismatch')
 })
 
 // make something like serialize for payloads in the server
-test('serialize random object', () => {
+test('serialize random object', async () => {
   const obj = { bla: [1, 23, 2, 12, { x: 1 }] }
   const serialized = serialize(obj)
   const deserialized = deSerialize(serialized)

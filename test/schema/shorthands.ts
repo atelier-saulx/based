@@ -1,11 +1,10 @@
-import test from 'node:test'
-import { deepEqual } from 'node:assert'
-import { parse } from '@based/schema'
+import { deepEqual, test } from '../shared/index.js'
+import { parse } from '@based/sdk'
 
-await test('shorthands', () => {
+await test('shorthands', async () => {
   deepEqual(
     parse({
-      locales: { en: {} },
+      locales: ['en'],
       types: {
         hello: {
           props: {
@@ -18,8 +17,8 @@ await test('shorthands', () => {
       },
     }).schema,
     {
-      hash: 1370478657748,
-      locales: { en: {} },
+      hash: 8197646311213,
+      locales: { en: { fallback: [] } },
       types: {
         hello: {
           props: {
@@ -45,8 +44,8 @@ await test('shorthands', () => {
       },
     }).schema,
     {
-      hash: 4322500041486,
-      locales: { en: {} },
+      hash: 13989456573687,
+      locales: { en: { fallback: [] } },
       types: {
         article: {
           props: {
@@ -77,8 +76,8 @@ await test('shorthands', () => {
       },
     }).schema,
     {
-      hash: 4322500041486,
-      locales: { en: {} },
+      hash: 13989456573687,
+      locales: { en: { fallback: [] } },
       types: {
         article: {
           props: {

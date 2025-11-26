@@ -1,7 +1,7 @@
-import test from 'node:test'
-import { parseSchema } from '../src/index.js'
+import { test } from '../shared/index.js'
+import { parseSchema } from '@based/sdk'
 
-await test('types', () => {
+await test('types', async () => {
   const schema = parseSchema({
     types: {},
   })

@@ -1,5 +1,4 @@
-import { Infer } from '../src/infer.js'
-import { Schema } from '../src/index.js'
+import type { Infer, Schema } from '../../src/schema.js'
 
 // Test schema
 const testSchema = {
