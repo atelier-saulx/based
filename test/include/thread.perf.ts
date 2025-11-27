@@ -49,7 +49,7 @@ await test('include', async (t) => {
 
   const x = await db
     .query('user')
-    // .locale('nl', ['fr', 'no', 'de'])
+    .locale('en', ['fr', 'no', 'de'])
     .include('body', { meta: true, end: 10 })
     // .include('name')
     .range(0, 2)
