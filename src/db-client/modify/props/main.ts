@@ -6,7 +6,7 @@ import { writeU32, writeU8, writeU8Array } from '../uint.js'
 import type { PropDef } from '../../../schema/index.js'
 
 export const writeMainBuffer = (ctx: Ctx) => {
-  if (ctx.cursor.main === null) {
+  if (ctx.cursor.main === undefined) {
     reserve(ctx, PROP_CURSOR_SIZE + 5 + ctx.schema.mainLen)
     writeMainCursor(ctx)
     writeU8(ctx, ctx.operation)
@@ -26,6 +26,6 @@ export const writeMainValue = (ctx: Ctx, def: PropDef, val: any) => {
     typeof val === 'object' && val !== null && 'increment' in val
       ? val.increment
       : val,
-    ctx.cursor.main! + def.start,
+    (ctx.cursor.main ?? 0) + def.start,
   )
 }

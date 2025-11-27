@@ -79,6 +79,7 @@ map[PropType.uint32] = (ctx, val, def) => {
   validate(val, def)
   reserve(ctx, 4)
   writeU32(ctx, val)
+  console.log('--->', val, ctx.index, ctx.buf.subarray(0, ctx.index))
 }
 
 map[PropType.uint16] = (ctx, val, def) => {
@@ -99,6 +100,7 @@ map[PropType.int32] = (ctx, val, def) => {
   val ??= def.default
   validate(val, def)
   reserve(ctx, 4)
+
   writeU32(ctx, val)
 }
 
@@ -124,6 +126,7 @@ export const writeFixedAtOffset = (
   offset: number,
 ) => {
   const index = ctx.index
+  console.log({ offset })
   ctx.index = offset
   map[def.typeIndex](ctx, val, def)
   ctx.index = index
