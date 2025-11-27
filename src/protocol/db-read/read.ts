@@ -32,6 +32,7 @@ export * from './string.js'
 export * from './schema/deserialize.js'
 
 const meta: ReadInstruction = (q, result, i, item) => {
+  console.log('META')
   const metaResponse: IncludeResponseMeta = readIncludeResponseMeta(
     result,
     i - 1,

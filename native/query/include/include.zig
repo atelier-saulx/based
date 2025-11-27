@@ -94,6 +94,9 @@ pub fn include(
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
                 const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
                 // var v: []u8 = value;
+
+                std.debug.print("{any}  \n", .{header});
+
                 switch (header.propType) {
                     t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
                         try append.meta(ctx.thread, header.prop, value);
@@ -110,6 +113,9 @@ pub fn include(
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
                 const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+
+                std.debug.print("{any}  \n", .{header});
+
                 switch (header.propType) {
                     t.PropType.binary,
                     t.PropType.string,

@@ -125,15 +125,17 @@ export const includeToBuffer = (
       if (propDef.opts?.meta) {
         if (propDef.opts.codes) {
           const codes = propDef.opts.codes.has(0)
-            ? Object.values(def.schema!.locales).map((c) => LangCode[c])
+            ? Object.keys(def.schema!.locales).map((c) => LangCode[c])
             : propDef.opts.codes
+
+          console.log({ codes }, def.schema!.locales)
           for (const code of codes) {
             result.push(
               createIncludeMetaHeader({
                 op: IncludeOp.meta,
                 prop,
                 propType: propType,
-                lang: LangCode[code],
+                lang: code,
               }),
             )
           }
@@ -149,6 +151,7 @@ export const includeToBuffer = (
         }
       }
 
+      console.log(opts)
       if (opts?.meta !== 'only') {
         const hasEndOption = !!opts?.end
         const codes = opts?.codes
