@@ -16,9 +16,20 @@ import {
   createIncludeOpts,
   LangCode,
   createIncludeMetaHeader,
+  MAIN_PROP,
+  createIncludePartialHeader,
 } from '../../../zigTsExports.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
+
+const isPartialMain = (def: QueryDef) => {
+  return (
+    def.include.main.len !==
+    (def.type === QueryDefType.Edge
+      ? def.target.ref!.edgeMainLen
+      : def.schema!.mainLen)
+  )
+}
 
 export const createLangFallbacks = (opts: IncludeOpts) => {
   const langFallbacks = new Uint8Array(opts.fallBacks!.length || 0)
@@ -60,10 +71,9 @@ export const includeToBuffer = (
     if (def.include.main.len === len) {
       // Get all main fields
       mainBuffer = EMPTY_BUFFER
-      let i = 2
       for (const value of def.include.main.include.values()) {
         value[0] = value[1].start
-        i += 4
+        console.log(value)
       }
     } else {
       const size = def.include.main.include.size
@@ -84,34 +94,26 @@ export const includeToBuffer = (
 
   const propSize = def.include.props.size ?? 0
 
-  if (mainBuffer!) {
-    if (mainBuffer.byteLength !== 0) {
-      const buf = new Uint8Array(5)
-      // writeIncludeHeader(
-      //   buf,
-      //   {
+  if (def.include.main.len > 0) {
+    if (isPartialMain(def)) {
+      // result.push(
+      //   createIncludePartialHeader({
       //     op: IncludeOp.partial,
-      //     prop: 0,
+      //     prop: MAIN_PROP,
       //     propType: PropType.microBuffer,
-      //   },
-      //   0,
+      //     size: mainBuffer.byteLength,
+      //   }),
+      //   mainBuffer,
       // )
-      // add opts len here...
-      writeUint16(buf, mainBuffer.byteLength, 3)
-      result.push(buf, mainBuffer)
     } else {
-      const buf = new Uint8Array(4)
-      // writeIncludeHeader(
-      //   buf,
-      //   {
-      //     op: IncludeOp.default,
-      //     prop: 0,
-      //     propType: PropType.microBuffer,
-      //   },
-      //   0,
-      // )
-      buf[3] = 0 // opts len
-      result.push(buf)
+      console.log('GET ALL')
+      result.push(
+        createIncludeHeader({
+          op: IncludeOp.default,
+          prop: MAIN_PROP,
+          propType: PropType.microBuffer,
+        }),
+      )
     }
   }
 

@@ -138,6 +138,7 @@ const readInstruction = (
   } else if (instruction === READ_EDGE) {
     return edge(q, result, i, item)
   } else if (instruction === 0) {
+    console.log('GO GO GO', i)
     return readMain(q, result, i, item)
   } else {
     return readProp(instruction, q, result, i, item)

@@ -24,7 +24,7 @@ await test('include', async (t) => {
       user: {
         props: {
           name: { type: 'string' }, // default: 'xxxx'
-          // nr: 'uint32',
+          nr: 'uint32',
           body: { type: 'text' }, // compression: 'none'
         },
       },
@@ -33,7 +33,7 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 2; i++) {
     db.create('user', {
-      // nr: i,
+      nr: i + 67,
       name: 'A',
       body: {
         // nl: 'x',
@@ -51,11 +51,12 @@ await test('include', async (t) => {
   const x = await db
     .query('user')
     .locale('nl', ['no', 'de'])
-    .include('body', { meta: 'only', end: 10 })
-    .include('name', { meta: 'only' })
+    // .include('body', { meta: 'only', end: 10 })
+    // .include('name', { meta: 'only' })
+    .include('nr')
 
     // .include('name')
-    .range(0, 3)
+    .range(0, 2)
     .get()
 
   x.debug()
@@ -154,8 +155,8 @@ await test('default', async (t) => {
           book: {
             type: 'text',
             default: {
-              'en': 'haha',
-              'de': 'hahaha',
+              en: 'haha',
+              de: 'hahaha',
             },
           },
         },

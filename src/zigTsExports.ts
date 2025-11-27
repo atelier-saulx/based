@@ -1405,6 +1405,80 @@ export const createIncludeMetaHeader = (header: IncludeMetaHeader): Uint8Array =
   return buffer
 }
 
+export type IncludePartialHeader = {
+  op: IncludeOpEnum
+  prop: number
+  propType: PropTypeEnum
+  size: number
+}
+
+export const IncludePartialHeaderByteSize = 5
+
+export const writeIncludePartialHeader = (
+  buf: Uint8Array,
+  header: IncludePartialHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  buf[offset] = header.prop
+  offset += 1
+  buf[offset] = header.propType
+  offset += 1
+  writeUint16(buf, header.size, offset)
+  offset += 2
+  return offset
+}
+
+export const writeIncludePartialHeaderProps = {
+  op: (buf: Uint8Array, value: IncludeOpEnum, offset: number) => {
+    buf[offset] = value
+  },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 2] = value
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 3)
+  },
+}
+
+export const readIncludePartialHeader = (
+  buf: Uint8Array,
+  offset: number,
+): IncludePartialHeader => {
+  const value: IncludePartialHeader = {
+    op: (buf[offset]) as IncludeOpEnum,
+    prop: buf[offset + 1],
+    propType: (buf[offset + 2]) as PropTypeEnum,
+    size: readUint16(buf, offset + 3),
+  }
+  return value
+}
+
+export const readIncludePartialHeaderProps = {
+  op: (buf: Uint8Array, offset: number): IncludeOpEnum => {
+    return (buf[offset]) as IncludeOpEnum
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 2]) as PropTypeEnum
+  },
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 3)
+  },
+}
+
+export const createIncludePartialHeader = (header: IncludePartialHeader): Uint8Array => {
+  const buffer = new Uint8Array(IncludePartialHeaderByteSize)
+  writeIncludePartialHeader(buffer, header, 0)
+  return buffer
+}
+
 export type IncludeOpts = {
   end: number
   isChars: boolean

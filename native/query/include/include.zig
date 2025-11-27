@@ -138,6 +138,7 @@ pub fn include(
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     else => {
+                        std.debug.print("yo? {any} \n", .{value});
                         try append.default(ctx.thread, header.prop, value);
                     },
                 }

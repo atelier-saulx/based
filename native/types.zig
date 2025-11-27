@@ -525,6 +525,13 @@ pub const IncludeMetaHeader = packed struct {
     propType: PropType,
 };
 
+pub const IncludePartialHeader = packed struct {
+    op: IncludeOp,
+    prop: u8,
+    propType: PropType,
+    size: u16,
+};
+
 pub const IncludeOpts = packed struct {
     end: u32,
     isChars: bool,
