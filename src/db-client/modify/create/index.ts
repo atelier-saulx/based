@@ -230,7 +230,9 @@ export function create(
   const ctx = db.modifyCtx
   ctx.start = ctx.index
   try {
+    console.log('payload:', payload)
     writeCreate(ctx, schema, payload, opts)
+    console.log('buf:', ctx.buf.subarray(0, ctx.index))
     const tmp = new Tmp(ctx)
     schedule(db, ctx)
     return tmp
