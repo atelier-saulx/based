@@ -16,6 +16,8 @@
     "build-ts-bundle": "tsdown --dts",
     "build": "npm run concurrently npm:build-native npm:build-ts npm:build-exports",
     "watch-zig": "zig build --watch",
+    "watch-zig-linux-arm64": "zig build -Dtarget=aarch64-linux-gnu --watch",
+    "watch-zig-linux-x64": "zig build -Dtarget=x86_64-linux-gnu --watch",
     "watch-ts": "tsc -p tsconfig.build.json --watch",
     "watch-native": "npm run build-c && npm run watch-zig",
     "watch-exports": "tsx --watch-path=./native/types.zig scripts/zigTsExports.ts ",
