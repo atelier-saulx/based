@@ -2,6 +2,7 @@ import { combineToNumber, readFloatLE, readUint32 } from '../../utils/index.js'
 import {
   AggItem,
   Item,
+  Meta,
   ReaderSchema,
   ReaderSchemaEnum,
   ReadInstruction,
@@ -15,30 +16,58 @@ import {
   READ_EDGE,
   READ_ID,
 } from './types.js'
-import { readMetaSeperate } from './meta.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
 import { undefinedProps } from './undefined.js'
-import { PropType } from '../../zigTsExports.js'
+import {
+  IncludeResponseMeta,
+  IncludeResponseMetaByteSize,
+  PropType,
+  readIncludeResponseMeta,
+} from '../../zigTsExports.js'
 
 export * from './types.js'
 export * from './string.js'
 export * from './schema/deserialize.js'
 
 const meta: ReadInstruction = (q, result, i, item) => {
-  const field = result[i]
-  i++
-  const prop = q.props[field]
-  const lang = result[i]
-  i++
-  prop.readBy = q.readId
-  if (prop.typeIndex === PropType.text && prop.locales) {
-    addLangMetaProp(prop, readMetaSeperate(result, i), item, lang)
-  } else {
-    addMetaProp(prop, readMetaSeperate(result, i), item)
+  const metaResponse: IncludeResponseMeta = readIncludeResponseMeta(
+    result,
+    i - 1,
+  )
+  const prop = metaResponse.prop
+  const propDef = q.props[prop]
+  const lang = metaResponse.lang
+  const propType = propDef.typeIndex
+
+  if (propDef.meta == 1 || propDef.meta === 3) {
+    propDef.readBy = q.readId
   }
-  i += 9
+
+  const meta: Meta = {
+    crc32: metaResponse.crc32,
+    compressed: metaResponse.compressed,
+    size: metaResponse.size,
+    checksum: combineToNumber(metaResponse.crc32, metaResponse.size),
+    compressedSize: metaResponse.size,
+  }
+
+  if (lang !== 0) {
+    meta.lang = propDef.locales![lang]
+  }
+
+  i += IncludeResponseMetaByteSize - 1
+  if (meta.compressed) {
+    meta.compressedSize = readUint32(result, i)
+    i += 4
+  }
+
+  if (propType === PropType.text && propDef.locales && propDef.meta! < 3) {
+    addLangMetaProp(propDef, meta, item, lang)
+  } else {
+    addMetaProp(propDef, meta, item)
+  }
   return i
 }
 
@@ -136,6 +165,7 @@ export const readProps = (
   }
   // For the last id
   undefinedProps(q, item)
+  return i
 }
 
 export const resultToObject = (
@@ -149,6 +179,7 @@ export const resultToObject = (
   }
 
   const len = readUint32(result, offset)
+
   if (len === 0) {
     if (q.type === ReaderSchemaEnum.single) {
       return null
@@ -163,13 +194,17 @@ export const resultToObject = (
   while (i < end) {
     const id = readUint32(result, i)
     i += 4
+
     let item: Item = { id }
+
     if (q.search) {
       item.$searchScore = readFloatLE(result, i)
       i += 4
     }
     const l = readProps(q, result, i, end, item) ?? 0
+
     i += l
+
     if (readHook) {
       const res = readHook(item)
       if (res === null) {
@@ -181,10 +216,7 @@ export const resultToObject = (
     }
   }
 
-  if (q.type === ReaderSchemaEnum.rootProps) {
-    delete items[0].id
-    return items[0]
-  } else if (q.type === ReaderSchemaEnum.single) {
+  if (q.type === ReaderSchemaEnum.single) {
     return items[0]
   }
 

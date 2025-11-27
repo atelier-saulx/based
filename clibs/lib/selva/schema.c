@@ -82,8 +82,8 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
 
 static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
-    uint8_t fixed_len;
     size_t off = 1;
+    uint8_t fixed_len;
     const size_t min_buf_len = 1 + sizeof(fixed_len) + (ctx->version >= 7);
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
 
@@ -114,12 +114,12 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
         fs->string.default_len = default_len;
 
         if (default_len > 0) { /* has default */
-            if (ctx->len < off) {
+            if (ctx->len < off + default_len) {
                 return SELVA_EINVAL;
             }
 
             /* default is copied straight from the schema buffer. */
-            fs->string.default_off = ctx->buf - ctx->schema_buf  + off;
+            fs->string.default_off = (uint32_t)((ptrdiff_t)(ctx->buf - ctx->schema_buf) + off);
             off += default_len;
         }
     }
@@ -127,16 +127,43 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
     return off;
 }
 
-static int type2fs_text(struct schemabuf_parser_ctx *, struct SelvaFieldsSchema *schema, field_t field)
+static int type2fs_text(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+    size_t off = 1;
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_TEXT,
     };
 
-    return 1;
+    if (ctx->version >= 8) {
+        uint8_t nr_defaults;
+
+        memcpy(&nr_defaults, ctx->buf + off, sizeof(nr_defaults));
+        off += sizeof(nr_defaults);
+        fs->text.nr_defaults = nr_defaults;
+
+        if (nr_defaults > 0) { /* has defaults */
+            fs->text.defaults_off = (uint32_t)((ptrdiff_t)(ctx->buf - ctx->schema_buf) + off);
+
+            /*
+             * Iterate over the defaults and skip them.
+             */
+            for (size_t i = 0; i < nr_defaults; i++) {
+                uint32_t len;
+
+                if (ctx->len < off + sizeof(len)) {
+                    return SELVA_EINVAL;
+                }
+
+                memcpy(&len, ctx->buf + off, sizeof(len));
+                off += sizeof(len) + len;
+            }
+        }
+    }
+
+    return off;
 }
 
 static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field, enum SelvaFieldType type)

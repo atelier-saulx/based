@@ -1,6 +1,7 @@
 const std = @import("std");
 const t = @import("../types.zig");
 const utils = @import("../utils.zig");
+const String = @import("../string.zig");
 
 pub const Result = struct {
     data: []u8,
@@ -90,6 +91,14 @@ pub const Result = struct {
         const size = utils.sizeOf(T);
         utils.writeAs(T, try self.slice(size), value, 0);
         return size;
+    }
+
+    pub inline fn checksum(self: *Result) !void {
+        const index = self.index;
+        const start = self.headerIndex + 9;
+        if (index != start) {
+            try self.append(String.c.crc32c(0, self.data[start..index].ptr, index));
+        }
     }
 
     pub inline fn commit(self: *Result) void {

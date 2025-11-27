@@ -11,6 +11,7 @@ import {
   resultToObject,
   type Item,
 } from '../../protocol/index.js'
+import { LangCodeInverse } from '../../zigTsExports.js'
 
 export { time, size, inspectData }
 
@@ -48,8 +49,13 @@ export class BasedQueryResponse {
     const hasId = defHasId(this.def) || this.def.selectFirstResult
     const target = displayTarget(this.def)
     let str = ''
+
     str += '\n  execTime: ' + time(this.execTime)
     str += '\n  size: ' + size(this.result.byteLength)
+    if (this.def.lang.lang) {
+      str +=
+        '\n  locale: ' + styleText('blue', LangCodeInverse[this.def.lang.lang])
+    }
     const dataStr = inspectData(
       this,
       this.def,

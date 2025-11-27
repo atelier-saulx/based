@@ -509,6 +509,7 @@ pub const IncludeOp = enum(u8) {
     partial = 130,
     // ---------------------
     defaultWithOpts = 131,
+    metaWithOpts = 132,
     // ---------------------
 };
 
@@ -518,10 +519,16 @@ pub const IncludeHeader = packed struct {
     propType: PropType,
 };
 
+pub const IncludeMetaHeader = packed struct {
+    op: IncludeOp,
+    prop: u8,
+    propType: PropType,
+};
+
 pub const IncludeOpts = packed struct {
     end: u32,
     isChars: bool,
-    next: bool,
+    hasOpts: bool,
     _padding: u6,
     langFallbackSize: u8,
     lang: LangCode,
@@ -529,6 +536,16 @@ pub const IncludeOpts = packed struct {
 
 pub const IncludeResponse = packed struct {
     prop: u8,
+    size: u32,
+};
+
+pub const IncludeResponseMeta = packed struct {
+    op: ReadOp,
+    prop: u8,
+    lang: LangCode,
+    compressed: bool,
+    _padding: u7,
+    crc32: u32,
     size: u32,
 };
 

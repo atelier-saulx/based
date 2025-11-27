@@ -55,7 +55,7 @@ export const writeString = (
   if (isUint8) {
     writeU8Array(ctx, val)
   } else {
-    size = write(ctx, val, ctx.index, def.compression === 0, lang)!
+    size = write(ctx, val, ctx.index, lang, def.compression === 0)
     if (size === null) {
       throw RANGE_ERR
     }

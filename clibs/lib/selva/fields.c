@@ -972,7 +972,7 @@ static struct ensure_text_field ensure_text_field(struct SelvaFields *fields, co
         res.tl = nullptr;
     } else {
         res.text = nfo2p(fields, nfo);
-        res.tl = find_text_by_lang(res.text, lang);
+        res.tl = lang != selva_lang_none ? find_text_by_lang(res.text, lang) : nullptr;
     }
 
     return res;
@@ -2091,6 +2091,27 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
                         if (unlikely(err)) {
                             /* TODO panic is not nice here. */
                             db_panic("Failed to set string default");
+                        }
+                    }
+                } else if (fs->type == SELVA_FIELD_TYPE_TEXT) {
+                    const size_t nr_defaults = fs->text.nr_defaults;
+                    size_t off = fs->text.defaults_off;
+                    if (nr_defaults > 0 && off > 0) {
+                        struct ensure_text_field tf;
+
+                        tf = ensure_text_field(fields, fs, selva_lang_none);
+                        tf.text->tl = selva_malloc(nr_defaults * sizeof(*tf.text->tl));
+                        tf.text->len = nr_defaults;
+
+                        for (size_t i = 0; i < nr_defaults; i++) {
+                            uint32_t len;
+                            uint32_t crc;
+
+                            memcpy(&len, te->schema_buf + off, sizeof(len));
+                            off += sizeof(len);
+                            memcpy(&crc, schema_buf + off + len - sizeof(crc), sizeof(crc));
+                            init_tl(&tf.text->tl[i], (const char *)(schema_buf + off), len - sizeof(crc), crc);
+                            off += len;
                         }
                     }
                 }

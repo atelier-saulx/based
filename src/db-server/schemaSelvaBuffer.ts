@@ -1,4 +1,7 @@
-import { writeUint32, } from '../utils/index.js'
+import {
+    writeUint16,
+    writeUint32,
+} from '../utils/index.js'
 import native from '../native.js'
 import { LangCode, PropType, PropTypeEnum } from '../zigTsExports.js'
 import {
@@ -8,8 +11,9 @@ import {
   type PropDefEdge,
   type SchemaTypeDef,
 } from '../schema/index.js'
-import { writeRaw as stringWrite } from '../db-client/string.js'
+import { write as writeString } from '../db-client/string.js'
 import { fillEmptyMain } from '../schema/def/fillEmptyMain.js'
+import {Ctx} from '../db-client/modify/Ctx.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -42,14 +46,15 @@ const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 const supportedDefaults = new Set<PropTypeEnum>([
   PropType.binary,
   PropType.string,
+  PropType.text,
   PropType.vector,
   PropType.json, // same as binary (Uint8Array)
 ])
+const STRING_EXTRA_MAX = 10
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
-  const view = new DataView(buf.buffer)
-  view.setUint32(0, blockCapacity, true)
+  writeUint32(buf, blockCapacity, 0)
   return buf
 }
 
@@ -74,10 +79,9 @@ const propDefBuffer = (
 
   if (prop.len && (type === PropType.microBuffer || type === PropType.vector)) {
     const buf = new Uint8Array(4)
-    const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
-    view.setUint16(1, prop.len, true)
+    writeUint16(buf, prop.len, 1)
     if (prop.default) {
       buf[3] = 1 // has default
       return [...buf, ...prop.default]
@@ -87,25 +91,23 @@ const propDefBuffer = (
     }
   } else if (prop.len && type === PropType.colVec) {
     const buf = new Uint8Array(5)
-    const view = new DataView(buf.buffer)
 
     buf[0] = selvaType
     const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
 
-    view.setUint16(1, prop.len / baseSize, true) // elements
-    view.setUint16(3, baseSize, true) // element size
+    writeUint16(buf, prop.len / baseSize, 1) // elements
+    writeUint16(buf, baseSize, 3) // element size
     return [...buf]
   } else if (type === PropType.reference || type === PropType.references) {
     const buf = new Uint8Array(11)
-    const view = new DataView(buf.buffer)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName!]
 
     buf[0] = selvaType // field type
     buf[1] = makeEdgeConstraintFlags(prop) // flags
-    view.setUint16(2, dstType.id, true) // dst_node_type
+    writeUint16(buf, dstType.id, 2) // dst_node_type
     buf[4] = prop.inversePropNumber! // inverse_field
-    view.setUint16(5, prop.edgeNodeTypeId ?? 0, true) // edge_node_type
-    view.setUint32(7, prop.referencesCapped ?? 0, true)
+    writeUint16(buf, prop.edgeNodeTypeId ?? 0, 5) // edge_node_type
+    writeUint32(buf, prop.referencesCapped ?? 0, 7)
 
     return [...buf]
   } else if (
@@ -115,13 +117,21 @@ const propDefBuffer = (
     type === PropType.json
   ) {
     if (prop.default && supportedDefaults.has(type)) {
-        const STRING_EXTRA_MAX = 10
-        const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : 2 * native.stringByteLength(prop.default) + STRING_EXTRA_MAX
+        const defaultValue = typeof prop.default === 'string'
+          ? prop.default.normalize('NFKD')
+          : type === PropType.json
+            ? JSON.stringify(prop.default)
+            : prop.default
+        const defaultLen = defaultValue instanceof Uint8Array
+          ? defaultValue.byteLength
+          : 2 * native.stringByteLength(defaultValue) + STRING_EXTRA_MAX
         let buf = new Uint8Array(6 + defaultLen)
 
         buf[0] = selvaType
         buf[1] = prop.len < 50 ? prop.len : 0
-        const l = stringWrite(buf, prop.default, 6, LangCode.none, false)
+        const l = (defaultValue instanceof Uint8Array)
+          ? (buf.set(defaultValue, 6), defaultLen)
+          : writeString({ buf } as Ctx, defaultValue, 6, LangCode.none, false)
         if (l != buf.length) {
           buf = buf.subarray(0, 6 + l)
         }
@@ -137,11 +147,29 @@ const propDefBuffer = (
 
       return [...buf]
     }
+  } else if (type === PropType.text) {
+    const fs: number[] = [selvaType, Object.keys(prop.default).length]
+    // [ type, nrDefaults, [len, default], [len, default]...]
+
+    for (const langName in prop.default) {
+      const lang = LangCode[langName]
+      const value = prop.default[langName].normalize('NFKD')
+      const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
+      let buf = new Uint8Array(tmpLen)
+
+      const l = writeString({ buf } as Ctx, value, 4, lang, false)
+      if (l != buf.length) {
+        buf = buf.subarray(0, 4 + l)
+      }
+      writeUint32(buf, l, 0) // length of the default
+      fs.push(...buf)
+    }
+
+    return fs
   }
   return [selvaType]
 }
 
-// TODO rewrite
 export function schemaToSelvaBuffer(schema: {
   [key: string]: SchemaTypeDef
 }): ArrayBuffer[] {

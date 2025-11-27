@@ -11,6 +11,8 @@ export type Meta = {
   crc32: number
   compressed: boolean
   value?: any
+  compressedSize: number
+  lang?: string
 }
 
 export type AggItem = Partial<Item>
@@ -29,12 +31,13 @@ export enum ReaderSchemaEnum {
   edge = 1,
   default = 2,
   single = 3,
-  rootProps = 4,
 }
 
 export enum ReaderMeta {
   only = 1,
   combined = 2,
+  onlyFallback = 3,
+  combinedFallback = 4,
 }
 
 export type ReadInstruction = (

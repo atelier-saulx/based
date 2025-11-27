@@ -8,6 +8,7 @@ import {
   type ReaderPropDef,
   type ReaderSchema,
 } from '../../protocol/index.js'
+import { read } from 'fs'
 
 const createReaderPropDef = (
   p: PropDef | PropDefEdge,
@@ -20,8 +21,15 @@ const createReaderPropDef = (
     readBy: 0,
   }
   if (opts?.meta) {
-    readerPropDef.meta =
-      opts?.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
+    if (opts?.codes?.size === 1 && opts.codes.has(opts.localeFromDef!)) {
+      readerPropDef.meta =
+        opts?.meta === 'only'
+          ? ReaderMeta.onlyFallback
+          : ReaderMeta.combinedFallback
+    } else {
+      readerPropDef.meta =
+        opts?.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
+    }
   }
   if (p.typeIndex === PropType.enum) {
     readerPropDef.enum = p.enum
@@ -39,6 +47,17 @@ const createReaderPropDef = (
       readerPropDef.locales = locales
     } else {
       if (opts.codes.size === 1 && opts.codes.has(opts.localeFromDef!)) {
+        if (readerPropDef.meta) {
+          readerPropDef.locales = {}
+          for (const code of opts.codes) {
+            readerPropDef.locales[code] = LangCodeInverse[code]
+          }
+          if (opts.fallBacks) {
+            for (const code of opts.fallBacks) {
+              readerPropDef.locales[code] = LangCodeInverse[code]
+            }
+          }
+        }
         // dont add locales - interpets it as a normal prop
       } else {
         readerPropDef.locales = {}
@@ -83,9 +102,7 @@ export const convertToReaderSchema = (
     type: isEdge
       ? ReaderSchemaEnum.edge
       : isSingle
-        ? q.target.type === '_root'
-          ? ReaderSchemaEnum.rootProps
-          : ReaderSchemaEnum.single
+        ? ReaderSchemaEnum.single
         : ReaderSchemaEnum.default,
   }
 

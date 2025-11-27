@@ -1247,6 +1247,7 @@ export const IncludeOp = {
   meta: 129,
   partial: 130,
   defaultWithOpts: 131,
+  metaWithOpts: 132,
 } as const
 
 export const IncludeOpInverse = {
@@ -1259,6 +1260,7 @@ export const IncludeOpInverse = {
   129: 'meta',
   130: 'partial',
   131: 'defaultWithOpts',
+  132: 'metaWithOpts',
 } as const
 
 /**
@@ -1270,7 +1272,8 @@ export const IncludeOpInverse = {
   referencesAggregation, 
   meta, 
   partial, 
-  defaultWithOpts 
+  defaultWithOpts, 
+  metaWithOpts 
  */
 export type IncludeOpEnum = (typeof IncludeOp)[keyof typeof IncludeOp]
 
@@ -1338,10 +1341,74 @@ export const createIncludeHeader = (header: IncludeHeader): Uint8Array => {
   return buffer
 }
 
+export type IncludeMetaHeader = {
+  op: IncludeOpEnum
+  prop: number
+  propType: PropTypeEnum
+}
+
+export const IncludeMetaHeaderByteSize = 3
+
+export const writeIncludeMetaHeader = (
+  buf: Uint8Array,
+  header: IncludeMetaHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  buf[offset] = header.prop
+  offset += 1
+  buf[offset] = header.propType
+  offset += 1
+  return offset
+}
+
+export const writeIncludeMetaHeaderProps = {
+  op: (buf: Uint8Array, value: IncludeOpEnum, offset: number) => {
+    buf[offset] = value
+  },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 2] = value
+  },
+}
+
+export const readIncludeMetaHeader = (
+  buf: Uint8Array,
+  offset: number,
+): IncludeMetaHeader => {
+  const value: IncludeMetaHeader = {
+    op: (buf[offset]) as IncludeOpEnum,
+    prop: buf[offset + 1],
+    propType: (buf[offset + 2]) as PropTypeEnum,
+  }
+  return value
+}
+
+export const readIncludeMetaHeaderProps = {
+  op: (buf: Uint8Array, offset: number): IncludeOpEnum => {
+    return (buf[offset]) as IncludeOpEnum
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 2]) as PropTypeEnum
+  },
+}
+
+export const createIncludeMetaHeader = (header: IncludeMetaHeader): Uint8Array => {
+  const buffer = new Uint8Array(IncludeMetaHeaderByteSize)
+  writeIncludeMetaHeader(buffer, header, 0)
+  return buffer
+}
+
 export type IncludeOpts = {
   end: number
   isChars: boolean
-  next: boolean
+  hasOpts: boolean
   langFallbackSize: number
   lang: LangCodeEnum
 }
@@ -1357,7 +1424,7 @@ export const writeIncludeOpts = (
   offset += 4
   buf[offset] = 0
   buf[offset] |= (((header.isChars ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.next ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= (((header.hasOpts ? 1 : 0) >>> 0) & 1) << 1
   buf[offset] |= ((0 >>> 0) & 63) << 2
   offset += 1
   buf[offset] = header.langFallbackSize
@@ -1374,7 +1441,7 @@ export const writeIncludeOptsProps = {
   isChars: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  next: (buf: Uint8Array, value: boolean, offset: number) => {
+  hasOpts: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
   langFallbackSize: (buf: Uint8Array, value: number, offset: number) => {
@@ -1392,7 +1459,7 @@ export const readIncludeOpts = (
   const value: IncludeOpts = {
     end: readUint32(buf, offset),
     isChars: (((buf[offset + 4] >>> 0) & 1)) === 1,
-    next: (((buf[offset + 4] >>> 1) & 1)) === 1,
+    hasOpts: (((buf[offset + 4] >>> 1) & 1)) === 1,
     langFallbackSize: buf[offset + 5],
     lang: (buf[offset + 6]) as LangCodeEnum,
   }
@@ -1406,7 +1473,7 @@ export const readIncludeOptsProps = {
   isChars: (buf: Uint8Array, offset: number): boolean => {
     return (((buf[offset + 4] >>> 0) & 1)) === 1
   },
-  next: (buf: Uint8Array, offset: number): boolean => {
+  hasOpts: (buf: Uint8Array, offset: number): boolean => {
     return (((buf[offset + 4] >>> 1) & 1)) === 1
   },
   langFallbackSize: (buf: Uint8Array, offset: number): number => {
@@ -1474,6 +1541,102 @@ export const readIncludeResponseProps = {
 export const createIncludeResponse = (header: IncludeResponse): Uint8Array => {
   const buffer = new Uint8Array(IncludeResponseByteSize)
   writeIncludeResponse(buffer, header, 0)
+  return buffer
+}
+
+export type IncludeResponseMeta = {
+  op: ReadOpEnum
+  prop: number
+  lang: LangCodeEnum
+  compressed: boolean
+  crc32: number
+  size: number
+}
+
+export const IncludeResponseMetaByteSize = 12
+
+export const writeIncludeResponseMeta = (
+  buf: Uint8Array,
+  header: IncludeResponseMeta,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  buf[offset] = header.prop
+  offset += 1
+  buf[offset] = header.lang
+  offset += 1
+  buf[offset] = 0
+  buf[offset] |= (((header.compressed ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
+  writeUint32(buf, header.crc32, offset)
+  offset += 4
+  writeUint32(buf, header.size, offset)
+  offset += 4
+  return offset
+}
+
+export const writeIncludeResponseMetaProps = {
+  op: (buf: Uint8Array, value: ReadOpEnum, offset: number) => {
+    buf[offset] = value
+  },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+  lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
+    buf[offset + 2] = value
+  },
+  compressed: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+  crc32: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 4)
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 8)
+  },
+}
+
+export const readIncludeResponseMeta = (
+  buf: Uint8Array,
+  offset: number,
+): IncludeResponseMeta => {
+  const value: IncludeResponseMeta = {
+    op: (buf[offset]) as ReadOpEnum,
+    prop: buf[offset + 1],
+    lang: (buf[offset + 2]) as LangCodeEnum,
+    compressed: (((buf[offset + 3] >>> 0) & 1)) === 1,
+    crc32: readUint32(buf, offset + 4),
+    size: readUint32(buf, offset + 8),
+  }
+  return value
+}
+
+export const readIncludeResponseMetaProps = {
+  op: (buf: Uint8Array, offset: number): ReadOpEnum => {
+    return (buf[offset]) as ReadOpEnum
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+  lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
+    return (buf[offset + 2]) as LangCodeEnum
+  },
+  compressed: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 3] >>> 0) & 1)) === 1
+  },
+  crc32: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 4)
+  },
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 8)
+  },
+}
+
+export const createIncludeResponseMeta = (header: IncludeResponseMeta): Uint8Array => {
+  const buffer = new Uint8Array(IncludeResponseMetaByteSize)
+  writeIncludeResponseMeta(buffer, header, 0)
   return buffer
 }
 

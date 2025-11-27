@@ -15,6 +15,7 @@ import {
   createIncludeHeader,
   createIncludeOpts,
   LangCode,
+  createIncludeMetaHeader,
 } from '../../../zigTsExports.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
@@ -115,72 +116,50 @@ export const includeToBuffer = (
   }
 
   if (propSize) {
+    // make this a function (the nested)
     for (const [prop, propDef] of def.include.props.entries()) {
       const opts = propDef.opts
-
       const propType = propDef.opts?.raw
         ? PropType.binary
-        : propDef.def.typeIndex // replace this with proptype
-      if (propDef.opts?.meta) {
-        if (propDef.opts.codes) {
-          if (propDef.opts.codes.has(0)) {
-            for (const code in def.schema!.locales) {
-              // const buf = new Uint8Array(4)
-              // writeIncludeHeader(
-              //   buf,
-              //   {
-              //     op: IncludeOp.meta,
-              //     prop,
-              //     propType: propType,
-              //   },
-              //   0,
-              // )
-              // buf[3] = langCodesMap.get(code)
-              // result.push(buf)
-            }
-          } else {
-            for (const code of propDef.opts.codes) {
-              // const buf = new Uint8Array(4)
-              // writeIncludeHeader(
-              //   buf,
-              //   {
-              //     op: IncludeOp.meta,
-              //     prop,
-              //     propType: propType,
-              //   },
-              //   0,
-              // )
-              // buf[3] = code
-              // result.push(buf)
-            }
+        : propDef.def.typeIndex
+
+      if (opts?.meta) {
+        const codes = opts?.codes
+        if (codes && !codes.has(0)) {
+          const fallBacks = createLangFallbacks(opts)
+          let i = 0
+          for (const code of codes) {
+            i++
+            result.push(
+              createIncludeMetaHeader({
+                op: IncludeOp.metaWithOpts,
+                prop,
+                propType: propType,
+              }),
+              createIncludeOpts({
+                hasOpts: i !== codes.size,
+                end: getEnd(propDef.opts),
+                isChars: !propDef.opts?.bytes,
+                lang: code,
+                langFallbackSize: fallBacks.byteLength,
+              }),
+              fallBacks,
+            )
           }
         } else {
-          const buf = new Uint8Array(4)
-          // writeIncludeHeader(
-          //   buf,
-          //   {
-          //     op: IncludeOp.meta,
-          //     prop,
-          //     propType: propType,
-          //   },
-          //   0,
-          // )
-          buf[3] = 0
-          result.push(buf)
+          result.push(
+            createIncludeMetaHeader({
+              op: IncludeOp.meta,
+              prop,
+              propType: propType,
+            }),
+          )
         }
       }
 
-      if (!opts) {
-        result.push(
-          createIncludeHeader({
-            op: IncludeOp.default,
-            prop,
-            propType: propType,
-          }),
-        )
-      } else if (opts.meta !== 'only') {
-        const hasEndOption = !!opts.end
-        const codes = opts.codes
+      if (opts?.meta !== 'only') {
+        const hasEndOption = !!opts?.end
+        const codes = opts?.codes
         if (codes && !codes.has(0)) {
           const fallBacks = createLangFallbacks(opts)
           result.push(
@@ -195,7 +174,7 @@ export const includeToBuffer = (
             i++
             result.push(
               createIncludeOpts({
-                next: i !== codes.size,
+                hasOpts: i !== codes.size,
                 end: getEnd(propDef.opts),
                 isChars: !propDef.opts?.bytes,
                 lang: code,
@@ -212,7 +191,7 @@ export const includeToBuffer = (
               propType: propType,
             }),
             createIncludeOpts({
-              next: false,
+              hasOpts: false,
               end: getEnd(propDef.opts),
               isChars:
                 !propDef.opts?.bytes &&
@@ -221,6 +200,14 @@ export const includeToBuffer = (
                   propType === PropType.text),
               lang: LangCode.none,
               langFallbackSize: 0,
+            }),
+          )
+        } else {
+          result.push(
+            createIncludeHeader({
+              op: IncludeOp.default,
+              prop,
+              propType: propType,
             }),
           )
         }

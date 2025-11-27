@@ -1,3 +1,4 @@
+import {ENCODER} from './utils/uint8.js'
 import db from './zigAddon.js'
 
 var compressor = db.createCompressor()
@@ -77,13 +78,29 @@ const native = {
     buf: Uint8Array,
     offset: number,
     stringSize: number,
-  ) => {
+  ): number => {
+    if (buf.byteLength - offset < 2 * stringSize) {
+      return 0
+    }
     return db.compress(compressor, buf, offset, stringSize)
   },
 
   // buf needs to be 2x stringSize!
-  compress: (buf: Uint8Array, offset: number, stringSize: number) => {
+  compress: (buf: Uint8Array, offset: number, stringSize: number): number => {
+    if (buf.byteLength - offset < 2 * stringSize) {
+      return 0
+    }
     return db.compress(compressor, buf, offset, stringSize)
+  },
+
+  decompressRaw: (
+    decompressor: any,
+    input: Uint8Array,
+    output: Uint8Array,
+    offset: number,
+    len: number,
+  ): void => {
+    return db.decompress(decompressor, input, output, offset, len)
   },
 
   decompress: (
@@ -91,7 +108,7 @@ const native = {
     output: Uint8Array,
     offset: number,
     len: number,
-  ) => {
+  ): void => {
     return db.decompress(decompressor, input, output, offset, len)
   },
 
@@ -117,15 +134,6 @@ const native = {
 
   stringByteLength: (s: string): number => {
     return db.stringByteLength(s)
-  },
-
-  stringToUint8Array: (
-    s: string,
-    dst: Uint8Array,
-    offset: number = 0,
-    terminated: boolean = false,
-  ): number => {
-    return db.stringToUint8Array(s, dst, offset, terminated)
   },
 
   selvaStrerror: (err: number) => {

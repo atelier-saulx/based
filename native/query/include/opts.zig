@@ -4,7 +4,7 @@ const utils = @import("../../utils.zig");
 const deflate = @import("../../deflate.zig");
 const Thread = @import("../../thread/thread.zig");
 const append = @import("append.zig");
-
+const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
 
 pub inline fn parse(
@@ -105,7 +105,7 @@ pub fn string(
     }
 
     if (opts.end == 0) {
-        // Does this mean ignore END ?
+        // Default
         try append.stripCrc32(thread, prop, value);
         return;
     }
@@ -174,4 +174,76 @@ pub fn string(
     } else {
         try append.default(thread, prop, value[0 .. opts.end + 2]);
     }
+}
+
+pub inline fn text(
+    thread: *Thread.Thread,
+    prop: u8,
+    value: []u8,
+    q: []u8,
+    i: *usize,
+    optsHeader: *const t.IncludeOpts,
+    appendCb: anytype,
+) !void {
+    switch (optsHeader.langFallbackSize) {
+        0 => {
+            if (optsHeader.lang == t.LangCode.none) {
+                var iter = Fields.textIterator(value);
+                while (iter.next()) |textValue| {
+                    try appendCb(thread, prop, textValue, optsHeader);
+                }
+            } else if (optsHeader.hasOpts) {
+                var optsHeaderSelf = optsHeader.*;
+                while (optsHeaderSelf.hasOpts) {
+                    try appendCb(
+                        thread,
+                        prop,
+                        Fields.textFromValue(value, optsHeader.lang),
+                        &optsHeaderSelf,
+                    );
+                    optsHeaderSelf = utils.readNext(t.IncludeOpts, q, i);
+                }
+            } else {
+                try appendCb(
+                    thread,
+                    prop,
+                    Fields.textFromValue(value, optsHeader.lang),
+                    optsHeader,
+                );
+            }
+        },
+        1 => {
+            try appendCb(
+                thread,
+                prop,
+                Fields.textFromValueFallback(
+                    value,
+                    optsHeader.lang,
+                    utils.readNext(t.LangCode, q, i),
+                ),
+                optsHeader,
+            );
+        },
+        else => {
+            try appendCb(
+                thread,
+                prop,
+                Fields.textFromValueFallbacks(
+                    value,
+                    optsHeader.lang,
+                    utils.sliceNextAs(t.LangCode, optsHeader.langFallbackSize, q, i),
+                ),
+                optsHeader,
+            );
+        },
+    }
+}
+
+pub inline fn meta(
+    thread: *Thread.Thread,
+    prop: u8,
+    value: []u8,
+    _: *const t.IncludeOpts,
+) !void {
+    try append.meta(thread, prop, value);
 }

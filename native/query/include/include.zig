@@ -9,6 +9,15 @@ const opts = @import("./opts.zig");
 const append = @import("./append.zig");
 const t = @import("../../types.zig");
 
+inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
+    return Fields.get(
+        typeEntry,
+        node,
+        try Schema.getFieldSchema(typeEntry, header.prop),
+        header.propType,
+    );
+}
+
 pub fn include(
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -69,98 +78,45 @@ pub fn include(
                 //     idIsSet = true;
                 // }
             },
+
             t.IncludeOp.meta => {
-                // var result: ?*results.Result = null;
-                // const field: u8 = include[i];
-                // const prop: t.PropType = @enumFromInt(include[i + 1]);
-                // const langCode: t.LangCode = @enumFromInt(include[i + 2]);
-                // i += 3;
-                // result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.meta);
-                // if (result) |r| {
-                //     switch (prop) {
-                //         t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
-                //             if (isEdge) {
-                //                 size += 1;
-                //             }
-                //             size += 12 + try f.add(ctx, id, score, idIsSet, r);
-                //             idIsSet = true;
-                //         },
-                //         t.PropType.text => {
-                //             if (isEdge) {
-                //                 size += 1;
-                //             }
-                //             const s = db.getTextFromValue(r.*.value, langCode);
-                //             if (s.len != 0) {
-                //                 r.*.value = s;
-                //                 size += 12 + try f.add(ctx, id, score, idIsSet, r);
-                //                 idIsSet = true;
-                //             }§
-                //         },
-                //         else => {},
-                //     }
-                // }
+                const header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                const value = try get(typeEntry, node, &header);
+                switch (header.propType) {
+                    t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
+                        try append.meta(ctx.thread, header.prop, value);
+                    },
+                    t.PropType.text => {
+                        var iter = Fields.textIterator(value);
+                        while (iter.next()) |textValue| {
+                            try append.meta(ctx.thread, header.prop, textValue);
+                        }
+                    },
+                    else => {},
+                }
+            },
+            t.IncludeOp.metaWithOpts => {
+                var header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                const value = try get(typeEntry, node, &header);
+                switch (header.propType) {
+                    t.PropType.text => {
+                        var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+                        try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
+                    },
+                    else => {},
+                }
             },
             t.IncludeOp.defaultWithOpts => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
-                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
+                const value = try get(typeEntry, node, &header);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                 switch (header.propType) {
-                    t.PropType.binary,
-                    t.PropType.string,
-                    t.PropType.json,
-                    => {
+                    t.PropType.binary, t.PropType.string, t.PropType.json => {
                         try opts.string(ctx.thread, header.prop, value, &optsHeader);
                     },
                     t.PropType.text,
                     => {
-                        switch (optsHeader.langFallbackSize) {
-                            0 => {
-                                if (optsHeader.lang == t.LangCode.none) {
-                                    var iter = Fields.textIterator(value);
-                                    while (iter.next()) |textValue| {
-                                        try opts.string(ctx.thread, header.prop, textValue, &optsHeader);
-                                    }
-                                } else if (optsHeader.next) {
-                                    while (optsHeader.next) {
-                                        try opts.string(
-                                            ctx.thread,
-                                            header.prop,
-                                            Fields.textFromValue(value, optsHeader.lang),
-                                            &optsHeader,
-                                        );
-                                        optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-                                    }
-                                } else {
-                                    try opts.string(
-                                        ctx.thread,
-                                        header.prop,
-                                        Fields.textFromValue(value, optsHeader.lang),
-                                        &optsHeader,
-                                    );
-                                }
-                            },
-                            1 => {
-                                try opts.string(
-                                    ctx.thread,
-                                    header.prop,
-                                    Fields.textFromValueFallback(value, optsHeader.lang, utils.readNext(t.LangCode, q, &i)),
-                                    &optsHeader,
-                                );
-                            },
-                            else => {
-                                try opts.string(
-                                    ctx.thread,
-                                    header.prop,
-                                    Fields.textFromValueFallbacks(
-                                        value,
-                                        optsHeader.lang,
-                                        utils.sliceNextAs(t.LangCode, optsHeader.langFallbackSize, q, &i),
-                                    ),
-                                    &optsHeader,
-                                );
-                            },
-                        }
+                        try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
                     },
                     else => {
                         try append.default(ctx.thread, header.prop, opts.parse(value, &optsHeader));
@@ -169,8 +125,7 @@ pub fn include(
             },
             t.IncludeOp.default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
-                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
+                const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
                     t.PropType.text,
                     => {
