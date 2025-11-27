@@ -1,7 +1,6 @@
 # Copyright (c) 2022-2025 SAULX
 # SPDX-License-Identifier: MIT
 
-SHELL := /bin/bash
 MAKEFLAGS += --jobs=4 --output-sync=target
 
 include common.mk

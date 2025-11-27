@@ -46,5 +46,6 @@ DEP := $(OBJ:%.o=%.d)
 
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $^
+	$(stripLinux)
 
 -include $(DEP)

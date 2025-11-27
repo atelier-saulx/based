@@ -103,6 +103,7 @@ DEP := $(OBJ:%.o=%.d)
 
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $^
+	$(stripLinux)
 
 version.c: FORCE
 	@echo selva_version $(SELVA_VERSION)
