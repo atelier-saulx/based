@@ -1247,6 +1247,7 @@ export const IncludeOp = {
   meta: 129,
   partial: 130,
   defaultWithOpts: 131,
+  metaWithOpts: 132,
 } as const
 
 export const IncludeOpInverse = {
@@ -1259,6 +1260,7 @@ export const IncludeOpInverse = {
   129: 'meta',
   130: 'partial',
   131: 'defaultWithOpts',
+  132: 'metaWithOpts',
 } as const
 
 /**
@@ -1270,7 +1272,8 @@ export const IncludeOpInverse = {
   referencesAggregation, 
   meta, 
   partial, 
-  defaultWithOpts 
+  defaultWithOpts, 
+  metaWithOpts 
  */
 export type IncludeOpEnum = (typeof IncludeOp)[keyof typeof IncludeOp]
 
@@ -1342,10 +1345,9 @@ export type IncludeMetaHeader = {
   op: IncludeOpEnum
   prop: number
   propType: PropTypeEnum
-  hasOpts: boolean
 }
 
-export const IncludeMetaHeaderByteSize = 4
+export const IncludeMetaHeaderByteSize = 3
 
 export const writeIncludeMetaHeader = (
   buf: Uint8Array,
@@ -1357,10 +1359,6 @@ export const writeIncludeMetaHeader = (
   buf[offset] = header.prop
   offset += 1
   buf[offset] = header.propType
-  offset += 1
-  buf[offset] = 0
-  buf[offset] |= (((header.hasOpts ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= ((0 >>> 0) & 127) << 1
   offset += 1
   return offset
 }
@@ -1375,9 +1373,6 @@ export const writeIncludeMetaHeaderProps = {
   propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset + 2] = value
   },
-  hasOpts: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
-  },
 }
 
 export const readIncludeMetaHeader = (
@@ -1388,7 +1383,6 @@ export const readIncludeMetaHeader = (
     op: (buf[offset]) as IncludeOpEnum,
     prop: buf[offset + 1],
     propType: (buf[offset + 2]) as PropTypeEnum,
-    hasOpts: (((buf[offset + 3] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -1402,9 +1396,6 @@ export const readIncludeMetaHeaderProps = {
   },
   propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
     return (buf[offset + 2]) as PropTypeEnum
-  },
-  hasOpts: (buf: Uint8Array, offset: number): boolean => {
-    return (((buf[offset + 3] >>> 0) & 1)) === 1
   },
 }
 

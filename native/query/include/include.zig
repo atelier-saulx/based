@@ -79,15 +79,22 @@ pub fn include(
                         try append.meta(ctx.thread, header.prop, value);
                     },
                     t.PropType.text => {
-                        if (header.hasOpts) {
-                            var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-                            try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
-                        } else {
-                            var iter = Fields.textIterator(value);
-                            while (iter.next()) |textValue| {
-                                try append.meta(ctx.thread, header.prop, textValue);
-                            }
+                        var iter = Fields.textIterator(value);
+                        while (iter.next()) |textValue| {
+                            try append.meta(ctx.thread, header.prop, textValue);
                         }
+                    },
+                    else => {},
+                }
+            },
+            t.IncludeOp.metaWithOpts => {
+                const header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
+                switch (header.propType) {
+                    t.PropType.text => {
+                        var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+                        try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
                     },
                     else => {},
                 }
@@ -98,10 +105,7 @@ pub fn include(
                 const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                 switch (header.propType) {
-                    t.PropType.binary,
-                    t.PropType.string,
-                    t.PropType.json,
-                    => {
+                    t.PropType.binary, t.PropType.string, t.PropType.json => {
                         try opts.string(ctx.thread, header.prop, value, &optsHeader);
                     },
                     t.PropType.text,

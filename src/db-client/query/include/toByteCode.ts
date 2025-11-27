@@ -122,25 +122,28 @@ export const includeToBuffer = (
       const propType = propDef.opts?.raw
         ? PropType.binary
         : propDef.def.typeIndex
-      if (propDef.opts?.meta) {
-        if (propDef.opts.codes) {
-          const codes = propDef.opts.codes.has(0)
-            ? Object.keys(def.schema!.locales).map((c) => LangCode[c])
-            : propDef.opts.codes
-          const fallBacks = opts ? createLangFallbacks(opts) : new Uint8Array(0)
 
+      if (opts?.meta) {
+        const codes = opts?.codes
+        if (codes && !codes.has(0)) {
+          const fallBacks = createLangFallbacks(opts)
+          let i = 0
           for (const code of codes) {
+            i++
             result.push(
               createIncludeMetaHeader({
-                op: IncludeOp.meta,
+                op: IncludeOp.metaWithOpts,
                 prop,
                 propType: propType,
-                hasOpts: false,
-
-                // lang: code,
-                // langFallbackSize: fallBacks.byteLength,
               }),
-              // fallBacks,
+              createIncludeOpts({
+                hasOpts: i !== codes.size,
+                end: getEnd(propDef.opts),
+                isChars: !propDef.opts?.bytes,
+                lang: code,
+                langFallbackSize: fallBacks.byteLength,
+              }),
+              fallBacks,
             )
           }
         } else {
@@ -149,15 +152,11 @@ export const includeToBuffer = (
               op: IncludeOp.meta,
               prop,
               propType: propType,
-              hasOpts: false,
-              // lang: LangCode.none,
-              // langFallbackSize: 0,
             }),
           )
         }
       }
 
-      console.log(opts)
       if (opts?.meta !== 'only') {
         const hasEndOption = !!opts?.end
         const codes = opts?.codes

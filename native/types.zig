@@ -509,6 +509,7 @@ pub const IncludeOp = enum(u8) {
     partial = 130,
     // ---------------------
     defaultWithOpts = 131,
+    metaWithOpts = 132,
     // ---------------------
 };
 
@@ -522,8 +523,6 @@ pub const IncludeMetaHeader = packed struct {
     op: IncludeOp,
     prop: u8,
     propType: PropType,
-    hasOpts: bool,
-    _padding: u7,
 };
 
 pub const IncludeOpts = packed struct {
