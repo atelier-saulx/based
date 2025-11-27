@@ -1,5 +1,5 @@
 FROM gcc:14.2
-ENV NODE_VERSION 22.14.0
+ENV NODE_VERSION 24.11.1
 ENV NVM_DIR /usr/local/nvm
 RUN apt-get update && \
     apt-get install -y rsync git patchelf gdb valgrind libasan8 && \
@@ -12,4 +12,4 @@ RUN apt-get update && \
     nvm use default
 ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/v$NODE_VERSION/bin:$PATH
-CMD ["/bin/bash", "-c", "cd /usr/src/based-db/packages/db/clibs && make"]
+# CMD ["/bin/bash", "-c", "cd /usr/src/based-db/packages/db/clibs && make"]

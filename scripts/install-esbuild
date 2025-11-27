@@ -1,0 +1,57 @@
+#!/bin/bash
+set -e
+
+# 1. Check if main esbuild is installed
+ESBUILD_PKG="./node_modules/esbuild/package.json"
+if [ ! -f "$ESBUILD_PKG" ]; then
+  echo "Error: esbuild not found in ./node_modules/esbuild"
+  exit 1
+fi
+
+# 2. Extract Variables
+PLATFORM=$(node -p "process.platform")
+ARCH=$(node -p "process.arch")
+VERSION=$(node -p "require('$ESBUILD_PKG').version")
+BINARY_PKG="@esbuild/${PLATFORM}-${ARCH}"
+BINARY_PKG_PATH="./node_modules/${BINARY_PKG}/package.json"
+
+echo "Checking for ${BINARY_PKG}@${VERSION}..."
+
+# 3. Check if the specific binary package is ALREADY installed and correct
+if [ -f "$BINARY_PKG_PATH" ]; then
+  INSTALLED_VERSION=$(node -p "require('$BINARY_PKG_PATH').version")
+  if [ "$INSTALLED_VERSION" == "$VERSION" ]; then
+    echo "✅ Success: ${BINARY_PKG} is already installed at version ${VERSION}."
+    exit 0
+  else
+    echo "⚠️  Version mismatch: Found ${INSTALLED_VERSION}, needed ${VERSION}. Updating..."
+  fi
+else
+  echo "⚠️  Binary package not found. Downloading..."
+fi
+
+# --- If we get here, we need to install ---
+# 3. Clear previous temp files
+echo "Clearing temporary directory..."
+rm -rf ./tmp
+
+# 4. Create structure
+mkdir -p ./tmp/node_modules
+
+# 5. Install specific binary with EXACT version
+# We append @$VERSION to ensure we don't accidentally get 'latest'
+PKG_NAME="@esbuild/${PLATFORM}-${ARCH}"
+
+echo "Installing $PKG_NAME@$VERSION..."
+npm install --prefix ./tmp --no-save "$PKG_NAME@$VERSION"
+
+# 6. Merge into main node_modules
+echo "Moving into project node_modules..."
+mkdir -p "./node_modules/@esbuild"
+mv "./tmp/node_modules/@esbuild/${PLATFORM}-${ARCH}" "./node_modules/@esbuild"
+
+# 7. Final Cleanup
+echo "Cleaning up..."
+rm -rf ./tmp
+
+echo "Done."

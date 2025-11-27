@@ -1,0 +1,101 @@
+#!/bin/bash
+set -e
+
+# Safety Check: Ensure an argument was passed
+if [ -z "$1" ]; then
+  echo "Error: Missing architecture argument."
+  echo "Usage: ./scripts/sync-clibs <arch-name>"
+  exit 1
+fi
+
+# 1. Path Resolution
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+SRC="$PROJECT_ROOT/clibs/"
+
+# Use the first argument ($1) to construct the path
+# If you run: ./scripts/sync-clibs linux-aarch64
+# This expands to: .../.clibs-linux-aarch64/
+DEST="$PROJECT_ROOT/.clibs-$1/"
+
+FILTER_FILE="/tmp/clibs_contextual_ignores.txt"
+# #!/bin/bash
+# set -e
+
+# # 1. Path Resolution
+# SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+# PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# SRC="$PROJECT_ROOT/clibs/"
+# DEST="$PROJECT_ROOT/.clibs-linux-aarch64/"
+# FILTER_FILE="/tmp/clibs_contextual_ignores.txt"
+
+# 2. Safety Checks
+if [ ! -d "$SRC" ]; then
+    echo "Error: Source directory $SRC does not exist."
+    exit 1
+fi
+mkdir -p "$DEST"
+
+echo "Generating path-aware ignore list..."
+# Clear the filter file
+> "$FILTER_FILE"
+
+# 3. The Contextual Parser
+#    We switch to SRC to make 'find' paths relative (./subdir/...)
+pushd "$SRC" > /dev/null
+
+find . -name ".gitignore" -print0 | while IFS= read -r -d '' ignore_file; do
+    # Get the directory of the gitignore (e.g., "./subdir")
+    # Clean it to remove leading ./ (e.g., "subdir")
+    dir=$(dirname "$ignore_file" | sed 's|^\./||')
+    
+    # If we are at root, prefix is empty. Otherwise, it's "dir/"
+    if [ "$dir" == "." ]; then 
+        prefix="" 
+    else 
+        prefix="$dir/"
+    fi
+
+    # Read the file line by line
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" =~ ^# ]] && continue
+        
+        # Handle "Exception" rules (starting with !)
+        if [[ "$line" == !* ]]; then
+            # Strip '!', prepend prefix, add '!' back
+            clean_line="${line:1}"
+            # If pattern starts with /, remove it (anchor logic)
+            clean_line="${clean_line#/}"
+            echo "!$prefix$clean_line" >> "$FILTER_FILE"
+            continue
+        fi
+
+        # Handle Standard Rules
+        # If the rule starts with /, it's anchored to this directory
+        if [[ "$line" == /* ]]; then
+            # Remove leading slash, prepend the current directory
+            echo "$prefix${line:1}" >> "$FILTER_FILE"
+        else
+            # If no leading slash, it's recursive from this directory down.
+            # Rsync uses '***' for recursive matching into subdirs
+            echo "$prefix***$line" >> "$FILTER_FILE"
+        fi
+    done < "$ignore_file"
+done
+
+# Add standard global excludes
+echo ".git/" >> "$FILTER_FILE"
+
+popd > /dev/null
+
+echo "Syncing..."
+# 4. Rsync using the generated path-specific list
+rsync -av \
+    --delete \
+    --exclude-from="$FILTER_FILE" \
+    "$SRC" "$DEST"
+
+echo "Sync Complete."

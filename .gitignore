@@ -164,3 +164,16 @@ aggregationNotes.md
 /build
 *.trace
 *_perf_logs
+# Selva db dumps
+*.sdb
+
+*.d
+*.so
+*.so.*
+*.o
+*.dylib
+vgcore.*
+*.trace
+
+# build cache
+/.clibs-*
