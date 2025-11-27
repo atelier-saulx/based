@@ -53,9 +53,10 @@ await test('include', async (t) => {
     // .include('name')
     .range(0, 2)
     .get()
-    .inspect(2, true)
 
   x.debug()
+
+  x.inspect(10, true)
 
   // console.log('drain done')
   // ;(

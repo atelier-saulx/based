@@ -24,3 +24,20 @@ pub inline fn stripCrc32(thread: *Thread.Thread, prop: u8, value: []u8) !void {
     utils.write(newSlice, header, 0);
     utils.write(newSlice, value[0..size], headerSize);
 }
+
+pub inline fn meta(thread: *Thread.Thread, prop: u8, value: []u8) !void {
+    if (value.len == 0) {
+        return;
+    }
+    const isCompressed = value[1] == 1;
+    _ = try thread.query.appendAs(t.IncludeResponseMeta, .{
+        .op = t.ReadOp.meta,
+        .prop = prop,
+        .lang = @enumFromInt(value[0]),
+        .compressed = isCompressed,
+        ._padding = 0,
+        .crc32 = utils.read(u32, value, value.len - 4),
+        .size = if (isCompressed) utils.read(u32, value, 2) else @truncate(value.len - 6),
+        // add uncompressed size
+    });
+}

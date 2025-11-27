@@ -40,6 +40,9 @@ const meta: ReadInstruction = (q, result, i, item) => {
   const propDef = q.props[prop]
   const lang = metaResponse.lang
   const propType = propDef.typeIndex
+
+  // propDef.readBy = q.readId
+
   const meta: Meta = {
     crc32: metaResponse.crc32,
     compressed: metaResponse.compressed,
@@ -47,7 +50,6 @@ const meta: ReadInstruction = (q, result, i, item) => {
     checksum: combineToNumber(metaResponse.crc32, metaResponse.size),
   }
   i += IncludeResponseMetaByteSize - 1
-  propDef.readBy = q.readId
   if (propType === PropType.text && propDef.locales) {
     addLangMetaProp(propDef, meta, item, lang)
   } else {
@@ -149,7 +151,7 @@ export const readProps = (
     i = readInstruction(instruction, q, result, i, item)
   }
   // For the last id
-  // undefinedProps(q, item)
+  undefinedProps(q, item)
   return i
 }
 
@@ -189,6 +191,9 @@ export const resultToObject = (
       i += 4
     }
     const l = readProps(q, result, i, end, item) ?? 0
+
+    console.log('-->', l)
+
     i += l
 
     if (readHook) {

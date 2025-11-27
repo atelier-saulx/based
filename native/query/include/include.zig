@@ -96,33 +96,11 @@ pub fn include(
                 // var v: []u8 = value;
                 switch (header.propType) {
                     t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
-                        if (value.len > 0) {
-                            const isCompressed = value[1] == 1;
-                            _ = try ctx.thread.query.appendAs(t.IncludeResponseMeta, .{
-                                .op = t.ReadOp.meta,
-                                .prop = header.prop,
-                                .lang = @enumFromInt(value[0]),
-                                .compressed = isCompressed,
-                                ._padding = 0,
-                                .crc32 = utils.read(u32, value, value.len - 4),
-                                .size = if (isCompressed) utils.read(u32, value, 2) else @truncate(value.len - 6),
-                            });
-                        }
+                        try append.meta(ctx.thread, header.prop, value);
                     },
                     t.PropType.text => {
                         const s = Fields.textFromValue(value, header.lang);
-                        if (s.len > 0) {
-                            const isCompressed = s[1] == 1;
-                            _ = try ctx.thread.query.appendAs(t.IncludeResponseMeta, .{
-                                .op = t.ReadOp.meta,
-                                .prop = header.prop,
-                                .lang = header.lang,
-                                .compressed = isCompressed,
-                                ._padding = 0,
-                                .crc32 = utils.read(u32, s, s.len - 4),
-                                .size = if (isCompressed) utils.read(u32, s, 2) else @truncate(s.len - 6),
-                            });
-                        }
+                        try append.meta(ctx.thread, header.prop, s);
                     },
                     else => {},
                 }
@@ -207,7 +185,6 @@ pub fn include(
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        std.debug.print("GET VALIUE!\n", .{});
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     else => {
