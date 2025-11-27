@@ -138,6 +138,7 @@ pub fn include(
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
+                        // fixed size
                         try ctx.thread.query.append(header.prop);
                         try ctx.thread.query.append(value);
                     },
