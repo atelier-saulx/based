@@ -43,12 +43,16 @@ mkdir -p ./tmp/node_modules
 PKG_NAME="@esbuild/${PLATFORM}-${ARCH}"
 
 echo "Installing $PKG_NAME@$VERSION..."
-npm install --prefix ./tmp --no-save "$PKG_NAME@$VERSION"
+npm install --prefix ./tmp --no-save --no-package-lock "$PKG_NAME@$VERSION"
 
 # 6. Merge into main node_modules
-echo "Moving into project node_modules..."
-mkdir -p "./node_modules/@esbuild"
-mv "./tmp/node_modules/@esbuild/${PLATFORM}-${ARCH}" "./node_modules/@esbuild"
+echo "📦 Merging into project node_modules..."
+# rsync is preferred because it handles merging existing folders gracefully.
+# If you must use 'mv', you have to delete the destination first.
+rsync -av \
+  --exclude='package-lock.json' \
+  --exclude='.package-lock.json' \
+  ./tmp/node_modules/ ./node_modules/
 
 # 7. Final Cleanup
 echo "Cleaning up..."
