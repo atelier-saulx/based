@@ -23,7 +23,7 @@ await test('include', async (t) => {
     types: {
       user: {
         props: {
-          flap: { enum: ['⚡️', '🤪', '💩'], default: '🤪' },
+          flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
           derp: ['hello', 'bye'],
           name: { type: 'string' }, // default: 'xxxx'
           nr: { type: 'uint32', default: 22 },
@@ -35,15 +35,22 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 2; i++) {
     db.create('user', {
-      nr: i + 67,
+      // nr: i + 67,
       name: 'A',
-      flap: '🤪',
+      flap: '⚡️',
       body: {
         // nl: 'x',
         fr: 'B',
         de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
         en: italy,
       },
+    })
+  }
+
+  for (let i = 1; i < 3; i++) {
+    db.update('user', {
+      id: i,
+      // flap: '💩',
     })
   }
 

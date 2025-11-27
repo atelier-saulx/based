@@ -81,12 +81,10 @@ export const readMain = (
   item: Item,
 ): number => {
   const mainInclude = q.main
-  console.log(mainInclude)
   for (const k in mainInclude.props) {
     const prop = mainInclude.props[k]
     readMainValue(prop, result, Number(k) + i, item)
   }
-  console.log('DERP', mainInclude.len, mainInclude.props, item)
   i += mainInclude.len
   return i
 }
