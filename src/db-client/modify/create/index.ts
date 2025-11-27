@@ -7,7 +7,7 @@ import {
   writeMainCursor,
   writeTypeCursor,
 } from '../cursor.js'
-import { writeMainValue } from '../props/main.js'
+import { writeMainBuffer, writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
 import { schedule } from '../drain.js'
@@ -210,6 +210,9 @@ export const writeCreate = (
     writeMainCursor(ctx)
   }
   writeCreateTs(ctx, payload)
+  if (!ctx.cursor.main && !ctx.schema.mainEmptyAllZeroes) {
+    writeMainBuffer(ctx)
+  }
   writeSortable(ctx)
   writeSortableText(ctx)
   while (ctx.index < ctx.start + 5) {

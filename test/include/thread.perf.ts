@@ -24,7 +24,7 @@ await test('include', async (t) => {
       user: {
         props: {
           name: { type: 'string' }, // default: 'xxxx'
-          nr: 'uint32',
+          nr: { type: 'uint32', default: 22 },
           body: { type: 'text' }, // compression: 'none'
         },
       },
