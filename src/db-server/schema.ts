@@ -31,7 +31,6 @@ async function getSchemaIds(db: DbServer): Promise<Uint32Array> {
 function setSchemaIds(db: DbServer, ids: Uint32Array): Promise<void> {
   const id = schemaOpId.next().value
 
-  console.log({ id })
   const msg = new Uint8Array(5 + ids.byteLength)
 
   writeUint32(msg, id, 0)
@@ -75,12 +74,10 @@ export async function createSelvaType(
 ): Promise<void> {
   const msg = new Uint8Array(5 + schema.byteLength)
 
-  console.log('CREATE TYPE', typeId)
   writeUint32(msg, typeId, 0)
 
   msg[4] = OpType.createType
   msg.set(schema, 5)
-  console.log({ msg })
   return new Promise((resolve, reject) => {
     server.addOpOnceListener(OpType.createType, typeId, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
@@ -88,7 +85,6 @@ export async function createSelvaType(
         const errMsg = `Create type ${typeId} failed: ${native.selvaStrerror(err)}`
         server.emit('error', errMsg)
         console.log('resolve type errr', typeId)
-
         reject(new Error(errMsg))
       } else {
         console.log('resolve type', typeId)
