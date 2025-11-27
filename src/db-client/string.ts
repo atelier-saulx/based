@@ -107,6 +107,7 @@ export const write = (
   noCompression: boolean,
   lang?: LangCodeEnum,
 ): number | null => {
+  //
   resize(ctx, native.stringByteLength(value) * 2 + 10)
   return writeRaw(ctx.buf, value, offset, lang || LangCode.none, noCompression)
 }

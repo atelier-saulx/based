@@ -70,40 +70,24 @@ pub fn include(
                 // }
             },
 
-            //     fn addChecksum(item: *Result, data: []u8, i: *usize) void {
-            //     data[i.*] = @intFromEnum(t.ReadOp.META);
-            //     i.* += 1;
-            //     data[i.*] = item.*.prop;
-            //     i.* += 1;
-            //     const v = item.*.value;
-            //     data[i.*] = v[0];
-            //     i.* += 1;
-            //     data[i.*] = v[1];
-            //     i.* += 1;
-            //     utils.copy(data[i.* .. i.* + 4], v[v.len - 4 .. v.len]);
-            //     if (v[1] == 1) {
-            //         utils.copy(data[i.* + 4 .. i.* + 8], v[2..6]);
-            //     } else {
-            //         writeInt(u32, data, i.* + 4, v.len);
-            //     }
-            //     i.* += 8;
-            // }
-
             t.IncludeOp.meta => {
                 const header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
                 const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
-                // var v: []u8 = value;
-
-                // std.debug.print("{any}  \n", .{header});
-
                 switch (header.propType) {
                     t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
                         try append.meta(ctx.thread, header.prop, value);
                     },
                     t.PropType.text => {
-                        const s = Fields.textFromValue(value, header.lang);
-                        try append.meta(ctx.thread, header.prop, s);
+                        if (header.hasOpts) {
+                            var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+                            try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
+                        } else {
+                            var iter = Fields.textIterator(value);
+                            while (iter.next()) |textValue| {
+                                try append.meta(ctx.thread, header.prop, textValue);
+                            }
+                        }
                     },
                     else => {},
                 }
@@ -113,9 +97,6 @@ pub fn include(
                 const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
                 const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-
-                // std.debug.print("{any}  \n", .{header});
-
                 switch (header.propType) {
                     t.PropType.binary,
                     t.PropType.string,
@@ -125,53 +106,7 @@ pub fn include(
                     },
                     t.PropType.text,
                     => {
-                        switch (optsHeader.langFallbackSize) {
-                            0 => {
-                                if (optsHeader.lang == t.LangCode.none) {
-                                    var iter = Fields.textIterator(value);
-                                    while (iter.next()) |textValue| {
-                                        try opts.string(ctx.thread, header.prop, textValue, &optsHeader);
-                                    }
-                                } else if (optsHeader.next) {
-                                    while (optsHeader.next) {
-                                        try opts.string(
-                                            ctx.thread,
-                                            header.prop,
-                                            Fields.textFromValue(value, optsHeader.lang),
-                                            &optsHeader,
-                                        );
-                                        optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-                                    }
-                                } else {
-                                    try opts.string(
-                                        ctx.thread,
-                                        header.prop,
-                                        Fields.textFromValue(value, optsHeader.lang),
-                                        &optsHeader,
-                                    );
-                                }
-                            },
-                            1 => {
-                                try opts.string(
-                                    ctx.thread,
-                                    header.prop,
-                                    Fields.textFromValueFallback(value, optsHeader.lang, utils.readNext(t.LangCode, q, &i)),
-                                    &optsHeader,
-                                );
-                            },
-                            else => {
-                                try opts.string(
-                                    ctx.thread,
-                                    header.prop,
-                                    Fields.textFromValueFallbacks(
-                                        value,
-                                        optsHeader.lang,
-                                        utils.sliceNextAs(t.LangCode, optsHeader.langFallbackSize, q, &i),
-                                    ),
-                                    &optsHeader,
-                                );
-                            },
-                        }
+                        try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
                     },
                     else => {
                         try append.default(ctx.thread, header.prop, opts.parse(value, &optsHeader));

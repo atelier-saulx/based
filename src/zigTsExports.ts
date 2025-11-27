@@ -1342,7 +1342,7 @@ export type IncludeMetaHeader = {
   op: IncludeOpEnum
   prop: number
   propType: PropTypeEnum
-  lang: LangCodeEnum
+  hasOpts: boolean
 }
 
 export const IncludeMetaHeaderByteSize = 4
@@ -1358,7 +1358,9 @@ export const writeIncludeMetaHeader = (
   offset += 1
   buf[offset] = header.propType
   offset += 1
-  buf[offset] = header.lang
+  buf[offset] = 0
+  buf[offset] |= (((header.hasOpts ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
   offset += 1
   return offset
 }
@@ -1373,8 +1375,8 @@ export const writeIncludeMetaHeaderProps = {
   propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset + 2] = value
   },
-  lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
-    buf[offset + 3] = value
+  hasOpts: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
 }
 
@@ -1386,7 +1388,7 @@ export const readIncludeMetaHeader = (
     op: (buf[offset]) as IncludeOpEnum,
     prop: buf[offset + 1],
     propType: (buf[offset + 2]) as PropTypeEnum,
-    lang: (buf[offset + 3]) as LangCodeEnum,
+    hasOpts: (((buf[offset + 3] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -1401,8 +1403,8 @@ export const readIncludeMetaHeaderProps = {
   propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
     return (buf[offset + 2]) as PropTypeEnum
   },
-  lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
-    return (buf[offset + 3]) as LangCodeEnum
+  hasOpts: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 3] >>> 0) & 1)) === 1
   },
 }
 
@@ -1415,7 +1417,7 @@ export const createIncludeMetaHeader = (header: IncludeMetaHeader): Uint8Array =
 export type IncludeOpts = {
   end: number
   isChars: boolean
-  next: boolean
+  hasOpts: boolean
   langFallbackSize: number
   lang: LangCodeEnum
 }
@@ -1431,7 +1433,7 @@ export const writeIncludeOpts = (
   offset += 4
   buf[offset] = 0
   buf[offset] |= (((header.isChars ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.next ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= (((header.hasOpts ? 1 : 0) >>> 0) & 1) << 1
   buf[offset] |= ((0 >>> 0) & 63) << 2
   offset += 1
   buf[offset] = header.langFallbackSize
@@ -1448,7 +1450,7 @@ export const writeIncludeOptsProps = {
   isChars: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  next: (buf: Uint8Array, value: boolean, offset: number) => {
+  hasOpts: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
   langFallbackSize: (buf: Uint8Array, value: number, offset: number) => {
@@ -1466,7 +1468,7 @@ export const readIncludeOpts = (
   const value: IncludeOpts = {
     end: readUint32(buf, offset),
     isChars: (((buf[offset + 4] >>> 0) & 1)) === 1,
-    next: (((buf[offset + 4] >>> 1) & 1)) === 1,
+    hasOpts: (((buf[offset + 4] >>> 1) & 1)) === 1,
     langFallbackSize: buf[offset + 5],
     lang: (buf[offset + 6]) as LangCodeEnum,
   }
@@ -1480,7 +1482,7 @@ export const readIncludeOptsProps = {
   isChars: (buf: Uint8Array, offset: number): boolean => {
     return (((buf[offset + 4] >>> 0) & 1)) === 1
   },
-  next: (buf: Uint8Array, offset: number): boolean => {
+  hasOpts: (buf: Uint8Array, offset: number): boolean => {
     return (((buf[offset + 4] >>> 1) & 1)) === 1
   },
   langFallbackSize: (buf: Uint8Array, offset: number): number => {

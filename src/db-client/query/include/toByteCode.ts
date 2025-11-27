@@ -127,14 +127,20 @@ export const includeToBuffer = (
           const codes = propDef.opts.codes.has(0)
             ? Object.keys(def.schema!.locales).map((c) => LangCode[c])
             : propDef.opts.codes
+          const fallBacks = opts ? createLangFallbacks(opts) : new Uint8Array(0)
+
           for (const code of codes) {
             result.push(
               createIncludeMetaHeader({
                 op: IncludeOp.meta,
                 prop,
                 propType: propType,
-                lang: code,
+                hasOpts: false,
+
+                // lang: code,
+                // langFallbackSize: fallBacks.byteLength,
               }),
+              // fallBacks,
             )
           }
         } else {
@@ -143,7 +149,9 @@ export const includeToBuffer = (
               op: IncludeOp.meta,
               prop,
               propType: propType,
-              lang: LangCode.none,
+              hasOpts: false,
+              // lang: LangCode.none,
+              // langFallbackSize: 0,
             }),
           )
         }
@@ -167,7 +175,7 @@ export const includeToBuffer = (
             i++
             result.push(
               createIncludeOpts({
-                next: i !== codes.size,
+                hasOpts: i !== codes.size,
                 end: getEnd(propDef.opts),
                 isChars: !propDef.opts?.bytes,
                 lang: code,
@@ -184,7 +192,7 @@ export const includeToBuffer = (
               propType: propType,
             }),
             createIncludeOpts({
-              next: false,
+              hasOpts: false,
               end: getEnd(propDef.opts),
               isChars:
                 !propDef.opts?.bytes &&

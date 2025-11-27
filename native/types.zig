@@ -522,13 +522,14 @@ pub const IncludeMetaHeader = packed struct {
     op: IncludeOp,
     prop: u8,
     propType: PropType,
-    lang: LangCode,
+    hasOpts: bool,
+    _padding: u7,
 };
 
 pub const IncludeOpts = packed struct {
     end: u32,
     isChars: bool,
-    next: bool,
+    hasOpts: bool,
     _padding: u6,
     langFallbackSize: u8,
     lang: LangCode,
