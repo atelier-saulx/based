@@ -35,9 +35,10 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 2; i++) {
     db.create('user', {
-      // nr: i + 67,
+      nr: i + 67,
       name: 'A',
       flap: '⚡️',
+      derp: 'hello',
       body: {
         // nl: 'x',
         fr: 'B',
@@ -47,10 +48,11 @@ await test('include', async (t) => {
     })
   }
 
+  // update works
   for (let i = 1; i < 3; i++) {
     db.update('user', {
       id: i,
-      // flap: '💩',
+      flap: '💩',
     })
   }
 
