@@ -1409,7 +1409,7 @@ export type IncludePartialHeader = {
   op: IncludeOpEnum
   prop: number
   propType: PropTypeEnum
-  size: number
+  amount: number
 }
 
 export const IncludePartialHeaderByteSize = 5
@@ -1425,7 +1425,7 @@ export const writeIncludePartialHeader = (
   offset += 1
   buf[offset] = header.propType
   offset += 1
-  writeUint16(buf, header.size, offset)
+  writeUint16(buf, header.amount, offset)
   offset += 2
   return offset
 }
@@ -1440,7 +1440,7 @@ export const writeIncludePartialHeaderProps = {
   propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset + 2] = value
   },
-  size: (buf: Uint8Array, value: number, offset: number) => {
+  amount: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 3)
   },
 }
@@ -1453,7 +1453,7 @@ export const readIncludePartialHeader = (
     op: (buf[offset]) as IncludeOpEnum,
     prop: buf[offset + 1],
     propType: (buf[offset + 2]) as PropTypeEnum,
-    size: readUint16(buf, offset + 3),
+    amount: readUint16(buf, offset + 3),
   }
   return value
 }
@@ -1468,7 +1468,7 @@ export const readIncludePartialHeaderProps = {
   propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
     return (buf[offset + 2]) as PropTypeEnum
   },
-  size: (buf: Uint8Array, offset: number): number => {
+  amount: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 3)
   },
 }
@@ -1476,6 +1476,60 @@ export const readIncludePartialHeaderProps = {
 export const createIncludePartialHeader = (header: IncludePartialHeader): Uint8Array => {
   const buffer = new Uint8Array(IncludePartialHeaderByteSize)
   writeIncludePartialHeader(buffer, header, 0)
+  return buffer
+}
+
+export type IncludePartialProp = {
+  start: number
+  size: number
+}
+
+export const IncludePartialPropByteSize = 4
+
+export const writeIncludePartialProp = (
+  buf: Uint8Array,
+  header: IncludePartialProp,
+  offset: number,
+): number => {
+  writeUint16(buf, header.start, offset)
+  offset += 2
+  writeUint16(buf, header.size, offset)
+  offset += 2
+  return offset
+}
+
+export const writeIncludePartialPropProps = {
+  start: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset)
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 2)
+  },
+}
+
+export const readIncludePartialProp = (
+  buf: Uint8Array,
+  offset: number,
+): IncludePartialProp => {
+  const value: IncludePartialProp = {
+    start: readUint16(buf, offset),
+    size: readUint16(buf, offset + 2),
+  }
+  return value
+}
+
+export const readIncludePartialPropProps = {
+  start: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset)
+  },
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 2)
+  },
+}
+
+export const createIncludePartialProp = (header: IncludePartialProp): Uint8Array => {
+  const buffer = new Uint8Array(IncludePartialPropByteSize)
+  writeIncludePartialProp(buffer, header, 0)
   return buffer
 }
 

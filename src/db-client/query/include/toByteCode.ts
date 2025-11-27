@@ -1,13 +1,11 @@
 import { DbClient } from '../../index.js'
 import {
-  IncludeField,
   IncludeOpts,
   IntermediateByteCode,
   QueryDef,
   QueryDefType,
 } from '../types.js'
 import { walkDefs } from './walk.js'
-import { writeUint16 } from '../../../utils/index.js'
 import { getEnd } from './utils.js'
 import {
   PropType,
@@ -18,6 +16,7 @@ import {
   createIncludeMetaHeader,
   MAIN_PROP,
   createIncludePartialHeader,
+  writeIncludePartialProp,
 } from '../../../zigTsExports.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
@@ -63,50 +62,36 @@ export const includeToBuffer = (
   }
 
   if (def.include.main.len > 0) {
-    const len =
-      def.type === QueryDefType.Edge
-        ? def.target.ref!.edgeMainLen
-        : def.schema!.mainLen
-
-    if (def.include.main.len === len) {
-      // Get all main fields
-      mainBuffer = EMPTY_BUFFER
-      for (const value of def.include.main.include.values()) {
-        value[0] = value[1].start
-        console.log(value)
-      }
-    } else {
+    if (isPartialMain(def)) {
       const size = def.include.main.include.size
-      mainBuffer = new Uint8Array(size * 4 + 2)
-      writeUint16(mainBuffer, def.include.main.len, 0)
-      let i = 2
+      mainBuffer = new Uint8Array(size * 4)
+      let i = 0
       let m = 0
       for (const value of def.include.main.include.values()) {
         const propDef = value[1]
-        writeUint16(mainBuffer, propDef.start, i)
-        writeUint16(mainBuffer, propDef.len, i + 2)
+        writeIncludePartialProp(
+          mainBuffer,
+          {
+            start: propDef.start,
+            size: propDef.len,
+          },
+          i,
+        )
+        // This writes the actual address of the prop to be used on read
         value[0] = m
         i += 4
         m += propDef.len
       }
-    }
-  }
-
-  const propSize = def.include.props.size ?? 0
-
-  if (def.include.main.len > 0) {
-    if (isPartialMain(def)) {
-      // result.push(
-      //   createIncludePartialHeader({
-      //     op: IncludeOp.partial,
-      //     prop: MAIN_PROP,
-      //     propType: PropType.microBuffer,
-      //     size: mainBuffer.byteLength,
-      //   }),
-      //   mainBuffer,
-      // )
+      result.push(
+        createIncludePartialHeader({
+          op: IncludeOp.partial,
+          prop: MAIN_PROP,
+          propType: PropType.microBuffer,
+          amount: size,
+        }),
+        mainBuffer,
+      )
     } else {
-      console.log('GET ALL')
       result.push(
         createIncludeHeader({
           op: IncludeOp.default,
@@ -117,7 +102,7 @@ export const includeToBuffer = (
     }
   }
 
-  if (propSize) {
+  if (def.include.props.size > 0) {
     // make this a function (the nested)
     for (const [prop, propDef] of def.include.props.entries()) {
       const opts = propDef.opts

@@ -65,20 +65,14 @@ pub fn include(
             //     return size;
             // },
             t.IncludeOp.partial => {
-                // var result: ?*results.Result = null;
-                // const field: u8 = include[i];
-                // const prop: t.PropType = @enumFromInt(include[i + 1]);
-                // i += 2;
-                // result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.fixed);
-                // const includeSize = read(u16, include, i);
-                // i += 2 + includeSize;
-                // if (result) |r| {
-                //     size += try f.partial(isEdge, ctx, r, include[i - includeSize .. i]);
-                //     size += try f.add(ctx, id, score, idIsSet, r);
-                //     idIsSet = true;
-                // }
+                const header = utils.readNext(t.IncludePartialHeader, q, &i);
+                const value = try get(typeEntry, node, &header);
+                try ctx.thread.query.append(header.prop);
+                var it = utils.readIterator(t.IncludePartialProp, q, header.amount, &i);
+                while (it.next()) |p| {
+                    try ctx.thread.query.append(value[p.start .. p.start + p.size]);
+                }
             },
-
             t.IncludeOp.meta => {
                 const header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
@@ -92,7 +86,9 @@ pub fn include(
                             try append.meta(ctx.thread, header.prop, textValue);
                         }
                     },
-                    else => {},
+                    else => {
+                        // no usefull metainfo for non selvaString props yet
+                    },
                 }
             },
             t.IncludeOp.metaWithOpts => {
@@ -138,7 +134,7 @@ pub fn include(
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
-                        // fixed size
+                        // Fixed size
                         try ctx.thread.query.append(header.prop);
                         try ctx.thread.query.append(value);
                     },
@@ -148,7 +144,7 @@ pub fn include(
                 }
             },
             else => {
-                //
+                // Unhandled operation - will remove this later
             },
         }
     }

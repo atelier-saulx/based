@@ -110,11 +110,63 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
     }
 }
 
+pub fn ReadIterator(comptime T: type) type {
+    return struct {
+        offset: *usize,
+        buffer: []u8,
+        len: usize,
+        pub fn next(self: *ReadIterator(T)) ?T {
+            if (self.offset.* < self.len) {
+                const prop = readNext(T, self.buffer, self.offset);
+                return prop;
+            } else {
+                return null;
+            }
+        }
+    };
+}
+
+pub inline fn readIterator(T: type, buffer: []u8, amount: usize, offset: *usize) ReadIterator(T) {
+    return ReadIterator(T){
+        .buffer = buffer,
+        .len = amount * sizeOf(T) + offset.*,
+        .offset = offset,
+    };
+}
+
 pub inline fn readNext(T: type, buffer: []u8, offset: *usize) T {
     const header = read(T, buffer, offset.*);
     offset.* = offset.* + @bitSizeOf(T) / 8;
     return header;
 }
+
+// pub const TextIterator = struct {
+//     value: []const [selva.c.SELVA_STRING_STRUCT_SIZE]u8,
+//     index: usize = 0,
+//     fn _next(self: *TextIterator) ?[]u8 {
+//         if (self.index == self.value.len) {
+//             return null;
+//         }
+//         var len: usize = undefined;
+//         const str: [*]const u8 = selva.c.selva_string_to_buf(@ptrCast(&self.value[self.index]), &len);
+//         const s = @as([*]u8, @constCast(str));
+//         self.index += 1;
+//         return s[0..len];
+//     }
+//     pub fn next(self: *TextIterator) ?[]u8 {
+//         return self._next();
+//     }
+// };
+
+// pub inline fn textIterator(
+//     value: []u8,
+// ) TextIterator {
+//     if (value.len == 0) {
+//         return TextIterator{ .value = emptyArray };
+//     }
+//     const textTmp: *[*]const [selva.c.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
+//     return TextIterator{ .value = textTmp.*[0..value[8]] };
+// }
 
 pub inline fn sliceNext(size: usize, q: []u8, offset: *usize) []u8 {
     const value = q[offset.* .. offset.* + size];
