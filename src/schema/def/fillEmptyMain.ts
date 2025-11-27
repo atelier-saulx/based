@@ -18,7 +18,7 @@ export const fillEmptyMain = (
     let val = f.default
 
     if (t === PropType.enum) {
-      mainEmpty[s] = f.default ?? 0
+      mainEmpty[s] = f.default ? (f.enum?.indexOf(f.default) ?? -1) + 1 : 0
     } else if (t === PropType.int8 || t === PropType.uint8) {
       mainEmpty[s] = val
     } else if (t === PropType.boolean) {
