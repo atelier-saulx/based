@@ -29,6 +29,8 @@ const readMainValue = (
   } else if (typeIndex === PropType.boolean) {
     addProp(prop, Boolean(result[i]), item)
   } else if (typeIndex === PropType.enum) {
+    console.log('XXX', result[i])
+
     if (result[i] === 0) {
       addProp(prop, undefined, item)
     } else {
@@ -79,6 +81,7 @@ export const readMain = (
   item: Item,
 ): number => {
   const mainInclude = q.main
+  console.log(mainInclude)
   for (const k in mainInclude.props) {
     const prop = mainInclude.props[k]
     readMainValue(prop, result, Number(k) + i, item)

@@ -70,6 +70,7 @@ pub fn include(
                 try ctx.thread.query.append(header.prop);
                 var it = utils.readIterator(t.IncludePartialProp, q, header.amount, &i);
                 while (it.next()) |p| {
+                    std.debug.print(">> {any} \n", .{p});
                     try ctx.thread.query.append(value[p.start .. p.start + p.size]);
                 }
             },
@@ -144,7 +145,7 @@ pub fn include(
                 }
             },
             else => {
-                // Unhandled operation - will remove this later
+                // Unhandled operation - will remove this late
             },
         }
     }

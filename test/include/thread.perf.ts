@@ -56,7 +56,7 @@ await test('include', async (t) => {
     .locale('nl', ['no', 'de'])
     // .include('body', { meta: 'only', end: 10 })
     // .include('name', { meta: 'only' })
-    .include('nr', 'flap')
+    .include('flap') //  'flap'
     // .include('name')
     .range(0, 2)
     .get()
