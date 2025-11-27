@@ -1,0 +1,3 @@
+#!/bin/bash
+podman run -t --rm -v "$PWD:/usr/src/based-db" based-db-clibs-build-linux_x86_64 \
+sh -c '\. "/usr/local/nvm/nvm.sh"; cd /usr/src/based-db; $@' -- "$@"

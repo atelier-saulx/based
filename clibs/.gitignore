@@ -1,13 +1,9 @@
 # Copyright (c) 2022, 2024 SAULX
 # SPDX-License-Identifier: MIT
-/selvad
 *.d
 *.so
 *.so.*
 *.o
 *.dylib
 vgcore.*
-/binaries
 *.trace
-# Selva db dumps
-*.sdb

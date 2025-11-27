@@ -3,7 +3,7 @@
   "version": "1.1.5",
   "type": "module",
   "main": "./dist/sdk.js",
-  "//temporarily-private-for-dev": true,
+  "// temporarily-private-for-dev": "",
   "private": true,
   "scripts": {
     "build-c": "make -C clibs",
@@ -23,6 +23,14 @@
     "test-gdb": "./scripts/node-gdb ./scripts/test.ts",
     "test-lldb": "./scripts/node-lldb ./scripts/test.ts",
     "test-valgrind": "./scripts/node-valgrind ./scripts/test.ts",
+    "install-esbuild": "./scripts/install-esbuild",
+    "linux-arm64": "./scripts/linux-arm64 npm run",
+    "linux-x64": "./scripts/linux-x64 npm run",
+    "linux-arm64-build-c": "./scripts/sync-clibs linux-aarch64 && ./scripts/linux-arm64 'make -C .clibs-linux-aarch64'",
+    "linux-arm64-build-zig": "zig build -Dtarget=aarch64-linux-gnu",
+    "linux-x64-build-c": "./scripts/sync-clibs linux-x86_64 && ./scripts/linux-x64 'make -C .clibs-linux-x86_64'",
+    "linux-x64-build-zig": "zig build -Dtarget=x86_64-linux-gnu",
+    "// todo:cleanup": "",
     "build-linux_aarch64": "(cd clibs && podman run --rm -v \"$PWD/../../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64) && npm run build-zig linux-aarch64 && tsc",
     "build-release-debug": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release debug && tsc",
     "build-release": "rm -rf ./dist .zig-cache .zig-out ./tmp && (cd clibs && ./build-release.sh) && npm run build-zig -- release && tsc",
@@ -31,7 +39,7 @@
     "_test": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./scripts/test.ts",
     "_test-gdb": "npm run build && LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node --import=tsx ./scripts/test.ts",
     "test-fast": "LOCPATH=../locale/locale-x86_64-gnu/locale node --import=tsx ./scripts/test.ts",
-    "test-fast-linux_aarch64-schema": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast schemadebug'",
+    "test-fast-linux_aarch64-schema": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast include/thread'",
     "test-fast-linux_aarch64": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast'",
     "test-fast-linux_aarch64-gdb": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node ./scripts/test.ts'",
     "test-fast-linux_aarch64-valgrind": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-aarch64-gnu/locale valgrind --leak-check=full node ./scripts/test.ts'",
@@ -40,7 +48,13 @@
     "test-zig-debug": "npm run build-zig -- debug && npm run build-ts && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node --force-node-api-uncaught-exceptions-policy ./scripts/test.ts",
     "test-ts": "npm run build-ts && node --import=tsx ./scripts/test.ts",
     "perf": "npm run build && node benchmarks/references.js && node benchmarks/transfermarkt/transfermarkt-based.js",
-    "repl": "LOCPATH=../locale/locale-x86_64-gnu/locale node --import=tsx  ./scripts/repl.ts"
+    "repl": "LOCPATH=../locale/locale-x86_64-gnu/locale node --import=tsx  ./scripts/repl.ts",
+    "// these were on the root": "",
+    "build-podman": "cd podman && ./build.sh",
+    "build-locale": "cd packages/locale && ./build.sh",
+    "build-sdk": "npm run build -w @based/sdk",
+    "check": "for i in packages/*; do npx npm-check-updates -f @based/* -x @based/client-old --cwd $i; done",
+    "upgrade": "for i in packages/*; do npx npm-check-updates -f @based/* -x @based/client-old --cwd $i -u; done"
   },
   "sideEffects": false,
   "files": [
@@ -51,11 +65,15 @@
     "package.json"
   ],
   "optionalDependencies": {
-    "@based/locale-x86-64-gnu": "*"
+    "@esbuild/darwin-arm64": "^0.27.0",
+    "@esbuild/linux-arm64": "^0.27.0",
+    "@esbuild/linux-x64": "^0.27.0"
   },
   "prettier": "@saulx/prettier-config",
   "devDependencies": {
+    "@saulx/prettier-config": "^2.0.0",
     "@saulx/tsconfig": "^1.1.3",
+    "@swc-node/register": "^1.11.1",
     "@types/node": "^22.5.3",
     "@types/react": "^18.3.1",
     "async-sema": "3.1.1",
@@ -64,10 +82,10 @@
     "jsondiffpatch": "^0.7.3",
     "prettier": "^3.6.2",
     "tar": "^7.4.3",
+    "ts-node": "^10.9.2",
     "tsdown": "^0.16.7",
     "tsx": "^4.20.6",
-    "typescript": "^5.6.3",
-    "@saulx/prettier-config": "^2.0.0"
+    "typescript": "^5.6.3"
   },
   "exports": {
     ".": "./dist/sdk.js",

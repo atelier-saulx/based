@@ -64,25 +64,26 @@ pub fn build(b: *std.Build) !void {
     const node_hpath = try currentNodeHeaderPath(b);
     const napiVersion = try currentNapiVersion(b);
     const osName: []const u8 = if (target.result.os.tag == .macos) "darwin" else @tagName(target.result.os.tag);
-    const dest_path = b.fmt("../../dist/lib/{s}_{s}/libbased-{s}.node", .{
-        osName,
-        @tagName(target.result.cpu.arch),
+    const libPath = b.fmt("dist/lib/{s}_{s}", .{ osName, @tagName(target.result.cpu.arch) });
+    const headerPath = b.fmt("{s}/include", .{
+        libPath,
+    });
+    // needs to be relative from zig-out/lib
+    const targetPath = b.fmt("../../{s}/libbased-{s}.node", .{
+        libPath,
         napiVersion,
     });
-
-    const rpath = b.option([]const u8, "rpath", "run-time search path") orelse "@loader_path";
-    const lib_selva_path = b.option([]const u8, "libselvapath", "Path to the Selva Library") orelse "dist/lib/darwin_aarch64";
-    const headers_selva_path = b.option([]const u8, "headersselvapath", "Path to the Selva Headers") orelse "dist/lib/darwin_aarch64/include";
-
-    lib.root_module.addRPathSpecial(rpath);
+    std.debug.print("libPath: {s}, headerPath: {s}, targetPath {s}", .{ libPath, headerPath, targetPath });
+    // const rpath = b.option([]const u8, "rpath", "run-time search path") orelse "$ORIGIN"; // "@loader_path";
+    lib.root_module.addRPathSpecial(if (target.result.os.tag == .macos) "@loader_path" else "$ORIGIN");
     lib.root_module.addIncludePath(.{ .cwd_relative = node_hpath });
-    lib.root_module.addIncludePath(b.path(headers_selva_path));
-    lib.root_module.addLibraryPath(b.path(lib_selva_path));
+    lib.root_module.addIncludePath(.{ .cwd_relative = headerPath });
+    lib.root_module.addLibraryPath(.{ .cwd_relative = libPath });
     lib.root_module.linkSystemLibrary("selva", .{});
     lib.root_module.link_libc = true;
 
     const install_lib = b.addInstallArtifact(lib, .{
-        .dest_sub_path = dest_path,
+        .dest_sub_path = targetPath,
     });
     const install_step = b.getInstallStep();
     install_step.dependOn(&install_lib.step);
