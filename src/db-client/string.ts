@@ -50,7 +50,6 @@ const { getUint8Array: getTmpBuffer } = makeTmpBuffer(4096) // the usual page si
 // }
 
 // TODO olli - this is broken does not compress big strings
-// does not resize the mod context so keep mod version as well
 export function writeRaw(
   dst: Uint8Array,
   s: Uint8Array | string,
