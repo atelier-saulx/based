@@ -37,7 +37,7 @@ await test('include', async (t) => {
     db.create('user', {
       nr: i + 67,
       name: 'A',
-      // flap: '🤪',
+      flap: '🤪',
       body: {
         // nl: 'x',
         fr: 'B',
@@ -56,7 +56,7 @@ await test('include', async (t) => {
     .locale('nl', ['no', 'de'])
     // .include('body', { meta: 'only', end: 10 })
     // .include('name', { meta: 'only' })
-    .include('flap') //  'flap'
+    .include('flap', 'nr') //  'flap'
     // .include('name')
     .range(0, 2)
     .get()
