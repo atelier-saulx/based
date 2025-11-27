@@ -72,6 +72,17 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
     type === PropType.text ||
     type === PropType.alias
   ) {
+    let metaInfo = ''
+    if (typeof v === 'object') {
+      // hasMeta = true
+      if (v.value !== undefined) {
+        v = v.value
+      } else {
+        v = undefined
+        return 'meta only...'
+      }
+    }
+
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
       const chars = styleText(
@@ -85,11 +96,13 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
         chars
     }
 
+    v = v.replaceAll(/\n/g, ' ⏎')
+
     if (type === PropType.alias) {
       return `"${v}" ${styleText('italic', styleText('dim', 'alias'))}`
     }
 
-    return `"${v}"`
+    return `"${v.replaceAll(/\n/g, ' ⏎')}"`
   }
 
   if (type === PropType.cardinality) {
