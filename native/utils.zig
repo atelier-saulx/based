@@ -88,8 +88,7 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
         .pointer => |info| {
             if (info.size == .slice) {
                 const ChildType = info.child;
-                const size = @bitSizeOf(T) / 8;
-                // [offset..] ??
+                const size = @bitSizeOf(ChildType) / 8;
                 const value: T = @as([*]ChildType, @ptrCast(@alignCast(buffer[offset..].ptr)))[0..@divFloor(buffer.len, size)];
                 return value;
             } else {
@@ -138,6 +137,19 @@ pub inline fn readNext(T: type, buffer: []u8, offset: *usize) T {
     const header = read(T, buffer, offset.*);
     offset.* = offset.* + @bitSizeOf(T) / 8;
     return header;
+}
+
+pub fn printString(x: anytype, value: []u8) void {
+    if (value.len == 0) {
+        std.debug.print("Empty string\n", .{});
+        return;
+    }
+    if (value[1] == 1) {
+        // decompress
+        std.debug.print("[PRINT] {any} compressed {any} \n", .{ x, value.len });
+    } else {
+        std.debug.print("[PRINT] {any} {s} \n", .{ x, value[2 .. value.len - 4] });
+    }
 }
 
 // pub const TextIterator = struct {

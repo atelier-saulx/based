@@ -12,7 +12,6 @@ export const writeMainBuffer = (ctx: Ctx) => {
     writeU8(ctx, ctx.operation)
     writeU32(ctx, ctx.schema.mainLen)
     ctx.cursor.main = ctx.index
-    console.log(ctx.schema.mainEmpty)
     writeU8Array(ctx, ctx.schema.mainEmpty)
   }
 }
@@ -28,10 +27,4 @@ export const writeMainValue = (ctx: Ctx, def: PropDef, val: any) => {
       : val,
     (ctx.cursor.main ?? 0) + def.start,
   )
-}
-
-const main: number = 0
-
-if (main === null) {
-  console.log('xxx')
 }

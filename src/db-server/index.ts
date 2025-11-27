@@ -247,7 +247,7 @@ export class DbServer extends DbShared {
     }
 
     if (this.schema) {
-      console.log('MIGRATE')
+      console.log('MIGRATE NOT HERE YET')
       if (schema.hash === this.migrating) {
         await this.once('schema')
         return this.schema.hash
@@ -258,9 +258,7 @@ export class DbServer extends DbShared {
 
     setSchemaOnServer(this, schema)
     await setNativeSchema(this, schema)
-    console.log('haha')
     await writeSchemaFile(this, schema)
-    console.log('hehe')
 
     process.nextTick(() => {
       this.emit('schema', this.schema!)

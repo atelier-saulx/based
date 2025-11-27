@@ -6,7 +6,12 @@ import {
 import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
-import { LangCode, LangCodeEnum, SortHeader } from '../../zigTsExports.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  QueryTypeEnum,
+  SortHeader,
+} from '../../zigTsExports.js'
 import type { AggregateType, ReaderSchema } from '../../protocol/index.js'
 
 type LangName = keyof typeof LangCode
@@ -29,15 +34,6 @@ export type IncludeField = {
 export type MainIncludes = Map<number, [number, PropDef, IncludeOpts]>
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
-
-export enum QueryType {
-  id = 0,
-  ids = 1,
-  default = 2,
-  alias = 3,
-  aggregates = 4,
-  aggregatesCountType = 5,
-}
 
 export enum ReferenceSelect {
   Index = 1,
@@ -187,7 +183,7 @@ export type LangFallback = LangName | false
 
 export type QueryDefShared = {
   selectFirstResult: boolean
-  queryType: QueryType
+  queryType: QueryTypeEnum
   schemaChecksum?: number
   errors: QueryError[]
   lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }

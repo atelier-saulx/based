@@ -24,6 +24,9 @@ await test('include', async (t) => {
       todo: {
         props: {
           name: 'string',
+          creator: { ref: 'user', prop: 'createdTodos' },
+          assignee: { ref: 'user', prop: 'todos' },
+          done: 'boolean',
         },
       },
       user: {
@@ -44,11 +47,22 @@ await test('include', async (t) => {
     name: 'A',
   })
 
-  for (let i = 0; i < 2; i++) {
+  const todo = await db.create('todo', {
+    name: 'TODO',
+  })
+
+  const todo2 = await db.create('todo', {
+    name: 'TODO2',
+  })
+
+  console.log({ todo, todo2 })
+
+  for (let i = 0; i < 1; i++) {
     db.create('user', {
       nr: i + 67,
       name: 'A',
       flap: '⚡️',
+      todos: [todo, todo2],
       derp: 'hello',
       body: {
         nl: 'x',
@@ -59,13 +73,13 @@ await test('include', async (t) => {
     })
   }
 
-  // update works
-  for (let i = 1; i < 1000; i++) {
-    db.update('user', {
-      id: i,
-      flap: '💩',
-    })
-  }
+  // // update works
+  // for (let i = 1; i < 1000; i++) {
+  //   db.update('user', {
+  //     id: i,
+  //     flap: '💩',
+  //   })
+  // }
 
   console.log('start query')
 
@@ -75,10 +89,11 @@ await test('include', async (t) => {
 
   const x = await db
     .query('user')
-    .locale('nl', ['no', 'de'])
-    .include('body', { meta: true, end: 10 })
+    // .locale('nl', ['no', 'de'])
+    // .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
-    .include('flap', 'nr') //  'flap'
+    .include('nr') //  'flap'
+    .include('todos.name')
     // .include('name')
     .range(0, 2)
     .get()

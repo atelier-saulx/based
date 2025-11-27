@@ -1,9 +1,4 @@
-import {
-  IntermediateByteCode,
-  QueryDef,
-  QueryDefType,
-  QueryType,
-} from '../types.js'
+import { IntermediateByteCode, QueryDef, QueryDefType } from '../types.js'
 import { includeToBuffer } from '../include/toByteCode.js'
 import { DbClient } from '../../index.js'
 import { writeUint32 } from '../../../utils/index.js'
@@ -17,6 +12,7 @@ import {
   createQueryHeader,
   ID_PROP,
   QueryHeaderByteSize,
+  QueryType,
   SortHeaderByteSize,
   writeQueryHeader,
   writeSortHeader,
@@ -29,113 +25,95 @@ export function defToBuffer(
 ): IntermediateByteCode[] {
   const result: IntermediateByteCode = []
 
-  // def.references.forEach((ref) => {
-  //   include.push(...defToBuffer(db, ref))
-  //   if (ref.errors) {
-  //     def.errors.push(...ref.errors)
-  //   }
-  // })
+  const isReferences = def.type === QueryDefType.References
 
-  // let edges: IntermediateByteCode[]
-  // let edgesSize = 0
-
-  // if (def.edges) {
-  //   edges = includeToBuffer(db, def.edges)
-  //   def.edges.references.forEach((ref) => {
-  //     edges.push(...defToBuffer(db, ref))
-  //     if (ref.errors) {
-  //       def.errors.push(...ref.errors)
-  //     }
-  //   })
-  //   edgesSize = byteSize(edges)
+  // if (def.target.resolvedAlias) {
+  // } else if (typeof def.target.id === 'number') {
+  // } else if (def.target.ids) {
+  // } else {
+  // else if (def.type === QueryDefType.Reference) {
+  //   // result.push(referenceQuery(def, size))
   // }
 
-  // const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
+  if (def.type === QueryDefType.Root || isReferences) {
+    const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
+    const hasSearch = !!def.search
+    const hasFilter = def.filter.size > 0
+    const searchSize = hasSearch ? def.search!.size : 0
+    const sortSize = hasSort ? SortHeaderByteSize : 0
+    const filterSize = def.filter.size
 
-  // if (def.aggregate) {
-  //   result.push(aggregatesQuery(def))
-  //   if (def.type === QueryDefType.Root) {
-  //     result.push(schemaChecksum(def))
-  //   }
-  //   return result
-  // }
+    const include = includeToBuffer(db, def)
 
-  // def.type === aggret
-
-  if (def.type === QueryDefType.Root) {
-    if (def.target.resolvedAlias) {
-      // result.push(aliasQuery(def))
-    } else if (typeof def.target.id === 'number') {
-      // result.push(idQuery(def))
-    } else if (def.target.ids) {
-      //   if (
-      //     !def.sort &&
-      //     (def.range.offset || def.range.limit < (def.target as any).ids.length)
-      //   ) {
-      //     ;(def.target as any).ids = (def.target as any).ids.slice(
-      //       def.range.offset,
-      //       def.range.offset + def.range.limit,
-      //     )
-      //   }
-      //   result.push(idsQuery(def))
-    } else {
-      const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
-      const hasSearch = !!def.search
-      const hasFilter = def.filter.size > 0
-      const searchSize = hasSearch ? def.search!.size : 0
-      const sortSize = hasSort ? SortHeaderByteSize : 0
-      const filterSize = def.filter.size
-
-      const include = includeToBuffer(db, def)
-      // also add reference
-      // also add references
-      // also add edge
-
-      const buffer = new Uint8Array(
-        QueryHeaderByteSize + searchSize + filterSize + sortSize,
-      )
-
-      let index = writeQueryHeader(
-        buffer,
-        {
-          op: QueryType.default,
-          prop: ID_PROP,
-          size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
-          typeId: def.schema!.id,
-          offset: def.range.offset,
-          limit: def.range.limit,
-          sort: hasSort,
-          includeEdge: false,
-          edgeIncludeOffset: 0,
-          filterSize: def.filter.size,
-          searchSize,
-          subType: getQuerySubType(def),
-        },
-        0,
-      )
-
-      if (hasSort) {
-        index = writeSortHeader(buffer, def.sort!, index)
+    def.references.forEach((ref) => {
+      // pass offset...
+      include.push(...defToBuffer(db, ref))
+      if (ref.errors) {
+        def.errors.push(...ref.errors)
       }
+    })
 
-      if (hasFilter) {
-        buffer.set(filterToBuffer(def.filter, index), index)
-        index += def.filter.size
-      }
+    const buffer = new Uint8Array(
+      QueryHeaderByteSize + searchSize + filterSize + sortSize,
+    )
 
-      if (hasSearch) {
-        buffer.set(searchToBuffer(def.search!), index)
-      }
+    let index = writeQueryHeader(
+      buffer,
+      {
+        op: isReferences ? QueryType.references : QueryType.default,
+        prop: isReferences ? def.target.propDef!.prop : ID_PROP,
+        // this does not seem nessecary
+        size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
+        typeId: def.schema!.id,
+        offset: def.range.offset,
+        limit: def.range.limit,
+        sort: hasSort,
+        includeEdge: false,
+        filterSize: def.filter.size,
+        searchSize,
+        subType: getQuerySubType(def),
+      },
+      0,
+    )
 
-      result.push([
-        { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
-        include,
-      ])
+    console.info('------', isReferences, {
+      op: isReferences ? QueryDefType.References : QueryType.default,
+      prop: isReferences ? def.target.propDef!.prop : ID_PROP,
+      // this does not seem nessecary
+      size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
+      typeId: def.schema!.id,
+      offset: def.range.offset,
+      limit: def.range.limit,
+      sort: hasSort,
+      includeEdge: false,
+      filterSize: def.filter.size,
+      searchSize,
+      subType: getQuerySubType(def),
+    })
+
+    // // @ts-ignore
+    // console.log(isReferences, def.schema.props)
+
+    if (hasSort) {
+      index = writeSortHeader(buffer, def.sort!, index)
     }
-  } else if (def.type === QueryDefType.References) {
-    // result.push(referencesQuery(def, size))
-  } else if (def.type === QueryDefType.Reference) {
-    // result.push(referenceQuery(def, size))
+
+    if (hasFilter) {
+      buffer.set(filterToBuffer(def.filter, index), index)
+      index += def.filter.size
+    }
+
+    if (hasSearch) {
+      buffer.set(searchToBuffer(def.search!), index)
+    }
+
+    // need to crrect stupid nested INDEX
+    result.push([
+      { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
+      include,
+    ])
+  } else {
+    // flap
   }
 
   return result

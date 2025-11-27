@@ -8,6 +8,7 @@ const Fields = @import("../../selva/fields.zig");
 const opts = @import("./opts.zig");
 const append = @import("./append.zig");
 const t = @import("../../types.zig");
+const multiple = @import("../multiple.zig");
 
 inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
     return Fields.get(
@@ -16,6 +17,19 @@ inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
         try Schema.getFieldSchema(typeEntry, header.prop),
         header.propType,
     );
+}
+
+pub fn recursionErrorBoundary(
+    cb: anytype,
+    node: Node.Node,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+    typeEntry: Node.Type,
+    index: *usize,
+) void {
+    cb(ctx, q, node, typeEntry, index) catch |err| {
+        std.debug.print("Error {any} \n", .{err});
+    };
 }
 
 pub fn include(
@@ -27,43 +41,12 @@ pub fn include(
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
+        std.debug.print("OP {any} {any} \n", .{ op, q[i .. i + 10] });
+
         switch (op) {
-            // t.IncludeOp.references => {
-            // call multiple
-            //     const operation = include[i..];
-            //     const refSize = read(u16, operation, 0);
-            //     const multiRefs = operation[2 .. 2 + refSize];
-            //     i += refSize + 2;
-            //     if (!idIsSet) {
-            //         idIsSet = true;
-            //         size += try addIdOnly(ctx, id, score);
-            //     }
-            //     size += getRefsFields(ctx, multiRefs, node, typeEntry, edgeRef, isEdge);
-            // },
-            // t.IncludeOp.reference => {
-            //  call single
-            //     const operation = include[i..];
-            //     const refSize = read(u16, operation, 0);
-            //     const singleRef = operation[2 .. 2 + refSize];
-            //     i += refSize + 2;
-            //     if (!idIsSet) {
-            //         idIsSet = true;
-            //         size += try addIdOnly(ctx, id, score);
-            //     }
-            //     size += getSingleRefFields(ctx, singleRef, node, typeEntry, edgeRef, isEdge);
-            // },
-            // t.IncludeOp.referencesAggregation => {
-            //     const operation = include[i..];
-            //     const refSize = read(u16, operation, 0);
-            //     const multiRefs = operation[2 .. 2 + refSize];
-            //     i += refSize + 2;
-            //     if (!idIsSet) {
-            //         idIsSet = true;
-            //         size += try addIdOnly(ctx, id, score);
-            //     }
-            //     size += try aggregateRefsFields(ctx, multiRefs, node, typeEntry);
-            //     return size;
-            // },
+            t.IncludeOp.references => {
+                recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
+            },
             t.IncludeOp.partial => {
                 const header = utils.readNext(t.IncludePartialHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
@@ -131,6 +114,8 @@ pub fn include(
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
+                        utils.printString(header, value);
+
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
@@ -144,7 +129,33 @@ pub fn include(
                 }
             },
             else => {
+                std.debug.print("WRONG", .{});
+                i += 1;
                 // Unhandled operation - will remove this late
+                // t.IncludeOp.reference => {
+                //  call single
+                //     const operation = include[i..];
+                //     const refSize = read(u16, operation, 0);
+                //     const singleRef = operation[2 .. 2 + refSize];
+                //     i += refSize + 2;
+                //     if (!idIsSet) {
+                //         idIsSet = true;
+                //         size += try addIdOnly(ctx, id, score);
+                //     }
+                //     size += getSingleRefFields(ctx, singleRef, node, typeEntry, edgeRef, isEdge);
+                // },
+                // t.IncludeOp.referencesAggregation => {
+                //     const operation = include[i..];
+                //     const refSize = read(u16, operation, 0);
+                //     const multiRefs = operation[2 .. 2 + refSize];
+                //     i += refSize + 2;
+                //     if (!idIsSet) {
+                //         idIsSet = true;
+                //         size += try addIdOnly(ctx, id, score);
+                //     }
+                //     size += try aggregateRefsFields(ctx, multiRefs, node, typeEntry);
+                //     return size;
+                // },
             },
         }
     }

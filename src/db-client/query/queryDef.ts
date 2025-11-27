@@ -1,4 +1,4 @@
-import { LangCode } from '../../zigTsExports.js'
+import { LangCode, QueryType } from '../../zigTsExports.js'
 import { DbClient } from '../index.js'
 import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
 import {
@@ -8,7 +8,6 @@ import {
   QueryDefRest,
   QueryDefShared,
   QueryDefType,
-  QueryType,
   Target,
 } from './types.js'
 import {
