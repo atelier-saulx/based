@@ -529,6 +529,11 @@ pub const IncludePartialHeader = packed struct {
     op: IncludeOp,
     prop: u8,
     propType: PropType,
+    amount: u16,
+};
+
+pub const IncludePartialProp = packed struct {
+    start: u16,
     size: u16,
 };
 

@@ -23,6 +23,7 @@ await test('include', async (t) => {
     types: {
       user: {
         props: {
+          derp: ['hello', 'bye'],
           name: { type: 'string' }, // default: 'xxxx'
           nr: { type: 'uint32', default: 22 },
           body: { type: 'text' }, // compression: 'none'

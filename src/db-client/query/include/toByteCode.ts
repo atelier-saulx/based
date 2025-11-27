@@ -18,6 +18,7 @@ import {
   createIncludeMetaHeader,
   MAIN_PROP,
   createIncludePartialHeader,
+  writeIncludePartialProp,
 } from '../../../zigTsExports.js'
 
 const EMPTY_BUFFER = new Uint8Array(0)
@@ -76,33 +77,41 @@ export const includeToBuffer = (
       //   console.log(value)
       // }
     } else {
-      const size = def.include.main.include.size
-      mainBuffer = new Uint8Array(size * 4 + 2)
-      writeUint16(mainBuffer, def.include.main.len, 0)
-      let i = 2
-      let m = 0
-      for (const value of def.include.main.include.values()) {
-        const propDef = value[1]
-        writeUint16(mainBuffer, propDef.start, i)
-        writeUint16(mainBuffer, propDef.len, i + 2)
-        value[0] = m
-        i += 4
-        m += propDef.len
-      }
     }
   }
 
   if (def.include.main.len > 0) {
     if (isPartialMain(def)) {
-      // result.push(
-      //   createIncludePartialHeader({
-      //     op: IncludeOp.partial,
-      //     prop: MAIN_PROP,
-      //     propType: PropType.microBuffer,
-      //     size: mainBuffer.byteLength,
-      //   }),
-      //   mainBuffer,
-      // )
+      const size = def.include.main.include.size
+      mainBuffer = new Uint8Array(size * 4)
+      let i = 0
+      let m = 0
+      let propsCnt = 0
+      for (const value of def.include.main.include.values()) {
+        const propDef = value[1]
+        writeIncludePartialProp(
+          mainBuffer,
+          {
+            start: propDef.start,
+            size: propDef.len,
+          },
+          i,
+        )
+        propsCnt++
+        // This writes the actual address of the prop to be used on read
+        value[0] = m
+        i += 4
+        m += propDef.len
+      }
+      result.push(
+        createIncludePartialHeader({
+          op: IncludeOp.partial,
+          prop: MAIN_PROP,
+          propType: PropType.microBuffer,
+          amount: propsCnt,
+        }),
+        mainBuffer,
+      )
     } else {
       console.log('GET ALL')
       result.push(
