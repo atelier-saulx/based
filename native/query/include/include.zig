@@ -86,7 +86,9 @@ pub fn include(
                             try append.meta(ctx.thread, header.prop, textValue);
                         }
                     },
-                    else => {},
+                    else => {
+                        // no usefull metainfo for non selvaString props yet
+                    },
                 }
             },
             t.IncludeOp.metaWithOpts => {
@@ -132,7 +134,7 @@ pub fn include(
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
-                        // fixed size
+                        // Fixed size
                         try ctx.thread.query.append(header.prop);
                         try ctx.thread.query.append(value);
                     },
@@ -142,7 +144,7 @@ pub fn include(
                 }
             },
             else => {
-                //
+                // Unhandled operation - will remove this later
             },
         }
     }
