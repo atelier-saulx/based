@@ -23,6 +23,7 @@ await test('include', async (t) => {
     types: {
       user: {
         props: {
+          flap: { enum: ['⚡️', '🤪', '💩'], default: '🤪' },
           derp: ['hello', 'bye'],
           name: { type: 'string' }, // default: 'xxxx'
           nr: { type: 'uint32', default: 22 },
@@ -36,6 +37,7 @@ await test('include', async (t) => {
     db.create('user', {
       nr: i + 67,
       name: 'A',
+      // flap: '🤪',
       body: {
         // nl: 'x',
         fr: 'B',
@@ -54,8 +56,7 @@ await test('include', async (t) => {
     .locale('nl', ['no', 'de'])
     // .include('body', { meta: 'only', end: 10 })
     // .include('name', { meta: 'only' })
-    .include('nr')
-
+    .include('nr', 'flap')
     // .include('name')
     .range(0, 2)
     .get()

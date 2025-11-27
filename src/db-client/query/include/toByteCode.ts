@@ -1,13 +1,11 @@
 import { DbClient } from '../../index.js'
 import {
-  IncludeField,
   IncludeOpts,
   IntermediateByteCode,
   QueryDef,
   QueryDefType,
 } from '../types.js'
 import { walkDefs } from './walk.js'
-import { writeUint16 } from '../../../utils/index.js'
 import { getEnd } from './utils.js'
 import {
   PropType,
@@ -64,29 +62,11 @@ export const includeToBuffer = (
   }
 
   if (def.include.main.len > 0) {
-    const len =
-      def.type === QueryDefType.Edge
-        ? def.target.ref!.edgeMainLen
-        : def.schema!.mainLen
-
-    if (def.include.main.len === len) {
-      // // Get all main fields
-      // mainBuffer = EMPTY_BUFFER
-      // for (const value of def.include.main.include.values()) {
-      //   value[0] = value[1].start
-      //   console.log(value)
-      // }
-    } else {
-    }
-  }
-
-  if (def.include.main.len > 0) {
     if (isPartialMain(def)) {
       const size = def.include.main.include.size
       mainBuffer = new Uint8Array(size * 4)
       let i = 0
       let m = 0
-      let propsCnt = 0
       for (const value of def.include.main.include.values()) {
         const propDef = value[1]
         writeIncludePartialProp(
@@ -97,7 +77,6 @@ export const includeToBuffer = (
           },
           i,
         )
-        propsCnt++
         // This writes the actual address of the prop to be used on read
         value[0] = m
         i += 4
@@ -108,12 +87,11 @@ export const includeToBuffer = (
           op: IncludeOp.partial,
           prop: MAIN_PROP,
           propType: PropType.microBuffer,
-          amount: propsCnt,
+          amount: size,
         }),
         mainBuffer,
       )
     } else {
-      console.log('GET ALL')
       result.push(
         createIncludeHeader({
           op: IncludeOp.default,
