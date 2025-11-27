@@ -151,6 +151,13 @@ await test('default', async (t) => {
             // TODO
             //default: new Uint8Array([0, 0, 0, 0]),
           },
+          book: {
+            type: 'text',
+            default: {
+              'en': 'haha',
+              'de': 'hahaha',
+            },
+          },
         },
       },
     },
@@ -165,12 +172,9 @@ await test('default', async (t) => {
     async () => {
       await db
         .query('user')
-        .include('name', 'bio', 'hack', 'hack2')
+        .include('name', 'bio', 'hack', 'hack2', 'book')
         .get()
         .inspect()
-      //const x = await db.query('user').include('name', 'bio', 'hack', 'hack2').get().toObject()
-      //console.log(x.name === x.bio)
-      //console.log(x.hack === x.bio)
     },
     'Dun',
     { repeat: 1 },
