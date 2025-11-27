@@ -49,7 +49,7 @@ await test('include', async (t) => {
   }
 
   // update works
-  for (let i = 1; i < 3; i++) {
+  for (let i = 1; i < 1000; i++) {
     db.update('user', {
       id: i,
       flap: '💩',
@@ -91,27 +91,26 @@ await test('include', async (t) => {
 
   // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
 
-  // await perf(
-  //   async () => {
-  //     const q: any[] = []
-  //     for (let i = 0; i < 1000; i++) {
-  //       q.push(
-  //         db
-  //           .query('user')
-  //           .locale('nl', ['fr', 'no', 'de'])
-  //           .include('name', 'body')
-  //           // .include('name', 'body', { end: 2 })
-  //           .range(0, 1000 + i)
-  //           .get(),
-  //         // .inspect(),
-  //         // .inspect(),
-  //       )
-  //     }
-  //     await Promise.all(q)
-  //   },
-  //   'Nodes',
-  //   { repeat: 10 },
-  // )
+  await perf(
+    async () => {
+      const q: any[] = []
+      for (let i = 0; i < 1000; i++) {
+        q.push(
+          db
+            .query('user')
+            // .locale('nl', ['fr', 'no', 'de'])
+            .include('nr')
+            // .include('name', 'body', { end: 2 })
+            .range(0, 1000 + i)
+            .get(),
+          // .inspect(),
+        )
+      }
+      await Promise.all(q)
+    },
+    'Nodes',
+    { repeat: 10 },
+  )
 
   console.log('done')
 
