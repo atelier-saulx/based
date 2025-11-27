@@ -127,8 +127,6 @@ export const includeToBuffer = (
           const codes = propDef.opts.codes.has(0)
             ? Object.keys(def.schema!.locales).map((c) => LangCode[c])
             : propDef.opts.codes
-
-          console.log({ codes }, def.schema!.locales)
           for (const code of codes) {
             result.push(
               createIncludeMetaHeader({

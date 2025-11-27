@@ -14,7 +14,7 @@ export const readMetaMainString = (
     size: len,
     crc32,
     compressed: false,
-    unCompressedSize: len,
+    compressedSize: len,
   }
 }
 
@@ -24,6 +24,6 @@ export const emptyMeta = (): Meta => {
     size: 0,
     crc32: 0,
     compressed: false,
-    unCompressedSize: 0,
+    compressedSize: 0,
   }
 }

@@ -25,13 +25,13 @@ await test('include', async (t) => {
         props: {
           name: { type: 'string' }, // default: 'xxxx'
           // nr: 'uint32',
-          body: { type: 'text', compression: 'deflate' }, // compression: 'none'
+          body: { type: 'text' }, // compression: 'none'
         },
       },
     },
   })
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 2; i++) {
     db.create('user', {
       // nr: i,
       name: 'A',

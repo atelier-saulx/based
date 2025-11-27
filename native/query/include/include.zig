@@ -95,7 +95,7 @@ pub fn include(
                 const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
                 // var v: []u8 = value;
 
-                std.debug.print("{any}  \n", .{header});
+                // std.debug.print("{any}  \n", .{header});
 
                 switch (header.propType) {
                     t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
@@ -114,7 +114,7 @@ pub fn include(
                 const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
 
-                std.debug.print("{any}  \n", .{header});
+                // std.debug.print("{any}  \n", .{header});
 
                 switch (header.propType) {
                     t.PropType.binary,

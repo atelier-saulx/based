@@ -46,11 +46,11 @@ const meta: ReadInstruction = (q, result, i, item) => {
     compressed: metaResponse.compressed,
     size: metaResponse.size,
     checksum: combineToNumber(metaResponse.crc32, metaResponse.size),
-    unCompressedSize: metaResponse.size,
+    compressedSize: metaResponse.size,
   }
   i += IncludeResponseMetaByteSize - 1
   if (meta.compressed) {
-    meta.unCompressedSize = readUint32(result, i)
+    meta.compressedSize = readUint32(result, i)
     i += 4
   }
   if (propType === PropType.text && propDef.locales) {
