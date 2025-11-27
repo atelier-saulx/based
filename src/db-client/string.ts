@@ -18,7 +18,7 @@ function writeRawInternal(dst: Uint8Array, value: string, offset: number, lang: 
   } else { // Try to compress
     const l = native.stringByteLength(value)
 
-    if (l <= 200 || dst.byteLength - offset < 2 * l + 10) {
+    if (l <= 200) {
       return writeRaw(dst, value, offset, lang, true)
     }
 

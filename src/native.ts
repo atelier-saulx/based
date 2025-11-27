@@ -77,13 +77,29 @@ const native = {
     buf: Uint8Array,
     offset: number,
     stringSize: number,
-  ) => {
+  ): number => {
+    if (buf.byteLength - offset < 2 * stringSize) {
+      return 0
+    }
     return db.compress(compressor, buf, offset, stringSize)
   },
 
   // buf needs to be 2x stringSize!
-  compress: (buf: Uint8Array, offset: number, stringSize: number) => {
+  compress: (buf: Uint8Array, offset: number, stringSize: number): number => {
+    if (buf.byteLength - offset < 2 * stringSize) {
+      return 0
+    }
     return db.compress(compressor, buf, offset, stringSize)
+  },
+
+  decompressRaw: (
+    decompressor: any,
+    input: Uint8Array,
+    output: Uint8Array,
+    offset: number,
+    len: number,
+  ): void => {
+    return db.decompress(decompressor, input, output, offset, len)
   },
 
   decompress: (
@@ -91,7 +107,7 @@ const native = {
     output: Uint8Array,
     offset: number,
     len: number,
-  ) => {
+  ): void => {
     return db.decompress(decompressor, input, output, offset, len)
   },
 
