@@ -137,8 +137,11 @@ pub fn include(
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
+                    t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
+                        try ctx.thread.query.append(header.prop);
+                        try ctx.thread.query.append(value);
+                    },
                     else => {
-                        std.debug.print("yo? {any} \n", .{value});
                         try append.default(ctx.thread, header.prop, value);
                     },
                 }
