@@ -17,6 +17,9 @@ import {
   OpTypeEnum,
   BridgeResponseEnum,
   BridgeResponse,
+  BridgeResponseInverse,
+  OpType,
+  OpTypeInverse,
 } from '../zigTsExports.js'
 import { deSerialize } from '../schema/serialize.js'
 import { BLOCK_CAPACITY_DEFAULT } from '../schema/index.js'
