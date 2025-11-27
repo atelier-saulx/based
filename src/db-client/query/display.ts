@@ -1,9 +1,10 @@
 import { QueryDef } from './types.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { ENCODER } from '../../utils/index.js'
-import { PropType, type PropTypeEnum } from '../../zigTsExports.js'
+import { LangCode, PropType, type PropTypeEnum } from '../../zigTsExports.js'
 import type { PropDef, PropDefEdge } from '../../schema/index.js'
 import { styleText } from 'node:util'
+import { Meta } from '../../protocol/index.js'
 
 const decimals = (v: number) => ~~(v * 100) / 100
 
@@ -13,6 +14,10 @@ const sizeCalc = (size: number) => {
   }
   if (size > 1e3) {
     return `${decimals(size / 1e3)} kb`
+  }
+
+  if (size === 1) {
+    return `1 byte`
   }
   return `${size} bytes`
 }
@@ -49,6 +54,16 @@ export const printNumber = (nr: number) => {
   return styleText('blue', String(nr))
 }
 
+const isMeta = (v: any): v is Meta => {
+  return (
+    typeof v === 'object' &&
+    typeof v.crc32 === 'number' &&
+    typeof v.size === 'number' &&
+    typeof v.compressed === 'boolean' &&
+    typeof v.compressedSize === 'number'
+  )
+}
+
 export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
   if (type === PropType.binary) {
     const nr = 12
@@ -72,37 +87,42 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
     type === PropType.text ||
     type === PropType.alias
   ) {
-    let metaInfo = ''
-    if (typeof v === 'object') {
-      // hasMeta = true
-      if (v.value !== undefined) {
-        v = v.value
-      } else {
-        v = undefined
-        return 'meta only...'
+    let meta: string = ''
+    if (isMeta(v)) {
+      const ratio =
+        Math.round((v.compressed ? v.size / v.compressedSize : 1) * 10) / 10
+      meta = v.value === undefined ? '' : ' '
+      if (v.value === undefined && v.compressed) {
+        meta += `${styleText('italic', styleText('dim', `size: ${sizeCalc(v.size)} compressed:`))}`
       }
-    }
+      if (ratio !== 1) {
+        meta += `${styleText('italic', styleText('dim', `${sizeCalc(v.compressedSize)} cratio ${ratio}x`))}`
+      } else {
+        meta += `${styleText('italic', styleText('dim', `${sizeCalc(v.size)}`))}`
+      }
 
+      if (v.lang) {
+        meta += styleText('blue', ' ' + v.lang)
+      }
+
+      if (v.value === undefined) {
+        return meta
+      }
+      v = v.value
+      meta = meta
+    }
     if (v.length > 50) {
       const byteLength = ENCODER.encode(v).byteLength
       const chars = styleText(
         'italic',
         styleText('dim', `${~~((byteLength / 1e3) * 100) / 100}kb`),
       )
-      v =
-        v.slice(0, 50).replace(/\n/g, '\\n ') +
-        styleText('dim', '...') +
-        '" ' +
-        chars
+      v = v.slice(0, 50) + styleText('dim', '...') + '" ' + chars + meta
     }
-
-    v = v.replaceAll(/\n/g, ' ⏎')
-
     if (type === PropType.alias) {
-      return `"${v}" ${styleText('italic', styleText('dim', 'alias'))}`
+      return `"${v}" ${styleText('italic', styleText('dim', 'alias'))}` + meta
     }
-
-    return `"${v.replaceAll(/\n/g, ' ⏎')}"`
+    return `"${String(v).replaceAll(/\n/g, ' ⏎')}"` + meta
   }
 
   if (type === PropType.cardinality) {
@@ -253,7 +273,7 @@ const inspectObject = (
         }
         str += prettyPrintVal(v, def.typeIndex)
       } else if (def.typeIndex === PropType.text) {
-        if (typeof v === 'object') {
+        if (typeof v === 'object' && !isMeta(v)) {
           str += '{\n'
           for (const lang in v) {
             str += `${prefixBody}  ${lang}: ${prettyPrintVal(v[lang], def.typeIndex)},\n`
@@ -264,6 +284,7 @@ const inspectObject = (
             return ''
           }
           str += prettyPrintVal(v, def.typeIndex)
+          str += ',\n'
         }
       } else if (
         def.typeIndex === PropType.string ||
@@ -341,12 +362,14 @@ const inspectObject = (
     }
   }
 
+  // if -1 2 remove ,
+
   if (isObject) {
-    str += prefix + ' },\n'
+    str += '\n' + prefix + ' },\n'
   } else if (isLast) {
-    str += prefix + '}'
+    str += '\n' + prefix + '}'
   } else {
-    str += prefix + '},\n'
+    str += '\n' + prefix + '},\n'
   }
   return str
 }

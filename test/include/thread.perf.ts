@@ -50,15 +50,17 @@ await test('include', async (t) => {
 
   const x = await db
     .query('user')
-    .locale('nl', ['fr', 'no', 'de'])
+    .locale('nl', ['no', 'de'])
     .include('body', { meta: true, end: 10 })
+    .include('name', { meta: 'only' })
+
     // .include('name')
-    .range(0, 1)
+    .range(0, 3)
     .get()
 
   x.debug()
 
-  x.inspect(10, true)
+  x.inspect(10)
 
   // console.log('drain done')
   // ;(
