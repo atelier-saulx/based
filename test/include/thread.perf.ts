@@ -35,11 +35,12 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 2; i++) {
     db.create('user', {
-      // nr: i + 67,
+      nr: i + 67,
       name: 'A',
       flap: '⚡️',
+      derp: 'hello',
       body: {
-        // nl: 'x',
+        nl: 'x',
         fr: 'B',
         de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
         en: italy,
@@ -47,10 +48,11 @@ await test('include', async (t) => {
     })
   }
 
-  for (let i = 1; i < 3; i++) {
+  // update works
+  for (let i = 1; i < 1000; i++) {
     db.update('user', {
       id: i,
-      // flap: '💩',
+      flap: '💩',
     })
   }
 
@@ -61,7 +63,7 @@ await test('include', async (t) => {
   const x = await db
     .query('user')
     .locale('nl', ['no', 'de'])
-    // .include('body', { meta: 'only', end: 10 })
+    .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
     .include('flap', 'nr') //  'flap'
     // .include('name')
@@ -96,12 +98,11 @@ await test('include', async (t) => {
   //       q.push(
   //         db
   //           .query('user')
-  //           .locale('nl', ['fr', 'no', 'de'])
-  //           .include('name', 'body')
+  //           // .locale('nl', ['fr', 'no', 'de'])
+  //           .include('nr')
   //           // .include('name', 'body', { end: 2 })
   //           .range(0, 1000 + i)
   //           .get(),
-  //         // .inspect(),
   //         // .inspect(),
   //       )
   //     }
