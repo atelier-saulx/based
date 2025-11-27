@@ -11,6 +11,7 @@ export type Meta = {
   crc32: number
   compressed: boolean
   value?: any
+  unCompressedSize: number
 }
 
 export type AggItem = Partial<Item>

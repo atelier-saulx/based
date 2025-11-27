@@ -9,7 +9,13 @@ export const readMetaMainString = (
 ): Meta => {
   const crc32 = crc32c(result.subarray(i, i + len))
   const checksum = combineToNumber(crc32, len)
-  return { checksum, size: len, crc32, compressed: false }
+  return {
+    checksum,
+    size: len,
+    crc32,
+    compressed: false,
+    unCompressedSize: len,
+  }
 }
 
 export const emptyMeta = (): Meta => {
@@ -18,5 +24,6 @@ export const emptyMeta = (): Meta => {
     size: 0,
     crc32: 0,
     compressed: false,
+    unCompressedSize: 0,
   }
 }

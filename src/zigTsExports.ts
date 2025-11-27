@@ -1,20 +1,12 @@
-import {
-  writeUint16,
-  writeInt16,
-  writeUint32,
-  writeInt32,
-  writeUint64,
-  writeInt64,
-  writeFloatLE,
-  writeDoubleLE,
-  readUint16,
-  readInt16,
-  readUint32,
-  readInt32,
-  readUint64,
-  readInt64,
-  readFloatLE,
-  readDoubleLE,
+import { 
+  writeUint16, writeInt16, 
+  writeUint32, writeInt32, 
+  writeUint64, writeInt64, 
+  writeFloatLE, writeDoubleLE,
+  readUint16, readInt16, 
+  readUint32, readInt32, 
+  readUint64, readInt64, 
+  readFloatLE, readDoubleLE
 } from './utils/index.js'
 
 export type TypeId = number
@@ -39,8 +31,7 @@ export const BridgeResponseInverse = {
   flushQuery, 
   flushModify 
  */
-export type BridgeResponseEnum =
-  (typeof BridgeResponse)[keyof typeof BridgeResponse]
+export type BridgeResponseEnum = (typeof BridgeResponse)[keyof typeof BridgeResponse]
 
 export const OpType = {
   id: 0,
@@ -344,8 +335,7 @@ export const ReferencesSelectInverse = {
   any, 
   all 
  */
-export type ReferencesSelectEnum =
-  (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
+export type ReferencesSelectEnum = (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
 
 export const RefEdgeOp = {
   noEdgeNoIndexRealId: 0,
@@ -1089,27 +1079,30 @@ export const writeSortHeaderProps = {
   },
 }
 
-export const readSortHeader = (buf: Uint8Array, offset: number): SortHeader => {
+export const readSortHeader = (
+  buf: Uint8Array,
+  offset: number,
+): SortHeader => {
   const value: SortHeader = {
-    order: buf[offset] as SortOrderEnum,
+    order: (buf[offset]) as SortOrderEnum,
     prop: buf[offset + 1],
-    propType: buf[offset + 2] as PropTypeEnum,
+    propType: (buf[offset + 2]) as PropTypeEnum,
     start: readUint16(buf, offset + 3),
     len: readUint16(buf, offset + 5),
-    lang: buf[offset + 7] as LangCodeEnum,
+    lang: (buf[offset + 7]) as LangCodeEnum,
   }
   return value
 }
 
 export const readSortHeaderProps = {
   order: (buf: Uint8Array, offset: number): SortOrderEnum => {
-    return buf[offset] as SortOrderEnum
+    return (buf[offset]) as SortOrderEnum
   },
   prop: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 1]
   },
   propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
-    return buf[offset + 2] as PropTypeEnum
+    return (buf[offset + 2]) as PropTypeEnum
   },
   start: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 3)
@@ -1118,7 +1111,7 @@ export const readSortHeaderProps = {
     return readUint16(buf, offset + 5)
   },
   lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
-    return buf[offset + 7] as LangCodeEnum
+    return (buf[offset + 7]) as LangCodeEnum
   },
 }
 
@@ -1320,22 +1313,22 @@ export const readIncludeHeader = (
   offset: number,
 ): IncludeHeader => {
   const value: IncludeHeader = {
-    op: buf[offset] as IncludeOpEnum,
+    op: (buf[offset]) as IncludeOpEnum,
     prop: buf[offset + 1],
-    propType: buf[offset + 2] as PropTypeEnum,
+    propType: (buf[offset + 2]) as PropTypeEnum,
   }
   return value
 }
 
 export const readIncludeHeaderProps = {
   op: (buf: Uint8Array, offset: number): IncludeOpEnum => {
-    return buf[offset] as IncludeOpEnum
+    return (buf[offset]) as IncludeOpEnum
   },
   prop: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 1]
   },
   propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
-    return buf[offset + 2] as PropTypeEnum
+    return (buf[offset + 2]) as PropTypeEnum
   },
 }
 
@@ -1390,32 +1383,30 @@ export const readIncludeMetaHeader = (
   offset: number,
 ): IncludeMetaHeader => {
   const value: IncludeMetaHeader = {
-    op: buf[offset] as IncludeOpEnum,
+    op: (buf[offset]) as IncludeOpEnum,
     prop: buf[offset + 1],
-    propType: buf[offset + 2] as PropTypeEnum,
-    lang: buf[offset + 3] as LangCodeEnum,
+    propType: (buf[offset + 2]) as PropTypeEnum,
+    lang: (buf[offset + 3]) as LangCodeEnum,
   }
   return value
 }
 
 export const readIncludeMetaHeaderProps = {
   op: (buf: Uint8Array, offset: number): IncludeOpEnum => {
-    return buf[offset] as IncludeOpEnum
+    return (buf[offset]) as IncludeOpEnum
   },
   prop: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 1]
   },
   propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
-    return buf[offset + 2] as PropTypeEnum
+    return (buf[offset + 2]) as PropTypeEnum
   },
   lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
-    return buf[offset + 3] as LangCodeEnum
+    return (buf[offset + 3]) as LangCodeEnum
   },
 }
 
-export const createIncludeMetaHeader = (
-  header: IncludeMetaHeader,
-): Uint8Array => {
+export const createIncludeMetaHeader = (header: IncludeMetaHeader): Uint8Array => {
   const buffer = new Uint8Array(IncludeMetaHeaderByteSize)
   writeIncludeMetaHeader(buffer, header, 0)
   return buffer
@@ -1474,10 +1465,10 @@ export const readIncludeOpts = (
 ): IncludeOpts => {
   const value: IncludeOpts = {
     end: readUint32(buf, offset),
-    isChars: ((buf[offset + 4] >>> 0) & 1) === 1,
-    next: ((buf[offset + 4] >>> 1) & 1) === 1,
+    isChars: (((buf[offset + 4] >>> 0) & 1)) === 1,
+    next: (((buf[offset + 4] >>> 1) & 1)) === 1,
     langFallbackSize: buf[offset + 5],
-    lang: buf[offset + 6] as LangCodeEnum,
+    lang: (buf[offset + 6]) as LangCodeEnum,
   }
   return value
 }
@@ -1487,16 +1478,16 @@ export const readIncludeOptsProps = {
     return readUint32(buf, offset)
   },
   isChars: (buf: Uint8Array, offset: number): boolean => {
-    return ((buf[offset + 4] >>> 0) & 1) === 1
+    return (((buf[offset + 4] >>> 0) & 1)) === 1
   },
   next: (buf: Uint8Array, offset: number): boolean => {
-    return ((buf[offset + 4] >>> 1) & 1) === 1
+    return (((buf[offset + 4] >>> 1) & 1)) === 1
   },
   langFallbackSize: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 5]
   },
   lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
-    return buf[offset + 6] as LangCodeEnum
+    return (buf[offset + 6]) as LangCodeEnum
   },
 }
 
@@ -1619,10 +1610,10 @@ export const readIncludeResponseMeta = (
   offset: number,
 ): IncludeResponseMeta => {
   const value: IncludeResponseMeta = {
-    op: buf[offset] as ReadOpEnum,
+    op: (buf[offset]) as ReadOpEnum,
     prop: buf[offset + 1],
-    lang: buf[offset + 2] as LangCodeEnum,
-    compressed: ((buf[offset + 3] >>> 0) & 1) === 1,
+    lang: (buf[offset + 2]) as LangCodeEnum,
+    compressed: (((buf[offset + 3] >>> 0) & 1)) === 1,
     crc32: readUint32(buf, offset + 4),
     size: readUint32(buf, offset + 8),
   }
@@ -1631,16 +1622,16 @@ export const readIncludeResponseMeta = (
 
 export const readIncludeResponseMetaProps = {
   op: (buf: Uint8Array, offset: number): ReadOpEnum => {
-    return buf[offset] as ReadOpEnum
+    return (buf[offset]) as ReadOpEnum
   },
   prop: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 1]
   },
   lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
-    return buf[offset + 2] as LangCodeEnum
+    return (buf[offset + 2]) as LangCodeEnum
   },
   compressed: (buf: Uint8Array, offset: number): boolean => {
-    return ((buf[offset + 3] >>> 0) & 1) === 1
+    return (((buf[offset + 3] >>> 0) & 1)) === 1
   },
   crc32: (buf: Uint8Array, offset: number): number => {
     return readUint32(buf, offset + 4)
@@ -1650,9 +1641,7 @@ export const readIncludeResponseMetaProps = {
   },
 }
 
-export const createIncludeResponseMeta = (
-  header: IncludeResponseMeta,
-): Uint8Array => {
+export const createIncludeResponseMeta = (header: IncludeResponseMeta): Uint8Array => {
   const buffer = new Uint8Array(IncludeResponseMetaByteSize)
   writeIncludeResponseMeta(buffer, header, 0)
   return buffer
@@ -1723,26 +1712,26 @@ export const readQuerySingleHeader = (
   offset: number,
 ): QuerySingleHeader => {
   const value: QuerySingleHeader = {
-    op: buf[offset] as QueryTypeEnum,
+    op: (buf[offset]) as QueryTypeEnum,
     size: readUint16(buf, offset + 1),
-    typeId: readUint16(buf, offset + 3) as TypeId,
+    typeId: (readUint16(buf, offset + 3)) as TypeId,
     id: readUint32(buf, offset + 5),
     filterSize: readUint16(buf, offset + 9),
     aliasSize: readUint16(buf, offset + 11),
-    includeEdge: ((buf[offset + 13] >>> 0) & 1) === 1,
+    includeEdge: (((buf[offset + 13] >>> 0) & 1)) === 1,
   }
   return value
 }
 
 export const readQuerySingleHeaderProps = {
   op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
-    return buf[offset] as QueryTypeEnum
+    return (buf[offset]) as QueryTypeEnum
   },
   size: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 1)
   },
   typeId: (buf: Uint8Array, offset: number): TypeId => {
-    return readUint16(buf, offset + 3) as TypeId
+    return (readUint16(buf, offset + 3)) as TypeId
   },
   id: (buf: Uint8Array, offset: number): number => {
     return readUint32(buf, offset + 5)
@@ -1754,13 +1743,11 @@ export const readQuerySingleHeaderProps = {
     return readUint16(buf, offset + 11)
   },
   includeEdge: (buf: Uint8Array, offset: number): boolean => {
-    return ((buf[offset + 13] >>> 0) & 1) === 1
+    return (((buf[offset + 13] >>> 0) & 1)) === 1
   },
 }
 
-export const createQuerySingleHeader = (
-  header: QuerySingleHeader,
-): Uint8Array => {
+export const createQuerySingleHeader = (header: QuerySingleHeader): Uint8Array => {
   const buffer = new Uint8Array(QuerySingleHeaderByteSize)
   writeQuerySingleHeader(buffer, header, 0)
   return buffer
@@ -1860,25 +1847,25 @@ export const readQueryHeader = (
   offset: number,
 ): QueryHeader => {
   const value: QueryHeader = {
-    op: buf[offset] as QueryTypeEnum,
+    op: (buf[offset]) as QueryTypeEnum,
     size: readUint16(buf, offset + 1),
     prop: buf[offset + 3],
-    typeId: readUint16(buf, offset + 4) as TypeId,
+    typeId: (readUint16(buf, offset + 4)) as TypeId,
     offset: readUint32(buf, offset + 6),
     limit: readUint32(buf, offset + 10),
     filterSize: readUint16(buf, offset + 14),
     searchSize: readUint16(buf, offset + 16),
     edgeIncludeOffset: readUint16(buf, offset + 18),
-    subType: buf[offset + 20] as QuerySubTypeEnum,
-    includeEdge: ((buf[offset + 21] >>> 0) & 1) === 1,
-    sort: ((buf[offset + 21] >>> 1) & 1) === 1,
+    subType: (buf[offset + 20]) as QuerySubTypeEnum,
+    includeEdge: (((buf[offset + 21] >>> 0) & 1)) === 1,
+    sort: (((buf[offset + 21] >>> 1) & 1)) === 1,
   }
   return value
 }
 
 export const readQueryHeaderProps = {
   op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
-    return buf[offset] as QueryTypeEnum
+    return (buf[offset]) as QueryTypeEnum
   },
   size: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 1)
@@ -1887,7 +1874,7 @@ export const readQueryHeaderProps = {
     return buf[offset + 3]
   },
   typeId: (buf: Uint8Array, offset: number): TypeId => {
-    return readUint16(buf, offset + 4) as TypeId
+    return (readUint16(buf, offset + 4)) as TypeId
   },
   offset: (buf: Uint8Array, offset: number): number => {
     return readUint32(buf, offset + 6)
@@ -1905,13 +1892,13 @@ export const readQueryHeaderProps = {
     return readUint16(buf, offset + 18)
   },
   subType: (buf: Uint8Array, offset: number): QuerySubTypeEnum => {
-    return buf[offset + 20] as QuerySubTypeEnum
+    return (buf[offset + 20]) as QuerySubTypeEnum
   },
   includeEdge: (buf: Uint8Array, offset: number): boolean => {
-    return ((buf[offset + 21] >>> 0) & 1) === 1
+    return (((buf[offset + 21] >>> 0) & 1)) === 1
   },
   sort: (buf: Uint8Array, offset: number): boolean => {
-    return ((buf[offset + 21] >>> 1) & 1) === 1
+    return (((buf[offset + 21] >>> 1) & 1)) === 1
   },
 }
 
@@ -2066,8 +2053,7 @@ export const FilterVectorFnInverse = {
   cosineSimilarity, 
   euclideanDistance 
  */
-export type FilterVectorFnEnum =
-  (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
+export type FilterVectorFnEnum = (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
 
 export const VectorBaseType = {
   int8: 1,
@@ -2101,8 +2087,7 @@ export const VectorBaseTypeInverse = {
   float32, 
   float64 
  */
-export type VectorBaseTypeEnum =
-  (typeof VectorBaseType)[keyof typeof VectorBaseType]
+export type VectorBaseTypeEnum = (typeof VectorBaseType)[keyof typeof VectorBaseType]
 
 export const FilterMaxVectorScore = 9999999
 export const FilterMaxStringScore = 255
@@ -2172,3 +2157,4 @@ export const AggTypeInverse = {
   hmean 
  */
 export type AggTypeEnum = (typeof AggType)[keyof typeof AggType]
+

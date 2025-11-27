@@ -29,15 +29,26 @@ pub inline fn meta(thread: *Thread.Thread, prop: u8, value: []u8) !void {
     if (value.len == 0) {
         return;
     }
-    const isCompressed = value[1] == 1;
-    _ = try thread.query.appendAs(t.IncludeResponseMeta, .{
-        .op = t.ReadOp.meta,
-        .prop = prop,
-        .lang = @enumFromInt(value[0]),
-        .compressed = isCompressed,
-        ._padding = 0,
-        .crc32 = utils.read(u32, value, value.len - 4),
-        .size = if (isCompressed) utils.read(u32, value, 2) else @truncate(value.len - 6),
-        // add uncompressed size
-    });
+    if (value[1] == 1) {
+        _ = try thread.query.appendAs(t.IncludeResponseMeta, .{
+            .op = t.ReadOp.meta,
+            .prop = prop,
+            .lang = @enumFromInt(value[0]),
+            .compressed = true,
+            ._padding = 0,
+            .crc32 = utils.read(u32, value, value.len - 4),
+            .size = utils.read(u32, value, 2),
+        });
+        _ = try thread.query.appendAs(u32, @truncate(value.len - 10));
+    } else {
+        _ = try thread.query.appendAs(t.IncludeResponseMeta, .{
+            .op = t.ReadOp.meta,
+            .prop = prop,
+            .lang = @enumFromInt(value[0]),
+            .compressed = false,
+            ._padding = 0,
+            .crc32 = utils.read(u32, value, value.len - 4),
+            .size = @truncate(value.len - 6),
+        });
+    }
 }

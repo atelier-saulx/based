@@ -40,16 +40,19 @@ const meta: ReadInstruction = (q, result, i, item) => {
   const propDef = q.props[prop]
   const lang = metaResponse.lang
   const propType = propDef.typeIndex
-
   // propDef.readBy = q.readId
-
   const meta: Meta = {
     crc32: metaResponse.crc32,
     compressed: metaResponse.compressed,
     size: metaResponse.size,
     checksum: combineToNumber(metaResponse.crc32, metaResponse.size),
+    unCompressedSize: metaResponse.size,
   }
   i += IncludeResponseMetaByteSize - 1
+  if (meta.compressed) {
+    meta.unCompressedSize = readUint32(result, i)
+    i += 4
+  }
   if (propType === PropType.text && propDef.locales) {
     addLangMetaProp(propDef, meta, item, lang)
   } else {
