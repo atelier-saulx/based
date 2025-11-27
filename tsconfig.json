@@ -9,7 +9,8 @@
     "strictNullChecks": true,
     "noEmit": true,
     "jsx": "react",
-    "declarationMap": true
+    "declarationMap": true,
+    "pretty": true
   },
   "include": ["src", "test", "scripts"],
   "exclude": ["dist"]

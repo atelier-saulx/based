@@ -29,3 +29,9 @@ export const writeMainValue = (ctx: Ctx, def: PropDef, val: any) => {
     (ctx.cursor.main ?? 0) + def.start,
   )
 }
+
+const main: number = 0
+
+if (main === null) {
+  console.log('xxx')
+}

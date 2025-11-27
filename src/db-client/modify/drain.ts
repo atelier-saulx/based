@@ -33,7 +33,7 @@ export const drain = (db: DbClient, ctx: Ctx) => {
     const current = db.hooks
       .flushModify(payload)
       .then((res) => {
-        if (res === null) {
+        if (res === null || res === undefined) {
           throw Error('Schema mismatch')
         }
         batch.res = res
