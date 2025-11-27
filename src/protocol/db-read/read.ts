@@ -32,7 +32,6 @@ export * from './string.js'
 export * from './schema/deserialize.js'
 
 const meta: ReadInstruction = (q, result, i, item) => {
-  console.log('META')
   const metaResponse: IncludeResponseMeta = readIncludeResponseMeta(
     result,
     i - 1,
@@ -186,8 +185,6 @@ export const resultToObject = (
     const id = readUint32(result, i)
     i += 4
 
-    console.log('ID', id)
-
     let item: Item = { id }
 
     if (q.search) {
@@ -195,8 +192,6 @@ export const resultToObject = (
       i += 4
     }
     const l = readProps(q, result, i, end, item) ?? 0
-
-    console.log('-->', l)
 
     i += l
 
