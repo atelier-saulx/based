@@ -61,9 +61,13 @@ struct SelvaFieldSchema {
     union {
         struct {
             size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
-            uint32_t default_off;
+            uint32_t default_off; /*!< Offset to the default value in te->schema_buf. */
             uint32_t default_len;
         } string; /*!< SELVA_FIELD_TYPE_STRING */
+        struct {
+            uint32_t nr_defaults; /*!< Number of defaults for this text field. */
+            uint32_t defaults_off; /*!< Offset to the default values in te->schema_buf. */
+        } text; /*!< SELVA_FIELD_TYPE_TEXT */
         struct EdgeFieldConstraint edge_constraint; /*!< SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_REFERENCES, SELVA_FIELD_TYPE_WEAK_REFERENCE, and SELVA_FIELD_TYPE_WEAK_REFERENCES. */
         struct {
             uint32_t default_off; /*!< Offset to the default in  the raw schema buffer. */
@@ -74,7 +78,7 @@ struct SelvaFieldSchema {
             uint16_t vec_len; /*!< Length of a single vector. */
             uint16_t comp_size; /*!< Component size in the vector. */
             field_t index; /*!< Index in te->col_fields.colvec.v. */
-        } colvec;
+        } colvec; /*!< SELVA_FIELD_TYPE_COLVEC */
     };
 } __designated_init;
 

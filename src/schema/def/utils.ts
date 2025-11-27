@@ -120,10 +120,12 @@ export const propIndexOffset = (prop: PropDef) => {
   switch (prop.typeIndex) {
     case PropType.microBuffer:
     case PropType.vector:
-      return prop.default ? -500 : 0
+      return prop.default ? -600 : 0
     case PropType.string:
     case PropType.binary:
     case PropType.json:
+      return prop.default ? -500 : 0
+    case PropType.text:
       return prop.default ? -400 : 0
     case PropType.references:
     case PropType.reference:

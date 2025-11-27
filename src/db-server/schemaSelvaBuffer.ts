@@ -11,8 +11,9 @@ import {
   type PropDefEdge,
   type SchemaTypeDef,
 } from '../schema/index.js'
-import { writeRaw as writeString } from '../db-client/string.js'
+import { write as writeString } from '../db-client/string.js'
 import { fillEmptyMain } from '../schema/def/fillEmptyMain.js'
+import {Ctx} from '../db-client/modify/Ctx.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -45,9 +46,11 @@ const EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01
 const supportedDefaults = new Set<PropTypeEnum>([
   PropType.binary,
   PropType.string,
+  PropType.text,
   PropType.vector,
   PropType.json, // same as binary (Uint8Array)
 ])
+const STRING_EXTRA_MAX = 10
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
@@ -114,13 +117,21 @@ const propDefBuffer = (
     type === PropType.json
   ) {
     if (prop.default && supportedDefaults.has(type)) {
-        const STRING_EXTRA_MAX = 10
-        const defaultLen = prop.default instanceof Uint8Array ? prop.default.byteLength : 2 * native.stringByteLength(prop.default) + STRING_EXTRA_MAX
+        const defaultValue = typeof prop.default === 'string'
+          ? prop.default.normalize('NFKD')
+          : type === PropType.json
+            ? JSON.stringify(prop.default)
+            : prop.default
+        const defaultLen = defaultValue instanceof Uint8Array
+          ? defaultValue.byteLength
+          : 2 * native.stringByteLength(defaultValue) + STRING_EXTRA_MAX
         let buf = new Uint8Array(6 + defaultLen)
 
         buf[0] = selvaType
         buf[1] = prop.len < 50 ? prop.len : 0
-        const l = writeString(buf, prop.default, 6, LangCode.none, false)
+        const l = (defaultValue instanceof Uint8Array)
+          ? (buf.set(defaultValue, 6), defaultLen)
+          : writeString({ buf } as Ctx, defaultValue, 6, LangCode.none, false)
         if (l != buf.length) {
           buf = buf.subarray(0, 6 + l)
         }
@@ -136,6 +147,25 @@ const propDefBuffer = (
 
       return [...buf]
     }
+  } else if (type === PropType.text) {
+    const fs: number[] = [selvaType, Object.keys(prop.default).length]
+    // [ type, nrDefaults, [len, default], [len, default]...]
+
+    for (const langName in prop.default) {
+      const lang = LangCode[langName]
+      const value = prop.default[langName].normalize('NFKD')
+      const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
+      let buf = new Uint8Array(tmpLen)
+
+      const l = writeString({ buf } as Ctx, value, 4, lang, false)
+      if (l != buf.length) {
+        buf = buf.subarray(0, 4 + l)
+      }
+      writeUint32(buf, l, 0) // length of the default
+      fs.push(...buf)
+    }
+
+    return fs
   }
   return [selvaType]
 }

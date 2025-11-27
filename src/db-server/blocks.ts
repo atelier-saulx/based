@@ -4,6 +4,7 @@ import { basename, join } from 'node:path'
 import {
   bufToHex,
   DECODER,
+  ENCODER,
   equals,
   readUint16,
   readUint32,
@@ -120,7 +121,7 @@ async function saveCommon(db: DbServer): Promise<void> {
 
   writeUint32(msg, id, 0)
   msg[4] = OpType.saveCommon
-  native.stringToUint8Array(filename, msg, 5, true)
+  ENCODER.encodeInto(filename, msg.subarray(5))
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.saveCommon, id, (buf: Uint8Array) => {
@@ -154,7 +155,7 @@ async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
       msg[4] = OpType.saveBlock
       writeUint32(msg, start, 5)
       writeUint16(msg, typeId, 9)
-      native.stringToUint8Array(filename, msg, 11, true)
+      ENCODER.encodeInto(filename, msg.subarray(11))
 
       const p = BlockMap.setIoPromise(block)
       native.getQueryBufThread(msg, db.dbCtxExternal)
@@ -172,7 +173,7 @@ export async function loadCommon(
 
   writeUint32(msg, id, 0)
   msg[4] = OpType.loadCommon
-  native.stringToUint8Array(filename, msg, 5, true)
+  ENCODER.encodeInto(filename, msg.subarray(5))
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.loadCommon, id, (buf: Uint8Array) => {
@@ -203,7 +204,7 @@ export async function loadBlockRaw(
   msg[4] = OpType.loadBlock
   writeUint32(msg, start, 5)
   writeUint16(msg, typeId, 9)
-  native.stringToUint8Array(filename, msg, 11, true)
+  ENCODER.encodeInto(filename, msg.subarray(11))
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.loadBlock, id, (buf: Uint8Array) => {
@@ -247,7 +248,7 @@ export async function loadBlock(
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
   msg[4] = OpType.loadBlock
-  native.stringToUint8Array(filename, msg, 5, true)
+  ENCODER.encodeInto(filename, msg.subarray(5))
 
   const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)
@@ -276,7 +277,7 @@ export async function unloadBlock(
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
   msg[4] = OpType.unloadBlock
-  native.stringToUint8Array(filename, msg, 5, true)
+  ENCODER.encodeInto(filename, msg.subarray(5))
 
   const p = BlockMap.setIoPromise(block)
   native.modifyThread(msg, db.dbCtxExternal)

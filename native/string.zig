@@ -116,6 +116,7 @@ pub fn compress(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     return result;
 }
 
+// TODO This should probably throw on error
 pub fn decompress(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(5, env, info) catch return null;
     const decompressor = napi.get(?*deflate.Decompressor, env, args[0]) catch return null;
