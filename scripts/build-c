@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e
+
+# 1. Detect Environment
+PLATFORM=$(node -p "process.platform")
+ARCH=$(node -p "process.arch")
+CURRENT="$PLATFORM-$ARCH"
+
+echo "🔎 Detected host: $CURRENT"
+
+# 2. Dispatch Logic
+case $CURRENT in
+  "darwin-arm64")
+    # --- Native macOS (Default) ---
+    echo "🍏 macOS ARM64 detected. Running native build..."
+    make -C clibs
+    ;;
+
+  "linux-arm64")
+    # --- Linux ARM64 (Custom Wrapper) ---
+    echo "🐧 Linux ARM64 detected. Running custom build flow..."
+    ./scripts/sync-clibs linux-aarch64
+    make -C .clibs-linux-aarch64
+    ;;
+
+  "linux-x64")
+    # --- Linux x64 (Custom Wrapper) ---
+    echo "🐧 Linux x64 detected. Running custom build flow..."
+    ./scripts/sync-clibs linux-x86_64
+    make -C .clibs-linux-x86_64
+    ;;
+
+  *)
+    echo "❌ Error: Unsupported platform/arch combination: $CURRENT"
+    exit 1
+    ;;
+esac
+
+echo "✅ Build complete."
