@@ -11,8 +11,9 @@ import {
   type PropDefEdge,
   type SchemaTypeDef,
 } from '../schema/index.js'
-import { writeRaw as writeString } from '../db-client/string.js'
+import { write as writeString } from '../db-client/string.js'
 import { fillEmptyMain } from '../schema/def/fillEmptyMain.js'
+import {Ctx} from '../db-client/modify/Ctx.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -128,7 +129,9 @@ const propDefBuffer = (
 
         buf[0] = selvaType
         buf[1] = prop.len < 50 ? prop.len : 0
-        const l = writeString(buf, defaultValue, 6, LangCode.none, false)
+        const l = (defaultValue instanceof Uint8Array)
+          ? (buf.set(defaultValue, 6), defaultLen)
+          : writeString({ buf } as Ctx, defaultValue, 6, LangCode.none, false)
         if (l != buf.length) {
           buf = buf.subarray(0, 6 + l)
         }
@@ -154,7 +157,7 @@ const propDefBuffer = (
       const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
       let buf = new Uint8Array(tmpLen)
 
-      const l = writeString(buf, value, 4, lang, false)
+      const l = writeString({ buf } as Ctx, value, 4, lang, false)
       if (l != buf.length) {
         buf = buf.subarray(0, 4 + l)
       }

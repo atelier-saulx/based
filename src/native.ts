@@ -1,3 +1,4 @@
+import {ENCODER} from './utils/uint8.js'
 import db from './zigAddon.js'
 
 var compressor = db.createCompressor()
@@ -133,15 +134,6 @@ const native = {
 
   stringByteLength: (s: string): number => {
     return db.stringByteLength(s)
-  },
-
-  stringToUint8Array: (
-    s: string,
-    dst: Uint8Array,
-    offset: number = 0,
-    terminated: boolean = false,
-  ): number => {
-    return db.stringToUint8Array(s, dst, offset, terminated)
   },
 
   selvaStrerror: (err: number) => {
