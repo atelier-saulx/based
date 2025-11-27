@@ -21,6 +21,11 @@ await test('include', async (t) => {
       no: true,
     },
     types: {
+      todo: {
+        props: {
+          name: 'string',
+        },
+      },
       user: {
         props: {
           flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
@@ -31,6 +36,12 @@ await test('include', async (t) => {
         },
       },
     },
+  })
+
+  console.log('SCHEMA DONE')
+
+  db.create('todo', {
+    name: 'A',
   })
 
   for (let i = 0; i < 2; i++) {
@@ -59,6 +70,8 @@ await test('include', async (t) => {
   console.log('start query')
 
   await db.drain()
+
+  console.log('yes?')
 
   const x = await db
     .query('user')

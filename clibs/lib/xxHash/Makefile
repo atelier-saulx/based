@@ -16,6 +16,8 @@ err: ; $(ERR)
 
 linux: build
 	cp $(XXHASH_SRC_PATH)/libxxhash.so.0 $(LIB_PATH)
+	objcopy --only-keep-debug "$(XXHASH_SRC_PATH)/libxxhash.so.0" "$(LIB_PATH)/libxxhash.so.0.sym"
+	objcopy --strip-debug "$(LIB_PATH)/libxxhash.so.0"
 	cd $(LIB_PATH); ln -sf libxxhash.so.0 libxxhash.so
 
 darwin: build

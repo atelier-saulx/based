@@ -3,6 +3,7 @@
 
 # Anything defined here will generally shared by all build goals except
 # libraries, unless the library Makefile explicitly imports this file.
+SHELL := /bin/bash
 
 lc = $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
 
@@ -90,3 +91,12 @@ endif
 ifndef LIB_SUFFIX
 $(error LIB_SUFFIX is not set)
 endif
+
+define stripLinux
+	$(eval TARGET_SYM := $@.sym)
+	$(eval STRIP_CMD := "objcopy --only-keep-debug \"$@\" $(TARGET_SYM) && objcopy --strip-debug \"$@\"")
+	if [[ "$(uname_S)" == "Linux" ]]; then \
+		echo '$(STRIP_CMD)'; \
+		eval $(STRIP_CMD); \
+	fi
+endef

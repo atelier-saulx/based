@@ -13,6 +13,7 @@ pub const Thread = struct {
     flushed: bool,
     modify: *results.Result,
     query: *results.Result,
+    currentModifyIndex: usize = 0,
 
     pub fn init(id: usize) !*Thread {
         const thread = try std.heap.raw_c_allocator.create(Thread);
@@ -25,6 +26,7 @@ pub const Thread = struct {
         thread.*.flushDone = .{};
         thread.*.query = try results.Result.init();
         thread.*.modify = try results.Result.init();
+        thread.*.currentModifyIndex = 0;
         return thread;
     }
 

@@ -112,7 +112,15 @@ pub const Threads = struct {
                 return;
             }
         }
-        _ = self.modifyQueue.swapRemove(0);
+
+        while (self.modifyQueue.items.len > 0) {
+            _ = self.modifyQueue.swapRemove(0);
+        }
+
+        for (self.threads) |thread| {
+            thread.currentModifyIndex = 0;
+        }
+
         self.modifyDone.signal();
         if (!self.jsModifyBridgeStaged) {
             self.ctx.jsBridge.call(t.BridgeResponse.modify, 0);
@@ -137,7 +145,6 @@ pub const Threads = struct {
             self.mutex.lock();
 
             if (self.shutdown) {
-                // std.debug.print("#{any} SHUT DOWN \n", .{thread.id});
                 self.mutex.unlock();
                 return;
             }
@@ -175,7 +182,7 @@ pub const Threads = struct {
                     }
                 }
             } else if (self.modifyQueue.items.len > 0 and thread.pendingModifies > 0) {
-                modifyBuf = self.modifyQueue.items[0];
+                modifyBuf = self.modifyQueue.items[thread.currentModifyIndex];
                 if (modifyBuf) |m| {
                     op = @enumFromInt(m[4]);
                 }
@@ -212,9 +219,10 @@ pub const Threads = struct {
                         };
                     },
                 }
+                self.mutex.lock();
+
                 thread.query.commit();
 
-                self.mutex.lock();
                 self.pendingQueries -= 1;
 
                 if (self.pendingQueries == 0) {
@@ -291,11 +299,11 @@ pub const Threads = struct {
                     self.mutex.lock();
                     self.pendingModifies -= 1;
                     thread.pendingModifies -= 1;
+                    thread.currentModifyIndex += 1;
 
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
                     } else if (thread.modify.index > 50_000_000 and !self.jsModifyBridgeStaged) {
-                        std.debug.print("FLUSH MOD \n", .{});
                         thread.mutex.lock();
                         self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
                         thread.flushed = false;
@@ -310,6 +318,7 @@ pub const Threads = struct {
                 } else {
                     // Subscription worker
                     self.mutex.lock();
+                    thread.currentModifyIndex += 1;
                     thread.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
                         self.modifyNotPending();
