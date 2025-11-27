@@ -51,7 +51,7 @@ await test('include', async (t) => {
   const x = await db
     .query('user')
     .locale('nl', ['no', 'de'])
-    .include('body', { meta: true, end: 10 })
+    .include('body', { meta: 'only', end: 10 })
     .include('name', { meta: 'only' })
 
     // .include('name')

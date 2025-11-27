@@ -89,22 +89,21 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
   ) {
     let meta: string = ''
     if (isMeta(v)) {
-      const ratio =
-        Math.round((v.compressed ? v.size / v.compressedSize : 1) * 10) / 10
       meta = v.value === undefined ? '' : ' '
-      if (v.value === undefined && v.compressed) {
-        meta += `${styleText('italic', styleText('dim', `size: ${sizeCalc(v.size)} compressed:`))}`
-      }
-      if (ratio !== 1) {
-        meta += `${styleText('italic', styleText('dim', `${sizeCalc(v.compressedSize)} cratio ${ratio}x`))}`
+      if (v.compressed) {
+        const ratio =
+          Math.round((v.compressed ? v.size / v.compressedSize : 1) * 10) / 10
+        if (v.value === undefined) {
+          meta += `${styleText('italic', styleText('dim', `${sizeCalc(v.compressedSize)} cratio ${ratio}x (original ${sizeCalc(v.size)})`))}`
+        } else {
+          meta += `${styleText('italic', styleText('dim', `${sizeCalc(v.compressedSize)} cratio ${ratio}x`))}`
+        }
       } else {
         meta += `${styleText('italic', styleText('dim', `${sizeCalc(v.size)}`))}`
       }
-
       if (v.lang) {
         meta += styleText('blue', ' ' + v.lang)
       }
-
       if (v.value === undefined) {
         return meta
       }
