@@ -40,7 +40,7 @@ await test('include', async (t) => {
       flap: '⚡️',
       derp: 'hello',
       body: {
-        // nl: 'x',
+        nl: 'x',
         fr: 'B',
         de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
         en: italy,
@@ -63,7 +63,7 @@ await test('include', async (t) => {
   const x = await db
     .query('user')
     .locale('nl', ['no', 'de'])
-    // .include('body', { meta: 'only', end: 10 })
+    .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
     .include('flap', 'nr') //  'flap'
     // .include('name')
