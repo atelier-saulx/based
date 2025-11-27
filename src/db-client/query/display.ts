@@ -363,6 +363,10 @@ const inspectObject = (
 
   // if -1 2 remove ,
 
+  if (str[str.length - 2] === ',') {
+    str = str.slice(0, str.length - 2)
+  }
+
   if (isObject) {
     str += '\n' + prefix + ' },\n'
   } else if (isLast) {

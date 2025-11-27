@@ -69,12 +69,12 @@ export const includeToBuffer = (
         : def.schema!.mainLen
 
     if (def.include.main.len === len) {
-      // Get all main fields
-      mainBuffer = EMPTY_BUFFER
-      for (const value of def.include.main.include.values()) {
-        value[0] = value[1].start
-        console.log(value)
-      }
+      // // Get all main fields
+      // mainBuffer = EMPTY_BUFFER
+      // for (const value of def.include.main.include.values()) {
+      //   value[0] = value[1].start
+      //   console.log(value)
+      // }
     } else {
       const size = def.include.main.include.size
       mainBuffer = new Uint8Array(size * 4 + 2)
@@ -91,8 +91,6 @@ export const includeToBuffer = (
       }
     }
   }
-
-  const propSize = def.include.props.size ?? 0
 
   if (def.include.main.len > 0) {
     if (isPartialMain(def)) {
@@ -117,7 +115,7 @@ export const includeToBuffer = (
     }
   }
 
-  if (propSize) {
+  if (def.include.props.size > 0) {
     // make this a function (the nested)
     for (const [prop, propDef] of def.include.props.entries()) {
       const opts = propDef.opts
