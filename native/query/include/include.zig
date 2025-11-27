@@ -9,6 +9,15 @@ const opts = @import("./opts.zig");
 const append = @import("./append.zig");
 const t = @import("../../types.zig");
 
+inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
+    return Fields.get(
+        typeEntry,
+        node,
+        try Schema.getFieldSchema(typeEntry, header.prop),
+        header.propType,
+    );
+}
+
 pub fn include(
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -72,8 +81,7 @@ pub fn include(
 
             t.IncludeOp.meta => {
                 const header = utils.readNext(t.IncludeMetaHeader, q, &i);
-                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
+                const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
                     t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
                         try append.meta(ctx.thread, header.prop, value);
@@ -88,21 +96,19 @@ pub fn include(
                 }
             },
             t.IncludeOp.metaWithOpts => {
-                const header = utils.readNext(t.IncludeMetaHeader, q, &i);
-                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
+                var header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
                     t.PropType.text => {
                         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-                        try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
+                        try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
                     },
                     else => {},
                 }
             },
             t.IncludeOp.defaultWithOpts => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
-                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
+                const value = try get(typeEntry, node, &header);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                 switch (header.propType) {
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
@@ -119,8 +125,7 @@ pub fn include(
             },
             t.IncludeOp.default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
-                const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-                const value = Fields.get(typeEntry, node, fieldSchema, header.propType);
+                const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
                     t.PropType.text,
                     => {

@@ -163,18 +163,10 @@ pub fn createSortIndex(
         if (node == null) {
             break;
         }
-        const data = if (header.propType == t.PropType.text) Fields.getText(
-            typeEntry,
-            node.?,
-            fieldSchema,
-            header.propType,
-            header.lang,
-        ) else Fields.get(
-            typeEntry,
-            node.?,
-            fieldSchema,
-            header.propType,
-        );
+        const data = if (header.propType == t.PropType.text)
+            Fields.getText(typeEntry, node.?, fieldSchema, header.propType, header.lang)
+        else
+            Fields.get(typeEntry, node.?, fieldSchema, header.propType);
         insert(decompressor, sortIndex, data, node.?);
     }
     if (defrag) {

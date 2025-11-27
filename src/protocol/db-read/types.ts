@@ -12,6 +12,7 @@ export type Meta = {
   compressed: boolean
   value?: any
   compressedSize: number
+  lang?: string
 }
 
 export type AggItem = Partial<Item>
@@ -35,6 +36,8 @@ export enum ReaderSchemaEnum {
 export enum ReaderMeta {
   only = 1,
   combined = 2,
+  onlyFallback = 3,
+  combinedFallback = 4,
 }
 
 export type ReadInstruction = (

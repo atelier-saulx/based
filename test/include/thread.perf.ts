@@ -36,6 +36,7 @@ await test('include', async (t) => {
       // nr: i,
       name: 'A',
       body: {
+        // nl: 'x',
         fr: 'B',
         de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
         en: italy,
@@ -52,10 +53,10 @@ await test('include', async (t) => {
     .locale('nl', ['fr', 'no', 'de'])
     .include('body', { meta: true, end: 10 })
     // .include('name')
-    .range(0, 2)
+    .range(0, 1)
     .get()
 
-  // x.debug()
+  x.debug()
 
   x.inspect(10, true)
 

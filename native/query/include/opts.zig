@@ -105,7 +105,7 @@ pub fn string(
     }
 
     if (opts.end == 0) {
-        // Does this mean ignore END ?
+        // Default
         try append.stripCrc32(thread, prop, value);
         return;
     }
@@ -237,4 +237,13 @@ pub inline fn text(
             );
         },
     }
+}
+
+pub inline fn meta(
+    thread: *Thread.Thread,
+    prop: u8,
+    value: []u8,
+    _: *const t.IncludeOpts,
+) !void {
+    try append.meta(thread, prop, value);
 }
