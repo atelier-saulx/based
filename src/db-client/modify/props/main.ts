@@ -12,6 +12,7 @@ export const writeMainBuffer = (ctx: Ctx) => {
     writeU8(ctx, ctx.operation)
     writeU32(ctx, ctx.schema.mainLen)
     ctx.cursor.main = ctx.index
+    console.log(ctx.schema.mainEmpty)
     writeU8Array(ctx, ctx.schema.mainEmpty)
   }
 }
