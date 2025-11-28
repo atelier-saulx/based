@@ -1,10 +1,8 @@
-import { fastPrng, wait } from '../src/utils/index.js'
+import { ENCODER, fastPrng } from '../src/utils/index.js'
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { euobserver } from './shared/examples.js'
-
-const ENCODER = new TextEncoder()
 
 await test('simple', async (t) => {
   const db = new BasedDb({
