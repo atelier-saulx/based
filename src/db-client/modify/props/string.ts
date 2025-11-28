@@ -1,3 +1,4 @@
+import native from '../../../native.js'
 import { Ctx } from '../Ctx.js'
 import { RANGE_ERR } from '../types.js'
 import {
@@ -11,7 +12,7 @@ import { writeU8, writeU8Array } from '../uint.js'
 import { validate } from '../validate.js'
 import { LangCodeEnum, ModOp } from '../../../zigTsExports.js'
 import type { PropDef } from '../../../schema/index.js'
-import { ENCODER, writeUint32 } from '../../../utils/uint8.js'
+import { writeUint32 } from '../../../utils/uint8.js'
 
 export const deleteString = (
   ctx: Ctx,
@@ -46,7 +47,7 @@ export const writeString = (
   }
 
   validate(val, def)
-  let size = isUint8 ? val.byteLength : ENCODER.encode(val).byteLength + 6
+  let size = isUint8 ? val.byteLength : native.stringByteLength(val) + 6
   reserve(ctx, FULL_CURSOR_SIZE + 11 + size)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)

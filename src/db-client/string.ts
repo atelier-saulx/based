@@ -50,8 +50,7 @@ export const write = (
 
 export const stringCompress = (str: string): Uint8Array => {
   const s = str.normalize('NFKD')
-  const len = ENCODER.encode(s).byteLength
-  const tmpCompressBlock = getTmpBuffer(2 * len + 10)
+  const tmpCompressBlock = getTmpBuffer(2 * native.stringByteLength(s) + 10)
   const l = write({ buf: tmpCompressBlock } as Ctx, str, 0, LangCode.none, false)
   const nBuffer = new Uint8Array(l)
   nBuffer.set(tmpCompressBlock.subarray(0, l))

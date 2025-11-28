@@ -1,8 +1,6 @@
-import { convertToTimestamp, writeInt64 } from '../../utils/index.js'
+import { convertToTimestamp, ENCODER, writeInt64 } from '../../utils/index.js'
 import { PropType } from '../../zigTsExports.js'
 import { PropDef, PropDefEdge } from './types.js'
-
-export const ENCODER = new TextEncoder()
 
 export const fillEmptyMain = (
   vals: (PropDef | PropDefEdge)[],

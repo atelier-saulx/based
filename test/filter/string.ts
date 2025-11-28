@@ -1,4 +1,5 @@
 import { BasedDb, stringCompress as compress } from '../../src/index.js'
+import { ENCODER } from '../../src/utils/uint8.js'
 import test from '../shared/test.js'
 import { equal, deepEqual } from '../shared/assert.js'
 import { italy, sentence, readBible } from '../shared/examples.js'
@@ -6,7 +7,6 @@ import { decompress } from '../../src/protocol/index.js'
 
 const bible = readBible()
 
-const ENCODER = new TextEncoder()
 const capitals =
   'AAAAAAAAAA AAAAAAAAAAA AAAAAAAAAAAAAAAAAAAA AAA A AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
 

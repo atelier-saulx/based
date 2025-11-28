@@ -265,17 +265,8 @@ const kCRCTable = Int32Array.of(
  * Adapted to use in Based.db  2025-02-17
  */
 
-export default (val: string | Uint8Array): number => {
-  let data: Uint8Array
+export default (data: Uint8Array): number => {
   let initial = 0
-
-  if (typeof val === 'string') {
-    // Convert string to Uint8Array using TextEncoder
-    const encoder = new TextEncoder()
-    data = encoder.encode(val)
-  } else {
-    data = val
-  }
 
   let crc = (initial | 0) ^ -1
 
