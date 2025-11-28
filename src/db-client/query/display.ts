@@ -1,7 +1,7 @@
+import native from '../../native.js'
 import { QueryDef } from './types.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import { ENCODER } from '../../utils/index.js'
-import { LangCode, PropType, type PropTypeEnum } from '../../zigTsExports.js'
+import { PropType, type PropTypeEnum } from '../../zigTsExports.js'
 import type { PropDef, PropDefEdge } from '../../schema/index.js'
 import { styleText } from 'node:util'
 import { Meta } from '../../protocol/index.js'
@@ -111,7 +111,7 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
       meta = meta
     }
     if (v.length > 50) {
-      const byteLength = ENCODER.encode(v).byteLength
+      const byteLength = native.stringByteLength(v)
       const chars = styleText(
         'italic',
         styleText('dim', `${~~((byteLength / 1e3) * 100) / 100}kb`),
