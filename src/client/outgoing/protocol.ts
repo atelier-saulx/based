@@ -25,8 +25,6 @@ import {
   writeUint64,
 } from '../../utils/index.js'
 
-const encoder = new TextEncoder()
-
 const encodeHeader = (
   type: FunctionServerType,
   isDeflate: boolean,
@@ -124,7 +122,7 @@ export const encodeGetObserveMessage = (
   const [type, name, checksum, payload] = o
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
   if (type === FunctionServerType.get) {
-    const n = encoder.encode(name)
+    const n = ENCODER.encode(name)
     len += 1 + n.length
     const val = encodePayloadV2(payload, true)
     len += val.buf.byteLength + 1
@@ -156,7 +154,7 @@ export const encodeSubscribeChannelMessage = (
   }
   // Type 5 = subscribe
   // | 4 header | 8 id | 1 name length | * name | * payload |
-  const n = encoder.encode(name)
+  const n = ENCODER.encode(name)
   len += 1 + n.length
   const isRequestSubscriber = type === 6
   const val = encodePayloadV2(payload, false)
@@ -189,7 +187,7 @@ export const encodeObserveMessage = (
     writeUint64(buff, id, 4)
     return { buffers: [buff], len: 12 }
   }
-  const n = encoder.encode(name)
+  const n = ENCODER.encode(name)
   len += 1 + n.length
   const val = encodePayloadV2(payload, true)
   len += val.buf.byteLength + 1
@@ -208,7 +206,7 @@ export const encodeFunctionMessage = (
   // | 4 header | 3 id | 1 name length | * name | * payload |
   let len = 7
   const [id, name, payload] = f
-  const n = encoder.encode(name)
+  const n = ENCODER.encode(name)
   len += 1 + n.length
   const val = encodePayloadV2(payload, true)
   len += val.buf.byteLength + 1
@@ -258,19 +256,19 @@ export const encodeStreamMessage = (
 
     let len = sLen
 
-    const nameEncoded = encoder.encode(name)
+    const nameEncoded = ENCODER.encode(name)
     len += nameEncoded.length
 
     const val = encodePayloadV2(payload, true)
     len += val.buf.byteLength + 1
 
-    const mimeTypeEncoded = encoder.encode(mimeType)
+    const mimeTypeEncoded = ENCODER.encode(mimeType)
     len += mimeTypeEncoded.length
 
-    const fnNameEncoded = encoder.encode(fnName)
+    const fnNameEncoded = ENCODER.encode(fnName)
     len += fnNameEncoded.length
 
-    const extensionEncoded = encoder.encode(extension)
+    const extensionEncoded = ENCODER.encode(extension)
     len += extensionEncoded.length
 
     const buff = createBuffer(7, val.deflate, len, sLen)
