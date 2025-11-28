@@ -9,7 +9,6 @@ import { byteSize, schemaChecksum } from './utils.js'
 import { filterToBuffer } from '../query.js'
 import { getQuerySubType } from './subType.js'
 import {
-  createQueryHeader,
   ID_PROP,
   QueryHeaderByteSize,
   QueryType,
@@ -53,6 +52,10 @@ export function defToBuffer(
       }
     })
 
+    if (def.edges) {
+      console.log('thid is edge time!', def.edges)
+    }
+
     const buffer = new Uint8Array(
       QueryHeaderByteSize + searchSize + filterSize + sortSize,
     )
@@ -71,28 +74,11 @@ export function defToBuffer(
         includeEdge: false,
         filterSize: def.filter.size,
         searchSize,
+        edgeQueryOffset: 0,
         subType: getQuerySubType(def),
       },
       0,
     )
-
-    console.info('------', isReferences, {
-      op: isReferences ? QueryDefType.References : QueryType.default,
-      prop: isReferences ? def.target.propDef!.prop : ID_PROP,
-      // this does not seem nessecary
-      size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
-      typeId: def.schema!.id,
-      offset: def.range.offset,
-      limit: def.range.limit,
-      sort: hasSort,
-      includeEdge: false,
-      filterSize: def.filter.size,
-      searchSize,
-      subType: getQuerySubType(def),
-    })
-
-    // // @ts-ignore
-    // console.log(isReferences, def.schema.props)
 
     if (hasSort) {
       index = writeSortHeader(buffer, def.sort!, index)
@@ -107,7 +93,7 @@ export function defToBuffer(
       buffer.set(searchToBuffer(def.search!), index)
     }
 
-    // need to crrect stupid nested INDEX
+    // need to pass crrect stupid nested INDEX for NOW queries
     result.push([
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
       include,

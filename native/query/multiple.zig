@@ -61,16 +61,17 @@ pub fn references(
     var correctedForOffset: u32 = header.offset;
     var nodeCnt: u32 = 0;
     const sizeIndex = try ctx.thread.query.reserve(4);
-    const nestedQuery = q[index.* .. index.* + header.size];
+    // size - is lame
+    const nestedQuery = q[index.* .. index.* + header.size - utils.sizeOf(t.QueryHeader)];
 
-    std.debug.print("flap? {any}  \n", .{nestedQuery});
+    // std.debug.print("flap? {any} {any}  \n", .{ header, nestedQuery });
 
     // this is a difference so prob want comtime for typeEntry and fromNode
     const typeEntry = try Node.getType(ctx.db, header.typeId);
 
     var it = try References.iterator(false, ctx.db, fromNode, header.prop, orgiTypeEntry);
 
-    std.debug.print("REFS -> {any} \n", .{it.refs.nr_refs});
+    // std.debug.print("REFS -> {any} \n", .{it.refs.nr_refs});
     index.* += header.size;
 
     while (it.next()) |node| {
@@ -79,14 +80,10 @@ pub fn references(
         //     continue :checkItem;
         // }
 
-        std.debug.print(" PROP12 flap --> {any} \n", .{node});
-
         if (correctedForOffset != 0) {
             correctedForOffset -= 1;
             continue;
         }
-
-        std.debug.print(" PROP flap --> {any} \n", .{node});
 
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(node));

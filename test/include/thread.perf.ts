@@ -25,7 +25,11 @@ await test('include', async (t) => {
         props: {
           name: 'string',
           creator: { ref: 'user', prop: 'createdTodos' },
-          assignee: { ref: 'user', prop: 'todos' },
+          assignee: {
+            ref: 'user',
+            prop: 'todos',
+            $status: ['inProgress', 'blocked', 'nothing'],
+          },
           done: 'boolean',
         },
       },
@@ -62,7 +66,7 @@ await test('include', async (t) => {
       nr: i + 67,
       name: 'A',
       flap: '⚡️',
-      todos: [todo, todo2],
+      todos: [{ id: todo, $status: 'blocked' }, todo2],
       derp: 'hello',
       body: {
         nl: 'x',

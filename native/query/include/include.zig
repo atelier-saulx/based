@@ -41,7 +41,7 @@ pub fn include(
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
-        std.debug.print("OP {any} {any} \n", .{ op, q[i .. i + 10] });
+        std.debug.print("OP {any} \n", .{op});
 
         switch (op) {
             t.IncludeOp.references => {
@@ -129,7 +129,7 @@ pub fn include(
                 }
             },
             else => {
-                std.debug.print("WRONG", .{});
+                // std.debug.print("WRONG", .{});
                 i += 1;
                 // Unhandled operation - will remove this late
                 // t.IncludeOp.reference => {
