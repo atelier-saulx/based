@@ -2,8 +2,8 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { equal } from './shared/assert.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
-import { langCodesMap } from '../src/schema/index.js'
 import crc32c from '../src/hash/crc32c.js'
+import {LangCode} from '../src/zigTsExports.js'
 
 const ENCODER = new TextEncoder()
 
@@ -31,7 +31,7 @@ await test('Comparing hash generation collision', async (t) => {
   }
   console.log(`1E6 CRC32c Native collision: ${collision}`)
 
-  const langs = [...langCodesMap.keys()]
+  const langs = Object.keys(LangCode)
 
   const randomLanguages = (i) => {
     const len = 10
