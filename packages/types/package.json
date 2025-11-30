@@ -1,0 +1,9 @@
+{
+  "name": "@based/types",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.d.ts",
+  "files": [
+    "index.d.ts"
+  ]
+}

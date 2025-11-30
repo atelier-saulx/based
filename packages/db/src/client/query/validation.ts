@@ -1,23 +1,4 @@
 import picocolors from 'picocolors'
-import {
-  ALIAS,
-  BINARY,
-  BOOLEAN,
-  PropDef,
-  PropDefEdge,
-  REFERENCE,
-  REFERENCES,
-  REVERSE_TYPE_INDEX_MAP,
-  SchemaTypeDef,
-  STRING,
-  TEXT,
-  TIMESTAMP,
-  VECTOR,
-  propIsNumerical,
-  createEmptyDef,
-  DEFAULT_MAP,
-  ID_FIELD_DEF,
-} from '@based/schema/def'
 import { DbClient } from '../index.js'
 import {
   EQUAL,
@@ -29,16 +10,18 @@ import {
   VECTOR_FNS,
 } from './filter/types.js'
 import { Filter } from './query.js'
-import { MAX_IDS_PER_QUERY, MIN_ID_VALUE } from './thresholds.js'
+import { MAX_IDS_PER_QUERY } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 import { displayTarget, safeStringify } from './display.js'
 import {
+  createErrorProp,
+  createIdProp,
   isValidId,
-  isValidString,
   LangCode,
   langCodesMap,
-  MAX_ID,
   Validation,
+  type QueryPropDef,
+  type TypeDef,
 } from '@based/schema'
 import { StepInput } from './aggregates/types.js'
 
@@ -109,7 +92,7 @@ const messages = {
   [ERR_SORT_ORDER]: (p) =>
     `Sort: incorrect order option "${safeStringify(p.order)}" passed to sort "${p.field}"`,
   [ERR_SORT_TYPE]: (p) =>
-    `Sort: cannot sort on type "${REVERSE_TYPE_INDEX_MAP[p.typeIndex]}" on field "${p.path.join('.')}"`,
+    `Sort: cannot sort on type "${p.type}" on field "${p.path.join('.')}"`,
   [ERR_RANGE_INVALID_OFFSET]: (p) =>
     `Range: incorrect start "${safeStringify(p)}"`,
   [ERR_RANGE_INVALID_LIMIT]: (p) =>
@@ -130,16 +113,38 @@ const messages = {
     `Aggregate: Can't aggregate, feature not implemented yet. Prop: "${p}".`,
 }
 
+const isValidString = (v: any) => {
+  const isVal =
+    typeof v === 'string' ||
+    (v as any) instanceof Uint8Array ||
+    ArrayBuffer.isView(v)
+  return isVal
+}
+
+const propIsNumerical = (prop: QueryPropDef) => {
+  const t = prop.type
+  if (
+    t === 'int16' ||
+    t === 'int32' ||
+    t === 'int8' ||
+    t === 'uint16' ||
+    t === 'uint32' ||
+    t === 'uint8' ||
+    t === 'number' ||
+    t === 'timestamp'
+  ) {
+    return true
+  }
+  return false
+}
+
 export type ErrorCode = keyof typeof messages
 
 export const searchIncorrecQueryValue = (def: QueryDef, payload: any) => {
   def.errors.push({ code: ERR_SEARCH_INCORRECT_VALUE, payload })
 }
 
-export const searchIncorrectType = (
-  def: QueryDef,
-  payload: PropDef | PropDefEdge,
-) => {
+export const searchIncorrectType = (def: QueryDef, payload: QueryPropDef) => {
   def.errors.push({ code: ERR_SEARCH_TYPE, payload })
 }
 
@@ -149,11 +154,14 @@ export const searchDoesNotExist = (
   isVector: boolean,
 ) => {
   def.errors.push({ code: ERR_SEARCH_ENOENT, payload: field })
-  if (isVector) {
-    return ERROR_VECTOR
-  }
-  return ERROR_STRING
+  return createErrorProp(def.schema)
+  // if (isVector) {
+  //   return ERROR_VECTOR
+  // }
+  // return ERROR_STRING
 }
+
+const MAX_ID = 4_294_967_295
 
 export const validateRange = (def: QueryDef, offset: number, limit: number) => {
   var r = false
@@ -208,13 +216,12 @@ export const validateVal = (
 
 export const validateFilter = (
   def: QueryDef,
-  prop: PropDef | PropDefEdge,
+  prop: QueryPropDef,
   f: Filter,
 ) => {
   if (def.skipValidation) {
     return false
   }
-  const t = prop.typeIndex
   const op = f[1].operation
 
   if (op == EXISTS) {
@@ -226,12 +233,12 @@ export const validateFilter = (
       })
       return true
     }
-  } else if (t === REFERENCES || t === REFERENCE) {
+  } else if (prop.type === 'references' || prop.type === 'reference') {
     if (op == LIKE) {
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }
-    if (t === REFERENCE && op != EQUAL) {
+    if (prop.type === 'reference' && op != EQUAL) {
       def.errors.push({
         code: ERR_FILTER_OP_FIELD,
         payload: f,
@@ -264,7 +271,7 @@ export const validateFilter = (
     if (validateVal(def, f, prop.validation)) {
       return true
     }
-  } else if (t === VECTOR) {
+  } else if (prop.type === 'vector') {
     if (isNumerical(op) || op === INCLUDES) {
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
@@ -288,7 +295,11 @@ export const validateFilter = (
     ) {
       return true
     }
-  } else if (t === TEXT || t === STRING || t === BINARY) {
+  } else if (
+    prop.type === 'text' ||
+    prop.type === 'string' ||
+    prop.type === 'binary'
+  ) {
     if (isNumerical(op)) {
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
@@ -311,25 +322,48 @@ export const validateFilter = (
       def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
       return true
     }
-    if (validateVal(def, f, (v) => t == TIMESTAMP || typeof v === 'number')) {
+    if (
+      validateVal(
+        def,
+        f,
+        (v) => prop.type === 'timestamp' || typeof v === 'number',
+      )
+    ) {
       return true
     }
-  } else if (t === BOOLEAN && op !== EQUAL) {
+  } else if (prop.type === 'boolean' && op !== EQUAL) {
     def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
     return true
   }
   return false
 }
 
-export const validateType = (db: DbClient, def: QueryDef, type: string) => {
-  const r = db.schemaTypesParsed[type]
+const emptyTypeDef = {
+  id: -1,
+  name: 'error',
+  size: 0,
+  props: {},
+  hooks: {},
+  locales: {},
+  propHooks: {},
+} as TypeDef
+
+emptyTypeDef.queryProps = { id: createIdProp(emptyTypeDef) }
+
+export const validateType = (
+  db: DbClient,
+  def: QueryDef,
+  type: string,
+): TypeDef => {
+  const r = db.defs.byName[type]
   if (!r) {
     def.errors.push({
       code: ERR_TARGET_INVAL_TYPE,
       payload: type,
     })
-    EMPTY_SCHEMA_DEF.locales = db.schema.locales
-    return EMPTY_SCHEMA_DEF
+    console.warn('TODO: validateType locales')
+    // EMPTY_SCHEMA_DEF.locales = db.schema.locales
+    return emptyTypeDef
   }
   return r
 }
@@ -384,7 +418,8 @@ export const validateSort = (
   field: string,
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
-  let propDef = field === 'id' ? ID_FIELD_DEF : def.props[field]
+  // let propDef = field === 'id' ? ID_FIELD_DEF : def.props[field]
+  let propDef = def.props[field]
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
@@ -401,9 +436,9 @@ export const validateSort = (
       const path = field.split('.')
       const x = path.slice(0, -1).join('.')
       propDef = def.props[x]
-      if (propDef && propDef.typeIndex === TEXT) {
+      if (propDef && propDef.type === 'text') {
         const k = path[path.length - 1]
-        lang = langCodesMap.get(k)
+        lang = langCodesMap.get(k) ?? 0
         isText = true
       }
     }
@@ -413,19 +448,22 @@ export const validateSort = (
         payload: field,
       })
       return {
-        prop: EMPTY_ALIAS_PROP_DEF,
+        prop: createErrorProp(def.schema) as any,
         order,
         lang: def.lang?.lang,
       }
     }
   }
-  const type = propDef.typeIndex
-  if (type === REFERENCES || type === REFERENCE || type === VECTOR) {
+  if (
+    propDef.type === 'references' ||
+    propDef.type === 'reference' ||
+    propDef.type === 'vector'
+  ) {
     def.errors.push({
       code: ERR_SORT_TYPE,
       payload: propDef,
     })
-  } else if (type === TEXT) {
+  } else if (propDef.type === 'text') {
     if (lang === 0) {
       lang = def.lang?.lang ?? 0
       if (lang === 0) {
@@ -456,7 +494,7 @@ export const validateAlias = (
   def: QueryDef,
   alias: QueryByAliasObj,
   path?: string,
-): { def: PropDef; value: string } => {
+): { def: QueryPropDef; value: string } => {
   const schema = def.schema
   for (const k in alias) {
     if (typeof alias[k] === 'string') {
@@ -464,7 +502,7 @@ export const validateAlias = (
       const prop = schema.props[p]
       if (!prop) {
         // def.errors.push({ code: ERR_TARGET_INVAL_ALIAS, payload: def })
-      } else if (prop.typeIndex === ALIAS) {
+      } else if (prop.type === 'alias') {
         return { def: prop, value: alias[k] }
       }
     } else if (typeof alias[k] === 'object') {
@@ -479,7 +517,8 @@ export const validateAlias = (
     code: ERR_TARGET_INVAL_ALIAS,
     payload: alias,
   })
-  return { value: '', def: EMPTY_ALIAS_PROP_DEF }
+
+  return { value: '', def: createErrorProp(def.schema) as any }
 }
 
 export const validateId = (def: QueryDef, id: any): number => {
@@ -562,53 +601,53 @@ export const handleErrors = (def: QueryDef) => {
   }
 }
 
-export const EMPTY_ALIAS_PROP_DEF: PropDef = {
-  schema: null,
-  prop: 1,
-  typeIndex: ALIAS,
-  __isPropDef: true,
-  separate: true,
-  validation: () => true,
-  len: 0,
-  start: 0,
-  default: DEFAULT_MAP[ALIAS],
-  path: ['ERROR_ALIAS'],
-}
+// export const EMPTY_ALIAS_PROP_DEF: QueryPropDef = {
+//   schema: null,
+//   prop: 1,
+//   typeIndex: ALIAS,
+//   __isQueryPropDef: true,
+//   separate: true,
+//   validation: () => true,
+//   len: 0,
+//   start: 0,
+//   default: DEFAULT_MAP[ALIAS],
+//   path: ['ERROR_ALIAS'],
+// }
 
-export const ERROR_STRING: PropDef = {
-  schema: null,
-  prop: 1,
-  typeIndex: STRING,
-  __isPropDef: true,
-  separate: true,
-  validation: () => true,
-  len: 0,
-  start: 0,
-  default: DEFAULT_MAP[STRING],
-  path: ['ERROR_STRING'],
-}
+// export const ERROR_STRING: QueryPropDef = {
+//   schema: null,
+//   prop: 1,
+//   typeIndex: STRING,
+//   __isQueryPropDef: true,
+//   separate: true,
+//   validation: () => true,
+//   len: 0,
+//   start: 0,
+//   default: DEFAULT_MAP[STRING],
+//   path: ['ERROR_STRING'],
+// }
 
-export const ERROR_VECTOR: PropDef = {
-  schema: null,
-  prop: 1,
-  typeIndex: VECTOR,
-  __isPropDef: true,
-  separate: true,
-  validation: () => true,
-  len: 0,
-  start: 0,
-  default: DEFAULT_MAP[VECTOR],
-  path: ['ERROR_VECTOR'],
-}
+// export const ERROR_VECTOR: QueryPropDef = {
+//   schema: null,
+//   prop: 1,
+//   typeIndex: VECTOR,
+//   __isQueryPropDef: true,
+//   separate: true,
+//   validation: () => true,
+//   len: 0,
+//   start: 0,
+//   default: DEFAULT_MAP[VECTOR],
+//   path: ['ERROR_VECTOR'],
+// }
 
-export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
-  ...createEmptyDef('_error', { props: {} }, {}),
-  buf: new Uint8Array([]),
-  propNames: new Uint8Array([]),
-  idUint8: new Uint8Array([0, 0]),
-  mainEmptyAllZeroes: true,
-  hasSeperateDefaults: false,
-}
+// export const EMPTY_SCHEMA_DEF: SchemaTypeDef = {
+//   ...createEmptyDef('_error', { props: {} }, {}),
+//   buf: new Uint8Array([]),
+//   propNames: new Uint8Array([]),
+//   idUint8: new Uint8Array([0, 0]),
+//   mainEmptyAllZeroes: true,
+//   hasSeperateDefaults: false,
+// }
 
 export const aggregationFieldDoesNotExist = (def: QueryDef, field: string) => {
   def.errors.push({
@@ -625,7 +664,10 @@ export const aggregationFieldNotNumber = (def: QueryDef, field: string) => {
   handleErrors(def)
 }
 
-export const validateStepRange = (def: QueryDef, step: StepInput) => {
+export const validateStepRange = (
+  def: QueryDef,
+  step: StepInput | undefined,
+) => {
   if (typeof step !== 'number' || step >= 4294967296) {
     def.errors.push({
       code: ERR_AGG_INVALID_STEP_RANGE,

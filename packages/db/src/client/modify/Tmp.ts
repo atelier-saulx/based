@@ -1,7 +1,7 @@
 import { readUint32 } from '@based/utils'
 import { Ctx } from './Ctx.js'
-import { errorMap, errors } from './error.js'
-import { SchemaTypeDef } from '@based/schema/def'
+import { errorMap } from './error.js'
+import type { TypeDef } from '@based/schema'
 
 const promisify = (tmp: Tmp) => {
   if (!tmp.promise) {
@@ -39,15 +39,15 @@ export const rejectTmp = (tmp: Tmp) => {
 export class Tmp implements Promise<number> {
   constructor(ctx: Ctx) {
     ctx.batch.count ??= 0
-    this.#schema = ctx.schema
+    this.#schema = ctx.typeDef
     this.batch = ctx.batch
     this.tmpId = ctx.batch.count++
   }
   [Symbol.toStringTag]: 'ModifyPromise'
-  #schema: SchemaTypeDef
+  #schema: TypeDef
   #id: number
   #err: number
-  get error(): Error {
+  get error(): Error | void {
     if (this.batch.ready && !this.id) {
       if (this.#err in errorMap) {
         return new errorMap[this.#err](this.#id, this.#schema)
@@ -55,7 +55,7 @@ export class Tmp implements Promise<number> {
       return this.batch.error || Error('Modify error')
     }
   }
-  get id(): number {
+  get id(): number | void {
     if (this.batch.res) {
       this.#err ??= this.batch.res[this.tmpId * 5 + 4]
       this.#id ??= readUint32(this.batch.res, this.tmpId * 5)
@@ -65,8 +65,8 @@ export class Tmp implements Promise<number> {
   tmpId: number
   batch: Ctx['batch']
   promise?: Promise<number>
-  resolve?: (value: number | PromiseLike<number>) => void
-  reject?: (reason?: any) => void
+  resolve: (value: number | PromiseLike<number>) => void
+  reject: (reason?: any) => void
   then<Res1 = number, Res2 = never>(
     onfulfilled?: ((value: number) => Res1 | PromiseLike<Res1>) | null,
     onrejected?: ((reason: any) => Res2 | PromiseLike<Res2>) | null,

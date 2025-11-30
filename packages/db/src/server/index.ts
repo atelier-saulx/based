@@ -1,14 +1,5 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import {
-  StrictSchema,
-  langCodesMap,
-  LangName,
-  MigrateFns,
-  SchemaChecksum,
-  strictSchemaToDbSchema,
-} from '@based/schema'
-import { ID_FIELD_DEF, PropDef, SchemaTypeDef } from '@based/schema/def'
 import { start, StartOpts } from './start.js'
 import { VerifTree, destructureTreeKey, makeTreeKeyFromNodeId } from './tree.js'
 import { save } from './save.js'
@@ -28,6 +19,14 @@ import {
 import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.js'
 import { loadBlock, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
+import {
+  langCodesMap,
+  type LangName,
+  type QueryPropDef,
+  type SchemaMigrateFns,
+  type SchemaOut,
+  type TypeDef,
+} from '@based/schema'
 
 const emptyUint8Array = new Uint8Array(0)
 
@@ -104,7 +103,7 @@ export class DbServer extends DbShared {
   }
 
   async loadBlock(typeName: string, nodeId: number) {
-    const def = this.schemaTypesParsed[typeName]
+    const def = this.defs.byName[typeName]
     if (!def) {
       throw new Error('Type not found')
     }
@@ -117,7 +116,7 @@ export class DbServer extends DbShared {
   }
 
   async unloadBlock(typeName: string, nodeId: number) {
-    const def = this.schemaTypesParsed[typeName]
+    const def = this.defs.byName[typeName]
     if (!def) {
       throw new Error('Type not found')
     }
@@ -183,8 +182,8 @@ export class DbServer extends DbShared {
     field: string,
     lang: LangName = 'none',
   ): SortIndex {
-    const t = this.schemaTypesParsed[type]
-    const prop = t.props[field]
+    const t = this.defs.byName[type]
+    const prop = t.queryProps[field]
     const langCode =
       langCodesMap.get(lang ?? Object.keys(this.schema?.locales ?? 'en')[0]) ??
       0
@@ -193,13 +192,15 @@ export class DbServer extends DbShared {
     if (!types) {
       types = this.sortIndexes[t.id] = {}
     }
-    let f = types[prop.prop]
+    let f = types[prop.id]
     if (!f) {
-      f = types[prop.prop] = {}
+      f = types[prop.id] = {}
     }
-    let fields = f[prop.start]
+    const start = 'main' in prop ? prop.main.start : 0
+    const size = 'main' in prop ? prop.main.size : 0
+    let fields = f[start]
     if (!fields) {
-      fields = f[prop.start] = {}
+      fields = f[start] = {}
     }
     let sortIndex = fields[langCode]
     if (sortIndex) {
@@ -210,11 +211,11 @@ export class DbServer extends DbShared {
     // call createSortBuf here
     buf[0] = t.id
     buf[1] = t.id >>> 8
-    buf[2] = prop.prop
-    buf[3] = prop.start
-    buf[4] = prop.start >>> 8
-    buf[5] = prop.len
-    buf[6] = prop.len >>> 8
+    buf[2] = prop.id
+    buf[3] = start
+    buf[4] = start >>> 8
+    buf[5] = size
+    buf[6] = size >>> 8
     buf[7] = prop.typeIndex
     buf[8] = langCode
     sortIndex = new SortIndex(buf, this.dbCtxExternal)
@@ -223,31 +224,32 @@ export class DbServer extends DbShared {
   }
 
   destroySortIndex(type: string, field: string, lang: LangName = 'none'): any {
-    const t = this.schemaTypesParsed[type]
-    const prop = t.props[field]
+    const t = this.defs.byName[type]
+    const prop = t.queryProps[field]
 
     let types = this.sortIndexes[t.id]
     if (!type) {
       return
     }
-    let fields = types[prop.prop]
+    let fields = types[prop.id]
     if (!fields) {
-      fields = types[prop.prop] = {}
+      fields = types[prop.id] = {}
     }
-    let sortIndex = fields[prop.start]
+    const start = 'main' in prop ? prop.main.start : 0
+    let sortIndex = fields[start]
     if (sortIndex) {
       const buf = new Uint8Array(6)
       buf[0] = t.id
       buf[1] = t.id >>> 8
-      buf[2] = prop.prop
-      buf[3] = prop.start
-      buf[4] = prop.start >>> 8
+      buf[2] = prop.id
+      buf[3] = start
+      buf[4] = start >>> 8
       buf[5] =
         langCodesMap.get(
           lang ?? Object.keys(this.schema?.locales ?? 'en')[0],
         ) ?? 0
       native.destroySortIndex(buf, this.dbCtxExternal)
-      delete fields[prop.start]
+      delete fields[start]
     }
   }
 
@@ -284,22 +286,25 @@ export class DbServer extends DbShared {
     buf[2] = field
     buf[3] = start
     buf[4] = start >>> 8
-    let typeDef: SchemaTypeDef
-    let prop: PropDef
+    let typeDef: TypeDef
+    let prop: QueryPropDef
 
-    if (field === 255) {
-      prop = ID_FIELD_DEF
-      typeDef = this.schemaTypesParsedById[typeId]
-    } else {
-      typeDef = this.schemaTypesParsedById[typeId]
-      for (const p in typeDef.props) {
-        const propDef = typeDef.props[p]
-        if (propDef.prop == field && propDef.start == start) {
-          prop = propDef
-          break
+    // if (field === 255) {
+    //   prop = ID_FIELD_DEF
+    //   typeDef = this.defsById[typeId]
+    // } else {
+    typeDef = this.defs.byName[typeId]
+    for (const p in typeDef.queryProps) {
+      const propDef = typeDef.queryProps[p]
+      if (propDef.id == field) {
+        if ('main' in propDef && propDef.main.start !== start) {
+          continue
         }
+        prop = propDef
+        break
       }
     }
+    // }
 
     if (!typeDef) {
       throw new Error(`Cannot find type id on db from query for sort ${typeId}`)
@@ -309,14 +314,24 @@ export class DbServer extends DbShared {
       throw new Error(`Cannot find prop on db from query for sort ${field}`)
     }
 
-    buf[5] = prop.len
-    buf[6] = prop.len >>> 8
+    if ('main' in prop) {
+      buf[5] = prop.main.size
+      buf[6] = prop.main.size >>> 8
+    } else {
+      buf[5] = 0
+      buf[6] = 0
+    }
+
     buf[7] = prop.typeIndex
     buf[8] = lang
     // put in modify stuff
     const sortIndex =
-      this.getSortIndex(typeId, prop.prop, prop.start, lang) ??
-      new SortIndex(buf, this.dbCtxExternal)
+      this.getSortIndex(
+        typeId,
+        prop.id,
+        'main' in prop ? prop.main.start : 0,
+        lang,
+      ) ?? new SortIndex(buf, this.dbCtxExternal)
     const types = this.sortIndexes[typeId]
     const fields = types[field]
     fields[start][lang] = sortIndex
@@ -324,14 +339,12 @@ export class DbServer extends DbShared {
   }
 
   async setSchema(
-    strictSchema: StrictSchema,
-    transformFns?: MigrateFns,
-  ): Promise<SchemaChecksum> {
+    schema: SchemaOut,
+    transformFns?: SchemaMigrateFns,
+  ): Promise<SchemaOut['hash']> {
     if (this.stopped || !this.dbCtxExternal) {
       throw new Error('Db is stopped')
     }
-
-    const schema = strictSchemaToDbSchema(strictSchema)
 
     if (schema.hash === this.schema?.hash) {
       // Todo something for sending back to actual client
@@ -357,7 +370,7 @@ export class DbServer extends DbShared {
     }
 
     setSchemaOnServer(this, schema)
-    setNativeSchema(this, schema)
+    setNativeSchema(this)
     await writeSchemaFile(this, schema)
 
     process.nextTick(() => {

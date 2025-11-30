@@ -1,10 +1,11 @@
-import { SchemaType, SchemaProp, Schema, StrictSchema } from '@based/schema'
+import { SchemaType, SchemaProp, type SchemaOut } from '@based/schema'
 import { SchemaDiagram } from './SchemaDiagram.js'
 import { FilterOps } from './types.js'
 import { getByPath, setByPath } from '@based/utils'
+import type { SchemaObject } from '@based/schema/dist/schema/object.js'
 
 export const walkProps = (
-  type: SchemaType,
+  type: SchemaType<true> | SchemaObject<true>,
   collect: { [key: string]: SchemaProp },
   path = [],
 ) => {
@@ -13,7 +14,7 @@ export const walkProps = (
     const schemaProp = target[key]
     const propPath = [...path, key]
     const propType = schemaProp.type
-    if (propType === 'object' || 'props' in schemaProp) {
+    if (propType === 'object') {
       walkProps(schemaProp, collect, propPath)
     } else {
       if (propType || schemaProp.items || schemaProp.enum || schemaProp.ref) {
@@ -30,7 +31,7 @@ export const filterSchema = (ctx: SchemaDiagram, ops: FilterOps) => {
     ctx.schema = originalSchema
     ctx.filterInternal = undefined
   }
-  const filteredSchema: StrictSchema = { types: {} }
+  const filteredSchema: SchemaOut = { types: {} }
   const walk = (type: SchemaType, path: string[], all?: boolean) => {
     const target = type.props
     path = [...path, 'props']

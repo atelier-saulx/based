@@ -1,13 +1,4 @@
-import {
-  PropDef,
-  PropDefEdge,
-  TIMESTAMP,
-  ENUM,
-  BOOLEAN,
-  STRING,
-  BINARY,
-  TEXT,
-} from '@based/schema/def'
+import type { QueryPropDef } from '@based/schema'
 import { crc32 } from '../../crc32.js'
 import { convertToTimestamp, ENCODER, writeUint32 } from '@based/utils'
 // -------------------------------------------
@@ -24,25 +15,22 @@ import { convertToTimestamp, ENCODER, writeUint32 } from '@based/utils'
 // [or = 2] [size 2] [start 2], [op], [size 2], value[size], [size 2], value[size]
 // -------------------------------------------
 
-export const parseFilterValue = (
-  prop: PropDef | PropDefEdge,
-  value: any,
-): any => {
+export const parseFilterValue = (prop: QueryPropDef, value: any): any => {
   if (
-    prop.typeIndex === BINARY ||
-    prop.typeIndex === STRING ||
-    prop.typeIndex === TEXT
+    prop.type === 'binary' ||
+    prop.type === 'string' ||
+    prop.type === 'text'
   ) {
     const b = value instanceof Uint8Array ? value : ENCODER.encode(value)
     const buf = new Uint8Array(8)
     writeUint32(buf, crc32(b), 0)
     writeUint32(buf, b.byteLength, 4)
     return buf
-  } else if (prop.typeIndex === BOOLEAN) {
+  } else if (prop.type === 'boolean') {
     return value ? 1 : 0
-  } else if (prop.typeIndex === ENUM) {
-    return prop.reverseEnum[value] + 1
-  } else if (prop.typeIndex === TIMESTAMP) {
+  } else if (prop.type === 'enum') {
+    return prop.enumMap[value] // + 1 // we now just have it plus one already
+  } else if (prop.type === 'timestamp') {
     const v = convertToTimestamp(value)
     if (typeof v !== 'number') {
       throw new Error(`Incorrect value for timestamp ${prop.path.join('.')}`)

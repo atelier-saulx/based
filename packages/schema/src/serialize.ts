@@ -1,6 +1,3 @@
-// import * as deflate from 'fflate'
-import { StrictSchema, stringFormats } from './types.js'
-import { ENUM, REVERSE_TYPE_INDEX_MAP, TYPE_INDEX_MAP } from './def/types.js'
 import {
   readDoubleLE,
   readUint16,
@@ -13,6 +10,9 @@ import {
   ENCODER,
   DECODER,
 } from '@based/utils'
+import { stringFormats } from './schema/string.js'
+import { reverseTypeMap, typeIndexMap } from './def/enums.js'
+import { Schema } from './schema/schema.js'
 
 const UINT8 = 245
 const FALSE = 246
@@ -41,6 +41,7 @@ const REF = 8
 const PROP = 9
 
 const KEY_OPTS = PROP
+const ENUM = typeIndexMap.enum
 
 type DictMapUsed = { key: DictMapKey; address: number }
 
@@ -237,12 +238,12 @@ const walk = (
   const isArray = Array.isArray(obj)
   const isFromObj = prev2?.type === 'object' || fromObject === false
   const isSchemaProp =
-    ('enum' in obj || ('type' in obj && TYPE_INDEX_MAP[obj.type])) && isFromObj
+    ('enum' in obj || ('type' in obj && typeIndexMap[obj.type])) && isFromObj
 
   ensureCapacity(1 + 5) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
-    const typeIndex = TYPE_INDEX_MAP['enum' in obj ? 'enum' : obj.type]
+    const typeIndex = typeIndexMap['enum' in obj ? 'enum' : obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
@@ -468,7 +469,7 @@ export const deSerializeInner = (
 
   if (isSchemaProp) {
     const type = buf[i]
-    const parsedType = REVERSE_TYPE_INDEX_MAP[type]
+    const parsedType = reverseTypeMap[type]
     if (type !== ENUM) {
       obj.type = parsedType
     }
@@ -594,9 +595,9 @@ export const deSerializeInner = (
   return i - start
 }
 
-export const deSerialize = (buf: Uint8Array): StrictSchema => {
+export const deSerialize = (buf: Uint8Array): Schema<true> => {
   // if first byte is deflate
-  const schema: any = {}
+  const schema = {} as Schema<true>
   deSerializeInner(buf, schema, 0, false)
-  return schema as StrictSchema
+  return schema
 }

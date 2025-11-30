@@ -17,7 +17,7 @@ const timeToNumber = (ex: string): number => {
   return 1
 }
 
-export const convertToTimestamp = (value: string | Date | number) => {
+export const convertToTimestamp = (value: string | Date | number): number => {
   if (value instanceof Date) {
     return value.valueOf()
   }

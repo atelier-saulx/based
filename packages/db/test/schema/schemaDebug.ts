@@ -3,7 +3,6 @@ import { DbClient, DbClientHooks, DbServer } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepCopy, deepMerge, wait } from '@based/utils'
 import { copy, emptyDir } from 'fs-extra/esm'
-import { deepEqual, equal } from '../shared/assert.js'
 
 const cleanProps = (props) => {
   for (const i in props) {
@@ -36,17 +35,10 @@ const removeInverseProps = (props) => {
 const cleanSchema = (schema: DbServer['schema']) => {
   const schemaCopy = deepCopy(schema)
 
-  delete schemaCopy.lastId
   delete schemaCopy.hash
 
   for (const type in schemaCopy.types) {
     cleanProps(schemaCopy.types[type].props)
-    if (type === '_root') {
-      // @ts-ignore
-      schemaCopy.props = schemaCopy.types[type].props
-      removeInverseProps(schemaCopy.props)
-      delete schemaCopy.types[type]
-    }
   }
   return schemaCopy
 }

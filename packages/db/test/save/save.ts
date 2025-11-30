@@ -27,14 +27,14 @@ await test('simple', async (t) => {
       cs: { required: true },
       et: { required: true },
     },
-    props: {
-      coolname: 'string',
-      users: {
-        items: {
-          ref: 'user',
-        },
-      },
-    },
+    // props: {
+    //   coolname: 'string',
+    //   users: {
+    //     items: {
+    //       ref: 'user',
+    //     },
+    //   },
+    // },
     types: {
       user: {
         props: {
@@ -134,9 +134,9 @@ await test('empty root', async (t) => {
   t.after(() => db.destroy())
 
   await db.setSchema({
-    props: {
-      rando: { type: 'string' },
-    },
+    // props: {
+    //   rando: { type: 'string' },
+    // },
     types: {
       user: {
         props: {

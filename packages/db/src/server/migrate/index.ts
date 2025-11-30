@@ -12,8 +12,12 @@ import {
   writeSchemaFile,
 } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
-import { DbSchema, MigrateFns, serialize } from '@based/schema'
-import { semver } from '@based/schema'
+import {
+  semver,
+  serialize,
+  type SchemaMigrateFns,
+  type SchemaOut,
+} from '@based/schema'
 const { satisfies, parseRange, parse } = semver
 
 export type MigrateRange = { typeId: number; start: number; end: number }
@@ -22,7 +26,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const workerPath = join(__dirname, 'worker.js')
 
-const parseTransform = (transform?: MigrateFns) => {
+const parseTransform = (transform?: SchemaMigrateFns) => {
   const res = {}
   if (typeof transform === 'object' && transform !== null) {
     for (const type in transform) {
@@ -40,7 +44,7 @@ const parseTransform = (transform?: MigrateFns) => {
   return res
 }
 
-const stripHooks = (schema: DbSchema): DbSchema => {
+const stripHooks = (schema: SchemaOut): SchemaOut => {
   const res = {}
   for (const i in schema) {
     if (i === 'types') {
@@ -53,14 +57,14 @@ const stripHooks = (schema: DbSchema): DbSchema => {
       res[i] = schema[i]
     }
   }
-  return res as DbSchema
+  return res as SchemaOut
 }
 
 export const migrate = async (
   server: DbServer,
-  fromSchema: DbSchema,
-  toSchema: DbSchema,
-  transform?: MigrateFns,
+  fromSchema: SchemaOut,
+  toSchema: SchemaOut,
+  transform?: SchemaMigrateFns,
 ): Promise<void> => {
   const migrationId = toSchema.hash
 
@@ -121,7 +125,7 @@ export const migrate = async (
   }
 
   setSchemaOnServer(tmpDb.server, toSchema)
-  setNativeSchema(tmpDb.server, toSchema)
+  setNativeSchema(tmpDb.server)
 
   if (abort()) {
     await tmpDb.destroy()
@@ -173,7 +177,7 @@ export const migrate = async (
 
   server.verifTree.foreachBlock((block) => {
     const [typeId, start] = destructureTreeKey(block.key)
-    const def = server.schemaTypesParsedById[typeId]
+    const def = server.defs.byName[typeId]
     const end = start + def.blockCapacity - 1
     rangesToMigrate.push({ typeId, start, end })
   })

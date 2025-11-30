@@ -3,7 +3,7 @@ import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { throws } from './shared/assert.js'
 import { wait } from '@based/utils'
-import {makeTreeKey} from '../src/server/tree.js'
+import { makeTreeKey } from '../src/server/tree.js'
 
 await test('partial', async (t) => {
   const db = new BasedDb({
@@ -132,7 +132,7 @@ await test('simple load/unload', async (t) => {
         props: {
           sku: 'number',
           flap: 'number',
-        }
+        },
       },
     },
   })
@@ -170,7 +170,12 @@ await test('simple load/unload', async (t) => {
   db2.server.verifTree.foreachBlock((block) => deepEqual(block.inmem, false))
 
   await db2.server.loadBlock('product', 100_001)
-  deepEqual(db.server.verifTree.getBlock(makeTreeKey(db.server.schemaTypesParsed['product'].id, 100_001)).inmem, true)
+  deepEqual(
+    db.server.verifTree.getBlock(
+      makeTreeKey(db.server.defs.byName['product'].id, 100_001),
+    ).inmem,
+    true,
+  )
 
   const d2 = await db2
     .query('product')

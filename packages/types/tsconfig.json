@@ -1,0 +1,10 @@
+{
+  "extends": "@saulx/tsconfig/default.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "esModuleInterop": true,
+    "strictNullChecks": true
+  }
+}

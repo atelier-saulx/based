@@ -5,22 +5,17 @@ import {
   ReferenceSelect,
   ReferenceSelectValue,
 } from '../types.js'
-import {
-  isPropDef,
-  SchemaTypeDef,
-  SchemaPropTree,
-  PropDef,
-  ID_FIELD_DEF,
-  TEXT,
-  REFERENCE,
-  REFERENCES,
-  PropDefEdge,
-} from '@based/schema/def'
 import { primitiveFilter } from './primitiveFilter.js'
 import { Operator } from './types.js'
 import { Filter, FilterAst, IsFilter } from './types.js'
 import { DbClient } from '../../index.js'
-import { langCodesMap } from '@based/schema'
+import {
+  langCodesMap,
+  type BranchDef,
+  type QueryPropDef,
+  type PropDef,
+  type TypeDef,
+} from '@based/schema'
 import { filterFieldDoesNotExist, filterInvalidLang } from '../validation.js'
 
 export { Operator, Filter }
@@ -28,14 +23,16 @@ export { Operator, Filter }
 const referencesFilter = (
   db: DbClient,
   filter: Filter,
-  schema: SchemaTypeDef,
+  schema: TypeDef,
   conditions: QueryDefFilter,
   def: QueryDef,
-): number => {
+): number | void => {
+  console.warn('TODO: referencesFilter')
+  /*
   const [fieldStr, ctx, value] = filter
   var size = 0
   const path = fieldStr.split('.')
-  let t: PropDef | PropDefEdge | SchemaPropTree = schema.tree
+  let t: BranchDef | QueryPropDef = schema
   let referencesSelect: ReferenceSelectValue | void
   for (let i = 0; i < path.length; i++) {
     const p = path[i]
@@ -50,12 +47,12 @@ const referencesFilter = (
           edges = def.target.propDef.edges
         }
         if (edges) {
-          const edgeDef = edges[p]
-          if (edgeDef) {
+          const edgesDef = edges[p]
+          if (edgesDef) {
             conditions.edges ??= new Map()
             size +=
               3 +
-              primitiveFilter(def, edgeDef, filter, conditions, {
+              primitiveFilter(def, edgesDef, filter, conditions, {
                 lang: def.lang.lang,
                 fallback: [],
               })
@@ -78,7 +75,7 @@ const referencesFilter = (
       conditions.references ??= new Map()
       let refConditions = conditions.references.get(t.prop)
       if (!refConditions) {
-        const schema = db.schemaTypesParsed[t.inverseTypeName]
+        const schema = db.defs.byName[t.inverseTypeName]
         size += t.typeIndex === REFERENCES ? 11 : 6
         refConditions = {
           conditions: {
@@ -114,15 +111,19 @@ const referencesFilter = (
     filterFieldDoesNotExist(def, fieldStr)
     return 0
   }
+    */
 }
 
 export const filterRaw = (
   db: DbClient,
   filter: Filter,
-  schema: SchemaTypeDef,
+  schema: TypeDef,
   conditions: QueryDefFilter,
   def: QueryDef,
 ): number => {
+  console.warn('TODO: filterRaw')
+  return 0
+  /*
   const field = filter[0]
   let fieldDef = schema.props[field]
 
@@ -155,6 +156,7 @@ export const filterRaw = (
   }
 
   return primitiveFilter(def, fieldDef, filter, conditions, def.lang)
+  */
 }
 
 export const filter = (
@@ -165,7 +167,9 @@ export const filter = (
 ) => {
   for (const f of filterAst) {
     if (IsFilter(f)) {
-      conditions.size += filterRaw(db, f, def.schema, conditions, def)
+      if (def.schema) {
+        conditions.size += filterRaw(db, f, def.schema, conditions, def)
+      }
     } else {
       filterOr(db, def, f, conditions)
     }

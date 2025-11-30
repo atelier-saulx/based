@@ -1,138 +1,114 @@
 import { Ctx } from '../Ctx.js'
-import {
-  BINARY,
-  BOOLEAN,
-  ENUM,
-  INT16,
-  INT32,
-  INT8,
-  NUMBER,
-  PropDef,
-  PropDefEdge,
-  STRING,
-  TIMESTAMP,
-  UINT16,
-  UINT32,
-  UINT8,
-} from '@based/schema/def'
 import { convertToTimestamp, ENCODER, writeDoubleLE } from '@based/utils'
 import { getBuffer } from './binary.js'
 import { reserve } from '../resize.js'
 import { writeU16, writeU32, writeU64, writeU8, writeU8Array } from '../uint.js'
 import { validate } from '../validate.js'
+import {
+  type mainSizeMap,
+  type MainDef,
+  type SchemaBoolean,
+  type SchemaEnum,
+  type SchemaNumber,
+  type SchemaTimestamp,
+  typeIndexMap,
+} from '@based/schema'
 
-const map: Record<
-  number,
-  (ctx: Ctx, val: any, def: PropDef | PropDefEdge) => void
-> = {}
-
-map[BINARY] = (ctx, val, def) => {
-  val = getBuffer(val)
-  validate(val, def)
-  reserve(ctx, val.byteLength + 1)
-  writeU8(ctx, val.byteLength)
-  writeU8Array(ctx, val)
-}
-
-map[STRING] = (ctx, val, def) => {
-  const valBuf = ENCODER.encode(val)
-  const size = valBuf.byteLength
-  if (size + 1 > def.len) {
-    throw [def, val, `max length of ${def.len - 1},`]
+type WriteFixed = (ctx: Ctx, val: any, def: MainDef) => void
+const getWriteInt =
+  (size: number, writeU: typeof writeU8) =>
+  (ctx: Ctx, val: any, def: SchemaNumber & MainDef) => {
+    val ??= def.default
+    validate(val, def)
+    reserve(ctx, size)
+    writeU(ctx, val)
   }
-  validate(val, def)
-  reserve(ctx, size + 1)
-  const fullSize = def.len - 1
-  ctx.array[ctx.index] = size
-  ctx.array.set(valBuf, ctx.index + 1)
-  ctx.index += fullSize + 1
-  if (fullSize !== size) {
-    ctx.array.fill(0, ctx.index - (fullSize - size), ctx.index)
-  }
-}
 
-map[BOOLEAN] = (ctx, val, def) => {
-  val ??= def.default
-  validate(val, def)
-  reserve(ctx, 1)
-  writeU8(ctx, val ? 1 : 0)
-}
+const write8 = getWriteInt(1, writeU8)
+const write16 = getWriteInt(2, writeU16)
+const write32 = getWriteInt(4, writeU32)
 
-map[ENUM] = (ctx, val, def) => {
-  validate(val, def)
-  if (val === null) {
+type Fixed = (typeof typeIndexMap)[keyof typeof mainSizeMap]
+const map: Record<Fixed, WriteFixed> = {
+  [typeIndexMap.binary](ctx, val, def) {
+    val = getBuffer(val)
+    validate(val, def)
+    reserve(ctx, val.byteLength + 1)
+    writeU8(ctx, val.byteLength)
+    writeU8Array(ctx, val)
+  },
+
+  [typeIndexMap.string](ctx, val, def) {
+    const valBuf = ENCODER.encode(val)
+    const size = valBuf.byteLength
+    if (size + 1 > def.main.size) {
+      throw [def, val, `max length of ${def.main.size - 1},`]
+    }
+    validate(val, def)
+    reserve(ctx, size + 1)
+    const fullSize = def.main.size - 1
+    ctx.array[ctx.index] = size
+    ctx.array.set(valBuf, ctx.index + 1)
+    ctx.index += fullSize + 1
+    if (fullSize !== size) {
+      ctx.array.fill(0, ctx.index - (fullSize - size), ctx.index)
+    }
+  },
+
+  [typeIndexMap.boolean](ctx, val, def: SchemaBoolean & MainDef) {
+    val ??= def.default
+    validate(val, def)
     reserve(ctx, 1)
-    writeU8(ctx, def.default)
-  } else if (val in def.reverseEnum) {
-    reserve(ctx, 1)
-    writeU8(ctx, def.reverseEnum[val] + 1)
-  } else {
-    throw [def, val]
-  }
-}
+    writeU8(ctx, val ? 1 : 0)
+  },
 
-map[NUMBER] = (ctx, val, def) => {
-  val ??= def.default
-  validate(val, def)
-  reserve(ctx, 8)
-  writeDoubleLE(ctx.array, val, ctx.array.byteOffset + ctx.index)
-  ctx.index += 8
-}
+  [typeIndexMap.enum](ctx, val, def: SchemaEnum & MainDef) {
+    validate(val, def)
+    if (val === null) {
+      reserve(ctx, 1)
+      writeU8(ctx, def.default ? def.enumMap[def.default as string] : 0)
+    } else if (val in def.enumMap) {
+      reserve(ctx, 1)
+      writeU8(ctx, def.enumMap[val])
+    } else {
+      throw [def, val]
+    }
+  },
 
-map[TIMESTAMP] = (ctx, val, def) => {
-  val ??= def.default
-  const parsedValue = convertToTimestamp(val)
-  validate(parsedValue, def)
-  reserve(ctx, 8)
-  writeU64(ctx, parsedValue)
-}
+  [typeIndexMap.number](ctx, val, def: SchemaNumber & MainDef) {
+    val ??= def.default
+    console.log('??', val)
+    validate(val, def)
+    console.log('??xxx')
+    reserve(ctx, 8)
+    writeDoubleLE(ctx.array, val, ctx.array.byteOffset + ctx.index)
+    ctx.index += 8
+  },
 
-map[UINT32] = (ctx, val, def) => {
-  val ??= def.default
-  validate(val, def)
-  reserve(ctx, 4)
-  writeU32(ctx, val)
-}
-
-map[UINT16] = (ctx, val, def) => {
-  val ??= def.default
-  validate(val, def)
-  reserve(ctx, 2)
-  writeU16(ctx, val)
-}
-
-map[UINT8] = map[INT8] = (ctx, val, def) => {
-  val ??= def.default
-  validate(val, def)
-  reserve(ctx, 1)
-  writeU8(ctx, val)
-}
-
-map[INT32] = (ctx, val, def) => {
-  val ??= def.default
-  validate(val, def)
-  reserve(ctx, 4)
-  writeU32(ctx, val)
-}
-
-map[INT16] = (ctx, val, def) => {
-  val ??= def.default
-  validate(val, def)
-  reserve(ctx, 2)
-  writeU16(ctx, val)
+  [typeIndexMap.timestamp](ctx, val, def: SchemaTimestamp & MainDef) {
+    val ??= def.default
+    const parsedValue = convertToTimestamp(val)
+    validate(parsedValue, def)
+    reserve(ctx, 8)
+    writeU64(ctx, parsedValue)
+  },
+  [typeIndexMap.uint32]: write32,
+  [typeIndexMap.uint16]: write16,
+  [typeIndexMap.uint8]: write8,
+  [typeIndexMap.int32]: write32,
+  [typeIndexMap.int16]: write16,
+  [typeIndexMap.int8]: write8,
 }
 
 export const writeFixed = (
   ctx: Ctx,
-  def: PropDef | PropDefEdge,
+  def: MainDef,
   val: string | boolean | number,
-) => {
-  return map[def.typeIndex](ctx, val, def)
-}
+) => map[def.typeIndex](ctx, val, def)
 
 export const writeFixedAtOffset = (
   ctx: Ctx,
-  def: PropDef,
+  def: MainDef,
   val: string | boolean | number,
   offset: number,
 ) => {

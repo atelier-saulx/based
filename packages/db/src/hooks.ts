@@ -1,9 +1,4 @@
-import {
-  StrictSchema,
-  MigrateFns,
-  DbSchema,
-  SchemaChecksum,
-} from '@based/schema'
+import type { SchemaMigrateFns, SchemaOut } from '@based/schema'
 import type { BasedDbQuery } from './client/query/BasedDbQuery.js'
 import { OnClose, OnData, OnError } from './client/query/subscription/types.js'
 import { DbServer } from './server/index.js'
@@ -11,9 +6,9 @@ import { registerSubscription } from './server/subscription.js'
 
 export type DbClientHooks = {
   setSchema(
-    schema: StrictSchema,
-    transformFns?: MigrateFns,
-  ): Promise<SchemaChecksum>
+    schema: SchemaOut,
+    transformFns?: SchemaMigrateFns,
+  ): Promise<SchemaOut['hash']>
   flushModify(buf: Uint8Array): Promise<Uint8Array | null>
   getQueryBuf(buf: Uint8Array): ReturnType<DbServer['getQueryBuf']>
   subscribe(
@@ -21,7 +16,7 @@ export type DbClientHooks = {
     onData: (buf: Uint8Array) => ReturnType<OnData>,
     onError?: OnError,
   ): OnClose
-  subscribeSchema(cb: (schema: DbSchema) => void): void
+  subscribeSchema(cb: (schema: SchemaOut) => void): void
 }
 
 export const getDefaultHooks = (
@@ -43,7 +38,7 @@ export const getDefaultHooks = (
         subInterval,
       )
     },
-    setSchema(schema: StrictSchema, transformFns) {
+    setSchema(schema: SchemaOut, transformFns) {
       return server.setSchema(schema, transformFns)
     },
     subscribeSchema(setSchema) {

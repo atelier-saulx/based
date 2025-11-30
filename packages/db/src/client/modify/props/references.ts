@@ -1,11 +1,10 @@
 import { Ctx } from '../Ctx.js'
-import { PropDef } from '@based/schema/def'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { writeU32, writeU8 } from '../uint.js'
 import { Tmp } from '../Tmp.js'
 import { validate } from '../validate.js'
-import { writeEdges } from '../edges/index.js'
+// import { writeEdges } from '../edges/index.js'
 import { writeUint32 } from '@based/utils'
 import {
   DELETE,
@@ -24,15 +23,22 @@ import {
   REF_OP_UPDATE,
   RefOp,
 } from '../types.js'
+import type { LeafDef, RefPropDef } from '@based/schema'
 
-const clearReferences = (ctx: Ctx, def: PropDef) => {
+const clearReferences = (ctx: Ctx, def: RefPropDef) => {
   reserve(ctx, PROP_CURSOR_SIZE + 1)
   writePropCursor(ctx, def)
   writeU8(ctx, DELETE)
 }
 
-const hasEdgeOrIndex = (def: PropDef, obj: Record<string, any>): boolean => {
-  if (def.edges) {
+const hasEdgeOrIndex = (
+  def: RefPropDef,
+  obj: Record<string, any>,
+): true | void => {
+  if ('$index' in obj) {
+    return true
+  }
+  if (def.edgesDef) {
     for (const key in obj) {
       if (key[0] === '$') {
         return true
@@ -41,11 +47,11 @@ const hasEdgeOrIndex = (def: PropDef, obj: Record<string, any>): boolean => {
   }
 }
 
-const hasAnEdge = (def: PropDef, obj: Record<string, any>): boolean => {
-  if (def.hasDefaultEdges) {
-    return true
-  }
-  if (def.edges) {
+const hasAnEdge = (def: RefPropDef, obj: Record<string, any>): true | void => {
+  // if (def.hasDefaultEdges) {
+  //   return true
+  // }
+  if (def.edgesDef) {
     for (const key in obj) {
       if (key[0] === '$' && key !== '$index') {
         return true
@@ -56,7 +62,7 @@ const hasAnEdge = (def: PropDef, obj: Record<string, any>): boolean => {
 
 const putReferences = (
   ctx: Ctx,
-  def: PropDef,
+  def: RefPropDef,
   val: any,
   refOp: RefOp,
 ): number => {
@@ -92,7 +98,7 @@ const putReferences = (
 
 const updateReferences = (
   ctx: Ctx,
-  def: PropDef,
+  def: RefPropDef,
   val: any[],
   index: number,
   length: number,
@@ -108,15 +114,16 @@ const updateReferences = (
   writeU32(ctx, length)
   while (length--) {
     let id = val[index++]
-    if (def.hasDefaultEdges) {
-      if (
-        typeof id === 'number' ||
-        id instanceof Tmp ||
-        id instanceof Promise
-      ) {
-        id = { id: id }
-      }
-    }
+    console.warn('DO EDGES')
+    // if (def.hasDefaultEdges) {
+    //   if (
+    //     typeof id === 'number' ||
+    //     id instanceof Tmp ||
+    //     id instanceof Promise
+    //   ) {
+    //     id = { id: id }
+    //   }
+    // }
 
     if (typeof id === 'number') {
       validate(id, def)
@@ -172,7 +179,7 @@ const updateReferences = (
 
 const putOrUpdateReferences = (
   ctx: Ctx,
-  def: PropDef,
+  def: RefPropDef,
   val: any,
   refOp: RefOp,
 ) => {
@@ -181,10 +188,11 @@ const putOrUpdateReferences = (
     return
   }
 
-  if (def.hasDefaultEdges) {
-    updateReferences(ctx, def, val, 0, val.length, refOp)
-    return
-  }
+  console.warn('DO DEFAULT EDGES')
+  // if (def.hasDefaultEdges) {
+  //   updateReferences(ctx, def, val, 0, val.length, refOp)
+  //   return
+  // }
 
   const start = ctx.index
   const index = putReferences(ctx, def, val, refOp)
@@ -195,18 +203,18 @@ const putOrUpdateReferences = (
   if (index === 0) {
     // did nothing
     ctx.index = start
-    ctx.cursor.prop = null
+    ctx.cursor.prop = undefined
     updateReferences(ctx, def, val, 0, val.length, refOp)
   } else {
     // did partial
-    ctx.cursor.prop = null
+    ctx.cursor.prop = undefined
     updateReferences(ctx, def, val, index, val.length - index, refOp)
   }
 }
 
 const writeReferenceObj = (
   ctx: Ctx,
-  def: PropDef,
+  def: RefPropDef,
   id: number,
   obj: Record<string, any>,
   isTmp: boolean,
@@ -218,7 +226,8 @@ const writeReferenceObj = (
       writeU8(ctx, isTmp ? EDGE_INDEX_TMPID : EDGE_INDEX_REALID)
       writeU32(ctx, id)
       writeU32(ctx, obj.$index)
-      writeEdges(ctx, def, obj, false)
+      console.warn('DO EDGES')
+      // writeEdges(ctx, def, obj, false)
     } else {
       writeU8(ctx, isTmp ? NOEDGE_INDEX_TMPID : NOEDGE_INDEX_REALID)
       writeU32(ctx, id)
@@ -227,14 +236,15 @@ const writeReferenceObj = (
   } else if (hasEdges) {
     writeU8(ctx, isTmp ? EDGE_NOINDEX_TMPID : EDGE_NOINDEX_REALID)
     writeU32(ctx, id)
-    writeEdges(ctx, def, obj, false)
+    console.warn('DO EDGES')
+    // writeEdges(ctx, def, obj, false)
   } else {
     writeU8(ctx, isTmp ? NOEDGE_NOINDEX_TMPID : NOEDGE_NOINDEX_REALID)
     writeU32(ctx, id)
   }
 }
 
-const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
+const deleteReferences = (ctx: Ctx, def: LeafDef, val: any[]) => {
   const size = 4 * val.length + 1
   reserve(ctx, PROP_CURSOR_SIZE + 6 + size)
   writePropCursor(ctx, def)
@@ -265,7 +275,7 @@ const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
   }
 }
 
-export const writeReferences = (ctx: Ctx, def: PropDef, val: any) => {
+export const writeReferences = (ctx: Ctx, def: RefPropDef, val: any) => {
   if (typeof val !== 'object') {
     throw [def, val]
   }

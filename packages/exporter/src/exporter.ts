@@ -41,7 +41,7 @@ const getCsvFileName = (
 
 const processBlockAndExportToCsv = async (db: BasedDb, blockKey: number) => {
   const [typeId, startNodeId] = destructureTreeKey(blockKey)
-  const def = db.client.schemaTypesParsedById[typeId]
+  const def = db.client.defsById[typeId]
   log(
     `Processing block: type "${def.type}" (id: ${typeId}), starting from node: ${startNodeId}`,
   )

@@ -4,7 +4,7 @@ import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
 import {
   EdgeTarget,
   QueryDef,
-  QueryDefEdges,
+  // QueryDefEdges,
   QueryDefRest,
   QueryDefShared,
   QueryDefType,
@@ -25,7 +25,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
     filter: { conditions: new Map(), size: 0, hasSubMeta: false },
     range: { offset: 0, limit: 0 },
     lang: {
-      lang: langCodesMap.get('none'),
+      lang: langCodesMap.get('none') ?? 0,
       fallback: [],
     },
     include: {
@@ -43,14 +43,21 @@ const createEmptySharedDef = (skipValidation: boolean) => {
   return q
 }
 
-type CreateQueryDefReturn<T extends QueryDefType> = T extends QueryDefType.Edge
-  ? QueryDefEdges
-  : T extends
-        | QueryDefType.Root
-        | QueryDefType.Reference
-        | QueryDefType.References
-    ? QueryDefRest
-    : QueryDef
+// type CreateQueryDefReturn<T extends QueryDefType> = T extends QueryDefType.Edge
+//   ? QueryDefEdges
+//   : T extends
+//         | QueryDefType.Root
+//         | QueryDefType.Reference
+//         | QueryDefType.References
+//     ? QueryDefRest
+//     : QueryDef
+
+type CreateQueryDefReturn<T extends QueryDefType> = T extends
+  | QueryDefType.Root
+  | QueryDefType.Reference
+  | QueryDefType.References
+  ? QueryDefRest
+  : QueryDef
 
 export function createQueryDef<T extends QueryDefType>(
   db: DbClient,
@@ -60,17 +67,19 @@ export function createQueryDef<T extends QueryDefType>(
 ): CreateQueryDefReturn<T> {
   const queryDef = createEmptySharedDef(skipValidation)
   if (type === QueryDefType.Edge) {
-    const t = target as EdgeTarget
-    const q = queryDef as QueryDefEdges
-    q.props = t.ref.edges
-    q.type = type
-    q.target = t
-    return q as CreateQueryDefReturn<T>
+    console.warn('TODO: edges createQueryDef')
+    return queryDef as CreateQueryDefReturn<T>
+    // const t = target as EdgeTarget
+    // const q = queryDef as QueryDefEdges
+    // q.props = t.ref.edges
+    // q.type = type
+    // q.target = t
+    // return q as CreateQueryDefReturn<T>
   } else {
     const t = target as Target
     const q = queryDef as QueryDefRest
     q.schema = validateType(db, q, t.type)
-    q.props = q.schema.props
+    q.props = q.schema.queryProps
     q.type = type
     q.target = t
     if (type === QueryDefType.Root) {
