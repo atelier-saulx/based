@@ -32,7 +32,7 @@ export const fillEmptyMain = (
     let val = f.default
 
     if (t === ENUM) {
-      mainEmpty[s] = f.default ?? 0
+      mainEmpty[s] = f.default ? (f.enum?.indexOf(f.default) ?? -1) + 1 : 0
     } else if (t === INT8 || t === UINT8) {
       mainEmpty[s] = val
     } else if (t === BOOLEAN) {
