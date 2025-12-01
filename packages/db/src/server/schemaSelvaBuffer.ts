@@ -1,4 +1,12 @@
-import { convertToTimestamp, ENCODER, writeDoubleLE, writeFloatLE, writeUint16, writeUint32, writeUint64 } from '@based/utils'
+import {
+  convertToTimestamp,
+  ENCODER,
+  writeDoubleLE,
+  writeFloatLE,
+  writeUint16,
+  writeUint32,
+  writeUint64,
+} from '@based/utils'
 import {
   SchemaTypeDef,
   PropDef,
@@ -70,9 +78,7 @@ function sepPropCount(props: Array<PropDef | PropDefEdge>): number {
   return props.filter((prop) => prop.separate).length
 }
 
-function makeEdgeConstraintFlags(
-  prop: PropDef,
-): number {
+function makeEdgeConstraintFlags(prop: PropDef): number {
   let flags = 0
 
   flags |= prop.dependent ? EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT : 0x00
@@ -177,10 +183,12 @@ export function schemaToSelvaBuffer(schema: {
           const buf = main.default as Uint8Array
 
           switch (f.typeIndex) {
+            case ENUM:
+              main.default[f.start] = f.reverseEnum[f.default] + 1
+              break
             case INT8:
             case UINT8:
             case BOOLEAN:
-            case ENUM:
               main.default[f.start] = f.default
               break
             case INT16:
@@ -205,8 +213,13 @@ export function schemaToSelvaBuffer(schema: {
                 const value = f.default.normalize('NFKD')
                 buf[f.start] = 0 // lang
                 buf[f.start + 1] = NOT_COMPRESSED
-                const { written: l } = ENCODER.encodeInto(value, buf.subarray(f.start + 2))
-                let crc = native.crc32(buf.subarray(f.start + 2, f.start + 2 + l))
+                const { written: l } = ENCODER.encodeInto(
+                  value,
+                  buf.subarray(f.start + 2),
+                )
+                let crc = native.crc32(
+                  buf.subarray(f.start + 2, f.start + 2 + l),
+                )
                 writeUint32(buf, crc, f.start + 2 + l)
               }
               break
