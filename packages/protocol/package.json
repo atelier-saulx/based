@@ -1,6 +1,6 @@
 {
   "name": "@based/protocol",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "MIT",
   "files": [
     "dist",
@@ -37,6 +37,6 @@
     "@based/hash": "1.1.0",
     "fflate": "0.8.2",
     "@based/utils": "1.2.0",
-    "@based/schema": "5.1.3"
+    "@based/schema": "5.1.4"
   }
 }
