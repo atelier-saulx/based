@@ -44,13 +44,13 @@ export function defToBuffer(
 
     const include = includeToBuffer(db, def)
 
-    def.references.forEach((ref) => {
+    for (const [, ref] of def.references) {
       // pass offset...
       include.push(...defToBuffer(db, ref))
       if (ref.errors) {
         def.errors.push(...ref.errors)
       }
-    })
+    }
 
     let edge: IntermediateByteCode[] | undefined = undefined
     const includeSize = byteSize(include)
@@ -71,13 +71,15 @@ export function defToBuffer(
       QueryHeaderByteSize + searchSize + filterSize + sortSize,
     )
 
+    console.log(isReferences, buffer.byteLength, includeSize)
+
     let index = writeQueryHeader(
       buffer,
       {
         op: isReferences ? QueryType.references : QueryType.default,
         prop: isReferences ? def.target.propDef!.prop : ID_PROP,
         // this does not seem nessecary
-        size: buffer.byteLength + byteSize(includeSize), // for top level the byte size is not very important
+        size: buffer.byteLength + includeSize, // for top level the byte size is not very important
         typeId: def.schema!.id,
         offset: def.range.offset,
         limit: def.range.limit,
