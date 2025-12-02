@@ -85,7 +85,7 @@
  * - Capped references
  *
  * **8**
- * - Add support for default value in SELVA_FIELD_TYPE_STRING
+ * - Add support for default value in SELVA_FIELD_TYPE_STRING, SELVA_FIELD_TYPE_STRING, and SELVA_FIELD_TYPE_COLVEC
  */
 
 #define SDB_VERSION 8 /*!< Bump this if the serialization format changes. */

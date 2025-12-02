@@ -71,7 +71,11 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
                 return SELVA_EINVAL;
             }
 
-            /* default is copied straight from the schema buffer. */
+            /*
+             * Default is copied straight from the schema buffer.
+             * Note that this default is off by the header size,
+             * where as most other default offsets start from 0.
+             */
             fs->smb.default_off = off;
             off += len;
         }
@@ -249,18 +253,19 @@ static int type2fs_aliases(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsS
 static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-
     struct {
         enum SelvaFieldType type;
         uint16_t vec_len; /*!< Length of a single vector. */
         uint16_t comp_size; /*!< Component size in the vector. */
-    } __packed spec;
+        uint8_t has_default;
+    } __packed spec = {};
+    size_t copy_len = sizeof(spec) + (ctx->version < 8) * -sizeof_field(typeof(spec), has_default);
 
     if (ctx->len < sizeof(spec)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&spec, ctx->buf, sizeof(spec));
+    memcpy(&spec, ctx->buf, copy_len);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
@@ -269,10 +274,11 @@ static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
             .vec_len = spec.vec_len,
             .comp_size = spec.comp_size,
             .index = ctx->colvec_index++,
+            .default_off = (spec.has_default) ? (uint32_t)((ptrdiff_t)(ctx->buf - ctx->schema_buf) + sizeof(spec)) : 0,
         },
     };
 
-    return 1 + sizeof(spec);
+    return copy_len;
 }
 
 static struct schemabuf_parser {
