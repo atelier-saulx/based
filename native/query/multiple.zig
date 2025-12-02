@@ -64,7 +64,7 @@ pub fn references(
     // size - is lame
     const nestedQuery = q[index.* .. index.* + header.size - utils.sizeOf(t.QueryHeader)];
 
-    std.debug.print("REFERENCES {any}  \n", .{header.edgeSize});
+    std.debug.print("REFERENCES -- {any}  \n", .{header.edgeSize});
 
     // this is a difference so prob want comtime for typeEntry and fromNode
     const typeEntry = try Node.getType(ctx.db, header.typeId);

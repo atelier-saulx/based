@@ -44,6 +44,8 @@ pub fn getQueryThreaded(
     const q = buffer[index .. buffer.len - 8]; // - checksum len
     const op = utils.read(t.OpType, q, 0);
 
+    std.debug.print("DERP DERP\n", .{});
+
     _ = try thread.query.result(0, queryId, op);
 
     switch (op) {
