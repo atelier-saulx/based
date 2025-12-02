@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 SUPPORTED_LOCALES := \
+	C \
 	ab_GE \
 	aa_DJ \
 	af_ZA \

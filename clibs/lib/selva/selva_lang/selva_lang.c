@@ -8,11 +8,18 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <langinfo.h>
 #include "jemalloc_selva.h"
 #include "selva_error.h"
 #include "selva/selva_lang.h"
 
 #define FALLBACK_LANG "en" /* TODO make configurable at runtime */
+
+#if __linux__
+#define LOC_ID_SOURCE _NL_IDENTIFICATION_SOURCE
+#else
+#define LOC_ID_SOURCE CODESET
+#endif
 
 #if (__APPLE__)
 #define FORALL_LANGS(apply) \
@@ -408,8 +415,44 @@ static void langs_log(const struct selva_lang *lang, int err)
             selva_strerror(err));
 }
 
+__unused static void check_selva_c_loc(void)
+{
+    locale_t loc;
+
+    /*
+     * Note: This leaks some memory: https://sourceware.org/bugzilla/show_bug.cgi?id=25770
+     */
+    loc = newlocale(LC_ALL_MASK, "C.UTF-8", 0);
+    if (!loc) {
+        int err;
+
+        if (errno == EINVAL) {
+            err = SELVA_EINVAL;
+        } else if (errno == ENOENT) {
+            err = SELVA_ENOENT;
+        } else if (errno == ENOMEM) {
+            err = SELVA_ENOMEM;
+        } else {
+            err = SELVA_EGENERAL;
+        }
+
+        fprintf(stderr, "WARN: Using system default locales (%s)\n", selva_strerror(err));
+        return;
+    }
+
+    char *loc_source = nl_langinfo_l(LOC_ID_SOURCE, loc);
+    if (strcmp(loc_source, "selva") != 0) {
+        fprintf(stderr, "WARN: Using system default locales\n");
+    }
+
+    (void)freelocale(loc);
+}
+
 __constructor static void load_langs(void)
 {
+#if __linux__
+    check_selva_c_loc();
+#endif
     qsort(selva_langs.langs, selva_langs.len, sizeof(struct selva_lang), wrap_lang_compare);
     /* TODO We should handle this error */
     selva_lang_set_fallback(FALLBACK_LANG, sizeof(FALLBACK_LANG) - 1);
