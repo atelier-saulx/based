@@ -97,7 +97,7 @@ await test('include', async (t) => {
     // .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
     .include('nr') //  'flap'
-    .include('todos.name')
+    .include('todos.name', 'todos.$status')
     // .include('name')
     .range(0, 2)
     .get()

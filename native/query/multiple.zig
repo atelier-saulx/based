@@ -21,7 +21,7 @@ pub fn default(
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
 
-    std.debug.print("flap {any} \n", .{header.size});
+    std.debug.print("DEFAULT QUERY {any} \n", .{header.size});
     // so what we want is a node iterator for both refs and non refs
     // that iterator will have filter etc as options
     // so the code can be the same
@@ -64,7 +64,7 @@ pub fn references(
     // size - is lame
     const nestedQuery = q[index.* .. index.* + header.size - utils.sizeOf(t.QueryHeader)];
 
-    // std.debug.print("flap? {any} {any}  \n", .{ header, nestedQuery });
+    std.debug.print("REFERENCES {any}  \n", .{header.edgeSize});
 
     // this is a difference so prob want comtime for typeEntry and fromNode
     const typeEntry = try Node.getType(ctx.db, header.typeId);
@@ -73,6 +73,9 @@ pub fn references(
 
     // std.debug.print("REFS -> {any} \n", .{it.refs.nr_refs});
     index.* += header.size;
+    if (header.includeEdge) {
+        index.* += header.edgeSize;
+    }
 
     while (it.next()) |node| {
         // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {

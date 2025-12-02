@@ -1883,7 +1883,7 @@ export type QueryHeader = {
   limit: number
   filterSize: number
   searchSize: number
-  edgeQueryOffset: number
+  edgeSize: number
   subType: QuerySubTypeEnum
   includeEdge: boolean
   sort: boolean
@@ -1912,7 +1912,7 @@ export const writeQueryHeader = (
   offset += 2
   writeUint16(buf, header.searchSize, offset)
   offset += 2
-  writeUint16(buf, header.edgeQueryOffset, offset)
+  writeUint16(buf, header.edgeSize, offset)
   offset += 2
   buf[offset] = header.subType
   offset += 1
@@ -1949,7 +1949,7 @@ export const writeQueryHeaderProps = {
   searchSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 16)
   },
-  edgeQueryOffset: (buf: Uint8Array, value: number, offset: number) => {
+  edgeSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 18)
   },
   subType: (buf: Uint8Array, value: QuerySubTypeEnum, offset: number) => {
@@ -1976,7 +1976,7 @@ export const readQueryHeader = (
     limit: readUint32(buf, offset + 10),
     filterSize: readUint16(buf, offset + 14),
     searchSize: readUint16(buf, offset + 16),
-    edgeQueryOffset: readUint16(buf, offset + 18),
+    edgeSize: readUint16(buf, offset + 18),
     subType: (buf[offset + 20]) as QuerySubTypeEnum,
     includeEdge: (((buf[offset + 21] >>> 0) & 1)) === 1,
     sort: (((buf[offset + 21] >>> 1) & 1)) === 1,
@@ -2009,7 +2009,7 @@ export const readQueryHeaderProps = {
   searchSize: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 16)
   },
-  edgeQueryOffset: (buf: Uint8Array, offset: number): number => {
+  edgeSize: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 18)
   },
   subType: (buf: Uint8Array, offset: number): QuerySubTypeEnum => {

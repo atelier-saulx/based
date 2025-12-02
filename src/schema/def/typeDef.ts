@@ -46,8 +46,8 @@ export const updateTypeDefs = (schema: SchemaOut) => {
     schemaTypesParsedById[def.id] = def
   }
 
-  for (const schema of Object.values(schemaTypesParsed)) {
-    for (const prop of Object.values(schema.props)) {
+  for (const schemaType of Object.values(schemaTypesParsed)) {
+    for (const prop of Object.values(schemaType.props)) {
       if (
         prop.typeIndex === PropType.reference ||
         prop.typeIndex === PropType.references
@@ -83,7 +83,37 @@ export const updateTypeDefs = (schema: SchemaOut) => {
           // Update edgeNodeTypeId
           if (!prop.edgeNodeTypeId) {
             if (prop.edges) {
-              const edgeTypeName = `_${[`${schema.type}_${prop.path.join('_')}`, `${dstType.type}_${dstType.props[prop.inversePropName as string].path.join('_')}`].sort().join(':')}`
+              const edgeTypeName = `_${[`${schemaType.type}_${prop.path.join('_')}`, `${dstType.type}_${dstType.props[prop.inversePropName as string].path.join('_')}`].sort().join(':')}`
+
+              // console.log(edgeTypeName, Object.keys(schemaTypesParsed))
+
+              if (!schemaTypesParsed[edgeTypeName]) {
+                // make it
+                console.log('have to make edge type')
+                //prop.edges, schema.types
+
+                // const type = schema.types[edgeTypeName]
+                const fakeEdgeType: any = {}
+                for (const k in prop.edges) {
+                  fakeEdgeType[k] = prop.edges[k].schema
+                }
+                const locales = schema.locales ?? { en: {} }
+                const result = createEmptyDef(
+                  edgeTypeName,
+                  fakeEdgeType,
+                  locales,
+                )
+                result.id = typeIdCnt++
+                const def = createSchemaTypeDef(
+                  edgeTypeName,
+                  fakeEdgeType,
+                  locales,
+                  result,
+                )
+                schemaTypesParsed[edgeTypeName] = def
+                schemaTypesParsedById[def.id] = def
+              }
+
               const edgeType = schemaTypesParsed[edgeTypeName]
               prop.edgeNodeTypeId = edgeType.id
               dstType.props[prop.inversePropName as string].edgeNodeTypeId =

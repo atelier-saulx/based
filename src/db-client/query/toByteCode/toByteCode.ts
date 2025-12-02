@@ -52,8 +52,19 @@ export function defToBuffer(
       }
     })
 
+    let edge: IntermediateByteCode[] | undefined = undefined
+    const includeSize = byteSize(include)
+    let edgeSize = 0
+
     if (def.edges) {
-      console.log('thid is edge time!', def.edges)
+      edge = defToBuffer(db, def.edges)
+      if (def.edges.errors) {
+        def.errors.push(...def.edges.errors)
+      }
+    }
+
+    if (edge) {
+      edgeSize = byteSize(edge)
     }
 
     const buffer = new Uint8Array(
@@ -66,15 +77,15 @@ export function defToBuffer(
         op: isReferences ? QueryType.references : QueryType.default,
         prop: isReferences ? def.target.propDef!.prop : ID_PROP,
         // this does not seem nessecary
-        size: buffer.byteLength + byteSize(include), // for top level the byte size is not very important
+        size: buffer.byteLength + byteSize(includeSize), // for top level the byte size is not very important
         typeId: def.schema!.id,
         offset: def.range.offset,
         limit: def.range.limit,
         sort: hasSort,
-        includeEdge: false,
+        includeEdge: !!edge,
         filterSize: def.filter.size,
         searchSize,
-        edgeQueryOffset: 0,
+        edgeSize,
         subType: getQuerySubType(def),
       },
       0,
