@@ -144,8 +144,7 @@ SUPPORTED_LOCALES := \
 	yo_NG \
 	zu_ZA
 
-uname_M := $(subst arm64,aarch64,$(shell sh -c 'uname -m 2>/dev/null || echo not'))
-LOCPATH ?= locale-$(uname_M)-gnu/locale
+LOCPATH ?= ../dist/locale
 LOCALES := $(patsubst %,%.UTF-8,$(SUPPORTED_LOCALES))
 LOCALE_RES := $(addprefix $(LOCPATH)/,$(LOCALES))
 
