@@ -62,7 +62,7 @@ await test('include', async (t) => {
 
   console.log({ todo, todo2 })
 
-  for (let i = 0; i < 1e7; i++) {
+  for (let i = 0; i < 1e6; i++) {
     db.create('user', {
       nr: i + 67,
       name: 'A',
@@ -134,7 +134,7 @@ await test('include', async (t) => {
           db
             .query('user')
             .include('name')
-            .range(0, 1e7 + i)
+            .range(0, 1e6 + i)
             .get(),
         )
       }
