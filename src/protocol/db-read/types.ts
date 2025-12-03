@@ -97,13 +97,6 @@ export type ReaderSchema = {
   search: boolean
 }
 
-export const READ_ID = 255
-export const READ_EDGE = 252
-export const READ_REFERENCES = 253
-export const READ_REFERENCE = 254
-export const READ_AGGREGATION = 250
-export const READ_META = 249 // hmm expand this better
-
 export enum AggregateType {
   SUM = 1,
   COUNT = 2,

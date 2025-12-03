@@ -8,14 +8,6 @@ import {
   ReadInstruction,
 } from './types.js'
 import { readAggregate } from './aggregate.js'
-import {
-  READ_AGGREGATION,
-  READ_META,
-  READ_REFERENCE,
-  READ_REFERENCES,
-  READ_EDGE,
-  READ_ID,
-} from './types.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
@@ -25,6 +17,7 @@ import {
   IncludeResponseMetaByteSize,
   PropType,
   readIncludeResponseMeta,
+  ReadOp,
 } from '../../zigTsExports.js'
 
 export * from './types.js'
@@ -127,15 +120,16 @@ const readInstruction = (
   i: number,
   item: Item,
 ): number => {
-  if (instruction === READ_META) {
+  if (instruction === ReadOp.meta) {
     return meta(q, result, i, item)
-  } else if (instruction === READ_AGGREGATION) {
+  } else if (instruction === ReadOp.aggregation) {
     return aggregation(q, result, i, item)
-  } else if (instruction === READ_REFERENCE) {
+  } else if (instruction === ReadOp.reference) {
     return reference(q, result, i, item)
-  } else if (instruction === READ_REFERENCES) {
+  } else if (instruction === ReadOp.references) {
     return references(q, result, i, item)
-  } else if (instruction === READ_EDGE) {
+  } else if (instruction === ReadOp.edge) {
+    // this will completely change!
     return edge(q, result, i, item)
   } else if (instruction === 0) {
     return readMain(q, result, i, item)
@@ -156,7 +150,7 @@ export const readProps = (
   while (i < end) {
     const instruction = result[i]
     i++
-    if (instruction === READ_ID) {
+    if (instruction === ReadOp.id) {
       undefinedProps(q, item)
       // Next node
       return i - offset
