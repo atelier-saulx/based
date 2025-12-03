@@ -140,12 +140,7 @@ await test('include', async (t) => {
         q.push(
           await db
             .query('user')
-            // .locale('nl', ['no', 'de'])
-            // .include('body', { meta: true, end: 10 })
-            // .include('name', { meta: 'only' })
-            .include('id') //  'flap'
-            // .include('todos.name') // 'todos.$status'
-            // .include('name')
+            .include('id')
             .range(0, 1e6 + i)
             .get(),
         )
