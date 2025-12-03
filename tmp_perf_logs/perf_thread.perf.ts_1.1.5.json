@@ -1,0 +1,226 @@
+{
+  "default": [
+    {
+      "timestamp": "2025-11-27T10:59:22.175Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 5.5768,
+      "totalDurationMs": 5.5768,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": -0.10159999999999947,
+      "previous": 5.6784
+    },
+    {
+      "timestamp": "2025-11-27T10:59:24.350Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 5.8513,
+      "totalDurationMs": 5.8513,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": 0.27449999999999974,
+      "previous": 5.5768
+    },
+    {
+      "timestamp": "2025-11-27T12:06:57.004Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 2.1384,
+      "totalDurationMs": 2.1384,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": -3.7129000000000003,
+      "previous": 5.8513
+    },
+    {
+      "timestamp": "2025-11-27T12:07:49.012Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 2.1867,
+      "totalDurationMs": 2.1867,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": 0.04830000000000023,
+      "previous": 2.1384
+    },
+    {
+      "timestamp": "2025-11-27T12:18:22.870Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 2.3396,
+      "totalDurationMs": 2.3396,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": 0.1528999999999998,
+      "previous": 2.1867
+    },
+    {
+      "timestamp": "2025-11-27T12:18:25.005Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 2.1337,
+      "totalDurationMs": 2.1337,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": -0.20589999999999975,
+      "previous": 2.3396
+    },
+    {
+      "timestamp": "2025-11-27T12:18:57.956Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 2.2451,
+      "totalDurationMs": 2.2451,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": 0.11139999999999972,
+      "previous": 2.1337
+    },
+    {
+      "timestamp": "2025-11-27T12:19:05.046Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 2.1322,
+      "totalDurationMs": 2.1322,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": -0.11289999999999978,
+      "previous": 2.2451
+    },
+    {
+      "timestamp": "2025-11-27T12:20:13.937Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 2.2191,
+      "totalDurationMs": 2.2191,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": 0.08689999999999998,
+      "previous": 2.1322
+    },
+    {
+      "timestamp": "2025-11-27T13:50:18.501Z",
+      "dbVersion": "1.1.5",
+      "label": "Dun",
+      "avgDurationMs": 0.8567,
+      "totalDurationMs": 0.8567,
+      "repetitions": 1,
+      "isDebugMode": false,
+      "difference": -1.3624,
+      "previous": 2.2191
+    }
+  ],
+  "include": [
+    {
+      "timestamp": "2025-11-27T08:47:12.511Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 19.5946,
+      "totalDurationMs": 195.9459,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": -13.575299999999999,
+      "previous": 209.5212
+    },
+    {
+      "timestamp": "2025-11-27T08:47:25.314Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 29.2768,
+      "totalDurationMs": 292.7684,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": 96.82249999999999,
+      "previous": 195.9459
+    },
+    {
+      "timestamp": "2025-11-27T09:21:03.325Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 21.7507,
+      "totalDurationMs": 217.5072,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": -75.26119999999997,
+      "previous": 292.7684
+    },
+    {
+      "timestamp": "2025-11-27T09:23:38.302Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 29.0812,
+      "totalDurationMs": 290.812,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": 73.3048,
+      "previous": 217.5072
+    },
+    {
+      "timestamp": "2025-11-27T09:23:54.165Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 19.153,
+      "totalDurationMs": 191.5299,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": -99.28210000000001,
+      "previous": 290.812
+    },
+    {
+      "timestamp": "2025-11-27T10:13:14.503Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 19.5284,
+      "totalDurationMs": 195.284,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": 3.754099999999994,
+      "previous": 191.5299
+    },
+    {
+      "timestamp": "2025-11-27T10:23:46.681Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 20.0348,
+      "totalDurationMs": 200.3479,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": 5.063900000000018,
+      "previous": 195.284
+    },
+    {
+      "timestamp": "2025-11-27T10:23:58.731Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 27.89,
+      "totalDurationMs": 278.8999,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": 78.55199999999999,
+      "previous": 200.3479
+    },
+    {
+      "timestamp": "2025-11-27T10:26:20.161Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 28.4014,
+      "totalDurationMs": 284.0143,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": 5.114399999999989,
+      "previous": 278.8999
+    },
+    {
+      "timestamp": "2025-11-27T10:28:35.151Z",
+      "dbVersion": "1.1.5",
+      "label": "Nodes",
+      "avgDurationMs": 28.7199,
+      "totalDurationMs": 287.199,
+      "repetitions": 10,
+      "isDebugMode": false,
+      "difference": 3.1847000000000207,
+      "previous": 284.0143
+    }
+  ]
+}

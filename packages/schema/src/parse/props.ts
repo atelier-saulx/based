@@ -42,7 +42,6 @@ import {
 } from './errors.js'
 import type { SchemaParser } from './index.js'
 import { getPropType } from './utils.js'
-import { DEFAULT_MAP } from '../def/defaultMap.js'
 import { parseMinMaxStep } from '../def/utils.js'
 
 let stringFormatsSet: Set<string>
@@ -203,12 +202,12 @@ export const isDefault = (val, prop, ctx) => {
   if (!validation(val, tmpProp)) {
     throw new Error(`Incorrect default for type "${prop.type ?? 'enum'}"`)
   }
-  if ('enum' in prop) {
-    if (val === undefined) {
-      return 0
-    }
-    return prop.enum.findIndex((v) => v === val) + 1
-  }
+  // if ('enum' in prop) {
+  //   if (val === undefined) {
+  //     return 0
+  //   }
+  //   return prop.enum.findIndex((v) => v === val) + 1
+  // }
   return val
 }
 
@@ -362,7 +361,10 @@ p.references = propParser<SchemaReferences>(
       }
     },
     capped(val) {
-      if (val !== undefined && (typeof val !== 'number' || val < 0 || !Number.isInteger(val))) {
+      if (
+        val !== undefined &&
+        (typeof val !== 'number' || val < 0 || !Number.isInteger(val))
+      ) {
         throw Error(INVALID_VALUE)
       }
     },

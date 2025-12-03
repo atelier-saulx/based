@@ -1,9 +1,9 @@
 import test from 'node:test'
-import { throws } from 'node:assert'
+import { equal, throws } from 'node:assert'
 import { parse } from '@based/schema'
 
 await test('enum', () => {
-  parse({
+  const { schema } = parse({
     props: {
       myEnum: {
         enum: ['published', 'draft'],
@@ -11,6 +11,8 @@ await test('enum', () => {
       },
     },
   })
+
+  equal((schema.props.myEnum as any).default, 'published')
 
   parse({
     props: {

@@ -62,7 +62,7 @@ map[ENUM] = (ctx, val, def) => {
   validate(val, def)
   if (val === null) {
     reserve(ctx, 1)
-    writeU8(ctx, def.default)
+    writeU8(ctx, def.reverseEnum[def.default] + 1)
   } else if (val in def.reverseEnum) {
     reserve(ctx, 1)
     writeU8(ctx, def.reverseEnum[val] + 1)
