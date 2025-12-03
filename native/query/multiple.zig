@@ -24,6 +24,7 @@ pub fn default(
     // so what we want is a node iterator for both refs and non refs
     // that iterator will have filter etc as options
     // so the code can be the same
+
     var it = Node.iterator(false, typeEntry);
     while (it.next()) |node| {
         // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {

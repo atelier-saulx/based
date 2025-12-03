@@ -98,7 +98,7 @@ pub fn NodeTypeIterator(
     return struct {
         typeEntry: selva.Type,
         node: ?Node,
-        pub inline fn next(self: *NodeTypeIterator(desc)) ?Node {
+        pub fn next(self: *NodeTypeIterator(desc)) ?Node {
             const node = self.node;
             if (node) |n| {
                 if (desc) {

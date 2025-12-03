@@ -32,7 +32,7 @@ pub fn recursionErrorBoundary(
     };
 }
 
-pub fn include(
+pub inline fn include(
     node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
@@ -41,66 +41,65 @@ pub fn include(
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
-        // std.debug.print("OP {any} \n", .{op});
 
         switch (op) {
             t.IncludeOp.references => {
                 recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
             },
             t.IncludeOp.partial => {
-                const header = utils.readNext(t.IncludePartialHeader, q, &i);
-                const value = try get(typeEntry, node, &header);
-                try ctx.thread.query.append(header.prop);
-                var it = utils.readIterator(t.IncludePartialProp, q, header.amount, &i);
-                while (it.next()) |p| {
-                    try ctx.thread.query.append(value[p.start .. p.start + p.size]);
-                }
+                // const header = utils.readNext(t.IncludePartialHeader, q, &i);
+                // const value = try get(typeEntry, node, &header);
+                // try ctx.thread.query.append(header.prop);
+                // var it = utils.readIterator(t.IncludePartialProp, q, header.amount, &i);
+                // while (it.next()) |p| {
+                //     try ctx.thread.query.append(value[p.start .. p.start + p.size]);
+                // }
             },
             t.IncludeOp.meta => {
-                const header = utils.readNext(t.IncludeMetaHeader, q, &i);
-                const value = try get(typeEntry, node, &header);
-                switch (header.propType) {
-                    t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
-                        try append.meta(ctx.thread, header.prop, value);
-                    },
-                    t.PropType.text => {
-                        var iter = Fields.textIterator(value);
-                        while (iter.next()) |textValue| {
-                            try append.meta(ctx.thread, header.prop, textValue);
-                        }
-                    },
-                    else => {
-                        // no usefull metainfo for non selvaString props yet
-                    },
-                }
+                // const header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                // const value = try get(typeEntry, node, &header);
+                // switch (header.propType) {
+                //     t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
+                //         try append.meta(ctx.thread, header.prop, value);
+                //     },
+                //     t.PropType.text => {
+                //         var iter = Fields.textIterator(value);
+                //         while (iter.next()) |textValue| {
+                //             try append.meta(ctx.thread, header.prop, textValue);
+                //         }
+                //     },
+                //     else => {
+                //         // no usefull metainfo for non selvaString props yet
+                //     },
+                // }
             },
             t.IncludeOp.metaWithOpts => {
-                var header = utils.readNext(t.IncludeMetaHeader, q, &i);
-                const value = try get(typeEntry, node, &header);
-                switch (header.propType) {
-                    t.PropType.text => {
-                        var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-                        try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
-                    },
-                    else => {},
-                }
+                // var header = utils.readNext(t.IncludeMetaHeader, q, &i);
+                // const value = try get(typeEntry, node, &header);
+                // switch (header.propType) {
+                //     t.PropType.text => {
+                //         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+                //         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
+                //     },
+                //     else => {},
+                // }
             },
             t.IncludeOp.defaultWithOpts => {
-                const header = utils.readNext(t.IncludeHeader, q, &i);
-                const value = try get(typeEntry, node, &header);
-                var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
-                switch (header.propType) {
-                    t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        try opts.string(ctx.thread, header.prop, value, &optsHeader);
-                    },
-                    t.PropType.text,
-                    => {
-                        try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
-                    },
-                    else => {
-                        try append.default(ctx.thread, header.prop, opts.parse(value, &optsHeader));
-                    },
-                }
+                // const header = utils.readNext(t.IncludeHeader, q, &i);
+                // const value = try get(typeEntry, node, &header);
+                // var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
+                // switch (header.propType) {
+                //     t.PropType.binary, t.PropType.string, t.PropType.json => {
+                //         try opts.string(ctx.thread, header.prop, value, &optsHeader);
+                //     },
+                //     t.PropType.text,
+                //     => {
+                //         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
+                //     },
+                //     else => {
+                //         try append.default(ctx.thread, header.prop, opts.parse(value, &optsHeader));
+                //     },
+                // }
             },
             t.IncludeOp.default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
@@ -114,8 +113,6 @@ pub fn include(
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        // utils.printString(header, value);
-
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
@@ -129,7 +126,7 @@ pub fn include(
                 }
             },
             else => {
-                // std.debug.print("WRONG", .{});
+                std.debug.print("WRONG", .{});
                 i += 1;
                 // Unhandled operation - will remove this late
                 // t.IncludeOp.reference => {

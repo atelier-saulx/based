@@ -62,7 +62,7 @@ await test('include', async (t) => {
 
   console.log({ todo, todo2 })
 
-  for (let i = 0; i < 2e6; i++) {
+  for (let i = 0; i < 1e6; i++) {
     db.create('user', {
       nr: i + 67,
       name: 'A',
@@ -124,16 +124,16 @@ await test('include', async (t) => {
   //   .debug()
   // .toObject(),
 
-  await db.query('user').include('name').range(0, 1).get().inspect()
+  // await db.query('user').include('name').range(0, 1).get().inspect()
 
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1e3; i++) {
+      for (let i = 0; i < 1e2; i++) {
         q.push(
           db
             .query('user')
-            .include('nr')
+            .include('name')
             .range(0, 1e6 + i)
             .get(),
         )
@@ -141,7 +141,7 @@ await test('include', async (t) => {
       await Promise.all(q)
     },
     'Nodes',
-    { repeat: 100 },
+    { repeat: 10 },
   )
 
   await wait(100)
