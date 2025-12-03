@@ -473,7 +473,6 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
 
         res = schemabuf_parsers[field_type].type2fs(ctx, fields_schema, field_idx);
         if (res < 0) {
-            /* TODO Potential memory leak */
             return res;
         }
 
@@ -481,7 +480,6 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
         field_idx++;
     }
 
-    /* TODO Fix memory leak */
     if (field_idx != fields_schema->nr_fields) {
         return SELVA_EINVAL;
     }

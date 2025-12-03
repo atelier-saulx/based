@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <langinfo.h>
+#include "db_panic.h"
 #include "jemalloc_selva.h"
 #include "selva_error.h"
 #include "selva/selva_lang.h"
@@ -450,12 +451,16 @@ __unused static void check_selva_c_loc(void)
 
 __constructor static void load_langs(void)
 {
+    int err;
+
 #if __linux__
     check_selva_c_loc();
 #endif
     qsort(selva_langs.langs, selva_langs.len, sizeof(struct selva_lang), wrap_lang_compare);
-    /* TODO We should handle this error */
-    selva_lang_set_fallback(FALLBACK_LANG, sizeof(FALLBACK_LANG) - 1);
+    err = selva_lang_set_fallback(FALLBACK_LANG, sizeof(FALLBACK_LANG) - 1);
+    if (err) {
+        db_panic("Failed to load the fallback locale (%s): %s", FALLBACK_LANG, selva_strerror(err));
+    }
 }
 
 __destructor static void unload_langs(void)
