@@ -18,6 +18,7 @@
 #include "bits.h"
 #include "db_panic.h"
 #include "db.h"
+#include "io.h"
 #include "schema.h"
 
 #define SCHEMA_MIN_SIZE                 8
@@ -495,7 +496,7 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
  * @param[out] ns
  * @param[out] type
  */
-int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t len)
+int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t len, uint32_t max_version)
 {
     struct SelvaFieldsSchema *fields_schema = &ns->fields_schema;
     struct schemabuf_parser_ctx ctx = {
@@ -512,6 +513,11 @@ int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t le
     ctx.version = buf[SCHEMA_OFF_VERSION];
     fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
     fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
+
+    if (ctx.version > max_version) {
+        /* Can't load a schema created with a newer version. */
+        return SELVA_ENOTSUP;
+    }
 
     int err = parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
     ns->nr_aliases = ctx.alias_index;

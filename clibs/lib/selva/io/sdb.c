@@ -58,37 +58,8 @@
  * hexdump -s 8 -n 40 -e '40/1 "%c"' common.sdb
  * hexdump -s 48 -n 40 -e '40/1 "%c"' common.sdb
  * ```
- *
- * SDB Version History
- * -------------------
- *
- * **1**
- * - First stable version
- *
- * **2**
- * - Adds colvec serialization at the end of each range file
- *
- * **3**
- * - ref save logic moved completely to flags given from the schema package
- * - meta/edge fields is now a *type*
- *
- * **4**
- * - Remove weak reference(s)
- *
- * **5**
- * - Remove EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP and always save both sides of refs
- *
- * **6**
- * - Add support for default value in SELVA_FIELD_TYPE_MICRO_BUFFER
- *
- * **7**
- * - Capped references
- *
- * **8**
- * - Add support for default value in SELVA_FIELD_TYPE_STRING, SELVA_FIELD_TYPE_STRING, and SELVA_FIELD_TYPE_COLVEC
  */
 
-#define SDB_VERSION 8 /*!< Bump this if the serialization format changes. */
 #define SDB_COMPRESSION_LEVEL 1
 #define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
@@ -474,7 +445,7 @@ void sdb_init(struct selva_io *io)
 {
     sdb_hash_init(io);
 
-    io->sdb_version = SDB_VERSION; /* this might change later in sdb_read_header(). */
+    io->sdb_version = SELVA_SDB_VERSION; /* this might change later in sdb_read_header(). */
 
     /*
      * Initialize compressor if requested or if reading because we don't know
@@ -578,7 +549,7 @@ int sdb_read_header(struct selva_io *io)
     }
 
     io->sdb_version = letoh(io->sdb_version);
-    if (io->sdb_version < 3 || io->sdb_version > SDB_VERSION) {
+    if (io->sdb_version < 3 || io->sdb_version > SELVA_SDB_VERSION) {
         return SELVA_ENOTSUP;
     }
 

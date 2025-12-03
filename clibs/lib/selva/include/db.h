@@ -147,6 +147,8 @@ struct SelvaDb {
      * Expiring nodes.
      */
     struct SelvaExpire expiring;
+
+    uint32_t sdb_version; /*!< Current SDB version. Set on common load and save. 0 if not saved/loaded. */
 };
 
 RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)

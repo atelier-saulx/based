@@ -24,6 +24,6 @@ int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len);
 /**
  * Parse node schema.
  */
-int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t len);
+int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t len, unsigned max_version);
 
 void schemabuf_deinit_fields_schema(struct SelvaFieldsSchema *schema);

@@ -14,8 +14,8 @@
 #include "queue.h"
 #include "selva_error.h"
 #include "schema.h"
-#include "ida.h"
 #include "db_panic.h"
+#include "io.h"
 #include "db.h"
 
 #define NODEPOOL_SLAB_SIZE 2097152
@@ -368,7 +368,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
 
     memset(te, 0, sizeof(*te));
     te->type = type;
-    err = schemabuf_parse_ns(&te->ns, schema_buf, schema_len);
+    err = schemabuf_parse_ns(&te->ns, schema_buf, schema_len, db->sdb_version ?: SELVA_SDB_VERSION);
     if (err) {
         mempool_return(&db->types.pool, te);
         return err;
