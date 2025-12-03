@@ -39,7 +39,6 @@ OBJ := \
 	io/sdb.o \
 	membar.o \
 	mem/auto_free.o \
-	mem/finalizer.o \
 	mem/mempool.o \
 	node_id_set.o \
 	poptop.o \
