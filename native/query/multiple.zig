@@ -64,8 +64,9 @@ pub fn references(
     // add 4
     const resultByteSizeIndex = try ctx.thread.query.reserve(4);
     const startIndex = ctx.thread.query.index;
+    // ------------- this piece can be shared completely
 
-    // var correctedForOffset: u32 = header.offset;
+    var correctedForOffset: u32 = header.offset;
     var nodeCnt: u32 = 0;
     const sizeIndex = try ctx.thread.query.reserve(4);
     // size - is lame
@@ -88,11 +89,10 @@ pub fn references(
         //     continue :checkItem;
         // }
 
-        // if (correctedForOffset != 0) {
-        //     correctedForOffset -= 1;
-        //     continue;
-        // }
-
+        if (correctedForOffset != 0) {
+            correctedForOffset -= 1;
+            continue;
+        }
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(node));
         try include.include(node, ctx, nestedQuery, typeEntry);
@@ -101,7 +101,10 @@ pub fn references(
             break;
         }
     }
+
     ctx.thread.query.write(nodeCnt, sizeIndex);
+
+    // ------------
 
     ctx.thread.query.writeAs(
         u32,

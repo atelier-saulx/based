@@ -105,7 +105,10 @@ const references: ReadInstruction = (q, result, i, item) => {
   i += 4
   const refs = resultToObject(ref.schema, result, size + i, i)
   addProp(ref.prop, refs, item)
-  i += size + 4
+
+  console.log('------->', 'x')
+
+  i += size
   return i
 }
 

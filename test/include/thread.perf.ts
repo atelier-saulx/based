@@ -41,7 +41,7 @@ await test('include', async (t) => {
           // flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
           // derp: ['hello', 'bye'],
           // name: { type: 'string' }, // default: 'xxxx'
-          // nr: { type: 'uint32' },
+          nr: { type: 'uint32' },
           // body: { type: 'text' }, // compression: 'none'
         },
       },
@@ -61,9 +61,9 @@ await test('include', async (t) => {
   console.log({ todo, todo2 })
   let d = Date.now()
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 2; i++) {
     db.create('user', {
-      // nr: i + 67,
+      nr: i + 67,
       // name: 'A',
       // flap: '⚡️',
       todos: [todo2, todo],
@@ -102,10 +102,10 @@ await test('include', async (t) => {
     // .locale('nl', ['no', 'de'])
     // .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
-    // .include('nr') //  'flap'
+    .include('nr') //  'flap'
     .include('todos.name') // 'todos.$status'
     // .include('name')
-    .range(0, 2)
+    .range(0, 20)
     .get()
 
   x.debug()
