@@ -7,7 +7,7 @@
 #include <stdint.h>
 
 /**
- * The following macros will look like they do a lot of mangling in runtime but
+ * The following macros may look like they do a lot of mangling at runtime but
  * any -O level should actually optimize the results to be comptime constants.
  */
 
@@ -28,8 +28,8 @@
 
 #define __bitsizeof(t, f, l) ({ \
     typedef unsigned long long __pad; \
-    union { __pad raw##l[(sizeof(t)+sizeof(__pad)-1)/sizeof(__pad)]; t typ; } a = {}; \
-    --a.typ.f; (findbit(a.raw##l, 64-__builtin_clzll))-findbit(a.raw##l, __builtin_ctzll); \
+    union { __pad raw##l[(sizeof(t) + sizeof(__pad) - 1)/sizeof(__pad)]; t typ; } a = {}; \
+    --a.typ.f; (findbit(a.raw##l, 64 - __builtin_clzll)) - findbit(a.raw##l, __builtin_ctzll); \
  })
 #define _bitsizeof(t, f, l) __bitsizeof(t, f, l)
 
