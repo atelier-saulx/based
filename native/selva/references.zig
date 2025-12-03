@@ -55,13 +55,10 @@ const ReferencesIterator1 = struct {
     dstType: Node.Type,
     i: u32 = 0,
     pub fn next(self: *ReferencesIterator1) ?Node.Node {
-        std.debug.print("REFS NR {any} \n", .{self.refs.nr_refs});
         // assert
-
         if (self.refs.size == selva.c.SELVA_NODE_REFERENCE_SMALL and self.i < self.refs.nr_refs) {
             const ref = self.refs.unnamed_0.small[self.i];
             const node = Node.getNode(self.dstType, ref.dst);
-            std.debug.print(" -> RETURN THIS \n", .{});
             self.i += 1;
             return node;
         } else {
