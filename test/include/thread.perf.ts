@@ -28,13 +28,13 @@ await test('include', async (t) => {
           nr: { type: 'uint32' },
 
           // creator: { ref: 'user', prop: 'createdTodos' },
-          // assignees: {
-          //   items: {
-          //     ref: 'user',
-          //     prop: 'todos',
-          //   },
-          //   // $status: ['inProgress', 'blocked', 'nothing'],
-          // },
+          assignees: {
+            items: {
+              ref: 'user',
+              prop: 'todos',
+            },
+            // $status: ['inProgress', 'blocked', 'nothing'],
+          },
           done: 'boolean',
         },
       },
@@ -74,7 +74,7 @@ await test('include', async (t) => {
 
       // ading edge here makes it 20x slower (can be better)
 
-      // todos: [todo, todo2],
+      todos: [todo, todo2],
 
       // derp: 'hello',
       // body: {
@@ -138,9 +138,9 @@ await test('include', async (t) => {
       const q: any[] = []
       for (let i = 0; i < 1e2; i++) {
         q.push(
-          await db
+          db
             .query('user')
-            .include('id')
+            .include('id', 'todos.id')
             .range(0, 1e6 + i)
             .get(),
         )

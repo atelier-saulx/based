@@ -44,7 +44,6 @@ pub inline fn include(
 
         switch (op) {
             t.IncludeOp.references => {
-                // try multiple.references(ctx, q, node, typeEntry, &i);
                 recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
             },
             t.IncludeOp.partial => {
