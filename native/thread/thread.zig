@@ -187,6 +187,8 @@ pub const Threads = struct {
                     op = @enumFromInt(m[4]);
                 }
             } else {
+                // std.debug.print("SLEEP {any} \n", .{thread.id});
+
                 self.wakeup.wait(&self.mutex);
             }
 
@@ -219,9 +221,9 @@ pub const Threads = struct {
                         };
                     },
                 }
-                self.mutex.lock();
-
                 thread.query.commit();
+
+                self.mutex.lock();
 
                 self.pendingQueries -= 1;
 

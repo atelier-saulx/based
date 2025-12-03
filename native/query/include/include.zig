@@ -41,7 +41,7 @@ pub fn include(
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
-        std.debug.print("OP {any} \n", .{op});
+        // std.debug.print("OP {any} \n", .{op});
 
         switch (op) {
             t.IncludeOp.references => {
@@ -114,7 +114,7 @@ pub fn include(
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
-                        utils.printString(header, value);
+                        // utils.printString(header, value);
 
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },

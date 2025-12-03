@@ -112,7 +112,7 @@ pub fn NodeTypeIterator(
     };
 }
 
-pub fn iterator(
+pub inline fn iterator(
     comptime desc: bool,
     typeEntry: selva.Type,
 ) NodeTypeIterator(desc) {

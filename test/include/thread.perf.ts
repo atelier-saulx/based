@@ -1,8 +1,9 @@
-import { wait } from '../../src/utils/index.js'
+import { readUint32, wait } from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
 import { BasedDb } from '../../src/index.js'
+import { registerQuery } from '../../src/db-client/query/registerQuery.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -35,11 +36,11 @@ await test('include', async (t) => {
       },
       user: {
         props: {
-          flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
-          derp: ['hello', 'bye'],
+          // flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
+          // derp: ['hello', 'bye'],
           name: { type: 'string' }, // default: 'xxxx'
-          nr: { type: 'uint32', default: 22 },
-          body: { type: 'text' }, // compression: 'none'
+          nr: { type: 'uint32' },
+          // body: { type: 'text' }, // compression: 'none'
         },
       },
     },
@@ -61,19 +62,19 @@ await test('include', async (t) => {
 
   console.log({ todo, todo2 })
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 2e6; i++) {
     db.create('user', {
       nr: i + 67,
       name: 'A',
-      flap: '⚡️',
-      todos: [{ id: todo, $status: 'blocked' }, todo2],
-      derp: 'hello',
-      body: {
-        nl: 'x',
-        fr: 'B',
-        de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
-        en: italy,
-      },
+      // flap: '⚡️',
+      // todos: [{ id: todo, $status: 'blocked' }, todo2],
+      // derp: 'hello',
+      // body: {
+      //   nl: 'x',
+      //   fr: 'B',
+      //   de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+      //   en: italy,
+      // },
     })
   }
 
@@ -86,25 +87,27 @@ await test('include', async (t) => {
   // }
 
   console.log('start query!!!!!!!!!')
+  let d = Date.now()
 
   await db.drain()
+  console.log(Date.now() - d, 'ms')
 
-  console.log('yes?')
+  console.log('yes?xx')
 
-  const x = await db
-    .query('user')
-    // .locale('nl', ['no', 'de'])
-    // .include('body', { meta: true, end: 10 })
-    // .include('name', { meta: 'only' })
-    .include('nr') //  'flap'
-    // .include('todos.name', 'todos.$status')
-    // .include('name')
-    .range(0, 2)
-    .get()
+  // const x = await db
+  //   .query('user')
+  //   // .locale('nl', ['no', 'de'])
+  //   // .include('body', { meta: true, end: 10 })
+  //   // .include('name', { meta: 'only' })
+  //   .include('nr') //  'flap'
+  //   .include('todos.name') // 'todos.$status'
+  //   // .include('name')
+  //   .range(0, 2)
+  //   .get()
 
-  x.debug()
+  // x.debug()
 
-  x.inspect(10)
+  // x.inspect(10)
 
   // console.log('drain done')
   // ;(
@@ -121,32 +124,27 @@ await test('include', async (t) => {
   //   .debug()
   // .toObject(),
 
-  // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
+  await db.query('user').include('name').range(0, 1).get().inspect()
 
-  // await perf(
-  //   async () => {
-  //     const q: any[] = []
-  //     for (let i = 0; i < 1000; i++) {
-  //       q.push(
-  //         db
-  //           .query('user')
-  //           // .locale('nl', ['fr', 'no', 'de'])
-  //           .include('nr')
-  //           // .include('name', 'body', { end: 2 })
-  //           .range(0, 1000 + i)
-  //           .get(),
-  //         // .inspect(),
-  //       )
-  //     }
-  //     await Promise.all(q)
-  //   },
-  //   'Nodes',
-  //   { repeat: 10 },
-  // )
+  await perf(
+    async () => {
+      const q: any[] = []
+      for (let i = 0; i < 1e3; i++) {
+        q.push(
+          db
+            .query('user')
+            .include('nr')
+            .range(0, 1e6 + i)
+            .get(),
+        )
+      }
+      await Promise.all(q)
+    },
+    'Nodes',
+    { repeat: 100 },
+  )
 
-  console.log('done')
-
-  // await wait(100)
+  await wait(100)
 })
 
 await test('default', async (t) => {

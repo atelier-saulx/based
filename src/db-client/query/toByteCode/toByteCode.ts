@@ -71,7 +71,7 @@ export function defToBuffer(
       QueryHeaderByteSize + searchSize + filterSize + sortSize,
     )
 
-    console.log(isReferences, buffer.byteLength, includeSize)
+    // console.log({ isReferences, includeSize, edgeSize })
 
     let index = writeQueryHeader(
       buffer,
