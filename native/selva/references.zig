@@ -55,11 +55,14 @@ const ReferencesIterator1 = struct {
     dstType: Node.Type,
     i: u32 = 0,
     pub fn next(self: *ReferencesIterator1) ?Node.Node {
-        std.debug.print("flap flap {any} \n", .{self.refs.nr_refs});
+        std.debug.print("REFS NR {any} \n", .{self.refs.nr_refs});
+        // assert
+
         if (self.refs.size == selva.c.SELVA_NODE_REFERENCE_SMALL and self.i < self.refs.nr_refs) {
             const ref = self.refs.unnamed_0.small[self.i];
             const node = Node.getNode(self.dstType, ref.dst);
-            self.i = self.i + 1;
+            std.debug.print(" -> RETURN THIS \n", .{});
+            self.i += 1;
             return node;
         } else {
             return null;
@@ -102,6 +105,7 @@ pub fn getReferences(
         return null;
     }
     const dstType = Node.getRefDstType(db, fieldSchema) catch return null;
+
     return switch (if (comptime !includeEdge) ReferencesIterator1 else ReferencesIterator2) {
         ReferencesIterator1 => return ReferencesIterator1{ .refs = refs, .dstType = dstType },
         ReferencesIterator2 => {
@@ -120,6 +124,7 @@ pub fn iterator(
     typeEntry: selva.Type,
 ) !if (!includeEdge) ReferencesIterator1 else ReferencesIterator2 {
     const fieldSchema = try Schema.getFieldSchema(typeEntry, prop);
+
     const it = getReferences(includeEdge, db, node, fieldSchema);
     if (it) |r| {
         return r;

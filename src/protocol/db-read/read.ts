@@ -110,7 +110,7 @@ const references: ReadInstruction = (q, result, i, item) => {
   const ref = q.refs[field]
   const size = readUint32(result, i)
   i += 4
-  const refs = resultToObject(ref.schema, result, size + i + 4, i)
+  const refs = resultToObject(ref.schema, result, size + i, i)
   addProp(ref.prop, refs, item)
   i += size + 4
   return i

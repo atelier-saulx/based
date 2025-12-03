@@ -113,6 +113,7 @@ pub inline fn include(
                         }
                     },
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
+                        utils.printString("derp", value);
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {

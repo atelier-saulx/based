@@ -25,11 +25,13 @@ await test('include', async (t) => {
       todo: {
         props: {
           name: 'string',
-          creator: { ref: 'user', prop: 'createdTodos' },
-          assignee: {
-            ref: 'user',
-            prop: 'todos',
-            $status: ['inProgress', 'blocked', 'nothing'],
+          // creator: { ref: 'user', prop: 'createdTodos' },
+          assignees: {
+            items: {
+              ref: 'user',
+              prop: 'todos',
+            },
+            // $status: ['inProgress', 'blocked', 'nothing'],
           },
           done: 'boolean',
         },
@@ -38,8 +40,8 @@ await test('include', async (t) => {
         props: {
           // flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
           // derp: ['hello', 'bye'],
-          name: { type: 'string' }, // default: 'xxxx'
-          nr: { type: 'uint32' },
+          // name: { type: 'string' }, // default: 'xxxx'
+          // nr: { type: 'uint32' },
           // body: { type: 'text' }, // compression: 'none'
         },
       },
@@ -48,26 +50,28 @@ await test('include', async (t) => {
 
   console.log('SCHEMA DONE')
 
-  db.create('todo', {
-    name: 'A',
-  })
-
   const todo = await db.create('todo', {
-    name: 'TODO',
+    name: 'TODO A',
   })
 
   const todo2 = await db.create('todo', {
-    name: 'TODO2',
+    name: 'TODO B',
   })
 
   console.log({ todo, todo2 })
+  let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1; i++) {
     db.create('user', {
-      nr: i + 67,
-      name: 'A',
+      // nr: i + 67,
+      // name: 'A',
       // flap: '⚡️',
-      // todos: [{ id: todo, $status: 'blocked' }, todo2],
+      todos: [todo2, todo],
+
+      // ading edge here makes it 20x slower (can be better)
+
+      // todos: [todo, todo2],
+
       // derp: 'hello',
       // body: {
       //   nl: 'x',
@@ -87,27 +91,26 @@ await test('include', async (t) => {
   // }
 
   console.log('start query!!!!!!!!!')
-  let d = Date.now()
 
   await db.drain()
   console.log(Date.now() - d, 'ms')
 
-  console.log('yes?xx')
+  console.log('YES ->')
 
-  // const x = await db
-  //   .query('user')
-  //   // .locale('nl', ['no', 'de'])
-  //   // .include('body', { meta: true, end: 10 })
-  //   // .include('name', { meta: 'only' })
-  //   .include('nr') //  'flap'
-  //   .include('todos.name') // 'todos.$status'
-  //   // .include('name')
-  //   .range(0, 2)
-  //   .get()
+  const x = await db
+    .query('user')
+    // .locale('nl', ['no', 'de'])
+    // .include('body', { meta: true, end: 10 })
+    // .include('name', { meta: 'only' })
+    // .include('nr') //  'flap'
+    .include('todos.name') // 'todos.$status'
+    // .include('name')
+    .range(0, 2)
+    .get()
 
-  // x.debug()
+  x.debug()
 
-  // x.inspect(10)
+  x.inspect(10)
 
   // console.log('drain done')
   // ;(
@@ -126,23 +129,23 @@ await test('include', async (t) => {
 
   // await db.query('user').include('name').range(0, 1).get().inspect()
 
-  await perf(
-    async () => {
-      const q: any[] = []
-      for (let i = 0; i < 1e2; i++) {
-        q.push(
-          db
-            .query('user')
-            .include('name')
-            .range(0, 1e6 + i)
-            .get(),
-        )
-      }
-      await Promise.all(q)
-    },
-    'Nodes',
-    { repeat: 10 },
-  )
+  // await perf(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 1e2; i++) {
+  //       q.push(
+  //         db
+  //           .query('user')
+  //           .include('name')
+  //           .range(0, 1e6 + i)
+  //           .get(),
+  //       )
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'Nodes',
+  //   { repeat: 10 },
+  // )
 
   await wait(100)
 })

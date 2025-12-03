@@ -51,26 +51,30 @@ pub fn references(
     ctx: *Query.QueryCtx,
     q: []u8,
     fromNode: Node.Node,
-    orgiTypeEntry: Selva.Type,
+    orginalTypeEntry: Selva.Type,
     index: *usize,
 ) !void {
     const header = utils.readNext(t.QueryHeader, q, index);
 
     // write prop
+    try ctx.thread.query.append(t.ReadOp.references);
+
     try ctx.thread.query.append(header.prop);
 
-    var correctedForOffset: u32 = header.offset;
+    // add 4
+    const resultByteSizeIndex = try ctx.thread.query.reserve(4);
+    const startIndex = ctx.thread.query.index;
+
+    // var correctedForOffset: u32 = header.offset;
     var nodeCnt: u32 = 0;
     const sizeIndex = try ctx.thread.query.reserve(4);
     // size - is lame
     const nestedQuery = q[index.* .. index.* + header.size - utils.sizeOf(t.QueryHeader)];
 
-    // std.debug.print("REFERENCES -- {any}  \n", .{header.edgeSize});
-
     // this is a difference so prob want comtime for typeEntry and fromNode
     const typeEntry = try Node.getType(ctx.db, header.typeId);
 
-    var it = try References.iterator(false, ctx.db, fromNode, header.prop, orgiTypeEntry);
+    var it = try References.iterator(false, ctx.db, fromNode, header.prop, orginalTypeEntry);
 
     // std.debug.print("REFS -> {any} \n", .{it.refs.nr_refs});
     index.* += header.size;
@@ -84,10 +88,10 @@ pub fn references(
         //     continue :checkItem;
         // }
 
-        if (correctedForOffset != 0) {
-            correctedForOffset -= 1;
-            continue;
-        }
+        // if (correctedForOffset != 0) {
+        //     correctedForOffset -= 1;
+        //     continue;
+        // }
 
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(node));
@@ -98,4 +102,10 @@ pub fn references(
         }
     }
     ctx.thread.query.write(nodeCnt, sizeIndex);
+
+    ctx.thread.query.writeAs(
+        u32,
+        @truncate(ctx.thread.query.index - startIndex),
+        resultByteSizeIndex,
+    );
 }

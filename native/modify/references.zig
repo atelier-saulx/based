@@ -126,8 +126,6 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
     const u32ids = read([]u32, aligned, 0);
 
-    std.debug.print("PUT IDS {any} {any} {any} id32 {any} \n", .{ aligned, offset, idsUnAligned, u32ids });
-
     try References.putReferences(
         ctx,
         ctx.node.?,

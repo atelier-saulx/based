@@ -67,7 +67,6 @@ pub const Result = struct {
         value: T,
         offset: usize,
     ) void {
-        @compileLog(T);
         utils.writeAs(T, self.data, value, offset);
     }
 
