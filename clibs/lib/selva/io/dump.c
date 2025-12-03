@@ -236,7 +236,6 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof(uint8_t), fs->smb.len, io);
-            /* TODO Verify CRC */
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
@@ -665,7 +664,6 @@ static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
 
     if (likely(dst_id != 0)) {
-        /* TODO In the future we want to just have an id here. */
         dst_node = selva_upsert_node(dst_te, dst_id);
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
             err = selva_fields_reference_set(db, node, fs, dst_node, &ref, selva_faux_dirty_cb, nullptr);
