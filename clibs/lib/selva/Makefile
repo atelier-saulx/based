@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
-SELVA_VERSION := $(shell sh -c 'git rev-parse --verify HEAD')
+SELVA_VERSION := $(shell bash -c 'git rev-parse --verify HEAD 2>/dev/null || echo "unknown"')
 CFLAGS += -fPIC -fvisibility=hidden \
 		  -iquote ../../include \
 		  -iquote ./include \

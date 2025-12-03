@@ -102,10 +102,19 @@ void colvec_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
      */
     for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
         struct SelvaColvec *colvec = &te->col_fields.colvec[i];
+        const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(&te->ns.fields_schema, colvec->field);
         uint8_t *slab = colvec_init_slab(colvec, block_i);
 
+        assert(fs->type == SELVA_FIELD_TYPE_COLVEC);
+
         void *vec = slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node->node_id);
-        memset(vec, 0, colvec->vec_size);
+        if (fs->colvec.default_off > 0) {
+            const uint8_t *schema_buf = te->schema_buf;
+            const void *default_vec = schema_buf + fs->colvec.default_off;
+            memcpy(vec, default_vec, colvec->vec_size);
+        } else {
+            memset(vec, 0, colvec->vec_size);
+        }
     }
 }
 

@@ -4,7 +4,7 @@ comment_char %
 
 LC_IDENTIFICATION
 title      "C locale"
-source     ""
+source     "selva"
 address    ""
 contact    ""
 email      "bug-glibc-locales@gnu.org"
