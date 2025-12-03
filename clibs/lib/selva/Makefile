@@ -41,7 +41,6 @@ OBJ := \
 	mem/auto_free.o \
 	mem/mempool.o \
 	node_id_set.o \
-	poptop.o \
 	print_ready.o \
 	schema.o \
 	selva_error.o \
