@@ -128,8 +128,9 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
         return nullptr;
     }
 
-    /* TODO Handle error. */
-    init_io_string(io, s, flags);
+    if (init_io_string(io, s, flags)) {
+        return nullptr;
+    }
 
     return s;
 }
@@ -141,10 +142,7 @@ int selva_io_init_string_read(struct selva_io *io, struct selva_string * restric
         return SELVA_EINVAL;
     }
 
-    /* TODO Handle error. */
-    init_io_string(io, s, flags);
-
-    return 0;
+    return init_io_string(io, s, flags);
 }
 
 static void selva_io_close(struct selva_io *io)
