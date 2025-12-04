@@ -660,3 +660,175 @@ await test('many to many', async (t) => {
     { id: 3, scenarios: [{ id: 1, name: 'phase' }] },
   ])
 })
+
+await test.skip('references with edges in single node', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      mission: {
+        props: {
+          name: 'string',
+          maps: {
+            items: {
+              ref: 'map',
+              prop: 'missions',
+              $attachedAt: 'timestamp',
+              $detachedAt: 'timestamp',
+            },
+          },
+        },
+      },
+      map: {
+        props: {
+          name: 'string',
+        },
+      },
+    },
+  })
+
+  const night1Start = new Date('2025-01-01 00:00:00+01:00')
+  const night1End = new Date('2025-01-01 06:00:00+01:00')
+  const night2Start = new Date('2025-01-02 00:00:00+01:00')
+  const night2End = new Date('2025-01-02 06:00:00+01:00')
+  const nightlyNoFlyZones = await db.create('map', {
+    name: 'dont fly here at night',
+  })
+
+  const multiDayMissionId = await db.create('mission', {
+    name: 'I span multiple days',
+    maps: [
+      {
+        id: nightlyNoFlyZones,
+        $attachedAt: night1Start.getTime(),
+        $detachedAt: night1End.getTime(),
+      },
+      {
+        id: nightlyNoFlyZones,
+        $attachedAt: night2Start.getTime(),
+        $detachedAt: night2End.getTime(),
+      },
+    ],
+  })
+
+  const missions = await db
+    .query('mission', multiDayMissionId)
+    .include('maps.id', 'maps.$attachedAt', 'maps.$detachedAt')
+    .get()
+    .toObject()
+
+  // This test fails.  The second entry overwrites the edge property.
+  // Refs may be keyed by Target Id causing an id collision.
+  // TODO: verify.
+
+  deepEqual(
+    missions.maps,
+    [
+      {
+        id: nightlyNoFlyZones,
+        $attachedAt: night1Start.getTime(),
+        $detachedAt: night1End.getTime(),
+      },
+      {
+        id: nightlyNoFlyZones,
+        $attachedAt: night2Start.getTime(),
+        $detachedAt: night2End.getTime(),
+      },
+    ],
+    'can have a single map, being attached twice',
+  )
+})
+
+await test('reifing', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      mission: {
+        props: {
+          name: 'string',
+          assignments: {
+            items: {
+              ref: 'assignment',
+              prop: 'mission',
+            },
+          },
+        },
+      },
+      assignment: {
+        props: {
+          attachedAt: 'timestamp',
+          detachedAt: 'timestamp',
+          map: {
+            ref: 'map',
+            prop: 'assignments',
+          },
+        },
+      },
+      map: {
+        props: {
+          name: 'string',
+        },
+      },
+    },
+  })
+
+  const night1Start = new Date('2025-01-01 00:00:00+01:00')
+  const night1End = new Date('2025-01-01 06:00:00+01:00')
+  const night2Start = new Date('2025-01-02 00:00:00+01:00')
+  const night2End = new Date('2025-01-02 06:00:00+01:00')
+
+  const nightlyNoFlyZones = await db.create('map', {
+    name: 'dont fly here at night',
+  })
+
+  const ref1 = await db.create('assignment', {
+    map: nightlyNoFlyZones,
+    attachedAt: night1Start.getTime(),
+    detachedAt: night1End.getTime(),
+  })
+  const ref2 = await db.create('assignment', {
+    map: nightlyNoFlyZones,
+    attachedAt: night2Start.getTime(),
+    detachedAt: night2End.getTime(),
+  })
+
+  const multiDayMissionId = await db.create('mission', {
+    name: 'I span multiple days',
+    assignments: [ref1, ref2],
+  })
+  const missions = await db
+    .query('mission')
+    .include(
+      'assignments.id',
+      'assignments.attachedAt',
+      'assignments.detachedAt',
+    )
+    .get()
+    .toObject()
+
+  deepEqual(
+    missions[0].assignments,
+    [
+      {
+        id: ref1,
+        detachedAt: night1End.getTime(),
+        attachedAt: night1Start.getTime(),
+      },
+      {
+        id: ref2,
+        detachedAt: night2End.getTime(),
+        attachedAt: night2Start.getTime(),
+      },
+    ],
+    'can have a single map, being attached twice',
+  )
+})
