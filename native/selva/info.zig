@@ -9,8 +9,8 @@ const DbCtx = @import("../db/ctx.zig").DbCtx;
 pub fn blockHash(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
     const id = utils.read(u32, q, 0);
     const data = try thread.query.result(20, id, op);
-    const start = utils.read(u32, q, 0);
-    const typeCode = utils.read(u16, q, 4);
+    const start = utils.read(u32, q, 5);
+    const typeCode = utils.read(u16, q, 9);
     const typeEntry = selva.c.selva_get_type_by_index(ctx.selva.?, typeCode);
     var err: c_int = selva.c.SELVA_EINTYPE;
     if (typeEntry) |te| {

@@ -103,7 +103,7 @@ export function registerBlockIoListeners(db: DbServer) {
         block.ioPromise?.reject(new Error('Block hash mismatch'))
       }
     } else {
-      const errlog = DECODER.decode(buf.slice(16))
+      const errlog = DECODER.decode(buf.subarray(26))
       db.emit('error', errlog)
       block.ioPromise?.reject(
         new Error(
@@ -179,6 +179,7 @@ export async function loadCommon(
     db.addOpOnceListener(OpType.loadCommon, id, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
+        // TODO read errlog
         const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
         db.emit('error', errMsg)
         reject(new Error(errMsg))
@@ -196,7 +197,7 @@ export async function loadBlockRaw(
   typeId: number,
   start: number,
   filename: string,
-): Promise<void> {
+): Promise<Uint8Array> {
   const id = loadBlockRawId.next().value
   const msg = new Uint8Array(11 + native.stringByteLength(filename) + 1)
 
@@ -210,11 +211,13 @@ export async function loadBlockRaw(
     db.addOpOnceListener(OpType.loadBlock, id, (buf: Uint8Array) => {
       const err = readUint32(buf, 0)
       if (err) {
+        // TODO read errlog
         const errMsg = `Load ${basename(filename)} failed: ${native.selvaStrerror(err)}`
         db.emit('error', errMsg)
         reject(new Error(errMsg))
       } else {
-        resolve()
+        const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
+        resolve(hash)
       }
     })
 
@@ -288,7 +291,7 @@ export async function unloadBlock(
   await p
 }
 
-async function getBlockHash(
+export async function getBlockHash(
   db: DbServer,
   typeCode: number,
   start: number,
@@ -317,25 +320,6 @@ async function getBlockHash(
 
     native.getQueryBufThread(msg, db.dbCtxExternal)
   })
-}
-
-/**
- * Get hash of each block in memory.
- */
-export async function* foreachBlock(
-  db: DbServer,
-  def: SchemaTypeDef,
-): AsyncGenerator<[number, number, Uint8Array]> {
-  const step = def.blockCapacity
-  const lastId = db.ids[def.id - 1]
-
-  for (let start = 1; start <= lastId; start += step) {
-    const end = start + step - 1
-    try {
-      const hash = await getBlockHash(db, def.id, start)
-      yield [start, end, hash]
-    } catch {}
-  }
 }
 
 function inhibitSave(

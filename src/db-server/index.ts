@@ -16,7 +16,7 @@ import {
 } from './schema.js'
 import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
 import { Subscriptions } from './subscription.js'
-import { OpType, OpTypeEnum, OpTypeInverse } from '../zigTsExports.js'
+import { OpType, OpTypeEnum } from '../zigTsExports.js'
 import {
   MAX_ID,
   type SchemaMigrateFns,
@@ -194,7 +194,7 @@ export class DbServer extends DbShared {
       const op: OpTypeEnum = buf[4]
       const queryListeners = this.opListeners.get(op)!
       if (queryListeners.get(id)) {
-        console.log('💤 Query allready staged dont exec again', id)
+        console.log('💤 Query already staged dont exec again', id)
       } else {
         native.getQueryBufThread(buf, this.dbCtxExternal)
       }

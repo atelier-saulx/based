@@ -387,7 +387,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     int err;
 
     struct SelvaTypeBlock *block = selva_get_block(te->blocks, start);
-    const sdb_nr_nodes_t nr_nodes = block->nr_nodes_in_block;
+    const sdb_nr_nodes_t nr_nodes = (block) ? block->nr_nodes_in_block : 0;
 
     if (nr_nodes == 0) {
         /*
@@ -414,21 +414,13 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     selva_hash_reset(hash_state);
     io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
-    /*
-     * Note that we just assume that the first node in RB_FOREACH is the same as `start`.
-     */
-    if (nr_nodes > 0) {
-        struct SelvaNodeIndex *nodes = &block->nodes;
-        struct SelvaNode *node;
+    struct SelvaNode *node;
 
-        RB_FOREACH(node, SelvaNodeIndex, nodes) {
-            selva_hash128_t node_hash;
-
-            node_hash = selva_node_hash_update(db, te, node, tmp_hash_state);
-            selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
-            save_node(&io, db, node);
-            save_aliases_node(&io, te, node->node_id);
-        }
+    RB_FOREACH(node, SelvaNodeIndex, &block->nodes) {
+        selva_hash128_t node_hash = selva_node_hash_update(db, te, node, tmp_hash_state);
+        selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
+        save_node(&io, db, node);
+        save_aliases_node(&io, te, node->node_id);
     }
 
     /*
