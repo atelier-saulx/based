@@ -101,15 +101,15 @@ int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_
         }
     }
 
-    if (fstat(fileno(file), &stats) == -1) {
-        fclose(file);
-        return SELVA_EGENERAL;
+    size_t blksize;
+
+    if (fstat(fileno(file), &stats) == 0) {
+        blksize = stats.st_blksize;
+    } else {
+        blksize = BUFSIZ;
     }
 
-    if (setvbuf(file, nullptr, _IOFBF, stats.st_blksize) != 0) {
-        fclose(file);
-        return SELVA_ENOBUFS;
-    }
+    (void)setvbuf(file, nullptr, _IOFBF, blksize);
 
     if (flags & SELVA_IO_FLAGS_WRITE) {
         /* We always compress files. */
