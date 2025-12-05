@@ -25,7 +25,7 @@ export function defToBuffer(
   const result: IntermediateByteCode = []
 
   const isReferences = def.type === QueryDefType.References
-
+  const isEdges = def.type === QueryDefType.Edge
   // if (def.target.resolvedAlias) {
   // } else if (typeof def.target.id === 'number') {
   // } else if (def.target.ids) {
@@ -34,7 +34,7 @@ export function defToBuffer(
   //   // result.push(referenceQuery(def, size))
   // }
 
-  if (def.type === QueryDefType.Root || isReferences) {
+  if (def.type === QueryDefType.Root || isReferences || isEdges) {
     const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
     const hasSearch = !!def.search
     const hasFilter = def.filter.size > 0
@@ -57,10 +57,12 @@ export function defToBuffer(
     let edgeSize = 0
 
     if (def.edges) {
-      edge = defToBuffer(db, def.edges)
-      if (def.edges.errors) {
-        def.errors.push(...def.edges.errors)
-      }
+      // edge = defToBuffer(db, def.edges)
+      // if (def.edges.errors) {
+      // def.errors.push(...def.edges.errors)
+      // }
+
+      edge = includeToBuffer(db, def.edges)
     }
 
     if (edge) {
@@ -71,16 +73,13 @@ export function defToBuffer(
       QueryHeaderByteSize + searchSize + filterSize + sortSize,
     )
 
-    // if (isReferences) {
-    //   console.log(def.target.propDef)
-    // }
-
     // @ts-ignore
     const hasEdges = isReferences && def.target.propDef.edgeNodeTypeId > 0
+    const typeId: number = def.schema!.id
+    // @ts-ignore
+    const edgeTypeId: number = hasEdges ? def.target.propDef.edgeNodeTypeId : 0
 
-    if (isReferences) {
-      console.log({ hasEdges })
-    }
+    console.log({ isReferences, typeId, edge })
 
     let index = writeQueryHeader(
       buffer,
@@ -89,15 +88,17 @@ export function defToBuffer(
         prop: isReferences ? def.target.propDef!.prop : ID_PROP,
         // this does not seem nessecary
         size: buffer.byteLength + includeSize, // for top level the byte size is not very important
-        typeId: def.schema!.id,
+        typeId,
         offset: def.range.offset,
         limit: def.range.limit,
         sort: hasSort,
-        hasEdges,
         filterSize: def.filter.size,
         searchSize,
-        edgeSize,
         subType: getQuerySubType(def),
+        hasEdges,
+        edgeTypeId,
+        edgeSize,
+        edgeFilterSize: 0, // this is nice
       },
       0,
     )
@@ -120,6 +121,9 @@ export function defToBuffer(
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
       include,
     ])
+    if (edge) {
+      result.push(edge)
+    }
   } else {
     // flap
   }

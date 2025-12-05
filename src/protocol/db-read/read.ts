@@ -105,9 +105,6 @@ const references: ReadInstruction = (q, result, i, item) => {
   i += 4
   const refs = resultToObject(ref.schema, result, size + i, i)
   addProp(ref.prop, refs, item)
-
-  console.log('------->', 'x')
-
   i += size
   return i
 }
@@ -132,7 +129,6 @@ const readInstruction = (
   } else if (instruction === ReadOp.references) {
     return references(q, result, i, item)
   } else if (instruction === ReadOp.edge) {
-    // this will completely change!
     return edge(q, result, i, item)
   } else if (instruction === 0) {
     return readMain(q, result, i, item)

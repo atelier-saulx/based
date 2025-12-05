@@ -75,12 +75,14 @@ pub fn references(
     // this is a difference so prob want comtime for typeEntry and fromNode
     const typeEntry = try Node.getType(ctx.db, header.typeId);
 
-    std.debug.print("FLAP {any} \n", .{header});
+    // std.debug.print("FLAP {any} \n", .{header});
 
     if (header.hasEdges) {
         var it = try References.iterator(true, ctx.db, fromNode, header.prop, orginalTypeEntry);
+
         while (it.next()) |ref| {
             const node = ref.node;
+
             // ref.edgeNode
             // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
             //     node = Db.getNextNode(typeEntry, node.?);
@@ -93,6 +95,17 @@ pub fn references(
             try ctx.thread.query.append(t.ReadOp.id);
             try ctx.thread.query.append(Node.getNodeId(node));
             try include.include(node, ctx, nestedQuery, typeEntry);
+
+            // if filter on edge need to do some stuff
+            if (header.edgeSize > 0) {
+                // make this nice
+                const s = index.* + header.size - utils.sizeOf(t.QueryHeader);
+                const edgeQuery = q[s .. s + header.edgeSize];
+                try ctx.thread.query.append(t.ReadOp.edge);
+                const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
+                try include.include(ref.edgeNode, ctx, edgeQuery, edgeTypeEntry);
+            }
+
             nodeCnt += 1;
             if (nodeCnt > header.limit) {
                 break;

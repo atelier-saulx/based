@@ -1879,17 +1879,19 @@ export type QueryHeader = {
   size: number
   prop: number
   typeId: TypeId
+  edgeTypeId: TypeId
   offset: number
   limit: number
   filterSize: number
   searchSize: number
   edgeSize: number
+  edgeFilterSize: number
   subType: QuerySubTypeEnum
   hasEdges: boolean
   sort: boolean
 }
 
-export const QueryHeaderByteSize = 22
+export const QueryHeaderByteSize = 26
 
 export const writeQueryHeader = (
   buf: Uint8Array,
@@ -1904,6 +1906,8 @@ export const writeQueryHeader = (
   offset += 1
   writeUint16(buf, header.typeId, offset)
   offset += 2
+  writeUint16(buf, header.edgeTypeId, offset)
+  offset += 2
   writeUint32(buf, header.offset, offset)
   offset += 4
   writeUint32(buf, header.limit, offset)
@@ -1913,6 +1917,8 @@ export const writeQueryHeader = (
   writeUint16(buf, header.searchSize, offset)
   offset += 2
   writeUint16(buf, header.edgeSize, offset)
+  offset += 2
+  writeUint16(buf, header.edgeFilterSize, offset)
   offset += 2
   buf[offset] = header.subType
   offset += 1
@@ -1937,29 +1943,35 @@ export const writeQueryHeaderProps = {
   typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
     writeUint16(buf, value, offset + 4)
   },
+  edgeTypeId: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, value, offset + 6)
+  },
   offset: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 6)
+    writeUint32(buf, value, offset + 8)
   },
   limit: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 10)
+    writeUint32(buf, value, offset + 12)
   },
   filterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 14)
-  },
-  searchSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 16)
   },
-  edgeSize: (buf: Uint8Array, value: number, offset: number) => {
+  searchSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 18)
   },
+  edgeSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 20)
+  },
+  edgeFilterSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 22)
+  },
   subType: (buf: Uint8Array, value: QuerySubTypeEnum, offset: number) => {
-    buf[offset + 20] = value
+    buf[offset + 24] = value
   },
   hasEdges: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 21] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+    buf[offset + 25] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
   sort: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 21] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    buf[offset + 25] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
 }
 
@@ -1972,14 +1984,16 @@ export const readQueryHeader = (
     size: readUint16(buf, offset + 1),
     prop: buf[offset + 3],
     typeId: (readUint16(buf, offset + 4)) as TypeId,
-    offset: readUint32(buf, offset + 6),
-    limit: readUint32(buf, offset + 10),
-    filterSize: readUint16(buf, offset + 14),
-    searchSize: readUint16(buf, offset + 16),
-    edgeSize: readUint16(buf, offset + 18),
-    subType: (buf[offset + 20]) as QuerySubTypeEnum,
-    hasEdges: (((buf[offset + 21] >>> 0) & 1)) === 1,
-    sort: (((buf[offset + 21] >>> 1) & 1)) === 1,
+    edgeTypeId: (readUint16(buf, offset + 6)) as TypeId,
+    offset: readUint32(buf, offset + 8),
+    limit: readUint32(buf, offset + 12),
+    filterSize: readUint16(buf, offset + 16),
+    searchSize: readUint16(buf, offset + 18),
+    edgeSize: readUint16(buf, offset + 20),
+    edgeFilterSize: readUint16(buf, offset + 22),
+    subType: (buf[offset + 24]) as QuerySubTypeEnum,
+    hasEdges: (((buf[offset + 25] >>> 0) & 1)) === 1,
+    sort: (((buf[offset + 25] >>> 1) & 1)) === 1,
   }
   return value
 }
@@ -1997,29 +2011,35 @@ export const readQueryHeaderProps = {
   typeId: (buf: Uint8Array, offset: number): TypeId => {
     return (readUint16(buf, offset + 4)) as TypeId
   },
+  edgeTypeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset + 6)) as TypeId
+  },
   offset: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 6)
+    return readUint32(buf, offset + 8)
   },
   limit: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 10)
+    return readUint32(buf, offset + 12)
   },
   filterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 14)
-  },
-  searchSize: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 16)
   },
-  edgeSize: (buf: Uint8Array, offset: number): number => {
+  searchSize: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 18)
   },
+  edgeSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 20)
+  },
+  edgeFilterSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 22)
+  },
   subType: (buf: Uint8Array, offset: number): QuerySubTypeEnum => {
-    return (buf[offset + 20]) as QuerySubTypeEnum
+    return (buf[offset + 24]) as QuerySubTypeEnum
   },
   hasEdges: (buf: Uint8Array, offset: number): boolean => {
-    return (((buf[offset + 21] >>> 0) & 1)) === 1
+    return (((buf[offset + 25] >>> 0) & 1)) === 1
   },
   sort: (buf: Uint8Array, offset: number): boolean => {
-    return (((buf[offset + 21] >>> 1) & 1)) === 1
+    return (((buf[offset + 25] >>> 1) & 1)) === 1
   },
 }
 

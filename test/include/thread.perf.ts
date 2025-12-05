@@ -40,6 +40,7 @@ await test('include', async (t) => {
       },
       user: {
         props: {
+          todos: { items: { ref: 'todo', prop: 'assignees' } },
           // flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
           // derp: ['hello', 'bye'],
           // name: { type: 'string' }, // default: 'xxxx'
@@ -65,15 +66,19 @@ await test('include', async (t) => {
   console.log({ todo, todo2 })
   let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e2; i++) {
     db.create('user', {
       nr: i + 67,
       // name: 'A',
       // flap: '⚡️',
 
       // adding edge here makes it 20x slower (can be better)
-      todos: [{ id: todo, $status: 'nothing' }, todo2],
-      // todos: [todo, todo2],
+      todos: [
+        // need to write an 8 byte empty thing for edges
+        { id: todo, $status: 'nothing' },
+        { id: todo2, $status: 'nothing' },
+      ],
+      // todos: [todo, todo2], // this doesnot work with edges...
 
       // derp: 'hello',
       // body: {
@@ -105,10 +110,10 @@ await test('include', async (t) => {
     // .locale('nl', ['no', 'de'])
     // .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
-    .include('nr') //  'flap'
-    .include('todos.nr') // 'todos.$status'
+    // .include('nr') //  'flap'
+    .include('todos.id', 'todos.$status') // 'todos.$status'
     // .include('name')
-    .range(0, 20)
+    .range(0, 1)
     .get()
 
   x.debug()
@@ -130,7 +135,7 @@ await test('include', async (t) => {
   //   .debug()
   // .toObject(),
 
-  await db.query('user').include('todos.nr').range(0, 1).get().inspect()
+  // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
   // await perf(
   //   async () => {
@@ -139,8 +144,10 @@ await test('include', async (t) => {
   //       q.push(
   //         db
   //           .query('user')
-  //           .include('id', 'todos.id')
+  //           .include('id')
+  //           // .include('id', 'todos.id')
   //           .range(0, 1e6 + i)
+  //           // .inspect()
   //           .get(),
   //       )
   //     }
