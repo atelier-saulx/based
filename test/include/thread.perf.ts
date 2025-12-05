@@ -33,6 +33,7 @@ await test('include', async (t) => {
               ref: 'user',
               prop: 'todos',
               $status: ['inProgress', 'blocked', 'nothing'],
+              // $name: 'string',
             },
           },
           done: 'boolean',
@@ -75,8 +76,8 @@ await test('include', async (t) => {
       // adding edge here makes it 20x slower (can be better)
       todos: [
         // need to write an 8 byte empty thing for edges
-        { id: todo, $status: 'nothing' },
-        { id: todo2, $status: 'nothing' },
+        { id: todo, $status: 'blocked' }, //  $name: 'bla'
+        { id: todo2, $status: 'nothing' }, // $name: 'blurf'
       ],
       // todos: [todo, todo2], // this doesnot work with edges...
 
@@ -109,7 +110,9 @@ await test('include', async (t) => {
     // .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
     // .include('nr') //  'flap'
-    .include('todos.id', 'todos.$status') // 'todos.$status'
+    .include('todos.id') // 'todos.$status'
+
+    // .include('todos.id', 'todos.$status', 'todos.$name') // 'todos.$status'
     // .include('name')
     .range(0, 1)
     .get()
@@ -142,13 +145,14 @@ await test('include', async (t) => {
         q.push(
           db
             .query('user')
-            .include('id')
-            .include('todos.id', 'todos.$status') // 'todos.$status'
-
-            // .include('id', 'todos.id')
+            // .include('id')
+            // .include('todos.id') // 'todos.$status'
+            //  'todos.$status'
+            .include('id', 'todos.id', 'todos.$status')
             .range(0, 1e6 + i)
             // .inspect()
-            .get(),
+            .get()
+            .inspect(),
         )
       }
       await Promise.all(q)
