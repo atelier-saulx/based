@@ -74,7 +74,7 @@ pub inline fn include(
                         }
                     },
                     else => {
-                        // no usefull metainfo for non selvaString props yet
+                        // No usefull metainfo for non-selvaString props yet
                     },
                 }
             },
