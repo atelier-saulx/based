@@ -103,8 +103,6 @@ await test('include', async (t) => {
   await db.drain()
   console.log(Date.now() - d, 'ms')
 
-  console.log('YES ->')
-
   const x = await db
     .query('user')
     // .locale('nl', ['no', 'de'])

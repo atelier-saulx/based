@@ -79,8 +79,6 @@ export function defToBuffer(
     // @ts-ignore
     const edgeTypeId: number = hasEdges ? def.target.propDef.edgeNodeTypeId : 0
 
-    console.log({ isReferences, typeId, edge })
-
     let index = writeQueryHeader(
       buffer,
       {
