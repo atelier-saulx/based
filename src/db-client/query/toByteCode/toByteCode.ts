@@ -71,7 +71,16 @@ export function defToBuffer(
       QueryHeaderByteSize + searchSize + filterSize + sortSize,
     )
 
-    // console.log({ isReferences, includeSize, edgeSize })
+    // if (isReferences) {
+    //   console.log(def.target.propDef)
+    // }
+
+    // @ts-ignore
+    const hasEdges = isReferences && def.target.propDef.edgeNodeTypeId > 0
+
+    if (isReferences) {
+      console.log({ hasEdges })
+    }
 
     let index = writeQueryHeader(
       buffer,
@@ -84,7 +93,7 @@ export function defToBuffer(
         offset: def.range.offset,
         limit: def.range.limit,
         sort: hasSort,
-        includeEdge: !!edge,
+        hasEdges,
         filterSize: def.filter.size,
         searchSize,
         edgeSize,

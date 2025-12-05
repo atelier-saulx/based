@@ -75,31 +75,54 @@ pub fn references(
     // this is a difference so prob want comtime for typeEntry and fromNode
     const typeEntry = try Node.getType(ctx.db, header.typeId);
 
-    var it = try References.iterator(false, ctx.db, fromNode, header.prop, orginalTypeEntry);
+    std.debug.print("FLAP {any} \n", .{header});
+
+    if (header.hasEdges) {
+        var it = try References.iterator(true, ctx.db, fromNode, header.prop, orginalTypeEntry);
+        while (it.next()) |ref| {
+            const node = ref.node;
+            // ref.edgeNode
+            // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
+            //     node = Db.getNextNode(typeEntry, node.?);
+            //     continue :checkItem;
+            // }
+            if (correctedForOffset != 0) {
+                correctedForOffset -= 1;
+                continue;
+            }
+            try ctx.thread.query.append(t.ReadOp.id);
+            try ctx.thread.query.append(Node.getNodeId(node));
+            try include.include(node, ctx, nestedQuery, typeEntry);
+            nodeCnt += 1;
+            if (nodeCnt > header.limit) {
+                break;
+            }
+        }
+    } else {
+        var it = try References.iterator(false, ctx.db, fromNode, header.prop, orginalTypeEntry);
+        while (it.next()) |node| {
+            // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
+            //     node = Db.getNextNode(typeEntry, node.?);
+            //     continue :checkItem;
+            // }
+            if (correctedForOffset != 0) {
+                correctedForOffset -= 1;
+                continue;
+            }
+            try ctx.thread.query.append(t.ReadOp.id);
+            try ctx.thread.query.append(Node.getNodeId(node));
+            try include.include(node, ctx, nestedQuery, typeEntry);
+            nodeCnt += 1;
+            if (nodeCnt > header.limit) {
+                break;
+            }
+        }
+    }
 
     // std.debug.print("REFS -> {any} \n", .{it.refs.nr_refs});
     index.* += header.size;
-    if (header.includeEdge) {
+    if (header.hasEdges) {
         index.* += header.edgeSize;
-    }
-
-    while (it.next()) |node| {
-        // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
-        //     node = Db.getNextNode(typeEntry, node.?);
-        //     continue :checkItem;
-        // }
-
-        if (correctedForOffset != 0) {
-            correctedForOffset -= 1;
-            continue;
-        }
-        try ctx.thread.query.append(t.ReadOp.id);
-        try ctx.thread.query.append(Node.getNodeId(node));
-        try include.include(node, ctx, nestedQuery, typeEntry);
-        nodeCnt += 1;
-        if (nodeCnt > header.limit) {
-            break;
-        }
     }
 
     ctx.thread.query.write(nodeCnt, sizeIndex);

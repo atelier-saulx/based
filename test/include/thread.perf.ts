@@ -32,8 +32,8 @@ await test('include', async (t) => {
             items: {
               ref: 'user',
               prop: 'todos',
+              $status: ['inProgress', 'blocked', 'nothing'],
             },
-            // $status: ['inProgress', 'blocked', 'nothing'],
           },
           done: 'boolean',
         },
@@ -70,11 +70,10 @@ await test('include', async (t) => {
       nr: i + 67,
       // name: 'A',
       // flap: '⚡️',
-      // todos: [todo2, todo],
 
-      // ading edge here makes it 20x slower (can be better)
-
-      todos: [todo, todo2],
+      // adding edge here makes it 20x slower (can be better)
+      todos: [{ id: todo, $status: 'nothing' }, todo2],
+      // todos: [todo, todo2],
 
       // derp: 'hello',
       // body: {
@@ -131,25 +130,25 @@ await test('include', async (t) => {
   //   .debug()
   // .toObject(),
 
-  // await db.query('user').include('name').range(0, 1).get().inspect()
+  await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
-  await perf(
-    async () => {
-      const q: any[] = []
-      for (let i = 0; i < 1e2; i++) {
-        q.push(
-          db
-            .query('user')
-            .include('id', 'todos.id')
-            .range(0, 1e6 + i)
-            .get(),
-        )
-      }
-      await Promise.all(q)
-    },
-    'Nodes',
-    { repeat: 10 },
-  )
+  // await perf(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 1e2; i++) {
+  //       q.push(
+  //         db
+  //           .query('user')
+  //           .include('id', 'todos.id')
+  //           .range(0, 1e6 + i)
+  //           .get(),
+  //       )
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'Nodes',
+  //   { repeat: 10 },
+  // )
 
   await wait(100)
 })

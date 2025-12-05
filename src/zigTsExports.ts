@@ -1885,7 +1885,7 @@ export type QueryHeader = {
   searchSize: number
   edgeSize: number
   subType: QuerySubTypeEnum
-  includeEdge: boolean
+  hasEdges: boolean
   sort: boolean
 }
 
@@ -1917,7 +1917,7 @@ export const writeQueryHeader = (
   buf[offset] = header.subType
   offset += 1
   buf[offset] = 0
-  buf[offset] |= (((header.includeEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.hasEdges ? 1 : 0) >>> 0) & 1) << 0
   buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 1
   buf[offset] |= ((0 >>> 0) & 63) << 2
   offset += 1
@@ -1955,7 +1955,7 @@ export const writeQueryHeaderProps = {
   subType: (buf: Uint8Array, value: QuerySubTypeEnum, offset: number) => {
     buf[offset + 20] = value
   },
-  includeEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+  hasEdges: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 21] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
   sort: (buf: Uint8Array, value: boolean, offset: number) => {
@@ -1978,7 +1978,7 @@ export const readQueryHeader = (
     searchSize: readUint16(buf, offset + 16),
     edgeSize: readUint16(buf, offset + 18),
     subType: (buf[offset + 20]) as QuerySubTypeEnum,
-    includeEdge: (((buf[offset + 21] >>> 0) & 1)) === 1,
+    hasEdges: (((buf[offset + 21] >>> 0) & 1)) === 1,
     sort: (((buf[offset + 21] >>> 1) & 1)) === 1,
   }
   return value
@@ -2015,7 +2015,7 @@ export const readQueryHeaderProps = {
   subType: (buf: Uint8Array, offset: number): QuerySubTypeEnum => {
     return (buf[offset + 20]) as QuerySubTypeEnum
   },
-  includeEdge: (buf: Uint8Array, offset: number): boolean => {
+  hasEdges: (buf: Uint8Array, offset: number): boolean => {
     return (((buf[offset + 21] >>> 0) & 1)) === 1
   },
   sort: (buf: Uint8Array, offset: number): boolean => {

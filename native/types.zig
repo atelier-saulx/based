@@ -595,7 +595,7 @@ pub const QueryHeader = packed struct {
     searchSize: u16,
     edgeSize: u16,
     subType: QuerySubType,
-    includeEdge: bool, // this just tells it in references that it needs to loop trhough edge + ref
+    hasEdges: bool, // this just tells it in references that it needs to loop trhough edge + ref
     sort: bool,
     _padding: u6,
 };
