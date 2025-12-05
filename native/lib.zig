@@ -8,7 +8,6 @@ const modify = @import("modify/modify.zig");
 const lifeTime = @import("db/lifeTime.zig");
 const string = @import("string.zig");
 const napi = @import("napi.zig");
-const colvecTest = @import("colvec.zig").colvec;
 const dbCtx = @import("db/ctx.zig");
 const subscriptions = @import("db/subscription/subscription.zig");
 const NapiError = error{NapiError};
@@ -124,8 +123,6 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
 
     registerFunction(env, exports, "selvaStrerror", selvaStrerror) catch return null;
     registerFunction(env, exports, "selvaLangAll", selvaLangAll) catch return null;
-
-    registerFunction(env, exports, "colvecTest", colvecTest) catch return null;
 
     // subscriptions
     registerFunction(env, exports, "addMultiSubscription", subscriptions.addMultiSubscription) catch return null;

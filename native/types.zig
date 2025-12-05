@@ -501,7 +501,6 @@ pub const IncludeOp = enum(u8) {
     aggregatesCount = 5,
     references = 6,
     reference = 7,
-
     // ---------------------
     default = 127,
     referencesAggregation = 128,
@@ -589,13 +588,15 @@ pub const QueryHeader = packed struct {
     size: u16, // cannot be more then 16kb? might be good enough
     prop: u8, // this is for ref
     typeId: TypeId,
+    edgeTypeId: TypeId,
     offset: u32,
     limit: u32,
     filterSize: u16,
     searchSize: u16,
-    edgeIncludeOffset: u16,
+    edgeSize: u16,
+    edgeFilterSize: u16, // this is nice
     subType: QuerySubType,
-    includeEdge: bool, // this just tells it in references that it needs to loop trhough edge + ref
+    hasEdges: bool, // this just tells it in references that it needs to loop trhough edge + ref
     sort: bool,
     _padding: u6,
 };

@@ -99,6 +99,7 @@ map[PropType.int32] = (ctx, val, def) => {
   val ??= def.default
   validate(val, def)
   reserve(ctx, 4)
+
   writeU32(ctx, val)
 }
 

@@ -2115,6 +2115,7 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
                         }
                     }
                 }
+                /* SELVA_FIELD_TYPE_COLVEC handled in colvec_init_node() */
             }
         } else {
             memset(fields->data, 0, data_len);

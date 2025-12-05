@@ -1,15 +1,11 @@
 import { writeInt64, writeUint16, writeUint32 } from '../../../utils/index.js'
 import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
+const ID_OFFSET = 3 // TODO FIX THIS
 
-// replace with single
-// import { ID } from '../toByteCode/offsets.js'
-
-// CHANGE WITH HEADER
-const ID_OFFSET = 3
-
-import { FilterMetaNow, QueryDef, QueryDefFilter, QueryType } from '../types.js'
+import { FilterMetaNow, QueryDef, QueryDefFilter } from '../types.js'
 import { SubscriptionType } from './types.js'
+import { QueryType } from '../../../zigTsExports.js'
 
 type Fields = { separate: Set<number>; main: Set<number> }
 
@@ -111,6 +107,7 @@ export const registerSubscription = (query: BasedDbQuery) => {
     const id = def.target.id
     const fields = collectFields(def)
     const typeId = def.schema!.id
+    // make a prop index map INDEX OF
     const subId = native.crc32(
       query.buffer!.subarray(ID_OFFSET + 4, query.buffer!.byteLength - 4),
     )

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
-SELVA_VERSION := $(shell sh -c 'git rev-parse --verify HEAD')
+SELVA_VERSION := $(shell bash -c 'git rev-parse --verify HEAD 2>/dev/null || echo "unknown"')
 CFLAGS += -fPIC -fvisibility=hidden \
 		  -iquote ../../include \
 		  -iquote ./include \
@@ -33,16 +33,13 @@ OBJ := \
 	fields_empty_text.o \
 	ida.o \
 	hll/hll.o \
-	idz.o \
 	io/dump.o \
 	io/io.o \
 	io/sdb.o \
 	membar.o \
 	mem/auto_free.o \
-	mem/finalizer.o \
 	mem/mempool.o \
 	node_id_set.o \
-	poptop.o \
 	print_ready.o \
 	schema.o \
 	selva_error.o \
@@ -103,6 +100,7 @@ DEP := $(OBJ:%.o=%.d)
 
 $(TARGET): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $^
+	$(stripLinux)
 
 version.c: FORCE
 	@echo selva_version $(SELVA_VERSION)

@@ -36,15 +36,6 @@ export type MainIncludes = Map<number, [number, PropDef, IncludeOpts]>
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
 
-export enum QueryType {
-  id = 0,
-  ids = 1,
-  default = 2,
-  alias = 3,
-  aggregates = 4,
-  aggregatesCountType = 5,
-}
-
 export enum ReferenceSelect {
   Index = 1,
   Any = 2,
@@ -183,7 +174,7 @@ export type LangFallback = LangName | false
 
 export type QueryDefShared = {
   selectFirstResult: boolean
-  queryType: QueryType
+  queryType: QueryTypeEnum
   schemaChecksum?: number
   errors: QueryError[]
   lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }

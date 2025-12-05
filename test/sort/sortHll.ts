@@ -1,8 +1,7 @@
 import { BasedDb, xxHash64 } from '../../src/index.js'
+import { ENCODER } from '../../src/utils/uint8.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from 'node:assert'
-
-const ENCODER = new TextEncoder()
 
 await test('sortCardinality', async (t) => {
   const db = new BasedDb({

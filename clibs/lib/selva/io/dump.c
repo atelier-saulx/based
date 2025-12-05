@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -236,7 +237,6 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
             break;
         case SELVA_FIELD_TYPE_MICRO_BUFFER:
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof(uint8_t), fs->smb.len, io);
-            /* TODO Verify CRC */
             break;
         case SELVA_FIELD_TYPE_ALIAS:
         case SELVA_FIELD_TYPE_ALIASES:
@@ -368,6 +368,8 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
     save_schema(&io, db);
     save_expire(&io, db);
     save_common_meta(&io, com->meta_data, com->meta_len);
+
+    db->sdb_version = io.sdb_version;
     selva_io_end(&io, nullptr);
 
     return 0;
@@ -665,7 +667,6 @@ static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
 
     if (likely(dst_id != 0)) {
-        /* TODO In the future we want to just have an id here. */
         dst_node = selva_upsert_node(dst_te, dst_id);
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
             err = selva_fields_reference_set(db, node, fs, dst_node, &ref, selva_faux_dirty_cb, nullptr);
@@ -1071,6 +1072,8 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
         return err;
     }
 
+    db->sdb_version = io.sdb_version;
+
     err = load_schema(&io, db);
     err = err ?: load_expire(&io, db);
     if (io.sdb_version >= 3) {
@@ -1092,6 +1095,11 @@ int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
+    }
+
+    if (io.sdb_version > db->sdb_version) {
+        selva_io_errlog(&io, "SDB version mismatch! common: %"PRIu32" block: %"PRIu32, db->sdb_version, io.sdb_version);
+        return SELVA_ENOTSUP;
     }
 
     err = load_type(&io, db);

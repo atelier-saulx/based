@@ -1,8 +1,7 @@
 import test from './shared/test.js'
+import { ENCODER } from '../src/utils/uint8.js'
 import { crc32 as nativeCrc32 } from '../src/index.js'
 import crc32c from '../src/hash/crc32c.js'
-
-const ENCODER = new TextEncoder()
 
 await test('Hash generation PERF', async (t) => {
   const val = ENCODER.encode(`oid${1e6}`)

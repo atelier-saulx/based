@@ -77,6 +77,7 @@ struct SelvaFieldSchema {
         struct {
             uint16_t vec_len; /*!< Length of a single vector. */
             uint16_t comp_size; /*!< Component size in the vector. */
+            uint32_t default_off; /*!< Offset to the default value in te->schema_buf. */
             field_t index; /*!< Index in te->col_fields.colvec.v. */
         } colvec; /*!< SELVA_FIELD_TYPE_COLVEC */
     };

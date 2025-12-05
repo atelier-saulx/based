@@ -92,37 +92,35 @@ pub inline fn getPrevNode(typeEntry: selva.Type, node: Node) ?Node {
     return selva.c.selva_prev_node(typeEntry, node);
 }
 
-pub const TypeIterator = struct {
-    comptime desc: bool = false,
-    typeEntry: selva.Type,
-    node: ?Node = null,
-    fn init(s: *const TypeIterator) TypeIterator {
-        if (s.desc) {
-            return TypeIterator{
-                .desc = s.desc,
-                .typeEntry = s.typeEntry,
-                .node = getLastNode(s.typeEntry),
-            };
-        } else {
-            return TypeIterator{
-                .desc = s.desc,
-                .typeEntry = s.typeEntry,
-                .node = getFirstNode(s.typeEntry),
-            };
-        }
-    }
-    inline fn next(self: *TypeIterator) ?Node {
-        const node = self.node;
-        if (node) |n| {
-            if (self.desc) {
-                self.node = getPrevNode(self.typeEntry, n);
-            } else {
-                self.node = getNextNode(self.typeEntry, n);
+pub fn NodeTypeIterator(
+    comptime desc: bool,
+) type {
+    return struct {
+        typeEntry: selva.Type,
+        node: ?Node,
+        pub fn next(self: *NodeTypeIterator(desc)) ?Node {
+            const node = self.node;
+            if (node) |n| {
+                if (desc) {
+                    self.node = getPrevNode(self.typeEntry, n);
+                } else {
+                    self.node = getNextNode(self.typeEntry, n);
+                }
             }
+            return node;
         }
-        return node;
-    }
-};
+    };
+}
+
+pub inline fn iterator(
+    comptime desc: bool,
+    typeEntry: selva.Type,
+) NodeTypeIterator(desc) {
+    return NodeTypeIterator(desc){
+        .node = if (desc) getLastNode(typeEntry) else getFirstNode(typeEntry),
+        .typeEntry = typeEntry,
+    };
+}
 
 pub inline fn getNodeFromReference(dstType: selva.Type, ref: anytype) ?Node {
     if (comptime @TypeOf(ref) == selva.ReferenceSmall or

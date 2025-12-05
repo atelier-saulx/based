@@ -217,11 +217,6 @@ const unparse = (str: string): any => {
   return unparseWalk(ctx)
 }
 
-console.log(JSON.stringify(obj, null, 2), parse(obj))
-console.log('-----------\n')
-console.log(JSON.stringify(unparse(parse(obj)), null, 2))
-console.dir(unparse(parse(obj)), { depth: null })
-
 export default () => {}
 
 const replacer = (key, val) => {

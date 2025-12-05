@@ -1,8 +1,9 @@
-import { wait } from '../../src/utils/index.js'
+import { readUint32, wait } from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
 import { BasedDb } from '../../src/index.js'
+import { registerQuery } from '../../src/db-client/query/registerQuery.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -21,49 +22,103 @@ await test('include', async (t) => {
       no: true,
     },
     types: {
+      todo: {
+        props: {
+          name: 'string',
+          nr: { type: 'uint32' },
+
+          // creator: { ref: 'user', prop: 'createdTodos' },
+          assignees: {
+            items: {
+              ref: 'user',
+              prop: 'todos',
+              $status: ['inProgress', 'blocked', 'nothing'],
+              $name: 'string',
+            },
+          },
+          done: 'boolean',
+        },
+      },
       user: {
         props: {
-          flap: { enum: ['⚡️', '🤪', '💩'], default: '🤪' },
-          derp: ['hello', 'bye'],
-          name: { type: 'string' }, // default: 'xxxx'
-          nr: { type: 'uint32', default: 22 },
-          body: { type: 'text' }, // compression: 'none'
+          todos: { items: { ref: 'todo', prop: 'assignees' } },
+          // flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
+          // derp: ['hello', 'bye'],
+          // name: { type: 'string' }, // default: 'xxxx'
+          nr: { type: 'uint32' },
+          // body: { type: 'text' }, // compression: 'none'
         },
       },
     },
   })
 
-  for (let i = 0; i < 2; i++) {
+  console.log('SCHEMA DONE')
+
+  const todo = await db.create('todo', {
+    name: 'TODO A',
+    nr: 67,
+  })
+
+  const todo2 = await db.create('todo', {
+    name: 'TODO B',
+    nr: 68,
+  })
+
+  console.log({ todo, todo2 })
+  let d = Date.now()
+
+  for (let i = 0; i < 1e5; i++) {
     db.create('user', {
       nr: i + 67,
-      name: 'A',
-      flap: '🤪',
-      body: {
-        // nl: 'x',
-        fr: 'B',
-        de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
-        en: italy,
-      },
+      // name: 'A',
+      // flap: '⚡️',
+
+      // adding edge here makes it 20x slower (can be better)
+      todos: [
+        // need to write an 8 byte empty thing for edges
+        { id: todo, $status: 'blocked' }, //  $name: 'bla'
+        // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
+      ],
+      // todos: [todo, todo2], // this doesnot work with edges...
+
+      // derp: 'hello',
+      // body: {
+      //   nl: 'x',
+      //   fr: 'B',
+      //   de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+      //   en: italy,
+      // },
     })
   }
 
-  console.log('start query')
-
+  // // update works
+  // for (let i = 1; i < 1000; i++) {
+  //   db.update('user', {
+  //     id: i,
+  //     flap: '💩',
+  //   })
+  // }
   await db.drain()
+  console.log(Date.now() - d, 'ms')
+
+  console.log('\n--------------------------\nStart query!!!!!!!!!')
 
   const x = await db
     .query('user')
-    .locale('nl', ['no', 'de'])
-    // .include('body', { meta: 'only', end: 10 })
+    // .locale('nl', ['no', 'de'])
+    // .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
-    .include('flap', 'nr') //  'flap'
+    // .include('nr') //  'flap'
+    // .include('todos.id') // 'todos.$status'
+
+    .include('todos.id', 'todos.$status', 'todos.$name') // 'todos.$status'
     // .include('name')
-    .range(0, 2)
+    .range(0, 1)
     .get()
 
   x.debug()
 
-  x.inspect(10)
+  x.inspect()
 
   // console.log('drain done')
   // ;(
@@ -80,21 +135,22 @@ await test('include', async (t) => {
   //   .debug()
   // .toObject(),
 
-  // await db.query('user').include('name', 'body').range(0, 1).get().inspect()
+  // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
   // await perf(
   //   async () => {
   //     const q: any[] = []
-  //     for (let i = 0; i < 1000; i++) {
+  //     for (let i = 0; i < 1e2; i++) {
   //       q.push(
   //         db
   //           .query('user')
-  //           .locale('nl', ['fr', 'no', 'de'])
-  //           .include('name', 'body')
-  //           // .include('name', 'body', { end: 2 })
-  //           .range(0, 1000 + i)
+  //           // .include('id')
+  //           // .include('todos.id') // 'todos.$status'
+  //           //  'todos.$status'
+  //           .include('id', 'todos.id', 'todos.$status')
+  //           .range(0, 1e6 + i)
+  //           // .inspect()
   //           .get(),
-  //         // .inspect(),
   //         // .inspect(),
   //       )
   //     }
@@ -104,9 +160,7 @@ await test('include', async (t) => {
   //   { repeat: 10 },
   // )
 
-  console.log('done')
-
-  // await wait(100)
+  await wait(100)
 })
 
 await test('default', async (t) => {

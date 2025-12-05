@@ -88,8 +88,7 @@ pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
         .pointer => |info| {
             if (info.size == .slice) {
                 const ChildType = info.child;
-                const size = @bitSizeOf(T) / 8;
-                // [offset..] ??
+                const size = @bitSizeOf(ChildType) / 8;
                 const value: T = @as([*]ChildType, @ptrCast(@alignCast(buffer[offset..].ptr)))[0..@divFloor(buffer.len, size)];
                 return value;
             } else {
@@ -139,34 +138,6 @@ pub inline fn readNext(T: type, buffer: []u8, offset: *usize) T {
     offset.* = offset.* + @bitSizeOf(T) / 8;
     return header;
 }
-
-// pub const TextIterator = struct {
-//     value: []const [selva.c.SELVA_STRING_STRUCT_SIZE]u8,
-//     index: usize = 0,
-//     fn _next(self: *TextIterator) ?[]u8 {
-//         if (self.index == self.value.len) {
-//             return null;
-//         }
-//         var len: usize = undefined;
-//         const str: [*]const u8 = selva.c.selva_string_to_buf(@ptrCast(&self.value[self.index]), &len);
-//         const s = @as([*]u8, @constCast(str));
-//         self.index += 1;
-//         return s[0..len];
-//     }
-//     pub fn next(self: *TextIterator) ?[]u8 {
-//         return self._next();
-//     }
-// };
-
-// pub inline fn textIterator(
-//     value: []u8,
-// ) TextIterator {
-//     if (value.len == 0) {
-//         return TextIterator{ .value = emptyArray };
-//     }
-//     const textTmp: *[*]const [selva.c.SELVA_STRING_STRUCT_SIZE]u8 = @ptrCast(@alignCast(@constCast(value)));
-//     return TextIterator{ .value = textTmp.*[0..value[8]] };
-// }
 
 pub inline fn sliceNext(size: usize, q: []u8, offset: *usize) []u8 {
     const value = q[offset.* .. offset.* + size];
@@ -268,10 +239,25 @@ pub inline fn sizeOf(typeToCheck: type) comptime_int {
 
 pub inline fn perf(ctx: anytype, callback: anytype) !void {
     var timer = try std.time.Timer.start();
+    // can add many args super nice
     if (@typeInfo(@TypeOf(callback)).Fn.params.len == 0) {
         _ = callback();
     } else {
         _ = callback(ctx);
     }
     std.debug.print("{}ns\n", .{timer.read()});
+}
+
+// export printer with color also nice to log ZIG in front of it
+pub fn printString(x: anytype, value: []u8) void {
+    if (value.len == 0) {
+        std.debug.print("Empty string\n", .{});
+        return;
+    }
+    if (value[1] == 1) {
+        // decompress
+        std.debug.print("\x1b[34m[PRINT]\x1b[0m  {any} compressed {any} \n", .{ x, value.len });
+    } else {
+        std.debug.print("\x1b[34m[PRINT]\x1b[0m String {s} \n", .{value[2 .. value.len - 4]});
+    }
 }

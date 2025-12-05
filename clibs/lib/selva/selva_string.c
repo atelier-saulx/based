@@ -17,7 +17,6 @@
 #include "libdeflate_strings.h"
 #include "selva_error.h"
 #include "selva/crc32c.h"
-#include "finalizer.h"
 #include "bits.h"
 #include "selva/selva_string.h"
 
@@ -598,10 +597,6 @@ void selva_string_free(_selva_string_ptr_t _s)
     }
 
     selva_free(s);
-}
-
-void selva_string_auto_finalize(struct finalizer *finalizer, struct selva_string *s) {
-    finalizer_add(finalizer, s, selva_string_free);
 }
 
 enum selva_string_flags selva_string_get_flags(const struct selva_string *s)

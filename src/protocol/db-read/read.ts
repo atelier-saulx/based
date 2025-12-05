@@ -8,14 +8,6 @@ import {
   ReadInstruction,
 } from './types.js'
 import { readAggregate } from './aggregate.js'
-import {
-  READ_AGGREGATION,
-  READ_META,
-  READ_REFERENCE,
-  READ_REFERENCES,
-  READ_EDGE,
-  READ_ID,
-} from './types.js'
 import { addLangMetaProp, addMetaProp, addProp } from './addProps.js'
 import { readProp } from './prop.js'
 import { readMain } from './main.js'
@@ -25,6 +17,7 @@ import {
   IncludeResponseMetaByteSize,
   PropType,
   readIncludeResponseMeta,
+  ReadOp,
 } from '../../zigTsExports.js'
 
 export * from './types.js'
@@ -110,9 +103,9 @@ const references: ReadInstruction = (q, result, i, item) => {
   const ref = q.refs[field]
   const size = readUint32(result, i)
   i += 4
-  const refs = resultToObject(ref.schema, result, size + i + 4, i)
+  const refs = resultToObject(ref.schema, result, size + i, i)
   addProp(ref.prop, refs, item)
-  i += size + 4
+  i += size
   return i
 }
 
@@ -127,18 +120,17 @@ const readInstruction = (
   i: number,
   item: Item,
 ): number => {
-  if (instruction === READ_META) {
+  if (instruction === ReadOp.meta) {
     return meta(q, result, i, item)
-  } else if (instruction === READ_AGGREGATION) {
+  } else if (instruction === ReadOp.aggregation) {
     return aggregation(q, result, i, item)
-  } else if (instruction === READ_REFERENCE) {
+  } else if (instruction === ReadOp.reference) {
     return reference(q, result, i, item)
-  } else if (instruction === READ_REFERENCES) {
+  } else if (instruction === ReadOp.references) {
     return references(q, result, i, item)
-  } else if (instruction === READ_EDGE) {
+  } else if (instruction === ReadOp.edge) {
     return edge(q, result, i, item)
   } else if (instruction === 0) {
-    console.log('GO GO GO', i)
     return readMain(q, result, i, item)
   } else {
     return readProp(instruction, q, result, i, item)
@@ -157,7 +149,7 @@ export const readProps = (
   while (i < end) {
     const instruction = result[i]
     i++
-    if (instruction === READ_ID) {
+    if (instruction === ReadOp.id) {
       undefinedProps(q, item)
       // Next node
       return i - offset

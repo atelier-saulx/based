@@ -176,7 +176,6 @@ export const valueToBufferV1 = (
     try {
       buf = ENCODER.encode(JSON.stringify(payload))
     } catch (err) {
-      console.log(payload)
       buf = ENCODER.encode(payload)
     }
   }

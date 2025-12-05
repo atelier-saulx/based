@@ -237,7 +237,11 @@ export async function loadBlock(
   }
 
   if (block.ioPromise) {
-    return block.ioPromise
+    if (block.status === 'fs') {
+      return block.ioPromise
+    } else {
+      await block.ioPromise.promise
+    }
   }
 
   const end = start + def.blockCapacity - 1

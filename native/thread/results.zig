@@ -67,7 +67,6 @@ pub const Result = struct {
         value: T,
         offset: usize,
     ) void {
-        @compileLog(T);
         utils.writeAs(T, self.data, value, offset);
     }
 
@@ -97,7 +96,8 @@ pub const Result = struct {
         const index = self.index;
         const start = self.headerIndex + 9;
         if (index != start) {
-            try self.append(String.c.crc32c(0, self.data[start..index].ptr, index));
+            const x = self.data[start..index];
+            try self.append(String.c.crc32c(0, x.ptr, x.len));
         }
     }
 

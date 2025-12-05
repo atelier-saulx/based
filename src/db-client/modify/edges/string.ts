@@ -1,3 +1,4 @@
+import native from '../../../native.js'
 import { write as writeString } from '../../string.js'
 import { Ctx } from '../Ctx.js'
 import { reserve } from '../resize.js'
@@ -7,7 +8,6 @@ import { writeEdgeHeader } from './header.js'
 import { validate } from '../validate.js'
 import { LangCode, PropType } from '../../../zigTsExports.js'
 import type { PropDefEdge } from '../../../schema/index.js'
-import { ENCODER } from '../../../utils/uint8.js'
 
 export const writeStringEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   if (val === null) {
@@ -20,10 +20,16 @@ export const writeStringEdge = (ctx: Ctx, edge: PropDefEdge, val: any) => {
   const maxSize =
     val instanceof Uint8Array
       ? val.byteLength
-      : ENCODER.encode(val).byteLength + 6
+      : native.stringByteLength(val) + 6
   reserve(ctx, 3 + maxSize + 4)
   writeEdgeHeader(ctx, edge, PropType.string)
-  const realSize = writeString(ctx, val, ctx.index + 4, LangCode.none, !edge.compression)
+  const realSize = writeString(
+    ctx,
+    val,
+    ctx.index + 4,
+    LangCode.none,
+    !edge.compression,
+  )
   if (realSize === null) {
     throw RANGE_ERR
   }

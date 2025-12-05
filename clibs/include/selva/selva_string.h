@@ -8,7 +8,6 @@
 #include <sys/types.h>
 #include "selva/_export.h"
 
-struct finalizer;
 struct selva_string;
 struct libdeflate_compressor;
 struct libdeflate_decompressor;
@@ -230,8 +229,7 @@ int selva_string_replace_crc(struct selva_string *s, const char *str, size_t len
     __attribute__((access(read_only, 2, 3)));
 
 /**
- * Allows selva_string_free() to be passed to finalizer_add() and other similar
- * functions accepting void functions.
+ * Allows selva_string_free() to be passed to functions accepting void functions.
  */
 typedef union {
     struct selva_string *__s;
@@ -249,14 +247,6 @@ void selva_string_free(struct selva_string *s);
 #else
 void selva_string_free(_selva_string_ptr_t s);
 #endif
-
-/**
- * Add a selva_string to the given finalizer.
- * @param finalizer is a pointer to a finalizer.
- * @param s is a pointer to a selva_string.
- */
-SELVA_EXPORT
-void selva_string_auto_finalize(struct finalizer *finalizer, struct selva_string *s);
 
 /**
  * Get the currently set flags of the string s.
