@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -367,6 +368,8 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
     save_schema(&io, db);
     save_expire(&io, db);
     save_common_meta(&io, com->meta_data, com->meta_len);
+
+    db->sdb_version = io.sdb_version;
     selva_io_end(&io, nullptr);
 
     return 0;
@@ -1069,6 +1072,8 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
         return err;
     }
 
+    db->sdb_version = io.sdb_version;
+
     err = load_schema(&io, db);
     err = err ?: load_expire(&io, db);
     if (io.sdb_version >= 3) {
@@ -1090,6 +1095,11 @@ int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
+    }
+
+    if (io.sdb_version > db->sdb_version) {
+        selva_io_errlog(&io, "SDB version mismatch! common: %"PRIu32" block: %"PRIu32, db->sdb_version, io.sdb_version);
+        return SELVA_ENOTSUP;
     }
 
     err = load_type(&io, db);

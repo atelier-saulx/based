@@ -4,6 +4,41 @@
  */
 #pragma once
 
+/**
+ * SDB version.
+ *
+ * Bump this if the serialization format changes.
+ *
+ * SDB Version History
+ * -------------------
+ *
+ * **1**
+ * - First stable version
+ *
+ * **2**
+ * - Adds colvec serialization at the end of each range file
+ *
+ * **3**
+ * - ref save logic moved completely to flags given from the schema package
+ * - meta/edge fields is now a *type*
+ *
+ * **4**
+ * - Remove weak reference(s)
+ *
+ * **5**
+ * - Remove EDGE_FIELD_CONSTRAINT_FLAG_SKIP_DUMP and always save both sides of refs
+ *
+ * **6**
+ * - Add support for default value in SELVA_FIELD_TYPE_MICRO_BUFFER
+ *
+ * **7**
+ * - Capped references
+ *
+ * **8**
+ * - Add support for default value in SELVA_FIELD_TYPE_STRING, SELVA_FIELD_TYPE_STRING, and SELVA_FIELD_TYPE_COLVEC
+ */
+#define SELVA_SDB_VERSION 8
+
 #define SELVA_IO_HASH_SIZE 16
 
 enum selva_io_flags {
