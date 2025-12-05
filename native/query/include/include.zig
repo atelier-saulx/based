@@ -38,6 +38,11 @@ pub inline fn include(
     q: []u8,
     typeEntry: Node.Type,
 ) !void {
+    comptime {
+        // This funciton has a lot of recursion so you need to increase the allowed branch eval amount
+        @setEvalBranchQuota(10000);
+    }
+
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);

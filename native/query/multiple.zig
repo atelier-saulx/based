@@ -9,6 +9,8 @@ const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 
+// make fn for the inner loop
+
 pub fn default(
     ctx: *Query.QueryCtx,
     q: []u8,
@@ -55,57 +57,47 @@ pub fn references(
     index: *usize,
 ) !void {
     const header = utils.readNext(t.QueryHeader, q, index);
-
-    // write prop
     try ctx.thread.query.append(t.ReadOp.references);
-
     try ctx.thread.query.append(header.prop);
-
-    // add 4
     const resultByteSizeIndex = try ctx.thread.query.reserve(4);
     const startIndex = ctx.thread.query.index;
-    // ------------- this piece can be shared completely
-
-    var correctedForOffset: u32 = header.offset;
-    var nodeCnt: u32 = 0;
     const sizeIndex = try ctx.thread.query.reserve(4);
-    // size - is lame
+    var nodeCnt: u32 = 0;
+    var correctedForOffset: u32 = header.offset;
+    const typeEntry = try Node.getType(ctx.db, header.typeId);
     const nestedQuery = q[index.* .. index.* + header.size - utils.sizeOf(t.QueryHeader)];
 
-    // this is a difference so prob want comtime for typeEntry and fromNode
-    const typeEntry = try Node.getType(ctx.db, header.typeId);
-
-    // std.debug.print("FLAP {any} \n", .{header});
-
-    if (header.hasEdges) {
+    if (header.edgeSize > 0) {
         var it = try References.iterator(true, ctx.db, fromNode, header.prop, orginalTypeEntry);
-
+        const s = index.* + header.size - utils.sizeOf(t.QueryHeader);
+        const edgeQuery = q[s .. s + header.edgeSize];
+        const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
         while (it.next()) |ref| {
-            const node = ref.node;
-
-            // ref.edgeNode
-            // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
-            //     node = Db.getNextNode(typeEntry, node.?);
-            //     continue :checkItem;
-            // }
             if (correctedForOffset != 0) {
                 correctedForOffset -= 1;
                 continue;
             }
             try ctx.thread.query.append(t.ReadOp.id);
-            try ctx.thread.query.append(Node.getNodeId(node));
-            try include.include(node, ctx, nestedQuery, typeEntry);
-
-            // if filter on edge need to do some stuff
-            if (header.edgeSize > 0) {
-                // make this nice
-                const s = index.* + header.size - utils.sizeOf(t.QueryHeader);
-                const edgeQuery = q[s .. s + header.edgeSize];
-                try ctx.thread.query.append(t.ReadOp.edge);
-                const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
-                try include.include(ref.edgeNode, ctx, edgeQuery, edgeTypeEntry);
+            try ctx.thread.query.append(Node.getNodeId(ref.node));
+            try include.include(ref.node, ctx, nestedQuery, typeEntry);
+            // --------------
+            try ctx.thread.query.append(t.ReadOp.edge);
+            try include.include(ref.edgeNode, ctx, edgeQuery, edgeTypeEntry);
+            nodeCnt += 1;
+            if (nodeCnt > header.limit) {
+                break;
             }
-
+        }
+    } else if (header.hasEdges) {
+        var it = try References.iterator(true, ctx.db, fromNode, header.prop, orginalTypeEntry);
+        while (it.next()) |ref| {
+            if (correctedForOffset != 0) {
+                correctedForOffset -= 1;
+                continue;
+            }
+            try ctx.thread.query.append(t.ReadOp.id);
+            try ctx.thread.query.append(Node.getNodeId(ref.node));
+            // try include.include(ref.node, ctx, nestedQuery, typeEntry);
             nodeCnt += 1;
             if (nodeCnt > header.limit) {
                 break;
@@ -114,10 +106,6 @@ pub fn references(
     } else {
         var it = try References.iterator(false, ctx.db, fromNode, header.prop, orginalTypeEntry);
         while (it.next()) |node| {
-            // if (hasFilter and !filter(ctx.db, node.?, ctx.threadCtx, typeEntry, filterSlice, null, null, 0, false)) {
-            //     node = Db.getNextNode(typeEntry, node.?);
-            //     continue :checkItem;
-            // }
             if (correctedForOffset != 0) {
                 correctedForOffset -= 1;
                 continue;
@@ -132,11 +120,7 @@ pub fn references(
         }
     }
 
-    // std.debug.print("REFS -> {any} \n", .{it.refs.nr_refs});
     index.* += header.size;
-    if (header.hasEdges) {
-        index.* += header.edgeSize;
-    }
 
     ctx.thread.query.write(nodeCnt, sizeIndex);
 
