@@ -94,15 +94,15 @@ pub fn loadBlock(
 
     const errlog = data[26..data.len];
 
-    err = selva.selva_dump_load_block(dbCtx.selva, filename.ptr, errlog.ptr, errlog.len);
-    if (err != 0) {
-        utils.write(data, err, 0);
-        return;
-    }
-
     const te = selva.selva_get_type_by_index(dbCtx.selva, typeCode);
     if (te == null) {
         utils.write(data, selva.SELVA_EINTYPE, 0);
+        return;
+    }
+
+    err = selva.selva_dump_load_block(dbCtx.selva, te, filename.ptr, errlog.ptr, errlog.len);
+    if (err != 0) {
+        utils.write(data, err, 0);
         return;
     }
 

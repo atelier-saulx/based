@@ -67,14 +67,14 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
  * ```c
  * struct SelvaDb *db = selva_db_create();
  * selva_dump_load_common(db, filename_common);
- * selva_dump_load_block(db, filename_range_n);
+ * selva_dump_load_block(db, te, filename_range_n);
  *  ```
  */
 SELVA_EXPORT
 int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename) __attribute__((nonnull));
 
 SELVA_EXPORT
-int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
+int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 /**
  * Find a type by type id.
