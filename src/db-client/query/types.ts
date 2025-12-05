@@ -5,9 +5,15 @@ import {
 } from '../../schema/index.js'
 import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
-import { Interval, aggFnOptions } from './aggregates/types.js'
-import { LangCode, LangCodeEnum, SortHeader } from '../../zigTsExports.js'
-import type { AggregateType, ReaderSchema } from '../../protocol/index.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  SortHeader,
+  QueryDefAggregateHeader,
+  AggregateFunction,
+  IntervalEnum,
+} from '../../zigTsExports.js'
+import type { ReaderSchema } from '../../protocol/index.js'
 
 type LangName = keyof typeof LangCode
 
@@ -158,26 +164,16 @@ export type QueryDefSearch =
       opts: FilterOpts
     }
 
-export type Aggregation = {
-  type: AggregateType
-  propDef: PropDef | PropDefEdge
-  resultPos: number
-  accumulatorPos: number
-  isEdge: boolean
-}
-
-export type QueryDefAggregation = {
+export type QueryDefAggregate = QueryDefAggregateHeader & {
   size: number
   groupBy?: aggPropDef
-  // only field 0 to start
-  aggregates: Map<number, Aggregation[]>
-  option?: aggFnOptions
+  aggregates: Map<number, AggregateFunction[]>
   totalResultsSize: number
   totalAccumulatorSize: number
 }
 
-export interface aggPropDef extends PropDef {
-  stepType?: Interval
+export type aggPropDef = PropDef & {
+  stepType?: IntervalEnum
   stepRange?: number
   tz?: number
   display?: Intl.DateTimeFormat
@@ -192,7 +188,7 @@ export type QueryDefShared = {
   errors: QueryError[]
   lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }
   filter: QueryDefFilter
-  aggregate: null | QueryDefAggregation
+  aggregate: null | QueryDefAggregate
   search: null | QueryDefSearch
   sort: null | SortHeader
   skipValidation: boolean

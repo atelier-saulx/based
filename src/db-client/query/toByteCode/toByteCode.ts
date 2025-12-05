@@ -8,7 +8,7 @@ import { includeToBuffer } from '../include/toByteCode.js'
 import { DbClient } from '../../index.js'
 import { writeUint32 } from '../../../utils/index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
-import { resolveMetaIndexes } from '../query.js'
+import { aggregateToBuffer, resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
 import { byteSize, schemaChecksum } from './utils.js'
 import { filterToBuffer } from '../query.js'
@@ -20,6 +20,8 @@ import {
   SortHeaderByteSize,
   writeQueryHeader,
   writeSortHeader,
+  writeAggregateHeader,
+  SamplingMode,
 } from '../../../zigTsExports.js'
 import { searchToBuffer } from '../search/index.js'
 
@@ -53,14 +55,12 @@ export function defToBuffer(
   // const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
 
   // if (def.aggregate) {
-  //   result.push(aggregatesQuery(def))
-  //   if (def.type === QueryDefType.Root) {
-  //     result.push(schemaChecksum(def))
-  //   }
-  //   return result
+  //   // result.push(aggregatesQuery(def))
+  //   // if (def.type === QueryDefType.Root) {
+  //   //   result.push(schemaChecksum(def))
+  //   // }
+  //   // return result
   // }
-
-  // def.type === aggret
 
   if (def.type === QueryDefType.Root) {
     if (def.target.resolvedAlias) {

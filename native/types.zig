@@ -680,7 +680,7 @@ pub const AggGroupedBy = enum(u8) {
     none = 0,
 };
 
-pub const AggType = enum(u8) {
+pub const AggFunctionType = enum(u8) {
     sum = 1,
     count = 2,
     cardinality = 3,
@@ -690,4 +690,32 @@ pub const AggType = enum(u8) {
     max = 7,
     min = 8,
     hmean = 9,
+};
+
+pub const SamplingMode = enum(u8) {
+    sample = 0,
+    population = 1,
+};
+
+pub const QueryDefAggregateHeader = packed struct {
+    queryType: QueryType,
+    typeId: TypeId,
+    offset: u32,
+    limit: u32,
+    filterSize: u16,
+};
+
+pub const AggregateProp = packed struct {
+    propId: u8,
+    propType: PropType,
+    size: u16,
+    start: u16,
+    isEdge: bool,
+};
+
+pub const AggregateFunction = packed struct {
+    type: AggFunctionType,
+    resultPos: u16,
+    accumulatorPos: u16,
+    samplingMode: SamplingMode,
 };
