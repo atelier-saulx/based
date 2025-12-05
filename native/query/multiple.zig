@@ -41,7 +41,7 @@ pub fn default(
         try ctx.thread.query.append(Node.getNodeId(node));
         try include.include(node, ctx, nestedQuery, typeEntry);
         nodeCnt += 1;
-        if (nodeCnt > header.limit) {
+        if (nodeCnt >= header.limit) {
             break;
         }
     }
@@ -72,6 +72,9 @@ pub fn references(
         const s = index.* + header.size - utils.sizeOf(t.QueryHeader);
         const edgeQuery = q[s .. s + header.edgeSize];
         const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
+
+        std.debug.print("e: {any} \n", .{edgeQuery});
+
         while (it.next()) |ref| {
             if (correctedForOffset != 0) {
                 correctedForOffset -= 1;
@@ -84,7 +87,7 @@ pub fn references(
             try ctx.thread.query.append(t.ReadOp.edge);
             try include.include(ref.edgeNode, ctx, edgeQuery, edgeTypeEntry);
             nodeCnt += 1;
-            if (nodeCnt > header.limit) {
+            if (nodeCnt >= header.limit) {
                 break;
             }
         }
@@ -99,7 +102,7 @@ pub fn references(
             try ctx.thread.query.append(Node.getNodeId(ref.node));
             // try include.include(ref.node, ctx, nestedQuery, typeEntry);
             nodeCnt += 1;
-            if (nodeCnt > header.limit) {
+            if (nodeCnt >= header.limit) {
                 break;
             }
         }
@@ -114,7 +117,7 @@ pub fn references(
             try ctx.thread.query.append(Node.getNodeId(node));
             try include.include(node, ctx, nestedQuery, typeEntry);
             nodeCnt += 1;
-            if (nodeCnt > header.limit) {
+            if (nodeCnt >= header.limit) {
                 break;
             }
         }

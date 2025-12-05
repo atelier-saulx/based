@@ -120,6 +120,7 @@ export function defToBuffer(
       include,
     ])
     if (edge) {
+      console.log({ edge })
       result.push(edge)
     }
   } else {

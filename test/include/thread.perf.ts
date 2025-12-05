@@ -33,7 +33,7 @@ await test('include', async (t) => {
               ref: 'user',
               prop: 'todos',
               $status: ['inProgress', 'blocked', 'nothing'],
-              // $name: 'string',
+              $name: 'string',
             },
           },
           done: 'boolean',
@@ -67,7 +67,7 @@ await test('include', async (t) => {
   console.log({ todo, todo2 })
   let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e5; i++) {
     db.create('user', {
       nr: i + 67,
       // name: 'A',
@@ -77,7 +77,7 @@ await test('include', async (t) => {
       todos: [
         // need to write an 8 byte empty thing for edges
         { id: todo, $status: 'blocked' }, //  $name: 'bla'
-        { id: todo2, $status: 'nothing' }, // $name: 'blurf'
+        // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
       ],
       // todos: [todo, todo2], // this doesnot work with edges...
 
@@ -98,11 +98,10 @@ await test('include', async (t) => {
   //     flap: '💩',
   //   })
   // }
-
-  console.log('start query!!!!!!!!!')
-
   await db.drain()
   console.log(Date.now() - d, 'ms')
+
+  console.log('\n--------------------------\nStart query!!!!!!!!!')
 
   const x = await db
     .query('user')
@@ -110,9 +109,9 @@ await test('include', async (t) => {
     // .include('body', { meta: true, end: 10 })
     // .include('name', { meta: 'only' })
     // .include('nr') //  'flap'
-    .include('todos.id') // 'todos.$status'
+    // .include('todos.id') // 'todos.$status'
 
-    // .include('todos.id', 'todos.$status', 'todos.$name') // 'todos.$status'
+    .include('todos.id', 'todos.$status', 'todos.$name') // 'todos.$status'
     // .include('name')
     .range(0, 1)
     .get()
@@ -138,28 +137,28 @@ await test('include', async (t) => {
 
   // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
-  await perf(
-    async () => {
-      const q: any[] = []
-      for (let i = 0; i < 1e2; i++) {
-        q.push(
-          db
-            .query('user')
-            // .include('id')
-            // .include('todos.id') // 'todos.$status'
-            //  'todos.$status'
-            .include('id', 'todos.id', 'todos.$status')
-            .range(0, 1e6 + i)
-            // .inspect()
-            .get()
-            .inspect(),
-        )
-      }
-      await Promise.all(q)
-    },
-    'Nodes',
-    { repeat: 10 },
-  )
+  // await perf(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 1e2; i++) {
+  //       q.push(
+  //         db
+  //           .query('user')
+  //           // .include('id')
+  //           // .include('todos.id') // 'todos.$status'
+  //           //  'todos.$status'
+  //           .include('id', 'todos.id', 'todos.$status')
+  //           .range(0, 1e6 + i)
+  //           // .inspect()
+  //           .get(),
+  //         // .inspect(),
+  //       )
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'Nodes',
+  //   { repeat: 10 },
+  // )
 
   await wait(100)
 })
