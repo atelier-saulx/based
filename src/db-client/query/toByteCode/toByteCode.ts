@@ -15,7 +15,7 @@ import {
   SortHeaderByteSize,
   writeQueryHeader,
   writeSortHeader,
-  writeAggregateHeader,
+  // writeAggregateHeader,
   SamplingMode,
 } from '../../../zigTsExports.js'
 import { searchToBuffer } from '../search/index.js'
@@ -70,6 +70,18 @@ export function defToBuffer(
     if (edge) {
       edgeSize = byteSize(edge)
     }
+
+    // const size = (edges ? edgesSize + 3 : 0) + byteSize(include)
+
+    // if (def.aggregate) {
+    //   result.push(aggregatesQuery(def))
+    //   if (def.type === QueryDefType.Root) {
+    //     result.push(schemaChecksum(def))
+    //   }
+    //   return result
+    // }
+
+    // def.type === aggret
 
     const buffer = new Uint8Array(
       QueryHeaderByteSize + searchSize + filterSize + sortSize,
