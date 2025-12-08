@@ -15,6 +15,8 @@ pub const OpType = enum(u8) {
     alias = 3,
     aggregates = 4,
     aggregatesCountType = 5,
+    defaultSort = 8,
+
     blockHash = 42,
     saveBlock = 67,
     saveCommon = 69,
@@ -452,39 +454,54 @@ pub const SortHeader = packed struct {
     lang: LangCode,
 };
 
-pub const QuerySubType = enum(u8) {
-    // --- NO SEARCH ---
-    default = 0, //                   Filter: [ X ],  Sort: [ X     ],  Search: [ X   ]
-    filter = 1, //                    Filter: [ √ ],  Sort: [ X     ],  Search: [ X   ]
-    sortAsc = 2, //                   Filter: [ X ],  Sort: [ASC    ],  Search: [ X   ]
-    sortAscFilter = 3, //             Filter: [ √ ],  Sort: [ASC    ],  Search: [ X   ]
-    sortDesc = 4, //                  Filter: [ X ],  Sort: [DESC   ],  Search: [ X   ]
-    sortDescFilter = 5, //            Filter: [ √ ],  Sort: [DESC   ],  Search: [ X   ]
-    sortIdDesc = 6, //                Filter: [ X ],  Sort: [ID_DESC],  Search: [ X   ]
-    sortIdDescFilter = 7, //          Filter: [ √ ],  Sort: [ID_DESC],  Search: [ X   ]
+// maybe just default, defaultSort, search, searchSort, vec, vecSort
+// maybe just add desc or not desc this can then fit in range and offset
+// sort is allready handled
 
+pub const QueryIteratorType = enum(u8) {
+    // ==========================
+    // --- NO SEARCH (Default) ---
+    // ==========================
+    default = 0, // Filter: [ X ],  Sort: [ X    ],  Search: [ X   ]
+    filter = 1, // Filter: [ √ ],  Sort: [ X    ],  Search: [ X   ]
+    desc = 2, // Filter: [ X ],  Sort: [DESC  ],  Search: [ X   ]
+    descFilter = 3, // Filter: [ √ ],  Sort: [DESC  ],  Search: [ X   ]
+
+    // ==========================
     // --- TEXT SEARCH ---
-    search = 8, //                    Filter: [ X ],  Sort: [ X     ],  Search: [TEXT ]
-    searchFilter = 9, //              Filter: [ √ ],  Sort: [ X     ],  Search: [TEXT ]
-    searchSortAsc = 10, //            Filter: [ X ],  Sort: [ASC    ],  Search: [TEXT ]
-    searchSortAscFilter = 11, //      Filter: [ √ ],  Sort: [ASC    ],  Search: [TEXT ]
-    searchSortDesc = 12, //           Filter: [ X ],  Sort: [DESC   ],  Search: [TEXT ]
-    searchSortDescFilter = 13, //     Filter: [ √ ],  Sort: [DESC   ],  Search: [TEXT ]
-    searchSortIdDesc = 14, //         Filter: [ X ],  Sort: [ID_DESC],  Search: [TEXT ]
-    searchSortIdDescFilter = 15, //   Filter: [ √ ],  Sort: [ID_DESC],  Search: [TEXT ]
+    // ==========================
+    search = 8, // Filter: [ X ],  Sort: [ X    ],  Search: [TEXT ]
+    searchFilter = 9, // Filter: [ √ ],  Sort: [ X    ],  Search: [TEXT ]
+    searchDesc = 10, // Filter: [ X ],  Sort: [DESC  ],  Search: [TEXT ]
+    searchDescFilter = 11, // Filter: [ √ ], Sort: [DESC  ],  Search: [TEXT ]
 
+    // ==========================
     // --- VECTOR SEARCH ---
-    vec = 16, //                      Filter: [ X ],  Sort: [ X     ],  Search: [ VEC ]
-    vecFilter = 17, //                Filter: [ √ ],  Sort: [ X     ],  Search: [ VEC ]
-    vecSortAsc = 18, //               Filter: [ X ],  Sort: [ASC    ],  Search: [ VEC ]
-    vecSortAscFilter = 19, //         Filter: [ √ ],  Sort: [ASC    ],  Search: [ VEC ]
-    vecSortDesc = 20, //              Filter: [ X ],  Sort: [DESC   ],  Search: [ VEC ]
-    vecSortDescFilter = 21, //        Filter: [ √ ],  Sort: [DESC   ],  Search: [ VEC ]
-    vecSortIdDesc = 22, //            Filter: [ X ],  Sort: [ID_DESC],  Search: [ VEC ]
-    vecSortIdDescFilter = 23, //      Filter: [ √ ],  Sort: [ID_DESC],  Search: [ VEC ]
+    // ==========================
+    vec = 16, // Filter: [ X ],  Sort: [ X    ],  Search: [ VEC ]
+    vecFilter = 17, // Filter: [ √ ],  Sort: [ X    ],  Search: [ VEC ]
+    vecDesc = 18, // Filter: [ X ],  Sort: [DESC  ],  Search: [ VEC ]
+    vecDescFilter = 19, // Filter: [ √ ],  Sort: [DESC  ],  Search: [ VEC ]
+
+    // ==========================
+    // --- EDGE SEARCH ---
+    // ==========================
+    edge = 24, // Filter: [ X ],  Sort: [ X    ],  Search: [EDGE ]
+    edgeFilter = 25, // Filter: [ √ ],  Sort: [ X    ],  Search: [EDGE ]
+    edgeDesc = 26, // Filter: [ X ],  Sort: [DESC  ],  Search: [EDGE ]
+    edgeDescFilter = 27, // Filter: [ √ ],  Sort: [DESC  ],  Search: [EDGE ]
+
+    // ==========================
+    // --- EDGE INCLUDE SEARCH ---
+    // ==========================
+    edgeInclude = 32, // Filter: [ X ],  Sort: [ X    ],  Search: [INCL ]
+    edgeIncludeFilter = 33, // Filter: [ √ ],  Sort: [ X    ],  Search: [INCL ]
+    edgeIncludeDesc = 34, // Filter: [ X ],  Sort: [DESC  ],  Search: [INCL ]
+    edgeIncludeDescFilter = 35, // Filter: [ √ ],  Sort: [DESC  ],  Search: [INCL ]
 };
 
 // include op needs overlap with this
+// here we add SORT
 pub const QueryType = enum(u8) {
     id = 0,
     ids = 1,
@@ -494,6 +511,8 @@ pub const QueryType = enum(u8) {
     aggregatesCount = 5,
     references = 6,
     reference = 7,
+    defaultSort = 8,
+    referencesSort = 9,
 };
 
 pub const IncludeOp = enum(u8) {
@@ -594,11 +613,10 @@ pub const QueryHeader = packed struct {
     filterSize: u16,
     searchSize: u16,
     edgeSize: u16,
-    edgeFilterSize: u16, // this is nice
-    subType: QuerySubType,
-    hasEdges: bool, // this just tells it in references that it needs to loop trhough edge + ref
+    edgeFilterSize: u16,
+    iteratorType: QueryIteratorType,
     sort: bool,
-    _padding: u6,
+    _padding: u7,
 };
 
 pub const FilterOp = enum(u8) {

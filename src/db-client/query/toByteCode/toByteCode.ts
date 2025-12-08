@@ -7,11 +7,12 @@ import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
 import { byteSize, schemaChecksum } from './utils.js'
 import { filterToBuffer } from '../query.js'
-import { getQuerySubType } from './subType.js'
+import { getIteratorType } from './iteratorType.js'
 import {
   ID_PROP,
   QueryHeaderByteSize,
   QueryType,
+  QueryTypeEnum,
   SortHeaderByteSize,
   writeQueryHeader,
   writeSortHeader,
@@ -79,10 +80,17 @@ export function defToBuffer(
     // @ts-ignore
     const edgeTypeId: number = hasEdges ? def.target.propDef.edgeNodeTypeId : 0
 
+    let op: QueryTypeEnum = isReferences
+      ? QueryType.references
+      : QueryType.default
+    if (hasSort) {
+      op = isReferences ? QueryType.referencesSort : QueryType.defaultSort
+    }
+
     let index = writeQueryHeader(
       buffer,
       {
-        op: isReferences ? QueryType.references : QueryType.default,
+        op,
         prop: isReferences ? def.target.propDef!.prop : ID_PROP,
         // this does not seem nessecary
         size: buffer.byteLength + includeSize, // for top level the byte size is not very important
@@ -92,8 +100,7 @@ export function defToBuffer(
         sort: hasSort,
         filterSize: def.filter.size,
         searchSize,
-        subType: getQuerySubType(def),
-        hasEdges,
+        iteratorType: getIteratorType(def, hasEdges, !!edge),
         edgeTypeId,
         edgeSize,
         edgeFilterSize: 0, // this is nice

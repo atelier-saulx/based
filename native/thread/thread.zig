@@ -153,31 +153,29 @@ pub const Threads = struct {
                 queryBuf = self.queryQueue.swapRemove(0);
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
-                    if (op == t.OpType.default) {
+                    if (op == t.OpType.defaultSort) {
                         var index: usize = 4;
                         const header = utils.readNext(t.QueryHeader, q, &index);
-                        if (header.sort) {
-                            const sortHeader = utils.readNext(t.SortHeader, q, &index);
-                            if (sort.getSortIndex(
-                                self.ctx.sortIndexes.get(header.typeId),
-                                sortHeader.prop,
-                                sortHeader.start,
-                                sortHeader.lang,
-                            )) |sortMetaIndex| {
-                                sortIndex = sortMetaIndex;
-                            } else {
-                                // needs multi threading ofc
-                                // add comtime dont create all
-                                // can now store sort indexes for refs as well!
-                                sortIndex = try sort.createSortIndex(
-                                    self.ctx,
-                                    thread.decompressor,
-                                    header.typeId,
-                                    &sortHeader,
-                                    true,
-                                    false,
-                                );
-                            }
+                        const sortHeader = utils.readNext(t.SortHeader, q, &index);
+                        if (sort.getSortIndex(
+                            self.ctx.sortIndexes.get(header.typeId),
+                            sortHeader.prop,
+                            sortHeader.start,
+                            sortHeader.lang,
+                        )) |sortMetaIndex| {
+                            sortIndex = sortMetaIndex;
+                        } else {
+                            // needs multi threading ofc
+                            // add comtime dont create all
+                            // can now store sort indexes for refs as well!
+                            sortIndex = try sort.createSortIndex(
+                                self.ctx,
+                                thread.decompressor,
+                                header.typeId,
+                                &sortHeader,
+                                true,
+                                false,
+                            );
                         }
                     }
                 }

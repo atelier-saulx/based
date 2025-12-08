@@ -40,6 +40,7 @@ export const OpType = {
   alias: 3,
   aggregates: 4,
   aggregatesCountType: 5,
+  defaultSort: 8,
   blockHash: 42,
   saveBlock: 67,
   saveCommon: 69,
@@ -60,6 +61,7 @@ export const OpTypeInverse = {
   3: 'alias',
   4: 'aggregates',
   5: 'aggregatesCountType',
+  8: 'defaultSort',
   42: 'blockHash',
   67: 'saveBlock',
   69: 'saveCommon',
@@ -80,6 +82,7 @@ export const OpTypeInverse = {
   alias, 
   aggregates, 
   aggregatesCountType, 
+  defaultSort, 
   blockHash, 
   saveBlock, 
   saveCommon, 
@@ -1121,87 +1124,75 @@ export const createSortHeader = (header: SortHeader): Uint8Array => {
   return buffer
 }
 
-export const QuerySubType = {
+export const QueryIteratorType = {
   default: 0,
   filter: 1,
-  sortAsc: 2,
-  sortAscFilter: 3,
-  sortDesc: 4,
-  sortDescFilter: 5,
-  sortIdDesc: 6,
-  sortIdDescFilter: 7,
+  desc: 2,
+  descFilter: 3,
   search: 8,
   searchFilter: 9,
-  searchSortAsc: 10,
-  searchSortAscFilter: 11,
-  searchSortDesc: 12,
-  searchSortDescFilter: 13,
-  searchSortIdDesc: 14,
-  searchSortIdDescFilter: 15,
+  searchDesc: 10,
+  searchDescFilter: 11,
   vec: 16,
   vecFilter: 17,
-  vecSortAsc: 18,
-  vecSortAscFilter: 19,
-  vecSortDesc: 20,
-  vecSortDescFilter: 21,
-  vecSortIdDesc: 22,
-  vecSortIdDescFilter: 23,
+  vecDesc: 18,
+  vecDescFilter: 19,
+  edge: 24,
+  edgeFilter: 25,
+  edgeDesc: 26,
+  edgeDescFilter: 27,
+  edgeInclude: 32,
+  edgeIncludeFilter: 33,
+  edgeIncludeDesc: 34,
+  edgeIncludeDescFilter: 35,
 } as const
 
-export const QuerySubTypeInverse = {
+export const QueryIteratorTypeInverse = {
   0: 'default',
   1: 'filter',
-  2: 'sortAsc',
-  3: 'sortAscFilter',
-  4: 'sortDesc',
-  5: 'sortDescFilter',
-  6: 'sortIdDesc',
-  7: 'sortIdDescFilter',
+  2: 'desc',
+  3: 'descFilter',
   8: 'search',
   9: 'searchFilter',
-  10: 'searchSortAsc',
-  11: 'searchSortAscFilter',
-  12: 'searchSortDesc',
-  13: 'searchSortDescFilter',
-  14: 'searchSortIdDesc',
-  15: 'searchSortIdDescFilter',
+  10: 'searchDesc',
+  11: 'searchDescFilter',
   16: 'vec',
   17: 'vecFilter',
-  18: 'vecSortAsc',
-  19: 'vecSortAscFilter',
-  20: 'vecSortDesc',
-  21: 'vecSortDescFilter',
-  22: 'vecSortIdDesc',
-  23: 'vecSortIdDescFilter',
+  18: 'vecDesc',
+  19: 'vecDescFilter',
+  24: 'edge',
+  25: 'edgeFilter',
+  26: 'edgeDesc',
+  27: 'edgeDescFilter',
+  32: 'edgeInclude',
+  33: 'edgeIncludeFilter',
+  34: 'edgeIncludeDesc',
+  35: 'edgeIncludeDescFilter',
 } as const
 
 /**
   default, 
   filter, 
-  sortAsc, 
-  sortAscFilter, 
-  sortDesc, 
-  sortDescFilter, 
-  sortIdDesc, 
-  sortIdDescFilter, 
+  desc, 
+  descFilter, 
   search, 
   searchFilter, 
-  searchSortAsc, 
-  searchSortAscFilter, 
-  searchSortDesc, 
-  searchSortDescFilter, 
-  searchSortIdDesc, 
-  searchSortIdDescFilter, 
+  searchDesc, 
+  searchDescFilter, 
   vec, 
   vecFilter, 
-  vecSortAsc, 
-  vecSortAscFilter, 
-  vecSortDesc, 
-  vecSortDescFilter, 
-  vecSortIdDesc, 
-  vecSortIdDescFilter 
+  vecDesc, 
+  vecDescFilter, 
+  edge, 
+  edgeFilter, 
+  edgeDesc, 
+  edgeDescFilter, 
+  edgeInclude, 
+  edgeIncludeFilter, 
+  edgeIncludeDesc, 
+  edgeIncludeDescFilter 
  */
-export type QuerySubTypeEnum = (typeof QuerySubType)[keyof typeof QuerySubType]
+export type QueryIteratorTypeEnum = (typeof QueryIteratorType)[keyof typeof QueryIteratorType]
 
 export const QueryType = {
   id: 0,
@@ -1212,6 +1203,8 @@ export const QueryType = {
   aggregatesCount: 5,
   references: 6,
   reference: 7,
+  defaultSort: 8,
+  referencesSort: 9,
 } as const
 
 export const QueryTypeInverse = {
@@ -1223,6 +1216,8 @@ export const QueryTypeInverse = {
   5: 'aggregatesCount',
   6: 'references',
   7: 'reference',
+  8: 'defaultSort',
+  9: 'referencesSort',
 } as const
 
 /**
@@ -1233,7 +1228,9 @@ export const QueryTypeInverse = {
   aggregates, 
   aggregatesCount, 
   references, 
-  reference 
+  reference, 
+  defaultSort, 
+  referencesSort 
  */
 export type QueryTypeEnum = (typeof QueryType)[keyof typeof QueryType]
 
@@ -1886,8 +1883,7 @@ export type QueryHeader = {
   searchSize: number
   edgeSize: number
   edgeFilterSize: number
-  subType: QuerySubTypeEnum
-  hasEdges: boolean
+  iteratorType: QueryIteratorTypeEnum
   sort: boolean
 }
 
@@ -1920,12 +1916,11 @@ export const writeQueryHeader = (
   offset += 2
   writeUint16(buf, header.edgeFilterSize, offset)
   offset += 2
-  buf[offset] = header.subType
+  buf[offset] = header.iteratorType
   offset += 1
   buf[offset] = 0
-  buf[offset] |= (((header.hasEdges ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 1
-  buf[offset] |= ((0 >>> 0) & 63) << 2
+  buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
   offset += 1
   return offset
 }
@@ -1964,14 +1959,11 @@ export const writeQueryHeaderProps = {
   edgeFilterSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 22)
   },
-  subType: (buf: Uint8Array, value: QuerySubTypeEnum, offset: number) => {
+  iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
     buf[offset + 24] = value
   },
-  hasEdges: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 25] |= (((value ? 1 : 0) >>> 0) & 1) << 0
-  },
   sort: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 25] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    buf[offset + 25] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
 }
 
@@ -1991,9 +1983,8 @@ export const readQueryHeader = (
     searchSize: readUint16(buf, offset + 18),
     edgeSize: readUint16(buf, offset + 20),
     edgeFilterSize: readUint16(buf, offset + 22),
-    subType: (buf[offset + 24]) as QuerySubTypeEnum,
-    hasEdges: (((buf[offset + 25] >>> 0) & 1)) === 1,
-    sort: (((buf[offset + 25] >>> 1) & 1)) === 1,
+    iteratorType: (buf[offset + 24]) as QueryIteratorTypeEnum,
+    sort: (((buf[offset + 25] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -2032,14 +2023,11 @@ export const readQueryHeaderProps = {
   edgeFilterSize: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 22)
   },
-  subType: (buf: Uint8Array, offset: number): QuerySubTypeEnum => {
-    return (buf[offset + 24]) as QuerySubTypeEnum
-  },
-  hasEdges: (buf: Uint8Array, offset: number): boolean => {
-    return (((buf[offset + 25] >>> 0) & 1)) === 1
+  iteratorType: (buf: Uint8Array, offset: number): QueryIteratorTypeEnum => {
+    return (buf[offset + 24]) as QueryIteratorTypeEnum
   },
   sort: (buf: Uint8Array, offset: number): boolean => {
-    return (((buf[offset + 25] >>> 1) & 1)) === 1
+    return (((buf[offset + 25] >>> 0) & 1)) === 1
   },
 }
 

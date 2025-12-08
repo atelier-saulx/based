@@ -33,7 +33,7 @@ await test('include', async (t) => {
               ref: 'user',
               prop: 'todos',
               $status: ['inProgress', 'blocked', 'nothing'],
-              $name: 'string',
+              // $name: 'string',
             },
           },
           done: 'boolean',
@@ -111,7 +111,7 @@ await test('include', async (t) => {
     // .include('nr') //  'flap'
     // .include('todos.id') // 'todos.$status'
 
-    .include('todos.id', 'todos.$status', 'todos.$name') // 'todos.$status'
+    .include('todos.id', 'todos.$status') // 'todos.$status'
     // .include('name')
     .range(0, 1)
     .get()
