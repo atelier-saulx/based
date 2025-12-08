@@ -10,8 +10,8 @@ await test('include', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  //t.after(() => db.stop(true))
-  t.after(() => t.backup(db))
+  t.after(() => db.stop(true))
+  //t.after(() => t.backup(db))
 
   await db.setSchema({
     locales: {

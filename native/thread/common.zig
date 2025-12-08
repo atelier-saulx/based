@@ -1,6 +1,7 @@
 const std = @import("std");
 const deflate = @import("../deflate.zig");
-const results = @import("./results.zig");
+const jemalloc = @import("../jemalloc.zig");
+const results = @import("results.zig");
 
 pub const Thread = struct {
     thread: std.Thread,
@@ -16,7 +17,7 @@ pub const Thread = struct {
     currentModifyIndex: usize = 0,
 
     pub fn init(id: usize) !*Thread {
-        const thread = try std.heap.raw_c_allocator.create(Thread);
+        const thread = jemalloc.create(Thread);
         thread.*.id = id;
         thread.*.decompressor = deflate.createDecompressor();
         thread.*.libdeflateBlockState = deflate.initBlockState(305000);
@@ -34,6 +35,6 @@ pub const Thread = struct {
         self.thread.join();
         self.query.deinit();
         self.modify.deinit();
-        std.heap.raw_c_allocator.destroy(self);
+        jemalloc.free(self);
     }
 };
