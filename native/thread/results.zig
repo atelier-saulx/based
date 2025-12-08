@@ -2,6 +2,7 @@ const std = @import("std");
 const t = @import("../types.zig");
 const utils = @import("../utils.zig");
 const String = @import("../string.zig");
+const jemalloc = @import("../jemalloc.zig");
 
 pub const Result = struct {
     data: []u8,
@@ -9,16 +10,16 @@ pub const Result = struct {
     headerIndex: usize,
 
     pub fn init() !*Result {
-        var r = try std.heap.raw_c_allocator.create(Result);
-        r.data = try std.heap.raw_c_allocator.alloc(u8, 0);
+        var r = jemalloc.create(Result);
+        r.data = jemalloc.alloc(u8, 0);
         r.*.index = 0;
         r.*.headerIndex = 0;
         return r;
     }
 
     pub fn deinit(self: *Result) void {
-        std.heap.raw_c_allocator.free(self.data);
-        std.heap.raw_c_allocator.destroy(self);
+        jemalloc.free(self.data);
+        jemalloc.free(self);
     }
 
     pub inline fn grow(self: *Result, extraSize: usize) !usize {
@@ -28,7 +29,7 @@ pub const Result = struct {
             if (extraSize > increasedSize) {
                 increasedSize = (@divTrunc(extraSize, increasedSize) + 1) * increasedSize;
             }
-            self.data = try std.heap.raw_c_allocator.realloc(self.data, self.data.len + increasedSize);
+            self.data = jemalloc.realloc(self.data, self.data.len + increasedSize);
         }
         return newSize;
     }

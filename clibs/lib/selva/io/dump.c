@@ -387,7 +387,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     int err;
 
     struct SelvaTypeBlock *block = selva_get_block(te->blocks, start);
-    const sdb_nr_nodes_t nr_nodes = block->nr_nodes_in_block;
+    const sdb_nr_nodes_t nr_nodes = (block) ? block->nr_nodes_in_block : 0;
 
     if (nr_nodes == 0) {
         /*
@@ -414,21 +414,13 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     selva_hash_reset(hash_state);
     io.sdb_write(&nr_nodes, sizeof(nr_nodes), 1, &io);
 
-    /*
-     * Note that we just assume that the first node in RB_FOREACH is the same as `start`.
-     */
-    if (nr_nodes > 0) {
-        struct SelvaNodeIndex *nodes = &block->nodes;
-        struct SelvaNode *node;
+    struct SelvaNode *node;
 
-        RB_FOREACH(node, SelvaNodeIndex, nodes) {
-            selva_hash128_t node_hash;
-
-            node_hash = selva_node_hash_update(db, te, node, tmp_hash_state);
-            selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
-            save_node(&io, db, node);
-            save_aliases_node(&io, te, node->node_id);
-        }
+    RB_FOREACH(node, SelvaNodeIndex, &block->nodes) {
+        selva_hash128_t node_hash = selva_node_hash_update(db, te, node, tmp_hash_state);
+        selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
+        save_node(&io, db, node);
+        save_aliases_node(&io, te, node->node_id);
     }
 
     /*
@@ -971,7 +963,7 @@ static int load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
 }
 
 __attribute__((warn_unused_result))
-static int load_type(struct selva_io *io, struct SelvaDb *db)
+static int load_type(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     int err;
 
@@ -983,10 +975,8 @@ static int load_type(struct selva_io *io, struct SelvaDb *db)
     node_type_t type;
     io->sdb_read(&type, sizeof(type), 1, io);
 
-    struct SelvaTypeEntry *te;
-    te = selva_get_type_by_index(db, type);
-    if (!te) {
-        selva_io_errlog(io, "Type not found: %d", type);
+    if (te->type != type) {
+        selva_io_errlog(io, "Invalid type found: %d != %d", type, te->type);
         return SELVA_EINVAL;
     }
 
@@ -1084,7 +1074,7 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
     return err;
 }
 
-int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog_buf, size_t errlog_size)
+int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, char *errlog_buf, size_t errlog_size)
 {
     struct selva_io io = {
         .errlog_buf = errlog_buf,
@@ -1102,7 +1092,7 @@ int selva_dump_load_block(struct SelvaDb *db, const char *filename, char *errlog
         return SELVA_ENOTSUP;
     }
 
-    err = load_type(&io, db);
+    err = load_type(&io, db, te);
     selva_io_end(&io, nullptr);
 
     return err;

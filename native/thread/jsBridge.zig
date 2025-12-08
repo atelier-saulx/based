@@ -1,3 +1,4 @@
+const jemalloc = @import("../jemalloc.zig");
 const selva = @import("../selva/selva.zig").c;
 const napi = @import("../napi.zig");
 const std = @import("std");
@@ -128,7 +129,7 @@ fn callJsCallback(
         },
     }
 
-    std.heap.raw_c_allocator.destroy(responseFn);
+    jemalloc.free(responseFn);
 }
 
 pub const Callback = struct {
@@ -140,7 +141,7 @@ pub const Callback = struct {
         dbCtx: *DbCtx,
         jsFunc: napi.Value,
     ) !*Callback {
-        const self = try std.heap.raw_c_allocator.create(Callback);
+        const self = jemalloc.create(Callback);
 
         var name: napi.Value = undefined;
         _ = napi.c.napi_create_string_utf8(env, "ZigThreadSafeJsBridge", napi.c.NAPI_AUTO_LENGTH, &name);
@@ -172,7 +173,7 @@ pub const Callback = struct {
     pub fn deinit(self: *Callback) void {
         std.debug.print("REMOVE JS BRIDGE \n", .{});
         _ = napi.c.napi_release_threadsafe_function(self.tsfn, napi.c.napi_tsfn_release);
-        std.heap.raw_c_allocator.destroy(self);
+        jemalloc.free(self);
     }
 
     pub fn call(
@@ -182,7 +183,7 @@ pub const Callback = struct {
     ) void {
         // std.debug.print("call js {any} \n", .{response});
 
-        const result = std.heap.raw_c_allocator.create(BridgeResponseStruct) catch return;
+        const result = jemalloc.create(BridgeResponseStruct);
         result.*.response = response;
         result.*.threadId = threadId;
         _ = napi.c.napi_call_threadsafe_function(self.tsfn, result, napi.c.napi_tsfn_blocking);

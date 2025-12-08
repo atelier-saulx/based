@@ -11,7 +11,7 @@ await test('include', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => db.stop(true))
-  // t.after(() => t.backup(db))
+  //t.after(() => t.backup(db))
 
   await db.setSchema({
     locales: {

@@ -6,7 +6,6 @@ import { join } from 'node:path'
 import { BlockMap, makeTreeKey } from './blockMap.js'
 import {
   readWritelog,
-  foreachBlock,
   registerBlockIoListeners,
   loadCommon,
   loadBlockRaw,
@@ -17,12 +16,8 @@ import {
   OpTypeEnum,
   BridgeResponseEnum,
   BridgeResponse,
-  BridgeResponseInverse,
-  OpType,
-  OpTypeInverse,
 } from '../zigTsExports.js'
 import { deSerialize } from '../schema/serialize.js'
-import { BLOCK_CAPACITY_DEFAULT } from '../schema/index.js'
 import { SCHEMA_FILE, SCHEMA_FILE_DEPRECATED, WRITELOG_FILE } from '../index.js'
 
 export type StartOpts = {
@@ -131,6 +126,8 @@ export async function start(db: DbServer, opts?: StartOpts) {
       }
     }
 
+    db.blockMap = new BlockMap(db.schemaTypesParsed)
+
     // Load block dumps
     for (const typeId in writelog.rangeDumps) {
       const dumps = writelog.rangeDumps[typeId]
@@ -142,7 +139,9 @@ export async function start(db: DbServer, opts?: StartOpts) {
           if (fname?.length > 0) {
             try {
               // Can't use loadBlock() yet because blockMap is not avail
-              await loadBlockRaw(db, def.id, dump.start, join(path, fname))
+              const hash = await loadBlockRaw(db, def.id, dump.start, join(path, fname))
+              const mtKey = makeTreeKey(def.id, dump.start)
+              db.blockMap.updateBlock(mtKey, hash)
             } catch (e) {
               console.error(e.message)
             }
@@ -152,35 +151,15 @@ export async function start(db: DbServer, opts?: StartOpts) {
         for (const dump of dumps) {
           const fname = dump.file
           if (fname?.length > 0) {
-            partials.push([
-              makeTreeKey(def.id, dump.start),
-              hexToBuf(dump.hash),
-            ])
+            const key = makeTreeKey(def.id, dump.start)
+            const hash = hexToBuf(dump.hash)
+            db.blockMap.updateBlock(key, hash, 'fs')
           }
         }
       }
     }
-  }
-
-  db.blockMap = new BlockMap(db.schemaTypesParsed)
-
-  for (const { typeId } of db.blockMap.types()) {
-    const def = db.schemaTypesParsedById[typeId]
-    def.blockCapacity =
-      writelog?.types[def.id]?.blockCapacity ||
-      def.blockCapacity ||
-      BLOCK_CAPACITY_DEFAULT
-
-    const blockGen = foreachBlock(db, def)
-    for await (const [start, _end, hash] of blockGen) {
-      const mtKey = makeTreeKey(def.id, start)
-      db.blockMap.updateBlock(mtKey, hash)
-    }
-  }
-
-  // Insert partials to make the hash match
-  for (const [key, hash] of partials) {
-    db.blockMap.updateBlock(key, hash, 'fs')
+  } else {
+    db.blockMap = new BlockMap(db.schemaTypesParsed)
   }
 
   if (writelog?.hash) {
