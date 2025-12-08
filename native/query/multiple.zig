@@ -73,7 +73,7 @@ pub fn references(
         const edgeQuery = q[s .. s + header.edgeSize];
         const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
 
-        std.debug.print("e: {any} \n", .{edgeQuery});
+        std.debug.print("references e: {any} \n", .{edgeQuery});
 
         while (it.next()) |ref| {
             if (correctedForOffset != 0) {
