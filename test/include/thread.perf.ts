@@ -67,7 +67,7 @@ await test('include', async (t) => {
   console.log({ todo, todo2 })
   let d = Date.now()
 
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e6; i++) {
     db.create('user', {
       nr: i + 67,
       // name: 'A',
@@ -137,28 +137,28 @@ await test('include', async (t) => {
 
   // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
-  // await perf(
-  //   async () => {
-  //     const q: any[] = []
-  //     for (let i = 0; i < 1e2; i++) {
-  //       q.push(
-  //         db
-  //           .query('user')
-  //           // .include('id')
-  //           // .include('todos.id') // 'todos.$status'
-  //           //  'todos.$status'
-  //           .include('id', 'todos.id', 'todos.$status')
-  //           .range(0, 1e6 + i)
-  //           // .inspect()
-  //           .get(),
-  //         // .inspect(),
-  //       )
-  //     }
-  //     await Promise.all(q)
-  //   },
-  //   'Nodes',
-  //   { repeat: 10 },
-  // )
+  await perf(
+    async () => {
+      const q: any[] = []
+      for (let i = 0; i < 1e2; i++) {
+        q.push(
+          db
+            .query('user')
+            .include('id')
+            // .include('todos.id') // 'todos.$status'
+            //  'todos.$status'
+            // .include('id', 'todos.id') // 'todos.$status'
+            .range(0, 1e6 + i)
+            // .inspect()
+            .get(),
+          // .inspect(),
+        )
+      }
+      await Promise.all(q)
+    },
+    'Nodes',
+    { repeat: 10 },
+  )
 
   await wait(100)
 })
