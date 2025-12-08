@@ -3,6 +3,7 @@ import {
   PropType,
   type PropTypeEnum,
   AggFunctionType,
+  AggFunctionTypeInverse,
 } from '../../zigTsExports.js'
 import {
   DECODER,
@@ -138,7 +139,7 @@ export const readAggregate = (
         } else {
           setByPath(
             resultKey,
-            [...agg.path, AggFunctionType[agg.type].toLowerCase()],
+            [...agg.path, AggFunctionTypeInverse[agg.type]],
             val,
           )
         }
@@ -160,17 +161,9 @@ export const readAggregate = (
         setByPath(results, agg.path, val)
       } else if (agg.path.length > 1 && agg.path[1][0] == '$') {
         // MV: make it better
-        setByPath(
-          results,
-          [agg.path[1], AggFunctionType[agg.type].toLowerCase()],
-          val,
-        )
+        setByPath(results, [agg.path[1], AggFunctionTypeInverse[agg.type]], val)
       } else {
-        setByPath(
-          results,
-          [...agg.path, AggFunctionType[agg.type].toLowerCase()],
-          val,
-        )
+        setByPath(results, [...agg.path, AggFunctionTypeInverse[agg.type]], val)
       }
     }
   }
