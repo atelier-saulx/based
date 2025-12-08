@@ -1,5 +1,9 @@
-import { ReaderSchema, AggregateType } from './types.js'
-import { PropType, type PropTypeEnum } from '../../zigTsExports.js'
+import { ReaderSchema } from './types.js'
+import {
+  PropType,
+  type PropTypeEnum,
+  AggFunctionType,
+} from '../../zigTsExports.js'
 import {
   DECODER,
   readDoubleLE,
@@ -122,19 +126,19 @@ export const readAggregate = (
       for (const agg of q.aggregate.aggregates) {
         var val: number
         if (
-          agg.type === AggregateType.CARDINALITY ||
-          agg.type === AggregateType.COUNT
+          agg.type === AggFunctionType.cardinality ||
+          agg.type === AggFunctionType.count
         ) {
           val = readUint32(result, agg.resultPos + i)
         } else {
           val = readDoubleLE(result, agg.resultPos + i)
         }
-        if (agg.type === AggregateType.COUNT) {
+        if (agg.type === AggFunctionType.count) {
           setByPath(resultKey, agg.path, val)
         } else {
           setByPath(
             resultKey,
-            [...agg.path, AggregateType[agg.type].toLowerCase()],
+            [...agg.path, AggFunctionType[agg.type].toLowerCase()],
             val,
           )
         }
@@ -145,26 +149,26 @@ export const readAggregate = (
     for (const agg of q.aggregate!.aggregates) {
       var val: number
       if (
-        agg.type === AggregateType.CARDINALITY ||
-        agg.type === AggregateType.COUNT
+        agg.type === AggFunctionType.cardinality ||
+        agg.type === AggFunctionType.count
       ) {
         val = readUint32(result, agg.resultPos + offset)
       } else {
         val = readDoubleLE(result, agg.resultPos + offset)
       }
-      if (agg.type === AggregateType.COUNT) {
+      if (agg.type === AggFunctionType.count) {
         setByPath(results, agg.path, val)
       } else if (agg.path.length > 1 && agg.path[1][0] == '$') {
         // MV: make it better
         setByPath(
           results,
-          [agg.path[1], AggregateType[agg.type].toLowerCase()],
+          [agg.path[1], AggFunctionType[agg.type].toLowerCase()],
           val,
         )
       } else {
         setByPath(
           results,
-          [...agg.path, AggregateType[agg.type].toLowerCase()],
+          [...agg.path, AggFunctionType[agg.type].toLowerCase()],
           val,
         )
       }

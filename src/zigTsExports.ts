@@ -2250,7 +2250,7 @@ export const AggGroupedByInverse = {
  */
 export type AggGroupedByEnum = (typeof AggGroupedBy)[keyof typeof AggGroupedBy]
 
-export const AggType = {
+export const AggFunctionType = {
   sum: 1,
   count: 2,
   cardinality: 3,
@@ -2262,7 +2262,7 @@ export const AggType = {
   hmean: 9,
 } as const
 
-export const AggTypeInverse = {
+export const AggFunctionTypeInverse = {
   1: 'sum',
   2: 'count',
   3: 'cardinality',
@@ -2285,5 +2285,5 @@ export const AggTypeInverse = {
   min, 
   hmean 
  */
-export type AggTypeEnum = (typeof AggType)[keyof typeof AggType]
+export type AggFunctionTypeEnum = (typeof AggFunctionType)[keyof typeof AggFunctionType]
 

@@ -1,4 +1,8 @@
-import { AggregateType } from '../../../protocol/index.js'
+import {
+  AggFunctionType,
+  type AggFunctionTypeEnum,
+  type IntervalEnum,
+} from '../../../zigTsExports.js'
 
 export const enum AccumulatorSize {
   // comptime
@@ -14,31 +18,31 @@ export const enum AccumulatorSize {
 }
 
 export const aggregateTypeMap = new Map<
-  AggregateType,
+  AggFunctionTypeEnum,
   { resultsSize: number; accumulatorSize: number }
 >([
   [
-    AggregateType.CARDINALITY,
+    AggFunctionType.cardinality,
     { resultsSize: 4, accumulatorSize: AccumulatorSize.CARDINALITY },
   ],
   [
-    AggregateType.COUNT,
+    AggFunctionType.count,
     { resultsSize: 4, accumulatorSize: AccumulatorSize.COUNT },
   ],
   [
-    AggregateType.STDDEV,
+    AggFunctionType.stddev,
     { resultsSize: 8, accumulatorSize: AccumulatorSize.STDDEV },
   ],
   [
-    AggregateType.AVERAGE,
+    AggFunctionType.average,
     { resultsSize: 8, accumulatorSize: AccumulatorSize.AVERAGE },
   ],
   [
-    AggregateType.HMEAN,
+    AggFunctionType.hmean,
     { resultsSize: 8, accumulatorSize: AccumulatorSize.HMEAN },
   ],
   [
-    AggregateType.VARIANCE,
+    AggFunctionType.variance,
     { resultsSize: 8, accumulatorSize: AccumulatorSize.VARIANCE },
   ],
   // Othe types like MAX, MIN, SUM fall in the else case in aggregation.ts 8/8

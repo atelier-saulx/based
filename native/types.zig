@@ -699,7 +699,7 @@ pub const AggGroupedBy = enum(u8) {
     none = 0,
 };
 
-pub const AggType = enum(u8) {
+pub const AggFunctionType = enum(u8) {
     sum = 1,
     count = 2,
     cardinality = 3,
