@@ -1,4 +1,4 @@
-import type { OutputFile } from '@based/bundle'
+import type { OutputFile } from 'esbuild'
 
 export class FunctionFile {
   constructor({

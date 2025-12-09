@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { join, parse, resolve } from 'node:path'
-import type { Plugin } from '@based/bundle'
+import type { Plugin } from 'esbuild'
 import type { AppContext } from '../../context/index.js'
 
 export const replaceBasedConfigPlugin =

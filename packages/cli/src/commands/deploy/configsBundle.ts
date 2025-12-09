@@ -1,6 +1,5 @@
 import { readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { bundle } from '@based/bundle'
 import { readJSON } from 'fs-extra/esm'
 import type { AppContext } from '../../context/index.js'
 import {
@@ -10,6 +9,7 @@ import {
   isSchemaFile,
 } from '../../shared/index.js'
 import { configsInvalidateCode } from './configsInvalidateCode.js'
+import { bundle } from '../../bundle/index.js'
 
 export const configsBundle = async (
   context: AppContext,

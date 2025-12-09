@@ -1,4 +1,4 @@
-import type { BasedBundleOptions, OutputFile } from '@based/bundle'
+import type { BasedBundleOptions, OutputFile } from './bundle/index.ts'
 import type { AuthState, BasedClient } from '@based/client'
 import type { BasedFunctionConfig } from '@based/functions'
 import type { BasedQuery } from '@based/functions'

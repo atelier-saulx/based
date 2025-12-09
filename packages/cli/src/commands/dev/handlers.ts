@@ -1,4 +1,5 @@
-import type { BuildFailure, BundleResult } from '@based/bundle'
+import type { BuildFailure } from 'esbuild'
+import type { BundleResult } from '../../bundle/BundleResult.js'
 import type { AppContext } from '../../context/index.js'
 import { rel } from '../../shared/index.js'
 

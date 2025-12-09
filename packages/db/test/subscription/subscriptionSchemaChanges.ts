@@ -1,9 +1,10 @@
-import { wait } from '@based/utils'
+import { deepMerge, wait } from '@based/utils'
 import { DbClient } from '../../src/client/index.js'
 import { BasedDb, getDefaultHooks } from '../../src/index.js'
 import { DbServer } from '../../src/server/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from '../shared/assert.js'
+import type { SchemaType } from '@based/schema'
 
 const start = async (t, clientsN = 2) => {
   const server = new DbServer({
@@ -186,4 +187,153 @@ await test('better subscription schema changes', async (t) => {
       { id: 2, nice: false },
     ],
   ])
+})
+
+await test('schema-change-2', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+
+  t.after(() => db.destroy())
+
+  const currencies = [
+    'eur',
+    'all',
+    'amd',
+    'aud',
+    'azn',
+    'chf',
+    'czk',
+    'dkk',
+    'gbp',
+    'gel',
+    'ils',
+    'isk',
+    'mdl',
+    'nok',
+    'pln',
+    'rsd',
+    'sek',
+    'uah',
+  ]
+
+  const edition: SchemaType = {
+    name: { type: 'alias' },
+    winner: 'string',
+    htmlConfig: {
+      type: 'object',
+      props: {
+        title: 'text',
+        description: 'text',
+        // image: { ref: 'file', prop: 'imageOfConfig' },
+        // favicon: { ref: 'file', prop: 'faviconOfConfig' },
+      },
+    },
+    theme: {
+      type: 'object',
+      props: {
+        primaryAccent: 'string',
+        secondaryAccent: 'string',
+        outline: 'string',
+        border: 'string',
+        textPrimary: 'string',
+        textSecondary: 'string',
+        textTertiary: 'string',
+        error: 'string',
+      },
+    },
+    dictionary: {
+      type: 'object',
+      props: {
+        // WIP, update based on app design
+
+        // UI
+        title: 'text',
+        homeButton: 'text',
+        votingRulesButton: 'text',
+        termsButton: 'text',
+        privacyButton: 'text',
+        imprintButton: 'text',
+
+        // Pages:
+        terms: 'text',
+        privacy: 'text',
+        rules: 'text',
+        imprint: 'text',
+      },
+    },
+    config: {
+      type: 'object',
+      props: {
+        price: 'uint16',
+        currency: currencies,
+        blacklistedCountries: 'json',
+        maxVotes: 'uint8',
+      },
+    },
+    // sequences: {
+    //   items: {
+    //     ref: 'sequence',
+    //     prop: 'edition',
+    //   },
+    // },
+    // contestants: {
+    //   items: {
+    //     ref: 'contestant',
+    //     prop: 'edition',
+    //   },
+    // },
+    // rounds: {
+    //   items: {
+    //     ref: 'round',
+    //     prop: 'edition',
+    //   },
+    // },
+    published: 'json',
+    currentLiveSequence: 'json',
+  } as const satisfies SchemaType
+
+  await db.setSchema({
+    locales: { en: true },
+    types: {
+      edition,
+    },
+  })
+
+  const id = await db.create('edition', {
+    name: 'party-time',
+  })
+
+  let resolve: any
+  const nextPromise = () => new Promise((r) => (resolve = r))
+  const res1 = nextPromise()
+  db.query('edition', id).subscribe((res) => {
+    console.log('res:', res.toObject().name)
+    resolve(res.toObject())
+  })
+
+  console.log(await res1)
+  const newEditionSchema = deepMerge({}, edition, {
+    published: 'number',
+  })
+
+  delete newEditionSchema.winner
+  await db.setSchema({
+    locales: {
+      en: true,
+    },
+    types: {
+      edition: newEditionSchema,
+    },
+  })
+
+  const res2 = nextPromise()
+
+  await db.update('edition', id, {
+    name: 'burpy',
+  })
+  console.log('----')
+  console.log(await res2)
 })

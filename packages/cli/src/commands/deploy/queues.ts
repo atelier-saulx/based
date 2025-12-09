@@ -1,11 +1,11 @@
-import type { OutputFile } from '@based/bundle'
 import type { BasedClient } from '@based/client'
 import { hash } from '@based/hash'
 import { queued } from '@based/utils'
 import type { AppContext } from '../../context/index.js'
 import { isDisconnectedError } from '../../shared/errors.js'
+import type { OutputFile } from 'esbuild'
 
-const retry = { shouldRetry: err => isDisconnectedError(err), max: 2 }
+const retry = { shouldRetry: (err) => isDisconnectedError(err), max: 2 }
 const concurrency = 10
 
 export const queuedFileUpload = queued(

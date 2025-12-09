@@ -3,8 +3,8 @@ import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import type { Readable } from 'node:stream'
-import type { BundleResult } from '@based/bundle'
 import { getFileByPath } from './getFile.js'
+import type { BundleResult } from '../bundle/BundleResult.js'
 
 export const fileExtensions = ['ts', 'js', 'json']
 export const installableTools = ['typescript', 'vitest', 'biome', 'react']

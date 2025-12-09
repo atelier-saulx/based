@@ -1,9 +1,9 @@
+import type { BundleResult } from '../../bundle/BundleResult.js'
 import {
+  bundle,
   type BasedBundleOptions,
   type BuildFailure,
-  type BundleResult,
-  bundle,
-} from '@based/bundle'
+} from '../../bundle/index.js'
 import type { AppContext } from '../../context/index.js'
 import { replaceBasedConfigPlugin } from './replaceBasedConfigPlugin.js'
 

@@ -1,7 +1,7 @@
-import type { BundleResult } from '@based/bundle'
 import { hash } from '@based/hash'
 import type { AppContext } from '../../context/index.js'
 import { queuedFnDeploy } from './queues.js'
+import type { BundleResult } from '../../bundle/BundleResult.js'
 
 export const configsDeploy = async (
   context: AppContext,

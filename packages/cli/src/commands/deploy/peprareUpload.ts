@@ -1,8 +1,9 @@
-import type { BundleResult, OutputFile } from '@based/bundle'
 import { hashCompact } from '@saulx/hash'
 import mimeTypes from 'mime-types'
 import type { AppContext } from '../../context/index.js'
 import { queuedFileUpload } from './queues.js'
+import type { OutputFile } from 'esbuild'
+import type { BundleResult } from '../../bundle/BundleResult.js'
 
 export const prepareFilesToUpload = async (
   files: OutputFile[],

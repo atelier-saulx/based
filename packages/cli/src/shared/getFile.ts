@@ -1,8 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { bundle } from '@based/bundle'
 import { findUp } from 'find-up'
 import { readJSON } from 'fs-extra/esm'
+import { bundle } from '../bundle/index.js'
 
 export const getFile = async (
   files: string[],

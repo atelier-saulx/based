@@ -1,7 +1,7 @@
 import { join } from 'node:path'
-import type { BasedBundleOptions, Plugin } from '@based/bundle'
 import type { AppContext } from '../../context/index.js'
 import { abs, rel as relative, stringMaxLength } from '../../shared/index.js'
+import type { BasedBundleOptions } from '../../bundle/index.js'
 
 export const configsParse = async (
   context: AppContext,
@@ -74,7 +74,7 @@ export const configsParse = async (
       }) => {
         if (config?.type === 'app') {
           if (config?.plugins) {
-            plugins.push(...(config.plugins as Plugin[]))
+            plugins.push(...(config.plugins as any[]))
           }
 
           if (config?.main) {
