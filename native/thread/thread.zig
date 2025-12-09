@@ -288,9 +288,13 @@ pub const Threads = struct {
                         },
                         t.OpType.setSchemaIds => {
                             _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                            const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(m[5..m.len])));
-                            const len = (m.len - 5) / @sizeOf(u32);
-                            self.ctx.ids = try self.ctx.allocator.dupe(u32, ptr[0..len]);
+                            if (self.ctx.ids.len > 0) {
+                                self.ctx.allocator.free(self.ctx.ids);
+                                self.ctx.ids = &[_]u32{};
+                            }
+                            self.ctx.ids = try self.ctx.allocator.alloc(u32, (m.len - 5) / @sizeOf(u32));
+                            const ids = m[5..m.len];
+                            utils.byteCopy(self.ctx.ids, ids, 0);
                         },
                         else => {},
                     }
