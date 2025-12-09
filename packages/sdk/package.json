@@ -1,6 +1,6 @@
 {
   "name": "@based/sdk",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "The official SDK for the Based platform, providing a unified entry point for all packages.",
   "author": "Based",
   "license": "MIT",
@@ -34,10 +34,34 @@
         "import": "./dist/db.js"
       }
     },
+    "./db/native": {
+      "import": {
+        "types": "./dist/db/native.d.ts",
+        "import": "./dist/db/native.js"
+      }
+    },
     "./schema": {
       "import": {
         "types": "./dist/schema.d.ts",
         "import": "./dist/schema.js"
+      }
+    },
+    "./schema/def": {
+      "import": {
+        "types": "./dist/schema/def.d.ts",
+        "import": "./dist/schema/def.js"
+      }
+    },
+    "./schema/lang": {
+      "import": {
+        "types": "./dist/schema/lang.d.ts",
+        "import": "./dist/schema/lang.js"
+      }
+    },
+    "./prop-types": {
+      "import": {
+        "types": "./dist/schema/prop-types.d.ts",
+        "import": "./dist/schema/prop-types.js"
       }
     },
     "./utils": {
@@ -58,6 +82,24 @@
         "import": "./dist/protocol.js"
       }
     },
+    "./protocol/client-server": {
+      "import": {
+        "types": "./dist/protocol/client-server.d.ts",
+        "import": "./dist/protocol/client-server.js"
+      }
+    },
+    "./protocol/db-read": {
+      "import": {
+        "types": "./dist/protocol/db-read.d.ts",
+        "import": "./dist/protocol/db-read.js"
+      }
+    },
+    "./protocol/db-read/serialize-schema": {
+      "import": {
+        "types": "./dist/protocol/serialize-schema.d.ts",
+        "import": "./dist/protocol/serialize-schema.js"
+      }
+    },
     "./functions": {
       "import": {
         "types": "./dist/functions.d.ts",
@@ -68,6 +110,12 @@
       "import": {
         "types": "./dist/errors.d.ts",
         "import": "./dist/errors.js"
+      }
+    },
+    "./errors/client": {
+      "import": {
+        "types": "./dist/errors/client.d.ts",
+        "import": "./dist/errors/client.js"
       }
     },
     "./server": {
@@ -88,11 +136,21 @@
         "import": "./dist/client.js"
       }
     },
+    "./client/ssr": {
+      "import": {
+        "types": "./dist/client/ssr.d.ts",
+        "import": "./dist/client/ssr.js"
+      }
+    },
     "./react": {
       "import": {
         "types": "./dist/react.d.ts",
         "import": "./dist/react.js"
       }
+    },
+    "./react/ssr": {
+      "types": "./dist/react/ssr.d.ts",
+      "import": "./dist/react/ssr.js"
     }
   },
   "scripts": {
@@ -101,18 +159,18 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@based/db": "0.2.7",
-    "@based/schema": "5.1.4",
-    "@based/utils": "1.2.0",
-    "@based/cli": "8.3.6",
-    "@based/protocol": "0.1.4",
+    "@based/cli": "8.3.7",
+    "@based/client": "8.3.7",
+    "@based/db": "0.2.8",
+    "@based/errors": "1.6.7",
+    "@based/functions": "3.4.7",
     "@based/hash": "1.1.0",
-    "@based/functions": "3.4.6",
-    "@based/errors": "1.6.6",
-    "@based/server": "10.3.6",
-    "@based/type-gen": "0.2.6",
-    "@based/client": "8.3.6",
-    "@based/react": "5.4.6"
+    "@based/protocol": "0.1.4",
+    "@based/react": "5.4.7",
+    "@based/schema": "5.1.4",
+    "@based/server": "10.3.7",
+    "@based/type-gen": "0.2.7",
+    "@based/utils": "1.2.0"
   },
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",

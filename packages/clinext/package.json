@@ -1,6 +1,6 @@
 {
   "name": "@based/clinext",
-  "version": "9.1.7",
+  "version": "9.1.8",
   "description": "Based command line tool",
   "bin": "dist/cli.js",
   "scripts": {
@@ -21,12 +21,12 @@
     "ink-testing-library": "^3.0.0"
   },
   "dependencies": {
-    "@based/client": "8.3.6",
-    "@based/functions": "3.4.6",
+    "@based/client": "8.3.7",
+    "@based/functions": "3.4.7",
     "@based/hash": "1.1.0",
-    "@based/hub": "0.2.7",
-    "@based/react": "5.4.6",
-    "@based/s3": "1.1.7",
+    "@based/hub": "0.2.8",
+    "@based/react": "5.4.7",
+    "@based/s3": "1.1.8",
     "@based/schema": "5.1.4",
     "@based/utils": "1.2.0",
     "@inkjs/ui": "^2.0.0",
