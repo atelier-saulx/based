@@ -4,7 +4,9 @@
  */
 #pragma once
 #include "xxhash.h"
+#ifndef __zig
 #include "jemalloc_selva.h"
+#endif
 #include "selva/types.h"
 
 typedef struct XXH3_state_s selva_hash_state_t;

@@ -1124,27 +1124,28 @@ export const createSortHeader = (header: SortHeader): Uint8Array => {
   return buffer
 }
 
+export const QUERY_ITERATOR_DEFAULT = 0
+export const QUERY_ITERATOR_EDGE = 10
+export const QUERY_ITERATOR_EDGE_INCLUDE = 20
+export const QUERY_ITERATOR_SEARCH = 120
+export const QUERY_ITERATOR_SEARCH_VEC = 130
 export const QueryIteratorType = {
   default: 0,
   filter: 1,
   desc: 2,
   descFilter: 3,
-  search: 8,
-  searchFilter: 9,
-  searchDesc: 10,
-  searchDescFilter: 11,
-  vec: 16,
-  vecFilter: 17,
-  vecDesc: 18,
-  vecDescFilter: 19,
-  edge: 24,
-  edgeFilter: 25,
-  edgeDesc: 26,
-  edgeDescFilter: 27,
-  edgeInclude: 32,
-  edgeIncludeFilter: 33,
-  edgeIncludeDesc: 34,
-  edgeIncludeDescFilter: 35,
+  edge: 10,
+  edgeFilter: 11,
+  edgeDesc: 12,
+  edgeDescFilter: 13,
+  edgeInclude: 20,
+  edgeIncludeFilter: 21,
+  edgeIncludeDesc: 22,
+  edgeIncludeDescFilter: 23,
+  search: 120,
+  searchFilter: 121,
+  vec: 130,
+  vecFilter: 131,
 } as const
 
 export const QueryIteratorTypeInverse = {
@@ -1152,22 +1153,18 @@ export const QueryIteratorTypeInverse = {
   1: 'filter',
   2: 'desc',
   3: 'descFilter',
-  8: 'search',
-  9: 'searchFilter',
-  10: 'searchDesc',
-  11: 'searchDescFilter',
-  16: 'vec',
-  17: 'vecFilter',
-  18: 'vecDesc',
-  19: 'vecDescFilter',
-  24: 'edge',
-  25: 'edgeFilter',
-  26: 'edgeDesc',
-  27: 'edgeDescFilter',
-  32: 'edgeInclude',
-  33: 'edgeIncludeFilter',
-  34: 'edgeIncludeDesc',
-  35: 'edgeIncludeDescFilter',
+  10: 'edge',
+  11: 'edgeFilter',
+  12: 'edgeDesc',
+  13: 'edgeDescFilter',
+  20: 'edgeInclude',
+  21: 'edgeIncludeFilter',
+  22: 'edgeIncludeDesc',
+  23: 'edgeIncludeDescFilter',
+  120: 'search',
+  121: 'searchFilter',
+  130: 'vec',
+  131: 'vecFilter',
 } as const
 
 /**
@@ -1175,14 +1172,6 @@ export const QueryIteratorTypeInverse = {
   filter, 
   desc, 
   descFilter, 
-  search, 
-  searchFilter, 
-  searchDesc, 
-  searchDescFilter, 
-  vec, 
-  vecFilter, 
-  vecDesc, 
-  vecDescFilter, 
   edge, 
   edgeFilter, 
   edgeDesc, 
@@ -1190,7 +1179,11 @@ export const QueryIteratorTypeInverse = {
   edgeInclude, 
   edgeIncludeFilter, 
   edgeIncludeDesc, 
-  edgeIncludeDescFilter 
+  edgeIncludeDescFilter, 
+  search, 
+  searchFilter, 
+  vec, 
+  vecFilter 
  */
 export type QueryIteratorTypeEnum = (typeof QueryIteratorType)[keyof typeof QueryIteratorType]
 

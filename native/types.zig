@@ -458,46 +458,36 @@ pub const SortHeader = packed struct {
 // maybe just add desc or not desc this can then fit in range and offset
 // sort is allready handled
 
+pub const QUERY_ITERATOR_DEFAULT = 0;
+pub const QUERY_ITERATOR_EDGE = 10;
+pub const QUERY_ITERATOR_EDGE_INCLUDE = 20;
+pub const QUERY_ITERATOR_SEARCH = 120;
+pub const QUERY_ITERATOR_SEARCH_VEC = 130;
+
 pub const QueryIteratorType = enum(u8) {
-    // ==========================
-    // --- NO SEARCH (Default) ---
-    // ==========================
-    default = 0, // Filter: [ X ],  Sort: [ X    ],  Search: [ X   ]
-    filter = 1, // Filter: [ √ ],  Sort: [ X    ],  Search: [ X   ]
-    desc = 2, // Filter: [ X ],  Sort: [DESC  ],  Search: [ X   ]
-    descFilter = 3, // Filter: [ √ ],  Sort: [DESC  ],  Search: [ X   ]
-
-    // ==========================
-    // --- TEXT SEARCH ---
-    // ==========================
-    search = 8, // Filter: [ X ],  Sort: [ X    ],  Search: [TEXT ]
-    searchFilter = 9, // Filter: [ √ ],  Sort: [ X    ],  Search: [TEXT ]
-    searchDesc = 10, // Filter: [ X ],  Sort: [DESC  ],  Search: [TEXT ]
-    searchDescFilter = 11, // Filter: [ √ ], Sort: [DESC  ],  Search: [TEXT ]
-
-    // ==========================
-    // --- VECTOR SEARCH ---
-    // ==========================
-    vec = 16, // Filter: [ X ],  Sort: [ X    ],  Search: [ VEC ]
-    vecFilter = 17, // Filter: [ √ ],  Sort: [ X    ],  Search: [ VEC ]
-    vecDesc = 18, // Filter: [ X ],  Sort: [DESC  ],  Search: [ VEC ]
-    vecDescFilter = 19, // Filter: [ √ ],  Sort: [DESC  ],  Search: [ VEC ]
-
-    // ==========================
-    // --- EDGE SEARCH ---
-    // ==========================
-    edge = 24, // Filter: [ X ],  Sort: [ X    ],  Search: [EDGE ]
-    edgeFilter = 25, // Filter: [ √ ],  Sort: [ X    ],  Search: [EDGE ]
-    edgeDesc = 26, // Filter: [ X ],  Sort: [DESC  ],  Search: [EDGE ]
-    edgeDescFilter = 27, // Filter: [ √ ],  Sort: [DESC  ],  Search: [EDGE ]
-
-    // ==========================
-    // --- EDGE INCLUDE SEARCH ---
-    // ==========================
-    edgeInclude = 32, // Filter: [ X ],  Sort: [ X    ],  Search: [INCL ]
-    edgeIncludeFilter = 33, // Filter: [ √ ],  Sort: [ X    ],  Search: [INCL ]
-    edgeIncludeDesc = 34, // Filter: [ X ],  Sort: [DESC  ],  Search: [INCL ]
-    edgeIncludeDescFilter = 35, // Filter: [ √ ],  Sort: [DESC  ],  Search: [INCL ]
+    // defaults & default refs
+    default = 0,
+    filter = 1,
+    desc = 2,
+    descFilter = 3,
+    // edge refs
+    edge = 10,
+    edgeFilter = 11,
+    edgeDesc = 12,
+    edgeDescFilter = 13,
+    // edge + include edge
+    edgeInclude = 20,
+    edgeIncludeFilter = 21,
+    edgeIncludeDesc = 22,
+    edgeIncludeDescFilter = 23,
+    // default search
+    search = 120,
+    searchFilter = 121,
+    // add edge include / edge later
+    // vec search
+    vec = 130,
+    vecFilter = 131,
+    // add edge include / edge later
 };
 
 // include op needs overlap with this
