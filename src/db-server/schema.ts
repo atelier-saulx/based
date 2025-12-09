@@ -53,7 +53,6 @@ export const setSchemaOnServer = async (
   server.schema = schema
   server.schemaTypesParsed = schemaTypesParsed
   server.schemaTypesParsedById = schemaTypesParsedById
-  server.ids = await getSchemaIds(server)
 }
 
 export const writeSchemaFile = async (server: DbServer, schema: SchemaOut) => {
