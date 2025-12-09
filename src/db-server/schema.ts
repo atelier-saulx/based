@@ -84,10 +84,8 @@ export async function createSelvaType(
       if (err) {
         const errMsg = `Create type ${typeId} failed: ${native.selvaStrerror(err)}`
         server.emit('error', errMsg)
-        console.log('resolve type errr', typeId)
         reject(new Error(errMsg))
       } else {
-        console.log('resolve type', typeId)
         resolve()
       }
       server.keepRefAliveTillThisPoint(msg)
