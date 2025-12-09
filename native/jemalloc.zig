@@ -1,5 +1,7 @@
 const std = @import("std");
 
+// TODO Make things work when EN_VALGRIND=1
+
 pub const c = @cImport({
     @cDefine("__zig", "1");
 
@@ -24,11 +26,18 @@ pub fn create(comptime T: type) *T {
 }
 
 pub fn free(ptr: anytype) void {
+    switch (@typeInfo(@TypeOf(ptr))) {
+        .optional => {
+            return free(ptr.?);
+        },
+        else => {
+        }
+    }
     const info = @typeInfo(@TypeOf(ptr)).pointer;
     if (info.size == .one) {
         const T = info.child;
-        if (@sizeOf(T) == 0) return;
-        c.selva_free(ptr);
+        if (T != anyopaque and @sizeOf(T) == 0) return;
+        c.selva_free(@constCast(ptr));
     } else {
         c.selva_free(ptr.ptr);
     }

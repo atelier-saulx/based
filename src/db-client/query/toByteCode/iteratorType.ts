@@ -1,36 +1,64 @@
-import { QueryIteratorTypeEnum, SortOrder } from '../../../zigTsExports.js'
+import {
+  QUERY_ITERATOR_DEFAULT,
+  QUERY_ITERATOR_EDGE,
+  QUERY_ITERATOR_EDGE_INCLUDE,
+  QUERY_ITERATOR_SEARCH,
+  QUERY_ITERATOR_SEARCH_VEC,
+  QueryIteratorTypeEnum,
+  SortOrder,
+} from '../../../zigTsExports.js'
 import { QueryDef } from '../types.js'
+
+export const NO_EDGE = 0
+export const EDGE_INCLUDE = 1
+export const HAS_EDGE = 2
 
 export const getIteratorType = (
   def: QueryDef,
-  hasEdges: boolean,
-  hasEdgesInclude: boolean,
+  edges: typeof EDGE_INCLUDE | typeof HAS_EDGE | typeof NO_EDGE,
 ): QueryIteratorTypeEnum => {
-  // 1. Determine the "Base" Block (Search Type)
-  // Priorities: EdgeInclude > Edge > Vector > Text > Default
   const hasSearch = def.search?.size && def.search.size > 0
   const isVector = hasSearch && def.search!.isVector
-
-  let base = 0
-  if (hasEdgesInclude) {
-    base = 32 // Edge Include Block
-  } else if (hasEdges) {
-    base = 24 // Edge Block
-  } else if (isVector) {
-    base = 16 // Vector Block
-  } else if (hasSearch) {
-    base = 8 // Text Search Block
-  }
-
-  // 2. Determine Modifiers (Bitwise offsets)
-  // Bit 0 (+1): Filter
-  // Bit 1 (+2): Desc
   const hasFilter = def.filter.size > 0
   const isDesc = def.sort?.order === SortOrder.desc
 
-  let modifier = 0
-  if (isDesc) modifier += 2
-  if (hasFilter) modifier += 1
+  let base = QUERY_ITERATOR_DEFAULT
 
-  return (base + modifier) as QueryIteratorTypeEnum
+  if (edges === HAS_EDGE) {
+    base = QUERY_ITERATOR_EDGE
+  }
+
+  if (edges === EDGE_INCLUDE) {
+    base = QUERY_ITERATOR_EDGE_INCLUDE
+  }
+
+  if (hasSearch && !isVector) {
+    base = QUERY_ITERATOR_SEARCH
+  }
+
+  if (hasSearch && isVector) {
+    base = QUERY_ITERATOR_SEARCH_VEC
+  }
+
+  if (hasFilter && isDesc) {
+    base += 3
+  }
+
+  if (hasSearch && isDesc) {
+    console.warn('Has search and is Desc not supported')
+    if (hasFilter) {
+      base += 1
+    }
+    return base as QueryIteratorTypeEnum
+  }
+
+  if (hasFilter && isDesc) {
+    base += 3
+  }
+
+  if (hasFilter) {
+    base += 1
+  }
+
+  return base as QueryIteratorTypeEnum
 }

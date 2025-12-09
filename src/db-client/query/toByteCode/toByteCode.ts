@@ -7,9 +7,15 @@ import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
 import { byteSize, schemaChecksum } from './utils.js'
 import { filterToBuffer } from '../query.js'
-import { getIteratorType } from './iteratorType.js'
+import {
+  EDGE_INCLUDE,
+  getIteratorType,
+  HAS_EDGE,
+  NO_EDGE,
+} from './iteratorType.js'
 import {
   ID_PROP,
+  PropType,
   QueryHeaderByteSize,
   QueryType,
   QueryTypeEnum,
@@ -26,7 +32,11 @@ export function defToBuffer(
   const result: IntermediateByteCode = []
 
   const isReferences = def.type === QueryDefType.References
-  const isEdges = def.type === QueryDefType.Edge
+  const isReferencesEdges =
+    def.type === QueryDefType.Edge &&
+    def.target.ref?.typeIndex === PropType.references
+  const isRootDefault = def.type === QueryDefType.Root
+
   // if (def.target.resolvedAlias) {
   // } else if (typeof def.target.id === 'number') {
   // } else if (def.target.ids) {
@@ -35,7 +45,7 @@ export function defToBuffer(
   //   // result.push(referenceQuery(def, size))
   // }
 
-  if (def.type === QueryDefType.Root || isReferences || isEdges) {
+  if (isRootDefault || isReferences || isReferencesEdges) {
     const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
     const hasSearch = !!def.search
     const hasFilter = def.filter.size > 0
@@ -46,7 +56,7 @@ export function defToBuffer(
     const include = includeToBuffer(db, def)
 
     for (const [, ref] of def.references) {
-      // pass offset...
+      // TODO: pass offset for NOW subscriptions
       include.push(...defToBuffer(db, ref))
       if (ref.errors) {
         def.errors.push(...ref.errors)
@@ -58,11 +68,6 @@ export function defToBuffer(
     let edgeSize = 0
 
     if (def.edges) {
-      // edge = defToBuffer(db, def.edges)
-      // if (def.edges.errors) {
-      // def.errors.push(...def.edges.errors)
-      // }
-
       edge = includeToBuffer(db, def.edges)
     }
 
@@ -92,15 +97,17 @@ export function defToBuffer(
       {
         op,
         prop: isReferences ? def.target.propDef!.prop : ID_PROP,
-        // this does not seem nessecary
-        size: buffer.byteLength + includeSize, // for top level the byte size is not very important
+        size: buffer.byteLength + includeSize,
         typeId,
         offset: def.range.offset,
         limit: def.range.limit,
         sort: hasSort,
         filterSize: def.filter.size,
         searchSize,
-        iteratorType: getIteratorType(def, hasEdges, !!edge),
+        iteratorType: getIteratorType(
+          def,
+          edge ? EDGE_INCLUDE : hasEdges ? HAS_EDGE : NO_EDGE,
+        ),
         edgeTypeId,
         edgeSize,
         edgeFilterSize: 0, // this is nice
@@ -121,7 +128,7 @@ export function defToBuffer(
       buffer.set(searchToBuffer(def.search!), index)
     }
 
-    // need to pass crrect stupid nested INDEX for NOW queries
+    // TODO: Need to pass crrect stupid nested INDEX for NOW queries
     result.push([
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
       include,
