@@ -73,7 +73,7 @@ pub fn build(b: *std.Build) !void {
         libPath,
         napiVersion,
     });
-    std.debug.print("libPath: {s}, headerPath: {s}, targetPath {s}", .{ libPath, headerPath, targetPath });
+    // std.debug.print("libPath: {s}, headerPath: {s}, targetPath {s}", .{ libPath, headerPath, targetPath });
     // const rpath = b.option([]const u8, "rpath", "run-time search path") orelse "$ORIGIN"; // "@loader_path";
     lib.root_module.addRPathSpecial(if (target.result.os.tag == .macos) "@loader_path" else "$ORIGIN");
     lib.root_module.addIncludePath(.{ .cwd_relative = node_hpath });
