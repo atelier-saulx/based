@@ -140,7 +140,6 @@ pub const Threads = struct {
             var queryBuf: ?[]u8 = null;
             var modifyBuf: ?[]u8 = null;
             var op: t.OpType = t.OpType.noOp;
-            var sortIndex: ?*sort.SortIndexMeta = null;
 
             self.mutex.lock();
 
@@ -153,31 +152,6 @@ pub const Threads = struct {
                 queryBuf = self.queryQueue.swapRemove(0);
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
-                    if (op == .defaultSort) {
-                        var index: usize = 4;
-                        const header = utils.readNext(t.QueryHeader, q, &index);
-                        const sortHeader = utils.readNext(t.SortHeader, q, &index);
-                        if (sort.getSortIndex(
-                            self.ctx.sortIndexes.get(header.typeId),
-                            sortHeader.prop,
-                            sortHeader.start,
-                            sortHeader.lang,
-                        )) |sortMetaIndex| {
-                            sortIndex = sortMetaIndex;
-                        } else {
-                            // needs multi threading ofc
-                            // add comtime dont create all
-                            // can now store sort indexes for refs as well!
-                            sortIndex = try sort.createSortIndex(
-                                self.ctx,
-                                thread.decompressor,
-                                header.typeId,
-                                &sortHeader,
-                                true,
-                                false,
-                            );
-                        }
-                    }
                 }
             } else if (self.modifyQueue.items.len > 0 and thread.pendingModifies > 0) {
                 modifyBuf = self.modifyQueue.items[thread.currentModifyIndex];
@@ -185,8 +159,6 @@ pub const Threads = struct {
                     op = @enumFromInt(m[4]);
                 }
             } else {
-                // std.debug.print("SLEEP {any} \n", .{thread.id});
-
                 self.wakeup.wait(&self.mutex);
             }
 
@@ -194,15 +166,9 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 switch (op) {
-                    .blockHash => {
-                        try info.blockHash(thread, self.ctx, q, op);
-                    },
-                    .saveBlock => {
-                        try dump.saveBlock(thread, self.ctx, q, op);
-                    },
-                    .saveCommon => {
-                        try dump.saveCommon(thread, self.ctx, q, op);
-                    },
+                    .blockHash => try info.blockHash(thread, self.ctx, q, op),
+                    .saveBlock => try dump.saveBlock(thread, self.ctx, q, op),
+                    .saveCommon => try dump.saveCommon(thread, self.ctx, q, op),
                     .getSchemaIds => {
                         const data = try thread.query.result(self.ctx.ids.len * 4, utils.read(u32, q, 0), op);
                         if (self.ctx.ids.len > 0) {
@@ -213,7 +179,7 @@ pub const Threads = struct {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
                     else => {
-                        getQueryThreaded(self.ctx, q, thread, sortIndex) catch |err| {
+                        getQueryThreaded(self.ctx, q, thread) catch |err| {
                             std.log.err("Error query: {any}", .{err});
                             // write query error response
                         };

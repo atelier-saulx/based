@@ -31,7 +31,6 @@ pub fn getQueryThreaded(
     dbCtx: *DbCtx,
     buffer: []u8,
     thread: *Thread.Thread,
-    sort: ?*Sort.SortIndexMeta,
 ) !void {
     var index: usize = 0;
 
@@ -52,7 +51,30 @@ pub fn getQueryThreaded(
             try multiple.default(.default, &ctx, q, void);
         },
         .defaultSort => {
-            try multiple.default(.defaultSort, &ctx, q, sort.?);
+            const header = utils.readNext(t.QueryHeader, q, &index);
+            const sortHeader = utils.readNext(t.SortHeader, q, &index);
+            var sortIndex: *Sort.SortIndexMeta = undefined;
+            if (Sort.getSortIndex(
+                dbCtx.sortIndexes.get(header.typeId),
+                sortHeader.prop,
+                sortHeader.start,
+                sortHeader.lang,
+            )) |sortMetaIndex| {
+                sortIndex = sortMetaIndex;
+            } else {
+                // needs multi threading ofc
+                // add comptime dont create all
+                // can now store sort indexes for refs as well!
+                sortIndex = try Sort.createSortIndex(
+                    dbCtx,
+                    thread.decompressor,
+                    header.typeId,
+                    &sortHeader,
+                    true,
+                    false,
+                );
+            }
+            try multiple.default(.defaultSort, &ctx, q, sortIndex);
         },
         .ids => {}, // can treat this the same as refs maybe?
         .id => {
