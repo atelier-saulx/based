@@ -41,12 +41,15 @@ await test('include', async (t) => {
       },
       user: {
         props: {
+          name: 'string',
           todos: { items: { ref: 'todo', prop: 'assignees' } },
-          // flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
-          // derp: ['hello', 'bye'],
-          // name: { type: 'string' }, // default: 'xxxx'
           nr: { type: 'uint32' },
-          // body: { type: 'text' }, // compression: 'none'
+          nr1: { type: 'uint32' },
+          nr2: { type: 'uint32' },
+          nr3: { type: 'uint32' },
+          nr4: { type: 'uint32' },
+          nr5: { type: 'uint32' },
+          nr6: { type: 'uint32' },
         },
       },
     },
@@ -67,9 +70,18 @@ await test('include', async (t) => {
   console.log({ todo, todo2 })
   let d = Date.now()
 
+  const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
+
   for (let i = 0; i < 1e5; i++) {
     db.create('user', {
       nr: 1e5 - i,
+      nr1: 1e5 - i,
+      nr2: 1e5 - i,
+      nr3: 1e5 - i,
+      nr4: 1e5 - i,
+      nr5: 1e5 - i,
+      nr6: 1e5 - i,
+
       // name: 'A',
       // flap: '⚡️',
 
@@ -104,7 +116,7 @@ await test('include', async (t) => {
 
   console.log('\n--------------------------\nStart query!!!!!!!!!')
 
-  const x = await db
+  const y = await db
     .query('user')
     // .locale('nl', ['no', 'de'])
     // .include('body', { meta: true, end: 10 })
@@ -112,15 +124,15 @@ await test('include', async (t) => {
     // .include('nr') //  'flap'
     // .include('todos.id') // 'todos.$status'
 
-    .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
-    // .include('name')
+    // .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
+    .include('nr')
     .range(0, 100)
     .sort('nr', 'desc')
     .get()
 
   // x.debug()
 
-  x.inspect()
+  y.inspect()
 
   // console.log('drain done')
   // ;(
@@ -142,19 +154,15 @@ await test('include', async (t) => {
   await perf.skip(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 1; i++) {
         q.push(
           db
             .query('user')
             .include('id')
-            // .include('todos.id')
-            //  'todos.$status'
-            // .include('id', 'todos.id', 'todos.$status') // 'todos.$status'
+            .include('name')
             .range(0, 1e5 + i)
-            .sort('nr')
-            // .inspect()
+            .sort(x[i % x.length])
             .get(),
-          // .inspect(),
         )
       }
       await Promise.all(q)

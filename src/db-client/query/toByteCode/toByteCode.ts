@@ -3,7 +3,7 @@ import { includeToBuffer } from '../include/toByteCode.js'
 import { DbClient } from '../../index.js'
 import { writeUint32 } from '../../../utils/index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
-import { resolveMetaIndexes } from '../query.js'
+import { debug, resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
 import { byteSize, schemaChecksum } from './utils.js'
 import { filterToBuffer } from '../query.js'
@@ -88,7 +88,7 @@ export function defToBuffer(
       {
         op,
         prop: isReferences ? def.target.propDef!.prop : ID_PROP,
-        size: buffer.byteLength + includeSize,
+        includeSize,
         typeId,
         offset: def.range.offset,
         limit: def.range.limit,
@@ -102,6 +102,8 @@ export function defToBuffer(
       },
       0,
     )
+
+    console.log('!!!!!', buffer.byteLength + includeSize)
 
     if (hasSort) {
       index = writeSortHeader(buffer, def.sort!, index)
@@ -121,6 +123,7 @@ export function defToBuffer(
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
       include,
     ])
+
     if (edge) {
       // console.log({ edge })
       result.push(edge)
@@ -168,5 +171,9 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   combineIntermediateResults(res, 0, bufs)
   const queryId = crc32(res)
   writeUint32(res, queryId, 0)
+
+  console.log(res)
+
+  debug(res)
   return res
 }

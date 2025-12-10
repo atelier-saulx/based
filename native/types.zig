@@ -602,7 +602,7 @@ pub const QuerySingleHeader = packed struct {
 
 pub const QueryHeader = packed struct {
     op: QueryType,
-    size: u16, // cannot be more then 16kb? might be good enough
+    includeSize: u16, // cannot be more then 16kb? might be good enough
     prop: u8, // this is for ref
     typeId: TypeId,
     edgeTypeId: TypeId,
