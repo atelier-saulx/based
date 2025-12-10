@@ -15,7 +15,6 @@ pub const OpType = enum(u8) {
     alias = 3,
     aggregates = 4,
     aggregatesCountType = 5,
-    defaultSort = 8, // match queryType
 
     blockHash = 42,
     saveBlock = 67,
@@ -465,26 +464,32 @@ pub const QUERY_ITERATOR_SEARCH = 120;
 pub const QUERY_ITERATOR_SEARCH_VEC = 130;
 
 pub const QueryIteratorType = enum(u8) {
-    // defaults
     default = 0,
-    filter = 1,
-    desc = 2,
-    descFilter = 3,
-    // sort = 4,
-    // filterSort = 5,
-    // descSort = 6,
-    // descSortFilter = 7,
-
-    // edge refs
+    sort = 1,
+    filter = 2,
+    filterSort = 3,
+    desc = 4,
+    descSort = 5,
+    descFilter = 6,
+    descFilterSort = 7,
+    // edge
     edge = 20,
-    edgeFilter = 21,
-    edgeDesc = 22,
-    edgeDescFilter = 23,
-    // edge + include edge
+    edgeSort = 21,
+    edgeFilter = 22,
+    edgeFilterSort = 23,
+    edgeDesc = 24,
+    edgeDescSort = 25,
+    edgeDescFilter = 26,
+    edgeDescFilterSort = 27,
+    // edge include
     edgeInclude = 30,
-    edgeIncludeFilter = 31,
-    edgeIncludeDesc = 32,
-    edgeIncludeDescFilter = 33,
+    edgeIncludeSort = 31,
+    edgeIncludeFilter = 32,
+    edgeIncludeFilterSort = 33,
+    edgeIncludeDesc = 34,
+    edgeIncludeDescSort = 35,
+    edgeIncludeDescFilter = 36,
+    edgeIncludeDescFilterSort = 37,
     // default search
     search = 120,
     searchFilter = 121,
@@ -506,8 +511,6 @@ pub const QueryType = enum(u8) {
     aggregatesCount = 5,
     references = 6,
     reference = 7,
-    defaultSort = 8,
-    referencesSort = 9,
 };
 
 pub const IncludeOp = enum(u8) {
@@ -515,7 +518,6 @@ pub const IncludeOp = enum(u8) {
     aggregatesCount = 5,
     references = 6,
     reference = 7,
-    referencesSort = 9, // match default
     // ---------------------
     default = 127,
     referencesAggregation = 128,

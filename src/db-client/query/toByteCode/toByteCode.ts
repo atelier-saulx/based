@@ -79,13 +79,9 @@ export function defToBuffer(
     // @ts-ignore
     const edgeTypeId: number = isReferences && def.target.propDef.edgeNodeTypeId
 
-    let op: QueryTypeEnum = isReferences
+    const op: QueryTypeEnum = isReferences
       ? QueryType.references
       : QueryType.default
-
-    if (hasSort) {
-      op = isReferences ? QueryType.referencesSort : QueryType.defaultSort
-    }
 
     let index = writeQueryHeader(
       buffer,

@@ -47,11 +47,9 @@ pub fn getQueryThreaded(
 
     switch (op) {
         .default => {
-            try multiple.default(.default, &ctx, q);
+            try multiple.default(&ctx, q);
         },
-        .defaultSort => {
-            try multiple.default(.defaultSort, &ctx, q);
-        },
+
         .ids => {}, // can treat this the same as refs maybe?
         .id => {
             // const id = read(u32, q, 3);
