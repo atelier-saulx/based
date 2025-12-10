@@ -60,10 +60,10 @@
  * ```
  */
 
-#define SDB_COMPRESSION_LEVEL 1
+static constexpr int SDB_COMPRESSION_LEVEL = 1;
 #define SDB_LOG_VERSIONS 0
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
-#define ZBLOCK_BUF_SIZE (1024 * 1024)
+static constexpr size_t ZBLOCK_BUF_SIZE = 1024 * 1024;
 
 #define SELVA_DB_VERSION_SIZE   40
 struct SelvaDbVersionInfo {

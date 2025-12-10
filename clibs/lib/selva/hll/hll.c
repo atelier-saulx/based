@@ -16,9 +16,9 @@
 #include "arm64/neon_mathfun.h"
 #endif
 
-#define HLL_MIN_PRECISION 4
-#define HLL_MAX_PRECISION 16
-#define HASH_SIZE 64
+static constexpr uint16_t HLL_MIN_PRECISION = 4;
+static constexpr uint16_t HLL_MAX_PRECISION = 16;
+static constexpr size_t HASH_SIZE = 64;
 
 enum hll_type {
     SPARSE = true,
@@ -45,7 +45,7 @@ void hll_init(struct selva_string *hllss, uint8_t precision, bool is_sparse)
 {
     if (precision < HLL_MIN_PRECISION ||
         precision > HLL_MAX_PRECISION) {
-        db_panic("Precision must be between %d and %d", HLL_MIN_PRECISION, HLL_MAX_PRECISION);
+        db_panic("Precision must be between %u and %u", HLL_MIN_PRECISION, HLL_MAX_PRECISION);
     }
     if (hllss == nullptr) {
         db_panic("selva_string can't be null during HLL initialization");
