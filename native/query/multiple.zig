@@ -85,32 +85,37 @@ pub fn default(
 ) !void {
     var index: usize = 0;
     const header = utils.readNext(t.QueryHeader, q, &index);
-
-    if (queryType == .defaultSort) {
-        const sortHeader = utils.readNext(t.SortHeader, q, &index);
-        _ = try Sort.iterator(
-            ctx.db,
-            ctx.thread,
-            header.typeId,
-            &sortHeader,
-        );
-    }
-
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;
-    const nestedQuery = q[index..];
 
-    switch (header.iteratorType) {
-        .default => {
-            var it = Node.iterator(false, typeEntry);
-            nodeCnt = try iterator(.default, ctx, nestedQuery, &it, &header, typeEntry);
-        },
-        .desc => {
-            var it = Node.iterator(true, typeEntry);
-            nodeCnt = try iterator(.desc, ctx, nestedQuery, &it, &header, typeEntry);
-        },
-        else => {},
+    if (queryType == .defaultSort) {
+        const sortHeader = utils.readNext(t.SortHeader, q, &index);
+        const nestedQuery = q[index..];
+        switch (header.iteratorType) {
+            .default => {
+                var it = try Sort.iterator(false, ctx.db, ctx.thread, header.typeId, &sortHeader);
+                nodeCnt = try iterator(.default, ctx, nestedQuery, &it, &header, typeEntry);
+            },
+            .desc => {
+                var it = try Sort.iterator(true, ctx.db, ctx.thread, header.typeId, &sortHeader);
+                nodeCnt = try iterator(.desc, ctx, nestedQuery, &it, &header, typeEntry);
+            },
+            else => {},
+        }
+    } else {
+        const nestedQuery = q[index..];
+        switch (header.iteratorType) {
+            .default => {
+                var it = Node.iterator(false, typeEntry);
+                nodeCnt = try iterator(.default, ctx, nestedQuery, &it, &header, typeEntry);
+            },
+            .desc => {
+                var it = Node.iterator(true, typeEntry);
+                nodeCnt = try iterator(.desc, ctx, nestedQuery, &it, &header, typeEntry);
+            },
+            else => {},
+        }
     }
 
     ctx.thread.query.write(nodeCnt, sizeIndex);

@@ -370,12 +370,33 @@ pub fn insert(
     };
 }
 
+pub fn SortIterator(
+    comptime desc: bool,
+) type {
+    return struct {
+        index: *SortIndexMeta,
+        it: selva.SelvaSortIterator,
+        pub fn next(self: *SortIterator(desc)) ?Node.Node {
+            if (selva.selva_sort_foreach_done(&self.it)) {
+                return null;
+            }
+            if (desc) {
+                return @ptrCast(selva.selva_sort_foreach_reverse(self.index.index, &self.it));
+            } else {
+                return @ptrCast(selva.selva_sort_foreach(self.index.index, &self.it));
+            }
+        }
+    };
+}
+
+// add iterator enum
 pub fn iterator(
+    comptime desc: bool,
     dbCtx: *DbCtx,
     thread: *Thread.Thread,
     typeId: t.TypeId,
     sortHeader: *const t.SortHeader,
-) !*SortIndexMeta {
+) !SortIterator(desc) {
     var sortIndex: *SortIndexMeta = undefined;
     dbCtx.threads.mutex.lock();
     if (getSortIndex(
@@ -396,7 +417,7 @@ pub fn iterator(
             dbCtx,
             thread.decompressor,
             typeId,
-            &sortHeader,
+            sortHeader,
             true,
             false,
             true,
@@ -405,5 +426,15 @@ pub fn iterator(
         dbCtx.threads.mutex.unlock();
     }
 
-    return sortIndex;
+    var it: selva.SelvaSortIterator = undefined;
+    if (desc) {
+        selva.selva_sort_foreach_begin_reverse(sortIndex.index, &it);
+    } else {
+        selva.selva_sort_foreach_begin(sortIndex.index, &it);
+    }
+
+    return SortIterator(desc){
+        .it = it,
+        .index = sortIndex,
+    };
 }
