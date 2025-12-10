@@ -111,6 +111,9 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
         ctx.ids = &[_]u32{};
     }
 
+    deflate.destroyDecompressor(ctx.decompressor);
+    deflate.deinitBlockState(&ctx.libdeflateBlockState);
+
     selva.selva_db_destroy(ctx.selva);
     ctx.selva = null;
     ctx.arena.deinit();
