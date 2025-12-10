@@ -5,6 +5,7 @@ import {
   QUERY_ITERATOR_SEARCH,
   QUERY_ITERATOR_SEARCH_VEC,
   QueryIteratorTypeEnum,
+  QueryIteratorTypeInverse,
   SortOrder,
 } from '../../../zigTsExports.js'
 import { QueryDef, QueryDefType } from '../types.js'
@@ -38,25 +39,37 @@ export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
     base = QUERY_ITERATOR_SEARCH_VEC
   }
 
-  if (hasFilter && isDesc) {
-    base += 3
-  }
+  //  default: 0,
+  //   filter: 1,
+  //   desc: 2,
+  //   descFilter: 3,
+  //   edge: 20,
+  //   edgeFilter: 21,
+  //   edgeDesc: 22,
+  //   edgeDescFilter: 23,
+  //   edgeInclude: 30,
+  //   edgeIncludeFilter: 31,
+  //   edgeIncludeDesc: 32,
+  //   edgeIncludeDescFilter: 33,
+  //   search: 120,
+  //   searchFilter: 121,
+  //   vec: 130,
+  //   vecFilter: 131,
 
-  if (hasSearch && isDesc) {
-    console.warn('Has search and is Desc not supported')
+  if (hasSearch) {
     if (hasFilter) {
       base += 1
     }
-    return base as QueryIteratorTypeEnum
+  } else {
+    if (isDesc) {
+      base += 2
+    }
+    if (hasFilter) {
+      base += 1
+    }
   }
 
-  if (hasFilter && isDesc) {
-    base += 3
-  }
-
-  if (hasFilter) {
-    base += 1
-  }
+  console.log('QueryIteratorTypeEnum', QueryIteratorTypeInverse[base])
 
   return base as QueryIteratorTypeEnum
 }

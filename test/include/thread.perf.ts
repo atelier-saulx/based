@@ -69,7 +69,7 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 1e5; i++) {
     db.create('user', {
-      nr: i + 67,
+      nr: 1e5 - i,
       // name: 'A',
       // flap: '⚡️',
 
@@ -112,12 +112,13 @@ await test('include', async (t) => {
     // .include('nr') //  'flap'
     // .include('todos.id') // 'todos.$status'
 
-    .include('todos.id', 'todos.$status') // 'todos.$status'
+    .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
     // .include('name')
-    .range(0, 1)
+    .range(0, 100)
+    .sort('nr', 'desc')
     .get()
 
-  x.debug()
+  // x.debug()
 
   x.inspect()
 
@@ -138,7 +139,7 @@ await test('include', async (t) => {
 
   // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 10; i++) {

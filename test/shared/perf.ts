@@ -154,6 +154,14 @@ export async function perf(
   }
 }
 
+perf.skip = async (
+  fn: () => void | Promise<void>,
+  label: string,
+  options: Options = {},
+) => {
+  console.log(`${styleText('gray', `skip perf "${label}"`)}`)
+}
+
 async function callWrapper(fn: () => void | Promise<void>) {
   const result = fn()
   if (result && typeof (result as any).then === 'function') {
