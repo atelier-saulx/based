@@ -480,6 +480,12 @@ class GetPromise extends Promise<BasedQueryResponse> {
         new GetPromise((resolve) => resolve(res.inspect(depth, raw))),
     ) as GetPromise
   }
+  debug(depth?: number, raw?: boolean) {
+    return this.then(
+      (res: BasedQueryResponse) =>
+        new GetPromise((resolve) => resolve(res.debug())),
+    ) as GetPromise
+  }
 }
 
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
