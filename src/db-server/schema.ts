@@ -53,7 +53,6 @@ export const setSchemaOnServer = async (
   server.schema = schema
   server.schemaTypesParsed = schemaTypesParsed
   server.schemaTypesParsedById = schemaTypesParsedById
-  server.ids = await getSchemaIds(server)
 }
 
 export const writeSchemaFile = async (server: DbServer, schema: SchemaOut) => {
@@ -84,10 +83,8 @@ export async function createSelvaType(
       if (err) {
         const errMsg = `Create type ${typeId} failed: ${native.selvaStrerror(err)}`
         server.emit('error', errMsg)
-        console.log('resolve type errr', typeId)
         reject(new Error(errMsg))
       } else {
-        console.log('resolve type', typeId)
         resolve()
       }
       server.keepRefAliveTillThisPoint(msg)

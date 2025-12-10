@@ -140,7 +140,6 @@ pub const Threads = struct {
             var queryBuf: ?[]u8 = null;
             var modifyBuf: ?[]u8 = null;
             var op: t.OpType = t.OpType.noOp;
-            var sortIndex: ?*sort.SortIndexMeta = null;
 
             self.mutex.lock();
 
@@ -153,31 +152,6 @@ pub const Threads = struct {
                 queryBuf = self.queryQueue.swapRemove(0);
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
-                    if (op == t.OpType.defaultSort) {
-                        var index: usize = 4;
-                        const header = utils.readNext(t.QueryHeader, q, &index);
-                        const sortHeader = utils.readNext(t.SortHeader, q, &index);
-                        if (sort.getSortIndex(
-                            self.ctx.sortIndexes.get(header.typeId),
-                            sortHeader.prop,
-                            sortHeader.start,
-                            sortHeader.lang,
-                        )) |sortMetaIndex| {
-                            sortIndex = sortMetaIndex;
-                        } else {
-                            // needs multi threading ofc
-                            // add comtime dont create all
-                            // can now store sort indexes for refs as well!
-                            sortIndex = try sort.createSortIndex(
-                                self.ctx,
-                                thread.decompressor,
-                                header.typeId,
-                                &sortHeader,
-                                true,
-                                false,
-                            );
-                        }
-                    }
                 }
             } else if (self.modifyQueue.items.len > 0 and thread.pendingModifies > 0) {
                 modifyBuf = self.modifyQueue.items[thread.currentModifyIndex];
@@ -185,8 +159,6 @@ pub const Threads = struct {
                     op = @enumFromInt(m[4]);
                 }
             } else {
-                // std.debug.print("SLEEP {any} \n", .{thread.id});
-
                 self.wakeup.wait(&self.mutex);
             }
 
@@ -194,26 +166,20 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 switch (op) {
-                    t.OpType.blockHash => {
-                        try info.blockHash(thread, self.ctx, q, op);
-                    },
-                    t.OpType.saveBlock => {
-                        try dump.saveBlock(thread, self.ctx, q, op);
-                    },
-                    t.OpType.saveCommon => {
-                        try dump.saveCommon(thread, self.ctx, q, op);
-                    },
-                    t.OpType.getSchemaIds => {
+                    .blockHash => try info.blockHash(thread, self.ctx, q, op),
+                    .saveBlock => try dump.saveBlock(thread, self.ctx, q, op),
+                    .saveCommon => try dump.saveCommon(thread, self.ctx, q, op),
+                    .getSchemaIds => {
                         const data = try thread.query.result(self.ctx.ids.len * 4, utils.read(u32, q, 0), op);
                         if (self.ctx.ids.len > 0) {
                             utils.byteCopy(data, @as([*]u8, @ptrCast(self.ctx.ids.ptr)), 0);
                         }
                     },
-                    t.OpType.noOp => {
+                    .noOp => {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
                     else => {
-                        getQueryThreaded(self.ctx, q, thread, sortIndex) catch |err| {
+                        getQueryThreaded(self.ctx, q, thread) catch |err| {
                             std.log.err("Error query: {any}", .{err});
                             // write query error response
                         };
@@ -262,19 +228,19 @@ pub const Threads = struct {
             if (modifyBuf) |m| {
                 if (thread.id == 0) {
                     switch (op) {
-                        t.OpType.modify => {
+                        .modify => {
                             try Modify.modify(thread, m, self.ctx, op);
                         },
-                        t.OpType.loadBlock => {
+                        .loadBlock => {
                             try dump.loadBlock(thread, self.ctx, m, op);
                         },
-                        t.OpType.unloadBlock => {
+                        .unloadBlock => {
                             try dump.unloadBlock(thread, self.ctx, m, op);
                         },
-                        t.OpType.loadCommon => {
+                        .loadCommon => {
                             try dump.loadCommon(thread, self.ctx, m, op);
                         },
-                        t.OpType.createType => {
+                        .createType => {
                             const data = try thread.modify.result(4, utils.read(u32, m, 0), op);
                             const typeCode = utils.read(u32, m, 0);
                             const schema = m[5..m.len];
@@ -286,11 +252,15 @@ pub const Threads = struct {
                             );
                             utils.write(data, err, 0);
                         },
-                        t.OpType.setSchemaIds => {
+                        .setSchemaIds => {
                             _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                            const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(m[5..m.len])));
-                            const len = (m.len - 5) / @sizeOf(u32);
-                            self.ctx.ids = try self.ctx.allocator.dupe(u32, ptr[0..len]);
+                            if (self.ctx.ids.len > 0) {
+                                self.ctx.allocator.free(self.ctx.ids);
+                                self.ctx.ids = &[_]u32{};
+                            }
+                            self.ctx.ids = try self.ctx.allocator.alloc(u32, (m.len - 5) / @sizeOf(u32));
+                            const ids = m[5..m.len];
+                            utils.byteCopy(self.ctx.ids, ids, 0);
                         },
                         else => {},
                     }

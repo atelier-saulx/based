@@ -1,7 +1,6 @@
 const std = @import("std");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
-const Sort = @import("../db/sort.zig");
 const Query = @import("common.zig");
 const utils = @import("../utils.zig");
 const multiple = @import("multiple.zig");
@@ -31,36 +30,37 @@ pub fn getQueryThreaded(
     dbCtx: *DbCtx,
     buffer: []u8,
     thread: *Thread.Thread,
-    _: ?*Sort.SortIndexMeta,
 ) !void {
     var index: usize = 0;
 
     var ctx: Query.QueryCtx = .{
         .db = dbCtx,
         .thread = thread,
+        // .sort
     };
 
     const queryId = utils.readNext(u32, buffer, &index);
     const q = buffer[index .. buffer.len - 8]; // - checksum len
     const op = utils.read(t.OpType, q, 0);
 
-    // std.debug.print("DERP DERP\n", .{});
-
     _ = try thread.query.result(0, queryId, op);
 
     switch (op) {
-        t.OpType.default => {
-            try multiple.default(&ctx, q);
+        .default => {
+            try multiple.default(.default, &ctx, q);
         },
-        t.OpType.ids => {}, // can treat this the same as refs maybe?
-        t.OpType.id => {
+        .defaultSort => {
+            try multiple.default(.defaultSort, &ctx, q);
+        },
+        .ids => {}, // can treat this the same as refs maybe?
+        .id => {
             // const id = read(u32, q, 3);
             // const filterSize = read(u16, q, 7);
             // const filterBuf = q[9 .. 9 + filterSize];
             // const include = q[9 + filterSize .. len];
             // try QueryId.default(id, &ctx, typeId, filterBuf, include);
         },
-        t.OpType.alias => {},
+        .alias => {},
         // t.OpType.aggregates => {},
         // t.OpType.aggregatesCount => {},
         else => {

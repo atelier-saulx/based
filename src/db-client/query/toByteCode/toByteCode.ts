@@ -7,12 +7,7 @@ import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
 import { byteSize, schemaChecksum } from './utils.js'
 import { filterToBuffer } from '../query.js'
-import {
-  EDGE_INCLUDE,
-  getIteratorType,
-  HAS_EDGE,
-  NO_EDGE,
-} from './iteratorType.js'
+import { getIteratorType } from './iteratorType.js'
 import {
   ID_PROP,
   PropType,
@@ -80,14 +75,14 @@ export function defToBuffer(
     )
 
     // @ts-ignore
-    const hasEdges = isReferences && def.target.propDef.edgeNodeTypeId > 0
     const typeId: number = def.schema!.id
     // @ts-ignore
-    const edgeTypeId: number = hasEdges ? def.target.propDef.edgeNodeTypeId : 0
+    const edgeTypeId: number = isReferences && def.target.propDef.edgeNodeTypeId
 
     let op: QueryTypeEnum = isReferences
       ? QueryType.references
       : QueryType.default
+
     if (hasSort) {
       op = isReferences ? QueryType.referencesSort : QueryType.defaultSort
     }
@@ -104,10 +99,7 @@ export function defToBuffer(
         sort: hasSort,
         filterSize: def.filter.size,
         searchSize,
-        iteratorType: getIteratorType(
-          def,
-          edge ? EDGE_INCLUDE : hasEdges ? HAS_EDGE : NO_EDGE,
-        ),
+        iteratorType: getIteratorType(def),
         edgeTypeId,
         edgeSize,
         edgeFilterSize: 0, // this is nice
@@ -134,7 +126,7 @@ export function defToBuffer(
       include,
     ])
     if (edge) {
-      console.log({ edge })
+      // console.log({ edge })
       result.push(edge)
     }
   } else {

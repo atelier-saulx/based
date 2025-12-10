@@ -1125,8 +1125,8 @@ export const createSortHeader = (header: SortHeader): Uint8Array => {
 }
 
 export const QUERY_ITERATOR_DEFAULT = 0
-export const QUERY_ITERATOR_EDGE = 10
-export const QUERY_ITERATOR_EDGE_INCLUDE = 20
+export const QUERY_ITERATOR_EDGE = 20
+export const QUERY_ITERATOR_EDGE_INCLUDE = 30
 export const QUERY_ITERATOR_SEARCH = 120
 export const QUERY_ITERATOR_SEARCH_VEC = 130
 export const QueryIteratorType = {
@@ -1134,14 +1134,14 @@ export const QueryIteratorType = {
   filter: 1,
   desc: 2,
   descFilter: 3,
-  edge: 10,
-  edgeFilter: 11,
-  edgeDesc: 12,
-  edgeDescFilter: 13,
-  edgeInclude: 20,
-  edgeIncludeFilter: 21,
-  edgeIncludeDesc: 22,
-  edgeIncludeDescFilter: 23,
+  edge: 20,
+  edgeFilter: 21,
+  edgeDesc: 22,
+  edgeDescFilter: 23,
+  edgeInclude: 30,
+  edgeIncludeFilter: 31,
+  edgeIncludeDesc: 32,
+  edgeIncludeDescFilter: 33,
   search: 120,
   searchFilter: 121,
   vec: 130,
@@ -1153,14 +1153,14 @@ export const QueryIteratorTypeInverse = {
   1: 'filter',
   2: 'desc',
   3: 'descFilter',
-  10: 'edge',
-  11: 'edgeFilter',
-  12: 'edgeDesc',
-  13: 'edgeDescFilter',
-  20: 'edgeInclude',
-  21: 'edgeIncludeFilter',
-  22: 'edgeIncludeDesc',
-  23: 'edgeIncludeDescFilter',
+  20: 'edge',
+  21: 'edgeFilter',
+  22: 'edgeDesc',
+  23: 'edgeDescFilter',
+  30: 'edgeInclude',
+  31: 'edgeIncludeFilter',
+  32: 'edgeIncludeDesc',
+  33: 'edgeIncludeDescFilter',
   120: 'search',
   121: 'searchFilter',
   130: 'vec',
@@ -1232,6 +1232,7 @@ export const IncludeOp = {
   aggregatesCount: 5,
   references: 6,
   reference: 7,
+  referencesSort: 9,
   default: 127,
   referencesAggregation: 128,
   meta: 129,
@@ -1245,6 +1246,7 @@ export const IncludeOpInverse = {
   5: 'aggregatesCount',
   6: 'references',
   7: 'reference',
+  9: 'referencesSort',
   127: 'default',
   128: 'referencesAggregation',
   129: 'meta',
@@ -1258,6 +1260,7 @@ export const IncludeOpInverse = {
   aggregatesCount, 
   references, 
   reference, 
+  referencesSort, 
   default, 
   referencesAggregation, 
   meta, 

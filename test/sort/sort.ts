@@ -489,9 +489,6 @@ await test('sort - from start (1M items)', async (t) => {
 
   await newDb.start()
 
-  // newDb.server.createSortIndex('user', 'age')
-  // newDb.server.createSortIndex('user', 'name')
-
   t.after(() => newDb.destroy())
 
   deepEqual(

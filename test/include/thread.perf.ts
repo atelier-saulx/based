@@ -67,9 +67,9 @@ await test('include', async (t) => {
   console.log({ todo, todo2 })
   let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e5; i++) {
     db.create('user', {
-      nr: i + 67,
+      nr: 1e5 - i,
       // name: 'A',
       // flap: '⚡️',
 
@@ -77,6 +77,7 @@ await test('include', async (t) => {
       todos: [
         // need to write an 8 byte empty thing for edges
         { id: todo, $status: 'blocked' }, //  $name: 'bla'
+        // { id: todo2, $status: 'nothing' }, //  $name: 'blurf'
         // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
       ],
       // todos: [todo, todo2], // this doesnot work with edges...
@@ -111,12 +112,13 @@ await test('include', async (t) => {
     // .include('nr') //  'flap'
     // .include('todos.id') // 'todos.$status'
 
-    .include('todos.id', 'todos.$status') // 'todos.$status'
+    .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
     // .include('name')
-    .range(0, 1)
+    .range(0, 100)
+    .sort('nr', 'desc')
     .get()
 
-  x.debug()
+  // x.debug()
 
   x.inspect()
 
@@ -137,18 +139,19 @@ await test('include', async (t) => {
 
   // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1e2; i++) {
+      for (let i = 0; i < 10; i++) {
         q.push(
           db
             .query('user')
             .include('id')
-            // .include('todos.id') // 'todos.$status'
+            // .include('todos.id')
             //  'todos.$status'
-            // .include('id', 'todos.id') // 'todos.$status'
-            .range(0, 1e6 + i)
+            // .include('id', 'todos.id', 'todos.$status') // 'todos.$status'
+            .range(0, 1e5 + i)
+            .sort('nr')
             // .inspect()
             .get(),
           // .inspect(),

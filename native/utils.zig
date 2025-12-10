@@ -172,20 +172,38 @@ pub inline fn copyNext(T: type, dest: []T, source: []const T, offset: *usize) vo
 }
 
 pub inline fn byteCopy(dest: anytype, source: anytype, offset: usize) void {
-    const len = @bitSizeOf(@typeInfo(@TypeOf(source)).pointer.child) / 8;
     var d: [*]u8 = undefined;
+    var s: *anyopaque = undefined;
+    var len: usize = undefined;
     switch (@typeInfo(@TypeOf(dest))) {
         .pointer => |info| {
             if (info.size == .slice) {
                 d = @ptrCast(dest.ptr);
             } else if (info.size == .c or info.size == .many) {
                 d = @ptrCast(dest);
+            } else {
+                @compileError("Invalid type");
+            }
+        },
+        else => @compileError("Invalid type"),
+    }
+    switch (@typeInfo(@TypeOf(source))) {
+        .pointer => |info| {
+            if (info.size == .slice) {
+                s = @ptrCast(source.ptr);
+                len = source.len * @sizeOf(@typeInfo(@TypeOf(source)).pointer.child);
+            } else if (info.size == .c or info.size == .many) {
+                s = @ptrCast(source);
+                len = @bitSizeOf(@typeInfo(@TypeOf(source)).pointer.child) / 8;
+            } else {
+                s = source;
+                len = @bitSizeOf(@typeInfo(@TypeOf(source)).pointer.child) / 8;
             }
         },
         else => @compileError("Invalid type"),
     }
 
-    _ = memcpy(d + offset, source, len);
+    _ = memcpy(d + offset, s, len);
 }
 
 pub inline fn move(dest: []u8, source: []const u8) void {
