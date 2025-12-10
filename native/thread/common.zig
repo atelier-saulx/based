@@ -35,6 +35,8 @@ pub const Thread = struct {
         self.thread.join();
         self.query.deinit();
         self.modify.deinit();
+        deflate.destroyDecompressor(self.decompressor);
+        deflate.deinitBlockState(&self.libdeflateBlockState);
         jemalloc.free(self);
     }
 };
