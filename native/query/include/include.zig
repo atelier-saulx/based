@@ -20,6 +20,7 @@ inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
 }
 
 pub fn recursionErrorBoundary(
+    comptime queryType: t.QueryType,
     cb: anytype,
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -27,7 +28,7 @@ pub fn recursionErrorBoundary(
     typeEntry: Node.Type,
     index: *usize,
 ) void {
-    cb(ctx, q, node, typeEntry, index) catch |err| {
+    cb(queryType, ctx, q, node, typeEntry, index) catch |err| {
         std.debug.print("recursionErrorBoundary: Error {any} \n", .{err});
     };
 }
@@ -48,10 +49,13 @@ pub inline fn include(
         const op: t.IncludeOp = @enumFromInt(q[i]);
 
         switch (op) {
-            t.IncludeOp.references => {
-                recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
+            .referencesSort => {
+                recursionErrorBoundary(.referencesSort, multiple.references, node, ctx, q, typeEntry, &i);
             },
-            t.IncludeOp.partial => {
+            .references => {
+                recursionErrorBoundary(.references, multiple.references, node, ctx, q, typeEntry, &i);
+            },
+            .partial => {
                 const header = utils.readNext(t.IncludePartialHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 try ctx.thread.query.append(header.prop);
@@ -60,7 +64,7 @@ pub inline fn include(
                     try ctx.thread.query.append(value[p.start .. p.start + p.size]);
                 }
             },
-            t.IncludeOp.meta => {
+            .meta => {
                 const header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
@@ -78,7 +82,7 @@ pub inline fn include(
                     },
                 }
             },
-            t.IncludeOp.metaWithOpts => {
+            .metaWithOpts => {
                 var header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
@@ -89,7 +93,7 @@ pub inline fn include(
                     else => {},
                 }
             },
-            t.IncludeOp.defaultWithOpts => {
+            .defaultWithOpts => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
@@ -106,7 +110,7 @@ pub inline fn include(
                     },
                 }
             },
-            t.IncludeOp.default => {
+            .default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {

@@ -153,7 +153,7 @@ pub const Threads = struct {
                 queryBuf = self.queryQueue.swapRemove(0);
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
-                    if (op == t.OpType.defaultSort) {
+                    if (op == .defaultSort) {
                         var index: usize = 4;
                         const header = utils.readNext(t.QueryHeader, q, &index);
                         const sortHeader = utils.readNext(t.SortHeader, q, &index);
@@ -194,22 +194,22 @@ pub const Threads = struct {
 
             if (queryBuf) |q| {
                 switch (op) {
-                    t.OpType.blockHash => {
+                    .blockHash => {
                         try info.blockHash(thread, self.ctx, q, op);
                     },
-                    t.OpType.saveBlock => {
+                    .saveBlock => {
                         try dump.saveBlock(thread, self.ctx, q, op);
                     },
-                    t.OpType.saveCommon => {
+                    .saveCommon => {
                         try dump.saveCommon(thread, self.ctx, q, op);
                     },
-                    t.OpType.getSchemaIds => {
+                    .getSchemaIds => {
                         const data = try thread.query.result(self.ctx.ids.len * 4, utils.read(u32, q, 0), op);
                         if (self.ctx.ids.len > 0) {
                             utils.byteCopy(data, @as([*]u8, @ptrCast(self.ctx.ids.ptr)), 0);
                         }
                     },
-                    t.OpType.noOp => {
+                    .noOp => {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
                     else => {
@@ -262,19 +262,19 @@ pub const Threads = struct {
             if (modifyBuf) |m| {
                 if (thread.id == 0) {
                     switch (op) {
-                        t.OpType.modify => {
+                        .modify => {
                             try Modify.modify(thread, m, self.ctx, op);
                         },
-                        t.OpType.loadBlock => {
+                        .loadBlock => {
                             try dump.loadBlock(thread, self.ctx, m, op);
                         },
-                        t.OpType.unloadBlock => {
+                        .unloadBlock => {
                             try dump.unloadBlock(thread, self.ctx, m, op);
                         },
-                        t.OpType.loadCommon => {
+                        .loadCommon => {
                             try dump.loadCommon(thread, self.ctx, m, op);
                         },
-                        t.OpType.createType => {
+                        .createType => {
                             const data = try thread.modify.result(4, utils.read(u32, m, 0), op);
                             const typeCode = utils.read(u32, m, 0);
                             const schema = m[5..m.len];
@@ -286,7 +286,7 @@ pub const Threads = struct {
                             );
                             utils.write(data, err, 0);
                         },
-                        t.OpType.setSchemaIds => {
+                        .setSchemaIds => {
                             _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
                             const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(m[5..m.len])));
                             const len = (m.len - 5) / @sizeOf(u32);

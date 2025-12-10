@@ -7,28 +7,26 @@ import {
   QueryIteratorTypeEnum,
   SortOrder,
 } from '../../../zigTsExports.js'
-import { QueryDef } from '../types.js'
+import { QueryDef, QueryDefType } from '../types.js'
 
-export const NO_EDGE = 0
-export const EDGE_INCLUDE = 1
-export const HAS_EDGE = 2
-
-export const getIteratorType = (
-  def: QueryDef,
-  edges: typeof EDGE_INCLUDE | typeof HAS_EDGE | typeof NO_EDGE,
-): QueryIteratorTypeEnum => {
+export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
   const hasSearch = def.search?.size && def.search.size > 0
   const isVector = hasSearch && def.search!.isVector
   const hasFilter = def.filter.size > 0
   const isDesc = def.sort?.order === SortOrder.desc
+  const edgeInclude = def.edges
+  const hasEdges =
+    def.type === QueryDefType.References &&
+    // @ts-ignore
+    def.target.propDef.edgeNodeTypeId > 0
 
   let base = QUERY_ITERATOR_DEFAULT
 
-  if (edges === HAS_EDGE) {
+  if (hasEdges && !edgeInclude) {
     base = QUERY_ITERATOR_EDGE
   }
 
-  if (edges === EDGE_INCLUDE) {
+  if (edgeInclude) {
     base = QUERY_ITERATOR_EDGE_INCLUDE
   }
 
