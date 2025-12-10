@@ -1,8 +1,8 @@
 import { inspect, styleText } from 'node:util'
 import { QueryDef } from './types.js'
-import { debug } from './query.js'
 import { size, time, inspectData, defHasId, displayTarget } from './display.js'
 import { readFloatLE, readUint32 } from '../../utils/uint8.js'
+import { debugBuffer } from '../../utils/debug.js'
 import {
   readChecksum,
   readId,
@@ -70,7 +70,7 @@ export class BasedQueryResponse {
   }
 
   debug() {
-    debug(this.result, 0, this.end)
+    debugBuffer(this.result, 0, this.end)
     return this
   }
 

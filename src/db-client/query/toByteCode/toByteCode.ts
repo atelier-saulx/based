@@ -3,7 +3,7 @@ import { includeToBuffer } from '../include/toByteCode.js'
 import { DbClient } from '../../index.js'
 import { writeUint32 } from '../../../utils/index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
-import { debug, resolveMetaIndexes } from '../query.js'
+import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
 import { byteSize, schemaChecksum } from './utils.js'
 import { filterToBuffer } from '../query.js'
@@ -103,8 +103,6 @@ export function defToBuffer(
       0,
     )
 
-    console.log('!!!!!', buffer.byteLength + includeSize)
-
     if (hasSort) {
       index = writeSortHeader(buffer, def.sort!, index)
     }
@@ -171,9 +169,5 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   combineIntermediateResults(res, 0, bufs)
   const queryId = crc32(res)
   writeUint32(res, queryId, 0)
-
-  console.log(res)
-
-  debug(res)
   return res
 }
