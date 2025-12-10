@@ -42,6 +42,10 @@ await test('include', async (t) => {
       user: {
         props: {
           name: 'string',
+          currentTodo: {
+            ref: 'todo',
+            prop: 'currentTodos',
+          },
           todos: { items: { ref: 'todo', prop: 'assignees' } },
           nr: { type: 'uint32' },
           nr1: { type: 'uint32' },
@@ -82,6 +86,7 @@ await test('include', async (t) => {
       nr5: 1e5 - i,
       nr6: 1e5 - i,
 
+      currentTodo: todo,
       // name: 'A',
       // flap: '⚡️',
 
@@ -126,6 +131,7 @@ await test('include', async (t) => {
 
     // .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
     .include('nr')
+    .include('currentTodo')
     .range(0, 100)
     .sort('nr', 'desc')
     .get()

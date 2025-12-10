@@ -529,6 +529,12 @@ pub const IncludeOp = enum(u8) {
     // ---------------------
 };
 
+pub const IncludeReferenceHeader = packed struct {
+    op: IncludeOp,
+    prop: u8,
+    size: u16,
+};
+
 pub const IncludeHeader = packed struct {
     op: IncludeOp,
     prop: u8,

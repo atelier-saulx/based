@@ -1294,6 +1294,70 @@ export const IncludeOpInverse = {
  */
 export type IncludeOpEnum = (typeof IncludeOp)[keyof typeof IncludeOp]
 
+export type IncludeReferenceHeader = {
+  op: IncludeOpEnum
+  prop: number
+  size: number
+}
+
+export const IncludeReferenceHeaderByteSize = 4
+
+export const writeIncludeReferenceHeader = (
+  buf: Uint8Array,
+  header: IncludeReferenceHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  buf[offset] = header.prop
+  offset += 1
+  writeUint16(buf, header.size, offset)
+  offset += 2
+  return offset
+}
+
+export const writeIncludeReferenceHeaderProps = {
+  op: (buf: Uint8Array, value: IncludeOpEnum, offset: number) => {
+    buf[offset] = value
+  },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 2)
+  },
+}
+
+export const readIncludeReferenceHeader = (
+  buf: Uint8Array,
+  offset: number,
+): IncludeReferenceHeader => {
+  const value: IncludeReferenceHeader = {
+    op: (buf[offset]) as IncludeOpEnum,
+    prop: buf[offset + 1],
+    size: readUint16(buf, offset + 2),
+  }
+  return value
+}
+
+export const readIncludeReferenceHeaderProps = {
+  op: (buf: Uint8Array, offset: number): IncludeOpEnum => {
+    return (buf[offset]) as IncludeOpEnum
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 2)
+  },
+}
+
+export const createIncludeReferenceHeader = (header: IncludeReferenceHeader): Uint8Array => {
+  const buffer = new Uint8Array(IncludeReferenceHeaderByteSize)
+  writeIncludeReferenceHeader(buffer, header, 0)
+  return buffer
+}
+
 export type IncludeHeader = {
   op: IncludeOpEnum
   prop: number

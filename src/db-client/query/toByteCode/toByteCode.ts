@@ -40,6 +40,9 @@ export function defToBuffer(
   //   // result.push(referenceQuery(def, size))
   // }
 
+  // edges as well
+  console.log('GO GET DAT SINGLE REF', def.type === QueryDefType.Reference)
+
   if (isRootDefault || isReferences || isReferencesEdges) {
     const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
     const hasSearch = !!def.search

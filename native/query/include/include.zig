@@ -48,6 +48,15 @@ pub inline fn include(
         const op: t.IncludeOp = @enumFromInt(q[i]);
 
         switch (op) {
+            .reference => {
+                const header = utils.readNext(t.IncludeReferenceHeader, q, &i);
+                i += header.size;
+                // refs time
+                // get type entry and call include
+                // get node
+                // need recursion boundary prob...
+                std.debug.print("go get that snurp {any} \n", .{header});
+            },
             .references => {
                 recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
             },
@@ -131,34 +140,17 @@ pub inline fn include(
                     },
                 }
             },
-            else => {
-                std.debug.print("WRONG", .{});
+            .aggregates => {
+                std.debug.print("AGG not implemented yet\n", .{});
                 i += 1;
-                // Unhandled operation - will remove this late
-                // t.IncludeOp.reference => {
-                //  call single
-                //     const operation = include[i..];
-                //     const refSize = read(u16, operation, 0);
-                //     const singleRef = operation[2 .. 2 + refSize];
-                //     i += refSize + 2;
-                //     if (!idIsSet) {
-                //         idIsSet = true;
-                //         size += try addIdOnly(ctx, id, score);
-                //     }
-                //     size += getSingleRefFields(ctx, singleRef, node, typeEntry, edgeRef, isEdge);
-                // },
-                // t.IncludeOp.referencesAggregation => {
-                //     const operation = include[i..];
-                //     const refSize = read(u16, operation, 0);
-                //     const multiRefs = operation[2 .. 2 + refSize];
-                //     i += refSize + 2;
-                //     if (!idIsSet) {
-                //         idIsSet = true;
-                //         size += try addIdOnly(ctx, id, score);
-                //     }
-                //     size += try aggregateRefsFields(ctx, multiRefs, node, typeEntry);
-                //     return size;
-                // },
+            },
+            .aggregatesCount => {
+                std.debug.print("AGG count not implemented yet\n", .{});
+                i += 1;
+            },
+            .referencesAggregation => {
+                std.debug.print("AGG refs not implemented yet\n", .{});
+                i += 1;
             },
         }
     }
