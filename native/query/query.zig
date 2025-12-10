@@ -1,7 +1,6 @@
 const std = @import("std");
 const errors = @import("../errors.zig");
 const napi = @import("../napi.zig");
-const Sort = @import("../db/sort.zig");
 const Query = @import("common.zig");
 const utils = @import("../utils.zig");
 const multiple = @import("multiple.zig");
@@ -48,33 +47,10 @@ pub fn getQueryThreaded(
 
     switch (op) {
         .default => {
-            try multiple.default(.default, &ctx, q, void);
+            try multiple.default(.default, &ctx, q);
         },
         .defaultSort => {
-            const header = utils.readNext(t.QueryHeader, q, &index);
-            const sortHeader = utils.readNext(t.SortHeader, q, &index);
-            var sortIndex: *Sort.SortIndexMeta = undefined;
-            if (Sort.getSortIndex(
-                dbCtx.sortIndexes.get(header.typeId),
-                sortHeader.prop,
-                sortHeader.start,
-                sortHeader.lang,
-            )) |sortMetaIndex| {
-                sortIndex = sortMetaIndex;
-            } else {
-                // needs multi threading ofc
-                // add comptime dont create all
-                // can now store sort indexes for refs as well!
-                sortIndex = try Sort.createSortIndex(
-                    dbCtx,
-                    thread.decompressor,
-                    header.typeId,
-                    &sortHeader,
-                    true,
-                    false,
-                );
-            }
-            try multiple.default(.defaultSort, &ctx, q, sortIndex);
+            try multiple.default(.defaultSort, &ctx, q);
         },
         .ids => {}, // can treat this the same as refs maybe?
         .id => {

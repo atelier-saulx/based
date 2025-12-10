@@ -146,10 +146,15 @@ pub fn createSortIndex(
     header: *const t.SortHeader,
     comptime defrag: bool,
     comptime desc: bool,
+    comptime fromQueryThread: bool,
 ) !*SortIndexMeta {
     const sortIndex = try getOrCreateFromCtx(dbCtx, typeId, header, desc);
     const typeEntry = try Node.getType(dbCtx, typeId);
     const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+
+    if (fromQueryThread) {
+        dbCtx.threads.mutex.unlock();
+    }
 
     // fill sort index needs to a special field
     var node = Node.getFirstNode(typeEntry);
@@ -172,7 +177,10 @@ pub fn createSortIndex(
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
     }
-    // This is wrong ofcourse
+
+    if (fromQueryThread) {
+        dbCtx.threads.mutex.lock();
+    }
     sortIndex.isCreated = true;
     return sortIndex;
 }

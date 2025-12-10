@@ -1,4 +1,4 @@
-import {ENCODER} from './utils/uint8.js'
+import { ENCODER } from './utils/uint8.js'
 import db from './zigAddon.js'
 
 var compressor = db.createCompressor()
@@ -114,10 +114,6 @@ const native = {
 
   crc32: (buf: Uint8Array) => {
     return db.crc32(buf)
-  },
-
-  createSortIndex: (buf: Uint8Array, dbCtx: any) => {
-    return db.createSortIndex(dbCtx, buf)
   },
 
   destroySortIndex: (buf: Uint8Array, dbCtx: any) => {

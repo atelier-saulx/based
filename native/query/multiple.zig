@@ -8,6 +8,7 @@ const Selva = @import("../selva/selva.zig");
 const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
+const Sort = @import("../db/sort.zig");
 
 fn iterator(
     comptime _: t.QueryIteratorType,
@@ -81,14 +82,41 @@ pub fn default(
     comptime queryType: t.QueryType,
     ctx: *Query.QueryCtx,
     q: []u8,
-    sortIndex: anytype,
 ) !void {
-    if (queryType == .defaultSort) {
-        std.debug.print("need to make different iterator (sorted) {any} \n", .{sortIndex});
-    }
-
     var index: usize = 0;
     const header = utils.readNext(t.QueryHeader, q, &index);
+
+    if (queryType == .defaultSort) {
+        const sortHeader = utils.readNext(t.SortHeader, q, &index);
+        var sortIndex: *Sort.SortIndexMeta = undefined;
+        ctx.db.threads.mutex.lock();
+        if (Sort.getSortIndex(
+            ctx.db.sortIndexes.get(header.typeId),
+            sortHeader.prop,
+            sortHeader.start,
+            sortHeader.lang,
+        )) |sortMetaIndex| {
+            if (sortMetaIndex.isCreated == false) {
+                std.debug.print("LETS WAIT FOR SORT \n", .{});
+                ctx.db.threads.sortDone.wait(&ctx.db.threads.mutex);
+            }
+            sortIndex = sortMetaIndex;
+            ctx.db.threads.mutex.unlock();
+        } else {
+            sortIndex = try Sort.createSortIndex(
+                ctx.db,
+                ctx.thread.decompressor,
+                header.typeId,
+                &sortHeader,
+                true,
+                false,
+                true,
+            );
+            ctx.db.threads.sortDone.broadcast();
+            ctx.db.threads.mutex.unlock();
+        }
+    }
+
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;

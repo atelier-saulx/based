@@ -141,15 +141,16 @@ await test('include', async (t) => {
   await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 10; i++) {
         q.push(
           db
             .query('user')
             .include('id')
-            // .include('todos.id') // 'todos.$status'
+            // .include('todos.id')
             //  'todos.$status'
-            .include('id', 'todos.id', 'todos.$status') // 'todos.$status'
+            // .include('id', 'todos.id', 'todos.$status') // 'todos.$status'
             .range(0, 1e5 + i)
+            .sort('nr')
             // .inspect()
             .get(),
           // .inspect(),
