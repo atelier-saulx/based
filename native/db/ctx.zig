@@ -106,6 +106,11 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
         }
     }
 
+    if (ctx.ids.len > 0) {
+        ctx.allocator.free(ctx.ids);
+        ctx.ids = &[_]u32{};
+    }
+
     selva.selva_db_destroy(ctx.selva);
     ctx.selva = null;
     ctx.arena.deinit();

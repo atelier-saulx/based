@@ -47,9 +47,6 @@ export class DbServer extends DbShared {
   saveInterval?: NodeJS.Timeout
   delayInMs?: number
 
-  // schema ids
-  ids: Uint32Array
-
   // hack to prevent gc to clean up a var
   forceRefCnt: number = 0
   keepRefAliveTillThisPoint(x: Uint8Array) {

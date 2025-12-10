@@ -1,4 +1,5 @@
 const selva = @import("selva.zig").c;
+const jemalloc = @import("../jemalloc.zig");
 const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const utils = @import("../utils.zig");
 const Thread = @import("../thread/thread.zig");
@@ -67,8 +68,7 @@ pub fn loadCommon(
     if (com.meta_data != null) {
         const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(com.meta_data)));
         const len = com.meta_len / @sizeOf(u32);
-        // TODO This doesn't work with EN_VALGRIND=1
-        defer selva.selva_free(@constCast(com.meta_data));
+        defer jemalloc.free(com.meta_data);
         dbCtx.ids = dbCtx.allocator.dupe(u32, ptr[0..len]) catch {
             err = selva.SELVA_ENOMEM;
             utils.write(data, err, 0);
