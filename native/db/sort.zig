@@ -9,6 +9,7 @@ const t = @import("../types.zig");
 const errors = @import("../errors.zig");
 const read = utils.read;
 const DbCtx = @import("ctx.zig").DbCtx;
+const Thread = @import("../thread/thread.zig");
 
 pub const SortIndexMeta = struct {
     prop: t.PropType,
@@ -136,9 +137,6 @@ fn getOrCreateFromCtx(
     return sortIndex.?;
 }
 
-// allways without these 2 options
-// true,
-// false,
 pub fn createSortIndex(
     dbCtx: *DbCtx,
     decompressor: *deflate.Decompressor,
@@ -370,4 +368,42 @@ pub fn insert(
         t.PropType.uint16 => insertIntIndex(u16, data, sortIndex, node),
         else => {},
     };
+}
+
+pub fn iterator(
+    dbCtx: *DbCtx,
+    thread: *Thread.Thread,
+    typeId: t.TypeId,
+    sortHeader: *const t.SortHeader,
+) !*SortIndexMeta {
+    var sortIndex: *SortIndexMeta = undefined;
+    dbCtx.threads.mutex.lock();
+    if (getSortIndex(
+        dbCtx.sortIndexes.get(typeId),
+        sortHeader.prop,
+        sortHeader.start,
+        sortHeader.lang,
+    )) |sortMetaIndex| {
+        if (sortMetaIndex.isCreated == false) {
+            std.debug.print("LETS WAIT FOR SORT \n", .{});
+            dbCtx.threads.sortDone.wait(&dbCtx.threads.mutex);
+        }
+        sortIndex = sortMetaIndex;
+        dbCtx.threads.mutex.unlock();
+    } else {
+        std.debug.print("MAKE SORT \n", .{});
+        sortIndex = try createSortIndex(
+            dbCtx,
+            thread.decompressor,
+            typeId,
+            &sortHeader,
+            true,
+            false,
+            true,
+        );
+        dbCtx.threads.sortDone.broadcast();
+        dbCtx.threads.mutex.unlock();
+    }
+
+    return sortIndex;
 }

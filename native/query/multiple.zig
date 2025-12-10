@@ -88,39 +88,19 @@ pub fn default(
 
     if (queryType == .defaultSort) {
         const sortHeader = utils.readNext(t.SortHeader, q, &index);
-        var sortIndex: *Sort.SortIndexMeta = undefined;
-        ctx.db.threads.mutex.lock();
-        if (Sort.getSortIndex(
-            ctx.db.sortIndexes.get(header.typeId),
-            sortHeader.prop,
-            sortHeader.start,
-            sortHeader.lang,
-        )) |sortMetaIndex| {
-            if (sortMetaIndex.isCreated == false) {
-                std.debug.print("LETS WAIT FOR SORT \n", .{});
-                ctx.db.threads.sortDone.wait(&ctx.db.threads.mutex);
-            }
-            sortIndex = sortMetaIndex;
-            ctx.db.threads.mutex.unlock();
-        } else {
-            sortIndex = try Sort.createSortIndex(
-                ctx.db,
-                ctx.thread.decompressor,
-                header.typeId,
-                &sortHeader,
-                true,
-                false,
-                true,
-            );
-            ctx.db.threads.sortDone.broadcast();
-            ctx.db.threads.mutex.unlock();
-        }
+        _ = try Sort.iterator(
+            ctx.db,
+            ctx.thread,
+            header.typeId,
+            &sortHeader,
+        );
     }
 
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;
     const nestedQuery = q[index..];
+
     switch (header.iteratorType) {
         .default => {
             var it = Node.iterator(false, typeEntry);
@@ -132,6 +112,7 @@ pub fn default(
         },
         else => {},
     }
+
     ctx.thread.query.write(nodeCnt, sizeIndex);
 }
 
