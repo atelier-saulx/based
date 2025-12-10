@@ -46,14 +46,6 @@ export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
       base += 1
     }
   } else {
-    // default: 0,
-    // sort: 1,
-    // filter: 2,
-    // filterSort: 3,
-    // desc: 4,
-    // descSort: 5,
-    // descFilter: 6,
-    // descFilterSort: 7,
     if (hasSort) {
       if (hasFilter) {
         if (isDesc) {
@@ -81,7 +73,7 @@ export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
     }
   }
 
-  console.log('QueryIteratorTypeEnum', QueryIteratorTypeInverse[base])
+  // console.log('QueryIteratorTypeEnum', QueryIteratorTypeInverse[base])
 
   return base as QueryIteratorTypeEnum
 }

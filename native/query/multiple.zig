@@ -39,14 +39,16 @@ fn iterator(
 fn iteratorEdge(
     comptime itType: t.QueryIteratorType,
     ctx: *Query.QueryCtx,
-    nestedQuery: []u8,
+    q: []u8,
     it: anytype,
     header: *const t.QueryHeader,
     typeEntry: Node.Type,
-    edgeQuery: anytype,
+    i: *usize,
 ) !u32 {
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
+
+    const nestedQuery = q[i.* .. i.* + header.size - utils.sizeOf(t.QueryHeader)];
 
     const edgeTypeEntry = if (itType == t.QueryIteratorType.edgeInclude)
         try Node.getType(ctx.db, header.edgeTypeId)
@@ -65,6 +67,8 @@ fn iteratorEdge(
         switch (itType) {
             .edgeInclude, .edgeIncludeFilter, .edgeIncludeDescFilter => {
                 try ctx.thread.query.append(t.ReadOp.edge);
+                const s = i.* + header.size - utils.sizeOf(t.QueryHeader);
+                const edgeQuery = q[s .. s + header.edgeSize];
                 try include.include(ref.edgeNode, ctx, edgeQuery, edgeTypeEntry);
             },
             else => {},
@@ -95,7 +99,7 @@ pub fn default(
         },
         .desc => {
             var it = Node.iterator(true, typeEntry);
-            nodeCnt = try iterator(.desc, ctx, q[i..], &it, &header, typeEntry);
+            nodeCnt = try iterator(.default, ctx, q[i..], &it, &header, typeEntry);
         },
         .sort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
@@ -118,37 +122,35 @@ pub fn references(
     q: []u8,
     from: Node.Node,
     fromType: Selva.Type,
-    index: *usize,
+    i: *usize,
 ) !void {
-    const header = utils.readNext(t.QueryHeader, q, index);
+    const header = utils.readNext(t.QueryHeader, q, i);
     try ctx.thread.query.append(t.ReadOp.references);
     try ctx.thread.query.append(header.prop);
     const resultByteSizeIndex = try ctx.thread.query.reserve(4);
     const startIndex = ctx.thread.query.index;
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
-    const nestedQuery = q[index.* .. index.* + header.size - utils.sizeOf(t.QueryHeader)];
     var nodeCnt: u32 = 0;
 
     switch (header.iteratorType) {
         .edgeInclude => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            const s = index.* + header.size - utils.sizeOf(t.QueryHeader);
-            const edgeQuery = q[s .. s + header.edgeSize];
-            nodeCnt = try iteratorEdge(.edgeInclude, ctx, nestedQuery, &it, &header, typeEntry, edgeQuery);
+            nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },
         .edge => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iteratorEdge(.edge, ctx, nestedQuery, &it, &header, typeEntry, void);
+            nodeCnt = try iteratorEdge(.edge, ctx, q, &it, &header, typeEntry, i);
         },
         .default => {
             var it = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterator(.default, ctx, nestedQuery, &it, &header, typeEntry);
+            const nestedQ = q[i.* .. i.* + header.size - utils.sizeOf(t.QueryHeader)];
+            nodeCnt = try iterator(.default, ctx, nestedQ, &it, &header, typeEntry);
         },
         else => {},
     }
 
-    index.* += header.size;
+    i.* += header.size;
     ctx.thread.query.write(nodeCnt, sizeIndex);
 
     ctx.thread.query.writeAs(
