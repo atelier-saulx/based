@@ -54,9 +54,6 @@ pub const ValgrindAllocator = struct {
             }
             return true;
         } else {
-            if (valgrind.runningOnValgrind() > 0) {
-                debugPrint("Valgrind resizeFn: Child rawResize failed.\n", .{});
-            }
             return false;
         }
     }
