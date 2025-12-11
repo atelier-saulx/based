@@ -4,6 +4,7 @@ import { perf } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
 import { BasedDb } from '../../src/index.js'
 import { registerQuery } from '../../src/db-client/query/registerQuery.js'
+import { register } from 'module'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -57,6 +58,7 @@ await test('include', async (t) => {
           nr4: { type: 'uint32' },
           nr5: { type: 'uint32' },
           nr6: { type: 'uint32' },
+          email: 'alias',
         },
       },
     },
@@ -90,10 +92,7 @@ await test('include', async (t) => {
       nr6: 1e5 - i,
       name: 'mr snurp ' + i,
       currentTodo: todo,
-      // name: 'A',
-      // flap: '⚡️',
-
-      // adding edge here makes it 20x slower (can be better)
+      email: `beerdejim+${i}@gmail.com`,
       todos: [
         // need to write an 8 byte empty thing for edges
         { id: todo, $status: 'blocked' }, //  $name: 'bla'
@@ -101,8 +100,6 @@ await test('include', async (t) => {
         // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
       ],
       // todos: [todo, todo2], // this doesnot work with edges...
-
-      // derp: 'hello',
       // body: {
       //   nl: 'x',
       //   fr: 'B',
@@ -124,7 +121,29 @@ await test('include', async (t) => {
 
   console.log('\n--------------------------\nStart query!!!!!!!!!')
 
-  await db.query('user', 1).include('id', 'name').range(0, 1).get().inspect()
+  // await db.query('user', 1).include('id', 'name').get().inspect()
+  await db
+    .query('user', { email: 'beerdejim+10@gmail.com' })
+    .include('id', 'name')
+    .get()
+    .inspect()
+
+  // const idBufs: any = []
+  // for (let i = 0; i < 1000; i++) {
+  //   idBufs.push(registerQuery(db.query('user', i + 1).include('id', 'name')))
+  // }
+
+  // await perf.skip(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 1000; i++) {
+  //       q.push(db.server.getQueryBuf(idBufs[i]))
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'single id',
+  //   { repeat: 10 },
+  // )
 
   // const y = await db
   //   .query('user')

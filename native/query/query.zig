@@ -50,12 +50,15 @@ pub fn getQueryThreaded(
         .default => {
             try multiple.default(&ctx, q);
         },
-
-        .ids => {}, // can treat this the same as refs maybe?
+        .ids => {
+            // can treat this the same as refs maybe?
+        },
         .id => {
             try single.default(&ctx, q);
         },
-        .alias => {},
+        .alias => {
+            try single.alias(&ctx, q);
+        },
         // t.OpType.aggregates => {},
         // t.OpType.aggregatesCount => {},
         else => {

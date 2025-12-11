@@ -1,7 +1,7 @@
 import { IntermediateByteCode, QueryDef, QueryDefType } from '../types.js'
 import { includeToBuffer } from '../include/toByteCode.js'
 import { DbClient } from '../../index.js'
-import { writeUint32 } from '../../../utils/index.js'
+import { ENCODER, writeUint32 } from '../../../utils/index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
@@ -36,9 +36,9 @@ export function defToBuffer(
     def.target.ref?.typeIndex === PropType.references
   const isRootDefault = def.type === QueryDefType.Root
   const isReference = def.type === QueryDefType.Reference
-
+  const isAlias = 'resolvedAlias' in def.target
   //  or id, alias
-  if ('id' in def.target) {
+  if ('id' in def.target || isAlias) {
     const hasFilter = def.filter.size > 0
     const filterSize = def.filter.size
     const include = includeToBuffer(db, def)
@@ -48,20 +48,39 @@ export function defToBuffer(
         def.errors.push(...ref.errors)
       }
     }
-    const buffer = new Uint8Array(QueryHeaderSingleByteSize + filterSize)
-    const op: QueryTypeEnum = QueryType.id
+    let aliasSize = 0
+    let aliasStr: Uint8Array = new Uint8Array([])
+    if (isAlias) {
+      // @ts-ignore
+      aliasStr = ENCODER.encode(def.target.resolvedAlias.value)
+      aliasSize = aliasStr.byteLength
+
+      console.log(aliasStr, aliasSize)
+    }
+    const buffer = new Uint8Array(
+      QueryHeaderSingleByteSize + filterSize + aliasSize,
+    )
+    const op: QueryTypeEnum = isAlias ? QueryType.alias : QueryType.id
+
     let index = writeQueryHeaderSingle(
       buffer,
       {
         op,
         // @ts-ignore
-        id: def.target.id,
+        prop: isAlias ? def.target.resolvedAlias.def.prop : 0,
+        // @ts-ignore
+        id: isAlias ? 0 : def.target.id,
         includeSize: byteSize(include),
         typeId: def.schema!.id,
         filterSize: def.filter.size,
+        aliasSize,
       },
       0,
     )
+    if (aliasSize > 0) {
+      buffer.set(aliasStr, index)
+      index += aliasSize
+    }
     if (hasFilter) {
       buffer.set(filterToBuffer(def.filter, index), index)
       index += def.filter.size
@@ -239,6 +258,6 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   combineIntermediateResults(res, 0, bufs)
   const queryId = crc32(res)
   writeUint32(res, queryId, 0)
-  debugBuffer(res)
+
   return res
 }

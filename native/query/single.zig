@@ -9,6 +9,30 @@ const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 const Sort = @import("../db/sort.zig");
+const Fields = @import("../selva/fields.zig");
+
+// alias filter needs to be added
+// make that top level
+
+pub fn alias(
+    ctx: *Query.QueryCtx,
+    q: []u8,
+) !void {
+    var i: usize = 0;
+    const header = utils.readNext(t.QueryHeaderSingle, q, &i);
+    const typeEntry = try Node.getType(ctx.db, header.typeId);
+    const aliasValue = utils.sliceNext(header.aliasSize, q, &i);
+    if (Fields.getAliasByName(typeEntry, header.prop, aliasValue)) |node| {
+        try ctx.thread.query.append(@as(u32, 1));
+        try ctx.thread.query.append(t.ReadOp.id);
+        try ctx.thread.query.append(header.id);
+        const nestedQuery = q[i .. i + header.includeSize];
+        try include.include(node, ctx, nestedQuery, typeEntry);
+    } else {
+        try ctx.thread.query.append(@as(u32, 0));
+    }
+    // i.* += header.includeSize; not nessecary for default
+}
 
 pub fn default(
     ctx: *Query.QueryCtx,
@@ -48,9 +72,11 @@ pub fn reference(
             try ctx.thread.query.append(header.prop);
             const resultByteSizeIndex = try ctx.thread.query.reserve(4);
             const startIndex = ctx.thread.query.index;
+
             try ctx.thread.query.append(ref.dst);
             const nestedQuery = q[i.* .. i.* + header.includeSize];
             try include.include(node, ctx, nestedQuery, typeEntry);
+
             ctx.thread.query.writeAs(
                 u32,
                 @truncate(ctx.thread.query.index - startIndex),

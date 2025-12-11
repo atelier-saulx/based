@@ -1954,13 +1954,14 @@ export const createQueryHeader = (header: QueryHeader): Uint8Array => {
 export type QueryHeaderSingle = {
   op: QueryTypeEnum
   typeId: TypeId
+  prop: number
   id: number
   filterSize: number
   includeSize: number
   aliasSize: number
 }
 
-export const QueryHeaderSingleByteSize = 13
+export const QueryHeaderSingleByteSize = 14
 
 export const writeQueryHeaderSingle = (
   buf: Uint8Array,
@@ -1971,6 +1972,8 @@ export const writeQueryHeaderSingle = (
   offset += 1
   writeUint16(buf, header.typeId, offset)
   offset += 2
+  buf[offset] = header.prop
+  offset += 1
   writeUint32(buf, header.id, offset)
   offset += 4
   writeUint16(buf, header.filterSize, offset)
@@ -1989,17 +1992,20 @@ export const writeQueryHeaderSingleProps = {
   typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
     writeUint16(buf, value, offset + 1)
   },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 3] = value
+  },
   id: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, value, offset + 3)
+    writeUint32(buf, value, offset + 4)
   },
   filterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 7)
+    writeUint16(buf, value, offset + 8)
   },
   includeSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 9)
+    writeUint16(buf, value, offset + 10)
   },
   aliasSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 11)
+    writeUint16(buf, value, offset + 12)
   },
 }
 
@@ -2010,10 +2016,11 @@ export const readQueryHeaderSingle = (
   const value: QueryHeaderSingle = {
     op: (buf[offset]) as QueryTypeEnum,
     typeId: (readUint16(buf, offset + 1)) as TypeId,
-    id: readUint32(buf, offset + 3),
-    filterSize: readUint16(buf, offset + 7),
-    includeSize: readUint16(buf, offset + 9),
-    aliasSize: readUint16(buf, offset + 11),
+    prop: buf[offset + 3],
+    id: readUint32(buf, offset + 4),
+    filterSize: readUint16(buf, offset + 8),
+    includeSize: readUint16(buf, offset + 10),
+    aliasSize: readUint16(buf, offset + 12),
   }
   return value
 }
@@ -2025,17 +2032,20 @@ export const readQueryHeaderSingleProps = {
   typeId: (buf: Uint8Array, offset: number): TypeId => {
     return (readUint16(buf, offset + 1)) as TypeId
   },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 3]
+  },
   id: (buf: Uint8Array, offset: number): number => {
-    return readUint32(buf, offset + 3)
+    return readUint32(buf, offset + 4)
   },
   filterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 7)
+    return readUint16(buf, offset + 8)
   },
   includeSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 9)
+    return readUint16(buf, offset + 10)
   },
   aliasSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 11)
+    return readUint16(buf, offset + 12)
   },
 }
 

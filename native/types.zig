@@ -609,6 +609,7 @@ pub const QueryHeader = packed struct {
 pub const QueryHeaderSingle = packed struct {
     op: QueryType,
     typeId: TypeId,
+    prop: u8,
     id: u32,
     filterSize: u16,
     includeSize: u16,
