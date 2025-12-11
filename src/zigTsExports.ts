@@ -1953,6 +1953,100 @@ export const createQueryHeader = (header: QueryHeader): Uint8Array => {
 
 export type QueryHeaderSingle = {
   op: QueryTypeEnum
+  typeId: TypeId
+  id: number
+  filterSize: number
+  includeSize: number
+  aliasSize: number
+}
+
+export const QueryHeaderSingleByteSize = 13
+
+export const writeQueryHeaderSingle = (
+  buf: Uint8Array,
+  header: QueryHeaderSingle,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  writeUint16(buf, header.typeId, offset)
+  offset += 2
+  writeUint32(buf, header.id, offset)
+  offset += 4
+  writeUint16(buf, header.filterSize, offset)
+  offset += 2
+  writeUint16(buf, header.includeSize, offset)
+  offset += 2
+  writeUint16(buf, header.aliasSize, offset)
+  offset += 2
+  return offset
+}
+
+export const writeQueryHeaderSingleProps = {
+  op: (buf: Uint8Array, value: QueryTypeEnum, offset: number) => {
+    buf[offset] = value
+  },
+  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, value, offset + 1)
+  },
+  id: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 3)
+  },
+  filterSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 7)
+  },
+  includeSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 9)
+  },
+  aliasSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 11)
+  },
+}
+
+export const readQueryHeaderSingle = (
+  buf: Uint8Array,
+  offset: number,
+): QueryHeaderSingle => {
+  const value: QueryHeaderSingle = {
+    op: (buf[offset]) as QueryTypeEnum,
+    typeId: (readUint16(buf, offset + 1)) as TypeId,
+    id: readUint32(buf, offset + 3),
+    filterSize: readUint16(buf, offset + 7),
+    includeSize: readUint16(buf, offset + 9),
+    aliasSize: readUint16(buf, offset + 11),
+  }
+  return value
+}
+
+export const readQueryHeaderSingleProps = {
+  op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
+    return (buf[offset]) as QueryTypeEnum
+  },
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset + 1)) as TypeId
+  },
+  id: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 3)
+  },
+  filterSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 7)
+  },
+  includeSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 9)
+  },
+  aliasSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 11)
+  },
+}
+
+export const createQueryHeaderSingle = (header: QueryHeaderSingle): Uint8Array => {
+  const buffer = new Uint8Array(QueryHeaderSingleByteSize)
+  writeQueryHeaderSingle(buffer, header, 0)
+  return buffer
+}
+
+export type QueryHeaderSingleReference = {
+  op: QueryTypeEnum
   prop: number
   typeId: TypeId
   edgeTypeId: TypeId
@@ -1962,11 +2056,11 @@ export type QueryHeaderSingle = {
   includeSize: number
 }
 
-export const QueryHeaderSingleByteSize = 14
+export const QueryHeaderSingleReferenceByteSize = 14
 
-export const writeQueryHeaderSingle = (
+export const writeQueryHeaderSingleReference = (
   buf: Uint8Array,
-  header: QueryHeaderSingle,
+  header: QueryHeaderSingleReference,
   offset: number,
 ): number => {
   buf[offset] = header.op
@@ -1988,7 +2082,7 @@ export const writeQueryHeaderSingle = (
   return offset
 }
 
-export const writeQueryHeaderSingleProps = {
+export const writeQueryHeaderSingleReferenceProps = {
   op: (buf: Uint8Array, value: QueryTypeEnum, offset: number) => {
     buf[offset] = value
   },
@@ -2015,11 +2109,11 @@ export const writeQueryHeaderSingleProps = {
   },
 }
 
-export const readQueryHeaderSingle = (
+export const readQueryHeaderSingleReference = (
   buf: Uint8Array,
   offset: number,
-): QueryHeaderSingle => {
-  const value: QueryHeaderSingle = {
+): QueryHeaderSingleReference => {
+  const value: QueryHeaderSingleReference = {
     op: (buf[offset]) as QueryTypeEnum,
     prop: buf[offset + 1],
     typeId: (readUint16(buf, offset + 2)) as TypeId,
@@ -2032,7 +2126,7 @@ export const readQueryHeaderSingle = (
   return value
 }
 
-export const readQueryHeaderSingleProps = {
+export const readQueryHeaderSingleReferenceProps = {
   op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
     return (buf[offset]) as QueryTypeEnum
   },
@@ -2059,9 +2153,9 @@ export const readQueryHeaderSingleProps = {
   },
 }
 
-export const createQueryHeaderSingle = (header: QueryHeaderSingle): Uint8Array => {
-  const buffer = new Uint8Array(QueryHeaderSingleByteSize)
-  writeQueryHeaderSingle(buffer, header, 0)
+export const createQueryHeaderSingleReference = (header: QueryHeaderSingleReference): Uint8Array => {
+  const buffer = new Uint8Array(QueryHeaderSingleReferenceByteSize)
+  writeQueryHeaderSingleReference(buffer, header, 0)
   return buffer
 }
 

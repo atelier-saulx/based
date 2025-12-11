@@ -124,27 +124,29 @@ await test('include', async (t) => {
 
   console.log('\n--------------------------\nStart query!!!!!!!!!')
 
-  const y = await db
-    .query('user')
-    // .locale('nl', ['no', 'de'])
-    // .include('body', { meta: true, end: 10 })
-    // .include('name', { meta: 'only' })
-    // .include('nr') //  'flap'
-    // .include('todos.id') // 'todos.$status'
+  await db.query('user', 1).include('id', 'name').range(0, 1).get().inspect()
 
-    // .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
-    // .include('nr')
-    .include('currentTodo')
-    // 'currentTodo.nr',
-    // .include(x)
-    .range(0, 1)
-    // .sort('nr', 'desc')
-    .get()
-    .debug()
+  // const y = await db
+  //   .query('user')
+  //   // .locale('nl', ['no', 'de'])
+  //   // .include('body', { meta: true, end: 10 })
+  //   // .include('name', { meta: 'only' })
+  //   // .include('nr') //  'flap'
+  //   // .include('todos.id') // 'todos.$status'
+
+  //   // .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
+  //   // .include('nr')
+  //   .include('currentTodo')
+  //   // 'currentTodo.nr',
+  //   // .include(x)
+  //   .range(0, 1)
+  //   // .sort('nr', 'desc')
+  //   .get()
+  //   .debug()
 
   // x.debug()
 
-  y.inspect()
+  // y.inspect()
 
   // console.log('drain done')
   // ;(

@@ -18,9 +18,11 @@ import {
   SortHeaderByteSize,
   writeQueryHeader,
   writeQueryHeaderSingle,
+  writeQueryHeaderSingleReference,
   writeSortHeader,
 } from '../../../zigTsExports.js'
 import { searchToBuffer } from '../search/index.js'
+import { debugBuffer } from '../../../sdk.js'
 
 export function defToBuffer(
   db: DbClient,
@@ -36,8 +38,40 @@ export function defToBuffer(
   const isReference = def.type === QueryDefType.Reference
 
   //  or id, alias
-  if (isReference) {
-    // change edges to just use this
+  if ('id' in def.target) {
+    const hasFilter = def.filter.size > 0
+    const filterSize = def.filter.size
+    const include = includeToBuffer(db, def)
+    for (const [, ref] of def.references) {
+      include.push(...defToBuffer(db, ref))
+      if (ref.errors) {
+        def.errors.push(...ref.errors)
+      }
+    }
+    const buffer = new Uint8Array(QueryHeaderSingleByteSize + filterSize)
+    const op: QueryTypeEnum = QueryType.id
+    let index = writeQueryHeaderSingle(
+      buffer,
+      {
+        op,
+        // @ts-ignore
+        id: def.target.id,
+        includeSize: byteSize(include),
+        typeId: def.schema!.id,
+        filterSize: def.filter.size,
+      },
+      0,
+    )
+    if (hasFilter) {
+      buffer.set(filterToBuffer(def.filter, index), index)
+      index += def.filter.size
+    }
+    // TODO: Need to pass correct stupid nested INDEX for NOW queries
+    result.push([
+      { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
+      include,
+    ])
+  } else if (isReference) {
     const hasFilter = def.filter.size > 0
     const filterSize = def.filter.size
     const include = includeToBuffer(db, def)
@@ -51,22 +85,25 @@ export function defToBuffer(
     let edge: IntermediateByteCode[] | undefined = undefined
     let edgeSize = 0
     if (def.edges) {
-      // needs to add the entire thing... (can have refs as well)
-      edge = includeToBuffer(db, def.edges)
-      if (edge) {
-        edgeSize = byteSize(edge)
+      edge = includeToBuffer(db, def.edges) || []
+      for (const [, ref] of def.edges.references) {
+        edge.push(...defToBuffer(db, ref))
+        if (ref.errors) {
+          def.errors.push(...ref.errors)
+        }
       }
+      edgeSize = byteSize(edge)
     }
     const buffer = new Uint8Array(QueryHeaderSingleByteSize + filterSize)
     const typeId: number = def.schema!.id
     const edgeTypeId: number =
       (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
     const op: QueryTypeEnum = QueryType.reference
-    let index = writeQueryHeaderSingle(
+    let index = writeQueryHeaderSingleReference(
       buffer,
       {
         op,
-        prop: isReference ? def.target.propDef!.prop : ID_PROP,
+        prop: def.target.propDef!.prop,
         includeSize,
         typeId,
         filterSize: def.filter.size,
@@ -106,7 +143,6 @@ export function defToBuffer(
     let edge: IntermediateByteCode[] = []
     let edgeSize = 0
     if (def.edges) {
-      // needs to add the entire thing... (can have refs as well)
       edge = includeToBuffer(db, def.edges) || []
       for (const [, ref] of def.edges.references) {
         edge.push(...defToBuffer(db, ref))
@@ -203,5 +239,6 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   combineIntermediateResults(res, 0, bufs)
   const queryId = crc32(res)
   writeUint32(res, queryId, 0)
+  debugBuffer(res)
   return res
 }

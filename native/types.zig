@@ -608,6 +608,15 @@ pub const QueryHeader = packed struct {
 
 pub const QueryHeaderSingle = packed struct {
     op: QueryType,
+    typeId: TypeId,
+    id: u32,
+    filterSize: u16,
+    includeSize: u16,
+    aliasSize: u16,
+};
+
+pub const QueryHeaderSingleReference = packed struct {
+    op: QueryType,
     prop: u8, // this is for ref
     typeId: TypeId,
     edgeTypeId: TypeId,
@@ -615,7 +624,6 @@ pub const QueryHeaderSingle = packed struct {
     edgeSize: u16,
     edgeFilterSize: u16,
     includeSize: u16, // cannot be more then 16kb? might be good enough
-    //  aliasSize: u16,
 };
 
 pub const FilterOp = enum(u8) {

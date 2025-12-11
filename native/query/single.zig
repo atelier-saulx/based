@@ -10,6 +10,25 @@ const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 const Sort = @import("../db/sort.zig");
 
+pub fn default(
+    ctx: *Query.QueryCtx,
+    q: []u8,
+) !void {
+    var i: usize = 0;
+    const header = utils.readNext(t.QueryHeaderSingle, q, &i);
+    const typeEntry = try Node.getType(ctx.db, header.typeId);
+    if (Node.getNode(typeEntry, header.id)) |node| {
+        try ctx.thread.query.append(@as(u32, 1));
+        try ctx.thread.query.append(t.ReadOp.id);
+        try ctx.thread.query.append(header.id);
+        const nestedQuery = q[i .. i + header.includeSize];
+        try include.include(node, ctx, nestedQuery, typeEntry);
+    } else {
+        try ctx.thread.query.append(@as(u32, 0));
+    }
+    // i.* += header.includeSize; not nessecary for default
+}
+
 pub fn reference(
     ctx: *Query.QueryCtx,
     q: []u8,
@@ -17,30 +36,21 @@ pub fn reference(
     fromType: Selva.Type,
     i: *usize,
 ) !void {
-    const header = utils.readNext(t.QueryHeaderSingle, q, i);
+    const header = utils.readNext(t.QueryHeaderSingleReference, q, i);
     const fs = try Schema.getFieldSchema(fromType, header.prop);
-    const ref = References.getSingleReference(from, fs);
 
-    std.debug.print("flap {any} \n", .{header});
-
-    // this can be shared ofc
-    if (ref) |r| {
+    // do we still need this?
+    if (References.getSingleReference(from, fs)) |ref| {
         const typeEntry = try Node.getType(ctx.db, header.typeId);
-        const n = Node.getNode(typeEntry, r.dst);
-
+        const n = Node.getNode(typeEntry, ref.dst);
         if (n) |node| {
             try ctx.thread.query.append(t.ReadOp.reference);
             try ctx.thread.query.append(header.prop);
-
             const resultByteSizeIndex = try ctx.thread.query.reserve(4);
             const startIndex = ctx.thread.query.index;
-
-            try ctx.thread.query.append(r.dst);
-
+            try ctx.thread.query.append(ref.dst);
             const nestedQuery = q[i.* .. i.* + header.includeSize];
-
             try include.include(node, ctx, nestedQuery, typeEntry);
-
             ctx.thread.query.writeAs(
                 u32,
                 @truncate(ctx.thread.query.index - startIndex),
@@ -49,6 +59,5 @@ pub fn reference(
         }
     }
 
-    // also add filter
     i.* += header.includeSize;
 }
