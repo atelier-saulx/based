@@ -9,6 +9,8 @@ const opts = @import("./opts.zig");
 const append = @import("./append.zig");
 const t = @import("../../types.zig");
 const multiple = @import("../multiple.zig");
+const single = @import("../single.zig");
+const References = @import("../../selva/references.zig");
 
 inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
     return Fields.get(
@@ -49,13 +51,7 @@ pub inline fn include(
 
         switch (op) {
             .reference => {
-                const header = utils.readNext(t.IncludeReferenceHeader, q, &i);
-                i += header.size;
-                // refs time
-                // get type entry and call include
-                // get node
-                // need recursion boundary prob...
-                std.debug.print("go get that snurp {any} \n", .{header});
+                recursionErrorBoundary(single.reference, node, ctx, q, typeEntry, &i);
             },
             .references => {
                 recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);

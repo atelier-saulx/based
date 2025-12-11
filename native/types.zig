@@ -529,12 +529,6 @@ pub const IncludeOp = enum(u8) {
     // ---------------------
 };
 
-pub const IncludeReferenceHeader = packed struct {
-    op: IncludeOp,
-    prop: u8,
-    size: u16,
-};
-
 pub const IncludeHeader = packed struct {
     op: IncludeOp,
     prop: u8,
@@ -595,20 +589,8 @@ pub const IncludeResponseMeta = packed struct {
 //     propType: PropType,
 // };
 
-pub const QuerySingleHeader = packed struct {
-    op: QueryType,
-    size: u16, // cannot be more then 16kb? might be good enough
-    typeId: TypeId,
-    id: u32,
-    filterSize: u16,
-    aliasSize: u16,
-    includeEdge: bool, // this just tells it in references that it needs to loop trhough edge + ref
-    _padding: u7,
-};
-
 pub const QueryHeader = packed struct {
     op: QueryType,
-    includeSize: u16, // cannot be more then 16kb? might be good enough
     prop: u8, // this is for ref
     typeId: TypeId,
     edgeTypeId: TypeId,
@@ -618,9 +600,22 @@ pub const QueryHeader = packed struct {
     searchSize: u16,
     edgeSize: u16,
     edgeFilterSize: u16,
+    includeSize: u16, // cannot be more then 16kb? might be good enough
     iteratorType: QueryIteratorType,
     sort: bool,
     _padding: u7,
+};
+
+pub const QueryHeaderSingle = packed struct {
+    op: QueryType,
+    prop: u8, // this is for ref
+    typeId: TypeId,
+    edgeTypeId: TypeId,
+    filterSize: u16,
+    edgeSize: u16,
+    edgeFilterSize: u16,
+    includeSize: u16, // cannot be more then 16kb? might be good enough
+    //  aliasSize: u16,
 };
 
 pub const FilterOp = enum(u8) {

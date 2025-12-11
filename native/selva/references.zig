@@ -225,6 +225,7 @@ pub fn swapReference(
     try errors.selva(selva.c.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
+// this should be gone
 pub fn getEdgeReference(
     db: *DbCtx,
     efc: Schema.EdgeFieldConstraint,

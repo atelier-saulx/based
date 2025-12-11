@@ -12,10 +12,12 @@ import {
   ID_PROP,
   PropType,
   QueryHeaderByteSize,
+  QueryHeaderSingleByteSize,
   QueryType,
   QueryTypeEnum,
   SortHeaderByteSize,
   writeQueryHeader,
+  writeQueryHeaderSingle,
   writeSortHeader,
 } from '../../../zigTsExports.js'
 import { searchToBuffer } from '../search/index.js'
@@ -31,50 +33,91 @@ export function defToBuffer(
     def.type === QueryDefType.Edge &&
     def.target.ref?.typeIndex === PropType.references
   const isRootDefault = def.type === QueryDefType.Root
+  const isReference = def.type === QueryDefType.Reference
 
-  if (isRootDefault || isReferences || isReferencesEdges) {
+  //  or id, alias
+  if (isReference) {
+    const hasFilter = def.filter.size > 0
+    const filterSize = def.filter.size
+    const include = includeToBuffer(db, def)
+    for (const [, ref] of def.references) {
+      include.push(...defToBuffer(db, ref))
+      if (ref.errors) {
+        def.errors.push(...ref.errors)
+      }
+    }
+    const includeSize = byteSize(include)
+    let edge: IntermediateByteCode[] | undefined = undefined
+    let edgeSize = 0
+    if (def.edges) {
+      edge = includeToBuffer(db, def.edges)
+      if (edge) {
+        edgeSize = byteSize(edge)
+      }
+    }
+    const buffer = new Uint8Array(QueryHeaderSingleByteSize + filterSize)
+    const typeId: number = def.schema!.id
+    const edgeTypeId: number =
+      (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
+    const op: QueryTypeEnum = QueryType.reference
+    let index = writeQueryHeaderSingle(
+      buffer,
+      {
+        op,
+        prop: isReference ? def.target.propDef!.prop : ID_PROP,
+        includeSize,
+        typeId,
+        filterSize: def.filter.size,
+        edgeTypeId,
+        edgeSize,
+        edgeFilterSize: 0, // this is nice
+      },
+      0,
+    )
+    if (hasFilter) {
+      buffer.set(filterToBuffer(def.filter, index), index)
+      index += def.filter.size
+    }
+    // TODO: Need to pass crrect stupid nested INDEX for NOW queries
+    result.push([
+      { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
+      include,
+    ])
+    if (edge) {
+      result.push(edge)
+    }
+  } else if (isRootDefault || isReferences || isReferencesEdges) {
     const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
     const hasSearch = !!def.search
     const hasFilter = def.filter.size > 0
     const searchSize = hasSearch ? def.search!.size : 0
     const sortSize = hasSort ? SortHeaderByteSize : 0
     const filterSize = def.filter.size
-
     const include = includeToBuffer(db, def)
-
     for (const [, ref] of def.references) {
-      // TODO: pass offset for NOW subscriptions
       include.push(...defToBuffer(db, ref))
       if (ref.errors) {
         def.errors.push(...ref.errors)
       }
     }
-
-    let edge: IntermediateByteCode[] | undefined = undefined
     const includeSize = byteSize(include)
+    let edge: IntermediateByteCode[] | undefined = undefined
     let edgeSize = 0
-
     if (def.edges) {
       edge = includeToBuffer(db, def.edges)
+      if (edge) {
+        edgeSize = byteSize(edge)
+      }
     }
-
-    if (edge) {
-      edgeSize = byteSize(edge)
-    }
-
     const buffer = new Uint8Array(
       QueryHeaderByteSize + searchSize + filterSize + sortSize,
     )
-
-    // @ts-ignore
     const typeId: number = def.schema!.id
-    // @ts-ignore
-    const edgeTypeId: number = isReferences && def.target.propDef.edgeNodeTypeId
-
+    const edgeTypeId: number =
+      (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
     const op: QueryTypeEnum = isReferences
       ? QueryType.references
       : QueryType.default
-
     let index = writeQueryHeader(
       buffer,
       {
@@ -94,32 +137,26 @@ export function defToBuffer(
       },
       0,
     )
-
     if (hasSort) {
       index = writeSortHeader(buffer, def.sort!, index)
     }
-
     if (hasFilter) {
       buffer.set(filterToBuffer(def.filter, index), index)
       index += def.filter.size
     }
-
     if (hasSearch) {
       buffer.set(searchToBuffer(def.search!), index)
     }
-
     // TODO: Need to pass crrect stupid nested INDEX for NOW queries
     result.push([
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
       include,
     ])
-
     if (edge) {
-      // console.log({ edge })
       result.push(edge)
     }
   } else {
-    // flap
+    console.error('UNHANDLED QUERY TYPE')
   }
 
   return result

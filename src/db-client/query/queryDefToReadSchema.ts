@@ -8,7 +8,6 @@ import {
   type ReaderPropDef,
   type ReaderSchema,
 } from '../../protocol/index.js'
-import { read } from 'fs'
 
 const createReaderPropDef = (
   p: PropDef | PropDefEdge,
@@ -161,7 +160,9 @@ export const convertToReaderSchema = (
     for (const [k, v] of q.include.props) {
       readerSchema.props[k] = createReaderPropDef(v.def, locales, v.opts)
     }
+
     readerSchema.main.len = q.include.main.len
+
     for (const [start, p, opts] of q.include.main.include.values()) {
       readerSchema.main.props[start] = createReaderPropDef(p, locales, opts)
     }

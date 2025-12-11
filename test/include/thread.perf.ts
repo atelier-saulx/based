@@ -26,6 +26,9 @@ await test('include', async (t) => {
         props: {
           name: 'string',
           nr: { type: 'uint32' },
+          workingOnIt: {
+            items: { ref: 'user', prop: 'currentTodo' },
+          },
 
           // creator: { ref: 'user', prop: 'createdTodos' },
           assignees: {
@@ -44,7 +47,7 @@ await test('include', async (t) => {
           name: 'string',
           currentTodo: {
             ref: 'todo',
-            prop: 'currentTodos',
+            prop: 'workingOnIt',
           },
           todos: { items: { ref: 'todo', prop: 'assignees' } },
           nr: { type: 'uint32' },
@@ -62,12 +65,12 @@ await test('include', async (t) => {
   console.log('SCHEMA DONE')
 
   const todo = await db.create('todo', {
-    name: 'TODO A',
+    name: 'a',
     nr: 67,
   })
 
   const todo2 = await db.create('todo', {
-    name: 'TODO B',
+    name: 'b',
     nr: 68,
   })
 
@@ -130,11 +133,14 @@ await test('include', async (t) => {
     // .include('todos.id') // 'todos.$status'
 
     // .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
-    .include('nr')
+    // .include('nr')
     .include('currentTodo')
-    .range(0, 100)
+    // 'currentTodo.nr',
+    // .include(x)
+    .range(0, 1)
     // .sort('nr', 'desc')
     .get()
+    .debug()
 
   // x.debug()
 
@@ -157,7 +163,7 @@ await test('include', async (t) => {
 
   // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 10; i++) {
