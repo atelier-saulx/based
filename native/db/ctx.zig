@@ -51,7 +51,6 @@ pub fn createDbCtx(
     nrThreads: u16,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
-    errdefer db_backing_allocator.destroy(arena);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const dbCtxPointer = try allocator.create(DbCtx);
@@ -66,7 +65,6 @@ pub fn createDbCtx(
 
     errdefer {
         arena.deinit();
-        db_backing_allocator.destroy(arena);
     }
 
     // config thread amount
@@ -118,5 +116,4 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     selva.selva_db_destroy(ctx.selva);
     ctx.selva = null;
     ctx.arena.deinit();
-    db_backing_allocator.destroy(ctx.arena);
 }
