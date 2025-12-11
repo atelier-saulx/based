@@ -381,12 +381,6 @@ pub const LangCode = enum(u8) {
 pub const MAIN_PROP: u8 = 0;
 pub const ID_PROP: u8 = 255;
 
-pub const ReadRefOp = enum(u8) {
-    references = @intFromEnum(ReadOp.references),
-    reference = @intFromEnum(ReadOp.reference),
-    none = @intFromEnum(ReadOp.none),
-};
-
 pub const ResultType = enum(u8) {
     default = 0,
     references = 1,

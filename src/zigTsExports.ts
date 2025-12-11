@@ -832,25 +832,6 @@ export type LangCodeEnum = (typeof LangCode)[keyof typeof LangCode]
 export const MAIN_PROP = 0
 export const ID_PROP = 255
 
-export const ReadRefOp = {
-  references: ReadOp.references,
-  reference: ReadOp.reference,
-  none: ReadOp.none,
-} as const
-
-export const ReadRefOpInverse = {
-  [ReadOp.references]: 'references',
-  [ReadOp.reference]: 'reference',
-  [ReadOp.none]: 'none',
-} as const
-
-/**
-  references, 
-  reference, 
-  none 
- */
-export type ReadRefOpEnum = (typeof ReadRefOp)[keyof typeof ReadRefOp]
-
 export const ResultType = {
   default: 0,
   references: 1,
