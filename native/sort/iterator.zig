@@ -9,6 +9,8 @@ const Schema = @import("../selva/schema.zig");
 const Fields = @import("../selva/fields.zig");
 const Thread = @import("../thread/thread.zig");
 const Sort = @import("./sort.zig");
+const std = @import("std");
+const jemalloc = @import("../jemalloc.zig");
 
 fn SortIterator(
     comptime desc: bool,
@@ -18,6 +20,17 @@ fn SortIterator(
         return struct {
             index: *SortIndexMeta,
             it: selva.SelvaSortIterator,
+
+            pub fn deinit(self: *SortIterator(desc, true)) void {
+                // std.debug.print("{any} \n", .{self});
+                // this is rly rly bad ofc...
+                self.it = undefined;
+                while (self.nextRef()) |ref| {
+                    jemalloc.free(ref);
+                }
+                selva.selva_sort_destroy(self.index.index);
+            }
+
             pub fn next(self: *SortIterator(desc, true)) ?Node.Node {
                 // not supert big fan of this
                 if (selva.selva_sort_foreach_done(&self.it)) {
@@ -34,21 +47,33 @@ fn SortIterator(
                 }
                 return null;
             }
+
             pub fn nextRef(self: *SortIterator(desc, true)) ?*References.ReferencesIteratorEdgesResult {
                 if (selva.selva_sort_foreach_done(&self.it)) {
                     return null;
                 }
                 if (desc) {
-                    return @ptrCast(@alignCast(selva.selva_sort_foreach_reverse(self.index.index, &self.it)));
+                    if (selva.selva_sort_foreach_reverse(self.index.index, &self.it)) |i| {
+                        return @ptrCast(@alignCast(i));
+                    }
                 } else {
-                    return @ptrCast(@alignCast(selva.selva_sort_foreach(self.index.index, &self.it)));
+                    if (selva.selva_sort_foreach(self.index.index, &self.it)) |i| {
+                        return @ptrCast(@alignCast(i));
+                    }
                 }
+                return null;
             }
         };
     } else {
         return struct {
             index: *SortIndexMeta,
             it: selva.SelvaSortIterator,
+
+            pub fn deinit(self: *SortIterator(desc, false)) void {
+                // std.debug.print("{any} \n", .{self});
+                selva.selva_sort_destroy(self.index.index);
+            }
+
             pub fn next(self: *SortIterator(desc, false)) ?Node.Node {
                 if (selva.selva_sort_foreach_done(&self.it)) {
                     return null;
@@ -103,7 +128,14 @@ fn fillSortIndex(
             else
                 Fields.get(typeEntry, node, fieldSchema, header.propType);
             // TODO: this ref needs to be allocated in certain situations
-            Sort.insert(decompressor, sortIndex, data, &ref);
+            // dont want struct
+            // this is ofc very not nice...
+            // prob want something in selva
+            var r = jemalloc.create(References.ReferencesIteratorEdgesResult);
+            r.node = ref.node;
+            r.edge = ref.edge;
+
+            Sort.insert(decompressor, sortIndex, data, r);
         }
     } else {
         while (it.*.next()) |node| {

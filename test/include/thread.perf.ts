@@ -129,14 +129,17 @@ await test('include', async (t) => {
 
   // await db.query('user', 1).include('id', 'name').get().inspect()
   await db
+    // .query('user')
     .query('user', { email: 'beerdejim+10@gmail.com' })
-    .include('id', 'name')
+    // .include('id', 'todos.$status')
+    .range(0, 1)
+
     .include((t) => {
-      t('todos').include('nr').sort('nr') // 'desc'
+      t('todos').include('nr', '$status').sort('nr') // 'desc'
     })
     .get()
     .inspect()
-
+    .debug()
   // const idBufs: any = []
   // for (let i = 0; i < 1000; i++) {
   //   idBufs.push(registerQuery(db.query('user', i + 1).include('id', 'name')))

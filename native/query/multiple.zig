@@ -39,7 +39,7 @@ fn iterator(
 }
 
 fn iteratorEdge(
-    comptime itType: t.QueryIteratorType,
+    comptime _: t.QueryIteratorType,
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
@@ -50,10 +50,7 @@ fn iteratorEdge(
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
     const nestedQuery = q[i.* .. i.* + header.includeSize];
-    const edgeTypeEntry = if (itType == t.QueryIteratorType.edgeInclude)
-        try Node.getType(ctx.db, header.edgeTypeId)
-    else
-        void;
+    const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
     const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
     while (it.nextRef()) |ref| {
         if (offset != 0) {
@@ -65,11 +62,16 @@ fn iteratorEdge(
         try include.include(ref.node, ctx, nestedQuery, typeEntry);
         try ctx.thread.query.append(t.ReadOp.edge);
         try include.include(ref.edge, ctx, edgeQuery, edgeTypeEntry);
+        // std.debug.print("REF -> {any} \n", .{ ref, edgeQuery });
+
         nodeCnt += 1;
         if (nodeCnt >= header.limit) {
             break;
         }
     }
+
+    i.* += header.edgeSize;
+
     return nodeCnt;
 }
 
@@ -142,18 +144,21 @@ pub fn references(
             var refs = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
             var it = try Sort.fromIterator(false, false, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
         },
         .edgeSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, i);
             var refs = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             var it = try Sort.fromIterator(false, false, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
         },
         .edgeIncludeSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, i);
             var refs = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             var it = try Sort.fromIterator(false, true, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
         },
 
         else => {},
