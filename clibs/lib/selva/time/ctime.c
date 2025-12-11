@@ -11,8 +11,8 @@
 
 struct timespec *msec2timespec(struct timespec * ts, int64_t msec)
 {
-    const int64_t sec_msec = (int64_t)1000;
-    const int64_t nsec_msec = (int64_t)1000000;
+    constexpr int64_t sec_msec = (int64_t)1000;
+    constexpr int64_t nsec_msec = (int64_t)1000000;
     int mod;
 
     mod = msec % sec_msec;
@@ -24,7 +24,7 @@ struct timespec *msec2timespec(struct timespec * ts, int64_t msec)
 
 struct timespec *nsec2timespec(struct timespec * ts, int64_t nsec)
 {
-    const int64_t sec_nsec = (int64_t)1000000000;
+    constexpr int64_t sec_nsec = (int64_t)1000000000;
     int64_t mod;
 
     mod = nsec % sec_nsec;
@@ -48,7 +48,7 @@ void timespec_add(struct timespec * sum, const struct timespec * left,
 void timespec_sub(struct timespec * diff, const struct timespec * left,
                   const struct timespec * right)
 {
-    const int64_t sec_nsec = (int64_t)1000000000;
+    constexpr int64_t sec_nsec = (int64_t)1000000000;
     struct timespec ts;
 
     diff->tv_sec = left->tv_sec - right->tv_sec;

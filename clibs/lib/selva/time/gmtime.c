@@ -12,27 +12,27 @@
 #include <tgmath.h>
 #include "selva/gmtime.h"
 
-#define SECS_PER_MIN    60
-#define MINS_PER_HOUR   60
-#define HOURS_PER_DAY   24
-#define DAYS_PER_WEEK   7
-#define DAYS_PER_NYEAR  365
-#define DAYS_PER_LYEAR  366
-#define SECS_PER_HOUR   (SECS_PER_MIN * MINS_PER_HOUR)
-#define SECS_PER_DAY    ((long) SECS_PER_HOUR * HOURS_PER_DAY)
-#define MONS_PER_YEAR   12
-#define SECS_PER_YEAR   31'556'926 /* avg accounting leap year. */
+static constexpr int64_t SECS_PER_MIN   = 60;
+static constexpr int64_t MINS_PER_HOUR  = 60;
+static constexpr int64_t HOURS_PER_DAY  = 24;
+static constexpr int64_t DAYS_PER_WEEK  = 7;
+static constexpr int64_t DAYS_PER_NYEAR = 365;
+static constexpr int64_t DAYS_PER_LYEAR = 366;
+static constexpr int64_t SECS_PER_HOUR  = (SECS_PER_MIN * MINS_PER_HOUR);
+static constexpr int64_t SECS_PER_DAY   = ((long) SECS_PER_HOUR * HOURS_PER_DAY);
+static constexpr int64_t MONS_PER_YEAR  = 12;
+static constexpr int64_t SECS_PER_YEAR  = 31'556'926; /* avg accounting leap year. */
 
-#define EPOCH_WDAY      SELVA_TM_THURSDAY
+static constexpr int64_t EPOCH_WDAY = SELVA_TM_THURSDAY;
 
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
-static const int64_t mon_lengths[2][MONS_PER_YEAR] = {
+static constexpr int64_t mon_lengths[2][MONS_PER_YEAR] = {
     { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
     { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
 };
 
-static const int64_t year_lengths[2] = {
+static constexpr int64_t year_lengths[2] = {
     DAYS_PER_NYEAR, DAYS_PER_LYEAR
 };
 
@@ -245,7 +245,7 @@ static int32_t weeks(int32_t year)
 
 #define TM0_ARR_BEGIN 2021
 #define TM0_ARR_END   2027
-static const struct selva_tm tm0_arr[] = {
+static constexpr struct selva_tm tm0_arr[] = {
     { .tm_sec = 42, .tm_min = 19, .tm_hour = 19, .tm_mday = 4, .tm_mon = 0, .tm_year = 2027, .tm_wday = 1, .tm_yday = 3, .tm_yleap = 0, }, /* 2027 */
     { .tm_sec = 56, .tm_min = 30, .tm_hour = 13, .tm_mday = 4, .tm_mon = 0, .tm_year = 2026, .tm_wday = 0, .tm_yday = 3, .tm_yleap = 0, }, /* 2026 */
     { .tm_sec = 10, .tm_min = 42, .tm_hour = 7,  .tm_mday = 4, .tm_mon = 0, .tm_year = 2025, .tm_wday = 6, .tm_yday = 3, .tm_yleap = 0, }, /* 2025 */

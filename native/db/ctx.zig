@@ -111,6 +111,7 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
         ctx.ids = &[_]u32{};
     }
 
+    std.heap.raw_c_allocator.free(ctx.subscriptions.singleIdMarked);
     deflate.destroyDecompressor(ctx.decompressor);
     deflate.deinitBlockState(&ctx.libdeflateBlockState);
 
