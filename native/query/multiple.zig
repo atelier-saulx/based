@@ -141,17 +141,33 @@ pub fn references(
 
     switch (header.iteratorType) {
         .edgeInclude => {
-            var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
+            var it = try References.iterator(false, .iterable, ctx.db, from, header.prop, fromType);
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },
         .edge => {
-            var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iteratorEdge(.edge, ctx, q, &it, &header, typeEntry, i);
-        },
-        .default => {
-            var it = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
+            var it = try References.iterator(false, .nonIterable, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
+        .default => {
+            var it = try References.iterator(false, .none, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+        },
+        .sort => {
+            std.debug.print("DERP\n", .{});
+            const sortHeader = utils.readNext(t.SortHeader, q, i);
+            var inputIt = try References.iterator(false, .none, ctx.db, from, header.prop, fromType);
+            var it = try Sort.fromIterator(false, ctx.db, ctx.thread, typeEntry, &sortHeader, &inputIt);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+        },
+        .edgeSort => {
+            std.debug.print("DERP?\n", .{});
+            std.debug.print("DERP\n", .{});
+            const sortHeader = utils.readNext(t.SortHeader, q, i);
+            var inputIt = try References.iterator(false, .nonIterable, ctx.db, from, header.prop, fromType);
+            var it = try Sort.fromIterator(false, ctx.db, ctx.thread, typeEntry, &sortHeader, &inputIt);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+        },
+
         else => {},
     }
 

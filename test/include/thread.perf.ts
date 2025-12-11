@@ -68,12 +68,17 @@ await test('include', async (t) => {
 
   const todo = await db.create('todo', {
     name: 'a',
-    nr: 67,
+    nr: 68,
   })
 
   const todo2 = await db.create('todo', {
     name: 'b',
-    nr: 68,
+    nr: 67,
+  })
+
+  const todo3 = await db.create('todo', {
+    name: 'c',
+    nr: 999,
   })
 
   console.log({ todo, todo2 })
@@ -96,7 +101,8 @@ await test('include', async (t) => {
       todos: [
         // need to write an 8 byte empty thing for edges
         { id: todo, $status: 'blocked' }, //  $name: 'bla'
-        // { id: todo2, $status: 'nothing' }, //  $name: 'blurf'
+        { id: todo2, $status: 'nothing' }, //  $name: 'blurf'
+        { id: todo3, $status: 'blocked' },
         // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
       ],
       // todos: [todo, todo2], // this doesnot work with edges...
@@ -125,6 +131,9 @@ await test('include', async (t) => {
   await db
     .query('user', { email: 'beerdejim+10@gmail.com' })
     .include('id', 'name')
+    .include((t) => {
+      t('todos').include('nr').sort('nr') // 'desc'
+    })
     .get()
     .inspect()
 

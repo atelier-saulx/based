@@ -73,8 +73,6 @@ pub fn reference(
 ) !void {
     const header = utils.readNext(t.QueryHeaderSingleReference, q, i);
     const fs = try Schema.getFieldSchema(fromType, header.prop);
-
-    // do we still need this?
     if (References.getSingleReference(from, fs)) |ref| {
         const typeEntry = try Node.getType(ctx.db, header.typeId);
         const n = Node.getNode(typeEntry, ref.dst);
@@ -83,11 +81,9 @@ pub fn reference(
             try ctx.thread.query.append(header.prop);
             const resultByteSizeIndex = try ctx.thread.query.reserve(4);
             const startIndex = ctx.thread.query.index;
-
             try ctx.thread.query.append(ref.dst);
             const nestedQuery = q[i.* .. i.* + header.includeSize];
             try include.include(node, ctx, nestedQuery, typeEntry);
-
             ctx.thread.query.writeAs(
                 u32,
                 @truncate(ctx.thread.query.index - startIndex),

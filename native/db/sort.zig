@@ -48,7 +48,7 @@ inline fn getTextKey(
     return @as(u16, @bitCast([_]u8{ field, @intFromEnum(lang) }));
 }
 
-fn getSortFlag(sortFieldType: t.PropType, desc: bool) !selva.SelvaSortOrder {
+fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
     switch (sortFieldType) {
         t.PropType.int8,
         t.PropType.uint8,
@@ -60,25 +60,13 @@ fn getSortFlag(sortFieldType: t.PropType, desc: bool) !selva.SelvaSortOrder {
         t.PropType.@"enum",
         t.PropType.cardinality,
         => {
-            if (desc) {
-                return selva.SELVA_SORT_ORDER_I64_DESC;
-            } else {
-                return selva.SELVA_SORT_ORDER_I64_ASC;
-            }
+            return selva.SELVA_SORT_ORDER_I64_ASC;
         },
         t.PropType.number, t.PropType.timestamp => {
-            if (desc) {
-                return selva.SELVA_SORT_ORDER_DOUBLE_DESC;
-            } else {
-                return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
-            }
+            return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
         },
         t.PropType.string, t.PropType.text, t.PropType.alias, t.PropType.binary => {
-            if (desc) {
-                return selva.SELVA_SORT_ORDER_BUFFER_DESC;
-            } else {
-                return selva.SELVA_SORT_ORDER_BUFFER_ASC;
-            }
+            return selva.SELVA_SORT_ORDER_BUFFER_ASC;
         },
         else => {
             return errors.DbError.WRONG_SORTFIELD_TYPE;
@@ -88,9 +76,8 @@ fn getSortFlag(sortFieldType: t.PropType, desc: bool) !selva.SelvaSortOrder {
 
 pub fn createSortIndexMeta(
     header: *const t.SortHeader,
-    desc: bool,
 ) !SortIndexMeta {
-    const sortFlag = try getSortFlag(header.propType, desc);
+    const sortFlag = try getSortFlag(header.propType);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, 0).?;
     const s: SortIndexMeta = .{
         .len = header.len,
@@ -108,7 +95,6 @@ fn getOrCreateFromCtx(
     dbCtx: *DbCtx,
     typeId: t.TypeId,
     sortHeader: *const t.SortHeader,
-    comptime desc: bool,
 ) !*SortIndexMeta {
     var sortIndex: ?*SortIndexMeta = undefined;
     var typeIndexes: ?*TypeIndex = dbCtx.sortIndexes.get(typeId);
@@ -125,7 +111,7 @@ fn getOrCreateFromCtx(
     sortIndex = getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang);
     if (sortIndex == null) {
         sortIndex = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = try createSortIndexMeta(sortHeader, desc);
+        sortIndex.?.* = try createSortIndexMeta(sortHeader);
         if (sortHeader.prop == 0) {
             try tI.main.put(sortHeader.start, sortIndex.?);
         } else if (sortHeader.propType == t.PropType.text) {
@@ -135,52 +121,6 @@ fn getOrCreateFromCtx(
         }
     }
     return sortIndex.?;
-}
-
-pub fn createSortIndex(
-    dbCtx: *DbCtx,
-    decompressor: *deflate.Decompressor,
-    typeId: t.TypeId,
-    header: *const t.SortHeader,
-    comptime defrag: bool,
-    comptime desc: bool,
-    comptime fromQueryThread: bool,
-) !*SortIndexMeta {
-    const sortIndex = try getOrCreateFromCtx(dbCtx, typeId, header, desc);
-    const typeEntry = try Node.getType(dbCtx, typeId);
-    const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-
-    if (fromQueryThread) {
-        dbCtx.threads.mutex.unlock();
-    }
-
-    // fill sort index needs to a special field
-    var node = Node.getFirstNode(typeEntry);
-    var first = true;
-    while (node != null) {
-        if (first) {
-            first = false;
-        } else {
-            node = Node.getNextNode(typeEntry, node.?);
-        }
-        if (node == null) {
-            break;
-        }
-        const data = if (header.propType == t.PropType.text)
-            Fields.getText(typeEntry, node.?, fieldSchema, header.propType, header.lang)
-        else
-            Fields.get(typeEntry, node.?, fieldSchema, header.propType);
-        insert(decompressor, sortIndex, data, node.?);
-    }
-    if (defrag) {
-        _ = selva.selva_sort_defrag(sortIndex.index);
-    }
-
-    if (fromQueryThread) {
-        dbCtx.threads.mutex.lock();
-    }
-    sortIndex.isCreated = true;
-    return sortIndex;
 }
 
 pub fn destroySortIndex(
@@ -370,7 +310,7 @@ pub fn insert(
     };
 }
 
-pub fn SortIterator(
+fn SortIterator(
     comptime desc: bool,
 ) type {
     return struct {
@@ -389,52 +329,110 @@ pub fn SortIterator(
     };
 }
 
-// add iterator enum
-pub fn iterator(
+inline fn createIterator(
     comptime desc: bool,
-    dbCtx: *DbCtx,
-    thread: *Thread.Thread,
-    typeId: t.TypeId,
-    sortHeader: *const t.SortHeader,
-) !SortIterator(desc) {
-    var sortIndex: *SortIndexMeta = undefined;
-    dbCtx.threads.mutex.lock();
-    if (getSortIndex(
-        dbCtx.sortIndexes.get(typeId),
-        sortHeader.prop,
-        sortHeader.start,
-        sortHeader.lang,
-    )) |sortMetaIndex| {
-        if (sortMetaIndex.isCreated == false) {
-            std.debug.print("LETS WAIT FOR SORT \n", .{});
-            dbCtx.threads.sortDone.wait(&dbCtx.threads.mutex);
-        }
-        sortIndex = sortMetaIndex;
-        dbCtx.threads.mutex.unlock();
-    } else {
-        std.debug.print("MAKE SORT \n", .{});
-        sortIndex = try createSortIndex(
-            dbCtx,
-            thread.decompressor,
-            typeId,
-            sortHeader,
-            true,
-            false,
-            true,
-        );
-        dbCtx.threads.sortDone.broadcast();
-        dbCtx.threads.mutex.unlock();
-    }
-
+    sortIndex: *SortIndexMeta,
+) SortIterator(desc) {
     var it: selva.SelvaSortIterator = undefined;
     if (desc) {
         selva.selva_sort_foreach_begin_reverse(sortIndex.index, &it);
     } else {
         selva.selva_sort_foreach_begin(sortIndex.index, &it);
     }
-
     return SortIterator(desc){
         .it = it,
         .index = sortIndex,
     };
+}
+
+fn fillSortIndex(
+    sortIndex: *SortIndexMeta,
+    dbCtx: *DbCtx,
+    decompressor: *deflate.Decompressor,
+    header: *const t.SortHeader,
+    typeEntry: Node.Type,
+    it: anytype,
+    comptime defrag: bool,
+    comptime isLocked: bool,
+) !void {
+    const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+    if (isLocked) {
+        dbCtx.threads.mutex.unlock();
+    }
+    while (it.*.next()) |node| {
+        const data = if (header.propType == t.PropType.text)
+            Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
+        else
+            Fields.get(typeEntry, node, fieldSchema, header.propType);
+        insert(decompressor, sortIndex, data, node);
+    }
+    if (defrag) {
+        _ = selva.selva_sort_defrag(sortIndex.index);
+    }
+    if (isLocked) {
+        dbCtx.threads.mutex.lock();
+    }
+    sortIndex.isCreated = true;
+}
+
+pub fn fromIterator(
+    comptime desc: bool,
+    dbCtx: *DbCtx,
+    thread: *Thread.Thread,
+    typeEntry: Node.Type,
+    header: *const t.SortHeader,
+    it: anytype,
+) !SortIterator(desc) {
+    var sortIndex = try createSortIndexMeta(header);
+    try fillSortIndex(
+        &sortIndex,
+        dbCtx,
+        thread.decompressor,
+        header,
+        typeEntry,
+        &it,
+        false,
+        false,
+    );
+    return createIterator(desc, &sortIndex);
+}
+
+pub fn iterator(
+    comptime desc: bool,
+    dbCtx: *DbCtx,
+    thread: *Thread.Thread,
+    typeId: t.TypeId,
+    header: *const t.SortHeader,
+) !SortIterator(desc) {
+    var sortIndex: *SortIndexMeta = undefined;
+    dbCtx.threads.mutex.lock();
+    if (getSortIndex(
+        dbCtx.sortIndexes.get(typeId),
+        header.prop,
+        header.start,
+        header.lang,
+    )) |sortMetaIndex| {
+        if (sortMetaIndex.isCreated == false) {
+            dbCtx.threads.sortDone.wait(&dbCtx.threads.mutex);
+        }
+        sortIndex = sortMetaIndex;
+        dbCtx.threads.mutex.unlock();
+    } else {
+        const typeEntry = try Node.getType(dbCtx, typeId);
+        var it = Node.iterator(false, typeEntry);
+        sortIndex = try getOrCreateFromCtx(dbCtx, typeId, header);
+        try fillSortIndex(
+            sortIndex,
+            dbCtx,
+            thread.decompressor,
+            header,
+            typeEntry,
+            &it,
+            true,
+            true,
+        );
+        dbCtx.threads.sortDone.broadcast();
+        dbCtx.threads.mutex.unlock();
+    }
+    return createIterator(desc, sortIndex);
 }
