@@ -85,7 +85,7 @@ await test('include', async (t) => {
       nr4: 1e5 - i,
       nr5: 1e5 - i,
       nr6: 1e5 - i,
-
+      name: 'mr snurp ' + i,
       currentTodo: todo,
       // name: 'A',
       // flap: '⚡️',
@@ -133,7 +133,7 @@ await test('include', async (t) => {
     .include('nr')
     .include('currentTodo')
     .range(0, 100)
-    .sort('nr', 'desc')
+    // .sort('nr', 'desc')
     .get()
 
   // x.debug()
@@ -157,18 +157,20 @@ await test('include', async (t) => {
 
   // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1; i++) {
+      for (let i = 0; i < 10; i++) {
         q.push(
           db
             .query('user')
             .include('id')
             .include('name')
             .range(0, 1e5 + i)
-            .sort(x[i % x.length])
+            // .sort(x[i % x.length])
+
             .get(),
+          // .inspect(),
         )
       }
       await Promise.all(q)

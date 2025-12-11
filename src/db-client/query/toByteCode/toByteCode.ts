@@ -32,17 +32,6 @@ export function defToBuffer(
     def.target.ref?.typeIndex === PropType.references
   const isRootDefault = def.type === QueryDefType.Root
 
-  // if (def.target.resolvedAlias) {
-  // } else if (typeof def.target.id === 'number') {
-  // } else if (def.target.ids) {
-  // } else {
-  // else if (def.type === QueryDefType.Reference) {
-  //   // result.push(referenceQuery(def, size))
-  // }
-
-  // edges as well
-  console.log('GO GET DAT SINGLE REF', def.type === QueryDefType.Reference)
-
   if (isRootDefault || isReferences || isReferencesEdges) {
     const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
     const hasSearch = !!def.search

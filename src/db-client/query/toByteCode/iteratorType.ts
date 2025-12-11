@@ -17,7 +17,7 @@ export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
   const hasFilter = def.filter.size > 0
   const isDesc = def.sort?.order === SortOrder.desc
   const edgeInclude = def.edges
-  const hasSort = def.sort?.prop !== ID_PROP
+  const hasSort = def.sort && def.sort.prop !== ID_PROP
   const hasEdges =
     def.type === QueryDefType.References &&
     // @ts-ignore
