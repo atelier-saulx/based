@@ -30,7 +30,7 @@ pub fn alias(
         }
         try ctx.thread.query.append(@as(u32, 1));
         try ctx.thread.query.append(t.ReadOp.id);
-        try ctx.thread.query.append(header.id);
+        try ctx.thread.query.append(Node.getNodeId(node));
         const nestedQuery = q[i .. i + header.includeSize];
         try include.include(node, ctx, nestedQuery, typeEntry);
     } else {
@@ -63,6 +63,7 @@ pub fn default(
     // i.* += header.includeSize; not nessecary for default
 }
 
+// prob add REF+EDGE include as an option
 pub fn reference(
     ctx: *Query.QueryCtx,
     q: []u8,
