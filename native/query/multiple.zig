@@ -8,7 +8,7 @@ const Selva = @import("../selva/selva.zig");
 const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
-const Sort = @import("../db/sort.zig");
+const Sort = @import("../sort/sort.zig");
 
 fn iterator(
     comptime _: t.QueryIteratorType,
@@ -82,7 +82,6 @@ pub fn default(
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;
-
     switch (header.iteratorType) {
         .default => {
             var it = Node.iterator(false, typeEntry);
@@ -104,9 +103,7 @@ pub fn default(
         },
         else => {},
     }
-
     // i.* += header.includeSize; not nessecary scince its top level
-
     ctx.thread.query.write(nodeCnt, sizeIndex);
 }
 
@@ -155,7 +152,6 @@ pub fn references(
         .edgeIncludeSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, i);
             var refs = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            // it has to store edge as well
             var it = try Sort.fromIterator(false, true, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },

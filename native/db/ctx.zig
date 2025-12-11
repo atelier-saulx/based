@@ -8,7 +8,7 @@ const SelvaError = @import("../errors.zig").SelvaError;
 const Subscription = @import("./subscription/common.zig");
 const jsBridge = @import("../thread/jsBridge.zig");
 const threads = @import("../thread/thread.zig");
-const sort = @import("./sort.zig");
+const sort = @import("../sort/sort.zig");
 
 const rand = std.crypto.random;
 

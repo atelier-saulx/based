@@ -1,6 +1,5 @@
 const std = @import("std");
 const jsBridge = @import("jsBridge.zig");
-const sort = @import("../db/sort.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const utils = @import("../utils.zig");
 const Modify = @import("../modify/modify.zig");
@@ -9,7 +8,6 @@ const selva = @import("../selva/selva.zig").c;
 const dump = @import("../selva/dump.zig");
 const info = @import("../selva/info.zig");
 const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
-const deflate = @import("../deflate.zig");
 const common = @import("common.zig");
 const t = @import("../types.zig");
 
