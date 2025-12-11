@@ -1,4 +1,4 @@
-import { BasedDb, save } from '../../index.js'
+import { BasedDb, initDefaultSubscriptions, save } from '../../index.js'
 import { dirname, join } from 'path'
 import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
@@ -178,6 +178,27 @@ export const migrate = async (
     rangesToMigrate.push({ typeId, start, end })
   })
 
+  rangesToMigrate.sort((a, b) => {
+    const typeA = server.schemaTypesParsedById[a.typeId]
+    const typeB = server.schemaTypesParsedById[b.typeId]
+
+    for (const k in typeA.props) {
+      const prop = typeA.props[k]
+      if (prop.dependent && prop.inverseTypeName === typeB.type) {
+        return 1
+      }
+    }
+
+    for (const k in typeB.props) {
+      const prop = typeB.props[k]
+      if (prop.dependent && prop.inverseTypeName === typeA.type) {
+        return -1
+      }
+    }
+
+    return 0
+  })
+
   await waitUntilSleeping(workerState)
   while (i < rangesToMigrate.length) {
     if (abort()) {
@@ -216,6 +237,7 @@ export const migrate = async (
 
   server.dbCtxExternal = toCtx
   server.sortIndexes = {}
+  server.subscriptions = initDefaultSubscriptions()
   setSchemaOnServer(server, toSchema)
   tmpDb.server.dbCtxExternal = fromCtx
   // TODO makes this SYNC

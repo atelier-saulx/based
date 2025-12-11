@@ -83,5 +83,59 @@ await test('dependent', async (t) => {
   for (const type in schema.types) {
     equal((await db.query(type).get()).length, 0)
   }
+
   await createShowTree()
+  for (const type in schema.types) {
+    equal((await db.query(type).get()).length, 1)
+  }
+
+  const reverseSchema = {
+    types: Object.fromEntries(Object.entries(schema.types).reverse()),
+  }
+
+  await db.setSchema(reverseSchema)
+
+  for (const type in schema.types) {
+    equal((await db.query(type).get()).length, 1)
+  }
+
+  await db.setSchema(schema)
+
+  for (const type in schema.types) {
+    equal((await db.query(type).get()).length, 1)
+  }
 })
+
+// await test('dependent-circular', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//   })
+
+//   await db.start({ clean: true })
+
+//   t.after(() => t.backup(db))
+
+//   const schema = {
+//     types: {
+//       author: {
+//         holyArticle: {
+//           ref: 'article',
+//           prop: 'dependentAuthors',
+//           dependent: true
+//         }
+//       },
+//       article: {
+//         author: {
+//           ref: 'author',
+//           prop: 'articles',
+//           dependent: true
+//         }
+//       },
+//     },
+//   } as const
+
+//   await db.setSchema(schema)
+
+//   const
+
+// })

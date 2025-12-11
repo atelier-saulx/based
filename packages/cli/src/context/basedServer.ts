@@ -56,7 +56,6 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
   'db:set-schema': {
     type: 'function',
     fn: async (based, schema) => {
-      
       // @ts-ignore
       const db = based.db.v2 as BasedDb
       if (!Array.isArray(schema)) {
@@ -72,6 +71,24 @@ const localServerConfig = (context: AppContext): BasedFunctionConfigs => ({
 
       try {
         await db.setSchema(mergedSchema)
+        // const server: BasedServer = based.server
+        // for (const item of Object.values(server.functions.routes)) {
+        //   if (item.type === 'query') {
+        //     server.functions.remove(item.name)
+        //     // server.functions.add()
+        //     // console.log('--->', item.name)
+        //   }
+        //   server.functions.add(server.functions.specs)
+        // }
+        // for (const key in server.functions) {
+        //   const fn = server.functions[key]
+        //   if (fn.type === 'query') {
+        //     console.log('-->', fn)
+        //   }
+        // }
+        // console.dir(server.functions, { depth: null })
+        // server.functions.updateConfig(server.functions.config)
+        // await based.server.updateConfig({})
       } catch (error) {
         context.print
           .line()
@@ -326,7 +343,6 @@ export const contextBasedServer =
           },
         }
 
-
         server.client.db = basedDb.client
 
         Object.defineProperty(basedDb.client, 'v2', {
@@ -372,6 +388,7 @@ export const contextBasedServer =
           .line()
       }
     })
+
     await server.start()
 
     if (!cloud) {

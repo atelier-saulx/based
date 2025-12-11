@@ -173,6 +173,7 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                             subs[i].marked = types.SubStatus.marked;
                         }
                         subs[i].isRemoved = true;
+                        // only do this when it's actually removed
                         if (subs.len > 1) {
                             const newLen = subs.len - 1;
                             if (i != newLen) {

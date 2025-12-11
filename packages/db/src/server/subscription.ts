@@ -25,6 +25,7 @@ export type SubscriptionId = {
   ids: Map<number, Set<() => void>>
   typesListener?: () => void
   nowListener?: () => void
+  // store sub
 }
 
 export type Subscriptions = {
@@ -36,6 +37,16 @@ export type Subscriptions = {
   now: { listeners: Set<() => void>; lastUpdated: number }
   subInterval: number // can change based on load
 }
+
+export const initDefaultSubscriptions = (): Subscriptions => ({
+  subInterval: 200,
+  active: 0,
+  updateHandler: null,
+  ids: new Map(),
+  fullType: new Map(),
+  updateId: 1,
+  now: { listeners: new Set(), lastUpdated: 1 },
+})
 
 export const startUpdateHandler = (server: DbServer) => {
   // skip next if queries are sitll in progress can add a number for each staged sub

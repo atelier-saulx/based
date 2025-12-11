@@ -27,7 +27,7 @@ import {
 } from './schema.js'
 import { resizeModifyDirtyRanges } from './resizeModifyDirtyRanges.js'
 import { loadBlock, unloadBlock } from './blocks.js'
-import { Subscriptions } from './subscription.js'
+import { initDefaultSubscriptions, Subscriptions } from './subscription.js'
 
 const emptyUint8Array = new Uint8Array(0)
 
@@ -44,15 +44,7 @@ class SortIndex {
 export class DbServer extends DbShared {
   modifyDirtyRanges: Float64Array
   dbCtxExternal: any // pointer to zig dbCtx
-  subscriptions: Subscriptions = {
-    subInterval: 200,
-    active: 0,
-    updateHandler: null,
-    ids: new Map(),
-    fullType: new Map(),
-    updateId: 1,
-    now: { listeners: new Set(), lastUpdated: 1 },
-  }
+  subscriptions: Subscriptions = initDefaultSubscriptions()
   migrating: number = null
   saveInProgress: boolean = false
   fileSystemPath: string
