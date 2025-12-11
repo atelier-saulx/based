@@ -37,6 +37,7 @@ export function defToBuffer(
 
   //  or id, alias
   if (isReference) {
+    // change edges to just use this
     const hasFilter = def.filter.size > 0
     const filterSize = def.filter.size
     const include = includeToBuffer(db, def)
@@ -50,6 +51,7 @@ export function defToBuffer(
     let edge: IntermediateByteCode[] | undefined = undefined
     let edgeSize = 0
     if (def.edges) {
+      // needs to add the entire thing... (can have refs as well)
       edge = includeToBuffer(db, def.edges)
       if (edge) {
         edgeSize = byteSize(edge)
@@ -101,13 +103,18 @@ export function defToBuffer(
       }
     }
     const includeSize = byteSize(include)
-    let edge: IntermediateByteCode[] | undefined = undefined
+    let edge: IntermediateByteCode[] = []
     let edgeSize = 0
     if (def.edges) {
-      edge = includeToBuffer(db, def.edges)
-      if (edge) {
-        edgeSize = byteSize(edge)
+      // needs to add the entire thing... (can have refs as well)
+      edge = includeToBuffer(db, def.edges) || []
+      for (const [, ref] of def.edges.references) {
+        edge.push(...defToBuffer(db, ref))
+        if (ref.errors) {
+          def.errors.push(...ref.errors)
+        }
       }
+      edgeSize = byteSize(edge)
     }
     const buffer = new Uint8Array(
       QueryHeaderByteSize + searchSize + filterSize + sortSize,
@@ -152,9 +159,7 @@ export function defToBuffer(
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
       include,
     ])
-    if (edge) {
-      result.push(edge)
-    }
+    result.push(edge)
   } else {
     console.error('UNHANDLED QUERY TYPE')
   }
