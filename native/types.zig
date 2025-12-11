@@ -15,6 +15,8 @@ pub const OpType = enum(u8) {
     alias = 3,
     aggregates = 4,
     aggregatesCountType = 5,
+    aliasFilter = 8,
+    idFilter = 9,
 
     blockHash = 42,
     saveBlock = 67,
@@ -511,6 +513,8 @@ pub const QueryType = enum(u8) {
     aggregatesCount = 5,
     references = 6,
     reference = 7,
+    aliasFilter = 8,
+    idFilter = 9,
 };
 
 pub const IncludeOp = enum(u8) {
@@ -621,9 +625,7 @@ pub const QueryHeaderSingleReference = packed struct {
     prop: u8, // this is for ref
     typeId: TypeId,
     edgeTypeId: TypeId,
-    filterSize: u16,
     edgeSize: u16,
-    edgeFilterSize: u16,
     includeSize: u16, // cannot be more then 16kb? might be good enough
 };
 

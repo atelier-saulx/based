@@ -9,10 +9,12 @@ import { byteSize, schemaChecksum } from './utils.js'
 import { filterToBuffer } from '../query.js'
 import { getIteratorType } from './iteratorType.js'
 import {
+  createQueryHeaderSingleReference,
   ID_PROP,
   PropType,
   QueryHeaderByteSize,
   QueryHeaderSingleByteSize,
+  QueryHeaderSingleReferenceByteSize,
   QueryType,
   QueryTypeEnum,
   SortHeaderByteSize,
@@ -37,7 +39,7 @@ export function defToBuffer(
   const isRootDefault = def.type === QueryDefType.Root
   const isReference = def.type === QueryDefType.Reference
   const isAlias = 'resolvedAlias' in def.target
-  //  or id, alias
+
   if ('id' in def.target || isAlias) {
     const hasFilter = def.filter.size > 0
     const filterSize = def.filter.size
@@ -60,8 +62,13 @@ export function defToBuffer(
     const buffer = new Uint8Array(
       QueryHeaderSingleByteSize + filterSize + aliasSize,
     )
-    const op: QueryTypeEnum = isAlias ? QueryType.alias : QueryType.id
-
+    const op: QueryTypeEnum = isAlias
+      ? hasFilter
+        ? QueryType.aliasFilter
+        : QueryType.alias
+      : hasFilter
+        ? QueryType.idFilter
+        : QueryType.id
     let index = writeQueryHeaderSingle(
       buffer,
       {
@@ -91,8 +98,6 @@ export function defToBuffer(
       include,
     ])
   } else if (isReference) {
-    const hasFilter = def.filter.size > 0
-    const filterSize = def.filter.size
     const include = includeToBuffer(db, def)
     for (const [, ref] of def.references) {
       include.push(...defToBuffer(db, ref))
@@ -113,29 +118,18 @@ export function defToBuffer(
       }
       edgeSize = byteSize(edge)
     }
-    const buffer = new Uint8Array(QueryHeaderSingleByteSize + filterSize)
     const typeId: number = def.schema!.id
     const edgeTypeId: number =
       (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
     const op: QueryTypeEnum = QueryType.reference
-    let index = writeQueryHeaderSingleReference(
-      buffer,
-      {
-        op,
-        prop: def.target.propDef!.prop,
-        includeSize,
-        typeId,
-        filterSize: def.filter.size,
-        edgeTypeId,
-        edgeSize,
-        edgeFilterSize: 0, // this is nice
-      },
-      0,
-    )
-    if (hasFilter) {
-      buffer.set(filterToBuffer(def.filter, index), index)
-      index += def.filter.size
-    }
+    const buffer = createQueryHeaderSingleReference({
+      op,
+      prop: def.target.propDef!.prop,
+      includeSize,
+      typeId,
+      edgeTypeId,
+      edgeSize,
+    })
     // TODO: Need to pass crrect stupid nested INDEX for NOW queries
     result.push([
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },

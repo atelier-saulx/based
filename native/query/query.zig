@@ -47,17 +47,13 @@ pub fn getQueryThreaded(
     _ = try thread.query.result(0, queryId, op);
 
     switch (op) {
-        .default => {
-            try multiple.default(&ctx, q);
-        },
+        .default => try multiple.default(&ctx, q),
+        .id => try single.default(false, &ctx, q),
+        .idFilter => try single.default(true, &ctx, q),
+        .alias => try single.alias(false, &ctx, q),
+        .aliasFilter => try single.alias(true, &ctx, q),
         .ids => {
             // can treat this the same as refs maybe?
-        },
-        .id => {
-            try single.default(&ctx, q);
-        },
-        .alias => {
-            try single.alias(&ctx, q);
         },
         // t.OpType.aggregates => {},
         // t.OpType.aggregatesCount => {},

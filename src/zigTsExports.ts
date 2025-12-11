@@ -40,6 +40,8 @@ export const OpType = {
   alias: 3,
   aggregates: 4,
   aggregatesCountType: 5,
+  aliasFilter: 8,
+  idFilter: 9,
   blockHash: 42,
   saveBlock: 67,
   saveCommon: 69,
@@ -60,6 +62,8 @@ export const OpTypeInverse = {
   3: 'alias',
   4: 'aggregates',
   5: 'aggregatesCountType',
+  8: 'aliasFilter',
+  9: 'idFilter',
   42: 'blockHash',
   67: 'saveBlock',
   69: 'saveCommon',
@@ -80,6 +84,8 @@ export const OpTypeInverse = {
   alias, 
   aggregates, 
   aggregatesCountType, 
+  aliasFilter, 
+  idFilter, 
   blockHash, 
   saveBlock, 
   saveCommon, 
@@ -1229,6 +1235,8 @@ export const QueryType = {
   aggregatesCount: 5,
   references: 6,
   reference: 7,
+  aliasFilter: 8,
+  idFilter: 9,
 } as const
 
 export const QueryTypeInverse = {
@@ -1240,6 +1248,8 @@ export const QueryTypeInverse = {
   5: 'aggregatesCount',
   6: 'references',
   7: 'reference',
+  8: 'aliasFilter',
+  9: 'idFilter',
 } as const
 
 /**
@@ -1250,7 +1260,9 @@ export const QueryTypeInverse = {
   aggregates, 
   aggregatesCount, 
   references, 
-  reference 
+  reference, 
+  aliasFilter, 
+  idFilter 
  */
 export type QueryTypeEnum = (typeof QueryType)[keyof typeof QueryType]
 
@@ -2060,13 +2072,11 @@ export type QueryHeaderSingleReference = {
   prop: number
   typeId: TypeId
   edgeTypeId: TypeId
-  filterSize: number
   edgeSize: number
-  edgeFilterSize: number
   includeSize: number
 }
 
-export const QueryHeaderSingleReferenceByteSize = 14
+export const QueryHeaderSingleReferenceByteSize = 10
 
 export const writeQueryHeaderSingleReference = (
   buf: Uint8Array,
@@ -2081,11 +2091,7 @@ export const writeQueryHeaderSingleReference = (
   offset += 2
   writeUint16(buf, header.edgeTypeId, offset)
   offset += 2
-  writeUint16(buf, header.filterSize, offset)
-  offset += 2
   writeUint16(buf, header.edgeSize, offset)
-  offset += 2
-  writeUint16(buf, header.edgeFilterSize, offset)
   offset += 2
   writeUint16(buf, header.includeSize, offset)
   offset += 2
@@ -2105,17 +2111,11 @@ export const writeQueryHeaderSingleReferenceProps = {
   edgeTypeId: (buf: Uint8Array, value: TypeId, offset: number) => {
     writeUint16(buf, value, offset + 4)
   },
-  filterSize: (buf: Uint8Array, value: number, offset: number) => {
+  edgeSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 6)
   },
-  edgeSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 8)
-  },
-  edgeFilterSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 10)
-  },
   includeSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 12)
+    writeUint16(buf, value, offset + 8)
   },
 }
 
@@ -2128,10 +2128,8 @@ export const readQueryHeaderSingleReference = (
     prop: buf[offset + 1],
     typeId: (readUint16(buf, offset + 2)) as TypeId,
     edgeTypeId: (readUint16(buf, offset + 4)) as TypeId,
-    filterSize: readUint16(buf, offset + 6),
-    edgeSize: readUint16(buf, offset + 8),
-    edgeFilterSize: readUint16(buf, offset + 10),
-    includeSize: readUint16(buf, offset + 12),
+    edgeSize: readUint16(buf, offset + 6),
+    includeSize: readUint16(buf, offset + 8),
   }
   return value
 }
@@ -2149,17 +2147,11 @@ export const readQueryHeaderSingleReferenceProps = {
   edgeTypeId: (buf: Uint8Array, offset: number): TypeId => {
     return (readUint16(buf, offset + 4)) as TypeId
   },
-  filterSize: (buf: Uint8Array, offset: number): number => {
+  edgeSize: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 6)
   },
-  edgeSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 8)
-  },
-  edgeFilterSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 10)
-  },
   includeSize: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 12)
+    return readUint16(buf, offset + 8)
   },
 }
 

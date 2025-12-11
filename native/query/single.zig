@@ -15,6 +15,7 @@ const Fields = @import("../selva/fields.zig");
 // make that top level
 
 pub fn alias(
+    comptime hasFilter: bool,
     ctx: *Query.QueryCtx,
     q: []u8,
 ) !void {
@@ -23,6 +24,10 @@ pub fn alias(
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     const aliasValue = utils.sliceNext(header.aliasSize, q, &i);
     if (Fields.getAliasByName(typeEntry, header.prop, aliasValue)) |node| {
+        if (hasFilter) {
+            try ctx.thread.query.append(@as(u32, 0));
+            // do stuff
+        }
         try ctx.thread.query.append(@as(u32, 1));
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(header.id);
@@ -35,6 +40,7 @@ pub fn alias(
 }
 
 pub fn default(
+    comptime hasFilter: bool,
     ctx: *Query.QueryCtx,
     q: []u8,
 ) !void {
@@ -42,6 +48,10 @@ pub fn default(
     const header = utils.readNext(t.QueryHeaderSingle, q, &i);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     if (Node.getNode(typeEntry, header.id)) |node| {
+        if (hasFilter) {
+            try ctx.thread.query.append(@as(u32, 0));
+            // do stuff
+        }
         try ctx.thread.query.append(@as(u32, 1));
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(header.id);
