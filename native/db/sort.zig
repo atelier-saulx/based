@@ -10,6 +10,7 @@ const errors = @import("../errors.zig");
 const read = utils.read;
 const DbCtx = @import("ctx.zig").DbCtx;
 const Thread = @import("../thread/thread.zig");
+const References = @import("../selva/references.zig");
 
 pub const SortIndexMeta = struct {
     prop: t.PropType,
@@ -258,25 +259,25 @@ pub fn remove(
     };
 }
 
-inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, node: Node.Node) void {
-    selva.selva_sort_insert_i64(sortIndex.index, @intCast(read(T, data, sortIndex.start)), node);
+inline fn insertIntIndex(T: type, data: []u8, sortIndex: *SortIndexMeta, value: anytype) void {
+    selva.selva_sort_insert_i64(sortIndex.index, @intCast(read(T, data, sortIndex.start)), value);
 }
 
 pub fn insert(
     decompressor: *deflate.Decompressor,
     sortIndex: *SortIndexMeta,
     data: []u8,
-    node: Node.Node,
+    value: anytype, // should support getting edge
 ) void {
     const prop = sortIndex.prop;
     const start = sortIndex.start;
     const index = sortIndex.index;
     return switch (prop) {
         t.PropType.@"enum", t.PropType.uint8, t.PropType.int8, t.PropType.boolean => {
-            selva.selva_sort_insert_i64(index, data[start], node);
+            selva.selva_sort_insert_i64(index, data[start], value);
         },
         t.PropType.alias => {
-            selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, node);
+            selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, value);
         },
         t.PropType.string, t.PropType.text, t.PropType.binary => {
             if (sortIndex.len > 0) {
@@ -284,62 +285,96 @@ pub fn insert(
                     index,
                     data[start + 1 .. start + sortIndex.len].ptr,
                     sortIndex.len - 1,
-                    node,
+                    value,
                 );
             } else {
                 var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
                 const str = parseString(decompressor, data, &buf);
-                selva.selva_sort_insert_buf(index, str, SIZE, node);
+                selva.selva_sort_insert_buf(index, str, SIZE, value);
             }
         },
         t.PropType.number, t.PropType.timestamp => {
-            selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), node);
+            selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), value);
         },
         t.PropType.cardinality => {
             if (data.len > 0) {
-                insertIntIndex(u32, data, sortIndex, node);
+                insertIntIndex(u32, data, sortIndex, value);
             } else {
-                insertIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, node);
+                insertIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, value);
             }
         },
-        t.PropType.int32 => insertIntIndex(i32, data, sortIndex, node),
-        t.PropType.int16 => insertIntIndex(i16, data, sortIndex, node),
-        t.PropType.uint32 => insertIntIndex(u32, data, sortIndex, node),
-        t.PropType.uint16 => insertIntIndex(u16, data, sortIndex, node),
+        t.PropType.int32 => insertIntIndex(i32, data, sortIndex, value),
+        t.PropType.int16 => insertIntIndex(i16, data, sortIndex, value),
+        t.PropType.uint32 => insertIntIndex(u32, data, sortIndex, value),
+        t.PropType.uint16 => insertIntIndex(u16, data, sortIndex, value),
         else => {},
     };
 }
 
 fn SortIterator(
     comptime desc: bool,
+    comptime edge: bool,
 ) type {
-    return struct {
-        index: *SortIndexMeta,
-        it: selva.SelvaSortIterator,
-        pub fn next(self: *SortIterator(desc)) ?Node.Node {
-            if (selva.selva_sort_foreach_done(&self.it)) {
+    if (edge) {
+        return struct {
+            index: *SortIndexMeta,
+            it: selva.SelvaSortIterator,
+            pub fn next(self: *SortIterator(desc, true)) ?Node.Node {
+                if (selva.selva_sort_foreach_done(&self.it)) {
+                    return null;
+                }
+                if (desc) {
+                    if (selva.selva_sort_foreach_reverse(self.index.index, &self.it)) |i| {
+                        return @as(References.ReferencesIteratorEdgesResult, @ptrCast(@alignCast(i))).node;
+                    }
+                } else {
+                    if (selva.selva_sort_foreach(self.index.index, &self.it)) |i| {
+                        return @as(References.ReferencesIteratorEdgesResult, @ptrCast(@alignCast(i))).node;
+                    }
+                }
                 return null;
             }
-            if (desc) {
-                return @ptrCast(selva.selva_sort_foreach_reverse(self.index.index, &self.it));
-            } else {
-                return @ptrCast(selva.selva_sort_foreach(self.index.index, &self.it));
+            pub fn nextRef(self: *SortIterator(desc, true)) ?*References.ReferencesIteratorEdgesResult {
+                if (selva.selva_sort_foreach_done(&self.it)) {
+                    return null;
+                }
+                if (desc) {
+                    return @ptrCast(@alignCast(selva.selva_sort_foreach_reverse(self.index.index, &self.it)));
+                } else {
+                    return @ptrCast(@alignCast(selva.selva_sort_foreach(self.index.index, &self.it)));
+                }
             }
-        }
-    };
+        };
+    } else {
+        return struct {
+            index: *SortIndexMeta,
+            it: selva.SelvaSortIterator,
+            pub fn next(self: *SortIterator(desc, false)) ?Node.Node {
+                if (selva.selva_sort_foreach_done(&self.it)) {
+                    return null;
+                }
+                if (desc) {
+                    return @ptrCast(selva.selva_sort_foreach_reverse(self.index.index, &self.it));
+                } else {
+                    return @ptrCast(@alignCast(selva.selva_sort_foreach(self.index.index, &self.it)));
+                }
+            }
+        };
+    }
 }
 
 inline fn createIterator(
     comptime desc: bool,
+    comptime isEdge: bool,
     sortIndex: *SortIndexMeta,
-) SortIterator(desc) {
+) SortIterator(desc, isEdge) {
     var it: selva.SelvaSortIterator = undefined;
     if (desc) {
         selva.selva_sort_foreach_begin_reverse(sortIndex.index, &it);
     } else {
         selva.selva_sort_foreach_begin(sortIndex.index, &it);
     }
-    return SortIterator(desc){
+    return SortIterator(desc, isEdge){
         .it = it,
         .index = sortIndex,
     };
@@ -354,17 +389,30 @@ fn fillSortIndex(
     it: anytype,
     comptime defrag: bool,
     comptime isLocked: bool,
+    comptime isEdge: bool,
 ) !void {
     const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
     if (isLocked) {
         dbCtx.threads.mutex.unlock();
     }
-    while (it.*.next()) |node| {
-        const data = if (header.propType == t.PropType.text)
-            Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
-        else
-            Fields.get(typeEntry, node, fieldSchema, header.propType);
-        insert(decompressor, sortIndex, data, node);
+    if (isEdge) {
+        while (it.*.nextRef()) |ref| {
+            const node = ref.node;
+            const data = if (header.propType == t.PropType.text)
+                Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
+            else
+                Fields.get(typeEntry, node, fieldSchema, header.propType);
+            // TODO: this ref needs to be allocated...
+            insert(decompressor, sortIndex, data, &ref);
+        }
+    } else {
+        while (it.*.next()) |node| {
+            const data = if (header.propType == t.PropType.text)
+                Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
+            else
+                Fields.get(typeEntry, node, fieldSchema, header.propType);
+            insert(decompressor, sortIndex, data, node);
+        }
     }
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
@@ -377,12 +425,13 @@ fn fillSortIndex(
 
 pub fn fromIterator(
     comptime desc: bool,
+    comptime isEdge: bool,
     dbCtx: *DbCtx,
     thread: *Thread.Thread,
     typeEntry: Node.Type,
     header: *const t.SortHeader,
     it: anytype,
-) !SortIterator(desc) {
+) !SortIterator(desc, isEdge) {
     var sortIndex = try createSortIndexMeta(header);
     try fillSortIndex(
         &sortIndex,
@@ -393,8 +442,9 @@ pub fn fromIterator(
         &it,
         false,
         false,
+        isEdge,
     );
-    return createIterator(desc, &sortIndex);
+    return createIterator(desc, isEdge, &sortIndex);
 }
 
 pub fn iterator(
@@ -403,7 +453,7 @@ pub fn iterator(
     thread: *Thread.Thread,
     typeId: t.TypeId,
     header: *const t.SortHeader,
-) !SortIterator(desc) {
+) !SortIterator(desc, false) {
     var sortIndex: *SortIndexMeta = undefined;
     dbCtx.threads.mutex.lock();
     if (getSortIndex(
@@ -430,9 +480,10 @@ pub fn iterator(
             &it,
             true,
             true,
+            false,
         );
         dbCtx.threads.sortDone.broadcast();
         dbCtx.threads.mutex.unlock();
     }
-    return createIterator(desc, sortIndex);
+    return createIterator(desc, false, sortIndex);
 }

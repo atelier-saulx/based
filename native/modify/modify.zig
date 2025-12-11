@@ -98,7 +98,7 @@ fn getLargeRef(db: *DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) 
     if (dstId == 0) { // assume reference
         return References.getSingleReference(node, fs);
     } else { // references
-        if (References.getReferences(false, .iterable, db, node, fs)) |iterator| {
+        if (References.getReferences(false, true, db, node, fs)) |iterator| {
             const refs = iterator.refs;
             const any = References.referencesGet(refs, dstId);
             if (any.type == selva.SELVA_NODE_REFERENCE_LARGE) {

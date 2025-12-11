@@ -70,37 +70,44 @@ pub fn ReferencesIterator(comptime desc: bool) type {
     };
 }
 
-const ReferencesIteratorEdgesResult = struct {
+pub const ReferencesIteratorEdgesResult = struct {
     node: Node.Node,
-    edgeNode: Node.Node,
+    edge: Node.Node,
 };
 
-pub const ReferenceEdgeIteratorType = enum(u8) {
-    none = 0,
-    iterable = 1,
-    nonIterable = 2,
-};
-
-pub fn ReferencesIteratorEdges(comptime desc: bool, comptime edge: ReferenceEdgeIteratorType) type {
+pub fn ReferencesIteratorEdges(comptime desc: bool) type {
     return struct {
         refs: References,
         dstType: Node.Type,
         edgeType: Node.Type,
         i: u32 = 0,
-        pub fn next(self: *ReferencesIteratorEdges(desc, edge)) if (edge == .nonIterable) ?Node.Node else ?ReferencesIteratorEdgesResult {
-            if (self.refs.size == selva.c.SELVA_NODE_REFERENCE_LARGE and self.i < self.refs.nr_refs) {
+        pub fn nextRef(self: *ReferencesIteratorEdges(desc)) ?ReferencesIteratorEdgesResult {
+            if (self.i < self.refs.nr_refs) {
                 const index = if (desc) self.refs.nr_refs - self.i else self.i;
                 const ref = self.refs.unnamed_0.large[index];
                 const node = Node.getNode(self.dstType, ref.dst);
                 const edgeNode = Node.getNode(self.edgeType, ref.edge);
                 self.i = self.i + 1;
                 if (node) |n1| {
-                    if (edge == .nonIterable) {
-                        return n1;
-                    }
                     if (edgeNode) |n2| {
-                        return ReferencesIteratorEdgesResult{ .node = n1, .edgeNode = n2 };
+                        return ReferencesIteratorEdgesResult{ .node = n1, .edge = n2 };
+                    } else {
+                        // CAN EDGES BE NULL? I THINK SO
+                        //     // remove null
+                        //     return ReferencesIteratorEdgesResult{ .node = n1, .edge = null };
                     }
+                }
+            }
+            return null;
+        }
+        pub fn next(self: *ReferencesIteratorEdges(desc)) ?Node.Node {
+            if (self.i < self.refs.nr_refs) {
+                const index = if (desc) self.refs.nr_refs - self.i else self.i;
+                const ref = self.refs.unnamed_0.large[index];
+                const node = Node.getNode(self.dstType, ref.dst);
+                self.i = self.i + 1;
+                if (node) |n1| {
+                    return n1;
                 }
             }
             return null;
@@ -110,35 +117,32 @@ pub fn ReferencesIteratorEdges(comptime desc: bool, comptime edge: ReferenceEdge
 
 pub fn getReferences(
     comptime desc: bool,
-    comptime edge: ReferenceEdgeIteratorType,
+    comptime edge: bool,
     db: *DbCtx,
     node: Node.Node,
     fieldSchema: Schema.FieldSchema,
-) if (edge == .none) ?ReferencesIterator(desc) else ?ReferencesIteratorEdges(desc, edge) {
+) if (edge == false) ?ReferencesIterator(desc) else ?ReferencesIteratorEdges(desc) {
     const refs = selva.c.selva_fields_get_references(node, fieldSchema);
     if (refs == null or fieldSchema.type != selva.c.SELVA_FIELD_TYPE_REFERENCES) {
         return null;
     }
     const dstType = Node.getRefDstType(db, fieldSchema) catch return null;
-
-    return switch (if (comptime edge == .none) ReferencesIterator(desc) else ReferencesIteratorEdges(desc, edge)) {
-        ReferencesIterator(desc) => return ReferencesIterator(desc){ .refs = refs, .dstType = dstType },
-        ReferencesIteratorEdges(desc, edge) => {
-            const edgeType = Node.getEdgeType(db, fieldSchema) catch return null;
-            return ReferencesIteratorEdges(desc, edge){ .refs = refs, .dstType = dstType, .edgeType = edgeType };
-        },
-        else => @compileError("Did wrong"),
-    };
+    if (edge) {
+        const edgeType = Node.getEdgeType(db, fieldSchema) catch return null;
+        return ReferencesIteratorEdges(desc){ .refs = refs, .dstType = dstType, .edgeType = edgeType };
+    } else {
+        return ReferencesIterator(desc){ .refs = refs, .dstType = dstType };
+    }
 }
 
 pub fn iterator(
     comptime desc: bool,
-    comptime edge: ReferenceEdgeIteratorType,
+    comptime edge: bool,
     db: *DbCtx,
     node: Node.Node,
     prop: u8,
     typeEntry: selva.Type,
-) !if (edge == .none) ReferencesIterator(desc) else ReferencesIteratorEdges(desc, edge) {
+) !if (edge == false) ReferencesIterator(desc) else ReferencesIteratorEdges(desc) {
     const fieldSchema = try Schema.getFieldSchema(typeEntry, prop);
     const it = getReferences(desc, edge, db, node, fieldSchema);
     if (it) |r| {
