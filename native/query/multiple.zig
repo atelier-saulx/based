@@ -153,18 +153,15 @@ pub fn references(
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
         .sort => {
-            std.debug.print("DERP\n", .{});
             const sortHeader = utils.readNext(t.SortHeader, q, i);
-            var inputIt = try References.iterator(false, .none, ctx.db, from, header.prop, fromType);
-            var it = try Sort.fromIterator(false, ctx.db, ctx.thread, typeEntry, &sortHeader, &inputIt);
+            var refIt = try References.iterator(false, .none, ctx.db, from, header.prop, fromType);
+            var it = try Sort.fromIterator(false, ctx.db, ctx.thread, typeEntry, &sortHeader, &refIt);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeSort => {
-            std.debug.print("DERP?\n", .{});
-            std.debug.print("DERP\n", .{});
             const sortHeader = utils.readNext(t.SortHeader, q, i);
-            var inputIt = try References.iterator(false, .nonIterable, ctx.db, from, header.prop, fromType);
-            var it = try Sort.fromIterator(false, ctx.db, ctx.thread, typeEntry, &sortHeader, &inputIt);
+            var refIt = try References.iterator(false, .nonIterable, ctx.db, from, header.prop, fromType);
+            var it = try Sort.fromIterator(false, ctx.db, ctx.thread, typeEntry, &sortHeader, &refIt);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
 
