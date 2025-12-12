@@ -48,6 +48,7 @@ pub fn build(b: *std.Build) !void {
     const lib = b.addLibrary(.{
         .linkage = .dynamic,
         .name = "based_db_zig",
+        .use_llvm = true,
         .root_module = b.createModule(.{
             .root_source_file = b.path("native/lib.zig"),
             .target = target,
