@@ -447,9 +447,7 @@ pub const SortHeader = packed struct {
     start: u16,
     len: u16,
     lang: LangCode,
-    isEdge: bool,
-    _padding: u7,
-    // add is Edge as well
+    edgeType: u16,
 };
 
 // maybe just default, defaultSort, search, searchSort, vec, vecSort

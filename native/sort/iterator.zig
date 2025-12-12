@@ -116,28 +116,39 @@ fn fillSortIndex(
     comptime isLocked: bool,
     comptime isEdge: bool,
 ) !void {
-    const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
     if (isLocked) {
         dbCtx.threads.mutex.unlock();
     }
-    if (isEdge) {
-        while (it.*.nextRef()) |ref| {
-            const node = ref.node;
-            const data = if (header.propType == t.PropType.text)
-                Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
-            else
-                Fields.get(typeEntry, node, fieldSchema, header.propType);
-            // TODO: this ref needs to be allocated in certain situations
-            // dont want struct
-            // this is ofc very not nice...
-            // prob want something in selva
-            var r = jemalloc.create(References.ReferencesIteratorEdgesResult);
-            r.node = ref.node;
-            r.edge = ref.edge;
 
-            Sort.insert(decompressor, sortIndex, data, r);
+    if (isEdge) {
+        if (header.edgeType != 0) {
+            const edgeType = try Node.getType(dbCtx, header.edgeType);
+            const fieldSchema = try Schema.getFieldSchema(edgeType, header.prop);
+            while (it.*.nextRef()) |ref| {
+                const data = if (header.propType == t.PropType.text)
+                    Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang)
+                else
+                    Fields.get(typeEntry, ref.edge, fieldSchema, header.propType);
+                var r = jemalloc.create(References.ReferencesIteratorEdgesResult);
+                r.node = ref.node;
+                r.edge = ref.edge;
+                Sort.insert(decompressor, sortIndex, data, r);
+            }
+        } else {
+            const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+            while (it.*.nextRef()) |ref| {
+                const data = if (header.propType == t.PropType.text)
+                    Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang)
+                else
+                    Fields.get(typeEntry, ref.node, fieldSchema, header.propType);
+                var r = jemalloc.create(References.ReferencesIteratorEdgesResult);
+                r.node = ref.node;
+                r.edge = ref.edge;
+                Sort.insert(decompressor, sortIndex, data, r);
+            }
         }
     } else {
+        const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
         while (it.*.next()) |node| {
             const data = if (header.propType == t.PropType.text)
                 Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
@@ -146,12 +157,15 @@ fn fillSortIndex(
             Sort.insert(decompressor, sortIndex, data, node);
         }
     }
+
     if (defrag) {
         _ = selva.selva_sort_defrag(sortIndex.index);
     }
+
     if (isLocked) {
         dbCtx.threads.mutex.lock();
     }
+
     sortIndex.isCreated = true;
 }
 

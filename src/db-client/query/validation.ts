@@ -387,10 +387,10 @@ export const validateSort = (
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
   let propDef: PropDef | PropDefEdge | void = undefined
+  let edgeType = 0
   if (field[0] === '$') {
-    console.log('EDGE LETS GO')
     if ('propDef' in def.target && def.target.propDef) {
-      console.log(def.target.propDef.edges)
+      edgeType = def.target.propDef.edgeNodeTypeId || 0
       propDef = def.target.propDef.edges![field]
     }
   } else {
@@ -465,6 +465,7 @@ export const validateSort = (
     propType: propDef.typeIndex,
     start: propDef.start ?? 0,
     len: propDef.len ?? 0,
+    edgeType,
     isEdge: propDef.__isEdge || false,
     order,
     lang,
