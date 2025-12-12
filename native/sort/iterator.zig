@@ -1,4 +1,4 @@
-const SortIndexMeta = @import("./common.zig").SortIndexMeta;
+const SortIndexMeta = @import("common.zig").SortIndexMeta;
 const t = @import("../types.zig");
 const selva = @import("../selva/selva.zig").c;
 const Node = @import("../selva/node.zig");
@@ -8,7 +8,7 @@ const deflate = @import("../deflate.zig");
 const Schema = @import("../selva/schema.zig");
 const Fields = @import("../selva/fields.zig");
 const Thread = @import("../thread/thread.zig");
-const Sort = @import("./sort.zig");
+const Sort = @import("sort.zig");
 const std = @import("std");
 const jemalloc = @import("../jemalloc.zig");
 const utils = @import("../utils.zig");
@@ -37,9 +37,9 @@ fn SortIterator(
                     // nothing
                 } else {
                     self.it = undefined;
-                    while (self.nextRef()) |ref| {
-                        jemalloc.free(ref);
-                    }
+                    // while (self.nextRef()) |ref| {
+                    //     jemalloc.free(ref);
+                    // }
                     selva.selva_sort_destroy(self.index.?.index);
                 }
             }
@@ -226,10 +226,7 @@ fn fillSortIndex(
                     Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang)
                 else
                     Fields.get(typeEntry, ref.edge, fieldSchema, header.propType);
-                var r = jemalloc.create(References.ReferencesIteratorEdgesResult);
-                r.node = ref.node;
-                r.edge = ref.edge;
-                Sort.insert(decompressor, sortIndex, data, r);
+                Sort.insert(decompressor, sortIndex, data, &ref);
             }
         } else {
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
@@ -238,10 +235,7 @@ fn fillSortIndex(
                     Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang)
                 else
                     Fields.get(typeEntry, ref.node, fieldSchema, header.propType);
-                var r = jemalloc.create(References.ReferencesIteratorEdgesResult);
-                r.node = ref.node;
-                r.edge = ref.edge;
-                Sort.insert(decompressor, sortIndex, data, r);
+                Sort.insert(decompressor, sortIndex, data, &ref);
             }
         }
     } else {
@@ -277,7 +271,7 @@ pub fn fromIterator(
 ) !SortIterator(desc, isEdge) {
     if (it.refs.nr_refs > 125) {
         // this might be worth to store from here
-        var sortIndex = try Sort.createSortIndexMeta(header, it.refs.nr_refs);
+        var sortIndex = try Sort.createSortIndexMeta(header, it.refs.nr_refs, isEdge);
         try fillSortIndex(
             &sortIndex,
             dbCtx,
@@ -322,6 +316,19 @@ pub fn fromIterator(
             };
         }
     }
+    var sortIndex = try Sort.createSortIndexMeta(header, isEdge);
+    try fillSortIndex(
+        &sortIndex,
+        dbCtx,
+        thread.decompressor,
+        header,
+        typeEntry,
+        &it,
+        false,
+        false,
+        isEdge,
+    );
+    return createIterator(desc, isEdge, &sortIndex);
 }
 
 pub fn iterator(
