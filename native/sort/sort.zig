@@ -69,9 +69,10 @@ fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
 
 pub fn createSortIndexMeta(
     header: *const t.SortHeader,
+    size: usize,
 ) !SortIndexMeta {
     const sortFlag = try getSortFlag(header.propType);
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, 0).?;
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, size).?;
     const s: SortIndexMeta = .{
         .len = header.len,
         .start = header.start,
@@ -104,7 +105,7 @@ pub fn getOrCreateFromCtx(
     sortIndex = getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang);
     if (sortIndex == null) {
         sortIndex = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = try createSortIndexMeta(sortHeader);
+        sortIndex.?.* = try createSortIndexMeta(sortHeader, 0);
         if (sortHeader.prop == 0) {
             try tI.main.put(sortHeader.start, sortIndex.?);
         } else if (sortHeader.propType == t.PropType.text) {

@@ -466,7 +466,6 @@ export const validateSort = (
     start: propDef.start ?? 0,
     len: propDef.len ?? 0,
     edgeType,
-    isEdge: propDef.__isEdge || false,
     order,
     lang,
   }

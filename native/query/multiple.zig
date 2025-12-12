@@ -35,6 +35,7 @@ fn iterator(
             break;
         }
     }
+
     return nodeCnt;
 }
 
@@ -125,7 +126,6 @@ pub fn references(
 
     switch (header.iteratorType) {
         .edgeInclude => {
-            // then this can just go back to true and false
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },
@@ -147,15 +147,13 @@ pub fn references(
         .edgeSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, i);
             var refs = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            var it = try Sort.fromIterator(false, false, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
+            var it = try Sort.fromIterator(false, true, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
-            // will store these somewhere...
             it.deinit();
         },
         .edgeIncludeSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, i);
             var refs = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            // this is very heavy for now
             var it = try Sort.fromIterator(false, true, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
             it.deinit();

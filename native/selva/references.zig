@@ -56,8 +56,8 @@ pub fn ReferencesIterator(comptime desc: bool) type {
         dstType: Node.Type,
         i: u32 = 0,
         pub fn next(self: *ReferencesIterator(desc)) ?Node.Node {
-            // assert
-            if (self.refs.size == selva.c.SELVA_NODE_REFERENCE_SMALL and self.i < self.refs.nr_refs) {
+            // assert self.refs.size == selva.c.SELVA_NODE_REFERENCE_SMALL and
+            if (self.i < self.refs.nr_refs) {
                 const index = if (desc) self.refs.nr_refs - self.i else self.i;
                 const ref = self.refs.unnamed_0.small[index];
                 const node = Node.getNode(self.dstType, ref.dst);
