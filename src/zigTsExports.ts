@@ -1021,9 +1021,10 @@ export type SortHeader = {
   start: number
   len: number
   lang: LangCodeEnum
+  isEdge: boolean
 }
 
-export const SortHeaderByteSize = 8
+export const SortHeaderByteSize = 9
 
 export const writeSortHeader = (
   buf: Uint8Array,
@@ -1041,6 +1042,10 @@ export const writeSortHeader = (
   writeUint16(buf, header.len, offset)
   offset += 2
   buf[offset] = header.lang
+  offset += 1
+  buf[offset] = 0
+  buf[offset] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
   offset += 1
   return offset
 }
@@ -1064,6 +1069,9 @@ export const writeSortHeaderProps = {
   lang: (buf: Uint8Array, value: LangCodeEnum, offset: number) => {
     buf[offset + 7] = value
   },
+  isEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 8] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
 }
 
 export const readSortHeader = (
@@ -1077,6 +1085,7 @@ export const readSortHeader = (
     start: readUint16(buf, offset + 3),
     len: readUint16(buf, offset + 5),
     lang: (buf[offset + 7]) as LangCodeEnum,
+    isEdge: (((buf[offset + 8] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -1099,6 +1108,9 @@ export const readSortHeaderProps = {
   },
   lang: (buf: Uint8Array, offset: number): LangCodeEnum => {
     return (buf[offset + 7]) as LangCodeEnum
+  },
+  isEdge: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 8] >>> 0) & 1)) === 1
   },
 }
 

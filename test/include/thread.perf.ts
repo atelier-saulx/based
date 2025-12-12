@@ -1,4 +1,4 @@
-import { readUint32, wait } from '../../src/utils/index.js'
+import { fastPrng, readUint32, wait } from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
@@ -37,6 +37,7 @@ await test('include', async (t) => {
               ref: 'user',
               prop: 'todos',
               $status: ['inProgress', 'blocked', 'nothing'],
+              // $nr: 'number',
               // $name: 'string',
             },
           },
@@ -86,6 +87,9 @@ await test('include', async (t) => {
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
+  const rand = fastPrng()
+
+  console.log(rand(0, 1e5))
   for (let i = 0; i < 1e5; i++) {
     db.create('user', {
       nr: 1e5 - i,
@@ -100,9 +104,9 @@ await test('include', async (t) => {
       email: `beerdejim+${i}@gmail.com`,
       todos: [
         // need to write an 8 byte empty thing for edges
-        { id: todo, $status: 'blocked' }, //  $name: 'bla'
-        { id: todo2, $status: 'nothing' }, //  $name: 'blurf'
-        { id: todo3, $status: 'blocked' },
+        { id: todo, $status: 'nothing' }, //  $name: 'bla'
+        { id: todo2, $status: 'inProgress' }, //  $name: 'blurf'
+        { id: todo3, $status: 'nothing' },
         // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
       ],
       // todos: [todo, todo2], // this doesnot work with edges...
@@ -132,14 +136,14 @@ await test('include', async (t) => {
     // .query('user')
     .query('user', { email: 'beerdejim+10@gmail.com' })
     // .include('id', 'todos.$status')
-    .range(0, 1)
+    .range(0, 1e5)
 
     .include((t) => {
-      t('todos').include('nr', '$status').sort('nr') // 'desc'
+      t('todos').include('nr', '$status').sort('$status') // 'desc'
     })
     .get()
     .inspect()
-    .debug()
+  // .debug()
   // const idBufs: any = []
   // for (let i = 0; i < 1000; i++) {
   //   idBufs.push(registerQuery(db.query('user', i + 1).include('id', 'name')))

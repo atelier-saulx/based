@@ -386,7 +386,17 @@ export const validateSort = (
   field: string,
   orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
-  let propDef = field === 'id' ? ID_FIELD_DEF : def.props![field]
+  let propDef: PropDef | PropDefEdge | void = undefined
+  if (field[0] === '$') {
+    console.log('EDGE LETS GO')
+    if ('propDef' in def.target && def.target.propDef) {
+      console.log(def.target.propDef.edges)
+      propDef = def.target.propDef.edges![field]
+    }
+  } else {
+    propDef = field === 'id' ? ID_FIELD_DEF : def.props![field]
+  }
+
   if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
     def.errors.push({
       code: ERR_SORT_ORDER,
@@ -396,7 +406,7 @@ export const validateSort = (
   const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
 
   let lang: LangCodeEnum = 0
-  if (!propDef) {
+  if (propDef == undefined) {
     let isText = false
     if (field.includes('.')) {
       const path = field.split('.')
@@ -416,6 +426,11 @@ export const validateSort = (
       return null
     }
   }
+
+  if (propDef === undefined) {
+    return null
+  }
+
   const type = propDef.typeIndex
   if (
     type === PropType.references ||
@@ -450,6 +465,7 @@ export const validateSort = (
     propType: propDef.typeIndex,
     start: propDef.start ?? 0,
     len: propDef.len ?? 0,
+    isEdge: propDef.__isEdge || false,
     order,
     lang,
   }
