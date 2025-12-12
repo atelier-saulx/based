@@ -82,17 +82,19 @@ const reference: ReadInstruction = (q, result, i, item) => {
   const size = readUint32(result, i)
   i += 4
   const ref = q.refs[field]
+  // why do we need size zero for this...
   if (size === 0) {
     addProp(ref.prop, null, item)
     i += size
   } else {
-    i++
+    // i++
     const id = readUint32(result, i)
     i += 4
     const refItem: Item = { id }
-    readProps(ref.schema, result, i, size + i - 5, refItem)
+    readProps(ref.schema, result, i, size + i - 4, refItem)
     addProp(ref.prop, refItem, item)
-    i += size - 5
+    // what about an end prop? (close)
+    i += size - 4
   }
   return i
 }

@@ -8,7 +8,7 @@ const SelvaError = @import("../errors.zig").SelvaError;
 const Subscription = @import("./subscription/common.zig");
 const jsBridge = @import("../thread/jsBridge.zig");
 const threads = @import("../thread/thread.zig");
-const sort = @import("./sort.zig");
+const sort = @import("../sort/sort.zig");
 
 const rand = std.crypto.random;
 
@@ -51,7 +51,6 @@ pub fn createDbCtx(
     nrThreads: u16,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
-    errdefer db_backing_allocator.destroy(arena);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const dbCtxPointer = try allocator.create(DbCtx);
@@ -66,7 +65,6 @@ pub fn createDbCtx(
 
     errdefer {
         arena.deinit();
-        db_backing_allocator.destroy(arena);
     }
 
     // config thread amount
@@ -110,6 +108,10 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
         ctx.allocator.free(ctx.ids);
         ctx.ids = &[_]u32{};
     }
+
+    std.heap.raw_c_allocator.free(ctx.subscriptions.singleIdMarked);
+    deflate.destroyDecompressor(ctx.decompressor);
+    deflate.deinitBlockState(&ctx.libdeflateBlockState);
 
     selva.selva_db_destroy(ctx.selva);
     ctx.selva = null;

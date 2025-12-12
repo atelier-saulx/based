@@ -14,8 +14,9 @@ pub const OpType = enum(u8) {
     default = 2,
     alias = 3,
     aggregates = 4,
-    // aggregatesCountType = 5,
-    defaultSort = 8, // match queryType
+    aggregatesCountType = 5,
+    aliasFilter = 8,
+    idFilter = 9,
 
     blockHash = 42,
     saveBlock = 67,
@@ -380,12 +381,6 @@ pub const LangCode = enum(u8) {
 pub const MAIN_PROP: u8 = 0;
 pub const ID_PROP: u8 = 255;
 
-pub const ReadRefOp = enum(u8) {
-    references = @intFromEnum(ReadOp.references),
-    reference = @intFromEnum(ReadOp.reference),
-    none = @intFromEnum(ReadOp.none),
-};
-
 pub const ResultType = enum(u8) {
     default = 0,
     references = 1,
@@ -435,6 +430,7 @@ pub const SortHeader = packed struct {
     start: u16,
     len: u16,
     lang: LangCode,
+    edgeType: u16,
 };
 
 // maybe just default, defaultSort, search, searchSort, vec, vecSort
@@ -448,26 +444,32 @@ pub const QUERY_ITERATOR_SEARCH = 120;
 pub const QUERY_ITERATOR_SEARCH_VEC = 130;
 
 pub const QueryIteratorType = enum(u8) {
-    // defaults
     default = 0,
-    filter = 1,
-    desc = 2,
-    descFilter = 3,
-    // sort = 4,
-    // filterSort = 5,
-    // descSort = 6,
-    // descSortFilter = 7,
-
-    // edge refs
+    sort = 1,
+    filter = 2,
+    filterSort = 3,
+    desc = 4,
+    descSort = 5,
+    descFilter = 6,
+    descFilterSort = 7,
+    // edge
     edge = 20,
-    edgeFilter = 21,
-    edgeDesc = 22,
-    edgeDescFilter = 23,
-    // edge + include edge
+    edgeSort = 21,
+    edgeFilter = 22,
+    edgeFilterSort = 23,
+    edgeDesc = 24,
+    edgeDescSort = 25,
+    edgeDescFilter = 26,
+    edgeDescFilterSort = 27,
+    // edge include
     edgeInclude = 30,
-    edgeIncludeFilter = 31,
-    edgeIncludeDesc = 32,
-    edgeIncludeDescFilter = 33,
+    edgeIncludeSort = 31,
+    edgeIncludeFilter = 32,
+    edgeIncludeFilterSort = 33,
+    edgeIncludeDesc = 34,
+    edgeIncludeDescSort = 35,
+    edgeIncludeDescFilter = 36,
+    edgeIncludeDescFilterSort = 37,
     // default search
     search = 120,
     searchFilter = 121,
@@ -491,8 +493,8 @@ pub const QueryType = enum(u8) {
     aggregatesCount = 5,
     references = 6,
     reference = 7,
-    defaultSort = 8,
-    referencesSort = 9,
+    aliasFilter = 8,
+    idFilter = 9,
 };
 
 pub const IncludeOp = enum(u8) {
@@ -500,7 +502,6 @@ pub const IncludeOp = enum(u8) {
     aggregatesCount = 5,
     references = 6,
     reference = 7,
-    referencesSort = 9, // match default
     // ---------------------
     default = 127,
     referencesAggregation = 128,
@@ -572,20 +573,8 @@ pub const IncludeResponseMeta = packed struct {
 //     propType: PropType,
 // };
 
-pub const QuerySingleHeader = packed struct {
-    op: QueryType,
-    size: u16, // cannot be more then 16kb? might be good enough
-    typeId: TypeId,
-    id: u32,
-    filterSize: u16,
-    aliasSize: u16,
-    includeEdge: bool, // this just tells it in references that it needs to loop trhough edge + ref
-    _padding: u7,
-};
-
 pub const QueryHeader = packed struct {
     op: QueryType,
-    size: u16, // cannot be more then 16kb? might be good enough
     prop: u8, // this is for ref
     typeId: TypeId,
     edgeTypeId: TypeId,
@@ -595,9 +584,29 @@ pub const QueryHeader = packed struct {
     searchSize: u16,
     edgeSize: u16,
     edgeFilterSize: u16,
+    includeSize: u16, // cannot be more then 16kb? might be good enough
     iteratorType: QueryIteratorType,
     sort: bool,
     _padding: u7,
+};
+
+pub const QueryHeaderSingle = packed struct {
+    op: QueryType,
+    typeId: TypeId,
+    prop: u8,
+    id: u32,
+    filterSize: u16,
+    includeSize: u16,
+    aliasSize: u16,
+};
+
+pub const QueryHeaderSingleReference = packed struct {
+    op: QueryType,
+    prop: u8, // this is for ref
+    typeId: TypeId,
+    edgeTypeId: TypeId,
+    edgeSize: u16,
+    includeSize: u16, // cannot be more then 16kb? might be good enough
 };
 
 pub const FilterOp = enum(u8) {

@@ -15,7 +15,7 @@ const addEmptyToSortIndex = @import("sort.zig").addEmptyToSortIndex;
 const addEmptyTextToSortIndex = @import("sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
 const Update = @import("update.zig");
-const dbSort = @import("../db/sort.zig");
+const dbSort = @import("../sort/sort.zig");
 const config = @import("config");
 const errors = @import("../errors.zig");
 const Thread = @import("../thread/thread.zig");
@@ -192,10 +192,10 @@ pub fn modify(
         const op: t.ModOp = @enumFromInt(batch[i]);
         const operation: []u8 = batch[i + 1 ..];
         switch (op) {
-            t.ModOp.padding => {
+            .padding => {
                 i = i + 1;
             },
-            t.ModOp.switchProp => {
+            .switchProp => {
                 ctx.field = operation[0];
                 i = i + 3;
                 ctx.fieldSchema = try Schema.getFieldSchema(ctx.typeEntry.?, ctx.field);
@@ -219,7 +219,7 @@ pub fn modify(
                     ctx.currentSortIndex = null;
                 }
             },
-            t.ModOp.deleteNode => {
+            .deleteNode => {
                 if (ctx.node) |node| {
                     subs.stage(&ctx, subs.Op.deleteNode);
                     Node.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
@@ -227,23 +227,23 @@ pub fn modify(
                 }
                 i = i + 1;
             },
-            t.ModOp.deleteTextField => {
+            .deleteTextField => {
                 const lang: t.LangCode = @enumFromInt(operation[0]);
                 deleteTextLang(&ctx, lang);
                 i = i + 2;
             },
-            t.ModOp.switchIdCreate => {
+            .switchIdCreate => {
                 writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
                 try newNode(&ctx);
                 i = i + 1;
             },
-            t.ModOp.switchIdCreateRing => {
+            .switchIdCreateRing => {
                 writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
                 const maxNodeId = read(u32, operation, 0);
                 try newNodeRing(&ctx, maxNodeId);
                 i = i + 5;
             },
-            t.ModOp.switchIdCreateUnsafe => {
+            .switchIdCreateUnsafe => {
                 writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
                 ctx.id = read(u32, operation, 0);
                 if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
@@ -253,7 +253,7 @@ pub fn modify(
                 Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
                 i = i + 5;
             },
-            t.ModOp.switchIdUpdate => {
+            .switchIdUpdate => {
                 const id = read(u32, operation, 0);
                 if (id != 0) {
                     writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
@@ -271,7 +271,7 @@ pub fn modify(
                 }
                 i = i + 5;
             },
-            t.ModOp.switchEdgeId => {
+            .switchEdgeId => {
                 const srcId = read(u32, operation, 0);
                 const dstId = read(u32, operation, 4);
                 const refField = read(u8, operation, 8);
@@ -279,7 +279,7 @@ pub fn modify(
                 writeoutPrevNodeId(&ctx, &resultLen, prevNodeId, result);
                 i = i + 10;
             },
-            t.ModOp.upsert => {
+            .upsert => {
                 const writeIndex = read(u32, operation, 0);
                 const updateIndex = read(u32, operation, 4);
                 var nextIndex: u32 = writeIndex;
@@ -297,7 +297,7 @@ pub fn modify(
                 }
                 i = i + nextIndex + 1;
             },
-            t.ModOp.insert => {
+            .insert => {
                 const writeIndex = read(u32, operation, 0);
                 const endIndex = read(u32, operation, 4);
                 var nextIndex: u32 = writeIndex;
@@ -318,35 +318,35 @@ pub fn modify(
                 }
                 i = i + nextIndex + 1;
             },
-            t.ModOp.switchType => {
+            .switchType => {
                 try switchType(&ctx, read(u16, operation, 0));
                 i = i + 3;
             },
-            t.ModOp.addEmptySort => {
+            .addEmptySort => {
                 i += try addEmptyToSortIndex(&ctx, operation) + 1;
             },
-            t.ModOp.addEmptySortText => {
+            .addEmptySortText => {
                 i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
             },
-            t.ModOp.delete => {
+            .delete => {
                 i += try deleteField(&ctx) + 1;
             },
-            t.ModOp.deleteSortIndex => {
+            .deleteSortIndex => {
                 i += try deleteFieldSortIndex(&ctx) + 1;
             },
-            t.ModOp.createProp => {
+            .createProp => {
                 i += try createField(&ctx, operation) + offset;
             },
-            t.ModOp.updateProp => {
+            .updateProp => {
                 i += try updateField(&ctx, operation) + offset;
             },
-            t.ModOp.updatePartial => {
+            .updatePartial => {
                 i += try updatePartialField(&ctx, operation) + offset;
             },
-            t.ModOp.increment, t.ModOp.decrement => {
+            .increment, .decrement => {
                 i += try increment(&ctx, operation, op) + 1;
             },
-            t.ModOp.expire => {
+            .expire => {
                 Node.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
                 i += 5;
             },

@@ -1,2 +1,2 @@
 #!/bin/bash
-valgrind --leak-check=full node --import=tsx "$@"
+valgrind --leak-check=full --gen-suppressions=all --suppressions=clibs/valgrind.supp node --import=tsx "$@"

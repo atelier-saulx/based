@@ -13,6 +13,7 @@ pub const IdSubsItem = packed struct {
     partial: @Vector(vectorLenU16, u16),
 };
 
+// needs a struct with SUBITEM and QUERY
 pub const IdSubs = std.AutoHashMap(u32, []IdSubsItem); // [types.SUB_SIZE] [24] [24] [4 4] [16 bytes]
 
 // can make a multi sub thing here

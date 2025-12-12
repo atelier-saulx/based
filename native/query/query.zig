@@ -4,6 +4,7 @@ const napi = @import("../napi.zig");
 const Query = @import("common.zig");
 const utils = @import("../utils.zig");
 const multiple = @import("multiple.zig");
+const single = @import("single.zig");
 const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
@@ -47,21 +48,14 @@ pub fn getQueryThreaded(
     _ = try thread.query.result(0, queryId, op);
 
     switch (op) {
-        .default => {
-            try multiple.default(.default, &ctx, q);
+        .default => try multiple.default(&ctx, q),
+        .id => try single.default(false, &ctx, q),
+        .idFilter => try single.default(true, &ctx, q),
+        .alias => try single.alias(false, &ctx, q),
+        .aliasFilter => try single.alias(true, &ctx, q),
+        .ids => {
+            // can treat this the same as refs maybe?
         },
-        .defaultSort => {
-            try multiple.default(.defaultSort, &ctx, q);
-        },
-        .ids => {}, // can treat this the same as refs maybe?
-        .id => {
-            // const id = read(u32, q, 3);
-            // const filterSize = read(u16, q, 7);
-            // const filterBuf = q[9 .. 9 + filterSize];
-            // const include = q[9 + filterSize .. len];
-            // try QueryId.default(id, &ctx, typeId, filterBuf, include);
-        },
-        .alias => {},
         .aggregates => {
             try multiple.aggregates(.aggregates, &ctx, q);
         },

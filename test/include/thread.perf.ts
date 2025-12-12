@@ -1,9 +1,10 @@
-import { readUint32, wait } from '../../src/utils/index.js'
+import { fastPrng, readUint32, wait } from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
 import { BasedDb } from '../../src/index.js'
 import { registerQuery } from '../../src/db-client/query/registerQuery.js'
+import { register } from 'module'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -26,6 +27,9 @@ await test('include', async (t) => {
         props: {
           name: 'string',
           nr: { type: 'uint32' },
+          workingOnIt: {
+            items: { ref: 'user', prop: 'currentTodo' },
+          },
 
           // creator: { ref: 'user', prop: 'createdTodos' },
           assignees: {
@@ -33,6 +37,7 @@ await test('include', async (t) => {
               ref: 'user',
               prop: 'todos',
               $status: ['inProgress', 'blocked', 'nothing'],
+              // $nr: 'number',
               // $name: 'string',
             },
           },
@@ -41,12 +46,20 @@ await test('include', async (t) => {
       },
       user: {
         props: {
+          name: 'string',
+          currentTodo: {
+            ref: 'todo',
+            prop: 'workingOnIt',
+          },
           todos: { items: { ref: 'todo', prop: 'assignees' } },
-          // flap: { enum: ['⚡️', '🤪', '💩'] }, // default: '🤪'
-          // derp: ['hello', 'bye'],
-          // name: { type: 'string' }, // default: 'xxxx'
           nr: { type: 'uint32' },
-          // body: { type: 'text' }, // compression: 'none'
+          nr1: { type: 'uint32' },
+          nr2: { type: 'uint32' },
+          nr3: { type: 'uint32' },
+          nr4: { type: 'uint32' },
+          nr5: { type: 'uint32' },
+          nr6: { type: 'uint32' },
+          email: 'alias',
         },
       },
     },
@@ -55,34 +68,55 @@ await test('include', async (t) => {
   console.log('SCHEMA DONE')
 
   const todo = await db.create('todo', {
-    name: 'TODO A',
-    nr: 67,
+    name: 'a',
+    nr: 68,
   })
 
   const todo2 = await db.create('todo', {
-    name: 'TODO B',
-    nr: 68,
+    name: 'b',
+    nr: 67,
+  })
+
+  const todo3 = await db.create('todo', {
+    name: 'c',
+    nr: 999,
+  })
+
+  const todo4 = await db.create('todo', {
+    name: 'd',
+    nr: 15,
   })
 
   console.log({ todo, todo2 })
   let d = Date.now()
 
+  const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
+
+  const rand = fastPrng()
+
+  console.log(rand(0, 1e5))
   for (let i = 0; i < 1e5; i++) {
     db.create('user', {
       nr: 1e5 - i,
-      // name: 'A',
-      // flap: '⚡️',
-
-      // adding edge here makes it 20x slower (can be better)
+      nr1: 1e5 - i,
+      nr2: 1e5 - i,
+      nr3: 1e5 - i,
+      nr4: 1e5 - i,
+      nr5: 1e5 - i,
+      nr6: 1e5 - i,
+      name: 'mr snurp ' + i,
+      currentTodo: todo,
+      email: `beerdejim+${i}@gmail.com`,
       todos: [
         // need to write an 8 byte empty thing for edges
-        { id: todo, $status: 'blocked' }, //  $name: 'bla'
-        // { id: todo2, $status: 'nothing' }, //  $name: 'blurf'
+        { id: todo, $status: 'nothing' }, //  $name: 'bla'
+        { id: todo2, $status: 'inProgress' }, //  $name: 'blurf'
+        { id: todo3, $status: 'nothing' },
+        { id: todo4, $status: 'blocked' },
+
         // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
       ],
       // todos: [todo, todo2], // this doesnot work with edges...
-
-      // derp: 'hello',
       // body: {
       //   nl: 'x',
       //   fr: 'B',
@@ -104,23 +138,57 @@ await test('include', async (t) => {
 
   console.log('\n--------------------------\nStart query!!!!!!!!!')
 
-  const x = await db
-    .query('user')
-    // .locale('nl', ['no', 'de'])
-    // .include('body', { meta: true, end: 10 })
-    // .include('name', { meta: 'only' })
-    // .include('nr') //  'flap'
-    // .include('todos.id') // 'todos.$status'
+  // await db.query('user', 1).include('id', 'name').get().inspect()
+  await db
+    // .query('user')
+    .query('user', { email: 'beerdejim+10@gmail.com' })
+    // .include('id', 'todos.$status')
+    .range(0, 1e5)
 
-    .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
-    // .include('name')
-    .range(0, 100)
-    .sort('nr', 'desc')
+    .include((t) => {
+      t('todos').include('nr', '$status').sort('$status') // 'desc'
+    })
     .get()
+    .inspect()
+  // .debug()
+  // const idBufs: any = []
+  // for (let i = 0; i < 1000; i++) {
+  //   idBufs.push(registerQuery(db.query('user', i + 1).include('id', 'name')))
+  // }
+
+  // await perf.skip(
+  //   async () => {
+  //     const q: any[] = []
+  //     for (let i = 0; i < 1000; i++) {
+  //       q.push(db.server.getQueryBuf(idBufs[i]))
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'single id',
+  //   { repeat: 10 },
+  // )
+
+  // const y = await db
+  //   .query('user')
+  //   // .locale('nl', ['no', 'de'])
+  //   // .include('body', { meta: true, end: 10 })
+  //   // .include('name', { meta: 'only' })
+  //   // .include('nr') //  'flap'
+  //   // .include('todos.id') // 'todos.$status'
+
+  //   // .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
+  //   // .include('nr')
+  //   .include('currentTodo')
+  //   // 'currentTodo.nr',
+  //   // .include(x)
+  //   .range(0, 1)
+  //   // .sort('nr', 'desc')
+  //   .get()
+  //   .debug()
 
   // x.debug()
 
-  x.inspect()
+  // y.inspect()
 
   // console.log('drain done')
   // ;(
@@ -147,12 +215,10 @@ await test('include', async (t) => {
           db
             .query('user')
             .include('id')
-            // .include('todos.id')
-            //  'todos.$status'
-            // .include('id', 'todos.id', 'todos.$status') // 'todos.$status'
+            .include('name')
             .range(0, 1e5 + i)
-            .sort('nr')
-            // .inspect()
+            // .sort(x[i % x.length])
+
             .get(),
           // .inspect(),
         )

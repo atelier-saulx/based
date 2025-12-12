@@ -126,7 +126,9 @@ uint32_t crc32c(uint32_t crc, const void *buf, size_t len)
      * k0=CRC(x^(3*SEGMENTBYTES*8)), k1=CRC(x^(2*SEGMENTBYTES*8)),
      * k2=CRC(x^(SEGMENTBYTES*8))
      */
-    const poly64_t k0 = 0x8d96551c, k1 = 0xbd6f81f8, k2 = 0xdcb17aa4;
+    constexpr poly64_t k0 = 0x8d96551c;
+    constexpr poly64_t k1 = 0xbd6f81f8;
+    constexpr poly64_t k2 = 0xdcb17aa4;
 
     crc = crc ^ KCRC32XOR;
 

@@ -1,4 +1,5 @@
 import {
+  ID_PROP,
   QUERY_ITERATOR_DEFAULT,
   QUERY_ITERATOR_EDGE,
   QUERY_ITERATOR_EDGE_INCLUDE,
@@ -16,6 +17,7 @@ export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
   const hasFilter = def.filter.size > 0
   const isDesc = def.sort?.order === SortOrder.desc
   const edgeInclude = def.edges
+  const hasSort = def.sort && def.sort.prop !== ID_PROP
   const hasEdges =
     def.type === QueryDefType.References &&
     // @ts-ignore
@@ -39,37 +41,39 @@ export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
     base = QUERY_ITERATOR_SEARCH_VEC
   }
 
-  //  default: 0,
-  //   filter: 1,
-  //   desc: 2,
-  //   descFilter: 3,
-  //   edge: 20,
-  //   edgeFilter: 21,
-  //   edgeDesc: 22,
-  //   edgeDescFilter: 23,
-  //   edgeInclude: 30,
-  //   edgeIncludeFilter: 31,
-  //   edgeIncludeDesc: 32,
-  //   edgeIncludeDescFilter: 33,
-  //   search: 120,
-  //   searchFilter: 121,
-  //   vec: 130,
-  //   vecFilter: 131,
-
   if (hasSearch) {
     if (hasFilter) {
       base += 1
     }
   } else {
-    if (isDesc) {
-      base += 2
-    }
-    if (hasFilter) {
-      base += 1
+    if (hasSort) {
+      if (hasFilter) {
+        if (isDesc) {
+          base += 7
+        } else {
+          base += 3
+        }
+      } else if (isDesc) {
+        base += 5
+      } else {
+        base += 1
+      }
+    } else {
+      if (hasFilter) {
+        if (isDesc) {
+          base += 6
+        } else {
+          base += 2
+        }
+      } else if (isDesc) {
+        base += 4
+      } else {
+        base += 0
+      }
     }
   }
 
-  console.log('QueryIteratorTypeEnum', QueryIteratorTypeInverse[base])
+  // console.log('QueryIteratorTypeEnum', QueryIteratorTypeInverse[base])
 
   return base as QueryIteratorTypeEnum
 }

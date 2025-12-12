@@ -1,5 +1,5 @@
 const napi = @import("../napi.zig");
-const sort = @import("../db/sort.zig");
+const sort = @import("../sort/sort.zig");
 const read = @import("../utils.zig").read;
 const Modify = @import("common.zig");
 const std = @import("std");

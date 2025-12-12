@@ -18,7 +18,7 @@
 #include "io.h"
 #include "db.h"
 
-#define NODEPOOL_SLAB_SIZE 2097152
+static constexpr uint64_t NODEPOOL_SLAB_SIZE = 2097152;
 
 static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
 

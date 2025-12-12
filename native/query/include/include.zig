@@ -9,6 +9,8 @@ const opts = @import("./opts.zig");
 const append = @import("./append.zig");
 const t = @import("../../types.zig");
 const multiple = @import("../multiple.zig");
+const single = @import("../single.zig");
+const References = @import("../../selva/references.zig");
 
 inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
     return Fields.get(
@@ -20,7 +22,6 @@ inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
 }
 
 pub fn recursionErrorBoundary(
-    comptime queryType: t.QueryType,
     cb: anytype,
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -28,7 +29,7 @@ pub fn recursionErrorBoundary(
     typeEntry: Node.Type,
     index: *usize,
 ) void {
-    cb(queryType, ctx, q, node, typeEntry, index) catch |err| {
+    cb(ctx, q, node, typeEntry, index) catch |err| {
         std.debug.print("recursionErrorBoundary: Error {any} \n", .{err});
     };
 }
@@ -49,11 +50,11 @@ pub inline fn include(
         const op: t.IncludeOp = @enumFromInt(q[i]);
 
         switch (op) {
-            .referencesSort => {
-                recursionErrorBoundary(.referencesSort, multiple.references, node, ctx, q, typeEntry, &i);
+            .reference => {
+                recursionErrorBoundary(single.reference, node, ctx, q, typeEntry, &i);
             },
             .references => {
-                recursionErrorBoundary(.references, multiple.references, node, ctx, q, typeEntry, &i);
+                recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
             },
             .partial => {
                 const header = utils.readNext(t.IncludePartialHeader, q, &i);
@@ -135,34 +136,17 @@ pub inline fn include(
                     },
                 }
             },
-            else => {
-                std.debug.print("WRONG", .{});
+            .aggregates => {
+                std.debug.print("AGG not implemented yet\n", .{});
                 i += 1;
-                // Unhandled operation - will remove this late
-                // t.IncludeOp.reference => {
-                //  call single
-                //     const operation = include[i..];
-                //     const refSize = read(u16, operation, 0);
-                //     const singleRef = operation[2 .. 2 + refSize];
-                //     i += refSize + 2;
-                //     if (!idIsSet) {
-                //         idIsSet = true;
-                //         size += try addIdOnly(ctx, id, score);
-                //     }
-                //     size += getSingleRefFields(ctx, singleRef, node, typeEntry, edgeRef, isEdge);
-                // },
-                // t.IncludeOp.referencesAggregation => {
-                //     const operation = include[i..];
-                //     const refSize = read(u16, operation, 0);
-                //     const multiRefs = operation[2 .. 2 + refSize];
-                //     i += refSize + 2;
-                //     if (!idIsSet) {
-                //         idIsSet = true;
-                //         size += try addIdOnly(ctx, id, score);
-                //     }
-                //     size += try aggregateRefsFields(ctx, multiRefs, node, typeEntry);
-                //     return size;
-                // },
+            },
+            .aggregatesCount => {
+                std.debug.print("AGG count not implemented yet\n", .{});
+                i += 1;
+            },
+            .referencesAggregation => {
+                std.debug.print("AGG refs not implemented yet\n", .{});
+                i += 1;
             },
         }
     }

@@ -28,7 +28,7 @@ static int valid_flags(enum selva_io_flags flags)
 
 char *selva_io_hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SELVA_IO_HASH_SIZE])
 {
-    static const char map[] = "0123456789abcdef";
+    static constexpr char map[] = "0123456789abcdef";
     char *p = s;
 
     for (size_t i = 0; i < SELVA_IO_HASH_SIZE; i++) {

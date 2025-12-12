@@ -92,6 +92,9 @@ export const includeToBuffer = (
         mainBuffer,
       )
     } else {
+      for (const [start, value] of def.include.main.include.entries()) {
+        value[0] = start
+      }
       result.push(
         createIncludeHeader({
           op: IncludeOp.default,

@@ -1,0 +1,37 @@
+{
+   <v8_1>
+   Memcheck:Cond
+   fun:_ZNK2v88internal10TypedFrame7IterateEPNS0_11RootVisitorE
+   fun:_ZN2v88internal7Isolate7IterateEPNS0_11RootVisitorEPNS0_14ThreadLocalTopE
+   fun:_ZN2v88internal4Heap12IterateRootsEPNS0_11RootVisitorENS_4base7EnumSetINS0_8SkipRootEiEENS1_16IterateRootsModeE
+   fun:_ZN2v88internal18ScavengerCollector14CollectGarbageEv
+   fun:_ZN2v88internal4Heap8ScavengeEv
+   fun:_ZN2v88internal4Heap24PerformGarbageCollectionENS0_16GarbageCollectorENS0_23GarbageCollectionReasonEPKc
+   fun:_ZZN2v88internal4Heap14CollectGarbageENS0_15AllocationSpaceENS0_23GarbageCollectionReasonENS_15GCCallbackFlagsEENKUlvE0_clEv
+   fun:_ZN4heap4base5Stack24SetMarkerAndCallbackImplIZN2v88internal4Heap14CollectGarbageENS4_15AllocationSpaceENS4_23GarbageCollectionReasonENS3_15GCCallbackFlagsEEUlvE0_EEvPS1_PvPKv
+   obj:*/bin/node
+}
+{
+   <v8_2>
+   Memcheck:Cond
+   fun:_ZN4heap4base12_GLOBAL__N_122IteratePointersInStackEPNS0_12StackVisitorEPKvS5_S5_.constprop.0
+   fun:_ZNK4heap4base5Stack26IteratePointersUntilMarkerEPNS0_12StackVisitorE
+   fun:_ZN5cppgc8internal10MarkerBase10VisitRootsENS_18EmbedderStackStateE
+   fun:_ZN5cppgc8internal10MarkerBase16EnterAtomicPauseENS_18EmbedderStackStateE
+   fun:_ZN2v88internal7CppHeap15EnterFinalPauseEN5cppgc18EmbedderStackStateE
+   fun:_ZN2v88internal20MarkCompactCollector15MarkLiveObjectsEv
+   fun:_ZN2v88internal20MarkCompactCollector14CollectGarbageEv
+   fun:_ZN2v88internal4Heap11MarkCompactEv
+   fun:_ZN2v88internal4Heap24PerformGarbageCollectionENS0_16GarbageCollectorENS0_23GarbageCollectionReasonEPKc
+   fun:_ZZN2v88internal4Heap14CollectGarbageENS0_15AllocationSpaceENS0_23GarbageCollectionReasonENS_15GCCallbackFlagsEENKUlvE0_clEv
+   fun:_ZN4heap4base5Stack24SetMarkerAndCallbackImplIZN2v88internal4Heap14CollectGarbageENS4_15AllocationSpaceENS4_23GarbageCollectionReasonENS3_15GCCallbackFlagsEEUlvE0_EEvPS1_PvPKv
+   obj:*/bin/node
+}
+{
+   <newlocale>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   fun:argz_add_sep
+   fun:newlocale
+}

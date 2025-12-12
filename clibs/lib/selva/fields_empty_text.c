@@ -165,7 +165,9 @@ const uint8_t selva_fields_text_tl_empty[_selva_lang_last][8] = {
     [selva_lang_ka] = { 145, 0, 0xdd, 0xe4, 0xc5, 0x26 },
     [selva_lang_cnr] = { 146, 0, 0x44, 0x4c, 0x22, 0x12 },
 };
+#ifdef __clang__
 static_assert(selva_fields_text_tl_empty[_selva_lang_last - 1][0] == _selva_lang_last - 1);
+#endif
 
 #if GEN_EMPTY_TRANSLATIONS
 const char names[][16] = {
