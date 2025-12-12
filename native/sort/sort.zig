@@ -1,15 +1,15 @@
 const deflate = @import("../deflate.zig");
 const selva = @import("../selva/selva.zig").c;
 const Node = @import("../selva/node.zig");
+const References = @import("../selva/references.zig");
 const std = @import("std");
 const utils = @import("../utils.zig");
 const t = @import("../types.zig");
 const errors = @import("../errors.zig");
 const read = utils.read;
 const DbCtx = @import("../db/ctx.zig").DbCtx;
-const Iterator = @import("./iterator.zig");
-
-pub const SortIndexMeta = @import("./common.zig").SortIndexMeta;
+const Iterator = @import("iterator.zig");
+pub const SortIndexMeta = @import("common.zig").SortIndexMeta;
 
 pub const iterator = Iterator.iterator;
 pub const fromIterator = Iterator.fromIterator;
@@ -69,9 +69,10 @@ fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
 
 pub fn createSortIndexMeta(
     header: *const t.SortHeader,
+    comptime isEdge: bool,
 ) !SortIndexMeta {
     const sortFlag = try getSortFlag(header.propType);
-    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init2(sortFlag, 0).?;
+    const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init3(sortFlag, 0, if (isEdge) @sizeOf(References.ReferencesIteratorEdgesResult) else 0).?;
     const s: SortIndexMeta = .{
         .len = header.len,
         .start = header.start,
@@ -104,7 +105,7 @@ pub fn getOrCreateFromCtx(
     sortIndex = getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang);
     if (sortIndex == null) {
         sortIndex = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = try createSortIndexMeta(sortHeader);
+        sortIndex.?.* = try createSortIndexMeta(sortHeader, false);
         if (sortHeader.prop == 0) {
             try tI.main.put(sortHeader.start, sortIndex.?);
         } else if (sortHeader.propType == t.PropType.text) {
