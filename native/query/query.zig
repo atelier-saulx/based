@@ -11,6 +11,7 @@ const Selva = @import("../selva");
 
 // -------- NAPI ---------- (put in js bridge maybe?)
 pub fn getQueryBufThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
+    utils.debugPrint("lala\n", .{});
     return getQueryBufInternalThread(env, info) catch |err| {
         napi.jsThrow(env, @errorName(err));
         return null;
@@ -61,7 +62,9 @@ pub fn getQueryThreaded(
             // try QueryId.default(id, &ctx, typeId, filterBuf, include);
         },
         .alias => {},
-        // t.OpType.aggregates => {},
+        .aggregates => {
+            try multiple.aggregates(.aggregates, &ctx, q);
+        },
         // t.OpType.aggregatesCount => {},
         else => {
             return errors.DbError.INCORRECT_QUERY_TYPE;

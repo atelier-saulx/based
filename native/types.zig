@@ -14,7 +14,7 @@ pub const OpType = enum(u8) {
     default = 2,
     alias = 3,
     aggregates = 4,
-    aggregatesCountType = 5,
+    // aggregatesCountType = 5,
     defaultSort = 8, // match queryType
 
     blockHash = 42,
@@ -400,23 +400,6 @@ pub const ResultType = enum(u8) {
     edgeFixed = 10,
 };
 
-pub const AggFn = enum(u8) {
-    none = 0,
-    avg = 1,
-    cardinality = 2,
-    concat = 3, // string aggregation, delimiter should be an argument
-    count = 4,
-    max = 5,
-    min = 6,
-    mode = 7, // ordered-set
-    percentile = 8, // continuous or discrete should be optional parameters, default = discrete
-    rank = 9, // hypothetical-set, dense should be optional parameter
-    stddev = 10, // population or sample should be optional parameters, default = sample
-    sum = 11,
-    variance = 12,
-    harmonicMean = 13,
-};
-
 pub const Compression = enum(u8) {
     none = 0,
     compressed = 1,
@@ -493,6 +476,8 @@ pub const QueryIteratorType = enum(u8) {
     vec = 130,
     vecFilter = 131,
     // add edge include / edge later
+    aggregates = 140,
+    aggregatesGroupBy = 141,
 };
 
 // include op needs overlap with this
@@ -706,3 +691,20 @@ pub const AggFunctionType = enum(u8) {
     min = 8,
     hmean = 9,
 };
+
+// pub const AggFn = enum(u8) {
+//     none = 0,
+//     avg = 1,
+//     cardinality = 2,
+//     concat = 3, // string aggregation, delimiter should be an argument
+//     count = 4,
+//     max = 5,
+//     min = 6,
+//     mode = 7, // ordered-set
+//     percentile = 8, // continuous or discrete should be optional parameters, default = discrete
+//     rank = 9, // hypothetical-set, dense should be optional parameter
+//     stddev = 10, // population or sample should be optional parameters, default = sample
+//     sum = 11,
+//     variance = 12,
+//     harmonicMean = 13,
+// };

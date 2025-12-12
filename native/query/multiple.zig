@@ -170,3 +170,32 @@ pub fn references(
         resultByteSizeIndex,
     );
 }
+
+pub fn aggregates(
+    comptime queryType: t.QueryType,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+) !void {
+    var index: usize = 0;
+    const header = utils.readNext(t.QueryHeader, q, &index);
+    const sizeIndex = try ctx.thread.query.reserve(4);
+    const typeEntry = try Node.getType(ctx.db, header.typeId);
+    var nodeCnt: u32 = 0;
+
+    if (queryType == .aggregatesCount) {
+        // later
+    } else {
+        const nestedQuery = q[index..];
+        switch (header.iteratorType) {
+            .aggregates => {
+                var it = Node.iterator(false, typeEntry);
+                nodeCnt = try iterator(.default, ctx, nestedQuery, &it, &header, typeEntry);
+            },
+            .aggregatesGroupBy => {},
+            else => {
+                // later
+            },
+        }
+    }
+    ctx.thread.query.write(nodeCnt, sizeIndex);
+}

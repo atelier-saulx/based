@@ -39,7 +39,6 @@ export const OpType = {
   default: 2,
   alias: 3,
   aggregates: 4,
-  aggregatesCountType: 5,
   defaultSort: 8,
   blockHash: 42,
   saveBlock: 67,
@@ -60,7 +59,6 @@ export const OpTypeInverse = {
   2: 'default',
   3: 'alias',
   4: 'aggregates',
-  5: 'aggregatesCountType',
   8: 'defaultSort',
   42: 'blockHash',
   67: 'saveBlock',
@@ -81,7 +79,6 @@ export const OpTypeInverse = {
   default, 
   alias, 
   aggregates, 
-  aggregatesCountType, 
   defaultSort, 
   blockHash, 
   saveBlock, 
@@ -891,58 +888,6 @@ export const ResultTypeInverse = {
  */
 export type ResultTypeEnum = (typeof ResultType)[keyof typeof ResultType]
 
-export const AggFn = {
-  none: 0,
-  avg: 1,
-  cardinality: 2,
-  concat: 3,
-  count: 4,
-  max: 5,
-  min: 6,
-  mode: 7,
-  percentile: 8,
-  rank: 9,
-  stddev: 10,
-  sum: 11,
-  variance: 12,
-  harmonicMean: 13,
-} as const
-
-export const AggFnInverse = {
-  0: 'none',
-  1: 'avg',
-  2: 'cardinality',
-  3: 'concat',
-  4: 'count',
-  5: 'max',
-  6: 'min',
-  7: 'mode',
-  8: 'percentile',
-  9: 'rank',
-  10: 'stddev',
-  11: 'sum',
-  12: 'variance',
-  13: 'harmonicMean',
-} as const
-
-/**
-  none, 
-  avg, 
-  cardinality, 
-  concat, 
-  count, 
-  max, 
-  min, 
-  mode, 
-  percentile, 
-  rank, 
-  stddev, 
-  sum, 
-  variance, 
-  harmonicMean 
- */
-export type AggFnEnum = (typeof AggFn)[keyof typeof AggFn]
-
 export const Compression = {
   none: 0,
   compressed: 1,
@@ -1146,6 +1091,8 @@ export const QueryIteratorType = {
   searchFilter: 121,
   vec: 130,
   vecFilter: 131,
+  aggregates: 140,
+  aggregatesGroupBy: 141,
 } as const
 
 export const QueryIteratorTypeInverse = {
@@ -1165,6 +1112,8 @@ export const QueryIteratorTypeInverse = {
   121: 'searchFilter',
   130: 'vec',
   131: 'vecFilter',
+  140: 'aggregates',
+  141: 'aggregatesGroupBy',
 } as const
 
 /**
@@ -1183,7 +1132,9 @@ export const QueryIteratorTypeInverse = {
   search, 
   searchFilter, 
   vec, 
-  vecFilter 
+  vecFilter, 
+  aggregates, 
+  aggregatesGroupBy 
  */
 export type QueryIteratorTypeEnum = (typeof QueryIteratorType)[keyof typeof QueryIteratorType]
 
