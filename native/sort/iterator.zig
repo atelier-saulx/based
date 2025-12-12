@@ -23,7 +23,7 @@ fn SortIterator(
             it: selva.SelvaSortIterator,
             isSmall: bool,
 
-            // small make it a struct
+            // // small make it a struct
             fromIt: ?*References.ReferencesIteratorEdges(desc),
             sortHeader: ?*const t.SortHeader,
             fieldSchema: ?Schema.FieldSchema,
@@ -33,15 +33,15 @@ fn SortIterator(
             i: u32,
 
             pub fn deinit(self: *SortIterator(desc, true)) void {
-                if (self.isSmall) {
-                    // nothing
-                } else {
-                    self.it = undefined;
-                    // while (self.nextRef()) |ref| {
-                    //     jemalloc.free(ref);
-                    // }
-                    selva.selva_sort_destroy(self.index.?.index);
-                }
+                // if (self.isSmall) {
+                //     // nothing
+                // } else {
+                self.it = undefined;
+                // while (self.nextRef()) |ref| {
+                //     jemalloc.free(ref);
+                // }
+                selva.selva_sort_destroy(self.index.?.index);
+                // }
             }
 
             pub fn next(self: *SortIterator(desc, true)) ?Node.Node {
@@ -316,7 +316,7 @@ pub fn fromIterator(
             };
         }
     }
-    var sortIndex = try Sort.createSortIndexMeta(header, isEdge);
+    var sortIndex = try Sort.createSortIndexMeta(header, 0, isEdge);
     try fillSortIndex(
         &sortIndex,
         dbCtx,

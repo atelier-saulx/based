@@ -70,7 +70,7 @@ await test('include', async (t) => {
   const todos: number[] = []
   const rand = fastPrng()
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1e3; i++) {
     todos.push(
       await db.create('todo', {
         name: 'a',
@@ -83,8 +83,7 @@ await test('include', async (t) => {
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
-  console.log(rand(0, 1e5))
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e3; i++) {
     db.create('user', {
       nr: 1e5 - i,
       nr1: 1e5 - i,
@@ -125,16 +124,29 @@ await test('include', async (t) => {
   console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
 
   // await db.query('user', 1).include('id', 'name').get().inspect()
+  // const result = await db
+  //   .query('user')
+  //   .include('id')
+  //   // .query('user', { email: 'beerdejim+10@gmail.com' })
+  //   // .include('id', 'todos.$status')
+  //   .range(0, 1e5)
+
+  //   .include((t) => {
+  //     t('todos').include('nr') //.sort('nr') // 'desc'
+  //   })
+  //   .get()
+  //   .inspect()
+
   const result = await db
-    .query('user')
-    .include('id')
+    .query('todo', [3, 10, 20])
+    .include('id', 'nr')
     // .query('user', { email: 'beerdejim+10@gmail.com' })
     // .include('id', 'todos.$status')
     .range(0, 1e5)
 
-    .include((t) => {
-      t('todos').include('nr').sort('nr') // 'desc'
-    })
+    // .include((t) => {
+    //   t('todos').include('nr') //.sort('nr') // 'desc'
+    // })
     .get()
     .inspect()
 

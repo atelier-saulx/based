@@ -576,18 +576,6 @@ pub const IncludeResponseMeta = packed struct {
     size: u32,
 };
 
-// pub const IncludeHeaderPartial = packed struct {
-//     op: IncludeOp,
-//     prop: u8,
-//     propType: PropType,
-// };
-
-// pub const IncludeHeaderMeta = packed struct {
-//     op: IncludeOp,
-//     prop: u8,
-//     propType: PropType,
-// };
-
 pub const QueryHeader = packed struct {
     op: QueryType,
     prop: u8, // this is for ref
