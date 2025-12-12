@@ -261,9 +261,9 @@ static inline void set_p(struct SelvaSortCtx *ctx, enum SelvaSortOrder order, st
     if (ctx->copy_size == 0) {
         item->p = p;
     } else {
-        memcpy((uint8_t *)item->data + get_item_size(ctx, order, data_size) - ctx->copy_size,
-               p,
-               ctx->copy_size);
+        void *dst = (uint8_t *)item->data + get_item_size(ctx, order, data_size) - ctx->copy_size;
+        memcpy(dst, p, ctx->copy_size);
+        item->p = dst;
     }
 }
 
