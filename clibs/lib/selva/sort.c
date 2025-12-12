@@ -215,9 +215,7 @@ struct SelvaSortCtx *selva_sort_init3(enum SelvaSortOrder order, size_t fixed_si
     ctx->lang = selva_lang_none;
     ctx->trans = SELVA_LANGS_TRANS_NONE;
 
-    if (fixed_size) {
-        mempool_init(&ctx->mempool, SORT_SLAB_SIZE, get_item_size(ctx, order, 0), alignof(max_align_t));
-    } else if (use_mempool(order)) {
+    if (fixed_size || use_mempool(order)) {
         mempool_init(&ctx->mempool, SORT_SLAB_SIZE, get_item_size(ctx, order, 0), alignof(max_align_t));
     }
 
@@ -261,7 +259,7 @@ static inline void set_p(struct SelvaSortCtx *ctx, enum SelvaSortOrder order, st
     if (ctx->copy_size == 0) {
         item->p = p;
     } else {
-        void *dst = (uint8_t *)item->data + get_item_size(ctx, order, data_size) - ctx->copy_size;
+        void *dst = (uint8_t *)item + get_item_size(ctx, order, data_size) - ctx->copy_size;
         memcpy(dst, p, ctx->copy_size);
         item->p = dst;
     }
