@@ -12,6 +12,7 @@ const Sort = @import("sort.zig");
 const std = @import("std");
 const jemalloc = @import("../jemalloc.zig");
 const utils = @import("../utils.zig");
+const errors = @import("../errors.zig");
 
 fn SortIterator(
     comptime desc: bool,
@@ -136,11 +137,7 @@ fn fillSortIndex(
         }
     } else {
         const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-        std.debug.print("flap X {any} \n", .{it});
-
         while (it.next()) |node| {
-            std.debug.print("flap {any} \n", .{node});
-
             const data = if (header.propType == t.PropType.text)
                 Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
             else
@@ -160,6 +157,36 @@ fn fillSortIndex(
     sortIndex.isCreated = true;
 }
 
+fn getSortIndex(
+    comptime isEdge: bool,
+    thread: *Thread.Thread,
+    sortFieldType: t.PropType,
+) !*selva.SelvaSortCtx {
+    switch (sortFieldType) {
+        .int8,
+        .uint8,
+        .int16,
+        .uint16,
+        .int32,
+        .uint32,
+        .boolean,
+        .@"enum",
+        .cardinality,
+        => {
+            return if (isEdge) thread.tmpSortIntEdge else thread.tmpSortInt;
+        },
+        .number, .timestamp => {
+            return if (isEdge) thread.tmpSortDoubleEdge else thread.tmpSortDouble;
+        },
+        .string, .text, .alias, .binary => {
+            return if (isEdge) thread.tmpSortBinaryEdge else thread.tmpSortBinary;
+        },
+        else => {
+            return errors.DbError.WRONG_SORTFIELD_TYPE;
+        },
+    }
+}
+
 pub fn fromIterator(
     comptime desc: bool,
     comptime isEdge: bool,
@@ -173,7 +200,7 @@ pub fn fromIterator(
         // can just store the header maybe?
         .len = header.len,
         .start = header.start,
-        .index = if (isEdge) thread.tmpSortIndexEdge else thread.tmpSortIndex,
+        .index = try getSortIndex(isEdge, thread, header.propType),
         .prop = header.propType,
         .langCode = header.lang,
         .field = header.prop,
