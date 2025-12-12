@@ -269,6 +269,8 @@ pub fn fromIterator(
     header: *const t.SortHeader,
     it: anytype,
 ) !SortIterator(desc, isEdge) {
+    std.debug.print("XXX", .{});
+
     if (it.refs.nr_refs > 125) {
         // this might be worth to store from here
         var sortIndex = try Sort.createSortIndexMeta(header, it.refs.nr_refs, isEdge);
@@ -316,19 +318,6 @@ pub fn fromIterator(
             };
         }
     }
-    var sortIndex = try Sort.createSortIndexMeta(header, 0, isEdge);
-    try fillSortIndex(
-        &sortIndex,
-        dbCtx,
-        thread.decompressor,
-        header,
-        typeEntry,
-        &it,
-        false,
-        false,
-        isEdge,
-    );
-    return createIterator(desc, isEdge, &sortIndex);
 }
 
 pub fn iterator(
