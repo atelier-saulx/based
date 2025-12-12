@@ -9,6 +9,7 @@
 #include "mempool.h"
 #include "selva/selva_lang.h"
 #include "selva_error.h"
+#include "selva/align.h"
 #include "selva/sort.h"
 
 #if 0
@@ -48,6 +49,7 @@ struct SelvaSortCtx {
         RB_HEAD(SelvaSortTreeDescText, SelvaSortItem) out_dt;
     };
     size_t fixed_size; /*!< 0 if dynamic. */
+    size_t copy_size; /*!< Make a copy of n bytes from p given on insert. */
     struct mempool mempool;
     enum selva_lang_code lang;
     enum selva_langs_trans trans;
@@ -152,6 +154,9 @@ RB_GENERATE_STATIC(SelvaSortTreeDescBuffer, SelvaSortItem, _entry, selva_sort_cm
 RB_GENERATE_STATIC(SelvaSortTreeAscText, SelvaSortItem, _entry, selva_sort_cmp_asc_text)
 RB_GENERATE_STATIC(SelvaSortTreeDescText, SelvaSortItem, _entry, selva_sort_cmp_desc_text)
 
+/**
+ * Non-buffer item.
+ */
 static bool use_mempool(enum SelvaSortOrder order)
 {
     return (order == SELVA_SORT_ORDER_NONE ||
@@ -163,6 +168,32 @@ static bool use_mempool(enum SelvaSortOrder order)
             order == SELVA_SORT_ORDER_DOUBLE_DESC);
 }
 
+/**
+ * Get the size of a SelvaSortItem.
+ * @param order used for comptime optimization.
+ * @param dyn_data_size total size of dynamic data that will be allocated.
+ */
+static inline size_t get_item_size(struct SelvaSortCtx *ctx, enum SelvaSortOrder order, size_t dyn_data_size)
+{
+    size_t size;
+
+    if (use_mempool(order)) {
+        size = sizeof(struct SelvaSortItem);
+    } else if (dyn_data_size > 0) {
+        size = sizeof_wflex(struct SelvaSortItem, data, dyn_data_size);
+    } else if (ctx->fixed_size > 0) {
+        size = sizeof_wflex(struct SelvaSortItem, data, ctx->fixed_size);
+    } else {
+        size = sizeof(struct SelvaSortItem);
+    }
+
+    if (ctx->copy_size > 0) {
+        size += PAD(size, sizeof(max_align_t)) + ctx->copy_size;
+    }
+
+    return size;
+}
+
 struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order)
 {
     return selva_sort_init2(order, 0);
@@ -170,18 +201,24 @@ struct SelvaSortCtx *selva_sort_init(enum SelvaSortOrder order)
 
 struct SelvaSortCtx *selva_sort_init2(enum SelvaSortOrder order, size_t fixed_size)
 {
+    return selva_sort_init3(order, fixed_size, 0);
+}
+
+struct SelvaSortCtx *selva_sort_init3(enum SelvaSortOrder order, size_t fixed_size, size_t copy_size)
+{
     struct SelvaSortCtx *ctx = selva_malloc(sizeof(*ctx));
 
     ctx->order = order;
     RB_INIT(&ctx->out_none);
     ctx->fixed_size = fixed_size;
+    ctx->copy_size = copy_size;
     ctx->lang = selva_lang_none;
     ctx->trans = SELVA_LANGS_TRANS_NONE;
 
     if (fixed_size) {
-        mempool_init(&ctx->mempool, SORT_SLAB_SIZE, sizeof_wflex(struct SelvaSortItem, data, fixed_size), alignof(struct SelvaSortItem));
+        mempool_init(&ctx->mempool, SORT_SLAB_SIZE, get_item_size(ctx, order, 0), alignof(max_align_t));
     } else if (use_mempool(order)) {
-        mempool_init(&ctx->mempool, SORT_SLAB_SIZE, sizeof(struct SelvaSortItem), alignof(struct SelvaSortItem));
+        mempool_init(&ctx->mempool, SORT_SLAB_SIZE, get_item_size(ctx, order, 0), alignof(max_align_t));
     }
 
     return ctx;
@@ -219,11 +256,22 @@ void selva_sort_destroy(struct SelvaSortCtx *ctx)
     selva_free(ctx);
 }
 
+static inline void set_p(struct SelvaSortCtx *ctx, enum SelvaSortOrder order, struct SelvaSortItem *item, size_t data_size, const void *p)
+{
+    if (ctx->copy_size == 0) {
+        item->p = p;
+    } else {
+        memcpy((uint8_t *)item->data + get_item_size(ctx, order, data_size) - ctx->copy_size,
+               p,
+               ctx->copy_size);
+    }
+}
+
 static struct SelvaSortItem *create_item_empty(struct SelvaSortCtx *ctx, const void *p)
 {
     struct SelvaSortItem *item = mempool_get(&ctx->mempool);
 
-    item->p = p;
+    set_p(ctx, SELVA_SORT_ORDER_NONE, item, 0, p);
 
     return item;
 }
@@ -233,7 +281,8 @@ static struct SelvaSortItem *create_item_i64(struct SelvaSortCtx *ctx, int64_t v
     struct SelvaSortItem *item = mempool_get(&ctx->mempool);
 
     item->i64 = v;
-    item->p = p;
+    /* ASC/DESC doesn't matter here. */
+    set_p(ctx, SELVA_SORT_ORDER_I64_ASC, item, 0, p);
 
     return item;
 }
@@ -243,7 +292,8 @@ static struct SelvaSortItem *create_item_f(struct SelvaSortCtx *ctx, float f, co
     struct SelvaSortItem *item = mempool_get(&ctx->mempool);
 
     item->f = f;
-    item->p = p;
+    /* ASC/DESC doesn't matter here. */
+    set_p(ctx, SELVA_SORT_ORDER_FLOAT_ASC, item, 0, p);
 
     return item;
 }
@@ -253,18 +303,20 @@ static struct SelvaSortItem *create_item_d(struct SelvaSortCtx *ctx, double d, c
     struct SelvaSortItem *item = mempool_get(&ctx->mempool);
 
     item->d = d;
-    item->p = p;
+    /* ASC/DESC doesn't matter here. */
+    set_p(ctx, SELVA_SORT_ORDER_DOUBLE_ASC, item, 0, p);
 
     return item;
 }
 
-static struct SelvaSortItem *create_item_buffer(const void *buf, size_t len, const void *p)
+static struct SelvaSortItem *create_item_buffer(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p)
 {
-    struct SelvaSortItem *item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, len));
+    struct SelvaSortItem *item = selva_malloc(get_item_size(ctx, SELVA_SORT_ORDER_BUFFER_ASC, len));
 
     item->data_len = len;
     memcpy(item->data, buf, len);
-    item->p = p;
+    /* ASC/DESC doesn't matter here. */
+    set_p(ctx, SELVA_SORT_ORDER_BUFFER_ASC, item, len, p);
 
     return item;
 }
@@ -275,7 +327,8 @@ static struct SelvaSortItem *create_item_fixed_buffer(struct SelvaSortCtx *ctx, 
 
     item->data_len = len;
     memcpy(item->data, buf, len);
-    item->p = p;
+    /* ASC/DESC doesn't matter here. */
+    set_p(ctx, SELVA_SORT_ORDER_BUFFER_ASC, item, 0, p);
 
     return item;
 }
@@ -294,7 +347,7 @@ static struct SelvaSortItem *create_item_text(struct SelvaSortCtx *ctx, const ch
         if (ctx->fixed_size) {
             item = mempool_get(&ctx->mempool);
         } else {
-            item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, data_len + 1));
+            item = selva_malloc(get_item_size(ctx, SELVA_SORT_ORDER_TEXT_ASC, len + 1));
         }
         strxfrm_l(item->data, str, len, ctx->loc);
         item->data_len = data_len;
@@ -306,12 +359,18 @@ static struct SelvaSortItem *create_item_text(struct SelvaSortCtx *ctx, const ch
         if (ctx->fixed_size) {
             item = mempool_get(&ctx->mempool);
         } else {
-            item = selva_malloc(sizeof_wflex(struct SelvaSortItem, data, 1));
+            item = selva_malloc(get_item_size(ctx, SELVA_SORT_ORDER_TEXT_ASC, 1));
         }
         item->data_len = 0;
     }
 
-    item->p = p;
+    if (ctx->fixed_size) {
+        /* ASC/DESC doesn't matter here. */
+        set_p(ctx, SELVA_SORT_ORDER_TEXT_ASC, item, 0, p);
+    } else {
+        /* ASC/DESC doesn't matter here. */
+        set_p(ctx, SELVA_SORT_ORDER_TEXT_ASC, item, len + 1, p);
+    }
 
     return item;
 }
@@ -373,7 +432,7 @@ void selva_sort_insert_buf(struct SelvaSortCtx *ctx, const void *buf, size_t len
 {
     struct SelvaSortItem *item = ctx->fixed_size
         ? create_item_fixed_buffer(ctx, buf, min(ctx->fixed_size, len), p)
-        : create_item_buffer(buf, len, p);
+        : create_item_buffer(ctx, buf, len, p);
 
     switch (ctx->order) {
     case SELVA_SORT_ORDER_BUFFER_ASC:
@@ -466,7 +525,7 @@ static inline struct SelvaSortItem *find_double(struct SelvaSortCtx *ctx, double
 
 static inline struct SelvaSortItem *find_buffer(struct SelvaSortCtx *ctx, const void *buf, size_t len, const void *p)
 {
-    struct SelvaSortItem *find = create_item_buffer(buf, len, p);
+    struct SelvaSortItem *find = create_item_buffer(ctx, buf, len, p);
     struct SelvaSortItem *item;
 
     switch (ctx->order) {
