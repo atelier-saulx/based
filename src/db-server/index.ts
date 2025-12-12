@@ -196,6 +196,8 @@ export class DbServer extends DbShared {
         native.getQueryBufThread(buf, this.dbCtxExternal)
       }
       this.addOpOnceListener(op, id, resolve)
+
+      // this.addOpListener(op, id, resolve)
     })
   }
 

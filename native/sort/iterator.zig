@@ -164,8 +164,6 @@ pub fn fromIterator(
     header: *const t.SortHeader,
     it: anytype,
 ) !SortIterator(desc, isEdge) {
-    // if using this with isEdge the edge ref struct had to be allocated unfortunately
-    // be aware!
     var sortIndex = try Sort.createSortIndexMeta(header);
     try fillSortIndex(
         &sortIndex,

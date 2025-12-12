@@ -91,10 +91,6 @@ pub fn ReferencesIteratorEdges(comptime desc: bool) type {
                 if (node) |n1| {
                     if (edgeNode) |n2| {
                         return ReferencesIteratorEdgesResult{ .node = n1, .edge = n2 };
-                    } else {
-                        // CAN EDGES BE NULL? I THINK SO
-                        //     // remove null
-                        //     return ReferencesIteratorEdgesResult{ .node = n1, .edge = null };
                     }
                 }
             }
@@ -239,6 +235,7 @@ pub fn swapReference(
     try errors.selva(selva.c.selva_fields_references_swap(node, fieldSchema, index_a, index_b));
 }
 
+// when youri is done with modify edges REMOVE
 // this should be gone
 pub fn getEdgeReference(
     db: *DbCtx,

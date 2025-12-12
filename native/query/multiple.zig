@@ -62,8 +62,6 @@ fn iteratorEdge(
         try include.include(ref.node, ctx, nestedQuery, typeEntry);
         try ctx.thread.query.append(t.ReadOp.edge);
         try include.include(ref.edge, ctx, edgeQuery, edgeTypeEntry);
-        // std.debug.print("REF -> {any} \n", .{ ref, edgeQuery });
-
         nodeCnt += 1;
         if (nodeCnt >= header.limit) {
             break;

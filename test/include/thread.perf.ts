@@ -82,6 +82,11 @@ await test('include', async (t) => {
     nr: 999,
   })
 
+  const todo4 = await db.create('todo', {
+    name: 'd',
+    nr: 15,
+  })
+
   console.log({ todo, todo2 })
   let d = Date.now()
 
@@ -107,6 +112,8 @@ await test('include', async (t) => {
         { id: todo, $status: 'nothing' }, //  $name: 'bla'
         { id: todo2, $status: 'inProgress' }, //  $name: 'blurf'
         { id: todo3, $status: 'nothing' },
+        { id: todo4, $status: 'blocked' },
+
         // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
       ],
       // todos: [todo, todo2], // this doesnot work with edges...
