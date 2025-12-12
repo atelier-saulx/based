@@ -589,6 +589,7 @@ pub const QueryHeader = packed struct {
     edgeFilterSize: u16,
     includeSize: u16, // cannot be more then 16kb? might be good enough
     iteratorType: QueryIteratorType,
+    size: u16,
     sort: bool,
     _padding: u7,
 };

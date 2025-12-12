@@ -94,7 +94,7 @@ pub fn ids(
     var i: usize = 0;
     const header = utils.readNext(t.QueryHeader, q, &i);
     const sizeIndex = try ctx.thread.query.reserve(4);
-    const size = header.includeSize + header.filterSize + header.searchSize + utils.sizeOf(t.QueryHeader);
+    const size = header.size;
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var it = IdsIterator{ .i = 0, .ids = utils.read([]u32, q, size + 4), .typeEntry = typeEntry };
     var nodeCnt: u32 = 0;
@@ -105,7 +105,12 @@ pub fn ids(
         .desc => {
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },
-        .sort => {},
+        .sort => {
+            const sortHeader = utils.readNext(t.SortHeader, q, &i);
+            var itSort = try Sort.fromIterator(false, false, ctx.db, ctx.thread, typeEntry, &sortHeader, &it);
+            nodeCnt = try iterator(.default, ctx, q, &itSort, &header, typeEntry, &i);
+            itSort.deinit();
+        },
         .descSort => {},
         else => {},
     }

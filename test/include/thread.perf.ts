@@ -68,7 +68,7 @@ await test('include', async (t) => {
   console.log('SCHEMA DONE')
 
   const todos: number[] = []
-  const rand = fastPrng()
+  const rand = fastPrng(233221)
 
   for (let i = 0; i < 1e3; i++) {
     todos.push(
@@ -125,17 +125,18 @@ await test('include', async (t) => {
 
   // await db.query('user', 1).include('id', 'name').get().inspect()
   const result = await db
-    .query('user')
-    .include('id')
+    .query('user', [2, 10, 11])
+    .include('id', 'nr')
     // .query('user', { email: 'beerdejim+10@gmail.com' })
     // .include('id', 'todos.$status')
-    .range(0, 1e5)
+    // .range(0, 1e5)
+    .sort('nr')
 
-    .include((t) => {
-      t('todos').include('nr') //.sort('nr') // 'desc'
-    })
+    // .include((t) => {
+    //   t('todos').include('nr').sort('nr') // 'desc'
+    // })
     .get()
-    .inspect()
+    .inspect(10)
 
   // const result = await db
   //   .query('todo', [3, 10, 20])

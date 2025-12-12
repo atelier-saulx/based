@@ -190,6 +190,7 @@ export function defToBuffer(
         edgeTypeId,
         edgeSize,
         edgeFilterSize: 0, // this is nice
+        size: buffer.byteLength + includeSize,
       },
       0,
     )
