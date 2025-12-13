@@ -265,19 +265,19 @@ pub fn insert(
     decompressor: *deflate.Decompressor,
     sortIndex: *SortIndexMeta,
     data: []u8,
-    value: anytype, // should support getting edge
+    value: anytype,
 ) void {
     const prop = sortIndex.prop;
     const start = sortIndex.start;
     const index = sortIndex.index;
     return switch (prop) {
-        t.PropType.@"enum", t.PropType.uint8, t.PropType.int8, t.PropType.boolean => {
+        .@"enum", .uint8, .int8, .boolean => {
             selva.selva_sort_insert_i64(index, data[start], value);
         },
-        t.PropType.alias => {
+        .alias => {
             selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, value);
         },
-        t.PropType.string, t.PropType.text, t.PropType.binary => {
+        .string, .text, .binary => {
             if (sortIndex.len > 0) {
                 selva.selva_sort_insert_buf(
                     index,
@@ -291,20 +291,20 @@ pub fn insert(
                 selva.selva_sort_insert_buf(index, str, SIZE, value);
             }
         },
-        t.PropType.number, t.PropType.timestamp => {
+        .number, .timestamp => {
             selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), value);
         },
-        t.PropType.cardinality => {
+        .cardinality => {
             if (data.len > 0) {
                 insertIntIndex(u32, data, sortIndex, value);
             } else {
                 insertIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, value);
             }
         },
-        t.PropType.int32 => insertIntIndex(i32, data, sortIndex, value),
-        t.PropType.int16 => insertIntIndex(i16, data, sortIndex, value),
-        t.PropType.uint32 => insertIntIndex(u32, data, sortIndex, value),
-        t.PropType.uint16 => insertIntIndex(u16, data, sortIndex, value),
+        .int32 => insertIntIndex(i32, data, sortIndex, value),
+        .int16 => insertIntIndex(i16, data, sortIndex, value),
+        .uint32, .id => insertIntIndex(u32, data, sortIndex, value),
+        .uint16 => insertIntIndex(u16, data, sortIndex, value),
         else => {},
     };
 }

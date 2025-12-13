@@ -200,6 +200,7 @@ pub fn references(
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
+
         .default => {
             var it = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
@@ -212,6 +213,10 @@ pub fn references(
             var it = try referencesSort(false, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
+        },
+        .edgeDesc => {
+            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
         .descSort => {
             var it = try referencesSort(true, false, ctx, q, from, fromType, i, &header, typeEntry);

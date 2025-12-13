@@ -31,9 +31,6 @@ export function defToBuffer(
 
   const isIds = 'ids' in def.target
   const isReferences = def.type === QueryDefType.References
-  const isReferencesEdges =
-    def.type === QueryDefType.Edge &&
-    def.target.ref?.typeIndex === PropType.references
   const isRootDefault = def.type === QueryDefType.Root
   const isReference = def.type === QueryDefType.Reference
   const isAlias = 'resolvedAlias' in def.target
@@ -136,8 +133,11 @@ export function defToBuffer(
     if (edge) {
       result.push(edge)
     }
-  } else if (isRootDefault || isReferences || isReferencesEdges) {
-    const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
+  } else if (isRootDefault || isReferences) {
+    const hasSort = (def.sort?.prop !== ID_PROP || isReferences) && !!def.sort
+
+    console.log({ hasSort }, def.sort)
+
     const hasSearch = !!def.search
     const hasFilter = def.filter.size > 0
     const searchSize = hasSearch ? def.search!.size : 0

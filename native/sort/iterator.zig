@@ -119,30 +119,50 @@ fn fillSortIndex(
             const edgeType = try Node.getType(dbCtx, header.edgeType);
             const fieldSchema = try Schema.getFieldSchema(edgeType, header.prop);
             while (it.nextRef()) |ref| {
-                const data = if (header.propType == t.PropType.text)
-                    Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang)
-                else
-                    Fields.get(typeEntry, ref.edge, fieldSchema, header.propType);
+                const data = switch (header.propType) {
+                    .text => Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang),
+                    else => Fields.get(typeEntry, ref.edge, fieldSchema, header.propType),
+                };
                 Sort.insert(decompressor, sortIndex, data, &ref);
+            }
+        } else if (header.propType == .id) {
+            while (it.nextRef()) |ref| {
+                Sort.insert(
+                    decompressor,
+                    sortIndex,
+                    @constCast(std.mem.asBytes(&Node.getNodeId(ref.node))),
+                    &ref,
+                );
             }
         } else {
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
             while (it.nextRef()) |ref| {
-                const data = if (header.propType == t.PropType.text)
-                    Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang)
-                else
-                    Fields.get(typeEntry, ref.node, fieldSchema, header.propType);
+                const data = switch (header.propType) {
+                    .text => Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang),
+                    else => Fields.get(typeEntry, ref.node, fieldSchema, header.propType),
+                };
                 Sort.insert(decompressor, sortIndex, data, &ref);
             }
         }
     } else {
-        const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-        while (it.next()) |node| {
-            const data = if (header.propType == t.PropType.text)
-                Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
-            else
-                Fields.get(typeEntry, node, fieldSchema, header.propType);
-            Sort.insert(decompressor, sortIndex, data, node);
+        if (header.propType == .id) {
+            while (it.next()) |node| {
+                Sort.insert(
+                    decompressor,
+                    sortIndex,
+                    @constCast(std.mem.asBytes(&Node.getNodeId(node))),
+                    node,
+                );
+            }
+        } else {
+            const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+            while (it.next()) |node| {
+                const data = switch (header.propType) {
+                    .text => Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang),
+                    else => Fields.get(typeEntry, node, fieldSchema, header.propType),
+                };
+                Sort.insert(decompressor, sortIndex, data, node);
+            }
         }
     }
 
@@ -172,6 +192,7 @@ fn getSortIndex(
         .boolean,
         .@"enum",
         .cardinality,
+        .id,
         => {
             return if (isEdge) thread.tmpSortIntEdge else thread.tmpSortInt;
         },

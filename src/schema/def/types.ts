@@ -198,7 +198,7 @@ for (const k in SIZE_MAP) {
 
 export const ID_FIELD_DEF: PropDef = {
   schema: null as any,
-  typeIndex: PropType.null,
+  typeIndex: PropType.id,
   separate: true,
   path: ['id'],
   start: 0,

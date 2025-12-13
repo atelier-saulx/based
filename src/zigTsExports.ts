@@ -998,12 +998,12 @@ export const IntervalInverse = {
  */
 export type IntervalEnum = (typeof Interval)[keyof typeof Interval]
 
-export const SortOrder = {
+export const Order = {
   asc: 0,
   desc: 1,
 } as const
 
-export const SortOrderInverse = {
+export const OrderInverse = {
   0: 'asc',
   1: 'desc',
 } as const
@@ -1012,10 +1012,10 @@ export const SortOrderInverse = {
   asc, 
   desc 
  */
-export type SortOrderEnum = (typeof SortOrder)[keyof typeof SortOrder]
+export type OrderEnum = (typeof Order)[keyof typeof Order]
 
 export type SortHeader = {
-  order: SortOrderEnum
+  order: OrderEnum
   prop: number
   propType: PropTypeEnum
   start: number
@@ -1049,7 +1049,7 @@ export const writeSortHeader = (
 }
 
 export const writeSortHeaderProps = {
-  order: (buf: Uint8Array, value: SortOrderEnum, offset: number) => {
+  order: (buf: Uint8Array, value: OrderEnum, offset: number) => {
     buf[offset] = value
   },
   prop: (buf: Uint8Array, value: number, offset: number) => {
@@ -1077,7 +1077,7 @@ export const readSortHeader = (
   offset: number,
 ): SortHeader => {
   const value: SortHeader = {
-    order: (buf[offset]) as SortOrderEnum,
+    order: (buf[offset]) as OrderEnum,
     prop: buf[offset + 1],
     propType: (buf[offset + 2]) as PropTypeEnum,
     start: readUint16(buf, offset + 3),
@@ -1089,8 +1089,8 @@ export const readSortHeader = (
 }
 
 export const readSortHeaderProps = {
-  order: (buf: Uint8Array, offset: number): SortOrderEnum => {
-    return (buf[offset]) as SortOrderEnum
+  order: (buf: Uint8Array, offset: number): OrderEnum => {
+    return (buf[offset]) as OrderEnum
   },
   prop: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 1]

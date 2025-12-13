@@ -130,10 +130,11 @@ await test('include', async (t) => {
     .include('id', 'nr')
     // .query('user', { email: 'beerdejim+10@gmail.com' })
     // .include('id', 'todos.$status')
-    .range(0, 1e5)
-    .sort('nr', 'desc')
+    .range(0, 2)
+    // .sort('nr')
+    .order('desc')
     .include((t) => {
-      t('todos').include('nr').sort('nr', 'desc') // 'desc'
+      t('todos').include('nr').sort('id').order('asc')
     })
     .get()
     .inspect()
