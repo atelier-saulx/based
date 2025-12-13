@@ -125,13 +125,11 @@ await test('include', async (t) => {
 
   // [2, 10, 11]
   // await db.query('user', 1).include('id', 'name').get().inspect()
+
   const result = await db
     .query('user')
     .include('id', 'nr')
-    // .query('user', { email: 'beerdejim+10@gmail.com' })
-    // .include('id', 'todos.$status')
-    .range(0, 2)
-    // .sort('nr')
+    .range(0, 1e5)
     .order('desc')
     .include((t) => {
       t('todos').include('nr').sort('id').order('asc')
