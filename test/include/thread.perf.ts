@@ -123,20 +123,20 @@ await test('include', async (t) => {
 
   console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
 
+  // [2, 10, 11]
   // await db.query('user', 1).include('id', 'name').get().inspect()
   const result = await db
-    .query('user', [2, 10, 11])
+    .query('user')
     .include('id', 'nr')
     // .query('user', { email: 'beerdejim+10@gmail.com' })
     // .include('id', 'todos.$status')
-    // .range(0, 1e5)
-    .sort('nr')
-
-    // .include((t) => {
-    //   t('todos').include('nr').sort('nr') // 'desc'
-    // })
+    .range(0, 1e5)
+    .sort('nr', 'desc')
+    .include((t) => {
+      t('todos').include('nr').sort('nr', 'desc') // 'desc'
+    })
     .get()
-    .inspect(10)
+    .inspect()
 
   // const result = await db
   //   .query('todo', [3, 10, 20])

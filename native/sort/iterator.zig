@@ -14,7 +14,7 @@ const jemalloc = @import("../jemalloc.zig");
 const utils = @import("../utils.zig");
 const errors = @import("../errors.zig");
 
-fn SortIterator(
+pub fn SortIterator(
     comptime desc: bool,
     comptime edge: bool,
 ) type {

@@ -111,7 +111,12 @@ pub fn ids(
             nodeCnt = try iterator(.default, ctx, q, &itSort, &header, typeEntry, &i);
             itSort.deinit();
         },
-        .descSort => {},
+        .descSort => {
+            const sortHeader = utils.readNext(t.SortHeader, q, &i);
+            var itSort = try Sort.fromIterator(true, false, ctx.db, ctx.thread, typeEntry, &sortHeader, &it);
+            nodeCnt = try iterator(.default, ctx, q, &itSort, &header, typeEntry, &i);
+            itSort.deinit();
+        },
         else => {},
     }
     ctx.thread.query.write(nodeCnt, sizeIndex);
@@ -150,6 +155,22 @@ pub fn default(
     ctx.thread.query.write(nodeCnt, sizeIndex);
 }
 
+inline fn referencesSort(
+    comptime desc: bool,
+    comptime edge: bool,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+    from: Node.Node,
+    fromType: Selva.Type,
+    i: *usize,
+    header: *const t.QueryHeader,
+    typeEntry: Node.Type,
+) !Sort.SortIterator(desc, edge) {
+    const sortHeader = utils.readNext(t.SortHeader, q, i);
+    var refs = try References.iterator(desc, edge, ctx.db, from, header.prop, fromType);
+    return try Sort.fromIterator(desc, edge, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
+}
+
 pub fn references(
     ctx: *Query.QueryCtx,
     q: []u8,
@@ -171,6 +192,10 @@ pub fn references(
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },
+        .edgeIncludeDesc => {
+            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
+        },
         .edge => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
@@ -179,24 +204,37 @@ pub fn references(
             var it = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
+        .desc => {
+            var it = try References.iterator(true, false, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+        },
         .sort => {
-            const sortHeader = utils.readNext(t.SortHeader, q, i);
-            var refs = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
-            var it = try Sort.fromIterator(false, false, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
+            var it = try referencesSort(false, false, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
+        .descSort => {
+            var it = try referencesSort(true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeSort => {
-            const sortHeader = utils.readNext(t.SortHeader, q, i);
-            var refs = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            var it = try Sort.fromIterator(false, true, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
+            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
+        .edgeDescSort => {
+            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
         .edgeIncludeSort => {
-            const sortHeader = utils.readNext(t.SortHeader, q, i);
-            var refs = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            var it = try Sort.fromIterator(false, true, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
+            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
+        .edgeIncludeDescSort => {
+            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },

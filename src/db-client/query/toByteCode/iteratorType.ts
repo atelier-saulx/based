@@ -73,7 +73,7 @@ export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
     }
   }
 
-  // console.log('QueryIteratorTypeEnum', QueryIteratorTypeInverse[base])
+  console.log('QueryIteratorTypeEnum', QueryIteratorTypeInverse[base])
 
   return base as QueryIteratorTypeEnum
 }

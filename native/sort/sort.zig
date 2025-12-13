@@ -13,6 +13,7 @@ pub const SortIndexMeta = @import("common.zig").SortIndexMeta;
 
 pub const iterator = Iterator.iterator;
 pub const fromIterator = Iterator.fromIterator;
+pub const SortIterator = Iterator.SortIterator;
 
 const SIZE = 16;
 pub const EMPTY: [0]u8 = [_]u8{0} ** 0;
