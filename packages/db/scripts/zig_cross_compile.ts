@@ -103,12 +103,10 @@ function buildWithZig(
   libSelvaPath: string,
 ) {
   console.log(`Building for target ${target}...`)
-  execSync(
-    `zig build ${debugOption} -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ '-Drpath=${rpath}' -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`,
-    {
-      stdio: 'inherit',
-    },
-  )
+  const buildCommand = `zig build ${debugOption} -Dtarget=${target} -Dnode_hpath=${nodeHeadersPath}/include/node/ '-Drpath=${rpath}' -Dlibselvapath=${libSelvaPath} -Dheadersselvapath=${libSelvaPath}/include`
+  execSync(buildCommand, {
+    stdio: 'inherit',
+  })
 }
 
 function moveLibraryToPlatformDir(
@@ -122,6 +120,12 @@ function moveLibraryToPlatformDir(
   if (fs.existsSync(originalPath)) {
     console.log(`Renaming library to ${newPath}...`)
     fs.renameSync(originalPath, newPath)
+    if (isDebugging && platform.os === 'macos') {
+      const dyCmd = `/bin/bash -c "rm -rf ${destinationLibPath}/libbased_db_zig.dylib.dSYM && mv ${__dirname}/zig-out/lib/libbased_db_zig.dylib*.* ${destinationLibPath}/"`
+      execSync(dyCmd, {
+        stdio: 'inherit',
+      })
+    }
 
     if (platform.os === 'linux') {
       if (os.platform() == 'darwin') {
@@ -134,12 +138,9 @@ function moveLibraryToPlatformDir(
         )
       } else {
         const cmd = `/bin/bash -c "cd dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
-        execSync(
-          cmd,
-          {
-            stdio: 'inherit',
-          },
-        )
+        execSync(cmd, {
+          stdio: 'inherit',
+        })
       }
     }
   } else {
