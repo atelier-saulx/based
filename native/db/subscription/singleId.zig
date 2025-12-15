@@ -28,7 +28,7 @@ pub inline fn getNewBitSize(size: u32) u32 {
     return n;
 }
 
-pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) !void {
+pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) void {
     var needsChange = false;
     const range = typeSubs.maxId - typeSubs.minId;
 
@@ -109,7 +109,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
         if (id < typeSubs.minId) {
             typeSubs.minId = id;
         }
-        try sizeBitSet(typeSubs);
+        sizeBitSet(typeSubs);
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
@@ -256,7 +256,7 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !voi
                                 typeSubs.minId = k.*;
                             }
                         }
-                        try sizeBitSet(typeSubs);
+                        sizeBitSet(typeSubs);
                     }
                 } else {
                     if (id == typeSubs.maxId) {
@@ -282,7 +282,7 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !voi
                             }
                             j += 1;
                         }
-                        try sizeBitSet(typeSubs);
+                        sizeBitSet(typeSubs);
                     }
                 }
             } else if (subs.len != 0) {
