@@ -67,7 +67,7 @@ pub fn realloc(old: anytype, n: usize) @TypeOf(old) {
     if (config.enable_debug and std.valgrind.runningOnValgrind() > 0) {
         const oldSize: usize = old.len * @sizeOf(T);
         const newSize = n * @sizeOf(T);
-        const oldBuf = slicify(u8, old.ptr, oldSize);
+        const oldBuf = slicify(u8, @ptrCast(old.ptr), oldSize);
         const newBuf = slicify(u8, ptr, newSize);
 
         std.valgrind.memcheck.makeMemNoAccess(oldBuf);
