@@ -717,3 +717,11 @@ pub const AggFunctionType = enum(u8) {
 //     variance = 12,
 //     harmonicMean = 13,
 // };
+
+pub const AggregatesHeader = packed struct {
+    hasGroupBy: bool,
+    resultsSize: u16,
+    accumulatorSize: u16,
+    isSamplingSet: bool,
+    _padding: u6,
+};

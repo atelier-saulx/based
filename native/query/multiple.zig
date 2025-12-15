@@ -9,6 +9,7 @@ const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 const Sort = @import("../sort/sort.zig");
+const iteratorAggregates = @import("aggregates/aggregates.zig").iteratorAggregates;
 
 fn iterator(
     comptime _: t.QueryIteratorType,
@@ -175,30 +176,39 @@ pub fn references(
 }
 
 pub fn aggregates(
-    comptime queryType: t.QueryType,
     ctx: *Query.QueryCtx,
     q: []u8,
 ) !void {
-    var index: usize = 0;
-    const header = utils.readNext(t.QueryHeader, q, &index);
-    const sizeIndex = try ctx.thread.query.reserve(4);
-    const typeEntry = try Node.getType(ctx.db, header.typeId);
-    var nodeCnt: u32 = 0;
+    var i: usize = 0;
 
-    if (queryType == .aggregatesCount) {
-        // later
-    } else {
-        const nestedQuery = q[index..];
-        switch (header.iteratorType) {
-            .aggregates => {
-                var it = Node.iterator(false, typeEntry);
-                nodeCnt = try iterator(.default, ctx, nestedQuery, &it, &header, typeEntry);
-            },
-            .aggregatesGroupBy => {},
-            else => {
-                // later
-            },
-        }
+    const queryHeader = utils.readNext(t.QueryHeader, q, &i);
+    const aggregatesHeader = utils.readNext(t.AggregatesHeader, q, &i);
+    const sizeIndex = try ctx.thread.query.reserve(4);
+    const totalSize = aggregatesHeader.resultsSize + aggregatesHeader.accumulatorSize;
+    const resultIndex = try ctx.thread.query.reserve(totalSize);
+
+    const bufferSlice = ctx.thread.query.data[resultIndex .. resultIndex + totalSize];
+    // const resultsField = bufferSlice[0..aggregatesHeader.resultsSize];
+    const accumulatorField = bufferSlice[aggregatesHeader.resultsSize..];
+    @memset(accumulatorField, 0);
+
+    const aggDefs = undefined;
+
+    const typeId = queryHeader.typeId;
+    const typeEntry = try Node.getType(ctx.db, typeId);
+
+    var nodeCnt: u32 = 0;
+    switch (queryHeader.iteratorType) {
+        .default => {
+            var it = Node.iterator(false, typeEntry);
+            nodeCnt = try iterator(.default, ctx, q, &it, &queryHeader, typeEntry, &i);
+
+            try iteratorAggregates(ctx, &it, queryHeader.limit, undefined, aggDefs, accumulatorField, typeEntry);
+        },
+        else => {},
     }
+    // try finalizeResults(resultsField, accumulatorField, aggDefs, option);
+
+    // i.* += queryHeader.includeSize; not nessecary scince its top level
     ctx.thread.query.write(nodeCnt, sizeIndex);
 }

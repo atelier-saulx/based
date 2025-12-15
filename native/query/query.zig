@@ -57,7 +57,7 @@ pub fn getQueryThreaded(
             // can treat this the same as refs maybe?
         },
         .aggregates => {
-            try multiple.aggregates(.aggregates, &ctx, q);
+            try multiple.aggregates(&ctx, q);
         },
         // t.OpType.aggregatesCount => {},
         else => {

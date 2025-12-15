@@ -186,6 +186,7 @@ export class DbServer extends DbShared {
   }
 
   getQueryBuf(buf): Promise<Uint8Array> {
+    console.log('🦋🦋🦋🦋🦋🦋🦋🦋🦋')
     return new Promise((resolve) => {
       const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4]
