@@ -20,11 +20,11 @@ await test('sum top level', async (t) => {
     },
   })
 
-  db.create('trip', { driver: 'Mr. Snurp', distance: 10 })
-  db.create('trip', { driver: 'Ms. Blah', distance: 20 })
+  db.create('trip', { distance: 10 })
+  db.create('trip', { distance: 20 })
 
-  //   console.log((await db.query('trip').include('driver').get()).debug())
-  console.log((await db.query('trip').sum('distance').get()).debug())
+  console.log((await db.query('trip').include('distance').get()).debug())
+  //   console.log((await db.query('trip').sum('distance').get()).debug())
 
   await db.stop()
 })
