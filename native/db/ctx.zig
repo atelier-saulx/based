@@ -2,6 +2,7 @@ const std = @import("std");
 const config = @import("config");
 const selva = @import("../selva/selva.zig").c;
 const deflate = @import("../deflate.zig");
+const jemalloc = @import("../jemalloc.zig");
 const valgrind = @import("../valgrind.zig");
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
@@ -58,10 +59,7 @@ pub fn createDbCtx(
     subscriptions.*.types = Subscription.TypeSubMap.init(allocator);
 
     subscriptions.*.lastIdMarked = 0;
-    subscriptions.*.singleIdMarked = try std.heap.raw_c_allocator.alloc(
-        *Subscription.IdSubsItem,
-        Subscription.BLOCK_SIZE,
-    );
+    subscriptions.*.singleIdMarked = jemalloc.alloc(*Subscription.IdSubsItem, Subscription.BLOCK_SIZE);
 
     errdefer {
         arena.deinit();
@@ -109,7 +107,7 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
         ctx.ids = &[_]u32{};
     }
 
-    std.heap.raw_c_allocator.free(ctx.subscriptions.singleIdMarked);
+    jemalloc.free(ctx.subscriptions.singleIdMarked);
     deflate.destroyDecompressor(ctx.decompressor);
     deflate.deinitBlockState(&ctx.libdeflateBlockState);
 

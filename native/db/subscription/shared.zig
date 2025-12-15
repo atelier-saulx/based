@@ -1,4 +1,5 @@
-const Subscription = @import("./common.zig");
+const jemalloc = @import("../../jemalloc.zig");
+const Subscription = @import("common.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const std = @import("std");
 
@@ -8,13 +9,13 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*Subscription.TypeSubscri
     var typeSubs: *Subscription.TypeSubscriptionCtx = undefined;
     if (!ctx.subscriptions.types.contains(typeId)) {
         // single id
-        typeSubs = try std.heap.raw_c_allocator.create(Subscription.TypeSubscriptionCtx);
+        typeSubs = jemalloc.create(Subscription.TypeSubscriptionCtx);
         typeSubs.maxId = 0;
         typeSubs.minId = std.math.maxInt(u32);
         typeSubs.bitSetMin = std.math.maxInt(u32);
         typeSubs.bitSetSize = 10;
         typeSubs.bitSetRatio = 5;
-        typeSubs.idBitSet = try std.heap.raw_c_allocator.alloc(u1, typeSubs.bitSetSize);
+        typeSubs.idBitSet = jemalloc.alloc(u1, typeSubs.bitSetSize);
         @memset(typeSubs.idBitSet, 0);
         typeSubs.idSubs = Subscription.IdSubs.init(std.heap.raw_c_allocator);
 
@@ -41,12 +42,12 @@ pub inline fn removeSubTypeIfEmpty(
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
             // std.debug.print("REMOVE SUB TYPE... \n", .{});
             removed_entry.value.idSubs.deinit();
-            std.heap.raw_c_allocator.free(removed_entry.value.idBitSet);
+            jemalloc.free(removed_entry.value.idBitSet);
 
             // std.heap.raw_c_allocator.free(removed_entry.value.multiSubsStageMarked);
             // std.heap.raw_c_allocator.free(removed_entry.value.multiSubs);
 
-            std.heap.raw_c_allocator.destroy(removed_entry.value);
+            jemalloc.free(removed_entry.value);
         }
     }
 }

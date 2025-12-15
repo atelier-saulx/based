@@ -10,33 +10,34 @@ const Fields = @import("../selva/fields.zig");
 const Thread = @import("../thread/thread.zig");
 const Sort = @import("sort.zig");
 const std = @import("std");
+const jemalloc = @import("../jemalloc.zig");
 const utils = @import("../utils.zig");
+const errors = @import("../errors.zig");
 
-fn SortIterator(
+pub fn SortIterator(
     comptime desc: bool,
     comptime edge: bool,
 ) type {
     if (edge) {
         return struct {
-            index: *SortIndexMeta,
+            index: ?*SortIndexMeta,
             it: selva.SelvaSortIterator,
 
             pub fn deinit(self: *SortIterator(desc, true)) void {
-                selva.selva_sort_destroy(self.index.index);
+                selva.selva_sort_clear(self.index.?.index);
             }
 
             pub fn next(self: *SortIterator(desc, true)) ?Node.Node {
-                // not supert big fan of this
                 if (selva.selva_sort_foreach_done(&self.it)) {
                     return null;
                 }
                 if (desc) {
-                    if (selva.selva_sort_foreach_reverse(self.index.index, &self.it)) |i| {
-                        return @as(References.ReferencesIteratorEdgesResult, @ptrCast(@alignCast(i))).node;
+                    if (selva.selva_sort_foreach_reverse(self.index.?.index, &self.it)) |i| {
+                        return @as(*References.ReferencesIteratorEdgesResult, @ptrCast(@alignCast(i))).node;
                     }
                 } else {
-                    if (selva.selva_sort_foreach(self.index.index, &self.it)) |i| {
-                        return @as(References.ReferencesIteratorEdgesResult, @ptrCast(@alignCast(i))).node;
+                    if (selva.selva_sort_foreach(self.index.?.index, &self.it)) |i| {
+                        return @as(*References.ReferencesIteratorEdgesResult, @ptrCast(@alignCast(i))).node;
                     }
                 }
                 return null;
@@ -47,11 +48,11 @@ fn SortIterator(
                     return null;
                 }
                 if (desc) {
-                    if (selva.selva_sort_foreach_reverse(self.index.index, &self.it)) |i| {
+                    if (selva.selva_sort_foreach_reverse(self.index.?.index, &self.it)) |i| {
                         return @ptrCast(@alignCast(i));
                     }
                 } else {
-                    if (selva.selva_sort_foreach(self.index.index, &self.it)) |i| {
+                    if (selva.selva_sort_foreach(self.index.?.index, &self.it)) |i| {
                         return @ptrCast(@alignCast(i));
                     }
                 }
@@ -60,12 +61,11 @@ fn SortIterator(
         };
     } else {
         return struct {
-            index: *SortIndexMeta,
+            index: ?*SortIndexMeta,
             it: selva.SelvaSortIterator,
 
             pub fn deinit(self: *SortIterator(desc, false)) void {
-                // std.debug.print("{any} \n", .{self});
-                selva.selva_sort_destroy(self.index.index);
+                selva.selva_sort_clear(self.index.?.index);
             }
 
             pub fn next(self: *SortIterator(desc, false)) ?Node.Node {
@@ -73,9 +73,9 @@ fn SortIterator(
                     return null;
                 }
                 if (desc) {
-                    return @ptrCast(selva.selva_sort_foreach_reverse(self.index.index, &self.it));
+                    return @ptrCast(selva.selva_sort_foreach_reverse(self.index.?.index, &self.it));
                 } else {
-                    return @ptrCast(@alignCast(selva.selva_sort_foreach(self.index.index, &self.it)));
+                    return @ptrCast(@alignCast(selva.selva_sort_foreach(self.index.?.index, &self.it)));
                 }
             }
         };
@@ -118,31 +118,51 @@ fn fillSortIndex(
         if (header.edgeType != 0) {
             const edgeType = try Node.getType(dbCtx, header.edgeType);
             const fieldSchema = try Schema.getFieldSchema(edgeType, header.prop);
-            while (it.*.nextRef()) |ref| {
-                const data = if (header.propType == t.PropType.text)
-                    Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang)
-                else
-                    Fields.get(typeEntry, ref.edge, fieldSchema, header.propType);
+            while (it.nextRef()) |ref| {
+                const data = switch (header.propType) {
+                    .text => Fields.getText(typeEntry, ref.edge, fieldSchema, header.propType, header.lang),
+                    else => Fields.get(typeEntry, ref.edge, fieldSchema, header.propType),
+                };
                 Sort.insert(decompressor, sortIndex, data, &ref);
+            }
+        } else if (header.propType == .id) {
+            while (it.nextRef()) |ref| {
+                Sort.insert(
+                    decompressor,
+                    sortIndex,
+                    @constCast(std.mem.asBytes(&Node.getNodeId(ref.node))),
+                    &ref,
+                );
             }
         } else {
             const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-            while (it.*.nextRef()) |ref| {
-                const data = if (header.propType == t.PropType.text)
-                    Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang)
-                else
-                    Fields.get(typeEntry, ref.node, fieldSchema, header.propType);
+            while (it.nextRef()) |ref| {
+                const data = switch (header.propType) {
+                    .text => Fields.getText(typeEntry, ref.node, fieldSchema, header.propType, header.lang),
+                    else => Fields.get(typeEntry, ref.node, fieldSchema, header.propType),
+                };
                 Sort.insert(decompressor, sortIndex, data, &ref);
             }
         }
     } else {
-        const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
-        while (it.*.next()) |node| {
-            const data = if (header.propType == t.PropType.text)
-                Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang)
-            else
-                Fields.get(typeEntry, node, fieldSchema, header.propType);
-            Sort.insert(decompressor, sortIndex, data, node);
+        if (header.propType == .id) {
+            while (it.next()) |node| {
+                Sort.insert(
+                    decompressor,
+                    sortIndex,
+                    @constCast(std.mem.asBytes(&Node.getNodeId(node))),
+                    node,
+                );
+            }
+        } else {
+            const fieldSchema = try Schema.getFieldSchema(typeEntry, header.prop);
+            while (it.next()) |node| {
+                const data = switch (header.propType) {
+                    .text => Fields.getText(typeEntry, node, fieldSchema, header.propType, header.lang),
+                    else => Fields.get(typeEntry, node, fieldSchema, header.propType),
+                };
+                Sort.insert(decompressor, sortIndex, data, node);
+            }
         }
     }
 
@@ -157,6 +177,37 @@ fn fillSortIndex(
     sortIndex.isCreated = true;
 }
 
+fn getSortIndex(
+    comptime isEdge: bool,
+    thread: *Thread.Thread,
+    sortFieldType: t.PropType,
+) !*selva.SelvaSortCtx {
+    switch (sortFieldType) {
+        .int8,
+        .uint8,
+        .int16,
+        .uint16,
+        .int32,
+        .uint32,
+        .boolean,
+        .@"enum",
+        .cardinality,
+        .id,
+        => {
+            return if (isEdge) thread.tmpSortIntEdge else thread.tmpSortInt;
+        },
+        .number, .timestamp => {
+            return if (isEdge) thread.tmpSortDoubleEdge else thread.tmpSortDouble;
+        },
+        .string, .text, .alias, .binary => {
+            return if (isEdge) thread.tmpSortBinaryEdge else thread.tmpSortBinary;
+        },
+        else => {
+            return errors.DbError.WRONG_SORTFIELD_TYPE;
+        },
+    }
+}
+
 pub fn fromIterator(
     comptime desc: bool,
     comptime isEdge: bool,
@@ -166,18 +217,29 @@ pub fn fromIterator(
     header: *const t.SortHeader,
     it: anytype,
 ) !SortIterator(desc, isEdge) {
-    var sortIndex = try Sort.createSortIndexMeta(header, isEdge);
+    var sortIndex: SortIndexMeta = .{
+        // can just store the header maybe?
+        .len = header.len,
+        .start = header.start,
+        .index = try getSortIndex(isEdge, thread, header.propType),
+        .prop = header.propType,
+        .langCode = header.lang,
+        .field = header.prop,
+        .isCreated = false,
+    };
+
     try fillSortIndex(
         &sortIndex,
         dbCtx,
         thread.decompressor,
         header,
         typeEntry,
-        &it,
+        it,
         false,
         false,
         isEdge,
     );
+
     return createIterator(desc, isEdge, &sortIndex);
 }
 

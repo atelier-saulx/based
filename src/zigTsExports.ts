@@ -946,12 +946,12 @@ export const IntervalInverse = {
  */
 export type IntervalEnum = (typeof Interval)[keyof typeof Interval]
 
-export const SortOrder = {
+export const Order = {
   asc: 0,
   desc: 1,
 } as const
 
-export const SortOrderInverse = {
+export const OrderInverse = {
   0: 'asc',
   1: 'desc',
 } as const
@@ -960,10 +960,10 @@ export const SortOrderInverse = {
   asc, 
   desc 
  */
-export type SortOrderEnum = (typeof SortOrder)[keyof typeof SortOrder]
+export type OrderEnum = (typeof Order)[keyof typeof Order]
 
 export type SortHeader = {
-  order: SortOrderEnum
+  order: OrderEnum
   prop: number
   propType: PropTypeEnum
   start: number
@@ -997,7 +997,7 @@ export const writeSortHeader = (
 }
 
 export const writeSortHeaderProps = {
-  order: (buf: Uint8Array, value: SortOrderEnum, offset: number) => {
+  order: (buf: Uint8Array, value: OrderEnum, offset: number) => {
     buf[offset] = value
   },
   prop: (buf: Uint8Array, value: number, offset: number) => {
@@ -1025,7 +1025,7 @@ export const readSortHeader = (
   offset: number,
 ): SortHeader => {
   const value: SortHeader = {
-    order: (buf[offset]) as SortOrderEnum,
+    order: (buf[offset]) as OrderEnum,
     prop: buf[offset + 1],
     propType: (buf[offset + 2]) as PropTypeEnum,
     start: readUint16(buf, offset + 3),
@@ -1037,8 +1037,8 @@ export const readSortHeader = (
 }
 
 export const readSortHeaderProps = {
-  order: (buf: Uint8Array, offset: number): SortOrderEnum => {
-    return (buf[offset]) as SortOrderEnum
+  order: (buf: Uint8Array, offset: number): OrderEnum => {
+    return (buf[offset]) as OrderEnum
   },
   prop: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 1]
@@ -1755,10 +1755,11 @@ export type QueryHeader = {
   edgeFilterSize: number
   includeSize: number
   iteratorType: QueryIteratorTypeEnum
+  size: number
   sort: boolean
 }
 
-export const QueryHeaderByteSize = 26
+export const QueryHeaderByteSize = 28
 
 export const writeQueryHeader = (
   buf: Uint8Array,
@@ -1789,6 +1790,8 @@ export const writeQueryHeader = (
   offset += 2
   buf[offset] = header.iteratorType
   offset += 1
+  writeUint16(buf, header.size, offset)
+  offset += 2
   buf[offset] = 0
   buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 0
   buf[offset] |= ((0 >>> 0) & 127) << 1
@@ -1833,8 +1836,11 @@ export const writeQueryHeaderProps = {
   iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
     buf[offset + 24] = value
   },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 25)
+  },
   sort: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 25] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+    buf[offset + 27] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
 }
 
@@ -1855,7 +1861,8 @@ export const readQueryHeader = (
     edgeFilterSize: readUint16(buf, offset + 20),
     includeSize: readUint16(buf, offset + 22),
     iteratorType: (buf[offset + 24]) as QueryIteratorTypeEnum,
-    sort: (((buf[offset + 25] >>> 0) & 1)) === 1,
+    size: readUint16(buf, offset + 25),
+    sort: (((buf[offset + 27] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -1897,8 +1904,11 @@ export const readQueryHeaderProps = {
   iteratorType: (buf: Uint8Array, offset: number): QueryIteratorTypeEnum => {
     return (buf[offset + 24]) as QueryIteratorTypeEnum
   },
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 25)
+  },
   sort: (buf: Uint8Array, offset: number): boolean => {
-    return (((buf[offset + 25] >>> 0) & 1)) === 1
+    return (((buf[offset + 27] >>> 0) & 1)) === 1
   },
 }
 

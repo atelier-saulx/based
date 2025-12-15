@@ -1,4 +1,4 @@
-import { LangCode, QueryType } from '../../zigTsExports.js'
+import { LangCode, Order, QueryType } from '../../zigTsExports.js'
 import { DbClient } from '../index.js'
 import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
 import {
@@ -35,6 +35,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
         include: new Map(),
       },
     },
+    order: Order.asc,
     aggregate: null,
     sort: null,
     references: new Map(),

@@ -67,34 +67,22 @@ await test('include', async (t) => {
 
   console.log('SCHEMA DONE')
 
-  const todo = await db.create('todo', {
-    name: 'a',
-    nr: 68,
-  })
+  const todos: number[] = []
+  const rand = fastPrng(233221)
 
-  const todo2 = await db.create('todo', {
-    name: 'b',
-    nr: 67,
-  })
+  for (let i = 0; i < 1e3; i++) {
+    todos.push(
+      await db.create('todo', {
+        name: 'a',
+        nr: rand(0, 1e5),
+      }),
+    )
+  }
 
-  const todo3 = await db.create('todo', {
-    name: 'c',
-    nr: 999,
-  })
-
-  const todo4 = await db.create('todo', {
-    name: 'd',
-    nr: 15,
-  })
-
-  console.log({ todo, todo2 })
   let d = Date.now()
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
-  const rand = fastPrng()
-
-  console.log(rand(0, 1e5))
   for (let i = 0; i < 1e5; i++) {
     db.create('user', {
       nr: 1e5 - i,
@@ -105,17 +93,14 @@ await test('include', async (t) => {
       nr5: 1e5 - i,
       nr6: 1e5 - i,
       name: 'mr snurp ' + i,
-      currentTodo: todo,
+      currentTodo: todos[0],
       email: `beerdejim+${i}@gmail.com`,
-      todos: [
-        // need to write an 8 byte empty thing for edges
-        { id: todo, $status: 'nothing' }, //  $name: 'bla'
-        { id: todo2, $status: 'inProgress' }, //  $name: 'blurf'
-        { id: todo3, $status: 'nothing' },
-        { id: todo4, $status: 'blocked' },
+      todos: todos.slice(0, rand(0, 10)).map((v) => ({
+        id: v,
+        $status: 'nothing',
+      })),
 
-        // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
-      ],
+      // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
       // todos: [todo, todo2], // this doesnot work with edges...
       // body: {
       //   nl: 'x',
@@ -136,20 +121,35 @@ await test('include', async (t) => {
   await db.drain()
   console.log(Date.now() - d, 'ms')
 
-  console.log('\n--------------------------\nStart query!!!!!!!!!')
+  console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
 
+  // [2, 10, 11]
   // await db.query('user', 1).include('id', 'name').get().inspect()
-  await db
-    // .query('user')
-    .query('user', { email: 'beerdejim+10@gmail.com' })
-    // .include('id', 'todos.$status')
-    .range(0, 1e5)
 
+  const result = await db
+    .query('user')
+    .include('id', 'nr')
+    .range(0, 1e5)
+    .order('desc')
     .include((t) => {
-      t('todos').include('nr', '$status').sort('$status') // 'desc'
+      t('todos').include('nr').sort('id').order('asc')
     })
     .get()
     .inspect()
+
+  // const result = await db
+  //   .query('todo', [3, 10, 20])
+  //   .include('id', 'nr')
+  //   // .query('user', { email: 'beerdejim+10@gmail.com' })
+  //   // .include('id', 'todos.$status')
+  //   .range(0, 1e5)
+
+  //   // .include((t) => {
+  //   //   t('todos').include('nr') //.sort('nr') // 'desc'
+  //   // })
+  //   .get()
+  //   .inspect()
+
   // .debug()
   // const idBufs: any = []
   // for (let i = 0; i < 1000; i++) {

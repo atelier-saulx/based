@@ -9,6 +9,7 @@ import { Interval, aggFnOptions } from './aggregates/types.js'
 import {
   LangCode,
   LangCodeEnum,
+  OrderEnum,
   QueryTypeEnum,
   SortHeader,
   AggFunctionTypeEnum,
@@ -192,6 +193,7 @@ export type QueryDefShared = {
   aggregate: null | QueryDefAggregation
   search: null | QueryDefSearch
   sort: null | SortHeader
+  order: OrderEnum
   skipValidation: boolean
   range: {
     offset: number

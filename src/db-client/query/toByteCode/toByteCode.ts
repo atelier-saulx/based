@@ -14,17 +14,14 @@ import {
   PropType,
   QueryHeaderByteSize,
   QueryHeaderSingleByteSize,
-  QueryHeaderSingleReferenceByteSize,
   QueryType,
   QueryTypeEnum,
   SortHeaderByteSize,
   writeQueryHeader,
   writeQueryHeaderSingle,
-  writeQueryHeaderSingleReference,
   writeSortHeader,
 } from '../../../zigTsExports.js'
 import { searchToBuffer } from '../search/index.js'
-import { debugBuffer } from '../../../sdk.js'
 
 export function defToBuffer(
   db: DbClient,
@@ -32,10 +29,8 @@ export function defToBuffer(
 ): IntermediateByteCode[] {
   const result: IntermediateByteCode = []
 
+  const isIds = 'ids' in def.target
   const isReferences = def.type === QueryDefType.References
-  const isReferencesEdges =
-    def.type === QueryDefType.Edge &&
-    def.target.ref?.typeIndex === PropType.references
   const isRootDefault = def.type === QueryDefType.Root
   const isReference = def.type === QueryDefType.Reference
   const isAlias = 'resolvedAlias' in def.target
@@ -138,8 +133,11 @@ export function defToBuffer(
     if (edge) {
       result.push(edge)
     }
-  } else if (isRootDefault || isReferences || isReferencesEdges) {
-    const hasSort = def.sort?.prop !== ID_PROP && !!def.sort
+  } else if (isRootDefault || isReferences) {
+    const hasSort = (def.sort?.prop !== ID_PROP || isReferences) && !!def.sort
+
+    console.log({ hasSort }, def.sort)
+
     const hasSearch = !!def.search
     const hasFilter = def.filter.size > 0
     const searchSize = hasSearch ? def.search!.size : 0
@@ -171,9 +169,11 @@ export function defToBuffer(
     const typeId: number = def.schema!.id
     const edgeTypeId: number =
       (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
-    const op: QueryTypeEnum = isReferences
-      ? QueryType.references
-      : QueryType.default
+    const op: QueryTypeEnum = isIds
+      ? QueryType.ids
+      : isReferences
+        ? QueryType.references
+        : QueryType.default
     let index = writeQueryHeader(
       buffer,
       {
@@ -190,6 +190,7 @@ export function defToBuffer(
         edgeTypeId,
         edgeSize,
         edgeFilterSize: 0, // this is nice
+        size: buffer.byteLength + includeSize,
       },
       0,
     )
@@ -209,6 +210,15 @@ export function defToBuffer(
       include,
     ])
     result.push(edge)
+
+    if (isIds && 'ids' in def.target && def.target.ids) {
+      const ids = new Uint8Array(4 + def.target.ids.length * 4)
+      writeUint32(ids, def.target.ids.length, 0)
+      for (let i = 0; i < def.target.ids.length; i++) {
+        writeUint32(ids, def.target.ids[i], i * 4 + 4)
+      }
+      result.push(ids)
+    }
   } else {
     console.error('UNHANDLED QUERY TYPE')
   }

@@ -384,7 +384,6 @@ export const validateLocale = (def: QueryDef, lang: string) => {
 export const validateSort = (
   def: QueryDef,
   field: string,
-  orderInput?: 'asc' | 'desc',
 ): QueryDef['sort'] => {
   let propDef: PropDef | PropDefEdge | void = undefined
   let edgeType = 0
@@ -396,14 +395,6 @@ export const validateSort = (
   } else {
     propDef = field === 'id' ? ID_FIELD_DEF : def.props![field]
   }
-
-  if (orderInput && orderInput !== 'asc' && orderInput !== 'desc') {
-    def.errors.push({
-      code: ERR_SORT_ORDER,
-      payload: { order: orderInput, field },
-    })
-  }
-  const order = orderInput === 'asc' || orderInput === undefined ? 0 : 1
 
   let lang: LangCodeEnum = 0
   if (propDef == undefined) {
@@ -466,8 +457,7 @@ export const validateSort = (
     start: propDef.start ?? 0,
     len: propDef.len ?? 0,
     edgeType,
-    isEdge: propDef.__isEdge || false,
-    order,
+    order: def.order,
     lang,
   }
 }

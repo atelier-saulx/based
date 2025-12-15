@@ -60,6 +60,9 @@ SELVA_EXPORT
 void selva_sort_set_lang(struct SelvaSortCtx *ctx, enum selva_lang_code lang, enum selva_langs_trans trans);
 
 SELVA_EXPORT
+void selva_sort_clear(struct SelvaSortCtx *ctx);
+
+SELVA_EXPORT
 void selva_sort_destroy(struct SelvaSortCtx *ctx);
 
 SELVA_EXPORT

@@ -50,14 +50,27 @@ export class QueryBranch<T> {
     this.def = def
   }
 
-  sort(field: string, order: 'asc' | 'desc' = 'asc'): T {
+  sort(field: string): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'sort',
-        args: [field, order],
+        args: [field],
       })
     } else {
-      sort(this.def!, field, order)
+      sort(this.def!, field)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  order(order: 'asc' | 'desc') {
+    if (this.queryCommands) {
+      this.queryCommands.unshift({
+        method: 'order',
+        args: [order],
+      })
+    } else {
+      this.def!.order = order === 'desc' ? Order.desc : Order.asc
     }
     // @ts-ignore
     return this

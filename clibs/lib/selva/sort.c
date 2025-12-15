@@ -215,9 +215,7 @@ struct SelvaSortCtx *selva_sort_init3(enum SelvaSortOrder order, size_t fixed_si
     ctx->lang = selva_lang_none;
     ctx->trans = SELVA_LANGS_TRANS_NONE;
 
-    if (fixed_size) {
-        mempool_init(&ctx->mempool, SORT_SLAB_SIZE, get_item_size(ctx, order, 0), alignof(max_align_t));
-    } else if (use_mempool(order)) {
+    if (fixed_size || use_mempool(order)) {
         mempool_init(&ctx->mempool, SORT_SLAB_SIZE, get_item_size(ctx, order, 0), alignof(max_align_t));
     }
 
@@ -232,25 +230,49 @@ void selva_sort_set_lang(struct SelvaSortCtx *ctx, enum selva_lang_code lang, en
     ctx->loc_trans = selva_lang_wctrans(lang, trans);
 }
 
-void selva_sort_destroy(struct SelvaSortCtx *ctx)
+static void clear_pool(struct SelvaSortCtx *ctx)
 {
     struct SelvaSortTreeNone *head = &ctx->out_none;
     struct SelvaSortItem *item;
     struct SelvaSortItem *tmp;
+
+    RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
+        RB_REMOVE(SelvaSortTreeNone, head, item);
+        mempool_return(&ctx->mempool, item);
+    }
+}
+
+static void clear_dyn(struct SelvaSortCtx *ctx) {
+    struct SelvaSortTreeNone *head = &ctx->out_none;
+    struct SelvaSortItem *item;
+    struct SelvaSortItem *tmp;
+
+    RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
+        RB_REMOVE(SelvaSortTreeNone, head, item);
+        selva_free(item);
+    }
+}
+
+void selva_sort_clear(struct SelvaSortCtx *ctx)
+{
     bool pool = use_mempool(ctx->order) || ctx->fixed_size;
 
     if (pool) {
-        RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
-            RB_REMOVE(SelvaSortTreeNone, head, item);
-            mempool_return(&ctx->mempool, item);
-        }
+        clear_pool(ctx);
+    } else {
+        clear_dyn(ctx);
+    }
+}
 
+void selva_sort_destroy(struct SelvaSortCtx *ctx)
+{
+    bool pool = use_mempool(ctx->order) || ctx->fixed_size;
+
+    if (pool) {
+        clear_pool(ctx);
         mempool_destroy(&ctx->mempool);
     } else {
-        RB_FOREACH_SAFE(item, SelvaSortTreeNone, head, tmp) {
-            RB_REMOVE(SelvaSortTreeNone, head, item);
-            selva_free(item);
-        }
+        clear_dyn(ctx);
     }
 
     selva_free(ctx);
@@ -261,7 +283,7 @@ static inline void set_p(struct SelvaSortCtx *ctx, enum SelvaSortOrder order, st
     if (ctx->copy_size == 0) {
         item->p = p;
     } else {
-        void *dst = (uint8_t *)item->data + get_item_size(ctx, order, data_size) - ctx->copy_size;
+        void *dst = (uint8_t *)item + get_item_size(ctx, order, data_size) - ctx->copy_size;
         memcpy(dst, p, ctx->copy_size);
         item->p = dst;
     }

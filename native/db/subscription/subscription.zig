@@ -26,7 +26,7 @@ fn getMarkedIdSubscriptionsInternal(env: napi.Env, info: napi.Info) !napi.Value 
             const newDataIndex = i * 8;
             const id = sub.id;
             if (sub.isRemoved) {
-                try singleId.removeSubscriptionMarked(ctx, sub);
+                singleId.removeSubscriptionMarked(ctx, sub);
             } else {
                 utils.writeAs(u32, data, id, newDataIndex);
                 utils.writeAs(u32, data, sub.subId, newDataIndex + 4);

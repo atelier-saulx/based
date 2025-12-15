@@ -2,6 +2,7 @@ const std = @import("std");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
 const utils = @import("../../utils.zig");
+const jemalloc = @import("../../jemalloc.zig");
 const Subscription = @import("common.zig");
 const upsertSubType = @import("shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("shared.zig").removeSubTypeIfEmpty;
@@ -27,7 +28,7 @@ pub inline fn getNewBitSize(size: u32) u32 {
     return n;
 }
 
-pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) !void {
+pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) void {
     var needsChange = false;
     const range = typeSubs.maxId - typeSubs.minId;
 
@@ -41,7 +42,7 @@ pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) !void {
                 typeSubs.*.bitSetRatio = 25;
             }
             typeSubs.bitSetSize = newSize;
-            typeSubs.idBitSet = try std.heap.raw_c_allocator.realloc(typeSubs.idBitSet, newSize);
+            typeSubs.idBitSet = jemalloc.realloc(typeSubs.idBitSet, newSize);
             needsChange = true;
         }
     }
@@ -94,13 +95,13 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
-            subs = try std.heap.raw_c_allocator.realloc(subs, subs.len + 1);
+            subs = jemalloc.realloc(subs, subs.len + 1);
             entry.value_ptr.* = subs;
         }
     }
 
     if (idDoesNotExist) {
-        subs = try std.heap.c_allocator.alloc(Subscription.IdSubsItem, 1);
+        subs = jemalloc.alloc(Subscription.IdSubsItem, 1);
         try typeSubs.idSubs.put(id, subs);
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
@@ -108,7 +109,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
         if (id < typeSubs.minId) {
             typeSubs.minId = id;
         }
-        try sizeBitSet(typeSubs);
+        sizeBitSet(typeSubs);
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
@@ -161,10 +162,10 @@ pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
                     if (subs[i].subId == subId) {
                         if (subs[i].marked != Subscription.SubStatus.marked) {
                             if (ctx.subscriptions.singleIdMarked.len < ctx.subscriptions.lastIdMarked + 1) {
-                                ctx.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
+                                ctx.subscriptions.singleIdMarked = jemalloc.realloc(
                                     ctx.subscriptions.singleIdMarked,
                                     ctx.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
-                                ) catch &.{};
+                                );
                             }
                             ctx.subscriptions.singleIdMarked[ctx.subscriptions.lastIdMarked] = &subs[i];
                             ctx.subscriptions.lastIdMarked += 1;
@@ -189,7 +190,7 @@ pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
     return null;
 }
 
-pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !void {
+pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) void {
     const id = sub.id;
     const typeId = sub.typeId;
 
@@ -197,7 +198,7 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !voi
         if (typeSubs.idSubs.getEntry(id)) |idSub| {
             const subs = idSub.value_ptr.*;
             if (subs.len == 1) {
-                std.heap.raw_c_allocator.free(idSub.value_ptr.*);
+                jemalloc.free(idSub.value_ptr.*);
                 _ = typeSubs.idSubs.remove(id);
 
                 // dont do this here need top be in marked
@@ -255,7 +256,7 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !voi
                                 typeSubs.minId = k.*;
                             }
                         }
-                        try sizeBitSet(typeSubs);
+                        sizeBitSet(typeSubs);
                     }
                 } else {
                     if (id == typeSubs.maxId) {
@@ -281,11 +282,11 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !voi
                             }
                             j += 1;
                         }
-                        try sizeBitSet(typeSubs);
+                        sizeBitSet(typeSubs);
                     }
                 }
             } else if (subs.len != 0) {
-                const newSubs = try std.heap.raw_c_allocator.realloc(
+                const newSubs = jemalloc.realloc(
                     idSub.value_ptr.*,
                     idSub.value_ptr.len - 1,
                 );

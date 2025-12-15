@@ -3,6 +3,7 @@ const ModifyCtx = Modify.ModifyCtx;
 const std = @import("std");
 const selva = @import("../selva/selva.zig");
 const utils = @import("../utils.zig");
+const jemalloc = @import("../jemalloc.zig");
 const Subscription = @import("../db/subscription/common.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
@@ -44,10 +45,10 @@ pub fn stagePartial(ctx: *ModifyCtx, start: u16) void {
             }
             if (@reduce(.Or, idSubs[i].partial == f)) {
                 if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
-                    ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
+                    ctx.db.subscriptions.singleIdMarked = jemalloc.realloc(
                         ctx.db.subscriptions.singleIdMarked,
                         ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
-                    ) catch &.{};
+                    );
                 }
                 ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
                 ctx.db.subscriptions.lastIdMarked += 1;
@@ -70,10 +71,10 @@ pub fn stage(
                 }
 
                 if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 16) {
-                    ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
+                    ctx.db.subscriptions.singleIdMarked = jemalloc.realloc(
                         ctx.db.subscriptions.singleIdMarked,
                         ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE * 16,
-                    ) catch &.{};
+                    );
                 }
 
                 ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
@@ -92,10 +93,10 @@ pub fn stage(
                 }
                 if (@reduce(.Or, idSubs[i].fields == f)) {
                     if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
-                        ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
+                        ctx.db.subscriptions.singleIdMarked = jemalloc.realloc(
                             ctx.db.subscriptions.singleIdMarked,
                             ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
-                        ) catch &.{};
+                        );
                     }
                     ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
                     ctx.db.subscriptions.lastIdMarked += 1;

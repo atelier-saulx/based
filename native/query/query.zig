@@ -53,13 +53,11 @@ pub fn getQueryThreaded(
         .idFilter => try single.default(true, &ctx, q),
         .alias => try single.alias(false, &ctx, q),
         .aliasFilter => try single.alias(true, &ctx, q),
-        .ids => {
-            // can treat this the same as refs maybe?
-        },
+        .ids => try multiple.ids(&ctx, q),
+        // t.OpType.aggregates => {},
         .aggregates => {
             try multiple.aggregates(&ctx, q);
         },
-        // t.OpType.aggregatesCount => {},
         else => {
             return errors.DbError.INCORRECT_QUERY_TYPE;
         },
