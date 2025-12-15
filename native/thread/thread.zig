@@ -239,8 +239,8 @@ pub const Threads = struct {
                             try dump.loadCommon(thread, self.ctx, m, op);
                         },
                         .createType => {
-                            const data = try thread.modify.result(4, utils.read(u32, m, 0), op);
                             const typeCode = utils.read(u32, m, 0);
+                            const resp = try thread.modify.result(4, typeCode, op);
                             const schema = m[5..m.len];
                             const err = selva.selva_db_create_type(
                                 self.ctx.selva,
@@ -248,7 +248,7 @@ pub const Threads = struct {
                                 schema.ptr,
                                 schema.len,
                             );
-                            utils.write(data, err, 0);
+                            utils.write(resp, err, 0);
                         },
                         .setSchemaIds => {
                             _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
