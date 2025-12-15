@@ -190,7 +190,7 @@ pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
     return null;
 }
 
-pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !void {
+pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) void {
     const id = sub.id;
     const typeId = sub.typeId;
 
