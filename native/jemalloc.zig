@@ -17,7 +17,7 @@ pub const c = @cImport({
 });
 
 fn slicify(comptime T: type, ptr: *anyopaque, n: usize) []T {
-    const p: [*]T = @as([*]T, @ptrCast(ptr));
+    const p: [*]T = @as([*]T, @alignCast(@ptrCast(ptr)));
     return p[0..n];
 }
 
@@ -62,7 +62,7 @@ pub const ReallocError = error{InvalidOld};
 pub fn realloc(old: anytype, n: usize) @TypeOf(old) {
     const Slice = @typeInfo(@TypeOf(old)).pointer;
     const T = Slice.child;
-    const ptr = c.selva_realloc(old.ptr, n * @sizeOf(T)).?;
+    const ptr = c.selva_realloc(@ptrCast(old.ptr), n * @sizeOf(T)).?;
 
     if (config.enable_debug and std.valgrind.runningOnValgrind() > 0) {
         const oldSize: usize = old.len * @sizeOf(T);
@@ -95,7 +95,7 @@ pub fn free(ptr: anytype) void {
             valgrindFree(@constCast(ptr), @sizeOf(T));
         }
     } else {
-        c.selva_free(ptr.ptr);
-        valgrindFree(ptr.ptr, ptr.len * @sizeOf(info.child));
+        c.selva_free(@ptrCast(ptr.ptr));
+        valgrindFree(@ptrCast(ptr.ptr), ptr.len * @sizeOf(info.child));
     }
 }

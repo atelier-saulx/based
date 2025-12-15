@@ -2,6 +2,7 @@ const std = @import("std");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const napi = @import("../../napi.zig");
 const utils = @import("../../utils.zig");
+const jemalloc = @import("../../jemalloc.zig");
 const Subscription = @import("common.zig");
 const upsertSubType = @import("shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("shared.zig").removeSubTypeIfEmpty;
@@ -161,10 +162,10 @@ pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
                     if (subs[i].subId == subId) {
                         if (subs[i].marked != Subscription.SubStatus.marked) {
                             if (ctx.subscriptions.singleIdMarked.len < ctx.subscriptions.lastIdMarked + 1) {
-                                ctx.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
+                                ctx.subscriptions.singleIdMarked = jemalloc.realloc(
                                     ctx.subscriptions.singleIdMarked,
                                     ctx.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
-                                ) catch &.{};
+                                );
                             }
                             ctx.subscriptions.singleIdMarked[ctx.subscriptions.lastIdMarked] = &subs[i];
                             ctx.subscriptions.lastIdMarked += 1;
