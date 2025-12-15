@@ -26,7 +26,12 @@ import { StepInput, aggFnOptions } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import { include } from './include/include.js'
 import { type ReaderSchema } from '../../protocol/index.js'
-import { LangCode, LangCodeEnum, AggFunctionType } from '../../zigTsExports.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  AggFunctionType,
+  Order,
+} from '../../zigTsExports.js'
 import { styleText } from 'node:util'
 
 export { QueryByAliasObj }
