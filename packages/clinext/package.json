@@ -24,7 +24,7 @@
     "@based/client": "8.3.8",
     "@based/functions": "3.4.8",
     "@based/hash": "1.1.0",
-    "@based/hub": "0.2.10",
+    "@based/hub": "0.2.9",
     "@based/react": "5.4.8",
     "@based/s3": "1.1.10",
     "@based/schema": "5.1.4",
