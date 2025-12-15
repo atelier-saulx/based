@@ -42,7 +42,7 @@ pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) !void {
                 typeSubs.*.bitSetRatio = 25;
             }
             typeSubs.bitSetSize = newSize;
-            typeSubs.idBitSet = try std.heap.raw_c_allocator.realloc(typeSubs.idBitSet, newSize);
+            typeSubs.idBitSet = jemalloc.realloc(typeSubs.idBitSet, newSize);
             needsChange = true;
         }
     }
@@ -95,13 +95,13 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
-            subs = try std.heap.raw_c_allocator.realloc(subs, subs.len + 1);
+            subs = jemalloc.realloc(subs, subs.len + 1);
             entry.value_ptr.* = subs;
         }
     }
 
     if (idDoesNotExist) {
-        subs = try std.heap.c_allocator.alloc(Subscription.IdSubsItem, 1);
+        subs = jemalloc.alloc(Subscription.IdSubsItem, 1);
         try typeSubs.idSubs.put(id, subs);
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
@@ -198,7 +198,7 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !voi
         if (typeSubs.idSubs.getEntry(id)) |idSub| {
             const subs = idSub.value_ptr.*;
             if (subs.len == 1) {
-                std.heap.raw_c_allocator.free(idSub.value_ptr.*);
+                jemalloc.free(idSub.value_ptr.*);
                 _ = typeSubs.idSubs.remove(id);
 
                 // dont do this here need top be in marked
@@ -286,7 +286,7 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !voi
                     }
                 }
             } else if (subs.len != 0) {
-                const newSubs = try std.heap.raw_c_allocator.realloc(
+                const newSubs = jemalloc.realloc(
                     idSub.value_ptr.*,
                     idSub.value_ptr.len - 1,
                 );
