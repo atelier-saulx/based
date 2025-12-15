@@ -2,11 +2,6 @@
   "name": "@based/uws",
   "version": "6.0.0",
   "license": "Apache-2.0",
-  "main": "uws.js",
-  "types": "./index.d.ts",
-  "exports": {
-    "import": "./ESM_wrapper.mjs",
-    "require": "./uws.js",
-    "types": "./index.d.ts"
-  }
+  "main": "index.js",
+  "types": "./index.d.ts"
 }
