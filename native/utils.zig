@@ -84,13 +84,13 @@ pub inline fn toSlice(comptime T: type, value: []u8) []T {
     return x;
 }
 
-pub inline fn read(comptime T: type, buffer: []u8, offset: usize) T {
+pub inline fn read(comptime T: type, buffer: []const u8, offset: usize) T {
     switch (@typeInfo(T)) {
         .pointer => |info| {
             if (info.size == .slice) {
                 const ChildType = info.child;
                 const size = @bitSizeOf(ChildType) / 8;
-                const value: T = @as([*]ChildType, @ptrCast(@alignCast(buffer[offset..].ptr)))[0..@divFloor(buffer.len, size)];
+                const value: T = @as([*]ChildType, @constCast(@ptrCast(@alignCast(buffer[offset..].ptr))))[0..@divFloor(buffer.len, size)];
                 return value;
             } else {
                 @compileError("Read: Only slice pointers supported for now... " ++ @typeName(T));
