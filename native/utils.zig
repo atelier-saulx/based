@@ -66,8 +66,9 @@ pub inline fn write(buffer: []u8, value: anytype, offset: usize) void {
             target.* = @bitCast(intVal);
         },
         else => {
-            const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
-            target.* = @bitCast(value);
+            _ = memcpy(buffer[offset..][0 .. @bitSizeOf(T) / 8].ptr, &value, @bitSizeOf(T) / 8);
+            //const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
+            //target.* = @bitCast(value);
         },
     }
 }
