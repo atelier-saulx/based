@@ -21,7 +21,7 @@ const repeat = args[2] && /^\d+$/.test(args[2]) ? Number(args[2]) : 1
 const match = args
   .slice(repeat == 1 ? 2 : 3)
   .filter((a) => !['--perf', '--all', '--scn'].includes(a))
-  .map((t) => t.replace('.ts', '.js'))
+  .map((t) => t.replace('.js', '.ts'))
 
 const testsToRun: any[] = []
 
