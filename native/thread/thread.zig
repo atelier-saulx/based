@@ -226,18 +226,10 @@ pub const Threads = struct {
             if (modifyBuf) |m| {
                 if (thread.id == 0) {
                     switch (op) {
-                        .modify => {
-                            try Modify.modify(thread, m, self.ctx, op);
-                        },
-                        .loadBlock => {
-                            try dump.loadBlock(thread, self.ctx, m, op);
-                        },
-                        .unloadBlock => {
-                            try dump.unloadBlock(thread, self.ctx, m, op);
-                        },
-                        .loadCommon => {
-                            try dump.loadCommon(thread, self.ctx, m, op);
-                        },
+                        .modify => try Modify.modify(thread, m, self.ctx, op),
+                        .loadBlock => try dump.loadBlock(thread, self.ctx, m, op),
+                        .unloadBlock => try dump.unloadBlock(thread, self.ctx, m, op),
+                        .loadCommon => try dump.loadCommon(thread, self.ctx, m, op),
                         .createType => {
                             const typeCode = utils.read(u32, m, 0);
                             const resp = try thread.modify.result(4, typeCode, op);
