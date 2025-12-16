@@ -47,8 +47,9 @@ export const clientWorker = async <T extends any>(
 
   const { port1, port2 } = new MessageChannel()
   const schemaChannel = new MessageChannel()
-
+  console.log(__dirname)
   const worker = new Worker(join(__dirname, 'workerExec.js'), {
+    execArgv: ['-r', 'tsx'],
     workerData: {
       file: filePath,
       channel: port2,
