@@ -43,7 +43,7 @@ export type Subscriptions = {
 }
 
 export const startUpdateHandler = (server: DbServer) => {
-  // skip next if queries are sitll in progress can add a number for each staged sub
+  // skip next if queries are still in progress can add a number for each staged sub
 
   // combine this with handled modify
   const scheduleUpdate = () => {
@@ -253,7 +253,7 @@ export const registerSubscription = (
       if (nowLen != 0) {
         // when this is the case do a completely different strategy
         // keep track of last update on sub id container
-        // and get the date allways (as a seperate query)
+        // and get the date always (as a separate query)
         // when getting the date mark next in line
 
         // have to make a copy (subArray is weak)
