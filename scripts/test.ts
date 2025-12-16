@@ -48,7 +48,7 @@ const walk = async (dir = p) => {
           } else if (
             // .perf only
             args.includes('--perf') &&
-            [...IGNORE_PATTERNS].some((pattern) => !f.includes('.perf'))
+            !f.includes('.perf')
           ) {
             continue
           } else if (
