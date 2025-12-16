@@ -4,6 +4,7 @@ import { italy } from '../shared/examples.js'
 import { deepEqual } from '../shared/assert.js'
 import { notEqual } from 'node:assert'
 import { wait } from '@based/utils'
+import { langCodesMap } from '@based/schema'
 
 await test('simple', async (t) => {
   const db = new BasedDb({
@@ -483,7 +484,7 @@ await test('reference text', async (t) => {
       },
       contestant: {
         name: 'string',
-        country: { ref: 'country', prop: 'contestants' },
+        // country: { ref: 'country', prop: 'contestants' },
       },
     },
   })
@@ -1025,4 +1026,33 @@ await test('text and crc32', async (t) => {
   const checksum2 = (await db.query('user', user1).get()).checksum
 
   notEqual(checksum, checksum2, 'Checksum is not the same')
+})
+
+await test.skip('text-many', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+  const locales = langCodesMap.keys().reduce((obj, lang) => {
+    if (obj !== 'none') {
+      obj[lang] = true
+    }
+    return obj
+  }, {})
+  const thing = {}
+  let i = 24
+  while (i--) {
+    thing['text' + i] = 'text'
+  }
+  await db.setSchema({
+    locales,
+    types: {
+      thing,
+    },
+  })
+
+  const a = await db.create('thing')
+
+  console.log(a)
 })

@@ -53,5 +53,6 @@ pub fn addEmptyTextToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
             i += 1;
         }
     }
+
     return len + 2;
 }
