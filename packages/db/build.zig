@@ -43,9 +43,16 @@ pub fn build(b: *std.Build) void {
 
     lib.linkLibC();
 
-    const install_lib = b.addInstallArtifact(lib, .{
-        .dest_sub_path = "./lib.node",
-    });
-
+    const install_lib = b.addInstallArtifact(lib, .{});
     b.getInstallStep().dependOn(&install_lib.step);
+
+    const install_node_file = b.addInstallFileWithDir(lib.getEmittedBin(), .lib, "lib.node");
+    b.getInstallStep().dependOn(&install_node_file.step);
+
+    if (target.result.os.tag == .macos and opt == .Debug) {
+        const dsymutil = b.addSystemCommand(&.{"dsymutil"});
+        dsymutil.addArg("zig-out/lib/libbased_db_zig.dylib");
+        dsymutil.step.dependOn(&install_lib.step);
+        b.getInstallStep().dependOn(&dsymutil.step);
+    }
 }

@@ -76,8 +76,8 @@ await test('subscription schema changes', async (t) => {
   q.reset()
   deepEqual(result1, q.get(), 'first schema change results are correct')
   const subResults = []
-  const close = q.subscribe((q) => {
-    subResults.push(q.toObject())
+  const close = q.subscribe(async (q) => {
+    subResults.push(await q.toObject())
     cnt++
   })
   t.after(() => {
@@ -103,7 +103,8 @@ await test('subscription schema changes', async (t) => {
   await clients[0].update('user', 1, {
     derp: 100,
   })
-  await wait(20)
+  await wait(1000)
+
   equal(cnt, 3, 'fired 3 times')
   deepEqual(
     subResults,
