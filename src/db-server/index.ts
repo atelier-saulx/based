@@ -217,12 +217,9 @@ export class DbServer extends DbShared {
         const resultLen = readUint32(v, 0)
         const blocksLen = readUint32(v, resultLen)
         if (blocksLen > 0) {
-          let blocksOffset = resultLen + 4
-          blocksOffset = blocksOffset - (blocksOffset % 8)
-          blocksOffset += 7
           const ranges = new Float64Array(
-            v.buffer,
-            v.byteOffset + blocksOffset,
+            v.slice(resultLen + 4).buffer,
+            0,
             blocksLen / 8,
           )
 

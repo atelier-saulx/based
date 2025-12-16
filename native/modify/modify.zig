@@ -363,11 +363,8 @@ pub fn modify(
 
     const newDirtyRanges = ctx.dirtyRanges.values();
     const dirtyRangesSize: u32 = @truncate(newDirtyRanges.len * 8);
-
-    var blocksOffset = resultLen + 4;
-    blocksOffset = 7 - (blocksOffset % 8);
-    const blockSlice = try thread.modify.slice(4 + blocksOffset + dirtyRangesSize);
+    const blockSlice = try thread.modify.slice(4 + dirtyRangesSize);
     const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
     write(blockSlice, dirtyRangesSize, 0);
-    utils.copy(u8, blockSlice, newDirtySlice, 4 + blocksOffset);
+    utils.copy(u8, blockSlice, newDirtySlice, 4);
 }
