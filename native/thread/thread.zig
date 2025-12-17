@@ -151,7 +151,9 @@ pub const Threads = struct {
                 if (queryBuf) |q| {
                     op = @enumFromInt(q[4]);
                 }
-            } else if (self.modifyQueue.items.len > 0 and thread.pendingModifies > 0) {
+            } else if (self.modifyQueue.items.len > 0 and
+                       thread.pendingModifies > 0 and
+                       thread.currentModifyIndex < self.modifyQueue.items.len) {
                 modifyBuf = self.modifyQueue.items[thread.currentModifyIndex];
                 if (modifyBuf) |m| {
                     op = @enumFromInt(m[4]);
