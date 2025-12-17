@@ -82,11 +82,53 @@ pub fn build(b: *std.Build) !void {
     lib.root_module.linkSystemLibrary("selva", .{});
     lib.root_module.link_libc = true;
 
-    const install_lib = b.addInstallArtifact(lib, .{
-        .dest_sub_path = targetPath,
-    });
-    const install_step = b.getInstallStep();
-    install_step.dependOn(&install_lib.step);
+    // // 1. Install to zig-out/lib (Standard Zig behavior)
+    // const install_lib = b.addInstallArtifact(lib, .{});
+    // b.getInstallStep().dependOn(&install_lib.step);
+
+    // // 2. Create the 'lib.node' in dist (For Node.js to load)
+    // const install_node_file = b.addInstallFileWithDir(lib.getEmittedBin(), .lib, targetPath);
+    // b.getInstallStep().dependOn(&install_node_file.step);
+
+    // if (target.result.os.tag == .macos and opt == .Debug) {
+    //     // 3. COPY the .dylib to dist (For LLDB to find)
+    //     // We replicate the original filename "libbased_db_zig.dylib"
+    //     const dylib_filename = "libbased_db_zig.dylib";
+    //     const dylib_dist_path = b.fmt("{s}/{s}", .{ libPath, dylib_filename });
+
+    //     // Note: The source path calculation for installFileWithDir is relative to zig-out
+    //     // We use "../../" to step out of zig-out/lib and point to the destination relative to project root
+    //     const install_dylib = b.addInstallFileWithDir(lib.getEmittedBin(), .lib, b.fmt("../../{s}", .{dylib_dist_path}));
+    //     install_dylib.step.dependOn(&install_lib.step);
+    //     b.getInstallStep().dependOn(&install_dylib.step);
+
+    //     // 4. Generate .dSYM in dist based on that .dylib
+    //     const dsymutil = b.addSystemCommand(&.{"dsymutil"});
+
+    //     // Output: dist/lib/.../libbased_db_zig.dylib.dSYM
+    //     const dsym_out_path = b.fmt("{s}.dSYM", .{dylib_dist_path});
+    //     dsymutil.addArgs(&.{ "-o", dsym_out_path });
+
+    //     // Input: The .dylib we just copied to dist
+    //     dsymutil.addArg(dylib_dist_path);
+
+    //     dsymutil.step.dependOn(&install_dylib.step);
+    //     b.getInstallStep().dependOn(&dsymutil.step);
+    // }
+
+    const install_lib = b.addInstallArtifact(lib, .{});
+    b.getInstallStep().dependOn(&install_lib.step);
+
+    const install_node_file = b.addInstallFileWithDir(lib.getEmittedBin(), .lib, "lib.node");
+    b.getInstallStep().dependOn(&install_node_file.step);
+
+    if (target.result.os.tag == .macos and opt == .Debug) {
+        const dsymutil = b.addSystemCommand(&.{"dsymutil"});
+        dsymutil.addArg("zig-out/lib/libbased_db_zig.dylib");
+        dsymutil.step.dependOn(&install_lib.step);
+        b.getInstallStep().dependOn(&dsymutil.step);
+    }
+    _ = targetPath;
 
     // This creates a "check" step that allows zls (Zig Language Server) to analyze the code.
     // It reuses the same module definition from the library being built.

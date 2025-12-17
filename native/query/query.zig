@@ -32,6 +32,7 @@ pub fn getQueryThreaded(
     buffer: []u8,
     thread: *Thread.Thread,
 ) !void {
+    utils.debugPrint("😸😸😸😸😸😸😸😸😸😸😸😸😸😸😸😸😸😸😸😸\n", .{});
     var index: usize = 0;
 
     var ctx: Query.QueryCtx = .{
