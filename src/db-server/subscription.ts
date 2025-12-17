@@ -3,15 +3,28 @@ import {
   readUint16,
   readUint32,
   writeInt64,
+  writeUint32,
 } from '../utils/index.js'
 import {
   OnError,
   SubscriptionType,
 } from '../db-client/query/subscription/types.js'
 import { DbServer } from '../index.js'
-import native from '../native.js'
+import native, { idGenerator } from '../native.js'
 import { styleText } from 'util'
 import { MAX_ID } from '../schema/index.js'
+import {
+  OpType,
+  writeaddMultiSubscriptionHeader,
+  writeremoveMultiSubscriptionHeader,
+} from '../zigTsExports.js'
+
+const addMultiSubscriptionId = idGenerator()
+const removeMultiSubscriptionId = idGenerator()
+const getMarkedMultiSubscriptionsId = idGenerator()
+const addIdSubscriptionId = idGenerator()
+const removeIdSubscriptionId = idGenerator()
+const getMarkedIdSubscriptionsId = idGenerator()
 
 type OnData = (res: Uint8Array) => void
 
@@ -42,11 +55,149 @@ export type Subscriptions = {
   subInterval: number // can change based on load
 }
 
+async function sendAddMultiSubscription(
+  db: DbServer,
+  typeId: number,
+): Promise<void> {
+  const id = addMultiSubscriptionId.next().value
+  const msg = new Uint8Array(7)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.addMultiSubscription
+  writeaddMultiSubscriptionHeader(msg, { typeId }, 5);
+
+  return new Promise((resolve, reject) => {
+    db.addOpOnceListener(OpType.addMultiSubscription, id, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        // TODO format error
+        const errMsg = `Failed: ${err}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
+
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
+}
+
+async function sendRemoveMultiSubscription(
+  db: DbServer,
+  typeId: number,
+): Promise<void> {
+  const id = removeMultiSubscriptionId.next().value
+  const msg = new Uint8Array(7)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.removeMultiSubscription
+  writeremoveMultiSubscriptionHeader(msg, { typeId }, 5);
+
+  return new Promise((resolve, reject) => {
+    db.addOpOnceListener(OpType.removeMultiSubscription, id, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        // TODO format error
+        const errMsg = `Failed: ${err}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
+
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
+}
+
+async function getMarkedMultiSubscriptions(db: DbServer): Promise<Uint8Array> {
+  const id = getMarkedMultiSubscriptionsId.next().value
+  const msg = new Uint8Array(5)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.getMarkedMultiSubscriptions
+
+  return new Promise((resolve) => {
+    db.addOpOnceListener(OpType.getMarkedMultiSubscriptions, id, (buf: Uint8Array) => resolve(new Uint8Array(buf)))
+    native.getQueryBufThread(msg, db.dbCtxExternal)
+  })
+}
+
+async function sendAddIdSubscription(
+  db: DbServer,
+  sub: Uint8Array,
+): Promise<void> {
+  const id = addIdSubscriptionId.next().value
+  const msg = new Uint8Array(5 + sub.byteLength)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.addIdSubscription
+  msg.set(sub, 5)
+
+  return new Promise((resolve, reject) => {
+    db.addOpOnceListener(OpType.addIdSubscription, id, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        // TODO format error
+        const errMsg = `Failed: ${err}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
+
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
+}
+
+async function sendRemoveIdSubscription(
+  db: DbServer,
+  sub: Uint8Array,
+): Promise<void> {
+  const id = removeIdSubscriptionId.next().value
+  const msg = new Uint8Array(5 + sub.byteLength)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.removeIdSubscription
+  msg.set(sub, 5)
+
+  return new Promise((resolve, reject) => {
+    db.addOpOnceListener(OpType.removeIdSubscription, id, (buf: Uint8Array) => {
+      const err = readUint32(buf, 0)
+      if (err) {
+        // TODO format error
+        const errMsg = `Failed: ${err}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        resolve()
+      }
+    })
+
+    native.modifyThread(msg, db.dbCtxExternal)
+  })
+}
+
+async function getMarkedIdSubscriptions(db: DbServer): Promise<Uint8Array> {
+  const id = getMarkedIdSubscriptionsId.next().value
+  const msg = new Uint8Array(5)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.getMarkedIdSubscriptions
+
+  return new Promise((resolve) => {
+    db.addOpOnceListener(OpType.getMarkedIdSubscriptions, id, (buf: Uint8Array) => resolve(new Uint8Array(buf)))
+    native.getQueryBufThread(msg, db.dbCtxExternal)
+  })
+}
+
 export const startUpdateHandler = (server: DbServer) => {
   // skip next if queries are still in progress can add a number for each staged sub
 
   // combine this with handled modify
-  const scheduleUpdate = () => {
+  const scheduleUpdate = async () => {
     if (server.stopped) {
       return
     }
@@ -54,12 +205,12 @@ export const startUpdateHandler = (server: DbServer) => {
     if (server.subscriptions.updateId > MAX_ID) {
       server.subscriptions.updateId = 1
     }
-    // can do seperate timing for id / type
-    // scince multi queries are much heavier ofc
-    const markedIdSubs = native.getMarkedIdSubscriptions(server.dbCtxExternal)
+    // can do separate timing for id / type
+    // since multi queries are much heavier ofc
+    const markedIdSubs = await getMarkedIdSubscriptions(server)
 
     if (markedIdSubs) {
-      const buffer = new Uint8Array(markedIdSubs)
+      const buffer = markedIdSubs
       for (let i = 0; i < buffer.byteLength; i += 8) {
         const id = readUint32(buffer, i)
         const subId = readUint32(buffer, i + 4)
@@ -75,11 +226,9 @@ export const startUpdateHandler = (server: DbServer) => {
       }
     }
 
-    const markedMultiSubs = native.getMarkedMultiSubscriptions(
-      server.dbCtxExternal,
-    )
+    const markedMultiSubs = await getMarkedMultiSubscriptions(server)
     if (markedMultiSubs) {
-      const buffer = new Uint8Array(markedMultiSubs)
+      const buffer = markedMultiSubs
       for (let i = 0; i < buffer.byteLength; i += 2) {
         const typeId = readUint16(buffer, i)
         const subs = server.subscriptions.fullType.get(typeId)
@@ -112,7 +261,7 @@ export const startUpdateHandler = (server: DbServer) => {
   )
 }
 
-const addToMultiSub = (
+const addToMultiSub = async (
   server: DbServer,
   typeId: number,
   runQuery: () => void,
@@ -125,7 +274,7 @@ const addToMultiSub = (
       listeners,
     }
     server.subscriptions.fullType.set(typeId, fullType)
-    native.addMultiSubscription(server.dbCtxExternal, typeId)
+    await sendAddMultiSubscription(server, typeId)
   } else {
     fullType = server.subscriptions.fullType.get(typeId)!
     listeners = fullType.listeners
@@ -133,7 +282,7 @@ const addToMultiSub = (
   listeners.add(runQuery)
 }
 
-const removeFromMultiSub = (
+const removeFromMultiSub = async (
   server: DbServer,
   typeId: number,
   runQuery: () => void,
@@ -144,7 +293,7 @@ const removeFromMultiSub = (
   }
   typeSub.listeners.delete(runQuery)
   if (typeSub.listeners.size === 0) {
-    native.removeMultiSubscription(server.dbCtxExternal, typeId)
+    await sendRemoveMultiSubscription(server, typeId)
     server.subscriptions.fullType.delete(typeId)
   }
 }
@@ -158,7 +307,7 @@ const replaceNowValues = (query: Uint8Array, now: Uint8Array) => {
   }
 }
 
-export const registerSubscription = (
+export const registerSubscription = async (
   server: DbServer,
   query: Uint8Array,
   sub: Uint8Array,
@@ -246,9 +395,11 @@ export const registerSubscription = (
             }
           }
         }
+        const p: Promise<void>[] = []
         for (const typeId of subContainer.types) {
-          addToMultiSub(server, typeId, subContainer.typesListener)
+          p.push(addToMultiSub(server, typeId, subContainer.typesListener))
         }
+        await Promise.all(p)
       }
       if (nowLen != 0) {
         // when this is the case do a completely different strategy
@@ -275,7 +426,7 @@ export const registerSubscription = (
     if (!subContainer.ids.has(id)) {
       listeners = new Set()
       subContainer.ids.set(id, listeners)
-      native.addIdSubscription(server.dbCtxExternal, sub)
+      await sendAddIdSubscription(server, sub)
     } else {
       listeners = subContainer.ids.get(id)!
     }
@@ -285,18 +436,20 @@ export const registerSubscription = (
       runQuery()
     })
 
-    return () => {
+    return async () => {
       killed = true
       listeners.delete(runQuery)
       if (listeners.size === 0) {
-        native.removeIdSubscription(server.dbCtxExternal, sub)
+        await sendRemoveIdSubscription(server, sub)
         subContainer.ids.delete(id)
       }
       if (subContainer.ids.size === 0) {
         if (subContainer.types) {
+          const p: Promise<void>[] = []
           for (const typeId of subContainer.types) {
-            removeFromMultiSub(server, typeId, subContainer.typesListener!)
+            p.push(removeFromMultiSub(server, typeId, subContainer.typesListener!))
           }
+          await Promise.all(p)
         }
         if (now) {
           server.subscriptions.now.listeners.delete(subContainer.nowListener!)
@@ -312,7 +465,7 @@ export const registerSubscription = (
   } else if (sub[0] === SubscriptionType.fullType) {
     const headerLen = 8
     const typeId = readUint16(sub, 1)
-    addToMultiSub(server, typeId, runQuery)
+    await addToMultiSub(server, typeId, runQuery)
     const typesLen = readUint16(sub, 3)
     let types: Uint16Array
     if (typesLen != 0) {
@@ -323,9 +476,11 @@ export const registerSubscription = (
       } else {
         types = new Uint16Array(sub.slice(headerLen, headerLen + typesLen * 2))
       }
+      const p: Promise<void>[] = []
       for (const typeId of types) {
-        addToMultiSub(server, typeId, runQuery)
+        p.push(addToMultiSub(server, typeId, runQuery))
       }
+      await Promise.all(p)
     }
 
     if (readUint16(sub, 5) != 0) {
@@ -338,16 +493,18 @@ export const registerSubscription = (
       runQuery()
     })
 
-    return () => {
+    return async () => {
       killed = true
       if (now) {
         server.subscriptions.now.listeners.delete(runQuery)
       }
-      removeFromMultiSub(server, typeId, runQuery)
+      await removeFromMultiSub(server, typeId, runQuery)
       if (types) {
+        const p: Promise<void>[] = []
         for (const typeId of types) {
-          removeFromMultiSub(server, typeId, runQuery)
+          p.push(removeFromMultiSub(server, typeId, runQuery))
         }
+        await Promise.all(p)
       }
       server.subscriptions.active--
       if (server.subscriptions.active === 0) {

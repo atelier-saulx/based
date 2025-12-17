@@ -124,13 +124,5 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "selvaStrerror", selvaStrerror) catch return null;
     registerFunction(env, exports, "selvaLangAll", selvaLangAll) catch return null;
 
-    // subscriptions
-    registerFunction(env, exports, "addMultiSubscription", subscriptions.addMultiSubscription) catch return null;
-    registerFunction(env, exports, "removeMultiSubscription", subscriptions.removeMultiSubscription) catch return null;
-    registerFunction(env, exports, "addIdSubscription", subscriptions.addIdSubscription) catch return null;
-    registerFunction(env, exports, "removeIdSubscription", subscriptions.removeIdSubscription) catch return null;
-    registerFunction(env, exports, "getMarkedIdSubscriptions", subscriptions.getMarkedIdSubscriptions) catch return null;
-    registerFunction(env, exports, "getMarkedMultiSubscriptions", subscriptions.getMarkedMultiSubscriptions) catch return null;
-
     return exports;
 }

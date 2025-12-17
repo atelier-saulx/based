@@ -70,20 +70,7 @@ pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) void {
     }
 }
 
-pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Value {
-    const args = try napi.getArgs(2, napi_env, info);
-    const ctx = try napi.get(*DbCtx, napi_env, args[0]);
-    const value = try napi.get([]u8, napi_env, args[1]);
-    const headerLen = 18;
-    const subId = utils.read(u32, value, 1);
-    const typeId = utils.read(u16, value, 5);
-    const id = utils.read(u32, value, 7);
-    const fieldsLen = value[11];
-    const partialLen = utils.read(u16, value, 12);
-
-    const fields = value[headerLen .. fieldsLen + headerLen];
-    const partialFields = value[fieldsLen + headerLen .. fieldsLen + headerLen + partialLen * 2];
-
+pub fn addIdSubscriptionInternal(ctx: *DbCtx, subId: u32, typeId: u16, id: u32, fieldsLen: u8, partialLen: u16, fields: []const u8, partialFields: []const u8) !void {
     var typeSubs = try upsertSubType(ctx, typeId);
 
     var subs: []Subscription.IdSubsItem = undefined;
@@ -140,19 +127,9 @@ pub fn addIdSubscriptionInternal(napi_env: napi.Env, info: napi.Info) !napi.Valu
             j += 1;
         }
     }
-
-    return null;
 }
 
-pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value {
-    const args = try napi.getArgs(2, env, info);
-    const ctx = try napi.get(*DbCtx, env, args[0]);
-    const value = try napi.get([]u8, env, args[1]);
-    // headerLen = 16
-    const subId = utils.read(u32, value, 1);
-    const typeId = utils.read(u16, value, 5);
-    const id = utils.read(u32, value, 7);
-
+pub fn removeIdSubscriptionInternal(ctx: *DbCtx, subId: u32, typeId: u16, id: u32) void {
     if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
         if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
             if (typeSubs.idSubs.getEntry(id)) |subsEntry| {
@@ -186,8 +163,6 @@ pub fn removeIdSubscriptionInternal(env: napi.Env, info: napi.Info) !napi.Value 
             }
         }
     }
-
-    return null;
 }
 
 pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) void {

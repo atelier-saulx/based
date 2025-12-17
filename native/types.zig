@@ -22,6 +22,8 @@ pub const OpType = enum(u8) {
     saveBlock = 67,
     saveCommon = 69,
     getSchemaIds = 70,
+    getMarkedMultiSubscriptions = 71,
+    getMarkedIdSubscriptions = 72,
     // Modify
     modify = 127,
     loadBlock = 128,
@@ -29,6 +31,10 @@ pub const OpType = enum(u8) {
     loadCommon = 130,
     createType = 131,
     setSchemaIds = 132,
+    addMultiSubscription = 123,
+    removeMultiSubscription = 124,
+    addIdSubscription = 125,
+    removeIdSubscription = 126,
 
     // --------------------
     noOp = 255,
@@ -703,4 +709,12 @@ pub const AggType = enum(u8) {
     max = 7,
     min = 8,
     hmean = 9,
+};
+
+pub const addMultiSubscriptionHeader = packed struct {
+    typeId: u16,
+};
+
+pub const removeMultiSubscriptionHeader = packed struct {
+    typeId: u16,
 };

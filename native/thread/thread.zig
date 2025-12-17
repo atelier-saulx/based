@@ -7,6 +7,7 @@ const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const selva = @import("../selva/selva.zig").c;
 const dump = @import("../selva/dump.zig");
 const info = @import("../selva/info.zig");
+const subscription = @import("../db/subscription/subscription.zig");
 const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
 const common = @import("common.zig");
 const t = @import("../types.zig");
@@ -175,6 +176,8 @@ pub const Threads = struct {
                             utils.byteCopy(data, @as([*]u8, @ptrCast(self.ctx.ids.ptr)), 0);
                         }
                     },
+                    .getMarkedMultiSubscriptions => try subscription.getMarkedMultiSubscriptions(thread, self.ctx, q, op),
+                    .getMarkedIdSubscriptions => try subscription.getMarkedIdSubscriptions(thread, self.ctx, q, op),
                     .noOp => {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
@@ -254,6 +257,10 @@ pub const Threads = struct {
                             const ids = m[5..m.len];
                             utils.byteCopy(self.ctx.ids, ids, 0);
                         },
+                        .addMultiSubscription => subscription.addMultiSubscription(thread, self.ctx, m, op),
+                        .removeMultiSubscription => subscription.removeMultiSubscription(thread, self.ctx, m, op),
+                        .addIdSubscription => subscription.addIdSubscription(thread, self.ctx, m, op),
+                        .removeIdSubscription => subscription.removeIdSubscription(thread, self.ctx, m, op),
                         else => {},
                     }
                     thread.modify.commit();
