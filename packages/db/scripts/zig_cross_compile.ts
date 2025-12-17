@@ -138,9 +138,16 @@ function moveLibraryToPlatformDir(
         )
       } else {
         const cmd = `/bin/bash -c "cd dist/lib/linux_${platform.arch}/ && ../../../scripts/patch_libnode.sh ${major}"`
-        execSync(cmd, {
-          stdio: 'inherit',
-        })
+        try {
+          execSync(cmd, {
+            stdio: 'inherit',
+          })
+        } catch (error: any) {
+          console.warn(
+            `Warning: Failed to patch library with patchelf: ${error.message}`,
+          )
+          throw error
+        }
       }
     }
   } else {
