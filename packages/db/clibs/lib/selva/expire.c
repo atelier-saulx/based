@@ -71,7 +71,6 @@ void selva_expire_insert(struct SelvaExpire *ex, struct SelvaExpireToken *token)
     struct SelvaExpireToken *old_token = SVector_Insert(&ex->list, token);
 
     token->next = nullptr;
-    int i = 0;
     if (old_token) {
         while (old_token->next) {
             old_token = old_token->next;
