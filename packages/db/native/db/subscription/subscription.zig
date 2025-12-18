@@ -19,6 +19,7 @@ fn getMarkedIdSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_call
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
 
+        //x
         // Reset
         var i: usize = 0;
         while (i < ctx.subscriptions.lastIdMarked) {
