@@ -1,6 +1,6 @@
 {
   "name": "@based/db",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "type": "module",
   "main": "./dist/src/index.js",
   "scripts": {
@@ -45,7 +45,7 @@
     "@based/hash": "1.1.0",
     "@based/schema": "5.1.4",
     "@based/utils": "1.2.0",
-    "@based/protocol": "0.1.4",
+    "@based/protocol": "0.1.5",
     "exit-hook": "^4.0.0"
   },
   "optionalDependencies": {
