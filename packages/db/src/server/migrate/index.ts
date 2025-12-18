@@ -14,6 +14,7 @@ import {
 import { setToAwake, waitUntilSleeping } from './utils.js'
 import { DbSchema, MigrateFns, serialize } from '@based/schema'
 import { semver } from '@based/schema'
+import { tmpdir } from 'node:os'
 const { satisfies, parseRange, parse } = semver
 
 export type MigrateRange = { typeId: number; start: number; end: number }
@@ -61,7 +62,7 @@ export const migrate = async (
   fromSchema: DbSchema,
   toSchema: DbSchema,
   transform?: MigrateFns,
-): Promise<void> => {
+): Promise<true | void> => {
   const migrationId = toSchema.hash
 
   server.migrating = migrationId
@@ -106,7 +107,7 @@ export const migrate = async (
   }
 
   const tmpDb = new BasedDb({
-    path: null,
+    path: null, //join(tmpdir(), String(Math.random())),
   })
 
   await tmpDb.start({
@@ -244,18 +245,22 @@ export const migrate = async (
   const promises: Promise<any>[] = [server.ioWorker, ...server.workers].map(
     (worker) => worker.updateCtx(toAddress),
   )
-  promises.push(tmpDb.destroy(), worker.terminate())
+  promises.push(worker.terminate())
   await Promise.all(promises)
   if (abort()) {
     return
   }
+  tmpDb.destroy()
   native.membarSyncRead()
+
   await save(server, {
     forceFullDump: true,
     skipDirtyCheck: true,
     skipMigrationCheck: true,
   })
+
   await writeSchemaFile(server, toSchema)
   server.migrating = 0
   process.nextTick(() => server.emit('schema', server.schema))
+  return true
 }

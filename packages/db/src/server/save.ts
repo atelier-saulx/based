@@ -164,7 +164,6 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
 
   let ts = Date.now()
   db.saveInProgress = true
-
   try {
     let err: number
     err = native.saveCommon(
@@ -172,6 +171,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
       db.dbCtxExternal,
     )
     if (err) {
+      console.log({ err })
       db.emit('error', `Save common failed: ${err}`)
       // Return ?
     }

@@ -3,6 +3,8 @@ import { BasedDb } from '../../src/index.js'
 import { deepCopy } from '@based/utils'
 import { Schema } from '@based/schema'
 import { deepEqual } from '../shared/assert.js'
+import { stat } from 'node:fs/promises'
+import { join } from 'node:path'
 
 await test('set schema dont migrate', async (t) => {
   const db = new BasedDb({
@@ -11,7 +13,15 @@ await test('set schema dont migrate', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => db.destroy())
+  let timer = setTimeout(async function doit() {
+    console.log((await stat(join(t.tmp, 'common.sdb'))).size)
+    timer = timer && setTimeout(doit)
+  })
+  t.after(() => {
+    clearTimeout(timer)
+    timer = null
+    return db.destroy()
+  })
 
   let schema = {
     props: {

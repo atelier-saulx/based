@@ -37,7 +37,9 @@ const walk = async (dir = p) => {
       if (match.length > 0) {
         const relPath = relative(p, path)
         for (const test of match) {
-          if (
+          if (match.length === 1) {
+            // don't exclude it
+          } else if (
             // default: no IGNORE_PATTERNS
             !args.includes('--perf') &&
             !args.includes('--all') &&
@@ -59,6 +61,7 @@ const walk = async (dir = p) => {
           ) {
             continue
           }
+
           if (test.includes(':')) {
             const [a, b] = test.split(':')
             if (relPath.toLowerCase().includes(a.slice(1).toLowerCase())) {

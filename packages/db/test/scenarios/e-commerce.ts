@@ -27,6 +27,8 @@ await test('E-commerce Simulation', async (t) => {
   let concurrency = 3000
 
   await db.start({ clean: true })
+  db.server.on('info', console.info)
+  db.server.on('error', console.error)
 
   let intervalId: NodeJS.Timeout | null = null
 
@@ -35,8 +37,7 @@ await test('E-commerce Simulation', async (t) => {
   })
 
   t.after(async () => t.backup(db))
-
-  await db.setSchema({
+  const schema = {
     locales: { en: {}, de: {} }, // Add locales for text fields
     types: {
       user: {
@@ -112,7 +113,9 @@ await test('E-commerce Simulation', async (t) => {
         },
       },
     },
-  })
+  }
+
+  await db.setSchema(schema as any)
 
   // --- State Tracking ---
   let userIds: number = 0
@@ -134,12 +137,60 @@ await test('E-commerce Simulation', async (t) => {
   const reviewIdsArr = []
   const userIdsArr = []
 
+  let subs = []
+
+  let subI = setInterval(() => {
+    // db.save()
+    if (Math.random() < 0.01) {
+      console.log('migrate!')
+      schema.types['smurk' + Math.random()] = {
+        name: 'string',
+      }
+      db.setSchema(schema as any)
+    }
+
+    if (!subs.length) {
+      return
+    }
+
+    if (Math.random() > 0.05) {
+      const i = Math.floor(Math.random() * subs.length)
+      const unsub = subs[i]
+      subs.filter((item) => item !== unsub)
+      unsub()
+    } else {
+      // console.log('clear all')
+      // for (const unsub of subs) {
+      //   unsub()
+      // }
+      // subs = []
+    }
+  }, 10)
+
+  t.after(() => {
+    clearInterval(subI)
+  })
+
   for (let i = 0; i < initialCategories; i++) {
     const catId = db.create('category', {
       name: `Category ${i}`,
       description: { en: `Description for category ${i}` },
     })
     categoryIdsArr.push(catId)
+    catId.then((catId) => {
+      subs.push(
+        db
+          .query('category')
+          .include('*', '**')
+          .subscribe(() => {}),
+      )
+      subs.push(
+        db
+          .query('category', catId)
+          .include('*', '**')
+          .subscribe(() => {}),
+      )
+    })
     categoryIds++
     totalItemsCreated++
   }
@@ -154,6 +205,21 @@ await test('E-commerce Simulation', async (t) => {
       ),
     })
     userIdsArr.push(userId)
+    userId.then((userId) => {
+      subs.push(
+        db
+          .query('user')
+          .include('*', '**')
+          .range(10, 20)
+          .subscribe(() => {}),
+      )
+      subs.push(
+        db
+          .query('user', userId)
+          .include('*', '**')
+          .subscribe(() => {}),
+      )
+    })
     userIds++
     totalItemsCreated++
   }
@@ -480,6 +546,7 @@ await test('E-commerce Simulation', async (t) => {
     throw testErr
   }
   clearInterval(intervalId)
+  clearInterval(subI)
 
   await wait(500)
 
