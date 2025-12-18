@@ -41,10 +41,20 @@ typedef union {
     void *p;
 } selva_expire_cmp_arg_t __attribute__((__transparent_union__));
 
+/**
+ * Initialize a SelvaExpire struct.
+ * expire_cb and cancel_cb must be set in the ex struct by the caller.
+ */
 void selva_expire_init(struct SelvaExpire *ex);
 void selva_expire_deinit(struct SelvaExpire *ex);
 void selva_expire_tick(struct SelvaExpire *ex, void *ctx, int64_t now);
+
+/**
+ * Insert an expire token.
+ * The expire time must be set by the caller.
+ */
 void selva_expire_insert(struct SelvaExpire *ex, struct SelvaExpireToken *token);
+
 bool selva_expire_exists(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireToken *token, selva_expire_cmp_arg_t arg), selva_expire_cmp_arg_t arg);
 void selva_expire_remove(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireToken *token, selva_expire_cmp_arg_t arg), selva_expire_cmp_arg_t arg);
 size_t selva_expire_count(const struct SelvaExpire *ex);
