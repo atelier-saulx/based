@@ -56,10 +56,15 @@ pub const TypeSubscriptionCtx = struct {
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
 
+pub const FreeList = std.ArrayList([]IdSubsItem);
+
 pub const SubscriptionCtx = struct {
     types: TypeSubMap,
     singleIdMarked: []*IdSubsItem,
     lastIdMarked: u32,
+    freeList: FreeList,
+    gpa: std.heap.GeneralPurposeAllocator(.{}),
+    allocator: std.mem.Allocator,
 };
 
 pub const BLOCK_SIZE = 100_000;

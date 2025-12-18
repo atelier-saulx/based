@@ -40,6 +40,11 @@ fn getMarkedIdSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_call
         ctx.subscriptions.lastIdMarked = 0;
         return result;
     }
+
+    for (ctx.subscriptions.freeList.items) |item| {
+        ctx.subscriptions.allocator.free(item);
+    }
+    ctx.subscriptions.freeList.clearAndFree(ctx.subscriptions.allocator);
     return null;
 }
 

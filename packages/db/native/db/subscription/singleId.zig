@@ -96,13 +96,25 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
-            subs = try std.heap.raw_c_allocator.realloc(subs, subs.len + 1);
+            // keep prev clean later
+
+            if (ctx.subscriptions.allocator.resize(subs, subs.len + 1)) {} else {
+                std.debug.print("CANT BLA \n", .{});
+                const subsFreeList = subs;
+                try ctx.subscriptions.freeList.append(
+                    ctx.subscriptions.allocator,
+                    subsFreeList,
+                );
+                subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, subs.len + 1);
+                @memcpy(subs, subsFreeList);
+            }
+
             entry.value_ptr.* = subs;
         }
     }
 
     if (idDoesNotExist) {
-        subs = try std.heap.c_allocator.alloc(types.IdSubsItem, 1);
+        subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, 1);
         try typeSubs.idSubs.put(id, subs);
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
@@ -200,7 +212,12 @@ pub fn removeSubscriptionMarked(ctx: *db.DbCtx, sub: *types.IdSubsItem) !void {
         if (typeSubs.idSubs.getEntry(id)) |idSub| {
             const subs = idSub.value_ptr.*;
             if (subs.len == 1) {
-                std.heap.raw_c_allocator.free(idSub.value_ptr.*);
+                try ctx.subscriptions.freeList.append(
+                    ctx.subscriptions.allocator,
+                    idSub.value_ptr.*,
+                );
+                idSub.value_ptr.* = &.{};
+
                 _ = typeSubs.idSubs.remove(id);
 
                 // dont do this here need top be in marked
@@ -288,11 +305,22 @@ pub fn removeSubscriptionMarked(ctx: *db.DbCtx, sub: *types.IdSubsItem) !void {
                     }
                 }
             } else if (subs.len != 0) {
-                const newSubs = try std.heap.raw_c_allocator.realloc(
+                if (ctx.subscriptions.allocator.resize(
                     idSub.value_ptr.*,
                     idSub.value_ptr.len - 1,
-                );
-                idSub.value_ptr.* = newSubs;
+                )) {} else {
+                    std.debug.print("REMOVE CANT RESIZE {any} \n", .{idSub.value_ptr.len - 1});
+                    const subsFreeList = idSub.value_ptr.*;
+                    try ctx.subscriptions.freeList.append(
+                        ctx.subscriptions.allocator,
+                        subsFreeList,
+                    );
+                    idSub.value_ptr.* = try ctx.subscriptions.allocator.alloc(
+                        types.IdSubsItem,
+                        idSub.value_ptr.len - 1,
+                    );
+                    @memcpy(subs, subsFreeList);
+                }
             } else {
                 std.debug.print("Weird subs len is 0 \n", .{});
             }
