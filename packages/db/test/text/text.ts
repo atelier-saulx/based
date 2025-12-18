@@ -484,7 +484,7 @@ await test('reference text', async (t) => {
       },
       contestant: {
         name: 'string',
-        // country: { ref: 'country', prop: 'contestants' },
+        country: { ref: 'country', prop: 'contestants' },
       },
     },
   })
