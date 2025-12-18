@@ -99,7 +99,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             // keep prev clean later
 
             if (ctx.subscriptions.allocator.resize(subs, subs.len + 1)) {} else {
-                std.debug.print("CANT BLA \n", .{});
+                // std.debug.print("CANT BLA \n", .{});
                 const subsFreeList = subs;
                 try ctx.subscriptions.freeList.append(
                     ctx.subscriptions.allocator,
@@ -309,7 +309,7 @@ pub fn removeSubscriptionMarked(ctx: *db.DbCtx, sub: *types.IdSubsItem) !void {
                     idSub.value_ptr.*,
                     idSub.value_ptr.len - 1,
                 )) {} else {
-                    std.debug.print("REMOVE CANT RESIZE {any} \n", .{idSub.value_ptr.len - 1});
+                    // std.debug.print("REMOVE CANT RESIZE {any} \n", .{idSub.value_ptr.len - 1});
                     const subsFreeList = idSub.value_ptr.*;
                     try ctx.subscriptions.freeList.append(
                         ctx.subscriptions.allocator,
