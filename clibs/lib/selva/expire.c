@@ -103,11 +103,12 @@ bool selva_expire_exists(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireTo
 void selva_expire_remove(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireToken *token, selva_expire_cmp_arg_t arg), selva_expire_cmp_arg_t arg)
 {
     struct SVectorIterator it;
-    struct SelvaExpireToken *token;
-    struct SelvaExpireToken *prev = nullptr;
 
     SVector_ForeachBegin(&it, &ex->list);
     while (!SVector_Done(&it)) {
+        struct SelvaExpireToken *token;
+        struct SelvaExpireToken *prev = nullptr;
+
         token = SVector_Foreach(&it);
         do {
             if (cmp(token, arg)) {
@@ -115,7 +116,7 @@ void selva_expire_remove(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireTo
                     prev->next = token->next;
                     ex->cancel_cb(token);
                     return;
-                } else {
+                } else { /* token is the current head */
                     SVector_Remove(&ex->list, token);
                     if (token->next) {
                         (void)SVector_Insert(&ex->list, token->next);
