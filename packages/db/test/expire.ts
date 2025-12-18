@@ -100,3 +100,47 @@ await test('refresh', async (t) => {
   await setTimeout(1100)
   deepEqual(await db.query('user', id1).get(), { id: 1, name: 'dude' })
 })
+
+await test('expire-alot', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        props: {
+          name: 'string',
+          other: {
+            ref: 'user',
+            prop: 'other',
+          },
+        },
+      },
+    },
+  })
+
+  const id1 = await db.create('user', {
+    name: 'dude',
+  })
+
+  const id2 = await db.create('user', {
+    name: 'dude2',
+    other: id1,
+  })
+
+  let i = 100
+  while (i--) {
+    db.expire('user', id1, 604_800_000)
+    db.expire('user', id2, 604_800_000)
+  }
+
+  db.save()
+
+  await db.drain()
+  await setTimeout(2000)
+
+  console.log(await db.query('user').get())
+})
