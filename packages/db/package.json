@@ -23,6 +23,7 @@
     "test-fast-linux_aarch64": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast'",
     "test-fast-linux_aarch64-gdb": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-x86_64-gnu/locale gdb -ex run --args node ./scripts/test.js'",
     "test-fast-linux_aarch64-valgrind": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-aarch64-gnu/locale valgrind --leak-check=full node ./scripts/test.js'",
+    "test-fast-linux_aarch64-valgrind-subs": "podman run -t --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; LOCPATH=../locale/locale-aarch64-gnu/locale valgrind --leak-check=full node ./scripts/test.js subscription/subscription.js'",
     "test-vector": "podman run --rm -v \"$PWD/../..:/usr/src/based-db\" based-db-clibs-build-linux_aarch64 sh -c '\\. \"/usr/local/nvm/nvm.sh\"; cd /usr/src/based-db/packages/db; npm run test-fast -- mem.js'",
     "test-zig": "npm run build-zig && tsc && npm run test-fast",
     "test-zig-debug": "npm run build-zig -- debug && tsc && LOCPATH=../locale/locale-x86_64-gnu/locale ./scripts/lldb-node ./scripts/test.js",
