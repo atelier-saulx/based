@@ -316,7 +316,7 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
 
     struct SVectorIterator it;
     struct SelvaExpireToken *token;
-    const sdb_arr_len_t count = selva_expire_count(&db->expiring);
+    sdb_arr_len_t count = selva_expire_count(&db->expiring);
 
     if (count >= 2'147'483'647) {
         fprintf(stderr, "Invalid selva_expire_count(): %zu\n", (size_t)count);
