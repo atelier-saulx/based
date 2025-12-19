@@ -6,6 +6,7 @@ import {
   DECODER,
   ENCODER,
   equals,
+  readInt32,
   readUint16,
   readUint32,
   writeUint16,
@@ -65,7 +66,7 @@ export async function readWritelog(filepath: string): Promise<Writelog | null> {
 
 export function registerBlockIoListeners(db: DbServer) {
   db.addOpListener(OpType.saveBlock, SAVE_BLOCK_ID, (buf: Uint8Array) => {
-    const err = readUint32(buf, 0)
+    const err = readInt32(buf, 0)
     const start = readUint32(buf, 4)
     const typeId = readUint16(buf, 8)
     const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
@@ -87,7 +88,7 @@ export function registerBlockIoListeners(db: DbServer) {
   })
 
   db.addOpListener(OpType.loadBlock, LOAD_BLOCK_ID, (buf: Uint8Array) => {
-    const err = readUint32(buf, 0)
+    const err = readInt32(buf, 0)
     const start = readUint32(buf, 4)
     const typeId = readUint16(buf, 8)
     const hash = buf.slice(10, 10 + BLOCK_HASH_SIZE)
@@ -125,7 +126,7 @@ async function saveCommon(db: DbServer): Promise<void> {
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.saveCommon, id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
+      const err = readInt32(buf, 0)
       if (err) {
         const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
         db.emit('error', errMsg)
@@ -177,7 +178,7 @@ export async function loadCommon(
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.loadCommon, id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
+      const err = readInt32(buf, 0)
       if (err) {
         // TODO read errlog
         const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
@@ -209,7 +210,7 @@ export async function loadBlockRaw(
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.loadBlock, id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
+      const err = readInt32(buf, 0)
       if (err) {
         // TODO read errlog
         const errMsg = `Load ${basename(filename)} failed: ${native.selvaStrerror(err)}`
@@ -306,7 +307,7 @@ export async function getBlockHash(
     writeUint16(msg, typeCode, 9)
 
     db.addOpOnceListener(OpType.blockHash, id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
+      const err = readInt32(buf, 0)
       if (err) {
         reject(
           new Error(
