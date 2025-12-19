@@ -19,22 +19,19 @@ pub const IdSubs = std.AutoHashMap(u32, []IdSubsItem); // [types.SUB_SIZE] [24] 
 // can make a multi sub thing here
 pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
 
-// 3 types of multi subs
-// ANY on type
-//  potentially also filter
-
-// ANY on type + filter
-//  potentially also filter
-
-// max / min range ID
-// can also include the id
-
-// max / min range SORT
-// can also include the id
-
-// significant filter (will make field more important)
-// the max / min id
-
+/// Subscription Context
+/// 3 types of multi subs
+/// - ANY on type
+///    potentially also filter
+/// - ANY on type + filter
+///   potentially also filter
+/// - max / min range ID
+///  can also include the id
+/// - max / min range SORT
+///   can also include the id
+///
+/// significant filter (will make field more important)
+/// the max / min id
 pub const TypeSubscriptionCtx = struct {
     typeModified: bool,
     idBitSet: []u1,
