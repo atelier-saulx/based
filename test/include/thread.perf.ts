@@ -14,6 +14,8 @@ await test('include', async (t) => {
   t.after(() => db.stop(true))
   //t.after(() => t.backup(db))
 
+  // single ref + edge
+
   await db.setSchema({
     locales: {
       en: true,
@@ -28,7 +30,7 @@ await test('include', async (t) => {
           name: 'string',
           nr: { type: 'uint32' },
           workingOnIt: {
-            items: { ref: 'user', prop: 'currentTodo' },
+            items: { ref: 'user', prop: 'currentTodo', $derp: 'boolean' },
           },
 
           // creator: { ref: 'user', prop: 'createdTodos' },
@@ -70,7 +72,7 @@ await test('include', async (t) => {
   const todos: number[] = []
   const rand = fastPrng(233221)
 
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 2; i++) {
     todos.push(
       await db.create('todo', {
         name: 'a',
@@ -79,37 +81,53 @@ await test('include', async (t) => {
     )
   }
 
+  const mrX = db.create('user', {
+    name: 'Mr X',
+    currentTodo: todos[0],
+    email: `beerdejim@gmail.com`,
+  })
+
+  await db.drain()
+
+  // now include edge
+  await db
+    .query('user', mrX)
+    // .include('currentTodo')
+    .include('nr', 'name', 'id', 'currentTodo', 'currentTodo.$derp')
+    .get()
+    .inspect()
+
   let d = Date.now()
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
-  for (let i = 0; i < 1e5; i++) {
-    db.create('user', {
-      nr: 1e5 - i,
-      nr1: 1e5 - i,
-      nr2: 1e5 - i,
-      nr3: 1e5 - i,
-      nr4: 1e5 - i,
-      nr5: 1e5 - i,
-      nr6: 1e5 - i,
-      name: 'mr snurp ' + i,
-      currentTodo: todos[0],
-      email: `beerdejim+${i}@gmail.com`,
-      todos: todos.slice(0, rand(0, 10)).map((v) => ({
-        id: v,
-        $status: 'nothing',
-      })),
+  // for (let i = 0; i < 1e5; i++) {
+  //   db.create('user', {
+  //     nr: 1e5 - i,
+  //     nr1: 1e5 - i,
+  //     nr2: 1e5 - i,
+  //     nr3: 1e5 - i,
+  //     nr4: 1e5 - i,
+  //     nr5: 1e5 - i,
+  //     nr6: 1e5 - i,
+  //     name: 'mr snurp ' + i,
+  //     currentTodo: todos[0],
+  //     email: `beerdejim+${i}@gmail.com`,
+  //     todos: todos.slice(0, rand(0, 10)).map((v) => ({
+  //       id: v,
+  //       $status: 'nothing',
+  //     })),
 
-      // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
-      // todos: [todo, todo2], // this doesnot work with edges...
-      // body: {
-      //   nl: 'x',
-      //   fr: 'B',
-      //   de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
-      //   en: italy,
-      // },
-    })
-  }
+  //     // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
+  //     // todos: [todo, todo2], // this doesnot work with edges...
+  //     // body: {
+  //     //   nl: 'x',
+  //     //   fr: 'B',
+  //     //   de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
+  //     //   en: italy,
+  //     // },
+  //   })
+  // }
 
   // // update works
   // for (let i = 1; i < 1000; i++) {
@@ -118,24 +136,24 @@ await test('include', async (t) => {
   //     flap: '💩',
   //   })
   // }
-  await db.drain()
-  console.log(Date.now() - d, 'ms')
+  // await db.drain()
+  // console.log(Date.now() - d, 'ms')
 
   console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
 
   // [2, 10, 11]
   // await db.query('user', 1).include('id', 'name').get().inspect()
 
-  const result = await db
-    .query('user')
-    .include('id', 'nr')
-    .range(0, 1e5)
-    .order('desc')
-    .include((t) => {
-      t('todos').include('nr').sort('id').order('asc')
-    })
-    .get()
-    .inspect()
+  // const result = await db
+  //   .query('user')
+  //   .include('id', 'nr')
+  //   .range(0, 1e5)
+  //   .order('desc')
+  //   .include((t) => {
+  //     t('todos').include('nr').sort('id').order('asc')
+  //   })
+  //   .get()
+  //   .inspect()
 
   // const result = await db
   //   .query('todo', [3, 10, 20])

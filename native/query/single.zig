@@ -72,7 +72,10 @@ pub fn reference(
 ) !void {
     const header = utils.readNext(t.QueryHeaderSingleReference, q, i);
     const fs = try Schema.getFieldSchema(fromType, header.prop);
-    if (References.getSingleReference(from, fs)) |ref| {
+
+    // References.getEdgeReference()
+
+    if (References.getReference(from, fs)) |ref| {
         const typeEntry = try Node.getType(ctx.db, header.typeId);
         const n = Node.getNode(typeEntry, ref.dst);
         if (n) |node| {

@@ -114,8 +114,7 @@ export function defToBuffer(
       edgeSize = byteSize(edge)
     }
     const typeId: number = def.schema!.id
-    const edgeTypeId: number =
-      (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
+    const edgeTypeId: number = def.target.propDef!.edgeNodeTypeId || 0
     const op: QueryTypeEnum = QueryType.reference
     const buffer = createQueryHeaderSingleReference({
       op,
@@ -125,7 +124,6 @@ export function defToBuffer(
       edgeTypeId,
       edgeSize,
     })
-    // TODO: Need to pass crrect stupid nested INDEX for NOW queries
     result.push([
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
       include,
@@ -135,9 +133,6 @@ export function defToBuffer(
     }
   } else if (isRootDefault || isReferences) {
     const hasSort = (def.sort?.prop !== ID_PROP || isReferences) && !!def.sort
-
-    console.log({ hasSort }, def.sort)
-
     const hasSearch = !!def.search
     const hasFilter = def.filter.size > 0
     const searchSize = hasSearch ? def.search!.size : 0
@@ -210,7 +205,6 @@ export function defToBuffer(
       include,
     ])
     result.push(edge)
-
     if (isIds && 'ids' in def.target && def.target.ids) {
       const ids = new Uint8Array(4 + def.target.ids.length * 4)
       writeUint32(ids, def.target.ids.length, 0)

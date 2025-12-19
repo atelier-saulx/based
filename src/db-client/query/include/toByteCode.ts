@@ -19,8 +19,6 @@ import {
   writeIncludePartialProp,
 } from '../../../zigTsExports.js'
 
-const EMPTY_BUFFER = new Uint8Array(0)
-
 const isPartialMain = (def: QueryDef) => {
   return (
     def.include.main.len !==

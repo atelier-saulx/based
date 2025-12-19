@@ -50,6 +50,7 @@ pub inline fn include(
         const op: t.IncludeOp = @enumFromInt(q[i]);
 
         switch (op) {
+            // add .referenceEdge?
             .reference => {
                 recursionErrorBoundary(single.reference, node, ctx, q, typeEntry, &i);
             },

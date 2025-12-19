@@ -96,7 +96,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
 
 fn getLargeRef(db: *DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?References.ReferenceLarge {
     if (dstId == 0) { // assume reference
-        return References.getSingleReference(node, fs);
+        return References.getReference(node, fs);
     } else { // references
         if (References.getReferences(false, true, db, node, fs)) |iterator| {
             const refs = iterator.refs;

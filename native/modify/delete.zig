@@ -87,7 +87,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         if (ctx.fieldType == t.PropType.reference) {
             const fs = ctx.fieldSchema.?;
             const dstType = try Node.getRefDstType(ctx.db, fs);
-            const oldRefDst = Node.getNodeFromReference(dstType, References.getSingleReference(ctx.node.?, fs));
+            const oldRefDst = Node.getNodeFromReference(dstType, References.getReference(ctx.node.?, fs));
             if (oldRefDst) |dstNode| {
                 Modify.markDirtyRange(ctx, Node.getNodeTypeId(dstNode), Node.getNodeId(dstNode));
             }
