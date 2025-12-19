@@ -9,8 +9,6 @@ const upsertSubType = @import("shared.zig").upsertSubType;
 const Subscription = @import("common.zig");
 const removeSubTypeIfEmpty = @import("shared.zig").removeSubTypeIfEmpty;
 
-const write = utils.write;
-
 pub fn getMarkedIdSubscriptions(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
     if (ctx.subscriptions.lastIdMarked > 0) {
         const size = (ctx.subscriptions.lastIdMarked) * 8;
@@ -75,7 +73,7 @@ pub fn removeIdSubscription(
     const id = utils.read(u32, value, 7);
 
     singleId.removeIdSubscriptionInternal(dbCtx, subId, typeId, id);
-    write(resp, @as(i32, 0), 0);
+    utils.write(resp, @as(i32, 0), 0);
 }
 
 pub fn addIdSubscription(
@@ -98,11 +96,11 @@ pub fn addIdSubscription(
 
     singleId.addIdSubscriptionInternal(dbCtx, subId, typeId, id, fieldsLen, partialLen, fields, partialFields) catch {
         // TODO proper error
-        write(resp, @as(i32, -1), 0);
+        utils.write(resp, @as(i32, -1), 0);
         return;
     };
 
-    write(resp, @as(i32, 0), 0);
+    utils.write(resp, @as(i32, 0), 0);
 }
 
 pub fn addMultiSubscription(
