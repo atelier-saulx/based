@@ -76,25 +76,24 @@ await test('sub-voting', async (t) => {
 
   await wait(300)
   await db.update('edition', id, {
-    body: 'z1',
+    body: 'z1 change',
   })
   await wait(300)
   await db.update('edition', id, {
-    body: 'z2',
+    body: 'z2 change',
   })
   await wait(300)
   await db.update('edition', id, {
-    body: 'z3',
+    body: 'z3 change',
   })
   await db.update('edition', id, {
     name: 'cool name',
   })
   await wait(300)
+  console.log({ id, a, b, c, d, e })
   equal(a, 3, 'a')
   equal(b, 3, 'b')
   equal(c, 4, 'c')
   equal(d, 4, 'd')
   equal(e, 2, 'e')
-
-  console.log({ a, b, c, d })
 })
