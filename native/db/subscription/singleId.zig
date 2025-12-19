@@ -84,7 +84,7 @@ pub fn addIdSubscriptionInternal(ctx: *DbCtx, subId: u32, typeId: u16, id: u32, 
             idDoesNotExist = false;
             subIndex = subs.len;
 
-            const newSubs = jemalloc.rallocx(subs, subs.len + 1);
+            const newSubs = jemalloc.resize(subs, subs.len + 1);
             if (newSubs) |s| {
                 entry.value_ptr.* = s;
                 subs = s;
@@ -279,7 +279,7 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !voi
                     }
                 }
             } else if (subs.len != 0) {
-                const newSubs = jemalloc.rallocx(idSub.value_ptr.*, idSub.value_ptr.len - 1);
+                const newSubs = jemalloc.resize(idSub.value_ptr.*, idSub.value_ptr.len - 1);
                 if (newSubs) |s| {
                     idSub.value_ptr.* = s;
                 } else {

@@ -78,26 +78,29 @@ pub fn realloc(old: anytype, n: usize) @TypeOf(old) {
     return slicify(T, ptr, n);
 }
 
-pub fn rallocx(old: anytype, n: usize) ?@TypeOf(old) {
+/// Resize the allocation at old.ptr in place to be at least n bytes.
+/// Returns a slice to the base address of the resulting allocation.
+pub fn resize(old: anytype, n: usize) ?@TypeOf(old) {
     const Slice = @typeInfo(@TypeOf(old)).pointer;
     const T = Slice.child;
+    const ptr = old.ptr;
+    const newSize = n * @sizeOf(T);
 
-    if (c.selva_rallocx(@ptrCast(old.ptr), n * @sizeOf(T), c.MALLOCX_ZERO)) |ptr| {
-        if (config.enable_debug and std.valgrind.runningOnValgrind() > 0) {
-            const oldSize: usize = old.len * @sizeOf(T);
-            const newSize = n * @sizeOf(T);
-            const oldBuf = slicify(u8, @ptrCast(old.ptr), oldSize);
-            const newBuf = slicify(u8, ptr, newSize);
-
-            std.valgrind.memcheck.makeMemNoAccess(oldBuf);
-            std.valgrind.memcheck.makeMemDefined(newBuf[0..oldSize]);
-            std.valgrind.memcheck.makeMemUndefined(newBuf[oldSize..newSize]);
-        }
-
-        return slicify(T, ptr, n);
-    } else {
+    if (c.selva_xallocx(@ptrCast(old.ptr), newSize, 0, c.MALLOCX_ZERO) < newSize) {
         return null;
     }
+
+    if (config.enable_debug and std.valgrind.runningOnValgrind() > 0) {
+        const oldSize: usize = old.len * @sizeOf(T);
+        const oldBuf = slicify(u8, @ptrCast(old.ptr), oldSize);
+        const newBuf = slicify(u8, ptr, newSize);
+
+        std.valgrind.memcheck.makeMemNoAccess(oldBuf);
+        std.valgrind.memcheck.makeMemDefined(newBuf[0..oldSize]);
+        std.valgrind.memcheck.makeMemUndefined(newBuf[oldSize..newSize]);
+    }
+
+    return slicify(T, ptr, n);
 }
 
 pub fn free(ptr: anytype) void {
