@@ -1,4 +1,5 @@
 import {
+  readInt32,
   readInt64,
   readUint16,
   readUint32,
@@ -68,7 +69,7 @@ async function sendAddMultiSubscription(
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.addMultiSubscription, id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
+      const err = readInt32(buf, 0)
       if (err) {
         // TODO format error
         const errMsg = `Failed: ${err}`
@@ -96,7 +97,7 @@ async function sendRemoveMultiSubscription(
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.removeMultiSubscription, id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
+      const err = readInt32(buf, 0)
       if (err) {
         // TODO format error
         const errMsg = `Failed: ${err}`
@@ -137,7 +138,7 @@ async function sendAddIdSubscription(
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.addIdSubscription, id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
+      const err = readInt32(buf, 0)
       if (err) {
         // TODO format error
         const errMsg = `Failed: ${err}`
@@ -165,7 +166,7 @@ async function sendRemoveIdSubscription(
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.removeIdSubscription, id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
+      const err = readInt32(buf, 0)
       if (err) {
         // TODO format error
         const errMsg = `Failed: ${err}`
