@@ -158,3 +158,84 @@ PU_TEST(test_cancel)
 
     return nullptr;
 }
+
+PU_TEST(test_cancel2)
+{
+    size_t n;
+
+    TICK(0);
+
+    struct SelvaExpireToken *tok1 = new_token(2);
+    struct SelvaExpireToken *tok2 = new_token(2);
+    struct SelvaExpireToken *tok3 = new_token(2);
+
+    selva_expire_insert(&ex, tok1);
+    selva_expire_insert(&ex, tok2);
+    selva_expire_insert(&ex, tok3);
+    ASSERT_EX_COUNT(3);
+
+    selva_expire_remove(&ex, cmp_addr, tok1);
+    ASSERT_EX_COUNT(2);
+
+    selva_expire_remove(&ex, cmp_addr, tok2);
+    ASSERT_EX_COUNT(1);
+
+    selva_expire_remove(&ex, cmp_addr, tok3);
+    ASSERT_EX_COUNT(0);
+
+    return nullptr;
+}
+
+PU_TEST(test_cancel3)
+{
+    size_t n;
+
+    TICK(0);
+
+    struct SelvaExpireToken *tok1 = new_token(2);
+    struct SelvaExpireToken *tok2 = new_token(2);
+    struct SelvaExpireToken *tok3 = new_token(2);
+
+    selva_expire_insert(&ex, tok1);
+    selva_expire_insert(&ex, tok2);
+    selva_expire_insert(&ex, tok3);
+    ASSERT_EX_COUNT(3);
+
+    selva_expire_remove(&ex, cmp_addr, tok1);
+    ASSERT_EX_COUNT(2);
+
+    selva_expire_remove(&ex, cmp_addr, tok3);
+    ASSERT_EX_COUNT(1);
+
+    selva_expire_remove(&ex, cmp_addr, tok2);
+    ASSERT_EX_COUNT(0);
+
+    return nullptr;
+}
+
+PU_TEST(test_cancel4)
+{
+    size_t n;
+
+    TICK(0);
+
+    struct SelvaExpireToken *tok1 = new_token(2);
+    struct SelvaExpireToken *tok2 = new_token(3);
+    struct SelvaExpireToken *tok3 = new_token(3);
+
+    selva_expire_insert(&ex, tok1);
+    selva_expire_insert(&ex, tok2);
+    selva_expire_insert(&ex, tok3);
+    ASSERT_EX_COUNT(3);
+
+    selva_expire_remove(&ex, cmp_addr, tok2);
+    ASSERT_EX_COUNT(2);
+
+    selva_expire_remove(&ex, cmp_addr, tok1);
+    ASSERT_EX_COUNT(1);
+
+    selva_expire_remove(&ex, cmp_addr, tok3);
+    ASSERT_EX_COUNT(0);
+
+    return nullptr;
+}
