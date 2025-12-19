@@ -18,22 +18,14 @@ fn getMarkedIdSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_call
             return null;
         }
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
-
-        //x
-        // Reset
         var i: usize = 0;
         while (i < ctx.subscriptions.lastIdMarked) {
             const sub = ctx.subscriptions.singleIdMarked[i];
             const newDataIndex = i * 8;
             const id = sub.id;
-            if (sub.isRemoved) {
-                // can make
-                try singleId.removeSubscriptionMarked(ctx, sub);
-            } else {
-                utils.writeInt(u32, data, newDataIndex, id);
-                utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
-                sub.*.marked = types.SubStatus.all;
-            }
+            utils.writeInt(u32, data, newDataIndex, id);
+            utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
+            sub.*.marked = types.SubStatus.all;
             i += 1;
         }
 
