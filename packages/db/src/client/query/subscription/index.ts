@@ -12,6 +12,12 @@ export class SubStore {
   len?: number
   subscribe(q: BasedDbQuery) {
     const onData = (res: Uint8Array) => {
+      // // @ts-ignore
+      // if (q._payload) {
+      //   // @ts-ignore
+      //   console.log('onData', q._payload)
+      // }
+
       if (!this.response) {
         this.response = new BasedQueryResponse(q.def, res, 0)
       } else {
