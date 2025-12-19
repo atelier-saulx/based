@@ -27,6 +27,7 @@ await test('sub-voting', async (t) => {
   let b = 0
   let c = 0
   let d = 0
+  let e = 0
   let unsub1 = db.query('edition', id).subscribe(() => {
     a++
   })
@@ -36,7 +37,13 @@ await test('sub-voting', async (t) => {
     .subscribe(() => {
       b++
     })
-
+  let unsub3 = db
+    .query('edition', id)
+    .include('name')
+    .subscribe(() => {
+      console.log('name!')
+      e++
+    })
   await wait(300)
   await db.update('edition', id, {
     body: 'z1',
@@ -78,10 +85,15 @@ await test('sub-voting', async (t) => {
   await db.update('edition', id, {
     body: 'z3',
   })
+  await db.update('edition', id, {
+    name: 'cool name',
+  })
   await wait(300)
   equal(a, 3, 'a')
   equal(b, 3, 'b')
   equal(c, 4, 'c')
   equal(d, 4, 'd')
+  equal(e, 2, 'e')
+
   console.log({ a, b, c, d })
 })
