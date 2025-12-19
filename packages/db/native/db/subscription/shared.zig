@@ -17,7 +17,6 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*types.TypeSubscriptionCt
         typeSubs.idBitSet = try std.heap.raw_c_allocator.alloc(u1, typeSubs.bitSetSize);
         @memset(typeSubs.idBitSet, 0);
         typeSubs.idSubs = types.IdSubs.init(std.heap.raw_c_allocator);
-
         // multi id
         typeSubs.multiSubsSize = 0;
         // typeSubs.multiSubsSizeBits = 0;

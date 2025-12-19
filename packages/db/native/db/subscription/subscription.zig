@@ -20,15 +20,15 @@ fn getMarkedIdSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_call
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
         var i: usize = 0;
         while (i < ctx.subscriptions.lastIdMarked) {
-            const sub = ctx.subscriptions.singleIdMarked[i];
-            if (sub.isRemoved) {
-                // do nothing
-            } else {
+            const subId = ctx.subscriptions.singleIdMarked[i];
+            if (ctx.subscriptions.subsHashMap.getEntry(subId)) |entry| {
+                const sub = entry.value_ptr;
                 const newDataIndex = i * 8;
                 const id = sub.id;
                 utils.writeInt(u32, data, newDataIndex, id);
                 utils.writeInt(u32, data, newDataIndex + 4, sub.subId);
-                sub.*.marked = types.SubStatus.all;
+                entry.value_ptr.*.marked = types.SubStatus.all;
+                // sub.marked = types.SubStatus.all;
             }
             i += 1;
         }
@@ -37,10 +37,6 @@ fn getMarkedIdSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_call
         return result;
     }
 
-    for (ctx.subscriptions.freeList.items) |item| {
-        ctx.subscriptions.allocator.free(item);
-    }
-    ctx.subscriptions.freeList.clearAndFree(ctx.subscriptions.allocator);
     return null;
 }
 

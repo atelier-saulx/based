@@ -48,9 +48,9 @@ pub fn stagePartial(ctx: *ModifyCtx, start: u16) void {
                     ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                         ctx.db.subscriptions.singleIdMarked,
                         ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE,
-                    ) catch &.{};
+                    ) catch &[_]u32{};
                 }
-                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
+                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
                 ctx.db.subscriptions.lastIdMarked += 1;
                 idSubs[i].marked = subTypes.SubStatus.marked;
             }
@@ -69,17 +69,14 @@ pub fn stage(
                 if (idSubs[i].marked == subTypes.SubStatus.marked) {
                     continue;
                 }
-
                 if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 16) {
                     ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                         ctx.db.subscriptions.singleIdMarked,
                         ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE * 16,
-                    ) catch &.{};
+                    ) catch &[_]u32{};
                 }
-
-                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
+                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
                 ctx.db.subscriptions.lastIdMarked += 1;
-
                 idSubs[i].marked = subTypes.SubStatus.marked;
             }
         }
@@ -96,9 +93,9 @@ pub fn stage(
                         ctx.db.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
                             ctx.db.subscriptions.singleIdMarked,
                             ctx.db.subscriptions.singleIdMarked.len + subTypes.BLOCK_SIZE,
-                        ) catch &.{};
+                        ) catch &[_]u32{};
                     }
-                    ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
+                    ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
                     ctx.db.subscriptions.lastIdMarked += 1;
                     idSubs[i].marked = subTypes.SubStatus.marked;
                 }

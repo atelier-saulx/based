@@ -58,15 +58,10 @@ pub fn createDbCtx() !*DbCtx {
     const subscriptions = try allocator.create(subs.SubscriptionCtx);
     subscriptions.*.types = subs.TypeSubMap.init(allocator);
 
-    subscriptions.*.gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    subscriptions.*.allocator = subscriptions.*.gpa.allocator();
-    subscriptions.*.freeList = try subs.FreeList.initCapacity(subscriptions.*.allocator, 0);
-
     subscriptions.*.lastIdMarked = 0;
-    subscriptions.*.singleIdMarked = try std.heap.raw_c_allocator.alloc(
-        *subs.IdSubsItem,
-        subs.BLOCK_SIZE,
-    );
+    subscriptions.*.singleIdMarked = try std.heap.raw_c_allocator.alloc(u32, subs.BLOCK_SIZE);
+
+    subscriptions.*.subsHashMap = subs.SubHashMap.init(std.heap.raw_c_allocator);
 
     errdefer {
         arena.deinit();
@@ -114,7 +109,7 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
         }
     }
 
-    _ = ctx.subscriptions.gpa.deinit();
+    _ = ctx.subscriptions.subsHashMap.deinit();
 
     selva.selva_db_destroy(ctx.selva);
     ctx.selva = null;
