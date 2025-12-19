@@ -9,7 +9,7 @@ const removeSubTypeIfEmpty = @import("shared.zig").removeSubTypeIfEmpty;
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 
-pub inline fn getNewBitSize(size: u32) u32 {
+inline fn getNewBitSize(size: u32) u32 {
     var n: u32 = size;
     if (size < 100) {
         n = 100;
