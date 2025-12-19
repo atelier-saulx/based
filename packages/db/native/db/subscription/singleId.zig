@@ -96,27 +96,14 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
-            // keep prev clean later
-            // std.debug.print("FLAP {any} \n", .{subs.len});
-            // if (ctx.subscriptions.allocator.resize(subs, subs.len + 1)) {
-            //     subs = entry.value_ptr.*;
-
-            //     std.debug.print("RESIZED SUB {any} \n", .{subs.len});
-            //     // ---------
-            // } else {
             const subsFreeList = subs;
             subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, subs.len + 1);
-
             @memcpy(subs[0..subsFreeList.len], subsFreeList);
-
-            // std.debug.print("ADD TO SUB CANT RESIZE OLD: \n{any}\n \nNew: \n{any}\n \n", .{ subsFreeList, subs });
-
             try ctx.subscriptions.freeList.append(
                 ctx.subscriptions.allocator,
                 subsFreeList,
             );
             entry.value_ptr.* = subs;
-            // }
         }
     }
 
@@ -132,8 +119,6 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
         try sizeBitSet(typeSubs);
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
-
-    // std.debug.print("ADD INDEX {any} {any} ->\n", .{ subs.len, subIndex });
 
     subs[subIndex].marked = types.SubStatus.all;
     subs[subIndex].subId = subId;
@@ -162,10 +147,6 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             j += 1;
         }
     }
-
-    // std.debug.print("DONE SETTING  INDEX {any} --> {any} \n", .{ subs[subIndex], subIndex });
-
-    // std.debug.print("\n INDEX------------------- \n {any} \n ------------------------ \n", .{subs});
 
     return null;
 }
