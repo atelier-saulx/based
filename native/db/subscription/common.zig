@@ -1,4 +1,5 @@
 const std = @import("std");
+
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 

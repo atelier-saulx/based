@@ -3,8 +3,6 @@ const Subscription = @import("common.zig");
 const DbCtx = @import("../ctx.zig").DbCtx;
 const std = @import("std");
 
-const vectorLen = std.simd.suggestVectorLength(u8).?;
-
 pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*Subscription.TypeSubscriptionCtx {
     var typeSubs: *Subscription.TypeSubscriptionCtx = undefined;
     if (!ctx.subscriptions.types.contains(typeId)) {
