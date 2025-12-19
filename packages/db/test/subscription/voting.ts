@@ -89,11 +89,10 @@ await test('sub-voting', async (t) => {
     name: 'cool name',
   })
   await wait(300)
+  console.log({ id, a, b, c, d, e })
   equal(a, 3, 'a')
   equal(b, 3, 'b')
   equal(c, 4, 'c')
   equal(d, 4, 'd')
   equal(e, 2, 'e')
-
-  console.log({ a, b, c, d, e })
 })
