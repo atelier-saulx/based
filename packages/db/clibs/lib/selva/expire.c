@@ -104,10 +104,10 @@ void selva_expire_remove(struct SelvaExpire *ex, bool (cmp)(struct SelvaExpireTo
 {
     struct SVectorIterator it;
     struct SelvaExpireToken *token;
-    struct SelvaExpireToken *prev = nullptr;
 
     SVector_ForeachBegin(&it, &ex->list);
     while (!SVector_Done(&it)) {
+        struct SelvaExpireToken *prev = nullptr;
         token = SVector_Foreach(&it);
         do {
             if (cmp(token, arg)) {
