@@ -98,7 +98,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             subIndex = subs.len;
             // keep prev clean later
             if (ctx.subscriptions.allocator.resize(subs, subs.len + 1)) {
-                // entry.value_ptr.*.ptr = subs.ptr;
+                entry.value_ptr.*.ptr = subs.ptr;
                 entry.value_ptr.*.len = subs.len + 1;
                 subs = entry.value_ptr.*;
             } else {
