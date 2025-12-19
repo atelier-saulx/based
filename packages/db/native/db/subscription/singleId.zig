@@ -270,14 +270,10 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                                 }
                             }
                         } else if (subs.len != 0) {
-
-                            // only do this when it's actually removed
-                            // if (subs.len > 1) {
                             const newLen = subs.len - 1;
                             if (i != newLen) {
                                 subs[i] = subs[newLen];
                             }
-                            // }
 
                             if (ctx.subscriptions.allocator.resize(
                                 idSub.value_ptr.*,
@@ -311,130 +307,4 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
     }
 
     return null;
-}
-
-pub fn removeSubscriptionMarked(ctx: *db.DbCtx, sub: *types.IdSubsItem) !void {
-    const id = sub.id;
-    const typeId = sub.typeId;
-
-    if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
-        if (typeSubs.idSubs.getEntry(id)) |idSub| {
-            const subs = idSub.value_ptr.*;
-            if (subs.len == 1) {
-                try ctx.subscriptions.freeList.append(
-                    ctx.subscriptions.allocator,
-                    idSub.value_ptr.*,
-                );
-
-                idSub.value_ptr.* = &.{};
-
-                _ = typeSubs.idSubs.remove(id);
-
-                // dont do this here need top be in marked
-                if (id > typeSubs.bitSetSize) {
-                    var hasOthers = false;
-                    var overlap = @divTrunc(id, typeSubs.bitSetSize);
-                    const lowBound = @divTrunc(typeSubs.minId, typeSubs.bitSetSize);
-                    while (overlap > lowBound) {
-                        const potentialId = ((id) % typeSubs.bitSetSize) + (overlap - 1) * typeSubs.bitSetSize;
-                        if (typeSubs.idSubs.contains(potentialId)) {
-                            hasOthers = true;
-                            break;
-                        }
-                        overlap -= 1;
-                    }
-                    if (!hasOthers) {
-                        typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 0;
-                    }
-                } else if (typeSubs.maxId < typeSubs.bitSetSize + 1) {
-                    typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 0;
-                } else {
-                    var hasOthers = false;
-                    var overlap = @divTrunc(id, typeSubs.bitSetSize);
-                    const maxId = @divTrunc(typeSubs.maxId, typeSubs.bitSetSize) + 1;
-                    while (overlap < maxId) {
-                        const potentialId = ((id) % typeSubs.bitSetSize) + (overlap + 1) * typeSubs.bitSetSize;
-                        if (typeSubs.idSubs.contains(potentialId)) {
-                            hasOthers = true;
-                            break;
-                        }
-                        overlap += 1;
-                    }
-                    if (!hasOthers) {
-                        typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 0;
-                    }
-                }
-
-                const idCount = typeSubs.idSubs.count();
-                const range = typeSubs.maxId - typeSubs.minId;
-
-                if (idCount == 0) {
-                    // remove
-                } else if (range / idCount > 1000) {
-                    if (id == typeSubs.maxId) {
-                        var keyIterator = typeSubs.idSubs.keyIterator();
-                        while (keyIterator.next()) |k| {
-                            if (k.* > typeSubs.maxId) {
-                                typeSubs.maxId = k.*;
-                            }
-                        }
-                    } else if (id == typeSubs.minId) {
-                        var keyIterator = typeSubs.idSubs.keyIterator();
-                        while (keyIterator.next()) |k| {
-                            if (k.* < typeSubs.maxId) {
-                                typeSubs.minId = k.*;
-                            }
-                        }
-                        try sizeBitSet(typeSubs);
-                    }
-                } else {
-                    if (id == typeSubs.maxId) {
-                        var j: u32 = typeSubs.maxId;
-                        const min = typeSubs.minId;
-                        while (j >= min) {
-                            if (typeSubs.idBitSet[(j - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
-                                if (typeSubs.idSubs.contains(j)) {
-                                    typeSubs.maxId = j;
-                                    break;
-                                }
-                            }
-                            j -= 1;
-                        }
-                    } else if (id == typeSubs.minId) {
-                        var j: u32 = typeSubs.minId;
-                        while (j <= typeSubs.maxId) {
-                            if (typeSubs.idBitSet[(j - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1 and
-                                typeSubs.idSubs.contains(j))
-                            {
-                                typeSubs.minId = j;
-                                break;
-                            }
-                            j += 1;
-                        }
-                        try sizeBitSet(typeSubs);
-                    }
-                }
-            } else if (subs.len != 0) {
-                if (ctx.subscriptions.allocator.resize(
-                    idSub.value_ptr.*,
-                    idSub.value_ptr.len - 1,
-                )) {} else {
-                    const subsFreeList = idSub.value_ptr.*;
-                    idSub.value_ptr.* = try ctx.subscriptions.allocator.alloc(
-                        types.IdSubsItem,
-                        idSub.value_ptr.len - 1,
-                    );
-                    @memcpy(subs, subsFreeList);
-                    try ctx.subscriptions.freeList.append(
-                        ctx.subscriptions.allocator,
-                        subsFreeList,
-                    );
-                }
-            } else {
-                std.debug.print("Weird subs len is 0 \n", .{});
-            }
-        }
-
-        removeSubTypeIfEmpty(ctx, typeId, typeSubs);
-    }
 }
