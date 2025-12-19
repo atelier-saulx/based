@@ -83,8 +83,21 @@ pub fn addIdSubscriptionInternal(ctx: *DbCtx, subId: u32, typeId: u16, id: u32, 
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
-            subs = jemalloc.realloc(subs, subs.len + 1);
-            entry.value_ptr.* = subs;
+
+            const newSubs = jemalloc.rallocx(subs, subs.len + 1);
+            if (newSubs) |s| {
+                entry.value_ptr.* = s;
+                subs = s;
+            } else {
+                const oldSubs = subs;
+                try ctx.subscriptions.freeList.append(
+                    ctx.subscriptions.allocator,
+                    oldSubs,
+                );
+                subs = jemalloc.alloc(Subscription.IdSubsItem, subs.len + 1);
+                @memcpy(subs, oldSubs);
+                entry.value_ptr.* = subs;
+            }
         }
     }
 
@@ -166,7 +179,7 @@ pub fn removeIdSubscriptionInternal(ctx: *DbCtx, subId: u32, typeId: u16, id: u3
     }
 }
 
-pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) void {
+pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) !void {
     const id = sub.id;
     const typeId = sub.typeId;
 
@@ -174,7 +187,11 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) void
         if (typeSubs.idSubs.getEntry(id)) |idSub| {
             const subs = idSub.value_ptr.*;
             if (subs.len == 1) {
-                jemalloc.free(idSub.value_ptr.*);
+                try ctx.subscriptions.freeList.append(
+                    ctx.subscriptions.allocator,
+                    idSub.value_ptr.*,
+                );
+                idSub.value_ptr.* = &.{};
                 _ = typeSubs.idSubs.remove(id);
 
                 // dont do this here need top be in marked
@@ -262,11 +279,18 @@ pub fn removeSubscriptionMarked(ctx: *DbCtx, sub: *Subscription.IdSubsItem) void
                     }
                 }
             } else if (subs.len != 0) {
-                const newSubs = jemalloc.realloc(
-                    idSub.value_ptr.*,
-                    idSub.value_ptr.len - 1,
-                );
-                idSub.value_ptr.* = newSubs;
+                const newSubs = jemalloc.rallocx(idSub.value_ptr.*, idSub.value_ptr.len - 1);
+                if (newSubs) |s| {
+                    idSub.value_ptr.* = s;
+                } else {
+                    const oldSubs = subs;
+                    try ctx.subscriptions.freeList.append(
+                        ctx.subscriptions.allocator,
+                        oldSubs,
+                    );
+                    idSub.value_ptr.* = jemalloc.alloc(Subscription.IdSubsItem, idSub.value_ptr.len + 1);
+                    @memcpy(idSub.value_ptr.*, oldSubs);
+                }
             } else {
                 std.debug.print("Weird subs len is 0 \n", .{});
             }

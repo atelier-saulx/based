@@ -4,6 +4,7 @@ const Thread = @import("../../thread/thread.zig");
 const napi = @import("../../napi.zig");
 const utils = @import("../../utils.zig");
 const t = @import("../../types.zig");
+const jemalloc = @import("../../jemalloc.zig");
 const singleId = @import("singleId.zig");
 const upsertSubType = @import("shared.zig").upsertSubType;
 const Subscription = @import("common.zig");
@@ -20,7 +21,7 @@ pub fn getMarkedIdSubscriptions(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op
             const newDataIndex = i * 8;
             const id = sub.id;
             if (sub.isRemoved) {
-                singleId.removeSubscriptionMarked(ctx, sub);
+                try singleId.removeSubscriptionMarked(ctx, sub);
             } else {
                 utils.writeAs(u32, resp, id, newDataIndex);
                 utils.writeAs(u32, resp, sub.subId, newDataIndex + 4);
@@ -30,6 +31,11 @@ pub fn getMarkedIdSubscriptions(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op
         }
 
         ctx.subscriptions.lastIdMarked = 0;
+
+        for (ctx.subscriptions.freeList.items) |item| {
+            jemalloc.free(item);
+        }
+        ctx.subscriptions.freeList.clearAndFree(ctx.subscriptions.allocator);
     } else {
         _ = try thread.query.result(0, utils.read(u32, q, 0), op);
     }
@@ -94,8 +100,9 @@ pub fn addIdSubscription(
     const fields = value[headerLen .. fieldsLen + headerLen];
     const partialFields = value[fieldsLen + headerLen .. fieldsLen + headerLen + partialLen * 2];
 
-    singleId.addIdSubscriptionInternal(dbCtx, subId, typeId, id, fieldsLen, partialLen, fields, partialFields) catch {
+    singleId.addIdSubscriptionInternal(dbCtx, subId, typeId, id, fieldsLen, partialLen, fields, partialFields) catch |err| {
         // TODO proper error
+        std.log.err("addIdSubscription: {any}", .{err});
         utils.write(resp, @as(i32, -1), 0);
         return;
     };
@@ -115,8 +122,9 @@ pub fn addMultiSubscription(
     const resp = try thread.modify.result(4, utils.read(u32, m, 0), op);
     const header = utils.read(t.addMultiSubscriptionHeader, m, 5);
 
-    var typeSubs = upsertSubType(dbCtx, header.typeId) catch {
+    var typeSubs = upsertSubType(dbCtx, header.typeId) catch |err| {
         // TODO Write proper error
+        std.log.err("addMultiSubscription: {any}", .{err});
         utils.write(resp, @as(i32, -1), 0);
         return;
     };
@@ -161,5 +169,5 @@ pub fn removeMultiSubscription(
         removeSubTypeIfEmpty(dbCtx, header.typeId, st);
     }
 
-    utils.write(resp, @as(i32, -1), 0);
+    utils.write(resp, @as(i32, 0), 0);
 }

@@ -59,7 +59,14 @@ pub const SubscriptionCtx = struct {
     types: TypeSubMap,
     singleIdMarked: []*IdSubsItem,
     lastIdMarked: u32,
+
+    // FreeList
+    freeList: FreeList,
+    gpa: std.heap.GeneralPurposeAllocator(.{}),
+    allocator: std.mem.Allocator,
 };
+
+pub const FreeList = std.ArrayList([]IdSubsItem);
 
 pub const BLOCK_SIZE = 100_000;
 
