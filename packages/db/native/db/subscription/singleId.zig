@@ -96,14 +96,25 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
-            const subsFreeList = subs;
-            subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, subs.len + 1);
-            @memcpy(subs[0..subsFreeList.len], subsFreeList);
-            try ctx.subscriptions.freeList.append(
-                ctx.subscriptions.allocator,
-                subsFreeList,
-            );
-            entry.value_ptr.* = subs;
+            // keep prev clean later
+            if (ctx.subscriptions.allocator.resize(subs, subs.len + 1)) {
+                // entry.value_ptr.*.ptr = subs.ptr;
+                entry.value_ptr.*.len = subs.len + 1;
+                subs = entry.value_ptr.*;
+            } else {
+                const subsFreeList = subs;
+                subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, subs.len + 1);
+
+                @memcpy(subs[0..subsFreeList.len], subsFreeList);
+
+                // std.debug.print("ADD TO SUB CANT RESIZE OLD: \n{any}\n \nNew: \n{any}\n \n", .{ subsFreeList, subs });
+
+                try ctx.subscriptions.freeList.append(
+                    ctx.subscriptions.allocator,
+                    subsFreeList,
+                );
+                entry.value_ptr.* = subs;
+            }
         }
     }
 
@@ -119,6 +130,8 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
         try sizeBitSet(typeSubs);
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
+
+    // std.debug.print("ADD INDEX {any} {any} ->\n", .{ subs.len, subIndex });
 
     subs[subIndex].marked = types.SubStatus.all;
     subs[subIndex].subId = subId;
@@ -147,6 +160,10 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             j += 1;
         }
     }
+
+    // std.debug.print("DONE SETTING  INDEX {any} --> {any} \n", .{ subs[subIndex], subIndex });
+
+    // std.debug.print("\n INDEX------------------- \n {any} \n ------------------------ \n", .{subs});
 
     return null;
 }
@@ -288,7 +305,7 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
 
                             // }
                         } else {
-                            // std.debug.print("Weird subs len is 0 \n", .{});
+                            std.debug.print("Weird subs len is 0 \n", .{});
                         }
                     }
 
