@@ -133,6 +133,7 @@ size_t selva_expire_count(const struct SelvaExpire *ex)
 {
     struct SVectorIterator it;
     size_t n = 0;
+    size_t MAX_N = 2'147'483'647;
 
     SVector_ForeachBegin(&it, &ex->list);
     while (!SVector_Done(&it)) {
@@ -141,7 +142,7 @@ size_t selva_expire_count(const struct SelvaExpire *ex)
         token = SVector_Foreach(&it);
         do {
             n++;
-        } while ((token = token->next));
+        } while ((token = token->next) && n < MAX_N);
     }
 
     return n;
