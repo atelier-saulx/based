@@ -172,18 +172,7 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                 var i: usize = 0;
                 while (i < subs.len) {
                     if (subs[i].subId == subId) {
-                        // if (subs[i].marked != types.SubStatus.marked) {
-                        //     if (ctx.subscriptions.singleIdMarked.len < ctx.subscriptions.lastIdMarked + 1) {
-                        //         ctx.subscriptions.singleIdMarked = std.heap.raw_c_allocator.realloc(
-                        //             ctx.subscriptions.singleIdMarked,
-                        //             ctx.subscriptions.singleIdMarked.len + types.BLOCK_SIZE,
-                        //         ) catch &.{};
-                        //     }
-                        //     ctx.subscriptions.singleIdMarked[ctx.subscriptions.lastIdMarked] = &subs[i];
-                        //     ctx.subscriptions.lastIdMarked += 1;
-                        //     subs[i].marked = types.SubStatus.marked;
-                        // }
-                        // subs[i].isRemoved = true;
+                        subs[i].isRemoved = true;
 
                         //    const subs = idSub.value_ptr.*;
                         if (subs.len == 1) {
