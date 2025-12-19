@@ -7,6 +7,7 @@ await test('sub-voting', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
+  db.server.subscriptions.subInterval = 1
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
