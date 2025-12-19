@@ -126,7 +126,6 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
 
     if (ctx.subscriptions.subsHashMap.getPtr(subId)) |sub| {
         subs[subIndex] = sub;
-
         if (partialLen > vectorLenU16) {
             sub.partial = @splat(@intFromEnum(types.SubPartialStatus.all));
         } else {
@@ -136,7 +135,6 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
                 j += 1;
             }
         }
-
         if (fields.len > vectorLen) {
             sub.fields = @splat(@intFromEnum(types.SubStatus.all));
         } else {
