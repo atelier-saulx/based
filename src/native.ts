@@ -19,30 +19,6 @@ export function* idGenerator(): Generator<number> {
 }
 
 const native = {
-  addMultiSubscription: (dbCtx: any, typeId: number): void => {
-    return db.addMultiSubscription(dbCtx, typeId)
-  },
-
-  removeMultiSubscription: (dbCtx: any, typeId: number): void => {
-    return db.removeMultiSubscription(dbCtx, typeId)
-  },
-
-  removeIdSubscription: (dbCtx: any, value: Uint8Array): void => {
-    return db.removeIdSubscription(dbCtx, value)
-  },
-
-  addIdSubscription: (dbCtx: any, value: Uint8Array): void => {
-    return db.addIdSubscription(dbCtx, value)
-  },
-
-  getMarkedIdSubscriptions: (dbCtx: any): ArrayBuffer | null => {
-    return db.getMarkedIdSubscriptions(dbCtx)
-  },
-
-  getMarkedMultiSubscriptions: (dbCtx: any): ArrayBuffer | null => {
-    return db.getMarkedMultiSubscriptions(dbCtx)
-  },
-
   externalFromInt(address: BigInt): any {
     return db.externalFromInt(address)
   },

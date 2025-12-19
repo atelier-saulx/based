@@ -15,7 +15,7 @@ export type DbClientHooks = {
     q: BasedDbQuery,
     onData: (buf: Uint8Array) => ReturnType<OnData>,
     onError: OnError,
-  ): OnClose
+  ): Promise<OnClose>
   subscribeSchema(cb: (schema: SchemaOut) => void): void
 }
 

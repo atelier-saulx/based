@@ -46,12 +46,18 @@ export const OpType = {
   saveBlock: 67,
   saveCommon: 69,
   getSchemaIds: 70,
+  getMarkedMultiSubscriptions: 71,
+  getMarkedIdSubscriptions: 72,
   modify: 127,
   loadBlock: 128,
   unloadBlock: 129,
   loadCommon: 130,
   createType: 131,
   setSchemaIds: 132,
+  addMultiSubscription: 123,
+  removeMultiSubscription: 124,
+  addIdSubscription: 125,
+  removeIdSubscription: 126,
   noOp: 255,
 } as const
 
@@ -68,12 +74,18 @@ export const OpTypeInverse = {
   67: 'saveBlock',
   69: 'saveCommon',
   70: 'getSchemaIds',
+  71: 'getMarkedMultiSubscriptions',
+  72: 'getMarkedIdSubscriptions',
   127: 'modify',
   128: 'loadBlock',
   129: 'unloadBlock',
   130: 'loadCommon',
   131: 'createType',
   132: 'setSchemaIds',
+  123: 'addMultiSubscription',
+  124: 'removeMultiSubscription',
+  125: 'addIdSubscription',
+  126: 'removeIdSubscription',
   255: 'noOp',
 } as const
 
@@ -90,12 +102,18 @@ export const OpTypeInverse = {
   saveBlock, 
   saveCommon, 
   getSchemaIds, 
+  getMarkedMultiSubscriptions, 
+  getMarkedIdSubscriptions, 
   modify, 
   loadBlock, 
   unloadBlock, 
   loadCommon, 
   createType, 
   setSchemaIds, 
+  addMultiSubscription, 
+  removeMultiSubscription, 
+  addIdSubscription, 
+  removeIdSubscription, 
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
@@ -2411,4 +2429,92 @@ export const AggTypeInverse = {
   hmean 
  */
 export type AggTypeEnum = (typeof AggType)[keyof typeof AggType]
+
+export type addMultiSubscriptionHeader = {
+  typeId: number
+}
+
+export const addMultiSubscriptionHeaderByteSize = 2
+
+export const writeaddMultiSubscriptionHeader = (
+  buf: Uint8Array,
+  header: addMultiSubscriptionHeader,
+  offset: number,
+): number => {
+  writeUint16(buf, header.typeId, offset)
+  offset += 2
+  return offset
+}
+
+export const writeaddMultiSubscriptionHeaderProps = {
+  typeId: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset)
+  },
+}
+
+export const readaddMultiSubscriptionHeader = (
+  buf: Uint8Array,
+  offset: number,
+): addMultiSubscriptionHeader => {
+  const value: addMultiSubscriptionHeader = {
+    typeId: readUint16(buf, offset),
+  }
+  return value
+}
+
+export const readaddMultiSubscriptionHeaderProps = {
+  typeId: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset)
+  },
+}
+
+export const createaddMultiSubscriptionHeader = (header: addMultiSubscriptionHeader): Uint8Array => {
+  const buffer = new Uint8Array(addMultiSubscriptionHeaderByteSize)
+  writeaddMultiSubscriptionHeader(buffer, header, 0)
+  return buffer
+}
+
+export type removeMultiSubscriptionHeader = {
+  typeId: number
+}
+
+export const removeMultiSubscriptionHeaderByteSize = 2
+
+export const writeremoveMultiSubscriptionHeader = (
+  buf: Uint8Array,
+  header: removeMultiSubscriptionHeader,
+  offset: number,
+): number => {
+  writeUint16(buf, header.typeId, offset)
+  offset += 2
+  return offset
+}
+
+export const writeremoveMultiSubscriptionHeaderProps = {
+  typeId: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset)
+  },
+}
+
+export const readremoveMultiSubscriptionHeader = (
+  buf: Uint8Array,
+  offset: number,
+): removeMultiSubscriptionHeader => {
+  const value: removeMultiSubscriptionHeader = {
+    typeId: readUint16(buf, offset),
+  }
+  return value
+}
+
+export const readremoveMultiSubscriptionHeaderProps = {
+  typeId: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset)
+  },
+}
+
+export const createremoveMultiSubscriptionHeader = (header: removeMultiSubscriptionHeader): Uint8Array => {
+  const buffer = new Uint8Array(removeMultiSubscriptionHeaderByteSize)
+  writeremoveMultiSubscriptionHeader(buffer, header, 0)
+  return buffer
+}
 

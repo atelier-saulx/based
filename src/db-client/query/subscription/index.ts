@@ -35,36 +35,37 @@ export class SubStore {
       }
     }
     let killed = false
-
+    this.onClose = () => {
+      killed = true
+    }
+    const doSub = () => {
+      try {
+        registerQuery(q)
+        registerSubscription(q)
+        q.db.hooks.subscribe(q, onData, onError).then((onClose) => {
+          if (killed) {
+            onClose()
+          } else {
+            this.onClose = onClose
+          }
+        })
+      } catch (err) {
+        onError(err)
+      }
+    }
     if (!q.db.schema) {
       q.db
         .schemaIsSet()
         .then(() => {
           if (!killed) {
-            try {
-              registerQuery(q)
-              registerSubscription(q)
-              this.onClose = q.db.hooks.subscribe(q, onData, onError)
-            } catch (err) {
-              onError(err)
-            }
+            doSub()
           }
         })
         .catch((err) => {
           onError(err)
         })
-      this.onClose = () => {
-        killed = true
-      }
     } else {
-      try {
-        registerQuery(q)
-        registerSubscription(q)
-        this.onClose = q.db.hooks.subscribe(q, onData, onError)
-      } catch (err) {
-        onError(err)
-        this.onClose = () => {}
-      }
+      doSub()
     }
   }
   resubscribe(q: BasedDbQuery) {
