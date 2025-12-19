@@ -112,7 +112,6 @@ export const startUpdateHandler = (server: DbServer) => {
       server.subscriptions.subInterval,
     )
   }
-  console.log('sub interval', server.subscriptions.subInterval)
   server.subscriptions.updateHandler = setTimeout(
     scheduleUpdate,
     server.subscriptions.subInterval,

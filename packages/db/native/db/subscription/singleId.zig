@@ -97,18 +97,26 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             idDoesNotExist = false;
             subIndex = subs.len;
             // keep prev clean later
+            // std.debug.print("FLAP {any} \n", .{subs.len});
+            // if (ctx.subscriptions.allocator.resize(subs, subs.len + 1)) {
+            //     subs = entry.value_ptr.*;
 
-            if (ctx.subscriptions.allocator.resize(subs, subs.len + 1)) {} else {
-                const subsFreeList = subs;
-                subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, subs.len + 1);
-                @memcpy(subs, subsFreeList);
-                try ctx.subscriptions.freeList.append(
-                    ctx.subscriptions.allocator,
-                    subsFreeList,
-                );
-            }
+            //     std.debug.print("RESIZED SUB {any} \n", .{subs.len});
+            //     // ---------
+            // } else {
+            const subsFreeList = subs;
+            subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, subs.len + 1);
 
+            @memcpy(subs[0..subsFreeList.len], subsFreeList);
+
+            // std.debug.print("ADD TO SUB CANT RESIZE OLD: \n{any}\n \nNew: \n{any}\n \n", .{ subsFreeList, subs });
+
+            try ctx.subscriptions.freeList.append(
+                ctx.subscriptions.allocator,
+                subsFreeList,
+            );
             entry.value_ptr.* = subs;
+            // }
         }
     }
 
@@ -124,6 +132,8 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
         try sizeBitSet(typeSubs);
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
+
+    // std.debug.print("ADD INDEX {any} {any} ->\n", .{ subs.len, subIndex });
 
     subs[subIndex].marked = types.SubStatus.all;
     subs[subIndex].subId = subId;
@@ -153,6 +163,10 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
         }
     }
 
+    // std.debug.print("DONE SETTING  INDEX {any} --> {any} \n", .{ subs[subIndex], subIndex });
+
+    // std.debug.print("\n INDEX------------------- \n {any} \n ------------------------ \n", .{subs});
+
     return null;
 }
 
@@ -168,7 +182,7 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
     if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
         if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
             if (typeSubs.idSubs.getEntry(id)) |idSub| {
-                const subs = idSub.value_ptr.*;
+                var subs = idSub.value_ptr.*;
                 var i: usize = 0;
                 while (i < subs.len) {
                     if (subs[i].subId == subId) {
@@ -176,6 +190,8 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
 
                         //    const subs = idSub.value_ptr.*;
                         if (subs.len == 1) {
+                            // std.debug.print("REMOVE ENTIRE ID \n", .{});
+
                             try ctx.subscriptions.freeList.append(
                                 ctx.subscriptions.allocator,
                                 idSub.value_ptr.*,
@@ -270,29 +286,28 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                                 }
                             }
                         } else if (subs.len != 0) {
-                            const newLen = subs.len - 1;
-                            if (i != newLen) {
-                                subs[i] = subs[newLen];
-                            }
+                            // std.debug.print("\n DO SOME REMOVE \n", .{});
 
-                            if (ctx.subscriptions.allocator.resize(
-                                idSub.value_ptr.*,
-                                idSub.value_ptr.len - 1,
-                            )) {} else {
-                                // only nessecary if any sub is marked
-                                const subsFreeList = idSub.value_ptr.*;
-                                idSub.value_ptr.* = try ctx.subscriptions.allocator.alloc(
-                                    types.IdSubsItem,
-                                    idSub.value_ptr.len - 1,
-                                );
-                                @memcpy(subs, subsFreeList);
-                                try ctx.subscriptions.freeList.append(
-                                    ctx.subscriptions.allocator,
-                                    subsFreeList,
-                                );
+                            const newLen = subs.len - 1;
+
+                            const subsFreeList = idSub.value_ptr.*;
+                            idSub.value_ptr.* = try ctx.subscriptions.allocator.alloc(
+                                types.IdSubsItem,
+                                newLen,
+                            );
+                            subs = idSub.value_ptr.*;
+                            if (i != newLen) {
+                                subsFreeList[i] = subsFreeList[newLen];
                             }
+                            @memcpy(subs, subsFreeList[0..newLen]);
+                            try ctx.subscriptions.freeList.append(
+                                ctx.subscriptions.allocator,
+                                subsFreeList,
+                            );
+
+                            // }
                         } else {
-                            std.debug.print("Weird subs len is 0 \n", .{});
+                            // std.debug.print("Weird subs len is 0 \n", .{});
                         }
                     }
 
