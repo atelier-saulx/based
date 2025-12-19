@@ -17,7 +17,7 @@
     "@babel/traverse": "^7.18.6",
     "utility-types": "^3.10.0",
     "@based/utils": "1.2.0",
-    "@based/functions": "3.4.9"
+    "@based/functions": "3.4.10"
   },
   "devDependencies": {
     "@types/fs-extra": "11.0.3",

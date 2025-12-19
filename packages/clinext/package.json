@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@based/client": "8.3.9",
-    "@based/functions": "3.4.9",
+    "@based/functions": "3.4.10",
     "@based/hash": "1.1.0",
     "@based/hub": "0.2.10",
     "@based/react": "5.4.9",

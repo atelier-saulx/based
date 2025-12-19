@@ -35,7 +35,7 @@
     "package.json"
   ],
   "dependencies": {
-    "@based/functions": "3.4.9"
+    "@based/functions": "3.4.10"
   },
   "devDependencies": {
     "ts-node": "10.9.1",
