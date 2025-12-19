@@ -294,6 +294,7 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                                 idSub.value_ptr.*,
                                 idSub.value_ptr.len - 1,
                             )) {} else {
+                                // only nessecary if any sub is marked
                                 const subsFreeList = idSub.value_ptr.*;
                                 idSub.value_ptr.* = try ctx.subscriptions.allocator.alloc(
                                     types.IdSubsItem,
