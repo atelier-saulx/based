@@ -78,6 +78,28 @@ pub fn realloc(old: anytype, n: usize) @TypeOf(old) {
     return slicify(T, ptr, n);
 }
 
+pub fn rallocx(old: anytype, n: usize) ?@TypeOf(old) {
+    const Slice = @typeInfo(@TypeOf(old)).pointer;
+    const T = Slice.child;
+
+    if (c.selva_rallocx(@ptrCast(old.ptr), n * @sizeOf(T), c.MALLOCX_ZERO)) |ptr| {
+        if (config.enable_debug and std.valgrind.runningOnValgrind() > 0) {
+            const oldSize: usize = old.len * @sizeOf(T);
+            const newSize = n * @sizeOf(T);
+            const oldBuf = slicify(u8, @ptrCast(old.ptr), oldSize);
+            const newBuf = slicify(u8, ptr, newSize);
+
+            std.valgrind.memcheck.makeMemNoAccess(oldBuf);
+            std.valgrind.memcheck.makeMemDefined(newBuf[0..oldSize]);
+            std.valgrind.memcheck.makeMemUndefined(newBuf[oldSize..newSize]);
+        }
+
+        return slicify(T, ptr, n);
+    } else {
+        return null;
+    }
+}
+
 pub fn free(ptr: anytype) void {
     switch (@typeInfo(@TypeOf(ptr))) {
         .optional => {
