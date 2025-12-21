@@ -115,7 +115,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
-    const sub = try std.heap.raw_c_allocator.create(types.IdSubsItem);
+    const sub = try ctx.allocator.create(types.IdSubsItem);
 
     sub.subId = subId;
     sub.id = id;
@@ -166,7 +166,7 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                 while (i < subs.len) {
                     if (subs[i].subId == subId) {
                         // ----------
-                        std.heap.raw_c_allocator.destroy(subs[i]);
+                        ctx.allocator.destroy(subs[i]);
                         _ = ctx.subscriptions.subsHashMap.remove(subId);
 
                         if (subs.len == 1) {
