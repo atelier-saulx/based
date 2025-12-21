@@ -32,7 +32,7 @@ pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
 // significant filter (will make field more important)
 // the max / min id
 
-pub const SubHashMap = std.AutoHashMap(u32, IdSubsItem);
+pub const SubHashMap = std.AutoHashMap(u32, *IdSubsItem);
 
 pub const TypeSubscriptionCtx = struct {
     typeModified: bool,

@@ -115,34 +115,34 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
-    try ctx.subscriptions.subsHashMap.put(subId, .{
-        .marked = types.SubStatus.all,
-        .subId = subId,
-        .id = id,
-        .typeId = typeId,
-        .partial = @splat(@intFromEnum(types.SubPartialStatus.none)),
-        .fields = @splat(@intFromEnum(types.SubStatus.marked)),
-    });
+    const sub = try std.heap.raw_c_allocator.create(types.IdSubsItem);
 
-    if (ctx.subscriptions.subsHashMap.getPtr(subId)) |sub| {
-        subs[subIndex] = sub;
-        if (partialLen > vectorLenU16) {
-            sub.partial = @splat(@intFromEnum(types.SubPartialStatus.all));
-        } else {
-            var j: usize = 0;
-            while (j < partialLen) {
-                sub.partial[j] = utils.read(u16, partialFields, j * 2);
-                j += 1;
-            }
+    sub.subId = subId;
+    sub.id = id;
+    sub.marked = types.SubStatus.all;
+    sub.typeId = typeId;
+    sub.partial = @splat(@intFromEnum(types.SubPartialStatus.none));
+    sub.fields = @splat(@intFromEnum(types.SubStatus.marked));
+
+    subs[subIndex] = sub;
+    try ctx.subscriptions.subsHashMap.put(subId, sub);
+
+    if (partialLen > vectorLenU16) {
+        sub.partial = @splat(@intFromEnum(types.SubPartialStatus.all));
+    } else {
+        var j: usize = 0;
+        while (j < partialLen) {
+            sub.partial[j] = utils.read(u16, partialFields, j * 2);
+            j += 1;
         }
-        if (fields.len > vectorLen) {
-            sub.fields = @splat(@intFromEnum(types.SubStatus.all));
-        } else {
-            var j: usize = 0;
-            while (j < fieldsLen) {
-                sub.fields[j] = fields[j];
-                j += 1;
-            }
+    }
+    if (fields.len > vectorLen) {
+        sub.fields = @splat(@intFromEnum(types.SubStatus.all));
+    } else {
+        var j: usize = 0;
+        while (j < fieldsLen) {
+            sub.fields[j] = fields[j];
+            j += 1;
         }
     }
 
@@ -165,10 +165,11 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                 var i: usize = 0;
                 while (i < subs.len) {
                     if (subs[i].subId == subId) {
+                        // ----------
+                        std.heap.raw_c_allocator.destroy(subs[i]);
                         _ = ctx.subscriptions.subsHashMap.remove(subId);
 
                         if (subs.len == 1) {
-                            std.heap.raw_c_allocator.free(idSub.value_ptr.*);
                             _ = typeSubs.idSubs.remove(id);
                             // dont do this here need top be in marked
                             if (id > typeSubs.bitSetSize) {
@@ -259,7 +260,6 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                             if (i != newLen) {
                                 subs[i] = subs[newLen];
                             }
-
                             subs = try std.heap.raw_c_allocator.realloc(subs, newLen);
                             idSub.value_ptr.* = subs;
                         } else {
