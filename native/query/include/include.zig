@@ -54,6 +54,9 @@ pub inline fn include(
             .reference => {
                 recursionErrorBoundary(single.reference, node, ctx, q, typeEntry, &i);
             },
+            .referenceEdge => {
+                recursionErrorBoundary(single.referenceEdge, node, ctx, q, typeEntry, &i);
+            },
             .references => {
                 recursionErrorBoundary(multiple.references, node, ctx, q, typeEntry, &i);
             },

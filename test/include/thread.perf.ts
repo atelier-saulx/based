@@ -83,8 +83,9 @@ await test('include', async (t) => {
 
   const mrX = db.create('user', {
     name: 'Mr X',
-    currentTodo: todos[0],
+    currentTodo: { id: todos[0], $derp: true },
     email: `beerdejim@gmail.com`,
+    nr: 67,
   })
 
   await db.drain()
@@ -93,7 +94,7 @@ await test('include', async (t) => {
   await db
     .query('user', mrX)
     // .include('currentTodo')
-    .include('nr', 'name', 'id', 'currentTodo', 'currentTodo.$derp')
+    .include('nr', 'currentTodo.id', 'currentTodo.$derp')
     .get()
     .inspect()
 

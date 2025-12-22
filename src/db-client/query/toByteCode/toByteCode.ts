@@ -93,6 +93,7 @@ export function defToBuffer(
       include,
     ])
   } else if (isReference) {
+    // REF
     const include = includeToBuffer(db, def)
     for (const [, ref] of def.references) {
       include.push(...defToBuffer(db, ref))
@@ -101,6 +102,7 @@ export function defToBuffer(
       }
     }
     const includeSize = byteSize(include)
+    console.log({ include })
     let edge: IntermediateByteCode[] | undefined = undefined
     let edgeSize = 0
     if (def.edges) {
@@ -115,7 +117,8 @@ export function defToBuffer(
     }
     const typeId: number = def.schema!.id
     const edgeTypeId: number = def.target.propDef!.edgeNodeTypeId || 0
-    const op: QueryTypeEnum = QueryType.reference
+    const op: QueryTypeEnum =
+      edgeSize > 0 ? QueryType.referenceEdge : QueryType.reference
     const buffer = createQueryHeaderSingleReference({
       op,
       prop: def.target.propDef!.prop,
@@ -164,11 +167,13 @@ export function defToBuffer(
     const typeId: number = def.schema!.id
     const edgeTypeId: number =
       (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
+
     const op: QueryTypeEnum = isIds
       ? QueryType.ids
       : isReferences
         ? QueryType.references
         : QueryType.default
+
     let index = writeQueryHeader(
       buffer,
       {
