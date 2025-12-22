@@ -88,11 +88,18 @@ await test('include', async (t) => {
     nr: 67,
   })
 
+  const mrY = db.create('user', {
+    name: 'Mr Y',
+    currentTodo: { id: todos[1], $derp: true },
+    email: `beerdejim+1@gmail.com`,
+    nr: 68,
+  })
+
   await db.drain()
 
   // now include edge
   await db
-    .query('user', mrX)
+    .query('user')
     // .include('currentTodo')
     .include('nr', 'currentTodo.id', 'currentTodo.$derp')
     .get()
