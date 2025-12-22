@@ -7,10 +7,11 @@ const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const selva = @import("../selva/selva.zig").c;
 const dump = @import("../selva/dump.zig");
 const info = @import("../selva/info.zig");
-const subscription = @import("../db/subscription/subscription.zig");
 const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
 const common = @import("common.zig");
 const t = @import("../types.zig");
+const Subscription = @import("../subscription/subscription.zig");
+const jemalloc = @import("../jemalloc.zig");
 
 pub const Thread = common.Thread;
 const Queue = std.array_list.Managed([]u8);
@@ -153,8 +154,9 @@ pub const Threads = struct {
                     op = @enumFromInt(q[4]);
                 }
             } else if (self.modifyQueue.items.len > 0 and
-                       thread.pendingModifies > 0 and
-                       thread.currentModifyIndex < self.modifyQueue.items.len) {
+                thread.pendingModifies > 0 and
+                thread.currentModifyIndex < self.modifyQueue.items.len)
+            {
                 modifyBuf = self.modifyQueue.items[thread.currentModifyIndex];
                 if (modifyBuf) |m| {
                     op = @enumFromInt(m[4]);
@@ -170,14 +172,8 @@ pub const Threads = struct {
                     .blockHash => try info.blockHash(thread, self.ctx, q, op),
                     .saveBlock => try dump.saveBlock(thread, self.ctx, q, op),
                     .saveCommon => try dump.saveCommon(thread, self.ctx, q, op),
-                    .getSchemaIds => {
-                        const data = try thread.query.result(self.ctx.ids.len * 4, utils.read(u32, q, 0), op);
-                        if (self.ctx.ids.len > 0) {
-                            utils.byteCopy(data, @as([*]u8, @ptrCast(self.ctx.ids.ptr)), 0);
-                        }
-                    },
-                    .getMarkedMultiSubscriptions => try subscription.getMarkedMultiSubscriptions(thread, self.ctx, q, op),
-                    .getMarkedIdSubscriptions => try subscription.getMarkedIdSubscriptions(thread, self.ctx, q, op),
+                    // .subscribe => Subscription.subscribe(self.ctx, q, thread, op),
+                    // .unsubscribe => Subscription.unsubscribe(self.ctx, q, thread, op),
                     .noOp => {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
@@ -257,10 +253,6 @@ pub const Threads = struct {
                             const ids = m[5..m.len];
                             utils.byteCopy(self.ctx.ids, ids, 0);
                         },
-                        .addMultiSubscription => subscription.addMultiSubscription(thread, self.ctx, m, op),
-                        .removeMultiSubscription => subscription.removeMultiSubscription(thread, self.ctx, m, op),
-                        .addIdSubscription => subscription.addIdSubscription(thread, self.ctx, m, op),
-                        .removeIdSubscription => subscription.removeIdSubscription(thread, self.ctx, m, op),
                         else => {},
                     }
                     thread.modify.commit();
@@ -326,7 +318,7 @@ pub const Threads = struct {
         };
 
         for (self.threads, 0..) |*threadContainer, id| {
-            const thread = try Thread.init(id);
+            const thread = try Thread.init(allocator, id);
             thread.*.thread = try std.Thread.spawn(.{}, worker, .{ self, thread });
             threadContainer.* = thread;
         }

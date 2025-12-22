@@ -9,7 +9,7 @@ const lifeTime = @import("db/lifeTime.zig");
 const string = @import("string.zig");
 const napi = @import("napi.zig");
 const dbCtx = @import("db/ctx.zig");
-const subscriptions = @import("db/subscription/subscription.zig");
+// const subscriptions = @import("db/subscription/subscription.zig");
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
 

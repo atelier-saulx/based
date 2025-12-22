@@ -2,37 +2,19 @@ const std = @import("std");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 
-pub const IdSubsItem = packed struct {
+pub const Sub = struct {
     marked: SubStatus,
     typeId: u16,
-    subId: u32,
+    subId: u64,
     id: u32,
     fields: @Vector(vectorLen, u8),
     partial: @Vector(vectorLenU16, u16),
+    query: []u8,
 };
 
-pub const IdSubs = std.AutoHashMap(u32, []*IdSubsItem); // [types.SUB_SIZE] [24] [24] [4 4] [16 bytes]
+pub const IdSubs = std.AutoHashMap(u64, []*Sub);
 
-// can make a multi sub thing here
-pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
-
-// 3 types of multi subs
-// ANY on type
-//  potentially also filter
-
-// ANY on type + filter
-//  potentially also filter
-
-// max / min range ID
-// can also include the id
-
-// max / min range SORT
-// can also include the id
-
-// significant filter (will make field more important)
-// the max / min id
-
-pub const SubHashMap = std.AutoHashMap(u32, *IdSubsItem);
+pub const SubHashMap = std.AutoHashMap(u32, *Sub);
 
 pub const TypeSubscriptionCtx = struct {
     typeModified: bool,
@@ -43,23 +25,22 @@ pub const TypeSubscriptionCtx = struct {
     bitSetSize: u32,
     bitSetMin: u32,
     bitSetRatio: u32,
-    multiSubsSize: u32,
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
 
-pub const FreeList = std.ArrayList([]IdSubsItem);
-
 pub const SubscriptionCtx = struct {
     types: TypeSubMap,
-    singleIdMarked: []u32,
+    singleIdMarked: []u64, // this will call query directly
     lastIdMarked: u32,
-    subsHashMap: SubHashMap,
+    multiMarked: []u64,
+    lastMultiMarked: u32,
+    subHashMap: SubHashMap,
 };
 
 pub const BLOCK_SIZE = 100_000;
 
-pub const MAX_BIT_SET_SIZE = 10_000_000; // 5mb
+pub const MAX_BIT_SET_SIZE = 10_000_000; // 10mb
 
 pub const SubStatus = enum(u8) {
     all = 255,

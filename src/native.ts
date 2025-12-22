@@ -1,4 +1,3 @@
-import { ENCODER } from './utils/uint8.js'
 import db from './zigAddon.js'
 
 var compressor = db.createCompressor()

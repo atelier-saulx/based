@@ -17,13 +17,6 @@ pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*Subscription.TypeSubscri
         @memset(typeSubs.idBitSet, 0);
         typeSubs.idSubs = Subscription.IdSubs.init(std.heap.raw_c_allocator);
 
-        // multi id
-        typeSubs.multiSubsSize = 0;
-        // typeSubs.multiSubsSizeBits = 0;
-        // typeSubs.multiSubs = try std.heap.raw_c_allocator.alloc(u8, 0); // re-alloc sporadicly (8 bytes)
-        // typeSubs.multiSubsStageMarked = try std.heap.raw_c_allocator.alloc(u8, 0);
-        // @memset(typeSubs.multiSubsStageMarked, 255);
-
         try ctx.subscriptions.types.put(typeId, typeSubs);
     } else {
         typeSubs = ctx.subscriptions.types.get(typeId).?;
@@ -38,13 +31,8 @@ pub inline fn removeSubTypeIfEmpty(
 ) void {
     if (typeSubs.idSubs.count() == 0 and typeSubs.multiSubsSize == 0) {
         if (ctx.subscriptions.types.fetchRemove(typeId)) |removed_entry| {
-            // std.debug.print("REMOVE SUB TYPE... \n", .{});
             removed_entry.value.idSubs.deinit();
             jemalloc.free(removed_entry.value.idBitSet);
-
-            // std.heap.raw_c_allocator.free(removed_entry.value.multiSubsStageMarked);
-            // std.heap.raw_c_allocator.free(removed_entry.value.multiSubs);
-
             jemalloc.free(removed_entry.value);
         }
     }

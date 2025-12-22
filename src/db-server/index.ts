@@ -15,7 +15,9 @@ import {
   writeSchemaFile,
 } from './schema.js'
 import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
-import { Subscriptions } from './subscription.js'
+
+// import { Subscriptions } from './subscription.js'
+
 import { OpType, OpTypeEnum } from '../zigTsExports.js'
 import {
   MAX_ID,
@@ -26,15 +28,7 @@ import { readUint32, writeUint32 } from '../utils/uint8.js'
 
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
-  subscriptions: Subscriptions = {
-    subInterval: 200,
-    active: 0,
-    updateHandler: null,
-    ids: new Map(),
-    fullType: new Map(),
-    updateId: 1,
-    now: { listeners: new Set(), lastUpdated: 1 },
-  }
+
   migrating: number
   saveInProgress: boolean = false
   fileSystemPath: string
@@ -185,6 +179,8 @@ export class DbServer extends DbShared {
     }
   }
 
+  // add the subscription thing
+
   getQueryBuf(buf): Promise<Uint8Array> {
     return new Promise((resolve) => {
       const id = readUint32(buf, 0)
@@ -267,8 +263,6 @@ export class DbServer extends DbShared {
     if (this.stopped) {
       return
     }
-    clearTimeout(this.subscriptions.updateHandler!)
-    this.subscriptions.updateHandler = null
     this.stopped = true
 
     if (this.saveInterval) {

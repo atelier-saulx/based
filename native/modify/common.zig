@@ -4,7 +4,7 @@ const errors = @import("../errors.zig");
 const sort = @import("../sort/sort.zig");
 const std = @import("std");
 const read = @import("../utils.zig").read;
-const Subscription = @import("../db/subscription/common.zig");
+const Subscription = @import("../subscription/common.zig");
 const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
@@ -21,8 +21,8 @@ pub const ModifyCtx = struct {
     fieldType: t.PropType,
     db: *DbCtx,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
-    subTypes: ?*Subscription.TypeSubscriptionCtx,
-    idSubs: ?[]*Subscription.IdSubsItem,
+    subTypes: ?*Subscription.TypeSubscriptionCtx, // prob want to add subs here
+    idSubs: ?[]*Subscription.Sub,
     batch: []u8,
     err: errors.ClientError,
     thread: *Thread.Thread,

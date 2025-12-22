@@ -10,7 +10,7 @@ await test('include', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-  await db.start({ clean: true, subscriptionDelay: 0 })
+  await db.start({ clean: true })
   t.after(() => db.stop(true))
   //t.after(() => t.backup(db))
 
