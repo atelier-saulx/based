@@ -17,12 +17,10 @@ pub fn getMarkedIdSubscriptions(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op
         // Reset
         var i: usize = 0;
         while (i < ctx.subscriptions.lastIdMarked) {
-            const sub = ctx.subscriptions.singleIdMarked[i];
-            const newDataIndex = i * 8;
-            const id = sub.id;
-            if (sub.isRemoved) {
-                try singleId.removeSubscriptionMarked(ctx, sub);
-            } else {
+            const subId = ctx.subscriptions.singleIdMarked[i];
+            if (ctx.subscriptions.subsHashMap.get(subId)) |sub| {
+                const newDataIndex = i * 8;
+                const id = sub.id;
                 utils.writeAs(u32, resp, id, newDataIndex);
                 utils.writeAs(u32, resp, sub.subId, newDataIndex + 4);
                 sub.*.marked = Subscription.SubStatus.all;
@@ -31,11 +29,6 @@ pub fn getMarkedIdSubscriptions(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op
         }
 
         ctx.subscriptions.lastIdMarked = 0;
-
-        for (ctx.subscriptions.freeList.items) |item| {
-            jemalloc.free(item);
-        }
-        ctx.subscriptions.freeList.clearAndFree(ctx.subscriptions.allocator);
     } else {
         _ = try thread.query.result(0, utils.read(u32, q, 0), op);
     }

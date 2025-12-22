@@ -10,7 +10,7 @@ await test('include', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
-  await db.start({ clean: true })
+  await db.start({ clean: true, subscriptionDelay: 0 })
   t.after(() => db.stop(true))
   //t.after(() => t.backup(db))
 
@@ -81,14 +81,14 @@ await test('include', async (t) => {
     )
   }
 
-  const mrX = db.create('user', {
+  const mrX = await db.create('user', {
     name: 'Mr X',
     currentTodo: { id: todos[0], $derp: true },
     email: `beerdejim@gmail.com`,
     nr: 67,
   })
 
-  const mrY = db.create('user', {
+  const mrY = await db.create('user', {
     name: 'Mr Y',
     currentTodo: { id: todos[1], $derp: true },
     email: `beerdejim+1@gmail.com`,
@@ -108,6 +108,20 @@ await test('include', async (t) => {
   let d = Date.now()
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
+
+  db.query('user', mrX)
+    .include('nr')
+    .subscribe((d) => {
+      console.log('INCOMING', d)
+    })
+
+  await wait(1)
+  db.update('user', mrX, { nr: { increment: 1 } })
+
+  await wait(10)
+  db.update('user', mrX, { nr: { increment: 1 } })
+
+  await wait(100)
 
   // for (let i = 0; i < 1e5; i++) {
   //   db.create('user', {
