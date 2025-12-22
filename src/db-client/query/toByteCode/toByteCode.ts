@@ -93,7 +93,6 @@ export function defToBuffer(
       include,
     ])
   } else if (isReference) {
-    // REF
     const include = includeToBuffer(db, def)
     for (const [, ref] of def.references) {
       include.push(...defToBuffer(db, ref))
@@ -102,7 +101,6 @@ export function defToBuffer(
       }
     }
     const includeSize = byteSize(include)
-    console.log({ include })
     let edge: IntermediateByteCode[] | undefined = undefined
     let edgeSize = 0
     if (def.edges) {
