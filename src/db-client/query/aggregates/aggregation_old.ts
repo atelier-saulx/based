@@ -169,7 +169,7 @@ const updateAggregateDefs = (
   aggregateField.push({
     type: aggType,
     propDef: propDef,
-    resultPos: aggregate.totalResultsSize,
+    resultPos: 25, //aggregate.totalResultsSize,
     accumulatorPos: aggregate.totalAccumulatorSize,
     isEdge: isEdge(propDef.path![0]),
   })
@@ -337,7 +337,7 @@ export const isRootCountOnly = (def: QueryDef, filterSize: number) => {
   if (aggs.length !== 1) {
     return false
   }
-  if (aggs[0].type !== AggregateType.COUNT) {
+  if (aggs[0].type !== AggFunction.count) {
     return false
   }
   if (def.filter && def.filter.size > 0) {
