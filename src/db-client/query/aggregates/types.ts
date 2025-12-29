@@ -1,45 +1,42 @@
-import { AggregateType } from '../../../protocol/index.js'
+import { AggFunction, AggFunctionEnum } from '../../../zigTsExports.js'
 
 export const enum AccumulatorSize {
   // comptime
-  SUM = 8,
-  COUNT = 4,
-  CARDINALITY = 4,
-  STDDEV = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
-  AVERAGE = 16, // count (u64) + sum (f64) = 16
-  VARIANCE = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
-  MAX = 8,
-  MIN = 8,
-  HMEAN = 16,
+  sum = 8,
+  count = 4,
+  cardinality = 4,
+  stddev = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
+  avg = 16, // count (u64) + sum (f64) = 16
+  variance = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
+  max = 8,
+  min = 8,
+  hmean = 16,
 }
 
 export const aggregateTypeMap = new Map<
-  AggregateType,
+  AggFunctionEnum,
   { resultsSize: number; accumulatorSize: number }
 >([
   [
-    AggregateType.CARDINALITY,
-    { resultsSize: 4, accumulatorSize: AccumulatorSize.CARDINALITY },
+    AggFunction.cardinality,
+    { resultsSize: 4, accumulatorSize: AccumulatorSize.cardinality },
   ],
   [
-    AggregateType.COUNT,
-    { resultsSize: 4, accumulatorSize: AccumulatorSize.COUNT },
+    AggFunction.count,
+    { resultsSize: 4, accumulatorSize: AccumulatorSize.count },
   ],
   [
-    AggregateType.STDDEV,
-    { resultsSize: 8, accumulatorSize: AccumulatorSize.STDDEV },
+    AggFunction.stddev,
+    { resultsSize: 8, accumulatorSize: AccumulatorSize.stddev },
+  ],
+  [AggFunction.avg, { resultsSize: 8, accumulatorSize: AccumulatorSize.avg }],
+  [
+    AggFunction.hmean,
+    { resultsSize: 8, accumulatorSize: AccumulatorSize.hmean },
   ],
   [
-    AggregateType.AVERAGE,
-    { resultsSize: 8, accumulatorSize: AccumulatorSize.AVERAGE },
-  ],
-  [
-    AggregateType.HMEAN,
-    { resultsSize: 8, accumulatorSize: AccumulatorSize.HMEAN },
-  ],
-  [
-    AggregateType.VARIANCE,
-    { resultsSize: 8, accumulatorSize: AccumulatorSize.VARIANCE },
+    AggFunction.variance,
+    { resultsSize: 8, accumulatorSize: AccumulatorSize.variance },
   ],
   // Othe types like MAX, MIN, SUM fall in the else case in aggregation.ts 8/8
 ])

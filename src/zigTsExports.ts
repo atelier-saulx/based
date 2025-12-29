@@ -893,7 +893,7 @@ export const ResultTypeInverse = {
  */
 export type ResultTypeEnum = (typeof ResultType)[keyof typeof ResultType]
 
-export const AggFn = {
+export const AggFunction = {
   none: 0,
   avg: 1,
   cardinality: 2,
@@ -910,7 +910,7 @@ export const AggFn = {
   harmonicMean: 13,
 } as const
 
-export const AggFnInverse = {
+export const AggFunctionInverse = {
   0: 'none',
   1: 'avg',
   2: 'cardinality',
@@ -943,7 +943,7 @@ export const AggFnInverse = {
   variance, 
   harmonicMean 
  */
-export type AggFnEnum = (typeof AggFn)[keyof typeof AggFn]
+export type AggFunctionEnum = (typeof AggFunction)[keyof typeof AggFunction]
 
 export const Compression = {
   none: 0,
@@ -2393,42 +2393,159 @@ export const AggGroupedByInverse = {
  */
 export type AggGroupedByEnum = (typeof AggGroupedBy)[keyof typeof AggGroupedBy]
 
-export const AggType = {
-  sum: 1,
-  count: 2,
-  cardinality: 3,
-  stddev: 4,
-  average: 5,
-  variance: 6,
-  max: 7,
-  min: 8,
-  hmean: 9,
-} as const
+export type AggHeader = {
+  op: QueryTypeEnum
+  typeId: TypeId
+  offset: number
+  limit: number
+  filterSize: number
+  iteratorType: QueryIteratorTypeEnum
+  size: number
+  resultsSize: number
+  accumulatorSize: number
+  sort: boolean
+  hasGroupBy: boolean
+  isSamplingSet: boolean
+}
 
-export const AggTypeInverse = {
-  1: 'sum',
-  2: 'count',
-  3: 'cardinality',
-  4: 'stddev',
-  5: 'average',
-  6: 'variance',
-  7: 'max',
-  8: 'min',
-  9: 'hmean',
-} as const
+export const AggHeaderByteSize = 21
 
-/**
-  sum, 
-  count, 
-  cardinality, 
-  stddev, 
-  average, 
-  variance, 
-  max, 
-  min, 
-  hmean 
- */
-export type AggTypeEnum = (typeof AggType)[keyof typeof AggType]
+export const writeAggHeader = (
+  buf: Uint8Array,
+  header: AggHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  writeUint16(buf, header.typeId, offset)
+  offset += 2
+  writeUint32(buf, header.offset, offset)
+  offset += 4
+  writeUint32(buf, header.limit, offset)
+  offset += 4
+  writeUint16(buf, header.filterSize, offset)
+  offset += 2
+  buf[offset] = header.iteratorType
+  offset += 1
+  writeUint16(buf, header.size, offset)
+  offset += 2
+  writeUint16(buf, header.resultsSize, offset)
+  offset += 2
+  writeUint16(buf, header.accumulatorSize, offset)
+  offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 2
+  buf[offset] |= ((0 >>> 0) & 31) << 3
+  offset += 1
+  return offset
+}
+
+export const writeAggHeaderProps = {
+  op: (buf: Uint8Array, value: QueryTypeEnum, offset: number) => {
+    buf[offset] = value
+  },
+  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, value, offset + 1)
+  },
+  offset: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 3)
+  },
+  limit: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 7)
+  },
+  filterSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 11)
+  },
+  iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
+    buf[offset + 13] = value
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 14)
+  },
+  resultsSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 16)
+  },
+  accumulatorSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 18)
+  },
+  sort: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 20] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+  hasGroupBy: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 20] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+  },
+  isSamplingSet: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 20] |= (((value ? 1 : 0) >>> 0) & 1) << 2
+  },
+}
+
+export const readAggHeader = (
+  buf: Uint8Array,
+  offset: number,
+): AggHeader => {
+  const value: AggHeader = {
+    op: (buf[offset]) as QueryTypeEnum,
+    typeId: (readUint16(buf, offset + 1)) as TypeId,
+    offset: readUint32(buf, offset + 3),
+    limit: readUint32(buf, offset + 7),
+    filterSize: readUint16(buf, offset + 11),
+    iteratorType: (buf[offset + 13]) as QueryIteratorTypeEnum,
+    size: readUint16(buf, offset + 14),
+    resultsSize: readUint16(buf, offset + 16),
+    accumulatorSize: readUint16(buf, offset + 18),
+    sort: (((buf[offset + 20] >>> 0) & 1)) === 1,
+    hasGroupBy: (((buf[offset + 20] >>> 1) & 1)) === 1,
+    isSamplingSet: (((buf[offset + 20] >>> 2) & 1)) === 1,
+  }
+  return value
+}
+
+export const readAggHeaderProps = {
+  op: (buf: Uint8Array, offset: number): QueryTypeEnum => {
+    return (buf[offset]) as QueryTypeEnum
+  },
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset + 1)) as TypeId
+  },
+  offset: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 3)
+  },
+  limit: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 7)
+  },
+  filterSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 11)
+  },
+  iteratorType: (buf: Uint8Array, offset: number): QueryIteratorTypeEnum => {
+    return (buf[offset + 13]) as QueryIteratorTypeEnum
+  },
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 14)
+  },
+  resultsSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 16)
+  },
+  accumulatorSize: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 18)
+  },
+  sort: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 20] >>> 0) & 1)) === 1
+  },
+  hasGroupBy: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 20] >>> 1) & 1)) === 1
+  },
+  isSamplingSet: (buf: Uint8Array, offset: number): boolean => {
+    return (((buf[offset + 20] >>> 2) & 1)) === 1
+  },
+}
+
+export const createAggHeader = (header: AggHeader): Uint8Array => {
+  const buffer = new Uint8Array(AggHeaderByteSize)
+  writeAggHeader(buffer, header, 0)
+  return buffer
+}
 
 export type addMultiSubscriptionHeader = {
   typeId: number
@@ -2515,6 +2632,90 @@ export const readremoveMultiSubscriptionHeaderProps = {
 export const createremoveMultiSubscriptionHeader = (header: removeMultiSubscriptionHeader): Uint8Array => {
   const buffer = new Uint8Array(removeMultiSubscriptionHeaderByteSize)
   writeremoveMultiSubscriptionHeader(buffer, header, 0)
+  return buffer
+}
+
+export type AggProp = {
+  propId: number
+  propType: PropTypeEnum
+  aggFunction: AggFunctionEnum
+  resultPos: number
+  accumulatorPos: number
+}
+
+export const AggPropByteSize = 7
+
+export const writeAggProp = (
+  buf: Uint8Array,
+  header: AggProp,
+  offset: number,
+): number => {
+  buf[offset] = header.propId
+  offset += 1
+  buf[offset] = header.propType
+  offset += 1
+  buf[offset] = header.aggFunction
+  offset += 1
+  writeUint16(buf, header.resultPos, offset)
+  offset += 2
+  writeUint16(buf, header.accumulatorPos, offset)
+  offset += 2
+  return offset
+}
+
+export const writeAggPropProps = {
+  propId: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset] = value
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 1] = value
+  },
+  aggFunction: (buf: Uint8Array, value: AggFunctionEnum, offset: number) => {
+    buf[offset + 2] = value
+  },
+  resultPos: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 3)
+  },
+  accumulatorPos: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 5)
+  },
+}
+
+export const readAggProp = (
+  buf: Uint8Array,
+  offset: number,
+): AggProp => {
+  const value: AggProp = {
+    propId: buf[offset],
+    propType: (buf[offset + 1]) as PropTypeEnum,
+    aggFunction: (buf[offset + 2]) as AggFunctionEnum,
+    resultPos: readUint16(buf, offset + 3),
+    accumulatorPos: readUint16(buf, offset + 5),
+  }
+  return value
+}
+
+export const readAggPropProps = {
+  propId: (buf: Uint8Array, offset: number): number => {
+    return buf[offset]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 1]) as PropTypeEnum
+  },
+  aggFunction: (buf: Uint8Array, offset: number): AggFunctionEnum => {
+    return (buf[offset + 2]) as AggFunctionEnum
+  },
+  resultPos: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 3)
+  },
+  accumulatorPos: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 5)
+  },
+}
+
+export const createAggProp = (header: AggProp): Uint8Array => {
+  const buffer = new Uint8Array(AggPropByteSize)
+  writeAggProp(buffer, header, 0)
   return buffer
 }
 

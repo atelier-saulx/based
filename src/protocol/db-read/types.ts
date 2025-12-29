@@ -97,18 +97,6 @@ export type ReaderSchema = {
   search: boolean
 }
 
-export enum AggregateType {
-  SUM = 1,
-  COUNT = 2,
-  CARDINALITY = 3,
-  STDDEV = 4,
-  AVERAGE = 5,
-  VARIANCE = 6,
-  MAX = 7,
-  MIN = 8,
-  HMEAN = 9,
-}
-
 export const COMPRESSED = 1
 export const NOT_COMPRESSED = 0
 

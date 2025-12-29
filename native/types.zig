@@ -401,7 +401,7 @@ pub const ResultType = enum(u8) {
     edgeFixed = 10,
 };
 
-pub const AggFn = enum(u8) {
+pub const AggFunction = enum(u8) {
     none = 0,
     avg = 1,
     cardinality = 2,
@@ -699,16 +699,20 @@ pub const AggGroupedBy = enum(u8) {
     none = 0,
 };
 
-pub const AggType = enum(u8) {
-    sum = 1,
-    count = 2,
-    cardinality = 3,
-    stddev = 4,
-    average = 5,
-    variance = 6,
-    max = 7,
-    min = 8,
-    hmean = 9,
+pub const AggHeader = packed struct {
+    op: QueryType,
+    typeId: TypeId,
+    offset: u32,
+    limit: u32,
+    filterSize: u16,
+    iteratorType: QueryIteratorType,
+    size: u16,
+    resultsSize: u16,
+    accumulatorSize: u16,
+    sort: bool,
+    hasGroupBy: bool,
+    isSamplingSet: bool,
+    _padding: u5,
 };
 
 pub const addMultiSubscriptionHeader = packed struct {
@@ -717,4 +721,12 @@ pub const addMultiSubscriptionHeader = packed struct {
 
 pub const removeMultiSubscriptionHeader = packed struct {
     typeId: u16,
+};
+
+pub const AggProp = packed struct {
+    propId: u8,
+    propType: PropType,
+    aggFunction: AggFunction,
+    resultPos: u16, // the result could also be a packed stru?
+    accumulatorPos: u16, // the accumulator could also be a packed stru?
 };
