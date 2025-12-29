@@ -1,5 +1,10 @@
 import { ReaderSchema } from './types.js'
-import { PropType, type PropTypeEnum, AggFunction } from '../../zigTsExports.js'
+import {
+  PropType,
+  type PropTypeEnum,
+  AggFunction,
+  AggFunctionInverse,
+} from '../../zigTsExports.js'
 import {
   DECODER,
   readDoubleLE,
@@ -152,9 +157,9 @@ export const readAggregate = (
         setByPath(results, agg.path, val)
       } else if (agg.path.length > 1 && agg.path[1][0] == '$') {
         // MV: make it better
-        setByPath(results, [agg.path[1], AggFunction[agg.type]], val)
+        setByPath(results, [agg.path[1], AggFunctionInverse[agg.type]], val)
       } else {
-        setByPath(results, [...agg.path, AggFunction[agg.type]], val)
+        setByPath(results, [...agg.path, AggFunctionInverse[agg.type]], val)
       }
     }
   }
