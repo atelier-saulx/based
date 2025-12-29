@@ -17,7 +17,7 @@ pub fn iterator(
     aggDefs: []u8,
     accumulatorField: []u8,
     typeEntry: Node.Type,
-) !void {
+) !u32 {
     var count: u32 = 0;
 
     while (it.next()) |node| {
@@ -30,6 +30,7 @@ pub fn iterator(
         count += 1;
         if (count >= limit) break;
     }
+    return count;
 }
 
 inline fn aggregateNode(

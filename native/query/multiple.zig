@@ -12,7 +12,7 @@ const Sort = @import("../sort/sort.zig");
 const Aggregates = @import("aggregates/aggregates.zig");
 const String = @import("../string.zig");
 const writeAs = utils.writeAs;
-const napi = @import("../napi.zig");
+const read = utils.read;
 
 fn iterator(
     comptime _: t.QueryIteratorType,
@@ -268,38 +268,38 @@ pub fn aggregates(
     var i: usize = 0;
     const sizeIndex = try ctx.thread.query.reserve(4);
     var nodeCnt: u32 = 0;
-    // var resultBuffer: ?*anyopaque = undefined;
-    // var result: napi.c.napi_value = undefined;
-    // if (napi.c.napi_create_arraybuffer(env, 0 + 4, &resultBuffer, &result) != napi.c.napi_ok) {
-    //     return undefined;
-    // }
 
-    const aggregatesHeader = utils.readNext(t.AggHeader, q, &i);
-    utils.debugPrint("aggregatesHeader: {any}\n", .{aggregatesHeader});
-    const typeId = aggregatesHeader.typeId;
-    const totalSize = aggregatesHeader.resultsSize + aggregatesHeader.accumulatorSize;
+    const header = utils.readNext(t.AggHeader, q, &i);
+    utils.debugPrint("header: {any}\n", .{header});
+    const typeId = header.typeId;
+    const totalSize = header.resultsSize + header.accumulatorSize;
     const resultIndex = try ctx.thread.query.reserve(totalSize);
 
     const typeEntry = try Node.getType(ctx.db, typeId);
 
     const bufferSlice = ctx.thread.query.data[resultIndex .. resultIndex + totalSize]; // placeholders range
     // const resultsProp = @as([*]u8, @ptrCast(resultBuffer))[0 .. 0 + 4]; // placeholders range
-    const accumulatorProp = bufferSlice[aggregatesHeader.resultsSize..]; // placeholders range
+    const accumulatorProp = bufferSlice[header.resultsSize..]; // placeholders range
     @memset(accumulatorProp, 0);
 
-    switch (aggregatesHeader.iteratorType) {
+    switch (header.iteratorType) {
         .default => {
             var it = Node.iterator(false, typeEntry);
-            nodeCnt = 1;
             utils.debugPrint("=> {d}\n", .{@sizeOf(t.AggHeader)});
             const aggDefs = q[i..];
-            utils.debugPrint("aggregatesHeader: {any}\n", .{aggregatesHeader});
+            utils.debugPrint("header: {any}\n", .{header});
             // to assign to nodeCnt?
-            try Aggregates.iterator(ctx, &it, aggregatesHeader.limit, undefined, aggDefs, accumulatorProp, typeEntry);
+            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry);
         },
         else => {},
     }
     // try Aggregates.finalizeResults(resultsProp, accumulatorProp);
+    try ctx.thread.query.append(t.ReadOp.id);
+    // // try ctx.thread.query.append(Node.getNodeId(node)); // item.id
+    try ctx.thread.query.append(@as(u32, 1));
+    try ctx.thread.query.append(read(f64, accumulatorProp, 0));
+    utils.debugPrint("u32 accProp: {any}", .{read(f64, accumulatorProp, 0)});
+
     // Do I must use type Result and checksum() instead of?
     // writeAs(u32, resultsProp, String.c.crc32c(4, resultsProp.ptr, resultsProp.len - 4), resultsProp.len - 4);
     // return result;
