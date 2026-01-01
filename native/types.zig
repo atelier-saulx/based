@@ -415,7 +415,7 @@ pub const AggFunction = enum(u8) {
     stddev = 10, // population or sample should be optional parameters, default = sample
     sum = 11,
     variance = 12,
-    harmonicMean = 13,
+    hmean = 13,
 };
 
 pub const Compression = enum(u8) {
