@@ -266,43 +266,32 @@ pub fn aggregates(
     q: []u8,
 ) !void {
     var i: usize = 0;
-    const sizeIndex = try ctx.thread.query.reserve(4);
+    // const resultSizeIndex =
+    _ = try ctx.thread.query.reserve(0);
     var nodeCnt: u32 = 0;
 
     const header = utils.readNext(t.AggHeader, q, &i);
-    utils.debugPrint("header: {any}\n", .{header});
+    // utils.debugPrint("header: {any}\n", .{header});
     const typeId = header.typeId;
-    const totalSize = header.resultsSize + header.accumulatorSize;
-    const resultIndex = try ctx.thread.query.reserve(totalSize);
 
     const typeEntry = try Node.getType(ctx.db, typeId);
 
-    const bufferSlice = ctx.thread.query.data[resultIndex .. resultIndex + totalSize]; // placeholders range
-    // const resultsProp = @as([*]u8, @ptrCast(resultBuffer))[0 .. 0 + 4]; // placeholders range
-    const accumulatorProp = bufferSlice[header.resultsSize..]; // placeholders range
+    const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
 
     switch (header.iteratorType) {
         .default => {
             var it = Node.iterator(false, typeEntry);
-            utils.debugPrint("=> {d}\n", .{@sizeOf(t.AggHeader)});
             const aggDefs = q[i..];
-            utils.debugPrint("header: {any}\n", .{header});
-            // to assign to nodeCnt?
             nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry);
         },
         else => {},
     }
     // try Aggregates.finalizeResults(resultsProp, accumulatorProp);
-    try ctx.thread.query.append(t.ReadOp.id);
-    // // try ctx.thread.query.append(Node.getNodeId(node)); // item.id
-    try ctx.thread.query.append(@as(u32, 1));
+    // try ctx.thread.query.append(t.ReadOp.id);
+    // try ctx.thread.query.append(@as(u32, 1));
     try ctx.thread.query.append(read(f64, accumulatorProp, 0));
-    utils.debugPrint("u32 accProp: {any}", .{read(f64, accumulatorProp, 0)});
-
-    // Do I must use type Result and checksum() instead of?
-    // writeAs(u32, resultsProp, String.c.crc32c(4, resultsProp.ptr, resultsProp.len - 4), resultsProp.len - 4);
-    // return result;
-
-    ctx.thread.query.write(nodeCnt, sizeIndex);
+    // utils.debugPrint("u32 accProp: {any}", .{read(f64, accumulatorProp, 0)});
+    // _ = nodeCnt;
+    // ctx.thread.query.write(nodeCnt, resultSizeIndex);
 }

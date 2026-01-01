@@ -95,7 +95,7 @@ inline fn execAggInternal(aggFunction: t.AggFunction, propType: t.PropType, accu
             return;
         },
     }
-    utils.debugPrint("accProp: {d}\n", .{read(u64, accumulatorProp, 0)});
+    // utils.debugPrint("accProp: {d}\n", .{read(u64, accumulatorProp, 0)});
     // utils.debugPrint("accProp: {d}\n", .{read(f64, accumulatorProp, 8)});
     // writeAs(f64, accumulatorField, accumulatorPos, read(f64, accumulatorField, accumulatorPos) + microbufferToF64(propType, value, start));
 }

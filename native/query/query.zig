@@ -43,7 +43,7 @@ pub fn getQueryThreaded(
     const queryId = utils.readNext(u32, buffer, &index);
     const q = buffer[index .. buffer.len - 8]; // - checksum len
     const op = utils.read(t.OpType, q, 0);
-    utils.debugPrint("🎃 op: {any}\n", .{op});
+    // utils.debugPrint("🎃 op: {any}\n", .{op});
 
     _ = try thread.query.result(0, queryId, op);
 

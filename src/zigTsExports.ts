@@ -907,7 +907,7 @@ export const AggFunction = {
   stddev: 10,
   sum: 11,
   variance: 12,
-  harmonicMean: 13,
+  hmean: 13,
 } as const
 
 export const AggFunctionInverse = {
@@ -924,7 +924,7 @@ export const AggFunctionInverse = {
   10: 'stddev',
   11: 'sum',
   12: 'variance',
-  13: 'harmonicMean',
+  13: 'hmean',
 } as const
 
 /**
@@ -941,7 +941,7 @@ export const AggFunctionInverse = {
   stddev, 
   sum, 
   variance, 
-  harmonicMean 
+  hmean 
  */
 export type AggFunctionEnum = (typeof AggFunction)[keyof typeof AggFunction]
 

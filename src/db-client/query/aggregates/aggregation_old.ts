@@ -169,7 +169,7 @@ const updateAggregateDefs = (
   aggregateField.push({
     type: aggType,
     propDef: propDef,
-    resultPos: 25, //aggregate.totalResultsSize,
+    resultPos: aggregate.totalResultsSize,
     accumulatorPos: aggregate.totalAccumulatorSize,
     isEdge: isEdge(propDef.path![0]),
   })
