@@ -266,32 +266,28 @@ pub fn aggregates(
     q: []u8,
 ) !void {
     var i: usize = 0;
-    // const resultSizeIndex =
     _ = try ctx.thread.query.reserve(0);
     var nodeCnt: u32 = 0;
 
     const header = utils.readNext(t.AggHeader, q, &i);
-    // utils.debugPrint("header: {any}\n", .{header});
+    utils.debugPrint("header: {any}\n", .{header});
+    const aggDefs = q[i..];
     const typeId = header.typeId;
-
     const typeEntry = try Node.getType(ctx.db, typeId);
+    var hadAccumulated: bool = false;
 
+    const resultsProp = try ctx.db.allocator.alloc(u8, header.resultsSize);
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
+    @memset(resultsProp, 0);
     @memset(accumulatorProp, 0);
 
     switch (header.iteratorType) {
         .default => {
             var it = Node.iterator(false, typeEntry);
-            const aggDefs = q[i..];
-            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry);
+
+            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, &hadAccumulated);
         },
         else => {},
     }
-    // try Aggregates.finalizeResults(resultsProp, accumulatorProp);
-    // try ctx.thread.query.append(t.ReadOp.id);
-    // try ctx.thread.query.append(@as(u32, 1));
-    try ctx.thread.query.append(read(f64, accumulatorProp, 0));
-    // utils.debugPrint("u32 accProp: {any}", .{read(f64, accumulatorProp, 0)});
-    // _ = nodeCnt;
-    // ctx.thread.query.write(nodeCnt, resultSizeIndex);
+    try Aggregates.finalizeResults(ctx, aggDefs, resultsProp, accumulatorProp);
 }

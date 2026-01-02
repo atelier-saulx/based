@@ -43,22 +43,23 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     accumulatorSize: def.aggregate.totalAccumulatorSize,
     isSamplingSet: true, // hardcoded
   }
-
-  const buffer = new Uint8Array(AggHeaderByteSize + 1 * AggPropByteSize) // hardcoded, must come from aggregate.size
+  const numPropsOrFuncs = [...def.aggregate.aggregates.entries()][0][1].length
+  const buffer = new Uint8Array(
+    AggHeaderByteSize + numPropsOrFuncs * AggPropByteSize,
+  )
   const aggHeaderBuff = createAggHeader(aggHeader)
   buffer.set(aggHeaderBuff, 0)
 
   let aggPropMap = def.aggregate.aggregates
   let pos = AggHeaderByteSize
   for (const [propId, aggPropArray] of aggPropMap.entries()) {
-    let propDefSize = 0
     for (const aggProp of aggPropArray) {
       const aggPropBuff = createAggProp({
         propId,
         propType: aggProp.propDef.typeIndex,
         aggFunction: aggProp.type,
-        resultPos: 0,
-        accumulatorPos: 0,
+        resultPos: aggProp.resultPos,
+        accumulatorPos: aggProp.accumulatorPos,
       })
       buffer.set(aggPropBuff, pos)
       pos += AggPropByteSize
