@@ -42,6 +42,10 @@ pub inline fn writeAs(T: type, buffer: []u8, value: anytype, offset: usize) void
         // .@"union" => {
         //     std.debug.print("Union. Payload: {}\n", .{});
         // },
+        .float, .comptime_float => {
+            const target = buffer[offset..][0 .. @bitSizeOf(T) / 8];
+            target.* = @bitCast(@as(T, value));
+        },
         .@"enum" => {
             return writeAs(T, buffer, @intFromEnum(value), offset);
         },
@@ -90,7 +94,7 @@ pub inline fn read(comptime T: type, buffer: []const u8, offset: usize) T {
             if (info.size == .slice) {
                 const ChildType = info.child;
                 const size = @bitSizeOf(ChildType) / 8;
-                const value: T = @as([*]ChildType, @constCast(@ptrCast(@alignCast(buffer[offset..].ptr))))[0..@divFloor(buffer.len, size)];
+                const value: T = @as([*]ChildType, @ptrCast(@alignCast(@constCast(buffer[offset..].ptr))))[0..@divFloor(buffer.len, size)];
                 return value;
             } else {
                 @compileError("Read: Only slice pointers supported for now... " ++ @typeName(T));
@@ -219,6 +223,19 @@ pub inline fn realign(comptime T: type, data: []u8) []T {
     if (offset != 0) move(aligned, data[0 .. data.len - (@alignOf(T) - 1)]);
     const p: *anyopaque = aligned.ptr;
     return @as([*]T, @ptrCast(@alignCast(p)))[0 .. aligned.len / @sizeOf(T)];
+}
+
+pub inline fn propTypeSize(propType: t.PropType) usize {
+    return switch (propType) {
+        t.PropType.int8 => 1,
+        t.PropType.int16 => 2,
+        t.PropType.int32 => 4,
+        t.PropType.uint8 => 1,
+        t.PropType.uint16 => 2,
+        t.PropType.uint32 => 4,
+        t.PropType.number => 8,
+        else => undefined,
+    };
 }
 
 pub inline fn microbufferToF64(propType: t.PropType, buffer: []u8, offset: usize) f64 {
