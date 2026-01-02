@@ -726,6 +726,7 @@ pub const removeMultiSubscriptionHeader = packed struct {
 pub const AggProp = packed struct {
     propId: u8,
     propType: PropType,
+    propDefStart: u16,
     aggFunction: AggFunction,
     resultPos: u16, // the result could also be a packed stru?
     accumulatorPos: u16, // the accumulator could also be a packed stru?

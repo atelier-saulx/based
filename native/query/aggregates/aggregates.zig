@@ -77,7 +77,6 @@ inline fn execAggInternal(
     value: []u8,
     hadAccumulated: *bool,
 ) usize {
-    var start: usize = 0;
     var i: usize = 0;
 
     while (i < aggDefs.len) {
@@ -85,6 +84,7 @@ inline fn execAggInternal(
         const propType = currentAggDef.propType;
         const aggFunction = currentAggDef.aggFunction;
         const accumulatorPos = currentAggDef.accumulatorPos;
+        const start = currentAggDef.propDefStart;
 
         switch (aggFunction) {
             .sum => {
@@ -163,7 +163,6 @@ inline fn execAggInternal(
                 return 0;
             },
         }
-        start += utils.propTypeSize(propType);
     }
     return i;
 }

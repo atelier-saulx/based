@@ -2638,12 +2638,13 @@ export const createremoveMultiSubscriptionHeader = (header: removeMultiSubscript
 export type AggProp = {
   propId: number
   propType: PropTypeEnum
+  propDefStart: number
   aggFunction: AggFunctionEnum
   resultPos: number
   accumulatorPos: number
 }
 
-export const AggPropByteSize = 7
+export const AggPropByteSize = 9
 
 export const writeAggProp = (
   buf: Uint8Array,
@@ -2654,6 +2655,8 @@ export const writeAggProp = (
   offset += 1
   buf[offset] = header.propType
   offset += 1
+  writeUint16(buf, header.propDefStart, offset)
+  offset += 2
   buf[offset] = header.aggFunction
   offset += 1
   writeUint16(buf, header.resultPos, offset)
@@ -2670,14 +2673,17 @@ export const writeAggPropProps = {
   propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset + 1] = value
   },
+  propDefStart: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 2)
+  },
   aggFunction: (buf: Uint8Array, value: AggFunctionEnum, offset: number) => {
-    buf[offset + 2] = value
+    buf[offset + 4] = value
   },
   resultPos: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 3)
+    writeUint16(buf, value, offset + 5)
   },
   accumulatorPos: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 5)
+    writeUint16(buf, value, offset + 7)
   },
 }
 
@@ -2688,9 +2694,10 @@ export const readAggProp = (
   const value: AggProp = {
     propId: buf[offset],
     propType: (buf[offset + 1]) as PropTypeEnum,
-    aggFunction: (buf[offset + 2]) as AggFunctionEnum,
-    resultPos: readUint16(buf, offset + 3),
-    accumulatorPos: readUint16(buf, offset + 5),
+    propDefStart: readUint16(buf, offset + 2),
+    aggFunction: (buf[offset + 4]) as AggFunctionEnum,
+    resultPos: readUint16(buf, offset + 5),
+    accumulatorPos: readUint16(buf, offset + 7),
   }
   return value
 }
@@ -2702,14 +2709,17 @@ export const readAggPropProps = {
   propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
     return (buf[offset + 1]) as PropTypeEnum
   },
+  propDefStart: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 2)
+  },
   aggFunction: (buf: Uint8Array, offset: number): AggFunctionEnum => {
-    return (buf[offset + 2]) as AggFunctionEnum
+    return (buf[offset + 4]) as AggFunctionEnum
   },
   resultPos: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 3)
+    return readUint16(buf, offset + 5)
   },
   accumulatorPos: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 5)
+    return readUint16(buf, offset + 7)
   },
 }
 

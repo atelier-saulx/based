@@ -27,7 +27,9 @@ await test('kev', async (t) => {
 
   // console.log((await db.query('trip').include('distance').get()).debug())
   console.log(
-    (await db.query('trip').var('distance').get()).debug(),
+    (
+      await db.query('trip').harmonicMean('distance').avg('distance').get()
+    ).debug(),
     //.avg('distance') // 3rd func
     // max being changed when using hmean in a joint query
   )

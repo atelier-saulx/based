@@ -57,6 +57,7 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
       const aggPropBuff = createAggProp({
         propId,
         propType: aggProp.propDef.typeIndex,
+        propDefStart: aggProp.propDef.start || 0,
         aggFunction: aggProp.type,
         resultPos: aggProp.resultPos,
         accumulatorPos: aggProp.accumulatorPos,
