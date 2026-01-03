@@ -14,7 +14,7 @@ pub const OpType = enum(u8) {
     default = 2,
     alias = 3,
     aggregates = 4,
-    aggregatesCountType = 5,
+    aggregatesCount = 5,
     aliasFilter = 8,
     idFilter = 9,
 

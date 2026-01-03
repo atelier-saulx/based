@@ -266,7 +266,6 @@ pub fn aggregates(
     q: []u8,
 ) !void {
     var i: usize = 0;
-    _ = try ctx.thread.query.reserve(0);
     var nodeCnt: u32 = 0;
 
     const header = utils.readNext(t.AggHeader, q, &i);
@@ -291,4 +290,16 @@ pub fn aggregates(
         else => {},
     }
     try Aggregates.finalizeResults(ctx, aggDefs, resultsProp, accumulatorProp, isSamplingSet);
+}
+
+pub fn aggregatesCount(
+    ctx: *Query.QueryCtx,
+    q: []u8,
+) !void {
+    var i: usize = 0;
+    const header = utils.readNext(t.AggHeader, q, &i);
+    const typeId = header.typeId;
+    const typeEntry = try Node.getType(ctx.db, typeId);
+    const count: u32 = @truncate(Node.getNodeCount(typeEntry));
+    try ctx.thread.query.append(count);
 }

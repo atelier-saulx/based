@@ -34,17 +34,18 @@ await test('kev', async (t) => {
   //       .get()
   //   ).debug(),
   // )
-  console.log(
-    (
-      await db
-        .query('trip')
-        .sum('distance')
-        .harmonicMean('distance')
-        .avg('distance')
-        .stddev('distance', { mode: 'population' })
-        .get()
-    ).debug(),
-  )
+  // console.log(
+  //   (
+  //     await db
+  //       .query('trip')
+  //       .sum('distance')
+  //       .harmonicMean('distance')
+  //       .avg('distance')
+  //       .stddev('distance', { mode: 'population' })
+  //       .get()
+  //   ).debug(),
+  // )
+  console.log((await db.query('trip').count().get()).debug())
 
   await db.stop()
 })

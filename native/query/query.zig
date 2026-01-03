@@ -57,7 +57,9 @@ pub fn getQueryThreaded(
         .aggregates => {
             try multiple.aggregates(&ctx, q);
         },
-        // t.OpType.aggregatesCount => {},
+        .aggregatesCount => {
+            try multiple.aggregatesCount(&ctx, q);
+        },
         else => {
             return errors.DbError.INCORRECT_QUERY_TYPE;
         },
