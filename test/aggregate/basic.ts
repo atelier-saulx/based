@@ -104,7 +104,7 @@ await test('sum top level', async (t) => {
   )
 })
 
-await test.skip('top level count', async (t) => {
+await test('top level count', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -173,6 +173,7 @@ await test.skip('top level count', async (t) => {
       .get()
       .toObject(),
     { count: 2 },
+    'count, top level, with filter',
   )
 
   deepEqual(
