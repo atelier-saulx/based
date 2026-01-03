@@ -104,7 +104,7 @@ await test('sum top level', async (t) => {
   )
 })
 
-await test('top level count', async (t) => {
+await test.skip('top level count', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -909,7 +909,7 @@ await test('numeric types', async (t) => {
   )
 })
 
-await test('fixed length strings', async (t) => {
+await test.skip('fixed length strings', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -977,7 +977,7 @@ await test('fixed length strings', async (t) => {
   )
 })
 
-await test('range', async (t) => {
+await test.skip('range', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

@@ -275,6 +275,7 @@ pub fn aggregates(
     const typeId = header.typeId;
     const typeEntry = try Node.getType(ctx.db, typeId);
     var hadAccumulated: bool = false;
+    const isSamplingSet = header.isSamplingSet;
 
     const resultsProp = try ctx.db.allocator.alloc(u8, header.resultsSize);
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
@@ -289,5 +290,5 @@ pub fn aggregates(
         },
         else => {},
     }
-    try Aggregates.finalizeResults(ctx, aggDefs, resultsProp, accumulatorProp);
+    try Aggregates.finalizeResults(ctx, aggDefs, resultsProp, accumulatorProp, isSamplingSet);
 }

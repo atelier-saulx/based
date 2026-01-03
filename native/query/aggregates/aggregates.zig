@@ -167,9 +167,9 @@ inline fn execAggInternal(
     return i;
 }
 
-pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: []u8, accumulatorProp: []u8) !void {
+pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: []u8, accumulatorProp: []u8, isSamplingSet: bool) !void {
     var i: usize = 0;
-    utils.debugPrint("aggDefs: {any}", .{aggDefs});
+    utils.debugPrint("aggDefs: {any}\n", .{aggDefs});
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
         const aggFunction = currentAggDef.aggFunction;
@@ -203,7 +203,6 @@ pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: 
                 }
             },
             .stddev => {
-                const option = 0; // hardcoded
                 const count = read(u64, accumulatorProp, accumulatorPos);
                 if (count > 1) {
                     const sum = read(f64, accumulatorProp, accumulatorPos + 8);
@@ -211,7 +210,7 @@ pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: 
                     const mean = sum / @as(f64, @floatFromInt(count));
                     const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
                     const denominator = @as(f64, @floatFromInt(count)) - 1.0;
-                    const variance = if (option == 1)
+                    const variance = if (isSamplingSet)
                         (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
                     else
                         numerator / denominator;
@@ -222,7 +221,6 @@ pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: 
                 }
             },
             .variance => {
-                const option = 0; // hardcoded
                 const count = read(u64, accumulatorProp, accumulatorPos);
                 if (count > 1) {
                     const sum = read(f64, accumulatorProp, accumulatorPos + 8);
@@ -230,7 +228,7 @@ pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: 
                     const mean = sum / @as(f64, @floatFromInt(count));
                     const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
                     const denominator = @as(f64, @floatFromInt(count)) - 1.0;
-                    const variance = if (option == 1)
+                    const variance = if (isSamplingSet)
                         (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
                     else
                         numerator / denominator;
