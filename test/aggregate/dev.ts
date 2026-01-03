@@ -25,13 +25,25 @@ await test('kev', async (t) => {
   db.create('trip', { distance: 20, rate: 10 })
   db.create('trip', { distance: 40, rate: 10 })
 
-  // console.log((await db.query('trip').include('distance').get()).debug())
+  // console.log(
+  //   (
+  //     await db
+  //       .query('trip')
+  //       .include('distance')
+  //       .filter('distance', '>', 10) // filter still doesn't work
+  //       .get()
+  //   ).debug(),
+  // )
   console.log(
     (
-      await db.query('trip').harmonicMean('distance').avg('distance').get()
+      await db
+        .query('trip')
+        .sum('distance')
+        .harmonicMean('distance')
+        .avg('distance')
+        .stddev('distance', { mode: 'population' })
+        .get()
     ).debug(),
-    //.avg('distance') // 3rd func
-    // max being changed when using hmean in a joint query
   )
 
   await db.stop()
