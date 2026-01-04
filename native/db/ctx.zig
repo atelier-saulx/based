@@ -58,12 +58,9 @@ pub fn createDbCtx(
     const subscriptions = try allocator.create(Subscription.SubscriptionCtx);
     subscriptions.*.types = Subscription.TypeSubMap.init(allocator);
 
-    subscriptions.*.gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    subscriptions.*.allocator = subscriptions.*.gpa.allocator();
-    subscriptions.*.freeList = try Subscription.FreeList.initCapacity(subscriptions.*.allocator, 0);
-
     subscriptions.*.lastIdMarked = 0;
-    subscriptions.*.singleIdMarked = jemalloc.alloc(*Subscription.IdSubsItem, Subscription.BLOCK_SIZE);
+    subscriptions.*.singleIdMarked = jemalloc.alloc(u32, Subscription.BLOCK_SIZE);
+    subscriptions.*.subsHashMap = Subscription.SubHashMap.init(allocator);
 
     errdefer {
         arena.deinit();
@@ -112,7 +109,9 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     }
 
     jemalloc.free(ctx.subscriptions.singleIdMarked);
-    _ = ctx.subscriptions.gpa.deinit();
+
+    // jemalloc.
+
     deflate.destroyDecompressor(ctx.decompressor);
     deflate.deinitBlockState(&ctx.libdeflateBlockState);
 

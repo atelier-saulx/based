@@ -17,6 +17,7 @@ pub const OpType = enum(u8) {
     aggregatesCountType = 5,
     aliasFilter = 8,
     idFilter = 9,
+    referenceEdge = 10,
 
     blockHash = 42,
     saveBlock = 67,
@@ -516,6 +517,7 @@ pub const QueryType = enum(u8) {
     reference = 7,
     aliasFilter = 8,
     idFilter = 9,
+    referenceEdge = 10,
 };
 
 pub const IncludeOp = enum(u8) {
@@ -523,6 +525,7 @@ pub const IncludeOp = enum(u8) {
     aggregatesCount = 5,
     references = 6,
     reference = 7,
+    referenceEdge = 10,
     // ---------------------
     default = 127,
     referencesAggregation = 128,
