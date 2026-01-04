@@ -42,7 +42,8 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     hasGroupBy: false, // hardcoded
     resultsSize: def.aggregate.totalResultsSize,
     accumulatorSize: def.aggregate.totalAccumulatorSize,
-    isSamplingSet: setMode[def.aggregate?.option?.mode] || 0,
+    isSamplingSet:
+      setMode[def.aggregate?.option?.mode || 0] === 0 ? true : false,
   }
   const numPropsOrFuncs = [...def.aggregate.aggregates.entries()][0][1].length
   const buffer = new Uint8Array(
