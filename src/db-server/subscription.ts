@@ -65,7 +65,7 @@ async function sendAddMultiSubscription(
 
   writeUint32(msg, id, 0)
   msg[4] = OpType.addMultiSubscription
-  writeaddMultiSubscriptionHeader(msg, { typeId }, 5);
+  writeaddMultiSubscriptionHeader(msg, { typeId }, 5)
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.addMultiSubscription, id, (buf: Uint8Array) => {
@@ -93,20 +93,24 @@ async function sendRemoveMultiSubscription(
 
   writeUint32(msg, id, 0)
   msg[4] = OpType.removeMultiSubscription
-  writeremoveMultiSubscriptionHeader(msg, { typeId }, 5);
+  writeremoveMultiSubscriptionHeader(msg, { typeId }, 5)
 
   return new Promise((resolve, reject) => {
-    db.addOpOnceListener(OpType.removeMultiSubscription, id, (buf: Uint8Array) => {
-      const err = readInt32(buf, 0)
-      if (err) {
-        // TODO format error
-        const errMsg = `Failed: ${err}`
-        db.emit('error', errMsg)
-        reject(new Error(errMsg))
-      } else {
-        resolve()
-      }
-    })
+    db.addOpOnceListener(
+      OpType.removeMultiSubscription,
+      id,
+      (buf: Uint8Array) => {
+        const err = readInt32(buf, 0)
+        if (err) {
+          // TODO format error
+          const errMsg = `Failed: ${err}`
+          db.emit('error', errMsg)
+          reject(new Error(errMsg))
+        } else {
+          resolve()
+        }
+      },
+    )
 
     native.modifyThread(msg, db.dbCtxExternal)
   })
@@ -120,7 +124,11 @@ async function getMarkedMultiSubscriptions(db: DbServer): Promise<Uint8Array> {
   msg[4] = OpType.getMarkedMultiSubscriptions
 
   return new Promise((resolve) => {
-    db.addOpOnceListener(OpType.getMarkedMultiSubscriptions, id, (buf: Uint8Array) => resolve(new Uint8Array(buf)))
+    db.addOpOnceListener(
+      OpType.getMarkedMultiSubscriptions,
+      id,
+      (buf: Uint8Array) => resolve(new Uint8Array(buf)),
+    )
     native.getQueryBufThread(msg, db.dbCtxExternal)
   })
 }
@@ -189,7 +197,11 @@ async function getMarkedIdSubscriptions(db: DbServer): Promise<Uint8Array> {
   msg[4] = OpType.getMarkedIdSubscriptions
 
   return new Promise((resolve) => {
-    db.addOpOnceListener(OpType.getMarkedIdSubscriptions, id, (buf: Uint8Array) => resolve(new Uint8Array(buf)))
+    db.addOpOnceListener(
+      OpType.getMarkedIdSubscriptions,
+      id,
+      (buf: Uint8Array) => resolve(new Uint8Array(buf)),
+    )
     native.getQueryBufThread(msg, db.dbCtxExternal)
   })
 }
@@ -256,6 +268,7 @@ export const startUpdateHandler = (server: DbServer) => {
       server.subscriptions.subInterval,
     )
   }
+
   server.subscriptions.updateHandler = setTimeout(
     scheduleUpdate,
     server.subscriptions.subInterval,
@@ -317,6 +330,7 @@ export const registerSubscription = async (
   subInterval?: number,
 ) => {
   if (subInterval) {
+    console.log('DERP', subInterval)
     server.subscriptions.subInterval = subInterval
   }
   let killed = false
@@ -448,7 +462,9 @@ export const registerSubscription = async (
         if (subContainer.types) {
           const p: Promise<void>[] = []
           for (const typeId of subContainer.types) {
-            p.push(removeFromMultiSub(server, typeId, subContainer.typesListener!))
+            p.push(
+              removeFromMultiSub(server, typeId, subContainer.typesListener!),
+            )
           }
           await Promise.all(p)
         }

@@ -42,6 +42,7 @@ export const OpType = {
   aggregatesCountType: 5,
   aliasFilter: 8,
   idFilter: 9,
+  referenceEdge: 10,
   blockHash: 42,
   saveBlock: 67,
   saveCommon: 69,
@@ -70,6 +71,7 @@ export const OpTypeInverse = {
   5: 'aggregatesCountType',
   8: 'aliasFilter',
   9: 'idFilter',
+  10: 'referenceEdge',
   42: 'blockHash',
   67: 'saveBlock',
   69: 'saveCommon',
@@ -98,6 +100,7 @@ export const OpTypeInverse = {
   aggregatesCountType, 
   aliasFilter, 
   idFilter, 
+  referenceEdge, 
   blockHash, 
   saveBlock, 
   saveCommon, 
@@ -1246,6 +1249,7 @@ export const QueryType = {
   reference: 7,
   aliasFilter: 8,
   idFilter: 9,
+  referenceEdge: 10,
 } as const
 
 export const QueryTypeInverse = {
@@ -1259,6 +1263,7 @@ export const QueryTypeInverse = {
   7: 'reference',
   8: 'aliasFilter',
   9: 'idFilter',
+  10: 'referenceEdge',
 } as const
 
 /**
@@ -1271,7 +1276,8 @@ export const QueryTypeInverse = {
   references, 
   reference, 
   aliasFilter, 
-  idFilter 
+  idFilter, 
+  referenceEdge 
  */
 export type QueryTypeEnum = (typeof QueryType)[keyof typeof QueryType]
 
@@ -1280,6 +1286,7 @@ export const IncludeOp = {
   aggregatesCount: 5,
   references: 6,
   reference: 7,
+  referenceEdge: 10,
   default: 127,
   referencesAggregation: 128,
   meta: 129,
@@ -1293,6 +1300,7 @@ export const IncludeOpInverse = {
   5: 'aggregatesCount',
   6: 'references',
   7: 'reference',
+  10: 'referenceEdge',
   127: 'default',
   128: 'referencesAggregation',
   129: 'meta',
@@ -1306,6 +1314,7 @@ export const IncludeOpInverse = {
   aggregatesCount, 
   references, 
   reference, 
+  referenceEdge, 
   default, 
   referencesAggregation, 
   meta, 

@@ -26,6 +26,7 @@ export type StartOpts = {
   noLoadDumps?: boolean
   delayInMs?: number
   queryThreads?: number
+  subscriptionDelay?: number
 }
 
 const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
@@ -103,7 +104,6 @@ export async function start(db: DbServer, opts?: StartOpts) {
   }, nrThreads)
 
   const writelog = await readWritelog(join(path, WRITELOG_FILE))
-  let partials: [number, Uint8Array][] = [] // Blocks that exists but were not loaded [key, hash]
 
   if (writelog) {
     // Load the common dump
@@ -139,7 +139,12 @@ export async function start(db: DbServer, opts?: StartOpts) {
           if (fname?.length > 0) {
             try {
               // Can't use loadBlock() yet because blockMap is not avail
-              const hash = await loadBlockRaw(db, def.id, dump.start, join(path, fname))
+              const hash = await loadBlockRaw(
+                db,
+                def.id,
+                dump.start,
+                join(path, fname),
+              )
               const mtKey = makeTreeKey(def.id, dump.start)
               db.blockMap.updateBlock(mtKey, hash)
             } catch (e) {
@@ -190,5 +195,9 @@ export async function start(db: DbServer, opts?: StartOpts) {
   if (opts?.delayInMs) {
     db.delayInMs = opts.delayInMs
     await wait(opts.delayInMs)
+  }
+
+  if (opts?.subscriptionDelay !== undefined) {
+    db.subscriptions.subInterval = opts.subscriptionDelay
   }
 }

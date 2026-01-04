@@ -50,7 +50,7 @@ pub fn stagePartial(ctx: *ModifyCtx, start: u16) void {
                         ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
                     );
                 }
-                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
+                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
                 ctx.db.subscriptions.lastIdMarked += 1;
                 idSubs[i].marked = Subscription.SubStatus.marked;
             }
@@ -69,17 +69,14 @@ pub fn stage(
                 if (idSubs[i].marked == Subscription.SubStatus.marked) {
                     continue;
                 }
-
                 if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 16) {
                     ctx.db.subscriptions.singleIdMarked = jemalloc.realloc(
                         ctx.db.subscriptions.singleIdMarked,
                         ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE * 16,
                     );
                 }
-
-                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
+                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
                 ctx.db.subscriptions.lastIdMarked += 1;
-
                 idSubs[i].marked = Subscription.SubStatus.marked;
             }
         }
@@ -98,7 +95,7 @@ pub fn stage(
                             ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
                         );
                     }
-                    ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = &idSubs[i];
+                    ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
                     ctx.db.subscriptions.lastIdMarked += 1;
                     idSubs[i].marked = Subscription.SubStatus.marked;
                 }

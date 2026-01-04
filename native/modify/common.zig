@@ -22,7 +22,7 @@ pub const ModifyCtx = struct {
     db: *DbCtx,
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
     subTypes: ?*Subscription.TypeSubscriptionCtx,
-    idSubs: ?[]Subscription.IdSubsItem,
+    idSubs: ?[]*Subscription.IdSubsItem,
     batch: []u8,
     err: errors.ClientError,
     thread: *Thread.Thread,

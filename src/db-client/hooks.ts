@@ -19,10 +19,7 @@ export type DbClientHooks = {
   subscribeSchema(cb: (schema: SchemaOut) => void): void
 }
 
-export const getDefaultHooks = (
-  server: DbServer,
-  subInterval = 200,
-): DbClientHooks => {
+export const getDefaultHooks = (server: DbServer): DbClientHooks => {
   return {
     subscribe(
       q: BasedDbQuery,
@@ -35,7 +32,6 @@ export const getDefaultHooks = (
         q.subscriptionBuffer!,
         onData,
         onError,
-        subInterval,
       )
     },
     setSchema(schema: SchemaOut, transformFns) {
