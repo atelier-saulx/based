@@ -276,9 +276,7 @@ pub fn aggregates(
     var hadAccumulated: bool = false;
     const isSamplingSet = header.isSamplingSet;
 
-    const resultsProp = try ctx.db.allocator.alloc(u8, header.resultsSize);
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
-    @memset(resultsProp, 0);
     @memset(accumulatorProp, 0);
 
     switch (header.iteratorType) {
@@ -289,7 +287,7 @@ pub fn aggregates(
         },
         else => {},
     }
-    try Aggregates.finalizeResults(ctx, aggDefs, resultsProp, accumulatorProp, isSamplingSet);
+    try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, isSamplingSet);
 }
 
 pub fn aggregatesCount(

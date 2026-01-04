@@ -9,6 +9,7 @@ const read = utils.read;
 const copy = utils.copy;
 const microbufferToF64 = utils.microbufferToF64;
 const t = @import("../../types.zig");
+const resultHeaderOffset = @import("../../thread/results.zig").resultHeaderOffset;
 
 pub fn iterator(
     ctx: *Query.QueryCtx,
@@ -51,155 +52,158 @@ inline fn aggregateNode(
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
         utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
         utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
-
         var value: []u8 = undefined;
-        const propSchema = Schema.getFieldSchema(typeEntry, currentAggDef.propId) catch {
-            i += @sizeOf(t.AggProp);
-            continue;
-        };
+        if (currentAggDef.aggFunction == t.AggFunction.count) {
+            accumulate(currentAggDef, accumulatorProp, value, hadAccumulated);
+            hadAccumulated.* = true;
+        } else {
+            if (currentAggDef.propId != t.MAIN_PROP) {
+                i += @sizeOf(t.AggProp);
+                continue;
+            }
+            const propSchema = Schema.getFieldSchema(typeEntry, currentAggDef.propId) catch {
+                i += @sizeOf(t.AggProp);
+                continue;
+            };
 
-        value = Fields.get(
-            typeEntry,
-            node,
-            propSchema,
-            currentAggDef.propType,
-        );
+            value = Fields.get(
+                typeEntry,
+                node,
+                propSchema,
+                currentAggDef.propType,
+            );
 
-        if (value.len > 0) {
-            i += execAggInternal(aggDefs, accumulatorProp, value, hadAccumulated);
+            if (value.len > 0) {
+                accumulate(currentAggDef, accumulatorProp, value, hadAccumulated);
+            }
         }
     }
 }
 
-inline fn execAggInternal(
-    aggDefs: []u8,
+inline fn accumulate(
+    currentAggDef: t.AggProp,
     accumulatorProp: []u8,
     value: []u8,
     hadAccumulated: *bool,
-) usize {
-    var i: usize = 0;
+) void {
+    const propType = currentAggDef.propType;
+    const aggFunction = currentAggDef.aggFunction;
+    const accumulatorPos = currentAggDef.accumulatorPos;
+    const start = currentAggDef.propDefStart;
 
-    while (i < aggDefs.len) {
-        const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
-        const propType = currentAggDef.propType;
-        const aggFunction = currentAggDef.aggFunction;
-        const accumulatorPos = currentAggDef.accumulatorPos;
-        const start = currentAggDef.propDefStart;
+    switch (aggFunction) {
+        .sum => {
+            writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propType, value, start), accumulatorPos);
+        },
+        .avg => {
+            const val = microbufferToF64(propType, value, start);
+            var count = read(u64, accumulatorProp, accumulatorPos);
+            var sum = read(f64, accumulatorProp, accumulatorPos + 8);
 
-        switch (aggFunction) {
-            .sum => {
-                writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propType, value, start), accumulatorPos);
-            },
-            .avg => {
-                const val = microbufferToF64(propType, value, start);
+            count += 1;
+            sum += val;
+
+            writeAs(u64, accumulatorProp, count, accumulatorPos);
+            writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
+        },
+        .min => {
+            if (!hadAccumulated.*) {
+                writeAs(f64, accumulatorProp, microbufferToF64(propType, value, start), accumulatorPos);
+            } else {
+                writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propType, value, start)), accumulatorPos);
+            }
+        },
+        .max => {
+            if (!hadAccumulated.*) {
+                writeAs(f64, accumulatorProp, microbufferToF64(propType, value, start), accumulatorPos);
+            } else {
+                writeAs(f64, accumulatorProp, @max(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propType, value, start)), accumulatorPos);
+            }
+        },
+        .hmean => {
+            const val = microbufferToF64(propType, value, start);
+            if (val != 0) {
                 var count = read(u64, accumulatorProp, accumulatorPos);
                 var sum = read(f64, accumulatorProp, accumulatorPos + 8);
 
                 count += 1;
-                sum += val;
+                sum += 1 / val;
 
                 writeAs(u64, accumulatorProp, count, accumulatorPos);
                 writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
-            },
-            .min => {
-                if (!hadAccumulated.*) {
-                    writeAs(f64, accumulatorProp, microbufferToF64(propType, value, start), accumulatorPos);
-                } else {
-                    writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propType, value, start)), accumulatorPos);
-                }
-            },
-            .max => {
-                if (!hadAccumulated.*) {
-                    writeAs(f64, accumulatorProp, microbufferToF64(propType, value, start), accumulatorPos);
-                } else {
-                    writeAs(f64, accumulatorProp, @max(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propType, value, start)), accumulatorPos);
-                }
-            },
-            .hmean => {
-                const val = microbufferToF64(propType, value, start);
-                if (val != 0) {
-                    var count = read(u64, accumulatorProp, accumulatorPos);
-                    var sum = read(f64, accumulatorProp, accumulatorPos + 8);
+            } else {
+                writeAs(u64, accumulatorProp, 0.0, accumulatorPos);
+                writeAs(f64, accumulatorProp, 0.0, accumulatorPos + 8);
+            }
+        },
+        .stddev => {
+            const val = microbufferToF64(propType, value, start);
+            var count = read(u64, accumulatorProp, accumulatorPos);
+            var sum = read(f64, accumulatorProp, accumulatorPos + 8);
+            var sum_sq = read(f64, accumulatorProp, accumulatorPos + 16);
 
-                    count += 1;
-                    sum += 1 / val;
+            count += 1;
+            sum += val;
+            sum_sq += val * val;
 
-                    writeAs(u64, accumulatorProp, count, accumulatorPos);
-                    writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
-                } else {
-                    writeAs(u64, accumulatorProp, 0.0, accumulatorPos);
-                    writeAs(f64, accumulatorProp, 0.0, accumulatorPos + 8);
-                }
-            },
-            .stddev => {
-                const val = microbufferToF64(propType, value, start);
-                var count = read(u64, accumulatorProp, accumulatorPos);
-                var sum = read(f64, accumulatorProp, accumulatorPos + 8);
-                var sum_sq = read(f64, accumulatorProp, accumulatorPos + 16);
+            writeAs(u64, accumulatorProp, count, accumulatorPos);
+            writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
+            writeAs(f64, accumulatorProp, sum_sq, accumulatorPos + 16);
+        },
+        .variance => {
+            const val = microbufferToF64(propType, value, start);
+            var count = read(u64, accumulatorProp, accumulatorPos);
+            var sum = read(f64, accumulatorProp, accumulatorPos + 8);
+            var sum_sq = read(f64, accumulatorProp, accumulatorPos + 16);
 
-                count += 1;
-                sum += val;
-                sum_sq += val * val;
+            count += 1;
+            sum += val;
+            sum_sq += val * val;
 
-                writeAs(u64, accumulatorProp, count, accumulatorPos);
-                writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
-                writeAs(f64, accumulatorProp, sum_sq, accumulatorPos + 16);
-            },
-            .variance => {
-                const val = microbufferToF64(propType, value, start);
-                var count = read(u64, accumulatorProp, accumulatorPos);
-                var sum = read(f64, accumulatorProp, accumulatorPos + 8);
-                var sum_sq = read(f64, accumulatorProp, accumulatorPos + 16);
-
-                count += 1;
-                sum += val;
-                sum_sq += val * val;
-
-                writeAs(u64, accumulatorProp, count, accumulatorPos);
-                writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
-                writeAs(f64, accumulatorProp, sum_sq, accumulatorPos + 16);
-            },
-            else => {
-                return 0;
-            },
-        }
+            writeAs(u64, accumulatorProp, count, accumulatorPos);
+            writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
+            writeAs(f64, accumulatorProp, sum_sq, accumulatorPos + 16);
+        },
+        .count => {
+            writeAs(u32, accumulatorProp, read(u32, accumulatorProp, accumulatorPos) + 1, accumulatorPos);
+        },
+        else => {},
     }
-    return i;
 }
 
-pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: []u8, accumulatorProp: []u8, isSamplingSet: bool) !void {
+pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, accumulatorProp: []u8, isSamplingSet: bool) !void {
     var i: usize = 0;
     utils.debugPrint("aggDefs: {any}\n", .{aggDefs});
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
         const aggFunction = currentAggDef.aggFunction;
-        const resultPos = currentAggDef.resultPos;
+        const resultPos = currentAggDef.resultPos + resultHeaderOffset;
         const accumulatorPos = currentAggDef.accumulatorPos;
 
         switch (aggFunction) {
             .sum => {
-                try ctx.thread.query.append(read(f64, accumulatorProp, resultPos));
+                ctx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
             },
             .max => {
-                try ctx.thread.query.append(read(f64, accumulatorProp, resultPos));
+                ctx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
             },
             .min => {
-                try ctx.thread.query.append(read(f64, accumulatorProp, resultPos));
+                ctx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
             },
             .avg => {
                 const count = read(u64, accumulatorProp, accumulatorPos);
                 const sum = read(f64, accumulatorProp, accumulatorPos + 8);
                 const mean = sum / @as(f64, @floatFromInt(count));
-                try ctx.thread.query.append(@as(f64, @floatCast(mean)));
+                ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(mean)), resultPos);
             },
             .hmean => {
                 const count = read(u64, accumulatorProp, accumulatorPos);
                 if (count != 0) {
                     const isum = read(f64, accumulatorProp, accumulatorPos + 8);
                     const mean = @as(f64, @floatFromInt(count)) / isum;
-                    try ctx.thread.query.append(@as(f64, @floatCast(mean)));
+                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(mean)), resultPos);
                 } else {
-                    try ctx.thread.query.append(@as(f64, @floatCast(0.0)));
+                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
                 }
             },
             .stddev => {
@@ -215,9 +219,9 @@ pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: 
                     else
                         numerator / denominator;
                     const stddev = @sqrt(variance);
-                    try ctx.thread.query.append(@as(f64, @floatCast(stddev)));
+                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(stddev)), resultPos);
                 } else {
-                    try ctx.thread.query.append(@as(f64, @floatCast(0.0)));
+                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
                 }
             },
             .variance => {
@@ -232,13 +236,17 @@ pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, resultsProp: 
                         (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
                     else
                         numerator / denominator;
-                    try ctx.thread.query.append(@as(f64, @floatCast(variance)));
+                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(variance)), resultPos);
                 } else {
-                    try ctx.thread.query.append(@as(f64, @floatCast(0.0)));
+                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
                 }
             },
+            .count => {
+                const count = read(u32, accumulatorProp, accumulatorPos);
+                ctx.thread.query.reserveAndWrite(count, resultPos);
+            },
             else => {
-                writeAs(f64, resultsProp, 0.0, resultPos);
+                ctx.thread.query.reserveAndWrite(0.0, resultPos);
             },
         }
     }
