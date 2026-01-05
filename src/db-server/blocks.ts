@@ -136,7 +136,7 @@ async function saveCommon(db: DbServer): Promise<void> {
       }
     })
 
-    native.getQueryBufThread(msg, db.dbCtxExternal)
+    native.query(msg, db.dbCtxExternal)
   })
 }
 
@@ -159,7 +159,7 @@ async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
       ENCODER.encodeInto(filename, msg.subarray(11))
 
       const p = BlockMap.setIoPromise(block)
-      native.getQueryBufThread(msg, db.dbCtxExternal)
+      native.query(msg, db.dbCtxExternal)
       return p
     }),
   )
@@ -189,7 +189,7 @@ export async function loadCommon(
       }
     })
 
-    native.modifyThread(msg, db.dbCtxExternal)
+    native.modify(msg, db.dbCtxExternal)
   })
 }
 
@@ -222,7 +222,7 @@ export async function loadBlockRaw(
       }
     })
 
-    native.modifyThread(msg, db.dbCtxExternal)
+    native.modify(msg, db.dbCtxExternal)
   })
 }
 
@@ -259,7 +259,7 @@ export async function loadBlock(
   ENCODER.encodeInto(filename, msg.subarray(5))
 
   const p = BlockMap.setIoPromise(block)
-  native.modifyThread(msg, db.dbCtxExternal)
+  native.modify(msg, db.dbCtxExternal)
   await p
 }
 
@@ -288,7 +288,7 @@ export async function unloadBlock(
   ENCODER.encodeInto(filename, msg.subarray(5))
 
   const p = BlockMap.setIoPromise(block)
-  native.modifyThread(msg, db.dbCtxExternal)
+  native.modify(msg, db.dbCtxExternal)
   await p
 }
 
@@ -319,7 +319,7 @@ export async function getBlockHash(
       }
     })
 
-    native.getQueryBufThread(msg, db.dbCtxExternal)
+    native.query(msg, db.dbCtxExternal)
   })
 }
 

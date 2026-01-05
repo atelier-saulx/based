@@ -26,9 +26,6 @@ export const getDefaultHooks = (server: DbServer): DbClientHooks => {
       onData: (res: Uint8Array) => void,
       onError: OnError,
     ) {
-      // get the crc32
-      // get the schema
-      // get the len
       console.log('GO SUBSCRIBE', q.buffer)
       return () => {}
     },

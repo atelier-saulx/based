@@ -5,7 +5,7 @@ const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 pub const Sub = struct {
     marked: SubStatus,
     typeId: u16,
-    subId: u64,
+    subId: u32,
     id: u32,
     fields: @Vector(vectorLen, u8),
     partial: @Vector(vectorLenU16, u16),
@@ -31,9 +31,9 @@ pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
 
 pub const SubscriptionCtx = struct {
     types: TypeSubMap,
-    singleIdMarked: []u64, // this will call query directly
+    singleIdMarked: []u32, // this will call query directly
     lastIdMarked: u32,
-    multiMarked: []u64,
+    multiMarked: []u32,
     lastMultiMarked: u32,
     subsHashMap: SubHashMap,
 };

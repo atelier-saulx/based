@@ -24,7 +24,7 @@ async function getSchemaIds(db: DbServer): Promise<Uint32Array> {
       tmp.set(buf)
       resolve(ids)
     })
-    native.getQueryBufThread(msg, db.dbCtxExternal)
+    native.query(msg, db.dbCtxExternal)
   })
 }
 
@@ -41,7 +41,7 @@ function setSchemaIds(db: DbServer, ids: Uint32Array): Promise<void> {
     db.addOpOnceListener(OpType.setSchemaIds, id, () => {
       resolve()
     })
-    native.modifyThread(msg, db.dbCtxExternal)
+    native.modify(msg, db.dbCtxExternal)
   })
 }
 
@@ -89,7 +89,7 @@ export async function createSelvaType(
       }
       server.keepRefAliveTillThisPoint(msg)
     })
-    native.modifyThread(msg, server.dbCtxExternal)
+    native.modify(msg, server.dbCtxExternal)
   })
 }
 

@@ -51,10 +51,12 @@ pub const Thread = struct {
         thread.*.tmpSortBinaryEdge = selva.selva_sort_init3(selva.SELVA_SORT_ORDER_BUFFER_ASC, 0, EdgeResultSize).?;
         thread.*.tmpSortBinary = selva.selva_sort_init3(selva.SELVA_SORT_ORDER_BUFFER_ASC, 0, 0).?;
 
+        // this is added on every thread - lets start to asign them to random threads
+        // see if we want a mod loop with COMPTIME OR just a seperate loop
         const subscriptions = try allocator.create(Subscription.SubscriptionCtx);
         subscriptions.*.types = Subscription.TypeSubMap.init(allocator);
         subscriptions.*.lastIdMarked = 0;
-        subscriptions.*.singleIdMarked = jemalloc.alloc(u64, Subscription.BLOCK_SIZE);
+        subscriptions.*.singleIdMarked = jemalloc.alloc(u32, Subscription.BLOCK_SIZE);
         subscriptions.*.subsHashMap = Subscription.SubHashMap.init(allocator);
 
         thread.*.subscriptions = subscriptions;

@@ -172,8 +172,9 @@ pub const Threads = struct {
                     .blockHash => try info.blockHash(thread, self.ctx, q, op),
                     .saveBlock => try dump.saveBlock(thread, self.ctx, q, op),
                     .saveCommon => try dump.saveCommon(thread, self.ctx, q, op),
-                    // .subscribe => Subscription.subscribe(self.ctx, q, thread, op),
-                    // .unsubscribe => Subscription.unsubscribe(self.ctx, q, thread, op),
+                    // .subscribe => try Subscription.subscribe(self.ctx, q, thread, op),
+                    // maybe subscribe --
+                    .unsubscribe => try Subscription.unsubscribe(self.ctx, q, thread, op),
                     .noOp => {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
@@ -184,6 +185,7 @@ pub const Threads = struct {
                         };
                     },
                 }
+
                 thread.query.commit();
 
                 self.mutex.lock();
