@@ -2,7 +2,7 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
-await test('number', async (t) => {
+await test('kkk', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

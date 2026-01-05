@@ -12,8 +12,9 @@ import {
   OrderEnum,
   QueryTypeEnum,
   SortHeader,
+  AggFunctionEnum,
 } from '../../zigTsExports.js'
-import type { AggregateType, ReaderSchema } from '../../protocol/index.js'
+import type { ReaderSchema } from '../../protocol/index.js'
 
 type LangName = keyof typeof LangCode
 
@@ -156,7 +157,7 @@ export type QueryDefSearch =
     }
 
 export type Aggregation = {
-  type: AggregateType
+  type: AggFunctionEnum
   propDef: PropDef | PropDefEdge
   resultPos: number
   accumulatorPos: number

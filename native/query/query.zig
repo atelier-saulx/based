@@ -43,6 +43,7 @@ pub fn getQueryThreaded(
     const queryId = utils.readNext(u32, buffer, &index);
     const q = buffer[index .. buffer.len - 8]; // - checksum len
     const op = utils.read(t.OpType, q, 0);
+    // utils.debugPrint("🎃 op: {any}\n", .{op});
 
     _ = try thread.query.result(0, queryId, op);
 
@@ -53,8 +54,12 @@ pub fn getQueryThreaded(
         .alias => try single.alias(false, &ctx, q),
         .aliasFilter => try single.alias(true, &ctx, q),
         .ids => try multiple.ids(&ctx, q),
-        // t.OpType.aggregates => {},
-        // t.OpType.aggregatesCount => {},
+        .aggregates => {
+            try multiple.aggregates(&ctx, q);
+        },
+        .aggregatesCount => {
+            try multiple.aggregatesCount(&ctx, q);
+        },
         else => {
             return errors.DbError.INCORRECT_QUERY_TYPE;
         },

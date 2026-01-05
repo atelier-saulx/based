@@ -25,8 +25,14 @@ import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { StepInput, aggFnOptions } from './aggregates/types.js'
 import { displayTarget } from './display.js'
 import { include } from './include/include.js'
-import { AggregateType, type ReaderSchema } from '../../protocol/index.js'
-import { LangCode, LangCodeEnum, Order } from '../../zigTsExports.js'
+import { type ReaderSchema } from '../../protocol/index.js'
+import {
+  LangCode,
+  LangCodeEnum,
+  Order,
+  AggFunction,
+  type AggFunctionEnum,
+} from '../../zigTsExports.js'
 import { styleText } from 'node:util'
 
 export { QueryByAliasObj }
@@ -195,7 +201,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(this, AggregateType.COUNT, fields)
+      addAggregate(this, AggFunction.count, fields)
     }
     // @ts-ignore
     return this
@@ -212,7 +218,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(this, AggregateType.SUM, fields)
+      addAggregate(this, AggFunction.sum, fields)
     }
     // @ts-ignore
     return this
@@ -229,7 +235,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(this, AggregateType.CARDINALITY, fields)
+      addAggregate(this, AggFunction.cardinality, fields)
     }
     // @ts-ignore
     return this
@@ -258,7 +264,7 @@ export class QueryBranch<T> {
       if (fields.length === 0) {
         throw new Error('Empty standard deviation function called')
       }
-      addAggregate(this, AggregateType.STDDEV, fields, option)
+      addAggregate(this, AggFunction.stddev, fields, option)
     }
     // @ts-ignore
     return this
@@ -287,7 +293,7 @@ export class QueryBranch<T> {
       if (fields.length === 0) {
         throw new Error('Empty variance called')
       }
-      addAggregate(this, AggregateType.VARIANCE, fields, option)
+      addAggregate(this, AggFunction.variance, fields, option)
     }
     // @ts-ignore
     return this
@@ -303,7 +309,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(this, AggregateType.AVERAGE, fields)
+      addAggregate(this, AggFunction.avg, fields)
     }
     // @ts-ignore
     return this
@@ -320,7 +326,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(this, AggregateType.HMEAN, fields)
+      addAggregate(this, AggFunction.hmean, fields)
     }
     // @ts-ignore
     return this
@@ -337,7 +343,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(this, AggregateType.MAX, fields)
+      addAggregate(this, AggFunction.max, fields)
     }
     // @ts-ignore
     return this
@@ -354,7 +360,7 @@ export class QueryBranch<T> {
         args: fields,
       })
     } else {
-      addAggregate(this, AggregateType.MIN, fields)
+      addAggregate(this, AggFunction.min, fields)
     }
     // @ts-ignore
     return this

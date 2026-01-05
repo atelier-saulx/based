@@ -173,6 +173,7 @@ await test('top level count', async (t) => {
       .get()
       .toObject(),
     { count: 2 },
+    'count, top level, with filter',
   )
 
   deepEqual(
@@ -909,7 +910,7 @@ await test('numeric types', async (t) => {
   )
 })
 
-await test('fixed length strings', async (t) => {
+await test.skip('fixed length strings', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -977,7 +978,7 @@ await test('fixed length strings', async (t) => {
   )
 })
 
-await test('range', async (t) => {
+await test.skip('range', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

@@ -9,6 +9,10 @@ const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 const Sort = @import("../sort/sort.zig");
+const Aggregates = @import("aggregates/aggregates.zig");
+const String = @import("../string.zig");
+const writeAs = utils.writeAs;
+const read = utils.read;
 
 fn iterator(
     comptime _: t.QueryIteratorType,
@@ -255,4 +259,45 @@ pub fn references(
         @truncate(ctx.thread.query.index - startIndex),
         resultByteSizeIndex,
     );
+}
+
+pub fn aggregates(
+    ctx: *Query.QueryCtx,
+    q: []u8,
+) !void {
+    var i: usize = 0;
+    var nodeCnt: u32 = 0;
+
+    const header = utils.readNext(t.AggHeader, q, &i);
+    utils.debugPrint("header: {any}\n", .{header});
+    const aggDefs = q[i..];
+    const typeId = header.typeId;
+    const typeEntry = try Node.getType(ctx.db, typeId);
+    var hadAccumulated: bool = false;
+    const isSamplingSet = header.isSamplingSet;
+
+    const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
+    @memset(accumulatorProp, 0);
+
+    switch (header.iteratorType) {
+        .default => {
+            var it = Node.iterator(false, typeEntry);
+
+            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, &hadAccumulated);
+        },
+        else => {},
+    }
+    try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, isSamplingSet);
+}
+
+pub fn aggregatesCount(
+    ctx: *Query.QueryCtx,
+    q: []u8,
+) !void {
+    var i: usize = 0;
+    const header = utils.readNext(t.AggHeader, q, &i);
+    const typeId = header.typeId;
+    const typeEntry = try Node.getType(ctx.db, typeId);
+    const count: u32 = @truncate(Node.getNodeCount(typeEntry));
+    try ctx.thread.query.append(count);
 }

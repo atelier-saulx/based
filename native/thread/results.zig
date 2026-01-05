@@ -4,6 +4,8 @@ const utils = @import("../utils.zig");
 const String = @import("../string.zig");
 const jemalloc = @import("../jemalloc.zig");
 
+pub const resultHeaderOffset = 9;
+
 pub const Result = struct {
     data: []u8,
     index: usize,
@@ -35,7 +37,7 @@ pub const Result = struct {
     }
 
     pub inline fn result(self: *Result, size: usize, id: u32, opType: t.OpType) ![]u8 {
-        const offset = 9;
+        const offset = resultHeaderOffset;
         const paddedSize: u32 = @truncate(size + offset);
         self.headerIndex = self.index;
         self.index = try self.grow(paddedSize);
@@ -59,6 +61,12 @@ pub const Result = struct {
     }
 
     pub inline fn write(self: *Result, value: anytype, offset: usize) void {
+        utils.write(self.data, value, offset);
+    }
+
+    pub inline fn reserveAndWrite(self: *Result, value: anytype, offset: usize) void {
+        const paddedSize: u32 = @sizeOf(@TypeOf(value));
+        self.index = try self.grow(paddedSize);
         utils.write(self.data, value, offset);
     }
 
@@ -95,7 +103,7 @@ pub const Result = struct {
 
     pub inline fn checksum(self: *Result) !void {
         const index = self.index;
-        const start = self.headerIndex + 9;
+        const start = self.headerIndex + resultHeaderOffset;
         if (index != start) {
             const x = self.data[start..index];
             try self.append(String.c.crc32c(0, x.ptr, x.len));

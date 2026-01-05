@@ -22,6 +22,7 @@ import {
   writeSortHeader,
 } from '../../../zigTsExports.js'
 import { searchToBuffer } from '../search/index.js'
+import { aggregateToBuffer } from '../aggregates/toByteCode.js'
 
 export function defToBuffer(
   db: DbClient,
@@ -34,6 +35,7 @@ export function defToBuffer(
   const isRootDefault = def.type === QueryDefType.Root
   const isReference = def.type === QueryDefType.Reference
   const isAlias = 'resolvedAlias' in def.target
+  const isAggregates = def.aggregate !== null
 
   if ('id' in def.target || isAlias) {
     const hasFilter = def.filter.size > 0
@@ -92,6 +94,9 @@ export function defToBuffer(
       { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
       include,
     ])
+  } else if (isAggregates) {
+    result.push(aggregateToBuffer(def))
+    return result
   } else if (isReference) {
     const include = includeToBuffer(db, def)
     for (const [, ref] of def.references) {

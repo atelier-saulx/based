@@ -14,8 +14,11 @@ import {
   type PropDefEdge,
   type SchemaPropTree,
 } from '../../../schema/index.js'
-import { PropType } from '../../../zigTsExports.js'
-import { AggregateType } from '../../../protocol/index.js'
+import {
+  PropType,
+  AggFunction,
+  type AggFunctionEnum,
+} from '../../../zigTsExports.js'
 
 export const aggregateToBuffer = (
   aggregates: QueryDefAggregation,
@@ -153,7 +156,7 @@ export const groupBy = (
 const updateAggregateDefs = (
   def: QueryDef,
   propDef: PropDef | PropDefEdge,
-  aggType: AggregateType,
+  aggType: AggFunctionEnum,
 ) => {
   const aggregate = def.aggregate!
   const aggregates = aggregate.aggregates
@@ -183,8 +186,8 @@ const updateAggregateDefs = (
   aggregate.size += 9 // aggType + propType + start + resultPos + accumulatorPos + isEdge
 }
 
-const isCount = (propString: string, aggType: AggregateType) => {
-  return propString === 'count' || aggType === AggregateType.COUNT
+const isCount = (propString: string, aggType: AggFunctionEnum) => {
+  return propString === 'count' || aggType === AggFunction.count
 }
 
 const isEdge = (propString) => {
@@ -198,7 +201,7 @@ const isReferenceOrReferences = (typeIndex) => {
 const getPropDefinition = (
   def: QueryDef,
   propName: string,
-  type: AggregateType,
+  type: AggFunctionEnum,
   resolvedPropDef: PropDef | PropDefEdge | undefined,
 ): PropDef | PropDefEdge | undefined => {
   if (isCount(propName, type)) {
@@ -226,7 +229,7 @@ const processPropPath = (
   query: QueryBranch<any>,
   path: string[],
   originalPropName: string,
-  type: AggregateType,
+  type: AggFunctionEnum,
 ): PropDef | PropDefEdge | undefined | typeof IN_RECURSION => {
   const def = query.def!
   let t: PropDef | SchemaPropTree = def.schema!.tree
@@ -270,7 +273,7 @@ const processPropPath = (
 
 export const addAggregate = (
   query: QueryBranch<any>,
-  type: AggregateType,
+  type: AggFunctionEnum,
   propNames: string[],
   option?: aggFnOptions,
 ) => {
@@ -334,7 +337,7 @@ export const isRootCountOnly = (def: QueryDef, filterSize: number) => {
   if (aggs.length !== 1) {
     return false
   }
-  if (aggs[0].type !== AggregateType.COUNT) {
+  if (aggs[0].type !== AggFunction.count) {
     return false
   }
   if (def.filter && def.filter.size > 0) {
