@@ -211,7 +211,8 @@ const writeReferenceObj = (
       writeU8(ctx, isTmp ? EDGE_INDEX_TMPID : EDGE_INDEX_REALID)
       writeU32(ctx, id)
       writeU32(ctx, obj.$index)
-      writeEdges(ctx, def, obj, false)
+
+      // writeEdges(ctx, def, obj, false)
     } else {
       writeU8(ctx, isTmp ? NOEDGE_INDEX_TMPID : NOEDGE_INDEX_REALID)
       writeU32(ctx, id)
@@ -220,7 +221,7 @@ const writeReferenceObj = (
   } else if (hasEdges) {
     writeU8(ctx, isTmp ? EDGE_NOINDEX_TMPID : EDGE_NOINDEX_REALID)
     writeU32(ctx, id)
-    writeEdges(ctx, def, obj, false)
+    // writeEdges(ctx, def, obj, false)
   } else {
     writeU8(ctx, isTmp ? NOEDGE_NOINDEX_TMPID : NOEDGE_NOINDEX_REALID)
     writeU32(ctx, id)

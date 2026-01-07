@@ -86,14 +86,11 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
-
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
         return len;
     }
-
     var i: usize = 1;
-
     while (i < len) : (i += 4) {
         const id = read(u32, data, i + 4);
         try References.deleteReference(
@@ -103,35 +100,28 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
             id,
         );
     }
-
     return len;
 }
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
-
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
         return len;
     }
-
     const idsUnAligned = data[5 .. len + 4];
     const address = @intFromPtr(idsUnAligned.ptr);
     const offset: u8 = @truncate(address % 4);
     const aligned = data[5 - offset .. len - offset + 4];
-
     if (offset != 0) {
         move(aligned, idsUnAligned);
     }
-
     const u32ids = read([]u32, aligned, 0);
-
     try References.putReferences(
         ctx,
         ctx.node.?,
         ctx.fieldSchema.?,
         u32ids,
     );
-
     return len;
 }
