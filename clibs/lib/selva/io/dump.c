@@ -46,6 +46,7 @@
 #define DUMP_MAGIC_FIELD_END    2944546091
 #define DUMP_MAGIC_ALIASES      4019181209
 #define DUMP_MAGIC_COLVEC       1901731729
+#define DUMP_MAGIC_BLOCK_HASH   2898966349
 
 /*
  * Helper types for portable serialization.
@@ -460,6 +461,9 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     *range_hash_out = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
     selva_hash_free_state(tmp_hash_state);
+
+    write_dump_magic(&io, DUMP_MAGIC_BLOCK_HASH);
+    io.sdb_write(range_hash_out, sizeof(*range_hash_out), 1, &io);
 
     selva_io_end(&io, nullptr);
     block->status = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
@@ -1095,11 +1099,33 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 
     if (io.sdb_version > db->sdb_version) {
         selva_io_errlog(&io, "SDB version mismatch! common: %"PRIu32" block: %"PRIu32, db->sdb_version, io.sdb_version);
-        return SELVA_ENOTSUP;
+        err = SELVA_ENOTSUP;
+        goto fail;
     }
 
     err = load_type(&io, db, te);
-    selva_io_end(&io, nullptr);
+    if (err) {
+        goto fail;
+    }
 
+    if (io.sdb_version >= 9) {
+        selva_hash128_t block_hash;
+
+        if (!read_dump_magic(&io, DUMP_MAGIC_BLOCK_HASH)) {
+            selva_io_errlog(&io, "Invalid block hash magic");
+            err = SELVA_EINVAL;
+            goto fail;
+        }
+
+        if (io.raw_read(&io, &block_hash, sizeof(block_hash)) != 1) {
+            err = SELVA_EINVAL;
+            goto fail;
+        }
+
+        /* TODO Do something with block_hash */
+    }
+
+fail:
+    selva_io_end(&io, nullptr);
     return err;
 }
