@@ -89,7 +89,7 @@ export const updateTypeDefs = (schema: SchemaOut) => {
 
               if (!schemaTypesParsed[edgeTypeName]) {
                 // make it
-                console.log('have to make edge type')
+                // console.log('have to make edge type')
                 //prop.edges, schema.types
 
                 // const type = schema.types[edgeTypeName]
