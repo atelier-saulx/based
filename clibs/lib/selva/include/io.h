@@ -36,8 +36,11 @@
  *
  * **8**
  * - Add support for default value in SELVA_FIELD_TYPE_STRING, SELVA_FIELD_TYPE_STRING, and SELVA_FIELD_TYPE_COLVEC
+ *
+ * **9**
+ * - Writelog in common.sdb
  */
-#define SELVA_SDB_VERSION 8
+#define SELVA_SDB_VERSION 9
 
 #define SELVA_IO_HASH_SIZE 16
 

@@ -63,6 +63,14 @@ SELVA_EXPORT
 int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, selva_hash128_t *range_hash_out) __attribute__((nonnull));
 
 /**
+ * Save the whole database.
+ * - common.sdb
+ * - Block dumps of all types
+ */
+SELVA_EXPORT
+int selva_dump_save_all(struct SelvaDb *db, struct selva_dump_common_data *com);
+
+/**
  * **Usage:**
  * ```c
  * struct SelvaDb *db = selva_db_create();
@@ -75,6 +83,9 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
 
 SELVA_EXPORT
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
+
+SELVA_EXPORT
+int selva_dump_load_all(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
 
 /**
  * Find a type by type id.

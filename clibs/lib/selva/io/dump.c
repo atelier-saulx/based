@@ -31,12 +31,16 @@
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0
 #define PRINT_SAVE_TIME 0
 
+#define COMMON_SDB "common.sdb"
+#define BLOCK_SDB_FMT "%" PRIu16 "_%" PRIu32 "_%" PRIu32 ".sdb"
+
 /*
  * Pick 32-bit primes for these.
  */
 #define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
 #define DUMP_MAGIC_EXPIRE       2147483647 /* common.sdb */
 #define DUMP_MAGIC_COMMON_META  2974848157 /* common.sdb */
+#define DUMP_MAGIC_BLOCKS       2898966349 /* common.sdb */
 #define DUMP_MAGIC_TYPES        3550908863 /* [block].sdb */
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
@@ -472,6 +476,111 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 #endif
 
     return 0;
+}
+
+static int save_all_blocks(struct SelvaDb *db, struct selva_io *io_common)
+{
+    sdb_arr_len_t nr_types = db->types.count;
+    struct SelvaTypeEntry *te;
+
+    write_dump_magic(io_common, DUMP_MAGIC_BLOCKS);
+    io_common->sdb_write(&nr_types, sizeof(nr_types), 1, io_common);
+
+    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
+        struct SelvaTypeBlocks *blocks = te->blocks;
+        sdb_arr_len_t nr_blocks = 0;
+
+        /*
+         * Count active blocks in this type.
+         */
+        for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
+            struct SelvaTypeBlock *block = &blocks->blocks[block_i];
+            if (block->status != SELVA_TYPE_BLOCK_STATUS_EMPTY) {
+                nr_blocks++;
+            }
+        }
+
+        /* Save the type id. */
+        io_common->sdb_write(&te->type, sizeof(te->type), 1, io_common);
+
+        /* Save the block count. */
+        io_common->sdb_write(&nr_blocks, sizeof(nr_blocks), 1, io_common);
+
+        /*
+         * Save each active block.
+         */
+        for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
+            struct SelvaTypeBlock *block = &blocks->blocks[block_i];
+
+            if (block->status == SELVA_TYPE_BLOCK_STATUS_EMPTY) {
+                continue;
+            }
+
+            selva_hash128_t block_hash;
+            constexpr enum SelvaTypeBlockStatus sm = SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
+            if ((block->status & sm) == sm) {
+                char filename[120];
+                node_id_t block_capacity = blocks->block_capacity;
+                node_id_t start = block_i * block_capacity + 1;
+                node_id_t end = start + block_capacity - 1;
+                int err;
+
+                snprintf(filename, sizeof(filename), BLOCK_SDB_FMT, te->type, start, end);
+                err = selva_dump_save_block(db, te, filename, start, &block_hash);
+                if (err) {
+                    return err;
+                }
+
+                /* The block is no longer dirty */
+                block->status ^= SELVA_TYPE_BLOCK_STATUS_DIRTY;
+            } else if (block->status & SELVA_TYPE_BLOCK_STATUS_INMEM) {
+                selva_node_block_hash2(db, te, block, &block_hash);
+            } else { /* Block not in memory */
+                /* TODO get block_hash somehow. */
+            }
+
+            /*
+             * Add to the list of blocks inuse.
+             */
+            io_common->sdb_write(&block_i, sizeof(block_i), 1, io_common);
+            io_common->sdb_write(&block_hash, sizeof(block_hash), 1, io_common);
+        }
+    }
+
+    return 0;
+}
+
+int selva_dump_save_all(struct SelvaDb *db, struct selva_dump_common_data *com)
+{
+    struct selva_io io = {
+        .errlog_buf = com->errlog_buf,
+        .errlog_left = com->errlog_size,
+    };
+    int err;
+
+    err = selva_io_init_file(&io, COMMON_SDB, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    /*
+     * Save all the common data here that can't be split up.
+     */
+    save_schema(&io, db);
+    save_expire(&io, db);
+    save_common_meta(&io, com->meta_data, com->meta_len);
+
+    db->sdb_version = io.sdb_version;
+
+    /*
+     * Save all dirty blocks in separate dumps and
+     * list all block in use in this dump.
+     */
+    err = save_all_blocks(db, &io);
+
+    selva_io_end(&io, nullptr);
+
+    return err;
 }
 
 __attribute__((warn_unused_result))
@@ -1099,6 +1208,95 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     }
 
     err = load_type(&io, db, te);
+    selva_io_end(&io, nullptr);
+
+    return err;
+}
+
+static int load_all_blocks(struct SelvaDb *db, struct selva_io *io_common)
+{
+    sdb_arr_len_t nr_types = 0;
+
+    if (!read_dump_magic(io_common, DUMP_MAGIC_BLOCKS)) {
+        selva_io_errlog(io_common, "Invalid blocks magic");
+        return SELVA_EINVAL;
+    }
+
+    if (io_common->sdb_read(&nr_types, sizeof(nr_types), 1, io_common) != 1) {
+        selva_io_errlog(io_common, "nr_types");
+        return SELVA_EINVAL;
+    }
+
+    for (block_id_t block_i = 0; block_i < nr_types; block_i++) {
+        node_type_t type;
+        struct SelvaTypeEntry *te;
+        sdb_arr_len_t nr_blocks = 0;
+
+        if (io_common->sdb_read(&type, sizeof(type), 1, io_common) != 1) {
+            selva_io_errlog(io_common, "type");
+            return SELVA_EINVAL;
+        }
+        te = selva_get_type_by_index(db, type);
+        if (!te) {
+            selva_io_errlog(io_common, "type not found: %u", type);
+            return SELVA_ENOENT;
+        }
+
+        if (io_common->sdb_read(&nr_blocks, sizeof(nr_blocks), 1, io_common) != 1) {
+            selva_io_errlog(io_common, "block count");
+            return SELVA_EINVAL;
+        }
+
+        for (sdb_arr_len_t i = 0; i < nr_blocks; i++) {
+            char filename[120];
+            block_id_t block_i;
+            int err;
+
+            io_common->sdb_read(&block_i, sizeof(block_i), 1, io_common);
+            node_id_t block_capacity = te->blocks->block_capacity;
+            node_id_t start = block_i * block_capacity + 1;
+            node_id_t end = start + block_capacity - 1;
+
+            snprintf(filename, sizeof(filename), BLOCK_SDB_FMT, type, start, end);
+
+            err = selva_dump_load_block(db, te, filename, io_common->errlog_buf, io_common->errlog_left);
+            if (err) {
+                /*
+                 * Note that errlog can't be updated here because we don't
+                 * know the new offset.
+                 */
+                return err;
+            }
+        }
+    }
+
+    return 0;
+}
+
+int selva_dump_load_all(struct SelvaDb *db, struct selva_dump_common_data *com)
+{
+    struct selva_io io = {
+        .errlog_buf = com->errlog_buf,
+        .errlog_left = com->errlog_size,
+    };
+    int err;
+
+    err = selva_io_init_file(&io, COMMON_SDB, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    if (err) {
+        return err;
+    }
+
+    db->sdb_version = io.sdb_version;
+
+    err = load_schema(&io, db);
+    err = err ?: load_expire(&io, db);
+    if (io.sdb_version >= 3) {
+        err = err ?: load_common_meta(&io, &com->meta_data, &com->meta_len);
+    }
+
+    /* TODO How to share errlog? */
+    err = load_all_blocks(db, &io);
+
     selva_io_end(&io, nullptr);
 
     return err;
