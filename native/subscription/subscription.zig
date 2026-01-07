@@ -43,9 +43,9 @@ pub fn subscribe(
 
     std.debug.print("SUBID {any} {any} \n", .{ subId, queryType });
 
-    // get query as well
+    // prob need to use 8 bytes for sub id...
 
-    // --
+    // get query as well
 
     // Id.addIdSubscription(
     //     dbCtx,
