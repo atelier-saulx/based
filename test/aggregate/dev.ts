@@ -53,6 +53,9 @@ await test('kev', async (t) => {
       await db.query('trip').sum('distance').count().avg('distance').get()
     ).debug(),
   )
+  console.log(
+    (await db.query('trip').count().sum('distance', 'rate').get()).debug(),
+  )
 
   await db.stop()
 })
