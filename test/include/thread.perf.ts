@@ -162,7 +162,6 @@ await test('default', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => db.stop(true))
-  //t.after(() => t.backup(db))
 
   await db.setSchema({
     locales: { en: true, de: true },
