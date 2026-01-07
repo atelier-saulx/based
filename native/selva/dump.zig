@@ -47,21 +47,6 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
     utils.byteCopy(resp, &hash, 10);
 }
 
-pub fn saveAll(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
-    const id = read(u32, q, 0);
-    const resp = try thread.query.result(4, id, op);
-    var com: selva.selva_dump_common_data = .{
-        .meta_data = ctx.ids.ptr,
-        .meta_len = ctx.ids.len * @sizeOf(u32),
-        .errlog_buf = null,
-        .errlog_size = 0,
-    };
-    var err: c_int = undefined;
-
-    err = selva.selva_dump_save_all(ctx.selva, &com);
-    utils.write(resp, err, 0);
-}
-
 pub fn loadCommon(
     thread: *Thread.Thread,
     dbCtx: *DbCtx,
