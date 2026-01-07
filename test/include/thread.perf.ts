@@ -75,8 +75,8 @@ await test('include', async (t) => {
   for (let i = 0; i < 2; i++) {
     todos.push(
       await db.create('todo', {
-        name: 'a',
-        nr: rand(0, 1e5),
+        name: i % 2 ? 'b' : 'a',
+        nr: rand(0, 10),
       }),
     )
   }
@@ -100,8 +100,8 @@ await test('include', async (t) => {
   // now include edge
   await db
     .query('user')
-    // .include('currentTodo')
-    .include('nr', 'currentTodo.id', 'currentTodo.$derp')
+    .include('currentTodo')
+    // .include('nr', 'currentTodo.id', 'currentTodo.$derp')
     .get()
     .inspect()
 
@@ -109,6 +109,7 @@ await test('include', async (t) => {
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
+  console.log('SUBSCRIBE')
   db.query('user', mrX)
     .include('nr')
     .subscribe((d) => {
@@ -135,8 +136,6 @@ await test('include', async (t) => {
             .include('id')
             .include('name')
             .range(0, 1e5 + i)
-            // .sort(x[i % x.length])
-
             .get(),
           // .inspect(),
         )

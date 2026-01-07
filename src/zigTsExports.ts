@@ -44,7 +44,7 @@ export const OpType = {
   idFilter: 9,
   referenceEdge: 10,
   subscribe: 11,
-  unsubscribe: 12,
+  unsubscribe: 14,
   blockHash: 42,
   saveBlock: 67,
   saveCommon: 69,
@@ -69,7 +69,7 @@ export const OpTypeInverse = {
   9: 'idFilter',
   10: 'referenceEdge',
   11: 'subscribe',
-  12: 'unsubscribe',
+  14: 'unsubscribe',
   42: 'blockHash',
   67: 'saveBlock',
   69: 'saveCommon',
@@ -1804,17 +1804,20 @@ export const createIncludeResponseMeta = (header: IncludeResponseMeta): Uint8Arr
 }
 
 export type SubscriptionHeader = {
+  op: OpTypeEnum
   fieldsLen: number
   partialLen: number
 }
 
-export const SubscriptionHeaderByteSize = 2
+export const SubscriptionHeaderByteSize = 3
 
 export const writeSubscriptionHeader = (
   buf: Uint8Array,
   header: SubscriptionHeader,
   offset: number,
 ): number => {
+  buf[offset] = header.op
+  offset += 1
   buf[offset] = header.fieldsLen
   offset += 1
   buf[offset] = header.partialLen
@@ -1823,11 +1826,14 @@ export const writeSubscriptionHeader = (
 }
 
 export const writeSubscriptionHeaderProps = {
-  fieldsLen: (buf: Uint8Array, value: number, offset: number) => {
+  op: (buf: Uint8Array, value: OpTypeEnum, offset: number) => {
     buf[offset] = value
   },
-  partialLen: (buf: Uint8Array, value: number, offset: number) => {
+  fieldsLen: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 1] = value
+  },
+  partialLen: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 2] = value
   },
 }
 
@@ -1836,18 +1842,22 @@ export const readSubscriptionHeader = (
   offset: number,
 ): SubscriptionHeader => {
   const value: SubscriptionHeader = {
-    fieldsLen: buf[offset],
-    partialLen: buf[offset + 1],
+    op: (buf[offset]) as OpTypeEnum,
+    fieldsLen: buf[offset + 1],
+    partialLen: buf[offset + 2],
   }
   return value
 }
 
 export const readSubscriptionHeaderProps = {
+  op: (buf: Uint8Array, offset: number): OpTypeEnum => {
+    return (buf[offset]) as OpTypeEnum
+  },
   fieldsLen: (buf: Uint8Array, offset: number): number => {
-    return buf[offset]
+    return buf[offset + 1]
   },
   partialLen: (buf: Uint8Array, offset: number): number => {
-    return buf[offset + 1]
+    return buf[offset + 2]
   },
 }
 

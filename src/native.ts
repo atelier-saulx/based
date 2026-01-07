@@ -26,10 +26,6 @@ const native = {
     return db.intFromExternal(external)
   },
 
-  subscribe: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
-    return db.subscribe(dbCtx, q)
-  },
-
   query: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
     return db.query(dbCtx, q)
   },
