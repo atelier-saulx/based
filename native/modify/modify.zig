@@ -148,6 +148,173 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
     return prevNodeId;
 }
 
+pub fn modifyWrite(ctx: *ModifyCtx) !void {
+    while (ctx.index < ctx.batch.len) {
+        const op: t.ModOp = @enumFromInt(ctx.batch[ctx.index]);
+        const operation: []u8 = ctx.batch[ctx.index + 1 ..];
+        switch (op) {
+            .padding => {
+                ctx.index += 1;
+            },
+            .switchProp => {
+                ctx.field = operation[0];
+                ctx.index += 3;
+                ctx.fieldSchema = try Schema.getFieldSchema(ctx.typeEntry.?, ctx.field);
+                ctx.fieldType = @enumFromInt(operation[1]);
+                // TODO move this logic to the actual handlers (createProp, updateProp, etc)
+                if (ctx.fieldType == t.PropType.reference) {
+                    ctx.offset = 1;
+                } else if (ctx.fieldType == t.PropType.cardinality) {
+                    ctx.offset = 7;
+                } else {
+                    ctx.offset = 5;
+                }
+                if (ctx.field != 0) {
+                    ctx.currentSortIndex = dbSort.getSortIndex(
+                        ctx.typeSortIndex,
+                        ctx.field,
+                        0,
+                        t.LangCode.none,
+                    );
+                } else {
+                    ctx.currentSortIndex = null;
+                }
+            },
+            .deleteNode => {
+                if (ctx.node) |node| {
+                    subs.stage(ctx, subs.Op.deleteNode);
+                    Node.deleteNode(ctx, ctx.typeEntry.?, node) catch {};
+                    ctx.node = null;
+                }
+                ctx.index += 1;
+            },
+            .deleteTextField => {
+                const lang: t.LangCode = @enumFromInt(operation[0]);
+                deleteTextLang(ctx, lang);
+                ctx.index += 2;
+            },
+            .switchIdCreate => {
+                writeoutPrevNodeId(ctx, &ctx.resultLen, ctx.id, ctx.result);
+                try newNode(ctx);
+                ctx.index += 1;
+            },
+            .switchIdCreateRing => {
+                writeoutPrevNodeId(ctx, &ctx.resultLen, ctx.id, ctx.result);
+                const maxNodeId = read(u32, operation, 0);
+                try newNodeRing(ctx, maxNodeId);
+                ctx.index += 5;
+            },
+            .switchIdCreateUnsafe => {
+                writeoutPrevNodeId(ctx, &ctx.resultLen, ctx.id, ctx.result);
+                ctx.id = read(u32, operation, 0);
+                if (ctx.id > ctx.db.ids[ctx.typeId - 1]) {
+                    ctx.db.ids[ctx.typeId - 1] = ctx.id;
+                }
+                ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, ctx.id);
+                Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+                ctx.index += 5;
+            },
+            .switchIdUpdate => {
+                const id = read(u32, operation, 0);
+                if (id != 0) {
+                    writeoutPrevNodeId(ctx, &ctx.resultLen, ctx.id, ctx.result);
+                    // if its zero then we don't want to switch (for upsert)
+                    ctx.id = id;
+                    ctx.node = Node.getNode(ctx.typeEntry.?, ctx.id);
+                    if (ctx.node == null) {
+                        ctx.err = errors.ClientError.nx;
+                    } else {
+                        try subs.checkId(ctx);
+                        // It would be even better if we'd mark it dirty only in the case
+                        // something was actually changed.
+                        Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+                    }
+                }
+                ctx.index += 5;
+            },
+            .switchEdgeId => {
+                const srcId = read(u32, operation, 0);
+                const dstId = read(u32, operation, 4);
+                const refField = read(u8, operation, 8);
+                const prevNodeId = try switchEdgeId(ctx, srcId, dstId, refField);
+                writeoutPrevNodeId(ctx, &ctx.resultLen, prevNodeId, ctx.result);
+                ctx.index += 10;
+            },
+            .upsert => {
+                const writeIndex = read(u32, operation, 0);
+                const updateIndex = read(u32, operation, 4);
+                var nextIndex: u32 = writeIndex;
+                var j: u32 = 8;
+                while (j < writeIndex) {
+                    const prop = read(u8, operation, j);
+                    const len = read(u32, operation, j + 1);
+                    const val = operation[j + 5 .. j + 5 + len];
+                    if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                        write(operation, Node.getNodeId(node), updateIndex + 1);
+                        nextIndex = updateIndex;
+                        break;
+                    }
+                    j = j + 5 + len;
+                }
+                ctx.index += nextIndex + 1;
+            },
+            .insert => {
+                const writeIndex = read(u32, operation, 0);
+                const endIndex = read(u32, operation, 4);
+                var nextIndex: u32 = writeIndex;
+                var j: u32 = 8;
+                while (j < writeIndex) {
+                    const prop = read(u8, operation, j);
+                    const len = read(u32, operation, j + 1);
+                    const val = operation[j + 5 .. j + 5 + len];
+                    if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+                        const id = Node.getNodeId(node);
+                        write(ctx.batch, id, ctx.resultLen);
+                        write(ctx.batch, errors.ClientError.null, ctx.resultLen + 4);
+                        ctx.resultLen += 5;
+                        nextIndex = endIndex;
+                        break;
+                    }
+                    j = j + 5 + len;
+                }
+                ctx.index += nextIndex + 1;
+            },
+            .switchType => {
+                try switchType(ctx, read(u16, operation, 0));
+                ctx.index += 3;
+            },
+            .addEmptySort => {
+                ctx.index += try addEmptyToSortIndex(ctx, operation) + 1;
+            },
+            .addEmptySortText => {
+                ctx.index += try addEmptyTextToSortIndex(ctx, operation) + 1;
+            },
+            .delete => {
+                ctx.index += try deleteField(ctx) + 1;
+            },
+            .deleteSortIndex => {
+                ctx.index += try deleteFieldSortIndex(ctx) + 1;
+            },
+            .createProp => {
+                ctx.index += try createField(ctx, operation) + ctx.offset;
+            },
+            .updateProp => {
+                ctx.index += try updateField(ctx, operation) + ctx.offset;
+            },
+            .updatePartial => {
+                ctx.index += try updatePartialField(ctx, operation) + ctx.offset;
+            },
+            .increment, .decrement => {
+                ctx.index += try increment(ctx, operation, op) + 1;
+            },
+            .expire => {
+                Node.expireNode(ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
+                ctx.index += 5;
+            },
+        }
+    }
+}
+
 pub fn modify(
     // comptime isSubscriptionWorker: bool,
     thread: *Thread.Thread,
@@ -155,13 +322,19 @@ pub fn modify(
     dbCtx: *DbCtx,
     opType: t.OpType,
 ) !void {
-    // utils.readNext(t.QueryDefaultHeader, q, &index);
-    // var i/: usize = 0;
     const modifyId = read(u32, batch, 0);
     const nodeCount = read(u32, batch, 13);
-    var i: usize = 13 + 4; // 5 for id + type and 8 for schema checksum + 4 for operation count
-    // currentOffset chek threadCtx.current
+    // var offset: u32 = 0;
+    const expectedLen = 4 + nodeCount * 5; // len(4)+res(5)n
+    // const result = try thread.modify.result(expectedLen, modifyId, opType);
+    // var resultLen: u32 = 4; // reserve for writing result len
+
+    // var i: usize = 13 + 4; // 5 for id + type and 8 for schema checksum + 4 for operation count
     var ctx: ModifyCtx = .{
+        .index = 13 + 4,
+        .offset = 0,
+        .result = try thread.modify.result(expectedLen, modifyId, opType),
+        .resultLen = 4,
         .field = undefined,
         .typeId = 0,
         .id = 0,
@@ -181,184 +354,179 @@ pub fn modify(
     };
 
     defer ctx.dirtyRanges.deinit();
-    var offset: u32 = 0;
-    const expectedLen = 4 + nodeCount * 5; // len(4)+res(5)n
+    try modifyWrite(&ctx);
 
-    const result = try thread.modify.result(expectedLen, modifyId, opType);
-
-    var resultLen: u32 = 4; // reserve for writing result len
-
-    while (i < batch.len) {
-        const op: t.ModOp = @enumFromInt(batch[i]);
-        const operation: []u8 = batch[i + 1 ..];
-        switch (op) {
-            .padding => {
-                i = i + 1;
-            },
-            .switchProp => {
-                ctx.field = operation[0];
-                i = i + 3;
-                ctx.fieldSchema = try Schema.getFieldSchema(ctx.typeEntry.?, ctx.field);
-                ctx.fieldType = @enumFromInt(operation[1]);
-                // TODO move this logic to the actual handlers (createProp, updateProp, etc)
-                if (ctx.fieldType == t.PropType.reference) {
-                    offset = 1;
-                } else if (ctx.fieldType == t.PropType.cardinality) {
-                    offset = 7;
-                } else {
-                    offset = 5;
-                }
-                if (ctx.field != 0) {
-                    ctx.currentSortIndex = dbSort.getSortIndex(
-                        ctx.typeSortIndex,
-                        ctx.field,
-                        0,
-                        t.LangCode.none,
-                    );
-                } else {
-                    ctx.currentSortIndex = null;
-                }
-            },
-            .deleteNode => {
-                if (ctx.node) |node| {
-                    subs.stage(&ctx, subs.Op.deleteNode);
-                    Node.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
-                    ctx.node = null;
-                }
-                i = i + 1;
-            },
-            .deleteTextField => {
-                const lang: t.LangCode = @enumFromInt(operation[0]);
-                deleteTextLang(&ctx, lang);
-                i = i + 2;
-            },
-            .switchIdCreate => {
-                writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
-                try newNode(&ctx);
-                i = i + 1;
-            },
-            .switchIdCreateRing => {
-                writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
-                const maxNodeId = read(u32, operation, 0);
-                try newNodeRing(&ctx, maxNodeId);
-                i = i + 5;
-            },
-            .switchIdCreateUnsafe => {
-                writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
-                ctx.id = read(u32, operation, 0);
-                if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
-                    dbCtx.ids[ctx.typeId - 1] = ctx.id;
-                }
-                ctx.node = try Node.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
-                Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
-                i = i + 5;
-            },
-            .switchIdUpdate => {
-                const id = read(u32, operation, 0);
-                if (id != 0) {
-                    writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
-                    // if its zero then we don't want to switch (for upsert)
-                    ctx.id = id;
-                    ctx.node = Node.getNode(ctx.typeEntry.?, ctx.id);
-                    if (ctx.node == null) {
-                        ctx.err = errors.ClientError.nx;
-                    } else {
-                        try subs.checkId(&ctx);
-                        // It would be even better if we'd mark it dirty only in the case
-                        // something was actually changed.
-                        Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
-                    }
-                }
-                i = i + 5;
-            },
-            .switchEdgeId => {
-                const srcId = read(u32, operation, 0);
-                const dstId = read(u32, operation, 4);
-                const refField = read(u8, operation, 8);
-                const prevNodeId = try switchEdgeId(&ctx, srcId, dstId, refField);
-                writeoutPrevNodeId(&ctx, &resultLen, prevNodeId, result);
-                i = i + 10;
-            },
-            .upsert => {
-                const writeIndex = read(u32, operation, 0);
-                const updateIndex = read(u32, operation, 4);
-                var nextIndex: u32 = writeIndex;
-                var j: u32 = 8;
-                while (j < writeIndex) {
-                    const prop = read(u8, operation, j);
-                    const len = read(u32, operation, j + 1);
-                    const val = operation[j + 5 .. j + 5 + len];
-                    if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
-                        write(operation, Node.getNodeId(node), updateIndex + 1);
-                        nextIndex = updateIndex;
-                        break;
-                    }
-                    j = j + 5 + len;
-                }
-                i = i + nextIndex + 1;
-            },
-            .insert => {
-                const writeIndex = read(u32, operation, 0);
-                const endIndex = read(u32, operation, 4);
-                var nextIndex: u32 = writeIndex;
-                var j: u32 = 8;
-                while (j < writeIndex) {
-                    const prop = read(u8, operation, j);
-                    const len = read(u32, operation, j + 1);
-                    const val = operation[j + 5 .. j + 5 + len];
-                    if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
-                        const id = Node.getNodeId(node);
-                        write(batch, id, resultLen);
-                        write(batch, errors.ClientError.null, resultLen + 4);
-                        resultLen += 5;
-                        nextIndex = endIndex;
-                        break;
-                    }
-                    j = j + 5 + len;
-                }
-                i = i + nextIndex + 1;
-            },
-            .switchType => {
-                try switchType(&ctx, read(u16, operation, 0));
-                i = i + 3;
-            },
-            .addEmptySort => {
-                i += try addEmptyToSortIndex(&ctx, operation) + 1;
-            },
-            .addEmptySortText => {
-                i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
-            },
-            .delete => {
-                i += try deleteField(&ctx) + 1;
-            },
-            .deleteSortIndex => {
-                i += try deleteFieldSortIndex(&ctx) + 1;
-            },
-            .createProp => {
-                i += try createField(&ctx, operation) + offset;
-            },
-            .updateProp => {
-                i += try updateField(&ctx, operation) + offset;
-            },
-            .updatePartial => {
-                i += try updatePartialField(&ctx, operation) + offset;
-            },
-            .increment, .decrement => {
-                i += try increment(&ctx, operation, op) + 1;
-            },
-            .expire => {
-                Node.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
-                i += 5;
-            },
-        }
-    }
+    // while (i < batch.len) {
+    //     const op: t.ModOp = @enumFromInt(batch[i]);
+    //     const operation: []u8 = batch[i + 1 ..];
+    //     switch (op) {
+    //         .padding => {
+    //             i = i + 1;
+    //         },
+    //         .switchProp => {
+    //             ctx.field = operation[0];
+    //             i = i + 3;
+    //             ctx.fieldSchema = try Schema.getFieldSchema(ctx.typeEntry.?, ctx.field);
+    //             ctx.fieldType = @enumFromInt(operation[1]);
+    //             // TODO move this logic to the actual handlers (createProp, updateProp, etc)
+    //             if (ctx.fieldType == t.PropType.reference) {
+    //                 offset = 1;
+    //             } else if (ctx.fieldType == t.PropType.cardinality) {
+    //                 offset = 7;
+    //             } else {
+    //                 offset = 5;
+    //             }
+    //             if (ctx.field != 0) {
+    //                 ctx.currentSortIndex = dbSort.getSortIndex(
+    //                     ctx.typeSortIndex,
+    //                     ctx.field,
+    //                     0,
+    //                     t.LangCode.none,
+    //                 );
+    //             } else {
+    //                 ctx.currentSortIndex = null;
+    //             }
+    //         },
+    //         .deleteNode => {
+    //             if (ctx.node) |node| {
+    //                 subs.stage(&ctx, subs.Op.deleteNode);
+    //                 Node.deleteNode(&ctx, ctx.typeEntry.?, node) catch {};
+    //                 ctx.node = null;
+    //             }
+    //             i = i + 1;
+    //         },
+    //         .deleteTextField => {
+    //             const lang: t.LangCode = @enumFromInt(operation[0]);
+    //             deleteTextLang(&ctx, lang);
+    //             i = i + 2;
+    //         },
+    //         .switchIdCreate => {
+    //             writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
+    //             try newNode(&ctx);
+    //             i = i + 1;
+    //         },
+    //         .switchIdCreateRing => {
+    //             writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
+    //             const maxNodeId = read(u32, operation, 0);
+    //             try newNodeRing(&ctx, maxNodeId);
+    //             i = i + 5;
+    //         },
+    //         .switchIdCreateUnsafe => {
+    //             writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
+    //             ctx.id = read(u32, operation, 0);
+    //             if (ctx.id > dbCtx.ids[ctx.typeId - 1]) {
+    //                 dbCtx.ids[ctx.typeId - 1] = ctx.id;
+    //             }
+    //             ctx.node = try Node.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
+    //             Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+    //             i = i + 5;
+    //         },
+    //         .switchIdUpdate => {
+    //             const id = read(u32, operation, 0);
+    //             if (id != 0) {
+    //                 writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
+    //                 // if its zero then we don't want to switch (for upsert)
+    //                 ctx.id = id;
+    //                 ctx.node = Node.getNode(ctx.typeEntry.?, ctx.id);
+    //                 if (ctx.node == null) {
+    //                     ctx.err = errors.ClientError.nx;
+    //                 } else {
+    //                     try subs.checkId(&ctx);
+    //                     // It would be even better if we'd mark it dirty only in the case
+    //                     // something was actually changed.
+    //                     Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+    //                 }
+    //             }
+    //             i = i + 5;
+    //         },
+    //         .switchEdgeId => {
+    //             const srcId = read(u32, operation, 0);
+    //             const dstId = read(u32, operation, 4);
+    //             const refField = read(u8, operation, 8);
+    //             const prevNodeId = try switchEdgeId(&ctx, srcId, dstId, refField);
+    //             writeoutPrevNodeId(&ctx, &resultLen, prevNodeId, result);
+    //             i = i + 10;
+    //         },
+    //         .upsert => {
+    //             const writeIndex = read(u32, operation, 0);
+    //             const updateIndex = read(u32, operation, 4);
+    //             var nextIndex: u32 = writeIndex;
+    //             var j: u32 = 8;
+    //             while (j < writeIndex) {
+    //                 const prop = read(u8, operation, j);
+    //                 const len = read(u32, operation, j + 1);
+    //                 const val = operation[j + 5 .. j + 5 + len];
+    //                 if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+    //                     write(operation, Node.getNodeId(node), updateIndex + 1);
+    //                     nextIndex = updateIndex;
+    //                     break;
+    //                 }
+    //                 j = j + 5 + len;
+    //             }
+    //             i = i + nextIndex + 1;
+    //         },
+    //         .insert => {
+    //             const writeIndex = read(u32, operation, 0);
+    //             const endIndex = read(u32, operation, 4);
+    //             var nextIndex: u32 = writeIndex;
+    //             var j: u32 = 8;
+    //             while (j < writeIndex) {
+    //                 const prop = read(u8, operation, j);
+    //                 const len = read(u32, operation, j + 1);
+    //                 const val = operation[j + 5 .. j + 5 + len];
+    //                 if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
+    //                     const id = Node.getNodeId(node);
+    //                     write(batch, id, resultLen);
+    //                     write(batch, errors.ClientError.null, resultLen + 4);
+    //                     resultLen += 5;
+    //                     nextIndex = endIndex;
+    //                     break;
+    //                 }
+    //                 j = j + 5 + len;
+    //             }
+    //             i = i + nextIndex + 1;
+    //         },
+    //         .switchType => {
+    //             try switchType(&ctx, read(u16, operation, 0));
+    //             i = i + 3;
+    //         },
+    //         .addEmptySort => {
+    //             i += try addEmptyToSortIndex(&ctx, operation) + 1;
+    //         },
+    //         .addEmptySortText => {
+    //             i += try addEmptyTextToSortIndex(&ctx, operation) + 1;
+    //         },
+    //         .delete => {
+    //             i += try deleteField(&ctx) + 1;
+    //         },
+    //         .deleteSortIndex => {
+    //             i += try deleteFieldSortIndex(&ctx) + 1;
+    //         },
+    //         .createProp => {
+    //             i += try createField(&ctx, operation) + offset;
+    //         },
+    //         .updateProp => {
+    //             i += try updateField(&ctx, operation) + offset;
+    //         },
+    //         .updatePartial => {
+    //             i += try updatePartialField(&ctx, operation) + offset;
+    //         },
+    //         .increment, .decrement => {
+    //             i += try increment(&ctx, operation, op) + 1;
+    //         },
+    //         .expire => {
+    //             Node.expireNode(&ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, operation, 0));
+    //             i += 5;
+    //         },
+    //     }
+    // }
 
     Node.expire(&ctx);
-    writeoutPrevNodeId(&ctx, &resultLen, ctx.id, result);
-    write(result, resultLen, 0);
+    writeoutPrevNodeId(&ctx, &ctx.resultLen, ctx.id, ctx.result);
+    write(ctx.result, ctx.resultLen, 0);
 
-    if (resultLen < expectedLen) {
-        @memset(result[resultLen..expectedLen], 0);
+    if (ctx.resultLen < expectedLen) {
+        @memset(ctx.result[ctx.resultLen..expectedLen], 0);
     }
 
     const newDirtyRanges = ctx.dirtyRanges.values();

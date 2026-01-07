@@ -14,14 +14,8 @@ import {
   NOEDGE_INDEX_TMPID,
   NOEDGE_NOINDEX_REALID,
   NOEDGE_NOINDEX_TMPID,
-  REF_OP_DELETE,
-  REF_OP_OVERWRITE,
-  REF_OP_PUT_ADD,
-  REF_OP_PUT_OVERWRITE,
-  REF_OP_UPDATE,
-  RefOp,
 } from '../types.js'
-import { ModOp } from '../../../zigTsExports.js'
+import { ModOp, RefOp, type RefOpEnum } from '../../../zigTsExports.js'
 import type { PropDef } from '../../../schema/index.js'
 import { writeUint32 } from '../../../utils/uint8.js'
 
@@ -60,16 +54,13 @@ const putReferences = (
   ctx: Ctx,
   def: PropDef,
   val: any,
-  refOp: RefOp,
+  refOp: RefOpEnum,
 ): number => {
   reserve(ctx, PROP_CURSOR_SIZE + 6 + val.length * 4)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
   writeU32(ctx, val.length * 4 + 1)
-  writeU8(
-    ctx,
-    refOp === REF_OP_OVERWRITE ? REF_OP_PUT_OVERWRITE : REF_OP_PUT_ADD,
-  )
+  writeU8(ctx, refOp === RefOp.overwrite ? RefOp.putOverwrite : RefOp.putAdd)
   let index = 0
   for (const id of val) {
     if (typeof id === 'number') {
@@ -98,7 +89,7 @@ const updateReferences = (
   val: any[],
   index: number,
   length: number,
-  refOp: RefOp,
+  refOp: RefOpEnum,
 ) => {
   reserve(ctx, PROP_CURSOR_SIZE + 6 + val.length * 9)
   writePropCursor(ctx, def)
@@ -106,7 +97,7 @@ const updateReferences = (
   const sizeIndex = ctx.index
   ctx.index += 4
   const start = ctx.index
-  writeU8(ctx, index > 0 ? REF_OP_UPDATE : refOp)
+  writeU8(ctx, index > 0 ? RefOp.add : refOp)
   writeU32(ctx, length)
   while (length--) {
     let id = val[index++]
@@ -176,7 +167,7 @@ const putOrUpdateReferences = (
   ctx: Ctx,
   def: PropDef,
   val: any,
-  refOp: RefOp,
+  refOp: RefOpEnum,
 ) => {
   if (!val.length) {
     clearReferences(ctx, def)
@@ -242,7 +233,7 @@ const deleteReferences = (ctx: Ctx, def: PropDef, val: any[]) => {
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
   writeU32(ctx, size)
-  writeU8(ctx, REF_OP_DELETE)
+  writeU8(ctx, RefOp.delete)
   for (const id of val) {
     if (typeof id === 'number') {
       validate(id, def)
@@ -278,7 +269,7 @@ export const writeReferences = (ctx: Ctx, def: PropDef, val: any) => {
   }
 
   if (Array.isArray(val)) {
-    putOrUpdateReferences(ctx, def, val, REF_OP_OVERWRITE)
+    putOrUpdateReferences(ctx, def, val, RefOp.overwrite)
     return
   }
 
@@ -288,7 +279,7 @@ export const writeReferences = (ctx: Ctx, def: PropDef, val: any) => {
       throw [def, val]
     }
     if (key === 'update' || key === 'add') {
-      putOrUpdateReferences(ctx, def, arr, REF_OP_UPDATE)
+      putOrUpdateReferences(ctx, def, arr, RefOp.add)
       continue
     }
     if (key === 'delete') {

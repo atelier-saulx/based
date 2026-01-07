@@ -26,10 +26,10 @@ export const EDGE_NOINDEX_TMPID = 5
 export const EDGE_INDEX_TMPID = 6
 export const NOEDGE_INDEX_TMPID = 7
 
-export const REF_OP_OVERWRITE = 0
-export const REF_OP_UPDATE = 1
-export const REF_OP_DELETE = 2
-export const REF_OP_PUT_OVERWRITE = 3
-export const REF_OP_PUT_ADD = 4
+// export const REF_OP_OVERWRITE = 0
+// export const REF_OP_UPDATE = 1
+// export const REF_OP_DELETE = 2
+// export const REF_OP_PUT_OVERWRITE = 3
+// export const REF_OP_PUT_ADD = 4
 
-export type RefOp = typeof REF_OP_OVERWRITE | typeof REF_OP_UPDATE
+// export type RefOp = typeof REF_OP_OVERWRITE | typeof REF_OP_UPDATE
