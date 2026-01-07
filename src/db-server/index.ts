@@ -182,7 +182,7 @@ export class DbServer extends DbShared {
       const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4] as OpTypeEnum
 
-      console.log('[Get q buf]', OpTypeInverse[op])
+      // console.log('[Get q buf]', OpTypeInverse[op])
 
       const queryListeners = this.opListeners.get(op)!
 

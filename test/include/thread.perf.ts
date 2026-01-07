@@ -71,11 +71,23 @@ await test('include', async (t) => {
 
   const todos: number[] = []
   const rand = fastPrng(233221)
+  let d = Date.now()
 
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 1e6; i++) {
+    db.create('todo', {
+      // name: i % 2 ? 'b' : 'a',
+      nr: rand(0, 10),
+    })
+  }
+
+  await db.drain()
+
+  console.log(Date.now() - d, 'ms')
+
+  for (let i = 0; i < 100; i++) {
     todos.push(
       await db.create('todo', {
-        name: i % 2 ? 'b' : 'a',
+        // name: i % 2 ? 'b' : 'a',
         nr: rand(0, 10),
       }),
     )
@@ -95,8 +107,6 @@ await test('include', async (t) => {
     nr: 68,
   })
 
-  await db.drain()
-
   // now include edge
   await db
     .query('user')
@@ -104,8 +114,6 @@ await test('include', async (t) => {
     // .include('nr', 'currentTodo.id', 'currentTodo.$derp')
     .get()
     .inspect()
-
-  let d = Date.now()
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
@@ -126,16 +134,15 @@ await test('include', async (t) => {
 
   console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 1e3; i++) {
         q.push(
           db
-            .query('user')
-            .include('id')
-            .include('name')
-            .range(0, 1e5 + i)
+            .query('todo')
+            .range(0, 1e6 + i)
+            .include('nr')
             .get(),
           // .inspect(),
         )
