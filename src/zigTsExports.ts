@@ -43,6 +43,8 @@ export const OpType = {
   aliasFilter: 8,
   idFilter: 9,
   referenceEdge: 10,
+  subscribe: 11,
+  unsubscribe: 12,
   blockHash: 42,
   saveBlock: 67,
   saveCommon: 69,
@@ -53,8 +55,6 @@ export const OpType = {
   loadCommon: 130,
   createType: 131,
   setSchemaIds: 132,
-  subscribe: 133,
-  unsubscribe: 134,
   noOp: 255,
 } as const
 
@@ -68,6 +68,8 @@ export const OpTypeInverse = {
   8: 'aliasFilter',
   9: 'idFilter',
   10: 'referenceEdge',
+  11: 'subscribe',
+  12: 'unsubscribe',
   42: 'blockHash',
   67: 'saveBlock',
   69: 'saveCommon',
@@ -78,8 +80,6 @@ export const OpTypeInverse = {
   130: 'loadCommon',
   131: 'createType',
   132: 'setSchemaIds',
-  133: 'subscribe',
-  134: 'unsubscribe',
   255: 'noOp',
 } as const
 
@@ -93,6 +93,8 @@ export const OpTypeInverse = {
   aliasFilter, 
   idFilter, 
   referenceEdge, 
+  subscribe, 
+  unsubscribe, 
   blockHash, 
   saveBlock, 
   saveCommon, 
@@ -103,8 +105,6 @@ export const OpTypeInverse = {
   loadCommon, 
   createType, 
   setSchemaIds, 
-  subscribe, 
-  unsubscribe, 
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
@@ -1800,6 +1800,60 @@ export const readIncludeResponseMetaProps = {
 export const createIncludeResponseMeta = (header: IncludeResponseMeta): Uint8Array => {
   const buffer = new Uint8Array(IncludeResponseMetaByteSize)
   writeIncludeResponseMeta(buffer, header, 0)
+  return buffer
+}
+
+export type SubscriptionHeader = {
+  fieldsLen: number
+  partialLen: number
+}
+
+export const SubscriptionHeaderByteSize = 2
+
+export const writeSubscriptionHeader = (
+  buf: Uint8Array,
+  header: SubscriptionHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.fieldsLen
+  offset += 1
+  buf[offset] = header.partialLen
+  offset += 1
+  return offset
+}
+
+export const writeSubscriptionHeaderProps = {
+  fieldsLen: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset] = value
+  },
+  partialLen: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+}
+
+export const readSubscriptionHeader = (
+  buf: Uint8Array,
+  offset: number,
+): SubscriptionHeader => {
+  const value: SubscriptionHeader = {
+    fieldsLen: buf[offset],
+    partialLen: buf[offset + 1],
+  }
+  return value
+}
+
+export const readSubscriptionHeaderProps = {
+  fieldsLen: (buf: Uint8Array, offset: number): number => {
+    return buf[offset]
+  },
+  partialLen: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+}
+
+export const createSubscriptionHeader = (header: SubscriptionHeader): Uint8Array => {
+  const buffer = new Uint8Array(SubscriptionHeaderByteSize)
+  writeSubscriptionHeader(buffer, header, 0)
   return buffer
 }
 

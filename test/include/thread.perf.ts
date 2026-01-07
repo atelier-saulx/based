@@ -90,7 +90,7 @@ await test('include', async (t) => {
 
   const mrY = await db.create('user', {
     name: 'Mr Y',
-    currentTodo: { id: todos[1], $derp: true },
+    currentTodo: { id: todos[1], $derp: false },
     email: `beerdejim+1@gmail.com`,
     nr: 68,
   })
@@ -123,129 +123,7 @@ await test('include', async (t) => {
 
   await wait(100)
 
-  // for (let i = 0; i < 1e5; i++) {
-  //   db.create('user', {
-  //     nr: 1e5 - i,
-  //     nr1: 1e5 - i,
-  //     nr2: 1e5 - i,
-  //     nr3: 1e5 - i,
-  //     nr4: 1e5 - i,
-  //     nr5: 1e5 - i,
-  //     nr6: 1e5 - i,
-  //     name: 'mr snurp ' + i,
-  //     currentTodo: todos[0],
-  //     email: `beerdejim+${i}@gmail.com`,
-  //     todos: todos.slice(0, rand(0, 10)).map((v) => ({
-  //       id: v,
-  //       $status: 'nothing',
-  //     })),
-
-  //     // { id: todo2, $status: 'nothing', $name: 'blurf' }, // $name: 'blurf'
-  //     // todos: [todo, todo2], // this doesnot work with edges...
-  //     // body: {
-  //     //   nl: 'x',
-  //     //   fr: 'B',
-  //     //   de: '🇮🇹🇮🇹🇮🇹🇮🇹🇮🇹🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹🤪🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇺🇸🇿🇼🇺🇸🇮🇹ewpofjwoif jweofhjweoifhweoifhweoihfoiwehfoiwehfoeiwhfoiewhfoiwehfoweihf eowifhowi efhwoefhweo ifhoeiw hoiewhfoiew foi oeiwfh ewoifhwe oioiweh ',
-  //     //   en: italy,
-  //     // },
-  //   })
-  // }
-
-  // // update works
-  // for (let i = 1; i < 1000; i++) {
-  //   db.update('user', {
-  //     id: i,
-  //     flap: '💩',
-  //   })
-  // }
-  // await db.drain()
-  // console.log(Date.now() - d, 'ms')
-
   console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
-
-  // [2, 10, 11]
-  // await db.query('user', 1).include('id', 'name').get().inspect()
-
-  // const result = await db
-  //   .query('user')
-  //   .include('id', 'nr')
-  //   .range(0, 1e5)
-  //   .order('desc')
-  //   .include((t) => {
-  //     t('todos').include('nr').sort('id').order('asc')
-  //   })
-  //   .get()
-  //   .inspect()
-
-  // const result = await db
-  //   .query('todo', [3, 10, 20])
-  //   .include('id', 'nr')
-  //   // .query('user', { email: 'beerdejim+10@gmail.com' })
-  //   // .include('id', 'todos.$status')
-  //   .range(0, 1e5)
-
-  //   // .include((t) => {
-  //   //   t('todos').include('nr') //.sort('nr') // 'desc'
-  //   // })
-  //   .get()
-  //   .inspect()
-
-  // .debug()
-  // const idBufs: any = []
-  // for (let i = 0; i < 1000; i++) {
-  //   idBufs.push(registerQuery(db.query('user', i + 1).include('id', 'name')))
-  // }
-
-  // await perf.skip(
-  //   async () => {
-  //     const q: any[] = []
-  //     for (let i = 0; i < 1000; i++) {
-  //       q.push(db.server.getQueryBuf(idBufs[i]))
-  //     }
-  //     await Promise.all(q)
-  //   },
-  //   'single id',
-  //   { repeat: 10 },
-  // )
-
-  // const y = await db
-  //   .query('user')
-  //   // .locale('nl', ['no', 'de'])
-  //   // .include('body', { meta: true, end: 10 })
-  //   // .include('name', { meta: 'only' })
-  //   // .include('nr') //  'flap'
-  //   // .include('todos.id') // 'todos.$status'
-
-  //   // .include('todos.id', 'todos.$status', 'nr') // 'todos.$status'
-  //   // .include('nr')
-  //   .include('currentTodo')
-  //   // 'currentTodo.nr',
-  //   // .include(x)
-  //   .range(0, 1)
-  //   // .sort('nr', 'desc')
-  //   .get()
-  //   .debug()
-
-  // x.debug()
-
-  // y.inspect()
-
-  // console.log('drain done')
-  // ;(
-  //   await db
-  //     .query('user')
-  //     // .locale('nl', ['fr', 'no', 'de'])
-  //     // .include('name')
-
-  //     .include('name', { meta: 'only' })
-  //     .range(0, 2)
-  //     .get()
-  // )
-  //   .inspect(2, true)
-  //   .debug()
-  // .toObject(),
-
-  // await db.query('user').include('todos.nr').range(0, 1).get().inspect()
 
   await perf.skip(
     async () => {
