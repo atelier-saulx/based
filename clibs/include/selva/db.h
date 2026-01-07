@@ -125,6 +125,65 @@ inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_i
 #endif
 
 /**
+ * \addtogroup block_status
+ * @{
+ */
+
+SELVA_EXPORT
+inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i)
+#ifndef __zig
+{
+    return te->blocks->blocks[block_i].status;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline void selva_block_status_replace(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus status)
+#ifndef __zig
+{
+    te->blocks->blocks[block_i].status = status;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline void selva_block_status_set(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+#ifndef __zig
+{
+    te->blocks->blocks[block_i].status |= mask;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline void selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+#ifndef __zig
+{
+    te->blocks->blocks[block_i].status &= ~mask;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+#ifndef __zig
+{
+    return (te->blocks->blocks[block_i].status & mask) == mask;
+}
+#else
+;
+#endif
+
+/**
+ * @}
+ */
+
+/**
  * Get the node schema for type.
  */
 SELVA_EXPORT
@@ -283,6 +342,9 @@ void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Selv
 
 SELVA_EXPORT
 void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
+
+SELVA_EXPORT
+void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id);
 
 SELVA_EXPORT
 void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start);

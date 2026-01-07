@@ -59,7 +59,8 @@ struct SelvaAlias {
 
 struct SelvaTypeBlock {
     struct SelvaNodeIndex nodes; /*!< Index of nodes in this block. */
-    size_t nr_nodes_in_block; /*!< Number of nodes in this block. */
+    node_id_t nr_nodes_in_block; /*!< Number of nodes in this block. */
+    enum SelvaTypeBlockStatus status;
 };
 
 /**
@@ -174,5 +175,6 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type);
 node_id_t selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new_alias);
 
 struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t node_id) __attribute__((returns_nonnull));
+void selva_node_block_hash2(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaTypeBlock *block, selva_hash128_t *hash_out) __attribute__((nonnull));
 
 #include "selva/db.h"

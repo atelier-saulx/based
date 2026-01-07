@@ -106,6 +106,13 @@ struct SelvaNodeSchema {
     /* Nothing must be put after this line. */
 };
 
+enum SelvaTypeBlockStatus {
+    SELVA_TYPE_BLOCK_STATUS_EMPTY = 0,
+    SELVA_TYPE_BLOCK_STATUS_FS = 0x01,
+    SELVA_TYPE_BLOCK_STATUS_INMEM = 0x02,
+    SELVA_TYPE_BLOCK_STATUS_DIRTY = 0x04, /*!< Can't be set if te->blocks->blocks[block_i].status isn't set. */
+};
+
 struct SelvaAlias;
 struct SelvaAliases;
 struct SelvaDb;

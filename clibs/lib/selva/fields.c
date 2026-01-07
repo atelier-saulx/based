@@ -775,6 +775,7 @@ static size_t remove_references_tail(
 
 static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
 {
+    struct SelvaTypeEntry *te = selva_get_type_by_index(db, node->type);
     struct SelvaFields *fields = &node->fields;
     assert(fs->field < fields->nr_fields);
     struct SelvaFieldInfo *nfo = &fields->fields_map[fs->field];
@@ -792,6 +793,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
     if (dirty_cb) {
         dirty_cb(dirty_ctx, node->type, node->node_id);
     }
+    selva_mark_dirty(te, node->node_id);
 
     struct SelvaTypeEntry *dst_type = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
     assert(dst_type);
@@ -820,6 +822,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
             if (dirty_cb) {
                 dirty_cb(dirty_ctx, fs->edge_constraint.dst_node_type, removed_dst);
             }
+            selva_mark_dirty(selva_get_type_by_index(db, fs->edge_constraint.dst_node_type), removed_dst);
         }
     }
 
@@ -1351,19 +1354,23 @@ int selva_fields_reference_set(
      * Remove previous refs.
      */
     node_id_t old_dst_id;
+    struct SelvaTypeEntry *te_dst = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
 
     old_dst_id = remove_reference(db, src, fs_src, 0, -1, true, dirty_cb, dirty_ctx);
     if (dirty_cb) {
         if (old_dst_id != 0) {
             dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, old_dst_id);
+            selva_mark_dirty(te_dst, old_dst_id);
         }
         dirty_cb(dirty_ctx, fs_src->edge_constraint.dst_node_type, dst->node_id);
+        selva_mark_dirty(te_dst, dst->node_id);
     }
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         /* The new destination may have a ref to somewhere. */
         old_dst_id = remove_reference(db, dst, fs_dst, 0, -1, false, dirty_cb, dirty_ctx);
         if (old_dst_id != 0 && dirty_cb) {
             dirty_cb(dirty_ctx, src->type, old_dst_id);
+            selva_mark_dirty(te_dst, old_dst_id);
         }
     }
 
@@ -1784,6 +1791,7 @@ static struct SelvaNode *next_ref_edge_node(struct SelvaTypeEntry *edge_type, se
     if (dirty_cb) {
         dirty_cb(dirty_ctx, edge_type->type, next_id);
     }
+    selva_mark_dirty(edge_type, next_id);
 
     return edge;
 }
@@ -1870,6 +1878,7 @@ struct SelvaNode *selva_fields_ensure_ref_edge(
         if (dirty_cb) {
             dirty_cb(dirty_ctx, efc->dst_node_type, ref->dst);
         }
+        selva_mark_dirty(selva_get_type_by_index(db, efc->dst_node_type), ref->dst);
     }
 
     return edge;
@@ -2005,6 +2014,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
             if (old_dst && dirty_cb) {
                 dirty_cb(dirty_ctx, fs->edge_constraint.dst_node_type, old_dst);
             }
+            selva_mark_dirty(selva_get_type_by_index(db, fs->edge_constraint.dst_node_type), old_dst);
         }
         break;
     case SELVA_FIELD_TYPE_REFERENCES:
@@ -2024,6 +2034,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
     if (dirty_cb) {
         dirty_cb(dirty_ctx, node->type, node->node_id);
     }
+    selva_mark_dirty(selva_get_type_by_index(db, node->type), node->node_id);
 
     return 0;
 }
