@@ -5,7 +5,7 @@ const results = @import("results.zig");
 const Sort = @import("../sort/sort.zig");
 const selva = @import("../selva/selva.zig").c;
 const References = @import("../selva/references.zig");
-
+const Subscription = @import("../subscription/common.zig");
 const EdgeResultSize = @sizeOf(References.ReferencesIteratorEdgesResult);
 
 pub const Thread = struct {
@@ -26,8 +26,9 @@ pub const Thread = struct {
     tmpSortDouble: *selva.SelvaSortCtx,
     tmpSortBinaryEdge: *selva.SelvaSortCtx,
     tmpSortBinary: *selva.SelvaSortCtx,
+    subscriptions: *Subscription.SubscriptionCtx,
 
-    pub fn init(id: usize) !*Thread {
+    pub fn init(allocator: std.mem.Allocator, id: usize) !*Thread {
         const thread = jemalloc.create(Thread);
         thread.*.id = id;
         thread.*.decompressor = deflate.createDecompressor();
@@ -50,6 +51,16 @@ pub const Thread = struct {
         thread.*.tmpSortBinaryEdge = selva.selva_sort_init3(selva.SELVA_SORT_ORDER_BUFFER_ASC, 0, EdgeResultSize).?;
         thread.*.tmpSortBinary = selva.selva_sort_init3(selva.SELVA_SORT_ORDER_BUFFER_ASC, 0, 0).?;
 
+        // this is added on every thread - lets start to asign them to random threads
+        // see if we want a mod loop with COMPTIME OR just a seperate loop
+        const subscriptions = try allocator.create(Subscription.SubscriptionCtx);
+        subscriptions.*.types = Subscription.TypeSubMap.init(allocator);
+        subscriptions.*.lastIdMarked = 0;
+        subscriptions.*.singleIdMarked = jemalloc.alloc(u32, Subscription.BLOCK_SIZE);
+        subscriptions.*.subsHashMap = Subscription.SubHashMap.init(allocator);
+
+        thread.*.subscriptions = subscriptions;
+
         return thread;
     }
 
@@ -70,5 +81,7 @@ pub const Thread = struct {
         deflate.destroyDecompressor(self.decompressor);
         deflate.deinitBlockState(&self.libdeflateBlockState);
         jemalloc.free(self);
+
+        jemalloc.free(self.subscriptions.singleIdMarked);
     }
 };

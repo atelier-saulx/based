@@ -51,7 +51,9 @@ fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     ctx.typeEntry = try Node.getType(ctx.db, ctx.typeId);
     ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
 
-    ctx.subTypes = ctx.db.subscriptions.types.get(ctx.typeId);
+    std.debug.print("??? {any} id: {any} \n", .{ ctx.typeId, ctx.thread.id });
+
+    ctx.subTypes = ctx.thread.subscriptions.types.get(ctx.typeId);
     if (ctx.subTypes) |st| {
         st.typeModified = true;
     }

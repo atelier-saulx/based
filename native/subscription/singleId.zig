@@ -81,6 +81,10 @@ pub fn addIdSubscriptionInternal(
     fields: []const u8,
     partialFields: []const u8,
 ) !void {
+
+    // prob want to add QUERY here as well
+    // upgrade the sub id to just the query id so we dont need to score keep more
+
     var typeSubs = try upsertSubType(ctx, typeId);
 
     var subs: []*Subscription.IdSubsItem = undefined;

@@ -1,6 +1,6 @@
 import { OnClose, OnData, OnError } from './query/subscription/types.js'
 import { DbServer } from '../db-server/index.js'
-import { registerSubscription } from '../db-server/subscription.js'
+// import { registerSubscription } from '../db-server/subscription.js'
 import type { BasedDbQuery } from './query/BasedDbQuery.js'
 import type { SchemaMigrateFns, SchemaOut } from '../schema/index.js'
 
@@ -15,7 +15,7 @@ export type DbClientHooks = {
     q: BasedDbQuery,
     onData: (buf: Uint8Array) => ReturnType<OnData>,
     onError: OnError,
-  ): Promise<OnClose>
+  ): OnClose
   subscribeSchema(cb: (schema: SchemaOut) => void): void
 }
 
@@ -26,13 +26,8 @@ export const getDefaultHooks = (server: DbServer): DbClientHooks => {
       onData: (res: Uint8Array) => void,
       onError: OnError,
     ) {
-      return registerSubscription(
-        server,
-        q.buffer!,
-        q.subscriptionBuffer!,
-        onData,
-        onError,
-      )
+      console.log('GO SUBSCRIBE', q.buffer)
+      return () => {}
     },
     setSchema(schema: SchemaOut, transformFns) {
       return server.setSchema(schema, transformFns)

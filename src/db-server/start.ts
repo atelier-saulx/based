@@ -26,7 +26,6 @@ export type StartOpts = {
   noLoadDumps?: boolean
   delayInMs?: number
   queryThreads?: number
-  subscriptionDelay?: number
 }
 
 const handleQueryResponse = (db: DbServer, arr: ArrayBuffer[] | null) => {
@@ -195,9 +194,5 @@ export async function start(db: DbServer, opts?: StartOpts) {
   if (opts?.delayInMs) {
     db.delayInMs = opts.delayInMs
     await wait(opts.delayInMs)
-  }
-
-  if (opts?.subscriptionDelay !== undefined) {
-    db.subscriptions.subInterval = opts.subscriptionDelay
   }
 }

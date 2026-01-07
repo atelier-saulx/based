@@ -1,4 +1,3 @@
-import { ENCODER } from './utils/uint8.js'
 import db from './zigAddon.js'
 
 var compressor = db.createCompressor()
@@ -27,14 +26,16 @@ const native = {
     return db.intFromExternal(external)
   },
 
-  getQueryBufThread: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
-    const x = db.getQueryBufThread(dbCtx, q)
-    return x
+  subscribe: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
+    return db.subscribe(dbCtx, q)
   },
 
-  modifyThread: (q: Uint8Array, dbCtx: any): null => {
-    const x = db.modifyThread(q, dbCtx)
-    return x
+  query: (q: Uint8Array, dbCtx: any): ArrayBuffer | null => {
+    return db.query(dbCtx, q)
+  },
+
+  modify: (q: Uint8Array, dbCtx: any): null => {
+    return db.modify(q, dbCtx)
   },
 
   start: (bridge: (id: number, payload: any) => void, nrThreads: number) => {

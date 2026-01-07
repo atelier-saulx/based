@@ -4,7 +4,7 @@ const std = @import("std");
 const selva = @import("../selva/selva.zig");
 const utils = @import("../utils.zig");
 const jemalloc = @import("../jemalloc.zig");
-const Subscription = @import("../db/subscription/common.zig");
+const Subscription = @import("../subscription/common.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
@@ -44,14 +44,14 @@ pub fn stagePartial(ctx: *ModifyCtx, start: u16) void {
                 continue;
             }
             if (@reduce(.Or, idSubs[i].partial == f)) {
-                if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
-                    ctx.db.subscriptions.singleIdMarked = jemalloc.realloc(
-                        ctx.db.subscriptions.singleIdMarked,
-                        ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
+                if (ctx.thread.subscriptions.singleIdMarked.len < ctx.thread.subscriptions.lastIdMarked + 1) {
+                    ctx.thread.subscriptions.singleIdMarked = jemalloc.realloc(
+                        ctx.thread.subscriptions.singleIdMarked,
+                        ctx.thread.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
                     );
                 }
-                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
-                ctx.db.subscriptions.lastIdMarked += 1;
+                ctx.thread.subscriptions.singleIdMarked[ctx.thread.subscriptions.lastIdMarked] = idSubs[i].subId;
+                ctx.thread.subscriptions.lastIdMarked += 1;
                 idSubs[i].marked = Subscription.SubStatus.marked;
             }
         }
@@ -69,14 +69,14 @@ pub fn stage(
                 if (idSubs[i].marked == Subscription.SubStatus.marked) {
                     continue;
                 }
-                if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 16) {
-                    ctx.db.subscriptions.singleIdMarked = jemalloc.realloc(
-                        ctx.db.subscriptions.singleIdMarked,
-                        ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE * 16,
+                if (ctx.thread.subscriptions.singleIdMarked.len < ctx.thread.subscriptions.lastIdMarked + 16) {
+                    ctx.thread.subscriptions.singleIdMarked = jemalloc.realloc(
+                        ctx.thread.subscriptions.singleIdMarked,
+                        ctx.thread.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE * 16,
                     );
                 }
-                ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
-                ctx.db.subscriptions.lastIdMarked += 1;
+                ctx.thread.subscriptions.singleIdMarked[ctx.thread.subscriptions.lastIdMarked] = idSubs[i].subId;
+                ctx.thread.subscriptions.lastIdMarked += 1;
                 idSubs[i].marked = Subscription.SubStatus.marked;
             }
         }
@@ -89,14 +89,14 @@ pub fn stage(
                     continue;
                 }
                 if (@reduce(.Or, idSubs[i].fields == f)) {
-                    if (ctx.db.subscriptions.singleIdMarked.len < ctx.db.subscriptions.lastIdMarked + 1) {
-                        ctx.db.subscriptions.singleIdMarked = jemalloc.realloc(
-                            ctx.db.subscriptions.singleIdMarked,
-                            ctx.db.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
+                    if (ctx.thread.subscriptions.singleIdMarked.len < ctx.thread.subscriptions.lastIdMarked + 1) {
+                        ctx.thread.subscriptions.singleIdMarked = jemalloc.realloc(
+                            ctx.thread.subscriptions.singleIdMarked,
+                            ctx.thread.subscriptions.singleIdMarked.len + Subscription.BLOCK_SIZE,
                         );
                     }
-                    ctx.db.subscriptions.singleIdMarked[ctx.db.subscriptions.lastIdMarked] = idSubs[i].subId;
-                    ctx.db.subscriptions.lastIdMarked += 1;
+                    ctx.thread.subscriptions.singleIdMarked[ctx.thread.subscriptions.lastIdMarked] = idSubs[i].subId;
+                    ctx.thread.subscriptions.lastIdMarked += 1;
                     idSubs[i].marked = Subscription.SubStatus.marked;
                 }
             }

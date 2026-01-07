@@ -15,8 +15,10 @@ import {
   writeSchemaFile,
 } from './schema.js'
 import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
-import { Subscriptions } from './subscription.js'
-import { OpType, OpTypeEnum } from '../zigTsExports.js'
+
+// import { Subscriptions } from './subscription.js'
+
+import { OpType, OpTypeEnum, OpTypeInverse } from '../zigTsExports.js'
 import {
   MAX_ID,
   type SchemaMigrateFns,
@@ -26,15 +28,7 @@ import { readUint32, writeUint32 } from '../utils/uint8.js'
 
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
-  subscriptions: Subscriptions = {
-    subInterval: 200,
-    active: 0,
-    updateHandler: null,
-    ids: new Map(),
-    fullType: new Map(),
-    updateId: 1,
-    now: { listeners: new Set(), lastUpdated: 1 },
-  }
+
   migrating: number
   saveInProgress: boolean = false
   fileSystemPath: string
@@ -185,20 +179,43 @@ export class DbServer extends DbShared {
     }
   }
 
-  getQueryBuf(buf): Promise<Uint8Array> {
+  getQueryBuf(buf: Uint8Array): Promise<Uint8Array> {
     return new Promise((resolve) => {
       const id = readUint32(buf, 0)
-      const op: OpTypeEnum = buf[4]
+      const op: OpTypeEnum = buf[4] as OpTypeEnum
+
+      console.log('[Get q buf]', OpTypeInverse[op])
+
       const queryListeners = this.opListeners.get(op)!
       if (queryListeners.get(id)) {
         console.log('💤 Query already staged dont exec again', id)
       } else {
-        native.getQueryBufThread(buf, this.dbCtxExternal)
+        native.query(buf, this.dbCtxExternal)
       }
       this.addOpOnceListener(op, id, resolve)
-
-      // this.addOpListener(op, id, resolve)
     })
+  }
+
+  unsubscribe(id: number) {}
+
+  subscribe(buf: Uint8Array, onData: (d: Uint8Array) => void): number {
+    const id = readUint32(buf, 0)
+    const op: OpTypeEnum = buf[4] as OpTypeEnum
+    const queryListeners = this.opListeners.get(op)!
+    const qIdListeners = queryListeners.get(id)
+    if (qIdListeners) {
+      console.log('💤 Subscription already staged dont exec again', id)
+    } else {
+      native.query(buf, this.dbCtxExternal)
+      // also add query
+    }
+
+    this.addOpListener(op, id, onData)
+
+    if (qIdListeners?.persistent.size === 0) {
+      native.subscribe(buf, this.dbCtxExternal)
+    }
+    return id
   }
 
   // allow 10 ids for special listeners on mod thread
@@ -212,7 +229,7 @@ export class DbServer extends DbShared {
     const id = this.modifyCnt++
     writeUint32(payload, id, 0)
     return new Promise((resolve) => {
-      native.modifyThread(payload, this.dbCtxExternal)
+      native.modify(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {
         const resultLen = readUint32(v, 0)
         const blocksLen = readUint32(v, resultLen)
@@ -267,8 +284,6 @@ export class DbServer extends DbShared {
     if (this.stopped) {
       return
     }
-    clearTimeout(this.subscriptions.updateHandler!)
-    this.subscriptions.updateHandler = null
     this.stopped = true
 
     if (this.saveInterval) {

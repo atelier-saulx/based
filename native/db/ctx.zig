@@ -6,7 +6,6 @@ const jemalloc = @import("../jemalloc.zig");
 const valgrind = @import("../valgrind.zig");
 const napi = @import("../napi.zig");
 const SelvaError = @import("../errors.zig").SelvaError;
-const Subscription = @import("subscription/common.zig");
 const jsBridge = @import("../thread/jsBridge.zig");
 const threads = @import("../thread/thread.zig");
 const sort = @import("../sort/sort.zig");
@@ -20,7 +19,6 @@ pub const DbCtx = struct {
     arena: *std.heap.ArenaAllocator,
     sortIndexes: sort.TypeSortIndexes,
     selva: ?*selva.SelvaDb,
-    subscriptions: Subscription.SubscriptionCtx,
     ids: []u32,
     jsBridge: *jsBridge.Callback,
     threads: *threads.Threads,
@@ -55,18 +53,11 @@ pub fn createDbCtx(
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const dbCtxPointer = try allocator.create(DbCtx);
-    const subscriptions = try allocator.create(Subscription.SubscriptionCtx);
-    subscriptions.*.types = Subscription.TypeSubMap.init(allocator);
-
-    subscriptions.*.lastIdMarked = 0;
-    subscriptions.*.singleIdMarked = jemalloc.alloc(u32, Subscription.BLOCK_SIZE);
-    subscriptions.*.subsHashMap = Subscription.SubHashMap.init(allocator);
 
     errdefer {
         arena.deinit();
     }
 
-    // config thread amount
     dbCtxPointer.* = .{
         .threads = try threads.Threads.init(allocator, nrThreads, dbCtxPointer),
         .id = rand.int(u32),
@@ -75,10 +66,8 @@ pub fn createDbCtx(
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
         .selva = null,
-        .subscriptions = subscriptions.*,
         .ids = &[_]u32{},
         .jsBridge = try jsBridge.Callback.init(env, dbCtxPointer, bridge),
-        // Also per thread this is just for when on the main thread
         .decompressor = deflate.createDecompressor(),
         .libdeflateBlockState = deflate.initBlockState(305000),
     };
@@ -107,10 +96,6 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
         ctx.allocator.free(ctx.ids);
         ctx.ids = &[_]u32{};
     }
-
-    jemalloc.free(ctx.subscriptions.singleIdMarked);
-
-    // jemalloc.
 
     deflate.destroyDecompressor(ctx.decompressor);
     deflate.deinitBlockState(&ctx.libdeflateBlockState);

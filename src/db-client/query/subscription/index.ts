@@ -34,39 +34,10 @@ export class SubStore {
         onError(err)
       }
     }
-    let killed = false
-    this.onClose = () => {
-      killed = true
-    }
-    const doSub = () => {
-      try {
-        registerQuery(q)
-        registerSubscription(q)
-        q.db.hooks.subscribe(q, onData, onError).then((onClose) => {
-          if (killed) {
-            onClose()
-          } else {
-            this.onClose = onClose
-          }
-        })
-      } catch (err) {
-        onError(err)
-      }
-    }
-    if (!q.db.schema) {
-      q.db
-        .schemaIsSet()
-        .then(() => {
-          if (!killed) {
-            doSub()
-          }
-        })
-        .catch((err) => {
-          onError(err)
-        })
-    } else {
-      doSub()
-    }
+
+    registerQuery(q)
+    registerSubscription(q)
+    this.onClose = q.db.hooks.subscribe(q, onData, onError)
   }
   resubscribe(q: BasedDbQuery) {
     this.onClose()

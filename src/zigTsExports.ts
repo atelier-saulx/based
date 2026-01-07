@@ -43,22 +43,18 @@ export const OpType = {
   aliasFilter: 8,
   idFilter: 9,
   referenceEdge: 10,
+  subscribe: 11,
+  unsubscribe: 12,
   blockHash: 42,
   saveBlock: 67,
   saveCommon: 69,
   getSchemaIds: 70,
-  getMarkedMultiSubscriptions: 71,
-  getMarkedIdSubscriptions: 72,
   modify: 127,
   loadBlock: 128,
   unloadBlock: 129,
   loadCommon: 130,
   createType: 131,
   setSchemaIds: 132,
-  addMultiSubscription: 123,
-  removeMultiSubscription: 124,
-  addIdSubscription: 125,
-  removeIdSubscription: 126,
   noOp: 255,
 } as const
 
@@ -72,22 +68,18 @@ export const OpTypeInverse = {
   8: 'aliasFilter',
   9: 'idFilter',
   10: 'referenceEdge',
+  11: 'subscribe',
+  12: 'unsubscribe',
   42: 'blockHash',
   67: 'saveBlock',
   69: 'saveCommon',
   70: 'getSchemaIds',
-  71: 'getMarkedMultiSubscriptions',
-  72: 'getMarkedIdSubscriptions',
   127: 'modify',
   128: 'loadBlock',
   129: 'unloadBlock',
   130: 'loadCommon',
   131: 'createType',
   132: 'setSchemaIds',
-  123: 'addMultiSubscription',
-  124: 'removeMultiSubscription',
-  125: 'addIdSubscription',
-  126: 'removeIdSubscription',
   255: 'noOp',
 } as const
 
@@ -101,22 +93,18 @@ export const OpTypeInverse = {
   aliasFilter, 
   idFilter, 
   referenceEdge, 
+  subscribe, 
+  unsubscribe, 
   blockHash, 
   saveBlock, 
   saveCommon, 
   getSchemaIds, 
-  getMarkedMultiSubscriptions, 
-  getMarkedIdSubscriptions, 
   modify, 
   loadBlock, 
   unloadBlock, 
   loadCommon, 
   createType, 
   setSchemaIds, 
-  addMultiSubscription, 
-  removeMultiSubscription, 
-  addIdSubscription, 
-  removeIdSubscription, 
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
@@ -1812,6 +1800,60 @@ export const readIncludeResponseMetaProps = {
 export const createIncludeResponseMeta = (header: IncludeResponseMeta): Uint8Array => {
   const buffer = new Uint8Array(IncludeResponseMetaByteSize)
   writeIncludeResponseMeta(buffer, header, 0)
+  return buffer
+}
+
+export type SubscriptionHeader = {
+  fieldsLen: number
+  partialLen: number
+}
+
+export const SubscriptionHeaderByteSize = 2
+
+export const writeSubscriptionHeader = (
+  buf: Uint8Array,
+  header: SubscriptionHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.fieldsLen
+  offset += 1
+  buf[offset] = header.partialLen
+  offset += 1
+  return offset
+}
+
+export const writeSubscriptionHeaderProps = {
+  fieldsLen: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset] = value
+  },
+  partialLen: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+}
+
+export const readSubscriptionHeader = (
+  buf: Uint8Array,
+  offset: number,
+): SubscriptionHeader => {
+  const value: SubscriptionHeader = {
+    fieldsLen: buf[offset],
+    partialLen: buf[offset + 1],
+  }
+  return value
+}
+
+export const readSubscriptionHeaderProps = {
+  fieldsLen: (buf: Uint8Array, offset: number): number => {
+    return buf[offset]
+  },
+  partialLen: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+}
+
+export const createSubscriptionHeader = (header: SubscriptionHeader): Uint8Array => {
+  const buffer = new Uint8Array(SubscriptionHeaderByteSize)
+  writeSubscriptionHeader(buffer, header, 0)
   return buffer
 }
 

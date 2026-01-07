@@ -18,13 +18,15 @@ pub const OpType = enum(u8) {
     aliasFilter = 8,
     idFilter = 9,
     referenceEdge = 10,
+    // unsubscribe = 12
+    subscribe = 11,
+    unsubscribe = 12,
 
     blockHash = 42,
     saveBlock = 67,
     saveCommon = 69,
     getSchemaIds = 70,
-    getMarkedMultiSubscriptions = 71,
-    getMarkedIdSubscriptions = 72,
+
     // Modify
     modify = 127,
     loadBlock = 128,
@@ -32,10 +34,6 @@ pub const OpType = enum(u8) {
     loadCommon = 130,
     createType = 131,
     setSchemaIds = 132,
-    addMultiSubscription = 123,
-    removeMultiSubscription = 124,
-    addIdSubscription = 125,
-    removeIdSubscription = 126,
 
     // --------------------
     noOp = 255,
@@ -585,6 +583,16 @@ pub const IncludeResponseMeta = packed struct {
     size: u32,
 };
 
+pub const SubscriptionHeader = packed struct {
+    // typeId: u16,
+    fieldsLen: u8,
+    partialLen: u8,
+    // fields: []const u8,
+    // partialFields: []const u8,
+    // query
+};
+
+// subscribe
 pub const QueryHeader = packed struct {
     op: QueryType,
     prop: u8, // this is for ref
@@ -603,6 +611,7 @@ pub const QueryHeader = packed struct {
     _padding: u7,
 };
 
+// subscribe
 pub const QueryHeaderSingle = packed struct {
     op: QueryType,
     typeId: TypeId,

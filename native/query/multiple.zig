@@ -71,9 +71,7 @@ fn iteratorEdge(
             break;
         }
     }
-
     i.* += header.edgeSize;
-
     return nodeCnt;
 }
 
@@ -194,6 +192,8 @@ pub fn references(
     switch (header.iteratorType) {
         .edgeInclude => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
+            // if it.needsLoad
+            // sleep
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeIncludeDesc => {
@@ -204,7 +204,6 @@ pub fn references(
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
-
         .default => {
             var it = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);

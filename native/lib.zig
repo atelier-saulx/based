@@ -9,7 +9,6 @@ const lifeTime = @import("db/lifeTime.zig");
 const string = @import("string.zig");
 const napi = @import("napi.zig");
 const dbCtx = @import("db/ctx.zig");
-const subscriptions = @import("db/subscription/subscription.zig");
 const NapiError = error{NapiError};
 const DbCtx = dbCtx.DbCtx;
 
@@ -102,8 +101,8 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "start", lifeTime.start) catch return null;
     registerFunction(env, exports, "stop", lifeTime.stop) catch return null;
 
-    registerFunction(env, exports, "getQueryBufThread", query.getQueryBufThread) catch return null;
-    registerFunction(env, exports, "modifyThread", modify.modifyThread) catch return null;
+    registerFunction(env, exports, "query", query.getQueryBufThread) catch return null;
+    registerFunction(env, exports, "modify", modify.modifyThread) catch return null;
 
     registerFunction(env, exports, "externalFromInt", externalFromInt) catch return null;
     registerFunction(env, exports, "intFromExternal", intFromExternal) catch return null;
