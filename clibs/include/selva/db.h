@@ -124,6 +124,31 @@ inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_i
 ;
 #endif
 
+SELVA_EXPORT
+inline node_id_t selva_block_i2start(const struct SelvaTypeEntry *te, block_id_t block_i)
+#ifndef __zig
+{
+    block_id_t block_capacity = te->blocks->block_capacity;
+    node_id_t start = block_i * block_capacity + 1;
+    return start;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t block_i)
+#ifndef __zig
+{
+    block_id_t block_capacity = te->blocks->block_capacity;
+    node_id_t start = block_i * block_capacity + 1;
+    node_id_t end = start + block_capacity - 1;
+    return end;
+}
+#else
+;
+#endif
+
 /**
  * \addtogroup block_status
  * @{

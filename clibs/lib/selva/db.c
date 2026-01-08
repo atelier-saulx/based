@@ -413,6 +413,10 @@ extern inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blo
 
 extern inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id);
 
+extern inline node_id_t selva_block_i2start(const struct SelvaTypeEntry *te, block_id_t block_i);
+
+extern inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t block_i);
+
 extern inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i);
 
 extern inline void selva_block_status_replace(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus status);
