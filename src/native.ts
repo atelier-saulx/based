@@ -1,3 +1,4 @@
+import { ENCODER } from './utils/uint8.js'
 import db from './zigAddon.js'
 
 var compressor = db.createCompressor()
@@ -34,8 +35,10 @@ const native = {
     return db.modify(q, dbCtx)
   },
 
-  start: (bridge: (id: number, payload: any) => void, nrThreads: number) => {
-    return db.start(bridge, nrThreads)
+  start: (bridge: (id: number, payload: any) => void, fsPath: string, nrThreads: number) => {
+    const fsPathBuf = new Uint8Array(db.stringByteLength(fsPath))
+    ENCODER.encodeInto(fsPath, fsPathBuf)
+    return db.start(bridge, fsPathBuf, nrThreads)
   },
 
   stop: (dbCtx: any) => {

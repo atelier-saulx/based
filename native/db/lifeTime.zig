@@ -20,9 +20,10 @@ pub fn stop(napi_env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
 fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     // does this make double things with valgrind? Ask marco
     dbCtx.init();
-    const args = try napi.getArgs(2, env, info);
-    const nrThreads = try napi.get(u16, env, args[1]);
-    const ctx = try dbCtx.createDbCtx(env, args[0], nrThreads);
+    const args = try napi.getArgs(3, env, info);
+    const fsPath = try napi.get([]u8, env, args[1]);
+    const nrThreads = try napi.get(u16, env, args[2]);
+    const ctx = try dbCtx.createDbCtx(env, args[0], fsPath, nrThreads);
     ctx.selva = selva.selva_db_create();
     var externalNapi: napi.Value = undefined;
     ctx.initialized = true;
