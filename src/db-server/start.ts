@@ -100,7 +100,7 @@ export async function start(db: DbServer, opts?: StartOpts) {
     } else if (id === BridgeResponse.flushModify) {
       handleModifyResponse(db, buffer)
     }
-  }, nrThreads)
+  }, db.fileSystemPath, nrThreads)
 
   const writelog = await readWritelog(join(path, WRITELOG_FILE))
 
