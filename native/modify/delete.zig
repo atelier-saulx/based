@@ -1,4 +1,5 @@
 const Modify = @import("common.zig");
+const Selva = @import("../selva/selva.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");
@@ -89,7 +90,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             const dstType = try Node.getRefDstType(ctx.db, fs);
             const oldRefDst = Node.getNodeFromReference(dstType, References.getReference(ctx.node.?, fs));
             if (oldRefDst) |dstNode| {
-                Modify.markDirtyRange(ctx, Node.getNodeTypeId(dstNode), Node.getNodeId(dstNode));
+                Selva.markDirty(ctx, Node.getNodeTypeId(dstNode), Node.getNodeId(dstNode));
             }
         }
         try Fields.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);

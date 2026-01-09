@@ -145,9 +145,9 @@ pub inline fn getNodeFromReference(dstType: selva.Type, ref: anytype) ?Node {
 }
 
 pub inline fn ensureRefEdgeNode(ctx: *Modify.ModifyCtx, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) !Node {
-    const edgeNode = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0, selva.markDirtyCb, ctx);
+    const edgeNode = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0);
     if (edgeNode) |n| {
-        Modify.markDirtyRange(ctx, efc.edge_node_type, getNodeId(n));
+        selva.markDirty(ctx, efc.edge_node_type, getNodeId(n));
         return n;
     } else {
         return errors.SelvaError.SELVA_ENOTSUP;
@@ -164,21 +164,21 @@ pub inline fn getEdgeNode(db: *DbCtx, efc: selva.EdgeFieldConstraint, ref: selva
 }
 
 pub inline fn deleteNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) !void {
-    selva.c.selva_del_node(ctx.db.selva, typeEntry, node, selva.markDirtyCb, ctx);
+    selva.c.selva_del_node(ctx.db.selva, typeEntry, node);
 }
 
 pub inline fn flushNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) void {
-    selva.c.selva_flush_node(ctx.db.selva, typeEntry, node, selva.markDirtyCb, ctx);
+    selva.c.selva_flush_node(ctx.db.selva, typeEntry, node);
 }
 
 pub inline fn expireNode(ctx: *Modify.ModifyCtx, typeId: t.TypeId, nodeId: u32, ts: i64) void {
     selva.c.selva_expire_node(ctx.db.selva, typeId, nodeId, ts, selva.c.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
-    Modify.markDirtyRange(ctx, typeId, nodeId);
+    selva.markDirty(ctx, typeId, nodeId);
 }
 
 pub inline fn expire(ctx: *Modify.ModifyCtx) void {
     // Expire things before query
-    selva.c.selva_db_expire_tick(ctx.db.selva, selva.markDirtyCb, ctx, std.time.timestamp());
+    selva.c.selva_db_expire_tick(ctx.db.selva, std.time.timestamp());
 }
 
 pub inline fn getNodeBlockHash(db: *DbCtx, typeEntry: Type, start: u32, hashOut: *SelvaHash128) c_int {

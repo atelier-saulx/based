@@ -1,5 +1,5 @@
 const Modify = @import("common.zig");
-const selva = @import("../selva/selva.zig").c;
+const selva = @import("../selva/selva.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
 const utils = @import("../utils.zig");
@@ -60,14 +60,14 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const offset = 2;
             const len = read(u32, data, offset);
             const hll = try Fields.ensurePropTypeString(ctx, ctx.fieldSchema.?);
-            selva.hll_init(hll, hllPrecision, hllMode);
+            selva.c.hll_init(hll, hllPrecision, hllMode);
             var i: usize = 4 + offset;
             while (i < (len * 8) + offset) {
                 const hash = read(u64, data, i);
-                selva.hll_add(hll, hash);
+                selva.c.hll_add(hll, hash);
                 i += 8;
             }
-            const newCount = selva.hll_count(hll);
+            const newCount = selva.c.hll_count(hll);
             addSortIndexOnCreation(ctx, newCount[0..4]) catch null;
             return len * 8;
         },
@@ -82,7 +82,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                         if (ctx.currentSortIndex != null) {
                             sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
                         }
-                        Modify.markDirtyRange(ctx, ctx.typeId, old);
+                        selva.markDirty(ctx, ctx.typeId, old);
                     }
                 }
             } else {

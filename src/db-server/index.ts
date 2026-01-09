@@ -1,11 +1,6 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
 import { start, StartOpts } from './start.js'
-import {
-  BlockMap,
-  destructureTreeKey,
-  makeTreeKeyFromNodeId,
-} from './blockMap.js'
 import { migrate } from './migrate/index.js'
 import { debugServer } from '../utils/debug.js'
 import { DbShared } from '../shared/DbBase.js'
@@ -14,7 +9,7 @@ import {
   setSchemaOnServer,
   writeSchemaFile,
 } from './schema.js'
-import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
+import { save, SaveOpts } from './blocks.js'
 
 import { OpType, OpTypeEnum, OpTypeInverse } from '../zigTsExports.js'
 import {
@@ -30,7 +25,6 @@ export class DbServer extends DbShared {
   migrating: number
   saveInProgress: boolean = false
   fileSystemPath: string
-  blockMap: BlockMap
   activeReaders = 0 // processing queries or other DB reads
   modifyQueue: Map<Function, Uint8Array> = new Map()
   queryQueue: Map<Function, Uint8Array> = new Map()
@@ -80,37 +74,6 @@ export class DbServer extends DbShared {
 
   save(opts?: SaveOpts) {
     return save(this, opts)
-  }
-
-  async loadBlock(typeName: string, nodeId: number) {
-    const def = this.schemaTypesParsed[typeName]
-    if (!def) {
-      throw new Error('Type not found')
-    }
-
-    const typeId = def.id
-    const key = makeTreeKeyFromNodeId(typeId, def.blockCapacity, nodeId)
-    const [, start] = destructureTreeKey(key)
-
-    await loadBlock(this, def, start)
-  }
-
-  async unloadBlock(typeName: string, nodeId: number) {
-    const def = this.schemaTypesParsed[typeName]
-    if (!def) {
-      throw new Error('Type not found')
-    }
-
-    const typeId = def.id
-    const key = makeTreeKeyFromNodeId(typeId, def.blockCapacity, nodeId)
-    const [, start] = destructureTreeKey(key)
-
-    const block = this.blockMap.getBlock(key)
-    if (!block) {
-      throw new Error('Block not found')
-    }
-
-    await unloadBlock(this, def, start)
   }
 
   // op listeners
@@ -235,16 +198,6 @@ export class DbServer extends DbShared {
       native.modify(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {
         const resultLen = readUint32(v, 0)
-        const blocksLen = readUint32(v, resultLen)
-        if (blocksLen > 0) {
-          const ranges = new Float64Array(
-            v.slice(resultLen + 4).buffer,
-            0,
-            blocksLen / 8,
-          )
-
-          this.blockMap.setDirtyBlocks(ranges)
-        }
         resolve(v.subarray(4, resultLen))
       })
     })

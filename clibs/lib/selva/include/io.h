@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 SAULX
+ * Copyright (c) 2022-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -36,8 +36,11 @@
  *
  * **8**
  * - Add support for default value in SELVA_FIELD_TYPE_STRING, SELVA_FIELD_TYPE_STRING, and SELVA_FIELD_TYPE_COLVEC
+ *
+ * *9**
+ * - Save block hash at the end of each block dump.
  */
-#define SELVA_SDB_VERSION 8
+#define SELVA_SDB_VERSION 9
 
 #define SELVA_IO_HASH_SIZE 16
 

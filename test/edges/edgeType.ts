@@ -49,16 +49,6 @@ await test('single reference', async (t) => {
       $note: 'funny',
     },
   })
-
-  // await db.query('article').include('*', '**').get().inspect()
-  // await db.query('_article_author:user_articles').include('*').get().inspect()
-  deepEqual(
-    [...db.server.blockMap.types()].map((type) => type.typeId),
-    [2, 3, 4],
-  )
-  let dirties = 0
-  db.server.blockMap.foreachDirtyBlock(() => dirties++)
-  deepEqual(dirties, 3)
 })
 
 await test('json type edge', async (t) => {

@@ -24,7 +24,7 @@ pub const OpType = enum(u8) {
 
     blockHash = 42,
     saveBlock = 67,
-    saveCommon = 69,
+    saveAllBlocks = 68,
     getSchemaIds = 70,
 
     // Modify
