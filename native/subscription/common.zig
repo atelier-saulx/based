@@ -5,11 +5,11 @@ const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 pub const Sub = struct {
     marked: SubStatus,
     typeId: u16,
-    subId: u32,
-    id: u32,
+    id: u32, // add ids
     fields: @Vector(vectorLen, u8),
     partial: @Vector(vectorLenU16, u16),
     query: []u8,
+    subId: u32,
 };
 
 pub const IdSubs = std.AutoHashMap(u64, []*Sub);

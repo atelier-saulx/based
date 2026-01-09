@@ -34,6 +34,7 @@ pub const OpType = enum(u8) {
     loadCommon = 130,
     createType = 131,
     setSchemaIds = 132,
+    emptyMod = 133,
 
     // --------------------
     noOp = 255,

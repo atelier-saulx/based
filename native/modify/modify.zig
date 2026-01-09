@@ -50,15 +50,11 @@ fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     ctx.typeId = typeId;
     ctx.typeEntry = try Node.getType(ctx.db, ctx.typeId);
     ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
-
     ctx.subTypes = ctx.thread.subscriptions.types.get(ctx.typeId);
     if (ctx.subTypes) |st| {
         st.typeModified = true;
     }
-
     ctx.node = null;
-    // TODO This can't be reset because it's still used.
-    //ctx.id = 0;
 }
 
 fn writeoutPrevNodeId(ctx: *ModifyCtx, resultLen: *u32, prevNodeId: u32, result: []u8) void {

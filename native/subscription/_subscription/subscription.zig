@@ -141,8 +141,6 @@ pub fn addMultiSubscription(
     // utils.write(u32, typeSubs.multiSubs, subId, typeSubs.multiSubsSize * types.SUB_SIZE + 4);
     // typeSubs.multiSubs[]
 
-    // std.debug.print("DERP typeId: {any} subId: {any} \n", .{ typeId, subId });
-
     utils.write(resp, @as(i32, 0), 0);
 }
 

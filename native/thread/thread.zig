@@ -1,4 +1,3 @@
-const std = @import("std");
 const jsBridge = @import("jsBridge.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const utils = @import("../utils.zig");
@@ -12,6 +11,10 @@ const common = @import("common.zig");
 const t = @import("../types.zig");
 const Subscription = @import("../subscription/subscription.zig");
 const jemalloc = @import("../jemalloc.zig");
+const std = @import("std");
+
+// configurable
+const SUB_EXEC_INTERVAL = 200_000_000;
 
 pub const Thread = common.Thread;
 const Queue = std.array_list.Managed([]u8);
@@ -36,6 +39,10 @@ pub const Threads = struct {
     jsModifyBridgeStaged: bool = false,
     ctx: *DbCtx,
     allocator: std.mem.Allocator,
+
+    lastModifyTime: u64 = 0,
+    lastModfiyTimeThread: std.Thread,
+    emptyMod: []u8,
 
     pub inline fn waitForQuery(self: *Threads) void {
         self.mutex.lock();
@@ -135,6 +142,23 @@ pub const Threads = struct {
         }
     }
 
+    fn poll(self: *Threads) !void {
+        while (true) {
+            std.Thread.sleep(SUB_EXEC_INTERVAL);
+            const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
+            self.mutex.lock();
+            if (self.shutdown) {
+                self.mutex.unlock();
+                return;
+            }
+            const elapsed = now -% self.lastModifyTime;
+            self.mutex.unlock();
+            if (elapsed > SUB_EXEC_INTERVAL) {
+                try self.modify(self.emptyMod);
+            }
+        }
+    }
+
     fn worker(self: *Threads, thread: *Thread) !void {
         while (true) {
             var queryBuf: ?[]u8 = null;
@@ -226,6 +250,9 @@ pub const Threads = struct {
             if (modifyBuf) |m| {
                 if (thread.id == 0) {
                     switch (op) {
+                        .emptyMod => {
+                            // does nothing but does trigger flush marked subs and maybe more in the future
+                        },
                         .modify => try Modify.modify(thread, m, self.ctx, op),
                         .loadBlock => try dump.loadBlock(thread, self.ctx, m, op),
                         .unloadBlock => try dump.unloadBlock(thread, self.ctx, m, op),
@@ -242,7 +269,7 @@ pub const Threads = struct {
                             );
                             utils.write(resp, err, 0);
                         },
-                        .subscribe => try Subscription.subscribe(self.ctx, m, thread),
+                        .subscribe => try Subscription.subscribe(thread, m),
                         .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
                         .setSchemaIds => {
                             _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
@@ -259,6 +286,9 @@ pub const Threads = struct {
                     thread.modify.commit();
 
                     self.mutex.lock();
+
+                    const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
+
                     self.pendingModifies -= 1;
                     thread.pendingModifies -= 1;
                     thread.currentModifyIndex += 1;
@@ -276,7 +306,17 @@ pub const Threads = struct {
                         self.mutex.lock();
                         thread.mutex.unlock();
                     }
+
+                    // this goes to the other threads
+                    const elapsed = now -% self.lastModifyTime;
+                    self.lastModifyTime = now;
+
                     self.mutex.unlock();
+
+                    // this will go under
+                    if (elapsed > SUB_EXEC_INTERVAL) {
+                        try Subscription.fireIdSubscription(self, thread);
+                    }
                 } else {
                     // Subscription worker
                     self.mutex.lock();
@@ -309,6 +349,9 @@ pub const Threads = struct {
         nextQueryQueue.* = Queue.init(allocator);
 
         self.* = .{
+            .emptyMod = try allocator.alloc(u8, 5),
+            .lastModfiyTimeThread = try std.Thread.spawn(.{}, poll, .{self}),
+            .lastModifyTime = 0,
             .allocator = allocator,
             .threads = try allocator.alloc(*Thread, threadAmount),
             .ctx = ctx,
@@ -317,6 +360,8 @@ pub const Threads = struct {
             .queryQueue = queryQueue,
             .nextQueryQueue = nextQueryQueue,
         };
+
+        self.*.emptyMod[4] = @intFromEnum(t.OpType.emptyMod);
 
         for (self.threads, 0..) |*threadContainer, id| {
             const thread = try Thread.init(allocator, id);
@@ -338,9 +383,12 @@ pub const Threads = struct {
         }
         self.wakeup.broadcast();
         self.mutex.unlock();
+
+        self.lastModfiyTimeThread.join();
         for (self.threads) |threadContainer| {
             threadContainer.deinit();
         }
+        self.allocator.free(self.emptyMod);
         self.modifyQueue.*.deinit();
         self.nextModifyQueue.*.deinit();
         self.queryQueue.*.deinit();
