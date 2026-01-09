@@ -25,34 +25,41 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 
     switch (ctx.fieldType) {
         t.PropType.references => {
-            switch (@as(t.RefOp, @enumFromInt(data[4]))) {
-                // overwrite
-                t.RefOp.overwrite => {
-                    References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
-                    return references.updateReferences(ctx, data);
-                },
-                // add
-                t.RefOp.add => {
-                    return references.updateReferences(ctx, data);
-                },
-                // delete
-                t.RefOp.delete => {
-                    return references.deleteReferences(ctx, data);
-                },
-                // put
-                t.RefOp.putOverwrite => {
-                    References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
-                    return references.putReferences(ctx, data);
-                },
-                // put
-                t.RefOp.putAdd => {
-                    return references.putReferences(ctx, data);
-                },
-                else => {
-                    const len = read(u32, data, 0);
-                    return len;
-                },
-            }
+            const op = @as(t.RefOp, @enumFromInt(data[4]));
+            std.debug.print("update ref op: {any}\n", .{op});
+            // invalid
+            const len = read(u32, data, 0);
+            // invalid command
+            return 4 + len;
+
+            // switch (@as(t.RefOp, @enumFromInt(data[4]))) {
+            //     // overwrite
+            //     t.RefOp.overwrite => {
+            //         References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
+            //         return references.updateReferences(ctx, data);
+            //     },
+            //     // add
+            //     t.RefOp.add => {
+            //         return references.updateReferences(ctx, data);
+            //     },
+            //     // delete
+            //     t.RefOp.delete => {
+            //         return references.deleteReferences(ctx, data);
+            //     },
+            //     // put
+            //     t.RefOp.putOverwrite => {
+            //         References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
+            //         return references.putReferences(ctx, data);
+            //     },
+            //     // put
+            //     t.RefOp.putAdd => {
+            //         return references.putReferences(ctx, data);
+            //     },
+            //     else => {
+            //         const len = read(u32, data, 0);
+            //         return len;
+            //     },
+            // }
         },
         t.PropType.reference => {
             return reference.updateReference(ctx, data);
@@ -62,14 +69,14 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             try Fields.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
-            return len;
+            return 4 + len;
         },
         t.PropType.colVec => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             Fields.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
-            return len;
+            return 4 + len;
         },
         t.PropType.cardinality => {
             const hllMode = if (data[0] == 0) true else false;
@@ -93,7 +100,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
                 sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
             }
-            return len * 8;
+            return 6 + len * 8;
         },
         else => {
             const len = read(u32, data, 0);
@@ -151,7 +158,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 try Fields.write(ctx.node.?, ctx.fieldSchema.?, slice);
             }
 
-            return len;
+            return 4 + len;
         },
     }
 }
@@ -159,7 +166,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     const len = read(u32, data, 0);
     if (ctx.node == null) {
-        return len;
+        return 4 + len;
     }
 
     const slice = data[4 .. len + 4];
@@ -199,7 +206,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     } else {
         std.log.err("Partial update id: {d} field: {d} does not exist \n", .{ ctx.id, ctx.field });
     }
-    return len;
+    return 4 + len;
 }
 
 fn incrementBuf(

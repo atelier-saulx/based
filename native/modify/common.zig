@@ -10,8 +10,6 @@ const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const ModifyCtx = struct {
-    index: usize,
-    offset: u32,
     result: []u8,
     resultLen: u32,
     field: u8,
@@ -27,14 +25,14 @@ pub const ModifyCtx = struct {
     dirtyRanges: std.AutoArrayHashMap(u64, f64),
     subTypes: ?*Subscription.TypeSubscriptionCtx, // prob want to add subs here
     idSubs: ?[]*Subscription.Sub,
-    batch: []u8,
+    buf: []u8,
     err: errors.ClientError,
     thread: *Thread.Thread,
 };
 
 pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {
     const index = tmpId * 5;
-    return read(u32, ctx.batch, index);
+    return read(u32, ctx.buf, index);
 }
 
 pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {

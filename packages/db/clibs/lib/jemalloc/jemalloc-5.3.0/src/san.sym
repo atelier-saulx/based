@@ -1,0 +1,10 @@
+opt_lg_san_uaf_align
+opt_san_guard_large
+opt_san_guard_small
+san_cache_bin_nonfast_mask
+san_check_stashed_ptrs
+san_guard_pages
+san_init
+san_unguard_pages
+san_unguard_pages_pre_destroy
+tsd_san_init

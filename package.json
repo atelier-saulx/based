@@ -27,7 +27,7 @@
     "watch-exports": "tsx --watch-path=./native/types.zig scripts/zigTsExports.ts ",
     "watch": "npm run concurrently npm:watch-native npm:watch-ts npm:watch-exports",
     "concurrently": "FORCE_COLOR=1 concurrently -c 'grey,blue,cyan'",
-    "test": "LOCPATH=dist/locale tsx ./scripts/test.ts",
+    "test": "LOCPATH=dist/locale tsx --force-node-api-uncaught-exceptions-policy=true ./scripts/test.ts",
     "test-gdb": "LOCPATH=dist/locale ./scripts/node-gdb ./scripts/test.ts",
     "test-lldb": "LOCPATH=dist/locale ./scripts/node-lldb ./scripts/test.ts",
     "test-valgrind": "LOCPATH=dist/locale ./scripts/node-valgrind ./scripts/test.ts",

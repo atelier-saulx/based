@@ -121,7 +121,6 @@ export const ModOp = {
   switchIdCreateUnsafe: 8,
   switchIdCreate: 9,
   switchIdCreateRing: 19,
-  switchEdgeId: 20,
   deleteNode: 10,
   delete: 11,
   increment: 12,
@@ -146,7 +145,6 @@ export const ModOpInverse = {
   8: 'switchIdCreateUnsafe',
   9: 'switchIdCreate',
   19: 'switchIdCreateRing',
-  20: 'switchEdgeId',
   10: 'deleteNode',
   11: 'delete',
   12: 'increment',
@@ -171,7 +169,6 @@ export const ModOpInverse = {
   switchIdCreateUnsafe, 
   switchIdCreate, 
   switchIdCreateRing, 
-  switchEdgeId, 
   deleteNode, 
   delete, 
   increment, 
@@ -277,30 +274,47 @@ export const PropTypeInverse = {
 export type PropTypeEnum = (typeof PropType)[keyof typeof PropType]
 
 export const RefOp = {
-  overwrite: 0,
-  add: 1,
-  delete: 2,
-  putOverwrite: 3,
-  putAdd: 4,
+  clear: 0,
+  del: 1,
+  end: 2,
+  set: 3,
+  setIndex: 4,
+  setTmp: 5,
+  setEdge: 6,
+  setIndexTmp: 7,
+  setEdgeIndex: 8,
+  setEdgeIndexTmp: 9,
+  setEdgeTmp: 10,
 } as const
 
 export const RefOpInverse = {
-  0: 'overwrite',
-  1: 'add',
-  2: 'delete',
-  3: 'putOverwrite',
-  4: 'putAdd',
+  0: 'clear',
+  1: 'del',
+  2: 'end',
+  3: 'set',
+  4: 'setIndex',
+  5: 'setTmp',
+  6: 'setEdge',
+  7: 'setIndexTmp',
+  8: 'setEdgeIndex',
+  9: 'setEdgeIndexTmp',
+  10: 'setEdgeTmp',
 } as const
 
 /**
-  overwrite, 
-  add, 
-  delete, 
-  putOverwrite, 
-  putAdd 
+  clear, 
+  del, 
+  end, 
+  set, 
+  setIndex, 
+  setTmp, 
+  setEdge, 
+  setIndexTmp, 
+  setEdgeIndex, 
+  setEdgeIndexTmp, 
+  setEdgeTmp 
  */
-// this needs number because it has a any (_) condition
-export type RefOpEnum = 0 | 1 | 2 | 3 | 4 | (number & {})
+export type RefOpEnum = (typeof RefOp)[keyof typeof RefOp]
 
 export const ReadOp = {
   none: 0,
