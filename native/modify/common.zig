@@ -10,8 +10,6 @@ const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const ModifyCtx = struct {
-    index: usize,
-    offset: u32,
     result: []u8,
     resultLen: u32,
     field: u8,

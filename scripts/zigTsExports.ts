@@ -873,5 +873,5 @@ const zigTsExports = parseZig(zigCodeString)
 await Promise.all([
   fs.writeFile(join(__dirname, '../src/zigTsExports.ts'), zigTsExports),
 ])
-
+console.log(join(__dirname, '../src/zigTsExports.ts'))
 console.log('build zig types file in ts (src/zigTsExports)')

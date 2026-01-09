@@ -8,10 +8,69 @@ const Modify = @import("common.zig");
 const errors = @import("../errors.zig");
 const std = @import("std");
 const edge = @import("edges.zig");
-const RefEdgeOp = @import("../types.zig").RefEdgeOp;
+const t = @import("../types.zig");
+const RefEdgeOp = t.RefEdgeOp;
 const move = @import("../utils.zig").move;
 
 const ModifyCtx = Modify.ModifyCtx;
+
+pub fn writeReferences(ctx: *ModifyCtx, buf: []u8) !usize {
+    var i: usize = 0;
+    while (i < buf.len) {
+        const op: t.RefOp = @enumFromInt(buf[i]);
+        const data: []u8 = buf[i + 1 ..];
+        i += 1;
+        switch (op) {
+            t.RefOp.set => {
+                const len: usize = read(u32, data, 0);
+                const u8IdsUnaligned = data[4 .. 4 + len];
+                const address = @intFromPtr(u8IdsUnaligned.ptr);
+                const offset: u8 = @truncate(address % 4);
+                const u8IdsAligned = data[4 - offset .. 4 + len - offset];
+                if (offset != 0) move(u8IdsAligned, u8IdsUnaligned);
+                const u32Ids = read([]u32, u8IdsAligned, 0);
+                try References.putReferences(
+                    ctx,
+                    ctx.node.?,
+                    ctx.fieldSchema.?,
+                    u32Ids,
+                );
+                i += 4 + len;
+            },
+            t.RefOp.setIndex => {
+                // i += 1;
+            },
+            t.RefOp.setTmp => {
+                // i += 1;
+            },
+            t.RefOp.setEdge => {
+                // i += 1;
+            },
+            t.RefOp.setIndexTmp => {
+                // i += 1;
+            },
+            t.RefOp.setEdgeIndex => {
+                // i += 1;
+            },
+            t.RefOp.setEdgeIndexTmp => {
+                // i += 1;/
+            },
+            t.RefOp.setEdgeTmp => {
+                // i += 1;
+            },
+            t.RefOp.clear => {
+                References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
+                // i += 1;
+            },
+            t.RefOp.del => {
+                // i += 1;
+            },
+            t.RefOp.end => break,
+        }
+    }
+
+    return i;
+}
 
 pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
@@ -86,14 +145,11 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
 
 pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
-
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
         return len;
     }
-
     var i: usize = 1;
-
     while (i < len) : (i += 4) {
         const id = read(u32, data, i + 4);
         try References.deleteReference(
@@ -103,35 +159,28 @@ pub fn deleteReferences(ctx: *ModifyCtx, data: []u8) !usize {
             id,
         );
     }
-
     return len;
 }
 
 pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const len: usize = read(u32, data, 0);
-
     if (ctx.node == null) {
         std.log.err("References delete id: {d} node does not exist \n", .{ctx.id});
         return len;
     }
-
     const idsUnAligned = data[5 .. len + 4];
     const address = @intFromPtr(idsUnAligned.ptr);
     const offset: u8 = @truncate(address % 4);
     const aligned = data[5 - offset .. len - offset + 4];
-
     if (offset != 0) {
         move(aligned, idsUnAligned);
     }
-
     const u32ids = read([]u32, aligned, 0);
-
     try References.putReferences(
         ctx,
         ctx.node.?,
         ctx.fieldSchema.?,
         u32ids,
     );
-
     return len;
 }

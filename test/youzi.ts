@@ -29,13 +29,14 @@ await test('reffies', async (t) => {
   const userId = await db.create('user', { name: 'a' })
 
   await db.create('user', {
-    name: 'b',
-    others: [
-      {
-        id: userId,
-        // $rating: 1,
-      },
-    ],
+    // others: [
+    //   {
+    //     id: userId,
+    //     // $rating: 1,
+    //   },
+    // ],
+    others: [userId],
+    name: 'bxxxxxxxx',
   })
 
   const res = await db.query('user').include('*', '**').get().toObject()
