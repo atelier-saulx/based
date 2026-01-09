@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 SAULX
+ * Copyright (c) 2022-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
