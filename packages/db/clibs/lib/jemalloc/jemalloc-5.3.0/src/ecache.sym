@@ -1,4 +1,0 @@
-ecache_init
-ecache_postfork_child
-ecache_postfork_parent
-ecache_prefork

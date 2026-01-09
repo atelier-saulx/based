@@ -1,4 +1,0 @@
-counter_accum_init
-counter_postfork_child
-counter_postfork_parent
-counter_prefork
