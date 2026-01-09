@@ -248,6 +248,20 @@ pub const Threads = struct {
             }
 
             if (modifyBuf) |m| {
+
+                // if thread
+                // min thread len == 2
+                if (thread.id == 0) {
+                    // if (thread.id == self.threads.len - 1) {
+                    std.debug.print("YO THREAD {any} \n", .{thread.id});
+                    // use this thread for subscribe
+                    switch (op) {
+                        .subscribe => try Subscription.subscribe(thread, m),
+                        .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
+                        else => {},
+                    }
+                }
+
                 if (thread.id == 0) {
                     switch (op) {
                         .emptyMod => {
@@ -269,8 +283,8 @@ pub const Threads = struct {
                             );
                             utils.write(resp, err, 0);
                         },
-                        .subscribe => try Subscription.subscribe(thread, m),
-                        .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
+                        // .subscribe => try Subscription.subscribe(thread, m),
+                        // .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
                         .setSchemaIds => {
                             _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
                             if (self.ctx.ids.len > 0) {

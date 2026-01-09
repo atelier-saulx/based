@@ -5,6 +5,8 @@ const selva = @import("../selva/selva.zig");
 const utils = @import("../utils.zig");
 const jemalloc = @import("../jemalloc.zig");
 const Subscription = @import("../subscription/common.zig");
+const Thread = @import("../thread/thread.zig");
+const t = @import("../types.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
@@ -103,3 +105,82 @@ pub fn stage(
         }
     }
 }
+
+// pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
+//     var index: usize = 0;
+//     while (index < batch.len) {
+//         const op: t.ModOp = @enumFromInt(batch[index]);
+//         const operation: []u8 = batch[index + 1 ..];
+//         switch (op) {
+//             .padding => {
+//                 index += 1;
+//             },
+//             .switchProp => {
+//                 index += 3;
+//             },
+//             .deleteNode => {
+//                 index += 1;
+//             },
+//             .deleteTextField => {
+//                 index += 2;
+//             },
+//             .switchIdCreate => {
+//                 index += 1;
+//             },
+//             .switchIdCreateRing => {
+//                 index += 5;
+//             },
+//             .switchIdCreateUnsafe => {
+//                 index += 5;
+//             },
+//             .switchIdUpdate => {
+//                 const id = utils.read(u32, operation, 0);
+//                 if (id != 0) {
+//                     // ctx.node = .getNode(ctx.typeEntry.?, ctx.id);
+//                     // if (ctx.node == null) {
+//                     //     ctx.err = errors.ClientError.nx;
+//                     // } else {
+
+//                     // try checkId(ctx);
+//                 }
+//                 index += 5;
+//             },
+//             .switchEdgeId => {
+//                 // const srcId = utils.read(u32, operation, 0);
+//                 // const dstId = utils.read(u32, operation, 4);
+//                 // const refField = utils.read(u8, operation, 8);
+
+//                 // NEED THIS!
+//                 // const prevNodeId = try switchEdgeId(ctx, srcId, dstId, refField);
+//                 // writeoutPrevNodeId(ctx, &ctx.resultLen, prevNodeId, ctx.result);
+//                 index += 10;
+//             },
+//             .upsert => {},
+//             .insert => {},
+//             .switchType => {
+//                 const typeId = utils.read(u16, operation, 0);
+//                 // try switchType(ctx, read(u16, operation, 0));
+//                 index += 3;
+//             },
+//             .addEmptySort => {},
+//             .addEmptySortText => {},
+//             .delete => {},
+//             .deleteSortIndex => {},
+//             .createProp => {
+//                 // also here
+//             },
+//             .updateProp => {
+//                 // derp here go
+//             },
+//             .updatePartial => {
+//                 // derp here we go
+//             },
+//             .increment, .decrement => {
+//                 // here we go
+//             },
+//             .expire => {
+//                 index += 5;
+//             },
+//         }
+//     }
+// }
