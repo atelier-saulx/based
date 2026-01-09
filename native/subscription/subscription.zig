@@ -1,6 +1,6 @@
 const std = @import("std");
 const errors = @import("../errors.zig");
-const Query = @import("common.zig");
+const Subscription = @import("common.zig");
 const utils = @import("../utils.zig");
 const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
@@ -8,61 +8,46 @@ const DbCtx = @import("../db/ctx.zig").DbCtx;
 const napi = @import("../napi.zig");
 const Id = @import("./singleId.zig");
 
+pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !void {
+    if (thread.subscriptions.lastIdMarked > 0) {
+        var i: usize = 0;
+        while (i < thread.subscriptions.lastIdMarked) {
+            const subId = thread.subscriptions.singleIdMarked[i];
+            if (thread.subscriptions.subsHashMap.get(subId)) |sub| {
+                sub.*.marked = Subscription.SubStatus.all;
+                try threads.query(sub.*.query);
+            }
+            i += 1;
+        }
+        thread.subscriptions.lastIdMarked = 0;
+    } else {
+        // _ = try thread.query.result(0, utils.read(u32, q, 0), op);
+    }
+}
+
 pub fn subscribe(
-    _: *DbCtx,
+    thread: *Thread.Thread,
     buffer: []u8,
-    _: *Thread.Thread,
 ) !void {
     var index: usize = 0;
     const subSize = utils.readNext(u32, buffer, &index);
-
-    std.debug.print("FLURP? {any} \n", .{subSize});
-
-    const header = utils.readNext(t.SubscriptionHeader, buffer, &index);
-    const fields = utils.sliceNext(header.fieldsLen, buffer, &index);
-    std.debug.print("flap {any} plen {any} \n", .{ buffer[index..subSize], header.partialLen });
-    const partialFields = utils.sliceNext(header.partialLen * 2, buffer, &index);
-    // TYPES
-
+    const subHeader = utils.readNext(t.SubscriptionHeader, buffer, &index);
+    const fields = utils.sliceNext(subHeader.fieldsLen, buffer, &index);
+    const partialFields = utils.sliceNext(subHeader.partialLen * 2, buffer, &index);
     const query = utils.sliceNext(buffer.len - subSize, buffer, &index);
-
-    std.debug.print("HEADER: {any} q: {any} fields: {any} partial: {any} len: {any} \n", .{
-        header,
-        query,
-        fields,
-        partialFields,
-        buffer.len - subSize,
-    });
-
     index = 0;
     const subId = utils.readNext(u32, query, &index);
-
-    std.debug.print("query {any} \n", .{query});
-
     const queryType: t.OpType = @enumFromInt(query[index]);
-
-    std.debug.print("SUBID {any} {any} \n", .{ subId, queryType });
-
-    // prob need to use 8 bytes for sub id...
-
-    // get query as well
-
-    // Id.addIdSubscription(
-    //     dbCtx,
-    //     header.subId,
-    //     header.typeId,
-    // );
-
-    // typeId: u16,
-    // id: u32,
-    // fieldsLen: u8,
-    // partialLen: u16,
-    // queryLen
-    // fields: []const u8,
-    // partialFields: []const u8,
-    // query
-
-    // ----
+    // here we allrdy get the thread so we need a fn that goes before this and assigns to the correct thread
+    switch (queryType) {
+        .id, .idFilter => {
+            const header = utils.readNext(t.QueryHeaderSingle, query, &index);
+            try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, &subHeader);
+        },
+        else => {
+            // not handled yet
+        },
+    }
 }
 
 pub fn unsubscribe(
@@ -70,6 +55,7 @@ pub fn unsubscribe(
     buffer: []u8,
     thread: *Thread.Thread,
 ) !void {
+    // needs to find the correct thread
     // only needs SUB-ID
     std.debug.print("derp {any} {any} {any}   \n", .{ dbCtx, buffer, thread });
     // ----

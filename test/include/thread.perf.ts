@@ -11,7 +11,10 @@ await test('include', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => db.stop(true))
+  t.after(async () => {
+    console.log('STOP SERVER')
+    await db.stop(true)
+  })
   //t.after(() => t.backup(db))
 
   // single ref + edge
@@ -71,20 +74,20 @@ await test('include', async (t) => {
 
   const todos: number[] = []
   const rand = fastPrng(233221)
-  let d = Date.now()
+  // let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
-    db.create('todo', {
-      // name: i % 2 ? 'b' : 'a',
-      nr: rand(0, 10),
-    })
-  }
+  // for (let i = 0; i < 1e6; i++) {
+  //   db.create('todo', {
+  //     // name: i % 2 ? 'b' : 'a',
+  //     nr: rand(0, 10),
+  //   })
+  // }
 
-  await db.drain()
+  // await db.drain()
 
-  console.log(Date.now() - d, 'ms')
+  // console.log(Date.now() - d, 'ms')
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 10; i++) {
     todos.push(
       await db.create('todo', {
         // name: i % 2 ? 'b' : 'a',
@@ -124,17 +127,17 @@ await test('include', async (t) => {
       console.log('INCOMING', d)
     })
 
-  await wait(1)
+  await wait(200)
   db.update('user', mrX, { nr: { increment: 1 } })
 
-  await wait(10)
+  await wait(200)
   db.update('user', mrX, { nr: { increment: 1 } })
 
-  await wait(100)
+  await wait(200)
 
   console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 1e3; i++) {

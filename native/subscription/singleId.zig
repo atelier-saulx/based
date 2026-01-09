@@ -6,6 +6,8 @@ const jemalloc = @import("../jemalloc.zig");
 const Subscription = @import("common.zig");
 const upsertSubType = @import("shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("shared.zig").removeSubTypeIfEmpty;
+const t = @import("../types.zig");
+const Thread = @import("../thread/thread.zig");
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
@@ -72,27 +74,21 @@ pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) void {
 }
 
 pub fn addIdSubscription(
-    ctx: *DbCtx,
+    thread: *Thread.Thread,
+    queryBuffer: []u8,
+    partialFields: []u8,
+    fields: []u8,
     subId: u32,
-    typeId: u16,
-    id: u32,
-    fieldsLen: u8,
-    partialLen: u16,
-    fields: []const u8,
-    partialFields: []const u8,
+    header: *const t.QueryHeaderSingle,
+    subHeader: *const t.SubscriptionHeader,
 ) !void {
-
-    // prob want to add QUERY here as well
-    // upgrade the sub id to just the query id so we dont need to score keep more
-
-    var typeSubs = try upsertSubType(ctx, typeId);
-
-    var subs: []*Subscription.IdSubsItem = undefined;
+    var typeSubs = try upsertSubType(thread, header.typeId);
+    var subs: []*Subscription.Sub = undefined;
     var idDoesNotExist = true;
     var subIndex: usize = 0;
 
-    if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
-        if (typeSubs.idSubs.getEntry(id)) |entry| {
+    if (header.id >= typeSubs.minId and typeSubs.idBitSet[(header.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
+        if (typeSubs.idSubs.getEntry(header.id)) |entry| {
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
@@ -102,36 +98,36 @@ pub fn addIdSubscription(
     }
 
     if (idDoesNotExist) {
-        subs = jemalloc.alloc(*Subscription.IdSubsItem, 1);
-        try typeSubs.idSubs.put(id, subs);
-        if (id > typeSubs.maxId) {
-            typeSubs.maxId = id;
+        subs = jemalloc.alloc(*Subscription.Sub, 1);
+        try typeSubs.idSubs.put(header.id, subs);
+        if (header.id > typeSubs.maxId) {
+            typeSubs.maxId = header.id;
         }
-        if (id < typeSubs.minId) {
-            typeSubs.minId = id;
+        if (header.id < typeSubs.minId) {
+            typeSubs.minId = header.id;
         }
         sizeBitSet(typeSubs);
-        typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
+        typeSubs.idBitSet[(header.id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
-    // see if we can replace this with jemalloc
-    const sub = try ctx.allocator.create(Subscription.IdSubsItem);
+    const sub = jemalloc.create(Subscription.Sub);
 
-    sub.subId = subId;
-    sub.id = id;
+    sub.id = header.id;
     sub.marked = Subscription.SubStatus.all;
-    sub.typeId = typeId;
+    sub.typeId = header.typeId;
     sub.partial = @splat(@intFromEnum(Subscription.SubPartialStatus.none));
     sub.fields = @splat(@intFromEnum(Subscription.SubStatus.marked));
+    sub.query = queryBuffer;
+    sub.subId = subId;
 
     subs[subIndex] = sub;
-    try ctx.subscriptions.subsHashMap.put(subId, sub);
+    try thread.subscriptions.subsHashMap.put(subId, sub);
 
-    if (partialLen > vectorLenU16) {
+    if (subHeader.partialLen > vectorLenU16) {
         sub.partial = @splat(@intFromEnum(Subscription.SubPartialStatus.all));
     } else {
         var j: usize = 0;
-        while (j < partialLen) {
+        while (j < subHeader.partialLen) {
             sub.partial[j] = utils.read(u16, partialFields, j * 2);
             j += 1;
         }
@@ -140,7 +136,7 @@ pub fn addIdSubscription(
         sub.fields = @splat(@intFromEnum(Subscription.SubStatus.all));
     } else {
         var j: usize = 0;
-        while (j < fieldsLen) {
+        while (j < subHeader.fieldsLen) {
             sub.fields[j] = fields[j];
             j += 1;
         }
