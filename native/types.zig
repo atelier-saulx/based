@@ -18,9 +18,9 @@ pub const OpType = enum(u8) {
     aliasFilter = 8,
     idFilter = 9,
     referenceEdge = 10,
-    // unsubscribe = 12
+
     subscribe = 11,
-    unsubscribe = 12,
+    unsubscribe = 14,
 
     blockHash = 42,
     saveBlock = 67,
@@ -584,12 +584,9 @@ pub const IncludeResponseMeta = packed struct {
 };
 
 pub const SubscriptionHeader = packed struct {
-    // typeId: u16,
+    op: OpType,
     fieldsLen: u8,
     partialLen: u8,
-    // fields: []const u8,
-    // partialFields: []const u8,
-    // query
 };
 
 // subscribe

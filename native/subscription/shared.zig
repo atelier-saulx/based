@@ -1,6 +1,6 @@
-const jemalloc = @import("../../jemalloc.zig");
+const jemalloc = @import("../jemalloc.zig");
 const Subscription = @import("common.zig");
-const DbCtx = @import("../ctx.zig").DbCtx;
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 const std = @import("std");
 
 pub inline fn upsertSubType(ctx: *DbCtx, typeId: u16) !*Subscription.TypeSubscriptionCtx {

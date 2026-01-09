@@ -16,8 +16,6 @@ import {
 } from './schema.js'
 import { loadBlock, save, SaveOpts, unloadBlock } from './blocks.js'
 
-// import { Subscriptions } from './subscription.js'
-
 import { OpType, OpTypeEnum, OpTypeInverse } from '../zigTsExports.js'
 import {
   MAX_ID,
@@ -184,10 +182,11 @@ export class DbServer extends DbShared {
       const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4] as OpTypeEnum
 
-      console.log('[Get q buf]', OpTypeInverse[op])
+      // console.log('[Get q buf]', OpTypeInverse[op])
 
       const queryListeners = this.opListeners.get(op)!
-      if (queryListeners.get(id)) {
+
+      if (queryListeners.get(id)?.once.length) {
         console.log('💤 Query already staged dont exec again', id)
       } else {
         native.query(buf, this.dbCtxExternal)
@@ -199,22 +198,29 @@ export class DbServer extends DbShared {
   unsubscribe(id: number) {}
 
   subscribe(buf: Uint8Array, onData: (d: Uint8Array) => void): number {
-    const id = readUint32(buf, 0)
-    const op: OpTypeEnum = buf[4] as OpTypeEnum
+    const subSize = readUint32(buf, 0)
+    const query = buf.subarray(subSize, buf.byteLength)
+
+    const id = readUint32(query, 0)
+    const op: OpTypeEnum = query[4] as OpTypeEnum
     const queryListeners = this.opListeners.get(op)!
+
+    console.log('derX???????????', id, OpTypeInverse[op])
+
     const qIdListeners = queryListeners.get(id)
     if (qIdListeners) {
       console.log('💤 Subscription already staged dont exec again', id)
     } else {
-      native.query(buf, this.dbCtxExternal)
-      // also add query
+      native.query(query, this.dbCtxExternal)
+    }
+
+    if (!qIdListeners?.persistent.size) {
+      console.log('DERP')
+      native.modify(buf, this.dbCtxExternal)
     }
 
     this.addOpListener(op, id, onData)
 
-    if (qIdListeners?.persistent.size === 0) {
-      native.subscribe(buf, this.dbCtxExternal)
-    }
     return id
   }
 

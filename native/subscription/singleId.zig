@@ -1,8 +1,8 @@
 const std = @import("std");
-const DbCtx = @import("../ctx.zig").DbCtx;
-const napi = @import("../../napi.zig");
-const utils = @import("../../utils.zig");
-const jemalloc = @import("../../jemalloc.zig");
+const DbCtx = @import("../db/ctx.zig").DbCtx;
+const napi = @import("../napi.zig");
+const utils = @import("../utils.zig");
+const jemalloc = @import("../jemalloc.zig");
 const Subscription = @import("common.zig");
 const upsertSubType = @import("shared.zig").upsertSubType;
 const removeSubTypeIfEmpty = @import("shared.zig").removeSubTypeIfEmpty;
@@ -71,7 +71,7 @@ pub fn sizeBitSet(typeSubs: *Subscription.TypeSubscriptionCtx) void {
     }
 }
 
-pub fn addIdSubscriptionInternal(
+pub fn addIdSubscription(
     ctx: *DbCtx,
     subId: u32,
     typeId: u16,
@@ -147,7 +147,7 @@ pub fn addIdSubscriptionInternal(
     }
 }
 
-pub fn removeIdSubscriptionInternal(ctx: *DbCtx, subId: u32, typeId: u16, id: u32) void {
+pub fn removeIdSubscription(ctx: *DbCtx, subId: u32, typeId: u16, id: u32) void {
     if (ctx.subscriptions.types.get(typeId)) |typeSubs| {
         if (id >= typeSubs.minId and typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] == 1) {
             if (typeSubs.idSubs.getEntry(id)) |idSub| {

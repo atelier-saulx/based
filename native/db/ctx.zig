@@ -21,6 +21,7 @@ pub const DbCtx = struct {
     selva: ?*selva.SelvaDb,
     ids: []u32,
     jsBridge: *jsBridge.Callback,
+    fsPath: []u8,
     threads: *threads.Threads,
     decompressor: *deflate.Decompressor,
     libdeflateBlockState: deflate.BlockState,
@@ -47,6 +48,7 @@ pub fn init() void {
 pub fn createDbCtx(
     env: napi.Env,
     bridge: napi.Value,
+    fsPath: []u8,
     nrThreads: u16,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
@@ -59,6 +61,7 @@ pub fn createDbCtx(
     }
 
     dbCtxPointer.* = .{
+        .fsPath = try allocator.dupe(u8, fsPath),
         .threads = try threads.Threads.init(allocator, nrThreads, dbCtxPointer),
         .id = rand.int(u32),
         .arena = arena,

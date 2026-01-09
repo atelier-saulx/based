@@ -3,6 +3,7 @@ import { DbServer } from '../db-server/index.js'
 // import { registerSubscription } from '../db-server/subscription.js'
 import type { BasedDbQuery } from './query/BasedDbQuery.js'
 import type { SchemaMigrateFns, SchemaOut } from '../schema/index.js'
+import { concatUint8Arr } from '../utils/uint8.js'
 
 export type DbClientHooks = {
   setSchema(
@@ -26,7 +27,7 @@ export const getDefaultHooks = (server: DbServer): DbClientHooks => {
       onData: (res: Uint8Array) => void,
       onError: OnError,
     ) {
-      console.log('GO SUBSCRIBE', q.buffer)
+      server.subscribe(q.subscriptionBuffer!, onData)
       return () => {}
     },
     setSchema(schema: SchemaOut, transformFns) {

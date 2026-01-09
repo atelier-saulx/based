@@ -172,9 +172,6 @@ pub const Threads = struct {
                     .blockHash => try info.blockHash(thread, self.ctx, q, op),
                     .saveBlock => try dump.saveBlock(thread, self.ctx, q, op),
                     .saveCommon => try dump.saveCommon(thread, self.ctx, q, op),
-                    // .subscribe => try Subscription.subscribe(self.ctx, q, thread, op),
-                    // maybe subscribe --
-                    .unsubscribe => try Subscription.unsubscribe(self.ctx, q, thread, op),
                     .noOp => {
                         std.log.err("NO-OP received for query incorrect \n", .{});
                     },
@@ -245,6 +242,8 @@ pub const Threads = struct {
                             );
                             utils.write(resp, err, 0);
                         },
+                        .subscribe => try Subscription.subscribe(self.ctx, m, thread),
+                        .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
                         .setSchemaIds => {
                             _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
                             if (self.ctx.ids.len > 0) {

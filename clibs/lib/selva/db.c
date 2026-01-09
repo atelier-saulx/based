@@ -416,6 +416,10 @@ extern inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blo
 
 extern inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id);
 
+extern inline node_id_t selva_block_i2start(const struct SelvaTypeEntry *te, block_id_t block_i);
+
+extern inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t block_i);
+
 extern inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te);
 
 extern inline const struct SelvaFieldSchema *get_fs_by_fields_schema_field(const struct SelvaFieldsSchema *fields_schema, field_t field);

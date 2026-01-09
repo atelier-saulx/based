@@ -1,11 +1,19 @@
-import { writeInt64, writeUint16, writeUint32 } from '../../../utils/index.js'
-import native from '../../../native.js'
+import {
+  concatUint8Arr,
+  writeInt64,
+  writeUint16,
+  writeUint32,
+} from '../../../utils/index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
-const ID_OFFSET = 3 // TODO FIX THIS
 
 import { FilterMetaNow, QueryDef, QueryDefFilter } from '../types.js'
 import { SubscriptionType } from './types.js'
-import { QueryType } from '../../../zigTsExports.js'
+import {
+  OpType,
+  QueryType,
+  SubscriptionHeaderByteSize,
+  createSubscriptionHeader,
+} from '../../../zigTsExports.js'
 
 type Fields = { separate: Set<number>; main: Set<number> }
 
@@ -108,49 +116,64 @@ export const registerSubscription = (query: BasedDbQuery) => {
     const fields = collectFields(def)
     const typeId = def.schema!.id
     // make a prop index map INDEX OF
-    const subId = native.crc32(
-      query.buffer!.subarray(ID_OFFSET + 4, query.buffer!.byteLength - 4),
-    )
-    const headerLen = 18
-    const types = collectTypes(def)
-    const nowQueries = collectFilters(def.filter, fields)
-    const buffer = new Uint8Array(
-      headerLen +
-        fields.separate.size +
-        types.size * 2 +
-        nowQueries.length * 16 +
-        fields.main.size * 2,
-    )
-    buffer[0] = SubscriptionType.singleId
-    writeUint32(buffer, subId, 1)
-    writeUint16(buffer, typeId, 5)
-    writeUint32(buffer, id, 7)
-    buffer[11] = fields.separate.size
-    writeUint16(buffer, fields.main.size, 12)
-    writeUint16(buffer, types.size, 14)
-    writeUint16(buffer, nowQueries.length, 16)
-    let i = headerLen
+    // const subId = native.crc32(
+    //   query.buffer!.subarray(ID_OFFSET + 4, query.buffer!.byteLength - 4),
+    // )
+
+    const fieldsLen = fields.separate.size
+    const partialLen = fields.main.size
+    const varLen = fieldsLen + partialLen * 2
+
+    const header = createSubscriptionHeader({
+      op: OpType.subscribe,
+      fieldsLen,
+      partialLen,
+    })
+
+    const variableFields = new Uint8Array(varLen)
+
+    let i = 0
     for (const field of fields.separate) {
-      buffer[i] = field
+      console.log('snurp?', field, fields.separate, fields.main)
+      variableFields[i] = field
       i++
     }
     for (const offset of fields.main) {
-      writeUint16(buffer, offset, i)
+      console.log({ offset })
+      writeUint16(variableFields, offset, i)
       i += 2
     }
-    for (const type of types) {
-      writeUint16(buffer, type, i)
-      i += 2
-    }
-    for (const now of nowQueries) {
-      buffer[i] = now.prop.prop
-      buffer[i + 1] = now.ctx.operation
-      writeUint16(buffer, now.ctx.typeId, i + 2)
-      writeInt64(buffer, now.offset, i + 4)
-      writeUint32(buffer, now.resolvedByteIndex, i + 12)
-      i += 16
-    }
-    query.subscriptionBuffer = buffer
+
+    const u32 = new Uint8Array(4)
+    writeUint32(u32, SubscriptionHeaderByteSize + varLen + 4, 0)
+    query.subscriptionBuffer = concatUint8Arr([
+      u32,
+      header,
+      variableFields,
+      query.buffer!,
+    ])
+
+    // combine this
+
+    // packed struct
+    // const types = collectTypes(def)
+    // const nowQueries = collectFilters(def.filter, fields)
+
+    // writeUint16(buffer, nowQueries.length, 16)
+
+    // TODO: very important
+    // for (const type of types) {
+    //   writeUint16(buffer, type, i)
+    //   i += 2
+    // }
+    // for (const now of nowQueries) {
+    //   buffer[i] = now.prop.prop
+    //   buffer[i + 1] = now.ctx.operation
+    //   writeUint16(buffer, now.ctx.typeId, i + 2)
+    //   writeInt64(buffer, now.offset, i + 4)
+    //   writeUint32(buffer, now.resolvedByteIndex, i + 12)
+    //   i += 16
+    // }
   } else {
     const typeId = def.schema!.id
     const types = collectTypes(def)

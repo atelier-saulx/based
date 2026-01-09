@@ -15,7 +15,6 @@ export * from './db-client/query/query.js'
 export * from './db-client/query/BasedDbQuery.js'
 export * from './db-client/query/BasedQueryResponse.js'
 export * from './db-client/hooks.js'
-export * from './db-server/subscription.js'
 
 export const SCHEMA_FILE_DEPRECATED = 'schema.json'
 export const SCHEMA_FILE = 'schema.bin'
