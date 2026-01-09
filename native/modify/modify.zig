@@ -1,6 +1,6 @@
 const std = @import("std");
 const napi = @import("../napi.zig");
-const selva = @import("../selva/selva.zig").c;
+const selva = @import("../selva/selva.zig");
 const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
@@ -76,7 +76,7 @@ fn newNode(ctx: *ModifyCtx) !void {
     ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, id);
     ctx.id = id;
     ctx.db.ids[ctx.typeId - 1] = id;
-    Modify.markDirtyRange(ctx, ctx.typeId, id);
+    selva.markDirty(ctx, ctx.typeId, id);
 }
 
 fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
@@ -91,7 +91,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
 
     ctx.id = nextId;
     ctx.db.ids[ctx.typeId - 1] = nextId;
-    Modify.markDirtyRange(ctx, ctx.typeId, nextId);
+    selva.markDirty(ctx, ctx.typeId, nextId);
 }
 
 fn getLargeRef(db: *DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?References.ReferenceLarge {
@@ -101,7 +101,7 @@ fn getLargeRef(db: *DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) 
         if (References.getReferences(false, true, db, node, fs)) |iterator| {
             const refs = iterator.refs;
             const any = References.referencesGet(refs, dstId);
-            if (any.type == selva.SELVA_NODE_REFERENCE_LARGE) {
+            if (any.type == selva.c.SELVA_NODE_REFERENCE_LARGE) {
                 return any.p.large;
             }
         }
@@ -141,7 +141,7 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
             try subs.checkId(ctx);
             // It would be even better if we'd mark it dirty only in the case
             // something was actually changed.
-            Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+            selva.markDirty(ctx, ctx.typeId, ctx.id);
         }
     }
 
@@ -211,7 +211,7 @@ pub fn modifyWrite(ctx: *ModifyCtx) !void {
                     ctx.db.ids[ctx.typeId - 1] = ctx.id;
                 }
                 ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, ctx.id);
-                Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+                selva.markDirty(ctx, ctx.typeId, ctx.id);
                 ctx.index += 5;
             },
             .switchIdUpdate => {
@@ -227,7 +227,7 @@ pub fn modifyWrite(ctx: *ModifyCtx) !void {
                         try subs.checkId(ctx);
                         // It would be even better if we'd mark it dirty only in the case
                         // something was actually changed.
-                        Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+                        selva.markDirty(ctx, ctx.typeId, ctx.id);
                     }
                 }
                 ctx.index += 5;
@@ -418,7 +418,7 @@ pub fn modify(
     //                 dbCtx.ids[ctx.typeId - 1] = ctx.id;
     //             }
     //             ctx.node = try Node.upsertNode(&ctx, ctx.typeEntry.?, ctx.id);
-    //             Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+    //             selva.markDirty(&ctx, ctx.typeId, ctx.id);
     //             i = i + 5;
     //         },
     //         .switchIdUpdate => {
@@ -434,7 +434,7 @@ pub fn modify(
     //                     try subs.checkId(&ctx);
     //                     // It would be even better if we'd mark it dirty only in the case
     //                     // something was actually changed.
-    //                     Modify.markDirtyRange(&ctx, ctx.typeId, ctx.id);
+    //                     selva.markDirty(&ctx, ctx.typeId, ctx.id);
     //                 }
     //             }
     //             i = i + 5;

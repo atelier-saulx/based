@@ -121,8 +121,6 @@ struct SelvaFields;
 struct SelvaNode;
 struct SelvaTypeEntry;
 
-typedef void (*selva_dirty_node_cb_t)(void *ctx, node_type_t type, node_id_t node_id);
-
 SELVA_EXPORT
 bool selva_is_valid_field_type(enum SelvaFieldType ftype);
 

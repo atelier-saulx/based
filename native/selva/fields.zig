@@ -141,12 +141,12 @@ pub fn ensureEdgePropTypeString(
     ref: References.ReferenceLarge,
     fieldSchema: Schema.FieldSchema,
 ) !*selva.c.selva_string {
-    const edge_node = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0, selva.markDirtyCb, ctx) orelse return errors.SelvaError.SELVA_ENOTSUP;
+    const edge_node = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0) orelse return errors.SelvaError.SELVA_ENOTSUP;
     return selva.c.selva_fields_ensure_string(edge_node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
 }
 
 pub fn deleteField(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
-    try errors.selva(selva.c.selva_fields_del(ctx.db.selva, node, fieldSchema, selva.markDirtyCb, ctx));
+    try errors.selva(selva.c.selva_fields_del(ctx.db.selva, node, fieldSchema));
 }
 
 pub fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {

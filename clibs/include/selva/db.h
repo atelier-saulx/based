@@ -369,17 +369,16 @@ SELVA_EXPORT
 void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id);
 
 SELVA_EXPORT
-void selva_db_expire_tick(struct SelvaDb *db, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx, int64_t now);
+void selva_db_expire_tick(struct SelvaDb *db, int64_t now);
 
 /**
  * Delete a node.
- * @param dirty_cb is called for any newly dirty nodes in addition to the node being deleted.
  */
 SELVA_EXPORT
-void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx) __attribute__((nonnull(1, 2, 3)));
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull(1, 2, 3)));
 
 SELVA_EXPORT
-void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
+void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
 
 SELVA_EXPORT
 void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id);

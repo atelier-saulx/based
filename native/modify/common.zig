@@ -36,16 +36,3 @@ pub fn resolveTmpId(ctx: *ModifyCtx, tmpId: u32) u32 {
     const index = tmpId * 5;
     return read(u32, ctx.batch, index);
 }
-
-pub inline fn markDirtyRange(ctx: *ModifyCtx, typeId: u16, nodeId: u32) void {
-    const blockCapacity = Node.getBlockCapacity(ctx.db, typeId);
-    const tmp: u64 = nodeId - @as(u64, @intFromBool((nodeId % blockCapacity) == 0));
-    const mtKey = (@as(u64, typeId) << 32) | ((tmp / blockCapacity) * blockCapacity + 1);
-    ctx.dirtyRanges.put(mtKey, @floatFromInt(mtKey)) catch return;
-}
-
-pub fn markReferencesDirty(ctx: *ModifyCtx, dstTypeId: u16, refs: []u32) void {
-    for (refs) |nodeId| {
-        markDirtyRange(ctx, dstTypeId, nodeId);
-    }
-}

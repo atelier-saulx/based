@@ -41,10 +41,7 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
         return;
     }
 
-    std.log.err("{s}", .{filename});
-
     err = selva.selva_dump_save_block(ctx.selva, te, filename.ptr, start, &hash);
-    std.log.err("saveBlock: {d}", .{ err });
     utils.write(resp, err, 0);
     utils.byteCopy(resp, q[5..11], 4);
     utils.byteCopy(resp, &hash, 10);
@@ -83,7 +80,6 @@ fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTy
     utils.byteCopy(msg, filepath, 11);
     msg[11 + filepath.len] = 0; // nul-termination
 
-    std.log.err("hurf durf save {d}:{d}", .{ selva.selva_get_type(te), blockI });
     jobCtx.threads.query(msg) catch return;
     jobCtx.nrBlocks += 1;
 }
@@ -92,7 +88,6 @@ fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTy
 /// Dispatches a save job for each block.
 /// This must be ran on the modify thread.
 pub fn saveAllBlocks(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, op: t.OpType) !void {
-    std.log.err("SAVE ALL", .{});
     const qid = read(u32, q, 0);
     const resp = try thread.query.result(8, qid, op);
     var jobCtx: DispatchSaveJobCtx = .{

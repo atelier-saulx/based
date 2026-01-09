@@ -116,15 +116,9 @@ void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t no
     selva_expire_remove(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
 }
 
-struct expire_dirty_ctx {
-    selva_dirty_node_cb_t cb;
-    void *mctx;
-};
-
 static void expire_cb(struct SelvaExpireToken *tok, void *ctx)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
-    struct expire_dirty_ctx *dirty = (struct expire_dirty_ctx *)ctx;
     struct SelvaTypeEntry *te;
     struct SelvaNode *node;
 
@@ -132,10 +126,7 @@ static void expire_cb(struct SelvaExpireToken *tok, void *ctx)
     assert(te);
     node = selva_find_node(te, token->node_id);
     if (node) {
-        if (dirty->cb) {
-            dirty->cb(dirty->mctx, node->type, node->node_id);
-        }
-        selva_del_node(token->db, te, node, dirty->cb, dirty->mctx);
+        selva_del_node(token->db, te, node);
     }
 
     selva_free(token);
@@ -148,14 +139,9 @@ static void cancel_cb(struct SelvaExpireToken *tok)
     selva_free(token);
 }
 
-void selva_db_expire_tick(struct SelvaDb *db, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx, int64_t now)
+void selva_db_expire_tick(struct SelvaDb *db, int64_t now)
 {
-    struct expire_dirty_ctx ctx = {
-        .cb = dirty_cb,
-        .mctx = dirty_ctx,
-    };
-
-    selva_expire_tick(&db->expiring, &ctx, now);
+    selva_expire_tick(&db->expiring, nullptr, now);
 }
 
 
@@ -201,8 +187,8 @@ static inline void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEn
         if (unload) {
             selva_unl_node(db, te, node);
         } else {
-            /* Presumably dirty_cb is not needed here. */
-            selva_del_node(db, te, node, selva_faux_dirty_cb, nullptr);
+            /* TODO Presumably this block shouldn't be marked dirty?. */
+            selva_del_node(db, te, node);
         }
     }
 }
@@ -464,15 +450,12 @@ extern inline const struct EdgeFieldConstraint *selva_get_edge_field_constraint(
 
 extern inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct SelvaDb *db, const struct EdgeFieldConstraint *efc);
 
-static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, bool unload, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, bool unload)
 {
     struct SelvaTypeBlock *block = selva_get_block(type->blocks, node->node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
 
     /* TODO What if block is empty or not loaded */
-    if (dirty_cb) {
-        dirty_cb(dirty_ctx, node->type, node->node_id);
-    }
     block->status |= SELVA_TYPE_BLOCK_STATUS_DIRTY;
 
     selva_remove_all_aliases(type, node->node_id);
@@ -487,7 +470,7 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
     if (unload) {
         selva_fields_unload(db, node);
     } else {
-        selva_fields_destroy(db, node, dirty_cb, dirty_ctx);
+        selva_fields_destroy(db, node);
     }
 #if 0
     memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.fields_schema.nr_fields));
@@ -498,25 +481,22 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
     type->nr_nodes--;
 }
 
-void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    del_node(db, type, node, false, dirty_cb, dirty_ctx);
+    del_node(db, type, node, false);
 }
 
 static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    del_node(db, type, node, true, selva_faux_dirty_cb, nullptr);
+    del_node(db, type, node, true);
 }
 
-void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx)
+void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    if (dirty_cb) {
-        dirty_cb(dirty_ctx, node->type, node->node_id);
-    }
     selva_mark_dirty(type, node->node_id);
 
     selva_remove_all_aliases(type, node->node_id);
-    selva_fields_flush(db, node, dirty_cb, dirty_ctx);
+    selva_fields_flush(db, node);
 }
 
 void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id)

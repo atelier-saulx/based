@@ -398,7 +398,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     }
 
     constexpr enum SelvaTypeBlockStatus block_sm = SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
-    if ((block->status & block_sm) == block_sm) {
+    if ((block->status & block_sm) != block_sm) {
         return 0; /* TODO Should this be an error instead? */
     }
 
@@ -628,7 +628,7 @@ static int load_field_weak_reference_v3(struct selva_io *io, struct SelvaDb *db,
 
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
     dst_node = selva_upsert_node(dst_te, dst_id);
-    return selva_fields_reference_set(db, node, fs, dst_node, nullptr, selva_faux_dirty_cb, nullptr);
+    return selva_fields_reference_set(db, node, fs, dst_node, nullptr);
 }
 
 /**
@@ -649,7 +649,7 @@ static int load_field_weak_references_v3(struct selva_io *io, struct SelvaDb *db
 
         io->sdb_read(&reference, sizeof(reference), 1, io);
         dst_node = selva_upsert_node(dst_te, reference.dst_id);
-        err = selva_fields_references_insert(db, node, fs, i, insert_flags, dst_te, dst_node, nullptr, nullptr, nullptr);
+        err = selva_fields_references_insert(db, node, fs, i, insert_flags, dst_te, dst_node, nullptr);
         if (err) {
             return err;
         }
@@ -671,10 +671,10 @@ static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode
     if (likely(dst_id != 0)) {
         dst_node = selva_upsert_node(dst_te, dst_id);
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
-            err = selva_fields_reference_set(db, node, fs, dst_node, &ref, selva_faux_dirty_cb, nullptr);
+            err = selva_fields_reference_set(db, node, fs, dst_node, &ref);
         } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
             enum selva_fields_references_insert_flags insert_flags = SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER | SELVA_FIELDS_REFERENCES_INSERT_FLAGS_IGNORE_SRC_DEPENDENT;
-            err = selva_fields_references_insert(db, node, fs, index, insert_flags, dst_te, dst_node, &ref, nullptr, nullptr);
+            err = selva_fields_references_insert(db, node, fs, index, insert_flags, dst_te, dst_node, &ref);
         } else {
             err = SELVA_EINTYPE;
         }
@@ -700,7 +700,7 @@ static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode
     if (edge) {
         switch (ref.type) {
         case SELVA_NODE_REFERENCE_LARGE:
-            (void)selva_fields_ensure_ref_edge(db, node, &fs->edge_constraint, ref.large, edge, nullptr, nullptr);
+            (void)selva_fields_ensure_ref_edge(db, node, &fs->edge_constraint, ref.large, edge);
             break;
         case SELVA_NODE_REFERENCE_NULL:
         case SELVA_NODE_REFERENCE_SMALL:
