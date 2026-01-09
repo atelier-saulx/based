@@ -205,8 +205,6 @@ export class DbServer extends DbShared {
     const op: OpTypeEnum = query[4] as OpTypeEnum
     const queryListeners = this.opListeners.get(op)!
 
-    console.log('derX???????????', id, OpTypeInverse[op])
-
     const qIdListeners = queryListeners.get(id)
     if (qIdListeners) {
       console.log('💤 Subscription already staged dont exec again', id)
@@ -215,7 +213,6 @@ export class DbServer extends DbShared {
     }
 
     if (!qIdListeners?.persistent.size) {
-      console.log('DERP')
       native.modify(buf, this.dbCtxExternal)
     }
 

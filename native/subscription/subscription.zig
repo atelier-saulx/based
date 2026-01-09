@@ -57,7 +57,7 @@ pub fn unsubscribe(
 ) !void {
     // needs to find the correct thread
     // only needs SUB-ID
-    std.debug.print("derp {any} {any} {any}   \n", .{ dbCtx, buffer, thread });
+    std.debug.print("unsubscribe {any} {any} {any}   \n", .{ dbCtx, buffer, thread });
     // ----
 
 }

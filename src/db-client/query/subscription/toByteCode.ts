@@ -134,12 +134,10 @@ export const registerSubscription = (query: BasedDbQuery) => {
 
     let i = 0
     for (const field of fields.separate) {
-      console.log('snurp?', field, fields.separate, fields.main)
       variableFields[i] = field
       i++
     }
     for (const offset of fields.main) {
-      console.log({ offset })
       writeUint16(variableFields, offset, i)
       i += 2
     }

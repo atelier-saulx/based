@@ -120,7 +120,6 @@ await test('include', async (t) => {
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
-  console.log('SUBSCRIBE')
   db.query('user', mrX)
     .include('nr')
     .subscribe((d) => {
