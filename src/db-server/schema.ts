@@ -120,7 +120,6 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
 
   await setSchemaIds(server, new Uint32Array(maxTid))
 
-  server.blockMap.updateTypes(server.schemaTypesParsed)
   if (server.fileSystemPath) {
     server.save({ skipDirtyCheck: true }).catch(console.error)
   }
