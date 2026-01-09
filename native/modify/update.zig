@@ -1,5 +1,5 @@
 const std = @import("std");
-const selva = @import("../selva/selva.zig").c;
+const selva = @import("../selva/selva.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");
@@ -83,20 +83,20 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const hllPrecision = data[1];
             const offset = 2;
             const len = read(u32, data, offset);
-            var currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
+            var currentData = selva.c.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
             if (currentData == null) {
                 currentData = try Fields.ensurePropTypeString(ctx, ctx.fieldSchema.?);
-                selva.hll_init(currentData, hllPrecision, hllMode);
+                selva.c.hll_init(currentData, hllPrecision, hllMode);
             }
             var i: usize = 4 + offset;
-            const currentCount = if (ctx.currentSortIndex != null) selva.hll_count(currentData) else undefined;
+            const currentCount = if (ctx.currentSortIndex != null) selva.c.hll_count(currentData) else undefined;
             while (i < (len * 8) + offset) {
                 const hash: u64 = read(u64, data, i);
-                selva.hll_add(currentData, hash);
+                selva.c.hll_add(currentData, hash);
                 i += 8;
             }
             if (ctx.currentSortIndex != null) {
-                const newCount = selva.hll_count(currentData);
+                const newCount = selva.c.hll_count(currentData);
                 sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
                 sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
             }
@@ -147,7 +147,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         if (ctx.currentSortIndex != null) {
                             sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
                         }
-                        Modify.markDirtyRange(ctx, ctx.typeId, old);
+                        selva.markDirty(ctx, ctx.typeId, old);
                     }
                 } else {
                     Fields.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {

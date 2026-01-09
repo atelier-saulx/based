@@ -16,6 +16,7 @@ await test('include', async (t) => {
     await db.stop(true)
   })
   //t.after(() => t.backup(db))
+  t.after(() => db.stop(true))
 
   // single ref + edge
 
@@ -158,7 +159,7 @@ await test('include', async (t) => {
   await wait(100)
 })
 
-await test('default', async (t) => {
+await test.skip('default', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

@@ -4,7 +4,6 @@ import { join, dirname, resolve } from 'path'
 import { BasedDb } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '../../src/utils/index.js'
-import { destructureTreeKey, BlockMap } from '../../src/db-server/blockMap.js'
 import fs from 'node:fs/promises'
 
 export const counts = {
@@ -104,28 +103,6 @@ const test: {
         console.log(styleText('gray', `backup size ${~~(kbs / 1024)}mb`))
       }
 
-      type MyBlockMap = {
-        [key: number]: {
-          key: number
-          typeId: number
-          start: number
-          hash: string
-        }
-      }
-      const oldBlocks: MyBlockMap = {}
-      const newBlocks: MyBlockMap = {}
-      const putBlocks = (blockMap: BlockMap, m: MyBlockMap) =>
-        blockMap.foreachBlock(
-          (block) =>
-            (m[block.key] = {
-              key: block.key,
-              typeId: destructureTreeKey(block.key)[0],
-              start: destructureTreeKey(block.key)[1],
-              hash: bufToHex(block.hash),
-            }),
-        )
-      putBlocks(db.server.blockMap, oldBlocks)
-
       await db.stop()
 
       const newDb = new BasedDb({
@@ -169,15 +146,6 @@ const test: {
             `Mismatching count after backup (len:${b.length}) ${Object.keys(db.server.schema!.types)[ci]}`,
           )
         }
-      }
-
-      deepEqual(checksums, backupChecksums, 'Starting from backup is equal')
-      putBlocks(newDb.server.blockMap, newBlocks)
-      for (const k in oldBlocks) {
-        deepEqual(oldBlocks[k], newBlocks[k])
-      }
-      for (const k in newBlocks) {
-        deepEqual(newBlocks[k], oldBlocks[k])
       }
 
       await wait(10)

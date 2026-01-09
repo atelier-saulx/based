@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 SAULX
+ * Copyright (c) 2024-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -89,6 +89,19 @@ SELVA_EXPORT
 struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
 
 SELVA_EXPORT
+inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)
+#ifndef __zig
+{
+    return te->type;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
+
+SELVA_EXPORT
 inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
 #ifndef __zig
 {
@@ -148,6 +161,65 @@ inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t b
 #else
 ;
 #endif
+
+/**
+ * \addtogroup block_status
+ * @{
+ */
+
+SELVA_EXPORT
+inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i)
+#ifndef __zig
+{
+    return te->blocks->blocks[block_i].status;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline void selva_block_status_replace(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus status)
+#ifndef __zig
+{
+    te->blocks->blocks[block_i].status = status;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline void selva_block_status_set(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+#ifndef __zig
+{
+    te->blocks->blocks[block_i].status |= mask;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline void selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+#ifndef __zig
+{
+    te->blocks->blocks[block_i].status &= ~mask;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+#ifndef __zig
+{
+    return (te->blocks->blocks[block_i].status & mask) == mask;
+}
+#else
+;
+#endif
+
+/**
+ * @}
+ */
 
 /**
  * Get the node schema for type.
@@ -297,17 +369,19 @@ SELVA_EXPORT
 void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id);
 
 SELVA_EXPORT
-void selva_db_expire_tick(struct SelvaDb *db, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx, int64_t now);
+void selva_db_expire_tick(struct SelvaDb *db, int64_t now);
 
 /**
  * Delete a node.
- * @param dirty_cb is called for any newly dirty nodes in addition to the node being deleted.
  */
 SELVA_EXPORT
-void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx) __attribute__((nonnull(1, 2, 3)));
+void selva_del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull(1, 2, 3)));
 
 SELVA_EXPORT
-void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, selva_dirty_node_cb_t dirty_cb, void *dirty_ctx);
+void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
+
+SELVA_EXPORT
+void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id);
 
 SELVA_EXPORT
 void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start);

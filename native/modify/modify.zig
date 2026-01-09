@@ -1,6 +1,6 @@
 const std = @import("std");
 const napi = @import("../napi.zig");
-const selva = @import("../selva/selva.zig").c;
+const selva = @import("../selva/selva.zig");
 const Schema = @import("../selva/schema.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
@@ -72,7 +72,7 @@ fn newNode(ctx: *ModifyCtx) !void {
     ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, id);
     ctx.id = id;
     ctx.db.ids[ctx.typeId - 1] = id;
-    Modify.markDirtyRange(ctx, ctx.typeId, id);
+    selva.markDirty(ctx, ctx.typeId, id);
 }
 
 fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
@@ -87,7 +87,7 @@ fn newNodeRing(ctx: *ModifyCtx, maxId: u32) !void {
 
     ctx.id = nextId;
     ctx.db.ids[ctx.typeId - 1] = nextId;
-    Modify.markDirtyRange(ctx, ctx.typeId, nextId);
+    selva.markDirty(ctx, ctx.typeId, nextId);
 }
 
 fn getLargeRef(db: *DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) ?References.ReferenceLarge {
@@ -97,7 +97,7 @@ fn getLargeRef(db: *DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) 
         if (References.getReferences(false, true, db, node, fs)) |iterator| {
             const refs = iterator.refs;
             const any = References.referencesGet(refs, dstId);
-            if (any.type == selva.SELVA_NODE_REFERENCE_LARGE) {
+            if (any.type == selva.c.SELVA_NODE_REFERENCE_LARGE) {
                 return any.p.large;
             }
         }
@@ -137,7 +137,7 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
             try subs.checkId(ctx);
             // It would be even better if we'd mark it dirty only in the case
             // something was actually changed.
-            Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+            selva.markDirty(ctx, ctx.typeId, ctx.id);
         }
     }
 
@@ -200,8 +200,13 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) !usize {
                     ctx.db.ids[ctx.typeId - 1] = ctx.id;
                 }
                 ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, ctx.id);
+<<<<<<< HEAD
                 Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
                 i += 5;
+=======
+                selva.markDirty(ctx, ctx.typeId, ctx.id);
+                ctx.index += 5;
+>>>>>>> 21071cd1539161a516148586b7dc2cb3ba3b9604
             },
             .switchIdUpdate => {
                 const id = read(u32, data, 0);
@@ -216,7 +221,7 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) !usize {
                         try subs.checkId(ctx);
                         // It would be even better if we'd mark it dirty only in the case
                         // something was actually changed.
-                        Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
+                        selva.markDirty(ctx, ctx.typeId, ctx.id);
                     }
                 }
                 i += 5;
@@ -329,7 +334,6 @@ pub fn modify(
         .fieldSchema = null,
         .fieldType = t.PropType.null,
         .db = dbCtx,
-        .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
         .batch = batch,
         .err = errors.ClientError.null,
         .idSubs = null,
@@ -337,7 +341,6 @@ pub fn modify(
         .thread = thread,
     };
 
-    defer ctx.dirtyRanges.deinit();
     _ = try writeData(&ctx, batch[13 + 4 ..]);
 
     Node.expire(&ctx);
@@ -347,11 +350,4 @@ pub fn modify(
     if (ctx.resultLen < expectedLen) {
         @memset(ctx.result[ctx.resultLen..expectedLen], 0);
     }
-
-    const newDirtyRanges = ctx.dirtyRanges.values();
-    const dirtyRangesSize: u32 = @truncate(newDirtyRanges.len * 8);
-    const blockSlice = try thread.modify.slice(4 + dirtyRangesSize);
-    const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
-    write(blockSlice, dirtyRangesSize, 0);
-    utils.copy(u8, blockSlice, newDirtySlice, 4);
 }
