@@ -89,6 +89,19 @@ SELVA_EXPORT
 struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
 
 SELVA_EXPORT
+inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)
+#ifndef __zig
+{
+    return te->type;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
+
+SELVA_EXPORT
 inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
 #ifndef __zig
 {

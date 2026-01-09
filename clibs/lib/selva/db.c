@@ -323,6 +323,25 @@ struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t
     return &blocks->blocks[block_i];
 }
 
+void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
+{
+    struct SelvaTypeEntry *te;
+
+    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
+        struct SelvaTypeBlocks *blocks = te->blocks;
+
+        for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
+            struct SelvaTypeBlock *block = &blocks->blocks[block_i];
+
+            if (block->status == SELVA_TYPE_BLOCK_STATUS_EMPTY) {
+                continue;
+            }
+
+            cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
+        }
+    }
+}
+
 static void clone_schema_buf(struct SelvaTypeEntry *te, const uint8_t *schema_buf, size_t schema_len)
 {
     te->schema_buf = selva_malloc(schema_len);
@@ -406,6 +425,8 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
     assert(te);
     return te;
 }
+
+extern inline node_type_t selva_get_type(const struct SelvaTypeEntry *te);
 
 extern inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te);
 
