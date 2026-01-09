@@ -53,6 +53,7 @@ const SAVE_BLOCK_ID = 0
 const LOAD_BLOCK_ID = 0
 
 const loadSaveCommonId = idGenerator()
+const saveAllBlocksId = idGenerator()
 const loadBlockRawId = idGenerator()
 const getBlockHashId = idGenerator()
 
@@ -163,6 +164,30 @@ async function saveBlocks(db: DbServer, blocks: Block[]): Promise<void> {
       return p
     }),
   )
+}
+
+function saveAllBlocks(db: DbServer): Promise<number> {
+  const id = saveAllBlocksId.next().value
+  const msg = new Uint8Array(5)
+
+  writeUint32(msg, id, 0)
+  msg[4] = OpType.saveAllBlocks
+
+  return new Promise((resolve, reject) => {
+    db.addOpOnceListener(OpType.saveAllBlocks, id, (buf: Uint8Array) => {
+      const err = readInt32(buf, 0)
+      if (err) {
+        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        db.emit('error', errMsg)
+        reject(new Error(errMsg))
+      } else {
+        const nrBlocks = readInt32(buf, 4)
+        resolve(nrBlocks)
+      }
+    })
+
+    native.query(msg, db.dbCtxExternal)
+  })
 }
 
 export async function loadCommon(
@@ -386,25 +411,27 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
 
   try {
     await saveCommon(db)
+    const nrBlocks = await saveAllBlocks(db)
+    console.log(`nrBlocks: ${nrBlocks}`)
 
-    const blocks: Block[] = []
-    db.blockMap.foreachDirtyBlock((_typeId, _start, _end, block) =>
-      blocks.push(block),
-    )
-    await saveBlocks(db, blocks)
+    //const blocks: Block[] = []
+    //db.blockMap.foreachDirtyBlock((_typeId, _start, _end, block) =>
+    //  blocks.push(block),
+    //)
+    //await saveBlocks(db, blocks)
 
-    try {
-      // Note that we assume here that blockMap didn't change before we call
-      // makeWritelog(). This is true as long as db.saveInProgress protects
-      // the blockMap from changes.
-      const data = makeWritelog(db, ts)
-      await writeFile(
-        join(db.fileSystemPath, WRITELOG_FILE),
-        JSON.stringify(data),
-      )
-    } catch (err) {
-      db.emit('error', `Save: writing writeLog failed ${err.message}`)
-    }
+    //try {
+    //  // Note that we assume here that blockMap didn't change before we call
+    //  // makeWritelog(). This is true as long as db.saveInProgress protects
+    //  // the blockMap from changes.
+    //  const data = makeWritelog(db, ts)
+    //  await writeFile(
+    //    join(db.fileSystemPath, WRITELOG_FILE),
+    //    JSON.stringify(data),
+    //  )
+    //} catch (err) {
+    //  db.emit('error', `Save: writing writeLog failed ${err.message}`)
+    //}
 
     db.emit('info', `Save took ${Date.now() - ts}ms`)
   } catch (err) {

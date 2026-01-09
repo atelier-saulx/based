@@ -41,10 +41,72 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
         return;
     }
 
+    std.log.err("{s}", .{filename});
+
     err = selva.selva_dump_save_block(ctx.selva, te, filename.ptr, start, &hash);
+    std.log.err("saveBlock: {d}", .{ err });
     utils.write(resp, err, 0);
     utils.byteCopy(resp, q[5..11], 4);
     utils.byteCopy(resp, &hash, 10);
+}
+
+const DispatchSaveJobCtx = struct {
+    threads: *Thread.Threads,
+    thread: *Thread.Thread,
+    qid: u32,
+    nrBlocks: u32,
+};
+
+fn makeDumpFilepath(allocator: std.mem.Allocator, fsPath: []const u8, typeId: selva.node_type_t, blockI: selva.block_id_t) ![]u8 {
+    const filename = try std.fmt.allocPrint(allocator, "{d}_{d}.sdb", .{ typeId, blockI });
+    return try std.fs.path.join(allocator, &[_][] const u8{ fsPath, filename });
+}
+
+// TODO Handle errors
+fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTypeEntry, blockI: selva.block_id_t, start: selva.node_id_t) callconv(.c) void {
+    const jobCtx: *DispatchSaveJobCtx = @alignCast(@ptrCast(jobCtxP.?));
+    const ctx = jobCtx.threads.ctx;
+    const typeCode = selva.selva_get_type(te);
+
+    jobCtx.threads.mutex.lock();
+    const filepath = makeDumpFilepath(ctx.allocator, ctx.fsPath, typeCode, blockI) catch return;
+    const msg = ctx.allocator.alloc(u8, 11 + filepath.len + 1) catch return;
+    ctx.allocator.free(filepath);
+    // TODO Free somewhere!
+    //defer ctx.allocator.free(msg);
+    jobCtx.threads.mutex.unlock();
+
+    utils.write(msg, @as(u32, jobCtx.qid), 0); // id
+    msg[4] = @intFromEnum(t.OpType.saveBlock); // op
+    utils.write(msg, @as(u32, start), 5); // start
+    utils.write(msg, @as(u16, typeCode), 9); // type
+    utils.byteCopy(msg, filepath, 11);
+    msg[11 + filepath.len] = 0; // nul-termination
+
+    std.log.err("hurf durf save {d}:{d}", .{ selva.selva_get_type(te), blockI });
+    jobCtx.threads.query(msg) catch return;
+    jobCtx.nrBlocks += 1;
+}
+
+/// Save all blocks.
+/// Dispatches a save job for each block.
+/// This must be ran on the modify thread.
+pub fn saveAllBlocks(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, op: t.OpType) !void {
+    std.log.err("SAVE ALL", .{});
+    const qid = read(u32, q, 0);
+    const resp = try thread.query.result(8, qid, op);
+    var jobCtx: DispatchSaveJobCtx = .{
+        .threads = threads,
+        .thread = thread,
+        .qid = qid,
+        .nrBlocks = 0,
+    };
+
+    selva.selva_foreach_block(threads.ctx.selva, dispatchSaveJob, &jobCtx);
+
+    const err: u32 = 0;
+    utils.write(resp, err, 0);
+    utils.write(resp, jobCtx.nrBlocks, 4);
 }
 
 pub fn loadCommon(
