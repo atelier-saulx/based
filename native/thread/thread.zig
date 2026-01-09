@@ -13,6 +13,9 @@ const Subscription = @import("../subscription/subscription.zig");
 const jemalloc = @import("../jemalloc.zig");
 const std = @import("std");
 
+// configurable
+const SUB_EXEC_INTERVAL = 200_000_000;
+
 pub const Thread = common.Thread;
 const Queue = std.array_list.Managed([]u8);
 
@@ -141,7 +144,7 @@ pub const Threads = struct {
 
     fn poll(self: *Threads) !void {
         while (true) {
-            std.Thread.sleep(100_000_000);
+            std.Thread.sleep(SUB_EXEC_INTERVAL);
             const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
             self.mutex.lock();
             if (self.shutdown) {
@@ -150,7 +153,7 @@ pub const Threads = struct {
             }
             const elapsed = now -% self.lastModifyTime;
             self.mutex.unlock();
-            if (elapsed > 100_000_000) {
+            if (elapsed > SUB_EXEC_INTERVAL) {
                 try self.modify(self.emptyMod);
             }
         }
@@ -311,7 +314,7 @@ pub const Threads = struct {
                     self.mutex.unlock();
 
                     // this will go under
-                    if (elapsed > 100_000_000) {
+                    if (elapsed > SUB_EXEC_INTERVAL) {
                         try Subscription.fireIdSubscription(self, thread);
                     }
                 } else {
