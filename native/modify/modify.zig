@@ -345,7 +345,6 @@ pub fn modify(
         .fieldSchema = null,
         .fieldType = t.PropType.null,
         .db = dbCtx,
-        .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
         .batch = batch,
         .err = errors.ClientError.null,
         .idSubs = null,
@@ -353,7 +352,6 @@ pub fn modify(
         .thread = thread,
     };
 
-    defer ctx.dirtyRanges.deinit();
     try modifyWrite(&ctx);
 
     // while (i < batch.len) {
@@ -528,11 +526,4 @@ pub fn modify(
     if (ctx.resultLen < expectedLen) {
         @memset(ctx.result[ctx.resultLen..expectedLen], 0);
     }
-
-    const newDirtyRanges = ctx.dirtyRanges.values();
-    const dirtyRangesSize: u32 = @truncate(newDirtyRanges.len * 8);
-    const blockSlice = try thread.modify.slice(4 + dirtyRangesSize);
-    const newDirtySlice: []u8 = std.mem.sliceAsBytes(newDirtyRanges);
-    write(blockSlice, dirtyRangesSize, 0);
-    utils.copy(u8, blockSlice, newDirtySlice, 4);
 }

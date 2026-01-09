@@ -172,7 +172,6 @@ pub const Threads = struct {
                     .blockHash => try info.blockHash(thread, self.ctx, q, op),
                     .saveBlock => try dump.saveBlock(thread, self.ctx, q, op),
                     .saveAllBlocks => try dump.saveAllBlocks(self, thread, q, op),
-                    .saveCommon => try dump.saveCommon(thread, self.ctx, q, op),
                     .noOp => {
                         std.log.err("NO-OP received for query incorrect\n", .{});
                     },

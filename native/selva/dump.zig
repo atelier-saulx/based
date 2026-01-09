@@ -8,20 +8,15 @@ const std = @import("std");
 const read = utils.read;
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
-// sdbFilename must be nul-terminated
-pub fn saveCommon(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
-    const id = read(u32, q, 0);
-    const resp = try thread.query.result(4, id, op);
-    const filename = q[5..q.len];
+fn saveCommon(ctx: *DbCtx, filename: [:0]const u8) c_int {
     var com: selva.selva_dump_common_data = .{
         .meta_data = ctx.ids.ptr,
         .meta_len = ctx.ids.len * @sizeOf(u32),
         .errlog_buf = null,
         .errlog_size = 0,
     };
-    var err: c_int = undefined;
-    err = selva.selva_dump_save_common(ctx.selva, &com, filename.ptr);
-    utils.write(resp, err, 0);
+
+    return selva.selva_dump_save_common(ctx.selva, &com, filename.ptr);
 }
 
 // sdbFilename must be nul-terminated
@@ -98,6 +93,9 @@ pub fn saveAllBlocks(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, 
     };
 
     selva.selva_foreach_block(threads.ctx.selva, dispatchSaveJob, &jobCtx);
+    std.log.err("saving {any} blocks", .{ jobCtx.nrBlocks });
+    const errSaveCommon = saveCommon(threads.ctx, "common.sdb");
+    std.log.err("save_common err: {any}", .{ errSaveCommon }); // TODO check error
 
     const err: u32 = 0;
     utils.write(resp, err, 0);

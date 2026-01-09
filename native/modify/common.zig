@@ -24,7 +24,6 @@ pub const ModifyCtx = struct {
     node: ?Node.Node,
     fieldType: t.PropType,
     db: *DbCtx,
-    dirtyRanges: std.AutoArrayHashMap(u64, f64),
     subTypes: ?*Subscription.TypeSubscriptionCtx, // prob want to add subs here
     idSubs: ?[]*Subscription.Sub,
     batch: []u8,

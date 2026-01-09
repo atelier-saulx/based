@@ -1,5 +1,4 @@
 import native, { idGenerator } from '../native.js'
-import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import {
   ENCODER,
@@ -9,7 +8,6 @@ import {
 } from '../utils/index.js'
 import { DbServer } from './index.js'
 import { OpType } from '../zigTsExports.js'
-import { COMMON_SDB_FILE } from '../index.js'
 
 export type BlockHash = Uint8Array
 export const BLOCK_HASH_SIZE = 16
@@ -21,35 +19,10 @@ export type SaveOpts = {
 
 const SELVA_ENOENT = -8
 
-const loadSaveCommonId = idGenerator()
+const loadCommonId = idGenerator()
 const saveAllBlocksId = idGenerator()
 const loadBlockRawId = idGenerator()
 const getBlockHashId = idGenerator()
-
-async function saveCommon(db: DbServer): Promise<void> {
-  const id = loadSaveCommonId.next().value
-  const filename = join(db.fileSystemPath, COMMON_SDB_FILE)
-  const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
-
-  writeUint32(msg, id, 0)
-  msg[4] = OpType.saveCommon
-  ENCODER.encodeInto(filename, msg.subarray(5))
-
-  return new Promise((resolve, reject) => {
-    db.addOpOnceListener(OpType.saveCommon, id, (buf: Uint8Array) => {
-      const err = readInt32(buf, 0)
-      if (err) {
-        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
-        db.emit('error', errMsg)
-        reject(new Error(errMsg))
-      } else {
-        resolve()
-      }
-    })
-
-    native.query(msg, db.dbCtxExternal)
-  })
-}
 
 function saveAllBlocks(db: DbServer): Promise<number> {
   const id = saveAllBlocksId.next().value
@@ -62,7 +35,7 @@ function saveAllBlocks(db: DbServer): Promise<number> {
     db.addOpOnceListener(OpType.saveAllBlocks, id, (buf: Uint8Array) => {
       const err = readInt32(buf, 0)
       if (err) {
-        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        const errMsg = `Save failed: ${native.selvaStrerror(err)}`
         db.emit('error', errMsg)
         reject(new Error(errMsg))
       } else {
@@ -79,7 +52,7 @@ export async function loadCommon(
   db: DbServer,
   filename: string,
 ): Promise<void> {
-  const id = loadSaveCommonId.next().value
+  const id = loadCommonId.next().value
   const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
 
   writeUint32(msg, id, 0)
@@ -91,7 +64,7 @@ export async function loadCommon(
       const err = readInt32(buf, 0)
       if (err) {
         // TODO read errlog
-        const errMsg = `Save common failed: ${native.selvaStrerror(err)}`
+        const errMsg = `Load failed: ${native.selvaStrerror(err)}`
         db.emit('error', errMsg)
         reject(new Error(errMsg))
       } else {
@@ -192,7 +165,6 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
   db.saveInProgress = true
 
   try {
-    await saveCommon(db)
     const nrBlocks = await saveAllBlocks(db)
     console.log(`nrBlocks: ${nrBlocks}`)
     // TODO block until all blocks have been written?
