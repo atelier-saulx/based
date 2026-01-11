@@ -718,11 +718,6 @@ pub const FilterMaxStringScore: u8 = 255;
 
 pub const FilterAlignment = enum(u8) { notSet = 255, _ };
 
-pub const AggGroupedBy = enum(u8) {
-    hasGroup = 255,
-    none = 0,
-};
-
 pub const AggHeader = packed struct {
     op: QueryType,
     typeId: TypeId,
@@ -752,6 +747,12 @@ pub const AggProp = packed struct {
     propType: PropType,
     propDefStart: u16,
     aggFunction: AggFunction,
-    resultPos: u16, // the result could also be a packed stru?
-    accumulatorPos: u16, // the accumulator could also be a packed stru?
+    resultPos: u16,
+    accumulatorPos: u16,
+};
+
+pub const AggGroupByKey = packed struct {
+    propId: u8,
+    propType: PropType,
+    propDefStart: u16,
 };

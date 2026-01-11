@@ -17,7 +17,7 @@ pub fn iterator(
     limit: u32,
     filterBuf: []u8,
     aggDefs: []u8,
-    accumulatorField: []u8,
+    accumulatorProp: []u8,
     typeEntry: Node.Type,
     hadAccumulated: *bool,
 ) !u32 {
@@ -29,7 +29,7 @@ pub fn iterator(
             // Filter Check
         }
 
-        aggregateNode(node, typeEntry, aggDefs, accumulatorField, hadAccumulated);
+        aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hadAccumulated);
 
         count += 1;
         if (count >= limit) break;
@@ -37,7 +37,7 @@ pub fn iterator(
     return count;
 }
 
-inline fn aggregateNode(
+pub inline fn aggregateProps(
     node: Node.Node,
     typeEntry: Node.Type,
     aggDefs: []u8,
@@ -80,7 +80,7 @@ inline fn aggregateNode(
     }
 }
 
-inline fn accumulate(
+pub inline fn accumulate(
     currentAggDef: t.AggProp,
     accumulatorProp: []u8,
     value: []u8,
@@ -171,13 +171,19 @@ inline fn accumulate(
     }
 }
 
-pub inline fn finalizeResults(ctx: *Query.QueryCtx, aggDefs: []u8, accumulatorProp: []u8, isSamplingSet: bool) !void {
-    var i: usize = 0;
-    utils.debugPrint("aggDefs: {any}\n", .{aggDefs});
+pub inline fn finalizeResults(
+    ctx: *Query.QueryCtx,
+    aggDefs: []u8,
+    accumulatorProp: []u8,
+    isSamplingSet: bool,
+    initialAggDefOffset: usize,
+) !void {
+    var i: usize = initialAggDefOffset;
+    const initialResultOffset = ctx.thread.query.index;
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
         const aggFunction = currentAggDef.aggFunction;
-        const resultPos = currentAggDef.resultPos + resultHeaderOffset;
+        const resultPos = currentAggDef.resultPos + initialResultOffset;
         const accumulatorPos = currentAggDef.accumulatorPos;
 
         switch (aggFunction) {
