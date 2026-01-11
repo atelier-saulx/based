@@ -137,7 +137,7 @@ export const readAggregate = (
         if (agg.type === AggFunction.count) {
           setByPath(resultKey, agg.path, val)
         } else {
-          setByPath(resultKey, [...agg.path, AggFunction[agg.type]], val)
+          setByPath(resultKey, [...agg.path, AggFunctionInverse[agg.type]], val)
         }
       }
       i += q.aggregate.totalResultsSize
