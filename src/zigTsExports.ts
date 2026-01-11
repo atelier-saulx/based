@@ -2386,22 +2386,6 @@ export const FilterAlignmentInverse = {
 // this needs number because it has a any (_) condition
 export type FilterAlignmentEnum = 255 | (number & {})
 
-export const AggGroupedBy = {
-  hasGroup: 255,
-  none: 0,
-} as const
-
-export const AggGroupedByInverse = {
-  255: 'hasGroup',
-  0: 'none',
-} as const
-
-/**
-  hasGroup, 
-  none 
- */
-export type AggGroupedByEnum = (typeof AggGroupedBy)[keyof typeof AggGroupedBy]
-
 export type AggHeader = {
   op: QueryTypeEnum
   typeId: TypeId
@@ -2735,6 +2719,70 @@ export const readAggPropProps = {
 export const createAggProp = (header: AggProp): Uint8Array => {
   const buffer = new Uint8Array(AggPropByteSize)
   writeAggProp(buffer, header, 0)
+  return buffer
+}
+
+export type AggGroupByKey = {
+  propId: number
+  propType: PropTypeEnum
+  propDefStart: number
+}
+
+export const AggGroupByKeyByteSize = 4
+
+export const writeAggGroupByKey = (
+  buf: Uint8Array,
+  header: AggGroupByKey,
+  offset: number,
+): number => {
+  buf[offset] = header.propId
+  offset += 1
+  buf[offset] = header.propType
+  offset += 1
+  writeUint16(buf, header.propDefStart, offset)
+  offset += 2
+  return offset
+}
+
+export const writeAggGroupByKeyProps = {
+  propId: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset] = value
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 1] = value
+  },
+  propDefStart: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 2)
+  },
+}
+
+export const readAggGroupByKey = (
+  buf: Uint8Array,
+  offset: number,
+): AggGroupByKey => {
+  const value: AggGroupByKey = {
+    propId: buf[offset],
+    propType: (buf[offset + 1]) as PropTypeEnum,
+    propDefStart: readUint16(buf, offset + 2),
+  }
+  return value
+}
+
+export const readAggGroupByKeyProps = {
+  propId: (buf: Uint8Array, offset: number): number => {
+    return buf[offset]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 1]) as PropTypeEnum
+  },
+  propDefStart: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 2)
+  },
+}
+
+export const createAggGroupByKey = (header: AggGroupByKey): Uint8Array => {
+  const buffer = new Uint8Array(AggGroupByKeyByteSize)
+  writeAggGroupByKey(buffer, header, 0)
   return buffer
 }
 

@@ -10,6 +10,8 @@ const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 const Sort = @import("../sort/sort.zig");
 const Aggregates = @import("aggregates/aggregates.zig");
+const GroupBy = @import("aggregates/group.zig");
+const GroupByHashMap = @import("aggregates/hashMap.zig").GroupByHashMap;
 const String = @import("../string.zig");
 const writeAs = utils.writeAs;
 const read = utils.read;
@@ -275,19 +277,31 @@ pub fn aggregates(
     const typeEntry = try Node.getType(ctx.db, typeId);
     var hadAccumulated: bool = false;
     const isSamplingSet = header.isSamplingSet;
+    const hasGroupBy = header.hasGroupBy;
 
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
 
-    switch (header.iteratorType) {
-        .default => {
-            var it = Node.iterator(false, typeEntry);
+    var it = Node.iterator(false, typeEntry);
+    if (hasGroupBy) {
+        var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
+        defer groupByHashMap.deinit();
 
-            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, &hadAccumulated);
-        },
-        else => {},
+        nodeCnt = try GroupBy.iterator(
+            &groupByHashMap,
+            &it,
+            header.limit,
+            undefined,
+            aggDefs,
+            header.accumulatorSize,
+            typeEntry,
+        );
+        try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, aggDefs);
+    } else {
+        nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, &hadAccumulated);
+        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, isSamplingSet, 0);
     }
-    try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, isSamplingSet);
+    // try ctx.db.allocator.free(accumulatorProp);
 }
 
 pub fn aggregatesCount(
