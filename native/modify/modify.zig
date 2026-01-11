@@ -200,13 +200,8 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) !usize {
                     ctx.db.ids[ctx.typeId - 1] = ctx.id;
                 }
                 ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, ctx.id);
-<<<<<<< HEAD
-                Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
-                i += 5;
-=======
                 selva.markDirty(ctx, ctx.typeId, ctx.id);
-                ctx.index += 5;
->>>>>>> 21071cd1539161a516148586b7dc2cb3ba3b9604
+                i += 5;
             },
             .switchIdUpdate => {
                 const id = read(u32, data, 0);
