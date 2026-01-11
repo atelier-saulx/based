@@ -21,9 +21,9 @@ await test('kev', async (t) => {
     },
   })
 
-  db.create('trip', { distance: 10, rate: 5 })
-  db.create('trip', { distance: 20, rate: 10 })
-  db.create('trip', { distance: 40, rate: 10 })
+  db.create('trip', { driver: 'lala', distance: 10, rate: 5 })
+  db.create('trip', { driver: 'lala', distance: 20, rate: 10 })
+  db.create('trip', { driver: 'lele', distance: 40, rate: 10 })
 
   // console.log(
   //   (
@@ -54,7 +54,10 @@ await test('kev', async (t) => {
     ).debug(),
   )
   console.log(
-    (await db.query('trip').count().sum('distance', 'rate').get()).debug(),
+    (await db.query('trip').count().sum('distance', 'rate').get()).debug(), // this doesn't
+  )
+  console.log(
+    (await db.query('trip').sum('distance').groupBy('driver').get()).debug(),
   )
 
   await db.stop()
