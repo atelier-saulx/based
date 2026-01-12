@@ -13,6 +13,8 @@
 #include "selva/selva_hash128.h"
 #include "expire.h"
 
+struct selva_string;
+
 RB_HEAD(SelvaTypeEntryIndex, SelvaTypeEntry);
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
