@@ -4,6 +4,9 @@
  */
 #pragma once
 
+#ifndef __zig
+#include <stdatomic.h>
+#endif
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -16,6 +19,7 @@
  * We should have something with selva_hash_state;
  */
 struct XXH3_state_s;
+struct selva_string;
 
 struct selva_dump_common_data {
     /**
@@ -171,7 +175,7 @@ SELVA_EXPORT
 inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i)
 #ifndef __zig
 {
-    return te->blocks->blocks[block_i].status;
+    return atomic_load(&te->blocks->blocks[block_i].status.atomic);
 }
 #else
 ;
@@ -181,7 +185,7 @@ SELVA_EXPORT
 inline void selva_block_status_replace(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus status)
 #ifndef __zig
 {
-    te->blocks->blocks[block_i].status = status;
+    atomic_store_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)status, memory_order_release);
 }
 #else
 ;
@@ -191,7 +195,7 @@ SELVA_EXPORT
 inline void selva_block_status_set(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
 #ifndef __zig
 {
-    te->blocks->blocks[block_i].status |= mask;
+    atomic_fetch_or_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)mask, memory_order_release);
 }
 #else
 ;
@@ -201,7 +205,7 @@ SELVA_EXPORT
 inline void selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
 #ifndef __zig
 {
-    te->blocks->blocks[block_i].status &= ~mask;
+    atomic_fetch_and_explicit(&te->blocks->blocks[block_i].status.atomic, ~mask, memory_order_release);
 }
 #else
 ;
@@ -211,7 +215,7 @@ SELVA_EXPORT
 inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
 #ifndef __zig
 {
-    return (te->blocks->blocks[block_i].status & mask) == mask;
+    return (atomic_load(&te->blocks->blocks[block_i].status.atomic) & mask) == mask;
 }
 #else
 ;

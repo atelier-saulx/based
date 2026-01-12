@@ -398,7 +398,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     }
 
     constexpr enum SelvaTypeBlockStatus block_sm = SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
-    if ((block->status & block_sm) != block_sm) {
+    if ((atomic_load(&block->status.atomic) & block_sm) != block_sm) {
         return 0; /* TODO Should this be an error instead? */
     }
 
@@ -466,7 +466,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     io.sdb_write(range_hash_out, sizeof(*range_hash_out), 1, &io);
 
     selva_io_end(&io, nullptr);
-    block->status = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
+    atomic_store(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM));
 
 #if PRINT_SAVE_TIME
     ts_monotime(&ts_end);

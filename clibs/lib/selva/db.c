@@ -319,7 +319,7 @@ void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaD
         for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
             struct SelvaTypeBlock *block = &blocks->blocks[block_i];
 
-            if (block->status == SELVA_TYPE_BLOCK_STATUS_EMPTY) {
+            if (atomic_load_explicit(&block->status.atomic, memory_order_consume) == SELVA_TYPE_BLOCK_STATUS_EMPTY) {
                 continue;
             }
 
@@ -455,8 +455,7 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
     struct SelvaTypeBlock *block = selva_get_block(type->blocks, node->node_id);
     struct SelvaNodeIndex *nodes = &block->nodes;
 
-    /* TODO What if block is empty or not loaded */
-    block->status |= SELVA_TYPE_BLOCK_STATUS_DIRTY;
+    atomic_fetch_or_explicit(&block->status.atomic, (uint32_t)SELVA_TYPE_BLOCK_STATUS_DIRTY, memory_order_release);
 
     selva_remove_all_aliases(type, node->node_id);
     RB_REMOVE(SelvaNodeIndex, nodes, node);
@@ -476,7 +475,7 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
     memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.fields_schema.nr_fields));
 #endif
     mempool_return(&type->nodepool, node);
-    block->status |= SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
+    atomic_fetch_or_explicit(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY), memory_order_release); /* TODO Is this needed?? */
     block->nr_nodes_in_block--;
     type->nr_nodes--;
 }
@@ -563,7 +562,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
 
     selva_fields_init_node(type, node);
 
-    block->status |= SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
+    atomic_fetch_or_explicit(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY), memory_order_release);
     block->nr_nodes_in_block++;
     type->nr_nodes++;
     if (!type->max_node || type->max_node->node_id < node_id) {

@@ -60,7 +60,15 @@ struct SelvaAlias {
 struct SelvaTypeBlock {
     struct SelvaNodeIndex nodes; /*!< Index of nodes in this block. */
     node_id_t nr_nodes_in_block; /*!< Number of nodes in this block. */
-    enum SelvaTypeBlockStatus status;
+    union {
+#if 0
+        /* This doesn't work in clang */
+        atomic_uint_least32_t
+#endif
+        _Atomic uint_least32_t atomic;
+        enum SelvaTypeBlockStatus e;
+    } status;
+    struct selva_string *filename; /*!< Set when the block is first written in SDB. */
 };
 
 /**
