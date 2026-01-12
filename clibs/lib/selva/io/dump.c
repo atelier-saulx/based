@@ -36,7 +36,8 @@
  */
 #define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
 #define DUMP_MAGIC_EXPIRE       2147483647 /* common.sdb */
-#define DUMP_MAGIC_COMMON_META  2974848157 /* common.sdb */
+#define DUMP_MAGIC_COMMON_IDS   2974848157 /* common.sdb */
+#define DUMP_MAGIC_COMMON_BLOCKS 2734165127 /* common.sdb */
 #define DUMP_MAGIC_TYPES        3550908863 /* [block].sdb */
 #define DUMP_MAGIC_NODE         3323984057
 #define DUMP_MAGIC_FIELDS       3126175483
@@ -339,14 +340,14 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
 
 }
 
-static void save_common_meta(struct selva_io *io, const void *meta_data, size_t meta_len)
+static void save_common_ids(struct selva_io *io, const node_id_t *ids_data, size_t meta_len)
 {
     const sdb_arr_len_t len = meta_len;
 
-    write_dump_magic(io, DUMP_MAGIC_COMMON_META);
+    write_dump_magic(io, DUMP_MAGIC_COMMON_IDS);
     io->sdb_write(&len, sizeof(len), 1, io);
     if (likely(len > 0)) {
-        io->sdb_write(meta_data, len, 1, io);
+        io->sdb_write(ids_data, sizeof(node_id_t), len, io);
     }
 }
 
@@ -368,7 +369,8 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
      */
     save_schema(&io, db);
     save_expire(&io, db);
-    save_common_meta(&io, com->meta_data, com->meta_len);
+    save_common_ids(&io, com->ids_data, com->ids_len);
+    //save_common_blocks(&io, com->blocks_data, blocks_len);
 
     db->sdb_version = io.sdb_version;
     selva_io_end(&io, nullptr);
@@ -405,6 +407,14 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
 #if PRINT_SAVE_TIME
     ts_monotime(&ts_start);
 #endif
+
+    if (!block->filename) {
+        block->filename = selva_string_create(filename, strlen(filename) + 1, SELVA_STRING_MUTABLE);
+        assert(block->filename);
+    } else {
+        /* RFE in the future we probably never want to change the name. */
+        (void)selva_string_replace(block->filename, filename, strlen(filename) + 1);
+    }
 
     err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
@@ -1031,12 +1041,12 @@ static int load_type(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEn
 }
 
 __attribute__((warn_unused_result))
-static int load_common_meta(struct selva_io *io, const void **meta_data, size_t *meta_len)
+static int load_common_ids(struct selva_io *io, struct selva_dump_common_data *com)
 {
     sdb_arr_len_t len;
-    void *data = nullptr;
+    node_id_t *data = nullptr;
 
-    if (!read_dump_magic(io, DUMP_MAGIC_COMMON_META)) {
+    if (!read_dump_magic(io, DUMP_MAGIC_COMMON_IDS)) {
         selva_io_errlog(io, "Ivalid types magic");
         return SELVA_EINVAL;
     }
@@ -1047,15 +1057,46 @@ static int load_common_meta(struct selva_io *io, const void **meta_data, size_t 
     }
 
     if (likely(len > 0)) {
-        data = selva_malloc(len);
-        if (io->sdb_read(data, len, 1, io) != 1) {
+        data = selva_malloc(len * sizeof(node_id_t));
+        if (io->sdb_read(data, sizeof(node_id_t), len, io) != 1) {
             selva_io_errlog(io, "%s: data", __func__);
             return SELVA_EIO;
         }
     }
 
-    *meta_len = len;
-    *meta_data = data;
+    com->ids_data = data;
+    com->ids_len = len;
+    return 0;
+}
+
+__attribute__((warn_unused_result))
+static int load_common_blocks(struct selva_io *io, struct selva_dump_common_data *com)
+{
+    sdb_arr_len_t len;
+    struct selva_dump_blocks *blocks;
+
+    if (!read_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS)) {
+        selva_io_errlog(io, "Ivalid types magic");
+        return SELVA_EINVAL;
+    }
+
+    if (io->sdb_read(&len, sizeof(len), 1, io) != 1) {
+        selva_io_errlog(io, "%s: len", __func__);
+        return SELVA_EIO;
+    }
+
+#if 0
+    if (likely(len > 0)) {
+        blocks = selva_malloc(len * sizeof(node_id_t));
+        if (io->sdb_read(blocks, sizeof(node_id_t), len, io) != 1) {
+            selva_io_errlog(io, "%s: data", __func__);
+            return SELVA_EIO;
+        }
+    }
+
+    com->ids_data = data;
+    com->ids_len = len;
+#endif
     return 0;
 }
 
@@ -1077,7 +1118,10 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
     err = load_schema(&io, db);
     err = err ?: load_expire(&io, db);
     if (io.sdb_version >= 3) {
-        err = err ?: load_common_meta(&io, &com->meta_data, &com->meta_len);
+        err = err ?: load_common_ids(&io, com);
+    }
+    if (io.sdb_version >= 9) {
+        err = err ?: load_common_blocks(&io, com);
     }
     selva_io_end(&io, nullptr);
 

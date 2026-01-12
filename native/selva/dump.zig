@@ -10,8 +10,8 @@ const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 fn saveCommon(ctx: *DbCtx, filename: [:0]const u8) c_int {
     var com: selva.selva_dump_common_data = .{
-        .meta_data = ctx.ids.ptr,
-        .meta_len = ctx.ids.len * @sizeOf(u32),
+        .ids_data = ctx.ids.ptr,
+        .ids_len = ctx.ids.len,
         .errlog_buf = null,
         .errlog_size = 0,
     };
@@ -114,21 +114,14 @@ pub fn loadCommon(
     var com: selva.selva_dump_common_data = .{
         .errlog_buf = errlog.ptr,
         .errlog_size = errlog.len,
-        .meta_data = null,
+        .ids_data = null,
     };
     var err: c_int = undefined;
 
     err = selva.selva_dump_load_common(dbCtx.selva, &com, filename.ptr);
 
-    if (com.meta_data != null) {
-        const ptr: [*]u32 = @ptrCast(@alignCast(@constCast(com.meta_data)));
-        const len = com.meta_len / @sizeOf(u32);
-        defer jemalloc.free(com.meta_data);
-        dbCtx.ids = dbCtx.allocator.dupe(u32, ptr[0..len]) catch {
-            err = selva.SELVA_ENOMEM;
-            utils.write(resp, err, 0);
-            return;
-        };
+    if (com.ids_data != null) {
+        dbCtx.ids = com.ids_data[0..com.ids_len];
     }
 
     utils.write(resp, err, 0);

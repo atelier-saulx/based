@@ -23,12 +23,24 @@ struct selva_string;
 
 struct selva_dump_common_data {
     /**
+     * Schema ids.
      * Pointer to data returned here when loading; Data read from here when saving.
      */
-    const void *meta_data __pcounted_by(meta_len);
-    size_t meta_len;
+    node_id_t *ids_data __pcounted_by(ids_len);
+    size_t ids_len;
 
     /**
+     * Info about all blocks related to this dump.
+     */
+    struct selva_dump_blocks {
+        node_type_t type;
+        block_id_t block;
+        struct selva_string *block_filenames_s;
+    } *blocks __pcounted_by(blocks_len);
+    size_t blocks_len;
+
+    /**
+     * Error log.
      * Can be nullptr. Also set errlog_size to 0.
      */
     char *errlog_buf __pcounted_by(errlog_size);
