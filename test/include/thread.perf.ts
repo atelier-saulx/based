@@ -80,7 +80,7 @@ await test('include', async (t) => {
   const rand = fastPrng(233221)
   let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e9; i++) {
     db.create('todo', {
       // name: i % 2 ? 'b' : 'a',
       nr: rand(0, 10),
@@ -173,7 +173,7 @@ await test('include', async (t) => {
 
   console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 1e3; i++) {
