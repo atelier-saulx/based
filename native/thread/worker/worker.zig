@@ -34,6 +34,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
             thread.pendingModifies > 0 and
             thread.currentModifyIndex < threads.modifyQueue.items.len)
         {
+            // double check
             modifyBuf = threads.modifyQueue.items[thread.currentModifyIndex];
             if (modifyBuf) |m| {
                 op = @enumFromInt(m[4]);
@@ -54,12 +55,13 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                 },
                 else => {
                     getQueryThreaded(threads.ctx, q, thread) catch |err| {
-                        std.log.err("Error query: {any}", .{err});
+                        std.log.err("Error query: {any}\n", .{err});
                         // write query error response
                     };
                 },
             }
 
+            // prob dont need this... add it specificly
             thread.query.commit();
 
             threads.mutex.lock();
@@ -79,7 +81,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     const prevModifyQueue = threads.modifyQueue;
                     threads.modifyQueue = threads.nextModifyQueue;
                     threads.nextModifyQueue = prevModifyQueue;
-                    threads.pendingModifies = threads.modifyQueue.items.len;
+                    threads.pendingModifies = threads.modifyQueue.items.len * threads.threads.len;
                     for (threads.threads) |threadIt| {
                         threadIt.*.pendingModifies = threads.modifyQueue.items.len;
                     }
@@ -140,13 +142,10 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     else => {},
                 }
                 thread.modify.commit();
-
                 threads.mutex.lock();
-
                 threads.pendingModifies -= 1;
                 thread.pendingModifies -= 1;
                 thread.currentModifyIndex += 1;
-
                 if (threads.pendingModifies == 0) {
                     modifyNotPending(threads);
                 } else if (thread.modify.index > 50_000_000 and !threads.jsModifyBridgeStaged) {
@@ -160,15 +159,8 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     threads.mutex.lock();
                     thread.mutex.unlock();
                 }
-
-                // this goes to the other threads
-
                 threads.mutex.unlock();
-
-                // this will go under
-
             } else {
-
                 // if thread
                 // min thread len == 2
                 if (thread.id == threads.threads.len - 1) {
@@ -203,19 +195,12 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
 
                 // Subscription worker
                 threads.mutex.lock();
-                // thread.mutex.lock();
-
-                // threads.pendingModifies -= 1;
-
+                threads.pendingModifies -= 1;
                 thread.currentModifyIndex += 1;
                 thread.pendingModifies -= 1;
                 if (threads.pendingModifies == 0) {
-                    // if (thread.id == threads.threads.len - 1) {
-                    //     std.debug.print("MOD DONE L Thread \n", .{});
-                    // }
                     modifyNotPending(threads);
                 }
-                // thread.mutex.unlock();
                 threads.mutex.unlock();
             }
         }

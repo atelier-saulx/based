@@ -42,11 +42,13 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
+
         if (self.pendingModifies > 0) {
             try self.nextQueryQueue.append(queryBuffer);
         } else {
             try self.queryQueue.append(queryBuffer);
             self.pendingQueries += 1;
+
             self.wakeup.signal();
         }
     }
@@ -61,9 +63,9 @@ pub const Threads = struct {
             try self.nextModifyQueue.append(modifyBuffer);
         } else {
             try self.modifyQueue.append(modifyBuffer);
-            self.pendingModifies += 1;
+            self.pendingModifies += self.threads.len;
             for (self.threads) |thread| {
-                thread.*.pendingModifies += 1;
+                thread.pendingModifies += 1;
             }
             self.wakeup.broadcast();
         }

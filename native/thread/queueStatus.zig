@@ -12,6 +12,7 @@ pub inline fn waitForQuery(threads: *Thread.Threads) void {
 pub inline fn waitForModify(threads: *Thread.Threads) void {
     threads.mutex.lock();
     defer threads.mutex.unlock();
+
     while (threads.pendingModifies > 0) {
         threads.modifyDone.wait(&threads.mutex);
     }
