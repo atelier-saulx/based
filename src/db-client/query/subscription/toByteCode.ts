@@ -128,6 +128,7 @@ export const registerSubscription = (query: BasedDbQuery) => {
       op: OpType.subscribe,
       fieldsLen,
       partialLen,
+      typeId,
     })
 
     const variableFields = new Uint8Array(varLen)

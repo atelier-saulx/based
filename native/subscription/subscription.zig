@@ -10,37 +10,35 @@ const Id = @import("./singleId.zig");
 
 pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !void {
     if (thread.subscriptions.lastIdMarked > 0) {
+        std.debug.print("Staged subs fire\n", .{});
         var i: usize = 0;
         while (i < thread.subscriptions.lastIdMarked) {
             const subId = thread.subscriptions.singleIdMarked[i];
             if (thread.subscriptions.subsHashMap.get(subId)) |sub| {
                 sub.*.marked = Subscription.SubStatus.all;
-
                 if (threads.pendingModifies > 0) {
-                    std.debug.print("BLA => q mod is pending \n", .{});
                     try threads.nextQueryQueue.append(sub.*.query);
                 } else {
                     try threads.queryQueue.append(sub.*.query);
                     threads.pendingQueries += 1;
-                    // threads.wakeup.signal();
                 }
-                // try threads.query(sub.*.query);
             }
             i += 1;
         }
         thread.subscriptions.lastIdMarked = 0;
-    } else {
-        // _ = try thread.query.result(0, utils.read(u32, q, 0), op);
+        if (threads.pendingModifies == 0) {
+            threads.wakeup.signal();
+        }
     }
 }
 
 pub fn subscribe(
     thread: *Thread.Thread,
     buffer: []u8,
+    subHeader: *const t.SubscriptionHeader,
+    subSize: u32,
 ) !void {
     var index: usize = 0;
-    const subSize = utils.readNext(u32, buffer, &index);
-    const subHeader = utils.readNext(t.SubscriptionHeader, buffer, &index);
     const fields = utils.sliceNext(subHeader.fieldsLen, buffer, &index);
     const partialFields = utils.sliceNext(subHeader.partialLen * 2, buffer, &index);
     const query = utils.sliceNext(buffer.len - subSize, buffer, &index);
@@ -51,7 +49,7 @@ pub fn subscribe(
     switch (queryType) {
         .id, .idFilter => {
             const header = utils.readNext(t.QueryHeaderSingle, query, &index);
-            try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, &subHeader);
+            try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, subHeader);
         },
         else => {
             // not handled yet

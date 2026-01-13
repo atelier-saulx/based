@@ -598,8 +598,10 @@ pub const IncludeResponseMeta = packed struct {
     size: u32,
 };
 
+// add typeId
 pub const SubscriptionHeader = packed struct {
     op: OpType,
+    typeId: TypeId,
     fieldsLen: u8,
     partialLen: u8,
 };

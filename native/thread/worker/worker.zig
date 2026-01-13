@@ -161,39 +161,31 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                 }
                 threads.mutex.unlock();
             } else {
-                // if thread
-                // min thread len == 2
-                if (thread.id == threads.threads.len - 1) {
-                    // use this thread for subscribe
-                    switch (op) {
-                        .emptyMod => {
-                            // does nothing but does trigger flush marked subs and maybe more in the future
-                        },
-                        .modify => {
-                            // try Modify.subscription(thread, m);
-                            // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                        },
-                        .subscribe => {
-                            try Subscription.subscribe(thread, m);
-                            // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                            // std.debug.print("subscribe {any} \n", .{utils.read(u32, m, 0)});
-                        },
-                        // .unsubscribe => try Subscription.unsubscribe(threads.ctx, m, thread),
-                        else => {},
-                    }
-                    // const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
-                    // threads.mutex.lock();
-                    // const elapsed = now - threads.lastModifyTime;
-                    // threads.lastModifyTime = now;
-                    // threads.mutex.unlock();
+                // this will be ANY id step 1 per type modulo
+                // or tell hey do you have subs?
+                // or let zero attach the sub to the lowest thread
+                // prob modulo on typeid?
+                // if (thread.id == threads.threads.len - 1) {
+                switch (op) {
+                    .emptyMod => {},
+                    .modify => {
+                        try Modify.subscription(thread, m);
+                    },
+                    .subscribe => {
+                        var index: usize = 0;
+                        const subSize = utils.readNext(u32, m, &index);
+                        const subHeader = utils.readNext(t.SubscriptionHeader, m, &index);
 
-                    // this will be done slightly different
-                    // if (elapsed > SUB_EXEC_INTERVAL) {
-                    // try Subscription.fireIdSubscription(self, thread);
-                    // }
+                        const len = threads.threads.len;
+                        if (subHeader.typeId % len == thread.id) {
+                            std.debug.print("subscribe on type {d} on thread {d}\n", .{ subHeader.typeId, thread.id });
+                            try Subscription.subscribe(thread, m[index..m.len], &subHeader, subSize);
+                        }
+                    },
+                    else => {},
                 }
+                // }
 
-                // Subscription worker
                 threads.mutex.lock();
                 threads.pendingModifies -= 1;
                 thread.currentModifyIndex += 1;

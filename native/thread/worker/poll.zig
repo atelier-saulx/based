@@ -1,8 +1,9 @@
 const Thread = @import("../thread.zig");
 const std = @import("std");
-const common = @import("./common.zig");
+const common = @import("../common.zig");
+const Subscription = @import("../../subscription/subscription.zig");
 
-fn poll(threads: *Thread.Threads) !void {
+pub fn poll(threads: *Thread.Threads) !void {
     while (true) {
         std.Thread.sleep(common.SUB_EXEC_INTERVAL);
         const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
@@ -15,15 +16,10 @@ fn poll(threads: *Thread.Threads) !void {
 
         if (elapsed > common.SUB_EXEC_INTERVAL) {
             threads.lastModifyTime = now;
-
-            std.debug.print("FIRE SUBS {any} \n", .{@divFloor(elapsed, 1000_000_000)});
-            // just fire from all
-
-            // try Subscription.fireIdSubscription(self, self.threads[self.threads.len - 1]);
-            // if (self.pendingModifies == 0) {
-            // self.wakeup.signal();
-            // }
-            // self.wakeup.signal();
+            try Subscription.fireIdSubscription(threads, threads.threads[threads.threads.len - 1]);
+            for (threads.threads) |thread| {
+                try Subscription.fireIdSubscription(threads, thread);
+            }
         }
 
         threads.mutex.unlock();

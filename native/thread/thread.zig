@@ -9,6 +9,7 @@ const t = @import("../types.zig");
 const jemalloc = @import("../jemalloc.zig");
 const std = @import("std");
 const worker = @import("./worker/worker.zig").worker;
+const poll = @import("./worker/poll.zig").poll;
 
 pub const Thread = common.Thread;
 const Queue = std.array_list.Managed([]u8);
@@ -33,7 +34,7 @@ pub const Threads = struct {
     ctx: *DbCtx,
     allocator: std.mem.Allocator,
     lastModifyTime: u64 = 0,
-    // lastModfiyTimeThread: std.Thread,
+    lastModfiyTimeThread: std.Thread,
     emptyMod: []u8,
 
     pub fn query(
@@ -42,13 +43,11 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-
         if (self.pendingModifies > 0) {
             try self.nextQueryQueue.append(queryBuffer);
         } else {
             try self.queryQueue.append(queryBuffer);
             self.pendingQueries += 1;
-
             self.wakeup.signal();
         }
     }
@@ -87,8 +86,7 @@ pub const Threads = struct {
         nextQueryQueue.* = Queue.init(allocator);
         self.* = .{
             .emptyMod = try allocator.alloc(u8, 5),
-            // .lastModfiyTimeThread
-            // .lastModfiyTimeThread = try std.Thread.spawn(.{}, poll, .{self}),
+            .lastModfiyTimeThread = try std.Thread.spawn(.{}, poll, .{self}),
             .lastModifyTime = 0,
             .allocator = allocator,
             .threads = try allocator.alloc(*Thread, threadAmount),
@@ -118,7 +116,7 @@ pub const Threads = struct {
         }
         self.wakeup.broadcast();
         self.mutex.unlock();
-        // self.lastModfiyTimeThread.join();
+        self.lastModfiyTimeThread.join();
         for (self.threads) |threadContainer| {
             threadContainer.deinit();
         }

@@ -118,8 +118,7 @@ pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
         return;
     }
 
-    var index: usize = 13 + 4;
-
+    const buf = batch[13 + 4 ..];
     var ctx: SubCtx = .{
         .idSubs = null,
         .subTypes = null,
@@ -127,85 +126,70 @@ pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
         .thread = thread,
     };
 
-    while (index < batch.len) {
-        const op: t.ModOp = @enumFromInt(batch[index]);
-        const operation: []u8 = batch[index + 1 ..];
+    var i: usize = 0;
+    while (i < buf.len) {
+        const op: t.ModOp = @enumFromInt(buf[i]);
+        const data: []u8 = buf[i + 1 ..];
         switch (op) {
             .padding => {
-                index += 1;
+                i += 1;
             },
             .switchProp => {
-                index += 3;
+                i += 3;
             },
             .deleteNode => {
-                index += 1;
+                // if (ctx.node) {
+                //     // subs.stage(ctx, subs.Op.deleteNode);
+                // }
+                i += 1;
             },
             .deleteTextField => {
-                index += 2;
+                // const lang: t.LangCode = @enumFromInt(data[0]);
+                i += 2;
             },
             .switchIdCreate => {
-                index += 1;
+                i += 1;
             },
             .switchIdCreateRing => {
-                index += 5;
+                i += 5;
             },
             .switchIdCreateUnsafe => {
-                index += 5;
+                i += 5;
             },
             .switchIdUpdate => {
-                const id = utils.read(u32, operation, 0);
-                ctx.id = id;
+                const id = utils.read(u32, data, 0);
                 if (id != 0) {
-                    // ctx.node = .getNode(ctx.typeEntry.?, ctx.id);
-                    // if (ctx.node == null) {
-                    //     ctx.err = errors.ClientError.nx;
-                    // } else {}
+                    ctx.id = id;
                     try checkId(&ctx);
                 }
-                index += 5;
+                i += 5;
             },
-            .switchEdgeId => {
-                // const srcId = utils.read(u32, operation, 0);
-                // const dstId = utils.read(u32, operation, 4);
-                // const refField = utils.read(u8, operation, 8);
-
-                // NEED THIS!
-                // const prevNodeId = try switchEdgeId(ctx, srcId, dstId, refField);
-                // writeoutPrevNodeId(ctx, &ctx.resultLen, prevNodeId, ctx.result);
-                index += 10;
-            },
+            // .switchEdgeId => {
+            // },
             .upsert => {},
             .insert => {},
             .switchType => {
-                const typeId = utils.read(u16, operation, 0);
-                ctx.subTypes = thread.subscriptions.types.get(typeId);
-                if (ctx.subTypes) |st| {
-                    st.typeModified = true;
-                }
-                index += 3;
+                const typeId = utils.read(u16, data, 0);
+                ctx.subTypes = ctx.thread.subscriptions.types.get(typeId);
+                i += 3;
             },
             .addEmptySort => {},
             .addEmptySortText => {},
             .delete => {},
             .deleteSortIndex => {},
-            .createProp => {
-                // also here
-            },
-            .updateProp => {
-                // derp here go
-            },
-            .updatePartial => {
-                // derp here we go
-            },
+            .createProp => {},
+            .updateProp => {},
+            .updatePartial => {},
             .increment, .decrement => {
-                const fieldType: t.PropType = @enumFromInt(utils.read(u8, operation, 0));
+                const fieldType: t.PropType = @enumFromInt(utils.read(u8, data, 0));
                 const propSize = t.PropType.size(fieldType);
-                const start = utils.read(u16, operation, 1);
+                const start = utils.read(u16, data, 1);
+                std.debug.print("increment/decrement {s} {d}\n", .{ @tagName(fieldType), start });
                 stagePartial(&ctx, start);
-                index += propSize + 3;
+                i += propSize + 3 + 1;
             },
             .expire => {
-                index += 5;
+                i += 5;
             },
         }
     }

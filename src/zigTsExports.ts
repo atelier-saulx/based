@@ -1822,11 +1822,12 @@ export const createIncludeResponseMeta = (header: IncludeResponseMeta): Uint8Arr
 
 export type SubscriptionHeader = {
   op: OpTypeEnum
+  typeId: TypeId
   fieldsLen: number
   partialLen: number
 }
 
-export const SubscriptionHeaderByteSize = 3
+export const SubscriptionHeaderByteSize = 5
 
 export const writeSubscriptionHeader = (
   buf: Uint8Array,
@@ -1835,6 +1836,8 @@ export const writeSubscriptionHeader = (
 ): number => {
   buf[offset] = header.op
   offset += 1
+  writeUint16(buf, header.typeId, offset)
+  offset += 2
   buf[offset] = header.fieldsLen
   offset += 1
   buf[offset] = header.partialLen
@@ -1846,11 +1849,14 @@ export const writeSubscriptionHeaderProps = {
   op: (buf: Uint8Array, value: OpTypeEnum, offset: number) => {
     buf[offset] = value
   },
+  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, value, offset + 1)
+  },
   fieldsLen: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 1] = value
+    buf[offset + 3] = value
   },
   partialLen: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 2] = value
+    buf[offset + 4] = value
   },
 }
 
@@ -1860,8 +1866,9 @@ export const readSubscriptionHeader = (
 ): SubscriptionHeader => {
   const value: SubscriptionHeader = {
     op: (buf[offset]) as OpTypeEnum,
-    fieldsLen: buf[offset + 1],
-    partialLen: buf[offset + 2],
+    typeId: (readUint16(buf, offset + 1)) as TypeId,
+    fieldsLen: buf[offset + 3],
+    partialLen: buf[offset + 4],
   }
   return value
 }
@@ -1870,11 +1877,14 @@ export const readSubscriptionHeaderProps = {
   op: (buf: Uint8Array, offset: number): OpTypeEnum => {
     return (buf[offset]) as OpTypeEnum
   },
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset + 1)) as TypeId
+  },
   fieldsLen: (buf: Uint8Array, offset: number): number => {
-    return buf[offset + 1]
+    return buf[offset + 3]
   },
   partialLen: (buf: Uint8Array, offset: number): number => {
-    return buf[offset + 2]
+    return buf[offset + 4]
   },
 }
 

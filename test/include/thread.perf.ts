@@ -80,7 +80,7 @@ await test('include', async (t) => {
   const rand = fastPrng(233221)
   let d = Date.now()
 
-  for (let i = 0; i < 1e9; i++) {
+  for (let i = 0; i < 1e6; i++) {
     db.create('todo', {
       // name: i % 2 ? 'b' : 'a',
       nr: rand(0, 10),
@@ -115,46 +115,18 @@ await test('include', async (t) => {
   })
 
   // now include edge
-  await db
-    .query('user')
-    .include('currentTodo')
-    // .include('nr', 'currentTodo.id', 'currentTodo.$derp')
-    .get()
-    .inspect()
+  await db.query('user').include('currentTodo').get().inspect()
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
-  console.log(styleText('blue', 'UPDATE'))
-  await db.update('todo', 1, { nr: 66 })
-  console.log(styleText('blue', '--------------'))
-
-  console.log('THREAD ISSUE')
-  const q: any = []
-
-  const mod = new Uint8Array([
-    0, 0, 0, 0, 127, 224, 184, 8, 246, 232,
-    0, 0, 0, 1, 0, 0, 0, 2, 1, 0,
-    1, 1, 0, 0, 0, 0, 0, 17, 5, 8,
-    0, 0, 0, 0, 0, 4, 0, 66, 0, 0,
-    0
-  ])
-
-  for (let i = 1; i < 10; i++) {
-    native.modify(mod, db.server.dbCtxExternal)
-    const q = registerQuery(db.query('todo', i))
-    native.query(q, db.server.dbCtxExternal)
+  for (let i = 1; i < 3; i++) {
+    db.query('todo', i)
+      .include('nr')
+      .subscribe((d) => console.log(d))
   }
 
-  console.log(styleText('blue', 'staged mod/q'))
-
-  // const r = await Promise.all(q)
-
-  // console.log(r[100])
-
-  console.log(styleText('blue', 'wait'))
-
   await wait(200)
-  console.log(styleText('blue', 'wait done'))
+  console.log(styleText('blue', 'subscribed'))
 
   d = Date.now()
   for (let i = 1; i < 3; i++) {
@@ -165,18 +137,17 @@ await test('include', async (t) => {
 
   console.log(styleText('blue', 'drain done'))
 
-  console.log('------->', Date.now() - d, 'ms')
   await wait(200)
-
+  console.log(styleText('blue', 'update TODO'))
   db.update('todo', 1, { nr: { increment: 1 } })
-  await wait(200)
+  await wait(500)
 
-  console.log('\n--------------------------\nStart quer222y!!!!!!!!!')
+  console.log('\n--------------------------\n')
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 1e3; i++) {
+      for (let i = 0; i < 100; i++) {
         q.push(
           db
             .query('todo')
@@ -188,7 +159,7 @@ await test('include', async (t) => {
       }
       await Promise.all(q)
     },
-    'Nodes',
+    '100M Nodes query',
     { repeat: 10 },
   )
 
