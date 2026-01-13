@@ -11,10 +11,18 @@ env:
 
 jobs:
   ci_build_test:
-    name: Autotest
-    runs-on: based-db-ci
+    name: Build & Test (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
     environment: 'BasedDB CI-CD'
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: based-db-ci
+            name: Linux-ARM64
+          # - os: macos-latest
+          #   name: MacOS-ARM64
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -25,7 +33,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Install Build Essentials & GCC-14
+      # --- LINUX SPECIFIC SETUP ---
+      - name: Install Build Essentials & GCC-14 (Linux)
+        if: runner.os == 'Linux'
         run: |
           echo "🛠️ Installing build tools..."
           sudo apt-get update
@@ -42,7 +52,8 @@ jobs:
           gcc --version
           make --version
 
-      - name: Setup Docker
+      - name: Setup Docker (Linux)
+        if: runner.os == 'Linux'
         run: |
           if ! command -v docker &> /dev/null; then
             echo "🐳 Docker not found on this runner. Installing..."
@@ -56,14 +67,16 @@ jobs:
           echo "🔧 Fixing Docker socket permissions..."
           sudo chmod 666 /var/run/docker.sock
 
-      - name: Build Builder Image
+      - name: Build Builder Image (Linux)
+        if: matrix.name == 'Linux-ARM64'
         run: docker build -t based-db-clibs-build-linux_aarch64 -f podman/Containerfile .
 
       - name: Run Build
         run: |
-          docker run -t --rm -w /usr/src/based-db -v "${{ github.workspace }}:/usr/src/based-db" based-db-clibs-build-linux_aarch64
-
-          sudo chown -R $USER:$USER .
+          if [[ "${{ matrix.name }}" == "Linux-ARM64" ]]; then
+              docker run -t --rm -w /usr/src/based-db -v "${{ github.workspace }}:/usr/src/based-db" based-db-clibs-build-linux_aarch64
+              sudo chown -R $USER:$USER .
+          fi
 
           echo "Installing ZVM..."
           curl -L https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
@@ -75,7 +88,9 @@ jobs:
           zvm i 0.15.2
           zvm use 0.15.2
 
-          sudo apt-get update && sudo apt-get install -y patchelf
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update && sudo apt-get install -y patchelf
+          fi
 
           npm ci
 
@@ -95,10 +110,34 @@ jobs:
 
           npx tsc
 
-      - name: Run Test Command (npm run test)
+      - name: Run Test Command
         run: |
           cd packages/db
           npm run test-fast
+
+      # --- PACKAGING & ARTIFACTS ---
+
+      - name: Create NPM Tarball
+        id: pack
+        if: success()
+        run: |
+          # This packs the project into a .tgz file exactly how npm publish would
+          # We move it to a clean name containing the short commit hash
+          npm pack
+          FILE_NAME=$(ls *.tgz | head -n 1)
+          NEW_NAME="based-db-${{ matrix.name }}-${{ github.sha }}.tgz"
+          mv "$FILE_NAME" "$NEW_NAME"
+          echo "artifact_path=$NEW_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: based-db-build-${{ matrix.name }}-${{ github.sha }}
+          path: ${{ steps.pack.outputs.artifact_path }}
+          retention-days: 60
+
+      # --- NOTIFICATIONS ---
 
       - name: Send Discord Notification
         uses: tsickert/discord-webhook@v7.0.0
@@ -110,5 +149,7 @@ jobs:
           embed-author-name: ${{ github.actor }}
           embed-author-url: ${{ github.server_url }}/${{ github.actor }}
           embed-author-icon-url: 'https://avatars.githubusercontent.com/u/${{ github.actor_id }}?v=4'
-          embed-title: "${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed' || '❌ FAILURE: CI/CD Failed' }}"
-          embed-description: '[${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})'
+          embed-title: "${{ job.status == 'success' && '✅ SUCCESS: CI/CD Passed & Artifact Created' || '❌ FAILURE: CI/CD Failed' }}"
+          embed-description: |
+            **Commit:** [${{ github.event.head_commit.message }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            **Artifact:** based-db-${{ matrix.name }}-${{ github.sha }}
