@@ -32,10 +32,10 @@ struct selva_dump_common_data {
     /**
      * Info about all blocks related to this dump.
      */
-    struct selva_dump_blocks {
+    struct selva_dump_block {
         node_type_t type;
         block_id_t block;
-        struct selva_string *block_filenames_s;
+        struct selva_string *filename;
     } *blocks __pcounted_by(blocks_len);
     size_t blocks_len;
 
