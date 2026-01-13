@@ -8,6 +8,8 @@ const References = @import("../selva/references.zig");
 const Subscription = @import("../subscription/common.zig");
 const EdgeResultSize = @sizeOf(References.ReferencesIteratorEdgesResult);
 
+pub const SUB_EXEC_INTERVAL = 1000_000_000;
+
 pub const Thread = struct {
     thread: std.Thread,
     id: usize,

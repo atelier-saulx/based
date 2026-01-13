@@ -4,6 +4,7 @@ const napi = @import("../napi.zig");
 const std = @import("std");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
+const QueueStatus = @import("./queueStatus.zig");
 
 pub const BridgeResponseStruct = struct {
     response: t.BridgeResponse,
@@ -28,7 +29,7 @@ fn callJsCallback(
 
     switch (responseFn.response) {
         t.BridgeResponse.modify => {
-            dbCtx.threads.waitForModify();
+            QueueStatus.waitForModify(dbCtx.threads);
             dbCtx.threads.mutex.lock();
             const thread = dbCtx.threads.threads[0];
             var arrayBuffer: napi.Value = undefined;
@@ -76,7 +77,7 @@ fn callJsCallback(
             thread.mutex.unlock();
         },
         t.BridgeResponse.query => {
-            dbCtx.threads.waitForQuery();
+            QueueStatus.waitForQuery(dbCtx.threads);
             var jsArray: napi.Value = undefined;
             _ = napi.c.napi_create_array_with_length(env, dbCtx.threads.threads.len, &jsArray);
             dbCtx.threads.mutex.lock();

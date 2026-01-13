@@ -4,23 +4,16 @@ const utils = @import("../utils.zig");
 const Modify = @import("../modify/modify.zig");
 const SelvaHash128 = @import("../string.zig").SelvaHash128;
 const selva = @import("../selva/selva.zig").c;
-const dump = @import("../selva/dump.zig");
-const info = @import("../selva/info.zig");
-const getQueryThreaded = @import("../query/query.zig").getQueryThreaded;
 const common = @import("common.zig");
 const t = @import("../types.zig");
-const Subscription = @import("../subscription/subscription.zig");
 const jemalloc = @import("../jemalloc.zig");
 const std = @import("std");
-
-// configurable
-const SUB_EXEC_INTERVAL = 1000_000_000;
+const worker = @import("./worker/worker.zig").worker;
 
 pub const Thread = common.Thread;
 const Queue = std.array_list.Managed([]u8);
 
 pub const Threads = struct {
-    // get rid of all the auto init things
     mutex: std.Thread.Mutex = .{},
     threads: []*Thread,
     pendingQueries: usize = 0,
@@ -39,44 +32,9 @@ pub const Threads = struct {
     jsModifyBridgeStaged: bool = false,
     ctx: *DbCtx,
     allocator: std.mem.Allocator,
-
     lastModifyTime: u64 = 0,
     // lastModfiyTimeThread: std.Thread,
     emptyMod: []u8,
-
-    pub inline fn waitForQuery(self: *Threads) void {
-        self.mutex.lock();
-        defer self.mutex.unlock();
-        while (self.pendingQueries > 0) {
-            self.queryDone.wait(&self.mutex);
-        }
-    }
-
-    pub inline fn waitForModify(self: *Threads) void {
-        self.mutex.lock();
-        defer self.mutex.unlock();
-        while (self.pendingModifies > 0) {
-            self.modifyDone.wait(&self.mutex);
-        }
-    }
-
-    pub inline fn modifyIsReady(self: *Threads) bool {
-        self.mutex.lock();
-        defer self.mutex.unlock();
-        if (self.pendingModifies > 0) {
-            return false;
-        }
-        return true;
-    }
-
-    pub inline fn queryIsReady(self: *Threads) bool {
-        self.mutex.lock();
-        defer self.mutex.unlock();
-        if (self.pendingQueries > 0) {
-            return false;
-        }
-        return true;
-    }
 
     pub fn query(
         self: *Threads,
@@ -99,8 +57,6 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        std.debug.print("STAGE MODIFY!!!! {any} \n", .{self.pendingQueries});
-
         if (self.pendingQueries > 0) {
             try self.nextModifyQueue.append(modifyBuffer);
         } else {
@@ -113,290 +69,20 @@ pub const Threads = struct {
         }
     }
 
-    inline fn modifyNotPending(
-        self: *Threads,
-    ) void {
-        for (self.threads) |thread| {
-            if (thread.pendingModifies != 0) {
-                return;
-            }
-        }
-        while (self.modifyQueue.items.len > 0) {
-            _ = self.modifyQueue.swapRemove(0);
-        }
-        for (self.threads) |thread| {
-            thread.currentModifyIndex = 0;
-        }
-        self.modifyDone.signal();
-        if (!self.jsModifyBridgeStaged) {
-            self.ctx.jsBridge.call(t.BridgeResponse.modify, 0);
-            self.jsModifyBridgeStaged = true;
-        }
-        if (self.nextQueryQueue.items.len > 0) {
-            const prevQueryQueue = self.queryQueue;
-            self.queryQueue = self.nextQueryQueue;
-            self.nextQueryQueue = prevQueryQueue;
-            self.pendingQueries = self.queryQueue.items.len;
-            self.wakeup.broadcast();
-        }
-    }
-
-    fn poll(self: *Threads) !void {
-        while (true) {
-            std.Thread.sleep(SUB_EXEC_INTERVAL);
-            const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
-            self.mutex.lock();
-            if (self.shutdown) {
-                self.mutex.unlock();
-                return;
-            }
-            const elapsed = now - self.lastModifyTime;
-
-            if (elapsed > SUB_EXEC_INTERVAL) {
-                self.lastModifyTime = now;
-
-                std.debug.print("FIRE SUBS {any} \n", .{@divFloor(elapsed, 1000_000_000)});
-                // just fire from all
-
-                // try Subscription.fireIdSubscription(self, self.threads[self.threads.len - 1]);
-                // if (self.pendingModifies == 0) {
-                // self.wakeup.signal();
-                // }
-                // self.wakeup.signal();
-            }
-
-            self.mutex.unlock();
-        }
-    }
-
-    fn worker(self: *Threads, thread: *Thread) !void {
-        while (true) {
-            var queryBuf: ?[]u8 = null;
-            var modifyBuf: ?[]u8 = null;
-            var op: t.OpType = t.OpType.noOp;
-
-            self.mutex.lock();
-
-            if (self.shutdown) {
-                self.mutex.unlock();
-                return;
-            }
-
-            if (self.queryQueue.items.len > 0) {
-                queryBuf = self.queryQueue.swapRemove(0);
-                if (queryBuf) |q| {
-                    op = @enumFromInt(q[4]);
-                }
-            } else if (self.modifyQueue.items.len > 0 and
-                thread.pendingModifies > 0 and
-                thread.currentModifyIndex < self.modifyQueue.items.len)
-            {
-                modifyBuf = self.modifyQueue.items[thread.currentModifyIndex];
-                if (modifyBuf) |m| {
-                    op = @enumFromInt(m[4]);
-                }
-            } else {
-                self.wakeup.wait(&self.mutex);
-            }
-
-            self.mutex.unlock();
-
-            if (queryBuf) |q| {
-                switch (op) {
-                    .blockHash => try info.blockHash(thread, self.ctx, q, op),
-                    .saveBlock => try dump.saveBlock(thread, self.ctx, q, op),
-                    .saveAllBlocks => try dump.saveAllBlocks(self, thread, q, op),
-                    .noOp => {
-                        std.log.err("NO-OP received for query incorrect\n", .{});
-                    },
-                    else => {
-                        getQueryThreaded(self.ctx, q, thread) catch |err| {
-                            std.log.err("Error query: {any}", .{err});
-                            // write query error response
-                        };
-                    },
-                }
-
-                thread.query.commit();
-
-                self.mutex.lock();
-
-                self.pendingQueries -= 1;
-
-                if (self.pendingQueries == 0) {
-                    self.queryDone.signal();
-                    if (!self.jsQueryBridgeStaged) {
-                        self.jsQueryBridgeStaged = true;
-                        for (self.threads) |tx| {
-                            tx.flushed = false;
-                        }
-                        self.ctx.jsBridge.call(t.BridgeResponse.query, 0);
-                    }
-                    if (self.nextModifyQueue.items.len > 0) {
-                        const prevModifyQueue = self.modifyQueue;
-                        self.modifyQueue = self.nextModifyQueue;
-                        self.nextModifyQueue = prevModifyQueue;
-                        self.pendingModifies = self.modifyQueue.items.len;
-                        for (self.threads) |threadIt| {
-                            threadIt.*.pendingModifies = self.modifyQueue.items.len;
-                        }
-                        self.wakeup.broadcast();
-                    } else {}
-                } else if (thread.query.index > 100_000_000 and !self.jsQueryBridgeStaged) {
-                    thread.mutex.lock();
-                    self.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
-                    thread.flushed = false;
-                    self.mutex.unlock();
-                    while (!thread.flushed) {
-                        thread.flushDone.wait(&thread.mutex);
-                    }
-                    self.mutex.lock();
-                    thread.mutex.unlock();
-                }
-
-                self.mutex.unlock();
-            }
-
-            if (modifyBuf) |m| {
-                if (thread.id == 0) {
-                    switch (op) {
-                        .emptyMod => {
-                            // does nothing but does trigger flush marked subs and maybe more in the future
-                        },
-                        .modify => try Modify.modify(thread, m, self.ctx, op),
-                        .loadBlock => try dump.loadBlock(thread, self.ctx, m, op),
-                        .unloadBlock => try dump.unloadBlock(thread, self.ctx, m, op),
-                        .loadCommon => try dump.loadCommon(thread, self.ctx, m, op),
-
-                        .createType => {
-                            const typeCode = utils.read(u32, m, 0);
-                            const resp = try thread.modify.result(4, typeCode, op);
-                            const schema = m[5..m.len];
-                            const err = selva.selva_db_create_type(
-                                self.ctx.selva,
-                                @truncate(typeCode),
-                                schema.ptr,
-                                schema.len,
-                            );
-                            utils.write(resp, err, 0);
-                        },
-                        // .subscribe => {
-                        // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                        // },
-                        // .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
-                        .setSchemaIds => {
-                            _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                            if (self.ctx.ids.len > 0) {
-                                jemalloc.free(self.ctx.ids);
-                                self.ctx.ids = &[_]u32{};
-                            }
-                            self.ctx.ids = jemalloc.alloc(u32, (m.len - 5) / @sizeOf(u32));
-                            const ids = m[5..m.len];
-                            utils.byteCopy(self.ctx.ids, ids, 0);
-                        },
-                        else => {},
-                    }
-                    thread.modify.commit();
-
-                    self.mutex.lock();
-
-                    self.pendingModifies -= 1;
-                    thread.pendingModifies -= 1;
-                    thread.currentModifyIndex += 1;
-
-                    if (self.pendingModifies == 0) {
-                        self.modifyNotPending();
-                    } else if (thread.modify.index > 50_000_000 and !self.jsModifyBridgeStaged) {
-                        thread.mutex.lock();
-                        self.ctx.jsBridge.call(t.BridgeResponse.flushModify, thread.id);
-                        thread.flushed = false;
-                        self.mutex.unlock();
-                        while (!thread.flushed) {
-                            thread.flushDone.wait(&thread.mutex);
-                        }
-                        self.mutex.lock();
-                        thread.mutex.unlock();
-                    }
-
-                    // this goes to the other threads
-
-                    self.mutex.unlock();
-
-                    // this will go under
-
-                } else {
-
-                    // if thread
-                    // min thread len == 2
-                    if (thread.id == self.threads.len - 1) {
-                        // use this thread for subscribe
-                        switch (op) {
-                            .emptyMod => {
-                                // does nothing but does trigger flush marked subs and maybe more in the future
-                            },
-                            .modify => {
-                                // try Modify.subscription(thread, m);
-                                // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                            },
-                            .subscribe => {
-                                try Subscription.subscribe(thread, m);
-                                // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                                // std.debug.print("subscribe {any} \n", .{utils.read(u32, m, 0)});
-                            },
-                            // .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
-                            else => {},
-                        }
-                        // const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
-                        // self.mutex.lock();
-                        // const elapsed = now - self.lastModifyTime;
-                        // self.lastModifyTime = now;
-                        // self.mutex.unlock();
-
-                        // this will be done slightly different
-                        // if (elapsed > SUB_EXEC_INTERVAL) {
-                        // try Subscription.fireIdSubscription(self, thread);
-                        // }
-                    }
-
-                    // Subscription worker
-                    self.mutex.lock();
-                    // thread.mutex.lock();
-
-                    // self.pendingModifies -= 1;
-
-                    thread.currentModifyIndex += 1;
-                    thread.pendingModifies -= 1;
-                    if (self.pendingModifies == 0) {
-                        if (thread.id == self.threads.len - 1) {
-                            std.debug.print("MOD DONE L Thread \n", .{});
-                        }
-
-                        self.modifyNotPending();
-                    }
-                    // thread.mutex.unlock();
-                    self.mutex.unlock();
-                }
-            }
-        }
-    }
-
     pub fn init(
         allocator: std.mem.Allocator,
         threadAmount: usize,
         ctx: *DbCtx,
     ) !*Threads {
         const self = try allocator.create(Threads);
-
         const modifyQueue = try allocator.create(Queue);
         modifyQueue.* = Queue.init(allocator);
         const nextModifyQueue = try allocator.create(Queue);
         nextModifyQueue.* = Queue.init(allocator);
-
         const queryQueue = try allocator.create(Queue);
         queryQueue.* = Queue.init(allocator);
         const nextQueryQueue = try allocator.create(Queue);
         nextQueryQueue.* = Queue.init(allocator);
-
         self.* = .{
             .emptyMod = try allocator.alloc(u8, 5),
             // .lastModfiyTimeThread
@@ -410,15 +96,12 @@ pub const Threads = struct {
             .queryQueue = queryQueue,
             .nextQueryQueue = nextQueryQueue,
         };
-
         self.*.emptyMod[4] = @intFromEnum(t.OpType.emptyMod);
-
         for (self.threads, 0..) |*threadContainer, id| {
             const thread = try Thread.init(allocator, id);
             thread.*.thread = try std.Thread.spawn(.{}, worker, .{ self, thread });
             threadContainer.* = thread;
         }
-
         return self;
     }
 
@@ -433,7 +116,6 @@ pub const Threads = struct {
         }
         self.wakeup.broadcast();
         self.mutex.unlock();
-
         // self.lastModfiyTimeThread.join();
         for (self.threads) |threadContainer| {
             threadContainer.deinit();
