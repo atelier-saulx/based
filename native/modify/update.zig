@@ -21,7 +21,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
         return len;
     }
 
-    subs.stage(ctx, subs.Op.update);
+    // subs.stage(ctx, subs.Op.update);
 
     switch (ctx.fieldType) {
         t.PropType.references => {
@@ -156,6 +156,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
     }
 }
 
+// is sub
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     const len = read(u32, data, 0);
     if (ctx.node == null) {
@@ -171,7 +172,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
             const start = read(u16, operation, 0);
             const l = read(u16, operation, 2);
             if (ctx.field == 0) {
-                subs.stagePartial(ctx, start);
+                // subs.stagePartial(ctx, start);
 
                 if (ctx.typeSortIndex != null) {
                     const sI = ctx.typeSortIndex.?.main.get(start);
@@ -189,10 +190,10 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
                 sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentData, ctx.node.?);
                 sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, ctx.node.?);
                 copy(u8, currentData, operation[4 .. 4 + l], start);
-                subs.stage(ctx, subs.Op.update);
+                // subs.stage(ctx, subs.Op.update);
             } else {
                 copy(u8, currentData, operation[4 .. 4 + l], start);
-                subs.stage(ctx, subs.Op.update);
+                // subs.stage(ctx, subs.Op.update);
             }
             j += 4 + l;
         }
@@ -329,7 +330,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: t.ModOp) !usize {
 
     const size = incrementBuffer(op, fieldType, value, addition);
     if (ctx.field == 0) {
-        subs.stagePartial(ctx, start);
+        // subs.stagePartial(ctx, start);
         if (ctx.typeSortIndex != null) {
             const sI = ctx.typeSortIndex.?.main.get(start);
             if (sI != null) {
@@ -337,7 +338,7 @@ pub fn increment(ctx: *ModifyCtx, data: []u8, op: t.ModOp) !usize {
             }
         }
     } else {
-        subs.stage(ctx, subs.Op.update);
+        // subs.stage(ctx, subs.Op.update);
         if (ctx.currentSortIndex != null) {
             sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, value, ctx.node.?);
         }

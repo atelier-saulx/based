@@ -54,7 +54,7 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
         return 0;
     }
 
-    subs.stage(ctx, subs.Op.deleteField);
+    // subs.stage(ctx, subs.Op.deleteField);
 
     if (ctx.typeSortIndex != null) {
         if (ctx.currentSortIndex != null) {
@@ -107,7 +107,7 @@ pub fn deleteTextLang(ctx: *ModifyCtx, lang: t.LangCode) void {
     );
     // If !empty
     if (textValue.len >= 6) {
-        subs.stage(ctx, subs.Op.deleteFieldLang);
+        // subs.stage(ctx, subs.Op.deleteFieldLang);
         const sortIndex = sort.getSortIndex(ctx.db.sortIndexes.get(ctx.typeId), ctx.field, 0, lang);
         if (sortIndex) |sI| {
             sort.remove(ctx.thread.decompressor, sI, textValue, ctx.node.?);

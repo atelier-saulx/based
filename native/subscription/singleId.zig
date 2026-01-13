@@ -117,7 +117,8 @@ pub fn addIdSubscription(
     sub.typeId = header.typeId;
     sub.partial = @splat(@intFromEnum(Subscription.SubPartialStatus.none));
     sub.fields = @splat(@intFromEnum(Subscription.SubStatus.marked));
-    sub.query = queryBuffer;
+    sub.query = jemalloc.alloc(u8, queryBuffer.len);
+    utils.copy(u8, sub.query, queryBuffer, 0);
     sub.subId = subId;
 
     subs[subIndex] = sub;

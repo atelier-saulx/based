@@ -20,8 +20,15 @@ pub const Op = enum(u8) {
     updatePartial = 5,
 };
 
+pub const SubCtx = struct {
+    subTypes: ?*Subscription.TypeSubscriptionCtx, // prob want to add subs here
+    idSubs: ?[]*Subscription.Sub,
+    id: u32,
+    thread: *Thread.Thread,
+};
+
 pub fn checkId(
-    ctx: *ModifyCtx,
+    ctx: *SubCtx,
 ) !void {
     if (ctx.subTypes) |typeSubs| {
         if (ctx.id >= typeSubs.minId and
@@ -36,7 +43,7 @@ pub fn checkId(
     }
 }
 
-pub fn stagePartial(ctx: *ModifyCtx, start: u16) void {
+pub fn stagePartial(ctx: *SubCtx, start: u16) void {
     if (ctx.idSubs) |idSubs| {
         var i: u32 = 0;
         var f: @Vector(vectorLenU16, u16) = @splat(start);
@@ -61,7 +68,7 @@ pub fn stagePartial(ctx: *ModifyCtx, start: u16) void {
 }
 
 pub fn stage(
-    ctx: *ModifyCtx,
+    ctx: *SubCtx,
     comptime op: Op,
 ) void {
     var i: u32 = 0;
@@ -106,81 +113,100 @@ pub fn stage(
     }
 }
 
-// pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
-//     var index: usize = 0;
-//     while (index < batch.len) {
-//         const op: t.ModOp = @enumFromInt(batch[index]);
-//         const operation: []u8 = batch[index + 1 ..];
-//         switch (op) {
-//             .padding => {
-//                 index += 1;
-//             },
-//             .switchProp => {
-//                 index += 3;
-//             },
-//             .deleteNode => {
-//                 index += 1;
-//             },
-//             .deleteTextField => {
-//                 index += 2;
-//             },
-//             .switchIdCreate => {
-//                 index += 1;
-//             },
-//             .switchIdCreateRing => {
-//                 index += 5;
-//             },
-//             .switchIdCreateUnsafe => {
-//                 index += 5;
-//             },
-//             .switchIdUpdate => {
-//                 const id = utils.read(u32, operation, 0);
-//                 if (id != 0) {
-//                     // ctx.node = .getNode(ctx.typeEntry.?, ctx.id);
-//                     // if (ctx.node == null) {
-//                     //     ctx.err = errors.ClientError.nx;
-//                     // } else {
+pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
+    if (thread.subscriptions.types.count() == 0) {
+        return;
+    }
 
-//                     // try checkId(ctx);
-//                 }
-//                 index += 5;
-//             },
-//             .switchEdgeId => {
-//                 // const srcId = utils.read(u32, operation, 0);
-//                 // const dstId = utils.read(u32, operation, 4);
-//                 // const refField = utils.read(u8, operation, 8);
+    var index: usize = 13 + 4;
 
-//                 // NEED THIS!
-//                 // const prevNodeId = try switchEdgeId(ctx, srcId, dstId, refField);
-//                 // writeoutPrevNodeId(ctx, &ctx.resultLen, prevNodeId, ctx.result);
-//                 index += 10;
-//             },
-//             .upsert => {},
-//             .insert => {},
-//             .switchType => {
-//                 const typeId = utils.read(u16, operation, 0);
-//                 // try switchType(ctx, read(u16, operation, 0));
-//                 index += 3;
-//             },
-//             .addEmptySort => {},
-//             .addEmptySortText => {},
-//             .delete => {},
-//             .deleteSortIndex => {},
-//             .createProp => {
-//                 // also here
-//             },
-//             .updateProp => {
-//                 // derp here go
-//             },
-//             .updatePartial => {
-//                 // derp here we go
-//             },
-//             .increment, .decrement => {
-//                 // here we go
-//             },
-//             .expire => {
-//                 index += 5;
-//             },
-//         }
-//     }
-// }
+    var ctx: SubCtx = .{
+        .idSubs = null,
+        .subTypes = null,
+        .id = 0,
+        .thread = thread,
+    };
+
+    while (index < batch.len) {
+        const op: t.ModOp = @enumFromInt(batch[index]);
+        const operation: []u8 = batch[index + 1 ..];
+        switch (op) {
+            .padding => {
+                index += 1;
+            },
+            .switchProp => {
+                index += 3;
+            },
+            .deleteNode => {
+                index += 1;
+            },
+            .deleteTextField => {
+                index += 2;
+            },
+            .switchIdCreate => {
+                index += 1;
+            },
+            .switchIdCreateRing => {
+                index += 5;
+            },
+            .switchIdCreateUnsafe => {
+                index += 5;
+            },
+            .switchIdUpdate => {
+                const id = utils.read(u32, operation, 0);
+                ctx.id = id;
+                if (id != 0) {
+                    // ctx.node = .getNode(ctx.typeEntry.?, ctx.id);
+                    // if (ctx.node == null) {
+                    //     ctx.err = errors.ClientError.nx;
+                    // } else {}
+                    try checkId(&ctx);
+                }
+                index += 5;
+            },
+            .switchEdgeId => {
+                // const srcId = utils.read(u32, operation, 0);
+                // const dstId = utils.read(u32, operation, 4);
+                // const refField = utils.read(u8, operation, 8);
+
+                // NEED THIS!
+                // const prevNodeId = try switchEdgeId(ctx, srcId, dstId, refField);
+                // writeoutPrevNodeId(ctx, &ctx.resultLen, prevNodeId, ctx.result);
+                index += 10;
+            },
+            .upsert => {},
+            .insert => {},
+            .switchType => {
+                const typeId = utils.read(u16, operation, 0);
+                ctx.subTypes = thread.subscriptions.types.get(typeId);
+                if (ctx.subTypes) |st| {
+                    st.typeModified = true;
+                }
+                index += 3;
+            },
+            .addEmptySort => {},
+            .addEmptySortText => {},
+            .delete => {},
+            .deleteSortIndex => {},
+            .createProp => {
+                // also here
+            },
+            .updateProp => {
+                // derp here go
+            },
+            .updatePartial => {
+                // derp here we go
+            },
+            .increment, .decrement => {
+                const fieldType: t.PropType = @enumFromInt(utils.read(u8, operation, 0));
+                const propSize = t.PropType.size(fieldType);
+                const start = utils.read(u16, operation, 1);
+                stagePartial(&ctx, start);
+                index += propSize + 3;
+            },
+            .expire => {
+                index += 5;
+            },
+        }
+    }
+}

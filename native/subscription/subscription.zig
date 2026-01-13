@@ -15,7 +15,16 @@ pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !voi
             const subId = thread.subscriptions.singleIdMarked[i];
             if (thread.subscriptions.subsHashMap.get(subId)) |sub| {
                 sub.*.marked = Subscription.SubStatus.all;
-                try threads.query(sub.*.query);
+
+                if (threads.pendingModifies > 0) {
+                    std.debug.print("BLA => q mod is pending \n", .{});
+                    try threads.nextQueryQueue.append(sub.*.query);
+                } else {
+                    try threads.queryQueue.append(sub.*.query);
+                    threads.pendingQueries += 1;
+                    // threads.wakeup.signal();
+                }
+                // try threads.query(sub.*.query);
             }
             i += 1;
         }

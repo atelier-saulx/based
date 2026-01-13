@@ -135,6 +135,10 @@ You can filter which tests to run by providing one or more filter arguments.
   npm run test -- 10
   ```
 
+## Zig version
+
+zig version 0.15.2
+
 ## Zig Performance Tests
 
 To run performance tests for a specific Zig file, you can use the `zig test` command with the `ReleaseSafe` optimization flag. This will compile and run the tests in the specified file with optimizations enabled.

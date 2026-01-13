@@ -10,7 +10,6 @@ const createField = @import("create.zig").createField;
 const deleteFieldSortIndex = @import("delete.zig").deleteFieldSortIndex;
 const deleteField = @import("delete.zig").deleteField;
 const deleteTextLang = @import("delete.zig").deleteTextLang;
-const subs = @import("subscription.zig");
 const addEmptyToSortIndex = @import("sort.zig").addEmptyToSortIndex;
 const addEmptyTextToSortIndex = @import("sort.zig").addEmptyTextToSortIndex;
 const utils = @import("../utils.zig");
@@ -29,6 +28,10 @@ const read = utils.read;
 const write = utils.write;
 const assert = std.debug.assert;
 const ModifyCtx = Modify.ModifyCtx;
+
+const subs = @import("subscription.zig");
+
+pub const subscription = subs.suscription;
 
 //  ----------NAPI-------------
 pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
@@ -50,10 +53,10 @@ fn switchType(ctx: *ModifyCtx, typeId: u16) !void {
     ctx.typeId = typeId;
     ctx.typeEntry = try Node.getType(ctx.db, ctx.typeId);
     ctx.typeSortIndex = dbSort.getTypeSortIndexes(ctx.db, ctx.typeId);
-    ctx.subTypes = ctx.thread.subscriptions.types.get(ctx.typeId);
-    if (ctx.subTypes) |st| {
-        st.typeModified = true;
-    }
+    // ctx.subTypes = ctx.thread.subscriptions.types.get(ctx.typeId);
+    // if (ctx.subTypes) |st| {
+    //     st.typeModified = true;
+    // }
     ctx.node = null;
 }
 
@@ -68,7 +71,6 @@ fn writeoutPrevNodeId(ctx: *ModifyCtx, resultLen: *u32, prevNodeId: u32, result:
 
 fn newNode(ctx: *ModifyCtx) !void {
     const id = ctx.db.ids[ctx.typeId - 1] + 1;
-
     ctx.node = try Node.upsertNode(ctx, ctx.typeEntry.?, id);
     ctx.id = id;
     ctx.db.ids[ctx.typeId - 1] = id;
@@ -134,7 +136,7 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
         if (ctx.node == null) {
             ctx.err = errors.ClientError.nx;
         } else {
-            try subs.checkId(ctx);
+            // try subs.checkId(ctx);
             // It would be even better if we'd mark it dirty only in the case
             // something was actually changed.
             Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
@@ -178,7 +180,7 @@ pub fn modifyWrite(ctx: *ModifyCtx) !void {
             },
             .deleteNode => {
                 if (ctx.node) |node| {
-                    subs.stage(ctx, subs.Op.deleteNode);
+                    // subs.stage(ctx, subs.Op.deleteNode);
                     Node.deleteNode(ctx, ctx.typeEntry.?, node) catch {};
                     ctx.node = null;
                 }
@@ -220,7 +222,7 @@ pub fn modifyWrite(ctx: *ModifyCtx) !void {
                     if (ctx.node == null) {
                         ctx.err = errors.ClientError.nx;
                     } else {
-                        try subs.checkId(ctx);
+                        // try subs.checkId(ctx);
                         // It would be even better if we'd mark it dirty only in the case
                         // something was actually changed.
                         Modify.markDirtyRange(ctx, ctx.typeId, ctx.id);
@@ -325,6 +327,7 @@ pub fn modify(
     var ctx: ModifyCtx = .{
         .index = 13 + 4,
         .offset = 0,
+        // if sub this is not nessecary
         .result = try thread.modify.result(expectedLen, modifyId, opType),
         .resultLen = 4,
         .field = undefined,
@@ -337,11 +340,10 @@ pub fn modify(
         .fieldSchema = null,
         .fieldType = t.PropType.null,
         .db = dbCtx,
+        // if sub this is also not nessecary
         .dirtyRanges = std.AutoArrayHashMap(u64, f64).init(dbCtx.allocator),
         .batch = batch,
         .err = errors.ClientError.null,
-        .idSubs = null,
-        .subTypes = null,
         .thread = thread,
     };
 
@@ -350,6 +352,7 @@ pub fn modify(
 
     Node.expire(&ctx);
     writeoutPrevNodeId(&ctx, &ctx.resultLen, ctx.id, ctx.result);
+    // this is not nessecary for sub
     write(ctx.result, ctx.resultLen, 0);
 
     if (ctx.resultLen < expectedLen) {

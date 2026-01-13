@@ -55,6 +55,7 @@ export const OpType = {
   loadCommon: 130,
   createType: 131,
   setSchemaIds: 132,
+  emptyMod: 133,
   noOp: 255,
 } as const
 
@@ -80,6 +81,7 @@ export const OpTypeInverse = {
   130: 'loadCommon',
   131: 'createType',
   132: 'setSchemaIds',
+  133: 'emptyMod',
   255: 'noOp',
 } as const
 
@@ -105,6 +107,7 @@ export const OpTypeInverse = {
   loadCommon, 
   createType, 
   setSchemaIds, 
+  emptyMod, 
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]

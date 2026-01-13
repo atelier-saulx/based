@@ -5,6 +5,9 @@ import { italy } from '../shared/examples.js'
 import { BasedDb } from '../../src/index.js'
 import { registerQuery } from '../../src/db-client/query/registerQuery.js'
 import { register } from 'module'
+import native from '../../src/native.js'
+import { OpType } from '../../src/zigTsExports.js'
+import { styleText } from 'util'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -74,18 +77,18 @@ await test('include', async (t) => {
 
   const todos: number[] = []
   const rand = fastPrng(233221)
-  // let d = Date.now()
+  let d = Date.now()
 
-  // for (let i = 0; i < 1e6; i++) {
-  //   db.create('todo', {
-  //     // name: i % 2 ? 'b' : 'a',
-  //     nr: rand(0, 10),
-  //   })
-  // }
+  for (let i = 0; i < 1e6; i++) {
+    db.create('todo', {
+      // name: i % 2 ? 'b' : 'a',
+      nr: rand(0, 10),
+    })
+  }
 
-  // await db.drain()
+  await db.drain()
 
-  // console.log(Date.now() - d, 'ms')
+  console.log(Date.now() - d, 'ms')
 
   for (let i = 0; i < 10; i++) {
     todos.push(
@@ -120,18 +123,58 @@ await test('include', async (t) => {
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
-  db.query('user', mrX)
-    .include('nr')
-    .subscribe((d) => {
-      console.log('INCOMING', d)
-    })
+  console.log(styleText('blue', 'UPDATE'))
+  await db.update('todo', 1, { nr: { increment: 1 } })
+  console.log(styleText('blue', '--------------'))
+
+
+
+  console.log('derp')
+  // const q: any = []
+  for (let i = 1; i < 2; i++) {
+    // db.update('todo', i, { nr: { increment: 1 } }).then(() => { })
+    const x = new Uint8Array(14)
+    x[4] = OpType.modify
+
+    // console.log(styleText('blue', 'stage mod'))
+
+    native.modify(x, db.server.dbCtxExternal)
+    // console.log('STAGED MOD')
+    const q = registerQuery(db.query('todo', i))
+    // console.log(styleText('blue', 'stage q'))
+
+    native.query(q, db.server.dbCtxExternal)
+    // console.log('STAGED QUERY')
+
+    // .subscribe((d) => {
+    //   console.log('INCOMING', d.id)
+    // })
+  }
+
+  console.log(styleText('blue', 'staged mod/q'))
+
+  // const r = await Promise.all(q)
+
+  // console.log(r[100])
+
+  console.log(styleText('blue', 'wait'))
 
   await wait(200)
-  db.update('user', mrX, { nr: { increment: 1 } })
+  console.log(styleText('blue', 'wait done'))
 
+  d = Date.now()
+  for (let i = 1; i < 3; i++) {
+    db.update('todo', i, { nr: { increment: 1 } })
+  }
+  console.log(styleText('blue', 'wait for drain'))
+  await db.drain()
+
+  console.log(styleText('blue', 'drain done'))
+
+  console.log('------->', Date.now() - d, 'ms')
   await wait(200)
-  db.update('user', mrX, { nr: { increment: 1 } })
 
+  db.update('todo', 1, { nr: { increment: 1 } })
   await wait(200)
 
   console.log('\n--------------------------\nStart quer222y!!!!!!!!!')

@@ -14,7 +14,7 @@ const jemalloc = @import("../jemalloc.zig");
 const std = @import("std");
 
 // configurable
-const SUB_EXEC_INTERVAL = 200_000_000;
+const SUB_EXEC_INTERVAL = 1000_000_000;
 
 pub const Thread = common.Thread;
 const Queue = std.array_list.Managed([]u8);
@@ -41,7 +41,7 @@ pub const Threads = struct {
     allocator: std.mem.Allocator,
 
     lastModifyTime: u64 = 0,
-    lastModfiyTimeThread: std.Thread,
+    // lastModfiyTimeThread: std.Thread,
     emptyMod: []u8,
 
     pub inline fn waitForQuery(self: *Threads) void {
@@ -99,6 +99,8 @@ pub const Threads = struct {
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
+        std.debug.print("STAGE MODIFY!!!! {any} \n", .{self.pendingQueries});
+
         if (self.pendingQueries > 0) {
             try self.nextModifyQueue.append(modifyBuffer);
         } else {
@@ -119,15 +121,12 @@ pub const Threads = struct {
                 return;
             }
         }
-
         while (self.modifyQueue.items.len > 0) {
             _ = self.modifyQueue.swapRemove(0);
         }
-
         for (self.threads) |thread| {
             thread.currentModifyIndex = 0;
         }
-
         self.modifyDone.signal();
         if (!self.jsModifyBridgeStaged) {
             self.ctx.jsBridge.call(t.BridgeResponse.modify, 0);
@@ -151,11 +150,22 @@ pub const Threads = struct {
                 self.mutex.unlock();
                 return;
             }
-            const elapsed = now -% self.lastModifyTime;
-            self.mutex.unlock();
+            const elapsed = now - self.lastModifyTime;
+
             if (elapsed > SUB_EXEC_INTERVAL) {
-                try self.modify(self.emptyMod);
+                self.lastModifyTime = now;
+
+                std.debug.print("FIRE SUBS {any} \n", .{@divFloor(elapsed, 1000_000_000)});
+                // just fire from all
+
+                // try Subscription.fireIdSubscription(self, self.threads[self.threads.len - 1]);
+                // if (self.pendingModifies == 0) {
+                // self.wakeup.signal();
+                // }
+                // self.wakeup.signal();
             }
+
+            self.mutex.unlock();
         }
     }
 
@@ -248,20 +258,6 @@ pub const Threads = struct {
             }
 
             if (modifyBuf) |m| {
-
-                // if thread
-                // min thread len == 2
-                if (thread.id == 0) {
-                    // if (thread.id == self.threads.len - 1) {
-                    std.debug.print("YO THREAD {any} \n", .{thread.id});
-                    // use this thread for subscribe
-                    switch (op) {
-                        .subscribe => try Subscription.subscribe(thread, m),
-                        .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
-                        else => {},
-                    }
-                }
-
                 if (thread.id == 0) {
                     switch (op) {
                         .emptyMod => {
@@ -271,6 +267,7 @@ pub const Threads = struct {
                         .loadBlock => try dump.loadBlock(thread, self.ctx, m, op),
                         .unloadBlock => try dump.unloadBlock(thread, self.ctx, m, op),
                         .loadCommon => try dump.loadCommon(thread, self.ctx, m, op),
+
                         .createType => {
                             const typeCode = utils.read(u32, m, 0);
                             const resp = try thread.modify.result(4, typeCode, op);
@@ -283,7 +280,9 @@ pub const Threads = struct {
                             );
                             utils.write(resp, err, 0);
                         },
-                        // .subscribe => try Subscription.subscribe(thread, m),
+                        // .subscribe => {
+                        // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
+                        // },
                         // .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
                         .setSchemaIds => {
                             _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
@@ -300,8 +299,6 @@ pub const Threads = struct {
                     thread.modify.commit();
 
                     self.mutex.lock();
-
-                    const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
 
                     self.pendingModifies -= 1;
                     thread.pendingModifies -= 1;
@@ -322,23 +319,61 @@ pub const Threads = struct {
                     }
 
                     // this goes to the other threads
-                    const elapsed = now -% self.lastModifyTime;
-                    self.lastModifyTime = now;
 
                     self.mutex.unlock();
 
                     // this will go under
-                    if (elapsed > SUB_EXEC_INTERVAL) {
-                        try Subscription.fireIdSubscription(self, thread);
-                    }
+
                 } else {
+
+                    // if thread
+                    // min thread len == 2
+                    if (thread.id == self.threads.len - 1) {
+                        // use this thread for subscribe
+                        switch (op) {
+                            .emptyMod => {
+                                // does nothing but does trigger flush marked subs and maybe more in the future
+                            },
+                            .modify => {
+                                // try Modify.subscription(thread, m);
+                                // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
+                            },
+                            .subscribe => {
+                                try Subscription.subscribe(thread, m);
+                                // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
+                                // std.debug.print("subscribe {any} \n", .{utils.read(u32, m, 0)});
+                            },
+                            // .unsubscribe => try Subscription.unsubscribe(self.ctx, m, thread),
+                            else => {},
+                        }
+                        // const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
+                        // self.mutex.lock();
+                        // const elapsed = now - self.lastModifyTime;
+                        // self.lastModifyTime = now;
+                        // self.mutex.unlock();
+
+                        // this will be done slightly different
+                        // if (elapsed > SUB_EXEC_INTERVAL) {
+                        // try Subscription.fireIdSubscription(self, thread);
+                        // }
+                    }
+
                     // Subscription worker
                     self.mutex.lock();
+                    // thread.mutex.lock();
+
+                    // self.pendingModifies -= 1;
+
                     thread.currentModifyIndex += 1;
                     thread.pendingModifies -= 1;
                     if (self.pendingModifies == 0) {
+                        if (thread.id == self.threads.len - 1) {
+                            std.debug.print("MOD DONE L Thread \n", .{});
+                        }
+
                         self.modifyNotPending();
                     }
+                    // thread.mutex.unlock();
                     self.mutex.unlock();
                 }
             }
@@ -364,7 +399,8 @@ pub const Threads = struct {
 
         self.* = .{
             .emptyMod = try allocator.alloc(u8, 5),
-            .lastModfiyTimeThread = try std.Thread.spawn(.{}, poll, .{self}),
+            // .lastModfiyTimeThread
+            // .lastModfiyTimeThread = try std.Thread.spawn(.{}, poll, .{self}),
             .lastModifyTime = 0,
             .allocator = allocator,
             .threads = try allocator.alloc(*Thread, threadAmount),
@@ -398,7 +434,7 @@ pub const Threads = struct {
         self.wakeup.broadcast();
         self.mutex.unlock();
 
-        self.lastModfiyTimeThread.join();
+        // self.lastModfiyTimeThread.join();
         for (self.threads) |threadContainer| {
             threadContainer.deinit();
         }

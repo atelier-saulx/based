@@ -182,16 +182,15 @@ export class DbServer extends DbShared {
       const id = readUint32(buf, 0)
       const op: OpTypeEnum = buf[4] as OpTypeEnum
 
-      // console.log('[Get q buf]', OpTypeInverse[op])
-
       const queryListeners = this.opListeners.get(op)!
+      const onceListeners = !!queryListeners.get(id)?.once.length
+      this.addOpOnceListener(op, id, resolve)
 
-      if (queryListeners.get(id)?.once.length) {
+      if (onceListeners) {
         console.log('💤 Query already staged dont exec again', id)
       } else {
         native.query(buf, this.dbCtxExternal)
       }
-      this.addOpOnceListener(op, id, resolve)
     })
   }
 
@@ -200,23 +199,19 @@ export class DbServer extends DbShared {
   subscribe(buf: Uint8Array, onData: (d: Uint8Array) => void): number {
     const subSize = readUint32(buf, 0)
     const query = buf.subarray(subSize, buf.byteLength)
-
     const id = readUint32(query, 0)
     const op: OpTypeEnum = query[4] as OpTypeEnum
     const queryListeners = this.opListeners.get(op)!
-
     const qIdListeners = queryListeners.get(id)
+    if (!qIdListeners?.persistent.size) {
+      native.modify(buf, this.dbCtxExternal)
+    }
+    this.addOpListener(op, id, onData)
     if (qIdListeners) {
       console.log('💤 Subscription already staged dont exec again', id)
     } else {
       native.query(query, this.dbCtxExternal)
     }
-
-    if (!qIdListeners?.persistent.size) {
-      native.modify(buf, this.dbCtxExternal)
-    }
-
-    this.addOpListener(op, id, onData)
 
     return id
   }
