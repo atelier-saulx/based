@@ -47,7 +47,7 @@ export const OpType = {
   unsubscribe: 14,
   blockHash: 42,
   saveBlock: 67,
-  saveCommon: 69,
+  saveAllBlocks: 68,
   getSchemaIds: 70,
   modify: 127,
   loadBlock: 128,
@@ -73,7 +73,7 @@ export const OpTypeInverse = {
   14: 'unsubscribe',
   42: 'blockHash',
   67: 'saveBlock',
-  69: 'saveCommon',
+  68: 'saveAllBlocks',
   70: 'getSchemaIds',
   127: 'modify',
   128: 'loadBlock',
@@ -99,7 +99,7 @@ export const OpTypeInverse = {
   unsubscribe, 
   blockHash, 
   saveBlock, 
-  saveCommon, 
+  saveAllBlocks, 
   getSchemaIds, 
   modify, 
   loadBlock, 
@@ -124,7 +124,6 @@ export const ModOp = {
   switchIdCreateUnsafe: 8,
   switchIdCreate: 9,
   switchIdCreateRing: 19,
-  switchEdgeId: 20,
   deleteNode: 10,
   delete: 11,
   increment: 12,
@@ -149,7 +148,6 @@ export const ModOpInverse = {
   8: 'switchIdCreateUnsafe',
   9: 'switchIdCreate',
   19: 'switchIdCreateRing',
-  20: 'switchEdgeId',
   10: 'deleteNode',
   11: 'delete',
   12: 'increment',
@@ -174,7 +172,6 @@ export const ModOpInverse = {
   switchIdCreateUnsafe, 
   switchIdCreate, 
   switchIdCreateRing, 
-  switchEdgeId, 
   deleteNode, 
   delete, 
   increment, 
@@ -280,30 +277,47 @@ export const PropTypeInverse = {
 export type PropTypeEnum = (typeof PropType)[keyof typeof PropType]
 
 export const RefOp = {
-  overwrite: 0,
-  add: 1,
-  delete: 2,
-  putOverwrite: 3,
-  putAdd: 4,
+  clear: 0,
+  del: 1,
+  end: 2,
+  set: 3,
+  setIndex: 4,
+  setTmp: 5,
+  setEdge: 6,
+  setIndexTmp: 7,
+  setEdgeIndex: 8,
+  setEdgeIndexTmp: 9,
+  setEdgeTmp: 10,
 } as const
 
 export const RefOpInverse = {
-  0: 'overwrite',
-  1: 'add',
-  2: 'delete',
-  3: 'putOverwrite',
-  4: 'putAdd',
+  0: 'clear',
+  1: 'del',
+  2: 'end',
+  3: 'set',
+  4: 'setIndex',
+  5: 'setTmp',
+  6: 'setEdge',
+  7: 'setIndexTmp',
+  8: 'setEdgeIndex',
+  9: 'setEdgeIndexTmp',
+  10: 'setEdgeTmp',
 } as const
 
 /**
-  overwrite, 
-  add, 
-  delete, 
-  putOverwrite, 
-  putAdd 
+  clear, 
+  del, 
+  end, 
+  set, 
+  setIndex, 
+  setTmp, 
+  setEdge, 
+  setIndexTmp, 
+  setEdgeIndex, 
+  setEdgeIndexTmp, 
+  setEdgeTmp 
  */
-// this needs number because it has a any (_) condition
-export type RefOpEnum = 0 | 1 | 2 | 3 | 4 | (number & {})
+export type RefOpEnum = (typeof RefOp)[keyof typeof RefOp]
 
 export const ReadOp = {
   none: 0,
@@ -2441,22 +2455,6 @@ export const FilterAlignmentInverse = {
 // this needs number because it has a any (_) condition
 export type FilterAlignmentEnum = 255 | (number & {})
 
-export const AggGroupedBy = {
-  hasGroup: 255,
-  none: 0,
-} as const
-
-export const AggGroupedByInverse = {
-  255: 'hasGroup',
-  0: 'none',
-} as const
-
-/**
-  hasGroup, 
-  none 
- */
-export type AggGroupedByEnum = (typeof AggGroupedBy)[keyof typeof AggGroupedBy]
-
 export type AggHeader = {
   op: QueryTypeEnum
   typeId: TypeId
@@ -2790,6 +2788,70 @@ export const readAggPropProps = {
 export const createAggProp = (header: AggProp): Uint8Array => {
   const buffer = new Uint8Array(AggPropByteSize)
   writeAggProp(buffer, header, 0)
+  return buffer
+}
+
+export type AggGroupByKey = {
+  propId: number
+  propType: PropTypeEnum
+  propDefStart: number
+}
+
+export const AggGroupByKeyByteSize = 4
+
+export const writeAggGroupByKey = (
+  buf: Uint8Array,
+  header: AggGroupByKey,
+  offset: number,
+): number => {
+  buf[offset] = header.propId
+  offset += 1
+  buf[offset] = header.propType
+  offset += 1
+  writeUint16(buf, header.propDefStart, offset)
+  offset += 2
+  return offset
+}
+
+export const writeAggGroupByKeyProps = {
+  propId: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset] = value
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 1] = value
+  },
+  propDefStart: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 2)
+  },
+}
+
+export const readAggGroupByKey = (
+  buf: Uint8Array,
+  offset: number,
+): AggGroupByKey => {
+  const value: AggGroupByKey = {
+    propId: buf[offset],
+    propType: (buf[offset + 1]) as PropTypeEnum,
+    propDefStart: readUint16(buf, offset + 2),
+  }
+  return value
+}
+
+export const readAggGroupByKeyProps = {
+  propId: (buf: Uint8Array, offset: number): number => {
+    return buf[offset]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 1]) as PropTypeEnum
+  },
+  propDefStart: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 2)
+  },
+}
+
+export const createAggGroupByKey = (header: AggGroupByKey): Uint8Array => {
+  const buffer = new Uint8Array(AggGroupByKeyByteSize)
+  writeAggGroupByKey(buffer, header, 0)
   return buffer
 }
 

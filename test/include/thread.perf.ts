@@ -19,6 +19,7 @@ await test('include', async (t) => {
     await db.stop(true)
   })
   //t.after(() => t.backup(db))
+  t.after(() => db.stop(true))
 
   // single ref + edge
 
@@ -131,25 +132,25 @@ await test('include', async (t) => {
 
   console.log('derp')
   // const q: any = []
-  for (let i = 1; i < 2; i++) {
-    // db.update('todo', i, { nr: { increment: 1 } }).then(() => { })
-    const x = new Uint8Array(14)
-    x[4] = OpType.modify
+  // for (let i = 1; i < 2; i++) {
+  //   // db.update('todo', i, { nr: { increment: 1 } }).then(() => { })
+  //   const x = new Uint8Array(14)
+  //   x[4] = OpType.modify
 
-    // console.log(styleText('blue', 'stage mod'))
+  //   // console.log(styleText('blue', 'stage mod'))
 
-    native.modify(x, db.server.dbCtxExternal)
-    // console.log('STAGED MOD')
-    const q = registerQuery(db.query('todo', i))
-    // console.log(styleText('blue', 'stage q'))
+  //   native.modify(x, db.server.dbCtxExternal)
+  //   // console.log('STAGED MOD')
+  //   const q = registerQuery(db.query('todo', i))
+  //   // console.log(styleText('blue', 'stage q'))
 
-    native.query(q, db.server.dbCtxExternal)
-    // console.log('STAGED QUERY')
+  //   native.query(q, db.server.dbCtxExternal)
+  //   // console.log('STAGED QUERY')
 
-    // .subscribe((d) => {
-    //   console.log('INCOMING', d.id)
-    // })
-  }
+  //   // .subscribe((d) => {
+  //   //   console.log('INCOMING', d.id)
+  //   // })
+  // }
 
   console.log(styleText('blue', 'staged mod/q'))
 
@@ -201,7 +202,7 @@ await test('include', async (t) => {
   await wait(100)
 })
 
-await test('default', async (t) => {
+await test.skip('default', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

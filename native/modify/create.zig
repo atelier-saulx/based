@@ -1,5 +1,5 @@
 const Modify = @import("common.zig");
-const selva = @import("../selva/selva.zig").c;
+const selva = @import("../selva/selva.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
 const utils = @import("../utils.zig");
@@ -23,19 +23,7 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
 
     switch (ctx.fieldType) {
         t.PropType.references => {
-            switch (@as(t.RefOp, @enumFromInt(data[4]))) {
-                t.RefOp.overwrite, t.RefOp.add => {
-                    return references.updateReferences(ctx, data);
-                },
-                t.RefOp.putOverwrite, t.RefOp.putAdd => {
-                    return references.putReferences(ctx, data);
-                },
-                else => {
-                    const len = read(u32, data, 0);
-                    // invalid command
-                    return len;
-                },
-            }
+            return references.writeReferences(ctx, data);
         },
         t.PropType.reference => {
             return reference.updateReference(ctx, data);
@@ -45,14 +33,14 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             try Fields.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
-            return len;
+            return len + 4;
         },
         t.PropType.colVec => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             Fields.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
-            return len;
+            return len + 4;
         },
         t.PropType.cardinality => {
             const hllMode = if (data[0] == 0) true else false;
@@ -60,16 +48,16 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
             const offset = 2;
             const len = read(u32, data, offset);
             const hll = try Fields.ensurePropTypeString(ctx, ctx.fieldSchema.?);
-            selva.hll_init(hll, hllPrecision, hllMode);
+            selva.c.hll_init(hll, hllPrecision, hllMode);
             var i: usize = 4 + offset;
             while (i < (len * 8) + offset) {
                 const hash = read(u64, data, i);
-                selva.hll_add(hll, hash);
+                selva.c.hll_add(hll, hash);
                 i += 8;
             }
-            const newCount = selva.hll_count(hll);
+            const newCount = selva.c.hll_count(hll);
             addSortIndexOnCreation(ctx, newCount[0..4]) catch null;
-            return len * 8;
+            return len * 8 + 6;
         },
         else => {
             const len = read(u32, data, 0);
@@ -82,13 +70,13 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                         if (ctx.currentSortIndex != null) {
                             sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
                         }
-                        Modify.markDirtyRange(ctx, ctx.typeId, old);
+                        selva.markDirty(ctx, ctx.typeId, old);
                     }
                 }
             } else {
                 try Fields.write(ctx.node.?, ctx.fieldSchema.?, slice);
             }
-            return len;
+            return len + 4;
         },
     }
 }

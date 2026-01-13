@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 SAULX
+ * Copyright (c) 2024-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -106,6 +106,13 @@ struct SelvaNodeSchema {
     /* Nothing must be put after this line. */
 };
 
+enum SelvaTypeBlockStatus {
+    SELVA_TYPE_BLOCK_STATUS_EMPTY = 0,
+    SELVA_TYPE_BLOCK_STATUS_FS = 0x01,
+    SELVA_TYPE_BLOCK_STATUS_INMEM = 0x02,
+    SELVA_TYPE_BLOCK_STATUS_DIRTY = 0x04, /*!< Can't be set if te->blocks->blocks[block_i].status isn't set. */
+};
+
 struct SelvaAlias;
 struct SelvaAliases;
 struct SelvaDb;
@@ -113,8 +120,6 @@ struct SelvaFieldInfo;
 struct SelvaFields;
 struct SelvaNode;
 struct SelvaTypeEntry;
-
-typedef void (*selva_dirty_node_cb_t)(void *ctx, node_type_t type, node_id_t node_id);
 
 SELVA_EXPORT
 bool selva_is_valid_field_type(enum SelvaFieldType ftype);

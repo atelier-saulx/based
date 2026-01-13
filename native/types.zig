@@ -24,7 +24,7 @@ pub const OpType = enum(u8) {
 
     blockHash = 42,
     saveBlock = 67,
-    saveCommon = 69,
+    saveAllBlocks = 68,
     getSchemaIds = 70,
 
     // Modify
@@ -56,7 +56,7 @@ pub const ModOp = enum(u8) {
     switchIdCreateUnsafe = 8,
     switchIdCreate = 9,
     switchIdCreateRing = 19,
-    switchEdgeId = 20,
+    // switchEdgeId = 20,
     deleteNode = 10,
     delete = 11,
     increment = 12,
@@ -168,12 +168,26 @@ pub const PropType = enum(u8) {
 };
 
 pub const RefOp = enum(u8) {
-    overwrite = 0,
-    add = 1,
-    delete = 2,
-    putOverwrite = 3,
-    putAdd = 4,
-    _,
+    clear = 0,
+    del = 1,
+    end = 2,
+
+    set = 3,
+    setIndex = 4,
+    setTmp = 5,
+    setEdge = 6,
+
+    setIndexTmp = 7,
+    setEdgeIndex = 8,
+    setEdgeIndexTmp = 9,
+    setEdgeTmp = 10,
+
+    // overwrite = 0,
+    // add = 1,
+    // delete = 2,
+    // putOverwrite = 3,
+    // putAdd = 4,
+    // _,
 };
 
 pub const ReadOp = enum(u8) {
@@ -704,11 +718,6 @@ pub const FilterMaxStringScore: u8 = 255;
 
 pub const FilterAlignment = enum(u8) { notSet = 255, _ };
 
-pub const AggGroupedBy = enum(u8) {
-    hasGroup = 255,
-    none = 0,
-};
-
 pub const AggHeader = packed struct {
     op: QueryType,
     typeId: TypeId,
@@ -738,6 +747,12 @@ pub const AggProp = packed struct {
     propType: PropType,
     propDefStart: u16,
     aggFunction: AggFunction,
-    resultPos: u16, // the result could also be a packed stru?
-    accumulatorPos: u16, // the accumulator could also be a packed stru?
+    resultPos: u16,
+    accumulatorPos: u16,
+};
+
+pub const AggGroupByKey = packed struct {
+    propId: u8,
+    propType: PropType,
+    propDefStart: u16,
 };

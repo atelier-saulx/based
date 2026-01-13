@@ -53,7 +53,14 @@ pub fn selvaStringDestroy(str: ?c.selva_string) void {
     try c.selva_string_free(str);
 }
 
-pub fn markDirtyCb(ctx: ?*anyopaque, typeId: u16, nodeId: u32) callconv(.c) void {
-    const mctx: *Modify.ModifyCtx = @ptrCast(@alignCast(ctx));
-    Modify.markDirtyRange(mctx, typeId, nodeId);
+// TODO Accept also Type as an arg
+pub inline fn markDirty(ctx: *Modify.ModifyCtx, typeId: u16, nodeId: u32) void {
+    c.selva_mark_dirty(c.selva_get_type_by_index(ctx.db.selva, typeId), nodeId);
+}
+
+pub fn markReferencesDirty(ctx: *Modify.ModifyCtx, dstTypeId: u16, refs: []u32) void {
+    const te = c.selva_get_type_by_index(ctx.db.selva, dstTypeId);
+    for (refs) |nodeId| {
+        c.selva_mark_dirty(te, nodeId);
+    }
 }

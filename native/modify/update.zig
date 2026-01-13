@@ -1,5 +1,5 @@
 const std = @import("std");
-const selva = @import("../selva/selva.zig").c;
+const selva = @import("../selva/selva.zig");
 const Node = @import("../selva/node.zig");
 const Fields = @import("../selva/fields.zig");
 const References = @import("../selva/references.zig");
@@ -25,34 +25,41 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 
     switch (ctx.fieldType) {
         t.PropType.references => {
-            switch (@as(t.RefOp, @enumFromInt(data[4]))) {
-                // overwrite
-                t.RefOp.overwrite => {
-                    References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
-                    return references.updateReferences(ctx, data);
-                },
-                // add
-                t.RefOp.add => {
-                    return references.updateReferences(ctx, data);
-                },
-                // delete
-                t.RefOp.delete => {
-                    return references.deleteReferences(ctx, data);
-                },
-                // put
-                t.RefOp.putOverwrite => {
-                    References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
-                    return references.putReferences(ctx, data);
-                },
-                // put
-                t.RefOp.putAdd => {
-                    return references.putReferences(ctx, data);
-                },
-                else => {
-                    const len = read(u32, data, 0);
-                    return len;
-                },
-            }
+            const op = @as(t.RefOp, @enumFromInt(data[4]));
+            std.debug.print("update ref op: {any}\n", .{op});
+            // invalid
+            const len = read(u32, data, 0);
+            // invalid command
+            return 4 + len;
+
+            // switch (@as(t.RefOp, @enumFromInt(data[4]))) {
+            //     // overwrite
+            //     t.RefOp.overwrite => {
+            //         References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
+            //         return references.updateReferences(ctx, data);
+            //     },
+            //     // add
+            //     t.RefOp.add => {
+            //         return references.updateReferences(ctx, data);
+            //     },
+            //     // delete
+            //     t.RefOp.delete => {
+            //         return references.deleteReferences(ctx, data);
+            //     },
+            //     // put
+            //     t.RefOp.putOverwrite => {
+            //         References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
+            //         return references.putReferences(ctx, data);
+            //     },
+            //     // put
+            //     t.RefOp.putAdd => {
+            //         return references.putReferences(ctx, data);
+            //     },
+            //     else => {
+            //         const len = read(u32, data, 0);
+            //         return len;
+            //     },
+            // }
         },
         t.PropType.reference => {
             return reference.updateReference(ctx, data);
@@ -62,38 +69,38 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             try Fields.setMicroBuffer(ctx.node.?, ctx.fieldSchema.?, slice);
-            return len;
+            return 4 + len;
         },
         t.PropType.colVec => {
             const len = read(u32, data, 0);
             const padding = data[4];
             const slice = data[8 - padding .. len + 4];
             Fields.setColvec(ctx.typeEntry.?, ctx.id, ctx.fieldSchema.?, slice);
-            return len;
+            return 4 + len;
         },
         t.PropType.cardinality => {
             const hllMode = if (data[0] == 0) true else false;
             const hllPrecision = data[1];
             const offset = 2;
             const len = read(u32, data, offset);
-            var currentData = selva.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
+            var currentData = selva.c.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
             if (currentData == null) {
                 currentData = try Fields.ensurePropTypeString(ctx, ctx.fieldSchema.?);
-                selva.hll_init(currentData, hllPrecision, hllMode);
+                selva.c.hll_init(currentData, hllPrecision, hllMode);
             }
             var i: usize = 4 + offset;
-            const currentCount = if (ctx.currentSortIndex != null) selva.hll_count(currentData) else undefined;
+            const currentCount = if (ctx.currentSortIndex != null) selva.c.hll_count(currentData) else undefined;
             while (i < (len * 8) + offset) {
                 const hash: u64 = read(u64, data, i);
-                selva.hll_add(currentData, hash);
+                selva.c.hll_add(currentData, hash);
                 i += 8;
             }
             if (ctx.currentSortIndex != null) {
-                const newCount = selva.hll_count(currentData);
+                const newCount = selva.c.hll_count(currentData);
                 sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
                 sort.insert(ctx.thread.decompressor, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
             }
-            return len * 8;
+            return 6 + len * 8;
         },
         else => {
             const len = read(u32, data, 0);
@@ -140,7 +147,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         if (ctx.currentSortIndex != null) {
                             sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
                         }
-                        Modify.markDirtyRange(ctx, ctx.typeId, old);
+                        selva.markDirty(ctx, ctx.typeId, old);
                     }
                 } else {
                     Fields.delAlias(ctx.typeEntry.?, ctx.id, ctx.field) catch |e| {
@@ -151,7 +158,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                 try Fields.write(ctx.node.?, ctx.fieldSchema.?, slice);
             }
 
-            return len;
+            return 4 + len;
         },
     }
 }
@@ -160,7 +167,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
 pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     const len = read(u32, data, 0);
     if (ctx.node == null) {
-        return len;
+        return 4 + len;
     }
 
     const slice = data[4 .. len + 4];
@@ -200,7 +207,7 @@ pub fn updatePartialField(ctx: *ModifyCtx, data: []u8) !usize {
     } else {
         std.log.err("Partial update id: {d} field: {d} does not exist \n", .{ ctx.id, ctx.field });
     }
-    return len;
+    return 4 + len;
 }
 
 fn incrementBuf(

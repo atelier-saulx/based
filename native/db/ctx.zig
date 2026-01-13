@@ -96,7 +96,7 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     }
 
     if (ctx.ids.len > 0) {
-        ctx.allocator.free(ctx.ids);
+        jemalloc.free(ctx.ids);
         ctx.ids = &[_]u32{};
     }
 
