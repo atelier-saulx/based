@@ -119,6 +119,7 @@ pub fn loadCommon(
     var err: c_int = undefined;
 
     err = selva.selva_dump_load_common(dbCtx.selva, &com, filename.ptr);
+    jemalloc.free(@as(*anyopaque, com.blocks)); // TODO Do something with this information
 
     if (com.ids_data != null) {
         dbCtx.ids = com.ids_data[0..com.ids_len];

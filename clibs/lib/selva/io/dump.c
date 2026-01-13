@@ -351,6 +351,36 @@ static void save_common_ids(struct selva_io *io, const node_id_t *ids_data, size
     }
 }
 
+static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *com)
+{
+    const sdb_arr_len_t len = com->blocks_len;
+
+    write_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS);
+    io->sdb_write(&len, sizeof(len), 1, io);
+    for (sdb_arr_len_t i = 0; i < len; i++) {
+        struct selva_dump_block bl = com->blocks[i];
+        size_t tmp;
+        uint32_t filename_len;
+        const char *filename_sz = selva_string_to_str(bl.filename, &tmp);
+        filename_len = (uint32_t)tmp;
+
+        io->sdb_write(&bl.type, sizeof(bl.type), 1, io);
+        io->sdb_write(&bl.block, sizeof(bl.block), 1, io);
+        io->sdb_write(&filename_len, sizeof(filename_len), 1, io);
+        io->sdb_write(filename_sz, sizeof(char), filename_len, io);
+
+        /*
+         * Also update the block status.
+         */
+        struct SelvaTypeEntry *te = selva_get_type_by_index(db, bl.type);
+        assert(te);
+        if (likely(te && bl.block < te->blocks->len)) {
+            te->blocks->blocks[bl.block].filename = bl.filename;
+            selva_block_status_set(te, bl.block, SELVA_TYPE_BLOCK_STATUS_FS);
+        }
+    }
+}
+
 int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename)
 {
     struct selva_io io = {
@@ -370,7 +400,7 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
     save_schema(&io, db);
     save_expire(&io, db);
     save_common_ids(&io, com->ids_data, com->ids_len);
-    //save_common_blocks(&io, com->blocks_data, blocks_len);
+    save_common_blocks(&io, db, com);
 
     db->sdb_version = io.sdb_version;
     selva_io_end(&io, nullptr);
@@ -1070,10 +1100,9 @@ static int load_common_ids(struct selva_io *io, struct selva_dump_common_data *c
 }
 
 __attribute__((warn_unused_result))
-static int load_common_blocks(struct selva_io *io, struct selva_dump_common_data *com)
+static int load_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *com)
 {
     sdb_arr_len_t len;
-    struct selva_dump_blocks *blocks;
 
     if (!read_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS)) {
         selva_io_errlog(io, "Ivalid types magic");
@@ -1085,18 +1114,35 @@ static int load_common_blocks(struct selva_io *io, struct selva_dump_common_data
         return SELVA_EIO;
     }
 
-#if 0
-    if (likely(len > 0)) {
-        blocks = selva_malloc(len * sizeof(node_id_t));
-        if (io->sdb_read(blocks, sizeof(node_id_t), len, io) != 1) {
-            selva_io_errlog(io, "%s: data", __func__);
-            return SELVA_EIO;
+    com->blocks_len = len;
+    com->blocks = selva_malloc(len * sizeof(*com->blocks));
+
+    for (sdb_arr_len_t i = 0; i < len; i++) {
+        struct selva_dump_block *bl = &com->blocks[i];
+        char *buf;
+        uint32_t filename_len;
+        size_t tmp;
+
+        io->sdb_read(&bl->type, sizeof(bl->type), 1, io);
+        io->sdb_read(&bl->block, sizeof(bl->block), 1, io);
+        io->sdb_read(&filename_len, sizeof(filename_len), 1, io);
+
+        bl->filename = selva_string_create(nullptr, len, SELVA_STRING_MUTABLE);
+        buf = selva_string_to_mstr(bl->filename, &tmp);
+        assert(tmp == (size_t)filename_len);
+        io->sdb_read(buf, filename_len, sizeof(char), io);
+
+        /*
+         * Also update to the block status.
+         */
+        struct SelvaTypeEntry *te = selva_get_type_by_index(db, bl->type);
+        assert(te);
+        if (likely(te && bl->block < te->blocks->len)) {
+            te->blocks->blocks[bl->block].filename = bl->filename;
+            selva_block_status_set(te, bl->block, SELVA_TYPE_BLOCK_STATUS_FS);
         }
     }
 
-    com->ids_data = data;
-    com->ids_len = len;
-#endif
     return 0;
 }
 
@@ -1121,7 +1167,7 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
         err = err ?: load_common_ids(&io, com);
     }
     if (io.sdb_version >= 9) {
-        err = err ?: load_common_blocks(&io, com);
+        err = err ?: load_common_blocks(&io, db, com);
     }
     selva_io_end(&io, nullptr);
 
