@@ -210,9 +210,9 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                 thread.currentModifyIndex += 1;
                 thread.pendingModifies -= 1;
                 if (threads.pendingModifies == 0) {
-                    if (thread.id == threads.threads.len - 1) {
-                        std.debug.print("MOD DONE L Thread \n", .{});
-                    }
+                    // if (thread.id == threads.threads.len - 1) {
+                    //     std.debug.print("MOD DONE L Thread \n", .{});
+                    // }
                     modifyNotPending(threads);
                 }
                 // thread.mutex.unlock();

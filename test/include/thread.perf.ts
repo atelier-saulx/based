@@ -126,7 +126,6 @@ await test('include', async (t) => {
 
   console.log(styleText('blue', 'UPDATE'))
   await db.update('todo', 1, { nr: 66 })
-  await wait(1000)
   console.log(styleText('blue', '--------------'))
 
 
@@ -142,7 +141,7 @@ await test('include', async (t) => {
     0
   ])
 
-  for (let i = 1; i < 200; i++) {
+  for (let i = 1; i < 100; i++) {
     native.modify(mod, db.server.dbCtxExternal)
     const q = registerQuery(db.query('todo', i))
     native.query(q, db.server.dbCtxExternal)
