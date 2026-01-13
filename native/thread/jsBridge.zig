@@ -25,15 +25,12 @@ fn callJsCallback(
         return;
     }
 
-    std.debug.print("FLAP {any} \n", .{responseFn});
-
     switch (responseFn.response) {
         t.BridgeResponse.modify => {
             QueueStatus.waitForModify(dbCtx.threads);
             dbCtx.threads.mutex.lock();
             const thread = dbCtx.threads.threads[0];
             var arrayBuffer: napi.Value = undefined;
-            std.debug.print("flap {any} \n", .{thread.modify.index});
             _ = napi.c.napi_create_external_arraybuffer(
                 env,
                 thread.modify.data.ptr,

@@ -125,31 +125,27 @@ await test('include', async (t) => {
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
   console.log(styleText('blue', 'UPDATE'))
-  await db.update('todo', 1, { nr: { increment: 1 } })
+  await db.update('todo', 1, { nr: 66 })
+  await wait(1000)
   console.log(styleText('blue', '--------------'))
 
 
 
   console.log('derp')
   const q: any = []
-  for (let i = 1; i < 2; i++) {
-    // db.update('todo', i, { nr: { increment: 1 } }).then(() => { })
-    const x = new Uint8Array(14)
-    x[4] = OpType.modify
 
-    // console.log(styleText('blue', 'stage mod'))
+  const mod = new Uint8Array([
+    0, 0, 0, 0, 127, 224, 184, 8, 246, 232,
+    0, 0, 0, 1, 0, 0, 0, 2, 1, 0,
+    1, 1, 0, 0, 0, 0, 0, 17, 5, 8,
+    0, 0, 0, 0, 0, 4, 0, 66, 0, 0,
+    0
+  ])
 
-    native.modify(x, db.server.dbCtxExternal)
-    // console.log('STAGED MOD')
+  for (let i = 1; i < 200; i++) {
+    native.modify(mod, db.server.dbCtxExternal)
     const q = registerQuery(db.query('todo', i))
-    // console.log(styleText('blue', 'stage q'))
-
     native.query(q, db.server.dbCtxExternal)
-    // console.log('STAGED QUERY')
-
-    // .subscribe((d) => {
-    //   console.log('INCOMING', d.id)
-    // })
   }
 
   console.log(styleText('blue', 'staged mod/q'))
