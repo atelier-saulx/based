@@ -308,7 +308,6 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) !usize {
 }
 
 pub fn modify(
-    // comptime isSubscriptionWorker: bool,
     thread: *Thread.Thread,
     batch: []u8,
     dbCtx: *DbCtx,
@@ -342,7 +341,6 @@ pub fn modify(
 
     Node.expire(&ctx);
     writeoutPrevNodeId(&ctx, &ctx.resultLen, ctx.id, ctx.result);
-    // this is not nessecary for sub
     write(ctx.result, ctx.resultLen, 0);
 
     if (ctx.resultLen < expectedLen) {
