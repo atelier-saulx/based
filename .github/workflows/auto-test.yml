@@ -115,27 +115,32 @@ jobs:
           cd packages/db
           npm run test-fast
 
-      # --- PACKAGING & ARTIFACTS ---
+      # --- PACKAGING & Releasing ---
 
-      - name: Create NPM Tarball
-        id: pack
+      - name: Create & Upload Release Asset
         if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # This packs the project into a .tgz file exactly how npm publish would
-          # We move it to a clean name containing the short commit hash
-          npm pack
-          FILE_NAME=$(ls *.tgz | head -n 1)
-          NEW_NAME="based-db-${{ matrix.name }}-${{ github.sha }}.tgz"
-          mv "$FILE_NAME" "$NEW_NAME"
-          echo "artifact_path=$NEW_NAME" >> $GITHUB_OUTPUT
+          cd packages/db
 
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: based-db-build-${{ matrix.name }}-${{ github.sha }}
-          path: ${{ steps.pack.outputs.artifact_path }}
-          retention-days: 60
+          npm pack
+
+          ORIGINAL_NAME=$(ls *.tgz | head -n 1)
+          ASSET_NAME="based-db-${{ matrix.name }}-${{ github.sha }}.tgz"
+          mv "$ORIGINAL_NAME" "$ASSET_NAME"
+
+          echo "Created package: $ASSET_NAME"
+
+          RELEASE_TAG="build-${{ github.sha }}"
+
+          gh release create "$RELEASE_TAG" "$ASSET_NAME" \
+            --repo "${{ github.repository }}" \
+            --title "Build ${{ github.sha }}" \
+            --notes "Automated build for commit ${{ github.sha }}" \
+            --prerelease \
+            --target main || \
+          gh release upload "$RELEASE_TAG" "$ASSET_NAME" --repo "${{ github.repository }}" --clobber
 
       # --- NOTIFICATIONS ---
 
