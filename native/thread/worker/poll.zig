@@ -17,7 +17,7 @@ pub fn poll(threads: *Thread.Threads) !void {
             const elapsed = now - thread.lastModifyTime;
             if (elapsed > common.SUB_EXEC_INTERVAL) {
                 thread.lastModifyTime = now;
-                try Subscription.fireIdSubscription(false, threads, thread);
+                try Subscription.fireIdSubscription(threads, thread);
             }
         }
 

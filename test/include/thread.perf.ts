@@ -141,6 +141,7 @@ await test('include', async (t) => {
   console.log(styleText('blue', `add ${subs} subs`))
   var cnt = 0
   const fn = (d) => cnt++
+
   for (let j = 0; j < subs / 1000; j++) {
     for (let i = 1; i < 1000; i++) {
       // opt query contructor to be faster and use less mem
