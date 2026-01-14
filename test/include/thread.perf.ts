@@ -8,6 +8,7 @@ import { register } from 'module'
 import native from '../../src/native.js'
 import { OpType } from '../../src/zigTsExports.js'
 import { styleText } from 'util'
+import { registerSubscription } from '../../src/db-client/query/subscription/toByteCode.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -142,12 +143,24 @@ await test('include', async (t) => {
   var cnt = 0
   const fn = (d) => cnt++
 
+  const q = db.query('todo', 1).include('nr')
+
   for (let j = 0; j < subs / 1000; j++) {
     for (let i = 1; i < 1000; i++) {
       // opt query contructor to be faster and use less mem
-      db.query('todo', i + j * 1000)
-        .include('nr')
-        .subscribe(fn)
+
+      // at least remove the query def
+      // @ts-ignore
+      q.target.id = i + j * 1000
+      q.subscriptionBuffer = undefined
+      q.buffer = undefined
+      registerQuery(q)
+      const buf = registerSubscription(q)
+      db.server.subscribe(buf, fn)
+
+      // db.query('todo', i + j * 1000)
+      //   .include('nr')
+      //   .subscribe(fn)
     }
     // gc
     await wait(10)

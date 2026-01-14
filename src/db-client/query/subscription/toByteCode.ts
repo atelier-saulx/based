@@ -1,4 +1,5 @@
 import {
+  bufToHex,
   concatUint8Arr,
   writeInt64,
   writeUint16,
@@ -206,4 +207,6 @@ export const registerSubscription = (query: BasedDbQuery) => {
     }
     query.subscriptionBuffer = buffer
   }
+
+  return query.subscriptionBuffer
 }

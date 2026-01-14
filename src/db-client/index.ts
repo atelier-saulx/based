@@ -151,10 +151,8 @@ export class DbClient extends DbShared {
       | Uint32Array,
   ): BasedDbQuery
 
-  query(): BasedDbQuery
-
   query(
-    type?: string,
+    type: string,
     id?:
       | number
       | number[]
@@ -163,10 +161,6 @@ export class DbClient extends DbShared {
       | Uint32Array
       | { [alias: string]: string }, // alias
   ): BasedDbQuery {
-    if (type === undefined) {
-      return new BasedDbQuery(this, '_root', 1)
-    }
-
     return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
   }
 
