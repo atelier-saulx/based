@@ -9,6 +9,12 @@ const napi = @import("../napi.zig");
 const Id = @import("./singleId.zig");
 
 pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !void {
+    // when we add REFERENCES and multi subs we can schedule
+    // this work for a specific thread (the one that holds the subs)
+    // then it can add meta info of the returned data on the subscription index
+    // e.g. filter can show the min and max id , same in sort etc,
+    // also keep the amount of data
+
     if (thread.subscriptions.lastIdMarked > 0) {
         var i: usize = 0;
         while (i < thread.subscriptions.lastIdMarked) {

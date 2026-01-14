@@ -7,7 +7,9 @@ pub fn poll(threads: *Thread.Threads) !void {
     while (true) {
         std.Thread.sleep(common.SUB_EXEC_INTERVAL);
         const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
+
         threads.mutex.lock();
+
         if (threads.shutdown) {
             threads.mutex.unlock();
             return;

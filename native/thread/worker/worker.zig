@@ -189,13 +189,13 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     thread.lastModifyTime = now;
                     try Subscription.fireIdSubscription(threads, thread);
                 }
-
                 threads.pendingModifies -= 1;
                 thread.currentModifyIndex += 1;
                 thread.pendingModifies -= 1;
                 if (threads.pendingModifies == 0) {
                     modifyNotPending(threads);
                 }
+
                 threads.mutex.unlock();
             }
         }
