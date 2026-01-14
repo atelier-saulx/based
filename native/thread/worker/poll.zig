@@ -12,12 +12,14 @@ pub fn poll(threads: *Thread.Threads) !void {
             threads.mutex.unlock();
             return;
         }
-        const elapsed = now - threads.lastModifyTime;
 
-        if (elapsed > common.SUB_EXEC_INTERVAL) {
-            threads.lastModifyTime = now;
-            try Subscription.fireIdSubscription(threads, threads.threads[threads.threads.len - 1]);
-            for (threads.threads) |thread| {
+        try Subscription.fireIdSubscription(threads, threads.threads[threads.threads.len - 1]);
+        for (threads.threads) |thread| {
+            const elapsed = now - thread.lastModifyTime;
+            if (elapsed > common.SUB_EXEC_INTERVAL) {
+                thread.lastModifyTime = now;
+                // std.debug.print("SUB EXEC from poll {any} \n", .{thread.id});
+
                 try Subscription.fireIdSubscription(threads, thread);
             }
         }

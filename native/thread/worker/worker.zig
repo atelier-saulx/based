@@ -161,11 +161,6 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                 }
                 threads.mutex.unlock();
             } else {
-                // this will be ANY id step 1 per type modulo
-                // or tell hey do you have subs?
-                // or let zero attach the sub to the lowest thread
-                // prob modulo on typeid?
-                // if (thread.id == threads.threads.len - 1) {
                 switch (op) {
                     .emptyMod => {},
                     .modify => {
@@ -175,18 +170,28 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                         var index: usize = 0;
                         const subSize = utils.readNext(u32, m, &index);
                         const subHeader = utils.readNext(t.SubscriptionHeader, m, &index);
-
                         const len = threads.threads.len;
                         if (subHeader.typeId % len == thread.id) {
-                            std.debug.print("subscribe on type {d} on thread {d}\n", .{ subHeader.typeId, thread.id });
+                            // This can be a bit more efficient
+                            // std.debug.print("subscribe on type {d} on thread {d}\n", .{ subHeader.typeId, thread.id });
                             try Subscription.subscribe(thread, m[index..m.len], &subHeader, subSize);
                         }
                     },
                     else => {},
                 }
-                // }
+
+                const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
+                const elapsed = now - thread.lastModifyTime;
 
                 threads.mutex.lock();
+
+                if (elapsed > common.SUB_EXEC_INTERVAL) {
+                    thread.lastModifyTime = now;
+                    // std.debug.print("SUB EXEC from worker {any} \n", .{thread.id});
+
+                    try Subscription.fireIdSubscription(threads, thread);
+                }
+
                 threads.pendingModifies -= 1;
                 thread.currentModifyIndex += 1;
                 thread.pendingModifies -= 1;

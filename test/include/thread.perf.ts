@@ -137,10 +137,28 @@ await test('include', async (t) => {
 
   console.log(styleText('blue', 'drain done'))
 
-  await wait(200)
-  console.log(styleText('blue', 'update TODO'))
-  db.update('todo', 1, { nr: { increment: 1 } })
+  console.log(styleText('blue', 'add 100k subs'))
+  var cnt = 0
+  for (let i = 1; i < 1e5; i++) {
+    db.query('todo', i)
+      .include('nr')
+      .subscribe((d) => cnt++)
+  }
+  console.log(styleText('blue', 'adding 100k subs done'))
   await wait(500)
+
+  const amount = 1e7
+  console.log(styleText('blue', `start update ${amount}`))
+  d = Date.now()
+  for (let i = 1; i < amount; i++) {
+    db.update('todo', i, { nr: { increment: 1 } })
+    if (i % 1000 === 0) {
+      await db.drain()
+    }
+  }
+  console.log(
+    styleText('blue', `done update ${amount} ` + (Date.now() - d) + 'ms'),
+  )
 
   console.log('\n--------------------------\n')
 
@@ -164,6 +182,7 @@ await test('include', async (t) => {
   )
 
   await wait(100)
+  console.log('SUBS FIRE?', cnt)
 })
 
 await test.skip('default', async (t) => {

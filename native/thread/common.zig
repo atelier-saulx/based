@@ -29,6 +29,7 @@ pub const Thread = struct {
     tmpSortBinaryEdge: *selva.SelvaSortCtx,
     tmpSortBinary: *selva.SelvaSortCtx,
     subscriptions: *Subscription.SubscriptionCtx,
+    lastModifyTime: u64 = 0,
 
     pub fn init(allocator: std.mem.Allocator, id: usize) !*Thread {
         const thread = jemalloc.create(Thread);
@@ -42,7 +43,7 @@ pub const Thread = struct {
         thread.*.query = try results.Result.init();
         thread.*.modify = try results.Result.init();
         thread.*.currentModifyIndex = 0;
-
+        thread.*.lastModifyTime = 0;
         // maybe we can make this with comtime loop
         thread.*.tmpSortIntEdge = selva.selva_sort_init3(selva.SELVA_SORT_ORDER_I64_ASC, 0, EdgeResultSize).?;
         thread.*.tmpSortInt = selva.selva_sort_init3(selva.SELVA_SORT_ORDER_I64_ASC, 0, 0).?;

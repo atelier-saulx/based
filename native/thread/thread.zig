@@ -33,7 +33,6 @@ pub const Threads = struct {
     jsModifyBridgeStaged: bool = false,
     ctx: *DbCtx,
     allocator: std.mem.Allocator,
-    lastModifyTime: u64 = 0,
     lastModfiyTimeThread: std.Thread,
     emptyMod: []u8,
 
@@ -87,7 +86,6 @@ pub const Threads = struct {
         self.* = .{
             .emptyMod = try allocator.alloc(u8, 5),
             .lastModfiyTimeThread = try std.Thread.spawn(.{}, poll, .{self}),
-            .lastModifyTime = 0,
             .allocator = allocator,
             .threads = try allocator.alloc(*Thread, threadAmount),
             .ctx = ctx,

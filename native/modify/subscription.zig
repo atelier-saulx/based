@@ -184,7 +184,7 @@ pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
                 const fieldType: t.PropType = @enumFromInt(utils.read(u8, data, 0));
                 const propSize = t.PropType.size(fieldType);
                 const start = utils.read(u16, data, 1);
-                std.debug.print("increment/decrement {s} {d}\n", .{ @tagName(fieldType), start });
+                // std.debug.print("increment/decrement {s} {d}\n", .{ @tagName(fieldType), start });
                 stagePartial(&ctx, start);
                 i += propSize + 3 + 1;
             },
