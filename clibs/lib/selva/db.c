@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
 #include "jemalloc_selva.h"
 #include "selva/align.h"
 #include "selva/fields.h"
@@ -168,9 +170,31 @@ struct SelvaDb *selva_db_create(void)
     mempool_init(&db->types.pool, te_slab_size(), sizeof(struct SelvaTypeEntry), alignof(struct SelvaTypeEntry));
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
+    db->dirfd = AT_FDCWD;
     selva_expire_init(&db->expiring);
 
     return db;
+}
+
+int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname_len)
+{
+    char buf[pathname_len + 1];
+    int fd;
+
+    memcpy(buf, pathname_str, pathname_len);
+    buf[pathname_len] = '\0';
+
+    if (db->dirfd != AT_FDCWD) {
+        close(db->dirfd);
+    }
+
+    fd = open(buf, O_SEARCH | O_DIRECTORY | O_CLOEXEC);
+    if (fd == -1) {
+        return SELVA_EIO;
+    }
+
+    db->dirfd = fd;
+    return 0;
 }
 
 /**
@@ -265,6 +289,9 @@ void selva_db_destroy(struct SelvaDb *db)
 #if 0
     memset(db, 0, sizeof(*db));
 #endif
+    if (db->dirfd != AT_FDCWD) {
+        close(db->dirfd);
+    }
     selva_free(db);
 }
 
@@ -309,7 +336,7 @@ struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t
     return &blocks->blocks[block_i];
 }
 
-void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
+void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
 {
     struct SelvaTypeEntry *te;
 
@@ -319,11 +346,13 @@ void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaD
         for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
             struct SelvaTypeBlock *block = &blocks->blocks[block_i];
 
-            if (atomic_load_explicit(&block->status.atomic, memory_order_consume) == SELVA_TYPE_BLOCK_STATUS_EMPTY) {
-                continue;
+            /*
+             * Note that we call it or_mask because the cb() is called if any
+             * bit of the mask is set in the status.
+             */
+            if (atomic_load_explicit(&block->status.atomic, memory_order_consume) & or_mask) {
+                cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
             }
-
-            cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
         }
     }
 }

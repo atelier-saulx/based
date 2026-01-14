@@ -31,11 +31,11 @@ struct selva_dump_common_data {
 
     /**
      * Info about all blocks related to this dump.
+     * Only on load.
      */
     struct selva_dump_block {
         node_type_t type;
         block_id_t block;
-        struct selva_string *filename;
     } *blocks __pcounted_by(blocks_len);
     size_t blocks_len;
 
@@ -60,6 +60,12 @@ SELVA_EXPORT
 void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
 
 /**
+ * Change backup directory.
+ */
+SELVA_EXPORT
+int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname_len) __attribute__((nonnull));
+
+/**
  * Create a new node type with a schema.
  * @param type must not exist before.
  */
@@ -70,27 +76,19 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
  * Save the common/shared data of the database.
  */
 SELVA_EXPORT
-int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename) __attribute__((nonnull));
+int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *path) __attribute__((nonnull));
 
 /**
  * Save a nodes block starting from start.
  */
 SELVA_EXPORT
-int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, selva_hash128_t *range_hash_out) __attribute__((nonnull));
-
-/**
- * **Usage:**
- * ```c
- * struct SelvaDb *db = selva_db_create();
- * selva_dump_load_common(db, filename_common);
- * selva_dump_load_block(db, te, filename_range_n);
- *  ```
- */
-SELVA_EXPORT
-int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename) __attribute__((nonnull));
+int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start, selva_hash128_t *range_hash_out) __attribute__((nonnull));
 
 SELVA_EXPORT
-int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
+int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
+
+SELVA_EXPORT
+int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 /**
  * Find a type by type id.
@@ -115,7 +113,7 @@ inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)
 #endif
 
 SELVA_EXPORT
-void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
+void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
 
 SELVA_EXPORT
 inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)

@@ -1,15 +1,18 @@
 /*
- * Copyright (c) 2022-2025 SAULX
+ * Copyright (c) 2022-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define SELVA_IO_TYPE
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "selva/fast_memcmp.h"
 #include "selva/selva_string.h"
 #include "selva_error.h"
@@ -76,10 +79,11 @@ static int init_io_string(struct selva_io *io, struct selva_string *s, enum selv
     return err;
 }
 
-int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_flags flags)
+int selva_io_init_file(struct selva_io *io, int dirfd, const char *filename, enum selva_io_flags flags)
 {
     const char *mode = (flags & SELVA_IO_FLAGS_WRITE) ? "wb" : "rb";
     struct stat stats;
+    int fd;
     FILE *file;
 
     flags |= SELVA_IO_FLAGS_FILE_IO;
@@ -87,8 +91,18 @@ int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_
         return SELVA_EINVAL;
     }
 
-    file = fopen(filename, mode);
+    if (flags & SELVA_IO_FLAGS_WRITE) {
+        fd = openat(dirfd, filename, O_WRONLY | O_CREAT | O_TRUNC | O_RESOLVE_BENEATH | O_CLOEXEC, 0640);
+    } else {
+        fd = openat(dirfd, filename, O_RDONLY | O_RESOLVE_BENEATH | O_CLOEXEC);
+    }
+    if (fd == -1) {
+        goto fopen_err;
+    }
+    file = fdopen(fd, mode);
     if (!file) {
+        close(fd);
+fopen_err:
         if (errno == ENOENT) {
             return SELVA_ENOENT;
         } else {
@@ -189,12 +203,12 @@ int selva_io_end(struct selva_io *io, uint8_t hash_out[restrict SELVA_IO_HASH_SI
     return err;
 }
 
-int selva_io_quick_verify(const char *filename)
+int selva_io_quick_verify(int dirfd, const char *filename)
 {
     int err;
     struct selva_io io = {};
 
-    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    err = selva_io_init_file(&io, dirfd, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }

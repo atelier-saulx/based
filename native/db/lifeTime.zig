@@ -25,6 +25,7 @@ fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const nrThreads = try napi.get(u16, env, args[2]);
     const ctx = try dbCtx.createDbCtx(env, args[0], fsPath, nrThreads);
     ctx.selva = selva.selva_db_create();
+    _ = selva.selva_db_chdir(ctx.selva, fsPath.ptr, fsPath.len); // TODO Handle error?
     var externalNapi: napi.Value = undefined;
     ctx.initialized = true;
     _ = napi.c.napi_create_external(env, ctx, null, null, &externalNapi);

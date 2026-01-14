@@ -4,7 +4,7 @@ import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { loadCommon, } from './blocks.js'
-import { bufToHex, equals, hexToBuf, readUint32, wait } from '../utils/index.js'
+import { readUint32, wait } from '../utils/index.js'
 import { setSchemaOnServer } from './schema.js'
 import {
   OpTypeEnum,
@@ -98,7 +98,7 @@ export async function start(db: DbServer, opts?: StartOpts) {
 
   // Load the common dump
   try {
-    await loadCommon(db, join(path, 'common.sdb'))
+    await loadCommon(db)
 
     // Load schema
     const schema = await readFile(join(path, SCHEMA_FILE)).catch(noop)

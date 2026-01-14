@@ -31,6 +31,9 @@
 #define USE_DUMP_MAGIC_FIELD_BEGIN 0
 #define PRINT_SAVE_TIME 0
 
+#define FNAME_COMMON_SDB "common.sdb"
+#define FNAME_BLOCK_SDB_FMT "%" PRIu16 "_%" PRIu32 ".sdb"
+
 /*
  * Pick 32-bit primes for these.
  */
@@ -351,34 +354,35 @@ static void save_common_ids(struct selva_io *io, const node_id_t *ids_data, size
     }
 }
 
+static void count_blocks(void *ctx, struct SelvaDb *, struct SelvaTypeEntry *, block_id_t, node_id_t)
+{
+    (*((sdb_arr_len_t *)ctx))++;
+}
+
+static void save_block_info(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start)
+{
+    struct selva_io *io = (struct selva_io *)ctx;
+
+    io->sdb_write(&te->type, sizeof(te->type), 1, io);
+    io->sdb_write(&block, sizeof(block), 1, io);
+
+    /*
+     * Also update the block status.
+     */
+    if (likely(block < te->blocks->len)) {
+        selva_block_status_set(te, block, SELVA_TYPE_BLOCK_STATUS_FS);
+    }
+}
+
 static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *com)
 {
-    const sdb_arr_len_t len = com->blocks_len;
+    enum SelvaTypeBlockStatus mask = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
+    sdb_arr_len_t len = 0;
 
     write_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS);
+    selva_foreach_block(db, mask, count_blocks, &len);
     io->sdb_write(&len, sizeof(len), 1, io);
-    for (sdb_arr_len_t i = 0; i < len; i++) {
-        struct selva_dump_block bl = com->blocks[i];
-        size_t tmp;
-        uint32_t filename_len;
-        const char *filename_sz = selva_string_to_str(bl.filename, &tmp);
-        filename_len = (uint32_t)tmp;
-
-        io->sdb_write(&bl.type, sizeof(bl.type), 1, io);
-        io->sdb_write(&bl.block, sizeof(bl.block), 1, io);
-        io->sdb_write(&filename_len, sizeof(filename_len), 1, io);
-        io->sdb_write(filename_sz, sizeof(char), filename_len, io);
-
-        /*
-         * Also update the block status.
-         */
-        struct SelvaTypeEntry *te = selva_get_type_by_index(db, bl.type);
-        assert(te);
-        if (likely(te && bl.block < te->blocks->len)) {
-            te->blocks->blocks[bl.block].filename = bl.filename;
-            selva_block_status_set(te, bl.block, SELVA_TYPE_BLOCK_STATUS_FS);
-        }
-    }
+    selva_foreach_block(db, mask, save_block_info, io);
 }
 
 int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename)
@@ -389,7 +393,7 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
     };
     int err;
 
-    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+    err = selva_io_init_file(&io, db->dirfd, FNAME_COMMON_SDB, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
@@ -408,7 +412,8 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
     return 0;
 }
 
-int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, node_id_t start, selva_hash128_t *range_hash_out)
+/* TODO Change start to block_i */
+int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start, selva_hash128_t *range_hash_out)
 {
 #if PRINT_SAVE_TIME
     struct timespec ts_start, ts_end;
@@ -438,15 +443,10 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const c
     ts_monotime(&ts_start);
 #endif
 
-    if (!block->filename) {
-        block->filename = selva_string_create(filename, strlen(filename) + 1, SELVA_STRING_MUTABLE);
-        assert(block->filename);
-    } else {
-        /* RFE in the future we probably never want to change the name. */
-        (void)selva_string_replace(block->filename, filename, strlen(filename) + 1);
-    }
+    char filename[120];
 
-    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
+    snprintf(filename, sizeof(filename), FNAME_BLOCK_SDB_FMT, te->type, selva_node_id2block_i2(te, start));
+    err = selva_io_init_file(&io, db->dirfd, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
@@ -1119,18 +1119,9 @@ static int load_common_blocks(struct selva_io *io, struct SelvaDb *db, struct se
 
     for (sdb_arr_len_t i = 0; i < len; i++) {
         struct selva_dump_block *bl = &com->blocks[i];
-        char *buf;
-        uint32_t filename_len;
-        size_t tmp;
 
         io->sdb_read(&bl->type, sizeof(bl->type), 1, io);
         io->sdb_read(&bl->block, sizeof(bl->block), 1, io);
-        io->sdb_read(&filename_len, sizeof(filename_len), 1, io);
-
-        bl->filename = selva_string_create(nullptr, len, SELVA_STRING_MUTABLE);
-        buf = selva_string_to_mstr(bl->filename, &tmp);
-        assert(tmp == (size_t)filename_len);
-        io->sdb_read(buf, filename_len, sizeof(char), io);
 
         /*
          * Also update to the block status.
@@ -1138,7 +1129,6 @@ static int load_common_blocks(struct selva_io *io, struct SelvaDb *db, struct se
         struct SelvaTypeEntry *te = selva_get_type_by_index(db, bl->type);
         assert(te);
         if (likely(te && bl->block < te->blocks->len)) {
-            te->blocks->blocks[bl->block].filename = bl->filename;
             selva_block_status_set(te, bl->block, SELVA_TYPE_BLOCK_STATUS_FS);
         }
     }
@@ -1146,7 +1136,7 @@ static int load_common_blocks(struct selva_io *io, struct SelvaDb *db, struct se
     return 0;
 }
 
-int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename)
+int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com)
 {
     struct selva_io io = {
         .errlog_buf = com->errlog_buf,
@@ -1154,7 +1144,7 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
     };
     int err;
 
-    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+    err = selva_io_init_file(&io, db->dirfd, FNAME_COMMON_SDB, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }
@@ -1174,15 +1164,18 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
     return err;
 }
 
-int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, const char *filename, char *errlog_buf, size_t errlog_size)
+int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size)
 {
     struct selva_io io = {
         .errlog_buf = errlog_buf,
         .errlog_left = errlog_size,
     };
+    char filename[120];
     int err;
 
-    err = selva_io_init_file(&io, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
+
+    snprintf(filename, sizeof(filename), FNAME_BLOCK_SDB_FMT, te->type, block_i);
+    err = selva_io_init_file(&io, db->dirfd, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
         return err;
     }

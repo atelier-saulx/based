@@ -1,7 +1,5 @@
 import native, { idGenerator } from '../native.js'
-import { basename, join } from 'node:path'
 import {
-  ENCODER,
   readInt32,
   writeUint16,
   writeUint32,
@@ -50,14 +48,12 @@ function saveAllBlocks(db: DbServer): Promise<number> {
 
 export async function loadCommon(
   db: DbServer,
-  filename: string,
 ): Promise<void> {
   const id = loadCommonId.next().value
-  const msg = new Uint8Array(5 + native.stringByteLength(filename) + 1)
+  const msg = new Uint8Array(5)
 
   writeUint32(msg, id, 0)
   msg[4] = OpType.loadCommon
-  ENCODER.encodeInto(filename, msg.subarray(5))
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.loadCommon, id, (buf: Uint8Array) => {
@@ -80,23 +76,23 @@ export async function loadBlockRaw(
   db: DbServer,
   typeId: number,
   start: number,
-  filename: string,
+  block: number,
 ): Promise<Uint8Array> {
   const id = loadBlockRawId.next().value
-  const msg = new Uint8Array(11 + native.stringByteLength(filename) + 1)
+  const msg = new Uint8Array(15)
 
   writeUint32(msg, id, 0)
   msg[4] = OpType.loadBlock
   writeUint32(msg, start, 5)
   writeUint16(msg, typeId, 9)
-  ENCODER.encodeInto(filename, msg.subarray(11))
+  writeUint32(msg, block, 11)
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.loadBlock, id, (buf: Uint8Array) => {
       const err = readInt32(buf, 0)
       if (err) {
         // TODO read errlog
-        const errMsg = `Load ${basename(filename)} failed: ${native.selvaStrerror(err)}`
+        const errMsg = `Load ${typeId}:${block} failed: ${native.selvaStrerror(err)}`
         db.emit('error', errMsg)
         reject(new Error(errMsg))
       } else {
