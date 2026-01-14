@@ -1,5 +1,6 @@
 import native, { idGenerator } from '../native.js'
 import {
+  DECODER,
   readInt32,
   writeUint16,
   writeUint32,
@@ -34,6 +35,9 @@ function saveAllBlocks(db: DbServer): Promise<number> {
       const err = readInt32(buf, 0)
       if (err) {
         const errMsg = `Save failed: ${native.selvaStrerror(err)}`
+        const errLog = DECODER.decode(buf.subarray(4))
+
+        console.log(errLog)
         db.emit('error', errMsg)
         reject(new Error(errMsg))
       } else {
@@ -61,6 +65,9 @@ export async function loadCommon(
       if (err) {
         // TODO read errlog
         const errMsg = `Load failed: ${native.selvaStrerror(err)}`
+        const errLog = DECODER.decode(buf.subarray(4))
+
+        console.log(errLog)
         db.emit('error', errMsg)
         reject(new Error(errMsg))
       } else {

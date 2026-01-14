@@ -1088,8 +1088,8 @@ static int load_common_ids(struct selva_io *io, struct selva_dump_common_data *c
 
     if (likely(len > 0)) {
         data = selva_malloc(len * sizeof(node_id_t));
-        if (io->sdb_read(data, sizeof(node_id_t), len, io) != 1) {
-            selva_io_errlog(io, "%s: data", __func__);
+        if (io->sdb_read(data, sizeof(node_id_t), len, io) != len) {
+            selva_io_errlog(io, "%s: load ids failed", __func__);
             return SELVA_EIO;
         }
     }
@@ -1195,12 +1195,13 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         selva_hash128_t block_hash;
 
         if (!read_dump_magic(&io, DUMP_MAGIC_BLOCK_HASH)) {
-            selva_io_errlog(&io, "Invalid block hash magic");
+            selva_io_errlog(&io, "%s: Invalid block hash magic", __func__);
             err = SELVA_EINVAL;
             goto fail;
         }
 
-        if (io.raw_read(&io, &block_hash, sizeof(block_hash)) != 1) {
+        if (io.sdb_read(&block_hash, sizeof(block_hash), 1, &io) != 1) {
+            selva_io_errlog(&io, "%s: Failed to read the hash", __func__);
             err = SELVA_EINVAL;
             goto fail;
         }
