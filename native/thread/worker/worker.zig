@@ -187,9 +187,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
 
                 if (elapsed > common.SUB_EXEC_INTERVAL) {
                     thread.lastModifyTime = now;
-                    // std.debug.print("SUB EXEC from worker {any} \n", .{thread.id});
-
-                    try Subscription.fireIdSubscription(threads, thread);
+                    try Subscription.fireIdSubscription(false, threads, thread);
                 }
 
                 threads.pendingModifies -= 1;

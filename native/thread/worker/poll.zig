@@ -13,14 +13,11 @@ pub fn poll(threads: *Thread.Threads) !void {
             return;
         }
 
-        try Subscription.fireIdSubscription(threads, threads.threads[threads.threads.len - 1]);
         for (threads.threads) |thread| {
             const elapsed = now - thread.lastModifyTime;
             if (elapsed > common.SUB_EXEC_INTERVAL) {
                 thread.lastModifyTime = now;
-                // std.debug.print("SUB EXEC from poll {any} \n", .{thread.id});
-
-                try Subscription.fireIdSubscription(threads, thread);
+                try Subscription.fireIdSubscription(false, threads, thread);
             }
         }
 

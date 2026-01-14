@@ -8,14 +8,20 @@ const DbCtx = @import("../db/ctx.zig").DbCtx;
 const napi = @import("../napi.zig");
 const Id = @import("./singleId.zig");
 
-pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !void {
+pub fn fireIdSubscription(comptime mutexLock: bool, threads: *Thread.Threads, thread: *Thread.Thread) !void {
     if (thread.subscriptions.lastIdMarked > 0) {
-        std.debug.print("Staged subs fire\n", .{});
+        // std.debug.print("Staged subs fire\n", .{});
+        if (mutexLock) {
+            threads.mutex.lock();
+            defer threads.mutex.unlock();
+        }
+
         var i: usize = 0;
         while (i < thread.subscriptions.lastIdMarked) {
             const subId = thread.subscriptions.singleIdMarked[i];
             if (thread.subscriptions.subsHashMap.get(subId)) |sub| {
                 sub.*.marked = Subscription.SubStatus.all;
+
                 if (threads.pendingModifies > 0) {
                     try threads.nextQueryQueue.append(sub.*.query);
                 } else {
@@ -26,6 +32,7 @@ pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !voi
             i += 1;
         }
         thread.subscriptions.lastIdMarked = 0;
+
         if (threads.pendingModifies == 0) {
             threads.wakeup.signal();
         }

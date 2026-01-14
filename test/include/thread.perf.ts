@@ -136,15 +136,22 @@ await test('include', async (t) => {
   await db.drain()
 
   console.log(styleText('blue', 'drain done'))
+  const subs = 5e5
 
-  console.log(styleText('blue', 'add 100k subs'))
+  console.log(styleText('blue', `add ${subs} subs`))
   var cnt = 0
-  for (let i = 1; i < 1e5; i++) {
-    db.query('todo', i)
-      .include('nr')
-      .subscribe((d) => cnt++)
+  const fn = (d) => cnt++
+  for (let j = 0; j < subs / 1000; j++) {
+    for (let i = 1; i < 1000; i++) {
+      // opt query contructor to be faster and use less mem
+      db.query('todo', i + j * 1000)
+        .include('nr')
+        .subscribe(fn)
+    }
+    // gc
+    await wait(10)
   }
-  console.log(styleText('blue', 'adding 100k subs done'))
+  console.log(styleText('blue', `adding ${subs} subs done`))
   await wait(500)
 
   const amount = 1e7
