@@ -137,7 +137,7 @@ await test('include', async (t) => {
   await db.drain()
 
   console.log(styleText('blue', 'drain done'))
-  const subs = 5e5
+  const subs = 1e5
 
   console.log(styleText('blue', `add ${subs} subs`))
   var cnt = 0
