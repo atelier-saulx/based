@@ -215,7 +215,6 @@ struct SelvaNodeRes selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAli
         return res;
     }
 
-
     res = selva_find_node(type, alias->dest);
     if (!res.node) {
         if (res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM) {
