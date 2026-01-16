@@ -95,7 +95,7 @@ await test('include', async (t) => {
   for (let i = 0; i < 100; i++) {
     todos.push(
       await db.create('todo', {
-        // name: i % 2 ? 'b' : 'a',
+        name: i % 2 ? 'b' : 'a',
         nr: rand(0, 10),
       }),
     )
@@ -137,7 +137,7 @@ await test('include', async (t) => {
   await db.drain()
 
   console.log(styleText('blue', 'drain done'))
-  const subs = 1e5
+  const subs = 1e4
 
   console.log(styleText('blue', `add ${subs} subs`))
   var cnt = 0
@@ -148,8 +148,6 @@ await test('include', async (t) => {
   for (let j = 0; j < subs / 1000; j++) {
     for (let i = 1; i < 1000; i++) {
       // opt query contructor to be faster and use less mem
-
-      // at least remove the query def
       // @ts-ignore
       q.target.id = i + j * 1000
       q.subscriptionBuffer = undefined
@@ -157,26 +155,23 @@ await test('include', async (t) => {
       registerQuery(q)
       const buf = registerSubscription(q)
       db.server.subscribe(buf, fn)
-
-      // db.query('todo', i + j * 1000)
-      //   .include('nr')
-      //   .subscribe(fn)
     }
-    // gc
-    await wait(10)
+    await wait(1)
   }
+
   console.log(styleText('blue', `adding ${subs} subs done`))
   await wait(500)
 
-  const amount = 1e7
+  const amount = 1e5
   console.log(styleText('blue', `start update ${amount}`))
   d = Date.now()
   for (let i = 1; i < amount; i++) {
     db.update('todo', i, { nr: { increment: 1 } })
-    if (i % 1000 === 0) {
-      await db.drain()
-    }
+    // if (i % 1000 === 0) {
+    // await db.drain()
+    // }
   }
+  await db.drain()
   console.log(
     styleText('blue', `done update ${amount} ` + (Date.now() - d) + 'ms'),
   )
@@ -204,6 +199,13 @@ await test('include', async (t) => {
 
   await wait(100)
   console.log('SUBS FIRE?', cnt)
+
+  await db
+    .query('todo', 1)
+    .include('nr', 'name')
+    .filter('nr', '=', 1)
+    .get()
+    .inspect()
 })
 
 await test.skip('default', async (t) => {

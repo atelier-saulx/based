@@ -9,19 +9,12 @@ const napi = @import("../napi.zig");
 const Id = @import("./singleId.zig");
 
 pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !void {
-    // when we add REFERENCES and multi subs we can schedule
-    // this work for a specific thread (the one that holds the subs)
-    // then it can add meta info of the returned data on the subscription index
-    // e.g. filter can show the min and max id , same in sort etc,
-    // also keep the amount of data
-
     if (thread.subscriptions.lastIdMarked > 0) {
         var i: usize = 0;
         while (i < thread.subscriptions.lastIdMarked) {
             const subId = thread.subscriptions.singleIdMarked[i];
             if (thread.subscriptions.subsHashMap.get(subId)) |sub| {
                 sub.*.marked = Subscription.SubStatus.all;
-
                 if (threads.pendingModifies > 0) {
                     try threads.nextQueryQueue.append(sub.*.query);
                 } else {
@@ -51,13 +44,14 @@ pub fn subscribe(
     index = 0;
     const subId = utils.readNext(u32, query, &index);
     const queryType: t.OpType = @enumFromInt(query[index]);
-    // here we allrdy get the thread so we need a fn that goes before this and assigns to the correct thread
     switch (queryType) {
         .id, .idFilter => {
             const header = utils.readNext(t.QueryHeaderSingle, query, &index);
             try Id.addIdSubscription(thread, query, partialFields, fields, subId, &header, subHeader);
         },
         else => {
+            // multi - has to be scheduled for the specific thread handle this when flushing
+            // query -> [4] - select THREAD
             // not handled yet
         },
     }
@@ -68,9 +62,6 @@ pub fn unsubscribe(
     buffer: []u8,
     thread: *Thread.Thread,
 ) !void {
-    // needs to find the correct thread
     // only needs SUB-ID
     std.debug.print("unsubscribe {any} {any} {any}   \n", .{ dbCtx, buffer, thread });
-    // ----
-
 }

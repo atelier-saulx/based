@@ -48,8 +48,9 @@ pub fn default(
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     if (Node.getNode(typeEntry, header.id)) |node| {
         if (hasFilter) {
-            try ctx.thread.query.append(@as(u32, 0));
-            // do stuff
+            // this is the result length
+            // try ctx.thread.query.append(@as(u32, 0));
+            // return;
         }
         try ctx.thread.query.append(@as(u32, 1));
         try ctx.thread.query.append(t.ReadOp.id);
@@ -59,7 +60,6 @@ pub fn default(
     } else {
         try ctx.thread.query.append(@as(u32, 0));
     }
-    // i.* += header.includeSize; not nessecary for default
 }
 
 // prob add REF+EDGE include as an option

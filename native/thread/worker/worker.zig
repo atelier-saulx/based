@@ -56,12 +56,11 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                 else => {
                     getQueryThreaded(threads.ctx, q, thread) catch |err| {
                         std.log.err("Error query: {any}\n", .{err});
-                        // write query error response
                     };
                 },
             }
 
-            // prob dont need this... add it specificly
+            // this is not always nessecary
             thread.query.commit();
 
             threads.mutex.lock();
@@ -86,7 +85,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                         threadIt.*.pendingModifies = threads.modifyQueue.items.len;
                     }
                     threads.wakeup.broadcast();
-                } else {}
+                }
             } else if (thread.query.index > 100_000_000 and !threads.jsQueryBridgeStaged) {
                 thread.mutex.lock();
                 threads.ctx.jsBridge.call(t.BridgeResponse.flushQuery, thread.id);
@@ -141,6 +140,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     },
                     else => {},
                 }
+                // this is not always nessecary e.g. subscribe does not need this
                 thread.modify.commit();
                 threads.mutex.lock();
                 threads.pendingModifies -= 1;
@@ -184,7 +184,6 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                 const elapsed = now - thread.lastModifyTime;
 
                 threads.mutex.lock();
-
                 if (elapsed > common.SUB_EXEC_INTERVAL) {
                     thread.lastModifyTime = now;
                     try Subscription.fireIdSubscription(threads, thread);
@@ -195,7 +194,6 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                 if (threads.pendingModifies == 0) {
                     modifyNotPending(threads);
                 }
-
                 threads.mutex.unlock();
             }
         }
