@@ -313,5 +313,7 @@ pub fn delAlias(typeEntry: Node.Type, node_id: selva.c.node_id_t, field: u8) !vo
 
 pub fn getAliasByName(typeEntry: Node.Type, field: u8, aliasName: []u8) ?Node.Node {
     const typeAliases = selva.c.selva_get_aliases(typeEntry, field);
-    return selva.c.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
+    const res = selva.c.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
+    // TODO Partials
+    return res.node;
 }

@@ -404,19 +404,19 @@ void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t st
  * Get a node by id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
+struct SelvaNodeRes selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
 
 /**
  * Find the first node greater than or equal to the provided id, or NULL.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
+struct SelvaNodeRes selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
 
 /**
  * Get or create a node by id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
+struct SelvaNodeRes selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
 
 /**
  * **Example**
@@ -425,7 +425,7 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
  * ```
  */
 SELVA_EXPORT
-struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type) __attribute__((nonnull));
+struct SelvaNodeRes selva_min_node(struct SelvaTypeEntry *type) __attribute__((nonnull));
 
 /**
  * **Example**
@@ -434,19 +434,19 @@ struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type) __attribute__((non
  * ```
  */
 SELVA_EXPORT
-struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type) __attribute__((nonnull));
+struct SelvaNodeRes selva_max_node(struct SelvaTypeEntry *type) __attribute__((nonnull));
 
 /**
  * Get previous node with a lower node id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
+struct SelvaNodeRes selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Get next node with higher node id.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
+struct SelvaNodeRes selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * Total count of nodes of type.
@@ -536,7 +536,7 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
  * Get alias by name.
  */
 SELVA_EXPORT
-struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len);
+struct SelvaNodeRes selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len);
 
 /**
  * Get alias by destination id.

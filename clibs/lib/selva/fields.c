@@ -618,7 +618,8 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
     struct SelvaTypeEntry *dst_type = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
     assert(dst_type);
 
-    struct SelvaNode *dst = selva_find_node(dst_type, dst_node_id);
+    /* TODO Partials */
+    struct SelvaNode *dst = selva_find_node(dst_type, dst_node_id).node;
     if (!dst) {
         return;
     }
@@ -1418,7 +1419,8 @@ static void selva_fields_references_insert_tail_empty_src_field(
         node_id_t dst_id = ids[i];
         struct SelvaNode *dst;
 
-        dst = selva_find_node(te_dst, dst_id);
+        /* TODO Partials */
+        dst = selva_find_node(te_dst, dst_id).node;
         if (!dst) {
             continue;
         }
@@ -1462,7 +1464,8 @@ static void selva_fields_references_insert_tail_nonempty_src_field(
             continue; /* ignore */
         }
 
-        dst = selva_find_node(te_dst, dst_id);
+        /* TODO Partials */
+        dst = selva_find_node(te_dst, dst_id).node;
         if (!dst) {
             continue;
         }
@@ -1751,18 +1754,21 @@ int selva_fields_references_swap(
 static struct SelvaNode *next_ref_edge_node(struct SelvaTypeEntry *edge_type)
 {
     node_id_t next_id = (edge_type->max_node) ? edge_type->max_node->node_id + 1 : 1;
-    struct SelvaNode *edge;
+    struct SelvaNodeRes edge;
 
-    while (selva_find_node(edge_type, next_id)) {
+    /* TODO Partials */
+    while (selva_find_node(edge_type, next_id).node) {
         /* FIXME This will loop infinitely if all ids are used. */
         /* FIXME Should we use some sort of free list as a bitmap or something to speed up reuse. */
         next_id++;
     }
 
     edge = selva_upsert_node(edge_type, next_id);
+    /* TODO Support partial edges */
+    assert(edge.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM);
     selva_mark_dirty(edge_type, next_id);
 
-    return edge;
+    return edge.node;
 }
 
 /**
@@ -1787,12 +1793,12 @@ struct SelvaNode *selva_fields_ensure_ref_edge(
 
     /* RFE what to do if there was an existing edge? */
     if (ref->edge != 0 && edge_id == 0) {
-        /* FIXME Partials will require upsert here! */
-        edge = selva_find_node(edge_type, ref->edge);
+        /* TODO Partials will require upsert here! */
+        edge = selva_find_node(edge_type, ref->edge).node;
         assert(edge);
     } else if (ref->edge == 0 || edge_id != 0) {
         edge = (edge_id != 0)
-            ? selva_upsert_node(edge_type, edge_id)
+            ? selva_upsert_node(edge_type, edge_id).node /* TODO Partials */
             : next_ref_edge_node(edge_type);
         if (!edge) {
             return nullptr;
@@ -1804,7 +1810,7 @@ struct SelvaNode *selva_fields_ensure_ref_edge(
 
         struct SelvaTypeEntry *type_dst = selva_get_type_by_index(db, efc->dst_node_type);
         const struct SelvaFieldSchema *fs_dst = selva_get_fs_by_te_field(type_dst, efc->inverse_field);
-        struct SelvaNode *dst = selva_find_node(type_dst, ref->dst);
+        struct SelvaNode *dst = selva_find_node(type_dst, ref->dst).node; /* TODO Partials */
         if (!dst) {
             db_panic("FIXME dangling reference");
         }
@@ -2199,7 +2205,7 @@ static void reference_edge_destroy(
 
         edge_type = selva_get_type_by_index(db, efc->edge_node_type);
         assert(edge_type);
-        edge_node = selva_find_node(edge_type, ref->edge);
+        edge_node = selva_find_node(edge_type, ref->edge).node; /* TODO Partials */
         ref->edge = 0;
 
         if (edge_node && !keep_edge_node) {

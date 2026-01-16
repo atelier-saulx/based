@@ -65,31 +65,42 @@ pub inline fn getNodeTypeId(node: Node) t.TypeId {
 }
 
 pub inline fn upsertNode(_: *Modify.ModifyCtx, typeEntry: selva.Type, id: u32) !Node {
-    const node = selva.c.selva_upsert_node(typeEntry, id);
-    if (node == null) {
+    const res = selva.c.selva_upsert_node(typeEntry, id);
+    // TODO Partials
+    if (res.node == null) {
         return errors.SelvaError.SELVA_CANNOT_UPSERT;
     }
-    return node.?;
+    return res.node.?;
 }
 
 pub inline fn getNode(typeEntry: selva.Type, id: u32) ?Node {
-    return selva.c.selva_find_node(typeEntry, id);
+    const res = selva.c.selva_find_node(typeEntry, id);
+    // TODO Partials
+    return res.node;
 }
 
 pub inline fn getFirstNode(typeEntry: selva.Type) ?Node {
-    return selva.c.selva_min_node(typeEntry);
+    const res = selva.c.selva_min_node(typeEntry);
+    // TODO Partials
+    return res.node;
 }
 
 pub inline fn getLastNode(typeEntry: selva.Type) ?Node {
-    return selva.c.selva_max_node(typeEntry);
+    const res = selva.c.selva_max_node(typeEntry);
+    // TODO Partials
+    return res.node;
 }
 
 pub inline fn getNextNode(typeEntry: selva.Type, node: Node) ?Node {
-    return selva.c.selva_next_node(typeEntry, node);
+    const res = selva.c.selva_next_node(typeEntry, node);
+    // TODO Partials
+    return res.node;
 }
 
 pub inline fn getPrevNode(typeEntry: selva.Type, node: Node) ?Node {
-    return selva.c.selva_prev_node(typeEntry, node);
+    const res = selva.c.selva_prev_node(typeEntry, node);
+    // TODO Partials
+    return res.node;
 }
 
 pub fn NodeTypeIterator(
@@ -135,7 +146,9 @@ pub inline fn getNodeFromReference(dstType: selva.Type, ref: anytype) ?Node {
         @TypeOf(ref) == ?*selva.c.SelvaNodeLargeReference)
     {
         if (ref) |r| {
-            return selva.c.selva_find_node(dstType, r.*.dst);
+            const res = selva.c.selva_find_node(dstType, r.*.dst);
+            // TODO Partial
+            return res.node;
         }
     } else {
         @compileLog("Invalid type: ", @TypeOf(ref));

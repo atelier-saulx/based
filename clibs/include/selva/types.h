@@ -121,6 +121,18 @@ struct SelvaFields;
 struct SelvaNode;
 struct SelvaTypeEntry;
 
+/**
+ * Node get result.
+ * This struct can be used as a return value from functions that should
+ * return a node. If the node is not loaded in memory then the caller can
+ * determine if it still might exist by checking `block_status`.
+ */
+struct SelvaNodeRes {
+    struct SelvaNode *node;
+    block_id_t block;
+    enum SelvaTypeBlockStatus block_status;
+} __designated_init;
+
 SELVA_EXPORT
 bool selva_is_valid_field_type(enum SelvaFieldType ftype);
 

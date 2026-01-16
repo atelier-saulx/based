@@ -376,7 +376,7 @@ static void save_block_info(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry
 
 static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *com)
 {
-    enum SelvaTypeBlockStatus mask = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
+    constexpr enum SelvaTypeBlockStatus mask = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
     sdb_arr_len_t len = 0;
 
     write_dump_magic(io, DUMP_MAGIC_COMMON_BLOCKS);
@@ -664,11 +664,12 @@ static int load_field_weak_reference_v3(struct selva_io *io, struct SelvaDb *db,
 {
     struct SelvaTypeEntry *dst_te = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
     node_id_t dst_id;
-    struct SelvaNode *dst_node;
+    struct SelvaNodeRes dst;
 
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
-    dst_node = selva_upsert_node(dst_te, dst_id);
-    return selva_fields_reference_set(db, node, fs, dst_node, nullptr);
+    dst = selva_upsert_node(dst_te, dst_id);
+    assert((dst.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM) && dst.node);
+    return selva_fields_reference_set(db, node, fs, dst.node, nullptr);
 }
 
 /**
@@ -684,12 +685,13 @@ static int load_field_weak_references_v3(struct selva_io *io, struct SelvaDb *db
     for (sdb_arr_len_t i = 0; i < nr_refs; i++) {
         enum selva_fields_references_insert_flags insert_flags = SELVA_FIELDS_REFERENCES_INSERT_FLAGS_REORDER | SELVA_FIELDS_REFERENCES_INSERT_FLAGS_IGNORE_SRC_DEPENDENT;
         struct SelvaNodeWeakReference reference;
-        struct SelvaNode *dst_node;
+        struct SelvaNodeRes dst;
         int err;
 
         io->sdb_read(&reference, sizeof(reference), 1, io);
-        dst_node = selva_upsert_node(dst_te, reference.dst_id);
-        err = selva_fields_references_insert(db, node, fs, i, insert_flags, dst_te, dst_node, nullptr);
+        dst = selva_upsert_node(dst_te, reference.dst_id);
+        assert((dst.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM) && dst.node);
+        err = selva_fields_references_insert(db, node, fs, i, insert_flags, dst_te, dst.node, nullptr);
         if (err) {
             return err;
         }
@@ -709,7 +711,7 @@ static int load_ref_v4(struct selva_io *io, struct SelvaDb *db, struct SelvaNode
     io->sdb_read(&dst_id, sizeof(dst_id), 1, io);
 
     if (likely(dst_id != 0)) {
-        dst_node = selva_upsert_node(dst_te, dst_id);
+        dst_node = selva_upsert_node(dst_te, dst_id).node;
         if (fs->type == SELVA_FIELD_TYPE_REFERENCE) {
             err = selva_fields_reference_set(db, node, fs, dst_node, &ref);
         } else if (fs->type == SELVA_FIELD_TYPE_REFERENCES) {
@@ -946,8 +948,17 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
     node_id_t node_id;
     io->sdb_read(&node_id, sizeof(node_id), 1, io);
 
-    struct SelvaNode *node = selva_upsert_node(te, node_id);
-    assert(node->type == te->type);
+    struct SelvaNodeRes res = selva_upsert_node(te, node_id);
+    if (!res.node && (res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM) == 0) {
+        /*
+         * This must be to allow upsert to create nodes in this block.
+         */
+        selva_block_status_set(te, selva_node_id2block_i(te->blocks, node_id), SELVA_TYPE_BLOCK_STATUS_INMEM);
+        res = selva_upsert_node(te, node_id);
+    }
+
+    struct SelvaNode *node = res.node;
+    assert(node && node->type == te->type);
     err = load_node_fields(io, db, te, node);
     if (err) {
         return 0;

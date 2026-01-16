@@ -201,8 +201,9 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)
     selva_free(alias);
 }
 
-struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len)
+struct SelvaNodeRes selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len)
 {
+    struct SelvaNodeRes res = {};
     struct SelvaAlias *find = alloca(sizeof_wflex(struct SelvaAlias, name, name_len));
 
     memset(find, 0, sizeof(*find));
@@ -211,18 +212,20 @@ struct SelvaNode *selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAlias
 
     struct SelvaAlias *alias = RB_FIND(SelvaAliasesByName, &aliases->alias_by_name, find);
     if (!alias) {
-        return nullptr;
+        return res;
     }
 
 
-    struct SelvaNode *node = selva_find_node(type, alias->dest);
-    if (!node) {
-        /* Oopsie, no node found. */
-        selva_del_alias_by_dest(aliases, alias->dest);
-        alias = nullptr;
+    res = selva_find_node(type, alias->dest);
+    if (!res.node) {
+        if (res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM) {
+            /* Oopsie, no node found. */
+            selva_del_alias_by_dest(aliases, alias->dest);
+            alias = nullptr;
+        }
     }
 
-    return node;
+    return res;
 }
 
 const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)
