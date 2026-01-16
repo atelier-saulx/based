@@ -63,7 +63,7 @@ char *selva_io_hash_to_hex(char s[2 * SELVA_IO_HASH_SIZE], const uint8_t hash[SE
 /**
  * @param io must be Initialized before call.
  */
-int selva_io_init_file(struct selva_io *io, const char *filename, enum selva_io_flags flags);
+int selva_io_init_file(struct selva_io *io, int dirfd, const char *filename, enum selva_io_flags flags);
 
 /**
  * @param io must be Initialized before call.
@@ -76,9 +76,7 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
 int selva_io_init_string_read(struct selva_io *io, struct selva_string * restrict s, enum selva_io_flags flags);
 
 int selva_io_end(struct selva_io *io, uint8_t hash_out[restrict SELVA_IO_HASH_SIZE]);
-int io_dump_save_async(struct SelvaDb *db, const char *filename);
-int io_dump_load(const char *filename, struct SelvaDb **db_out);
-int selva_io_quick_verify(const char *filename);
+int selva_io_quick_verify(int dirfd, const char *filename);
 
 /**
  * Log error to the error buffer.

@@ -70,7 +70,6 @@ struct SelvaTypeBlock {
         _Atomic uint_least32_t atomic;
         enum SelvaTypeBlockStatus e;
     } status;
-    struct selva_string *filename; /*!< Set when the block is first written in SDB. */
 };
 
 /**
@@ -158,6 +157,11 @@ struct SelvaDb {
      * Expiring nodes.
      */
     struct SelvaExpire expiring;
+
+    /**
+     * Backup directory file descriptor.
+     */
+    int dirfd;
 
     uint32_t sdb_version; /*!< Current SDB version. Set on common load and save. 0 if not saved/loaded. */
 };

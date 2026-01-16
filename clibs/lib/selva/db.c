@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
 #include "jemalloc_selva.h"
 #include "selva/align.h"
 #include "selva/fields.h"
@@ -120,13 +122,14 @@ static void expire_cb(struct SelvaExpireToken *tok, void *ctx)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
     struct SelvaTypeEntry *te;
-    struct SelvaNode *node;
+    struct SelvaNodeRes res;
 
     te = selva_get_type_by_index(token->db, token->type);
     assert(te);
-    node = selva_find_node(te, token->node_id);
-    if (node) {
-        selva_del_node(token->db, te, node);
+    res = selva_find_node(te, token->node_id);
+    if (res.node) {
+        /* TODO What if the node is on FS but it's expiring */
+        selva_del_node(token->db, te, res.node);
     }
 
     selva_free(token);
@@ -168,9 +171,31 @@ struct SelvaDb *selva_db_create(void)
     mempool_init(&db->types.pool, te_slab_size(), sizeof(struct SelvaTypeEntry), alignof(struct SelvaTypeEntry));
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
+    db->dirfd = AT_FDCWD;
     selva_expire_init(&db->expiring);
 
     return db;
+}
+
+int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname_len)
+{
+    char buf[pathname_len + 1];
+    int fd;
+
+    memcpy(buf, pathname_str, pathname_len);
+    buf[pathname_len] = '\0';
+
+    if (db->dirfd != AT_FDCWD) {
+        close(db->dirfd);
+    }
+
+    fd = open(buf, O_SEARCH | O_DIRECTORY | O_CLOEXEC);
+    if (fd == -1) {
+        return SELVA_EIO;
+    }
+
+    db->dirfd = fd;
+    return 0;
 }
 
 /**
@@ -265,6 +290,9 @@ void selva_db_destroy(struct SelvaDb *db)
 #if 0
     memset(db, 0, sizeof(*db));
 #endif
+    if (db->dirfd != AT_FDCWD) {
+        close(db->dirfd);
+    }
     selva_free(db);
 }
 
@@ -309,7 +337,7 @@ struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t
     return &blocks->blocks[block_i];
 }
 
-void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
+void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
 {
     struct SelvaTypeEntry *te;
 
@@ -319,11 +347,13 @@ void selva_foreach_block(struct SelvaDb *db, void (*cb)(void *ctx, struct SelvaD
         for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
             struct SelvaTypeBlock *block = &blocks->blocks[block_i];
 
-            if (atomic_load_explicit(&block->status.atomic, memory_order_consume) == SELVA_TYPE_BLOCK_STATUS_EMPTY) {
-                continue;
+            /*
+             * Note that we call it or_mask because the cb() is called if any
+             * bit of the mask is set in the status.
+             */
+            if (atomic_load_explicit(&block->status.atomic, memory_order_consume) & or_mask) {
+                cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
             }
-
-            cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
         }
     }
 }
@@ -462,8 +492,9 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
     if (node == type->max_node) {
         /*
          * selva_max_node() is as fast as selva_prev_node().
+         * TODO What if it hits partial!
          */
-        type->max_node = selva_max_node(type);
+        type->max_node = selva_max_node(type).node;
     }
 
     if (unload) {
@@ -505,47 +536,92 @@ void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id)
     }
 }
 
-struct SelvaNode *selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNodeRes selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
     if (unlikely(node_id == 0)) {
-        return nullptr;
+        return (struct SelvaNodeRes){};
     }
 
-    struct SelvaTypeBlock *block = selva_get_block(type->blocks, node_id);
+    struct SelvaTypeBlocks *blocks = type->blocks;
+    struct SelvaNodeRes res = {
+        .block = selva_node_id2block_i(blocks, node_id),
+    };
+
+    struct SelvaTypeBlock *block = &blocks->blocks[res.block];
+    res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
+    if (!(res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM)) {
+        goto out;
+    }
+
     struct SelvaNodeIndex *nodes = &block->nodes;
     struct SelvaNode find = {
         .node_id = node_id,
     };
 
-    return RB_FIND(SelvaNodeIndex, nodes, &find);
+    res.node = RB_FIND(SelvaNodeIndex, nodes, &find);
+out:
+    return res;
 }
 
-struct SelvaNode *selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNodeRes selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
-    struct SelvaTypeBlock *block = selva_get_block(type->blocks, node_id);
+    struct SelvaTypeBlocks *blocks = type->blocks;
+    struct SelvaNodeRes res = {
+        .block = selva_node_id2block_i(blocks, node_id),
+    };
+
+    if (unlikely(node_id == 0)) {
+        goto out;
+    }
+
+    struct SelvaTypeBlock *block = &blocks->blocks[res.block];
+    res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
+    if (!(res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM)) {
+        goto out;
+    }
+
     struct SelvaNodeIndex *nodes = &block->nodes;
     struct SelvaNode find = {
         .node_id = node_id,
     };
 
-    return RB_NFIND(SelvaNodeIndex, nodes, &find);
+    res.node = RB_NFIND(SelvaNodeIndex, nodes, &find);
+out:
+    return res;
 }
 
-struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
+struct SelvaNodeRes selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
+    struct SelvaTypeBlocks *blocks = type->blocks;
+    struct SelvaNodeRes res = {
+        .block = selva_node_id2block_i(blocks, node_id),
+    };
+
     if (unlikely(node_id == 0)) {
-        return nullptr;
+        goto out;
     }
 
-    block_id_t block_i = selva_node_id2block_i2(type, node_id);
-    struct SelvaTypeBlock *block = &type->blocks->blocks[block_i];
+    struct SelvaTypeBlock *block = &blocks->blocks[res.block];
+    res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
+    constexpr enum SelvaTypeBlockStatus mask = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
+    if ((res.block_status & mask) == SELVA_TYPE_BLOCK_STATUS_FS) {
+        /*
+         * Note that this is tricky because we want to normally bail if the block
+         * is only in fs to avoid creating two versions of the block (one in fs
+         * and one in mem. However, we must be able to upsert while loading the
+         * block. The trick is to set `SELVA_TYPE_BLOCK_STATUS_INMEM` before
+         * upsert if the caller is loading.
+         */
+        goto out;
+    }
+
     struct SelvaNode *node = mempool_get(&type->nodepool);
 
     node->node_id = node_id;
     node->type = type->type;
 
     if (type->max_node &&type->max_node->node_id < node_id &&
-        selva_node_id2block_i2(type, type->max_node->node_id) == block_i) {
+        selva_node_id2block_i2(type, type->max_node->node_id) == res.block) {
         /*
          * We can assume that node_id almost always grows monotonically.
          */
@@ -556,7 +632,8 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         prev = RB_INSERT(SelvaNodeIndex, &block->nodes, node);
         if (prev) {
             mempool_return(&type->nodepool, node);
-            return prev;
+            res.node = prev;
+            goto out;
         }
     }
 
@@ -569,31 +646,41 @@ struct SelvaNode *selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_
         type->max_node = node;
     }
 
-    return node;
+    res.node = node;
+out:
+    return res;
 }
 
 /**
  * Find the min node starting from block `start`.
  */
-static struct SelvaNode *selva_min_node_from(struct SelvaTypeEntry *type, block_id_t start)
+static struct SelvaNodeRes selva_min_node_from(struct SelvaTypeEntry *type, block_id_t start)
 {
     struct SelvaTypeBlocks *blocks = type->blocks;
     const size_t len = blocks->len;
+    struct SelvaNodeRes res = {};
 
     for (size_t i = start; i < len; i++) {
         struct SelvaTypeBlock *block = &blocks->blocks[i];
         struct SelvaNode *node;
 
+        res.block = i;
+        res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
+        if (!(res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM)) {
+            break;
+        }
+
         node = RB_MIN(SelvaNodeIndex, &block->nodes);
         if (node) {
-            return node;
+            res.node = node;
+            break;
         }
     }
 
-    return nullptr;
+    return res;
 }
 
-struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type)
+struct SelvaNodeRes selva_min_node(struct SelvaTypeEntry *type)
 {
     return selva_min_node_from(type, 0);
 }
@@ -601,63 +688,86 @@ struct SelvaNode *selva_min_node(struct SelvaTypeEntry *type)
 /**
  * Find the max node starting from block `start`.
  */
-static struct SelvaNode *selva_max_node_from(struct SelvaTypeEntry *type, block_id_t start)
+static struct SelvaNodeRes selva_max_node_from(struct SelvaTypeEntry *type, block_id_t start)
 {
     struct SelvaTypeBlocks *blocks = type->blocks;
+    struct SelvaNodeRes res = {};
 
     for (ssize_t i = start; i >= 0; i--) {
         struct SelvaTypeBlock *block = &blocks->blocks[i];
         struct SelvaNode *node;
 
+        res.block = i;
+        res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
+        if (!(res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM)) {
+            break;
+        }
+
         node = RB_MAX(SelvaNodeIndex, &block->nodes);
         if (node) {
-            return node;
+            res.node = node;
+            break;
         }
     }
 
-    return nullptr;
+    return res;
 }
 
-struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
+struct SelvaNodeRes selva_max_node(struct SelvaTypeEntry *type)
 {
     return selva_max_node_from(type, type->blocks->len - 1);
 }
 
 /* FIXME This seems incorrect. What if also the previous block is empty but there is a prev on somewhere? */
-struct SelvaNode *selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
+struct SelvaNodeRes selva_prev_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
-    block_id_t i = selva_node_id2block_i(blocks, node->node_id);
+    struct SelvaNodeRes res = {
+        .block = selva_node_id2block_i(blocks, node->node_id),
+        .block_status = SELVA_TYPE_BLOCK_STATUS_INMEM,
+    };
     struct SelvaNode *prev;
 
-    prev = RB_PREV(SelvaNodeIndex, &blocks->blocks[i].nodes, node);
+    /* We know it's always SELVA_TYPE_BLOCK_STATUS_INMEM */
+#if 0
+    res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
+#endif
+
+    prev = RB_PREV(SelvaNodeIndex, nullptr /* notused */, node);
     if (prev) {
-        return prev;
+        res.node = prev;
+        goto out;
     }
 
-    if ( i > 0 && i - 1 < i) {
-        return selva_max_node_from(type, i - 1);
+    if ( res.block > 0 && res.block - 1 < res.block) {
+        return selva_max_node_from(type, res.block - 1);
     }
 
-    return nullptr;
+out:
+    return res;
 }
 
-struct SelvaNode *selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
+struct SelvaNodeRes selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     const struct SelvaTypeBlocks *blocks = type->blocks;
+    struct SelvaNodeRes res = {
+        .block = selva_node_id2block_i(blocks, node->node_id),
+        .block_status = SELVA_TYPE_BLOCK_STATUS_INMEM,
+    };
     struct SelvaNode *next;
 
-    next = RB_NEXT(SelvaNodeIndex, &block->nodes, node);
+    next = RB_NEXT(SelvaNodeIndex, nullptr /* notused */, node);
     if (next) {
-        return next;
+        res.node = next;
+        return res;
     }
 
-    block_id_t i_next = selva_node_id2block_i(blocks, node->node_id) + 1;
+    block_id_t i_next = res.block + 1;
     if (i_next < blocks->len) {
         return selva_min_node_from(type, i_next);
     }
 
-    return nullptr;
+    return res;
 }
 
 size_t selva_node_count(const struct SelvaTypeEntry *type)
