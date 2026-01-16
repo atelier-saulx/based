@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 SAULX
+# Copyright (c) 2022-2026 SAULX
 # SPDX-License-Identifier: MIT
 
 # Anything defined here will generally shared by all build goals except
@@ -22,7 +22,7 @@ CC += -fdiagnostics-color=always
 
 # CFLAGS shared with all compilation units.
 CFLAGS := -std=gnu23 -pthread -O2 -MMD -fstack-protector \
-		  -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes \
+		  -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes -Werror=incompatible-pointer-types \
 		  -DDCACHE_LINESIZE=64
 
 LDFLAGS += -pthread
