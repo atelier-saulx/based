@@ -247,9 +247,14 @@ pub inline fn alignLeft(comptime T: type, data: []u8) u8 {
     const alignment = @alignOf(T);
     const unAligned = data[alignment..];
     const address = @intFromPtr(unAligned.ptr);
+
+    if (address % alignment == address & (alignment - 1)) {
+        return 0;
+    }
+
     const offset: u8 = @truncate(address % alignment);
     const aligned = data[alignment - offset .. alignment + data.len - offset];
-    if (offset != 0) move(aligned, unAligned);
+    move(aligned, unAligned);
     return offset;
 }
 
