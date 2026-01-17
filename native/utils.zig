@@ -88,8 +88,37 @@ pub inline fn toSlice(comptime T: type, value: []u8) []T {
     return x;
 }
 
-pub inline fn read(comptime T: type, buffer: []const u8, offset: usize) T {
+pub inline fn readAligned(
+    comptime T: type,
+    buffer: []const u8,
+    offset: usize,
+) T {
     switch (@typeInfo(T)) {
+        .int, .float => {
+            return @as(*const T, @ptrCast(@alignCast(buffer.ptr + offset))).*;
+        },
+        else => {
+            return read(T, buffer, offset);
+        },
+    }
+}
+
+pub inline fn read(
+    comptime T: type,
+    // comptime isAligned: bool,
+    buffer: []const u8,
+    offset: usize,
+) T {
+    switch (@typeInfo(T)) {
+        // could add isAligned then this is slightly faster
+        // .int, .float => {
+        //     const raw_ptr = buffer.ptr + offset;
+        //     // if (isAligned) {
+        //     //     return @as(*const T, @ptrCast(@alignCast(raw_ptr))).*;
+        //     // } else {
+        //     return @as(*align(1) const T, @ptrCast(raw_ptr)).*;
+        //     // }
+        // },
         .pointer => |info| {
             if (info.size == .slice) {
                 const ChildType = info.child;
@@ -107,8 +136,7 @@ pub inline fn read(comptime T: type, buffer: []const u8, offset: usize) T {
             return @enumFromInt(intVal);
         },
         else => {
-            const size = @bitSizeOf(T) / 8;
-            const value: T = @bitCast(buffer[offset..][0..size].*);
+            const value: T = @bitCast(buffer[offset..][0 .. @bitSizeOf(T) / 8].*);
             return value;
         },
     }
@@ -215,14 +243,14 @@ pub inline fn move(dest: []u8, source: []const u8) void {
     _ = memmove(dest.ptr, source.ptr, source.len);
 }
 
-pub inline fn realign(comptime T: type, data: []u8) []T {
-    const address = @intFromPtr(data.ptr);
-    var offset = (@alignOf(T) - (address & (@alignOf(T) - 1))) & @alignOf(T);
-    if (offset == 4) offset = 0;
-    const aligned: []u8 align(@alignOf(T)) = @alignCast(data[offset .. data.len - (@alignOf(T) - 1) + offset]);
-    if (offset != 0) move(aligned, data[0 .. data.len - (@alignOf(T) - 1)]);
-    const p: *anyopaque = aligned.ptr;
-    return @as([*]T, @ptrCast(@alignCast(p)))[0 .. aligned.len / @sizeOf(T)];
+pub inline fn alignLeft(comptime T: type, data: []u8) u8 {
+    const alignment = @alignOf(T);
+    const unAligned = data[alignment..];
+    const address = @intFromPtr(unAligned.ptr);
+    const offset: u8 = @truncate(address % alignment);
+    const aligned = data[alignment - offset .. alignment + data.len - offset];
+    if (offset != 0) move(aligned, unAligned);
+    return offset;
 }
 
 pub inline fn propTypeSize(propType: t.PropType) usize {

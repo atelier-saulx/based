@@ -82,9 +82,10 @@ pub const PropType = enum(u8) {
     boolean = 9,
     @"enum" = 10,
     string = 11,
-    text = 12,
-    reference = 13,
-    references = 14,
+    stringFixed = 12,
+    text = 13,
+    reference = 15,
+    references = 16,
     microBuffer = 17,
     alias = 18,
     aliases = 19,
@@ -93,10 +94,12 @@ pub const PropType = enum(u8) {
     uint16 = 22,
     int32 = 23,
     binary = 25,
+    binaryFixed = 26,
     vector = 27,
     json = 28,
-    colVec = 30,
-    object = 29,
+    jsonFixed = 29,
+    object = 30,
+    colVec = 31,
     id = 255,
 
     pub fn isBuffer(self: PropType) bool {
@@ -138,7 +141,7 @@ pub const PropType = enum(u8) {
 
     pub fn crcLen(self: PropType) usize {
         return switch (self) {
-            .string => 4,
+            .string, .binary, .json => 4,
             else => 0,
         };
     }
@@ -598,7 +601,6 @@ pub const IncludeResponseMeta = packed struct {
     size: u32,
 };
 
-// add typeId
 pub const SubscriptionHeader = packed struct {
     op: OpType,
     typeId: TypeId,
@@ -606,7 +608,6 @@ pub const SubscriptionHeader = packed struct {
     partialLen: u8,
 };
 
-// subscribe
 pub const QueryHeader = packed struct {
     op: QueryType,
     prop: u8, // this is for ref
@@ -625,7 +626,6 @@ pub const QueryHeader = packed struct {
     _padding: u7,
 };
 
-// subscribe
 pub const QueryHeaderSingle = packed struct {
     op: QueryType,
     typeId: TypeId,
@@ -645,64 +645,6 @@ pub const QueryHeaderSingleReference = packed struct {
     includeSize: u16, // cannot be more then 16kb? might be good enough
 };
 
-pub const FilterOp = enum(u8) {
-    equal = 1,
-    has = 2,
-    endsWith = 4,
-    startsWith = 5,
-    largerThen = 6,
-    smallerThen = 7,
-    largerThenInclusive = 8,
-    smallerThenInclusive = 9,
-    equalNormalize = 12,
-    hasLowerCase = 13,
-    startsWithNormalize = 14,
-    endsWithNormalize = 15,
-    equalCrc32 = 17,
-    like = 18,
-    pub fn isNumerical(self: FilterOp) bool {
-        return switch (self) {
-            FilterOp.smallerThen,
-            FilterOp.largerThen,
-            FilterOp.largerThenInclusive,
-            FilterOp.smallerThenInclusive,
-            => true,
-            else => false,
-        };
-    }
-};
-
-pub const FilterType = enum(u8) {
-    negate = 1,
-    default = 2,
-};
-
-pub const FilterMode = enum(u8) {
-    default = 0,
-    orFixed = 1,
-    orVar = 2,
-    andFixed = 3,
-    defaultVar = 4,
-    reference = 5,
-};
-
-pub const FilterMeta = enum(u8) {
-    references = 250,
-    exists = 251,
-    edge = 252,
-    orBranch = 253,
-    reference = 254,
-    id = 255,
-    _,
-};
-
-pub const FilterVectorFn = enum(u8) {
-    dotProduct = 0,
-    manhattanDistance = 1,
-    cosineSimilarity = 2,
-    euclideanDistance = 3,
-};
-
 pub const VectorBaseType = enum(u8) {
     int8 = 1,
     uint8 = 2,
@@ -713,12 +655,6 @@ pub const VectorBaseType = enum(u8) {
     float32 = 7,
     float64 = 8,
 };
-
-pub const FilterMaxVectorScore: f32 = 9999999;
-
-pub const FilterMaxStringScore: u8 = 255;
-
-pub const FilterAlignment = enum(u8) { notSet = 255, _ };
 
 pub const AggHeader = packed struct {
     op: QueryType,
@@ -757,4 +693,45 @@ pub const AggGroupByKey = packed struct {
     propId: u8,
     propType: PropType,
     propDefStart: u16,
+};
+
+pub const FilterOp = enum(u8) {
+    equals = 0, // only for references
+    notEquals = 1,
+    orEquals = 2,
+    orNotEquals = 3,
+    // different type
+    switchProp = 100,
+    @"and" = 101,
+    @"or" = 102,
+    andReference = 103,
+    andEdge = 104,
+    orReference = 105,
+    orEdge = 106,
+};
+
+pub const FilterCondition = packed struct {
+    op: FilterOp,
+    repeat: u16,
+    start: u16,
+    propType: PropType,
+    alignOffset: u8,
+    _padding: u64, // 4 bytes to align into
+};
+
+// only for nested
+pub const FilterHeader = packed struct {
+    op: FilterOp,
+    prop: u8,
+    propType: PropType,
+    typeId: TypeId,
+    edgeTypeId: TypeId,
+    size: u32,
+    nextOrIndex: u32, // something like this?
+};
+
+pub const FilterPropHeader = packed struct {
+    op: FilterOp,
+    prop: u8,
+    propType: PropType,
 };

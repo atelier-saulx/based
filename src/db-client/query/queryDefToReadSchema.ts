@@ -154,9 +154,9 @@ export const convertToReaderSchema = (
     } else if (q.schema?.hooks?.read) {
       readerSchema.hook = q.schema.hooks.read
     }
-    if (isRoot && q.search) {
-      readerSchema.search = true
-    }
+    // if (isRoot && q.search) {
+    //   readerSchema.search = true
+    // }
     for (const [k, v] of q.include.props) {
       readerSchema.props[k] = createReaderPropDef(v.def, locales, v.opts)
     }

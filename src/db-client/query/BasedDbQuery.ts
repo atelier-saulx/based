@@ -1,25 +1,21 @@
 import {
   QueryDef,
   QueryTarget,
-  filter,
-  Operator,
   sort,
-  filterOr,
   type QueryByAliasObj,
   isAlias,
   addAggregate,
   groupBy,
   LangFallback,
   IncludeOpts,
+  filter,
 } from './query.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
-import { FilterBranch } from './filter/FilterBranch.js'
-import { search, Search, vectorSearch } from './search/index.js'
+// import { search, Search, vectorSearch } from './search/index.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
-import { FilterBranchFn, FilterOpts } from './filter/types.js'
-import { convertFilter } from './filter/convertFilter.js'
+import { FilterOpts } from './filter/types.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { StepInput, aggFnOptions } from './aggregates/types.js'
@@ -31,7 +27,7 @@ import {
   LangCodeEnum,
   Order,
   AggFunction,
-  type AggFunctionEnum,
+  FilterOpInverse,
 } from '../../zigTsExports.js'
 import { styleText } from 'node:util'
 
@@ -82,11 +78,50 @@ export class QueryBranch<T> {
     return this
   }
 
-  filter<O extends Operator>(
+  // or(fn: FilterBranchFn): T
+  // or(
+  //   field: string,
+  //   operator?: Operator | boolean,
+  //   value?: any,
+  //   opts?: FilterOpts,
+  // ): T
+  // or(
+  //   field: string | FilterBranchFn,
+  //   operator?: Operator | boolean,
+  //   value?: any,
+  //   opts?: FilterOpts,
+  // ): T {
+  //   if (this.queryCommands) {
+  //     this.queryCommands.push({
+  //       method: 'or',
+  //       args: [field, operator, value, opts],
+  //     })
+  //   } else {
+  //     const def = this.def!
+  //     if (typeof field === 'function') {
+  //       const f = new FilterBranch(
+  //         this.db,
+  //         filterOr(this.db, def, [], def.filter),
+  //         def,
+  //       )
+  //       field(f)
+  //       def.filter.size += f.filterBranch.size
+  //     } else {
+  //       const f = convertFilter(this, field, operator, value, opts)
+  //       if (f) {
+  //         filterOr(this.db, def, f, def.filter)
+  //       }
+  //     }
+  //   }
+  //   // @ts-ignore
+  //   return this
+  // }
+
+  filter(
     field: string,
-    operator?: O | boolean,
+    operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
     value?: any,
-    opts?: FilterOpts<O>,
+    opts?: FilterOpts,
   ): T {
     if (this.queryCommands) {
       this.queryCommands.push({
@@ -94,90 +129,89 @@ export class QueryBranch<T> {
         args: [field, operator, value, opts],
       })
     } else {
-      const f = convertFilter(this, field, operator, value, opts)
-      if (!f) {
-        // @ts-ignore
-        return this
+      if (operator === undefined) {
+        operator = FilterOpInverse[0]
       }
-      filter(this.db, this.def!, f, this.def!.filter)
+      filter(this.db, this.def!, field, operator, value, opts)
     }
     // @ts-ignore
     return this
   }
+  // .or and .and
 
-  search(query: string, ...fields: Search[]): T
+  // search(query: string, ...fields: Search[]): T
 
-  search(
-    query: ArrayBufferView,
-    field: string,
-    opts?: Omit<FilterOpts, 'lowerCase'>,
-  ): T
+  // search(
+  //   query: ArrayBufferView,
+  //   field: string,
+  //   opts?: Omit<FilterOpts, 'lowerCase'>,
+  // ): T
 
-  search(
-    query: string | ArrayBufferView,
-    field?: Search | string,
-    opts?: Omit<FilterOpts, 'lowerCase'> | Search,
-    ...fields: Search[]
-  ): T {
-    if (this.queryCommands) {
-      this.queryCommands.push({
-        method: 'search',
-        args: [query, field, opts, ...fields],
-      })
-    } else {
-      if (ArrayBuffer.isView(query)) {
-        // @ts-ignore
-        vectorSearch(this.def, query, field, opts ?? {})
-        // @ts-ignore
-        return this
-      }
+  // search(
+  //   query: string | ArrayBufferView,
+  //   field?: Search | string,
+  //   opts?: Omit<FilterOpts, 'lowerCase'> | Search,
+  //   ...fields: Search[]
+  // ): T {
+  //   if (this.queryCommands) {
+  //     this.queryCommands.push({
+  //       method: 'search',
+  //       args: [query, field, opts, ...fields],
+  //     })
+  //   } else {
+  //     if (ArrayBuffer.isView(query)) {
+  //       // @ts-ignore
+  //       vectorSearch(this.def, query, field, opts ?? {})
+  //       // @ts-ignore
+  //       return this
+  //     }
 
-      if (field) {
-        if (!fields) {
-          // @ts-ignore
-          fields = [field]
-        } else {
-          // @ts-ignore
-          fields.unshift(field)
-        }
-      }
+  //     if (field) {
+  //       if (!fields) {
+  //         // @ts-ignore
+  //         fields = [field]
+  //       } else {
+  //         // @ts-ignore
+  //         fields.unshift(field)
+  //       }
+  //     }
 
-      if (opts) {
-        if (!fields) {
-          // @ts-ignore
-          fields = [opts]
-        } else {
-          // @ts-ignore
-          fields.unshift(opts)
-        }
-      }
+  //     if (opts) {
+  //       if (!fields) {
+  //         // @ts-ignore
+  //         fields = [opts]
+  //       } else {
+  //         // @ts-ignore
+  //         fields.unshift(opts)
+  //       }
+  //     }
 
-      if (fields.length) {
-        if (fields.length === 1) {
-          search(this, query, fields[0])
-        } else {
-          const s = {}
-          for (const f of fields) {
-            if (typeof f === 'string') {
-              s[f] = 0
-            } else if (Array.isArray(f)) {
-              for (const ff of f) {
-                s[ff] = 0
-              }
-            } else if (typeof f === 'object') {
-              Object.assign(s, f)
-            }
-          }
-          search(this, query, s)
-        }
-      } else {
-        search(this, query)
-      }
-    }
+  //     if (fields.length) {
+  //       if (fields.length === 1) {
+  //         search(this, query, fields[0])
+  //       } else {
+  //         const s = {}
+  //         for (const f of fields) {
+  //           if (typeof f === 'string') {
+  //             s[f] = 0
+  //           } else if (Array.isArray(f)) {
+  //             for (const ff of f) {
+  //               s[ff] = 0
+  //             }
+  //           } else if (typeof f === 'object') {
+  //             Object.assign(s, f)
+  //           }
+  //         }
+  //         search(this, query, s)
+  //       }
+  //     } else {
+  //       search(this, query)
+  //     }
+  //   }
 
-    // @ts-ignore
-    return this
-  }
+  //   // @ts-ignore
+  //   return this
+  // }
 
   groupBy(field: string, step?: StepInput): T {
     if (this.queryCommands) {
@@ -361,45 +395,6 @@ export class QueryBranch<T> {
       })
     } else {
       addAggregate(this, AggFunction.min, fields)
-    }
-    // @ts-ignore
-    return this
-  }
-
-  or(fn: FilterBranchFn): T
-  or(
-    field: string,
-    operator?: Operator | boolean,
-    value?: any,
-    opts?: FilterOpts,
-  ): T
-  or(
-    field: string | FilterBranchFn,
-    operator?: Operator | boolean,
-    value?: any,
-    opts?: FilterOpts,
-  ): T {
-    if (this.queryCommands) {
-      this.queryCommands.push({
-        method: 'or',
-        args: [field, operator, value, opts],
-      })
-    } else {
-      const def = this.def!
-      if (typeof field === 'function') {
-        const f = new FilterBranch(
-          this.db,
-          filterOr(this.db, def, [], def.filter),
-          def,
-        )
-        field(f)
-        def.filter.size += f.filterBranch.size
-      } else {
-        const f = convertFilter(this, field, operator, value, opts)
-        if (f) {
-          filterOr(this.db, def, f, def.filter)
-        }
-      }
     }
     // @ts-ignore
     return this

@@ -1,5 +1,4 @@
 import {
-  bufToHex,
   concatUint8Arr,
   writeInt64,
   writeUint16,
@@ -7,7 +6,7 @@ import {
 } from '../../../utils/index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 
-import { FilterMetaNow, QueryDef, QueryDefFilter } from '../types.js'
+import { QueryDef, QueryDefFilter } from '../types.js'
 import { SubscriptionType } from './types.js'
 import {
   OpType,
@@ -21,47 +20,44 @@ type Fields = { separate: Set<number>; main: Set<number> }
 export const collectFilters = (
   filter: QueryDefFilter,
   fields?: Fields,
-  nowQueries: FilterMetaNow[] = [],
+  // nowQueries: FilterMetaNow[] = [],
 ) => {
-  if (filter.hasSubMeta) {
-    for (const [, conditions] of filter.conditions) {
-      for (const condition of conditions) {
-        if (condition.subscriptionMeta) {
-          if (condition.subscriptionMeta.now) {
-            nowQueries.push(...condition.subscriptionMeta.now)
-          }
-        }
-      }
-    }
-  }
-
-  if (fields) {
-    for (const [prop, conditions] of filter.conditions) {
-      fields.separate.add(prop)
-      if (prop === 0) {
-        for (const condition of conditions) {
-          fields.main.add(condition.propDef.start!)
-        }
-      }
-    }
-  }
-
-  if (filter.or) {
-    collectFilters(filter.or, fields, nowQueries)
-  }
-  if (filter.and) {
-    collectFilters(filter.and, fields, nowQueries)
-  }
-
-  if (filter.references) {
-    for (const ref of filter.references.values()) {
-      for (const prop of filter.conditions.keys()) {
-        fields!.separate.add(prop)
-      }
-      collectFilters(ref.conditions, undefined, nowQueries)
-    }
-  }
-  return nowQueries
+  // if (filter.hasSubMeta) {
+  //   for (const [, conditions] of filter.conditions) {
+  //     for (const condition of conditions) {
+  //       if (condition.subscriptionMeta) {
+  //         if (condition.subscriptionMeta.now) {
+  //           // nowQueries.push(...condition.subscriptionMeta.now)
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+  // if (fields) {
+  //   for (const [prop, conditions] of filter.conditions) {
+  //     fields.separate.add(prop)
+  //     if (prop === 0) {
+  //       for (const condition of conditions) {
+  //         fields.main.add(condition.start!)
+  //       }
+  //     }
+  //   }
+  // }
+  // if (filter.or) {
+  //   collectFilters(filter.or, fields, nowQueries)
+  // }
+  // if (filter.and) {
+  //   collectFilters(filter.and, fields, nowQueries)
+  // }
+  // if (filter.references) {
+  //   for (const ref of filter.references.values()) {
+  //     for (const prop of filter.conditions.keys()) {
+  //       fields!.separate.add(prop)
+  //     }
+  //     collectFilters(ref.conditions, undefined, nowQueries)
+  //   }
+  // }
+  return []
 }
 
 export const collectFields = (def: QueryDef) => {
@@ -95,17 +91,17 @@ export const collectTypes = (
         types.add(ref.schema!.id)
         collectTypes(ref, types)
       } else {
-        types.add(ref.conditions.schema!.id)
-        collectTypes(ref.conditions, types)
+        // types.add(ref.conditions.schema!.id)
+        // collectTypes(ref.conditions, types)
       }
     }
   }
-  if ('filter' in def && 'references' in def.filter) {
-    for (const ref of def.filter.references!.values()) {
-      types.add(ref.conditions.schema!.id)
-      collectTypes(ref.conditions)
-    }
-  }
+  // if ('filter' in def && 'references' in def.filter) {
+  //   for (const ref of def.filter.references!.values()) {
+  //     types.add(ref.conditions.schema!.id)
+  //     collectTypes(ref.conditions)
+  //   }
+  // }
   return types
 }
 
@@ -197,14 +193,14 @@ export const registerSubscription = (query: BasedDbQuery) => {
         i += 2
       }
     }
-    for (const now of nowQueries) {
-      buffer[i] = now.prop.prop
-      buffer[i + 1] = now.ctx.operation
-      writeUint16(buffer, now.ctx.typeId, i + 2)
-      writeInt64(buffer, now.offset, i + 4)
-      writeUint32(buffer, now.resolvedByteIndex, i + 12)
-      i += 16
-    }
+    // for (const now of nowQueries) {
+    //   buffer[i] = now.prop.prop
+    //   buffer[i + 1] = now.ctx.operation
+    //   writeUint16(buffer, now.ctx.typeId, i + 2)
+    //   writeInt64(buffer, now.offset, i + 4)
+    //   writeUint32(buffer, now.resolvedByteIndex, i + 12)
+    //   i += 16
+    // }
     query.subscriptionBuffer = buffer
   }
 

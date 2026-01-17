@@ -81,7 +81,7 @@ await test('include', async (t) => {
   const rand = fastPrng(233221)
   let d = Date.now()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e7; i++) {
     db.create('todo', {
       // name: i % 2 ? 'b' : 'a',
       nr: rand(0, 10),
@@ -90,9 +90,9 @@ await test('include', async (t) => {
 
   await db.drain()
 
-  console.log(Date.now() - d, 'ms')
+  // console.log(Date.now() - d, 'ms')
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 3; i++) {
     todos.push(
       await db.create('todo', {
         name: i % 2 ? 'b' : 'a',
@@ -120,14 +120,14 @@ await test('include', async (t) => {
 
   const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
 
-  for (let i = 1; i < 3; i++) {
-    db.query('todo', i)
-      .include('nr')
-      .subscribe((d) => console.log(d))
-  }
+  // for (let i = 1; i < 3; i++) {
+  //   db.query('todo', i)
+  //     .include('nr')
+  //     .subscribe((d) => console.log(d))
+  // }
 
-  await wait(200)
-  console.log(styleText('blue', 'subscribed'))
+  // await wait(200)
+  // console.log(styleText('blue', 'subscribed'))
 
   d = Date.now()
   for (let i = 1; i < 3; i++) {
@@ -137,51 +137,51 @@ await test('include', async (t) => {
   await db.drain()
 
   console.log(styleText('blue', 'drain done'))
-  const subs = 1e4
+  // const subs = 1e4
 
-  console.log(styleText('blue', `add ${subs} subs`))
-  var cnt = 0
-  const fn = (d) => cnt++
+  // console.log(styleText('blue', `add ${subs} subs`))
+  // var cnt = 0
+  // const fn = (d) => cnt++
 
-  const q = db.query('todo', 1).include('nr')
+  // const q = db.query('todo', 1).include('nr')
 
-  for (let j = 0; j < subs / 1000; j++) {
-    for (let i = 1; i < 1000; i++) {
-      // opt query contructor to be faster and use less mem
-      // @ts-ignore
-      q.target.id = i + j * 1000
-      q.subscriptionBuffer = undefined
-      q.buffer = undefined
-      registerQuery(q)
-      const buf = registerSubscription(q)
-      db.server.subscribe(buf, fn)
-    }
-    await wait(1)
-  }
+  // for (let j = 0; j < subs / 1000; j++) {
+  //   for (let i = 1; i < 1000; i++) {
+  //     // opt query contructor to be faster and use less mem
+  //     // @ts-ignore
+  //     q.target.id = i + j * 1000
+  //     q.subscriptionBuffer = undefined
+  //     q.buffer = undefined
+  //     registerQuery(q)
+  //     const buf = registerSubscription(q)
+  //     db.server.subscribe(buf, fn)
+  //   }
+  //   await wait(1)
+  // }
 
-  console.log(styleText('blue', `adding ${subs} subs done`))
-  await wait(500)
+  // console.log(styleText('blue', `adding ${subs} subs done`))
+  // await wait(500)
 
-  const amount = 1e5
-  console.log(styleText('blue', `start update ${amount}`))
-  d = Date.now()
-  for (let i = 1; i < amount; i++) {
-    db.update('todo', i, { nr: { increment: 1 } })
-    // if (i % 1000 === 0) {
-    // await db.drain()
-    // }
-  }
-  await db.drain()
-  console.log(
-    styleText('blue', `done update ${amount} ` + (Date.now() - d) + 'ms'),
-  )
+  // const amount = 1e5
+  // console.log(styleText('blue', `start update ${amount}`))
+  // d = Date.now()
+  // for (let i = 1; i < amount; i++) {
+  //   db.update('todo', i, { nr: { increment: 1 } })
+  //   // if (i % 1000 === 0) {
+  //   // await db.drain()
+  //   // }
+  // }
+  // await db.drain()
+  // console.log(
+  //   styleText('blue', `done update ${amount} ` + (Date.now() - d) + 'ms'),
+  // )
 
-  console.log('\n--------------------------\n')
+  // console.log('\n--------------------------\n')
 
   await perf.skip(
     async () => {
       const q: any[] = []
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 5; i++) {
         q.push(
           db
             .query('todo')
@@ -197,13 +197,16 @@ await test('include', async (t) => {
     { repeat: 10 },
   )
 
-  await wait(100)
-  console.log('SUBS FIRE?', cnt)
+  // await wait(100)
+  // console.log('SUBS FIRE?', cnt)
 
+  await db.update('todo', 1, { nr: 2 })
+
+  console.log('derp')
   await db
-    .query('todo', 1)
+    .query('todo')
     .include('nr', 'name')
-    .filter('nr', '=', 1)
+    .filter('nr', 'equals', 1e7) // lets start with this...
     .get()
     .inspect()
 })

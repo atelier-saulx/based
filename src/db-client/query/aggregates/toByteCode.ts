@@ -21,13 +21,13 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
   }
 
   // QueryHeader
-  const filterSize = def.filter.size || 0
+  const filterSize = 0 // def.filter.size later...
   const queryType = isRootCountOnly(def, filterSize)
     ? QueryType.aggregatesCount
     : QueryType.aggregates
   const hasSort = false // hardcoded
-  const hasSearch = !!def.search
-  const hasFilter = def.filter.size > 0
+  // const hasSearch = !!def.search
+  // const hasFilter = def.filter.size > 0
   const sortSize = 0 // hardcoded
 
   let aggHeader: AggHeader = {
@@ -35,8 +35,8 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     typeId: def.schema!.id,
     offset: def.range.offset,
     limit: def.range.limit,
-    filterSize: def.filter.size,
-    iteratorType: getIteratorType(def),
+    filterSize,
+    iteratorType: getIteratorType(def, false),
     size: 0, // hardcoded
     sort: false, // hardcoded
     hasGroupBy: def.aggregate.groupBy ? true : false,
@@ -88,5 +88,6 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     }
   }
 
-  return { buffer, def, needsMetaResolve: def.filter.hasSubMeta }
+  // here we do need to pass the filter thing as well
+  return buffer
 }

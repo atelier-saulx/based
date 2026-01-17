@@ -44,7 +44,7 @@ const parseZig = (input: string): string => {
   const regexEnumStart = /^pub const (\w+)(?:: type)? = enum\((\w+)\) \{/
   const regexConstVal = /^pub const (\w+)(?:: [\w\d]+)?\s*=\s*([^;]+);/
   const regexStructStart = /^pub const (\w+) = (packed )?struct \{/
-  const regexField = /^\s*([\w@"]+)\s*=\s*(.+?)(?:,|;)?$/
+  const regexField = /^\s*(@".*?"|[\w]+)\s*=\s*(.+?)(?:,|;)?$/
   const regexStructField = /^\s*(\w+):\s*([\w\.]+),/
 
   let currentBlock: 'NONE' | 'ENUM' | 'STRUCT' = 'NONE'
@@ -250,7 +250,13 @@ const parseZig = (input: string): string => {
 
     // 1. Enum Map
     output += `export const ${name} = {\n`
-    pairs.forEach((p) => (output += `  ${p.key}: ${p.val},\n`))
+    pairs.forEach((p) => {
+      let key = p.key
+      if (!/^[a-zA-Z_$][\w$]*$/.test(key)) {
+        key = `'${key}'`
+      }
+      output += `  ${key}: ${p.val},\n`
+    })
     output += `} as const\n\n`
 
     // 2. Inverse Map
@@ -318,6 +324,19 @@ const parseZig = (input: string): string => {
 
         const bitSize = getBitSize(fType)
         totalBits += bitSize
+
+        if (name === 'FilterCondition') {
+          console.log(
+            'Field:',
+            fName,
+            'Type:',
+            fType,
+            'BitSize:',
+            bitSize,
+            'IsPadding:',
+            isPadding,
+          )
+        }
 
         fields.push({
           name: fName,

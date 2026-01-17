@@ -182,6 +182,9 @@ export const SIZE_MAP: Record<keyof typeof PropType, number> = {
   json: 0,
   object: 0,
   colVec: 0,
+  jsonFixed: 0,
+  binaryFixed: 0,
+  stringFixed: 0,
 }
 
 const reverseMap: any = {}

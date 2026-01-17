@@ -197,9 +197,10 @@ export const PropType = {
   boolean: 9,
   enum: 10,
   string: 11,
-  text: 12,
-  reference: 13,
-  references: 14,
+  stringFixed: 12,
+  text: 13,
+  reference: 15,
+  references: 16,
   microBuffer: 17,
   alias: 18,
   aliases: 19,
@@ -208,10 +209,12 @@ export const PropType = {
   uint16: 22,
   int32: 23,
   binary: 25,
+  binaryFixed: 26,
   vector: 27,
   json: 28,
-  colVec: 30,
-  object: 29,
+  jsonFixed: 29,
+  object: 30,
+  colVec: 31,
   id: 255,
 } as const
 
@@ -227,9 +230,10 @@ export const PropTypeInverse = {
   9: 'boolean',
   10: 'enum',
   11: 'string',
-  12: 'text',
-  13: 'reference',
-  14: 'references',
+  12: 'stringFixed',
+  13: 'text',
+  15: 'reference',
+  16: 'references',
   17: 'microBuffer',
   18: 'alias',
   19: 'aliases',
@@ -238,10 +242,12 @@ export const PropTypeInverse = {
   22: 'uint16',
   23: 'int32',
   25: 'binary',
+  26: 'binaryFixed',
   27: 'vector',
   28: 'json',
-  30: 'colVec',
-  29: 'object',
+  29: 'jsonFixed',
+  30: 'object',
+  31: 'colVec',
   255: 'id',
 } as const
 
@@ -257,6 +263,7 @@ export const PropTypeInverse = {
   boolean, 
   enum, 
   string, 
+  stringFixed, 
   text, 
   reference, 
   references, 
@@ -268,10 +275,12 @@ export const PropTypeInverse = {
   uint16, 
   int32, 
   binary, 
+  binaryFixed, 
   vector, 
   json, 
-  colVec, 
+  jsonFixed, 
   object, 
+  colVec, 
   id 
  */
 export type PropTypeEnum = (typeof PropType)[keyof typeof PropType]
@@ -2268,153 +2277,6 @@ export const createQueryHeaderSingleReference = (header: QueryHeaderSingleRefere
   return buffer
 }
 
-export const FilterOp = {
-  equal: 1,
-  has: 2,
-  endsWith: 4,
-  startsWith: 5,
-  largerThen: 6,
-  smallerThen: 7,
-  largerThenInclusive: 8,
-  smallerThenInclusive: 9,
-  equalNormalize: 12,
-  hasLowerCase: 13,
-  startsWithNormalize: 14,
-  endsWithNormalize: 15,
-  equalCrc32: 17,
-  like: 18,
-} as const
-
-export const FilterOpInverse = {
-  1: 'equal',
-  2: 'has',
-  4: 'endsWith',
-  5: 'startsWith',
-  6: 'largerThen',
-  7: 'smallerThen',
-  8: 'largerThenInclusive',
-  9: 'smallerThenInclusive',
-  12: 'equalNormalize',
-  13: 'hasLowerCase',
-  14: 'startsWithNormalize',
-  15: 'endsWithNormalize',
-  17: 'equalCrc32',
-  18: 'like',
-} as const
-
-/**
-  equal, 
-  has, 
-  endsWith, 
-  startsWith, 
-  largerThen, 
-  smallerThen, 
-  largerThenInclusive, 
-  smallerThenInclusive, 
-  equalNormalize, 
-  hasLowerCase, 
-  startsWithNormalize, 
-  endsWithNormalize, 
-  equalCrc32, 
-  like 
- */
-export type FilterOpEnum = (typeof FilterOp)[keyof typeof FilterOp]
-
-export const FilterType = {
-  negate: 1,
-  default: 2,
-} as const
-
-export const FilterTypeInverse = {
-  1: 'negate',
-  2: 'default',
-} as const
-
-/**
-  negate, 
-  default 
- */
-export type FilterTypeEnum = (typeof FilterType)[keyof typeof FilterType]
-
-export const FilterMode = {
-  default: 0,
-  orFixed: 1,
-  orVar: 2,
-  andFixed: 3,
-  defaultVar: 4,
-  reference: 5,
-} as const
-
-export const FilterModeInverse = {
-  0: 'default',
-  1: 'orFixed',
-  2: 'orVar',
-  3: 'andFixed',
-  4: 'defaultVar',
-  5: 'reference',
-} as const
-
-/**
-  default, 
-  orFixed, 
-  orVar, 
-  andFixed, 
-  defaultVar, 
-  reference 
- */
-export type FilterModeEnum = (typeof FilterMode)[keyof typeof FilterMode]
-
-export const FilterMeta = {
-  references: 250,
-  exists: 251,
-  edge: 252,
-  orBranch: 253,
-  reference: 254,
-  id: 255,
-} as const
-
-export const FilterMetaInverse = {
-  250: 'references',
-  251: 'exists',
-  252: 'edge',
-  253: 'orBranch',
-  254: 'reference',
-  255: 'id',
-} as const
-
-/**
-  references, 
-  exists, 
-  edge, 
-  orBranch, 
-  reference, 
-  id 
- */
-// this needs number because it has a any (_) condition
-export type FilterMetaEnum = 250 | 251 | 252 | 253 | 254 | 255 | (number & {})
-
-export const FilterVectorFn = {
-  dotProduct: 0,
-  manhattanDistance: 1,
-  cosineSimilarity: 2,
-  euclideanDistance: 3,
-} as const
-
-export const FilterVectorFnInverse = {
-  0: 'dotProduct',
-  1: 'manhattanDistance',
-  2: 'cosineSimilarity',
-  3: 'euclideanDistance',
-} as const
-
-/**
-  dotProduct, 
-  manhattanDistance, 
-  cosineSimilarity, 
-  euclideanDistance 
- */
-export type FilterVectorFnEnum = (typeof FilterVectorFn)[keyof typeof FilterVectorFn]
-
 export const VectorBaseType = {
   int8: 1,
   uint8: 2,
@@ -2448,22 +2310,6 @@ export const VectorBaseTypeInverse = {
   float64 
  */
 export type VectorBaseTypeEnum = (typeof VectorBaseType)[keyof typeof VectorBaseType]
-
-export const FilterMaxVectorScore = 9999999
-export const FilterMaxStringScore = 255
-export const FilterAlignment = {
-  notSet: 255,
-} as const
-
-export const FilterAlignmentInverse = {
-  255: 'notSet',
-} as const
-
-/**
-  notSet 
- */
-// this needs number because it has a any (_) condition
-export type FilterAlignmentEnum = 255 | (number & {})
 
 export type AggHeader = {
   op: QueryTypeEnum
@@ -2862,6 +2708,303 @@ export const readAggGroupByKeyProps = {
 export const createAggGroupByKey = (header: AggGroupByKey): Uint8Array => {
   const buffer = new Uint8Array(AggGroupByKeyByteSize)
   writeAggGroupByKey(buffer, header, 0)
+  return buffer
+}
+
+export const FilterOp = {
+  equals: 0,
+  notEquals: 1,
+  orEquals: 2,
+  orNotEquals: 3,
+  switchProp: 100,
+  and: 101,
+  or: 102,
+  andReference: 103,
+  andEdge: 104,
+  orReference: 105,
+  orEdge: 106,
+} as const
+
+export const FilterOpInverse = {
+  0: 'equals',
+  1: 'notEquals',
+  2: 'orEquals',
+  3: 'orNotEquals',
+  100: 'switchProp',
+  101: 'and',
+  102: 'or',
+  103: 'andReference',
+  104: 'andEdge',
+  105: 'orReference',
+  106: 'orEdge',
+} as const
+
+/**
+  equals, 
+  notEquals, 
+  orEquals, 
+  orNotEquals, 
+  switchProp, 
+  and, 
+  or, 
+  andReference, 
+  andEdge, 
+  orReference, 
+  orEdge 
+ */
+export type FilterOpEnum = (typeof FilterOp)[keyof typeof FilterOp]
+
+export type FilterCondition = {
+  op: FilterOpEnum
+  repeat: number
+  start: number
+  propType: PropTypeEnum
+  alignOffset: number
+}
+
+export const FilterConditionByteSize = 15
+
+export const writeFilterCondition = (
+  buf: Uint8Array,
+  header: FilterCondition,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  writeUint16(buf, header.repeat, offset)
+  offset += 2
+  writeUint16(buf, header.start, offset)
+  offset += 2
+  buf[offset] = header.propType
+  offset += 1
+  buf[offset] = header.alignOffset
+  offset += 1
+  writeUint64(buf, 0, offset)
+  offset += 8
+  return offset
+}
+
+export const writeFilterConditionProps = {
+  op: (buf: Uint8Array, value: FilterOpEnum, offset: number) => {
+    buf[offset] = value
+  },
+  repeat: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 1)
+  },
+  start: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 3)
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 5] = value
+  },
+  alignOffset: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 6] = value
+  },
+}
+
+export const readFilterCondition = (
+  buf: Uint8Array,
+  offset: number,
+): FilterCondition => {
+  const value: FilterCondition = {
+    op: (buf[offset]) as FilterOpEnum,
+    repeat: readUint16(buf, offset + 1),
+    start: readUint16(buf, offset + 3),
+    propType: (buf[offset + 5]) as PropTypeEnum,
+    alignOffset: buf[offset + 6],
+  }
+  return value
+}
+
+export const readFilterConditionProps = {
+  op: (buf: Uint8Array, offset: number): FilterOpEnum => {
+    return (buf[offset]) as FilterOpEnum
+  },
+  repeat: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 1)
+  },
+  start: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 3)
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 5]) as PropTypeEnum
+  },
+  alignOffset: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 6]
+  },
+}
+
+export const createFilterCondition = (header: FilterCondition): Uint8Array => {
+  const buffer = new Uint8Array(FilterConditionByteSize)
+  writeFilterCondition(buffer, header, 0)
+  return buffer
+}
+
+export type FilterHeader = {
+  op: FilterOpEnum
+  prop: number
+  propType: PropTypeEnum
+  typeId: TypeId
+  edgeTypeId: TypeId
+  size: number
+  nextOrIndex: number
+}
+
+export const FilterHeaderByteSize = 15
+
+export const writeFilterHeader = (
+  buf: Uint8Array,
+  header: FilterHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  buf[offset] = header.prop
+  offset += 1
+  buf[offset] = header.propType
+  offset += 1
+  writeUint16(buf, header.typeId, offset)
+  offset += 2
+  writeUint16(buf, header.edgeTypeId, offset)
+  offset += 2
+  writeUint32(buf, header.size, offset)
+  offset += 4
+  writeUint32(buf, header.nextOrIndex, offset)
+  offset += 4
+  return offset
+}
+
+export const writeFilterHeaderProps = {
+  op: (buf: Uint8Array, value: FilterOpEnum, offset: number) => {
+    buf[offset] = value
+  },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 2] = value
+  },
+  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, value, offset + 3)
+  },
+  edgeTypeId: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, value, offset + 5)
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 7)
+  },
+  nextOrIndex: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 11)
+  },
+}
+
+export const readFilterHeader = (
+  buf: Uint8Array,
+  offset: number,
+): FilterHeader => {
+  const value: FilterHeader = {
+    op: (buf[offset]) as FilterOpEnum,
+    prop: buf[offset + 1],
+    propType: (buf[offset + 2]) as PropTypeEnum,
+    typeId: (readUint16(buf, offset + 3)) as TypeId,
+    edgeTypeId: (readUint16(buf, offset + 5)) as TypeId,
+    size: readUint32(buf, offset + 7),
+    nextOrIndex: readUint32(buf, offset + 11),
+  }
+  return value
+}
+
+export const readFilterHeaderProps = {
+  op: (buf: Uint8Array, offset: number): FilterOpEnum => {
+    return (buf[offset]) as FilterOpEnum
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 2]) as PropTypeEnum
+  },
+  typeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset + 3)) as TypeId
+  },
+  edgeTypeId: (buf: Uint8Array, offset: number): TypeId => {
+    return (readUint16(buf, offset + 5)) as TypeId
+  },
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 7)
+  },
+  nextOrIndex: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 11)
+  },
+}
+
+export const createFilterHeader = (header: FilterHeader): Uint8Array => {
+  const buffer = new Uint8Array(FilterHeaderByteSize)
+  writeFilterHeader(buffer, header, 0)
+  return buffer
+}
+
+export type FilterPropHeader = {
+  op: FilterOpEnum
+  prop: number
+  propType: PropTypeEnum
+}
+
+export const FilterPropHeaderByteSize = 3
+
+export const writeFilterPropHeader = (
+  buf: Uint8Array,
+  header: FilterPropHeader,
+  offset: number,
+): number => {
+  buf[offset] = header.op
+  offset += 1
+  buf[offset] = header.prop
+  offset += 1
+  buf[offset] = header.propType
+  offset += 1
+  return offset
+}
+
+export const writeFilterPropHeaderProps = {
+  op: (buf: Uint8Array, value: FilterOpEnum, offset: number) => {
+    buf[offset] = value
+  },
+  prop: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = value
+  },
+  propType: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
+    buf[offset + 2] = value
+  },
+}
+
+export const readFilterPropHeader = (
+  buf: Uint8Array,
+  offset: number,
+): FilterPropHeader => {
+  const value: FilterPropHeader = {
+    op: (buf[offset]) as FilterOpEnum,
+    prop: buf[offset + 1],
+    propType: (buf[offset + 2]) as PropTypeEnum,
+  }
+  return value
+}
+
+export const readFilterPropHeaderProps = {
+  op: (buf: Uint8Array, offset: number): FilterOpEnum => {
+    return (buf[offset]) as FilterOpEnum
+  },
+  prop: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 1]
+  },
+  propType: (buf: Uint8Array, offset: number): PropTypeEnum => {
+    return (buf[offset + 2]) as PropTypeEnum
+  },
+}
+
+export const createFilterPropHeader = (header: FilterPropHeader): Uint8Array => {
+  const buffer = new Uint8Array(FilterPropHeaderByteSize)
+  writeFilterPropHeader(buffer, header, 0)
   return buffer
 }
 

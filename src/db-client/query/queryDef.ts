@@ -21,7 +21,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
   const q: Partial<QueryDefShared> = {
     errors: [],
     skipValidation,
-    filter: { conditions: new Map(), size: 0, hasSubMeta: false },
+    filter: { conditions: new Map() },
     range: { offset: 0, limit: 0 },
     lang: {
       lang: LangCode.none,
@@ -59,6 +59,7 @@ export function createQueryDef<T extends QueryDefType>(
   skipValidation: boolean,
 ): CreateQueryDefReturn<T> {
   const queryDef = createEmptySharedDef(skipValidation)
+
   if (type === QueryDefType.Edge) {
     const t = target as EdgeTarget
     const q = queryDef as QueryDefEdges
@@ -70,6 +71,7 @@ export function createQueryDef<T extends QueryDefType>(
     const t = target as Target
     const q = queryDef as QueryDefRest
     q.schema = validateType(db, q, t.type)
+    q.filter.schema = q.schema
     q.props = q.schema.props
     q.type = type
     q.target = t

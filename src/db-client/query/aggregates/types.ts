@@ -41,6 +41,7 @@ export const aggregateTypeMap = new Map<
   // Othe types like MAX, MIN, SUM fall in the else case in aggregation.ts 8/8
 ])
 
+// from zig
 export const enum GroupBy {
   NONE = 0,
   HAS_GROUP = 255,

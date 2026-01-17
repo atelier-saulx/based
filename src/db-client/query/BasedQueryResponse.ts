@@ -102,10 +102,10 @@ export class BasedQueryResponse {
       let item: Item = {
         id,
       }
-      if (this.def.search) {
-        item.$searchScore = readFloatLE(result, i)
-        i += 4
-      }
+      // if (this.def.search) {
+      //   item.$searchScore = readFloatLE(result, i)
+      //   i += 4
+      // }
       const l =
         readProps(
           this.def.readSchema!,

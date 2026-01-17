@@ -3,15 +3,13 @@ import { includeToBuffer } from '../include/toByteCode.js'
 import { DbClient } from '../../index.js'
 import { ENCODER, writeUint32 } from '../../../utils/index.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
-import { resolveMetaIndexes } from '../query.js'
 import { crc32 } from '../../crc32.js'
 import { byteSize, schemaChecksum } from './utils.js'
-import { filterToBuffer } from '../query.js'
+import { filterToBuffer } from '../filter/toByteCode.js'
 import { getIteratorType } from './iteratorType.js'
 import {
   createQueryHeaderSingleReference,
   ID_PROP,
-  PropType,
   QueryHeaderByteSize,
   QueryHeaderSingleByteSize,
   QueryType,
@@ -21,8 +19,8 @@ import {
   writeQueryHeaderSingle,
   writeSortHeader,
 } from '../../../zigTsExports.js'
-import { searchToBuffer } from '../search/index.js'
 import { aggregateToBuffer } from '../aggregates/toByteCode.js'
+import { debugBuffer } from '../../../sdk.js'
 
 export function defToBuffer(
   db: DbClient,
@@ -38,8 +36,6 @@ export function defToBuffer(
   const isAggregates = def.aggregate !== null
 
   if ('id' in def.target || isAlias) {
-    const hasFilter = def.filter.size > 0
-    const filterSize = def.filter.size
     const include = includeToBuffer(db, def)
     for (const [, ref] of def.references) {
       include.push(...defToBuffer(db, ref))
@@ -53,12 +49,13 @@ export function defToBuffer(
       // @ts-ignore
       aliasStr = ENCODER.encode(def.target.resolvedAlias.value)
       aliasSize = aliasStr.byteLength
-
-      console.log(aliasStr, aliasSize)
     }
-    const buffer = new Uint8Array(
-      QueryHeaderSingleByteSize + filterSize + aliasSize,
-    )
+
+    const filter = filterToBuffer(def.filter)
+    const filterSize = byteSize(filter)
+    const hasFilter = filterSize > 0
+
+    const buffer = new Uint8Array(QueryHeaderSingleByteSize + aliasSize)
     const op: QueryTypeEnum = isAlias
       ? hasFilter
         ? QueryType.aliasFilter
@@ -66,6 +63,7 @@ export function defToBuffer(
       : hasFilter
         ? QueryType.idFilter
         : QueryType.id
+
     let index = writeQueryHeaderSingle(
       buffer,
       {
@@ -76,7 +74,7 @@ export function defToBuffer(
         id: isAlias ? 0 : def.target.id,
         includeSize: byteSize(include),
         typeId: def.schema!.id,
-        filterSize: def.filter.size,
+        filterSize,
         aliasSize,
       },
       0,
@@ -85,15 +83,11 @@ export function defToBuffer(
       buffer.set(aliasStr, index)
       index += aliasSize
     }
+    result.push(buffer)
     if (hasFilter) {
-      buffer.set(filterToBuffer(def.filter, index), index)
-      index += def.filter.size
+      result.push(filter)
     }
-    // TODO: Need to pass correct stupid nested INDEX for NOW queries
-    result.push([
-      { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
-      include,
-    ])
+    result.push(include)
   } else if (isAggregates) {
     result.push(aggregateToBuffer(def))
     return result
@@ -130,20 +124,22 @@ export function defToBuffer(
       edgeTypeId,
       edgeSize,
     })
-    result.push([
-      { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
-      include,
-    ])
+    result.push([buffer, include])
     if (edge) {
       result.push(edge)
     }
   } else if (isRootDefault || isReferences) {
     const hasSort = (def.sort?.prop !== ID_PROP || isReferences) && !!def.sort
-    const hasSearch = !!def.search
-    const hasFilter = def.filter.size > 0
-    const searchSize = hasSearch ? def.search!.size : 0
+    const hasSearch = false // !!def.search
+
+    const filter = filterToBuffer(def.filter)
+    const filterSize = byteSize(filter)
+    const hasFilter = filterSize > 0
+
+    // const hasFilter = def.filter.size > 0
+    const searchSize = 0 // hasSearch ? def.search!.size : 0
     const sortSize = hasSort ? SortHeaderByteSize : 0
-    const filterSize = def.filter.size
+    // const filterSize = def.filter.size
     const include = includeToBuffer(db, def)
     for (const [, ref] of def.references) {
       include.push(...defToBuffer(db, ref))
@@ -164,9 +160,7 @@ export function defToBuffer(
       }
       edgeSize = byteSize(edge)
     }
-    const buffer = new Uint8Array(
-      QueryHeaderByteSize + searchSize + filterSize + sortSize,
-    )
+    const buffer = new Uint8Array(QueryHeaderByteSize + searchSize + sortSize)
     const typeId: number = def.schema!.id
     const edgeTypeId: number =
       (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
@@ -187,9 +181,9 @@ export function defToBuffer(
         offset: def.range.offset,
         limit: def.range.limit,
         sort: hasSort,
-        filterSize: def.filter.size,
+        filterSize,
         searchSize,
-        iteratorType: getIteratorType(def),
+        iteratorType: getIteratorType(def, hasFilter),
         edgeTypeId,
         edgeSize,
         edgeFilterSize: 0, // this is nice
@@ -200,18 +194,15 @@ export function defToBuffer(
     if (hasSort) {
       index = writeSortHeader(buffer, def.sort!, index)
     }
+    result.push(buffer)
     if (hasFilter) {
-      buffer.set(filterToBuffer(def.filter, index), index)
-      index += def.filter.size
+      console.log('ADD FILTER', filter, filterSize)
+      result.push(filter)
     }
     if (hasSearch) {
-      buffer.set(searchToBuffer(def.search!), index)
+      // buffer.set(searchToBuffer(def.search!), index)
     }
-    // TODO: Need to pass crrect stupid nested INDEX for NOW queries
-    result.push([
-      { buffer, def, needsMetaResolve: def.filter.hasSubMeta },
-      include,
-    ])
+    result.push(include)
     result.push(edge)
     if (isIds && 'ids' in def.target && def.target.ids) {
       const ids = new Uint8Array(4 + def.target.ids.length * 4)
@@ -237,17 +228,9 @@ const combineIntermediateResults = (
     for (const intermediateResult of t) {
       offset = combineIntermediateResults(res, offset, intermediateResult)
     }
-  } else if (t instanceof Uint8Array) {
+  } else {
     res.set(t, offset)
     offset += t.byteLength
-  } else {
-    if (t.needsMetaResolve) {
-      if (t.def.filter.hasSubMeta) {
-        resolveMetaIndexes(t.def.filter, offset)
-      }
-    }
-    res.set(t.buffer, offset)
-    offset += t.buffer.byteLength
   }
   return offset
 }
@@ -264,6 +247,8 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   combineIntermediateResults(res, 0, bufs)
   const queryId = crc32(res)
   writeUint32(res, queryId, 0)
+
+  debugBuffer(res)
 
   return res
 }

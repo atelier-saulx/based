@@ -25,7 +25,7 @@ export const isRootCountOnly = (def: QueryDef, filterSize: number) => {
   if (aggs[0].type !== AggFunction.count) {
     return false
   }
-  if (def.filter && def.filter.size > 0) {
+  if (filterSize > 0) {
     return false
   }
   return true

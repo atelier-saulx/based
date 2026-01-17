@@ -1,7 +1,8 @@
 const std = @import("std");
 const utils = @import("../utils.zig");
 const Query = @import("common.zig");
-const include = @import("include/include.zig");
+const Include = @import("include/include.zig");
+const Filter = @import("./filter/filter.zig");
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");
 const Selva = @import("../selva/selva.zig");
@@ -17,7 +18,7 @@ const writeAs = utils.writeAs;
 const read = utils.read;
 
 fn iterator(
-    comptime _: t.QueryIteratorType,
+    comptime It: t.QueryIteratorType,
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
@@ -27,15 +28,22 @@ fn iterator(
 ) !u32 {
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
+    const filter = utils.sliceNext(header.filterSize, q, i);
+    Filter.prepare(filter);
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (it.next()) |node| {
+        if (It == t.QueryIteratorType.filter) {
+            if (!try Filter.filter(node, ctx, filter, typeEntry)) {
+                continue;
+            }
+        }
         if (offset != 0) {
             offset -= 1;
             continue;
         }
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(node));
-        try include.include(node, ctx, nestedQuery, typeEntry);
+        try Include.include(node, ctx, nestedQuery, typeEntry);
         nodeCnt += 1;
         if (nodeCnt >= header.limit) {
             break;
@@ -65,9 +73,9 @@ fn iteratorEdge(
         }
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(ref.node));
-        try include.include(ref.node, ctx, nestedQuery, typeEntry);
+        try Include.include(ref.node, ctx, nestedQuery, typeEntry);
         try ctx.thread.query.append(t.ReadOp.edge);
-        try include.include(ref.edge, ctx, edgeQuery, edgeTypeEntry);
+        try Include.include(ref.edge, ctx, edgeQuery, edgeTypeEntry);
         nodeCnt += 1;
         if (nodeCnt >= header.limit) {
             break;
@@ -140,6 +148,10 @@ pub fn default(
             var it = Node.iterator(false, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },
+        .filter => {
+            var it = Node.iterator(false, typeEntry);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, &i);
+        },
         .desc => {
             var it = Node.iterator(true, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
@@ -194,8 +206,6 @@ pub fn references(
     switch (header.iteratorType) {
         .edgeInclude => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            // if it.needsLoad
-            // sleep
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeIncludeDesc => {

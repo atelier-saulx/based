@@ -6,15 +6,17 @@ import {
   QUERY_ITERATOR_SEARCH,
   QUERY_ITERATOR_SEARCH_VEC,
   QueryIteratorTypeEnum,
-  QueryIteratorTypeInverse,
   Order,
 } from '../../../zigTsExports.js'
 import { QueryDef, QueryDefType } from '../types.js'
 
-export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
-  const hasSearch = def.search?.size && def.search.size > 0
-  const isVector = hasSearch && def.search!.isVector
-  const hasFilter = def.filter.size > 0
+export const getIteratorType = (
+  def: QueryDef,
+  hasFilter: boolean,
+): QueryIteratorTypeEnum => {
+  const hasSearch = false //def.search?.size && def.search.size > 0
+  const isVector = false // hasSearch && def.search!.isVector
+  // const hasFilter = def.filter.size > 0
   const isDesc = def.order === Order.desc
   const edgeInclude = def.edges
   const hasSort =
@@ -74,8 +76,6 @@ export const getIteratorType = (def: QueryDef): QueryIteratorTypeEnum => {
       }
     }
   }
-
-  // console.log('QueryIteratorTypeEnum', QueryIteratorTypeInverse[base])
 
   return base as QueryIteratorTypeEnum
 }

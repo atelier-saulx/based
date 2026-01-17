@@ -1,14 +1,5 @@
 import { DbClient } from '../index.js'
-import {
-  EQUAL,
-  EXISTS,
-  INCLUDES,
-  isNumerical,
-  LIKE,
-  operatorReverseMap,
-  VECTOR_FNS,
-} from './filter/types.js'
-import { Filter } from './query.js'
+
 import { MAX_IDS_PER_QUERY } from './thresholds.js'
 import { QueryByAliasObj, QueryDef } from './types.js'
 import { displayTarget, safeStringify } from './display.js'
@@ -87,14 +78,14 @@ const messages = {
   [ERR_FILTER_ENOENT]: (p) => `Filter: field does not exist "${p}"`,
   [ERR_FILTER_INVALID_LANG]: (p) => `Filter: invalid lang "${p}"`,
   [ERR_FILTER_OP_ENOENT]: (p) => `Filter: invalid operator "${p}"`,
-  [ERR_FILTER_OP_FIELD]: (p: Filter) =>
-    `Cannot use operator "${operatorReverseMap[p[1].operation]}" on field "${p[0]}"`,
-  [ERR_FILTER_INVALID_OPTS]: (p) => {
-    return `Filter: Invalid opts "${safeStringify(p)}"`
-  },
-  [ERR_FILTER_INVALID_VAL]: (p) => {
-    return `Filter: Invalid value ${p[0]} ${operatorReverseMap[p[1].operation]} "${safeStringify(p[2])}"`
-  },
+  // [ERR_FILTER_OP_FIELD]: (p: Filter) =>
+  //   `Cannot use operator "${operatorReverseMap[p[1].operation]}" on field "${p[0]}"`,
+  // [ERR_FILTER_INVALID_OPTS]: (p) => {
+  //   return `Filter: Invalid opts "${safeStringify(p)}"`
+  // },
+  // [ERR_FILTER_INVALID_VAL]: (p) => {
+  //   return `Filter: Invalid value ${p[0]} ${operatorReverseMap[p[1].operation]} "${safeStringify(p[2])}"`
+  // },
   [ERR_SORT_ENOENT]: (p) => `Sort: field does not exist "${p}"`,
   [ERR_SORT_WRONG_TARGET]: (p) =>
     `Sort: incorrect query target "${displayTarget(p)}"`,
@@ -170,157 +161,6 @@ export const validateRange = (def: QueryDef, offset: number, limit: number) => {
     r = true
   }
   return r
-}
-
-export const validateVal = (
-  def: QueryDef,
-  f: Filter,
-  validate: Validation,
-): boolean => {
-  if (def.skipValidation) {
-    return false
-  }
-  const value = f[2]
-  if (Array.isArray(value)) {
-    for (const v of value) {
-      if (validate(v, f[2].schema) !== true) {
-        def.errors.push({ code: ERR_FILTER_INVALID_VAL, payload: f })
-        return true
-      }
-    }
-  } else if (validate(value, f[2].schema) !== true) {
-    def.errors.push({
-      code: ERR_FILTER_INVALID_VAL,
-      payload: f,
-    })
-    return true
-  }
-  return false
-}
-
-export const validateFilter = (
-  def: QueryDef,
-  prop: PropDef | PropDefEdge,
-  f: Filter,
-) => {
-  if (def.skipValidation) {
-    return false
-  }
-  const t = prop.typeIndex
-  const op = f[1].operation
-
-  if (op == EXISTS) {
-    // fields...
-    if (f[2] !== undefined) {
-      def.errors.push({
-        code: ERR_FILTER_OP_FIELD,
-        payload: f,
-      })
-      return true
-    }
-  } else if (t === PropType.references || t === PropType.reference) {
-    if (op == LIKE) {
-      def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
-      return true
-    }
-    if (t === PropType.reference && op != EQUAL) {
-      def.errors.push({
-        code: ERR_FILTER_OP_FIELD,
-        payload: f,
-      })
-      return true
-    }
-
-    // map { id: } format for filter
-    const values = f[2]
-    if (Array.isArray(values)) {
-      let hasObject = false
-      for (const v of values) {
-        if (typeof v === 'object' && 'id' in v) {
-          hasObject = true
-          break
-        }
-      }
-      if (hasObject) {
-        f[2] = values.map((v) => {
-          if (typeof v === 'object' && 'id' in v) {
-            return v.id
-          }
-          return v
-        })
-      }
-    } else if (typeof values === 'object' && 'id' in values) {
-      f[2] = values.id
-    }
-
-    if (validateVal(def, f, prop.validation!)) {
-      return true
-    }
-  } else if (t === PropType.vector) {
-    if (isNumerical(op) || op === INCLUDES) {
-      def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
-      return true
-    }
-    if (op === LIKE) {
-      const opts = f[1].opts
-      if (
-        (opts.fn && !VECTOR_FNS.includes(opts.fn)) ||
-        (opts.score != undefined && typeof opts.score !== 'number')
-      ) {
-        def.errors.push({ code: ERR_FILTER_INVALID_OPTS, payload: f })
-        return true
-      }
-    }
-    if (
-      validateVal(
-        def,
-        f,
-        (v) => ArrayBuffer.isView(v) || v instanceof ArrayBuffer,
-      )
-    ) {
-      return true
-    }
-  } else if (
-    t === PropType.text ||
-    t === PropType.string ||
-    t === PropType.binary
-  ) {
-    if (isNumerical(op)) {
-      def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
-      return true
-    }
-    if (op === LIKE) {
-      const opts = f[1].opts
-      if (
-        opts.score &&
-        (typeof opts.score !== 'number' || opts.score < 0 || opts.score > 255)
-      ) {
-        def.errors.push({ code: ERR_FILTER_INVALID_OPTS, payload: f })
-        return true
-      }
-    }
-    if (validateVal(def, f, isValidString)) {
-      return true
-    }
-  } else if (propIsNumerical(prop)) {
-    if (op !== EQUAL && !isNumerical(op)) {
-      def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
-      return true
-    }
-    if (
-      validateVal(
-        def,
-        f,
-        (v) => t == PropType.timestamp || typeof v === 'number',
-      )
-    ) {
-      return true
-    }
-  } else if (t === PropType.boolean && op !== EQUAL) {
-    def.errors.push({ code: ERR_FILTER_OP_FIELD, payload: f })
-    return true
-  }
-  return false
 }
 
 export const validateType = (db: DbClient, def: QueryDef, type: string) => {

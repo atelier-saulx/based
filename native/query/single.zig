@@ -1,7 +1,7 @@
 const std = @import("std");
 const utils = @import("../utils.zig");
 const Query = @import("common.zig");
-const include = @import("include/include.zig");
+const Include = @import("include/include.zig");
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");
 const Selva = @import("../selva/selva.zig");
@@ -9,6 +9,7 @@ const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 const Fields = @import("../selva/fields.zig");
+const Filter = @import("./filter/filter.zig");
 
 // alias filter needs to be added
 // make that top level
@@ -31,7 +32,7 @@ pub fn alias(
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(node));
         const nestedQuery = q[i .. i + header.includeSize];
-        try include.include(node, ctx, nestedQuery, typeEntry);
+        try Include.include(node, ctx, nestedQuery, typeEntry);
     } else {
         try ctx.thread.query.append(@as(u32, 0));
     }
@@ -48,15 +49,18 @@ pub fn default(
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     if (Node.getNode(typeEntry, header.id)) |node| {
         if (hasFilter) {
-            // this is the result length
-            // try ctx.thread.query.append(@as(u32, 0));
-            // return;
+            const filter = utils.sliceNext(header.filterSize, q, &i);
+            Filter.prepare(filter);
+            if (!try Filter.filter(node, ctx, filter, typeEntry)) {
+                try ctx.thread.query.append(@as(u32, 0));
+                return;
+            }
         }
         try ctx.thread.query.append(@as(u32, 1));
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(header.id);
         const nestedQuery = q[i .. i + header.includeSize];
-        try include.include(node, ctx, nestedQuery, typeEntry);
+        try Include.include(node, ctx, nestedQuery, typeEntry);
     } else {
         try ctx.thread.query.append(@as(u32, 0));
     }
@@ -82,7 +86,7 @@ pub fn reference(
             const startIndex = ctx.thread.query.index;
             try ctx.thread.query.append(ref.dst);
             const nestedQuery = q[i.* .. i.* + header.includeSize];
-            try include.include(node, ctx, nestedQuery, typeEntry);
+            try Include.include(node, ctx, nestedQuery, typeEntry);
             ctx.thread.query.writeAs(
                 u32,
                 @truncate(ctx.thread.query.index - startIndex),
@@ -113,14 +117,14 @@ pub fn referenceEdge(
             const startIndex = ctx.thread.query.index;
             try ctx.thread.query.append(ref.dst);
             const nestedQuery = q[i.* .. i.* + header.includeSize];
-            try include.include(node, ctx, nestedQuery, typeEntry);
+            try Include.include(node, ctx, nestedQuery, typeEntry);
 
             const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
             const e = Node.getNode(edgeTypeEntry, ref.edge);
             if (e) |edge| {
                 const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
                 try ctx.thread.query.append(t.ReadOp.edge);
-                try include.include(edge, ctx, edgeQuery, edgeTypeEntry);
+                try Include.include(edge, ctx, edgeQuery, edgeTypeEntry);
             }
 
             i.* += header.edgeSize;

@@ -3,7 +3,6 @@ import {
   type PropDefEdge,
   type SchemaTypeDef,
 } from '../../schema/index.js'
-import { FilterCtx, FilterOpts } from './filter/types.js'
 import { QueryError } from './validation.js'
 import { Interval, aggFnOptions } from './aggregates/types.js'
 import {
@@ -13,8 +12,10 @@ import {
   QueryTypeEnum,
   SortHeader,
   AggFunctionEnum,
+  FilterCondition,
 } from '../../zigTsExports.js'
 import type { ReaderSchema } from '../../protocol/index.js'
+import { FilterOpts } from './filter/types.js'
 
 type LangName = keyof typeof LangCode
 
@@ -36,6 +37,92 @@ export type IncludeField = {
 export type MainIncludes = Map<number, [number, PropDef, IncludeOpts]>
 
 export type IncludeTreeArr = (string | PropDef | IncludeTreeArr)[]
+
+enum QueryDefType {
+  Edge = 1,
+  Reference = 2,
+  References = 3,
+  Root = 4,
+}
+
+export type EdgeTarget = {
+  ref: PropDef | PropDefEdge | null
+}
+
+export type Target = {
+  type: string
+  id?: number | void | Promise<number>
+  ids?: Uint32Array | void
+  propDef?: PropDef | PropDefEdge
+  alias?: QueryByAliasObj
+  // This can just instantly be added
+  resolvedAlias?: { def: PropDef; value: string }
+}
+
+export const isRefDef = (def: QueryDef): def is QueryDefRest => {
+  return (
+    def.type === QueryDefType.Reference || def.type === QueryDefType.References
+  )
+}
+
+export type QueryDefFilter = {
+  conditions: Map<number, IntermediateByteCode[]>
+  nowOffset?: number // this is for subs
+  isEdge?: boolean // something like this
+  ref?: PropDef
+  select?: ReferenceSelectOperator //this will get there
+  schema?: SchemaTypeDef
+  or?: QueryDefFilter
+  and?: QueryDefFilter
+}
+
+// export type QueryDefSearch =
+//   | {
+//       size: number
+//       query: Uint8Array
+//       isVector: false
+//       fields: {
+//         weight: number
+//         field: number
+//         start: number
+//         lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }
+//         typeIndex: number
+//       }[]
+//     }
+//   | {
+//       size: number
+//       query: Uint8Array
+//       prop: number
+//       isVector: true // could add typeIndex / len
+//       opts: FilterOpts
+//     }
+
+export type Aggregation = {
+  type: AggFunctionEnum
+  propDef: PropDef | PropDefEdge
+  resultPos: number
+  accumulatorPos: number
+  isEdge: boolean
+}
+
+export type QueryDefAggregation = {
+  size: number
+  groupBy?: aggPropDef
+  // only field 0 to start
+  aggregates: Map<number, Aggregation[]>
+  option?: aggFnOptions
+  totalResultsSize: number
+  totalAccumulatorSize: number
+}
+
+export interface aggPropDef extends PropDef {
+  stepType?: Interval
+  stepRange?: number
+  tz?: number
+  display?: Intl.DateTimeFormat
+}
+
+export type LangFallback = LangName | false
 
 export enum ReferenceSelect {
   Index = 1,
@@ -72,117 +159,6 @@ export const getReferenceSelect = (
   }
 }
 
-enum QueryDefType {
-  Edge = 1,
-  Reference = 2,
-  References = 3,
-  Root = 4,
-}
-
-export type EdgeTarget = {
-  ref: PropDef | PropDefEdge | null
-}
-
-export type Target = {
-  type: string
-  id?: number | void | Promise<number>
-  ids?: Uint32Array | void
-  propDef?: PropDef | PropDefEdge
-  alias?: QueryByAliasObj
-  // This can just instantly be added
-  resolvedAlias?: { def: PropDef; value: string }
-}
-
-export const isRefDef = (def: QueryDef): def is QueryDefRest => {
-  return (
-    def.type === QueryDefType.Reference || def.type === QueryDefType.References
-  )
-}
-
-export type FilterMetaNow = {
-  byteIndex: number
-  resolvedByteIndex: number
-  offset: number
-  ctx: FilterCtx
-  prop: PropDef | PropDefEdge
-}
-
-export type FilterCondition = {
-  buffer: Uint8Array
-  propDef: PropDef | PropDefEdge
-  subscriptionMeta?: {
-    now?: FilterMetaNow[]
-  }
-}
-
-export type QueryDefFilter = {
-  size: number
-  conditions: Map<number, FilterCondition[]>
-  exists?: { prop: PropDef | PropDefEdge; negate: boolean }[]
-  references?: Map<
-    number,
-    {
-      conditions: QueryDefFilter
-      select: ReferenceSelectValue
-    }
-  >
-  fromRef?: PropDef
-  schema?: SchemaTypeDef
-  edges?: Map<number, FilterCondition[]>
-  or?: QueryDefFilter
-  // Make this work
-  and?: QueryDefFilter
-  hasSubMeta: boolean
-}
-
-export type QueryDefSearch =
-  | {
-      size: number
-      query: Uint8Array
-      isVector: false
-      fields: {
-        weight: number
-        field: number
-        start: number
-        lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }
-        typeIndex: number
-      }[]
-    }
-  | {
-      size: number
-      query: Uint8Array
-      prop: number
-      isVector: true // could add typeIndex / len
-      opts: FilterOpts
-    }
-
-export type Aggregation = {
-  type: AggFunctionEnum
-  propDef: PropDef | PropDefEdge
-  resultPos: number
-  accumulatorPos: number
-  isEdge: boolean
-}
-
-export type QueryDefAggregation = {
-  size: number
-  groupBy?: aggPropDef
-  // only field 0 to start
-  aggregates: Map<number, Aggregation[]>
-  option?: aggFnOptions
-  totalResultsSize: number
-  totalAccumulatorSize: number
-}
-
-export interface aggPropDef extends PropDef {
-  stepType?: Interval
-  stepRange?: number
-  tz?: number
-  display?: Intl.DateTimeFormat
-}
-
-export type LangFallback = LangName | false
-
 export type QueryDefShared = {
   selectFirstResult: boolean
   queryType: QueryTypeEnum
@@ -191,7 +167,7 @@ export type QueryDefShared = {
   lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }
   filter: QueryDefFilter
   aggregate: null | QueryDefAggregation
-  search: null | QueryDefSearch
+  // search: null | QueryDefSearch
   sort: null | SortHeader
   order: OrderEnum
   skipValidation: boolean
@@ -256,15 +232,8 @@ export const isAlias = (
   )
 }
 
-export type IntermediateByteCodeLeaf =
-  | {
-      buffer: Uint8Array
-      def: QueryDef
-      needsMetaResolve?: boolean
-    }
-  | Uint8Array
+export type IntermediateByteCodeLeaf = Uint8Array
 
-// allow UINT8ARRAY
 export type IntermediateByteCode =
   | IntermediateByteCodeLeaf
   | (IntermediateByteCodeLeaf | IntermediateByteCode)[]
