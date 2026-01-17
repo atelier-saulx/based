@@ -1765,7 +1765,7 @@ static struct SelvaNode *next_ref_edge_node(struct SelvaTypeEntry *edge_type)
 
     edge = selva_upsert_node(edge_type, next_id);
     /* TODO Support partial edges */
-    assert(edge.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM);
+    assert(edge.node && edge.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM);
     selva_mark_dirty(edge_type, next_id);
 
     return edge.node;

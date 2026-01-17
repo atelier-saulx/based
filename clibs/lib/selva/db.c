@@ -592,14 +592,14 @@ out:
 
 struct SelvaNodeRes selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
+    if (unlikely(node_id == 0)) {
+        return (struct SelvaNodeRes){};
+    }
+
     struct SelvaTypeBlocks *blocks = type->blocks;
     struct SelvaNodeRes res = {
         .block = selva_node_id2block_i(blocks, node_id),
     };
-
-    if (unlikely(node_id == 0)) {
-        goto out;
-    }
 
     struct SelvaTypeBlock *block = &blocks->blocks[res.block];
     res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
@@ -648,6 +648,7 @@ struct SelvaNodeRes selva_upsert_node(struct SelvaTypeEntry *type, node_id_t nod
 
     res.node = node;
 out:
+    res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_relaxed);
     return res;
 }
 
