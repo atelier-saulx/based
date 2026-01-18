@@ -1,5 +1,4 @@
-import { PropDefEdge } from '../../../../dist/schema.js'
-import { PropDef } from '../../../schema.js'
+import { PropDef, PropDefEdge } from '../../../schema.js'
 import { writeUint16, writeUint32 } from '../../../utils/uint8.js'
 import {
   FilterConditionByteSize,
@@ -9,7 +8,7 @@ import {
   writeFilterCondition,
 } from '../../../zigTsExports.js'
 import { DbClient } from '../../index.js'
-import { QueryDef, QueryDefFilter } from '../types.js'
+import { QueryDefFilter } from '../types.js'
 import { FilterOpts } from './types.js'
 
 const createCondition = (
@@ -41,15 +40,22 @@ export const filter = (
   value?: any,
   opts?: FilterOpts,
 ) => {
-  let propDef = filter.schema?.props![field]
+  let propDef = filter.props[field]
 
   if (!propDef) {
     // nested prop find it
-    // throw new Error(`Property ${field} not found`)
   }
 
   if (!propDef) {
     throw new Error(`Property ${field} in filter not found`)
+  }
+
+  // This is temp here for subscriptions
+  if (propDef.prop === 0) {
+    if (!filter.partialOffsets) {
+      filter.partialOffsets = new Set()
+    }
+    filter.partialOffsets.add(propDef.start || 0)
   }
 
   const conditions =
@@ -61,7 +67,7 @@ export const filter = (
     value = [value]
   }
 
-  // for now
+  // For now
   if (value == undefined) {
     return
   }

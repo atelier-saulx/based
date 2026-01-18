@@ -156,6 +156,7 @@ export class QueryBranch<T> {
       if (!this.def?.filter.or) {
         this.def!.filter.or = {
           conditions: new Map(),
+          props: this.def?.schema?.props || {},
         }
       }
       if (operator === undefined) {

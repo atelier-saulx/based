@@ -2,22 +2,12 @@ const std = @import("std");
 const Query = @import("../common.zig");
 const utils = @import("../../utils.zig");
 const Node = @import("../../selva/node.zig");
-// const Thread = @import("../../thread/thread.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
-// const multiple = @import("../multiple.zig");
-// const References = @import("../../selva/references.zig");
 
-// inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
-//     return Fields.get(
-//         typeEntry,
-//         node,
-//         try Schema.getFieldSchema(typeEntry, header.prop),
-//         header.propType,
-//     );
-// }
-
+// prepare will return the next NOW
+// it will also just fill in the current now
 pub inline fn prepare(
     q: []u8,
 ) void {
@@ -25,10 +15,18 @@ pub inline fn prepare(
     while (i < q.len) {
         const op: t.FilterOp = @enumFromInt(q[i]);
         switch (op) {
-            .equalsU32 => {
+            .nextOrIndex => {
                 const condition = utils.readNext(t.FilterCondition, q, &i);
                 if (condition.alignOffset == 255) {
-                    q[i - 1] = utils.alignLeft(u32, q[i .. i + 8]);
+                    q[i - 3] = utils.alignLeft(usize, q[i - 2 .. i + 14]);
+                }
+            },
+            .equalsU32,
+            .notEqualsU32,
+            => {
+                const condition = utils.readNext(t.FilterCondition, q, &i);
+                if (condition.alignOffset == 255) {
+                    q[i - 3] = utils.alignLeft(u32, q[i .. i + 8]);
                 }
                 i += 8;
             },
@@ -49,6 +47,16 @@ pub inline fn equalFixed(
         utils.readAligned(u32, value, condition.start);
 }
 
+// baseline
+// pub inline fn filter(
+//     _: Node.Node,
+//     _: *Query.QueryCtx,
+//     _: []u8,
+//     _: Node.Type,
+// ) !bool {
+//     return false;
+// }
+
 pub inline fn filter(
     node: Node.Node,
     _: *Query.QueryCtx,
@@ -58,13 +66,13 @@ pub inline fn filter(
     var i: usize = 0;
     var pass: bool = true;
     var value: []u8 = undefined;
-    var prop: u8 = 255;
-    const nextOrIndex: usize = q.len;
+    var prop: u8 = 255; // tmp default
+    var nextOrIndex: usize = q.len;
     while (i < q.len) {
         const op: t.FilterOp = @enumFromInt(q[i]);
+
         const condition = utils.readNext(t.FilterCondition, q, &i);
         if (prop != condition.prop) {
-            // this will be used to avoid this get if its not applicable for the condition
             prop = condition.prop;
             value = Fields.get(
                 typeEntry,
@@ -73,15 +81,21 @@ pub inline fn filter(
                 .null,
             );
         }
+
         pass = switch (op) {
+            .nextOrIndex => blk: {
+                nextOrIndex = utils.readAligned(usize, q, i + 6 - condition.alignOffset);
+                i += 14;
+                break :blk true;
+            },
             .equalsU32 => try equalFixed(u32, q, &i, &condition, value),
             .notEqualsU32 => !try equalFixed(u32, q, &i, &condition, value),
-            // .equalsU32Or =>
-            // .notEqualsU32Or =>
             else => false,
         };
-        if (pass == false) {
+
+        if (!pass) {
             i = nextOrIndex;
+            nextOrIndex = q.len;
         }
     }
     return pass;

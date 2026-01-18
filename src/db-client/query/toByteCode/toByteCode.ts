@@ -20,6 +20,7 @@ import {
   writeSortHeader,
 } from '../../../zigTsExports.js'
 import { aggregateToBuffer } from '../aggregates/toByteCode.js'
+import { debugBuffer } from '../../../sdk.js'
 
 export function defToBuffer(
   db: DbClient,
@@ -211,7 +212,7 @@ export function defToBuffer(
   return result
 }
 
-const combineIntermediateResults = (
+export const combineIntermediateResults = (
   res: Uint8Array,
   offset: number,
   t: IntermediateByteCode,

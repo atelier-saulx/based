@@ -1,3 +1,4 @@
+import { PropDef, SchemaTypeDef } from '../../schema.js'
 import { LangCode, Order, QueryType } from '../../zigTsExports.js'
 import { DbClient } from '../index.js'
 import { DEF_RANGE_PROP_LIMIT, DEF_RANGE_REF_LIMIT } from './thresholds.js'
@@ -17,11 +18,14 @@ import {
   validateType,
 } from './validation.js'
 
-const createEmptySharedDef = (skipValidation: boolean) => {
+const createEmptySharedDef = (
+  skipValidation: boolean,
+  props: SchemaTypeDef['props'] | PropDef['edges'],
+) => {
   const q: Partial<QueryDefShared> = {
     errors: [],
     skipValidation,
-    filter: { conditions: new Map(), lastPropWriten: -1 },
+    filter: { conditions: new Map(), props: props || {} },
     range: { offset: 0, limit: 0 },
     lang: {
       lang: LangCode.none,
@@ -58,10 +62,9 @@ export function createQueryDef<T extends QueryDefType>(
   target: T extends QueryDefType.Edge ? EdgeTarget : Target,
   skipValidation: boolean,
 ): CreateQueryDefReturn<T> {
-  const queryDef = createEmptySharedDef(skipValidation)
-
   if (type === QueryDefType.Edge) {
     const t = target as EdgeTarget
+    const queryDef = createEmptySharedDef(skipValidation, t.ref!.edges)
     const q = queryDef as QueryDefEdges
     q.props = t.ref!.edges
     q.type = type
@@ -69,10 +72,11 @@ export function createQueryDef<T extends QueryDefType>(
     return q as CreateQueryDefReturn<T>
   } else {
     const t = target as Target
+    const queryDef = createEmptySharedDef(skipValidation, {})
     const q = queryDef as QueryDefRest
     q.schema = validateType(db, q, t.type)
-    q.filter.schema = q.schema
     q.props = q.schema.props
+    q.filter.props = q.schema.props
     q.type = type
     q.target = t
     if (type === QueryDefType.Root) {

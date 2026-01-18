@@ -12,11 +12,8 @@ import {
   QueryTypeEnum,
   SortHeader,
   AggFunctionEnum,
-  FilterCondition,
-  FilterHeader,
 } from '../../zigTsExports.js'
 import type { ReaderSchema } from '../../protocol/index.js'
-import { FilterOpts } from './filter/types.js'
 
 type LangName = keyof typeof LangCode
 
@@ -67,14 +64,15 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
 }
 
 export type QueryDefFilter = {
+  partialOffsets?: Set<number> // need this for subs...
   conditions: Map<number, IntermediateByteCode[]>
   nowOffset?: number // this is for subs
   isEdge?: boolean // something like this
   ref?: PropDef
   select?: ReferenceSelectOperator //this will get there
-  schema?: SchemaTypeDef
   or?: QueryDefFilter
   and?: QueryDefFilter
+  props: { [prop: string]: PropDef | PropDefEdge }
 }
 
 // export type QueryDefSearch =
@@ -192,7 +190,7 @@ export type QueryDefShared = {
 export type QueryDefEdges = {
   type: QueryDefType.Edge
   target: EdgeTarget
-  schema: null
+  schema: null // only add schemaTypeDef
   props: PropDef['edges']
 } & QueryDefShared
 

@@ -189,7 +189,7 @@ await test('include', async (t) => {
             .query('todo')
             .include('nr', 'name')
             .filter('nr', 'equalsU32', 1e7 + i) // lets start with this...
-            .or('flap', 'equalsU32', 67) // should give results
+            // .or('flap', 'equalsU32', 20) // should give results
             .get(),
         )
       }
@@ -219,10 +219,11 @@ await test('include', async (t) => {
   //   .get()
   // .inspect()
   db.query('todo')
-    .include('nr', 'name')
+    .include('nr', 'name', 'flap')
     // .filter('flap', 'equalsU32', 0) // lets start with this...
     // .filter('flap', 'equalsU32', 0) // lets start with this...
     .filter('nr', 'equalsU32', 1e7) // lets start with this...
+    // .or('flap', 'equalsU32', 20) // should give results
     .get()
     .inspect()
 
