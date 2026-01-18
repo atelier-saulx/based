@@ -46,9 +46,9 @@ pub fn get(
     typeEntry: ?Node.Type,
     node: Node.Node,
     fieldSchema: Schema.FieldSchema,
-    fieldType: t.PropType,
+    propType: t.PropType,
 ) []u8 {
-    if (fieldType == t.PropType.alias) {
+    if (propType == t.PropType.alias) {
         const target = Node.getNodeId(node);
         const typeAliases = selva.c.selva_get_aliases(typeEntry, fieldSchema.field);
         const alias = selva.c.selva_get_alias_by_dest(typeAliases, target);
@@ -58,17 +58,17 @@ pub fn get(
         var len: usize = 0;
         const res = selva.c.selva_get_alias_name(alias, &len);
         return @as([*]u8, @constCast(res))[0..len];
-    } else if (fieldType == t.PropType.cardinality) {
+    } else if (propType == t.PropType.cardinality) {
         return getCardinality(node, fieldSchema) orelse emptySlice;
-    } else if (fieldType == t.PropType.colVec) {
+    } else if (propType == t.PropType.colVec) {
         const nodeId = Node.getNodeId(node);
         const vec = selva.c.colvec_get_vec(typeEntry, nodeId, fieldSchema);
         const len = fieldSchema.*.unnamed_0.colvec.vec_len * fieldSchema.*.unnamed_0.colvec.comp_size;
         return @as([*]u8, @ptrCast(vec))[0..len];
+    } else {
+        const result: selva.c.SelvaFieldsPointer = selva.c.selva_fields_get_raw(node, fieldSchema);
+        return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
     }
-
-    const result: selva.c.SelvaFieldsPointer = selva.c.selva_fields_get_raw(node, fieldSchema);
-    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
 pub fn write(node: Node.Node, fieldSchema: Schema.FieldSchema, data: []u8) !void {

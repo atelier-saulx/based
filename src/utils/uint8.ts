@@ -152,6 +152,7 @@ export const readFloatLE = (val: Uint8Array, offset: number): number => {
 export const writeUint16 = (dest: Uint8Array, val: number, offset: number) => {
   dest[offset] = val
   dest[offset + 1] = val >>> 8
+  return dest
 }
 
 export const writeInt16 = writeUint16
@@ -160,6 +161,7 @@ export const writeUint24 = (dest: Uint8Array, val: number, offset: number) => {
   dest[offset] = val
   dest[offset + 1] = val >>> 8
   dest[offset + 2] = val >>> 16
+  return dest
 }
 
 export const writeInt24 = writeUint24
@@ -169,6 +171,7 @@ export const writeUint32 = (dest: Uint8Array, val: number, offset: number) => {
   dest[offset + 1] = val >>> 8
   dest[offset + 2] = val >>> 16
   dest[offset + 3] = val >>> 24
+  return dest
 }
 
 export const writeUint64 = (dest: Uint8Array, val: number, offset: number) => {
@@ -195,6 +198,7 @@ export const writeUint64 = (dest: Uint8Array, val: number, offset: number) => {
   val = (val - byte6) / 256
   const byte7 = val & 0xff
   dest[offset + 7] = byte7
+  return dest
 }
 
 export const readUint64 = (src: Uint8Array, offset: number) => {
@@ -239,6 +243,7 @@ export const writeInt64 = (dest: Uint8Array, val: number, offset: number) => {
     const byte7 = val & 0xff
     dest[offset + 7] = byte7
   }
+  return dest
 }
 
 export const readInt64 = (src: Uint8Array, offset: number): number => {
@@ -267,11 +272,13 @@ export const writeDoubleLE = (
 ) => {
   const dV = new DataView(dest.buffer, offset, 8)
   dV.setFloat64(0, val, true)
+  return dest
 }
 
 export const writeFloatLE = (dest: Uint8Array, val: number, offset: number) => {
   const dV = new DataView(dest.buffer, offset, 4)
   dV.setFloat32(0, val, true)
+  return dest
 }
 
 export const writeInt32 = writeUint32

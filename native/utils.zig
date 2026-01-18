@@ -98,6 +98,7 @@ pub inline fn readAligned(
             return @as(*const T, @ptrCast(@alignCast(buffer.ptr + offset))).*;
         },
         else => {
+            // TODO add for things like []u32
             return read(T, buffer, offset);
         },
     }
@@ -105,20 +106,10 @@ pub inline fn readAligned(
 
 pub inline fn read(
     comptime T: type,
-    // comptime isAligned: bool,
     buffer: []const u8,
     offset: usize,
 ) T {
     switch (@typeInfo(T)) {
-        // could add isAligned then this is slightly faster
-        // .int, .float => {
-        //     const raw_ptr = buffer.ptr + offset;
-        //     // if (isAligned) {
-        //     //     return @as(*const T, @ptrCast(@alignCast(raw_ptr))).*;
-        //     // } else {
-        //     return @as(*align(1) const T, @ptrCast(raw_ptr)).*;
-        //     // }
-        // },
         .pointer => |info| {
             if (info.size == .slice) {
                 const ChildType = info.child;
@@ -247,14 +238,9 @@ pub inline fn alignLeft(comptime T: type, data: []u8) u8 {
     const alignment = @alignOf(T);
     const unAligned = data[alignment..];
     const address = @intFromPtr(unAligned.ptr);
-
-    if (address % alignment == address & (alignment - 1)) {
-        return 0;
-    }
-
     const offset: u8 = @truncate(address % alignment);
     const aligned = data[alignment - offset .. alignment + data.len - offset];
-    move(aligned, unAligned);
+    if (offset != 0) move(aligned, unAligned);
     return offset;
 }
 

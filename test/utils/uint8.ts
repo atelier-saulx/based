@@ -24,6 +24,8 @@ import {
   writeUint24,
   writeUint32,
   writeUint64,
+  writeDoubleLE,
+  writeFloatLE,
 } from '../../src/utils/index.js'
 
 await test('equals() returns true for identical Uint8Arrays', async (t) => {
@@ -329,9 +331,12 @@ await test('makeTmpBuffer().getUint8Array() returns array of correct size', asyn
 
 await test('writeUint16() writes uint16 values (LE)', async (t) => {
   const buf = new Uint8Array(6)
-  writeUint16(buf, 0, 0) // 0x0000
-  writeUint16(buf, 65535, 2) // 0xFFFF
-  writeUint16(buf, 0x1234, 4) // 0x1234
+  const r1 = writeUint16(buf, 0, 0) // 0x0000
+  const r2 = writeUint16(buf, 65535, 2) // 0xFFFF
+  const r3 = writeUint16(buf, 0x1234, 4) // 0x1234
+  assert(r1 === buf, 'writeUint16 returns dest')
+  assert(r2 === buf, 'writeUint16 returns dest')
+  assert(r3 === buf, 'writeUint16 returns dest')
   deepEqual(buf, new Uint8Array([0x00, 0x00, 0xff, 0xff, 0x34, 0x12]))
   equal(readUint16(buf, 0), 0)
   equal(readUint16(buf, 2), 65535)
@@ -340,10 +345,14 @@ await test('writeUint16() writes uint16 values (LE)', async (t) => {
 
 await test('writeInt16() writes int16 values (LE)', async (t) => {
   const buf = new Uint8Array(8)
-  writeInt16(buf, 0, 0) // 0x0000
-  writeInt16(buf, 32767, 2) // 0x7FFF
-  writeInt16(buf, -1, 4) // 0xFFFF
-  writeInt16(buf, -32768, 6) // 0x8000
+  const r1 = writeInt16(buf, 0, 0) // 0x0000
+  const r2 = writeInt16(buf, 32767, 2) // 0x7FFF
+  const r3 = writeInt16(buf, -1, 4) // 0xFFFF
+  const r4 = writeInt16(buf, -32768, 6) // 0x8000
+  assert(r1 === buf, 'writeInt16 returns dest')
+  assert(r2 === buf, 'writeInt16 returns dest')
+  assert(r3 === buf, 'writeInt16 returns dest')
+  assert(r4 === buf, 'writeInt16 returns dest')
   deepEqual(
     buf,
     new Uint8Array([0x00, 0x00, 0xff, 0x7f, 0xff, 0xff, 0x00, 0x80]),
@@ -356,9 +365,12 @@ await test('writeInt16() writes int16 values (LE)', async (t) => {
 
 await test('writeUint24() writes uint24 values (LE)', async (t) => {
   const buf = new Uint8Array(9)
-  writeUint24(buf, 0, 0) // 0x000000
-  writeUint24(buf, 0xffffff, 3) // 0xFFFFFF
-  writeUint24(buf, 0x123456, 6) // 0x123456
+  const r1 = writeUint24(buf, 0, 0) // 0x000000
+  const r2 = writeUint24(buf, 0xffffff, 3) // 0xFFFFFF
+  const r3 = writeUint24(buf, 0x123456, 6) // 0x123456
+  assert(r1 === buf, 'writeUint24 returns dest')
+  assert(r2 === buf, 'writeUint24 returns dest')
+  assert(r3 === buf, 'writeUint24 returns dest')
   deepEqual(
     buf,
     new Uint8Array([0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x56, 0x34, 0x12]),
@@ -370,10 +382,14 @@ await test('writeUint24() writes uint24 values (LE)', async (t) => {
 
 await test('writeInt24() writes int24 values (LE)', async (t) => {
   const buf = new Uint8Array(12)
-  writeInt24(buf, 0, 0) // 0x000000
-  writeInt24(buf, 8388607, 3) // 0x7FFFFF (Max Int24)
-  writeInt24(buf, -1, 6) // 0xFFFFFF
-  writeInt24(buf, -8388608, 9) // 0x800000 (Min Int24)
+  const r1 = writeInt24(buf, 0, 0) // 0x000000
+  const r2 = writeInt24(buf, 8388607, 3) // 0x7FFFFF (Max Int24)
+  const r3 = writeInt24(buf, -1, 6) // 0xFFFFFF
+  const r4 = writeInt24(buf, -8388608, 9) // 0x800000 (Min Int24)
+  assert(r1 === buf, 'writeInt24 returns dest')
+  assert(r2 === buf, 'writeInt24 returns dest')
+  assert(r3 === buf, 'writeInt24 returns dest')
+  assert(r4 === buf, 'writeInt24 returns dest')
   deepEqual(
     buf,
     new Uint8Array([
@@ -389,9 +405,12 @@ await test('writeInt24() writes int24 values (LE)', async (t) => {
 
 await test('writeUint32() writes uint32 values (LE)', async (t) => {
   const buf = new Uint8Array(12)
-  writeUint32(buf, 0, 0) // 0x00000000
-  writeUint32(buf, 0xffffffff, 4) // 0xFFFFFFFF
-  writeUint32(buf, 0xabcd1234, 8) // 0xABCD1234
+  const r1 = writeUint32(buf, 0, 0) // 0x00000000
+  const r2 = writeUint32(buf, 0xffffffff, 4) // 0xFFFFFFFF
+  const r3 = writeUint32(buf, 0xabcd1234, 8) // 0xABCD1234
+  assert(r1 === buf, 'writeUint32 returns dest')
+  assert(r2 === buf, 'writeUint32 returns dest')
+  assert(r3 === buf, 'writeUint32 returns dest')
   deepEqual(
     buf,
     new Uint8Array([
@@ -405,10 +424,14 @@ await test('writeUint32() writes uint32 values (LE)', async (t) => {
 
 await test('writeInt32() writes int32 values (LE)', async (t) => {
   const buf = new Uint8Array(16)
-  writeInt32(buf, 0, 0) // 0x00000000
-  writeInt32(buf, 2147483647, 4) // 0x7FFFFFFF (Max Int32)
-  writeInt32(buf, -1, 8) // 0xFFFFFFFF
-  writeInt32(buf, -2147483648, 12) // 0x80000000 (Min Int32)
+  const r1 = writeInt32(buf, 0, 0) // 0x00000000
+  const r2 = writeInt32(buf, 2147483647, 4) // 0x7FFFFFFF (Max Int32)
+  const r3 = writeInt32(buf, -1, 8) // 0xFFFFFFFF
+  const r4 = writeInt32(buf, -2147483648, 12) // 0x80000000 (Min Int32)
+  assert(r1 === buf, 'writeInt32 returns dest')
+  assert(r2 === buf, 'writeInt32 returns dest')
+  assert(r3 === buf, 'writeInt32 returns dest')
+  assert(r4 === buf, 'writeInt32 returns dest')
   deepEqual(
     buf,
     new Uint8Array([
@@ -425,12 +448,14 @@ await test('writeInt32() writes int32 values (LE)', async (t) => {
 await test('writeUint64()', async (t) => {
   const buf = new Uint8Array(8)
   const bigBoyNumber = Date.now()
-  writeUint64(buf, bigBoyNumber, 0)
+  const r1 = writeUint64(buf, bigBoyNumber, 0)
   equal(readUint64(buf, 0), bigBoyNumber)
+  assert(r1 === buf, 'writeUint64 returns dest')
 
   const bigBoyNumberNegative = -Date.now()
-  writeUint64(buf, bigBoyNumberNegative, 0)
+  const r2 = writeUint64(buf, bigBoyNumberNegative, 0)
   notEqual(readUint64(buf, 0), bigBoyNumberNegative)
+  assert(r2 === buf, 'writeUint64 returns dest')
 })
 
 await test('writeInt64() with negative numbers', async (t) => {
@@ -438,7 +463,8 @@ await test('writeInt64() with negative numbers', async (t) => {
 
   // Test with a negative timestamp
   const negativeTimestamp = -7258033050000
-  writeInt64(buf, negativeTimestamp, 0)
+  const r1 = writeInt64(buf, negativeTimestamp, 0)
+  assert(r1 === buf, 'writeInt64 returns dest')
   const readNegativeTimestamp = readInt64(buf, 0)
   equal(
     readNegativeTimestamp,
@@ -505,6 +531,37 @@ await test('writeInt64() and readInt64() with JavaScript timestamps', async (t) 
   )
   assert(testNegativeTimestamp < 0, 'Historical timestamp should be negative')
   assert(recentTimestamp > 0, 'Recent timestamp should be positive')
+})
+
+await test('writeDoubleLE() writes double values (LE)', async (t) => {
+  const buf = new Uint8Array(8)
+  const r1 = writeDoubleLE(buf, 0, 0)
+  assert(r1 === buf, 'writeDoubleLE returns dest')
+  equal(readDoubleLE(buf, 0), 0)
+
+  const r2 = writeDoubleLE(buf, 123.456, 0)
+  assert(r2 === buf, 'writeDoubleLE returns dest')
+  equal(readDoubleLE(buf, 0), 123.456)
+
+  const r3 = writeDoubleLE(buf, -987.654, 0)
+  assert(r3 === buf, 'writeDoubleLE returns dest')
+  equal(readDoubleLE(buf, 0), -987.654)
+})
+
+await test('writeFloatLE() writes float values (LE)', async (t) => {
+  const buf = new Uint8Array(4)
+  const r1 = writeFloatLE(buf, 0, 0)
+  assert(r1 === buf, 'writeFloatLE returns dest')
+  equal(readFloatLE(buf, 0), 0)
+
+  const tolerance = 1e-5
+  const r2 = writeFloatLE(buf, 123.456, 0)
+  assert(r2 === buf, 'writeFloatLE returns dest')
+  assert(Math.abs(readFloatLE(buf, 0) - 123.456) < tolerance)
+
+  const r3 = writeFloatLE(buf, -987.654, 0)
+  assert(r3 === buf, 'writeFloatLE returns dest')
+  assert(Math.abs(readFloatLE(buf, 0) - -987.654) < tolerance)
 })
 
 await test('Performance comparison: writeInt64 vs writeUint64', async (t) => {

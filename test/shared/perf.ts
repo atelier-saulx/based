@@ -135,7 +135,10 @@ export async function perf(
                 ` ${diff.difference.toFixed(2)} ms (${percentDiff.toFixed(1)}%)`,
               )
       } else {
-        diffMessage = styleText('gray', ` similar performance`)
+        diffMessage = styleText(
+          'gray',
+          ` similar performance (${percentDiff.toFixed(1)}%)`,
+        )
       }
     }
     if (!options.silent) {

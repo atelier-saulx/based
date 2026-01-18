@@ -117,6 +117,7 @@ export class QueryBranch<T> {
   //   return this
   // }
 
+  // going to support a fn for both filter and or
   filter(
     field: string,
     operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
@@ -132,7 +133,35 @@ export class QueryBranch<T> {
       if (operator === undefined) {
         operator = FilterOpInverse[0]
       }
-      filter(this.db, this.def!, field, operator, value, opts)
+      filter(this.db, this.def?.filter!, field, operator, value, opts)
+    }
+    // @ts-ignore
+    return this
+  }
+
+  // and can be a shortcut for filter 🤷🏻‍♂️
+  // going to support a fn for both filter and or
+  or(
+    field: string,
+    operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
+    value?: any,
+    opts?: FilterOpts,
+  ): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'or',
+        args: [field, operator, value, opts],
+      })
+    } else {
+      if (!this.def?.filter.or) {
+        this.def!.filter.or = {
+          conditions: new Map(),
+        }
+      }
+      if (operator === undefined) {
+        operator = FilterOpInverse[0]
+      }
+      filter(this.db, this.def?.filter!.or!, field, operator, value, opts)
     }
     // @ts-ignore
     return this

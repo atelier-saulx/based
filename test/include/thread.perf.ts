@@ -37,6 +37,7 @@ await test('include', async (t) => {
         props: {
           name: 'string',
           nr: { type: 'uint32' },
+          flap: { type: 'uint32' },
           workingOnIt: {
             items: { ref: 'user', prop: 'currentTodo', $derp: 'boolean' },
           },
@@ -83,6 +84,7 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 1e7; i++) {
     db.create('todo', {
+      flap: 67,
       // name: i % 2 ? 'b' : 'a',
       nr: rand(0, 10),
     })
@@ -178,37 +180,53 @@ await test('include', async (t) => {
 
   // console.log('\n--------------------------\n')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
         q.push(
           db
             .query('todo')
-            .range(0, 1e6 + i)
-            .include('nr')
+            .include('nr', 'name')
+            .filter('nr', 'equalsU32', 1e7 + i) // lets start with this...
+            .or('flap', 'equalsU32', 67) // should give results
             .get(),
-          // .inspect(),
         )
       }
       await Promise.all(q)
     },
-    '100M Nodes query',
-    { repeat: 10 },
+    '10M Nodes query',
+    { repeat: 100 },
   )
 
   // await wait(100)
   // console.log('SUBS FIRE?', cnt)
 
+  // await db
+  //   .query('todo', 1)
+  //   .include('nr', 'name')
+  //   .filter('nr', 'equalsU32', 1e7) // lets start with this...
+  //   .get()
+  //   .inspect()
+
   await db.update('todo', 1, { nr: 2 })
 
-  console.log('derp')
-  await db
-    .query('todo')
+  // console.log('derp')
+
+  // db.query('todo', 1)
+  //   .include('nr', 'name')
+  //   .filter('nr', 'equals', 2) // lets start with this...
+  //   .get()
+  // .inspect()
+  db.query('todo')
     .include('nr', 'name')
-    .filter('nr', 'equals', 1e7) // lets start with this...
+    // .filter('flap', 'equalsU32', 0) // lets start with this...
+    // .filter('flap', 'equalsU32', 0) // lets start with this...
+    .filter('nr', 'equalsU32', 1e7) // lets start with this...
     .get()
     .inspect()
+
+  await wait(1000)
 })
 
 await test.skip('default', async (t) => {

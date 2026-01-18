@@ -20,7 +20,6 @@ import {
   writeSortHeader,
 } from '../../../zigTsExports.js'
 import { aggregateToBuffer } from '../aggregates/toByteCode.js'
-import { debugBuffer } from '../../../sdk.js'
 
 export function defToBuffer(
   db: DbClient,
@@ -131,15 +130,11 @@ export function defToBuffer(
   } else if (isRootDefault || isReferences) {
     const hasSort = (def.sort?.prop !== ID_PROP || isReferences) && !!def.sort
     const hasSearch = false // !!def.search
-
     const filter = filterToBuffer(def.filter)
     const filterSize = byteSize(filter)
     const hasFilter = filterSize > 0
-
-    // const hasFilter = def.filter.size > 0
     const searchSize = 0 // hasSearch ? def.search!.size : 0
     const sortSize = hasSort ? SortHeaderByteSize : 0
-    // const filterSize = def.filter.size
     const include = includeToBuffer(db, def)
     for (const [, ref] of def.references) {
       include.push(...defToBuffer(db, ref))
@@ -164,13 +159,11 @@ export function defToBuffer(
     const typeId: number = def.schema!.id
     const edgeTypeId: number =
       (isReferences && def.target.propDef!.edgeNodeTypeId) || 0
-
     const op: QueryTypeEnum = isIds
       ? QueryType.ids
       : isReferences
         ? QueryType.references
         : QueryType.default
-
     let index = writeQueryHeader(
       buffer,
       {
@@ -196,7 +189,6 @@ export function defToBuffer(
     }
     result.push(buffer)
     if (hasFilter) {
-      console.log('ADD FILTER', filter, filterSize)
       result.push(filter)
     }
     if (hasSearch) {
@@ -247,8 +239,6 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   combineIntermediateResults(res, 0, bufs)
   const queryId = crc32(res)
   writeUint32(res, queryId, 0)
-
-  debugBuffer(res)
-
+  // debugBuffer(res)
   return res
 }

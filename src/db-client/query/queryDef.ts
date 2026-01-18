@@ -21,7 +21,7 @@ const createEmptySharedDef = (skipValidation: boolean) => {
   const q: Partial<QueryDefShared> = {
     errors: [],
     skipValidation,
-    filter: { conditions: new Map() },
+    filter: { conditions: new Map(), lastPropWriten: -1 },
     range: { offset: 0, limit: 0 },
     lang: {
       lang: LangCode.none,

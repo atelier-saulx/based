@@ -13,6 +13,7 @@ import {
   SortHeader,
   AggFunctionEnum,
   FilterCondition,
+  FilterHeader,
 } from '../../zigTsExports.js'
 import type { ReaderSchema } from '../../protocol/index.js'
 import { FilterOpts } from './filter/types.js'

@@ -695,34 +695,37 @@ pub const AggGroupByKey = packed struct {
     propDefStart: u16,
 };
 
-pub const FilterOp = enum(u8) {
-    equals = 0, // only for references
-    notEquals = 1,
-    orEquals = 2,
-    orNotEquals = 3,
+pub const FilterOp = enum(u16) {
+    exists = 0,
+    notExists = 1,
+    // equals = 0, // only for references
+    // notEquals = 1,
+    // orEquals = 2,
+    // orNotEquals = 3,
+    equalsU32 = 4,
+    notEqualsU32 = 5,
+    equalsU32Or = 6,
+    notEqualsU32Or = 7,
+
     // different type
-    switchProp = 100,
-    @"and" = 101,
-    @"or" = 102,
-    andReference = 103,
-    andEdge = 104,
-    orReference = 105,
-    orEdge = 106,
+    // switchProp = 100,
+    @"and" = 60000,
+    @"or" = 60001,
+    andReference = 60002,
+    andEdge = 60003,
+    orReference = 60004,
+    orEdge = 60005,
 };
 
 pub const FilterCondition = packed struct {
     op: FilterOp,
-    repeat: u16,
     start: u16,
-    propType: PropType,
+    prop: u8,
     alignOffset: u8,
-    _padding: u64, // 4 bytes to align into
 };
 
 // only for nested
 pub const FilterHeader = packed struct {
-    op: FilterOp,
-    prop: u8,
     propType: PropType,
     typeId: TypeId,
     edgeTypeId: TypeId,
