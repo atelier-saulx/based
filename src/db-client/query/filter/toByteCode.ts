@@ -52,7 +52,7 @@ export const filterToBuffer = (
       },
       0,
     )
-    writeUint64(nextOrIndex, resultSize + nextOrIndex.byteLength, offset + 6)
+    writeUint64(nextOrIndex, resultSize + nextOrIndex.byteLength, offset + 8)
 
     // const nextOrIndex = new Uint8Array(2 + 16)
     // nextOrIndex[0] = FilterOp.nextOrIndex

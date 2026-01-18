@@ -98,7 +98,6 @@ pub inline fn readAligned(
             return @as(*const T, @ptrCast(@alignCast(buffer.ptr + offset))).*;
         },
         else => {
-            // TODO add for things like []u32
             return read(T, buffer, offset);
         },
     }
@@ -158,9 +157,20 @@ pub inline fn readIterator(T: type, buffer: []u8, amount: usize, offset: *usize)
 }
 
 pub inline fn readNext(T: type, buffer: []u8, offset: *usize) T {
-    const header = read(T, buffer, offset.*);
+    const val = read(T, buffer, offset.*);
     offset.* = offset.* + @bitSizeOf(T) / 8;
-    return header;
+    return val;
+}
+
+pub inline fn readNextAligned(
+    comptime T: type,
+    buffer: []const u8,
+    offset: *usize,
+    alignOffset: u8,
+) T {
+    offset.* = offset.* + @bitSizeOf(T) / 8 + @alignOf(T);
+    const val = readAligned(T, buffer, offset.* - @alignOf(T) - alignOffset);
+    return val;
 }
 
 pub inline fn sliceNext(size: usize, q: []u8, offset: *usize) []u8 {
@@ -174,6 +184,17 @@ pub inline fn sliceNextAs(T: type, size: usize, buffer: []u8, offset: *usize) []
     const value: []T = @as([*]T, @ptrCast(@alignCast(buffer.ptr)))[offset.* .. s + offset.*];
     offset.* += s;
     return value;
+}
+
+pub fn sliceNextAligned(T: type, len: usize, q: []u8, i: *usize, alignOffset: u8) []T {
+    const alignedIndex = i.* - alignOffset + @alignOf(T);
+    const values = read(
+        []T,
+        q[alignedIndex .. alignedIndex + len * sizeOf(T)],
+        0,
+    );
+    i.* += @alignOf(T) + len * sizeOf(T);
+    return values;
 }
 
 pub fn debugPrint(comptime format: []const u8, args: anytype) void {

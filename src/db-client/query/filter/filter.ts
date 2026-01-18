@@ -73,12 +73,11 @@ export const filter = (
   }
 
   if (propDef.typeIndex === PropType.uint32) {
-    // 4 Extra for alignment padding
     if (value.length > 1) {
       const condition = createCondition(propDef, 6 + value.length * 4, operator)
       let i = FilterConditionByteSize
-      writeUint16(condition, value.length, 0)
-      i += 6
+      writeUint16(condition, value.length, i)
+      i += 6 // 4 Extra for alignment padding
       for (const v of value) {
         writeUint32(condition, v, i)
         i += 4
@@ -89,7 +88,7 @@ export const filter = (
         writeUint32(
           createCondition(propDef, 8, operator),
           value[0],
-          FilterConditionByteSize + 4,
+          FilterConditionByteSize + 4, // 4 Extra for alignment padding
         ),
       )
     }

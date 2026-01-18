@@ -188,8 +188,9 @@ await test('include', async (t) => {
           db
             .query('todo')
             .include('nr', 'name')
-            .filter('nr', 'equalsU32', 1e7 + i) // lets start with this...
-            // .or('flap', 'equalsU32', 20) // should give results
+            .filter('nr', 'equalsU32', 1e7 + i)
+            // .filter('flap', 'equalsU32Or', [20, 670]) // should give results
+            // .or('nr', 'equalsU32Or', [1e7, 1e7 + 1, 1e7 + 2, 1e7 + i]) // lets start with this...
             .get(),
         )
       }
@@ -220,10 +221,16 @@ await test('include', async (t) => {
   // .inspect()
   db.query('todo')
     .include('nr', 'name', 'flap')
-    // .filter('flap', 'equalsU32', 0) // lets start with this...
-    // .filter('flap', 'equalsU32', 0) // lets start with this...
+    // from id will be very important for big ranges
+    // .filter('flap', 'equalsU32', 20)
+    // .or('nr', 'equalsU32', 2)
+
+    // lets start with this...
     .filter('nr', 'equalsU32', 1e7) // lets start with this...
-    // .or('flap', 'equalsU32', 20) // should give results
+    // .or('nr', 'equalsU32', 2)
+
+    // .filter('flap', 'equalsU32Or', [20, 670]) // should give results
+    .or('nr', 'equalsU32Or', [66, 67, 20, 30, 2]) // lets start with this...
     .get()
     .inspect()
 
