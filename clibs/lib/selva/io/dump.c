@@ -365,13 +365,6 @@ static void save_block_info(void *ctx, struct SelvaDb *, struct SelvaTypeEntry *
 
     io->sdb_write(&te->type, sizeof(te->type), 1, io);
     io->sdb_write(&block, sizeof(block), 1, io);
-
-    /*
-     * Also update the block status.
-     */
-    if (likely(block < te->blocks->len)) {
-        selva_block_status_set(te, block, SELVA_TYPE_BLOCK_STATUS_FS);
-    }
 }
 
 static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *)
