@@ -709,7 +709,7 @@ pub const FilterOp = enum(u8) {
 
     // different type
     // switchProp = 100,
-    nextOrIndex = 200,
+    nextOrIndex = 253,
     groupReference = 201,
     groupEdge = 202,
 };

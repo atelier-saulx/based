@@ -82,6 +82,12 @@ await test('include', async (t) => {
   const rand = fastPrng(233221)
   let d = Date.now()
 
+  db.create('todo', {
+    flap: 666,
+    // name: i % 2 ? 'b' : 'a',
+    nr: 2,
+  })
+
   for (let i = 0; i < 1e7; i++) {
     db.create('todo', {
       flap: 67,
@@ -188,8 +194,8 @@ await test('include', async (t) => {
           db
             .query('todo')
             .include('nr', 'name')
-            .filter('nr', 'equalsU32', 1e7 + i)
-            // .filter('flap', 'equalsU32Or', [20, 670]) // should give results
+            // .filter('nr', 'equalsU32', 1e7 + i)
+            .filter('flap', 'equalsU32Or', [20, 670, 1e7 + i]) // should give results
             // .or('nr', 'equalsU32Or', [1e7, 1e7 + 1, 1e7 + 2, 1e7 + i]) // lets start with this...
             .get(),
         )
@@ -219,20 +225,42 @@ await test('include', async (t) => {
   //   .filter('nr', 'equals', 2) // lets start with this...
   //   .get()
   // .inspect()
-  db.query('todo')
+
+  // make or function
+  // .and
+
+  // db.query('todo').include('nr', 'flap').filter('nr','equalsU32', 10 )
+
+  /*
+    if ((nr = 1 && flap = 2) || (nr = 4 && (flap = 5 || nr = 11)))
+    q.filter(nr, 1).and(flap, 2).or((f) => {
+      f.filter(nr, 4).and(f => f.filter('flap', 5).or(nr, 11))
+    })
+
+    // if ((nr = 1 && flap = 2) || (nr = 4 && (flap = 5 || nr = 11)))
+    q.filter(nr, 1, flap, 2).or(nr, 4, f => f(flap, 5).or(nr, 11))
+  */
+
+  // await db
+  //   .query('todo')
+  //   .include('nr')
+  //   // .filter('nr', 'equalsU32', 2e7)
+  //   // .or('nr', 'equalsU32', 1e7)
+  //   // .or('nr', 'equalsU32', 2)
+  //   // .or('nr', 'equalsU32', 10)
+  //   .get()
+  //   .inspect(1000)
+
+  await db
+    .query('todo')
     .include('nr', 'name', 'flap')
-    // from id will be very important for big ranges
-    // .filter('flap', 'equalsU32', 20)
+    .filter('nr', 'equalsU32Or', [11, 12, 13])
+    // .or('nr', 'equalsU32', 1e7)
     // .or('nr', 'equalsU32', 2)
-
-    // lets start with this...
-    .filter('nr', 'equalsU32', 1e7) // lets start with this...
-    // .or('nr', 'equalsU32', 2)
-
-    // .filter('flap', 'equalsU32Or', [20, 670]) // should give results
-    .or('nr', 'equalsU32Or', [66, 67, 20, 30, 2]) // lets start with this...
+    // .and('flap', 'equalsU32', 666)
+    // .or('nr', 'equalsU32', 10)
     .get()
-    .inspect()
+    .inspect(100)
 
   await wait(1000)
 })

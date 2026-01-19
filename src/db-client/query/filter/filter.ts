@@ -33,14 +33,18 @@ const createCondition = (
 
 export const filter = (
   db: DbClient,
-  filter: QueryDefFilter,
+  def: QueryDefFilter,
   field: string,
   // TODO: this is tmp will become user operator
-  operator: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
+  operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
   value?: any,
   opts?: FilterOpts,
 ) => {
-  let propDef = filter.props[field]
+  if (operator === undefined) {
+    operator = FilterOpInverse[0]
+  }
+
+  let propDef = def.props[field]
 
   if (!propDef) {
     // nested prop find it
@@ -52,15 +56,15 @@ export const filter = (
 
   // This is temp here for subscriptions
   if (propDef.prop === 0) {
-    if (!filter.partialOffsets) {
-      filter.partialOffsets = new Set()
+    if (!def.partialOffsets) {
+      def.partialOffsets = new Set()
     }
-    filter.partialOffsets.add(propDef.start || 0)
+    def.partialOffsets.add(propDef.start || 0)
   }
 
   const conditions =
-    filter.conditions.get(propDef.prop) ??
-    filter.conditions.set(propDef.prop, []).get(propDef.prop) ??
+    def.conditions.get(propDef.prop) ??
+    def.conditions.set(propDef.prop, []).get(propDef.prop) ??
     [] // for typescript...
 
   if (value !== undefined && !(value instanceof Array)) {
@@ -69,17 +73,27 @@ export const filter = (
 
   // For now
   if (value == undefined) {
-    return
+    return def
   }
 
   if (propDef.typeIndex === PropType.uint32) {
+    // make functions for this on a map writeType(typeIndex)
     if (value.length > 1) {
-      const condition = createCondition(propDef, 6 + value.length * 4, operator)
+      const condition = createCondition(
+        propDef,
+        6 + value.length * 4 + 16,
+        operator,
+      )
       let i = FilterConditionByteSize
       writeUint16(condition, value.length, i)
       i += 6 // 4 Extra for alignment padding
       for (const v of value) {
         writeUint32(condition, v, i)
+        i += 4
+      }
+      // Empty padding for SIMD
+      for (let j = 0; j < 4; j++) {
+        writeUint32(condition, value[0], i)
         i += 4
       }
       conditions.push(condition)
@@ -92,5 +106,29 @@ export const filter = (
         ),
       )
     }
+  }
+
+  return def
+}
+
+export const or = (
+  db: DbClient,
+  def: QueryDefFilter,
+  field: string,
+  operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
+  value?: any,
+  opts?: FilterOpts,
+) => {
+  if (operator === undefined) {
+    operator = FilterOpInverse[0]
+  }
+  if (!def.or) {
+    def.or = {
+      conditions: new Map(),
+      props: def.props || {},
+    }
+    return filter(db, def.or, field, operator, value, opts)
+  } else {
+    return or(db, def.or, field, operator, value, opts)
   }
 }

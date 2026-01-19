@@ -8,7 +8,6 @@ import {
   groupBy,
   LangFallback,
   IncludeOpts,
-  filter,
 } from './query.js'
 import { BasedQueryResponse } from './BasedQueryResponse.js'
 // import { search, Search, vectorSearch } from './search/index.js'
@@ -30,6 +29,7 @@ import {
   FilterOpInverse,
 } from '../../zigTsExports.js'
 import { styleText } from 'node:util'
+import { filter, or } from './filter/filter.js'
 
 export { QueryByAliasObj }
 
@@ -130,10 +130,42 @@ export class QueryBranch<T> {
         args: [field, operator, value, opts],
       })
     } else {
-      if (operator === undefined) {
-        operator = FilterOpInverse[0]
+      filter(
+        this.db,
+        this.def!.filterContinue ?? this.def?.filter!,
+        field,
+        operator,
+        value,
+        opts,
+      )
+    }
+    // @ts-ignore
+    return this
+  }
+
+  and(
+    field: string,
+    operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
+    value?: any,
+    opts?: FilterOpts,
+  ): T {
+    if (this.queryCommands) {
+      this.queryCommands.push({
+        method: 'and',
+        args: [field, operator, value, opts],
+      })
+    } else {
+      if (!this.def!.filterContinue && !this.def!.filter.conditions.size) {
+        throw new Error('.and() needs to continue from another filter')
       }
-      filter(this.db, this.def?.filter!, field, operator, value, opts)
+      filter(
+        this.db,
+        this.def!.filterContinue ?? this.def?.filter!,
+        field,
+        operator,
+        value,
+        opts,
+      )
     }
     // @ts-ignore
     return this
@@ -153,16 +185,14 @@ export class QueryBranch<T> {
         args: [field, operator, value, opts],
       })
     } else {
-      if (!this.def?.filter.or) {
-        this.def!.filter.or = {
-          conditions: new Map(),
-          props: this.def?.schema?.props || {},
-        }
-      }
-      if (operator === undefined) {
-        operator = FilterOpInverse[0]
-      }
-      filter(this.db, this.def?.filter!.or!, field, operator, value, opts)
+      this.def!.filterContinue = or(
+        this.db,
+        this.def!.filterContinue ?? this.def?.filter!,
+        field,
+        operator,
+        value,
+        opts,
+      )
     }
     // @ts-ignore
     return this

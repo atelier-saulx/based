@@ -2718,7 +2718,7 @@ export const FilterOp = {
   notEqualsU32: 5,
   equalsU32Or: 6,
   notEqualsU32Or: 7,
-  nextOrIndex: 200,
+  nextOrIndex: 253,
   groupReference: 201,
   groupEdge: 202,
 } as const
@@ -2730,7 +2730,7 @@ export const FilterOpInverse = {
   5: 'notEqualsU32',
   6: 'equalsU32Or',
   7: 'notEqualsU32Or',
-  200: 'nextOrIndex',
+  253: 'nextOrIndex',
   201: 'groupReference',
   202: 'groupEdge',
 } as const

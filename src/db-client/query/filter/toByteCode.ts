@@ -31,19 +31,43 @@ const addConditions = (
   return lastProp
 }
 
+const logger = (obj: any): any => {
+  if (obj && typeof obj === 'object') {
+    if (obj instanceof Map)
+      return Object.fromEntries([...obj].map(([k, v]) => [k, logger(v)]))
+    if (Array.isArray(obj)) return obj.map(logger)
+    const res: any = {}
+    for (const key in obj) {
+      if (key === 'schema' || key === 'props') {
+        continue
+      }
+      if (key === 'conditions') {
+        res[key] = obj[key]
+      } else {
+        res[key] = logger(obj[key])
+      }
+    }
+    return res
+  }
+  return obj
+}
+
 export const filterToBuffer = (
   def: QueryDefFilter,
   fromLastProp: number = 255, // bit wrong for id...
+  fromIndex: number = 0,
+  top: boolean = true,
 ): IntermediateByteCode[] => {
   const result: IntermediateByteCode[] = []
+
   if (!def.or) {
     addConditions(result, def, fromLastProp)
   } else if (def.or && def.conditions.size != 0) {
     const lastProp = addConditions(result, def, fromLastProp)
     const resultSize = byteSize(result)
-    const nextOrIndex = new Uint8Array(FilterConditionByteSize + 16)
+    const nextOrIndexBuffer = new Uint8Array(FilterConditionByteSize + 16)
     const offset = writeFilterCondition(
-      nextOrIndex,
+      nextOrIndexBuffer,
       {
         op: FilterOp.nextOrIndex,
         prop: fromLastProp,
@@ -52,25 +76,25 @@ export const filterToBuffer = (
       },
       0,
     )
-    writeUint64(nextOrIndex, resultSize + nextOrIndex.byteLength, offset + 8)
 
-    // const nextOrIndex = new Uint8Array(2 + 16)
-    // nextOrIndex[0] = FilterOp.nextOrIndex
-    // // alignmentOfset
-    // nextOrIndex[1] = 255
-    // writeUint64(nextOrIndex, resultSize + nextOrIndex.byteLength, 2)
-    result.unshift(nextOrIndex)
-    result.push(filterToBuffer(def.or, lastProp))
+    const nextOrIndex = resultSize + nextOrIndexBuffer.byteLength + fromIndex
+    writeUint64(nextOrIndexBuffer, nextOrIndex, offset + 8)
+
+    result.unshift(nextOrIndexBuffer)
+    result.push(filterToBuffer(def.or, lastProp, nextOrIndex, false))
   } else {
     // fix this later
     // MOVE 1 up
   }
 
-  // const totalByteLength = byteSize(result)
-  // const res = new Uint8Array(totalByteLength)
-  // const nResult = combineIntermediateResults(res, 0, result)
-  // console.log('FILTER!')
-  // debugBuffer(res)
+  // if (top) {
+  //   console.dir(logger(def), { depth: 10 })
+  //   const totalByteLength = byteSize(result)
+  //   const res = new Uint8Array(totalByteLength)
+  //   const nResult = combineIntermediateResults(res, 0, result)
+  //   console.log('FILTER!')
+  //   debugBuffer(res)
+  // }
 
   return result
 }

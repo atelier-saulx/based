@@ -19,9 +19,10 @@ fn alignBatch(T: type, q: []u8, i: *usize) void {
     const condition = utils.readNext(t.FilterCondition, q, i);
     const len = utils.readNext(u16, q, i);
     if (condition.alignOffset == 255) {
-        q[i.* - 5] = utils.alignLeft(u32, q[i.* .. i.* + len * utils.sizeOf(T) + @alignOf(T)]);
+        q[i.* - 5] = utils.alignLeft(u32, q[i.* .. i.* + len * utils.sizeOf(T) + @alignOf(T) + 16]);
     }
-    i.* += len * utils.sizeOf(T) + @alignOf(T);
+    // Always 16 bytes padding (can become slightly more efficient)
+    i.* += len * utils.sizeOf(T) + @alignOf(T) + 16;
 }
 
 // prepare will return the next NOW
@@ -50,30 +51,23 @@ pub inline fn equalFixedOr(
 ) !bool {
     const vectorLen = std.simd.suggestVectorLength(T).?;
     const v = utils.readAligned(T, value, condition.start);
-
-    // make fn
     const len = utils.readNext(u16, q, i);
     const values = utils.sliceNextAligned(T, len, q, i, condition.alignOffset);
-
-    // const tmp: [*]T = @ptrCast(@alignCast(values[8 - offset .. values.len - offset].ptr));
-    // const ints: []T = tmp[0..l];
-
+    i.* += 16;
     var j: usize = 0;
-    if (vectorLen <= len) {
-        while (j <= (len - vectorLen)) : (j += vectorLen) {
+    if (vectorLen < len) {
+        while (j <= (len)) : (j += vectorLen) {
             const vec2: @Vector(vectorLen, T) = values[j..][0..vectorLen].*;
             if (std.simd.countElementsWithValue(vec2, v) != 0) {
                 return true;
             }
         }
-    }
-
-    while (j < len) : (j += 1) {
-        if (values[j] == v) {
+    } else {
+        const vec2: @Vector(vectorLen, T) = values[j..][0..vectorLen].*;
+        if (std.simd.countElementsWithValue(vec2, v) != 0) {
             return true;
         }
     }
-
     return false;
 }
 
@@ -97,11 +91,10 @@ pub inline fn filter(
     var i: usize = 0;
     var pass: bool = true;
     var value: []u8 = undefined;
-    var prop: u8 = 255; // tmp default
+    var prop: u8 = 255;
     var nextOrIndex: usize = q.len;
-    while (i < q.len) {
+    while (i < nextOrIndex) {
         const op: t.FilterOp = @enumFromInt(q[i]);
-
         const condition = utils.readNext(t.FilterCondition, q, &i);
         if (prop != condition.prop) {
             prop = condition.prop;
@@ -132,13 +125,3 @@ pub inline fn filter(
     }
     return pass;
 }
-
-// baseline
-// pub inline fn filter(
-//     _: Node.Node,
-//     _: *Query.QueryCtx,
-//     _: []u8,
-//     _: Node.Type,
-// ) !bool {
-//     return false;
-// }

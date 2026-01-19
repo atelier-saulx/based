@@ -165,6 +165,7 @@ export type QueryDefShared = {
   errors: QueryError[]
   lang: { lang: LangCodeEnum; fallback: LangCodeEnum[] }
   filter: QueryDefFilter
+  filterContinue?: QueryDefFilter
   aggregate: null | QueryDefAggregation
   // search: null | QueryDefSearch
   sort: null | SortHeader
