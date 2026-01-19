@@ -460,10 +460,17 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
         return SELVA_ENOENT;
     }
 
+    const enum SelvaTypeBlockStatus prev_block_status = atomic_fetch_or(&block->status.atomic, (uint32_t)SELVA_TYPE_BLOCK_STATUS_SAVING);
     constexpr enum SelvaTypeBlockStatus block_sm = SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
-    if ((atomic_load(&block->status.atomic) & block_sm) != block_sm) {
-        return 0; /* TODO Should this be an error instead? */
+    if ((prev_block_status & block_sm) != block_sm) {
+        if (prev_block_status & (SELVA_TYPE_BLOCK_STATUS_LOADING | SELVA_TYPE_BLOCK_STATUS_SAVING)) {
+            err = SELVA_EINPROGRESS;
+        } else {
+            err = 0; /* TODO Should this be an error instead? */
+        }
+        goto fail;
     }
+
 
 #if PRINT_SAVE_TIME
     ts_monotime(&ts_start);
@@ -474,7 +481,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
     snprintf(filename, sizeof(filename), FNAME_BLOCK_SDB_FMT, te->type, selva_node_id2block_i2(te, start));
     err = selva_io_init_file(&io, db->dirfd, filename, SELVA_IO_FLAGS_WRITE | SELVA_IO_FLAGS_COMPRESSED);
     if (err) {
-        return err;
+        goto fail;
     }
 
     write_dump_magic(&io, DUMP_MAGIC_TYPES);
@@ -509,7 +516,6 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
     io.sdb_write(range_hash_out, sizeof(*range_hash_out), 1, &io);
 
     selva_io_end(&io, nullptr);
-    atomic_store(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM));
 
 #if PRINT_SAVE_TIME
     ts_monotime(&ts_end);
@@ -518,7 +524,13 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
             2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash_out));
 #endif
 
-    return 0;
+fail:
+    if (err) {
+        atomic_store(&block->status.atomic, (uint32_t)prev_block_status);
+    } else {
+        atomic_store(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM));
+    }
+    return err;
 }
 
 __attribute__((warn_unused_result))
@@ -1037,6 +1049,12 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
     char filename[120];
     int err;
 
+    /*
+     * SELVA_TYPE_BLOCK_STATUS_INMEM must be to allow upsert to create nodes in
+     * this block. Should this dump contain nodes for other blocks, loading
+     * those nodes may fail.
+     */
+    const enum SelvaTypeBlockStatus prev_block_status = selva_block_status_set(te, block_i, SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_LOADING);
 
     snprintf(filename, sizeof(filename), FNAME_BLOCK_SDB_FMT, te->type, block_i);
     err = selva_io_init_file(&io, db->dirfd, filename, SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_COMPRESSED);
@@ -1050,15 +1068,9 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         goto fail;
     }
 
-    const enum SelvaTypeBlockStatus prev_block_status = selva_block_status_get(te, block_i);
-
-    if ((prev_block_status & SELVA_TYPE_BLOCK_STATUS_INMEM) == 0) {
-        /*
-         * This must be to allow upsert to create nodes in this block.
-         * Should this dump contain nodes for other blocks, loading those
-         * nodes may fail.
-         */
-        selva_block_status_set(te, block_i, SELVA_TYPE_BLOCK_STATUS_INMEM);
+    if (prev_block_status & (SELVA_TYPE_BLOCK_STATUS_LOADING | SELVA_TYPE_BLOCK_STATUS_SAVING)) {
+        err = SELVA_EINPROGRESS;
+        goto fail;
     }
 
     err = load_type(&io, db, te);
@@ -1085,12 +1097,17 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
          * Supposedly this block is not dirty as it was just loaded but
          * modifications during loading may have made it look like it is.
          */
-        selva_block_status_reset(te, block_i, SELVA_TYPE_BLOCK_STATUS_DIRTY);
+        selva_block_status_reset(te, block_i, SELVA_TYPE_BLOCK_STATUS_DIRTY | SELVA_TYPE_BLOCK_STATUS_LOADING);
+    } else {
+        selva_block_status_reset(te, block_i, SELVA_TYPE_BLOCK_STATUS_LOADING);
     }
 
     /* TODO Do something with block_hash */
 
 fail:
+    if (err) {
+        selva_block_status_replace(te, block_i, prev_block_status);
+    }
     selva_io_end(&io, nullptr);
     return err;
 }
