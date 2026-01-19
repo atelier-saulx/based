@@ -195,27 +195,35 @@ SELVA_EXPORT
 inline void selva_block_status_replace(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus status)
 #ifndef __zig
 {
-    atomic_store_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)status, memory_order_release);
+    atomic_store_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)status, memory_order_seq_cst);
 }
 #else
 ;
 #endif
 
+/**
+ * OR mask to the status.
+ * @returns the previous status.
+ */
 SELVA_EXPORT
-inline void selva_block_status_set(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+inline enum SelvaTypeBlockStatus selva_block_status_set(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
 #ifndef __zig
 {
-    atomic_fetch_or_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)mask, memory_order_release);
+    return atomic_fetch_or_explicit(&te->blocks->blocks[block_i].status.atomic, (uint32_t)mask, memory_order_seq_cst);
 }
 #else
 ;
 #endif
 
+/**
+ * Reset mask flags from the status.
+ * @returns the previous status.
+ */
 SELVA_EXPORT
-inline void selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
+inline enum SelvaTypeBlockStatus selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
 #ifndef __zig
 {
-    atomic_fetch_and_explicit(&te->blocks->blocks[block_i].status.atomic, ~mask, memory_order_release);
+    return atomic_fetch_and_explicit(&te->blocks->blocks[block_i].status.atomic, ~(uint32_t)mask, memory_order_seq_cst);
 }
 #else
 ;
@@ -225,7 +233,7 @@ SELVA_EXPORT
 inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask)
 #ifndef __zig
 {
-    return (atomic_load(&te->blocks->blocks[block_i].status.atomic) & mask) == mask;
+    return (atomic_load(&te->blocks->blocks[block_i].status.atomic) & (uint32_t)mask) == (uint32_t)mask;
 }
 #else
 ;
