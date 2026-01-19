@@ -129,7 +129,9 @@ export const filter = (
     return def
   }
 
-  if (propDef.typeIndex === PropType.uint32) {
+  if (operator === 'tester') {
+    conditions.push(createCondition(propDef, 0, operator))
+  } else if (propDef.typeIndex === PropType.uint32) {
     // make functions for this on a map writeType(typeIndex)
     if (value.length > 1) {
       const condition = createCondition(

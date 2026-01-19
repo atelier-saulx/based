@@ -707,6 +707,8 @@ pub const FilterOp = enum(u8) {
     equalsU32Or = 6,
     notEqualsU32Or = 7,
 
+    tester = 8,
+
     // different type
     // switchProp = 100,
     nextOrIndex = 253,

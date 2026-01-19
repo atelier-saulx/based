@@ -1,4 +1,9 @@
-import { fastPrng, readUint32, wait } from '../../src/utils/index.js'
+import {
+  fastPrng,
+  readUint32,
+  wait,
+  writeUint32,
+} from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 import { italy } from '../shared/examples.js'
@@ -62,6 +67,7 @@ await test('include', async (t) => {
             ref: 'todo',
             prop: 'workingOnIt',
           },
+          spesh: 'binary',
           todos: { items: { ref: 'todo', prop: 'assignees' } },
           nr: { type: 'uint32' },
           nr1: { type: 'uint32' },
@@ -110,11 +116,19 @@ await test('include', async (t) => {
     )
   }
 
+  const amount = 1e7
+  const spesh = new Uint8Array(4 * amount)
+
+  for (let i = 0; i < amount; i++) {
+    writeUint32(spesh, i, i * 4)
+  }
+
   const mrX = await db.create('user', {
     name: 'Mr X',
     currentTodo: { id: todos[0], $derp: true },
     email: `beerdejim@gmail.com`,
     nr: 67,
+    spesh,
   })
 
   const mrY = await db.create('user', {
@@ -122,6 +136,7 @@ await test('include', async (t) => {
     currentTodo: { id: todos[1], $derp: false },
     email: `beerdejim+1@gmail.com`,
     nr: 68,
+    spesh,
   })
 
   // now include edge
@@ -254,11 +269,11 @@ await test('include', async (t) => {
 
   await db
     .query('user')
-    .include('currentTodo')
+    .filter('spesh', 'tester', spesh)
     // if single ref
-    .filter('currentTodo.nr', 'equalsU32', 1)
-    .or('nr', 'equalsU32', 1e7)
-    .or('flap', 'equalsU32', 2)
+    // .filter('currentTodo.nr', 'equalsU32', 1)
+    // .or('nr', 'equalsU32', 1e7)
+    // .or('flap', 'equalsU32', 2)
     // .and('flap', 'equalsU32', 666)
     // .or('nr', 'equalsU32', 10)
     .get()

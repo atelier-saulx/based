@@ -45,6 +45,9 @@ pub fn prepare(
             },
             .equalsU32, .notEqualsU32 => alignSingle(u32, q, &i),
             .equalsU32Or, .notEqualsU32Or => alignBatch(u32, q, &i),
+            .tester => {
+                i += utils.sizeOf(t.FilterCondition);
+            },
             else => {},
         }
     }
@@ -99,6 +102,10 @@ pub inline fn filter(
             .notEqualsU32 => !try Fixed.equal(u32, q, &i, &condition, v),
             .equalsU32Or => try Fixed.equalOr(u32, q, &i, &condition, v),
             .notEqualsU32Or => !try Fixed.equalOr(u32, q, &i, &condition, v),
+            .tester => blk: {
+                std.debug.print("MR TEST \n", .{});
+                break :blk true;
+            },
             else => false,
         };
 
