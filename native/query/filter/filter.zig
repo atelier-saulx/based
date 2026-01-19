@@ -63,7 +63,6 @@ pub fn recursionErrorBoundary(
     };
 }
 
-// re ad dinline add ref boundary
 pub inline fn filter(
     node: Node.Node,
     ctx: *Query.QueryCtx,
@@ -77,6 +76,7 @@ pub inline fn filter(
     var nextOrIndex: usize = q.len;
     while (i < nextOrIndex) {
         const op: t.FilterOp = @enumFromInt(q[i]);
+
         const condition = utils.readNext(t.FilterCondition, q, &i);
         if (prop != condition.prop) {
             prop = condition.prop;
