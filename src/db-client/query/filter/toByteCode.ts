@@ -1,11 +1,13 @@
 import { debugBuffer } from '../../../sdk.js'
 import { writeUint32, writeUint64 } from '../../../utils/uint8.js'
 import {
-  createFilterCondition,
   FilterConditionByteSize,
-  FilterHeaderByteSize,
   FilterOp,
+  FilterOpInverse,
+  FilterSelectByteSize,
+  PropType,
   writeFilterCondition,
+  writeFilterSelect,
 } from '../../../zigTsExports.js'
 import { combineIntermediateResults } from '../query.js'
 import { byteSize } from '../toByteCode/utils.js'
@@ -31,6 +33,66 @@ const addConditions = (
   return lastProp
 }
 
+const addRefs = (
+  result: IntermediateByteCode[],
+  def: QueryDefFilter,
+  index: number,
+) => {
+  if (!def.references) {
+    return
+  }
+  for (const [prop, refDef] of def.references) {
+    const isMulti = refDef.ref?.typeIndex === PropType.references
+    const refBuffer = new Uint8Array(
+      FilterConditionByteSize + FilterSelectByteSize,
+    )
+
+    const nestedRefs = filterToBuffer(
+      refDef,
+      255,
+      index + refBuffer.byteLength,
+      false,
+    )
+    const edgeTypeId = refDef.ref?.edgeNodeTypeId ?? 0
+    const typeId = refDef.ref?.inverseTypeId ?? 0
+
+    // isMulti can have selections (which can be multiple that will be a special op)
+    const op =
+      edgeTypeId != 0
+        ? isMulti
+          ? FilterOp.selectLargeRefs
+          : FilterOp.selectLargeRef
+        : isMulti
+          ? FilterOp.selectSmallRefs
+          : FilterOp.selectSmallRef
+
+    let i = writeFilterCondition(
+      refBuffer,
+      {
+        op,
+        prop,
+        alignOffset: 0,
+        start: 0,
+      },
+      0,
+    )
+    i = writeFilterSelect(
+      refBuffer,
+      {
+        typeId,
+        edgeTypeId,
+        size: byteSize(nestedRefs),
+      },
+      i,
+    )
+
+    result.push(refBuffer)
+    result.push(nestedRefs)
+  }
+  // .or will be shitty scince we will jump and redo the reference there...
+  // so refs can get an or when we allow branching
+}
+
 const logger = (obj: any): any => {
   if (obj && typeof obj === 'object') {
     if (obj instanceof Map)
@@ -41,7 +103,10 @@ const logger = (obj: any): any => {
       if (key === 'schema' || key === 'props') {
         continue
       }
-      if (key === 'conditions') {
+
+      if (key === 'ref') {
+        res[key] = obj[key].path
+      } else if (key === 'conditions') {
         res[key] = obj[key]
       } else {
         res[key] = logger(obj[key])
@@ -62,8 +127,10 @@ export const filterToBuffer = (
 
   if (!def.or) {
     addConditions(result, def, fromLastProp)
+    addRefs(result, def, byteSize(result))
   } else if (def.or && def.conditions.size != 0) {
     const lastProp = addConditions(result, def, fromLastProp)
+    addRefs(result, def, byteSize(result))
     const resultSize = byteSize(result)
     const nextOrIndexBuffer = new Uint8Array(FilterConditionByteSize + 16)
     const offset = writeFilterCondition(
@@ -72,7 +139,7 @@ export const filterToBuffer = (
         op: FilterOp.nextOrIndex,
         prop: fromLastProp,
         alignOffset: 255,
-        start: 0, // this will also be used to offset
+        start: 0,
       },
       0,
     )
@@ -87,14 +154,14 @@ export const filterToBuffer = (
     // MOVE 1 up
   }
 
-  // if (top) {
-  //   console.dir(logger(def), { depth: 10 })
-  //   const totalByteLength = byteSize(result)
-  //   const res = new Uint8Array(totalByteLength)
-  //   const nResult = combineIntermediateResults(res, 0, result)
-  //   console.log('FILTER!')
-  //   debugBuffer(res)
-  // }
+  if (top) {
+    console.dir(logger(def), { depth: 10 })
+    const totalByteLength = byteSize(result)
+    const res = new Uint8Array(totalByteLength)
+    const nResult = combineIntermediateResults(res, 0, result)
+    console.log('FILTER!', totalByteLength)
+    debugBuffer(res)
+  }
 
   return result
 }

@@ -5,6 +5,8 @@ const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
+const Fixed = @import("./fixed.zig");
+const Select = @import("./select.zig");
 
 fn alignSingle(T: type, q: []u8, i: *usize) void {
     const size = utils.sizeOf(T) + @alignOf(T);
@@ -27,7 +29,7 @@ fn alignBatch(T: type, q: []u8, i: *usize) void {
 
 // prepare will return the next NOW
 // it will also just fill in the current now
-pub inline fn prepare(
+pub fn prepare(
     q: []u8,
 ) void {
     var i: usize = 0;
@@ -35,6 +37,12 @@ pub inline fn prepare(
         const op: t.FilterOp = @enumFromInt(q[i]);
         switch (op) {
             .nextOrIndex => alignSingle(usize, q, &i),
+            .selectLargeRef, .selectSmallRef => {
+                i += utils.sizeOf(t.FilterCondition);
+                const selectReference = utils.readNext(t.FilterSelect, q, &i);
+                prepare(q[i .. i + selectReference.size]);
+                i += selectReference.size;
+            },
             .equalsU32, .notEqualsU32 => alignSingle(u32, q, &i),
             .equalsU32Or, .notEqualsU32Or => alignBatch(u32, q, &i),
             else => {},
@@ -42,55 +50,29 @@ pub inline fn prepare(
     }
 }
 
-pub inline fn equalFixedOr(
-    T: type,
+pub fn recursionErrorBoundary(
+    cb: anytype,
+    ctx: *Query.QueryCtx,
     q: []u8,
-    i: *usize,
-    condition: *const t.FilterCondition,
     value: []u8,
-) !bool {
-    const vectorLen = std.simd.suggestVectorLength(T).?;
-    const v = utils.readAligned(T, value, condition.start);
-    const len = utils.readNext(u16, q, i);
-    const values = utils.sliceNextAligned(T, len, q, i, condition.alignOffset);
-    i.* += 16;
-    var j: usize = 0;
-    if (vectorLen < len) {
-        while (j <= (len)) : (j += vectorLen) {
-            const vec2: @Vector(vectorLen, T) = values[j..][0..vectorLen].*;
-            if (std.simd.countElementsWithValue(vec2, v) != 0) {
-                return true;
-            }
-        }
-    } else {
-        const vec2: @Vector(vectorLen, T) = values[j..][0..vectorLen].*;
-        if (std.simd.countElementsWithValue(vec2, v) != 0) {
-            return true;
-        }
-    }
-    return false;
+    i: *usize,
+) bool {
+    return cb(ctx, q, value, i) catch |err| {
+        std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
+        return false;
+    };
 }
 
-pub inline fn equalFixed(
-    T: type,
-    q: []u8,
-    i: *usize,
-    condition: *const t.FilterCondition,
-    value: []u8,
-) !bool {
-    return utils.readNextAligned(T, q, i, condition.alignOffset) ==
-        utils.readAligned(T, value, condition.start);
-}
-
+// re ad dinline add ref boundary
 pub inline fn filter(
     node: Node.Node,
-    _: *Query.QueryCtx,
+    ctx: *Query.QueryCtx,
     q: []u8,
     typeEntry: Node.Type,
 ) !bool {
     var i: usize = 0;
     var pass: bool = true;
-    var value: []u8 = undefined;
+    var v: []u8 = undefined;
     var prop: u8 = 255;
     var nextOrIndex: usize = q.len;
     while (i < nextOrIndex) {
@@ -98,7 +80,7 @@ pub inline fn filter(
         const condition = utils.readNext(t.FilterCondition, q, &i);
         if (prop != condition.prop) {
             prop = condition.prop;
-            value = Fields.get(
+            v = Fields.get(
                 typeEntry,
                 node,
                 try Schema.getFieldSchema(typeEntry, condition.prop),
@@ -107,14 +89,16 @@ pub inline fn filter(
         }
 
         pass = switch (op) {
+            // with and without edge
+            .selectLargeRef => recursionErrorBoundary(Select.largeRef, ctx, q, v, &i),
             .nextOrIndex => blk: {
                 nextOrIndex = utils.readNextAligned(usize, q, &i, condition.alignOffset);
                 break :blk true;
             },
-            .equalsU32 => try equalFixed(u32, q, &i, &condition, value),
-            .notEqualsU32 => !try equalFixed(u32, q, &i, &condition, value),
-            .equalsU32Or => try equalFixedOr(u32, q, &i, &condition, value),
-            .notEqualsU32Or => !try equalFixedOr(u32, q, &i, &condition, value),
+            .equalsU32 => try Fixed.equal(u32, q, &i, &condition, v),
+            .notEqualsU32 => !try Fixed.equal(u32, q, &i, &condition, v),
+            .equalsU32Or => try Fixed.equalOr(u32, q, &i, &condition, v),
+            .notEqualsU32Or => !try Fixed.equalOr(u32, q, &i, &condition, v),
             else => false,
         };
 

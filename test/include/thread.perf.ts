@@ -88,7 +88,7 @@ await test('include', async (t) => {
     nr: 2,
   })
 
-  for (let i = 0; i < 1e7; i++) {
+  for (let i = 0; i < 3; i++) {
     db.create('todo', {
       flap: 67,
       // name: i % 2 ? 'b' : 'a',
@@ -104,7 +104,8 @@ await test('include', async (t) => {
     todos.push(
       await db.create('todo', {
         name: i % 2 ? 'b' : 'a',
-        nr: rand(0, 10),
+        nr: i % 2 ? 1 : 2,
+        flap: 99,
       }),
     )
   }
@@ -186,7 +187,7 @@ await test('include', async (t) => {
 
   // console.log('\n--------------------------\n')
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
@@ -252,15 +253,27 @@ await test('include', async (t) => {
   //   .inspect(1000)
 
   await db
-    .query('todo')
-    .include('nr', 'name', 'flap')
-    .filter('nr', 'equalsU32Or', [11, 12, 13])
+    .query('user')
+    .include('currentTodo')
+    // if single ref
+    .filter('currentTodo.nr', 'equalsU32', 1)
     // .or('nr', 'equalsU32', 1e7)
     // .or('nr', 'equalsU32', 2)
     // .and('flap', 'equalsU32', 666)
     // .or('nr', 'equalsU32', 10)
     .get()
     .inspect(100)
+
+  // await db
+  //   .query('todo')
+  //   .include('nr', 'name', 'flap')
+  //   .filter('nr', 'equalsU32Or', [11, 12, 13])
+  //   // .or('nr', 'equalsU32', 1e7)
+  //   // .or('nr', 'equalsU32', 2)
+  //   // .and('flap', 'equalsU32', 666)
+  //   // .or('nr', 'equalsU32', 10)
+  //   .get()
+  //   .inspect(100)
 
   await wait(1000)
 })

@@ -77,6 +77,7 @@ export function createQueryDef<T extends QueryDefType>(
     q.schema = validateType(db, q, t.type)
     q.props = q.schema.props
     q.filter.props = q.schema.props
+
     q.type = type
     q.target = t
     if (type === QueryDefType.Root) {

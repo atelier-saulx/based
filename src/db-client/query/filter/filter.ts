@@ -47,6 +47,59 @@ export const filter = (
   let propDef = def.props[field]
 
   if (!propDef) {
+    const path = field.split('.')
+    let currentSelect
+    let props = def.props
+    // index if last is ref then this is wrong
+    for (let i = 0; i < path.length - 1; i++) {
+      const segment = path[i]
+      currentSelect = props[segment]
+
+      // segment[0] === $ // handle EDGE
+
+      if (
+        currentSelect.typeIndex === PropType.reference ||
+        currentSelect.typeIndex === PropType.references
+      ) {
+        if (!def.references) {
+          def.references = new Map()
+        }
+        let refDef = def.references.get(currentSelect.prop)
+        if (!refDef) {
+          refDef = {
+            ref: currentSelect,
+            conditions: new Map(),
+            props: db.schemaTypesParsed[currentSelect.schema.ref].props,
+          }
+          def.references.set(currentSelect.prop, refDef)
+        }
+        console.log('CONTINUE', path.slice(i + 1).join('.'))
+        return filter(
+          db,
+          refDef,
+          path.slice(i + 1).join('.'),
+          operator,
+          value,
+          opts,
+        )
+      } else if (currentSelect.typeIndex === PropType.object) {
+        console.log('GOT OBJECT HANDLE IT')
+        // set props PROPS
+      }
+
+      // for object and text but wait until we handle that ourselves
+      currentSelect = props[path[path.length - 1]]
+
+      // make 1 fn to handle all this stuff
+
+      console.log(currentSelect)
+
+      if (!currentSelect) {
+        throw new Error(`Property ${field} in filter not found`)
+      }
+    }
+    // not enough ofc
+    propDef = currentSelect
     // nested prop find it
   }
 
@@ -107,8 +160,6 @@ export const filter = (
       )
     }
   }
-
-  return def
 }
 
 export const or = (
@@ -127,7 +178,8 @@ export const or = (
       conditions: new Map(),
       props: def.props || {},
     }
-    return filter(db, def.or, field, operator, value, opts)
+    filter(db, def.or, field, operator, value, opts)
+    return def.or
   } else {
     return or(db, def.or, field, operator, value, opts)
   }

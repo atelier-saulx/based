@@ -710,8 +710,14 @@ pub const FilterOp = enum(u8) {
     // different type
     // switchProp = 100,
     nextOrIndex = 253,
-    groupReference = 201,
-    groupEdge = 202,
+    // single ref
+    // multi ref
+    selectLargeRef = 202,
+    selectLargeRefs = 203,
+    selectSmallRef = 204,
+    selectSmallRefs = 205,
+
+    // groupEdge = 202,
 };
 
 pub const FilterCondition = packed struct {
@@ -722,16 +728,10 @@ pub const FilterCondition = packed struct {
 };
 
 // only for nested
-pub const FilterHeader = packed struct {
-    propType: PropType,
+pub const FilterSelect = packed struct {
+    // propType: PropType,
     typeId: TypeId,
     edgeTypeId: TypeId,
     size: u32,
     // nextOrIndex: u32, // something like this?
-};
-
-pub const FilterPropHeader = packed struct {
-    op: FilterOp,
-    prop: u8,
-    propType: PropType,
 };
