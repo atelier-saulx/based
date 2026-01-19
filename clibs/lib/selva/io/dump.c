@@ -359,7 +359,7 @@ static void count_blocks(void *ctx, struct SelvaDb *, struct SelvaTypeEntry *, b
     (*((sdb_arr_len_t *)ctx))++;
 }
 
-static void save_block_info(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start)
+static void save_block_info(void *ctx, struct SelvaDb *, struct SelvaTypeEntry *te, block_id_t block, node_id_t start __unused)
 {
     struct selva_io *io = (struct selva_io *)ctx;
 
@@ -374,7 +374,7 @@ static void save_block_info(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry
     }
 }
 
-static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *com)
+static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct selva_dump_common_data *)
 {
     constexpr enum SelvaTypeBlockStatus mask = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
     sdb_arr_len_t len = 0;
@@ -412,7 +412,7 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
     return 0;
 }
 
-static void selva_dump_save_colvec(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start)
+static void selva_dump_save_colvec(struct selva_io *io, struct SelvaDb *, struct SelvaTypeEntry *te, node_id_t start)
 {
     write_dump_magic(io, DUMP_MAGIC_COLVEC);
 
