@@ -107,10 +107,12 @@ struct SelvaNodeSchema {
 };
 
 enum SelvaTypeBlockStatus {
-    SELVA_TYPE_BLOCK_STATUS_EMPTY = 0,
-    SELVA_TYPE_BLOCK_STATUS_FS = 0x01,
-    SELVA_TYPE_BLOCK_STATUS_INMEM = 0x02,
+    SELVA_TYPE_BLOCK_STATUS_EMPTY = 0, /*!< Block not in use. */
+    SELVA_TYPE_BLOCK_STATUS_FS = 0x01, /*!< Block has been saved previously. */
+    SELVA_TYPE_BLOCK_STATUS_INMEM = 0x02, /*!< Block loaded in memory. */
     SELVA_TYPE_BLOCK_STATUS_DIRTY = 0x04, /*!< Can't be set if te->blocks->blocks[block_i].status isn't set. */
+    SELVA_TYPE_BLOCK_STATUS_LOADING = 0x80, /*!< Loading in progress. */
+    SELVA_TYPE_BLOCK_STATUS_SAVING = 0x40, /*!< Saving in progress. */
 };
 
 struct SelvaAlias;
