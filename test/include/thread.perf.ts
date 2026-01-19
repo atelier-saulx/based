@@ -88,7 +88,7 @@ await test('include', async (t) => {
     nr: 2,
   })
 
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 1e7; i++) {
     db.create('todo', {
       flap: 67,
       // name: i % 2 ? 'b' : 'a',
@@ -185,7 +185,7 @@ await test('include', async (t) => {
   //   styleText('blue', `done update ${amount} ` + (Date.now() - d) + 'ms'),
   // )
 
-  // console.log('\n--------------------------\n')
+  console.log('\n--------------------------\n')
 
   await perf.skip(
     async () => {
@@ -196,8 +196,8 @@ await test('include', async (t) => {
             .query('todo')
             .include('nr', 'name')
             // .filter('nr', 'equalsU32', 1e7 + i)
-            .filter('flap', 'equalsU32Or', [20, 670, 1e7 + i]) // should give results
-            // .or('nr', 'equalsU32Or', [1e7, 1e7 + 1, 1e7 + 2, 1e7 + i]) // lets start with this...
+            .filter('flap', 'equalsU32Or', [20, 1e7 + i]) // should give results
+            .or('nr', 'equalsU32Or', [1e7, 1e7 + 1, 1e7 + 2, 1e7 + i]) // lets start with this...
             .get(),
         )
       }
@@ -257,8 +257,8 @@ await test('include', async (t) => {
     .include('currentTodo')
     // if single ref
     .filter('currentTodo.nr', 'equalsU32', 1)
-    // .or('nr', 'equalsU32', 1e7)
-    // .or('nr', 'equalsU32', 2)
+    .or('nr', 'equalsU32', 1e7)
+    .or('flap', 'equalsU32', 2)
     // .and('flap', 'equalsU32', 666)
     // .or('nr', 'equalsU32', 10)
     .get()

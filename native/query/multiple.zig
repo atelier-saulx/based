@@ -28,8 +28,13 @@ fn iterator(
 ) !u32 {
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
-    const filter = utils.sliceNext(header.filterSize, q, i);
-    Filter.prepare(filter);
+    var filter: []u8 = undefined;
+
+    if (It == t.QueryIteratorType.filter) {
+        filter = utils.sliceNext(header.filterSize, q, i);
+        Filter.prepare(filter);
+    }
+
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (it.next()) |node| {
         if (It == t.QueryIteratorType.filter) {

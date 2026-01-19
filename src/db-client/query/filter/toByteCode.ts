@@ -154,14 +154,14 @@ export const filterToBuffer = (
     // MOVE 1 up
   }
 
-  if (top) {
-    console.dir(logger(def), { depth: 10 })
-    const totalByteLength = byteSize(result)
-    const res = new Uint8Array(totalByteLength)
-    const nResult = combineIntermediateResults(res, 0, result)
-    console.log('FILTER!', totalByteLength)
-    debugBuffer(res)
-  }
+  // if (top) {
+  //   console.dir(logger(def), { depth: 10 })
+  //   const totalByteLength = byteSize(result)
+  //   const res = new Uint8Array(totalByteLength)
+  //   const nResult = combineIntermediateResults(res, 0, result)
+  //   console.log('FILTER!', totalByteLength)
+  //   debugBuffer(res)
+  // }
 
   return result
 }

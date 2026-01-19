@@ -21,7 +21,7 @@ fn alignBatch(T: type, q: []u8, i: *usize) void {
     const condition = utils.readNext(t.FilterCondition, q, i);
     const len = utils.readNext(u16, q, i);
     if (condition.alignOffset == 255) {
-        q[i.* - 5] = utils.alignLeft(u32, q[i.* .. i.* + len * utils.sizeOf(T) + @alignOf(T) + 16]);
+        q[i.* - 5] = utils.alignLeft(T, q[i.* .. i.* + len * utils.sizeOf(T) + @alignOf(T) + 16]);
     }
     // Always 16 bytes padding (can become slightly more efficient)
     i.* += len * utils.sizeOf(T) + @alignOf(T) + 16;
@@ -89,12 +89,12 @@ pub inline fn filter(
         }
 
         pass = switch (op) {
-            // with and without edge
-            .selectLargeRef => recursionErrorBoundary(Select.largeRef, ctx, q, v, &i),
             .nextOrIndex => blk: {
                 nextOrIndex = utils.readNextAligned(usize, q, &i, condition.alignOffset);
                 break :blk true;
             },
+            .selectLargeRef => recursionErrorBoundary(Select.largeRef, ctx, q, v, &i),
+
             .equalsU32 => try Fixed.equal(u32, q, &i, &condition, v),
             .notEqualsU32 => !try Fixed.equal(u32, q, &i, &condition, v),
             .equalsU32Or => try Fixed.equalOr(u32, q, &i, &condition, v),
