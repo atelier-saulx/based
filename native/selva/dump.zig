@@ -45,28 +45,30 @@ const DispatchSaveJobCtx = struct {
     threads: *Thread.Threads,
     thread: *Thread.Thread,
     qid: u32,
-    nrBlocks: u32,
+    nrDirtyBlocks: u32,
+    msg: []u8,
+    off: usize
 };
 
-// TODO Handle errors
+fn countDirtyBlocks(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, _: ?*selva.SelvaTypeEntry, _: selva.block_id_t, _: selva.node_id_t) callconv(.c) void {
+    const jobCtx: *DispatchSaveJobCtx = @alignCast(@ptrCast(jobCtxP.?));
+    jobCtx.nrDirtyBlocks += 1;
+}
+
 fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTypeEntry, _: selva.block_id_t, start: selva.node_id_t) callconv(.c) void {
     const jobCtx: *DispatchSaveJobCtx = @alignCast(@ptrCast(jobCtxP.?));
-    const ctx = jobCtx.threads.ctx;
     const typeCode = selva.selva_get_type(te);
 
-    jobCtx.threads.mutex.lock();
-    const msg = ctx.allocator.alloc(u8, 11) catch return;
-    // TODO Free somewhere!
-    //defer ctx.allocator.free(msg);
-    jobCtx.threads.mutex.unlock();
+    const msg = jobCtx.msg[jobCtx.off..jobCtx.off + 11];
+    jobCtx.off += 11;
 
     utils.write(msg, @as(u32, jobCtx.qid), 0); // id
     msg[4] = @intFromEnum(t.OpType.saveBlock); // op
     utils.write(msg, @as(u32, start), 5); // start
     utils.write(msg, @as(u16, typeCode), 9); // type
 
+    // TODO Handle error
     jobCtx.threads.query(msg) catch return;
-    jobCtx.nrBlocks += 1;
 }
 
 /// Save all blocks.
@@ -79,17 +81,22 @@ pub fn saveAllBlocks(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, 
         .threads = threads,
         .thread = thread,
         .qid = qid,
-        .nrBlocks = 0,
+        .nrDirtyBlocks = 0,
+        .msg = undefined,
+        .off = 0,
     };
 
     const errSaveCommon = saveCommon(threads.ctx);
     if (errSaveCommon == 0) {
+        selva.selva_foreach_block(threads.ctx.selva, selva.SELVA_TYPE_BLOCK_STATUS_DIRTY, countDirtyBlocks, &jobCtx);
+        // TODO Free somewhere!
+        jobCtx.msg = jemalloc.alloc(u8, jobCtx.nrDirtyBlocks * 11);
         selva.selva_foreach_block(threads.ctx.selva, selva.SELVA_TYPE_BLOCK_STATUS_DIRTY, dispatchSaveJob, &jobCtx);
     }
 
     const err: i32 = @intCast(errSaveCommon);
     utils.write(resp, err, 0);
-    utils.write(resp, jobCtx.nrBlocks, 4);
+    utils.write(resp, jobCtx.nrDirtyBlocks, 4);
 }
 
 pub fn loadCommon(
