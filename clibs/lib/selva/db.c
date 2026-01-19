@@ -118,7 +118,7 @@ void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t no
     selva_expire_remove(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
 }
 
-static void expire_cb(struct SelvaExpireToken *tok, void *ctx)
+static void expire_cb(struct SelvaExpireToken *tok, void *)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
     struct SelvaTypeEntry *te;

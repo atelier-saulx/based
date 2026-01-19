@@ -385,7 +385,7 @@ static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct s
     selva_foreach_block(db, mask, save_block_info, io);
 }
 
-int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename)
+int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com)
 {
     struct selva_io io = {
         .errlog_buf = com->errlog_buf,
@@ -812,12 +812,8 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
     io->sdb_read(&node_id, sizeof(node_id), 1, io);
 
     struct SelvaNodeRes res = selva_upsert_node(te, node_id);
-    if (!res.node && (res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM) == 0) {
-        /*
-         * This must be to allow upsert to create nodes in this block.
-         */
-        selva_block_status_set(te, selva_node_id2block_i(te->blocks, node_id), SELVA_TYPE_BLOCK_STATUS_INMEM);
-        res = selva_upsert_node(te, node_id);
+    if (!res.node) {
+        return SELVA_ENOENT;
     }
 
     struct SelvaNode *node = res.node;
@@ -1054,6 +1050,17 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         goto fail;
     }
 
+    const enum SelvaTypeBlockStatus prev_block_status = selva_block_status_get(te, block_i);
+
+    if ((prev_block_status & SELVA_TYPE_BLOCK_STATUS_INMEM) == 0) {
+        /*
+         * This must be to allow upsert to create nodes in this block.
+         * Should this dump contain nodes for other blocks, loading those
+         * nodes may fail.
+         */
+        selva_block_status_set(te, block_i, SELVA_TYPE_BLOCK_STATUS_INMEM);
+    }
+
     err = load_type(&io, db, te);
     if (err) {
         goto fail;
@@ -1071,6 +1078,14 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         selva_io_errlog(&io, "%s: Failed to read the hash", __func__);
         err = SELVA_EINVAL;
         goto fail;
+    }
+
+    if ((prev_block_status & SELVA_TYPE_BLOCK_STATUS_DIRTY) == 0) {
+        /**
+         * Supposedly this block is not dirty as it was just loaded but
+         * modifications during loading may have made it look like it is.
+         */
+        selva_block_status_reset(te, block_i, SELVA_TYPE_BLOCK_STATUS_DIRTY);
     }
 
     /* TODO Do something with block_hash */

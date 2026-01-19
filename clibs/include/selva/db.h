@@ -76,7 +76,7 @@ int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *sc
  * Save the common/shared data of the database.
  */
 SELVA_EXPORT
-int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *path) __attribute__((nonnull));
+int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
 
 /**
  * Save a nodes block starting from start.

@@ -8,7 +8,7 @@ const std = @import("std");
 const read = utils.read;
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
-fn saveCommon(ctx: *DbCtx, filename: [:0]const u8) c_int {
+fn saveCommon(ctx: *DbCtx) c_int {
     var com: selva.selva_dump_common_data = .{
         .ids_data = ctx.ids.ptr,
         .ids_len = ctx.ids.len,
@@ -16,7 +16,7 @@ fn saveCommon(ctx: *DbCtx, filename: [:0]const u8) c_int {
         .errlog_size = 0,
     };
 
-    return selva.selva_dump_save_common(ctx.selva, &com, filename.ptr);
+    return selva.selva_dump_save_common(ctx.selva, &com);
 }
 
 // sdbFilename must be nul-terminated
@@ -82,7 +82,7 @@ pub fn saveAllBlocks(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, 
         .nrBlocks = 0,
     };
 
-    const errSaveCommon = saveCommon(threads.ctx, "common.sdb");
+    const errSaveCommon = saveCommon(threads.ctx);
     if (errSaveCommon == 0) {
         selva.selva_foreach_block(threads.ctx.selva, selva.SELVA_TYPE_BLOCK_STATUS_DIRTY, dispatchSaveJob, &jobCtx);
     }
