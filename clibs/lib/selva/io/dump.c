@@ -385,7 +385,7 @@ static void save_common_blocks(struct selva_io *io, struct SelvaDb *db, struct s
     selva_foreach_block(db, mask, save_block_info, io);
 }
 
-int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com, const char *filename)
+int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *com)
 {
     struct selva_io io = {
         .errlog_buf = com->errlog_buf,
