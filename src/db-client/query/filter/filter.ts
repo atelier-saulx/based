@@ -73,7 +73,7 @@ export const filter = (
           }
           def.references.set(currentSelect.prop, refDef)
         }
-        console.log('CONTINUE', path.slice(i + 1).join('.'))
+        // console.log('CONTINUE', path.slice(i + 1).join('.'))
         return filter(
           db,
           refDef,
@@ -133,22 +133,35 @@ export const filter = (
     conditions.push(createCondition(propDef, 0, operator))
   } else if (propDef.typeIndex === PropType.uint32) {
     // make functions for this on a map writeType(typeIndex)
-    if (value.length > 1) {
+    if (value.length > 4) {
       const condition = createCondition(
         propDef,
-        6 + value.length * 4 + 16,
+        8 + value.length * 4 + 16,
         operator,
       )
       let i = FilterConditionByteSize
-      writeUint16(condition, value.length, i)
-      i += 6 // 4 Extra for alignment padding
+      writeUint32(condition, value.length, i)
+      i += 8 // 4 Extra for alignment padding
+      // Actual values
       for (const v of value) {
         writeUint32(condition, v, i)
         i += 4
       }
-      // Empty padding for SIMD
+      // Empty padding for SIMD (for now 16 bytes)
       for (let j = 0; j < 4; j++) {
         writeUint32(condition, value[0], i)
+        i += 4
+      }
+      conditions.push(condition)
+    }
+    if (value.length > 1) {
+      // Small batch
+      const condition = createCondition(propDef, 4 + 16, operator)
+      let i = FilterConditionByteSize
+      i += 4
+      for (let j = 0; j < 4; j++) {
+        // Allways use a full ARM neon simd vector (16 bytes)
+        writeUint32(condition, j >= value.length ? value[0] : value[j], i)
         i += 4
       }
       conditions.push(condition)

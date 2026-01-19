@@ -698,16 +698,15 @@ pub const AggGroupByKey = packed struct {
 pub const FilterOp = enum(u8) {
     exists = 0,
     notExists = 1,
-    // equals = 0, // only for references
-    // notEquals = 1,
-    // orEquals = 2,
-    // orNotEquals = 3,
-    equalsU32 = 4,
-    notEqualsU32 = 5,
-    equalsU32Or = 6,
-    notEqualsU32Or = 7,
 
-    tester = 8,
+    eqU32 = 4,
+    neqU32 = 5,
+    eqU32Batch = 6,
+    neqU32Batch = 7,
+    eqU32BatchSmall = 8,
+    neqU32BatchSmall = 9,
+
+    tester = 10,
 
     // different type
     // switchProp = 100,

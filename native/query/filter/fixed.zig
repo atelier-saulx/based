@@ -6,16 +6,16 @@ const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
 
-pub inline fn equalOr(
+pub inline fn eqBatch(
     T: type,
     q: []u8,
     i: *usize,
     condition: *const t.FilterCondition,
     value: []u8,
 ) !bool {
-    const vectorLen = std.simd.suggestVectorLength(T).?;
+    const vectorLen = 16 / utils.sizeOf(T);
     const v = utils.readAligned(T, value, condition.start);
-    const len = utils.readNext(u16, q, i);
+    const len = utils.readNext(u32, q, i);
     const values = utils.sliceNextAligned(T, len, q, i, condition.alignOffset);
     i.* += 16;
     var j: usize = 0;
@@ -28,17 +28,27 @@ pub inline fn equalOr(
     return false;
 }
 
-pub inline fn equal(
+pub inline fn eqBatchSmall(
     T: type,
     q: []u8,
     i: *usize,
     condition: *const t.FilterCondition,
     value: []u8,
 ) !bool {
-    // const val = utils.readAligned(T, value, condition.start);
-    // const f = utils.readNextAligned(T, q, i, condition.alignOffset);
-    // std.debug.print("EQ v: {any} f: {any} \n", .{ val, f });
-    // return val == f;
+    const vectorLen = 16 / utils.sizeOf(T);
+    const v = utils.readAligned(T, value, condition.start);
+    const values = utils.sliceNextAligned(T, vectorLen, q, i, condition.alignOffset);
+    const vec2: @Vector(vectorLen, T) = values[0..][0..vectorLen].*;
+    return (std.simd.countElementsWithValue(vec2, v) != 0);
+}
+
+pub inline fn eq(
+    T: type,
+    q: []u8,
+    i: *usize,
+    condition: *const t.FilterCondition,
+    value: []u8,
+) !bool {
     return utils.readNextAligned(T, q, i, condition.alignOffset) ==
         utils.readAligned(T, value, condition.start);
 }

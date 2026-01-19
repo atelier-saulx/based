@@ -19,12 +19,22 @@ fn alignSingle(T: type, q: []u8, i: *usize) void {
 
 fn alignBatch(T: type, q: []u8, i: *usize) void {
     const condition = utils.readNext(t.FilterCondition, q, i);
-    const len = utils.readNext(u16, q, i);
+    // make this u32
+    const len = utils.readNext(u32, q, i);
     if (condition.alignOffset == 255) {
-        q[i.* - 5] = utils.alignLeft(T, q[i.* .. i.* + len * utils.sizeOf(T) + @alignOf(T) + 16]);
+        q[i.* - 7] = utils.alignLeft(T, q[i.* .. i.* + len * utils.sizeOf(T) + @alignOf(T) + 16]);
     }
     // Always 16 bytes padding (can become slightly more efficient)
     i.* += len * utils.sizeOf(T) + @alignOf(T) + 16;
+}
+
+fn alignSmallBatch(T: type, q: []u8, i: *usize) void {
+    const condition = utils.readNext(t.FilterCondition, q, i);
+    if (condition.alignOffset == 255) {
+        q[i.* - 3] = utils.alignLeft(T, q[i.* .. i.* + @alignOf(T) + 16]);
+    }
+    // Always 16 bytes padding (can become slightly more efficient)
+    i.* += @alignOf(T) + 16;
 }
 
 // prepare will return the next NOW
@@ -43,8 +53,9 @@ pub fn prepare(
                 prepare(q[i .. i + selectReference.size]);
                 i += selectReference.size;
             },
-            .equalsU32, .notEqualsU32 => alignSingle(u32, q, &i),
-            .equalsU32Or, .notEqualsU32Or => alignBatch(u32, q, &i),
+            .eqU32, .neqU32 => alignSingle(u32, q, &i),
+            .eqU32Batch, .neqU32Batch => alignBatch(u32, q, &i),
+            .eqU32BatchSmall, .neqU32BatchSmall => alignSmallBatch(u32, q, &i),
             .tester => {
                 i += utils.sizeOf(t.FilterCondition);
             },
@@ -98,10 +109,13 @@ pub inline fn filter(
             },
             .selectLargeRef => recursionErrorBoundary(Select.largeRef, ctx, q, v, &i),
 
-            .equalsU32 => try Fixed.equal(u32, q, &i, &condition, v),
-            .notEqualsU32 => !try Fixed.equal(u32, q, &i, &condition, v),
-            .equalsU32Or => try Fixed.equalOr(u32, q, &i, &condition, v),
-            .notEqualsU32Or => !try Fixed.equalOr(u32, q, &i, &condition, v),
+            .eqU32 => try Fixed.eq(u32, q, &i, &condition, v),
+            .neqU32 => !try Fixed.eq(u32, q, &i, &condition, v),
+            .eqU32Batch => try Fixed.eqBatch(u32, q, &i, &condition, v),
+            .neqU32Batch => !try Fixed.eqBatch(u32, q, &i, &condition, v),
+            .eqU32BatchSmall => try Fixed.eqBatchSmall(u32, q, &i, &condition, v),
+            .neqU32BatchSmall => !try Fixed.eqBatchSmall(u32, q, &i, &condition, v),
+
             .tester => blk: {
                 std.debug.print("MR TEST \n", .{});
                 break :blk true;

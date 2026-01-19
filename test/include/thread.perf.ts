@@ -202,17 +202,25 @@ await test('include', async (t) => {
 
   console.log('\n--------------------------\n')
 
-  await perf.skip(
+  const bigBatch: number[] = []
+  for (let i = 0; i < 20; i++) {
+    bigBatch.push(1e7 + i)
+  }
+
+  await perf(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
+        bigBatch[0] = 1e7 + i
         q.push(
           db
             .query('todo')
             .include('nr', 'name')
             // .filter('nr', 'equalsU32', 1e7 + i)
-            .filter('flap', 'equalsU32Or', [20, 1e7 + i]) // should give results
-            .or('nr', 'equalsU32Or', [1e7, 1e7 + 1, 1e7 + 2, 1e7 + i]) // lets start with this...
+            .filter('flap', 'eqU32Batch', bigBatch) // should give results
+
+            // .filter('flap', 'eqU32BatchSmall', [20, 1e7 + i]) // should give results
+            // .or('nr', 'eqU32BatchSmall', [1e7, 1e7 + 1, 1e7 + 2, 1e7 + i]) // lets start with this...
             .get(),
         )
       }
@@ -269,9 +277,12 @@ await test('include', async (t) => {
 
   await db
     .query('user')
-    .filter('spesh', 'tester', spesh)
+    .include('currentTodo')
+    // .filter('spesh', 'tester', spesh)
     // if single ref
-    // .filter('currentTodo.nr', 'equalsU32', 1)
+    .filter('currentTodo.nr', 'eqU32BatchSmall', [1, 2])
+
+    // .filter('currentTodo.nr', 'eqU32', 1)
     // .or('nr', 'equalsU32', 1e7)
     // .or('flap', 'equalsU32', 2)
     // .and('flap', 'equalsU32', 666)
