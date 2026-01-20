@@ -23,8 +23,7 @@ const saveAllBlocksId = idGenerator()
 const loadBlockRawId = idGenerator()
 const getBlockHashId = idGenerator()
 
-function saveAllBlocks(db: DbServer): Promise<number> {
-  const id = saveAllBlocksId.next().value
+function saveAllBlocks(db: DbServer, id: number): Promise<number> {
   const msg = new Uint8Array(5)
 
   writeUint32(msg, id, 0)
@@ -165,18 +164,33 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
   }
 
   let ts = Date.now()
+  const id = saveAllBlocksId.next().value
   db.saveInProgress = true
+  let state = 0
+  const p = Promise.withResolvers()
+
+  const updateState = (n: number) => {
+    state += n
+    if (state === 0) {
+      p.resolve(null)
+    }
+  }
+  const saveListener = () => updateState(1)
+
+
+  db.addOpListener(OpType.saveBlock, id, saveListener)
 
   try {
-    const nrBlocks = await saveAllBlocks(db)
-    console.log(`nrBlocks: ${nrBlocks}`)
-    // TODO block until all blocks have been written?
+    const nrBlocks = await saveAllBlocks(db, id)
+    updateState(-nrBlocks)
+    await p.promise
 
     db.emit('info', `Save took ${Date.now() - ts}ms`)
   } catch (err) {
     db.emit('error', `Save failed ${err.message}`)
     throw err
   } finally {
+    db.removeOpListener(OpType.saveBlock, id, saveListener)
     db.saveInProgress = false
   }
 }
