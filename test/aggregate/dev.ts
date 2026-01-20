@@ -15,7 +15,7 @@ await test('kev', async (t) => {
     types: {
       trip: {
         driver: 'string',
-        distance: 'int32',
+        distance: 'uint32',
         rate: 'int8',
       },
     },
@@ -30,35 +30,46 @@ await test('kev', async (t) => {
   //     await db
   //       .query('trip')
   //       .include('distance')
-  //       .filter('distance', '>', 10) // filter still doesn't work
+  //       .filter('distance', 'equalsU32', 10) // filter ongoing
   //       .get()
   //   ).debug(),
   // )
+
   console.log(
     (
       await db
         .query('trip')
         .sum('distance')
-        .harmonicMean('distance')
-        .count()
-        .avg('distance')
-        .stddev('distance', { mode: 'population' })
+        .filter('distance', 'equalsU32', 10)
         .get()
     ).debug(),
   )
-  console.log((await db.query('trip').count().get()).debug())
-  console.log((await db.query('trip').count().sum('distance').get()).debug())
-  console.log(
-    (
-      await db.query('trip').sum('distance').count().avg('distance').get()
-    ).debug(),
-  )
-  console.log(
-    (await db.query('trip').count().sum('distance', 'rate').get()).debug(), // this doesn't
-  )
-  console.log(
-    (await db.query('trip').sum('distance').groupBy('driver').get()).debug(),
-  )
 
-  await db.stop()
+  // console.log(
+  //   (
+  //     await db
+  //       .query('trip')
+  //       .sum('distance')
+  //       .harmonicMean('distance')
+  //       .count()
+  //       .avg('distance')
+  //       .stddev('distance', { mode: 'population' })
+  //       .get()
+  //   ).debug(),
+  // )
+  // console.log((await db.query('trip').count().get()).debug())
+  // console.log((await db.query('trip').sum('distance').get()).debug())
+  // console.log(
+  //   (
+  //     await db.query('trip').sum('distance').count().avg('distance').get()
+  //   ).debug(),
+  // )
+  // console.log(
+  //   (await db.query('trip').count().sum('distance', 'rate').get()).debug(), // this doesn't
+  // )
+  // console.log(
+  //   (await db.query('trip').sum('distance').groupBy('driver').get()).debug(),
+  // )
+
+  // await db.stop()
 })

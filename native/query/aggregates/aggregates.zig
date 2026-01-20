@@ -10,6 +10,7 @@ const copy = utils.copy;
 const microbufferToF64 = utils.microbufferToF64;
 const t = @import("../../types.zig");
 const resultHeaderOffset = @import("../../thread/results.zig").resultHeaderOffset;
+const filter = @import("../filter/filter.zig").filter;
 
 pub fn iterator(
     ctx: *Query.QueryCtx,
@@ -27,6 +28,10 @@ pub fn iterator(
     while (it.next()) |node| {
         if (filterBuf.len > 0) {
             // Filter Check
+            // utils.debugPrint("filterBuf: {any}\n", .{filterBuf});
+            // if (!try filter(node, ctx, q, typeEntry)) {
+            //     continue :nodeLoop;
+            // }
         }
 
         aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hadAccumulated);
