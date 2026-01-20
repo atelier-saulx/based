@@ -7,3 +7,19 @@ export type FilterOpts = {
     | 'euclideanDistance'
   score?: number
 }
+
+export type Operator =
+  | '='
+  | 'includes'
+  | '!includes' // includes ?
+  | '<'
+  | '>'
+  | '!='
+  | 'like'
+  | '>='
+  | '<='
+  | '..'
+  | '!..'
+  | 'like'
+  | 'exists'
+  | '!exists'

@@ -10,8 +10,6 @@ export const DEFAULT_MAP: Record<PropTypeEnum, any> = {
   [PropType.cardinality]: [],
   [PropType.number]: 0,
   [PropType.timestamp]: 0,
-  [PropType.created]: 0,
-  [PropType.updated]: 0,
   [PropType.enum]: 0,
   [PropType.id]: 0,
   [PropType.int16]: 0,

@@ -158,8 +158,6 @@ export const SIZE_MAP: Record<keyof typeof PropType, number> = {
   timestamp: 8, // 64bit
   // double-precision 64-bit binary format IEEE 754 value
   number: 8, // 64bit
-  created: 8,
-  updated: 8,
   int8: 1,
   uint8: 1,
   int16: 2,

@@ -216,11 +216,9 @@ await test('include', async (t) => {
           db
             .query('todo')
             .include('nr', 'name')
-            // .filter('nr', 'equalsU32', 1e7 + i)
-            .filter('flap', 'eqU32Batch', bigBatch) // should give results
-
-            // .filter('flap', 'eqU32BatchSmall', [20, 1e7 + i]) // should give results
-            // .or('nr', 'eqU32BatchSmall', [1e7, 1e7 + 1, 1e7 + 2, 1e7 + i]) // lets start with this...
+            .filter('nr', '=', 1e7 + i)
+            // .filter('flap', 'eqU32Batch', bigBatch) // should give results
+            // .filter('flap', 'eqU32BatchSmall', [1e7 + 1e7 + i]) // should give results
             .get(),
         )
       }
@@ -280,7 +278,7 @@ await test('include', async (t) => {
     .include('currentTodo')
     // .filter('spesh', 'tester', spesh)
     // if single ref
-    .filter('currentTodo.nr', 'eqU32BatchSmall', [1, 2])
+    .filter('currentTodo.nr', '=', [1, 2])
 
     // .filter('currentTodo.nr', 'eqU32', 1)
     // .or('nr', 'equalsU32', 1e7)

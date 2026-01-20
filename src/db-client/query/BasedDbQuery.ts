@@ -14,7 +14,7 @@ import { BasedQueryResponse } from './BasedQueryResponse.js'
 import { subscribe, OnData, OnError } from './subscription/index.js'
 import { registerQuery } from './registerQuery.js'
 import { DbClient } from '../index.js'
-import { FilterOpts } from './filter/types.js'
+import { FilterOpts, Operator } from './filter/types.js'
 import { validateLocale, validateRange } from './validation.js'
 import { DEF_RANGE_PROP_LIMIT } from './thresholds.js'
 import { StepInput, aggFnOptions } from './aggregates/types.js'
@@ -120,7 +120,7 @@ export class QueryBranch<T> {
   // going to support a fn for both filter and or
   filter(
     field: string,
-    operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
+    operator?: Operator,
     value?: any,
     opts?: FilterOpts,
   ): T {
@@ -143,12 +143,7 @@ export class QueryBranch<T> {
     return this
   }
 
-  and(
-    field: string,
-    operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
-    value?: any,
-    opts?: FilterOpts,
-  ): T {
+  and(field: string, operator?: Operator, value?: any, opts?: FilterOpts): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'and',
@@ -173,12 +168,7 @@ export class QueryBranch<T> {
 
   // and can be a shortcut for filter 🤷🏻‍♂️
   // going to support a fn for both filter and or
-  or(
-    field: string,
-    operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
-    value?: any,
-    opts?: FilterOpts,
-  ): T {
+  or(field: string, operator?: Operator, value?: any, opts?: FilterOpts): T {
     if (this.queryCommands) {
       this.queryCommands.push({
         method: 'or',

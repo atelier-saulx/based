@@ -1,47 +1,20 @@
-import { PropDef, PropDefEdge } from '../../../schema.js'
-import { writeUint16, writeUint32 } from '../../../utils/uint8.js'
-import {
-  FilterConditionByteSize,
-  FilterOp,
-  FilterOpInverse,
-  PropType,
-  writeFilterCondition,
-} from '../../../zigTsExports.js'
+import { FilterOpInverse, PropType } from '../../../zigTsExports.js'
 import { DbClient } from '../../index.js'
 import { QueryDefFilter } from '../types.js'
-import { FilterOpts } from './types.js'
-
-const createCondition = (
-  propDef: PropDef | PropDefEdge,
-  size: number,
-  // TODO: this is tmp will become user operator
-  operator: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
-) => {
-  const condition = new Uint8Array(size + FilterConditionByteSize)
-  writeFilterCondition(
-    condition,
-    {
-      op: FilterOp[operator],
-      start: propDef.start || 0,
-      prop: propDef.prop,
-      alignOffset: 255,
-    },
-    0,
-  )
-  return condition
-}
+import { createCondition } from './condition.js'
+import { FilterOpts, Operator } from './types.js'
 
 export const filter = (
   db: DbClient,
   def: QueryDefFilter,
   field: string,
   // TODO: this is tmp will become user operator
-  operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
+  operator?: Operator,
   value?: any,
   opts?: FilterOpts,
-) => {
+): void => {
   if (operator === undefined) {
-    operator = FilterOpInverse[0]
+    operator = '='
   }
 
   let propDef = def.props[field]
@@ -126,54 +99,14 @@ export const filter = (
 
   // For now
   if (value == undefined) {
-    return def
+    return
   }
 
-  if (operator === 'tester') {
-    conditions.push(createCondition(propDef, 0, operator))
-  } else if (propDef.typeIndex === PropType.uint32) {
-    // make functions for this on a map writeType(typeIndex)
-    if (value.length > 4) {
-      const condition = createCondition(
-        propDef,
-        8 + value.length * 4 + 16,
-        operator,
-      )
-      let i = FilterConditionByteSize
-      writeUint32(condition, value.length, i)
-      i += 8 // 4 Extra for alignment padding
-      // Actual values
-      for (const v of value) {
-        writeUint32(condition, v, i)
-        i += 4
-      }
-      // Empty padding for SIMD (for now 16 bytes)
-      for (let j = 0; j < 4; j++) {
-        writeUint32(condition, value[0], i)
-        i += 4
-      }
-      conditions.push(condition)
-    }
-    if (value.length > 1) {
-      // Small batch
-      const condition = createCondition(propDef, 4 + 16, operator)
-      let i = FilterConditionByteSize
-      i += 4
-      for (let j = 0; j < 4; j++) {
-        // Allways use a full ARM neon simd vector (16 bytes)
-        writeUint32(condition, j >= value.length ? value[0] : value[j], i)
-        i += 4
-      }
-      conditions.push(condition)
-    } else {
-      conditions.push(
-        writeUint32(
-          createCondition(propDef, 8, operator),
-          value[0],
-          FilterConditionByteSize + 4, // 4 Extra for alignment padding
-        ),
-      )
-    }
+  const condition = createCondition(propDef, operator!, value, opts)
+
+  // When all values are handled this is not nessecary
+  if (condition) {
+    conditions.push(condition)
   }
 }
 
@@ -181,12 +114,12 @@ export const or = (
   db: DbClient,
   def: QueryDefFilter,
   field: string,
-  operator?: (typeof FilterOpInverse)[keyof typeof FilterOpInverse],
+  operator?: Operator,
   value?: any,
   opts?: FilterOpts,
 ) => {
   if (operator === undefined) {
-    operator = FilterOpInverse[0]
+    operator = '='
   }
   if (!def.or) {
     def.or = {

@@ -73,8 +73,8 @@ pub const ModOp = enum(u8) {
 pub const PropType = enum(u8) {
     null = 0,
     timestamp = 1,
-    created = 2,
-    updated = 3,
+    // created = 2,
+    // updated = 3,
     number = 4,
     cardinality = 5,
     uint8 = 6,
@@ -149,8 +149,8 @@ pub const PropType = enum(u8) {
     pub fn size(self: PropType) u8 {
         switch (self) {
             .timestamp,
-            .created,
-            .updated,
+            // .created,
+            // .updated,
             .number,
             => return 8,
             .int8,
@@ -706,19 +706,61 @@ pub const FilterOp = enum(u8) {
     eqU32BatchSmall = 8,
     neqU32BatchSmall = 9,
 
-    tester = 10,
+    eqI32 = 10,
+    neqI32 = 11,
+    eqI32Batch = 12,
+    neqI32Batch = 13,
+    eqI32BatchSmall = 14,
+    neqI32BatchSmall = 15,
 
-    // different type
-    // switchProp = 100,
-    nextOrIndex = 253,
-    // single ref
-    // multi ref
+    eqU16 = 16,
+    neqU16 = 17,
+    eqU16Batch = 18,
+    neqU16Batch = 19,
+    eqU16BatchSmall = 20,
+    neqU16BatchSmall = 21,
+
+    eqI16 = 22,
+    neqI16 = 23,
+    eqI16Batch = 24,
+    neqI16Batch = 25,
+    eqI16BatchSmall = 26,
+    neqI16BatchSmall = 27,
+
+    eqU8 = 28,
+    neqU8 = 29,
+    eqU8Batch = 30,
+    neqU8Batch = 31,
+    eqU8BatchSmall = 32,
+    neqU8BatchSmall = 33,
+
+    eqI8 = 34,
+    neqI8 = 35,
+    eqI8Batch = 36,
+    neqI8Batch = 37,
+    eqI8BatchSmall = 38,
+    neqI8BatchSmall = 39,
+
+    eqF64 = 40,
+    neqF64 = 41,
+    eqF64Batch = 42,
+    neqF64Batch = 43,
+    eqF64BatchSmall = 44,
+    neqF64BatchSmall = 45,
+
+    eqI64 = 46,
+    neqI64 = 47,
+    eqI64Batch = 48,
+    neqI64Batch = 49,
+    eqI64BatchSmall = 50,
+    neqI64BatchSmall = 51,
+
     selectLargeRef = 202,
     selectLargeRefs = 203,
     selectSmallRef = 204,
     selectSmallRefs = 205,
 
-    // groupEdge = 202,
+    nextOrIndex = 253,
 };
 
 pub const FilterCondition = packed struct {
