@@ -432,7 +432,7 @@ static void selva_dump_save_colvec(struct selva_io *io, struct SelvaDb *, struct
 }
 
 /* TODO Change start to block_i */
-int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start, selva_hash128_t *range_hash_out)
+int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start)
 {
 #if PRINT_SAVE_TIME
     struct timespec ts_start, ts_end;
@@ -501,12 +501,12 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
      */
     selva_dump_save_colvec(&io, db, te, start);
 
-    *range_hash_out = selva_hash_digest(hash_state);
+    selva_hash128_t block_hash = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
     selva_hash_free_state(tmp_hash_state);
 
     write_dump_magic(&io, DUMP_MAGIC_BLOCK_HASH);
-    io.sdb_write(range_hash_out, sizeof(*range_hash_out), 1, &io);
+    io.sdb_write(&block_hash, sizeof(block_hash), 1, &io);
 
     selva_io_end(&io, nullptr);
 
@@ -514,7 +514,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
     ts_monotime(&ts_end);
     print_ready("save", &ts_start, &ts_end, "hash: %.*s range_hash: %.*s\n",
             2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io.computed_hash),
-            2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash_out));
+            SELVA_HASH_HEX_LEN, selva_io_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, block_hash));
 #endif
 
 fail:
@@ -1040,7 +1040,10 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         .errlog_left = errlog_size,
     };
     char filename[120];
+    selva_hash128_t old_hash, new_hash;
     int err;
+
+    old_hash = new_hash = 0;
 
     /*
      * SELVA_TYPE_BLOCK_STATUS_INMEM must be to allow upsert to create nodes in
@@ -1071,15 +1074,13 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         goto fail;
     }
 
-    selva_hash128_t block_hash;
-
     if (!read_dump_magic(&io, DUMP_MAGIC_BLOCK_HASH)) {
         selva_io_errlog(&io, "%s: Invalid block hash magic", __func__);
         err = SELVA_EINVAL;
         goto fail;
     }
 
-    if (io.sdb_read(&block_hash, sizeof(block_hash), 1, &io) != 1) {
+    if (io.sdb_read(&old_hash, sizeof(old_hash), 1, &io) != 1) {
         selva_io_errlog(&io, "%s: Failed to read the hash", __func__);
         err = SELVA_EINVAL;
         goto fail;
@@ -1095,12 +1096,20 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         selva_block_status_reset(te, block_i, SELVA_TYPE_BLOCK_STATUS_LOADING);
     }
 
-    /* TODO Do something with block_hash */
+    selva_node_block_hash(db, te, selva_block_i2start(te, block_i), &new_hash);
 
 fail:
     if (err) {
         selva_block_status_replace(te, block_i, prev_block_status);
     }
+    if (old_hash != new_hash) {
+        selva_io_errlog(&io, "%s: Block hash mismatch! %.*s != %.*s",
+                        __func__,
+                        SELVA_HASH_HEX_LEN, selva_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, old_hash),
+                        SELVA_HASH_HEX_LEN, selva_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, new_hash));
+        err = SELVA_EIO;
+    }
+
     selva_io_end(&io, nullptr);
     return err;
 }

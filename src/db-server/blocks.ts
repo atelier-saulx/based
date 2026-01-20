@@ -2,6 +2,8 @@ import native, { idGenerator } from '../native.js'
 import {
   DECODER,
   readInt32,
+  readUint16,
+  readUint32,
   writeUint16,
   writeUint32,
 } from '../utils/index.js'
@@ -33,6 +35,7 @@ function saveAllBlocks(db: DbServer, id: number): Promise<number> {
     db.addOpOnceListener(OpType.saveAllBlocks, id, (buf: Uint8Array) => {
       const err = readInt32(buf, 0)
       if (err) {
+        // In this case save probably failed before any blocks were written.
         const errMsg = `Save failed: ${native.selvaStrerror(err)}`
         const errLog = DECODER.decode(buf.subarray(4))
 
@@ -175,10 +178,22 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
       p.resolve(null)
     }
   }
-  const saveListener = () => updateState(1)
+  const saveBlockListener = (buf: Uint8Array) => {
+    const err = readInt32(buf, 0)
+    if (err) {
+      const start = readUint32(buf, 4)
+      const typeCode = readUint16(buf, 8)
+      const errMsg = `Save block ${typeCode}:${start} failed: ${native.selvaStrerror(err)}`
+
+      db.emit('error', errMsg)
+      p.reject(new Error(errMsg))
+    } else {
+      updateState(1)
+    }
+  }
 
 
-  db.addOpListener(OpType.saveBlock, id, saveListener)
+  db.addOpListener(OpType.saveBlock, id, saveBlockListener)
 
   try {
     const nrBlocks = await saveAllBlocks(db, id)
@@ -190,7 +205,7 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
     db.emit('error', `Save failed ${err.message}`)
     throw err
   } finally {
-    db.removeOpListener(OpType.saveBlock, id, saveListener)
+    db.removeOpListener(OpType.saveBlock, id, saveBlockListener)
     db.saveInProgress = false
   }
 }
