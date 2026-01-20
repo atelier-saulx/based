@@ -53,6 +53,52 @@ const readNumber = (
 }
 
 export const readAggregate = (
+  q: ReaderSchema,
+  result: Uint8Array,
+  offset: number,
+  len: number,
+) => {
+  const { groupBy, aggregates, totalResultsSize } = q.aggregate!
+  const results = {}
+
+  if (groupBy) {
+    // let cursor = offset
+    // while (cursor < len) {
+    //   const { key, bytesRead } = readGroupKey(result, cursor, groupBy)
+    //   cursor += bytesRead
+    //   results[key] = results[key] || {}
+    //   readAggValues(result, cursor, aggregates, results[key])
+    //   cursor += totalResultsSize // MV: to check
+    // }
+  } else {
+    readAggValues(result, offset, aggregates, results)
+  }
+
+  return results
+}
+
+const readAggValues = (
+  result: Uint8Array,
+  baseOffset: number,
+  aggregates: any[],
+  targetObject: any,
+) => {
+  for (const agg of aggregates) {
+    const isCountOrCardinality =
+      agg.type === AggFunction.cardinality || agg.type === AggFunction.count
+    const readFn = isCountOrCardinality ? readUint32 : readDoubleLE
+
+    const val = readFn(result, baseOffset + agg.resultPos)
+
+    const pathSuffix =
+      agg.type === AggFunction.count ? [] : [AggFunctionInverse[agg.type]]
+
+    // MV: check for edgesagg.path[1][0] == '$`
+    setByPath(targetObject, [...agg.path, ...pathSuffix], val)
+  }
+}
+
+export const readAggregateOld = (
   // only need agg
   q: ReaderSchema,
   result: Uint8Array,

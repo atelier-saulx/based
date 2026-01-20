@@ -35,28 +35,28 @@ await test('kev', async (t) => {
   //   ).debug(),
   // )
 
-  console.log(
-    (
-      await db
-        .query('trip')
-        .sum('distance')
-        .filter('distance', 'equalsU32', 10)
-        .get()
-    ).debug(),
-  )
-
   // console.log(
   //   (
   //     await db
   //       .query('trip')
   //       .sum('distance')
-  //       .harmonicMean('distance')
-  //       .count()
-  //       .avg('distance')
-  //       .stddev('distance', { mode: 'population' })
+  //       .filter('distance', 'equalsU32', 10)
   //       .get()
   //   ).debug(),
   // )
+
+  console.log(
+    (
+      await db
+        .query('trip')
+        .sum('distance')
+        .harmonicMean('distance')
+        .count()
+        .avg('distance')
+        .stddev('distance', { mode: 'population' })
+        .get()
+    ).debug(),
+  )
   // console.log((await db.query('trip').count().get()).debug())
   // console.log((await db.query('trip').sum('distance').get()).debug())
   // console.log(
