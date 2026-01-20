@@ -39,6 +39,9 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
     utils.write(resp, err, 0);
     utils.byteCopy(resp, q[5..11], 4);
     utils.byteCopy(resp, &hash, 10);
+
+    // Free the query message allocated by dispatchSaveJob()
+    jemalloc.free(q);
 }
 
 const DispatchSaveJobCtx = struct {
@@ -46,21 +49,13 @@ const DispatchSaveJobCtx = struct {
     thread: *Thread.Thread,
     qid: u32,
     nrDirtyBlocks: u32,
-    msg: []u8,
-    off: usize
 };
-
-fn countDirtyBlocks(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, _: ?*selva.SelvaTypeEntry, _: selva.block_id_t, _: selva.node_id_t) callconv(.c) void {
-    const jobCtx: *DispatchSaveJobCtx = @alignCast(@ptrCast(jobCtxP.?));
-    jobCtx.nrDirtyBlocks += 1;
-}
 
 fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTypeEntry, _: selva.block_id_t, start: selva.node_id_t) callconv(.c) void {
     const jobCtx: *DispatchSaveJobCtx = @alignCast(@ptrCast(jobCtxP.?));
     const typeCode = selva.selva_get_type(te);
 
-    const msg = jobCtx.msg[jobCtx.off..jobCtx.off + 11];
-    jobCtx.off += 11;
+    const msg = jemalloc.alloc(u8, 11);
 
     utils.write(msg, @as(u32, jobCtx.qid), 0); // id
     msg[4] = @intFromEnum(t.OpType.saveBlock); // op
@@ -69,6 +64,7 @@ fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTy
 
     // TODO Handle error
     jobCtx.threads.query(msg) catch return;
+    jobCtx.nrDirtyBlocks += 1;
 }
 
 /// Save all blocks.
@@ -82,15 +78,10 @@ pub fn saveAllBlocks(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, 
         .thread = thread,
         .qid = qid,
         .nrDirtyBlocks = 0,
-        .msg = undefined,
-        .off = 0,
     };
 
     const errSaveCommon = saveCommon(threads.ctx);
     if (errSaveCommon == 0) {
-        selva.selva_foreach_block(threads.ctx.selva, selva.SELVA_TYPE_BLOCK_STATUS_DIRTY, countDirtyBlocks, &jobCtx);
-        // TODO Free somewhere!
-        jobCtx.msg = jemalloc.alloc(u8, jobCtx.nrDirtyBlocks * 11);
         selva.selva_foreach_block(threads.ctx.selva, selva.SELVA_TYPE_BLOCK_STATUS_DIRTY, dispatchSaveJob, &jobCtx);
     }
 
