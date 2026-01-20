@@ -137,12 +137,12 @@ pub fn loadBlock(
 ) !void {
     const resp = try thread.modify.result(512, read(u32, m, 0), op);
 
-    const start: u32 = read(u32, m, 5);
+    //const start: u32 = read(u32, m, 5);
     const typeCode: u16 = read(u16, m, 9);
     const block = read(u32, m, 11);
     var err: c_int = undefined;
 
-    const errlog = resp[26..resp.len];
+    const errlog = resp[4..resp.len];
 
     const te = selva.selva_get_type_by_index(dbCtx.selva, typeCode);
     if (te == null) {
@@ -151,16 +151,7 @@ pub fn loadBlock(
     }
 
     err = selva.selva_dump_load_block(dbCtx.selva, te, block, errlog.ptr, errlog.len);
-    if (err != 0) {
-        utils.write(resp, err, 0);
-        return;
-    }
-
-    var hash: SelvaHash128 = 0;
-    err = selva.selva_node_block_hash(dbCtx.selva, te, start, &hash);
     utils.write(resp, err, 0);
-    utils.byteCopy(resp, m[5..11], 4);
-    utils.byteCopy(resp, &hash, 10);
 }
 
 pub fn unloadBlock(
