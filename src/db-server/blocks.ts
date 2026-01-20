@@ -181,12 +181,12 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
   const saveBlockListener = (buf: Uint8Array) => {
     const err = readInt32(buf, 0)
     if (err) {
-      const start = readUint32(buf, 5)
-      const typeCode = readUint16(buf, 9)
+      const start = readUint32(buf, 4)
+      const typeCode = readUint16(buf, 8)
       const errMsg = `Save block ${typeCode}:${start} failed: ${native.selvaStrerror(err)}`
 
       db.emit('error', errMsg)
-      p.reject()
+      p.reject(new Error(errMsg))
     } else {
       updateState(1)
     }
