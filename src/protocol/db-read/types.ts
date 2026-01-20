@@ -63,16 +63,17 @@ export type ReaderPropDef = {
 }
 
 export type ReaderAggregateSchema = {
-  aggregates: {
-    path: string[]
-    type: number
-    resultPos: number
-  }[]
-  groupBy?: ReaderGroupBySchema
+  aggregates: ReaderAggregates[]
+  groupBy?: ReaderGroupBy
   totalResultsSize: number
 }
+export type ReaderAggregates = {
+  path: string[]
+  type: number
+  resultPos: number
+}
 
-export type ReaderGroupBySchema = {
+export type ReaderGroupBy = {
   typeIndex: PropTypeEnum
   stepRange?: number
   stepType?: boolean
