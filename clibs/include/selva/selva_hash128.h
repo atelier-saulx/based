@@ -10,6 +10,7 @@
 #include "selva/types.h"
 
 typedef struct XXH3_state_s selva_hash_state_t;
+#define SELVA_HASH_HEX_LEN (2 * sizeof(selva_hash128_t))
 
 #define selva_hash_reset XXH3_128bits_reset
 #define selva_hash_update XXH3_128bits_update
@@ -49,3 +50,5 @@ retry:
 #else
 ;
 #endif
+
+char *selva_hash_to_hex(char s[SELVA_HASH_HEX_LEN], selva_hash128_t hash);

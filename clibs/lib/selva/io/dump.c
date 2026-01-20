@@ -514,7 +514,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
     ts_monotime(&ts_end);
     print_ready("save", &ts_start, &ts_end, "hash: %.*s range_hash: %.*s\n",
             2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io.computed_hash),
-            2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, (const uint8_t *)range_hash_out));
+            SELVA_HASH_HEX_LEN, selva_io_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, *range_hash_out));
 #endif
 
 fail:
