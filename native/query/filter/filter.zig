@@ -49,11 +49,18 @@ pub fn prepare(
     while (i < q.len) {
         // const op: t.FilterOp = @enumFromInt(q[i]);
 
-        const size = utils.sizeOf(u32) + 8 + utils.sizeOf(t.FilterCondition);
+        const size = utils.sizeOf(u32) + 16 + 1 + utils.sizeOf(t.FilterCondition);
+
+        // std.debug.print("derp {any} \n", .{size});
+
         if (q[i] == 255) {
-            q[i] = 7 - utils.alignLeft(u32, q[i + 1 .. i + size]);
+            q[i] = 16 - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + size]);
+
             var condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
+
             condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
+
+            // std.debug.print("derp {any} {any} \n", .{ q, condition });
         }
         i += size;
 
@@ -99,7 +106,7 @@ pub inline fn filter(
     var nextOrIndex: usize = q.len;
     while (i < nextOrIndex) {
         const condition = utils.readPtr(t.FilterCondition, q, i + 1 + q[i]);
-        const next = i + utils.sizeOf(t.FilterCondition) + 8;
+        const next = i + utils.sizeOf(t.FilterCondition) + 16 + 1;
 
         if (prop != condition.prop) {
             prop = condition.prop;
@@ -123,13 +130,13 @@ pub inline fn filter(
             // },
 
             .eqU32 => blk: {
-                const target = utils.readPtr(u32, q, next + q[0] - 7);
+                const target = utils.readPtr(u32, q, next + q[0] - 16);
                 const val = utils.readPtr(u32, v, condition.start);
                 i = next + 4;
                 break :blk (val.* == target.*);
             },
             .neqU32 => blk: {
-                const target = utils.readPtr(u32, q, next + q[0] - 7);
+                const target = utils.readPtr(u32, q, next + q[0] - 16);
                 const val = utils.readPtr(u32, v, condition.start);
                 i = next + 4;
                 break :blk (val.* != target.*);

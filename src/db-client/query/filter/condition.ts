@@ -25,7 +25,7 @@ const conditionBuffer = (
   size: number,
   op: FilterOpEnum,
 ) => {
-  const condition = new Uint8Array(size + FilterConditionByteSize + 8)
+  const condition = new Uint8Array(size + FilterConditionByteSize + 16 + 1)
   condition[0] = 255
   writeFilterCondition(
     condition,
@@ -35,7 +35,7 @@ const conditionBuffer = (
       prop: propDef.prop,
       fieldSchema: 0,
     },
-    8,
+    16 + 1,
   )
   return condition
 }
@@ -123,7 +123,7 @@ export const createCondition = (
       //   return condition
     } else {
       const condition = conditionBuffer(propDef, size, op)
-      write(condition, value[0], FilterConditionByteSize + 8) // 4 Extra for alignment padding
+      write(condition, value[0], FilterConditionByteSize + 16 + 1) // 4 Extra for alignment padding
 
       //   debugBuffer(condition)
 
