@@ -88,7 +88,7 @@ const parseZig = (input: string): string => {
     if (typeSizes[prim]) return typeSizes[prim] * 8
     const match = prim.match(/^u(\d+)$/)
     if (match) return parseInt(match[1], 10)
-    return 8
+    return 64
   }
 
   // Pre-pass
@@ -414,7 +414,7 @@ const parseZig = (input: string): string => {
             output += `  writeDoubleLE(buf, ${valRef}, offset)\n;  offset += 8\n`
             break
           default:
-            output += `  offset += ${Math.ceil(f.bitSize / 8)}\n`
+            output += `  writeUint64(buf, ${valRef}, offset)\n;  offset += 8\n`
         }
       })
     } else {
@@ -538,6 +538,9 @@ const parseZig = (input: string): string => {
           case 'f64':
             output += `    writeDoubleLE(buf, value, ${offStr})\n`
             break
+          default:
+            output += `    writeUint64(buf, value, ${offStr})\n`
+            break
         }
         propsCurrentOffset += Math.ceil(f.bitSize / 8)
         output += `  },\n`
@@ -654,6 +657,9 @@ const parseZig = (input: string): string => {
             break
           case 'f64':
             readExpr = `readDoubleLE(buf, ${offStr})`
+            break
+          default:
+            readExpr = `readUint64(buf, ${offStr})`
             break
         }
         // Add 'as Type' if enum
@@ -793,6 +799,9 @@ const parseZig = (input: string): string => {
             break
           case 'f64':
             readExpr = `readDoubleLE(buf, ${offStr})`
+            break
+          default:
+            readExpr = `readUint64(buf, ${offStr})`
             break
         }
 

@@ -71,8 +71,9 @@ const addRefs = (
       {
         op,
         prop,
-        alignOffset: 0,
+        // alignOffset: 0,
         start: 0,
+        fieldSchema: 0,
       },
       0,
     )
@@ -138,8 +139,9 @@ export const filterToBuffer = (
       {
         op: FilterOp.nextOrIndex,
         prop: fromLastProp,
-        alignOffset: 255,
+        // alignOffset: 255,
         start: 0,
+        fieldSchema: 0,
       },
       0,
     )

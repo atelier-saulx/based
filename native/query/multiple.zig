@@ -32,7 +32,7 @@ fn iterator(
 
     if (It == t.QueryIteratorType.filter) {
         filter = utils.sliceNext(header.filterSize, q, i);
-        Filter.prepare(filter);
+        try Filter.prepare(filter, ctx, typeEntry);
     }
 
     const nestedQuery = q[i.* .. i.* + header.includeSize];

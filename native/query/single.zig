@@ -50,7 +50,7 @@ pub fn default(
     if (Node.getNode(typeEntry, header.id)) |node| {
         if (hasFilter) {
             const filter = utils.sliceNext(header.filterSize, q, &i);
-            Filter.prepare(filter);
+            try Filter.prepare(filter, ctx, typeEntry);
             if (!try Filter.filter(node, ctx, filter, typeEntry)) {
                 try ctx.thread.query.append(@as(u32, 0));
                 return;

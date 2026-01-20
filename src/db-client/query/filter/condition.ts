@@ -1,4 +1,5 @@
 import { PropDef, PropDefEdge } from '../../../schema.js'
+import { debugBuffer } from '../../../sdk.js'
 import {
   writeDoubleLE,
   writeInt16,
@@ -24,24 +25,25 @@ const conditionBuffer = (
   size: number,
   op: FilterOpEnum,
 ) => {
-  const condition = new Uint8Array(size + FilterConditionByteSize)
+  const condition = new Uint8Array(size + FilterConditionByteSize + 8)
+  condition[0] = 255
   writeFilterCondition(
     condition,
     {
       op,
       start: propDef.start || 0,
       prop: propDef.prop,
-      alignOffset: 255,
+      fieldSchema: 0,
     },
-    0,
+    8,
   )
   return condition
 }
 
-const writeUint8 = (buf: Uint8Array, val: number, offset: number) => {
-  buf[offset] = val
-  return buf
-}
+// const writeUint8 = (buf: Uint8Array, val: number, offset: number) => {
+//   buf[offset] = val
+//   return buf
+// }
 
 const getProps = {
   [PropType.uint32]: {
@@ -51,69 +53,6 @@ const getProps = {
       eq: FilterOp.eqU32,
       eqBatch: FilterOp.eqU32Batch,
       eqBatchSmall: FilterOp.eqU32BatchSmall,
-    },
-  },
-  [PropType.int32]: {
-    write: writeInt32,
-    size: 4,
-    ops: {
-      eq: FilterOp.eqI32,
-      eqBatch: FilterOp.eqI32Batch,
-      eqBatchSmall: FilterOp.eqI32BatchSmall,
-    },
-  },
-  [PropType.uint16]: {
-    write: writeUint16,
-    size: 2,
-    ops: {
-      eq: FilterOp.eqU16,
-      eqBatch: FilterOp.eqU16Batch,
-      eqBatchSmall: FilterOp.eqU16BatchSmall,
-    },
-  },
-  [PropType.int16]: {
-    write: writeInt16,
-    size: 2,
-    ops: {
-      eq: FilterOp.eqI16,
-      eqBatch: FilterOp.eqI16Batch,
-      eqBatchSmall: FilterOp.eqI16BatchSmall,
-    },
-  },
-  [PropType.uint8]: {
-    write: writeUint8,
-    size: 1,
-    ops: {
-      eq: FilterOp.eqU8,
-      eqBatch: FilterOp.eqU8Batch,
-      eqBatchSmall: FilterOp.eqU8BatchSmall,
-    },
-  },
-  [PropType.int8]: {
-    write: writeUint8,
-    size: 1,
-    ops: {
-      eq: FilterOp.eqI8,
-      eqBatch: FilterOp.eqI8Batch,
-      eqBatchSmall: FilterOp.eqI8BatchSmall,
-    },
-  },
-  [PropType.number]: {
-    write: writeDoubleLE,
-    size: 8,
-    ops: {
-      eq: FilterOp.eqF64,
-      eqBatch: FilterOp.eqF64Batch,
-      eqBatchSmall: FilterOp.eqF64BatchSmall,
-    },
-  },
-  [PropType.timestamp]: {
-    write: writeInt64,
-    size: 8,
-    ops: {
-      eq: FilterOp.eqI64,
-      eqBatch: FilterOp.eqI64Batch,
-      eqBatchSmall: FilterOp.eqI64BatchSmall,
     },
   },
 }
@@ -150,41 +89,44 @@ export const createCondition = (
     const op = getFilterOp(typeCfg, operator, value.length)
 
     if (value.length > vectorLen) {
-      const condition = conditionBuffer(
-        propDef,
-        8 + value.length * size + 16,
-        op,
-      )
-      let i = FilterConditionByteSize
-      writeUint32(condition, value.length, i)
-      i += 8 // 4 Extra for alignment padding
-      // Actual values
-      for (const v of value) {
-        write(condition, v, i)
-        i += size
-      }
-      // Empty padding for SIMD (16 bytes)
-      for (let j = 0; j < vectorLen; j++) {
-        write(condition, value[0], i)
-        i += size
-      }
-      return condition
+      //   const condition = conditionBuffer(
+      //     propDef,
+      //     8 + value.length * size + 16,
+      //     op,
+      //   )
+      //   let i = FilterConditionByteSize
+      //   writeUint32(condition, value.length, i)
+      //   i += 8 // 4 Extra for alignment padding
+      //   // Actual values
+      //   for (const v of value) {
+      //     write(condition, v, i)
+      //     i += size
+      //   }
+      //   // Empty padding for SIMD (16 bytes)
+      //   for (let j = 0; j < vectorLen; j++) {
+      //     write(condition, value[0], i)
+      //     i += size
+      //   }
+      //   return condition
     }
 
     if (value.length > 1) {
-      // Small batch
-      const condition = conditionBuffer(propDef, 4 + 16, op)
-      let i = FilterConditionByteSize
-      i += 4
-      for (let j = 0; j < vectorLen; j++) {
-        // Allways use a full ARM neon simd vector (16 bytes)
-        write(condition, j >= value.length ? value[0] : value[j], i)
-        i += size
-      }
-      return condition
+      //   // Small batch
+      //   const condition = conditionBuffer(propDef, 4 + 16, op)
+      //   let i = FilterConditionByteSize
+      //   i += 4
+      //   for (let j = 0; j < vectorLen; j++) {
+      //     // Allways use a full ARM neon simd vector (16 bytes)
+      //     write(condition, j >= value.length ? value[0] : value[j], i)
+      //     i += size
+      //   }
+      //   return condition
     } else {
-      const condition = conditionBuffer(propDef, 4 + size, op)
-      write(condition, value[0], FilterConditionByteSize + 4) // 4 Extra for alignment padding
+      const condition = conditionBuffer(propDef, size, op)
+      write(condition, value[0], FilterConditionByteSize + 8) // 4 Extra for alignment padding
+
+      //   debugBuffer(condition)
+
       return condition
     }
   }

@@ -88,19 +88,12 @@ pub inline fn toSlice(comptime T: type, value: []u8) []T {
     return x;
 }
 
-pub inline fn readAligned(
+pub inline fn readPtr(
     comptime T: type,
-    buffer: []const u8,
+    buffer: []u8,
     offset: usize,
-) T {
-    switch (@typeInfo(T)) {
-        .int, .float => {
-            return @as(*const T, @ptrCast(@alignCast(buffer.ptr + offset))).*;
-        },
-        else => {
-            return read(T, buffer, offset);
-        },
-    }
+) *T {
+    return @as(*T, @ptrCast(@alignCast(buffer.ptr + offset)));
 }
 
 pub inline fn read(
@@ -162,14 +155,14 @@ pub inline fn readNext(T: type, buffer: []u8, offset: *usize) T {
     return val;
 }
 
-pub inline fn readNextAligned(
+pub inline fn readNextPtr(
     comptime T: type,
     buffer: []const u8,
     offset: *usize,
     alignOffset: u8,
-) T {
+) *T {
     offset.* = offset.* + @bitSizeOf(T) / 8 + @alignOf(T);
-    const val = readAligned(T, buffer, offset.* - @alignOf(T) - alignOffset);
+    const val = readPtr(T, buffer, offset.* - @alignOf(T) - alignOffset);
     return val;
 }
 

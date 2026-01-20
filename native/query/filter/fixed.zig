@@ -46,7 +46,7 @@ pub inline fn eq(
     T: type,
     q: []u8,
     i: *usize,
-    condition: *const t.FilterCondition,
+    condition: *align(1) const t.FilterCondition,
     value: []u8,
 ) !bool {
     return utils.readNextAligned(T, q, i, condition.alignOffset) ==

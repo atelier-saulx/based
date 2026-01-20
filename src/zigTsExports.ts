@@ -2714,48 +2714,6 @@ export const FilterOp = {
   neqU32Batch: 7,
   eqU32BatchSmall: 8,
   neqU32BatchSmall: 9,
-  eqI32: 10,
-  neqI32: 11,
-  eqI32Batch: 12,
-  neqI32Batch: 13,
-  eqI32BatchSmall: 14,
-  neqI32BatchSmall: 15,
-  eqU16: 16,
-  neqU16: 17,
-  eqU16Batch: 18,
-  neqU16Batch: 19,
-  eqU16BatchSmall: 20,
-  neqU16BatchSmall: 21,
-  eqI16: 22,
-  neqI16: 23,
-  eqI16Batch: 24,
-  neqI16Batch: 25,
-  eqI16BatchSmall: 26,
-  neqI16BatchSmall: 27,
-  eqU8: 28,
-  neqU8: 29,
-  eqU8Batch: 30,
-  neqU8Batch: 31,
-  eqU8BatchSmall: 32,
-  neqU8BatchSmall: 33,
-  eqI8: 34,
-  neqI8: 35,
-  eqI8Batch: 36,
-  neqI8Batch: 37,
-  eqI8BatchSmall: 38,
-  neqI8BatchSmall: 39,
-  eqF64: 40,
-  neqF64: 41,
-  eqF64Batch: 42,
-  neqF64Batch: 43,
-  eqF64BatchSmall: 44,
-  neqF64BatchSmall: 45,
-  eqI64: 46,
-  neqI64: 47,
-  eqI64Batch: 48,
-  neqI64Batch: 49,
-  eqI64BatchSmall: 50,
-  neqI64BatchSmall: 51,
   selectLargeRef: 202,
   selectLargeRefs: 203,
   selectSmallRef: 204,
@@ -2772,48 +2730,6 @@ export const FilterOpInverse = {
   7: 'neqU32Batch',
   8: 'eqU32BatchSmall',
   9: 'neqU32BatchSmall',
-  10: 'eqI32',
-  11: 'neqI32',
-  12: 'eqI32Batch',
-  13: 'neqI32Batch',
-  14: 'eqI32BatchSmall',
-  15: 'neqI32BatchSmall',
-  16: 'eqU16',
-  17: 'neqU16',
-  18: 'eqU16Batch',
-  19: 'neqU16Batch',
-  20: 'eqU16BatchSmall',
-  21: 'neqU16BatchSmall',
-  22: 'eqI16',
-  23: 'neqI16',
-  24: 'eqI16Batch',
-  25: 'neqI16Batch',
-  26: 'eqI16BatchSmall',
-  27: 'neqI16BatchSmall',
-  28: 'eqU8',
-  29: 'neqU8',
-  30: 'eqU8Batch',
-  31: 'neqU8Batch',
-  32: 'eqU8BatchSmall',
-  33: 'neqU8BatchSmall',
-  34: 'eqI8',
-  35: 'neqI8',
-  36: 'eqI8Batch',
-  37: 'neqI8Batch',
-  38: 'eqI8BatchSmall',
-  39: 'neqI8BatchSmall',
-  40: 'eqF64',
-  41: 'neqF64',
-  42: 'eqF64Batch',
-  43: 'neqF64Batch',
-  44: 'eqF64BatchSmall',
-  45: 'neqF64BatchSmall',
-  46: 'eqI64',
-  47: 'neqI64',
-  48: 'eqI64Batch',
-  49: 'neqI64Batch',
-  50: 'eqI64BatchSmall',
-  51: 'neqI64BatchSmall',
   202: 'selectLargeRef',
   203: 'selectLargeRefs',
   204: 'selectSmallRef',
@@ -2830,48 +2746,6 @@ export const FilterOpInverse = {
   neqU32Batch, 
   eqU32BatchSmall, 
   neqU32BatchSmall, 
-  eqI32, 
-  neqI32, 
-  eqI32Batch, 
-  neqI32Batch, 
-  eqI32BatchSmall, 
-  neqI32BatchSmall, 
-  eqU16, 
-  neqU16, 
-  eqU16Batch, 
-  neqU16Batch, 
-  eqU16BatchSmall, 
-  neqU16BatchSmall, 
-  eqI16, 
-  neqI16, 
-  eqI16Batch, 
-  neqI16Batch, 
-  eqI16BatchSmall, 
-  neqI16BatchSmall, 
-  eqU8, 
-  neqU8, 
-  eqU8Batch, 
-  neqU8Batch, 
-  eqU8BatchSmall, 
-  neqU8BatchSmall, 
-  eqI8, 
-  neqI8, 
-  eqI8Batch, 
-  neqI8Batch, 
-  eqI8BatchSmall, 
-  neqI8BatchSmall, 
-  eqF64, 
-  neqF64, 
-  eqF64Batch, 
-  neqF64Batch, 
-  eqF64BatchSmall, 
-  neqF64BatchSmall, 
-  eqI64, 
-  neqI64, 
-  eqI64Batch, 
-  neqI64Batch, 
-  eqI64BatchSmall, 
-  neqI64BatchSmall, 
   selectLargeRef, 
   selectLargeRefs, 
   selectSmallRef, 
@@ -2883,11 +2757,11 @@ export type FilterOpEnum = (typeof FilterOp)[keyof typeof FilterOp]
 export type FilterCondition = {
   op: FilterOpEnum
   prop: number
-  alignOffset: number
   start: number
+  fieldSchema: number
 }
 
-export const FilterConditionByteSize = 5
+export const FilterConditionByteSize = 12
 
 export const writeFilterCondition = (
   buf: Uint8Array,
@@ -2898,10 +2772,10 @@ export const writeFilterCondition = (
   offset += 1
   buf[offset] = header.prop
   offset += 1
-  buf[offset] = header.alignOffset
-  offset += 1
   writeUint16(buf, header.start, offset)
   offset += 2
+  writeUint64(buf, header.fieldSchema, offset)
+  offset += 8
   return offset
 }
 
@@ -2912,11 +2786,11 @@ export const writeFilterConditionProps = {
   prop: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 1] = value
   },
-  alignOffset: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 2] = value
-  },
   start: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 3)
+    writeUint16(buf, value, offset + 2)
+  },
+  fieldSchema: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint64(buf, value, offset + 4)
   },
 }
 
@@ -2927,8 +2801,8 @@ export const readFilterCondition = (
   const value: FilterCondition = {
     op: (buf[offset]) as FilterOpEnum,
     prop: buf[offset + 1],
-    alignOffset: buf[offset + 2],
-    start: readUint16(buf, offset + 3),
+    start: readUint16(buf, offset + 2),
+    fieldSchema: readUint64(buf, offset + 4),
   }
   return value
 }
@@ -2940,11 +2814,11 @@ export const readFilterConditionProps = {
   prop: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 1]
   },
-  alignOffset: (buf: Uint8Array, offset: number): number => {
-    return buf[offset + 2]
-  },
   start: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 3)
+    return readUint16(buf, offset + 2)
+  },
+  fieldSchema: (buf: Uint8Array, offset: number): number => {
+    return readUint64(buf, offset + 4)
   },
 }
 

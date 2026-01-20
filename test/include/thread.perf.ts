@@ -116,7 +116,7 @@ await test('include', async (t) => {
     )
   }
 
-  const amount = 1e7
+  const amount = 1000
   const spesh = new Uint8Array(4 * amount)
 
   for (let i = 0; i < amount; i++) {
@@ -273,12 +273,15 @@ await test('include', async (t) => {
   //   .get()
   //   .inspect(1000)
 
+  console.log('??????????')
   await db
     .query('user')
-    .include('currentTodo')
+    .include('currentTodo', 'nr')
     // .filter('spesh', 'tester', spesh)
     // if single ref
-    .filter('currentTodo.nr', '=', [1, 2])
+    .filter('nr', '=', 67)
+
+    // .filter('currentTodo.nr', '=', [1, 2])
 
     // .filter('currentTodo.nr', 'eqU32', 1)
     // .or('nr', 'equalsU32', 1e7)
