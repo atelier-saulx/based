@@ -67,9 +67,9 @@ await test('kev', async (t) => {
   // console.log(
   //   (await db.query('trip').count().sum('distance', 'rate').get()).debug(), // this doesn't
   // )
-  // console.log(
-  //   (await db.query('trip').sum('distance').groupBy('driver').get()).debug(),
-  // )
+  console.log(
+    (await db.query('trip').sum('distance').groupBy('driver').get()).debug(),
+  )
 
   // await db.stop()
 })
