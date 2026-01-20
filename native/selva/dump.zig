@@ -19,14 +19,12 @@ fn saveCommon(ctx: *DbCtx) c_int {
     return selva.selva_dump_save_common(ctx.selva, &com);
 }
 
-// sdbFilename must be nul-terminated
 pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !void {
     const id = read(u32, q, 0);
-    const resp = try thread.query.result(26, id, op);
+    const resp = try thread.query.result(10, id, op);
 
     const start = read(u32, q, 5);
     const typeCode = read(u16, q, 9);
-    var hash: SelvaHash128 = 0;
     var err: c_int = undefined;
 
     const te = selva.selva_get_type_by_index(ctx.selva, typeCode);
@@ -35,10 +33,9 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
         return;
     }
 
-    err = selva.selva_dump_save_block(ctx.selva, te, start, &hash);
+    err = selva.selva_dump_save_block(ctx.selva, te, start);
     utils.write(resp, err, 0);
     utils.byteCopy(resp, q[5..11], 4);
-    utils.byteCopy(resp, &hash, 10);
 
     // Free the query message allocated by dispatchSaveJob()
     jemalloc.free(q);
@@ -160,7 +157,7 @@ pub fn unloadBlock(
     m: []u8,
     op: t.OpType,
 ) !void {
-    const resp = try thread.modify.result(20, read(u32, m, 0), op);
+    const resp = try thread.modify.result(10, read(u32, m, 0), op);
 
     const start: u32 = read(u32, m, 5);
     const typeCode: u16 = read(u16, m, 9);
@@ -172,8 +169,7 @@ pub fn unloadBlock(
         return;
     }
 
-    var hash: SelvaHash128 = 0;
-    err = selva.selva_dump_save_block(dbCtx.selva, te, start, &hash);
+    err = selva.selva_dump_save_block(dbCtx.selva, te, start);
     if (err == 0) {
         selva.selva_del_block(dbCtx.selva, te, start);
         return;
@@ -181,5 +177,4 @@ pub fn unloadBlock(
 
     utils.write(resp, err, 0);
     utils.byteCopy(resp, m[5..11], 4);
-    utils.byteCopy(resp, &hash, 10);
 }

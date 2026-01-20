@@ -432,7 +432,7 @@ static void selva_dump_save_colvec(struct selva_io *io, struct SelvaDb *, struct
 }
 
 /* TODO Change start to block_i */
-int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start, selva_hash128_t *range_hash_out)
+int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start)
 {
 #if PRINT_SAVE_TIME
     struct timespec ts_start, ts_end;
@@ -501,12 +501,12 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
      */
     selva_dump_save_colvec(&io, db, te, start);
 
-    *range_hash_out = selva_hash_digest(hash_state);
+    selva_hash128_t block_hash = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
     selva_hash_free_state(tmp_hash_state);
 
     write_dump_magic(&io, DUMP_MAGIC_BLOCK_HASH);
-    io.sdb_write(range_hash_out, sizeof(*range_hash_out), 1, &io);
+    io.sdb_write(&block_hash, sizeof(block_hash), 1, &io);
 
     selva_io_end(&io, nullptr);
 
@@ -514,7 +514,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
     ts_monotime(&ts_end);
     print_ready("save", &ts_start, &ts_end, "hash: %.*s range_hash: %.*s\n",
             2 * SELVA_IO_HASH_SIZE, selva_io_hash_to_hex((char [2 * SELVA_IO_HASH_SIZE]){ 0 }, io.computed_hash),
-            SELVA_HASH_HEX_LEN, selva_io_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, *range_hash_out));
+            SELVA_HASH_HEX_LEN, selva_io_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, block_hash));
 #endif
 
 fail:
