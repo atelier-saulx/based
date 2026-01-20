@@ -295,6 +295,7 @@ pub fn aggregates(
 
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
+    defer ctx.db.allocator.free(accumulatorProp);
 
     var it = Node.iterator(false, typeEntry);
     if (hasGroupBy) {
@@ -315,7 +316,6 @@ pub fn aggregates(
         nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, &hadAccumulated);
         try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, isSamplingSet, 0);
     }
-    // try ctx.db.allocator.free(accumulatorProp);
 }
 
 pub fn aggregatesCount(
