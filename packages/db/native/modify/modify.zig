@@ -327,7 +327,6 @@ fn modifyInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info, resCoun
             },
             else => {
                 std.log.err("Something went wrong, incorrect modify operation. At i: {d} len: {d}\n", .{ i, batch.len });
-                std.process.exit(1);
                 break;
             },
         }
