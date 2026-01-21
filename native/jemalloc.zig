@@ -106,7 +106,10 @@ pub fn resize(old: anytype, n: usize) ?@TypeOf(old) {
 pub fn free(ptr: anytype) void {
     switch (@typeInfo(@TypeOf(ptr))) {
         .optional => {
-            return free(ptr.?);
+            if (ptr) |p| {
+                return free(p);
+            }
+            return;
         },
         else => {
         }
@@ -119,6 +122,8 @@ pub fn free(ptr: anytype) void {
         if (T != anyopaque) {
             valgrindFree(@constCast(ptr), @sizeOf(T));
         }
+    } else if (info.size == .c) {
+        @compileError("Pass ptr as a slice instead of a C pointer");
     } else {
         c.selva_free(@ptrCast(ptr.ptr));
         valgrindFree(@ptrCast(ptr.ptr), ptr.len * @sizeOf(info.child));

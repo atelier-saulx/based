@@ -306,7 +306,7 @@ pub fn aggregates(
             &groupByHashMap,
             &it,
             header.limit,
-            undefined,
+            undefined, // filterBuf
             aggDefs,
             header.accumulatorSize,
             typeEntry,

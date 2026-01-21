@@ -47,7 +47,7 @@ export const OpType = {
   unsubscribe: 14,
   blockHash: 42,
   saveBlock: 67,
-  saveAllBlocks: 68,
+  saveAll: 68,
   getSchemaIds: 70,
   modify: 127,
   loadBlock: 128,
@@ -73,7 +73,7 @@ export const OpTypeInverse = {
   14: 'unsubscribe',
   42: 'blockHash',
   67: 'saveBlock',
-  68: 'saveAllBlocks',
+  68: 'saveAll',
   70: 'getSchemaIds',
   127: 'modify',
   128: 'loadBlock',
@@ -99,7 +99,7 @@ export const OpTypeInverse = {
   unsubscribe, 
   blockHash, 
   saveBlock, 
-  saveAllBlocks, 
+  saveAll, 
   getSchemaIds, 
   modify, 
   loadBlock, 
@@ -2641,17 +2641,20 @@ export const createAggProp = (header: AggProp): Uint8Array => {
   return buffer
 }
 
-export type AggGroupByKey = {
+export type GroupByKeyProp = {
   propId: number
   propType: PropTypeEnum
   propDefStart: number
+  stepType: number
+  stepRange: number
+  timezone: number
 }
 
-export const AggGroupByKeyByteSize = 4
+export const GroupByKeyPropByteSize = 11
 
-export const writeAggGroupByKey = (
+export const writeGroupByKeyProp = (
   buf: Uint8Array,
-  header: AggGroupByKey,
+  header: GroupByKeyProp,
   offset: number,
 ): number => {
   buf[offset] = header.propId
@@ -2660,10 +2663,16 @@ export const writeAggGroupByKey = (
   offset += 1
   writeUint16(buf, header.propDefStart, offset)
   offset += 2
+  buf[offset] = header.stepType
+  offset += 1
+  writeUint32(buf, header.stepRange, offset)
+  offset += 4
+  writeUint16(buf, header.timezone, offset)
+  offset += 2
   return offset
 }
 
-export const writeAggGroupByKeyProps = {
+export const writeGroupByKeyPropProps = {
   propId: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset] = value
   },
@@ -2673,21 +2682,33 @@ export const writeAggGroupByKeyProps = {
   propDefStart: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, value, offset + 2)
   },
+  stepType: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 4] = value
+  },
+  stepRange: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset + 5)
+  },
+  timezone: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, value, offset + 9)
+  },
 }
 
-export const readAggGroupByKey = (
+export const readGroupByKeyProp = (
   buf: Uint8Array,
   offset: number,
-): AggGroupByKey => {
-  const value: AggGroupByKey = {
+): GroupByKeyProp => {
+  const value: GroupByKeyProp = {
     propId: buf[offset],
     propType: (buf[offset + 1]) as PropTypeEnum,
     propDefStart: readUint16(buf, offset + 2),
+    stepType: buf[offset + 4],
+    stepRange: readUint32(buf, offset + 5),
+    timezone: readUint16(buf, offset + 9),
   }
   return value
 }
 
-export const readAggGroupByKeyProps = {
+export const readGroupByKeyPropProps = {
   propId: (buf: Uint8Array, offset: number): number => {
     return buf[offset]
   },
@@ -2697,11 +2718,20 @@ export const readAggGroupByKeyProps = {
   propDefStart: (buf: Uint8Array, offset: number): number => {
     return readUint16(buf, offset + 2)
   },
+  stepType: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 4]
+  },
+  stepRange: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset + 5)
+  },
+  timezone: (buf: Uint8Array, offset: number): number => {
+    return readUint16(buf, offset + 9)
+  },
 }
 
-export const createAggGroupByKey = (header: AggGroupByKey): Uint8Array => {
-  const buffer = new Uint8Array(AggGroupByKeyByteSize)
-  writeAggGroupByKey(buffer, header, 0)
+export const createGroupByKeyProp = (header: GroupByKeyProp): Uint8Array => {
+  const buffer = new Uint8Array(GroupByKeyPropByteSize)
+  writeGroupByKeyProp(buffer, header, 0)
   return buffer
 }
 

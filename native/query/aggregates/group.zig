@@ -37,20 +37,22 @@ pub fn iterator(
     return count;
 }
 
-inline fn getGrouByKeyValue(keyValue: []u8, currentAggDef: t.AggProp) []u8 {
+inline fn getGrouByKeyValue(keyValue: []u8, currentGroupByKeyDef: t.GroupByKeyProp) []u8 {
     const emptyKey = &[_]u8{};
 
-    const key: []u8 = if (keyValue.len > 0)
-        if (currentAggDef.propType == t.PropType.string)
-            if (currentAggDef.propId == 0)
-                keyValue.ptr[currentAggDef.propDefStart + 1 .. currentAggDef.propDefStart + 1 + keyValue[currentAggDef.propDefStart]]
-            else
-                keyValue.ptr[2 + currentAggDef.propDefStart .. currentAggDef.propDefStart + keyValue.len - currentAggDef.propType.crcLen()]
+    if (keyValue.len == 0) return emptyKey;
+
+    const key = if (currentGroupByKeyDef.propType == t.PropType.string)
+        if (currentGroupByKeyDef.propId == 0)
+            keyValue.ptr[currentGroupByKeyDef.propDefStart + 1 .. currentGroupByKeyDef.propDefStart + 1 + keyValue[currentGroupByKeyDef.propDefStart]]
         else
-            keyValue.ptr[currentAggDef.propDefStart..currentAggDef.propDefStart]
+            keyValue.ptr[2 + currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len - currentGroupByKeyDef.propType.crcLen()]
+    else if (currentGroupByKeyDef.propType == t.PropType.timestamp)
+        @constCast(utils.datePart(keyValue.ptr[currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len], @enumFromInt(currentGroupByKeyDef.stepType), currentGroupByKeyDef.timezone))
     else
-        emptyKey;
-    utils.debugPrint("key: {s}\n", .{key});
+        keyValue.ptr[currentGroupByKeyDef.propDefStart..currentGroupByKeyDef.propDefStart];
+
+    utils.debugPrint("currentGroupByKeyDef: {any}, key: {s}\n", .{ currentGroupByKeyDef, key });
     return key;
 }
 
@@ -65,7 +67,7 @@ inline fn aggregatePropsWithGroupBy(
     utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
     var i: usize = 0;
-    const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
+    const currentAggDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
     utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
     utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
 
@@ -75,7 +77,7 @@ inline fn aggregatePropsWithGroupBy(
     // defer Selva.selva_string_free(hllAccumulator);
 
     const propSchema = Schema.getFieldSchema(typeEntry, currentAggDef.propId) catch {
-        i += @sizeOf(t.AggGroupByKey);
+        i += @sizeOf(t.GroupByKeyProp);
         return;
     };
 
@@ -87,7 +89,10 @@ inline fn aggregatePropsWithGroupBy(
     );
 
     const key = getGrouByKeyValue(keyValue, currentAggDef);
-    const hash_map_entry = try groupByHashMap.getOrInsert(key, accumulatorSize);
+    const hash_map_entry = if (currentAggDef.propType == t.PropType.timestamp and currentAggDef.stepRange != 0)
+        try groupByHashMap.getOrInsertWithRange(key, accumulatorSize, currentAggDef.stepRange)
+    else
+        try groupByHashMap.getOrInsert(key, accumulatorSize);
     const accumulatorProp = hash_map_entry.value;
     var hadAccumulated = !hash_map_entry.is_new;
 
@@ -111,6 +116,6 @@ pub inline fn finalizeGroupResults(
 
         const accumulatorProp = entry.value_ptr.*;
 
-        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, true, @bitSizeOf(t.AggProp) / 8);
+        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, true, @bitSizeOf(t.GroupByKeyProp) / 8);
     }
 }
