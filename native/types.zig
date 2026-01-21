@@ -716,6 +716,8 @@ pub const FilterOp = enum(u8) {
     neqU32Batch = 7,
     eqU32BatchSmall = 8,
     neqU32BatchSmall = 9,
+
+    eq = 10,
     // will become quite a lot :L > , < <=, >=
     // maybe format a bit easier
 

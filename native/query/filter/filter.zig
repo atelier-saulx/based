@@ -172,43 +172,35 @@ pub inline fn filter(
             //            const targetPtr = q.ptr + (next + q[0] - 7);
             // const valPtr    = v.ptr + condition.start;
 
-            //         const match = switch (len) {
-            // 4 => @as(*const align(1) u32, @ptrCast(target_ptr)).* ==
-            //      @as(*const align(1) u32, @ptrCast(val_ptr)).*,
-
-            // 8 => @as(*const align(1) u64, @ptrCast(target_ptr)).* ==
-            //      @as(*const align(1) u64, @ptrCast(val_ptr)).*,
-
-            // 2 => @as(*const align(1) u16, @ptrCast(target_ptr)).* ==
-            //      @as(*const align(1) u16, @ptrCast(val_ptr)).*,
-
-            // 16 => @as(*const align(1) u128, @ptrCast(target_ptr)).* ==
-            //       @as(*const align(1) u128, @ptrCast(val_ptr)).*,
-
-            // // Fallback for larger/odd sizes (calls optimized memcmp)
-            // else => std.mem.eql(u8, target_ptr[0..len], val_ptr[0..len]),
-            // };
             // }
+            //         },
 
             .eqU32 => blk: {
-                // std.debug.print(
-                //     "READ HERE? {any} q: {any} a: {any} p: {any} \n",
-                //     .{
-                //         next + q[0] - COND_ALIGN_BYTES,
-                //         q,
-                //         @alignOf(u32),
-                //         @intFromPtr(q[next + q[0] - COND_ALIGN_BYTES + 2 .. next + q[0] - COND_ALIGN_BYTES + 1 + 2].ptr) % 4,
-                //     },
-                // );
-                //  nextI + condition.len - condition.alignOffset
-                const target = utils.readPtr(u32, q, next + 4 - condition.alignOffset);
+                const targetOffset = next + condition.len - condition.alignOffset;
+                i = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + condition.len + condition.len;
+                break :blk utils.readPtr(u32, q, targetOffset).* ==
+                    utils.readPtr(u32, v, condition.start).*;
+            },
 
-                const val = utils.readPtr(u32, v, condition.start);
-                i = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + 8;
-
-                // std.debug.print("READ HERE DONE! {any} {any} {any} \n", .{ i, next + 8, q.len });
-
-                break :blk (val.* == target.*);
+            // nice to have a generic one
+            // this can just use std mem eql i think
+            .eq => blk: {
+                const targetOffset = next + condition.len - condition.alignOffset;
+                i = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + condition.len + condition.len;
+                const match = switch (condition.len) {
+                    4 => utils.readPtr(u32, q, targetOffset).* ==
+                        utils.readPtr(u32, v, condition.start).*,
+                    8 => utils.readPtr(u64, q, targetOffset).* ==
+                        utils.readPtr(u64, v, condition.start).*,
+                    2 => utils.readPtr(u16, q, targetOffset).* ==
+                        utils.readPtr(u16, v, condition.start).*,
+                    else => std.mem.eql(
+                        u8,
+                        q[targetOffset .. targetOffset + condition.len],
+                        v[condition.start .. condition.start + condition.len],
+                    ),
+                };
+                break :blk match;
             },
             // .neqU32 => blk: {
             //     // make fn for this
