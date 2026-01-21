@@ -138,28 +138,28 @@ pub inline fn filter(
     var prop: u8 = 255;
     var nextOrIndex: usize = q.len;
     while (i < nextOrIndex) {
-        const condition = utils.readPtr(t.FilterCondition, q, i + q[i]);
-        const next = i + q[i] + utils.sizeOf(t.FilterCondition);
+        const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
+        const valueIndex = i + q[i] + utils.sizeOf(t.FilterCondition);
+        const nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size;
 
         // const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
 
         // std.debug.print("HAVE READ COND!\n", .{});
 
-        if (prop != condition.prop) {
-            prop = condition.prop;
+        if (prop != c.prop) {
+            prop = c.prop;
             v = Fields.get(
                 typeEntry,
                 node,
-                condition.fieldSchema,
+                c.fieldSchema,
                 // try Schema.getFieldSchema(typeEntry, condition.prop),
                 .null,
             );
         }
 
-        pass = switch (condition.op) {
+        pass = switch (c.op) {
             .nextOrIndex => blk: {
-                nextOrIndex = utils.readPtr(u32, q, next + q[0] - COND_ALIGN_BYTES).*;
-                i = next + 4;
+                nextOrIndex = utils.readPtr(u32, q, valueIndex + c.len - c.alignOffset).*;
                 break :blk true;
             },
 
@@ -167,41 +167,21 @@ pub inline fn filter(
             //     pass = recursionErrorBoundary(Select.largeRef, ctx, q, v, &i);
             // },
 
-            //         .eq => blk: {
-
-            //            const targetPtr = q.ptr + (next + q[0] - 7);
-            // const valPtr    = v.ptr + condition.start;
-
-            // }
-            //         },
-
             .eqU32 => blk: {
-                const targetOffset = next + condition.len - condition.alignOffset;
-                i = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + condition.len + condition.len;
-                break :blk utils.readPtr(u32, q, targetOffset).* ==
-                    utils.readPtr(u32, v, condition.start).*;
+                break :blk utils.readPtr(u32, q, valueIndex + c.len - c.alignOffset).* ==
+                    utils.readPtr(u32, v, c.start).*;
             },
 
-            // nice to have a generic one
-            // this can just use std mem eql i think
             .eq => blk: {
-                const targetOffset = next + condition.len - condition.alignOffset;
-                i = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + condition.len + condition.len;
-                const match = switch (condition.len) {
-                    4 => utils.readPtr(u32, q, targetOffset).* ==
-                        utils.readPtr(u32, v, condition.start).*,
-                    8 => utils.readPtr(u64, q, targetOffset).* ==
-                        utils.readPtr(u64, v, condition.start).*,
-                    2 => utils.readPtr(u16, q, targetOffset).* ==
-                        utils.readPtr(u16, v, condition.start).*,
-                    else => std.mem.eql(
-                        u8,
-                        q[targetOffset .. targetOffset + condition.len],
-                        v[condition.start .. condition.start + condition.len],
-                    ),
-                };
-                break :blk match;
+                // Generic len
+                const targetOffset = valueIndex + c.len - c.alignOffset;
+                break :blk std.mem.eql(
+                    u8,
+                    q[targetOffset .. targetOffset + c.len],
+                    v[c.start .. c.start + c.len],
+                );
             },
+
             // .neqU32 => blk: {
             //     // make fn for this
             //     const target = utils.readPtr(u32, q, next + q[0] - COND_ALIGN_BYTES);
@@ -217,7 +197,7 @@ pub inline fn filter(
             // .neqU32BatchSmall => !try Fixed.eqBatchSmall(u32, q, &i, &condition, v),
 
             else => blk: {
-                i = next;
+                i = valueIndex;
                 break :blk false;
             },
         };
@@ -225,6 +205,8 @@ pub inline fn filter(
         if (!pass) {
             i = nextOrIndex;
             nextOrIndex = q.len;
+        } else {
+            i = nextIndex;
         }
     }
     return pass;
