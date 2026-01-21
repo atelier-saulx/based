@@ -46,6 +46,10 @@ await test('isomorphic types have equal hashes', async (t) => {
   }
   await db.drain()
 
+  deepEqual(
+    (await db.query('article').get()).checksum,
+    (await db.query('story').get()).checksum,
+  )
   assert(
     native.equals(
       await getBlockHash(db.server, db.server.schemaTypesParsed.article.id, 1),
