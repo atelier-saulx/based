@@ -18,7 +18,6 @@ const getSortIndex = Modify.getSortIndex;
 
 pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
     subs.stage(ctx, subs.Op.create);
-
     switch (ctx.fieldType) {
         types.Prop.REFERENCES => {
             switch (@as(types.RefOp, @enumFromInt(data[4]))) {

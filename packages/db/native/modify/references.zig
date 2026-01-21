@@ -35,15 +35,18 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
         }
 
         if (ctx.id == id and ctx.typeId == refTypeId) {
+
             // don't ref yourself
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
                 const edgelen = read(u32, data, sizepos);
-                const edgepos = sizepos + 4;
-                const edges = data[edgepos .. edgepos + edgelen];
-                i += edges.len + 4;
+                i += edgelen + 4;
             }
-            i += 4;
+
+            if (hasIndex) {
+                i += 4;
+            }
+
             continue;
         }
 
@@ -56,9 +59,12 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
                 const edgelen = read(u32, data, sizepos);
-                i += edgelen;
+                i += edgelen + 4;
             }
-            i += 4;
+
+            if (hasIndex) {
+                i += 4;
+            }
             // TODO WARN errors.SelvaError.SELVA_ENOENT
             continue;
         }
@@ -130,14 +136,13 @@ pub fn putReferences(ctx: *ModifyCtx, data: []u8) !usize {
     const idsUnAligned = data[5 .. len + 4];
     const address = @intFromPtr(idsUnAligned.ptr);
     const offset: u8 = @truncate(address % 4);
-    const aligned = data[5 - offset .. len - offset + 4];
+    const aligned = data[5 - offset .. len + 4 - offset];
 
     if (offset != 0) {
         move(aligned, idsUnAligned);
     }
 
     const u32ids = read([]u32, aligned, 0);
-
     try db.putReferences(
         ctx,
         ctx.node.?,
