@@ -316,11 +316,9 @@ fn modifyInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info, resCoun
             },
             types.ModOp.UPDATE_PARTIAL => {
                 // fires too often!
-                // std.debug.print("PARTIAL TIMES! \n", .{});
                 i += try updatePartialField(&ctx, operation) + offset;
             },
             types.ModOp.INCREMENT, types.ModOp.DECREMENT => {
-                // std.debug.print("INCREMENT TIMES! \n", .{});
                 i += try increment(&ctx, operation, op) + 1;
             },
             types.ModOp.EXPIRE => {
@@ -329,6 +327,7 @@ fn modifyInternal(env: napi.c.napi_env, info: napi.c.napi_callback_info, resCoun
             },
             else => {
                 std.log.err("Something went wrong, incorrect modify operation. At i: {d} len: {d}\n", .{ i, batch.len });
+                std.process.exit(1);
                 break;
             },
         }

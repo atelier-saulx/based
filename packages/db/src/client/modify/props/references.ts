@@ -63,7 +63,8 @@ const putReferences = (
   reserve(ctx, PROP_CURSOR_SIZE + 6 + val.length * 4)
   writePropCursor(ctx, def)
   writeU8(ctx, ctx.operation)
-  writeU32(ctx, val.length * 4 + 1)
+  const sizepos = ctx.index
+  ctx.index += 4 // reserve for size
   writeU8(
     ctx,
     refOp === REF_OP_OVERWRITE ? REF_OP_PUT_OVERWRITE : REF_OP_PUT_ADD,
@@ -78,7 +79,7 @@ const putReferences = (
     }
     if (typeof id === 'object' && id !== null && typeof id.id === 'number') {
       if (hasEdgeOrIndex(def, id)) {
-        return index
+        break
       }
       validate(id.id, def)
       writeU32(ctx, id.id)
@@ -87,6 +88,7 @@ const putReferences = (
     }
     return index
   }
+  writeUint32(ctx.array, index * 4 + 1, sizepos)
   return index
 }
 

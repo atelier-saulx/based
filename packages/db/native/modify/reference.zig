@@ -38,8 +38,13 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
 
     if (ref == null) {
         if (db.getNode(refTypeEntry, id)) |dst| {
-            ref = try db.writeReference(ctx,  ctx.node.?, ctx.fieldSchema.?, dst);
+            ref = try db.writeReference(ctx, ctx.node.?, ctx.fieldSchema.?, dst);
         } else {
+            if (hasEdges) {
+                const totalEdgesLen = read(u32, data, 5);
+                const len = 5 + totalEdgesLen;
+                return len;
+            }
             return 5; //TODO WARN errors.SelvaError.SELVA_ENOENT
         }
     }
@@ -47,6 +52,7 @@ pub fn updateReference(ctx: *ModifyCtx, data: []u8) !usize {
     if (hasEdges) {
         const totalEdgesLen = read(u32, data, 5);
         const len = 5 + totalEdgesLen;
+
         if (ref) |r| {
             const edges = data[9..len];
             try edge.writeEdges(ctx, r, edges);
