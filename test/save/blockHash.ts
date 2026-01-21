@@ -97,16 +97,10 @@ await test('small diff in schema', async (t) => {
 
   await db1.save()
   await db2.save()
-  const { rangeDumps: rangeDumps1 } = JSON.parse(
-    (await fs.readFile(path.join(t.tmp, 'db1', 'writelog.json'))).toString(),
-  )
-  const { rangeDumps: rangeDumps2 } = JSON.parse(
-    (await fs.readFile(path.join(t.tmp, 'db2', 'writelog.json'))).toString(),
-  )
-  deepEqual(f(rangeDumps1['2']), f(rangeDumps2['2']))
+
   equal(
-    await sha1(path.join(t.tmp, 'db1', '2_1_100000.sdb')),
-    await sha1(path.join(t.tmp, 'db2', '2_1_100000.sdb')),
+    await sha1(path.join(t.tmp, 'db1', '1_0.sdb')),
+    await sha1(path.join(t.tmp, 'db2', '1_0.sdb')),
   )
 })
 
