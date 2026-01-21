@@ -45,184 +45,184 @@ await test('group by datetime intervals', async (t) => {
     },
     'shorthand for step type',
   )
-  // deepEqual(
-  //   await db
-  //     .query('trip')
-  //     .sum('distance')
-  //     .groupBy('pickup', { step: 'day' })
-  //     .get(),
-  //   {
-  //     11: {
-  //       distance: { sum: 1026.88 },
-  //     },
-  //   },
-  //   'group timestamp by day, without shorthand',
-  // )
-  // deepEqual(
-  //   await db.query('trip').sum('distance').groupBy('pickup', 'hour').get(),
-  //   {
-  //     11: {
-  //       distance: { sum: 1026.88 },
-  //     },
-  //   },
-  //   'group timestamp by hour',
-  // )
-  // deepEqual(
-  //   await db.query('trip').sum('distance').groupBy('pickup', 'dow').get(),
-  //   {
-  //     3: {
-  //       distance: { sum: 1026.88 },
-  //     },
-  //   },
-  //   'group timestamp by day of week',
-  // )
-  // deepEqual(
-  //   await db.query('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
-  //   {
-  //     3: {
-  //       distance: { sum: 1026.88 },
-  //     },
-  //   },
-  //   'group timestamp by hour',
-  // )
-  // deepEqual(
-  //   await db.query('trip').sum('distance').groupBy('pickup', 'doy').get(),
-  //   {
-  //     345: {
-  //       distance: { sum: 1026.88 },
-  //     },
-  //   },
-  //   'group timestamp by hour',
-  // )
-  // deepEqual(
-  //   await db.query('trip').sum('distance').groupBy('pickup', 'month').get(),
-  //   {
-  //     11: {
-  //       distance: { sum: 1026.88 },
-  //     },
-  //   },
-  //   'group timestamp by month[0-11]',
-  // )
-  // deepEqual(
-  //   await db.query('trip').sum('distance').groupBy('pickup', 'year').get(),
-  //   {
-  //     2024: {
-  //       distance: { sum: 1026.88 },
-  //     },
-  //   },
-  //   'group timestamp by hour',
-  // )
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 'day' })
+      .get(),
+    {
+      11: {
+        distance: { sum: 1026.88 },
+      },
+    },
+    'group timestamp by day, without shorthand',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'hour').get(),
+    {
+      11: {
+        distance: { sum: 1026.88 },
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'dow').get(),
+    {
+      3: {
+        distance: { sum: 1026.88 },
+      },
+    },
+    'group timestamp by day of week',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
+    {
+      3: {
+        distance: { sum: 1026.88 },
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'doy').get(),
+    {
+      345: {
+        distance: { sum: 1026.88 },
+      },
+    },
+    'group timestamp by hour',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'month').get(),
+    {
+      11: {
+        distance: { sum: 1026.88 },
+      },
+    },
+    'group timestamp by month[0-11]',
+  )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup', 'year').get(),
+    {
+      2024: {
+        distance: { sum: 1026.88 },
+      },
+    },
+    'group timestamp by hour',
+  )
 })
 
-// await test('group by datetime ranges', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-//   await db.start({ clean: true })
-//   t.after(() => db.stop())
+await test('group by datetime ranges', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
 
-//   await db.setSchema({
-//     types: {
-//       trip: {
-//         pickup: 'timestamp',
-//         dropoff: 'timestamp',
-//         distance: 'number',
-//         vendorId: 'uint16',
-//       },
-//     },
-//   })
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
 
-//   db.create('trip', {
-//     vendorId: 813,
-//     pickup: new Date('12/11/2024 11:00+00'),
-//     dropoff: new Date('12/11/2024 11:10+00'),
-//     distance: 813.44,
-//   })
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 813.44,
+  })
 
-//   db.create('trip', {
-//     vendorId: 814,
-//     pickup: new Date('12/11/2024 11:30+00'),
-//     dropoff: new Date('12/12/2024 12:10+00'),
-//     distance: 513.44,
-//   })
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
 
-//   const dtFormat = new Intl.DateTimeFormat('pt-BR', {
-//     dateStyle: 'short',
-//     timeStyle: 'short',
-//     timeZone: 'America/Sao_Paulo',
-//   })
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
 
-//   let interval = 40 * 60 // 40 minutes
-//   let r = await db
-//     .query('trip')
-//     .sum('distance')
-//     .groupBy('pickup', interval)
-//     .get()
-//     .toObject()
+  let interval = 40 * 60 // 40 minutes
+  let r = await db
+    .query('trip')
+    .sum('distance')
+    .groupBy('pickup', interval)
+    .get()
+    .toObject()
 
-//   let epoch = Number(Object.keys(r)[0])
-//   let startDate = dtFormat.format(epoch)
-//   let endDate = epoch + interval * 1000
+  let epoch = Number(Object.keys(r)[0])
+  let startDate = dtFormat.format(epoch)
+  let endDate = epoch + interval * 1000
 
-//   // console.log(r) // epoch as index
-//   deepEqual(
-//     r,
-//     { '1733914800000': { distance: { sum: 1326.88 } } },
-//     'epoch as index',
-//   )
+  // console.log(r) // epoch as index
+  deepEqual(
+    r,
+    { '1733914800000': { distance: { sum: 1326.88 } } },
+    'epoch as index',
+  )
 
-//   const startDateAsIndex = { [startDate]: Object.values(r)[0] }
-//   // console.log(startDateAsIndex) // startDate as index
-//   deepEqual(
-//     startDateAsIndex,
-//     { '11/12/2024, 08:00': { distance: { sum: 1326.88 } } },
-//     'startDate as index',
-//   )
-//   const rangeAsIndex = {
-//     [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0],
-//   }
-//   // console.log(rangeAsIndex) // range as index
-//   deepEqual(
-//     rangeAsIndex,
-//     { '11/12/2024 08:00 – 08:40': { distance: { sum: 1326.88 } } },
-//     'range as index',
-//   )
+  const startDateAsIndex = { [startDate]: Object.values(r)[0] }
+  // console.log(startDateAsIndex) // startDate as index
+  deepEqual(
+    startDateAsIndex,
+    { '11/12/2024, 08:00': { distance: { sum: 1326.88 } } },
+    'startDate as index',
+  )
+  const rangeAsIndex = {
+    [dtFormat.formatRange(epoch, endDate)]: Object.values(r)[0],
+  }
+  // console.log(rangeAsIndex) // range as index
+  deepEqual(
+    rangeAsIndex,
+    { '11/12/2024 08:00 – 08:40': { distance: { sum: 1326.88 } } },
+    'range as index',
+  )
 
-//   let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
-//   let r2 = await db
-//     .query('trip')
-//     .sum('distance')
-//     .groupBy('pickup', interval2)
-//     .get()
-//     .toObject()
+  let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
+  let r2 = await db
+    .query('trip')
+    .sum('distance')
+    .groupBy('pickup', interval2)
+    .get()
+    .toObject()
 
-//   let epoch2 = Number(Object.keys(r2)[0])
-//   let startDate2 = dtFormat.format(epoch2)
-//   let endDate2 = epoch2 + interval2 * 1000
-//   const rangeByIndex2 = {
-//     [dtFormat.formatRange(epoch2, endDate2)]: Object.values(r2)[0],
-//   }
-//   // console.log(rangeByIndex2)
-//   deepEqual(
-//     rangeByIndex2,
-//     { '11/12/2024, 08:00 – 23/12/2024, 10:00': { distance: { sum: 1326.88 } } },
-//     'another range interval as index',
-//   )
+  let epoch2 = Number(Object.keys(r2)[0])
+  let startDate2 = dtFormat.format(epoch2)
+  let endDate2 = epoch2 + interval2 * 1000
+  const rangeByIndex2 = {
+    [dtFormat.formatRange(epoch2, endDate2)]: Object.values(r2)[0],
+  }
+  // console.log(rangeByIndex2)
+  deepEqual(
+    rangeByIndex2,
+    { '11/12/2024, 08:00 – 23/12/2024, 10:00': { distance: { sum: 1326.88 } } },
+    'another range interval as index',
+  )
 
-//   // ranges are limited to u32 max value seconds => (group by ~136 years intervals)
-//   await throws(
-//     async () => {
-//       await db
-//         .query('trip')
-//         .sum('distance')
-//         .groupBy('pickup', 2 ** 32 + 1)
-//         .get()
-//         .inspect()
-//     },
-//     false,
-//     `throw invalid step range error on validation`,
-//   )
-// })
+  // ranges are limited to u32 max value seconds => (group by ~136 years intervals)
+  await throws(
+    async () => {
+      await db
+        .query('trip')
+        .sum('distance')
+        .groupBy('pickup', 2 ** 32 + 1)
+        .get()
+        .inspect()
+    },
+    false,
+    `throw invalid step range error on validation`,
+  )
+})
 
 // await test.skip('cardinality with dates', async (t) => {
 //   const db = new BasedDb({

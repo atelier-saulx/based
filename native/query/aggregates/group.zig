@@ -89,7 +89,10 @@ inline fn aggregatePropsWithGroupBy(
     );
 
     const key = getGrouByKeyValue(keyValue, currentAggDef);
-    const hash_map_entry = try groupByHashMap.getOrInsert(key, accumulatorSize);
+    const hash_map_entry = if (currentAggDef.propType == t.PropType.timestamp and currentAggDef.stepRange != 0)
+        try groupByHashMap.getOrInsertWithRange(key, accumulatorSize, currentAggDef.stepRange)
+    else
+        try groupByHashMap.getOrInsert(key, accumulatorSize);
     const accumulatorProp = hash_map_entry.value;
     var hadAccumulated = !hash_map_entry.is_new;
 
