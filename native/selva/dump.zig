@@ -115,7 +115,9 @@ pub fn loadCommon(
         }
     }
 
-    jemalloc.free(@as(?*anyopaque, com.blocks));
+    if (com.blocks) |blocks| {
+        jemalloc.free(blocks[0..com.blocks_len]);
+    }
 
     if (com.ids_data != null) {
         dbCtx.ids = com.ids_data[0..com.ids_len];
