@@ -1,10 +1,12 @@
-import { equal, notEqual } from 'node:assert'
+import assert, { equal, notEqual } from 'node:assert'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import native from '../../src/native.js'
 import { deepEqual } from '../shared/assert.js'
+import { getBlockHash } from '../../src/db-server/blocks.js'
 
 const f = (v) => v.map((r) => r.hash)
 const sha1 = async (path: string) =>
@@ -33,25 +35,23 @@ await test('isomorphic types have equal hashes', async (t) => {
   })
 
   for (let i = 0; i < 200_000; i++) {
-    await db.create('article', {
+    db.create('article', {
       title: 'party in the house',
       body: 'there was',
     })
-    await db.create('story', {
+    db.create('story', {
       title: 'party in the house',
       body: 'there was',
     })
   }
+  await db.drain()
 
-  await db.save()
-  deepEqual(
-    (await db.query('article').get()).checksum,
-    (await db.query('story').get()).checksum,
+  assert(
+    native.equals(
+      await getBlockHash(db.server, db.server.schemaTypesParsed.article.id, 1),
+      await getBlockHash(db.server, db.server.schemaTypesParsed.story.id, 1),
+    ),
   )
-  const { rangeDumps } = JSON.parse(
-    (await fs.readFile(path.join(t.tmp, 'writelog.json'))).toString(),
-  )
-  deepEqual(f(rangeDumps['2']), f(rangeDumps['3']))
 })
 
 // The result might be unexpected but 'cardinality' and 'string' are stored the same way
