@@ -6,6 +6,8 @@ import {
   AggHeader,
   createAggHeader,
   createAggProp,
+  createGroupByKeyProp,
+  GroupByKeyPropByteSize,
   AggHeaderByteSize,
   AggPropByteSize,
   AggFunction,
@@ -53,7 +55,7 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
   const buffer = new Uint8Array(
     AggHeaderByteSize +
       numPropsOrFuncs * AggPropByteSize +
-      (hasGroupBy ? AggPropByteSize : 0),
+      (hasGroupBy ? GroupByKeyPropByteSize : 0),
   )
   const aggHeaderBuff = createAggHeader(aggHeader)
   buffer.set(aggHeaderBuff, 0)
@@ -62,16 +64,16 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
   let pos = AggHeaderByteSize
   if (def.aggregate.groupBy) {
     const gp = def.aggregate.groupBy
-    const groupByKeyPropDef = createAggProp({
+    const groupByKeyPropDef = createGroupByKeyProp({
       propId: gp.prop,
       propType: gp.typeIndex,
       propDefStart: gp.start,
-      aggFunction: AggFunction.none, // should be unused
-      resultPos: 0, // should be unused
-      accumulatorPos: 0, // should be unused
+      stepType: gp.stepType || 0,
+      stepRange: gp.stepRange || 0,
+      timezone: gp.tz || 0,
     })
     buffer.set(groupByKeyPropDef, pos)
-    pos += AggPropByteSize
+    pos += GroupByKeyPropByteSize
   }
   for (const [propId, aggPropArray] of aggPropMap.entries()) {
     for (const aggProp of aggPropArray) {

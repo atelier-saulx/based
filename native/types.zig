@@ -691,11 +691,20 @@ pub const AggProp = packed struct {
     accumulatorPos: u16,
 };
 
-pub const AggGroupByKey = packed struct {
+pub const GroupByKeyProp = packed struct {
     propId: u8,
     propType: PropType,
     propDefStart: u16,
+    stepType: u8,
+    stepRange: u32,
+    timezone: i16,
 };
+
+// pub const AggGroupByKey = packed struct {
+//     propId: u8,
+//     propType: PropType,
+//     propDefStart: u16,
+// };
 
 pub const FilterOp = enum(u8) {
     exists = 0,

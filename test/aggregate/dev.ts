@@ -25,22 +25,22 @@ await test('kev', async (t) => {
   db.create('trip', { driver: 'lala', distance: 20, rate: 10 })
   db.create('trip', { driver: 'lele', distance: 40, rate: 10 })
 
-  // console.log(
-  //   (
-  //     await db
-  //       .query('trip')
-  //       .include('distance')
-  //       .filter('distance', 'equalsU32', 10) // filter ongoing
-  //       .get()
-  //   ).debug(),
-  // )
+  console.log(
+    (
+      await db
+        .query('trip')
+        .include('distance')
+        .filter('distance', '=', 10) // filter ongoing
+        .get()
+    ).debug(),
+  )
 
   // console.log(
   //   (
   //     await db
   //       .query('trip')
   //       .sum('distance')
-  //       .filter('distance', 'equalsU32', 10)
+  //       .filter('distance', '=', 10)
   //       .get()
   //   ).debug(),
   // )
