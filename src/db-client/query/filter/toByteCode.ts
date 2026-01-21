@@ -12,6 +12,7 @@ import {
 import { combineIntermediateResults } from '../query.js'
 import { byteSize } from '../toByteCode/utils.js'
 import { IntermediateByteCode, QueryDefFilter } from '../types.js'
+import { conditionBuffer } from './condition.js'
 
 const addConditions = (
   result: IntermediateByteCode[],
@@ -74,6 +75,9 @@ const addRefs = (
         // alignOffset: 0,
         start: 0,
         fieldSchema: 0,
+        len: 0,
+        alignOffset: 255,
+        size: 4, // tmp
       },
       0,
     )
@@ -133,30 +137,34 @@ export const filterToBuffer = (
     const lastProp = addConditions(result, def, fromLastProp)
     addRefs(result, def, byteSize(result))
     const resultSize = byteSize(result)
-    const nextOrIndexBuffer = new Uint8Array(FilterConditionByteSize + 16)
-    const offset = writeFilterCondition(
-      nextOrIndexBuffer,
-      {
-        op: FilterOp.nextOrIndex,
-        prop: fromLastProp,
-        // alignOffset: 255,
-        start: 0,
-        fieldSchema: 0,
-      },
-      0,
+
+    // const nextOrIndexBuffer = new Uint8Array(FilterConditionByteSize + 16)
+    // const offset = writeFilterCondition(
+    //   nextOrIndexBuffer,
+    //   {
+    //     op: FilterOp.nextOrIndex,
+    //     prop: fromLastProp,
+    //     start: 0,
+    //     fieldSchema: 0,
+    //   },
+    //   0,
+    // )
+
+    const { offset, condition } = conditionBuffer(
+      { prop: fromLastProp, len: 8, start: 0 },
+      8,
+      FilterOp.nextOrIndex,
     )
-
-    const nextOrIndex = resultSize + nextOrIndexBuffer.byteLength + fromIndex
-    writeUint64(nextOrIndexBuffer, nextOrIndex, offset + 8)
-
-    result.unshift(nextOrIndexBuffer)
+    const nextOrIndex = resultSize + condition.byteLength + fromIndex
+    writeUint64(condition, nextOrIndex, offset + 8)
+    result.unshift(condition)
     result.push(filterToBuffer(def.or, lastProp, nextOrIndex, false))
   } else {
     // fix this later
     // MOVE 1 up
   }
 
-  // if (top) {
+  // if (top && result.length > 0) {
   //   console.dir(logger(def), { depth: 10 })
   //   const totalByteLength = byteSize(result)
   //   const res = new Uint8Array(totalByteLength)

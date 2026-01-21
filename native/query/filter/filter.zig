@@ -8,6 +8,8 @@ const t = @import("../../types.zig");
 const Fixed = @import("./fixed.zig");
 const Select = @import("./select.zig");
 
+const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
+
 // fn alignSingle(T: type, q: []u8, i: *usize) void {
 //     const size = utils.sizeOf(T) + 9 + utils.sizeOf(t.FilterCondition);
 //     const alignOffset = q[0];
@@ -47,17 +49,55 @@ pub fn prepare(
 ) !void {
     var i: usize = 0;
     while (i < q.len) {
-        // const op: t.FilterOp = @enumFromInt(q[i]);
-        const size = utils.sizeOf(u32) + 16 + 1 + utils.sizeOf(t.FilterCondition);
-        // std.debug.print("derp {any} \n", .{size});
+        // this has to expand the buffer
+        // size can be done with either
+        // add the size in the condition OR add proptype OR add op in equal and make it work
+        // just add size in cond
+        const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
+        var condition: *t.FilterCondition = undefined;
+
+        // 255 means its unprepared - the condition new index will be set when aligned
         if (q[i] == 255) {
-            q[i] = 16 - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + size]);
-            var condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
+            const condSize = utils.read(u32, q, i + 1 + COND_ALIGN_BYTES);
+
+            // std.debug.print("COND SIZE {any} {any} \n", .{ i + 1 + COND_ALIGN_BYTES, condSize });
+            const totalSize = headerSize + condSize;
+
+            q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
+
+            // std.debug.print("yo COND align {any}? {any} {any} \n", .{ COND_ALIGN_BYTES, q[i], q });
+
+            condition = utils.readPtr(t.FilterCondition, q, q[i] + i);
+
+            // if (select ref this is different - use type read next)
+            // add select edge - finish api
+            // add a FIND filter that allows chaining (its a fn)
+            // filter((select) => select('contributors').find(jim).filter('$role', 'writer'))
+            // filter((select) => select('currentTodo').filter('$status', 'inProgress'))
+            // filter('currentTodo.$status', 'inProgress') // make this first
             condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
-            // std.debug.print("derp {any} {any} \n", .{ q, condition });
+
+            const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
+
+            // end is ofc size + i
+
+            condition.alignOffset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
+
+            const end = totalSize + i;
+
+            // std.debug.print("yo COND correct {any} {any} - {any} - END {any} \n", .{
+            //     condition,
+            //     q[nextI..end],
+            //     utils.readPtr(u32, q, nextI + condition.len - condition.alignOffset).*,
+            //     end,
+            // });
+            i = end;
+        } else {
+            condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
         }
-        i += size;
-        // switch (op) {
+        i += headerSize + condition.size;
+
+        // switch (condition.op) {
         //     // .nextOrIndex => alignSingle(usize, q, &i),
         //     // .selectLargeRef, .selectSmallRef => {
         //     //     i += utils.sizeOf(t.FilterCondition);
@@ -98,8 +138,12 @@ pub inline fn filter(
     var prop: u8 = 255;
     var nextOrIndex: usize = q.len;
     while (i < nextOrIndex) {
-        const condition = utils.readPtr(t.FilterCondition, q, i + 1 + q[i]);
-        const next = i + utils.sizeOf(t.FilterCondition) + 16 + 1;
+        const condition = utils.readPtr(t.FilterCondition, q, i + q[i]);
+        const next = i + q[i] + utils.sizeOf(t.FilterCondition);
+
+        // const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
+
+        // std.debug.print("HAVE READ COND!\n", .{});
 
         if (prop != condition.prop) {
             prop = condition.prop;
@@ -113,27 +157,66 @@ pub inline fn filter(
         }
 
         pass = switch (condition.op) {
-            // .nextOrIndex => {
-            //     nextOrIndex = utils.readNextAligned(usize, q, &i, condition.alignOffset);
-            //     pass = true;
-            // },
+            .nextOrIndex => blk: {
+                nextOrIndex = utils.readPtr(u32, q, next + q[0] - COND_ALIGN_BYTES).*;
+                i = next + 4;
+                break :blk true;
+            },
 
             // .selectLargeRef => {
             //     pass = recursionErrorBoundary(Select.largeRef, ctx, q, v, &i);
             // },
 
+            //         .eq => blk: {
+
+            //            const targetPtr = q.ptr + (next + q[0] - 7);
+            // const valPtr    = v.ptr + condition.start;
+
+            //         const match = switch (len) {
+            // 4 => @as(*const align(1) u32, @ptrCast(target_ptr)).* ==
+            //      @as(*const align(1) u32, @ptrCast(val_ptr)).*,
+
+            // 8 => @as(*const align(1) u64, @ptrCast(target_ptr)).* ==
+            //      @as(*const align(1) u64, @ptrCast(val_ptr)).*,
+
+            // 2 => @as(*const align(1) u16, @ptrCast(target_ptr)).* ==
+            //      @as(*const align(1) u16, @ptrCast(val_ptr)).*,
+
+            // 16 => @as(*const align(1) u128, @ptrCast(target_ptr)).* ==
+            //       @as(*const align(1) u128, @ptrCast(val_ptr)).*,
+
+            // // Fallback for larger/odd sizes (calls optimized memcmp)
+            // else => std.mem.eql(u8, target_ptr[0..len], val_ptr[0..len]),
+            // };
+            // }
+
             .eqU32 => blk: {
-                const target = utils.readPtr(u32, q, next + q[0] - 16);
+                // std.debug.print(
+                //     "READ HERE? {any} q: {any} a: {any} p: {any} \n",
+                //     .{
+                //         next + q[0] - COND_ALIGN_BYTES,
+                //         q,
+                //         @alignOf(u32),
+                //         @intFromPtr(q[next + q[0] - COND_ALIGN_BYTES + 2 .. next + q[0] - COND_ALIGN_BYTES + 1 + 2].ptr) % 4,
+                //     },
+                // );
+                //  nextI + condition.len - condition.alignOffset
+                const target = utils.readPtr(u32, q, next + 4 - condition.alignOffset);
+
                 const val = utils.readPtr(u32, v, condition.start);
-                i = next + 4;
+                i = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + 8;
+
+                // std.debug.print("READ HERE DONE! {any} {any} {any} \n", .{ i, next + 8, q.len });
+
                 break :blk (val.* == target.*);
             },
-            .neqU32 => blk: {
-                const target = utils.readPtr(u32, q, next + q[0] - 16);
-                const val = utils.readPtr(u32, v, condition.start);
-                i = next + 4;
-                break :blk (val.* != target.*);
-            },
+            // .neqU32 => blk: {
+            //     // make fn for this
+            //     const target = utils.readPtr(u32, q, next + q[0] - COND_ALIGN_BYTES);
+            //     const val = utils.readPtr(u32, v, condition.start);
+            //     i = next + 4;
+            //     break :blk (val.* != target.*);
+            // },
 
             // .neqU32 => !try Fixed.eq(u32, q, &i, &condition, v),
             // .eqU32Batch => try Fixed.eqBatch(u32, q, &i, &condition, v),

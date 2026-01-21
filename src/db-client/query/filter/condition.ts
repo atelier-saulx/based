@@ -12,32 +12,38 @@ import {
   FilterConditionByteSize,
   FilterOp,
   FilterOpEnum,
-  FilterOpInverse,
   PropType,
   writeFilterCondition,
 } from '../../../zigTsExports.js'
-import { DbClient } from '../../index.js'
-import { QueryDefFilter } from '../types.js'
 import { FilterOpts, Operator } from './types.js'
 
-const conditionBuffer = (
-  propDef: PropDef | PropDefEdge,
+const COND_ALIGN_SPACE = 16
+
+export const conditionBuffer = (
+  propDef: { start: number; prop: number; len: number } & Record<string, any>,
   size: number,
   op: FilterOpEnum,
 ) => {
-  const condition = new Uint8Array(size + FilterConditionByteSize + 16 + 1)
-  condition[0] = 255
-  writeFilterCondition(
-    condition,
-    {
-      op,
-      start: propDef.start || 0,
-      prop: propDef.prop,
-      fieldSchema: 0,
-    },
-    16 + 1,
+  const condition = new Uint8Array(
+    size + FilterConditionByteSize + COND_ALIGN_SPACE + 1 + propDef.len,
   )
-  return condition
+  condition[0] = 255
+  const offset =
+    writeFilterCondition(
+      condition,
+      {
+        op,
+        start: propDef.start || 0,
+        prop: propDef.prop,
+        fieldSchema: 0,
+        len: propDef.len,
+        alignOffset: 255,
+        size: size + propDef.len,
+      },
+      // propDef.len - 1 is space for alignment
+      COND_ALIGN_SPACE + 1, //+ propDef.len - 1,
+    ) + propDef.len
+  return { condition, offset }
 }
 
 // const writeUint8 = (buf: Uint8Array, val: number, offset: number) => {
@@ -48,7 +54,6 @@ const conditionBuffer = (
 const getProps = {
   [PropType.uint32]: {
     write: writeUint32,
-    size: 4,
     ops: {
       eq: FilterOp.eqU32,
       eqBatch: FilterOp.eqU32Batch,
@@ -58,12 +63,14 @@ const getProps = {
 }
 
 const getFilterOp = (
+  propDef: PropDef | PropDefEdge,
   typeCfg: (typeof getProps)[keyof typeof getProps],
   operator: Operator,
   len: number,
 ): FilterOpEnum => {
   if (operator === '=') {
-    const vectorLen = 16 / typeCfg.size
+    const vectorLen = 16 / propDef.len
+    // of a val might not fit in a vec
     if (len > vectorLen) {
       return typeCfg.ops.eqBatch as FilterOpEnum
     } else if (len > 1) {
@@ -84,9 +91,9 @@ export const createCondition = (
 ) => {
   const typeCfg = getProps[propDef.typeIndex]
   if (typeCfg) {
-    const { write, size } = typeCfg
-    const vectorLen = 16 / size
-    const op = getFilterOp(typeCfg, operator, value.length)
+    const { write } = typeCfg
+    const vectorLen = 16 / propDef.len
+    const op = getFilterOp(propDef, typeCfg, operator, value.length)
 
     if (value.length > vectorLen) {
       //   const condition = conditionBuffer(
@@ -122,11 +129,12 @@ export const createCondition = (
       //   }
       //   return condition
     } else {
-      const condition = conditionBuffer(propDef, size, op)
-      write(condition, value[0], FilterConditionByteSize + 16 + 1) // 4 Extra for alignment padding
-
-      //   debugBuffer(condition)
-
+      const { condition, offset } = conditionBuffer(
+        { ...propDef, start: propDef.start || 0 },
+        propDef.len,
+        op,
+      )
+      write(condition, value[0], offset)
       return condition
     }
   }

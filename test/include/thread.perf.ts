@@ -38,45 +38,9 @@ await test('include', async (t) => {
       no: true,
     },
     types: {
-      todo: {
+      simple: {
         props: {
-          name: 'string',
-          nr: { type: 'uint32' },
-          flap: { type: 'uint32' },
-          workingOnIt: {
-            items: { ref: 'user', prop: 'currentTodo', $derp: 'boolean' },
-          },
-
-          // creator: { ref: 'user', prop: 'createdTodos' },
-          assignees: {
-            items: {
-              ref: 'user',
-              prop: 'todos',
-              $status: ['inProgress', 'blocked', 'nothing'],
-              // $nr: 'number',
-              // $name: 'string',
-            },
-          },
-          done: 'boolean',
-        },
-      },
-      user: {
-        props: {
-          name: 'string',
-          currentTodo: {
-            ref: 'todo',
-            prop: 'workingOnIt',
-          },
-          spesh: 'binary',
-          todos: { items: { ref: 'todo', prop: 'assignees' } },
-          nr: { type: 'uint32' },
-          nr1: { type: 'uint32' },
-          nr2: { type: 'uint32' },
-          nr3: { type: 'uint32' },
-          nr4: { type: 'uint32' },
-          nr5: { type: 'uint32' },
-          nr6: { type: 'uint32' },
-          email: 'alias',
+          nr: 'uint32',
         },
       },
     },
@@ -86,136 +50,130 @@ await test('include', async (t) => {
 
   const todos: number[] = []
   const rand = fastPrng(233221)
+
+  await wait(100)
   let d = Date.now()
 
-  db.create('todo', {
-    flap: 666,
-    // name: i % 2 ? 'b' : 'a',
-    nr: 2,
-  })
+  // db.create('todo', {
+  //   flap: 666,
+  //   // name: i % 2 ? 'b' : 'a',
+  //   nr: 2,
+  // })
 
-  for (let i = 0; i < 1e7; i++) {
-    db.create('todo', {
-      flap: 67,
+  for (let i = 0; i < 5e6; i++) {
+    db.create('simple', {
+      nr: 67,
       // name: i % 2 ? 'b' : 'a',
-      nr: rand(0, 10),
+      // nr: rand(0, 10),
     })
   }
 
   await db.drain()
 
-  // console.log(Date.now() - d, 'ms')
+  let time = Date.now() - d
+  console.log('create 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
 
-  for (let i = 0; i < 3; i++) {
-    todos.push(
-      await db.create('todo', {
-        name: i % 2 ? 'b' : 'a',
-        nr: i % 2 ? 1 : 2,
-        flap: 99,
-      }),
+  d = Date.now()
+  for (let i = 0; i < 5e6; i++) {
+    db.update('simple', i + 1, {
+      nr: 67,
+      // name: i % 2 ? 'b' : 'a',
+      // nr: rand(0, 10),
+    })
+  }
+
+  await db.drain()
+
+  time = Date.now() - d
+
+  console.log('update 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
+
+  let q: any = []
+
+  const x = db.query('simple', 1)
+
+  registerQuery(x)
+
+  // console.log(
+  //   x.buffer,
+  //   await x.get().then((v) => {
+  //     console.log(v)
+  //     return v
+  //   }),
+  //   // x.§
+  // )
+  // d = Date.now()
+
+  // for (let i = 0; i < 100; i++) {
+  //   //.range(0, 1)
+
+  //   writeUint32(x.buffer!, i + 1, 8)
+  //   writeUint32(x.buffer!, i + 1, 0)
+
+  //   q.push(db.server.getQueryBuf(x.buffer!))
+  // }
+
+  // await Promise.all(q)
+
+  // time = Date.now() - d
+  // console.log('READ 5M', time, 'ms', (1000 / time) * 9 * 1e3, 'OPS per second')
+
+  q = []
+  d = Date.now()
+  for (let i = 0; i < 9; i++) {
+    //.range(0, 1)
+    q.push(
+      db
+        .query('simple')
+        .range(0, 5e6 + i)
+        // .include('id')
+        .count()
+        .get(),
     )
   }
 
-  const amount = 1000
-  const spesh = new Uint8Array(4 * amount)
+  await Promise.all(q)
 
-  for (let i = 0; i < amount; i++) {
-    writeUint32(spesh, i, i * 4)
-  }
-
-  const mrX = await db.create('user', {
-    name: 'Mr X',
-    currentTodo: { id: todos[0], $derp: true },
-    email: `beerdejim@gmail.com`,
-    nr: 67,
-    spesh,
-  })
-
-  const mrY = await db.create('user', {
-    name: 'Mr Y',
-    currentTodo: { id: todos[1], $derp: false },
-    email: `beerdejim+1@gmail.com`,
-    nr: 68,
-    spesh,
-  })
-
-  // now include edge
-  await db.query('user').include('currentTodo').get().inspect()
-
-  const x = ['nr', 'nr1', 'nr2', 'nr3', 'nr4', 'nr5', 'nr6']
-
-  // for (let i = 1; i < 3; i++) {
-  //   db.query('todo', i)
-  //     .include('nr')
-  //     .subscribe((d) => console.log(d))
-  // }
-
-  // await wait(200)
-  // console.log(styleText('blue', 'subscribed'))
+  time = Date.now() - d
+  console.log(
+    'COUNT ALL (fast path) 5M',
+    time,
+    'ms',
+    (1000 / time) * 1 * 9,
+    'OPS per second',
+  )
 
   d = Date.now()
-  for (let i = 1; i < 3; i++) {
-    db.update('todo', i, { nr: { increment: 1 } })
+  for (let i = 0; i < 5e6; i++) {
+    db.delete('simple', i + 1)
   }
-  console.log(styleText('blue', 'wait for drain'))
+
   await db.drain()
 
-  console.log(styleText('blue', 'drain done'))
-  // const subs = 1e4
+  time = Date.now() - d
 
-  // console.log(styleText('blue', `add ${subs} subs`))
-  // var cnt = 0
-  // const fn = (d) => cnt++
+  console.log('DEL 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
 
-  // const q = db.query('todo', 1).include('nr')
+  d = Date.now()
 
-  // for (let j = 0; j < subs / 1000; j++) {
-  //   for (let i = 1; i < 1000; i++) {
-  //     // opt query contructor to be faster and use less mem
-  //     // @ts-ignore
-  //     q.target.id = i + j * 1000
-  //     q.subscriptionBuffer = undefined
-  //     q.buffer = undefined
-  //     registerQuery(q)
-  //     const buf = registerSubscription(q)
-  //     db.server.subscribe(buf, fn)
-  //   }
-  //   await wait(1)
-  // }
-
-  // console.log(styleText('blue', `adding ${subs} subs done`))
-  // await wait(500)
-
-  // const amount = 1e5
-  // console.log(styleText('blue', `start update ${amount}`))
-  // d = Date.now()
-  // for (let i = 1; i < amount; i++) {
-  //   db.update('todo', i, { nr: { increment: 1 } })
-  //   // if (i % 1000 === 0) {
-  //   // await db.drain()
-  //   // }
-  // }
-  // await db.drain()
-  // console.log(
-  //   styleText('blue', `done update ${amount} ` + (Date.now() - d) + 'ms'),
-  // )
-
-  console.log('\n--------------------------\n')
-
-  const bigBatch: number[] = []
-  for (let i = 0; i < 20; i++) {
-    bigBatch.push(1e7 + i)
+  for (let i = 0; i < 1e7; i++) {
+    db.create('simple', {
+      nr: 67,
+      // name: i % 2 ? 'b' : 'a',
+      // nr: rand(0, 10),
+    })
   }
+
+  await db.drain()
 
   await perf(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
-        bigBatch[0] = 1e7 + i
         q.push(
           db
-            .query('todo')
-            .include('nr', 'name')
+            .query('simple')
+            .include('nr')
             .filter('nr', '=', 1e7 + i)
             // .filter('flap', 'eqU32Batch', bigBatch) // should give results
             // .filter('flap', 'eqU32BatchSmall', [1e7 + 1e7 + i]) // should give results
@@ -228,79 +186,19 @@ await test('include', async (t) => {
     { repeat: 100 },
   )
 
-  // await wait(100)
-  // console.log('SUBS FIRE?', cnt)
+  // time = Date.now() - d
+  // console.log('create 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
 
-  // await db
-  //   .query('todo', 1)
-  //   .include('nr', 'name')
-  //   .filter('nr', 'equalsU32', 1e7) // lets start with this...
-  //   .get()
-  //   .inspect()
-
-  await db.update('todo', 1, { nr: 2 })
-
-  // console.log('derp')
-
-  // db.query('todo', 1)
-  //   .include('nr', 'name')
-  //   .filter('nr', 'equals', 2) // lets start with this...
-  //   .get()
-  // .inspect()
-
-  // make or function
-  // .and
-
-  // db.query('todo').include('nr', 'flap').filter('nr','equalsU32', 10 )
-
-  /*
-    if ((nr = 1 && flap = 2) || (nr = 4 && (flap = 5 || nr = 11)))
-    q.filter(nr, 1).and(flap, 2).or((f) => {
-      f.filter(nr, 4).and(f => f.filter('flap', 5).or(nr, 11))
-    })
-
-    // if ((nr = 1 && flap = 2) || (nr = 4 && (flap = 5 || nr = 11)))
-    q.filter(nr, 1, flap, 2).or(nr, 4, f => f(flap, 5).or(nr, 11))
-  */
-
-  // await db
-  //   .query('todo')
-  //   .include('nr')
-  //   // .filter('nr', 'equalsU32', 2e7)
-  //   // .or('nr', 'equalsU32', 1e7)
-  //   // .or('nr', 'equalsU32', 2)
-  //   // .or('nr', 'equalsU32', 10)
-  //   .get()
-  //   .inspect(1000)
-
-  console.log('??????????')
   await db
-    .query('user')
-    .include('currentTodo', 'nr')
-    // .filter('spesh', 'tester', spesh)
-    // if single ref
-    .filter('nr', '=', 67)
-
-    // .filter('currentTodo.nr', '=', [1, 2])
-
-    // .filter('currentTodo.nr', 'eqU32', 1)
+    .query('simple')
+    .include('nr')
+    .filter('nr', '=', 11)
     // .or('nr', 'equalsU32', 1e7)
-    // .or('flap', 'equalsU32', 2)
+    // .or('nr', 'equalsU32', 2)
     // .and('flap', 'equalsU32', 666)
     // .or('nr', 'equalsU32', 10)
     .get()
     .inspect(100)
-
-  // await db
-  //   .query('todo')
-  //   .include('nr', 'name', 'flap')
-  //   .filter('nr', 'equalsU32Or', [11, 12, 13])
-  //   // .or('nr', 'equalsU32', 1e7)
-  //   // .or('nr', 'equalsU32', 2)
-  //   // .and('flap', 'equalsU32', 666)
-  //   // .or('nr', 'equalsU32', 10)
-  //   .get()
-  //   .inspect(100)
 
   await wait(1000)
 })

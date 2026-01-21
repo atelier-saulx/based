@@ -2755,42 +2755,60 @@ export const FilterOpInverse = {
 export type FilterOpEnum = (typeof FilterOp)[keyof typeof FilterOp]
 
 export type FilterCondition = {
+  size: number
   op: FilterOpEnum
   prop: number
   start: number
+  len: number
   fieldSchema: number
+  alignOffset: number
 }
 
-export const FilterConditionByteSize = 12
+export const FilterConditionByteSize = 18
 
 export const writeFilterCondition = (
   buf: Uint8Array,
   header: FilterCondition,
   offset: number,
 ): number => {
+  writeUint32(buf, header.size, offset)
+  offset += 4
   buf[offset] = header.op
   offset += 1
   buf[offset] = header.prop
   offset += 1
   writeUint16(buf, header.start, offset)
   offset += 2
+  buf[offset] = header.len
+  offset += 1
   writeUint64(buf, header.fieldSchema, offset)
   offset += 8
+  buf[offset] = header.alignOffset
+  offset += 1
   return offset
 }
 
 export const writeFilterConditionProps = {
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, value, offset)
+  },
   op: (buf: Uint8Array, value: FilterOpEnum, offset: number) => {
-    buf[offset] = value
+    buf[offset + 4] = value
   },
   prop: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 1] = value
+    buf[offset + 5] = value
   },
   start: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, value, offset + 2)
+    writeUint16(buf, value, offset + 6)
+  },
+  len: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 8] = value
   },
   fieldSchema: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint64(buf, value, offset + 4)
+    writeUint64(buf, value, offset + 9)
+  },
+  alignOffset: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 17] = value
   },
 }
 
@@ -2799,26 +2817,38 @@ export const readFilterCondition = (
   offset: number,
 ): FilterCondition => {
   const value: FilterCondition = {
-    op: (buf[offset]) as FilterOpEnum,
-    prop: buf[offset + 1],
-    start: readUint16(buf, offset + 2),
-    fieldSchema: readUint64(buf, offset + 4),
+    size: readUint32(buf, offset),
+    op: (buf[offset + 4]) as FilterOpEnum,
+    prop: buf[offset + 5],
+    start: readUint16(buf, offset + 6),
+    len: buf[offset + 8],
+    fieldSchema: readUint64(buf, offset + 9),
+    alignOffset: buf[offset + 17],
   }
   return value
 }
 
 export const readFilterConditionProps = {
+  size: (buf: Uint8Array, offset: number): number => {
+    return readUint32(buf, offset)
+  },
   op: (buf: Uint8Array, offset: number): FilterOpEnum => {
-    return (buf[offset]) as FilterOpEnum
+    return (buf[offset + 4]) as FilterOpEnum
   },
   prop: (buf: Uint8Array, offset: number): number => {
-    return buf[offset + 1]
+    return buf[offset + 5]
   },
   start: (buf: Uint8Array, offset: number): number => {
-    return readUint16(buf, offset + 2)
+    return readUint16(buf, offset + 6)
+  },
+  len: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 8]
   },
   fieldSchema: (buf: Uint8Array, offset: number): number => {
-    return readUint64(buf, offset + 4)
+    return readUint64(buf, offset + 9)
+  },
+  alignOffset: (buf: Uint8Array, offset: number): number => {
+    return buf[offset + 17]
   },
 }
 

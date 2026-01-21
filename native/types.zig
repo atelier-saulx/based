@@ -721,11 +721,13 @@ pub const FilterOp = enum(u8) {
 };
 
 pub const FilterCondition = packed struct {
+    size: u32,
     op: FilterOp,
     prop: u8,
-    // alignOffset: u8,
     start: u16,
+    len: u8,
     fieldSchema: Schema.FieldSchema,
+    alignOffset: u8,
 };
 
 // only for nested

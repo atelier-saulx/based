@@ -252,6 +252,17 @@ pub inline fn alignLeft(comptime T: type, data: []u8) u8 {
     const alignment = @alignOf(T);
     const unAligned = data[alignment..data.len];
     const address = @intFromPtr(unAligned.ptr);
+    // (i + 7) & ~@as(usize, 7); more efficient
+    const offset: u8 = @truncate(address % alignment);
+    const aligned = data[alignment - offset .. data.len - offset];
+    if (offset != 0) move(aligned, unAligned);
+    return offset;
+}
+
+pub inline fn alignLeftLen(alignment: u8, data: []u8) u8 {
+    // (i + 7) & ~@as(usize, 7); more efficient
+    const unAligned = data[alignment..data.len];
+    const address = @intFromPtr(unAligned.ptr);
     const offset: u8 = @truncate(address % alignment);
     const aligned = data[alignment - offset .. data.len - offset];
     if (offset != 0) move(aligned, unAligned);
