@@ -40,18 +40,18 @@ pub fn iterator(
 inline fn getGrouByKeyValue(keyValue: []u8, currentGroupByKeyDef: t.GroupByKeyProp) []u8 {
     const emptyKey = &[_]u8{};
 
-    const key: []u8 = if (keyValue.len > 0)
-        if (currentGroupByKeyDef.propType == t.PropType.string)
-            if (currentGroupByKeyDef.propId == 0)
-                keyValue.ptr[currentGroupByKeyDef.propDefStart + 1 .. currentGroupByKeyDef.propDefStart + 1 + keyValue[currentGroupByKeyDef.propDefStart]]
-            else
-                keyValue.ptr[2 + currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len - currentGroupByKeyDef.propType.crcLen()]
-        else if (currentGroupByKeyDef.propType == t.PropType.timestamp)
-            @constCast(utils.datePart(keyValue.ptr[currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len], @enumFromInt(currentGroupByKeyDef.stepType), currentGroupByKeyDef.timezone))
+    if (keyValue.len == 0) return emptyKey;
+
+    const key = if (currentGroupByKeyDef.propType == t.PropType.string)
+        if (currentGroupByKeyDef.propId == 0)
+            keyValue.ptr[currentGroupByKeyDef.propDefStart + 1 .. currentGroupByKeyDef.propDefStart + 1 + keyValue[currentGroupByKeyDef.propDefStart]]
         else
-            keyValue.ptr[currentGroupByKeyDef.propDefStart..currentGroupByKeyDef.propDefStart]
+            keyValue.ptr[2 + currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len - currentGroupByKeyDef.propType.crcLen()]
+    else if (currentGroupByKeyDef.propType == t.PropType.timestamp)
+        @constCast(utils.datePart(keyValue.ptr[currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len], @enumFromInt(currentGroupByKeyDef.stepType), currentGroupByKeyDef.timezone))
     else
-        emptyKey;
+        keyValue.ptr[currentGroupByKeyDef.propDefStart..currentGroupByKeyDef.propDefStart];
+
     utils.debugPrint("currentGroupByKeyDef: {any}, key: {s}\n", .{ currentGroupByKeyDef, key });
     return key;
 }
