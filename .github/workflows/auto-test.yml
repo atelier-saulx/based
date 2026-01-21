@@ -117,30 +117,30 @@ jobs:
 
       # --- PACKAGING & Releasing ---
 
-      - name: Create & Upload Release Asset
-        if: success()
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd packages/db
+      # - name: Create & Upload Release Asset
+      #   if: success()
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     cd packages/db
 
-          npm pack
+      #     npm pack
 
-          ORIGINAL_NAME=$(ls *.tgz | head -n 1)
-          ASSET_NAME="based-db-${{ matrix.name }}-${{ github.sha }}.tgz"
-          mv "$ORIGINAL_NAME" "$ASSET_NAME"
+      #     ORIGINAL_NAME=$(ls *.tgz | head -n 1)
+      #     ASSET_NAME="based-db-${{ matrix.name }}-${{ github.sha }}.tgz"
+      #     mv "$ORIGINAL_NAME" "$ASSET_NAME"
 
-          echo "Created package: $ASSET_NAME"
+      #     echo "Created package: $ASSET_NAME"
 
-          RELEASE_TAG="build-${{ github.sha }}"
+      #     RELEASE_TAG="build-${{ github.sha }}"
 
-          gh release create "$RELEASE_TAG" "$ASSET_NAME" \
-            --repo "${{ github.repository }}" \
-            --title "Build ${{ github.sha }}" \
-            --notes "Automated build for commit ${{ github.sha }}" \
-            --prerelease \
-            --target main || \
-          gh release upload "$RELEASE_TAG" "$ASSET_NAME" --repo "${{ github.repository }}" --clobber
+      #     gh release create "$RELEASE_TAG" "$ASSET_NAME" \
+      #       --repo "${{ github.repository }}" \
+      #       --title "Build ${{ github.sha }}" \
+      #       --notes "Automated build for commit ${{ github.sha }}" \
+      #       --prerelease \
+      #       --target main || \
+      #     gh release upload "$RELEASE_TAG" "$ASSET_NAME" --repo "${{ github.repository }}" --clobber
 
       # --- NOTIFICATIONS ---
 
