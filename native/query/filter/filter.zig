@@ -48,22 +48,15 @@ pub fn prepare(
     var i: usize = 0;
     while (i < q.len) {
         // const op: t.FilterOp = @enumFromInt(q[i]);
-
         const size = utils.sizeOf(u32) + 16 + 1 + utils.sizeOf(t.FilterCondition);
-
         // std.debug.print("derp {any} \n", .{size});
-
         if (q[i] == 255) {
             q[i] = 16 - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + size]);
-
             var condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
-
             condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
-
             // std.debug.print("derp {any} {any} \n", .{ q, condition });
         }
         i += size;
-
         // switch (op) {
         //     // .nextOrIndex => alignSingle(usize, q, &i),
         //     // .selectLargeRef, .selectSmallRef => {
