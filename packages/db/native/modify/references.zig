@@ -40,11 +40,13 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
                 const edgelen = read(u32, data, sizepos);
-                const edgepos = sizepos + 4;
-                const edges = data[edgepos .. edgepos + edgelen];
-                i += edges.len + 4;
+                i += edgelen + 4;
             }
-            i += 4;
+
+            if (hasIndex) {
+                i += 4;
+            }
+
             continue;
         }
 
@@ -57,10 +59,12 @@ pub fn updateReferences(ctx: *ModifyCtx, data: []u8) !usize {
             if (hasEdgeData) {
                 const sizepos = if (hasIndex) i + 9 else i + 5;
                 const edgelen = read(u32, data, sizepos);
-                i += edgelen;
+                i += edgelen + 4;
             }
 
-            i += 4;
+            if (hasIndex) {
+                i += 4;
+            }
             // TODO WARN errors.SelvaError.SELVA_ENOENT
             continue;
         }
