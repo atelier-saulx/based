@@ -63,19 +63,22 @@ export type ReaderPropDef = {
 }
 
 export type ReaderAggregateSchema = {
-  aggregates: {
-    path: string[]
-    type: number
-    resultPos: number
-  }[]
-  groupBy?: {
-    typeIndex: PropTypeEnum
-    stepRange?: number
-    stepType?: boolean
-    display?: Intl.DateTimeFormat // find a way for this -- shitty
-    enum?: any[]
-  }
+  aggregates: ReaderAggregates[]
+  groupBy?: ReaderGroupBy
   totalResultsSize: number
+}
+export type ReaderAggregates = {
+  path: string[]
+  type: number
+  resultPos: number
+}
+
+export type ReaderGroupBy = {
+  typeIndex: PropTypeEnum
+  stepRange?: number
+  stepType?: boolean
+  display?: Intl.DateTimeFormat // find a way for this -- shitty
+  enum?: any[]
 }
 
 // Move these types to seperate pkg including query def agg
