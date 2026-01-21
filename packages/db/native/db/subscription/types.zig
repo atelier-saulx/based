@@ -5,13 +5,15 @@ const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 pub const IdSubsItem = packed struct {
     marked: SubStatus,
     typeId: u16,
+    isRemoved: bool,
+    _padding: u7,
     subId: u32,
     id: u32,
     fields: @Vector(vectorLen, u8),
     partial: @Vector(vectorLenU16, u16),
 };
 
-pub const IdSubs = std.AutoHashMap(u32, []*IdSubsItem); // [types.SUB_SIZE] [24] [24] [4 4] [16 bytes]
+pub const IdSubs = std.AutoHashMap(u32, []IdSubsItem); // [types.SUB_SIZE] [24] [24] [4 4] [16 bytes]
 
 // can make a multi sub thing here
 pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
@@ -32,8 +34,6 @@ pub const MultiSubsStore = std.AutoHashMap(u32, []u8); // [type][type] (for now)
 // significant filter (will make field more important)
 // the max / min id
 
-pub const SubHashMap = std.AutoHashMap(u32, *IdSubsItem);
-
 pub const TypeSubscriptionCtx = struct {
     typeModified: bool,
     idBitSet: []u1,
@@ -43,7 +43,15 @@ pub const TypeSubscriptionCtx = struct {
     bitSetSize: u32,
     bitSetMin: u32,
     bitSetRatio: u32,
-    multiSubsSize: u32,
+    // multi
+    // multiSubsStore: MultiSubsStore, // iterator seems very expensive
+    // multiSubsSizeBits: u32,
+    multiSubsSize: u32, // if 0 faster check
+    // multiSubs: []u8, //types.SUB_SIZE // lets add 100k of these will not be fast im affraid
+    // multiSubsStageMarked: []u8, // then simd check // just increases in size never gets de-alloc
+    // ^ can scan if it makes sense (true not staged, not true)
+    // what about u8 in there and having more
+    // what can we put in a byte to help?
 };
 
 pub const TypeSubMap = std.AutoHashMap(u16, *TypeSubscriptionCtx);
@@ -52,9 +60,11 @@ pub const FreeList = std.ArrayList([]IdSubsItem);
 
 pub const SubscriptionCtx = struct {
     types: TypeSubMap,
-    singleIdMarked: []u32,
+    singleIdMarked: []*IdSubsItem,
     lastIdMarked: u32,
-    subsHashMap: SubHashMap,
+    freeList: FreeList,
+    gpa: std.heap.GeneralPurposeAllocator(.{}),
+    allocator: std.mem.Allocator,
 };
 
 pub const BLOCK_SIZE = 100_000;

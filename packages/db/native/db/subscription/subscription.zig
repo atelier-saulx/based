@@ -20,8 +20,10 @@ fn getMarkedIdSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_call
         const data = @as([*]u8, @ptrCast(resultBuffer))[0..size];
         var i: usize = 0;
         while (i < ctx.subscriptions.lastIdMarked) {
-            const subId = ctx.subscriptions.singleIdMarked[i];
-            if (ctx.subscriptions.subsHashMap.get(subId)) |sub| {
+            const sub = ctx.subscriptions.singleIdMarked[i];
+            if (sub.isRemoved) {
+                // do nothing
+            } else {
                 const newDataIndex = i * 8;
                 const id = sub.id;
                 utils.writeInt(u32, data, newDataIndex, id);
@@ -35,6 +37,10 @@ fn getMarkedIdSubscriptionsInternal(env: napi.c.napi_env, info: napi.c.napi_call
         return result;
     }
 
+    for (ctx.subscriptions.freeList.items) |item| {
+        ctx.subscriptions.allocator.free(item);
+    }
+    ctx.subscriptions.freeList.clearAndFree(ctx.subscriptions.allocator);
     return null;
 }
 

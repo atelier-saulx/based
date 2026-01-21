@@ -87,7 +87,7 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
 
     var typeSubs = try upsertSubType(ctx, typeId);
 
-    var subs: []*types.IdSubsItem = undefined;
+    var subs: []types.IdSubsItem = undefined;
     var idDoesNotExist = true;
     var subIndex: usize = 0;
 
@@ -96,14 +96,28 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
             subs = entry.value_ptr.*;
             idDoesNotExist = false;
             subIndex = subs.len;
-            // fix this
-            subs = try std.heap.raw_c_allocator.realloc(subs, subs.len + 1);
-            entry.value_ptr.* = subs;
+            // keep prev clean later
+            // sub is going to be stored on hashmap only sub id is stored on marked gets from hashmap
+            // add this stuff is no longer neescary
+            if (ctx.subscriptions.allocator.resize(subs, subs.len + 1)) {
+                entry.value_ptr.*.ptr = subs.ptr;
+                entry.value_ptr.*.len = subs.len + 1;
+                subs = entry.value_ptr.*;
+            } else {
+                const subsFreeList = subs;
+                subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, subs.len + 1);
+                @memcpy(subs[0..subsFreeList.len], subsFreeList);
+                try ctx.subscriptions.freeList.append(
+                    ctx.subscriptions.allocator,
+                    subsFreeList,
+                );
+                entry.value_ptr.* = subs;
+            }
         }
     }
 
     if (idDoesNotExist) {
-        subs = try std.heap.raw_c_allocator.alloc(*types.IdSubsItem, 1);
+        subs = try ctx.subscriptions.allocator.alloc(types.IdSubsItem, 1);
         try typeSubs.idSubs.put(id, subs);
         if (id > typeSubs.maxId) {
             typeSubs.maxId = id;
@@ -115,33 +129,30 @@ pub fn addIdSubscriptionInternal(napi_env: napi.c.napi_env, info: napi.c.napi_ca
         typeSubs.idBitSet[(id - typeSubs.bitSetMin) % typeSubs.bitSetSize] = 1;
     }
 
-    const sub = try ctx.allocator.create(types.IdSubsItem);
-
-    sub.subId = subId;
-    sub.id = id;
-    sub.marked = types.SubStatus.all;
-    sub.typeId = typeId;
-    sub.partial = @splat(@intFromEnum(types.SubPartialStatus.none));
-    sub.fields = @splat(@intFromEnum(types.SubStatus.marked));
-
-    subs[subIndex] = sub;
-    try ctx.subscriptions.subsHashMap.put(subId, sub);
+    subs[subIndex].marked = types.SubStatus.all;
+    subs[subIndex].subId = subId;
+    subs[subIndex].id = id;
+    subs[subIndex].typeId = typeId;
+    subs[subIndex].isRemoved = false;
+    subs[subIndex].partial = @splat(@intFromEnum(types.SubPartialStatus.none));
+    subs[subIndex].fields = @splat(@intFromEnum(types.SubStatus.marked));
 
     if (partialLen > vectorLenU16) {
-        sub.partial = @splat(@intFromEnum(types.SubPartialStatus.all));
+        subs[subIndex].partial = @splat(@intFromEnum(types.SubPartialStatus.all));
     } else {
         var j: usize = 0;
         while (j < partialLen) {
-            sub.partial[j] = utils.read(u16, partialFields, j * 2);
+            subs[subIndex].partial[j] = utils.read(u16, partialFields, j * 2);
             j += 1;
         }
     }
+
     if (fields.len > vectorLen) {
-        sub.fields = @splat(@intFromEnum(types.SubStatus.all));
+        subs[subIndex].fields = @splat(@intFromEnum(types.SubStatus.all));
     } else {
         var j: usize = 0;
         while (j < fieldsLen) {
-            sub.fields[j] = fields[j];
+            subs[subIndex].fields[j] = fields[j];
             j += 1;
         }
     }
@@ -165,12 +176,21 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                 var i: usize = 0;
                 while (i < subs.len) {
                     if (subs[i].subId == subId) {
-                        // ----------
-                        ctx.allocator.destroy(subs[i]);
-                        _ = ctx.subscriptions.subsHashMap.remove(subId);
+                        subs[i].isRemoved = true;
 
+                        //    const subs = idSub.value_ptr.*;
                         if (subs.len == 1) {
+                            // std.debug.print("REMOVE ENTIRE ID \n", .{});
+
+                            try ctx.subscriptions.freeList.append(
+                                ctx.subscriptions.allocator,
+                                idSub.value_ptr.*,
+                            );
+
+                            idSub.value_ptr.* = &.{};
+
                             _ = typeSubs.idSubs.remove(id);
+
                             // dont do this here need top be in marked
                             if (id > typeSubs.bitSetSize) {
                                 var hasOthers = false;
@@ -256,12 +276,26 @@ pub fn removeIdSubscriptionInternal(env: napi.c.napi_env, info: napi.c.napi_call
                                 }
                             }
                         } else if (subs.len != 0) {
+                            // std.debug.print("\n DO SOME REMOVE \n", .{});
+
                             const newLen = subs.len - 1;
+
+                            const subsFreeList = idSub.value_ptr.*;
+                            idSub.value_ptr.* = try ctx.subscriptions.allocator.alloc(
+                                types.IdSubsItem,
+                                newLen,
+                            );
+                            subs = idSub.value_ptr.*;
                             if (i != newLen) {
-                                subs[i] = subs[newLen];
+                                subsFreeList[i] = subsFreeList[newLen];
                             }
-                            subs = try std.heap.raw_c_allocator.realloc(subs, newLen);
-                            idSub.value_ptr.* = subs;
+                            @memcpy(subs, subsFreeList[0..newLen]);
+                            try ctx.subscriptions.freeList.append(
+                                ctx.subscriptions.allocator,
+                                subsFreeList,
+                            );
+
+                            // }
                         } else {
                             std.debug.print("Weird subs len is 0 \n", .{});
                         }
