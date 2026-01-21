@@ -64,10 +64,10 @@ fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTy
     jobCtx.nrDirtyBlocks += 1;
 }
 
-/// Save all blocks.
+/// Save common and all blocks.
 /// Dispatches a save job for each block.
 /// This must be ran on the modify thread.
-pub fn saveAllBlocks(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, op: t.OpType) !void {
+pub fn saveAll(threads: *Thread.Threads, thread: *Thread.Thread, q: []u8, op: t.OpType) !void {
     const qid = read(u32, q, 0);
     const resp = try thread.query.result(8, qid, op);
     var jobCtx: DispatchSaveJobCtx = .{
@@ -116,7 +116,7 @@ pub fn loadCommon(
     }
 
     if (com.blocks) |blocks| {
-        jemalloc.free(@as(*anyopaque, blocks));
+        jemalloc.free(blocks[0..com.blocks_len]);
     }
 
     if (com.ids_data != null) {

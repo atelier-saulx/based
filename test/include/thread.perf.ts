@@ -207,7 +207,7 @@ await test('include', async (t) => {
     bigBatch.push(1e7 + i)
   }
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {

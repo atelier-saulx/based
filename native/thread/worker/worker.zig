@@ -49,7 +49,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
             switch (op) {
                 .blockHash => try info.blockHash(thread, threads.ctx, q, op),
                 .saveBlock => try dump.saveBlock(thread, threads.ctx, q, op),
-                .saveAllBlocks => try dump.saveAllBlocks(threads, thread, q, op),
+                .saveAll => try dump.saveAll(threads, thread, q, op),
                 .noOp => {
                     std.log.err("NO-OP received for query incorrect\n", .{});
                 },

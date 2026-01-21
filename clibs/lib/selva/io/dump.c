@@ -464,7 +464,6 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id
         goto fail;
     }
 
-
 #if PRINT_SAVE_TIME
     ts_monotime(&ts_start);
 #endif
