@@ -25,14 +25,14 @@ const saveAllBlocksId = idGenerator()
 const loadBlockRawId = idGenerator()
 const getBlockHashId = idGenerator()
 
-function saveAllBlocks(db: DbServer, id: number): Promise<number> {
+function saveAll(db: DbServer, id: number): Promise<number> {
   const msg = new Uint8Array(5)
 
   writeUint32(msg, id, 0)
-  msg[4] = OpType.saveAllBlocks
+  msg[4] = OpType.saveAll
 
   return new Promise((resolve, reject) => {
-    db.addOpOnceListener(OpType.saveAllBlocks, id, (buf: Uint8Array) => {
+    db.addOpOnceListener(OpType.saveAll, id, (buf: Uint8Array) => {
       const err = readInt32(buf, 0)
       if (err) {
         // In this case save probably failed before any blocks were written.
@@ -192,11 +192,10 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
     }
   }
 
-
   db.addOpListener(OpType.saveBlock, id, saveBlockListener)
 
   try {
-    const nrBlocks = await saveAllBlocks(db, id)
+    const nrBlocks = await saveAll(db, id)
     updateState(-nrBlocks)
     await p.promise
 
