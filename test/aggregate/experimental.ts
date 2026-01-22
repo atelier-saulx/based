@@ -15,7 +15,11 @@ await test('dev', async (t) => {
         week: 'string',
         lala: 'number',
         lele: 'number',
-        Mon: 'cardinality',
+        Mon: {
+          type: 'cardinality',
+          precision: 12,
+          mode: 'dense',
+        },
         Tue: 'cardinality',
         Wed: 'cardinality',
         Thu: 'cardinality',
@@ -84,13 +88,16 @@ await test('dev', async (t) => {
     Mon: ['youzi', 'Marco', 'Luigui'],
     lala: 10,
   })
-  // deepEqual(
-  //   await db.query('lunch').cardinality('Mon').get(),
-  //   {
-  //     Mon: 7,
-  //   },
-  //   'main cardinality no group by',
-  // )
+
+  // console.log(await db.query('lunch').include('Mon').get())
+
+  deepEqual(
+    await db.query('lunch').cardinality('Mon').get(),
+    {
+      Mon: { cardinality: 7 },
+    },
+    'main cardinality no group by',
+  )
 
   // deepEqual(
   //   await db.query('lunch').cardinality('Mon').groupBy('week').get(),

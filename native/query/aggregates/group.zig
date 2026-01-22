@@ -101,7 +101,7 @@ inline fn aggregatePropsWithGroupBy(
     const accumulatorProp = hash_map_entry.value;
     var hadAccumulated = !hash_map_entry.is_new;
 
-    Aggregates.aggregateProps(node, typeEntry, aggDefs[i..], accumulatorProp, &hadAccumulated);
+    Aggregates.aggregateProps(node, typeEntry, aggDefs[i..], accumulatorProp, null, &hadAccumulated);
 }
 
 pub inline fn finalizeGroupResults(

@@ -20,6 +20,7 @@ pub fn iterator(
     aggDefs: []u8,
     accumulatorProp: []u8,
     typeEntry: Node.Type,
+    hllAccumulator: anytype,
     hadAccumulated: *bool,
 ) !u32 {
     var count: u32 = 0;
@@ -34,7 +35,7 @@ pub fn iterator(
             // }
         }
 
-        aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hadAccumulated);
+        aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, hadAccumulated);
 
         count += 1;
         if (count >= limit) break;
@@ -47,6 +48,7 @@ pub inline fn aggregateProps(
     typeEntry: Node.Type,
     aggDefs: []u8,
     accumulatorProp: []u8,
+    hllAccumulator: anytype,
     hadAccumulated: *bool,
 ) void {
     if (aggDefs.len == 0) return;
@@ -59,10 +61,10 @@ pub inline fn aggregateProps(
         utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
         var value: []u8 = undefined;
         if (currentAggDef.aggFunction == t.AggFunction.count) {
-            accumulate(currentAggDef, accumulatorProp, value, hadAccumulated);
+            accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
             hadAccumulated.* = true;
         } else {
-            if (currentAggDef.propId != t.MAIN_PROP) {
+            if (currentAggDef.propId != t.MAIN_PROP and currentAggDef.aggFunction != t.AggFunction.cardinality) {
                 i += @sizeOf(t.AggProp);
                 continue;
             }
@@ -70,16 +72,29 @@ pub inline fn aggregateProps(
                 i += @sizeOf(t.AggProp);
                 continue;
             };
+            if (currentAggDef.aggFunction == t.AggFunction.cardinality) {
+                const hllValue = Selva.c.selva_fields_get_selva_string(node, propSchema) orelse null;
+                if (hllValue == null) {
+                    i += @sizeOf(t.AggProp);
+                    continue;
+                }
+                if (!hadAccumulated.*) {
+                    _ = Selva.c.selva_string_replace(hllAccumulator, null, Selva.c.HLL_INIT_SIZE);
+                    Selva.c.hll_init_like(hllAccumulator, hllValue);
+                }
+                accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, hllAccumulator, hllValue);
+                hadAccumulated.* = true;
+            } else {
+                value = Fields.get(
+                    typeEntry,
+                    node,
+                    propSchema,
+                    currentAggDef.propType,
+                );
 
-            value = Fields.get(
-                typeEntry,
-                node,
-                propSchema,
-                currentAggDef.propType,
-            );
-
-            if (value.len > 0) {
-                accumulate(currentAggDef, accumulatorProp, value, hadAccumulated);
+                if (value.len > 0) {
+                    accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
+                }
             }
         }
     }
@@ -90,6 +105,8 @@ pub inline fn accumulate(
     accumulatorProp: []u8,
     value: []u8,
     hadAccumulated: *bool,
+    hllAccumulator: anytype,
+    hllValue: anytype,
 ) void {
     const propType = currentAggDef.propType;
     const aggFunction = currentAggDef.aggFunction;
@@ -171,6 +188,10 @@ pub inline fn accumulate(
         },
         .count => {
             writeAs(u32, accumulatorProp, read(u32, accumulatorProp, accumulatorPos) + 1, accumulatorPos);
+        },
+        .cardinality => {
+            Selva.c.hll_union(hllAccumulator, hllValue);
+            writeAs(u32, accumulatorProp, read(u32, Selva.c.hll_count(hllAccumulator)[0..4], 0), accumulatorPos);
         },
         else => {},
     }
@@ -255,6 +276,9 @@ pub inline fn finalizeResults(
             .count => {
                 const count = read(u32, accumulatorProp, accumulatorPos);
                 ctx.thread.query.reserveAndWrite(count, resultPos);
+            },
+            .cardinality => {
+                ctx.thread.query.reserveAndWrite(read(u32, accumulatorProp, accumulatorPos), resultPos);
             },
             else => {
                 ctx.thread.query.reserveAndWrite(0.0, resultPos);
