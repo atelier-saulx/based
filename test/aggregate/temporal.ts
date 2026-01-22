@@ -224,7 +224,7 @@ await test('group by datetime ranges', async (t) => {
   )
 })
 
-await test.skip('cardinality with dates', async (t) => {
+await test('cardinality with dates', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
