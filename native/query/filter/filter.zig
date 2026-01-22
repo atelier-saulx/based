@@ -106,6 +106,8 @@ pub inline fn filter(
             .neqU32 => !Fixed.single(.eq, u32, q, v, valueIndex, c),
             .eqU32BatchSmall => Fixed.batchSmall(.eq, u32, q, v, valueIndex, c),
             .eqU32Batch => Fixed.eqBatch(u32, q, v, valueIndex, c),
+            .neqU32BatchSmall => !Fixed.batchSmall(.eq, u32, q, v, valueIndex, c),
+            .neqU32Batch => !Fixed.eqBatch(u32, q, v, valueIndex, c),
 
             .ltU32 => Fixed.single(.lt, u32, q, v, valueIndex, c),
             .leU32 => Fixed.single(.le, u32, q, v, valueIndex, c),
