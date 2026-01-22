@@ -166,6 +166,8 @@ await test('include', async (t) => {
 
   await db.drain()
 
+  // {"all_attributes":{"_registerArt":"HRB","_registerNummer":"150148","additional_data":{"AD":true,"CD":true,"DK":true,"HD":false,"SI":true,"UT":true,"VÖ":false},"federal_state":"Hamburg","native_company_number":"Hamburg HRB 150148","registered_office":"Hamburg","registrar":"Hamburg"},"company_number":"K1101R_HRB150148","current_status":"currently registered","jurisdiction_code":"de","name":"olly UG (haftungsbeschränkt)","officers":[{"name":"Oliver Keunecke","other_attributes":{"city":"Hamburg","firstname":"Oliver","flag":"vertretungsberechtigt gemäß allgemeiner Vertretungsregelung","lastname":"Keunecke"},"position":"Geschäftsführer","start_date":"2018-02-06","type":"person"}],"registered_address":"Waidmannstraße 1, 22769 Hamburg.","retrieved_at":"2018-11-09T18:03:03Z"}
+
   await perf(
     async () => {
       const q: any[] = []
@@ -174,7 +176,10 @@ await test('include', async (t) => {
           db
             .query('simple')
             .include('nr')
-            .filter('nr', '=', 1e7 + i)
+            // add more
+            .filter('nr', '=', [1, 1, 1, 100 + i])
+
+            // .filter('nr', '=', [11, 1e7 + i])
             // .filter('flap', 'eqU32Batch', bigBatch) // should give results
             // .filter('flap', 'eqU32BatchSmall', [1e7 + 1e7 + i]) // should give results
             .get(),
@@ -189,10 +194,14 @@ await test('include', async (t) => {
   // time = Date.now() - d
   // console.log('create 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
 
+  db.create('simple', {
+    nr: 99,
+  })
+
   await db
     .query('simple')
     .include('nr')
-    .filter('nr', '=', 11)
+    .filter('nr', '=', [99, 1, 1, 1, 1, 1, 1, 1])
     // .or('nr', 'equalsU32', 1e7)
     // .or('nr', 'equalsU32', 2)
     // .and('flap', 'equalsU32', 666)

@@ -83,8 +83,7 @@ pub inline fn writeNext(comptime T: type, buffer: []u8, value: T, offset: *usize
 }
 
 pub inline fn toSlice(comptime T: type, value: []u8) []T {
-    const size = @sizeOf(T);
-    const x: []T = @as([*]T, @ptrCast(@alignCast(value.ptr)))[0..@divFloor(value.len, size)];
+    const x: []T = @as([*]T, @ptrCast(@alignCast(value.ptr)))[0..@divFloor(value.len, @sizeOf(T))];
     return x;
 }
 
