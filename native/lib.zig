@@ -1,5 +1,6 @@
 const std = @import("std");
 const selva = @import("selva/selva.zig");
+const selvaNapi = @import("selva/napi.zig");
 const dump = @import("selva/dump.zig");
 const info = @import("selva/info.zig");
 const errors = @import("errors.zig");
@@ -64,28 +65,6 @@ fn _externalFromInt(napi_env: napi.Env, inf: napi.Info) !napi.Value {
     return result;
 }
 
-fn _selvaStrerror(napi_env: napi.Env, nfo: napi.Info) !napi.Value {
-    const args = try napi.getArgs(1, napi_env, nfo);
-    const err = try napi.get(i32, napi_env, args[0]);
-    var result: napi.Value = undefined;
-    var copied: selva.c.bool = undefined;
-    const str = selva.strerror(err);
-    _ = napi.c.node_api_create_external_string_latin1(napi_env, @constCast(str.ptr), str.len, null, null, &result, &copied);
-    return result;
-}
-
-fn selvaStrerror(napi_env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
-    return _selvaStrerror(napi_env, nfo) catch return null;
-}
-
-fn selvaLangAll(napi_env: napi.Env, _: napi.Info) callconv(.c) napi.Value {
-    var result: napi.Value = undefined;
-    var copied: selva.c.bool = undefined;
-
-    _ = napi.c.node_api_create_external_string_latin1(napi_env, @constCast(selva.c.selva_lang_all_str), selva.c.selva_lang_all_len, null, null, &result, &copied);
-    return result;
-}
-
 fn stringByteLength(env: napi.Env, nfo: napi.Info) callconv(.c) napi.Value {
     const args = napi.getArgs(1, env, nfo) catch return null;
     var len: usize = 0;
@@ -120,8 +99,8 @@ export fn napi_register_module_v1(env: napi.Env, exports: napi.Value) napi.Value
     registerFunction(env, exports, "equals", string.equals) catch return null;
     registerFunction(env, exports, "stringByteLength", stringByteLength) catch return null;
 
-    registerFunction(env, exports, "selvaStrerror", selvaStrerror) catch return null;
-    registerFunction(env, exports, "selvaLangAll", selvaLangAll) catch return null;
+    registerFunction(env, exports, "selvaStrerror", selvaNapi.strerror) catch return null;
+    registerFunction(env, exports, "selvaLangAll", selvaNapi.langAll) catch return null;
 
     return exports;
 }
