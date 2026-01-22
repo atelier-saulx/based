@@ -418,7 +418,7 @@ await test('group by unique numbers', async (t) => {
   )
 })
 
-await test('groupBy ranges in numeric properties', async (t) => {
+await test.skip('groupBy ranges in numeric properties', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })

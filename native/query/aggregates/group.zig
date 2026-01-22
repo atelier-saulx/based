@@ -50,7 +50,7 @@ inline fn getGrouByKeyValue(keyValue: []u8, currentGroupByKeyDef: t.GroupByKeyPr
     else if (currentGroupByKeyDef.propType == t.PropType.timestamp)
         @constCast(utils.datePart(keyValue.ptr[currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len], @enumFromInt(currentGroupByKeyDef.stepType), currentGroupByKeyDef.timezone))
     else
-        keyValue.ptr[currentGroupByKeyDef.propDefStart..currentGroupByKeyDef.propDefStart];
+        keyValue.ptr[currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + t.PropType.size(currentGroupByKeyDef.propType)];
 
     utils.debugPrint("currentGroupByKeyDef: {any}, key: {s}\n", .{ currentGroupByKeyDef, key });
     return key;
@@ -67,16 +67,16 @@ inline fn aggregatePropsWithGroupBy(
     utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
     var i: usize = 0;
-    const currentAggDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
-    utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
-    utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
+    const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
+    utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
+    utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
 
     var keyValue: []u8 = undefined;
 
     // const hllAccumulator = Selva.selva_string_create(null, Selva.HLL_INIT_SIZE, Selva.SELVA_STRING_MUTABLE);
     // defer Selva.selva_string_free(hllAccumulator);
 
-    const propSchema = Schema.getFieldSchema(typeEntry, currentAggDef.propId) catch {
+    const propSchema = Schema.getFieldSchema(typeEntry, currentKeyPropDef.propId) catch {
         i += @sizeOf(t.GroupByKeyProp);
         return;
     };
@@ -85,12 +85,12 @@ inline fn aggregatePropsWithGroupBy(
         typeEntry,
         node,
         propSchema,
-        currentAggDef.propType,
+        currentKeyPropDef.propType,
     );
 
-    const key = getGrouByKeyValue(keyValue, currentAggDef);
-    const hash_map_entry = if (currentAggDef.propType == t.PropType.timestamp and currentAggDef.stepRange != 0)
-        try groupByHashMap.getOrInsertWithRange(key, accumulatorSize, currentAggDef.stepRange)
+    const key = getGrouByKeyValue(keyValue, currentKeyPropDef);
+    const hash_map_entry = if (currentKeyPropDef.propType == t.PropType.timestamp and currentKeyPropDef.stepRange != 0)
+        try groupByHashMap.getOrInsertWithRange(key, accumulatorSize, currentKeyPropDef.stepRange)
     else
         try groupByHashMap.getOrInsert(key, accumulatorSize);
     const accumulatorProp = hash_map_entry.value;
