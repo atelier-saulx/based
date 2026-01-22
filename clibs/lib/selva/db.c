@@ -444,6 +444,8 @@ struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct S
 
 extern inline node_type_t selva_get_type(const struct SelvaTypeEntry *te);
 
+extern inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te);
+
 extern inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te);
 
 extern inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id);
@@ -463,6 +465,22 @@ extern inline enum SelvaTypeBlockStatus selva_block_status_set(const struct Selv
 extern inline enum SelvaTypeBlockStatus selva_block_status_reset(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask);
 
 extern inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t block_i, enum SelvaTypeBlockStatus mask);
+
+size_t selva_get_type_status(const struct SelvaTypeEntry *te, size_t len, uint8_t packed_statuses[len])
+{
+    struct SelvaTypeBlocks *blocks = te->blocks;
+    const size_t n = min(len, blocks->len);
+
+    for (size_t i = 0; i < n; i++) {
+        struct SelvaTypeBlock *block = &blocks->blocks[i];
+        enum SelvaTypeBlockStatus status;
+
+        status = atomic_load_explicit(&block->status.atomic, memory_order_relaxed);
+        packed_statuses[i] = (uint8_t)status;
+    }
+
+    return n;
+}
 
 extern inline const struct SelvaNodeSchema *selva_get_ns_by_te(const struct SelvaTypeEntry *te);
 

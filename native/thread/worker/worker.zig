@@ -48,6 +48,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
         if (queryBuf) |q| {
             switch (op) {
                 .blockHash => try info.blockHash(thread, threads.ctx, q, op),
+                .blockStatuses => try info.blockStatuses(thread, threads.ctx, q, op),
                 .saveBlock => try dump.saveBlock(thread, threads.ctx, q, op),
                 .saveAll => try dump.saveAll(threads, thread, q, op),
                 .noOp => {

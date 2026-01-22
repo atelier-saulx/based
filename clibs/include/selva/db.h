@@ -116,6 +116,16 @@ SELVA_EXPORT
 void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
 
 SELVA_EXPORT
+inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te)
+#ifndef __zig
+{
+    return te->blocks->len;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
 inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
 #ifndef __zig
 {
@@ -238,6 +248,9 @@ inline bool selva_block_status_eq(const struct SelvaTypeEntry *te, block_id_t bl
 #else
 ;
 #endif
+
+SELVA_EXPORT
+size_t selva_get_type_status(const struct SelvaTypeEntry *te, size_t len, uint8_t packed_statuses[len]);
 
 /**
  * @}

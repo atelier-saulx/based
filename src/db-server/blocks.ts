@@ -24,6 +24,7 @@ const loadCommonId = idGenerator()
 const saveAllBlocksId = idGenerator()
 const loadBlockRawId = idGenerator()
 const getBlockHashId = idGenerator()
+const getBlockStatusesId = idGenerator()
 
 function saveAll(db: DbServer, id: number): Promise<number> {
   const msg = new Uint8Array(5)
@@ -138,6 +139,35 @@ export async function getBlockHash(
         )
       } else {
         resolve(buf.slice(4, 20))
+      }
+    })
+
+    native.query(msg, db.dbCtxExternal)
+  })
+}
+
+export async function getBlockStatuses(
+  db: DbServer,
+  typeCode: number,
+): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const id = getBlockStatusesId.next().value
+    const msg = new Uint8Array(11)
+
+    writeUint32(msg, id, 0)
+    msg[4] = OpType.blockStatuses
+    writeUint16(msg, typeCode, 5)
+
+    db.addOpOnceListener(OpType.blockStatuses, id, (buf: Uint8Array) => {
+      const len = readInt32(buf, 0)
+      if (len === 0) {
+        reject(
+          new Error(
+            `getBlockStatuses(${typeCode}) failed`,
+          ),
+        )
+      } else {
+        resolve(buf.slice(4, 4 * len))
       }
     })
 
