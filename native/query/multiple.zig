@@ -312,6 +312,8 @@ pub fn aggregates(
             aggDefs,
             header.accumulatorSize,
             typeEntry,
+            hllAccumulator,
+            &hadAccumulated,
         );
         try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, aggDefs);
     } else {

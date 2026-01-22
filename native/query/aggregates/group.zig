@@ -21,6 +21,8 @@ pub fn iterator(
     aggDefs: []u8,
     accumulatorSize: usize,
     typeEntry: Node.Type,
+    hllAccumulator: anytype,
+    hadAccumulated: *bool,
 ) !u32 {
     var count: u32 = 0;
 
@@ -29,7 +31,7 @@ pub fn iterator(
             // Filter Check
         }
 
-        try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize);
+        try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, hadAccumulated);
 
         count += 1;
         if (count >= limit) break;
@@ -67,6 +69,8 @@ inline fn aggregatePropsWithGroupBy(
     typeEntry: Node.Type,
     aggDefs: []u8,
     accumulatorSize: usize,
+    hllAccumulator: anytype,
+    hadAccumulated: *bool,
 ) !void {
     if (aggDefs.len == 0) return;
     utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
@@ -77,9 +81,6 @@ inline fn aggregatePropsWithGroupBy(
     utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
 
     var keyValue: []u8 = undefined;
-
-    // const hllAccumulator = Selva.selva_string_create(null, Selva.HLL_INIT_SIZE, Selva.SELVA_STRING_MUTABLE);
-    // defer Selva.selva_string_free(hllAccumulator);
 
     const propSchema = Schema.getFieldSchema(typeEntry, currentKeyPropDef.propId) catch {
         i += @sizeOf(t.GroupByKeyProp);
@@ -99,9 +100,9 @@ inline fn aggregatePropsWithGroupBy(
     else
         try groupByHashMap.getOrInsert(key, accumulatorSize);
     const accumulatorProp = hash_map_entry.value;
-    var hadAccumulated = !hash_map_entry.is_new;
+    hadAccumulated.* = !hash_map_entry.is_new;
 
-    Aggregates.aggregateProps(node, typeEntry, aggDefs[i..], accumulatorProp, null, &hadAccumulated);
+    Aggregates.aggregateProps(node, typeEntry, aggDefs[i..], accumulatorProp, hllAccumulator, hadAccumulated);
 }
 
 pub inline fn finalizeGroupResults(
