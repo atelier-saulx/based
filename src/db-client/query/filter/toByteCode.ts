@@ -76,7 +76,7 @@ const addRefs = (
         start: 0,
         fieldSchema: 0,
         len: 0,
-        alignOffset: 255,
+        offset: 255,
         size: 4, // tmp
       },
       0,

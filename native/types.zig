@@ -716,8 +716,9 @@ pub const FilterOp = enum(u8) {
     neqU32Batch = 7,
     eqU32BatchSmall = 8,
     neqU32BatchSmall = 9,
+    rangeU32 = 10,
 
-    eq = 10,
+    eq = 11,
     // will become quite a lot :L > , < <=, >=
     // maybe format a bit easier
 
@@ -738,7 +739,7 @@ pub const FilterCondition = packed struct {
     start: u16,
     len: u8,
     fieldSchema: Schema.FieldSchema,
-    alignOffset: u8,
+    offset: u8,
 };
 
 // only for nested

@@ -32,7 +32,7 @@ pub fn prepare(
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i);
             condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
-            condition.alignOffset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
+            condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
             i = end;
         } else {
@@ -94,7 +94,7 @@ pub inline fn filter(
 
         pass = switch (c.op) {
             .nextOrIndex => blk: {
-                nextOrIndex = utils.readPtr(u32, q, valueIndex + c.len - c.alignOffset).*;
+                nextOrIndex = utils.readPtr(u32, q, valueIndex + c.len - c.offset).*;
                 break :blk true;
             },
 
@@ -106,11 +106,12 @@ pub inline fn filter(
             .neqU32 => !Fixed.eq(u32, q, v, valueIndex, c),
             .eqU32BatchSmall => Fixed.eqBatchSmall(u32, q, v, valueIndex, c),
             .eqU32Batch => Fixed.eqBatch(u32, q, v, valueIndex, c),
+            .rangeU32 => Fixed.range(u32, q, v, valueIndex, c),
 
             // not very nice
             .eq => blk: {
                 // Generic len
-                const targetOffset = valueIndex + c.len - c.alignOffset;
+                const targetOffset = valueIndex + c.len - c.offset;
                 break :blk std.mem.eql(
                     u8,
                     q[targetOffset .. targetOffset + c.len],

@@ -2744,7 +2744,8 @@ export const FilterOp = {
   neqU32Batch: 7,
   eqU32BatchSmall: 8,
   neqU32BatchSmall: 9,
-  eq: 10,
+  rangeU32: 10,
+  eq: 11,
   selectLargeRef: 202,
   selectLargeRefs: 203,
   selectSmallRef: 204,
@@ -2761,7 +2762,8 @@ export const FilterOpInverse = {
   7: 'neqU32Batch',
   8: 'eqU32BatchSmall',
   9: 'neqU32BatchSmall',
-  10: 'eq',
+  10: 'rangeU32',
+  11: 'eq',
   202: 'selectLargeRef',
   203: 'selectLargeRefs',
   204: 'selectSmallRef',
@@ -2778,6 +2780,7 @@ export const FilterOpInverse = {
   neqU32Batch, 
   eqU32BatchSmall, 
   neqU32BatchSmall, 
+  rangeU32, 
   eq, 
   selectLargeRef, 
   selectLargeRefs, 
@@ -2794,7 +2797,7 @@ export type FilterCondition = {
   start: number
   len: number
   fieldSchema: number
-  alignOffset: number
+  offset: number
 }
 
 export const FilterConditionByteSize = 18
@@ -2816,7 +2819,7 @@ export const writeFilterCondition = (
   offset += 1
   writeUint64(buf, header.fieldSchema, offset)
   offset += 8
-  buf[offset] = header.alignOffset
+  buf[offset] = header.offset
   offset += 1
   return offset
 }
@@ -2840,7 +2843,7 @@ export const writeFilterConditionProps = {
   fieldSchema: (buf: Uint8Array, value: number, offset: number) => {
     writeUint64(buf, value, offset + 9)
   },
-  alignOffset: (buf: Uint8Array, value: number, offset: number) => {
+  offset: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 17] = value
   },
 }
@@ -2856,7 +2859,7 @@ export const readFilterCondition = (
     start: readUint16(buf, offset + 6),
     len: buf[offset + 8],
     fieldSchema: readUint64(buf, offset + 9),
-    alignOffset: buf[offset + 17],
+    offset: buf[offset + 17],
   }
   return value
 }
@@ -2880,7 +2883,7 @@ export const readFilterConditionProps = {
   fieldSchema: (buf: Uint8Array, offset: number): number => {
     return readUint64(buf, offset + 9)
   },
-  alignOffset: (buf: Uint8Array, offset: number): number => {
+  offset: (buf: Uint8Array, offset: number): number => {
     return buf[offset + 17]
   },
 }

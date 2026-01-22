@@ -1,4 +1,5 @@
 import { PropDef, PropDefEdge } from '../../../schema.js'
+import { propIndexOffset } from '../../../schema/def/utils.js'
 import { debugBuffer } from '../../../sdk.js'
 import {
   writeDoubleLE,
@@ -37,7 +38,7 @@ export const conditionBuffer = (
         prop: propDef.prop,
         fieldSchema: 0,
         len: propDef.len,
-        alignOffset: 255,
+        offset: 255,
         size: size + propDef.len,
       },
       // propDef.len - 1 is space for alignment
@@ -58,6 +59,7 @@ const getProps = {
       eq: FilterOp.eqU32,
       eqBatch: FilterOp.eqU32Batch,
       eqBatchSmall: FilterOp.eqU32BatchSmall,
+      range: FilterOp.rangeU32,
     },
   },
 }
@@ -67,19 +69,43 @@ const getFilterOp = (
   typeCfg: (typeof getProps)[keyof typeof getProps],
   operator: Operator,
   len: number,
-): FilterOpEnum => {
+): {
+  len: number
+  op: FilterOpEnum
+  write: (condition: Uint8Array, v: any, offset: number) => Uint8Array
+} => {
   if (operator === '=') {
+    // add NEQ
     const vectorLen = 16 / propDef.len
-    // of a val might not fit in a vec
     if (len > vectorLen) {
-      return typeCfg.ops.eqBatch as FilterOpEnum
+      return { op: typeCfg.ops.eqBatch, len: propDef.len, write: typeCfg.write }
     } else if (len > 1) {
-      return typeCfg.ops.eqBatchSmall as FilterOpEnum
+      return {
+        op: typeCfg.ops.eqBatchSmall,
+        len: propDef.len,
+        write: typeCfg.write,
+      }
     } else {
-      return typeCfg.ops.eq as FilterOpEnum
+      return { op: typeCfg.ops.eq, len: propDef.len, write: typeCfg.write }
+    }
+  } else if (operator === '..') {
+    return {
+      op: typeCfg.ops.range,
+      len: propDef.len * 2,
+      write: (condition: Uint8Array, v: any, offset: number) => {
+        console.info({ v })
+
+        // x >= 3 && x <= 11
+        // (x -% 3) <= (11 - 3)
+        // 3,8
+
+        typeCfg.write(condition, v.min, offset)
+        typeCfg.write(condition, v.max - v.min, offset + propDef.len)
+        return condition
+      },
     }
   }
-  return 0 as FilterOpEnum // Default or 'exists'
+  throw new Error(`Op ${operator} not implemented yet...`)
 }
 
 export const createCondition = (
@@ -89,53 +115,53 @@ export const createCondition = (
   value?: any,
   opts?: FilterOpts,
 ) => {
+  console.info({ value })
+
   const typeCfg = getProps[propDef.typeIndex]
   if (typeCfg) {
-    const { write } = typeCfg
-    const vectorLen = 16 / propDef.len
-    const op = getFilterOp(propDef, typeCfg, operator, value.length)
-
+    const { op, len, write } = getFilterOp(
+      propDef,
+      typeCfg,
+      operator,
+      value.length,
+    )
+    const vectorLen = 16 / len
     if (value.length > vectorLen) {
       const { condition, offset } = conditionBuffer(
         { ...propDef, start: propDef.start || 0 },
-        value.length * propDef.len,
+        value.length * len,
         op,
       )
       let i = offset
-
       // Actual values
       for (const v of value) {
         write(condition, v, i)
         i += propDef.len
       }
-
       // Empty padding for SIMD (16 bytes)
       for (let j = 0; j < vectorLen; j++) {
         write(condition, value[0], i)
-        i += propDef.len
+        i += len
       }
-
       return condition
-    }
-
-    if (value.length > 1) {
+    } else if (value.length > 1) {
       // Small batch
       const { condition, offset } = conditionBuffer(
         { ...propDef, start: propDef.start || 0 },
-        value.length * propDef.len,
+        value.length * len,
         op,
       )
       let i = offset
       for (let j = 0; j < vectorLen; j++) {
         // Allways use a full ARM neon simd vector (16 bytes)
         write(condition, j >= value.length ? value[0] : value[j], i)
-        i += propDef.len
+        i += len
       }
       return condition
     } else {
       const { condition, offset } = conditionBuffer(
         { ...propDef, start: propDef.start || 0 },
-        propDef.len,
+        len,
         op,
       )
       write(condition, value[0], offset)
