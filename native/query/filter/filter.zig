@@ -84,7 +84,7 @@ pub inline fn filter(
     var nextOrIndex: usize = q.len;
     while (i < nextOrIndex) {
         const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
-        const valueIndex = i + q[i] + utils.sizeOf(t.FilterCondition);
+        const index = i + q[i] + utils.sizeOf(t.FilterCondition);
         const nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size;
 
         if (prop != c.prop) {
@@ -94,7 +94,7 @@ pub inline fn filter(
 
         pass = switch (c.op) {
             .nextOrIndex => blk: {
-                nextOrIndex = utils.readPtr(u32, q, valueIndex + c.len - c.offset).*;
+                nextOrIndex = utils.readPtr(u32, q, index + c.len - c.offset).*;
                 break :blk true;
             },
 
@@ -102,43 +102,27 @@ pub inline fn filter(
             //     pass = recursionErrorBoundary(Select.largeRef, ctx, q, v, &i);
             // },
 
-            .eqU32 => Fixed.single(.eq, u32, q, v, valueIndex, c),
-            .neqU32 => !Fixed.single(.eq, u32, q, v, valueIndex, c),
-            .eqU32BatchSmall => Fixed.batchSmall(.eq, u32, q, v, valueIndex, c),
-            .eqU32Batch => Fixed.eqBatch(u32, q, v, valueIndex, c),
-            .neqU32BatchSmall => !Fixed.batchSmall(.eq, u32, q, v, valueIndex, c),
-            .neqU32Batch => !Fixed.eqBatch(u32, q, v, valueIndex, c),
+            .eqU32 => Fixed.single(.eq, u32, q, v, index, c),
+            .neqU32 => !Fixed.single(.eq, u32, q, v, index, c),
+            .eqU32BatchSmall => Fixed.batchSmall(.eq, u32, q, v, index, c),
+            .neqU32BatchSmall => !Fixed.batchSmall(.eq, u32, q, v, index, c),
+            .eqU32Batch => Fixed.eqBatch(u32, q, v, index, c),
+            .neqU32Batch => !Fixed.eqBatch(u32, q, v, index, c),
 
-            .ltU32 => Fixed.single(.lt, u32, q, v, valueIndex, c),
-            .leU32 => Fixed.single(.le, u32, q, v, valueIndex, c),
-            .ltU32BatchSmall => Fixed.batchSmall(.lt, u32, q, v, valueIndex, c),
-            .leU32BatchSmall => Fixed.batchSmall(.le, u32, q, v, valueIndex, c),
+            .ltU32 => Fixed.single(.lt, u32, q, v, index, c),
+            .leU32 => Fixed.single(.le, u32, q, v, index, c),
+            .ltU32BatchSmall => Fixed.batchSmall(.lt, u32, q, v, index, c),
+            .leU32BatchSmall => Fixed.batchSmall(.le, u32, q, v, index, c),
 
-            .gtU32 => Fixed.single(.gt, u32, q, v, valueIndex, c),
-            .geU32 => Fixed.single(.ge, u32, q, v, valueIndex, c),
-            .gtU32BatchSmall => Fixed.batchSmall(.gt, u32, q, v, valueIndex, c),
-            .geU32BatchSmall => Fixed.batchSmall(.ge, u32, q, v, valueIndex, c),
+            .gtU32 => Fixed.single(.gt, u32, q, v, index, c),
+            .geU32 => Fixed.single(.ge, u32, q, v, index, c),
+            .gtU32BatchSmall => Fixed.batchSmall(.gt, u32, q, v, index, c),
+            .geU32BatchSmall => Fixed.batchSmall(.ge, u32, q, v, index, c),
 
-            .rangeU32 => Fixed.range(u32, q, v, valueIndex, c),
-
-            // not very nice
-            // .eq => blk: {
-            //     // Generic len
-            //     const targetOffset = valueIndex + c.len - c.offset;
-            //     break :blk std.mem.eql(
-            //         u8,
-            //         q[targetOffset .. targetOffset + c.len],
-            //         v[c.start .. c.start + c.len],
-            //     );
-            // },
-
-            // .eqU32Batch => try Fixed.eqBatch(u32, q, &i, &condition, v),
-            // .neqU32Batch => !try Fixed.eqBatch(u32, q, &i, &condition, v),
-            // .eqU32BatchSmall => try Fixed.eqBatchSmall(u32, q, &i, &condition, v),
-            // .neqU32BatchSmall => !try Fixed.eqBatchSmall(u32, q, &i, &condition, v),
+            .rangeU32 => Fixed.range(u32, q, v, index, c),
 
             else => blk: {
-                i = valueIndex;
+                i = index;
                 break :blk false;
             },
         };
