@@ -38,19 +38,24 @@ pub fn iterator(
 }
 
 inline fn getGrouByKeyValue(keyValue: []u8, currentGroupByKeyDef: t.GroupByKeyProp) []u8 {
+    const propId = currentGroupByKeyDef.propId;
+    const start = currentGroupByKeyDef.propDefStart;
+    const propType = currentGroupByKeyDef.propType;
+    const stepType = currentGroupByKeyDef.stepType;
+    const timezone = currentGroupByKeyDef.timezone;
     const emptyKey = &[_]u8{};
 
     if (keyValue.len == 0) return emptyKey;
 
-    const key = if (currentGroupByKeyDef.propType == t.PropType.string)
-        if (currentGroupByKeyDef.propId == 0)
-            keyValue.ptr[currentGroupByKeyDef.propDefStart + 1 .. currentGroupByKeyDef.propDefStart + 1 + keyValue[currentGroupByKeyDef.propDefStart]]
+    const key = if (propType == t.PropType.string)
+        if (propId == 0)
+            keyValue.ptr[start + 1 .. start + 1 + keyValue[start]]
         else
-            keyValue.ptr[2 + currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len - currentGroupByKeyDef.propType.crcLen()]
-    else if (currentGroupByKeyDef.propType == t.PropType.timestamp)
-        @constCast(utils.datePart(keyValue.ptr[currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + keyValue.len], @enumFromInt(currentGroupByKeyDef.stepType), currentGroupByKeyDef.timezone))
+            keyValue.ptr[2 + start .. start + keyValue.len - propType.crcLen()]
+    else if (propType == t.PropType.timestamp)
+        @constCast(utils.datePart(keyValue.ptr[start .. start + keyValue.len], @enumFromInt(stepType), timezone))
     else
-        keyValue.ptr[currentGroupByKeyDef.propDefStart .. currentGroupByKeyDef.propDefStart + t.PropType.size(currentGroupByKeyDef.propType)];
+        keyValue.ptr[start .. start + propType.size()];
 
     utils.debugPrint("currentGroupByKeyDef: {any}, key: {s}\n", .{ currentGroupByKeyDef, key });
     return key;
