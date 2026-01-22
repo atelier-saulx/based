@@ -93,14 +93,10 @@ const getFilterOp = (
       op: typeCfg.ops.range,
       len: propDef.len * 2,
       write: (condition: Uint8Array, v: any, offset: number) => {
-        console.info({ v })
-
         // x >= 3 && x <= 11
         // (x -% 3) <= (11 - 3)
-        // 3,8
-
-        typeCfg.write(condition, v.min, offset)
-        typeCfg.write(condition, v.max - v.min, offset + propDef.len)
+        typeCfg.write(condition, v[0], offset)
+        typeCfg.write(condition, v[1] - v[0], offset + propDef.len)
         return condition
       },
     }
@@ -115,8 +111,6 @@ export const createCondition = (
   value?: any,
   opts?: FilterOpts,
 ) => {
-  console.info({ value })
-
   const typeCfg = getProps[propDef.typeIndex]
   if (typeCfg) {
     const { op, len, write } = getFilterOp(
@@ -126,7 +120,20 @@ export const createCondition = (
       value.length,
     )
     const vectorLen = 16 / len
-    if (value.length > vectorLen) {
+
+    if (value.length == 1 || operator === '..' || operator == '!..') {
+      const { condition, offset } = conditionBuffer(
+        { ...propDef, start: propDef.start || 0 },
+        len,
+        op,
+      )
+      if (operator === '..' || operator == '!..') {
+        write(condition, value, offset)
+      } else {
+        write(condition, value[0], offset)
+      }
+      return condition
+    } else if (value.length > vectorLen) {
       const { condition, offset } = conditionBuffer(
         { ...propDef, start: propDef.start || 0 },
         value.length * len,
@@ -157,14 +164,6 @@ export const createCondition = (
         write(condition, j >= value.length ? value[0] : value[j], i)
         i += len
       }
-      return condition
-    } else {
-      const { condition, offset } = conditionBuffer(
-        { ...propDef, start: propDef.start || 0 },
-        len,
-        op,
-      )
-      write(condition, value[0], offset)
       return condition
     }
   }

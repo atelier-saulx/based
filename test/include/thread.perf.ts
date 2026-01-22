@@ -201,7 +201,7 @@ await test('include', async (t) => {
   await db
     .query('simple')
     .include('nr')
-    .filter('nr', '..', { min: 90, max: 100 })
+    .filter('nr', '..', [90, 100])
     // .or('nr', 'equalsU32', 1e7)
     // .or('nr', 'equalsU32', 2)
     // .and('flap', 'equalsU32', 666)

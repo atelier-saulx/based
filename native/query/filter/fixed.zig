@@ -45,16 +45,6 @@ pub inline fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) 
     // x >= 3 && x <= 11
     // (x -% 3) <= (11 - 3)
     // 3,8
-
-    // std.debug.print(
-    //     "DERPI v: {any} l: {any} r: {any} \n",
-    //     .{
-    //         utils.readPtr(T, v, c.start).*,
-    //         utils.readPtr(T, q, i + utils.sizeOf(T) - c.offset).*,
-    //         utils.readPtr(T, q, i + (utils.sizeOf(T) * 2) - c.offset).*,
-    //     },
-    // );
-
     return (utils.readPtr(T, v, c.start).* -% utils.readPtr(T, q, i + size - c.offset).*) <=
         utils.readPtr(T, q, i + (size * 2) - c.offset).*;
 }
