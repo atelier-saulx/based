@@ -25,6 +25,7 @@ pub const OpType = enum(u8) {
     unsubscribe = 14,
 
     blockHash = 42,
+    blockStatuses = 43,
     saveBlock = 67,
     saveAll = 68,
     getSchemaIds = 70,
