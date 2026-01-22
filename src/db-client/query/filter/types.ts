@@ -10,16 +10,16 @@ export type FilterOpts = {
 
 export type Operator =
   | '='
-  | 'includes'
-  | '!includes' // includes ?
   | '<'
   | '>'
   | '!='
-  | 'like'
   | '>='
   | '<='
   | '..'
   | '!..'
-  | 'like'
   | 'exists'
   | '!exists'
+  | 'like'
+  | '!like'
+  | 'includes'
+  | '!includes'

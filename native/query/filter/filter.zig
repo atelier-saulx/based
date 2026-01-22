@@ -102,22 +102,33 @@ pub inline fn filter(
             //     pass = recursionErrorBoundary(Select.largeRef, ctx, q, v, &i);
             // },
 
-            .eqU32 => Fixed.eq(u32, q, v, valueIndex, c),
-            .neqU32 => !Fixed.eq(u32, q, v, valueIndex, c),
-            .eqU32BatchSmall => Fixed.eqBatchSmall(u32, q, v, valueIndex, c),
+            .eqU32 => Fixed.single(.eq, u32, q, v, valueIndex, c),
+            .neqU32 => !Fixed.single(.eq, u32, q, v, valueIndex, c),
+            .eqU32BatchSmall => Fixed.batchSmall(.eq, u32, q, v, valueIndex, c),
             .eqU32Batch => Fixed.eqBatch(u32, q, v, valueIndex, c),
+
+            .ltU32 => Fixed.single(.lt, u32, q, v, valueIndex, c),
+            .leU32 => Fixed.single(.le, u32, q, v, valueIndex, c),
+            .ltU32BatchSmall => Fixed.batchSmall(.lt, u32, q, v, valueIndex, c),
+            .leU32BatchSmall => Fixed.batchSmall(.le, u32, q, v, valueIndex, c),
+
+            .gtU32 => Fixed.single(.gt, u32, q, v, valueIndex, c),
+            .geU32 => Fixed.single(.ge, u32, q, v, valueIndex, c),
+            .gtU32BatchSmall => Fixed.batchSmall(.gt, u32, q, v, valueIndex, c),
+            .geU32BatchSmall => Fixed.batchSmall(.ge, u32, q, v, valueIndex, c),
+
             .rangeU32 => Fixed.range(u32, q, v, valueIndex, c),
 
             // not very nice
-            .eq => blk: {
-                // Generic len
-                const targetOffset = valueIndex + c.len - c.offset;
-                break :blk std.mem.eql(
-                    u8,
-                    q[targetOffset .. targetOffset + c.len],
-                    v[c.start .. c.start + c.len],
-                );
-            },
+            // .eq => blk: {
+            //     // Generic len
+            //     const targetOffset = valueIndex + c.len - c.offset;
+            //     break :blk std.mem.eql(
+            //         u8,
+            //         q[targetOffset .. targetOffset + c.len],
+            //         v[c.start .. c.start + c.len],
+            //     );
+            // },
 
             // .eqU32Batch => try Fixed.eqBatch(u32, q, &i, &condition, v),
             // .neqU32Batch => !try Fixed.eqBatch(u32, q, &i, &condition, v),

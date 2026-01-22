@@ -710,15 +710,32 @@ pub const FilterOp = enum(u8) {
     exists = 0,
     notExists = 1,
 
+    // -----------
     eqU32 = 4,
     neqU32 = 5,
     eqU32Batch = 6,
     neqU32Batch = 7,
     eqU32BatchSmall = 8,
     neqU32BatchSmall = 9,
+    // -----------
     rangeU32 = 10,
-
-    eq = 11,
+    nangeU32 = 11,
+    // -----------
+    gtU32 = 14,
+    ltU32 = 15,
+    gtU32Batch = 16,
+    ltU32Batch = 17,
+    gtU32BatchSmall = 18,
+    ltU32BatchSmall = 19,
+    // -----------
+    geU32 = 20,
+    leU32 = 21,
+    geU32Batch = 22,
+    leU32Batch = 23,
+    geU32BatchSmall = 24,
+    leU32BatchSmall = 25,
+    // -----------
+    // eq = 12,
     // will become quite a lot :L > , < <=, >=
     // maybe format a bit easier
 

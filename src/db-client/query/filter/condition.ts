@@ -60,6 +60,18 @@ const getProps = {
       eqBatch: FilterOp.eqU32Batch,
       eqBatchSmall: FilterOp.eqU32BatchSmall,
       range: FilterOp.rangeU32,
+      gt: FilterOp.gtU32,
+      gtBatch: FilterOp.gtU32Batch,
+      gtBatchSmall: FilterOp.gtU32BatchSmall,
+      lt: FilterOp.ltU32,
+      ltBatch: FilterOp.ltU32Batch,
+      ltBatchSmall: FilterOp.ltU32BatchSmall,
+      ge: FilterOp.geU32,
+      geBatch: FilterOp.geU32Batch,
+      geBatchSmall: FilterOp.geU32BatchSmall,
+      le: FilterOp.leU32,
+      leBatch: FilterOp.leU32Batch,
+      leBatchSmall: FilterOp.leU32BatchSmall,
     },
   },
 }
@@ -74,19 +86,39 @@ const getFilterOp = (
   op: FilterOpEnum
   write: (condition: Uint8Array, v: any, offset: number) => Uint8Array
 } => {
-  if (operator === '=') {
+  if (
+    operator === '=' ||
+    operator === '<' ||
+    operator === '>' ||
+    operator === '<=' ||
+    operator === '>='
+  ) {
     // add NEQ
     const vectorLen = 16 / propDef.len
+    let opName: 'eq' | 'gt' | 'lt' | 'ge' | 'le' = 'eq'
+    if (operator === '<') opName = 'lt'
+    else if (operator === '>') opName = 'gt'
+    else if (operator === '<=') opName = 'le'
+    else if (operator === '>=') opName = 'ge'
+
     if (len > vectorLen) {
-      return { op: typeCfg.ops.eqBatch, len: propDef.len, write: typeCfg.write }
+      return {
+        op: typeCfg.ops[`${opName}Batch`],
+        len: propDef.len,
+        write: typeCfg.write,
+      }
     } else if (len > 1) {
       return {
-        op: typeCfg.ops.eqBatchSmall,
+        op: typeCfg.ops[`${opName}BatchSmall`],
         len: propDef.len,
         write: typeCfg.write,
       }
     } else {
-      return { op: typeCfg.ops.eq, len: propDef.len, write: typeCfg.write }
+      return {
+        op: typeCfg.ops[opName],
+        len: propDef.len,
+        write: typeCfg.write,
+      }
     }
   } else if (operator === '..') {
     return {
