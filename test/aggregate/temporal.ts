@@ -224,192 +224,192 @@ await test('group by datetime ranges', async (t) => {
   )
 })
 
-// await test.skip('cardinality with dates', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-//   await db.start({ clean: true })
-//   t.after(() => db.stop())
+await test.skip('cardinality with dates', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
 
-//   await db.setSchema({
-//     types: {
-//       lunch: {
-//         day: 'timestamp',
-//         eaters: 'cardinality',
-//       },
-//     },
-//   })
+  await db.setSchema({
+    types: {
+      lunch: {
+        day: 'timestamp',
+        eaters: 'cardinality',
+      },
+    },
+  })
 
-//   db.create('lunch', {
-//     day: new Date('6/30/2025 00:00+0'), // mon
-//     eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
-//   })
-//   db.create('lunch', {
-//     day: new Date('7/1/2025 00:00+0'), // tue
-//     eaters: [
-//       'Nuno',
-//       'Tom',
-//       'Alex',
-//       'Niels',
-//       'jimdebeer',
-//       'Francesco',
-//       'Victor',
-//     ],
-//   })
-//   db.create('lunch', {
-//     day: '7/2/25', // wed
-//     eaters: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
-//   })
-//   db.create('lunch', {
-//     day: '7/3/25', // thu
-//     eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
-//   })
-//   db.create('lunch', {
-//     day: '7/4/25', // fri
-//     eaters: [
-//       'Nuno',
-//       'yves',
-//       'Tom',
-//       'youzi',
-//       'jimdebeer',
-//       'Francesco',
-//       'Victor',
-//       'sandor',
-//       'Luca',
-//     ],
-//   })
+  db.create('lunch', {
+    day: new Date('6/30/2025 00:00+0'), // mon
+    eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: new Date('7/1/2025 00:00+0'), // tue
+    eaters: [
+      'Nuno',
+      'Tom',
+      'Alex',
+      'Niels',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+    ],
+  })
+  db.create('lunch', {
+    day: '7/2/25', // wed
+    eaters: ['Nuno', 'youzi', 'Francesco', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/3/25', // thu
+    eaters: ['Tom', 'youzi', 'jimdebeer', 'Victor', 'Luca'],
+  })
+  db.create('lunch', {
+    day: '7/4/25', // fri
+    eaters: [
+      'Nuno',
+      'yves',
+      'Tom',
+      'youzi',
+      'jimdebeer',
+      'Francesco',
+      'Victor',
+      'sandor',
+      'Luca',
+    ],
+  })
 
-//   const total = await db.query('lunch').cardinality('eaters').get().toObject()
+  const total = await db.query('lunch').cardinality('eaters').get().toObject()
 
-//   // console.log('Total Eaters: ', total.eaters)
-//   deepEqual(total.eaters.cardinality, 11, 'Total Eaters')
+  // console.log('Total Eaters: ', total.eaters)
+  deepEqual(total.eaters.cardinality, 11, 'Total Eaters')
 
-//   const groupByDay = await db
-//     .query('lunch')
-//     .cardinality('eaters')
-//     .groupBy('day')
-//     .get()
-//     .toObject()
+  const groupByDay = await db
+    .query('lunch')
+    .cardinality('eaters')
+    .groupBy('day')
+    .get()
+    .toObject()
 
-//   const meals = Object.entries(groupByDay) //@ts-ignore
-//     .map((m) => m[1].eaters.cardinality)
-//     .reduce((e, acc) => (acc += e))
+  const meals = Object.entries(groupByDay) //@ts-ignore
+    .map((m) => m[1].eaters.cardinality)
+    .reduce((e, acc) => (acc += e))
 
-//   // console.log('Total Meals: ', meals)
-//   deepEqual(meals, 31, 'Total Meals')
+  // console.log('Total Meals: ', meals)
+  deepEqual(meals, 31, 'Total Meals')
 
-//   enum months {
-//     'Jan',
-//     'Feb',
-//     'Mar',
-//     'Apr',
-//     'May',
-//     'Jun',
-//     'Jul',
-//     'Ago',
-//     'Sep',
-//     'Oct',
-//     'Nov',
-//     'Dec',
-//   }
+  enum months {
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Ago',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  }
 
-//   const groupByMonth = await db
-//     .query('lunch')
-//     .cardinality('eaters')
-//     .groupBy('day', 'month')
-//     .get()
-//     .toObject()
+  const groupByMonth = await db
+    .query('lunch')
+    .cardinality('eaters')
+    .groupBy('day', 'month')
+    .get()
+    .toObject()
 
-//   const eatersByMonth = Object.entries(groupByMonth).map((e) => {
-//     //@ts-ignore
-//     return { [months[e[0]]]: e[1].eaters }
-//   })
-//   // console.log('Total Eaters by Month: ', eatersByMonth)
-//   deepEqual(
-//     eatersByMonth,
-//     [{ Jun: { cardinality: 5 } }, { Jul: { cardinality: 11 } }],
-//     'Total Eaters by Month',
-//   )
-// })
+  const eatersByMonth = Object.entries(groupByMonth).map((e) => {
+    //@ts-ignore
+    return { [months[e[0]]]: e[1].eaters }
+  })
+  // console.log('Total Eaters by Month: ', eatersByMonth)
+  deepEqual(
+    eatersByMonth,
+    [{ Jun: { cardinality: 5 } }, { Jul: { cardinality: 11 } }],
+    'Total Eaters by Month',
+  )
+})
 
-// await test('formating timestamp', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-//   await db.start({ clean: true })
-//   t.after(() => db.stop())
+await test('formating timestamp', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
 
-//   await db.setSchema({
-//     types: {
-//       trip: {
-//         pickup: 'timestamp',
-//         dropoff: 'timestamp',
-//         distance: 'number',
-//         vendorId: 'uint16',
-//       },
-//     },
-//   })
+  await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorId: 'uint16',
+      },
+    },
+  })
 
-//   db.create('trip', {
-//     vendorId: 813,
-//     pickup: new Date('12/11/2024 11:00+00'),
-//     dropoff: new Date('12/11/2024 11:10+00'),
-//     distance: 813.44,
-//   })
+  db.create('trip', {
+    vendorId: 813,
+    pickup: new Date('12/11/2024 11:00+00'),
+    dropoff: new Date('12/11/2024 11:10+00'),
+    distance: 813.44,
+  })
 
-//   db.create('trip', {
-//     vendorId: 814,
-//     pickup: new Date('12/11/2024 11:30+00'),
-//     dropoff: new Date('12/12/2024 12:10+00'),
-//     distance: 513.44,
-//   })
+  db.create('trip', {
+    vendorId: 814,
+    pickup: new Date('12/11/2024 11:30+00'),
+    dropoff: new Date('12/12/2024 12:10+00'),
+    distance: 513.44,
+  })
 
-//   const dtFormat = new Intl.DateTimeFormat('pt-BR', {
-//     dateStyle: 'short',
-//     timeStyle: 'short',
-//     timeZone: 'America/Sao_Paulo',
-//   })
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
 
-//   deepEqual(
-//     await db.query('trip').sum('distance').groupBy('pickup').get(),
-//     {
-//       1733916600000: {
-//         distance: { sum: 513.44 },
-//       },
-//       1733914800000: {
-//         distance: { sum: 813.44 },
-//       },
-//     },
-//     'no format => epoch ',
-//   )
+  deepEqual(
+    await db.query('trip').sum('distance').groupBy('pickup').get(),
+    {
+      1733916600000: {
+        distance: { sum: 513.44 },
+      },
+      1733914800000: {
+        distance: { sum: 813.44 },
+      },
+    },
+    'no format => epoch ',
+  )
 
-//   deepEqual(
-//     await db
-//       .query('trip')
-//       .sum('distance')
-//       .groupBy('pickup', { step: 40 * 60, display: dtFormat })
-//       .get(),
-//     {
-//       '11/12/2024 08:00 – 08:40': {
-//         distance: { sum: 1326.88 },
-//       },
-//     },
-//     'formated range interval as range',
-//   )
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { step: 40 * 60, display: dtFormat })
+      .get(),
+    {
+      '11/12/2024 08:00 – 08:40': {
+        distance: { sum: 1326.88 },
+      },
+    },
+    'formated range interval as range',
+  )
 
-//   deepEqual(
-//     await db
-//       .query('trip')
-//       .sum('distance')
-//       .groupBy('pickup', { display: dtFormat })
-//       .get(),
-//     {
-//       '11/12/2024, 08:30': { distance: { sum: 513.44 } },
-//       '11/12/2024, 08:00': { distance: { sum: 813.44 } },
-//     },
-//     'formated timestamp without range',
-//   )
-// })
+  deepEqual(
+    await db
+      .query('trip')
+      .sum('distance')
+      .groupBy('pickup', { display: dtFormat })
+      .get(),
+    {
+      '11/12/2024, 08:30': { distance: { sum: 513.44 } },
+      '11/12/2024, 08:00': { distance: { sum: 813.44 } },
+    },
+    'formated timestamp without range',
+  )
+})
 
 await test('timezone offsets', async (t) => {
   const db = new BasedDb({
