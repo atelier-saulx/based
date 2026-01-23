@@ -89,13 +89,12 @@ export async function loadBlockRaw(
   block: number,
 ): Promise<Uint8Array> {
   const id = loadBlockRawId.next().value
-  const msg = new Uint8Array(15)
+  const msg = new Uint8Array(11)
 
   writeUint32(msg, id, 0)
   msg[4] = OpType.loadBlock
-  writeUint32(msg, start, 5)
+  writeUint32(msg, block, 5)
   writeUint16(msg, typeId, 9)
-  writeUint32(msg, block, 11)
 
   return new Promise((resolve, reject) => {
     db.addOpOnceListener(OpType.loadBlock, id, (buf: Uint8Array) => {
@@ -211,9 +210,9 @@ export async function save(db: DbServer, opts: SaveOpts = {}): Promise<void> {
   const saveBlockListener = (buf: Uint8Array) => {
     const err = readInt32(buf, 0)
     if (err) {
-      const start = readUint32(buf, 4)
+      const block = readUint32(buf, 4)
       const typeCode = readUint16(buf, 8)
-      const errMsg = `Save block ${typeCode}:${start} failed: ${native.selvaStrerror(err)}`
+      const errMsg = `Save block ${typeCode}:${block} failed: ${native.selvaStrerror(err)}`
 
       db.emit('error', errMsg)
       p.reject(new Error(errMsg))

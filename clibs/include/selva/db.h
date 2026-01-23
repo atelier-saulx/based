@@ -82,7 +82,7 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
  * Save a nodes block starting from start.
  */
 SELVA_EXPORT
-int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start) __attribute__((nonnull));
+int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i) __attribute__((nonnull));
 
 SELVA_EXPORT
 int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
