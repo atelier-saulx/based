@@ -17,13 +17,8 @@ pub fn prepare(
 ) !void {
     var i: usize = 0;
     while (i < q.len) {
-        // this has to expand the buffer
-        // size can be done with either
-        // add the size in the condition OR add proptype OR add op in equal and make it work
-        // just add size in cond
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
         var condition: *t.FilterCondition = undefined;
-
         // 255 means its unprepared - the condition new index will be set when aligned
         if (q[i] == 255) {
             const condSize = utils.read(u32, q, i + 1 + COND_ALIGN_BYTES);
@@ -34,27 +29,21 @@ pub fn prepare(
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
             condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
+
+            // Add reference select thing
+            //     // .selectLargeRef, .selectSmallRef => {
+            //     //     i += utils.sizeOf(t.FilterCondition);
+            //     //     const selectReference = utils.readNext(t.FilterSelect, q, &i);
+            //     //     prepare(q[i .. i + selectReference.size]);
+            //     //     i += selectReference.size;
+            //     // },
+
             i = end;
         } else {
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
         }
+        // if condition has type NOW we need to handle it
         i += headerSize + condition.size;
-
-        // ADD REFERENCES
-
-        // switch (condition.op) {
-        //     // .nextOrIndex => alignSingle(usize, q, &i),
-        //     // .selectLargeRef, .selectSmallRef => {
-        //     //     i += utils.sizeOf(t.FilterCondition);
-        //     //     const selectReference = utils.readNext(t.FilterSelect, q, &i);
-        //     //     prepare(q[i .. i + selectReference.size]);
-        //     //     i += selectReference.size;
-        //     // },
-        //     .eqU32, .neqU32 => alignSingle(u32, q, &i),
-        //     // .eqU32Batch, .neqU32Batch => alignBatch(u32, q, &i),
-        //     // .eqU32BatchSmall, .neqU32BatchSmall => alignSmallBatch(u32, q, &i),
-        //     else => {},
-        // }
     }
 }
 
@@ -102,6 +91,7 @@ pub inline fn filter(
             //     pass = recursionErrorBoundary(Select.largeRef, ctx, q, v, &i);
             // },
 
+            // u32
             .eqU32 => Fixed.single(.eq, u32, q, v, index, c),
             .neqU32 => !Fixed.single(.eq, u32, q, v, index, c),
             .eqU32BatchSmall => Fixed.batchSmall(.eq, u32, q, v, index, c),
@@ -113,11 +103,15 @@ pub inline fn filter(
             .leU32 => Fixed.single(.le, u32, q, v, index, c),
             .ltU32BatchSmall => Fixed.batchSmall(.lt, u32, q, v, index, c),
             .leU32BatchSmall => Fixed.batchSmall(.le, u32, q, v, index, c),
+            .ltU32Batch => Fixed.batchSmall(.lt, u32, q, v, index, c),
+            .leU32Batch => Fixed.batchSmall(.le, u32, q, v, index, c),
 
             .gtU32 => Fixed.single(.gt, u32, q, v, index, c),
             .geU32 => Fixed.single(.ge, u32, q, v, index, c),
             .gtU32BatchSmall => Fixed.batchSmall(.gt, u32, q, v, index, c),
             .geU32BatchSmall => Fixed.batchSmall(.ge, u32, q, v, index, c),
+            .gtU32Batch => Fixed.batchSmall(.gt, u32, q, v, index, c),
+            .geU32Batch => Fixed.batchSmall(.ge, u32, q, v, index, c),
 
             .rangeU32 => Fixed.range(u32, q, v, index, c),
 
