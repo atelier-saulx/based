@@ -296,6 +296,8 @@ pub fn aggregates(
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
     defer ctx.db.allocator.free(accumulatorProp);
+    const hllAccumulator = Selva.c.selva_string_create(null, Selva.c.HLL_INIT_SIZE, Selva.c.SELVA_STRING_MUTABLE);
+    defer Selva.c.selva_string_free(hllAccumulator);
 
     var it = Node.iterator(false, typeEntry);
     if (hasGroupBy) {
@@ -310,10 +312,12 @@ pub fn aggregates(
             aggDefs,
             header.accumulatorSize,
             typeEntry,
+            hllAccumulator,
+            &hadAccumulated,
         );
         try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, aggDefs);
     } else {
-        nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, &hadAccumulated);
+        nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, hllAccumulator, &hadAccumulated);
         try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, isSamplingSet, 0);
     }
 }

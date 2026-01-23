@@ -1,9 +1,10 @@
 import { readdir } from 'node:fs/promises'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, DbServer } from '../../src/index.js'
 import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
 import { deepEqual, equal } from '../shared/assert.js'
 import { equals } from '../../src/utils/index.js'
+import { getBlockStatuses } from '../../src/db-server/blocks.js'
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
@@ -11,7 +12,6 @@ await test('save simple range', async (t) => {
   })
   await db.start({ clean: true })
   t.after(() => {
-    // TODO No crash if stopped (youzi: seems to work now)
     return db.destroy()
   })
 
@@ -164,6 +164,16 @@ await test('save simple range', async (t) => {
   )
 })
 
+async function countDirtyBlocks(server: DbServer) {
+  let n = 0
+
+  for (const t of Object.keys(server.schemaTypesParsedById)) {
+    n += (await getBlockStatuses(server, Number(t))).reduce((acc, cur) => acc + ~~!!(cur & 0x4), 0)
+  }
+
+  return n
+}
+
 await test('reference changes', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -195,21 +205,17 @@ await test('reference changes', async (t) => {
     }),
   )
   await db.drain()
-  let dirties = 0
-  db.server.blockMap.foreachDirtyBlock(() => dirties++)
-  equal(dirties, 1, 'creating new users creates a dirty range')
+  equal(await countDirtyBlocks(db.server), 1, 'creating new users creates a dirty range')
 
   db.create('doc', {
     title: 'The Wonders of AI',
     creator: users[0],
   })
   await db.drain()
-  dirties = 0
-  db.server.blockMap.foreachDirtyBlock(() => dirties++)
-  equal(dirties, 2, 'creating nodes in two types makes both dirty')
+  equal(await countDirtyBlocks(db.server), 2, 'creating nodes in two types makes both dirty')
 
   await db.save()
-  equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
+  equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 
   const doc2 = db.create('doc', {
     title: 'The Slops of AI',
@@ -218,31 +224,23 @@ await test('reference changes', async (t) => {
     title: 'The Hype of AI',
   })
   await db.drain()
-  dirties = 0
-  db.server.blockMap.foreachDirtyBlock(() => dirties++)
-  equal(dirties, 1, 'creating docs makes the range dirty')
+  equal(await countDirtyBlocks(db.server), 1, 'creating docs makes the range dirty')
   await db.save()
-  equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
+  equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 
   // Link user -> doc
-
   db.update('user', users[1], { docs: [doc2] })
-
   await db.drain()
-  dirties = 0
-  db.server.blockMap.foreachDirtyBlock(() => dirties++)
-  equal(dirties, 2, 'Linking a user to doc makes both dirty')
+  equal(await countDirtyBlocks(db.server), 2, 'Linking a user to doc makes both dirty')
   await db.save()
-  equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
+  equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 
   // Link doc -> user
   db.update('doc', doc3, { creator: users[2] })
   await db.drain()
-  dirties = 0
-  db.server.blockMap.foreachDirtyBlock(() => dirties++)
-  equal(dirties, 2, 'Linking a doc to user makes both dirty')
+  equal(await countDirtyBlocks(db.server), 2, 'Linking a doc to user makes both dirty')
   await db.save()
-  equal(db.server.blockMap.isDirty, false, 'saving clears the dirty set')
+  equal(await countDirtyBlocks(dbserver), 0, 'saving clears dirt')
 })
 
 await test('ref block moves', async (t) => {

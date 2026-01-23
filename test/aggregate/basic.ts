@@ -978,7 +978,7 @@ await test.skip('fixed length strings', async (t) => {
   )
 })
 
-await test.skip('range', async (t) => {
+await test('range', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
