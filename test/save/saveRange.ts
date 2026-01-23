@@ -1,10 +1,28 @@
+import { createHash } from 'node:crypto';
 import { readdir } from 'node:fs/promises'
 import { BasedDb, DbServer } from '../../src/index.js'
 import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
-import { deepEqual, equal } from '../shared/assert.js'
-import { equals } from '../../src/utils/index.js'
-import { getBlockStatuses } from '../../src/db-server/blocks.js'
+import { deepEqual, equal, notEqual } from '../shared/assert.js'
+import { getBlockHash, getBlockStatuses } from '../../src/db-server/blocks.js'
+
+const getActiveBlocks = async (db: DbServer, tc: number): Promise<Array<number>> => (await getBlockStatuses(db, tc)).reduce((acc, cur, i) => {
+  if (cur) {
+    acc.push(i)
+  }
+  return acc
+}, [] as Array<number>)
+const block2start = (block: number, capacity: number): number => block * capacity + 1;
+const hashType = async (db: DbServer, typeName: string): Promise<string> => {
+  const tc = db.schemaTypesParsed[typeName].id
+  const capacity = db.schemaTypesParsed[typeName].blockCapacity
+  const hash = createHash('sha256')
+  const bhs = await Promise.all((await getActiveBlocks(db, tc)).map((block) => getBlockHash(db, tc, block2start(block, capacity))))
+  for (const bh of bhs) {
+    hash.update(bh)
+  }
+  return hash.digest('hex')
+}
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
@@ -54,8 +72,7 @@ await test('save simple range', async (t) => {
   const save1_start = performance.now()
   await db.save()
   const save1_end = performance.now()
-  // TODO
-  //const firstHash = db.server.blockMap.hash
+  const firstHash = await hashType(db.server, 'user')
 
   db.update('user', 1, {
     age: 1337,
@@ -74,14 +91,12 @@ await test('save simple range', async (t) => {
   const save2_start = performance.now()
   await db.save()
   const save2_end = performance.now()
+  const secondHash = await hashType(db.server, 'user')
   await db.stop()
-  // TODO
-  //const secondHash = db.server.blockMap.hash
 
   //console.log(save2_end - save2_start, save1_end - save1_start)
   equal(save2_end - save2_start < save1_end - save1_start, true)
-  // TODO
-  //equal(equals(firstHash, secondHash), false)
+  notEqual(firstHash, secondHash)
 
   const ls = await readdir(t.tmp)
   equal(ls.length, N / 100_000 + 2)
@@ -107,10 +122,9 @@ await test('save simple range', async (t) => {
   t.after(() => newDb.destroy())
   const load_end = performance.now()
 
-  // TODO
-  //const thirdHash = db.server.blockMap.hash
-  //equal(equals(firstHash, secondHash), false)
-  //equal(equals(secondHash, thirdHash), true)
+  const thirdHash = await hashType(newDb.server, 'user')
+  notEqual(firstHash, secondHash)
+  equal(secondHash, thirdHash)
 
   deepEqual(
     (await newDb.query('user').include('age').range(0, 1).get()).toObject(),
