@@ -646,10 +646,6 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
         node_id_t removed;
 
         removed = del_single_ref(db, dst, &fs_dst->edge_constraint, fields_dst, nfo_dst, false);
-        if (removed == 0) {
-            fprintf(stderr, "%s WARN removed: %u src_node_id: %u\n",
-                    __func__, (unsigned)removed, (unsigned)src_node_id);
-        }
         assert(removed == src_node_id);
     } else if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences *refs = nfo2p(fields_dst, nfo_dst);
