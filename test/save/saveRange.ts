@@ -240,7 +240,7 @@ await test('reference changes', async (t) => {
   await db.drain()
   equal(await countDirtyBlocks(db.server), 2, 'Linking a doc to user makes both dirty')
   await db.save()
-  equal(await countDirtyBlocks(dbserver), 0, 'saving clears dirt')
+  equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 })
 
 await test('ref block moves', async (t) => {
