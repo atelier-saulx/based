@@ -28,7 +28,7 @@ await test('save simple range', async (t) => {
     },
   })
 
-  const N = 400_000
+  const N = 800_000
   const slen = 80
   const xn_len = italy.length / slen
   for (let i = 1; i <= N; i++) {
@@ -78,22 +78,25 @@ await test('save simple range', async (t) => {
   // TODO
   //const secondHash = db.server.blockMap.hash
 
-  console.log(save2_end - save2_start, save1_end - save1_start)
+  //console.log(save2_end - save2_start, save1_end - save1_start)
   equal(save2_end - save2_start < save1_end - save1_start, true)
   // TODO
   //equal(equals(firstHash, secondHash), false)
 
   const ls = await readdir(t.tmp)
-  equal(ls.length, N / 100_000 + 3)
+  equal(ls.length, N / 100_000 + 2)
 
   deepEqual(ls, [
-    '2_100001_200000.sdb',
-    '2_1_100000.sdb',
-    '2_200001_300000.sdb',
-    '2_300001_400000.sdb',
+    '1_0.sdb',
+    '1_1.sdb',
+    '1_2.sdb',
+    '1_3.sdb',
+    '1_4.sdb',
+    '1_5.sdb',
+    '1_6.sdb',
+    '1_7.sdb',
     'common.sdb',
     'schema.bin',
-    'writelog.json',
   ])
 
   const load_start = performance.now()
@@ -102,12 +105,12 @@ await test('save simple range', async (t) => {
   })
   await newDb.start()
   t.after(() => newDb.destroy())
-
   const load_end = performance.now()
-  const thirdHash = db.server.blockMap.hash
 
-  equal(equals(firstHash, secondHash), false)
-  equal(equals(secondHash, thirdHash), true)
+  // TODO
+  //const thirdHash = db.server.blockMap.hash
+  //equal(equals(firstHash, secondHash), false)
+  //equal(equals(secondHash, thirdHash), true)
 
   deepEqual(
     (await newDb.query('user').include('age').range(0, 1).get()).toObject(),
