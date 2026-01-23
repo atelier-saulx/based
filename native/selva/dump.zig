@@ -23,7 +23,7 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
     const id = read(u32, q, 0);
     const resp = try thread.query.result(10, id, op);
 
-    const start = read(u32, q, 5);
+    const block = read(u32, q, 5);
     const typeCode = read(u16, q, 9);
     var err: c_int = undefined;
 
@@ -33,7 +33,7 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
         return;
     }
 
-    err = selva.selva_dump_save_block(ctx.selva, te, start);
+    err = selva.selva_dump_save_block(ctx.selva, te, block);
     utils.write(resp, err, 0);
     utils.byteCopy(resp, q[5..11], 4);
 
@@ -48,15 +48,14 @@ const DispatchSaveJobCtx = struct {
     nrDirtyBlocks: u32,
 };
 
-fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTypeEntry, _: selva.block_id_t, start: selva.node_id_t) callconv(.c) void {
+fn dispatchSaveJob(jobCtxP: ?*anyopaque, _: ?*selva.SelvaDb, te: ?*selva.SelvaTypeEntry, block: selva.block_id_t, _: selva.node_id_t) callconv(.c) void {
     const jobCtx: *DispatchSaveJobCtx = @alignCast(@ptrCast(jobCtxP.?));
     const typeCode = selva.selva_get_type(te);
-
     const msg = jemalloc.alloc(u8, 11);
 
     utils.write(msg, @as(u32, jobCtx.qid), 0); // id
     msg[4] = @intFromEnum(t.OpType.saveBlock); // op
-    utils.write(msg, @as(u32, start), 5); // start
+    utils.write(msg, @as(u32, block), 5); // block
     utils.write(msg, @as(u16, typeCode), 9); // type
 
     // TODO Handle error
@@ -134,9 +133,8 @@ pub fn loadBlock(
 ) !void {
     const resp = try thread.modify.result(512, read(u32, m, 0), op);
 
-    //const start: u32 = read(u32, m, 5);
+    const block = read(u32, m, 5);
     const typeCode: u16 = read(u16, m, 9);
-    const block = read(u32, m, 11);
     var err: c_int = undefined;
 
     const errlog = resp[4..resp.len];
@@ -159,7 +157,7 @@ pub fn unloadBlock(
 ) !void {
     const resp = try thread.modify.result(10, read(u32, m, 0), op);
 
-    const start: u32 = read(u32, m, 5);
+    const block: u32 = read(u32, m, 5);
     const typeCode: u16 = read(u16, m, 9);
     var err: c_int = undefined;
 
@@ -169,9 +167,9 @@ pub fn unloadBlock(
         return;
     }
 
-    err = selva.selva_dump_save_block(dbCtx.selva, te, start);
+    err = selva.selva_dump_save_block(dbCtx.selva, te, block);
     if (err == 0) {
-        selva.selva_del_block(dbCtx.selva, te, start);
+        selva.selva_del_block(dbCtx.selva, te, block);
         return;
     }
 

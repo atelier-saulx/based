@@ -7,7 +7,7 @@ const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
 const Fixed = @import("./fixed.zig");
 const Select = @import("./select.zig");
-
+const Instruction = @import("./instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
 pub fn prepare(
@@ -21,8 +21,9 @@ pub fn prepare(
         var condition: *t.FilterCondition = undefined;
         // 255 means its unprepared - the condition new index will be set when aligned
         if (q[i] == 255) {
-            const condSize = utils.read(u32, q, i + 1 + COND_ALIGN_BYTES);
+            const condSize = utils.read(u32, q, i + 3 + COND_ALIGN_BYTES);
             const totalSize = headerSize + condSize;
+
             q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i);
             condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
@@ -81,43 +82,26 @@ pub inline fn filter(
             v = Fields.get(typeEntry, node, c.fieldSchema, .null);
         }
 
-        pass = switch (c.op) {
-            .nextOrIndex => blk: {
-                nextOrIndex = utils.readPtr(u32, q, index + c.len - c.offset).*;
-                break :blk true;
-            },
+        const instruction = utils.readPtr(Instruction.CombinedOp, q, i + q[i]).*;
 
-            // .selectLargeRef => {
-            //     pass = recursionErrorBoundary(Select.largeRef, ctx, q, v, &i);
-            // },
+        pass = switch (instruction) {
+            inline else => |tag| blk: {
+                const val = @intFromEnum(tag);
+                const typeByte = @as(u8, @truncate(val));
+                const opByte = @as(u8, @truncate(val >> 8));
 
-            // u32
-            .eqU32 => Fixed.single(.eq, u32, q, v, index, c),
-            .neqU32 => !Fixed.single(.eq, u32, q, v, index, c),
-            .eqU32BatchSmall => Fixed.batchSmall(.eq, u32, q, v, index, c),
-            .neqU32BatchSmall => !Fixed.batchSmall(.eq, u32, q, v, index, c),
-            .eqU32Batch => Fixed.eqBatch(u32, q, v, index, c),
-            .neqU32Batch => !Fixed.eqBatch(u32, q, v, index, c),
+                const meta = comptime Instruction.parseOp(@enumFromInt(opByte));
+                const T = comptime Instruction.propTypeToPrimitive(@enumFromInt(typeByte));
 
-            .ltU32 => Fixed.single(.lt, u32, q, v, index, c),
-            .leU32 => Fixed.single(.le, u32, q, v, index, c),
-            .ltU32BatchSmall => Fixed.batchSmall(.lt, u32, q, v, index, c),
-            .leU32BatchSmall => Fixed.batchSmall(.le, u32, q, v, index, c),
-            .ltU32Batch => Fixed.batchSmall(.lt, u32, q, v, index, c),
-            .leU32Batch => Fixed.batchSmall(.le, u32, q, v, index, c),
+                // std.debug.print("bla {any} {any} {any} {any} \n", .{ opByte, typeByte, meta, T });
 
-            .gtU32 => Fixed.single(.gt, u32, q, v, index, c),
-            .geU32 => Fixed.single(.ge, u32, q, v, index, c),
-            .gtU32BatchSmall => Fixed.batchSmall(.gt, u32, q, v, index, c),
-            .geU32BatchSmall => Fixed.batchSmall(.ge, u32, q, v, index, c),
-            .gtU32Batch => Fixed.batchSmall(.gt, u32, q, v, index, c),
-            .geU32Batch => Fixed.batchSmall(.ge, u32, q, v, index, c),
-
-            .rangeU32 => Fixed.range(u32, q, v, index, c),
-
-            else => blk: {
-                i = index;
-                break :blk false;
+                const res = switch (meta.func) {
+                    .Single => Fixed.single(meta.cmp, T, q, v, index, c),
+                    .Range => Fixed.range(T, q, v, index, c),
+                    .Batch => Fixed.batch(meta.cmp, T, q, v, index, c),
+                    .BatchSmall => Fixed.batchSmall(meta.cmp, T, q, v, index, c),
+                };
+                break :blk if (meta.invert) !res else res;
             },
         };
 

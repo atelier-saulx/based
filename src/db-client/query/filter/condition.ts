@@ -12,7 +12,7 @@ import {
 import {
   FilterConditionByteSize,
   FilterOp,
-  FilterOpEnum,
+  FilterOpCompare,
   PropType,
   writeFilterCondition,
 } from '../../../zigTsExports.js'
@@ -23,11 +23,12 @@ const COND_ALIGN_SPACE = 16
 export const conditionBuffer = (
   propDef: { start: number; prop: number; len: number } & Record<string, any>,
   size: number,
-  op: FilterOpEnum,
+  op: FilterOp,
 ) => {
   const condition = new Uint8Array(
     size + FilterConditionByteSize + COND_ALIGN_SPACE + 1 + propDef.len,
   )
+
   condition[0] = 255
   const offset =
     writeFilterCondition(
@@ -55,24 +56,6 @@ export const conditionBuffer = (
 const getProps = {
   [PropType.uint32]: {
     write: writeUint32,
-    ops: {
-      eq: FilterOp.eqU32,
-      eqBatch: FilterOp.eqU32Batch,
-      eqBatchSmall: FilterOp.eqU32BatchSmall,
-      range: FilterOp.rangeU32,
-      gt: FilterOp.gtU32,
-      gtBatch: FilterOp.gtU32Batch,
-      gtBatchSmall: FilterOp.gtU32BatchSmall,
-      lt: FilterOp.ltU32,
-      ltBatch: FilterOp.ltU32Batch,
-      ltBatchSmall: FilterOp.ltU32BatchSmall,
-      ge: FilterOp.geU32,
-      geBatch: FilterOp.geU32Batch,
-      geBatchSmall: FilterOp.geU32BatchSmall,
-      le: FilterOp.leU32,
-      leBatch: FilterOp.leU32Batch,
-      leBatchSmall: FilterOp.leU32BatchSmall,
-    },
   },
 }
 
@@ -83,7 +66,7 @@ const getFilterOp = (
   len: number,
 ): {
   len: number
-  op: FilterOpEnum
+  op: FilterOp
   write: (condition: Uint8Array, v: any, offset: number) => Uint8Array
 } => {
   if (
@@ -103,26 +86,42 @@ const getFilterOp = (
 
     if (len > vectorLen) {
       return {
-        op: typeCfg.ops[`${opName}Batch`],
+        op: {
+          compare: FilterOpCompare[`${opName}Batch`],
+          // @ts-ignore
+          prop: propDef.typeIndex,
+        },
         len: propDef.len,
         write: typeCfg.write,
       }
     } else if (len > 1) {
       return {
-        op: typeCfg.ops[`${opName}BatchSmall`],
+        op: {
+          compare: FilterOpCompare[`${opName}BatchSmall`],
+          // @ts-ignore
+          prop: propDef.typeIndex,
+        },
         len: propDef.len,
         write: typeCfg.write,
       }
     } else {
       return {
-        op: typeCfg.ops[opName],
+        op: {
+          compare: FilterOpCompare[opName],
+          // @ts-ignore
+          prop: propDef.typeIndex,
+        },
         len: propDef.len,
         write: typeCfg.write,
       }
     }
   } else if (operator === '..') {
     return {
-      op: typeCfg.ops.range,
+      op: {
+        compare: FilterOpCompare.range,
+        // @ts-ignore
+        prop: propDef.typeIndex,
+      },
       len: propDef.len * 2,
       write: (condition: Uint8Array, v: any, offset: number) => {
         // x >= 3 && x <= 11

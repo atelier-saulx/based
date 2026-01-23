@@ -218,6 +218,7 @@ await test('include', async (t) => {
     .query('simple')
     .include('nr')
     .filter('nr', '>', 90)
+    .range(0, 5)
 
     // .filter('nr', '..', [90, 100])
     // > , >=, <=, <
