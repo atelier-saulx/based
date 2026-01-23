@@ -229,9 +229,7 @@ await test('reference changes', async (t) => {
   equal(await countDirtyBlocks(db.server), 0, 'saving clears dirt')
 
   // Link user -> doc
-
   db.update('user', users[1], { docs: [doc2] })
-
   await db.drain()
   equal(await countDirtyBlocks(db.server), 2, 'Linking a user to doc makes both dirty')
   await db.save()
