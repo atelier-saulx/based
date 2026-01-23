@@ -197,3 +197,11 @@ pub inline fn expire(ctx: *Modify.ModifyCtx) void {
 pub inline fn getNodeBlockHash(db: *DbCtx, typeEntry: Type, start: u32, hashOut: *SelvaHash128) c_int {
     return selva.c.selva_node_block_hash(db.selva, typeEntry, start, hashOut);
 }
+
+pub inline fn getReferenceNodeId(ref: ?selva.ReferenceLarge) []u8 {
+    if (ref) |r| {
+        const id: *u32 = @ptrCast(@alignCast(&r.*.dst));
+        return std.mem.asBytes(id)[0..4];
+    }
+    return &[_]u8{};
+}
