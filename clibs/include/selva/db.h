@@ -419,7 +419,7 @@ SELVA_EXPORT
 void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id);
 
 SELVA_EXPORT
-void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start);
+void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i);
 
 /**
  * Get a node by id.

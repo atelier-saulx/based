@@ -218,11 +218,11 @@ static inline void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEn
     }
 }
 
-void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, node_id_t start)
+void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i)
 {
-    const size_t block_i = selva_node_id2block_i(te->blocks, start);
-
-    selva_del_block_unsafe(db, te, block_i, true);
+    if (likely(block_i < te->blocks->len)) {
+        selva_del_block_unsafe(db, te, block_i, true);
+    }
 }
 
 /**

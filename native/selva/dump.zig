@@ -169,7 +169,7 @@ pub fn unloadBlock(
 
     err = selva.selva_dump_save_block(dbCtx.selva, te, block);
     if (err == 0) {
-        selva.selva_del_block(dbCtx.selva, te, selva.selva_block_i2start(te, block));
+        selva.selva_del_block(dbCtx.selva, te, block);
         return;
     }
 
