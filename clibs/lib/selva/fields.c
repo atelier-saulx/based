@@ -646,6 +646,10 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
         node_id_t removed;
 
         removed = del_single_ref(db, dst, &fs_dst->edge_constraint, fields_dst, nfo_dst, false);
+        if (removed == 0) {
+            fprintf(stderr, "%s WARN removed: %u src_node_id: %u\n",
+                    __func__, (unsigned)removed, (unsigned)src_node_id);
+        }
         assert(removed == src_node_id);
     } else if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCES) {
         struct SelvaNodeReferences *refs = nfo2p(fields_dst, nfo_dst);
@@ -658,6 +662,8 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
         assert(i >= 0);
         (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i);
     }
+
+    selva_mark_dirty(dst_type, dst_node_id);
 }
 
 /*
@@ -698,6 +704,7 @@ static inline void write_ref_2way(
 /**
  * Delete a reference field edge.
  * Clears both ways.
+ * The removed dst_node_id is marked dirty so that the caller doesn't need to do it.
  * @param orig_dst should be given if fs_src is of type SELVA_FIELD_TYPE_REFERENCES.
  * @returns the removed dst_node_id.
  */
@@ -811,7 +818,6 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
         removed_dst = remove_reference(db, node, fs, dst_node_id, i, false);
         if (removed_dst != 0) {
             assert(removed_dst == dst_node_id);
-            selva_mark_dirty(selva_get_type_by_index(db, fs->edge_constraint.dst_node_type), removed_dst);
         }
     }
 
@@ -1337,21 +1343,14 @@ int selva_fields_reference_set(
     /*
      * Remove previous refs.
      */
-    node_id_t old_dst_id;
     struct SelvaTypeEntry *te_dst = selva_get_type_by_index(db, fs_src->edge_constraint.dst_node_type);
 
-    old_dst_id = remove_reference(db, src, fs_src, 0, -1, true);
-    if (old_dst_id != 0) {
-        selva_mark_dirty(te_dst, old_dst_id);
-    }
+    (void)remove_reference(db, src, fs_src, 0, -1, true);
     selva_mark_dirty(te_dst, dst->node_id);
 
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         /* The new destination may have a ref to somewhere. */
-        old_dst_id = remove_reference(db, dst, fs_dst, 0, -1, false);
-        if (old_dst_id != 0) {
-            selva_mark_dirty(te_dst, old_dst_id);
-        }
+        (void)remove_reference(db, dst, fs_dst, 0, -1, false);
     }
 
     assume(fs_src->type == SELVA_FIELD_TYPE_REFERENCE);
@@ -1981,10 +1980,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         break;
     case SELVA_FIELD_TYPE_REFERENCE:
         if (!unload) {
-            node_id_t old_dst = remove_reference(db, node, fs, 0, -1, false);
-            if (old_dst) {
-                selva_mark_dirty(selva_get_type_by_index(db, fs->edge_constraint.dst_node_type), old_dst);
-            }
+            (void)remove_reference(db, node, fs, 0, -1, false);
         }
         break;
     case SELVA_FIELD_TYPE_REFERENCES:
