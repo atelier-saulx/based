@@ -1,4 +1,4 @@
-import { FilterOpInverse, PropType } from '../../../zigTsExports.js'
+import { PropType } from '../../../zigTsExports.js'
 import { DbClient } from '../../index.js'
 import { QueryDefFilter } from '../types.js'
 import { createCondition } from './condition.js'

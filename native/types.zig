@@ -707,34 +707,34 @@ pub const GroupByKeyProp = packed struct {
 //     propDefStart: u16,
 // };
 
-pub const FilterOp = enum(u8) {
-    exists = 0,
-    notExists = 1,
+pub const FilterOpCompare = enum(u8) {
+    // exists = 0,
+    // nexists = 1,
 
     // -----------
-    eqU32 = 4,
-    neqU32 = 5,
-    eqU32Batch = 6,
-    neqU32Batch = 7,
-    eqU32BatchSmall = 8,
-    neqU32BatchSmall = 9,
+    eq = 4,
+    neq = 5,
+    eqBatch = 6,
+    neqBatch = 7,
+    eqBatchSmall = 8,
+    neqBatchSmall = 9,
     // -----------
-    rangeU32 = 10,
-    nangeU32 = 11,
+    range = 10,
+    nrange = 11,
     // -----------
-    gtU32 = 14,
-    ltU32 = 15,
-    gtU32Batch = 16,
-    ltU32Batch = 17,
-    gtU32BatchSmall = 18,
-    ltU32BatchSmall = 19,
+    gt = 14,
+    lt = 15,
+    gtBatch = 16,
+    ltBatch = 17,
+    gtBatchSmall = 18,
+    ltBatchSmall = 19,
     // -----------
-    geU32 = 20,
-    leU32 = 21,
-    geU32Batch = 22,
-    leU32Batch = 23,
-    geU32BatchSmall = 24,
-    leU32BatchSmall = 25,
+    ge = 20,
+    le = 21,
+    geBatch = 22,
+    leBatch = 23,
+    geBatchSmall = 24,
+    leBatchSmall = 25,
     // -----------
     // eq = 12,
     // will become quite a lot :L > , < <=, >=
@@ -742,17 +742,27 @@ pub const FilterOp = enum(u8) {
 
     // var is a lot less
 
-    selectLargeRef = 202,
-    selectLargeRefs = 203,
-    selectSmallRef = 204,
-    selectSmallRefs = 205,
+    // selectLargeRef = 202,
+    // selectLargeRefs = 203,
+    // selectSmallRef = 204,
+    // selectSmallRefs = 205,
 
-    nextOrIndex = 253,
+    // nextOrIndex = 253,
+};
+
+pub const FilterFixedPropType = enum(u8) {
+    uint32 = @intFromEnum(PropType.uint32),
+    uint16 = @intFromEnum(PropType.uint16),
+};
+
+pub const FilterOp = packed struct {
+    prop: FilterFixedPropType,
+    compare: FilterOpCompare,
 };
 
 pub const FilterCondition = packed struct {
+    op: FilterOp, // this can become a u16 that holds the [OP,PROP_TYPE]
     size: u32,
-    op: FilterOp,
     prop: u8,
     start: u16,
     len: u8,

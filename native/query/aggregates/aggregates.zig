@@ -113,87 +113,91 @@ pub inline fn accumulate(
     const accumulatorPos = currentAggDef.accumulatorPos;
     const start = currentAggDef.propDefStart;
 
-    switch (aggFunction) {
-        .sum => {
-            writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propType, value, start), accumulatorPos);
-        },
-        .avg => {
-            const val = microbufferToF64(propType, value, start);
-            var count = read(u64, accumulatorProp, accumulatorPos);
-            var sum = read(f64, accumulatorProp, accumulatorPos + 8);
+    switch (propType) {
+        else => |propTypeTag| {
+            switch (aggFunction) {
+                .sum => {
+                    writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propTypeTag, value, start), accumulatorPos);
+                },
+                .avg => {
+                    const val = microbufferToF64(propTypeTag, value, start);
+                    var count = read(u64, accumulatorProp, accumulatorPos);
+                    var sum = read(f64, accumulatorProp, accumulatorPos + 8);
 
-            count += 1;
-            sum += val;
+                    count += 1;
+                    sum += val;
 
-            writeAs(u64, accumulatorProp, count, accumulatorPos);
-            writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
-        },
-        .min => {
-            if (!hadAccumulated.*) {
-                writeAs(f64, accumulatorProp, microbufferToF64(propType, value, start), accumulatorPos);
-            } else {
-                writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propType, value, start)), accumulatorPos);
+                    writeAs(u64, accumulatorProp, count, accumulatorPos);
+                    writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
+                },
+                .min => {
+                    if (!hadAccumulated.*) {
+                        writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
+                    } else {
+                        writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
+                    }
+                },
+                .max => {
+                    if (!hadAccumulated.*) {
+                        writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
+                    } else {
+                        writeAs(f64, accumulatorProp, @max(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
+                    }
+                },
+                .hmean => {
+                    const val = microbufferToF64(propTypeTag, value, start);
+                    if (val != 0) {
+                        var count = read(u64, accumulatorProp, accumulatorPos);
+                        var sum = read(f64, accumulatorProp, accumulatorPos + 8);
+
+                        count += 1;
+                        sum += 1 / val;
+
+                        writeAs(u64, accumulatorProp, count, accumulatorPos);
+                        writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
+                    } else {
+                        writeAs(u64, accumulatorProp, 0.0, accumulatorPos);
+                        writeAs(f64, accumulatorProp, 0.0, accumulatorPos + 8);
+                    }
+                },
+                .stddev => {
+                    const val = microbufferToF64(propTypeTag, value, start);
+                    var count = read(u64, accumulatorProp, accumulatorPos);
+                    var sum = read(f64, accumulatorProp, accumulatorPos + 8);
+                    var sum_sq = read(f64, accumulatorProp, accumulatorPos + 16);
+
+                    count += 1;
+                    sum += val;
+                    sum_sq += val * val;
+
+                    writeAs(u64, accumulatorProp, count, accumulatorPos);
+                    writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
+                    writeAs(f64, accumulatorProp, sum_sq, accumulatorPos + 16);
+                },
+                .variance => {
+                    const val = microbufferToF64(propTypeTag, value, start);
+                    var count = read(u64, accumulatorProp, accumulatorPos);
+                    var sum = read(f64, accumulatorProp, accumulatorPos + 8);
+                    var sum_sq = read(f64, accumulatorProp, accumulatorPos + 16);
+
+                    count += 1;
+                    sum += val;
+                    sum_sq += val * val;
+
+                    writeAs(u64, accumulatorProp, count, accumulatorPos);
+                    writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
+                    writeAs(f64, accumulatorProp, sum_sq, accumulatorPos + 16);
+                },
+                .count => {
+                    writeAs(u32, accumulatorProp, read(u32, accumulatorProp, accumulatorPos) + 1, accumulatorPos);
+                },
+                .cardinality => {
+                    Selva.c.hll_union(hllAccumulator, hllValue);
+                    writeAs(u32, accumulatorProp, read(u32, Selva.c.hll_count(hllAccumulator)[0..4], 0), accumulatorPos);
+                },
+                else => {},
             }
         },
-        .max => {
-            if (!hadAccumulated.*) {
-                writeAs(f64, accumulatorProp, microbufferToF64(propType, value, start), accumulatorPos);
-            } else {
-                writeAs(f64, accumulatorProp, @max(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propType, value, start)), accumulatorPos);
-            }
-        },
-        .hmean => {
-            const val = microbufferToF64(propType, value, start);
-            if (val != 0) {
-                var count = read(u64, accumulatorProp, accumulatorPos);
-                var sum = read(f64, accumulatorProp, accumulatorPos + 8);
-
-                count += 1;
-                sum += 1 / val;
-
-                writeAs(u64, accumulatorProp, count, accumulatorPos);
-                writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
-            } else {
-                writeAs(u64, accumulatorProp, 0.0, accumulatorPos);
-                writeAs(f64, accumulatorProp, 0.0, accumulatorPos + 8);
-            }
-        },
-        .stddev => {
-            const val = microbufferToF64(propType, value, start);
-            var count = read(u64, accumulatorProp, accumulatorPos);
-            var sum = read(f64, accumulatorProp, accumulatorPos + 8);
-            var sum_sq = read(f64, accumulatorProp, accumulatorPos + 16);
-
-            count += 1;
-            sum += val;
-            sum_sq += val * val;
-
-            writeAs(u64, accumulatorProp, count, accumulatorPos);
-            writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
-            writeAs(f64, accumulatorProp, sum_sq, accumulatorPos + 16);
-        },
-        .variance => {
-            const val = microbufferToF64(propType, value, start);
-            var count = read(u64, accumulatorProp, accumulatorPos);
-            var sum = read(f64, accumulatorProp, accumulatorPos + 8);
-            var sum_sq = read(f64, accumulatorProp, accumulatorPos + 16);
-
-            count += 1;
-            sum += val;
-            sum_sq += val * val;
-
-            writeAs(u64, accumulatorProp, count, accumulatorPos);
-            writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
-            writeAs(f64, accumulatorProp, sum_sq, accumulatorPos + 16);
-        },
-        .count => {
-            writeAs(u32, accumulatorProp, read(u32, accumulatorProp, accumulatorPos) + 1, accumulatorPos);
-        },
-        .cardinality => {
-            Selva.c.hll_union(hllAccumulator, hllValue);
-            writeAs(u32, accumulatorProp, read(u32, Selva.c.hll_count(hllAccumulator)[0..4], 0), accumulatorPos);
-        },
-        else => {},
     }
 }
 

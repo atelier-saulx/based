@@ -26,7 +26,6 @@ import {
   LangCodeEnum,
   Order,
   AggFunction,
-  FilterOpInverse,
 } from '../../zigTsExports.js'
 import { styleText } from 'node:util'
 import { filter, or } from './filter/filter.js'

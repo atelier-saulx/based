@@ -38,6 +38,7 @@ const parseZig = (input: string): string => {
   const enumBackingTypes: Record<string, string> = {}
   const aliases: Record<string, string> = {}
   const enumValues: Record<string, Record<string, string>> = {}
+  const structs: Record<string, { isPacked: boolean; bitSize: number }> = {}
 
   // Regex patterns
   const regexConstAlias = /^pub const (\w+) = ([a-zA-Z_][\w]*);/
@@ -61,6 +62,7 @@ const parseZig = (input: string): string => {
       )
     )
       return 'number'
+    if (structs[zigType]?.isPacked) return zigType
     if (['bool'].includes(zigType)) return 'boolean'
     if (aliases[zigType]) return toTsType(aliases[zigType])
     if (typeSizes[zigType])
@@ -85,6 +87,7 @@ const parseZig = (input: string): string => {
   const getBitSize = (type: string): number => {
     const prim = getPrimitive(type)
     if (prim === 'bool') return 1 // bool is 1 bit in packed structs
+    if (structs[prim]) return structs[prim].bitSize
     if (typeSizes[prim]) return typeSizes[prim] * 8
     const match = prim.match(/^u(\d+)$/)
     if (match) return parseInt(match[1], 10)
@@ -300,6 +303,7 @@ const parseZig = (input: string): string => {
       bitSize: number
       isPadding: boolean
       isBoolean: boolean
+      isStruct: boolean
     }[] = []
     let totalBits = 0
 
@@ -321,6 +325,15 @@ const parseZig = (input: string): string => {
 
         const prim = getPrimitive(fType)
         const isBoolean = prim === 'bool'
+        // If it's a packed struct, we want the TS type to be the struct interface, not number
+        // but currently aliases logic or something else might override it.
+        // getPrimitive resolves aliases.
+
+        let isStruct = false
+        if (structs[prim]?.isPacked) {
+          tsType = prim
+          isStruct = true
+        }
 
         const bitSize = getBitSize(fType)
         totalBits += bitSize
@@ -344,6 +357,7 @@ const parseZig = (input: string): string => {
           bitSize,
           isPadding,
           isBoolean,
+          isStruct,
         })
       }
     })
@@ -359,6 +373,70 @@ const parseZig = (input: string): string => {
 
     const byteSize = Math.ceil(totalBits / 8)
     output += `export const ${name}ByteSize = ${byteSize}\n\n`
+
+    structs[name] = { isPacked, bitSize: totalBits }
+
+    if (isPacked) {
+      // Generate pack/unpack helpers for this packed struct (BigInt based for >32 bit support)
+      // Pack: takes Object -> returns bigint
+      // Unpack: takes bigint -> returns Object
+
+      // Pack
+      output += `export const pack${name} = (obj: ${name}): bigint => {\n`
+      output += `  let val = 0n\n`
+      let currentBit = 0
+      fields.forEach((f) => {
+        if (f.isPadding) {
+          currentBit += f.bitSize
+          return
+        }
+        let valExpr = `obj.${f.name}`
+        if (f.isBoolean) {
+          valExpr = `(${valExpr} ? 1n : 0n)`
+        } else if (f.isStruct) {
+          valExpr = `pack${f.type}(${valExpr})`
+        } else {
+          // Cast to BigInt
+          valExpr = `BigInt(${valExpr})`
+        }
+
+        output += `  val |= (${valExpr} & ${(1n << BigInt(f.bitSize)) - 1n}n) << ${currentBit}n\n`
+        currentBit += f.bitSize
+      })
+      output += `  return val\n`
+      output += `}\n\n`
+
+      // Unpack
+      output += `export const unpack${name} = (val: bigint): ${name} => {\n`
+      output += `  return {\n`
+      currentBit = 0
+      fields.forEach((f) => {
+        if (f.isPadding) {
+          currentBit += f.bitSize
+          return
+        }
+
+        let readExpr = `(val >> ${currentBit}n) & ${(1n << BigInt(f.bitSize)) - 1n}n`
+
+        if (f.isBoolean) {
+          readExpr = `(${readExpr}) === 1n`
+        } else if (f.isStruct) {
+          readExpr = `unpack${f.type}(${readExpr})`
+        } else {
+          readExpr = `Number(${readExpr})`
+          if (f.type.endsWith('Enum')) {
+            readExpr = `(${readExpr}) as ${f.type}`
+          } else if (f.type === 'TypeId') {
+            readExpr = `(${readExpr}) as TypeId`
+          }
+        }
+
+        output += `    ${f.name}: ${readExpr},\n`
+        currentBit += f.bitSize
+      })
+      output += `  }\n`
+      output += `}\n\n`
+    }
 
     // 2. Export Main Write Function
     output += `export const write${name} = (\n`
@@ -376,6 +454,20 @@ const parseZig = (input: string): string => {
             ?.match(regexStructField)?.[2] || 'u8',
         )
         const valRef = f.isPadding ? '0' : `header.${fName}`
+
+        if (structs[prim]?.isPacked) {
+          const packer = `pack${prim}(${valRef})`
+          const sBits = structs[prim].bitSize
+          if (sBits <= 8)
+            output += `  buf[offset] = Number(${packer})\n;  offset += 1\n`
+          else if (sBits <= 16)
+            output += `  writeUint16(buf, Number(${packer}), offset)\n;  offset += 2\n`
+          else if (sBits <= 32)
+            output += `  writeUint32(buf, Number(${packer}), offset)\n;  offset += 4\n`
+          else
+            output += `  writeUint64(buf, ${packer}, offset)\n;  offset += 8\n`
+          return
+        }
 
         switch (prim) {
           case 'u8':
@@ -425,18 +517,20 @@ const parseZig = (input: string): string => {
 
         if (currentBitGlobal % 8 === 0 && [8, 16, 32, 64].includes(f.bitSize)) {
           const fName = f.name
-          const valRef = f.isPadding ? '0' : `header.${fName}`
-          const valWithTernary =
-            f.isBoolean && !f.isPadding ? `(${valRef} ? 1 : 0)` : valRef
+          let valRef = f.isPadding ? '0' : `header.${fName}`
+
+          if (f.isBoolean && !f.isPadding) valRef = `(${valRef} ? 1 : 0)`
+          else if (f.isStruct && !f.isPadding)
+            valRef = `pack${f.type}(${valRef})`
 
           if (f.bitSize === 8) {
-            output += `  buf[offset] = ${valWithTernary}\n`
+            output += `  buf[offset] = Number(${valRef})\n`
             output += `  offset += 1\n`
           } else if (f.bitSize === 16) {
-            output += `  writeUint16(buf, ${valRef}, offset)\n`
+            output += `  writeUint16(buf, Number(${valRef}), offset)\n`
             output += `  offset += 2\n`
           } else if (f.bitSize === 32) {
-            output += `  writeUint32(buf, ${valRef}, offset)\n`
+            output += `  writeUint32(buf, Number(${valRef}), offset)\n`
             output += `  offset += 4\n`
           } else if (f.bitSize === 64) {
             output += `  writeUint64(buf, ${valRef}, offset)\n`
@@ -449,6 +543,8 @@ const parseZig = (input: string): string => {
 
           if (f.isBoolean && !f.isPadding) {
             valExpression = `(${valExpression} ? 1 : 0)`
+          } else if (f.isStruct && !f.isPadding) {
+            valExpression = `pack${f.type}(${valExpression})`
           }
 
           let bitsProcessed = 0
@@ -502,45 +598,56 @@ const parseZig = (input: string): string => {
         const offStr =
           propsCurrentOffset === 0 ? 'offset' : `offset + ${propsCurrentOffset}`
 
-        switch (prim) {
-          case 'u8':
-          case 'LangCode':
-            output += `    buf[${offStr}] = value\n`
-            break
-          case 'bool':
-            output += `    buf[${offStr}] = value ? 1 : 0\n`
-            break
-          case 'i8':
-            output += `    buf[${offStr}] = value\n`
-            break
-          case 'u16':
-            output += `    writeUint16(buf, value, ${offStr})\n`
-            break
-          case 'i16':
-            output += `    writeInt16(buf, value, ${offStr})\n`
-            break
-          case 'u32':
-            output += `    writeUint32(buf, value, ${offStr})\n`
-            break
-          case 'i32':
-            output += `    writeInt32(buf, value, ${offStr})\n`
-            break
-          case 'f32':
-            output += `    writeFloatLE(buf, value, ${offStr})\n`
-            break
-          case 'u64':
-          case 'usize':
-            output += `    writeUint64(buf, value, ${offStr})\n`
-            break
-          case 'i64':
-            output += `    writeInt64(buf, value, ${offStr})\n`
-            break
-          case 'f64':
-            output += `    writeDoubleLE(buf, value, ${offStr})\n`
-            break
-          default:
-            output += `    writeUint64(buf, value, ${offStr})\n`
-            break
+        if (structs[prim]?.isPacked) {
+          const packer = `pack${prim}(value)`
+          const sBits = structs[prim].bitSize
+          if (sBits <= 8) output += `    buf[${offStr}] = Number(${packer})\n`
+          else if (sBits <= 16)
+            output += `    writeUint16(buf, Number(${packer}), ${offStr})\n`
+          else if (sBits <= 32)
+            output += `    writeUint32(buf, Number(${packer}), ${offStr})\n`
+          else output += `    writeUint64(buf, ${packer}, ${offStr})\n`
+        } else {
+          switch (prim) {
+            case 'u8':
+            case 'LangCode':
+              output += `    buf[${offStr}] = value\n`
+              break
+            case 'bool':
+              output += `    buf[${offStr}] = value ? 1 : 0\n`
+              break
+            case 'i8':
+              output += `    buf[${offStr}] = value\n`
+              break
+            case 'u16':
+              output += `    writeUint16(buf, value, ${offStr})\n`
+              break
+            case 'i16':
+              output += `    writeInt16(buf, value, ${offStr})\n`
+              break
+            case 'u32':
+              output += `    writeUint32(buf, value, ${offStr})\n`
+              break
+            case 'i32':
+              output += `    writeInt32(buf, value, ${offStr})\n`
+              break
+            case 'f32':
+              output += `    writeFloatLE(buf, value, ${offStr})\n`
+              break
+            case 'u64':
+            case 'usize':
+              output += `    writeUint64(buf, value, ${offStr})\n`
+              break
+            case 'i64':
+              output += `    writeInt64(buf, value, ${offStr})\n`
+              break
+            case 'f64':
+              output += `    writeDoubleLE(buf, value, ${offStr})\n`
+              break
+            default:
+              output += `    writeUint64(buf, value, ${offStr})\n`
+              break
+          }
         }
         propsCurrentOffset += Math.ceil(f.bitSize / 8)
         output += `  },\n`
@@ -560,21 +667,25 @@ const parseZig = (input: string): string => {
         const offStr = byteOffset === 0 ? 'offset' : `offset + ${byteOffset}`
 
         if (startBit % 8 === 0 && [8, 16, 32, 64].includes(f.bitSize)) {
-          const valWithTernary = f.isBoolean ? `(value ? 1 : 0)` : `value`
+          let valWithTernary = `value`
+          if (f.isBoolean) valWithTernary = `(value ? 1 : 0)`
+          else if (f.isStruct) valWithTernary = `pack${f.type}(value)`
 
           if (f.bitSize === 8) {
-            output += `    buf[${offStr}] = ${valWithTernary}\n`
+            output += `    buf[${offStr}] = Number(${valWithTernary})\n`
           } else if (f.bitSize === 16) {
-            output += `    writeUint16(buf, value, ${offStr})\n`
+            output += `    writeUint16(buf, Number(${valWithTernary}), ${offStr})\n`
           } else if (f.bitSize === 32) {
-            output += `    writeUint32(buf, value, ${offStr})\n`
+            output += `    writeUint32(buf, Number(${valWithTernary}), ${offStr})\n`
           } else if (f.bitSize === 64) {
-            output += `    writeUint64(buf, value, ${offStr})\n`
+            output += `    writeUint64(buf, ${valWithTernary}, ${offStr})\n`
           }
         } else {
           let remainingBits = f.bitSize
           let valExpression = `value`
           if (f.isBoolean) valExpression = `(${valExpression} ? 1 : 0)`
+          else if (f.isStruct) valExpression = `pack${f.type}(${valExpression})`
+
           let localCurrentBitGlobal = startBit
           let bitsProcessed = 0
           while (remainingBits > 0) {
@@ -622,51 +733,61 @@ const parseZig = (input: string): string => {
           readCurrentOffset === 0 ? 'offset' : `offset + ${readCurrentOffset}`
         let readExpr = ''
 
-        switch (prim) {
-          case 'u8':
-          case 'LangCode':
-            readExpr = `buf[${offStr}]`
-            break
-          case 'bool':
-            readExpr = `buf[${offStr}] === 1`
-            break
-          case 'i8':
-            readExpr = `buf[${offStr}]`
-            break
-          case 'u16':
-            readExpr = `readUint16(buf, ${offStr})`
-            break
-          case 'i16':
-            readExpr = `readInt16(buf, ${offStr})`
-            break
-          case 'u32':
-            readExpr = `readUint32(buf, ${offStr})`
-            break
-          case 'i32':
-            readExpr = `readInt32(buf, ${offStr})`
-            break
-          case 'f32':
-            readExpr = `readFloatLE(buf, ${offStr})`
-            break
-          case 'u64':
-          case 'usize':
-            readExpr = `readUint64(buf, ${offStr})`
-            break
-          case 'i64':
-            readExpr = `readInt64(buf, ${offStr})`
-            break
-          case 'f64':
-            readExpr = `readDoubleLE(buf, ${offStr})`
-            break
-          default:
-            readExpr = `readUint64(buf, ${offStr})`
-            break
-        }
-        // Add 'as Type' if enum
-        if (f.type.endsWith('Enum')) {
-          readExpr = `(${readExpr}) as ${f.type}`
-        } else if (f.type === 'TypeId') {
-          readExpr = `(${readExpr}) as TypeId`
+        if (structs[prim]?.isPacked) {
+          const sBits = structs[prim].bitSize
+          if (sBits <= 8) readExpr = `buf[${offStr}]`
+          else if (sBits <= 16) readExpr = `readUint16(buf, ${offStr})`
+          else if (sBits <= 32) readExpr = `readUint32(buf, ${offStr})`
+          else readExpr = `readUint64(buf, ${offStr})`
+
+          readExpr = `unpack${prim}(BigInt(${readExpr}))`
+        } else {
+          switch (prim) {
+            case 'u8':
+            case 'LangCode':
+              readExpr = `buf[${offStr}]`
+              break
+            case 'bool':
+              readExpr = `buf[${offStr}] === 1`
+              break
+            case 'i8':
+              readExpr = `buf[${offStr}]`
+              break
+            case 'u16':
+              readExpr = `readUint16(buf, ${offStr})`
+              break
+            case 'i16':
+              readExpr = `readInt16(buf, ${offStr})`
+              break
+            case 'u32':
+              readExpr = `readUint32(buf, ${offStr})`
+              break
+            case 'i32':
+              readExpr = `readInt32(buf, ${offStr})`
+              break
+            case 'f32':
+              readExpr = `readFloatLE(buf, ${offStr})`
+              break
+            case 'u64':
+            case 'usize':
+              readExpr = `readUint64(buf, ${offStr})`
+              break
+            case 'i64':
+              readExpr = `readInt64(buf, ${offStr})`
+              break
+            case 'f64':
+              readExpr = `readDoubleLE(buf, ${offStr})`
+              break
+            default:
+              readExpr = `readUint64(buf, ${offStr})`
+              break
+          }
+          // Add 'as Type' if enum
+          if (f.type.endsWith('Enum')) {
+            readExpr = `(${readExpr}) as ${f.type}`
+          } else if (f.type === 'TypeId') {
+            readExpr = `(${readExpr}) as TypeId`
+          }
         }
 
         output += `    ${fName}: ${readExpr},\n`
@@ -728,7 +849,9 @@ const parseZig = (input: string): string => {
           }
         }
 
-        if (f.type.endsWith('Enum')) {
+        if (f.isStruct) {
+          readExpr = `unpack${f.type}(BigInt(${readExpr}))`
+        } else if (f.type.endsWith('Enum')) {
           readExpr = `(${readExpr}) as ${f.type}`
         } else if (f.type === 'TypeId') {
           readExpr = `(${readExpr}) as TypeId`
@@ -764,57 +887,64 @@ const parseZig = (input: string): string => {
             : `offset + ${readPropsCurrentOffset}`
         let readExpr = ''
 
-        switch (prim) {
-          case 'u8':
-          case 'LangCode':
-            readExpr = `buf[${offStr}]`
-            break
-          case 'bool':
-            readExpr = `buf[${offStr}] === 1`
-            break
-          case 'i8':
-            readExpr = `buf[${offStr}]`
-            break
-          case 'u16':
-            readExpr = `readUint16(buf, ${offStr})`
-            break
-          case 'i16':
-            readExpr = `readInt16(buf, ${offStr})`
-            break
-          case 'u32':
-            readExpr = `readUint32(buf, ${offStr})`
-            break
-          case 'i32':
-            readExpr = `readInt32(buf, ${offStr})`
-            break
-          case 'f32':
-            readExpr = `readFloatLE(buf, ${offStr})`
-            break
-          case 'u64':
-          case 'usize':
-            readExpr = `readUint64(buf, ${offStr})`
-            break
-          case 'i64':
-            readExpr = `readInt64(buf, ${offStr})`
-            break
-          case 'f64':
-            readExpr = `readDoubleLE(buf, ${offStr})`
-            break
-          default:
-            readExpr = `readUint64(buf, ${offStr})`
-            break
+        if (structs[prim]?.isPacked) {
+          const sBits = structs[prim].bitSize
+          if (sBits <= 8) readExpr = `buf[${offStr}]`
+          else if (sBits <= 16) readExpr = `readUint16(buf, ${offStr})`
+          else if (sBits <= 32) readExpr = `readUint32(buf, ${offStr})`
+          else readExpr = `readUint64(buf, ${offStr})`
+
+          readExpr = `unpack${prim}(BigInt(${readExpr}))`
+        } else {
+          switch (prim) {
+            case 'u8':
+            case 'LangCode':
+              readExpr = `buf[${offStr}]`
+              break
+            case 'bool':
+              readExpr = `buf[${offStr}] === 1`
+              break
+            case 'i8':
+              readExpr = `buf[${offStr}]`
+              break
+            case 'u16':
+              readExpr = `readUint16(buf, ${offStr})`
+              break
+            case 'i16':
+              readExpr = `readInt16(buf, ${offStr})`
+              break
+            case 'u32':
+              readExpr = `readUint32(buf, ${offStr})`
+              break
+            case 'i32':
+              readExpr = `readInt32(buf, ${offStr})`
+              break
+            case 'f32':
+              readExpr = `readFloatLE(buf, ${offStr})`
+              break
+            case 'u64':
+            case 'usize':
+              readExpr = `readUint64(buf, ${offStr})`
+              break
+            case 'i64':
+              readExpr = `readInt64(buf, ${offStr})`
+              break
+            case 'f64':
+              readExpr = `readDoubleLE(buf, ${offStr})`
+              break
+            default:
+              readExpr = `readUint64(buf, ${offStr})`
+              break
+          }
+          // Add 'as Type' if enum
+          if (f.type.endsWith('Enum')) {
+            readExpr = `(${readExpr}) as ${f.type}`
+          } else if (f.type === 'TypeId') {
+            readExpr = `(${readExpr}) as TypeId`
+          }
         }
 
-        if (f.type.endsWith('Enum')) {
-          readExpr = `(${readExpr}) as ${f.type}`
-        } else if (f.type === 'TypeId') {
-          readExpr = `(${readExpr}) as TypeId`
-        }
-
-        output += `  ${fName}: (buf: Uint8Array, offset: number): ${f.type} => {\n`
-        output += `    return ${readExpr}\n`
-        output += `  },\n`
-
+        output += `    ${fName}: (buf: Uint8Array, offset: number) => ${readExpr},\n`
         readPropsCurrentOffset += Math.ceil(f.bitSize / 8)
       })
     } else {
@@ -871,15 +1001,15 @@ const parseZig = (input: string): string => {
           }
         }
 
-        if (f.type.endsWith('Enum')) {
+        if (f.isStruct) {
+          readExpr = `unpack${f.type}(BigInt(${readExpr}))`
+        } else if (f.type.endsWith('Enum')) {
           readExpr = `(${readExpr}) as ${f.type}`
         } else if (f.type === 'TypeId') {
           readExpr = `(${readExpr}) as TypeId`
         }
 
-        output += `  ${f.name}: (buf: Uint8Array, offset: number): ${f.type} => {\n`
-        output += `    return ${readExpr}\n`
-        output += `  },\n`
+        output += `    ${f.name}: (buf: Uint8Array, offset: number) => ${readExpr},\n`
       }
     }
     output += `}\n\n`
