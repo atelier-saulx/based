@@ -117,60 +117,58 @@ export const createCondition = (
   value?: any,
   opts?: FilterOpts,
 ) => {
-  const typeCfg = getPropWriter(propDef.typeIndex)
-  if (typeCfg) {
-    const { op, len, write } = getFilterOp(
-      propDef,
-      typeCfg,
-      operator,
-      value.length,
-    )
-    const vectorLen = 16 / len
+  const writer = getPropWriter(propDef.typeIndex)
+  const { op, len, write } = getFilterOp(
+    propDef,
+    writer,
+    operator,
+    value.length,
+  )
+  const vectorLen = 16 / len
 
-    if (value.length == 1 || operator === '..' || operator == '!..') {
-      const { condition, offset } = conditionBuffer(
-        { ...propDef, start: propDef.start || 0 },
-        len,
-        op,
-      )
-      if (operator === '..' || operator == '!..') {
-        write(condition, value, offset)
-      } else {
-        write(condition, value[0], offset)
-      }
-      return condition
-    } else if (value.length > vectorLen) {
-      const { condition, offset } = conditionBuffer(
-        { ...propDef, start: propDef.start || 0 },
-        value.length * len,
-        op,
-      )
-      let i = offset
-      // Actual values
-      for (const v of value) {
-        write(condition, v, i)
-        i += propDef.len
-      }
-      // Empty padding for SIMD (16 bytes)
-      for (let j = 0; j < vectorLen; j++) {
-        write(condition, value[0], i)
-        i += len
-      }
-      return condition
-    } else if (value.length > 1) {
-      // Small batch
-      const { condition, offset } = conditionBuffer(
-        { ...propDef, start: propDef.start || 0 },
-        value.length * len,
-        op,
-      )
-      let i = offset
-      for (let j = 0; j < vectorLen; j++) {
-        // Allways use a full ARM neon simd vector (16 bytes)
-        write(condition, j >= value.length ? value[0] : value[j], i)
-        i += len
-      }
-      return condition
+  if (value.length == 1 || operator === '..' || operator == '!..') {
+    const { condition, offset } = conditionBuffer(
+      { ...propDef, start: propDef.start || 0 },
+      len,
+      op,
+    )
+    if (operator === '..' || operator == '!..') {
+      write(condition, value, offset)
+    } else {
+      write(condition, value[0], offset)
     }
+    return condition
+  } else if (value.length > vectorLen) {
+    const { condition, offset } = conditionBuffer(
+      { ...propDef, start: propDef.start || 0 },
+      value.length * len,
+      op,
+    )
+    let i = offset
+    // Actual values
+    for (const v of value) {
+      write(condition, v, i)
+      i += propDef.len
+    }
+    // Empty padding for SIMD (16 bytes)
+    for (let j = 0; j < vectorLen; j++) {
+      write(condition, value[0], i)
+      i += len
+    }
+    return condition
+  } else if (value.length > 1) {
+    // Small batch
+    const { condition, offset } = conditionBuffer(
+      { ...propDef, start: propDef.start || 0 },
+      value.length * len,
+      op,
+    )
+    let i = offset
+    for (let j = 0; j < vectorLen; j++) {
+      // Allways use a full ARM neon simd vector (16 bytes)
+      write(condition, j >= value.length ? value[0] : value[j], i)
+      i += len
+    }
+    return condition
   }
 }
