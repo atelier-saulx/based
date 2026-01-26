@@ -1,17 +1,9 @@
 import { PropDef, PropDefEdge } from '../../../schema.js'
-import {
-  writeDoubleLE,
-  writeInt16,
-  writeInt32,
-  writeInt64,
-  writeUint16,
-  writeUint32,
-} from '../../../utils/uint8.js'
+import { getPropWriter } from '../../../schema/def/utils.js'
 import {
   FilterConditionByteSize,
   FilterOp,
   FilterOpCompare,
-  PropType,
   writeFilterCondition,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from './types.js'
@@ -46,26 +38,15 @@ export const conditionBuffer = (
   return { condition, offset }
 }
 
-// const writeUint8 = (buf: Uint8Array, val: number, offset: number) => {
-//   buf[offset] = val
-//   return buf
-// }
-
-const getProps = {
-  [PropType.uint32]: {
-    write: writeUint32,
-  },
-}
-
 const getFilterOp = (
   propDef: PropDef | PropDefEdge,
-  typeCfg: (typeof getProps)[keyof typeof getProps],
+  write: ReturnType<typeof getPropWriter>,
   operator: Operator,
   len: number,
 ): {
   len: number
   op: FilterOp
-  write: (condition: Uint8Array, v: any, offset: number) => Uint8Array
+  write: ReturnType<typeof getPropWriter>
 } => {
   if (
     operator === '=' ||
@@ -89,7 +70,7 @@ const getFilterOp = (
           prop: propDef.typeIndex,
         },
         len: propDef.len,
-        write: typeCfg.write,
+        write,
       }
     } else if (len > 1) {
       return {
@@ -98,7 +79,7 @@ const getFilterOp = (
           prop: propDef.typeIndex,
         },
         len: propDef.len,
-        write: typeCfg.write,
+        write,
       }
     } else {
       return {
@@ -107,7 +88,7 @@ const getFilterOp = (
           prop: propDef.typeIndex,
         },
         len: propDef.len,
-        write: typeCfg.write,
+        write,
       }
     }
   } else if (operator === '..') {
@@ -120,8 +101,8 @@ const getFilterOp = (
       write: (condition: Uint8Array, v: any, offset: number) => {
         // x >= 3 && x <= 11
         // (x -% 3) <= (11 - 3)
-        typeCfg.write(condition, v[0], offset)
-        typeCfg.write(condition, v[1] - v[0], offset + propDef.len)
+        write(condition, v[0], offset)
+        write(condition, v[1] - v[0], offset + propDef.len)
         return condition
       },
     }
@@ -136,7 +117,7 @@ export const createCondition = (
   value?: any,
   opts?: FilterOpts,
 ) => {
-  const typeCfg = getProps[propDef.typeIndex]
+  const typeCfg = getPropWriter(propDef.typeIndex)
   if (typeCfg) {
     const { op, len, write } = getFilterOp(
       propDef,

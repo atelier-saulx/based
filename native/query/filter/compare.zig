@@ -94,13 +94,11 @@ pub inline fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t
 
 pub inline fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
-
     if (T == f64) {
-        // float dont support ignore overflow
+        // Floats do not support ignore overflow
         return (utils.readPtr(T, v, c.start).* - utils.readPtr(T, q, i + size - c.offset).*) <=
             utils.readPtr(T, q, i + (size * 2) - c.offset).*;
     }
-
     // x >= 3 && x <= 11
     // (x -% 3) <= (11 - 3)
     // 3,8

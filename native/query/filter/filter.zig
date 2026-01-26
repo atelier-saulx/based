@@ -5,7 +5,7 @@ const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
-const Fixed = @import("./fixed.zig");
+const Compare = @import("./compare.zig");
 const Select = @import("./select.zig");
 const Instruction = @import("./instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
@@ -31,6 +31,7 @@ pub fn prepare(
             condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
 
+            // we can expand the buffer here make a copy and make prepare a seperate fn
             // Add reference select thing
             //     // .selectLargeRef, .selectSmallRef => {
             //     //     i += utils.sizeOf(t.FilterCondition);
@@ -76,22 +77,19 @@ pub inline fn filter(
         const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
         const index = i + q[i] + utils.sizeOf(t.FilterCondition);
         const nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size;
-
         if (prop != c.prop) {
             prop = c.prop;
             v = Fields.get(typeEntry, node, c.fieldSchema, .null);
         }
-
         const instruction = utils.readPtr(Instruction.CombinedOp, q, i + q[i]).*;
-
         pass = switch (instruction) {
             inline else => |tag| blk: {
                 const meta = comptime Instruction.parseOp(tag);
                 const res = switch (meta.func) {
-                    .Single => Fixed.single(meta.cmp, meta.T, q, v, index, c),
-                    .Range => Fixed.range(meta.T, q, v, index, c),
-                    .Batch => Fixed.batch(meta.cmp, meta.T, q, v, index, c),
-                    .BatchSmall => Fixed.batchSmall(meta.cmp, meta.T, q, v, index, c),
+                    .Single => Compare.single(meta.cmp, meta.T, q, v, index, c),
+                    .Range => Compare.range(meta.T, q, v, index, c),
+                    .Batch => Compare.batch(meta.cmp, meta.T, q, v, index, c),
+                    .BatchSmall => Compare.batchSmall(meta.cmp, meta.T, q, v, index, c),
                 };
                 break :blk if (meta.invert) !res else res;
             },

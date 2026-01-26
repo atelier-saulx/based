@@ -10,9 +10,18 @@ import {
   SIZE_MAP,
   VECTOR_BASE_TYPE_SIZE_MAP,
 } from './types.js'
-import { convertToTimestamp } from '../../utils/index.js'
+import {
+  convertToTimestamp,
+  writeDoubleLE,
+  writeInt16,
+  writeInt32,
+  writeInt64,
+  writeUint16,
+  writeUint32,
+} from '../../utils/index.js'
 import {
   PropType,
+  PropTypeEnum,
   VectorBaseType,
   VectorBaseTypeEnum,
   VectorBaseTypeInverse,
@@ -151,4 +160,36 @@ export const reorderProps = (props: PropDef[]) => {
       p.prop = ++lastProp
     }
   }
+}
+
+const writeUint8 = (dest: Uint8Array, val: number, offset: number) => {
+  dest[offset] = val
+  return dest
+}
+
+const writeInt8 = writeUint8
+
+const propWriter = {
+  [PropType.int8]: writeInt8,
+  [PropType.uint8]: writeUint8,
+  [PropType.int16]: writeInt16,
+  [PropType.uint16]: writeUint16,
+  [PropType.int32]: writeInt32,
+  [PropType.uint32]: writeUint32,
+  [PropType.number]: writeDoubleLE,
+  [PropType.timestamp]: writeInt64,
+  [PropType.boolean]: (dest: Uint8Array, val: boolean, offset: number) => {
+    dest[offset] = val ? 1 : 0
+    return dest
+  },
+}
+
+export const getPropWriter = (
+  propType: PropTypeEnum,
+): ((buf: Uint8Array, val: any, offset: number) => Uint8Array) => {
+  const write = propWriter[propType]
+  if (!write) {
+    return (buf: Uint8Array, val: any, offset: number) => buf
+  }
+  return write
 }

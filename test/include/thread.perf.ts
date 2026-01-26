@@ -41,6 +41,8 @@ await test('include', async (t) => {
       simple: {
         props: {
           nr: 'uint32',
+          start: 'timestamp',
+          end: 'timestamp',
         },
       },
     },
@@ -159,6 +161,8 @@ await test('include', async (t) => {
   for (let i = 0; i < 1e7; i++) {
     db.create('simple', {
       nr: 67,
+      start: d + i * 1e3,
+      end: d + i * 1e3 + 10e3,
       // name: i % 2 ? 'b' : 'a',
       // nr: rand(0, 10),
     })
@@ -216,9 +220,11 @@ await test('include', async (t) => {
 
   await db
     .query('simple')
-    .include('nr')
+    .include('nr', 'end', 'start')
     .filter('nr', '>', 90)
-    .range(0, 5)
+    .and('start', '>', Date.now())
+    .and('end', '<', Date.now() + 20e3)
+    .range(0, 100)
 
     // .filter('nr', '..', [90, 100])
     // > , >=, <=, <
