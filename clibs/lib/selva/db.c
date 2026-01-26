@@ -212,7 +212,6 @@ static inline void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEn
         if (unload) {
             selva_unl_node(db, te, node);
         } else {
-            /* TODO Presumably this block shouldn't be marked dirty?. */
             selva_del_node(db, te, node);
         }
     }
