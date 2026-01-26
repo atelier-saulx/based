@@ -86,9 +86,7 @@ pub inline fn getFirstNode(typeEntry: selva.Type) ?Node {
 }
 
 pub inline fn getLastNode(typeEntry: selva.Type) ?Node {
-    const res = selva.c.selva_max_node(typeEntry);
-    // TODO Partials
-    return res.node;
+    return selva.c.selva_max_node(typeEntry);
 }
 
 pub inline fn getNextNode(typeEntry: selva.Type, node: Node) ?Node {

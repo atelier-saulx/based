@@ -455,7 +455,7 @@ struct SelvaNodeRes selva_min_node(struct SelvaTypeEntry *type) __attribute__((n
  * ```
  */
 SELVA_EXPORT
-struct SelvaNodeRes selva_max_node(struct SelvaTypeEntry *type) __attribute__((nonnull));
+struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type) __attribute__((nonnull));
 
 /**
  * Get previous node with a lower node id.

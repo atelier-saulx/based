@@ -22,6 +22,7 @@
 
 static constexpr uint64_t NODEPOOL_SLAB_SIZE = 2097152;
 
+static struct SelvaNodeRes selva_max_node_from(struct SelvaTypeEntry *type, block_id_t start);
 static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node);
 
 static struct SelvaTypeBlocks *alloc_blocks(size_t block_capacity)
@@ -212,7 +213,6 @@ static inline void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEn
         if (unload) {
             selva_unl_node(db, te, node);
         } else {
-            /* TODO Presumably this block shouldn't be marked dirty?. */
             selva_del_node(db, te, node);
         }
     }
@@ -509,10 +509,14 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
     RB_REMOVE(SelvaNodeIndex, nodes, node);
     if (node == type->max_node) {
         /*
-         * selva_max_node() is as fast as selva_prev_node().
-         * TODO What if it hits partial!
+         * We can't use selva_max_node() here because it returns type->max_node.
          */
-        type->max_node = selva_max_node(type).node;
+        const struct SelvaNodeRes res = selva_max_node_from(type, type->blocks->len - 1);
+        if ((res.block_status & (SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM)) == SELVA_TYPE_BLOCK_STATUS_FS) {
+            /* TODO load the block instead of crashing. */
+            db_panic("Block %u:%u must be loaded", (unsigned)type->type, (unsigned)res.block);
+        }
+        type->max_node = res.node; /* Note that this can be null. */
     }
 
     if (unload) {
@@ -524,7 +528,7 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
     memset(node, 0, sizeof_wflex(struct SelvaNode, fields.fields_map, type->ns.fields_schema.nr_fields));
 #endif
     mempool_return(&type->nodepool, node);
-    atomic_fetch_or_explicit(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY), memory_order_release); /* TODO Is this needed?? */
+    atomic_fetch_or_explicit(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY), memory_order_release);
     block->nr_nodes_in_block--;
     type->nr_nodes--;
 }
@@ -732,9 +736,9 @@ static struct SelvaNodeRes selva_max_node_from(struct SelvaTypeEntry *type, bloc
     return res;
 }
 
-struct SelvaNodeRes selva_max_node(struct SelvaTypeEntry *type)
+struct SelvaNode *selva_max_node(struct SelvaTypeEntry *type)
 {
-    return selva_max_node_from(type, type->blocks->len - 1);
+    return type->max_node;
 }
 
 /* FIXME This seems incorrect. What if also the previous block is empty but there is a prev on somewhere? */
