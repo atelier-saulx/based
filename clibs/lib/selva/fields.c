@@ -1781,7 +1781,7 @@ struct SelvaNode *selva_fields_ensure_ref_edge(
 {
     struct SelvaTypeEntry *edge_type = selva_get_type_by_index(db, efc->edge_node_type);
     struct SelvaNode *edge = nullptr;
-
+    
     if (!edge_type) {
         return nullptr;
     }

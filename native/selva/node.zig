@@ -156,7 +156,9 @@ pub inline fn getNodeFromReference(dstType: selva.Type, ref: anytype) ?Node {
 }
 
 pub inline fn ensureRefEdgeNode(ctx: *Modify.ModifyCtx, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) !Node {
+    std.debug.print("here we are?\n", .{});
     const edgeNode = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0);
+    std.debug.print("here we are: {any}\n", .{edgeNode});
     if (edgeNode) |n| {
         selva.markDirty(ctx, efc.edge_node_type, getNodeId(n));
         return n;

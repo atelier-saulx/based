@@ -16,7 +16,8 @@ const parseZig = (input: string): string => {
   readUint32, readInt32, 
   readUint64, readInt64, 
   readFloatLE, readDoubleLE
-} from './utils/index.js'\n\n`
+} from './utils/index.js'
+import { AutoSizedUint8Array } from './modify/AutoSizedUint8Array.js'\n\n`
 
   // Symbol tables
   const typeSizes: Record<string, number> = {
@@ -1019,6 +1020,136 @@ const parseZig = (input: string): string => {
     output += `  const buffer = new Uint8Array(${name}ByteSize)\n`
     output += `  write${name}(buffer, header, 0)\n`
     output += `  return buffer\n`
+    output += `}\n\n`
+
+    // 7. Export Push Function
+    output += `export const push${name} = (\n`
+    output += `  buf: AutoSizedUint8Array,\n`
+    output += `  header: ${name},\n`
+    output += `): number => {\n`
+    output += `  const index = buf.length\n`
+
+    if (!isPacked) {
+      fields.forEach((f) => {
+        const fName = f.name
+        const prim = getPrimitive(
+          body
+            .find((l) => l.includes(`${fName}:`))
+            ?.match(regexStructField)?.[2] || 'u8',
+        )
+        const valRef = f.isPadding ? '0' : `header.${fName}`
+
+        switch (prim) {
+          case 'u8':
+          case 'LangCode':
+            output += `  buf.pushU8(${valRef})\n`
+            break
+          case 'bool':
+            output += `  buf.pushU8(${valRef} ? 1 : 0)\n`
+            break
+          case 'i8':
+            output += `  buf.pushU8(${valRef})\n`
+            break
+          case 'u16':
+            output += `  buf.pushU16(${valRef})\n`
+            break
+          case 'i16':
+            output += `  buf.pushU16(${valRef})\n`
+            break
+          case 'u32':
+            output += `  buf.pushU32(${valRef})\n`
+            break
+          case 'i32':
+            output += `  buf.pushU32(${valRef})\n`
+            break
+          case 'f32':
+            output += `  buf.pushF32(${valRef})\n`
+            break
+          case 'u64':
+          case 'usize':
+            output += `  buf.pushU64(${valRef})\n`
+            break
+          case 'i64':
+            output += `  buf.pushI64(${valRef})\n`
+            break
+          case 'f64':
+            output += `  buf.pushDouble(${valRef})\n`
+            break
+          default:
+            // Fallback for unknown types or padding greater than handled above
+            const byteCount = Math.ceil(f.bitSize / 8)
+            for (let k = 0; k < byteCount; k++) {
+              output += `  buf.pushU8(0)\n`
+            }
+        }
+      })
+    } else {
+      let currentBitGlobal = 0
+
+      for (let i = 0; i < fields.length; i++) {
+        const f = fields[i]
+
+        if (currentBitGlobal % 8 === 0 && [8, 16, 32, 64].includes(f.bitSize)) {
+          const fName = f.name
+          const valRef = f.isPadding ? '0' : `header.${fName}`
+          let valWithTernary =
+            f.isBoolean && !f.isPadding ? `(${valRef} ? 1 : 0)` : valRef
+
+          if (f.isStruct && !f.isPadding) {
+            valWithTernary = `pack${f.type}(${valRef})`
+          }
+
+          if (f.bitSize === 8) {
+            output += `  buf.pushU8(Number(${valWithTernary}))\n`
+          } else if (f.bitSize === 16) {
+            output += `  buf.pushU16(Number(${valWithTernary}))\n`
+          } else if (f.bitSize === 32) {
+            output += `  buf.pushU32(Number(${valWithTernary}))\n`
+          } else if (f.bitSize === 64) {
+            output += `  buf.pushU64(${valWithTernary})\n`
+          }
+          currentBitGlobal += f.bitSize
+        } else {
+          let remainingBits = f.bitSize
+          let valExpression = f.isPadding ? '0' : `header.${f.name}`
+
+          if (f.isBoolean && !f.isPadding) {
+            valExpression = `(${valExpression} ? 1 : 0)`
+          } else if (f.isStruct && !f.isPadding) {
+            valExpression = `Number(pack${f.type}(${valExpression}))`
+          }
+
+          let bitsProcessed = 0
+          while (remainingBits > 0) {
+            const bitInByte = currentBitGlobal % 8
+            const bitsCanFitInByte = 8 - bitInByte
+            const bitsToWrite = Math.min(remainingBits, bitsCanFitInByte)
+
+            const mask = (1 << bitsToWrite) - 1
+
+            if (bitInByte === 0) {
+              // New byte started
+              output += `  buf.pushU8(0)\n`
+            }
+
+            // Access the last byte using view directly OR ensure pushU8(0) initialized it
+            // We know we just pushed a byte if bitInByte == 0.
+            // If bitInByte > 0, the byte exists at buf.length - 1
+            // But we need to be careful about not relying on `buf.view` if possible?
+            // Actually `buf.view` property exists on AutoSizedUint8Array.
+            // Let's use `buf.view[buf.length - 1] |= ...`
+
+            output += `  buf.view[buf.length - 1] |= ((${valExpression} >>> ${bitsProcessed}) & ${mask}) << ${bitInByte}\n`
+
+            currentBitGlobal += bitsToWrite
+            bitsProcessed += bitsToWrite
+            remainingBits -= bitsToWrite
+          }
+        }
+      }
+    }
+
+    output += `  return index\n`
     output += `}\n\n`
   }
 

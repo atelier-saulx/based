@@ -45,6 +45,7 @@ export type PropDef = {
   hasDefaultEdges?: boolean
   reverseEnum?: { [key: string]: number }
   edgesSeperateCnt?: number
+  edgeType?: SchemaTypeDef
   edges?: {
     [key: string]: PropDefEdge
   }

@@ -10,6 +10,7 @@
     "noEmit": true,
     "jsx": "react",
     "declarationMap": true,
+    "strictPropertyInitialization": true,
     "pretty": true
   },
   "include": ["src", "test", "scripts"],

@@ -22,13 +22,13 @@ import { readUint32, writeUint32 } from '../utils/uint8.js'
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
 
-  migrating: number
+  migrating!: number
   saveInProgress: boolean = false
   fileSystemPath: string
   activeReaders = 0 // processing queries or other DB reads
   modifyQueue: Map<Function, Uint8Array> = new Map()
   queryQueue: Map<Function, Uint8Array> = new Map()
-  stopped: boolean // = true does not work
+  stopped!: boolean // = true does not work
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout
   delayInMs?: number
@@ -189,6 +189,7 @@ export class DbServer extends DbShared {
     }
     const id = this.modifyCnt++
     writeUint32(payload, id, 0)
+    payload[4] = OpType.modify
     return new Promise((resolve) => {
       native.modify(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {

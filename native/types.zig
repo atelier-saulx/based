@@ -69,8 +69,74 @@ pub const ModOp = enum(u8) {
     deleteTextField = 16,
     upsert = 17,
     insert = 18,
+    end = 254,
     // TODO remove when modify is not used for response
     padding = 255,
+};
+
+pub const Modify = enum(u8) {
+    create = 0,
+    update = 1,
+    delete = 2,
+};
+
+pub const ModifyHeader = packed struct {
+    opId: u32,
+    opType: OpType,
+    schema: u64,
+    count: u32,
+};
+
+pub const ModifyUpdateHeader = packed struct {
+    op: Modify,
+    type: u8,
+    id: u32,
+    size: u32,
+};
+
+pub const ModifyDeleteHeader = packed struct {
+    op: Modify,
+    type: u8,
+    id: u32,
+};
+
+pub const ModifyCreateHeader = packed struct {
+    op: Modify,
+    type: u8,
+    size: u32,
+};
+
+pub const ModifyMainHeader = packed struct {
+    id: u8,
+    start: u16,
+    size: u16,
+};
+
+pub const ModifyPropHeader = packed struct {
+    id: u8,
+    type: u8,
+    size: u32,
+};
+
+pub const ModifyReferences = enum(u8) {
+    clear = 0,
+    ids = 1,
+    idsAndEdges = 2,
+    tmpIds = 3,
+    delIds = 4,
+    delTmpIds = 5,
+};
+
+pub const ModifyReferencesHeader = packed struct {
+    op: ModifyReferences,
+    size: u32,
+};
+
+pub const ModifyEdgesHeader = packed struct {
+    id: u32,
+    withIndex: bool,
+    index: u32,
+    size: u32,
 };
 
 pub const PropType = enum(u8) {
@@ -180,17 +246,17 @@ pub const PropType = enum(u8) {
 pub const RefOp = enum(u8) {
     clear = 0,
     del = 1,
-    end = 2,
-
+    end = @intFromEnum(ModOp.end),
     set = 3,
-    setIndex = 4,
-    setTmp = 5,
-    setEdge = 6,
+    setEdge = 4,
+    // setIndex = 4,
+    // setTmp = 5,
+    // // setEdge = 6,
 
-    setIndexTmp = 7,
-    setEdgeIndex = 8,
-    setEdgeIndexTmp = 9,
-    setEdgeTmp = 10,
+    // setIndexTmp = 7,
+    // setEdgeIndex = 8,
+    // setEdgeIndexTmp = 9,
+    // setEdgeTmp = 10,
 
     // overwrite = 0,
     // add = 1,

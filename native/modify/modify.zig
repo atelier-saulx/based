@@ -107,30 +107,30 @@ fn getLargeRef(db: *DbCtx, node: Node.Node, fs: Schema.FieldSchema, dstId: u32) 
     return null;
 }
 
-fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
+pub fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) anyerror!u32 {
     var prevNodeId: u32 = 0;
-
     if (srcId == 0 or ctx.node == null) {
         return 0;
     }
-
     const fs = Schema.getFieldSchema(ctx.typeEntry, refField) catch {
         return 0;
     };
     ctx.fieldSchema = fs;
-
     if (getLargeRef(ctx.db, ctx.node.?, fs, dstId)) |ref| {
         const efc = Schema.getEdgeFieldConstraint(fs);
-        switchType(ctx, efc.edge_node_type) catch {
-            return 0;
-        };
+
         const edgeNode = Node.ensureRefEdgeNode(ctx, ctx.node.?, efc, ref) catch {
             return 0;
         };
+
         const edgeId = ref.*.edge;
 
         // if its zero then we don't want to switch (for upsert)
         prevNodeId = ctx.id;
+
+        switchType(ctx, efc.edge_node_type) catch {
+            return 0;
+        };
         ctx.id = edgeId;
         ctx.node = edgeNode;
         if (ctx.node == null) {
@@ -146,11 +146,13 @@ fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) !u32 {
     return prevNodeId;
 }
 
-pub fn writeData(ctx: *ModifyCtx, buf: []u8) !usize {
+pub fn writeData(ctx: *ModifyCtx, buf: []u8) anyerror!usize {
     var i: usize = 0;
     while (i < buf.len) {
         const op: t.ModOp = @enumFromInt(buf[i]);
+        // TODO set i += 1; HERE and remove from each individual thing
         const data: []u8 = buf[i + 1 ..];
+        std.debug.print("OP: {any}\n", .{op});
         switch (op) {
             .padding => {
                 i += 1;
@@ -302,6 +304,10 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) !usize {
                 Node.expireNode(ctx, ctx.typeId, ctx.id, std.time.timestamp() + read(u32, data, 0));
                 i += 5;
             },
+            .end => {
+                i += 1;
+                break;
+            },
         }
     }
     return i;
@@ -309,10 +315,43 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) !usize {
 
 pub fn modify(
     thread: *Thread.Thread,
+    buf: []u8,
+    ctx: *DbCtx,
+    opType: t.OpType,
+) !void {
+    var i: usize = 0;
+    const header = utils.readNext(t.ModifyHeader, buf, &i);
+    const size = 4 + header.count * 5;
+    const result = try thread.modify.result(size, header.opId, header.opType);
+    _ = result;
+    _ = ctx;
+    _ = opType;
+    while (i < buf.len) {
+        const op: t.Modify = @enumFromInt(buf[i]);
+        switch (op) {
+            .create => {
+                const create = utils.readNext(t.ModifyCreateHeader, buf, &i);
+                const data: []u8 = buf[i .. i + create.size];
+                std.debug.print("create: {any}, {any}, {any}\n", .{ create.size, buf.len, data });
+                i += create.size;
+            },
+            .update => {},
+            .delete => {},
+        }
+    }
+
+    // const id = read(u32, batch, 0);
+    // const count = read(u32, batch, 13);
+    // const expectedLen = 4 + nodeCount * 5;
+}
+
+pub fn _modify(
+    thread: *Thread.Thread,
     batch: []u8,
     dbCtx: *DbCtx,
     opType: t.OpType,
 ) !void {
+    std.debug.print("hahaha??\n", .{});
     const modifyId = read(u32, batch, 0);
     const nodeCount = read(u32, batch, 13);
     const expectedLen = 4 + nodeCount * 5;

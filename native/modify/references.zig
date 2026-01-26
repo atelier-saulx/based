@@ -11,10 +11,10 @@ const edge = @import("edges.zig");
 const t = @import("../types.zig");
 const RefEdgeOp = t.RefEdgeOp;
 const move = @import("../utils.zig").move;
-
+const modify = @import("./modify.zig");
 const ModifyCtx = Modify.ModifyCtx;
 
-pub fn writeReferences(ctx: *ModifyCtx, buf: []u8) !usize {
+pub fn writeReferences(ctx: *ModifyCtx, buf: []u8) anyerror!usize {
     var i: usize = 0;
     while (i < buf.len) {
         const op: t.RefOp = @enumFromInt(buf[i]);
@@ -22,11 +22,12 @@ pub fn writeReferences(ctx: *ModifyCtx, buf: []u8) !usize {
         i += 1;
         switch (op) {
             t.RefOp.set => {
-                const len: usize = read(u32, data, 0);
-                const u8IdsUnaligned = data[4 .. 4 + len];
+                const len: u32 = read(u32, data, 0);
+                const size: u32 = len * 4;
+                const u8IdsUnaligned = data[4 .. 4 + size];
                 const address = @intFromPtr(u8IdsUnaligned.ptr);
                 const offset: u8 = @truncate(address % 4);
-                const u8IdsAligned = data[4 - offset .. 4 + len - offset];
+                const u8IdsAligned = data[4 - offset .. 4 + size - offset];
                 if (offset != 0) move(u8IdsAligned, u8IdsUnaligned);
                 const u32Ids = read([]u32, u8IdsAligned, 0);
                 try References.putReferences(
@@ -35,36 +36,52 @@ pub fn writeReferences(ctx: *ModifyCtx, buf: []u8) !usize {
                     ctx.fieldSchema.?,
                     u32Ids,
                 );
-                i += 4 + len;
-            },
-            t.RefOp.setIndex => {
-                // i += 1;
-            },
-            t.RefOp.setTmp => {
-                // i += 1;
+                i += 4 + size;
             },
             t.RefOp.setEdge => {
-                // i += 1;
+                const len: u32 = read(u32, data, 0);
+                var j: u32 = 0;
+
+                // modify.switchEdgeId(ctx, ctx.id, );
+
+                var localCtx = ctx.*;
+                const srcId = ctx.id;
+                const refField = ctx.field;
+                const refTypeId = Schema.getRefTypeIdFromFieldSchema(ctx.fieldSchema.?);
+                const refTypeEntry = try Node.getType(ctx.db, refTypeId);
+
+                while (j < len) : (j += 1) {
+                    const id = read(u32, data, 4);
+                    if (Node.getNode(refTypeEntry, id)) |dstNode| {
+                        _ = try References.insertReference(ctx, ctx.node.?, ctx.fieldSchema.?, dstNode, 0, false);
+                    }
+                    _ = try modify.switchEdgeId(&localCtx, srcId, id, refField);
+                    i += 4;
+                    i += try modify.writeData(&localCtx, data[i..]);
+                }
             },
-            t.RefOp.setIndexTmp => {
-                // i += 1;
-            },
-            t.RefOp.setEdgeIndex => {
-                // i += 1;
-            },
-            t.RefOp.setEdgeIndexTmp => {
-                // i += 1;/
-            },
-            t.RefOp.setEdgeTmp => {
-                // i += 1;
-            },
+            // t.RefOp.setTmp => {
+
+            // },
+            // t.RefOp.setEdge => {
+
+            // },
+            // t.RefOp.setIndexTmp => {
+
+            // },
+            // t.RefOp.setEdgeIndex => {
+
+            // },
+            // t.RefOp.setEdgeIndexTmp => {
+
+            // },
+            // t.RefOp.setEdgeTmp => {
+
+            // },
             t.RefOp.clear => {
                 References.clearReferences(ctx, ctx.node.?, ctx.fieldSchema.?);
-                // i += 1;
             },
-            t.RefOp.del => {
-                // i += 1;
-            },
+            t.RefOp.del => {},
             t.RefOp.end => break,
         }
     }

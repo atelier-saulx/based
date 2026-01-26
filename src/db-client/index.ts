@@ -55,7 +55,7 @@ export class DbClient extends DbShared {
   }
 
   subs = new Map<BasedDbQuery, SubStore>()
-  stopped: boolean
+  stopped!: boolean
   hooks: DbClientHooks
 
   // modify
