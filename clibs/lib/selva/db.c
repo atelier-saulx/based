@@ -512,9 +512,11 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
          * We can't use selva_max_node() here because it returns type->max_node.
          */
         const struct SelvaNodeRes res = selva_max_node_from(type, type->blocks->len - 1);
-        if ((res.block_status & (SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM)) == SELVA_TYPE_BLOCK_STATUS_FS) {
-            /* TODO load the block instead of crashing. */
-            db_panic("Block %u:%u must be loaded", (unsigned)type->type, (unsigned)res.block);
+        constexpr enum SelvaTypeBlockStatus mask = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
+        if ((res.block_status & mask) == SELVA_TYPE_BLOCK_STATUS_FS) {
+            /* TODO load the block instead of crashing. partials */
+            db_panic("Block %u:%u must be loaded",
+                     (unsigned)type->type, (unsigned)res.block);
         }
         type->max_node = res.node; /* Note that this can be null. */
     }
