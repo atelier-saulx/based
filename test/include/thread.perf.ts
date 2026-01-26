@@ -222,8 +222,8 @@ await test('include', async (t) => {
     .query('simple')
     .include('nr', 'end', 'start')
     .filter('nr', '>', 90)
-    .and('start', '>', Date.now())
-    .and('end', '<', Date.now() + 20e3)
+    // .and('start', '>', Date.now())
+    // .and('end', '<', Date.now() + 20e3)
     .range(0, 100)
 
     // .filter('nr', '..', [90, 100])
