@@ -9,7 +9,7 @@ const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 const Fields = @import("../selva/fields.zig");
-const Filter = @import("./filter/filter.zig");
+const Filter = @import("filter/filter.zig");
 
 // alias filter needs to be added
 // make that top level
@@ -51,7 +51,7 @@ pub fn default(
         if (hasFilter) {
             const filter = utils.sliceNext(header.filterSize, q, &i);
             try Filter.prepare(filter, ctx, typeEntry);
-            if (!try Filter.filter(node, ctx, filter, typeEntry)) {
+            if (!try Filter.filter(node, ctx, filter)) {
                 try ctx.thread.query.append(@as(u32, 0));
                 return;
             }

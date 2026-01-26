@@ -1,4 +1,4 @@
-const Schema = @import("./selva/schema.zig");
+const Schema = @import("selva/schema.zig");
 
 pub const TypeId = u16;
 
@@ -751,7 +751,7 @@ pub const FilterOpCompare = enum(u8) {
     // selectSmallRef = 204,
     // selectSmallRefs = 205,
 
-    // nextOrIndex = 253,
+    nextOrIndex = 253,
 };
 
 pub const FilterOp = packed struct {

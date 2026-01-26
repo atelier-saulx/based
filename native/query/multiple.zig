@@ -2,7 +2,7 @@ const std = @import("std");
 const utils = @import("../utils.zig");
 const Query = @import("common.zig");
 const Include = @import("include/include.zig");
-const Filter = @import("./filter/filter.zig");
+const Filter = @import("filter/filter.zig");
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");
 const Selva = @import("../selva/selva.zig");
@@ -38,7 +38,7 @@ fn iterator(
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (it.next()) |node| {
         if (It == t.QueryIteratorType.filter) {
-            if (!try Filter.filter(node, ctx, filter, typeEntry)) {
+            if (!try Filter.filter(node, ctx, filter)) {
                 continue;
             }
         }

@@ -2,7 +2,7 @@ const std = @import("std");
 const valgrind = std.valgrind;
 const mem = std.mem;
 const Allocator = mem.Allocator;
-const debugPrint = @import("./utils.zig").debugPrint;
+const debugPrint = @import("utils.zig").debugPrint;
 
 pub const ValgrindAllocator = struct {
     childAllocator: std.mem.Allocator,

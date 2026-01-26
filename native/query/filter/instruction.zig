@@ -1,59 +1,81 @@
 const std = @import("std");
 const t = @import("../../types.zig");
-const Fixed = @import("fixed.zig");
+const Compare = @import("compare.zig");
+
+fn createEnumField(propType: t.PropType, cmp: t.FilterOpCompare) std.builtin.Type.EnumField {
+    const val: u16 = (@as(u16, cmp.value) << 8) | propType.value;
+    return .{
+        .name = propType.name ++ cmp.name,
+        .value = val,
+    };
+}
 
 fn createInstructionEnum() type {
-    // can be a bit less
-
-    // Add or jump
-    // add REFERENCE
-    // use proptype
-    // make an enum function to find filterfixedpropType
-
     const propTypeInfo = @typeInfo(t.PropType).@"enum";
     const compareInfo = @typeInfo(t.FilterOpCompare).@"enum";
 
-    var total = 0;
+    // nextOrIndex
+    var total = 1;
+
     for (propTypeInfo.fields) |propType| {
         const p: t.PropType = @enumFromInt(propType.value);
-        if (p.isFixed()) {
-            for (compareInfo.fields) |_| {
-                total += 1;
-            }
-        } else {
-            // derp?
+        switch (p) {
+            .boolean, .@"enum" => {
+                total += 2; // neq, eq
+            },
+            else => {
+                if (p.isFixed()) {
+                    for (compareInfo.fields) |compare| {
+                        const x: u8 = @intFromEnum(t.FilterOpCompare.nextOrIndex);
+                        if (compare.value != x) {
+                            total += 1;
+                        }
+                    }
+                } else {
+                    // bla
+                }
+            },
         }
     }
 
-    @setEvalBranchQuota(total);
-
-    var new_fields: [total]std.builtin.Type.EnumField = undefined;
-
-    // add OR INDEX
-    // select refs
-
+    var newFields: [total]std.builtin.Type.EnumField = undefined;
     var i: usize = 0;
+
+    newFields[i] = .{
+        .name = "nextOrIndex",
+        .value = (@as(u16, @intFromEnum(t.FilterOpCompare.nextOrIndex)) << 8) | @intFromEnum(t.PropType.null),
+    };
+    i += 1;
+
     for (propTypeInfo.fields) |propType| {
         const p: t.PropType = @enumFromInt(propType.value);
         if (p.isFixed()) {
-            for (compareInfo.fields) |compare| {
-                // @compileLog(compare.name, compare.value, propType.name, propType.value);
-
-                const val: u16 = (@as(u16, compare.value) << 8) | propType.value;
-
-                new_fields[i] = .{
-                    .name = propType.name ++ compare.name,
-                    .value = val,
-                };
-                i += 1;
+            const fields = switch (p) {
+                .boolean, .@"enum" => [_]std.builtin.Type.EnumField{
+                    .{ .name = "eq", .value = @intFromEnum(t.FilterOpCompare.eq) },
+                    .{ .name = "neq", .value = @intFromEnum(t.FilterOpCompare.neq) },
+                },
+                else => if (p.isFixed()) compareInfo.fields else [_]std.builtin.Type.EnumField{},
+            };
+            for (fields) |compare| {
+                const x: u8 = @intFromEnum(t.FilterOpCompare.nextOrIndex);
+                if (compare.value != x) {
+                    const val: u16 = (@as(u16, compare.value) << 8) | propType.value;
+                    newFields[i] = .{ .name = propType.name ++ compare.name, .value = val };
+                    i += 1;
+                }
             }
         }
     }
+
+    // for (newFields) |f| {
+    //     @compileLog(f.name, f.value);
+    // }
 
     return @Type(.{
         .@"enum" = .{
             .tag_type = u16,
-            .fields = &new_fields,
+            .fields = &newFields,
             .decls = &.{},
             .is_exhaustive = true,
         },
@@ -65,8 +87,9 @@ pub const CombinedOp = createInstructionEnum();
 
 pub const OpMeta = struct {
     invert: bool = false,
-    cmp: Fixed.Op = .eq,
-    func: Fixed.Function = .Single,
+    // this is just OP
+    cmp: Compare.Op = .eq,
+    func: Compare.Function = .Single,
     T: type,
 };
 
@@ -87,23 +110,18 @@ pub fn parseOp(comptime tag: CombinedOp) OpMeta {
     };
 }
 
-fn getCmp(comptime tag: t.FilterOpCompare) Fixed.Op {
+fn getCmp(comptime tag: t.FilterOpCompare) Compare.Op {
     return switch (tag) {
-        // Less Than
         .lt, .ltBatch, .ltBatchSmall => .lt,
-        // Less Equal
         .le, .leBatch, .leBatchSmall => .le,
-        // Greater Than
         .gt, .gtBatch, .gtBatchSmall => .gt,
-        // Greater Equal
         .ge, .geBatch, .geBatchSmall => .ge,
-
-        // Everything else (Eq, Neq, Range) defaults to Equality logic
+        // Add now CMP
         else => .eq,
     };
 }
 
-fn getFunc(comptime tag: t.FilterOpCompare) Fixed.Function {
+fn getFunc(comptime tag: t.FilterOpCompare) Compare.Function {
     return switch (tag) {
         .range, .nrange => .Range,
         .eqBatch, .neqBatch, .ltBatch, .leBatch, .gtBatch, .geBatch => .Batch,
@@ -120,22 +138,11 @@ fn propTypeToPrimitive(comptime propType: t.PropType) type {
         .int16 => i16,
         .uint8 => u8,
         .int8 => i8,
+        .timestamp => i64,
+        .number => f64,
 
-        // .id => u32,
-        // .int32 => i32,
-        // .number => f64,
+        // .boolean, .enum => u8,
 
-        // // Small Ints
-        // .uint16 => u16,
-        // .int16 => i16,
-        // .uint8 => u8,
-        // .int8 => i8,
-
-        // // Special
-        // .timestamp => u64,
-
-        // Unsupported for Math (Strings, Objects, etc.)
-        // We return 'void' so the generator loop skips these cases automatically.
         else => u8,
     };
 }

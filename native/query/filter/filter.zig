@@ -5,9 +5,9 @@ const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
-const Fixed = @import("./fixed.zig");
-const Select = @import("./select.zig");
-const Instruction = @import("./instruction.zig");
+const Compare = @import("compare.zig");
+const Select = @import("select.zig");
+const Instruction = @import("instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
 pub fn prepare(
@@ -20,17 +20,21 @@ pub fn prepare(
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
         var condition: *t.FilterCondition = undefined;
         // 255 means its unprepared - the condition new index will be set when aligned
+
         if (q[i] == 255) {
             const condSize = utils.read(u32, q, i + 3 + COND_ALIGN_BYTES);
             const totalSize = headerSize + condSize;
 
             q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i);
-            condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
+            if (condition.op.compare != t.FilterOpCompare.nextOrIndex) {
+                condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
+            }
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
             condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
 
+            // we can expand the buffer here make a copy and make prepare a seperate fn
             // Add reference select thing
             //     // .selectLargeRef, .selectSmallRef => {
             //     //     i += utils.sizeOf(t.FilterCondition);
@@ -42,9 +46,11 @@ pub fn prepare(
             i = end;
         } else {
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
+            const totalSize = headerSize + condition.size;
+            const end = totalSize + i;
+            i = end;
         }
         // if condition has type NOW we need to handle it
-        i += headerSize + condition.size;
     }
 }
 
@@ -65,7 +71,6 @@ pub inline fn filter(
     node: Node.Node,
     _: *Query.QueryCtx,
     q: []u8,
-    typeEntry: Node.Type,
 ) !bool {
     var i: usize = 0;
     var pass: bool = true;
@@ -75,23 +80,24 @@ pub inline fn filter(
     while (i < nextOrIndex) {
         const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
         const index = i + q[i] + utils.sizeOf(t.FilterCondition);
-        const nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size;
-
+        const nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
         if (prop != c.prop) {
             prop = c.prop;
-            v = Fields.get(typeEntry, node, c.fieldSchema, .null);
+            v = Fields.getRaw(node, c.fieldSchema);
         }
-
         const instruction = utils.readPtr(Instruction.CombinedOp, q, i + q[i]).*;
-
         pass = switch (instruction) {
+            .nextOrIndex => blk: {
+                nextOrIndex = utils.readPtr(u64, q, index + utils.sizeOf(u64) - c.offset).*;
+                break :blk true;
+            },
             inline else => |tag| blk: {
                 const meta = comptime Instruction.parseOp(tag);
                 const res = switch (meta.func) {
-                    .Single => Fixed.single(meta.cmp, meta.T, q, v, index, c),
-                    .Range => Fixed.range(meta.T, q, v, index, c),
-                    .Batch => Fixed.batch(meta.cmp, meta.T, q, v, index, c),
-                    .BatchSmall => Fixed.batchSmall(meta.cmp, meta.T, q, v, index, c),
+                    .Single => Compare.single(meta.cmp, meta.T, q, v, index, c),
+                    .Range => Compare.range(meta.T, q, v, index, c),
+                    .Batch => Compare.batch(meta.cmp, meta.T, q, v, index, c),
+                    .BatchSmall => Compare.batchSmall(meta.cmp, meta.T, q, v, index, c),
                 };
                 break :blk if (meta.invert) !res else res;
             },

@@ -41,6 +41,8 @@ await test('include', async (t) => {
       simple: {
         props: {
           nr: 'uint32',
+          start: 'timestamp',
+          end: 'timestamp',
         },
       },
     },
@@ -159,6 +161,8 @@ await test('include', async (t) => {
   for (let i = 0; i < 1e7; i++) {
     db.create('simple', {
       nr: 67,
+      start: d + i * 1e3,
+      end: d + i * 1e3 + 10e3,
       // name: i % 2 ? 'b' : 'a',
       // nr: rand(0, 10),
     })
@@ -216,16 +220,14 @@ await test('include', async (t) => {
 
   await db
     .query('simple')
-    .include('nr')
-    .filter('nr', '>', 90)
-    .range(0, 5)
-
-    // .filter('nr', '..', [90, 100])
-    // > , >=, <=, <
-    // .or('nr', 'equalsU32', 1e7)
-    // .or('nr', 'equalsU32', 2)
-    // .and('flap', 'equalsU32', 666)
-    // .or('nr', 'equalsU32', 10)
+    .include('nr', 'start', 'end') //  'start', 'end'
+    // .filter('nr', '>', 90)
+    // .and('nr', '<', 200)
+    .filter('start', '>', Date.now() - 1e3)
+    .and('end', '<', Date.now() + 10e3)
+    // .filter('nr', '>', 200)
+    .or('nr', '>', 90)
+    .range(0, 10)
     .get()
     .inspect(100)
 
