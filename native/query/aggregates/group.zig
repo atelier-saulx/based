@@ -64,7 +64,7 @@ inline fn getGrouByKeyValue(
     else
         keyValue.ptr[start .. start + propType.size()];
 
-    utils.debugPrint("currentGroupByKeyDef: {any}, key: {s}\n", .{ currentGroupByKeyDef, key });
+    // utils.debugPrint("currentGroupByKeyDef: {any}, key: {s}\n", .{ currentGroupByKeyDef, key });
     return key;
 }
 
@@ -78,11 +78,11 @@ inline fn aggregatePropsWithGroupBy(
     hadAccumulated: *bool,
 ) !void {
     if (aggDefs.len == 0) return;
-    utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
+    // utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
     var i: usize = 0;
     const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
-    utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
+    // utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
     // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
 
     var keyValue: []u8 = undefined;

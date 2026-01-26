@@ -284,10 +284,10 @@ pub inline fn propTypeSize(propType: t.PropType) usize {
 pub inline fn microbufferToF64(propType: t.PropType, buffer: []u8, offset: usize) f64 {
     return switch (propType) {
         t.PropType.int8 => @as(f64, @floatFromInt(buffer[offset])),
-        t.PropType.int16 => @as(f64, @floatFromInt(read(u16, buffer, offset))),
+        t.PropType.int16 => @as(f64, @floatFromInt(read(i16, buffer, offset))),
         t.PropType.int32 => @as(f64, @floatFromInt(read(i32, buffer, offset))),
         t.PropType.uint8 => @as(f64, @floatFromInt(buffer[offset])),
-        t.PropType.uint16 => @as(f64, @floatFromInt(read(i16, buffer, offset))),
+        t.PropType.uint16 => @as(f64, @floatFromInt(read(u16, buffer, offset))),
         t.PropType.uint32 => @as(f64, @floatFromInt(read(u32, buffer, offset))),
         t.PropType.number => read(f64, buffer, offset),
         else => undefined,
