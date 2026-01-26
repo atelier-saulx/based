@@ -431,7 +431,6 @@ static void selva_dump_save_colvec(struct selva_io *io, struct SelvaDb *, struct
     }
 }
 
-/* TODO Change start to block_i */
 int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i)
 {
     node_id_t start = selva_block_i2start(te, block_i);
