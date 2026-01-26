@@ -1,6 +1,4 @@
 import { PropDef, PropDefEdge } from '../../../schema.js'
-import { propIndexOffset } from '../../../schema/def/utils.js'
-import { debugBuffer } from '../../../sdk.js'
 import {
   writeDoubleLE,
   writeInt16,
@@ -88,7 +86,6 @@ const getFilterOp = (
       return {
         op: {
           compare: FilterOpCompare[`${opName}Batch`],
-          // @ts-ignore
           prop: propDef.typeIndex,
         },
         len: propDef.len,
@@ -98,7 +95,6 @@ const getFilterOp = (
       return {
         op: {
           compare: FilterOpCompare[`${opName}BatchSmall`],
-          // @ts-ignore
           prop: propDef.typeIndex,
         },
         len: propDef.len,
@@ -108,7 +104,6 @@ const getFilterOp = (
       return {
         op: {
           compare: FilterOpCompare[opName],
-          // @ts-ignore
           prop: propDef.typeIndex,
         },
         len: propDef.len,
@@ -119,7 +114,6 @@ const getFilterOp = (
     return {
       op: {
         compare: FilterOpCompare.range,
-        // @ts-ignore
         prop: propDef.typeIndex,
       },
       len: propDef.len * 2,
