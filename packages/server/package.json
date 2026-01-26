@@ -16,7 +16,7 @@
     "clean": "rm -rf ./dist ./node_modules ./tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@based/db": "0.2.14",
+    "@based/db": "0.2.15",
     "@based/errors": "1.6.12",
     "@based/functions": "3.4.13",
     "@based/hash": "1.1.1",

@@ -15,7 +15,7 @@
   "source": "src/index.ts",
   "dependencies": {
     "@based/client": "8.3.12",
-    "@based/db": "0.2.14",
+    "@based/db": "0.2.15",
     "@based/hash": "1.1.1",
     "@based/s3": "1.1.13",
     "@based/schema": "5.1.5",
