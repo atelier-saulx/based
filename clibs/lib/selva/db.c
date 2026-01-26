@@ -516,7 +516,7 @@ static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, str
             /* TODO load the block instead of crashing. */
             db_panic("Block %u:%u must be loaded", (unsigned)type->type, (unsigned)res.block);
         }
-        type->max_node = res.node;
+        type->max_node = res.node; /* Note that this can be null. */
     }
 
     if (unload) {
