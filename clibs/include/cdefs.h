@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 SAULX
+ * Copyright (c) 2020-2026 SAULX
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
@@ -179,6 +179,24 @@
 #define __packed __attribute__((packed))
 #endif
 
+#ifndef __designated_init
+#if __has_attribute(__designated_init__)
+/**
+ * Must use a designated initializer with a struct.
+ */
+#define __designated_init __attribute__((__designated_init__))
+#else
+#define __designated_init
+#endif
+#endif
+
+#ifndef __flag_enum
+/**
+ * enum used as flags.
+ */
+#define __flag_enum __attribute__((flag_enum))
+#endif
+
 #ifndef __counted_by
 #if __has_attribute(__counted_by__)
 /**
@@ -206,17 +224,6 @@
 #define __pcounted_by(member) __attribute__((__counted_by__(member)))
 #else
 #define __pcounted_by(member)
-#endif
-#endif
-
-#ifndef __designated_init
-#if __has_attribute(__designated_init__)
-/**
- * Must use a designated initializer with a struct.
- */
-#define __designated_init __attribute__((__designated_init__))
-#else
-#define __designated_init
 #endif
 #endif
 

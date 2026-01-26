@@ -39,7 +39,10 @@ pub fn iterator(
     return count;
 }
 
-inline fn getGrouByKeyValue(keyValue: []u8, currentGroupByKeyDef: t.GroupByKeyProp) []u8 {
+inline fn getGrouByKeyValue(
+    keyValue: []u8,
+    currentGroupByKeyDef: t.GroupByKeyProp,
+) []u8 {
     const propId = currentGroupByKeyDef.propId;
     const start = currentGroupByKeyDef.propDefStart;
     const propType = currentGroupByKeyDef.propType;
@@ -56,6 +59,8 @@ inline fn getGrouByKeyValue(keyValue: []u8, currentGroupByKeyDef: t.GroupByKeyPr
             keyValue.ptr[2 + start .. start + keyValue.len - propType.crcLen()]
     else if (propType == t.PropType.timestamp)
         @constCast(utils.datePart(keyValue.ptr[start .. start + keyValue.len], @enumFromInt(stepType), timezone))
+    else if (propType == t.PropType.reference)
+        Node.getReferenceNodeId(@ptrCast(@alignCast(keyValue.ptr)))
     else
         keyValue.ptr[start .. start + propType.size()];
 
