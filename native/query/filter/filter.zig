@@ -5,9 +5,9 @@ const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
-const Compare = @import("./compare.zig");
-const Select = @import("./select.zig");
-const Instruction = @import("./instruction.zig");
+const Compare = @import("compare.zig");
+const Select = @import("select.zig");
+const Instruction = @import("instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
 pub fn prepare(

@@ -5,7 +5,7 @@ const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
-const Filter = @import("./filter.zig");
+const Filter = @import("filter.zig");
 
 pub fn largeRef(ctx: *Query.QueryCtx, q: []u8, value: []u8, i: *usize) !bool {
     const selectReference = utils.readNext(t.FilterSelect, q, i);

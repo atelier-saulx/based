@@ -10,7 +10,7 @@ const utils = @import("../../utils.zig");
 const selva = @import("../../selva/selva.zig").c;
 const jemalloc = @import("../../jemalloc.zig");
 const common = @import("../common.zig");
-const modifyNotPending = @import("./modifyNotPending.zig").modifyNotPending;
+const modifyNotPending = @import("modifyNotPending.zig").modifyNotPending;
 
 pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
     while (true) {

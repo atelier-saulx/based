@@ -1,4 +1,4 @@
-const Thread = @import("./thread.zig");
+const Thread = @import("thread.zig");
 const std = @import("std");
 
 pub inline fn waitForQuery(threads: *Thread.Threads) void {
