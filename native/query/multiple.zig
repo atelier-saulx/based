@@ -38,7 +38,7 @@ fn iterator(
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (it.next()) |node| {
         if (It == t.QueryIteratorType.filter) {
-            if (!try Filter.filter(node, ctx, filter, typeEntry)) {
+            if (!try Filter.filter(node, ctx, filter)) {
                 continue;
             }
         }

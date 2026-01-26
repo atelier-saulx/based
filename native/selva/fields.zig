@@ -71,6 +71,14 @@ pub fn get(
     }
 }
 
+pub fn getRaw(
+    node: Node.Node,
+    fieldSchema: Schema.FieldSchema,
+) []u8 {
+    const result: selva.c.SelvaFieldsPointer = selva.c.selva_fields_get_raw(node, fieldSchema);
+    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
+}
+
 pub fn write(node: Node.Node, fieldSchema: Schema.FieldSchema, data: []u8) !void {
     try errors.selva(switch (fieldSchema.*.type) {
         selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.c.selva_fields_set_micro_buffer(node, fieldSchema, data.ptr, data.len),
