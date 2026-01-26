@@ -16,7 +16,7 @@ pub const Op = enum(u8) {
 
 pub const Function = enum { Single, Range, Batch, BatchSmall };
 
-pub inline fn batch(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn batch(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
@@ -39,7 +39,7 @@ pub inline fn batch(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.
     return false;
 }
 
-pub inline fn batchSmall(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn batchSmall(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
@@ -68,7 +68,7 @@ pub inline fn batchSmall(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c
     }
 }
 
-pub inline fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     @setEvalBranchQuota(10000);
 
     const val = utils.readPtr(T, v, c.start).*;
@@ -92,7 +92,7 @@ pub inline fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t
     }
 }
 
-pub inline fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     if (T == f64) {
         // Floats do not support ignore overflow

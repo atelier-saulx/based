@@ -97,6 +97,7 @@ pub const Result = struct {
 
     pub inline fn appendAs(self: *Result, comptime T: type, value: T) !usize {
         const size = utils.sizeOf(T);
+        @setEvalBranchQuota(10000);
         utils.writeAs(T, try self.slice(size), value, 0);
         return size;
     }
