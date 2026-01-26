@@ -19,6 +19,8 @@ export const conditionBuffer = (
     size + FilterConditionByteSize + COND_ALIGN_SPACE + 1 + propDef.len,
   )
 
+  console.info(propDef)
+
   condition[0] = 255
   const offset =
     writeFilterCondition(

@@ -26,6 +26,7 @@ pub fn prepare(
 
             q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i);
+            // only do this if the prop is different
             condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
             condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
@@ -43,9 +44,11 @@ pub fn prepare(
             i = end;
         } else {
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
+            const totalSize = headerSize + condition.size;
+            const end = totalSize + i;
+            i = end;
         }
         // if condition has type NOW we need to handle it
-        i += headerSize + condition.size;
     }
 }
 
@@ -76,7 +79,7 @@ pub inline fn filter(
     while (i < nextOrIndex) {
         const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
         const index = i + q[i] + utils.sizeOf(t.FilterCondition);
-        const nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size;
+        const nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
         if (prop != c.prop) {
             prop = c.prop;
             v = Fields.get(typeEntry, node, c.fieldSchema, .null);
