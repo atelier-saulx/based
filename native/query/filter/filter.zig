@@ -67,7 +67,7 @@ pub fn recursionErrorBoundary(
     };
 }
 
-pub fn filter(
+pub inline fn filter(
     node: Node.Node,
     _: *Query.QueryCtx,
     q: []u8,
