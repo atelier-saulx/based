@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "10.3.13",
+  "version": "10.3.14",
   "license": "MIT",
   "main": "./dist/index.js",
   "type": "module",
@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@based/db": "0.2.15",
-    "@based/errors": "1.6.12",
-    "@based/functions": "3.4.13",
+    "@based/errors": "1.6.13",
+    "@based/functions": "3.4.14",
     "@based/hash": "1.1.1",
     "@based/protocol": "0.1.6",
     "@based/utils": "1.2.1",
