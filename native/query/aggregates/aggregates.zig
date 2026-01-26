@@ -58,7 +58,7 @@ pub inline fn aggregateProps(
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
         utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
-        utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
+        // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
         var value: []u8 = undefined;
         if (currentAggDef.aggFunction == t.AggFunction.count) {
             accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
@@ -251,10 +251,10 @@ pub inline fn finalizeResults(
                     const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
                     const denominator = @as(f64, @floatFromInt(count)) - 1.0;
                     const variance = if (isSamplingSet)
-                        (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
+                        numerator / denominator
                     else
-                        numerator / denominator;
-                    const stddev = @sqrt(variance);
+                        (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
+                    const stddev = if (variance < 0) 0 else @sqrt(variance);
                     ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(stddev)), resultPos);
                 } else {
                     ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
@@ -268,10 +268,11 @@ pub inline fn finalizeResults(
                     const mean = sum / @as(f64, @floatFromInt(count));
                     const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
                     const denominator = @as(f64, @floatFromInt(count)) - 1.0;
-                    const variance = if (isSamplingSet)
-                        (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
+                    var variance = if (isSamplingSet)
+                        numerator / denominator
                     else
-                        numerator / denominator;
+                        (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
+                    if (variance < 0) variance = 0;
                     ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(variance)), resultPos);
                 } else {
                     ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
