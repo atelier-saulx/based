@@ -2978,24 +2978,8 @@ export const FilterOpCompareInverse = {
  */
 export type FilterOpCompareEnum = (typeof FilterOpCompare)[keyof typeof FilterOpCompare]
 
-export const FilterFixedPropType = {
-  uint32: PropType.uint32,
-  uint16: PropType.uint16,
-} as const
-
-export const FilterFixedPropTypeInverse = {
-  [PropType.uint32]: 'uint32',
-  [PropType.uint16]: 'uint16',
-} as const
-
-/**
-  uint32, 
-  uint16 
- */
-export type FilterFixedPropTypeEnum = (typeof FilterFixedPropType)[keyof typeof FilterFixedPropType]
-
 export type FilterOp = {
-  prop: FilterFixedPropTypeEnum
+  prop: PropTypeEnum
   compare: FilterOpCompareEnum
 }
 
@@ -3010,7 +2994,7 @@ export const packFilterOp = (obj: FilterOp): bigint => {
 
 export const unpackFilterOp = (val: bigint): FilterOp => {
   return {
-    prop: (Number((val >> 0n) & 255n)) as FilterFixedPropTypeEnum,
+    prop: (Number((val >> 0n) & 255n)) as PropTypeEnum,
     compare: (Number((val >> 8n) & 255n)) as FilterOpCompareEnum,
   }
 }
@@ -3028,7 +3012,7 @@ export const writeFilterOp = (
 }
 
 export const writeFilterOpProps = {
-  prop: (buf: Uint8Array, value: FilterFixedPropTypeEnum, offset: number) => {
+  prop: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset] = Number(value)
   },
   compare: (buf: Uint8Array, value: FilterOpCompareEnum, offset: number) => {
@@ -3041,14 +3025,14 @@ export const readFilterOp = (
   offset: number,
 ): FilterOp => {
   const value: FilterOp = {
-    prop: (buf[offset]) as FilterFixedPropTypeEnum,
+    prop: (buf[offset]) as PropTypeEnum,
     compare: (buf[offset + 1]) as FilterOpCompareEnum,
   }
   return value
 }
 
 export const readFilterOpProps = {
-    prop: (buf: Uint8Array, offset: number) => (buf[offset]) as FilterFixedPropTypeEnum,
+    prop: (buf: Uint8Array, offset: number) => (buf[offset]) as PropTypeEnum,
     compare: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as FilterOpCompareEnum,
 }
 

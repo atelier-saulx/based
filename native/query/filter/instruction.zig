@@ -5,10 +5,25 @@ const Fixed = @import("fixed.zig");
 fn createInstructionEnum() type {
     // can be a bit less
 
-    const propTypeInfo = @typeInfo(t.FilterFixedPropType).@"enum";
+    // Add or jump
+    // add REFERENCE
+    // use proptype
+    // make an enum function to find filterfixedpropType
+
+    const propTypeInfo = @typeInfo(t.PropType).@"enum";
     const compareInfo = @typeInfo(t.FilterOpCompare).@"enum";
 
-    const total = propTypeInfo.fields.len * compareInfo.fields.len;
+    var total = 0;
+    for (propTypeInfo.fields) |propType| {
+        const p: t.PropType = @enumFromInt(propType.value);
+        if (p.isFixed()) {
+            for (compareInfo.fields) |_| {
+                total += 1;
+            }
+        } else {
+            // derp?
+        }
+    }
 
     @setEvalBranchQuota(total);
 
@@ -19,18 +34,22 @@ fn createInstructionEnum() type {
 
     var i: usize = 0;
     for (propTypeInfo.fields) |propType| {
-        for (compareInfo.fields) |compare| {
-            // @compileLog(compare.name, compare.value, propType.name, propType.value);
+        const p: t.PropType = @enumFromInt(propType.value);
+        if (p.isFixed()) {
+            for (compareInfo.fields) |compare| {
+                // @compileLog(compare.name, compare.value, propType.name, propType.value);
 
-            const val: u16 = (@as(u16, compare.value) << 8) | propType.value;
+                const val: u16 = (@as(u16, compare.value) << 8) | propType.value;
 
-            new_fields[i] = .{
-                .name = propType.name ++ compare.name,
-                .value = val,
-            };
-            i += 1;
+                new_fields[i] = .{
+                    .name = propType.name ++ compare.name,
+                    .value = val,
+                };
+                i += 1;
+            }
         }
     }
+
     return @Type(.{
         .@"enum" = .{
             .tag_type = u16,
@@ -48,104 +67,59 @@ pub const OpMeta = struct {
     invert: bool = false,
     cmp: Fixed.Op = .eq,
     func: Fixed.Function = .Single,
+    T: type,
 };
 
-pub fn parseOp(comptime tag: t.FilterOpCompare) OpMeta {
-    var m = OpMeta{};
+pub fn parseOp(comptime tag: CombinedOp) OpMeta {
+    const val = @intFromEnum(tag);
 
-    switch (tag) {
-        // eq
-        .eq => {
-            m.cmp = .eq;
-        },
-        .neq => {
-            m.cmp = .eq;
-            m.invert = true;
-        },
-        .eqBatch => {
-            m.cmp = .eq;
-            m.func = .Batch;
-        },
-        .neqBatch => {
-            m.cmp = .eq;
-            m.func = .Batch;
-            m.invert = true;
-        },
-        .eqBatchSmall => {
-            m.cmp = .eq;
-            m.func = .BatchSmall;
-        },
-        .neqBatchSmall => {
-            m.cmp = .eq;
-            m.func = .BatchSmall;
-            m.invert = true;
-        },
-        // range
-        .range => {
-            m.func = .Range;
-        },
-        .nrange => {
-            m.func = .Range;
-            m.invert = true;
-        },
-        // lt
-        .lt => {
-            m.cmp = .lt;
-        },
-        .ltBatch => {
-            m.cmp = .lt;
-            m.func = .Batch;
-        },
-        .ltBatchSmall => {
-            m.cmp = .lt;
-            m.func = .BatchSmall;
-        },
-        // le
-        .le => {
-            m.cmp = .le;
-        },
-        .leBatch => {
-            m.cmp = .le;
-            m.func = .Batch;
-        },
-        .leBatchSmall => {
-            m.cmp = .le;
-            m.func = .BatchSmall;
-        },
-        // gt
-        .gt => {
-            m.cmp = .gt;
-        },
-        .gtBatch => {
-            m.cmp = .gt;
-            m.func = .Batch;
-        },
-        .gtBatchSmall => {
-            m.cmp = .gt;
-            m.func = .BatchSmall;
-        },
-        // ge
-        .ge => {
-            m.cmp = .ge;
-        },
-        .geBatch => {
-            m.cmp = .ge;
-            m.func = .Batch;
-        },
-        .geBatchSmall => {
-            m.cmp = .ge;
-            m.func = .BatchSmall;
-        },
-    }
+    const op: t.FilterOpCompare = @enumFromInt(@as(u8, @truncate(val >> 8)));
+    const propType: t.PropType = @enumFromInt(@as(u8, @truncate(val)));
 
-    return m;
+    return .{
+        .T = propTypeToPrimitive(propType),
+        .cmp = getCmp(op),
+        .func = getFunc(op),
+        .invert = switch (op) {
+            .neq, .neqBatch, .neqBatchSmall, .nrange => true,
+            else => false,
+        },
+    };
 }
 
-pub fn propTypeToPrimitive(comptime propType: t.FilterFixedPropType) type {
+fn getCmp(comptime tag: t.FilterOpCompare) Fixed.Op {
+    return switch (tag) {
+        // Less Than
+        .lt, .ltBatch, .ltBatchSmall => .lt,
+        // Less Equal
+        .le, .leBatch, .leBatchSmall => .le,
+        // Greater Than
+        .gt, .gtBatch, .gtBatchSmall => .gt,
+        // Greater Equal
+        .ge, .geBatch, .geBatchSmall => .ge,
+
+        // Everything else (Eq, Neq, Range) defaults to Equality logic
+        else => .eq,
+    };
+}
+
+fn getFunc(comptime tag: t.FilterOpCompare) Fixed.Function {
+    return switch (tag) {
+        .range, .nrange => .Range,
+        .eqBatch, .neqBatch, .ltBatch, .leBatch, .gtBatch, .geBatch => .Batch,
+        .eqBatchSmall, .neqBatchSmall, .ltBatchSmall, .leBatchSmall, .gtBatchSmall, .geBatchSmall => .BatchSmall,
+        else => .Single,
+    };
+}
+
+fn propTypeToPrimitive(comptime propType: t.PropType) type {
     return switch (propType) {
-        // Standard Math
-        .uint32 => u32,
+        .uint32, .id => u32,
+        .int32 => i32,
         .uint16 => u16,
+        .int16 => i16,
+        .uint8 => u8,
+        .int8 => i8,
 
         // .id => u32,
         // .int32 => i32,
@@ -162,6 +136,6 @@ pub fn propTypeToPrimitive(comptime propType: t.FilterFixedPropType) type {
 
         // Unsupported for Math (Strings, Objects, etc.)
         // We return 'void' so the generator loop skips these cases automatically.
-        // else => void,
+        else => u8,
     };
 }

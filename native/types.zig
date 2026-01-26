@@ -149,6 +149,10 @@ pub const PropType = enum(u8) {
         };
     }
 
+    pub fn isFixed(self: PropType) bool {
+        return self.size() != 0;
+    }
+
     pub fn size(self: PropType) u8 {
         switch (self) {
             .timestamp,
@@ -750,13 +754,8 @@ pub const FilterOpCompare = enum(u8) {
     // nextOrIndex = 253,
 };
 
-pub const FilterFixedPropType = enum(u8) {
-    uint32 = @intFromEnum(PropType.uint32),
-    uint16 = @intFromEnum(PropType.uint16),
-};
-
 pub const FilterOp = packed struct {
-    prop: FilterFixedPropType,
+    prop: PropType,
     compare: FilterOpCompare,
 };
 

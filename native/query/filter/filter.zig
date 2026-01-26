@@ -86,20 +86,12 @@ pub inline fn filter(
 
         pass = switch (instruction) {
             inline else => |tag| blk: {
-                const val = @intFromEnum(tag);
-                const typeByte = @as(u8, @truncate(val));
-                const opByte = @as(u8, @truncate(val >> 8));
-
-                const meta = comptime Instruction.parseOp(@enumFromInt(opByte));
-                const T = comptime Instruction.propTypeToPrimitive(@enumFromInt(typeByte));
-
-                // std.debug.print("bla {any} {any} {any} {any} \n", .{ opByte, typeByte, meta, T });
-
+                const meta = comptime Instruction.parseOp(tag);
                 const res = switch (meta.func) {
-                    .Single => Fixed.single(meta.cmp, T, q, v, index, c),
-                    .Range => Fixed.range(T, q, v, index, c),
-                    .Batch => Fixed.batch(meta.cmp, T, q, v, index, c),
-                    .BatchSmall => Fixed.batchSmall(meta.cmp, T, q, v, index, c),
+                    .Single => Fixed.single(meta.cmp, meta.T, q, v, index, c),
+                    .Range => Fixed.range(meta.T, q, v, index, c),
+                    .Batch => Fixed.batch(meta.cmp, meta.T, q, v, index, c),
+                    .BatchSmall => Fixed.batchSmall(meta.cmp, meta.T, q, v, index, c),
                 };
                 break :blk if (meta.invert) !res else res;
             },
