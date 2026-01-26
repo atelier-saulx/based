@@ -48,7 +48,7 @@ enum SelvaFieldType {
 struct EdgeFieldConstraint {
     enum EdgeFieldConstraintFlag {
         EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT = 0x01,
-    } __packed flags;
+    } __packed __flag_enum flags;
     field_t inverse_field;
     node_type_t dst_node_type;
     node_type_t edge_node_type;
@@ -113,7 +113,7 @@ enum SelvaTypeBlockStatus {
     SELVA_TYPE_BLOCK_STATUS_DIRTY = 0x04, /*!< Can't be set if te->blocks->blocks[block_i].status isn't set. */
     SELVA_TYPE_BLOCK_STATUS_LOADING = 0x80, /*!< Loading in progress. */
     SELVA_TYPE_BLOCK_STATUS_SAVING = 0x40, /*!< Saving in progress. */
-};
+} __flag_enum;
 
 struct SelvaAlias;
 struct SelvaAliases;
