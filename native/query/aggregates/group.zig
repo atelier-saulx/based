@@ -83,7 +83,7 @@ inline fn aggregatePropsWithGroupBy(
     var i: usize = 0;
     const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
     utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
-    utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
+    // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
 
     var keyValue: []u8 = undefined;
 
@@ -113,6 +113,7 @@ inline fn aggregatePropsWithGroupBy(
 pub inline fn finalizeGroupResults(
     ctx: *Query.QueryCtx,
     groupByHashMap: *GroupByHashMap,
+    header: t.AggHeader,
     aggDefs: []u8,
 ) !void {
     var it = groupByHashMap.iterator();
@@ -127,6 +128,6 @@ pub inline fn finalizeGroupResults(
 
         const accumulatorProp = entry.value_ptr.*;
 
-        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, true, @bitSizeOf(t.GroupByKeyProp) / 8);
+        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, header.isSamplingSet, @bitSizeOf(t.GroupByKeyProp) / 8);
     }
 }

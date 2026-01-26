@@ -512,22 +512,22 @@ await test('numeric types', async (t) => {
     await db.query('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
-        NL: { average: 16.5 },
-        PT: { average: 21.5 },
-        FI: { average: -500000.15 },
+        NL: { avg: 16.5 },
+        PT: { avg: 21.5 },
+        FI: { avg: -500000.15 },
       },
       aa: {
-        NL: { average: 46.5 },
-        PT: { average: 46.5 },
-        FI: { average: 0 },
+        NL: { avg: 46.5 },
+        PT: { avg: 46.5 },
+        FI: { avg: 0 },
       },
       Great: {
-        NL: { average: 50 },
-        PT: { average: 50 },
-        FI: { average: -50.999 },
+        NL: { avg: 50 },
+        PT: { avg: 50 },
+        FI: { avg: -50.999 },
       },
     },
-    'average, main, group by',
+    'avg, main, group by',
   )
   deepEqual(
     await db
@@ -574,7 +574,7 @@ await test('numeric types', async (t) => {
         PL: { stddev: 0 },
       },
     },
-    'stddev, main, group by',
+    'stddev, main, group by, pop',
   )
   deepEqual(
     await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
@@ -592,7 +592,7 @@ await test('numeric types', async (t) => {
         PL: { stddev: 0 },
       },
     },
-    'stddev, main, group by',
+    'stddev, main, group by, default=sample',
   )
   deepEqual(
     await db
@@ -711,7 +711,7 @@ await test('numeric types', async (t) => {
   //       {
   //         id: 1,
   //         votes: {
-  //           NL: { average: 35.2 },
+  //           NL: { avg: 35.2 },
   //         },
   //       },
   //     ],
@@ -892,18 +892,18 @@ await test('numeric types', async (t) => {
   //         id: 1,
   //         votes: {
   //           bb: {
-  //             NL: { average: 16.5 },
+  //             NL: { avg: 16.5 },
   //           },
   //           aa: {
-  //             NL: { average: 46.5 },
+  //             NL: { avg: 46.5 },
   //           },
   //           Great: {
-  //             NL: { average: 50 },
+  //             NL: { avg: 50 },
   //           },
   //         },
   //       },
   //     ],
-  //     'average, references, group by',
+  //     'avg, references, group by',
   //   )
 
   //   deepEqual(
