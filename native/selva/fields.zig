@@ -71,7 +71,7 @@ pub fn get(
     }
 }
 
-pub fn getRaw(
+pub inline fn getRaw(
     node: Node.Node,
     fieldSchema: Schema.FieldSchema,
 ) []u8 {
