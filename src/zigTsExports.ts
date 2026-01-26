@@ -2929,6 +2929,7 @@ export const FilterOpCompare = {
   leBatch: 23,
   geBatchSmall: 24,
   leBatchSmall: 25,
+  nextOrIndex: 253,
 } as const
 
 export const FilterOpCompareInverse = {
@@ -2952,6 +2953,7 @@ export const FilterOpCompareInverse = {
   23: 'leBatch',
   24: 'geBatchSmall',
   25: 'leBatchSmall',
+  253: 'nextOrIndex',
 } as const
 
 /**
@@ -2974,7 +2976,8 @@ export const FilterOpCompareInverse = {
   geBatch, 
   leBatch, 
   geBatchSmall, 
-  leBatchSmall 
+  leBatchSmall, 
+  nextOrIndex 
  */
 export type FilterOpCompareEnum = (typeof FilterOpCompare)[keyof typeof FilterOpCompare]
 

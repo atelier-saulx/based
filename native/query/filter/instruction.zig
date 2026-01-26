@@ -14,7 +14,8 @@ fn createInstructionEnum() type {
     const propTypeInfo = @typeInfo(t.PropType).@"enum";
     const compareInfo = @typeInfo(t.FilterOpCompare).@"enum";
 
-    var total = 0;
+    // nextOrIndex
+    var total = 1;
 
     for (propTypeInfo.fields) |propType| {
         const p: t.PropType = @enumFromInt(propType.value);
@@ -24,8 +25,11 @@ fn createInstructionEnum() type {
             },
             else => {
                 if (p.isFixed()) {
-                    for (compareInfo.fields) |_| {
-                        total += 1;
+                    for (compareInfo.fields) |compare| {
+                        const x: u8 = @intFromEnum(t.FilterOpCompare.nextOrIndex);
+                        if (compare.value != x) {
+                            total += 1;
+                        }
                     }
                 } else {
                     // bla
@@ -34,11 +38,15 @@ fn createInstructionEnum() type {
         }
     }
 
-    // @setEvalBranchQuota(total);
-
-    var new_fields: [total]std.builtin.Type.EnumField = undefined;
-
+    var newFields: [total]std.builtin.Type.EnumField = undefined;
     var i: usize = 0;
+
+    newFields[i] = .{
+        .name = "nextOrIndex",
+        .value = (@as(u16, @intFromEnum(t.FilterOpCompare.nextOrIndex)) << 8) | @intFromEnum(t.PropType.null),
+    };
+    i += 1;
+
     for (propTypeInfo.fields) |propType| {
         const p: t.PropType = @enumFromInt(propType.value);
         if (p.isFixed()) {
@@ -50,20 +58,24 @@ fn createInstructionEnum() type {
                 else => if (p.isFixed()) compareInfo.fields else [_]std.builtin.Type.EnumField{},
             };
             for (fields) |compare| {
-                const val: u16 = (@as(u16, compare.value) << 8) | propType.value;
-                new_fields[i] = .{
-                    .name = propType.name ++ compare.name,
-                    .value = val,
-                };
-                i += 1;
+                const x: u8 = @intFromEnum(t.FilterOpCompare.nextOrIndex);
+                if (compare.value != x) {
+                    const val: u16 = (@as(u16, compare.value) << 8) | propType.value;
+                    newFields[i] = .{ .name = propType.name ++ compare.name, .value = val };
+                    i += 1;
+                }
             }
         }
     }
 
+    // for (newFields) |f| {
+    //     @compileLog(f.name, f.value);
+    // }
+
     return @Type(.{
         .@"enum" = .{
             .tag_type = u16,
-            .fields = &new_fields,
+            .fields = &newFields,
             .decls = &.{},
             .is_exhaustive = true,
         },

@@ -220,13 +220,14 @@ await test('include', async (t) => {
 
   await db
     .query('simple')
-    .include('nr', 'end', 'start')
-    .filter('nr', '>', 90)
-    .and('nr', '<', 200)
-
-    // .and('start', '>', Date.now())
-    // .and('end', '<', Date.now() + 20e3)
-    .range(0, 100)
+    .include('nr') //  'start', 'end'
+    // .filter('nr', '>', 90)
+    // .and('nr', '<', 200)
+    // .filter('start', '>', Date.now() - 1e3)
+    // .and('end', '<', Date.now() + 10e3)
+    .filter('nr', '>', 200)
+    .or('nr', '>', 90)
+    .range(0, 10)
     .get()
     .inspect(100)
 

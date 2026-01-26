@@ -133,29 +133,18 @@ export const filterToBuffer = (
     addConditions(result, def, fromLastProp)
     // addRefs(result, def, byteSize(result))
   } else if (def.or && def.conditions.size != 0) {
-    // const lastProp = addConditions(result, def, fromLastProp)
+    const lastProp = addConditions(result, def, fromLastProp)
     // // addRefs(result, def, byteSize(result))
-    // const resultSize = byteSize(result)
-    // // const nextOrIndexBuffer = new Uint8Array(FilterConditionByteSize + 16)
-    // // const offset = writeFilterCondition(
-    // //   nextOrIndexBuffer,
-    // //   {
-    // //     op: FilterOp.nextOrIndex,
-    // //     prop: fromLastProp,
-    // //     start: 0,
-    // //     fieldSchema: 0,
-    // //   },
-    // //   0,
-    // // )
-    // const { offset, condition } = conditionBuffer(
-    //   { prop: fromLastProp, len: 8, start: 0 },
-    //   8,
-    //   { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
-    // )
-    // const nextOrIndex = resultSize + condition.byteLength + fromIndex
-    // writeUint64(condition, nextOrIndex, offset + 8)
-    // result.unshift(condition)
-    // result.push(filterToBuffer(def.or, lastProp, nextOrIndex, false))
+    const resultSize = byteSize(result)
+    const { offset, condition } = conditionBuffer(
+      { prop: fromLastProp, len: 8, start: 0 },
+      8,
+      { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
+    )
+    const nextOrIndex = resultSize + condition.byteLength + fromIndex
+    writeUint64(condition, nextOrIndex, offset)
+    result.unshift(condition)
+    result.push(filterToBuffer(def.or, lastProp, nextOrIndex, false))
   } else {
     // fix this later
     // MOVE 1 up

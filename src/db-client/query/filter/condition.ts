@@ -18,7 +18,6 @@ export const conditionBuffer = (
   const condition = new Uint8Array(
     size + FilterConditionByteSize + COND_ALIGN_SPACE + 1 + propDef.len,
   )
-
   condition[0] = 255
   const offset =
     writeFilterCondition(
