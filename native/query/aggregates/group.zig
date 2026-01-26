@@ -10,8 +10,8 @@ const copy = utils.copy;
 const microbufferToF64 = utils.microbufferToF64;
 const t = @import("../../types.zig");
 const resultHeaderOffset = @import("../../thread/results.zig").resultHeaderOffset;
-const Aggregates = @import("./aggregates.zig");
-const GroupByHashMap = @import("./hashMap.zig").GroupByHashMap;
+const Aggregates = @import("aggregates.zig");
+const GroupByHashMap = @import("hashMap.zig").GroupByHashMap;
 
 pub fn iterator(
     groupByHashMap: *GroupByHashMap,

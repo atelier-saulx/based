@@ -4,7 +4,7 @@ const napi = @import("../napi.zig");
 const std = @import("std");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
-const QueueStatus = @import("./queueStatus.zig");
+const QueueStatus = @import("queueStatus.zig");
 
 pub const BridgeResponseStruct = struct {
     response: t.BridgeResponse,

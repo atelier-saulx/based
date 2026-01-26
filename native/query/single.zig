@@ -9,7 +9,7 @@ const Thread = @import("../thread/thread.zig");
 const Schema = @import("../selva/schema.zig");
 const t = @import("../types.zig");
 const Fields = @import("../selva/fields.zig");
-const Filter = @import("./filter/filter.zig");
+const Filter = @import("filter/filter.zig");
 
 // alias filter needs to be added
 // make that top level

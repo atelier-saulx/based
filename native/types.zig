@@ -1,4 +1,4 @@
-const Schema = @import("./selva/schema.zig");
+const Schema = @import("selva/schema.zig");
 
 pub const TypeId = u16;
 
