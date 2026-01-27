@@ -457,8 +457,10 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
     if ((prev_block_status & block_sm) != block_sm) {
         if (prev_block_status & (SELVA_TYPE_BLOCK_STATUS_LOADING | SELVA_TYPE_BLOCK_STATUS_SAVING)) {
             err = SELVA_EINPROGRESS;
+        } else if (prev_block_status & SELVA_TYPE_BLOCK_STATUS_FS) {
+            err = 0; /* Note that we now expect the dump to already exist. */
         } else {
-            err = 0; /* TODO Should this be an error instead? */
+            err = SELVA_EGENERAL;
         }
         goto fail;
     }
