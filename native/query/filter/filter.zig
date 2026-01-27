@@ -64,25 +64,14 @@ pub fn recursionErrorBoundary(
     node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
-    typeEntry: Node.Type,
 ) bool {
-    return cb(
-        node,
-        ctx,
-        q,
-        typeEntry,
-    ) catch |err| {
+    return cb(node, ctx, q) catch |err| {
         std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
         return false;
     };
 }
 
-// maybe add an inline version as well?
-pub inline fn filter(
-    node: Node.Node,
-    ctx: *Query.QueryCtx,
-    q: []u8,
-) !bool {
+pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
     var i: usize = 0;
     var pass: bool = true;
     var v: []u8 = undefined;
@@ -107,11 +96,10 @@ pub inline fn filter(
             },
             .selectSmallRef => blk: {
                 // if edge can be a seperate thing
-
                 const select = utils.readPtr(t.FilterSelect, q, index + @alignOf(t.FilterSelect) - c.offset);
                 nextIndex += select.size;
                 if (Node.getNode(select.typeEntry, utils.readPtr(u32, v, 0).*)) |refNode| {
-                    break :blk recursionErrorBoundary(filter, refNode, ctx, q[nextIndex - select.size .. nextIndex], select.typeEntry);
+                    break :blk recursionErrorBoundary(filter, refNode, ctx, q[nextIndex - select.size .. nextIndex]);
                 } else {
                     break :blk false;
                 }
