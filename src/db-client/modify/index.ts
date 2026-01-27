@@ -132,7 +132,7 @@ export class ModifyItem implements Promise<number> {
   [Symbol.toStringTag]!: 'ModifyItem'
 
   private _p?: Promise<number>
-  private _batch: ModifyBatch
+
   private get _promise() {
     if (!this._p) {
       this._p ??= new Promise((resolve, reject) => {
@@ -146,6 +146,7 @@ export class ModifyItem implements Promise<number> {
     return this._p
   }
 
+  _batch: ModifyBatch
   _index: number
   _id?: number
   _err?: ModifyErrorEnum
@@ -187,6 +188,7 @@ type ModifyBatch = {
   count: number
   items?: ModifyItem[]
   result?: Uint8Array
+  flushed?: true
 }
 
 export type ModifyCtx = {
@@ -204,6 +206,7 @@ export const flush = (ctx: ModifyCtx) => {
   if (ctx.buf.length) {
     const batch = ctx.batch
     writeModifyHeaderProps.count(ctx.buf.data, batch.count, 0)
+    batch.flushed = true
     ctx.hooks.flushModify(ctx.buf.view).then((result) => {
       batch.result = result
       if (batch.items) {
@@ -267,9 +270,7 @@ export const modify = <
     ;(serialize as (...args: any[]) => void)(...args)
   } catch (e) {
     if (e === AutoSizedUint8Array.ERR_OVERFLOW) {
-      if (isEmpty) {
-        throw new Error('Range error')
-      }
+      if (isEmpty) throw new Error('Range error')
       ctx.buf.length = initialLength
       flush(ctx)
       return modify(ctx, serialize, ...args)

@@ -138,22 +138,22 @@ await test('modify client', async (t) => {
     },
   })
 
-  const youzi = await db.create('user', {
+  const youzi = db.create('user', {
     age: 32,
     rating: 5,
     name: 'youzi',
   })
 
-  const jamez = await db.create('user', {
+  const jamez = db.create('user', {
     age: 24,
     rating: 54,
     name: 'jamez',
-    friends: [{ id: 1, $rank: 5 }],
+    friends: [{ id: youzi }],
   })
 
   console.log('done did it!', { youzi, jamez })
 
-  const res = await db.query('user').include('*', 'friends.*').get().toObject()
+  const res = await db.query('user').include('*', 'friends').get().toObject()
   console.dir(res, { depth: null })
 })
 

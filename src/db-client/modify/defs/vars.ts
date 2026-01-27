@@ -36,6 +36,7 @@ export const string = class extends BasePropDef {
     lang: LangCodeEnum,
   ) {
     const normalized = val.normalize('NFKD')
+    // make header!
     buf.pushU8(lang)
     buf.pushU8(NOT_COMPRESSED)
     const written = buf.pushString(normalized)

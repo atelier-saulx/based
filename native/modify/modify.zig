@@ -375,10 +375,20 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     while (k < value.len) {
                         const references = utils.readNext(t.ModifyReferencesHeader, value, &k);
                         const refs = value[k .. k + references.size];
+                        std.debug.print("ref op {any}\n", .{references.op});
                         switch (references.op) {
                             .ids => {
                                 const offset = utils.alignLeft(u32, refs);
                                 const u32Ids = read([]u32, refs[4 - offset .. refs.len - offset], 0);
+                                try References.putReferences(db, node, propSchema, u32Ids);
+                            },
+                            .tmpIds => {
+                                const offset = utils.alignLeft(u32, refs);
+                                const u32Ids = read([]u32, refs[4 - offset .. refs.len - offset], 0);
+                                for (u32Ids) |*id| {
+                                    id.* = items[id.*].id;
+                                }
+                                std.debug.print("hahah {any}\n", .{u32Ids});
                                 try References.putReferences(db, node, propSchema, u32Ids);
                             },
                             .idsWithMeta => {
@@ -392,8 +402,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                                     var refId = meta.id;
 
                                     if (meta.isTmp) {
-                                        // TODO handle isTmp case
-                                        refId = meta.id;
+                                        refId = items[refId].id;
                                     }
 
                                     if (Node.getNode(refTypeEntry, refId)) |dst| {

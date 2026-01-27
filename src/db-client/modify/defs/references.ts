@@ -15,7 +15,7 @@ import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
 import type { SchemaProp } from '../../../schema.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from './index.js'
-import { serializeProps } from '../index.js'
+import { ModifyItem, serializeProps } from '../index.js'
 
 type Edges = Record<`${string}`, unknown> | undefined
 
@@ -39,10 +39,8 @@ const serializeIds = (
   // one extra for padding
   buf.pushU32(0)
   for (; i < ids.length; i++) {
-    const id = ids[i]
-    if (typeof id !== 'number') {
-      break
-    }
+    const id = getRealId(ids[i])
+    if (!id) break
     buf.pushU32(id)
   }
   return i
@@ -50,19 +48,16 @@ const serializeIds = (
 
 const serializeTmpIds = (
   buf: AutoSizedUint8Array,
-  items: { tmpId: number }[],
+  items: ModifyItem[],
   offset: number,
 ): undefined | any => {
   let i = offset
   // one extra for padding
   buf.pushU32(0)
   for (; i < items.length; i++) {
-    const item = items[i]
-    if (typeof item !== 'object' || item === null || !item.tmpId) {
-      // TODO handle async await for tmp in other batch
-      break
-    }
-    buf.pushU32(item.tmpId)
+    const tmpId = getTmpId(items[i])
+    if (tmpId === undefined) break
+    buf.pushU32(tmpId)
   }
 
   return i
@@ -81,18 +76,18 @@ const serializeIdsAndMeta = (
 
   for (; i < items.length; i++) {
     const item = items[i]
-    if (item === null || typeof item !== 'object') {
-      throw 'error'
-    }
-
-    // TODO handle tmp id
-    if (typeof item.id !== 'number') {
+    if (!isValidRefObj(item)) {
       break
     }
-
+    const realId = getRealId(item.id)
+    const id = realId || getTmpId(item.id)
+    if (id === undefined) {
+      console.log(item)
+      throw 'not handled ref'
+    }
     const index = pushModifyReferencesMetaHeader(buf, {
-      id: item.id,
-      isTmp: false,
+      id: id,
+      isTmp: !realId,
       withIndex: '$index' in item,
       index: item.$index,
       size: 0,
@@ -118,6 +113,19 @@ const serializeIdsAndMeta = (
   return i
 }
 
+const getRealId = (item: any) =>
+  typeof item === 'number' ? item : item instanceof ModifyItem && item.id
+
+const getTmpId = (item: any) => {
+  if (item instanceof ModifyItem && !item._batch.flushed) {
+    return item._index
+  }
+}
+
+const isValidRefObj = (item: any) =>
+  (typeof item !== 'object' && item !== null && typeof item.id === 'number') ||
+  item.id instanceof ModifyItem
+
 const setReferences = (
   buf: AutoSizedUint8Array,
   value: any[],
@@ -129,7 +137,7 @@ const setReferences = (
   while (offset < value.length) {
     const item = value[offset]
 
-    if (typeof item === 'number') {
+    if (getRealId(item)) {
       const index = pushModifyReferencesHeader(buf, {
         op: ModifyReferences.ids,
         size: 0,
@@ -140,40 +148,29 @@ const setReferences = (
       continue
     }
 
-    if (typeof item === 'object' && item !== null) {
-      if (item.tmpId) {
-        const index = pushModifyReferencesHeader(buf, {
-          op: ModifyReferences.tmpIds,
-          size: 0,
-        })
-        const start = buf.length
-        offset = serializeTmpIds(buf, value, offset)
-        writeModifyReferencesHeaderProps.size(
-          buf.data,
-          buf.length - start,
-          index,
-        )
-        continue
-      }
-
-      if (typeof item.id === 'number') {
-        // TODO can optimize, don't need whole object
-        const index = pushModifyReferencesHeader(buf, {
-          op: ModifyReferences.idsWithMeta,
-          size: 0,
-        })
-        const start = buf.length
-        offset = serializeIdsAndMeta(buf, value, op, offset, lang, prop.edges)
-        writeModifyReferencesHeaderProps.size(
-          buf.data,
-          buf.length - start,
-          index,
-        )
-        continue
-      }
+    if (getTmpId(item) !== undefined) {
+      const index = pushModifyReferencesHeader(buf, {
+        op: ModifyReferences.tmpIds,
+        size: 0,
+      })
+      const start = buf.length
+      offset = serializeTmpIds(buf, value, offset)
+      writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
+      continue
     }
 
-    throw 'bad ref'
+    if (isValidRefObj(item)) {
+      const index = pushModifyReferencesHeader(buf, {
+        op: ModifyReferences.idsWithMeta,
+        size: 0,
+      })
+      const start = buf.length
+      offset = serializeIdsAndMeta(buf, value, op, offset, lang, prop.edges)
+      writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
+      continue
+    }
+
+    throw 'bad ref!'
   }
 }
 
