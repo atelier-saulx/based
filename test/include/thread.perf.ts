@@ -136,7 +136,7 @@ await test('include', async (t) => {
 
   d = Date.now()
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 10e6; i++) {
     db.create('simple', {
       nr: 67,
       start: d + i * 1e3,
@@ -158,7 +158,7 @@ await test('include', async (t) => {
     'OPS per second',
   )
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
@@ -185,9 +185,6 @@ await test('include', async (t) => {
     .query('simple')
     .include('nr', 'start', 'end', 'target')
     .filter('target.nr', '>', 1001)
-    // .filter('start', '>', Date.now() - 1e3)
-    // .and('end', '<', Date.now() + 10e3)
-    // .filter('nr', '>', 1000)
     .or('nr', '=', 100)
     .range(0, 4)
     .get()
