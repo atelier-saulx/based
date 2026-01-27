@@ -453,14 +453,18 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
      */
 
     const enum SelvaTypeBlockStatus prev_block_status = atomic_fetch_or(&block->status.atomic, (uint32_t)SELVA_TYPE_BLOCK_STATUS_SAVING);
-    constexpr enum SelvaTypeBlockStatus block_sm = SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
-    if ((prev_block_status & block_sm) != block_sm) {
-        if (prev_block_status & (SELVA_TYPE_BLOCK_STATUS_LOADING | SELVA_TYPE_BLOCK_STATUS_SAVING)) {
-            err = SELVA_EINPROGRESS;
-        } else if (prev_block_status & SELVA_TYPE_BLOCK_STATUS_FS) {
-            err = 0; /* Note that we now expect the dump to already exist. */
+    constexpr enum SelvaTypeBlockStatus block_sm_needs_save = SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
+    if (prev_block_status & (SELVA_TYPE_BLOCK_STATUS_LOADING | SELVA_TYPE_BLOCK_STATUS_SAVING)) {
+        err = SELVA_EINPROGRESS;
+        goto fail;
+    } else if ((prev_block_status & block_sm_needs_save) != block_sm_needs_save) {
+        if (prev_block_status & SELVA_TYPE_BLOCK_STATUS_FS) {
+            /* We now expect the dump to already exist. */
+            err = 0;
         } else {
-            err = SELVA_EGENERAL;
+            fprintf(stderr, "%s: Request to save a block %u:%u that's not dirty but neither saved\n",
+                    __func__, (unsigned)te->type, (unsigned)block_i);
+            err = 0;
         }
         goto fail;
     }

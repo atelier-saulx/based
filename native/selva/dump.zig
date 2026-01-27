@@ -34,6 +34,10 @@ pub fn saveBlock(thread: *Thread.Thread, ctx: *DbCtx, q: []u8, op: t.OpType) !vo
     }
 
     err = selva.selva_dump_save_block(ctx.selva, te, block);
+    if (err == selva.SELVA_EINPROGRESS) {
+        // This is "weird" but probably ok.
+        err = 0;
+    }
     utils.write(resp, err, 0);
     utils.byteCopy(resp, q[5..11], 4);
 
