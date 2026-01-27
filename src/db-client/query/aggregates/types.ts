@@ -83,8 +83,8 @@ export type NormalizedStepObject = {
 }
 
 export enum setMode {
-  'sample',
   'population',
+  'sample',
 }
 
 export type setModeString = 'sample' | 'population'

@@ -82,7 +82,6 @@ pub inline fn filter(
     node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
-    typeEntry: Node.Type,
 ) !bool {
     var i: usize = 0;
     var pass: bool = true;
@@ -95,7 +94,7 @@ pub inline fn filter(
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
         if (prop != c.prop) {
             prop = c.prop;
-            v = Fields.get(typeEntry, node, c.fieldSchema, .null);
+            v = Fields.getRaw(node, c.fieldSchema);
         }
         const instruction = utils.readPtr(Instruction.CombinedOp, q, i + q[i]).*;
         pass = switch (instruction) {
