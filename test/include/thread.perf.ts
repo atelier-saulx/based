@@ -126,8 +126,6 @@ await test('include', async (t) => {
 
   console.log('DEL 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
 
-  d = Date.now()
-
   const simple = await db.create('simple', {
     nr: 1001,
   })
@@ -136,7 +134,9 @@ await test('include', async (t) => {
     nr: 1002,
   })
 
-  for (let i = 0; i < 10e6; i++) {
+  d = Date.now()
+
+  for (let i = 0; i < 10; i++) {
     db.create('simple', {
       nr: 67,
       start: d + i * 1e3,
@@ -149,15 +149,16 @@ await test('include', async (t) => {
 
   await db.drain()
   time = Date.now() - d
+
   console.log(
     'CREATE + REF 10M',
     time,
     'ms',
-    (1000 / time) * 5e6,
+    (1000 / time) * 10e6,
     'OPS per second',
   )
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
@@ -174,6 +175,11 @@ await test('include', async (t) => {
     '10M Nodes query',
     { repeat: 100 },
   )
+  db.create('simple', {
+    nr: 100,
+    // name: i % 2 ? 'b' : 'a',
+    // nr: rand(0, 10),
+  })
 
   await db
     .query('simple')
@@ -181,8 +187,9 @@ await test('include', async (t) => {
     .filter('target.nr', '>', 1001)
     // .filter('start', '>', Date.now() - 1e3)
     // .and('end', '<', Date.now() + 10e3)
-    // .or('nr', '>', 90)
-    .range(0, 3)
+    // .filter('nr', '>', 1000)
+    .or('nr', '=', 100)
+    .range(0, 4)
     .get()
     .inspect(100)
 

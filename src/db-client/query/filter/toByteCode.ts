@@ -125,7 +125,8 @@ export const filterToBuffer = (
   if (!def.or) {
     addConditions(result, def, fromLastProp)
     addRefs(result, def, byteSize(result))
-  } else if (def.or && def.conditions.size != 0) {
+  } else if (def.or) {
+    // && def.conditions.size != 0 // can add this to flatten
     const lastProp = addConditions(result, def, fromLastProp)
     addRefs(result, def, byteSize(result))
     const resultSize = byteSize(result)
@@ -135,12 +136,12 @@ export const filterToBuffer = (
       { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
     )
     const nextOrIndex = resultSize + condition.byteLength + fromIndex
+
+    // console.log('DERP', nextOrIndex)
+
     writeUint64(condition, nextOrIndex, offset)
     result.unshift(condition)
     result.push(filterToBuffer(def.or, lastProp, nextOrIndex, false))
-  } else {
-    // fix this later
-    // MOVE 1 up
   }
 
   // if (top && result.length > 0) {
