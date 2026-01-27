@@ -37,11 +37,17 @@ pub fn prepare(
             const end = totalSize + i;
 
             switch (condition.op.compare) {
-                .selectSmallRef => {
-                    // make a util for this
-                    const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
+                .selectLargeRefEdge => {
+                    // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
+                    // const edgeSelect = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
+                    // select.typeEntry = try Node.getType(ctx.db, select.typeId);
+                    // try prepare(q[end .. end + select.size], ctx, select.typeEntry);
+                    // i = end + select.size;
+                    i = end;
+                },
+                .selectRef => {
+                    const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - condition.offset);
                     select.typeEntry = try Node.getType(ctx.db, select.typeId);
-
                     try prepare(q[end .. end + select.size], ctx, select.typeEntry);
                     i = end + select.size;
                 },
@@ -71,6 +77,7 @@ pub fn recursionErrorBoundary(
     };
 }
 
+// Check if this becomes better
 pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
     var i: usize = 0;
     var pass: bool = true;
@@ -91,11 +98,9 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
                 nextOrIndex = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 break :blk true;
             },
-            .selectLargeRef => blk: {
-                break :blk true;
-            },
-            .selectSmallRef => blk: {
-                // if edge can be a seperate thing
+
+            .selectRef => blk: {
+                // edge is hopefully second :D
                 const select = utils.readPtr(t.FilterSelect, q, index + @alignOf(t.FilterSelect) - c.offset);
                 nextIndex += select.size;
                 if (Node.getNode(select.typeEntry, utils.readPtr(u32, v, 0).*)) |refNode| {
@@ -104,12 +109,11 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
                     break :blk false;
                 }
             },
-            .selectSmallRefs => blk: {
+
+            .selectSmallRefs, .selectLargeRefsEdge, .selectLargeRefEdge, .selectLargeRefs => blk: {
                 break :blk true;
             },
-            .selectLargeRefs => blk: {
-                break :blk true;
-            },
+
             inline else => |tag| blk: {
                 const meta = comptime Instruction.parseOp(tag);
                 const res = switch (meta.func) {

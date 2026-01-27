@@ -747,10 +747,14 @@ pub const FilterOpCompare = enum(u8) {
 
     // var is a lot less
 
-    selectLargeRef = 202,
+    // selectLargeRef = 202,
     selectLargeRefs = 203,
-    selectSmallRef = 204,
+    selectRef = 204,
     selectSmallRefs = 205,
+
+    selectLargeRefEdge = 206,
+    selectLargeRefsEdge = 207,
+
     nextOrIndex = 253,
 };
 

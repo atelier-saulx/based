@@ -38,14 +38,11 @@ const getSelectOp = (
   edgeTypeId: number,
   isMulti: boolean,
 ): FilterOpCompareEnum => {
+  // very different
   if (edgeTypeId != 0) {
-    return isMulti
-      ? FilterOpCompare.selectLargeRefs
-      : FilterOpCompare.selectLargeRef
+    return isMulti ? FilterOpCompare.selectLargeRefs : FilterOpCompare.selectRef
   }
-  return isMulti
-    ? FilterOpCompare.selectSmallRefs
-    : FilterOpCompare.selectSmallRef
+  return isMulti ? FilterOpCompare.selectSmallRefs : FilterOpCompare.selectRef
 }
 
 const addRefs = (
