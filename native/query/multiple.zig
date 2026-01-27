@@ -289,7 +289,6 @@ pub fn aggregates(
     const aggDefs = q[i..];
     const typeId = header.typeId;
     const typeEntry = try Node.getType(ctx.db, typeId);
-    var hadAccumulated: bool = false;
     const isSamplingSet = header.isSamplingSet;
     const hasGroupBy = header.hasGroupBy;
 
@@ -313,11 +312,10 @@ pub fn aggregates(
             header.accumulatorSize,
             typeEntry,
             hllAccumulator,
-            &hadAccumulated,
         );
         try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, aggDefs);
     } else {
-        nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, hllAccumulator, &hadAccumulated);
+        nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, undefined, aggDefs, accumulatorProp, typeEntry, hllAccumulator);
         try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, isSamplingSet, 0);
     }
 }

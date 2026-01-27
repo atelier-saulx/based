@@ -21,9 +21,9 @@ pub fn iterator(
     accumulatorProp: []u8,
     typeEntry: Node.Type,
     hllAccumulator: anytype,
-    hadAccumulated: *bool,
 ) !u32 {
     var count: u32 = 0;
+    var hadAccumulated: bool = false;
     _ = ctx;
 
     while (it.next()) |node| {
@@ -35,7 +35,7 @@ pub fn iterator(
             // }
         }
 
-        aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, hadAccumulated);
+        aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, &hadAccumulated);
 
         count += 1;
         if (count >= limit) break;
@@ -52,7 +52,6 @@ pub inline fn aggregateProps(
     hadAccumulated: *bool,
 ) void {
     if (aggDefs.len == 0) return;
-    // utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
     var i: usize = 0;
     while (i < aggDefs.len) {
