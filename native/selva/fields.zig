@@ -79,7 +79,7 @@ pub inline fn getRaw(
     return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
-pub fn write(node: Node.Node, fieldSchema: Schema.FieldSchema, data: []u8) !void {
+pub fn set(node: Node.Node, fieldSchema: Schema.FieldSchema, data: []u8) !void {
     try errors.selva(switch (fieldSchema.*.type) {
         selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER => selva.c.selva_fields_set_micro_buffer(node, fieldSchema, data.ptr, data.len),
         selva.c.SELVA_FIELD_TYPE_STRING => selva.c.selva_fields_set_string(node, fieldSchema, data.ptr, data.len),
@@ -113,25 +113,6 @@ pub fn setColvec(te: Node.Type, nodeId: selva.c.node_id_t, fieldSchema: Schema.F
         fieldSchema,
         vec.ptr,
     );
-}
-
-// TODO This should be going away
-pub fn getEdgePropType(
-    db: *DbCtx,
-    efc: Schema.EdgeFieldConstraint,
-    ref: References.ReferenceLarge,
-    fieldSchema: Schema.FieldSchema,
-) []u8 {
-    const edge_node = Node.getEdgeNode(db, efc, ref);
-    if (edge_node == null) {
-        return emptySlice;
-    }
-
-    const result: selva.c.SelvaFieldsPointer = selva.c.selva_fields_get_raw(
-        edge_node,
-        fieldSchema,
-    );
-    return @as([*]u8, @ptrCast(result.ptr))[result.off .. result.off + result.len];
 }
 
 // TODO This is now hll specific but we might want to change it.

@@ -71,7 +71,7 @@ pub fn writeEdges(
                 }
             } else {
                 const edgeData = data[i + offset + mainBufferOffset .. i + len + offset];
-                try Fields.write(edgeNode, edgeFieldSchema, edgeData);
+                try Fields.set(edgeNode, edgeFieldSchema, edgeData);
             }
         } else switch (propType) {
             t.PropType.reference => {
@@ -115,7 +115,7 @@ pub fn writeEdges(
                 len = read(u32, data, i);
                 offset = 4;
                 const edgeData = data[i + offset .. i + offset + len];
-                try Fields.write(edgeNode, edgeFieldSchema, edgeData);
+                try Fields.set(edgeNode, edgeFieldSchema, edgeData);
             },
         }
         i += offset + len;

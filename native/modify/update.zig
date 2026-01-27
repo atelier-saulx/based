@@ -155,7 +155,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                     };
                 }
             } else {
-                try Fields.write(ctx.node.?, ctx.fieldSchema.?, slice);
+                try Fields.set(ctx.node.?, ctx.fieldSchema.?, slice);
             }
 
             return 4 + len;
