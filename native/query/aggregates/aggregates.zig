@@ -62,7 +62,6 @@ pub inline fn aggregateProps(
         var value: []u8 = undefined;
         if (currentAggDef.aggFunction == t.AggFunction.count) {
             accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
-            hadAccumulated.* = true;
         } else {
             if (currentAggDef.propId != t.MAIN_PROP and currentAggDef.aggFunction != t.AggFunction.cardinality) {
                 i += @sizeOf(t.AggProp);
@@ -83,7 +82,6 @@ pub inline fn aggregateProps(
                     Selva.c.hll_init_like(hllAccumulator, hllValue);
                 }
                 accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, hllAccumulator, hllValue);
-                hadAccumulated.* = true;
             } else {
                 value = Fields.get(
                     typeEntry,
@@ -98,6 +96,7 @@ pub inline fn aggregateProps(
             }
         }
     }
+    hadAccumulated.* = true;
 }
 
 pub inline fn accumulate(
@@ -131,11 +130,13 @@ pub inline fn accumulate(
                     writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
                 },
                 .min => {
+                    // utils.debugPrint("hadAccumulated: {any} {d} {d}\n", .{ hadAccumulated.*, accumulatorPos, microbufferToF64(propTypeTag, value, start) });
                     if (!hadAccumulated.*) {
                         writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
                     } else {
                         writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
                     }
+                    // utils.debugPrint("ficou: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .max => {
                     if (!hadAccumulated.*) {

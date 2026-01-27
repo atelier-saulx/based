@@ -285,7 +285,7 @@ pub fn aggregates(
     var nodeCnt: u32 = 0;
 
     const header = utils.readNext(t.AggHeader, q, &i);
-    utils.debugPrint("header: {any}\n", .{header});
+    // utils.debugPrint("header: {any}\n", .{header});
     const aggDefs = q[i..];
     const typeId = header.typeId;
     const typeEntry = try Node.getType(ctx.db, typeId);
