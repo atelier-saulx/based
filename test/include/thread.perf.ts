@@ -165,7 +165,8 @@ await test('include', async (t) => {
         q.push(
           db
             .query('simple')
-            .include('nr')
+            .include('id', 'nr')
+            // .range(0, 10e6 + i)
             .filter('nr', '=', 100 + i)
             .get(),
         )
@@ -175,6 +176,7 @@ await test('include', async (t) => {
     '10M Nodes query',
     { repeat: 100 },
   )
+
   db.create('simple', {
     nr: 100,
     // name: i % 2 ? 'b' : 'a',
@@ -183,12 +185,12 @@ await test('include', async (t) => {
 
   await db
     .query('simple')
-    .include('nr', 'start', 'end', 'target')
+    .include('nr') //  'start', 'end', 'target'
     .filter('target.nr', '>', 1001)
-    .or('nr', '=', 100)
-    .range(0, 4)
+    // .or('nr', '=', 100)
+    .range(0, 10e6)
     .get()
-    .inspect(100)
+    .inspect()
 
   await wait(1000)
 })

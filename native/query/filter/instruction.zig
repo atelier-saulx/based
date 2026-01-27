@@ -20,16 +20,52 @@ fn isNoMetaOp(op: t.FilterOpCompare, metaOps: []const std.builtin.Type.EnumField
     return true;
 }
 
+fn getCmp(comptime tag: t.FilterOpCompare) Compare.Op {
+    return switch (tag) {
+        .lt, .ltBatch, .ltBatchSmall => .lt,
+        .le, .leBatch, .leBatchSmall => .le,
+        .gt, .gtBatch, .gtBatchSmall => .gt,
+        .ge, .geBatch, .geBatchSmall => .ge,
+        // Add now CMP
+        else => .eq,
+    };
+}
+
+fn getFunc(comptime tag: t.FilterOpCompare) Compare.Function {
+    return switch (tag) {
+        .range, .nrange => .Range,
+        .eqBatch, .neqBatch, .ltBatch, .leBatch, .gtBatch, .geBatch => .Batch,
+        .eqBatchSmall, .neqBatchSmall, .ltBatchSmall, .leBatchSmall, .gtBatchSmall, .geBatchSmall => .BatchSmall,
+        else => .Single,
+    };
+}
+
+fn propTypeToPrimitive(comptime propType: t.PropType) type {
+    return switch (propType) {
+        .uint32, .id => u32,
+        .int32 => i32,
+        .uint16 => u16,
+        .int16 => i16,
+        .uint8 => u8,
+        .int8 => i8,
+        .timestamp => i64,
+        .number => f64,
+        // .boolean, .enum => u8,
+        else => u8,
+    };
+}
+
 fn createInstructionEnum() type {
     const propTypeInfo = @typeInfo(t.PropType).@"enum";
     const compareInfo = @typeInfo(t.FilterOpCompare).@"enum";
 
     const metaOps = [_]std.builtin.Type.EnumField{
         metaField(t.FilterOpCompare.nextOrIndex),
-        metaField(t.FilterOpCompare.selectLargeRef),
+        metaField(t.FilterOpCompare.selectRef),
         metaField(t.FilterOpCompare.selectLargeRefs),
-        metaField(t.FilterOpCompare.selectSmallRef),
         metaField(t.FilterOpCompare.selectSmallRefs),
+        metaField(t.FilterOpCompare.selectLargeRefEdge),
+        metaField(t.FilterOpCompare.selectLargeRefsEdge),
     };
 
     var total = metaOps.len;
@@ -37,6 +73,7 @@ fn createInstructionEnum() type {
     for (propTypeInfo.fields) |propType| {
         const p: t.PropType = @enumFromInt(propType.value);
         switch (p) {
+            .id => {},
             .boolean, .@"enum" => {
                 total += 2; // neq, eq
             },
@@ -65,7 +102,7 @@ fn createInstructionEnum() type {
 
     for (propTypeInfo.fields) |propType| {
         const p: t.PropType = @enumFromInt(propType.value);
-        if (p.isFixed()) {
+        if (p != t.PropType.id and p.isFixed()) {
             const fields = switch (p) {
                 .boolean, .@"enum" => [_]std.builtin.Type.EnumField{
                     .{ .name = "eq", .value = @intFromEnum(t.FilterOpCompare.eq) },
@@ -87,6 +124,8 @@ fn createInstructionEnum() type {
     // for (newFields) |f| {
     //     @compileLog(f.name, f.value);
     // }
+
+    @compileLog(newFields.len);
 
     return @Type(.{
         .@"enum" = .{
@@ -125,40 +164,5 @@ pub fn parseOp(comptime tag: CombinedOp) OpMeta {
             .neq, .neqBatch, .neqBatchSmall, .nrange => true,
             else => false,
         },
-    };
-}
-
-fn getCmp(comptime tag: t.FilterOpCompare) Compare.Op {
-    return switch (tag) {
-        .lt, .ltBatch, .ltBatchSmall => .lt,
-        .le, .leBatch, .leBatchSmall => .le,
-        .gt, .gtBatch, .gtBatchSmall => .gt,
-        .ge, .geBatch, .geBatchSmall => .ge,
-        // Add now CMP
-        else => .eq,
-    };
-}
-
-fn getFunc(comptime tag: t.FilterOpCompare) Compare.Function {
-    return switch (tag) {
-        .range, .nrange => .Range,
-        .eqBatch, .neqBatch, .ltBatch, .leBatch, .gtBatch, .geBatch => .Batch,
-        .eqBatchSmall, .neqBatchSmall, .ltBatchSmall, .leBatchSmall, .gtBatchSmall, .geBatchSmall => .BatchSmall,
-        else => .Single,
-    };
-}
-
-fn propTypeToPrimitive(comptime propType: t.PropType) type {
-    return switch (propType) {
-        .uint32, .id => u32,
-        .int32 => i32,
-        .uint16 => u16,
-        .int16 => i16,
-        .uint8 => u8,
-        .int8 => i8,
-        .timestamp => i64,
-        .number => f64,
-        // .boolean, .enum => u8,
-        else => u8,
     };
 }
