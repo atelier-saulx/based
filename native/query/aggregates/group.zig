@@ -22,16 +22,16 @@ pub fn iterator(
     accumulatorSize: usize,
     typeEntry: Node.Type,
     hllAccumulator: anytype,
-    hadAccumulated: *bool,
 ) !u32 {
     var count: u32 = 0;
+    var hadAccumulated: bool = false;
 
     while (it.next()) |node| {
         if (filterBuf.len > 0) {
             // Filter Check
         }
 
-        try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, hadAccumulated);
+        try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, &hadAccumulated);
 
         count += 1;
         if (count >= limit) break;
@@ -64,7 +64,6 @@ inline fn getGrouByKeyValue(
     else
         keyValue.ptr[start .. start + propType.size()];
 
-    // utils.debugPrint("currentGroupByKeyDef: {any}, key: {s}\n", .{ currentGroupByKeyDef, key });
     return key;
 }
 
