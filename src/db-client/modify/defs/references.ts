@@ -15,7 +15,7 @@ import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
 import type { SchemaProp } from '../../../schema.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from './index.js'
-import { ModifyItem, serializeProps } from '../index.js'
+import { ModifyItem, QueuedItem, serializeProps } from '../index.js'
 
 type Edges = Record<`${string}`, unknown> | undefined
 
@@ -82,8 +82,7 @@ const serializeIdsAndMeta = (
     const realId = getRealId(item.id)
     const id = realId || getTmpId(item.id)
     if (id === undefined) {
-      console.log(item)
-      throw 'not handled ref'
+      break
     }
     const index = pushModifyReferencesMetaHeader(buf, {
       id: id,
@@ -113,18 +112,18 @@ const serializeIdsAndMeta = (
   return i
 }
 
-const getRealId = (item: any) =>
-  typeof item === 'number' ? item : item instanceof ModifyItem && item.id
+const getRealId = (item: any) => {
+  if (typeof item === 'number') return item
+  if (item instanceof ModifyItem || item instanceof QueuedItem) return item.id
+}
 
 const getTmpId = (item: any) => {
-  if (item instanceof ModifyItem && !item._batch.flushed) {
-    return item._index
-  }
+  if (item instanceof ModifyItem && !item._batch.flushed) return item._index
 }
 
 const isValidRefObj = (item: any) =>
-  (typeof item !== 'object' && item !== null && typeof item.id === 'number') ||
-  item.id instanceof ModifyItem
+  (typeof item === 'object' && item !== null && getRealId(item.id)) ||
+  getTmpId(item.id) !== undefined
 
 const setReferences = (
   buf: AutoSizedUint8Array,
@@ -136,7 +135,6 @@ const setReferences = (
   let offset = 0
   while (offset < value.length) {
     const item = value[offset]
-
     if (getRealId(item)) {
       const index = pushModifyReferencesHeader(buf, {
         op: ModifyReferences.ids,
@@ -145,10 +143,7 @@ const setReferences = (
       const start = buf.length
       offset = serializeIds(buf, value, offset)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-      continue
-    }
-
-    if (getTmpId(item) !== undefined) {
+    } else if (getTmpId(item) !== undefined) {
       const index = pushModifyReferencesHeader(buf, {
         op: ModifyReferences.tmpIds,
         size: 0,
@@ -156,10 +151,7 @@ const setReferences = (
       const start = buf.length
       offset = serializeTmpIds(buf, value, offset)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-      continue
-    }
-
-    if (isValidRefObj(item)) {
+    } else if (isValidRefObj(item)) {
       const index = pushModifyReferencesHeader(buf, {
         op: ModifyReferences.idsWithMeta,
         size: 0,
@@ -167,10 +159,13 @@ const setReferences = (
       const start = buf.length
       offset = serializeIdsAndMeta(buf, value, op, offset, lang, prop.edges)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-      continue
+    } else if (item instanceof ModifyItem || item instanceof QueuedItem) {
+      throw item
+    } else if (item.id instanceof ModifyItem || item instanceof QueuedItem) {
+      throw item.id
+    } else {
+      throw 'bad ref!'
     }
-
-    throw 'bad ref!'
   }
 }
 

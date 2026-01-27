@@ -1,6 +1,10 @@
 import { BasedDb } from '../src/index.js'
 import { AutoSizedUint8Array } from '../src/db-client/modify/AutoSizedUint8Array.js'
-import { getTypeDefs, serializeCreate } from '../src/db-client/modify/index.js'
+import {
+  flush,
+  getTypeDefs,
+  serializeCreate,
+} from '../src/db-client/modify/index.js'
 import { parseSchema } from '../src/schema.js'
 import { LangCode, Modify, pushModifyHeader } from '../src/zigTsExports.js'
 import test from './shared/test.js'
@@ -144,13 +148,34 @@ await test('modify client', async (t) => {
     name: 'youzi',
   })
 
+  // olli uses TMPID for youzi
+  const olli = db.create('user', {
+    age: 22,
+    rating: 256,
+    name: 'olli',
+    friends: [youzi],
+  })
+
+  // youzi is now in-flight
+  flush(db.client.modifyCtx)
+
+  // james WILL BE QUEUED until youzi is done -> because we need that reference
   const jamez = db.create('user', {
     age: 24,
     rating: 54,
     name: 'jamez',
-    friends: [{ id: youzi }],
+    friends: [youzi],
   })
 
+  // this WILL NOT BE QUEUED ----> different order
+  const marco = db.create('user', {
+    age: 28,
+    rating: 100,
+    name: 'mr marco',
+    friends: [jamez],
+  })
+
+  // await db.drain()
   console.log('done did it!', { youzi, jamez })
 
   const res = await db.query('user').include('*', 'friends').get().toObject()

@@ -103,7 +103,6 @@ export class DbClient extends DbShared {
   }
 
   create(type: string, obj = {}, opts?: ModifyOpts): Promise<number> {
-    // console.log(this.modifyCtx.buf.length)
     return modify(
       this.modifyCtx,
       serializeCreate,
@@ -197,7 +196,7 @@ export class DbClient extends DbShared {
   }
 
   // For more advanced / internal usage - use isModified instead for most cases
-  async drain() {
+  drain() {
     // if (this.upserting.size) {
     //   await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
     // }
@@ -206,14 +205,16 @@ export class DbClient extends DbShared {
     // const t = this.writeTime
     // this.writeTime = 0
     flush(this.modifyCtx)
-    await this.modifyCtx.lastModify?.catch(noop)
+    return this.isModified()
+    // await this.modifyCtx.lastModify?.catch(noop)
     // await this.modifyCtx.lastModify
     // return t
   }
 
   async isModified() {
-    schedule(this.modifyCtx)
-    await this.modifyCtx.lastModify?.catch(noop)
+    while (this.modifyCtx.batch.lastModify) {
+      await this.modifyCtx.batch.lastModify.catch(noop)
+    }
   }
 }
 

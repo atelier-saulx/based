@@ -123,25 +123,80 @@ export const serializeDelete = <
   })
 }
 
+export class QueuedItem implements Promise<number> {
+  constructor(blocker: ModifyItem | QueuedItem, args: IArguments) {
+    while (blocker instanceof QueuedItem) {
+      blocker = blocker._blocker
+    }
+    this._blocker = blocker
+    this._args = args
+    blocker._batch.queue ??= []
+    blocker._batch.queue.push(this)
+  }
+  [Symbol.toStringTag]!: 'QueuedItem'
+  _args: IArguments
+  _item?: ModifyItem
+
+  private _blocker: ModifyItem
+  private _p?: Promise<number>
+
+  _promise() {
+    this._p ??=
+      this._item ||
+      new Promise((resolve) => {
+        this._resolve = resolve
+      })
+    return this._p
+  }
+  get id(): number | undefined {
+    return this._item?.id
+  }
+
+  get err(): ModifyErrorEnum | undefined {
+    return this._item?.err
+  }
+
+  _resolve?: (value: number | PromiseLike<number>) => void
+
+  then<Res1 = number, Res2 = never>(
+    onfulfilled?: ((value: number) => Res1 | PromiseLike<Res1>) | null,
+    onrejected?: ((reason: any) => Res2 | PromiseLike<Res2>) | null,
+  ): Promise<Res1 | Res2> {
+    return this._promise().then(onfulfilled, onrejected)
+  }
+  catch<Res = never>(
+    onrejected?: ((reason: any) => Res | PromiseLike<Res>) | null,
+  ): Promise<number | Res> {
+    return this._promise().catch(onrejected)
+  }
+  finally(onfinally?: (() => void) | null): Promise<number> {
+    return this._promise().finally(onfinally)
+  }
+}
+
 export class ModifyItem implements Promise<number> {
   constructor(batch: ModifyBatch) {
     this._batch = batch
-    this._index = batch.count
+    this._index = batch.count++
+    batch.lastModify = this
   }
 
   [Symbol.toStringTag]!: 'ModifyItem'
 
   private _p?: Promise<number>
-
-  private get _promise() {
-    if (!this._p) {
-      this._p ??= new Promise((resolve, reject) => {
+  _promise() {
+    this._p ??= new Promise((resolve, reject) => {
+      if (this.id) {
+        resolve(this.id)
+      } else if (this.err) {
+        reject(this.err)
+      } else {
         this._resolve = resolve
         this._reject = reject
         this._batch.items ??= []
         this._batch.items.push(this)
-      })
-    }
+      }
+    })
 
     return this._p
   }
@@ -150,6 +205,7 @@ export class ModifyItem implements Promise<number> {
   _index: number
   _id?: number
   _err?: ModifyErrorEnum
+  _args?: IArguments
 
   get id(): number | undefined {
     if (this._batch.result) {
@@ -172,30 +228,37 @@ export class ModifyItem implements Promise<number> {
     onfulfilled?: ((value: number) => Res1 | PromiseLike<Res1>) | null,
     onrejected?: ((reason: any) => Res2 | PromiseLike<Res2>) | null,
   ): Promise<Res1 | Res2> {
-    return this._promise.then(onfulfilled, onrejected)
+    return this._promise().then(onfulfilled, onrejected)
   }
   catch<Res = never>(
     onrejected?: ((reason: any) => Res | PromiseLike<Res>) | null,
   ): Promise<number | Res> {
-    return this._promise.catch(onrejected)
+    return this._promise().catch(onrejected)
   }
   finally(onfinally?: (() => void) | null): Promise<number> {
-    return this._promise.finally(onfinally)
+    return this._promise().finally(onfinally)
   }
 }
+
+type ModifySerializer =
+  | typeof serializeCreate
+  | typeof serializeUpdate
+  | typeof serializeDelete
 
 type ModifyBatch = {
   count: number
   items?: ModifyItem[]
+  queue?: QueuedItem[]
   result?: Uint8Array
   flushed?: true
+  lastModify?: ModifyItem
 }
 
 export type ModifyCtx = {
   buf: AutoSizedUint8Array
   batch: ModifyBatch
   flushTime: number
-  lastModify?: ModifyItem
+
   flushTimer?: NodeJS.Timeout | true | undefined
   hooks: {
     flushModify: (buf: Uint8Array<ArrayBufferLike>) => Promise<Uint8Array>
@@ -209,8 +272,19 @@ export const flush = (ctx: ModifyCtx) => {
     batch.flushed = true
     ctx.hooks.flushModify(ctx.buf.view).then((result) => {
       batch.result = result
-      if (batch.items) {
-        for (const item of batch.items) {
+      const items = batch.items
+      const queue = batch.queue
+      if (queue) {
+        batch.queue = undefined
+        for (const item of queue) {
+          const res = modify.apply(null, item._args)
+          item._item = res
+          item._resolve?.(res)
+        }
+      }
+      if (items) {
+        batch.items = undefined
+        for (const item of items) {
           const id = item.id
           const err = item.err
           if (err) {
@@ -244,18 +318,12 @@ export const schedule = (ctx: ModifyCtx) => {
   }
 }
 
-export const modify = <
-  S extends
-    | typeof serializeCreate
-    | typeof serializeUpdate
-    | typeof serializeDelete,
->(
+export const modify = function <S extends ModifySerializer>(
   ctx: ModifyCtx,
   serialize: S,
   ...args: Parameters<S>
-): Promise<number> => {
+): Promise<number> {
   const isEmpty = ctx.buf.length === 0
-
   if (isEmpty) {
     pushModifyHeader(ctx.buf, {
       opId: 0, // is filled on server
@@ -264,24 +332,22 @@ export const modify = <
       count: 0,
     })
   }
-
   const initialLength = ctx.buf.length
   try {
     ;(serialize as (...args: any[]) => void)(...args)
   } catch (e) {
+    ctx.buf.length = initialLength
     if (e === AutoSizedUint8Array.ERR_OVERFLOW) {
       if (isEmpty) throw new Error('Range error')
-      ctx.buf.length = initialLength
       flush(ctx)
-      return modify(ctx, serialize, ...args)
+      return modify.apply(null, arguments)
+    } else if (e instanceof ModifyItem || e instanceof QueuedItem) {
+      return new QueuedItem(e, arguments)
     } else {
       throw e
     }
   }
 
-  const item = new ModifyItem(ctx.batch)
-  ctx.lastModify = item
-  ctx.batch.count++
   schedule(ctx)
-  return item
+  return new ModifyItem(ctx.batch)
 }
