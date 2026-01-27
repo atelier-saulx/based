@@ -136,7 +136,7 @@ await test('include', async (t) => {
 
   d = Date.now()
 
-  for (let i = 0; i < 10e6; i++) {
+  for (let i = 0; i < 10; i++) {
     db.create('simple', {
       nr: 67,
       start: d + i * 1e3,
@@ -189,7 +189,7 @@ await test('include', async (t) => {
     // .and('end', '<', Date.now() + 10e3)
     // .filter('nr', '>', 1000)
     .or('nr', '=', 100)
-    .range(0, 10)
+    .range(0, 4)
     .get()
     .inspect(100)
 

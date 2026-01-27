@@ -174,6 +174,8 @@ export class QueryBranch<T> {
         args: [field, operator, value, opts],
       })
     } else {
+      console.log('OK WHAT?', this.def?.filterContinue)
+
       this.def!.filterContinue = or(
         this.db,
         this.def!.filterContinue ?? this.def?.filter!,
