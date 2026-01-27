@@ -136,7 +136,7 @@ await test('include', async (t) => {
     nr: 1002,
   })
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 10e6; i++) {
     db.create('simple', {
       nr: 67,
       start: d + i * 1e3,
@@ -157,7 +157,7 @@ await test('include', async (t) => {
     'OPS per second',
   )
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
