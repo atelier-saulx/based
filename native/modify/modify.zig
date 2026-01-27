@@ -390,7 +390,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     }
                 },
                 else => {
-                    try Fields.write(node, propSchema, value);
+                    try Fields.set(node, propSchema, value);
                 },
             }
 

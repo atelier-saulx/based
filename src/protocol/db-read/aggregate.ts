@@ -83,7 +83,7 @@ const readGroupKey = (
   groupBy: ReaderGroupBy,
 ): { key: string | number; bytesRead: number } => {
   if (result[offset] === 0) {
-    return { key: '$undefined', bytesRead: 2 }
+    return { key: '$undefined', bytesRead: 0 }
   }
 
   if (groupBy.typeIndex === PropType.enum) {

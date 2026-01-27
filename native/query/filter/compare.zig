@@ -6,6 +6,8 @@ const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
 
+// Fns here are non-inline to avoid a too long switch statement in filter
+
 pub const Op = enum(u8) {
     eq = 1,
     lt = 2,
@@ -16,11 +18,11 @@ pub const Op = enum(u8) {
 
 pub const Function = enum { Single, Range, Batch, BatchSmall };
 
-pub inline fn batch(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn batch(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
-    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + size - c.offset]);
+    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + @alignOf(T) - c.offset]);
     const len = values.len / size;
     var j: usize = 0;
     switch (op) {
@@ -39,11 +41,11 @@ pub inline fn batch(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.
     return false;
 }
 
-pub inline fn batchSmall(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn batchSmall(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
-    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + size - c.offset]);
+    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + @alignOf(T) - c.offset]);
     const vec: @Vector(vectorLen, T) = values[0..][0..vectorLen].*;
     switch (op) {
         .eq => {
@@ -68,7 +70,7 @@ pub inline fn batchSmall(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c
     }
 }
 
-pub inline fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     @setEvalBranchQuota(10000);
 
     const val = utils.readPtr(T, v, c.start).*;
@@ -92,18 +94,16 @@ pub inline fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t
     }
 }
 
-pub inline fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
-
     if (T == f64) {
-        // float dont support ignore overflow
-        return (utils.readPtr(T, v, c.start).* - utils.readPtr(T, q, i + size - c.offset).*) <=
+        // Floats do not support ignore overflow
+        return (utils.readPtr(T, v, c.start).* - utils.readPtr(T, q, i + @alignOf(T) - c.offset).*) <=
             utils.readPtr(T, q, i + (size * 2) - c.offset).*;
     }
-
     // x >= 3 && x <= 11
     // (x -% 3) <= (11 - 3)
     // 3,8
-    return (utils.readPtr(T, v, c.start).* -% utils.readPtr(T, q, i + size - c.offset).*) <=
+    return (utils.readPtr(T, v, c.start).* -% utils.readPtr(T, q, i + @alignOf(T) - c.offset).*) <=
         utils.readPtr(T, q, i + (size * 2) - c.offset).*;
 }

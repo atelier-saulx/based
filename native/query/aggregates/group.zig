@@ -10,8 +10,8 @@ const copy = utils.copy;
 const microbufferToF64 = utils.microbufferToF64;
 const t = @import("../../types.zig");
 const resultHeaderOffset = @import("../../thread/results.zig").resultHeaderOffset;
-const Aggregates = @import("./aggregates.zig");
-const GroupByHashMap = @import("./hashMap.zig").GroupByHashMap;
+const Aggregates = @import("aggregates.zig");
+const GroupByHashMap = @import("hashMap.zig").GroupByHashMap;
 
 pub fn iterator(
     groupByHashMap: *GroupByHashMap,
@@ -22,16 +22,16 @@ pub fn iterator(
     accumulatorSize: usize,
     typeEntry: Node.Type,
     hllAccumulator: anytype,
-    hadAccumulated: *bool,
 ) !u32 {
     var count: u32 = 0;
+    var hadAccumulated: bool = false;
 
     while (it.next()) |node| {
         if (filterBuf.len > 0) {
             // Filter Check
         }
 
-        try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, hadAccumulated);
+        try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, &hadAccumulated);
 
         count += 1;
         if (count >= limit) break;
@@ -64,7 +64,6 @@ inline fn getGrouByKeyValue(
     else
         keyValue.ptr[start .. start + propType.size()];
 
-    utils.debugPrint("currentGroupByKeyDef: {any}, key: {s}\n", .{ currentGroupByKeyDef, key });
     return key;
 }
 
@@ -78,12 +77,12 @@ inline fn aggregatePropsWithGroupBy(
     hadAccumulated: *bool,
 ) !void {
     if (aggDefs.len == 0) return;
-    utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
+    // utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
     var i: usize = 0;
     const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
-    utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
-    utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
+    // utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
+    // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
 
     var keyValue: []u8 = undefined;
 
@@ -113,6 +112,7 @@ inline fn aggregatePropsWithGroupBy(
 pub inline fn finalizeGroupResults(
     ctx: *Query.QueryCtx,
     groupByHashMap: *GroupByHashMap,
+    header: t.AggHeader,
     aggDefs: []u8,
 ) !void {
     var it = groupByHashMap.iterator();
@@ -127,6 +127,6 @@ pub inline fn finalizeGroupResults(
 
         const accumulatorProp = entry.value_ptr.*;
 
-        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, true, @bitSizeOf(t.GroupByKeyProp) / 8);
+        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, header.isSamplingSet, @bitSizeOf(t.GroupByKeyProp) / 8);
     }
 }

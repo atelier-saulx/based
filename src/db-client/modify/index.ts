@@ -241,7 +241,7 @@ export const schedule = (ctx: ModifyCtx) => {
   }
 }
 
-export const modify = async <
+export const modify = <
   S extends
     | typeof serializeCreate
     | typeof serializeUpdate

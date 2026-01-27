@@ -1,22 +1,13 @@
 import { PropDef, PropDefEdge } from '../../../schema.js'
-import {
-  writeDoubleLE,
-  writeInt16,
-  writeInt32,
-  writeInt64,
-  writeUint16,
-  writeUint32,
-} from '../../../utils/uint8.js'
+import { getPropWriter } from '../../../schema/def/utils.js'
 import {
   FilterConditionByteSize,
+  FilterConditionAlignOf,
   FilterOp,
   FilterOpCompare,
-  PropType,
   writeFilterCondition,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from './types.js'
-
-const COND_ALIGN_SPACE = 16
 
 export const conditionBuffer = (
   propDef: { start: number; prop: number; len: number } & Record<string, any>,
@@ -24,10 +15,9 @@ export const conditionBuffer = (
   op: FilterOp,
 ) => {
   const condition = new Uint8Array(
-    size + FilterConditionByteSize + COND_ALIGN_SPACE + 1 + propDef.len,
+    size + FilterConditionByteSize + FilterConditionAlignOf + 1 + propDef.len,
   )
-
-  condition[0] = 255
+  condition[0] = 255 // Means condition header is not aligned
   const offset =
     writeFilterCondition(
       condition,
@@ -37,35 +27,23 @@ export const conditionBuffer = (
         prop: propDef.prop,
         fieldSchema: 0,
         len: propDef.len,
-        offset: 255,
+        offset: 255, // Means value is not aligned
         size: size + propDef.len,
       },
-      // propDef.len - 1 is space for alignment
-      COND_ALIGN_SPACE + 1, //+ propDef.len - 1,
+      FilterConditionAlignOf + 1,
     ) + propDef.len
   return { condition, offset }
 }
 
-// const writeUint8 = (buf: Uint8Array, val: number, offset: number) => {
-//   buf[offset] = val
-//   return buf
-// }
-
-const getProps = {
-  [PropType.uint32]: {
-    write: writeUint32,
-  },
-}
-
 const getFilterOp = (
   propDef: PropDef | PropDefEdge,
-  typeCfg: (typeof getProps)[keyof typeof getProps],
+  write: ReturnType<typeof getPropWriter>,
   operator: Operator,
   len: number,
 ): {
   len: number
   op: FilterOp
-  write: (condition: Uint8Array, v: any, offset: number) => Uint8Array
+  write: ReturnType<typeof getPropWriter>
 } => {
   if (
     operator === '=' ||
@@ -89,7 +67,7 @@ const getFilterOp = (
           prop: propDef.typeIndex,
         },
         len: propDef.len,
-        write: typeCfg.write,
+        write,
       }
     } else if (len > 1) {
       return {
@@ -98,7 +76,7 @@ const getFilterOp = (
           prop: propDef.typeIndex,
         },
         len: propDef.len,
-        write: typeCfg.write,
+        write,
       }
     } else {
       return {
@@ -107,7 +85,7 @@ const getFilterOp = (
           prop: propDef.typeIndex,
         },
         len: propDef.len,
-        write: typeCfg.write,
+        write,
       }
     }
   } else if (operator === '..') {
@@ -120,8 +98,8 @@ const getFilterOp = (
       write: (condition: Uint8Array, v: any, offset: number) => {
         // x >= 3 && x <= 11
         // (x -% 3) <= (11 - 3)
-        typeCfg.write(condition, v[0], offset)
-        typeCfg.write(condition, v[1] - v[0], offset + propDef.len)
+        write(condition, v[0], offset)
+        write(condition, v[1] - v[0], offset + propDef.len)
         return condition
       },
     }
@@ -136,60 +114,58 @@ export const createCondition = (
   value?: any,
   opts?: FilterOpts,
 ) => {
-  const typeCfg = getProps[propDef.typeIndex]
-  if (typeCfg) {
-    const { op, len, write } = getFilterOp(
-      propDef,
-      typeCfg,
-      operator,
-      value.length,
-    )
-    const vectorLen = 16 / len
+  const writer = getPropWriter(propDef.typeIndex)
+  const { op, len, write } = getFilterOp(
+    propDef,
+    writer,
+    operator,
+    value.length,
+  )
+  const vectorLen = 16 / len
 
-    if (value.length == 1 || operator === '..' || operator == '!..') {
-      const { condition, offset } = conditionBuffer(
-        { ...propDef, start: propDef.start || 0 },
-        len,
-        op,
-      )
-      if (operator === '..' || operator == '!..') {
-        write(condition, value, offset)
-      } else {
-        write(condition, value[0], offset)
-      }
-      return condition
-    } else if (value.length > vectorLen) {
-      const { condition, offset } = conditionBuffer(
-        { ...propDef, start: propDef.start || 0 },
-        value.length * len,
-        op,
-      )
-      let i = offset
-      // Actual values
-      for (const v of value) {
-        write(condition, v, i)
-        i += propDef.len
-      }
-      // Empty padding for SIMD (16 bytes)
-      for (let j = 0; j < vectorLen; j++) {
-        write(condition, value[0], i)
-        i += len
-      }
-      return condition
-    } else if (value.length > 1) {
-      // Small batch
-      const { condition, offset } = conditionBuffer(
-        { ...propDef, start: propDef.start || 0 },
-        value.length * len,
-        op,
-      )
-      let i = offset
-      for (let j = 0; j < vectorLen; j++) {
-        // Allways use a full ARM neon simd vector (16 bytes)
-        write(condition, j >= value.length ? value[0] : value[j], i)
-        i += len
-      }
-      return condition
+  if (value.length == 1 || operator === '..' || operator == '!..') {
+    const { condition, offset } = conditionBuffer(
+      { ...propDef, start: propDef.start || 0 },
+      len,
+      op,
+    )
+    if (operator === '..' || operator == '!..') {
+      write(condition, value, offset)
+    } else {
+      write(condition, value[0], offset)
     }
+    return condition
+  } else if (value.length > vectorLen) {
+    const { condition, offset } = conditionBuffer(
+      { ...propDef, start: propDef.start || 0 },
+      value.length * len,
+      op,
+    )
+    let i = offset
+    // Actual values
+    for (const v of value) {
+      write(condition, v, i)
+      i += propDef.len
+    }
+    // Empty padding for SIMD (16 bytes)
+    for (let j = 0; j < vectorLen; j++) {
+      write(condition, value[0], i)
+      i += len
+    }
+    return condition
+  } else if (value.length > 1) {
+    // Small batch
+    const { condition, offset } = conditionBuffer(
+      { ...propDef, start: propDef.start || 0 },
+      value.length * len,
+      op,
+    )
+    let i = offset
+    for (let j = 0; j < vectorLen; j++) {
+      // Allways use a full ARM neon simd vector (16 bytes)
+      write(condition, j >= value.length ? value[0] : value[j], i)
+      i += len
+    }
+    return condition
   }
 }

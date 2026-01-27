@@ -1,4 +1,6 @@
-const Schema = @import("./selva/schema.zig");
+const Schema = @import("selva/schema.zig");
+const Node = @import("selva/node.zig");
+
 pub const TypeId = u16;
 
 pub const BridgeResponse = enum(u32) {
@@ -838,12 +840,11 @@ pub const FilterOpCompare = enum(u8) {
 
     // var is a lot less
 
-    // selectLargeRef = 202,
-    // selectLargeRefs = 203,
-    // selectSmallRef = 204,
-    // selectSmallRefs = 205,
-
-    // nextOrIndex = 253,
+    selectLargeRef = 202,
+    selectLargeRefs = 203,
+    selectSmallRef = 204,
+    selectSmallRefs = 205,
+    nextOrIndex = 253,
 };
 
 pub const FilterOp = packed struct {
@@ -863,9 +864,11 @@ pub const FilterCondition = packed struct {
 
 // only for nested
 pub const FilterSelect = packed struct {
-    // propType: PropType,
-    typeId: TypeId,
-    edgeTypeId: TypeId,
     size: u32,
-    // nextOrIndex: u32, // something like this?
+    typeEntry: Node.Type,
+    typeId: TypeId,
+
+    // this is basicly another condition seperate from the ref thing itself
+    // edgeTypeId: TypeId,
+    // you want EDGE INDEX as well
 };

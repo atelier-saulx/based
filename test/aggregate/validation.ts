@@ -49,8 +49,8 @@ await test('undefined numbers', async (t) => {
     await db.query('vote').avg('AU', 'FI').groupBy('region').get().toObject(),
     {
       EU: {
-        AU: { average: 16.5 },
-        FI: { average: -500_000.15 },
+        AU: { avg: 16.5 },
+        FI: { avg: -500_000.15 },
       },
     },
     'avg affected by count because number is initialized with zero',

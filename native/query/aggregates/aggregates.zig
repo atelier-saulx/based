@@ -21,9 +21,9 @@ pub fn iterator(
     accumulatorProp: []u8,
     typeEntry: Node.Type,
     hllAccumulator: anytype,
-    hadAccumulated: *bool,
 ) !u32 {
     var count: u32 = 0;
+    var hadAccumulated: bool = false;
     _ = ctx;
 
     while (it.next()) |node| {
@@ -35,7 +35,7 @@ pub fn iterator(
             // }
         }
 
-        aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, hadAccumulated);
+        aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, &hadAccumulated);
 
         count += 1;
         if (count >= limit) break;
@@ -52,17 +52,15 @@ pub inline fn aggregateProps(
     hadAccumulated: *bool,
 ) void {
     if (aggDefs.len == 0) return;
-    utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
     var i: usize = 0;
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
-        utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
-        utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
+        // utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
+        // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
         var value: []u8 = undefined;
         if (currentAggDef.aggFunction == t.AggFunction.count) {
             accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
-            hadAccumulated.* = true;
         } else {
             if (currentAggDef.propId != t.MAIN_PROP and currentAggDef.aggFunction != t.AggFunction.cardinality) {
                 i += @sizeOf(t.AggProp);
@@ -83,7 +81,6 @@ pub inline fn aggregateProps(
                     Selva.c.hll_init_like(hllAccumulator, hllValue);
                 }
                 accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, hllAccumulator, hllValue);
-                hadAccumulated.* = true;
             } else {
                 value = Fields.get(
                     typeEntry,
@@ -98,6 +95,7 @@ pub inline fn aggregateProps(
             }
         }
     }
+    hadAccumulated.* = true;
 }
 
 pub inline fn accumulate(
@@ -131,11 +129,13 @@ pub inline fn accumulate(
                     writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
                 },
                 .min => {
+                    // utils.debugPrint("hadAccumulated: {any} {d} {d}\n", .{ hadAccumulated.*, accumulatorPos, microbufferToF64(propTypeTag, value, start) });
                     if (!hadAccumulated.*) {
                         writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
                     } else {
                         writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
                     }
+                    // utils.debugPrint("ficou: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .max => {
                     if (!hadAccumulated.*) {
@@ -251,10 +251,10 @@ pub inline fn finalizeResults(
                     const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
                     const denominator = @as(f64, @floatFromInt(count)) - 1.0;
                     const variance = if (isSamplingSet)
-                        (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
+                        numerator / denominator
                     else
-                        numerator / denominator;
-                    const stddev = @sqrt(variance);
+                        (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
+                    const stddev = if (variance < 0) 0 else @sqrt(variance);
                     ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(stddev)), resultPos);
                 } else {
                     ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
@@ -268,10 +268,11 @@ pub inline fn finalizeResults(
                     const mean = sum / @as(f64, @floatFromInt(count));
                     const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
                     const denominator = @as(f64, @floatFromInt(count)) - 1.0;
-                    const variance = if (isSamplingSet)
-                        (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean)
+                    var variance = if (isSamplingSet)
+                        numerator / denominator
                     else
-                        numerator / denominator;
+                        (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
+                    if (variance < 0) variance = 0;
                     ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(variance)), resultPos);
                 } else {
                     ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);

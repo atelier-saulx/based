@@ -6,7 +6,7 @@ const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const napi = @import("../napi.zig");
-const Id = @import("./singleId.zig");
+const Id = @import("singleId.zig");
 
 pub fn fireIdSubscription(threads: *Thread.Threads, thread: *Thread.Thread) !void {
     if (thread.subscriptions.lastIdMarked > 0) {

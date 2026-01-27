@@ -1,5 +1,4 @@
 import { QueryDef, IntermediateByteCode } from '../types.js'
-import { setMode } from './types.js'
 import { isRootCountOnly } from './aggregates.js'
 import {
   QueryType,
@@ -10,7 +9,6 @@ import {
   GroupByKeyPropByteSize,
   AggHeaderByteSize,
   AggPropByteSize,
-  AggFunction,
 } from '../../../zigTsExports.js'
 import { getIteratorType } from '../toByteCode/iteratorType.js'
 
@@ -44,8 +42,7 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     hasGroupBy: def.aggregate.groupBy ? true : false,
     resultsSize: def.aggregate.totalResultsSize,
     accumulatorSize: def.aggregate.totalAccumulatorSize,
-    isSamplingSet:
-      setMode[def.aggregate?.option?.mode || 0] === 0 ? true : false,
+    isSamplingSet: (def.aggregate?.option?.mode || 'sample') === 'sample',
   }
   const numPropsOrFuncs = [...def.aggregate.aggregates.values()].reduce(
     (sum, arr) => sum + arr.length,

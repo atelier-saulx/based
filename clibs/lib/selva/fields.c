@@ -1805,11 +1805,17 @@ struct SelvaNode *selva_fields_ensure_ref_edge(
 
         struct SelvaTypeEntry *type_dst = selva_get_type_by_index(db, efc->dst_node_type);
         const struct SelvaFieldSchema *fs_dst = selva_get_fs_by_te_field(type_dst, efc->inverse_field);
-        struct SelvaNode *dst = selva_find_node(type_dst, ref->dst).node; /* TODO Partials */
-        if (!dst) {
+        const struct SelvaNodeRes dst_res = selva_find_node(type_dst, ref->dst);
+        constexpr enum SelvaTypeBlockStatus mask = SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM;
+        if ((dst_res.block_status & mask) == SELVA_TYPE_BLOCK_STATUS_FS) {
+            /* TODO load the block instead of crashing. partials */
+            db_panic("Block %u:%u needs to be loaded",
+                     (unsigned)type_dst->type, (unsigned)dst_res.block);
+        } else if (!dst_res.node) {
             db_panic("FIXME dangling reference");
         }
 
+        struct SelvaNode *dst = dst_res.node;
         struct SelvaFields *dst_fields = &dst->fields;
         assert(efc->inverse_field < dst_fields->nr_fields);
         const struct SelvaFieldInfo *dst_nfo = &dst_fields->fields_map[efc->inverse_field];

@@ -8,8 +8,8 @@ const common = @import("common.zig");
 const t = @import("../types.zig");
 const jemalloc = @import("../jemalloc.zig");
 const std = @import("std");
-const worker = @import("./worker/worker.zig").worker;
-const poll = @import("./worker/poll.zig").poll;
+const worker = @import("worker/worker.zig").worker;
+const poll = @import("worker/poll.zig").poll;
 
 pub const Thread = common.Thread;
 const Queue = std.array_list.Managed([]u8);

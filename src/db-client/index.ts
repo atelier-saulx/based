@@ -103,6 +103,7 @@ export class DbClient extends DbShared {
   }
 
   create(type: string, obj = {}, opts?: ModifyOpts): Promise<number> {
+    // console.log(this.modifyCtx.buf.length)
     return modify(
       this.modifyCtx,
       serializeCreate,
@@ -114,15 +115,15 @@ export class DbClient extends DbShared {
     )
   }
 
-  async update(
+  update(
     type: string,
-    id: number | Promise<number>,
+    id: number, // | Promise<number>,
     obj = {},
     opts?: ModifyOpts,
   ): Promise<number> {
-    if (id instanceof Promise) {
-      id = await id
-    }
+    // if (id instanceof Promise) {
+    //   id = await id
+    // }
     return modify(
       this.modifyCtx,
       serializeUpdate,
@@ -135,10 +136,13 @@ export class DbClient extends DbShared {
     )
   }
 
-  async delete(type: string, id: number | Promise<number>) {
-    if (id instanceof Promise) {
-      id = await id
-    }
+  delete(
+    type: string,
+    id: number, // | Promise<number>
+  ) {
+    // if (id instanceof Promise) {
+    //   id = await id
+    // }
     return modify(
       this.modifyCtx,
       serializeDelete,

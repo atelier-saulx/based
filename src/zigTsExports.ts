@@ -220,6 +220,8 @@ export type ModifyHeader = {
 
 export const ModifyHeaderByteSize = 17
 
+export const ModifyHeaderAlignOf = 16
+
 export const packModifyHeader = (obj: ModifyHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.opId) & 4294967295n) << 0n
@@ -316,6 +318,8 @@ export type ModifyUpdateHeader = {
 
 export const ModifyUpdateHeaderByteSize = 10
 
+export const ModifyUpdateHeaderAlignOf = 16
+
 export const packModifyUpdateHeader = (obj: ModifyUpdateHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.op) & 255n) << 0n
@@ -411,6 +415,8 @@ export type ModifyDeleteHeader = {
 
 export const ModifyDeleteHeaderByteSize = 6
 
+export const ModifyDeleteHeaderAlignOf = 8
+
 export const packModifyDeleteHeader = (obj: ModifyDeleteHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.op) & 255n) << 0n
@@ -495,6 +501,8 @@ export type ModifyCreateHeader = {
 }
 
 export const ModifyCreateHeaderByteSize = 6
+
+export const ModifyCreateHeaderAlignOf = 8
 
 export const packModifyCreateHeader = (obj: ModifyCreateHeader): bigint => {
   let val = 0n
@@ -581,6 +589,8 @@ export type ModifyMainHeader = {
 
 export const ModifyMainHeaderByteSize = 5
 
+export const ModifyMainHeaderAlignOf = 8
+
 export const packModifyMainHeader = (obj: ModifyMainHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.id) & 255n) << 0n
@@ -665,6 +675,8 @@ export type ModifyPropHeader = {
 }
 
 export const ModifyPropHeaderByteSize = 6
+
+export const ModifyPropHeaderAlignOf = 8
 
 export const packModifyPropHeader = (obj: ModifyPropHeader): bigint => {
   let val = 0n
@@ -778,6 +790,8 @@ export type ModifyReferencesHeader = {
 
 export const ModifyReferencesHeaderByteSize = 5
 
+export const ModifyReferencesHeaderAlignOf = 8
+
 export const packModifyReferencesHeader = (obj: ModifyReferencesHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.op) & 255n) << 0n
@@ -854,6 +868,8 @@ export type ModifyReferencesMetaHeader = {
 }
 
 export const ModifyReferencesMetaHeaderByteSize = 13
+
+export const ModifyReferencesMetaHeaderAlignOf = 16
 
 export const packModifyReferencesMetaHeader = (obj: ModifyReferencesMetaHeader): bigint => {
   let val = 0n
@@ -963,6 +979,8 @@ export type ModifyReferenceMetaHeader = {
 
 export const ModifyReferenceMetaHeaderByteSize = 9
 
+export const ModifyReferenceMetaHeaderAlignOf = 16
+
 export const packModifyReferenceMetaHeader = (obj: ModifyReferenceMetaHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.id) & 4294967295n) << 0n
@@ -1050,6 +1068,8 @@ export type ModifyResultItem = {
 }
 
 export const ModifyResultItemByteSize = 5
+
+export const ModifyResultItemAlignOf = 8
 
 export const packModifyResultItem = (obj: ModifyResultItem): bigint => {
   let val = 0n
@@ -1989,6 +2009,8 @@ export type SortHeader = {
 
 export const SortHeaderByteSize = 10
 
+export const SortHeaderAlignOf = 16
+
 export const packSortHeader = (obj: SortHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.order) & 255n) << 0n
@@ -2299,6 +2321,8 @@ export type IncludeHeader = {
 
 export const IncludeHeaderByteSize = 3
 
+export const IncludeHeaderAlignOf = 4
+
 export const packIncludeHeader = (obj: IncludeHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.op) & 255n) << 0n
@@ -2383,6 +2407,8 @@ export type IncludeMetaHeader = {
 }
 
 export const IncludeMetaHeaderByteSize = 3
+
+export const IncludeMetaHeaderAlignOf = 4
 
 export const packIncludeMetaHeader = (obj: IncludeMetaHeader): bigint => {
   let val = 0n
@@ -2469,6 +2495,8 @@ export type IncludePartialHeader = {
 }
 
 export const IncludePartialHeaderByteSize = 5
+
+export const IncludePartialHeaderAlignOf = 8
 
 export const packIncludePartialHeader = (obj: IncludePartialHeader): bigint => {
   let val = 0n
@@ -2564,6 +2592,8 @@ export type IncludePartialProp = {
 
 export const IncludePartialPropByteSize = 4
 
+export const IncludePartialPropAlignOf = 4
+
 export const packIncludePartialProp = (obj: IncludePartialProp): bigint => {
   let val = 0n
   val |= (BigInt(obj.start) & 65535n) << 0n
@@ -2640,6 +2670,8 @@ export type IncludeOpts = {
 }
 
 export const IncludeOptsByteSize = 7
+
+export const IncludeOptsAlignOf = 8
 
 export const packIncludeOpts = (obj: IncludeOpts): bigint => {
   let val = 0n
@@ -2748,6 +2780,8 @@ export type IncludeResponse = {
 
 export const IncludeResponseByteSize = 5
 
+export const IncludeResponseAlignOf = 8
+
 export const packIncludeResponse = (obj: IncludeResponse): bigint => {
   let val = 0n
   val |= (BigInt(obj.prop) & 255n) << 0n
@@ -2825,6 +2859,8 @@ export type IncludeResponseMeta = {
 }
 
 export const IncludeResponseMetaByteSize = 12
+
+export const IncludeResponseMetaAlignOf = 16
 
 export const packIncludeResponseMeta = (obj: IncludeResponseMeta): bigint => {
   let val = 0n
@@ -2946,6 +2982,8 @@ export type SubscriptionHeader = {
 
 export const SubscriptionHeaderByteSize = 5
 
+export const SubscriptionHeaderAlignOf = 8
+
 export const packSubscriptionHeader = (obj: SubscriptionHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.op) & 255n) << 0n
@@ -3051,6 +3089,8 @@ export type QueryHeader = {
 }
 
 export const QueryHeaderByteSize = 28
+
+export const QueryHeaderAlignOf = 16
 
 export const packQueryHeader = (obj: QueryHeader): bigint => {
   let val = 0n
@@ -3255,6 +3295,8 @@ export type QueryHeaderSingle = {
 
 export const QueryHeaderSingleByteSize = 14
 
+export const QueryHeaderSingleAlignOf = 16
+
 export const packQueryHeaderSingle = (obj: QueryHeaderSingle): bigint => {
   let val = 0n
   val |= (BigInt(obj.op) & 255n) << 0n
@@ -3382,6 +3424,8 @@ export type QueryHeaderSingleReference = {
 }
 
 export const QueryHeaderSingleReferenceByteSize = 10
+
+export const QueryHeaderSingleReferenceAlignOf = 16
 
 export const packQueryHeaderSingleReference = (obj: QueryHeaderSingleReference): bigint => {
   let val = 0n
@@ -3540,6 +3584,8 @@ export type AggHeader = {
 }
 
 export const AggHeaderByteSize = 21
+
+export const AggHeaderAlignOf = 16
 
 export const packAggHeader = (obj: AggHeader): bigint => {
   let val = 0n
@@ -3716,6 +3762,8 @@ export type addMultiSubscriptionHeader = {
 
 export const addMultiSubscriptionHeaderByteSize = 2
 
+export const addMultiSubscriptionHeaderAlignOf = 2
+
 export const packaddMultiSubscriptionHeader = (obj: addMultiSubscriptionHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.typeId) & 65535n) << 0n
@@ -3778,6 +3826,8 @@ export type removeMultiSubscriptionHeader = {
 }
 
 export const removeMultiSubscriptionHeaderByteSize = 2
+
+export const removeMultiSubscriptionHeaderAlignOf = 2
 
 export const packremoveMultiSubscriptionHeader = (obj: removeMultiSubscriptionHeader): bigint => {
   let val = 0n
@@ -3846,6 +3896,8 @@ export type AggProp = {
 }
 
 export const AggPropByteSize = 9
+
+export const AggPropAlignOf = 16
 
 export const packAggProp = (obj: AggProp): bigint => {
   let val = 0n
@@ -3964,6 +4016,8 @@ export type GroupByKeyProp = {
 }
 
 export const GroupByKeyPropByteSize = 11
+
+export const GroupByKeyPropAlignOf = 16
 
 export const packGroupByKeyProp = (obj: GroupByKeyProp): bigint => {
   let val = 0n
@@ -4093,6 +4147,11 @@ export const FilterOpCompare = {
   leBatch: 23,
   geBatchSmall: 24,
   leBatchSmall: 25,
+  selectLargeRef: 202,
+  selectLargeRefs: 203,
+  selectSmallRef: 204,
+  selectSmallRefs: 205,
+  nextOrIndex: 253,
 } as const
 
 export const FilterOpCompareInverse = {
@@ -4116,6 +4175,11 @@ export const FilterOpCompareInverse = {
   23: 'leBatch',
   24: 'geBatchSmall',
   25: 'leBatchSmall',
+  202: 'selectLargeRef',
+  203: 'selectLargeRefs',
+  204: 'selectSmallRef',
+  205: 'selectSmallRefs',
+  253: 'nextOrIndex',
 } as const
 
 /**
@@ -4138,7 +4202,12 @@ export const FilterOpCompareInverse = {
   geBatch, 
   leBatch, 
   geBatchSmall, 
-  leBatchSmall 
+  leBatchSmall, 
+  selectLargeRef, 
+  selectLargeRefs, 
+  selectSmallRef, 
+  selectSmallRefs, 
+  nextOrIndex 
  */
 export type FilterOpCompareEnum = (typeof FilterOpCompare)[keyof typeof FilterOpCompare]
 
@@ -4148,6 +4217,8 @@ export type FilterOp = {
 }
 
 export const FilterOpByteSize = 2
+
+export const FilterOpAlignOf = 2
 
 export const packFilterOp = (obj: FilterOp): bigint => {
   let val = 0n
@@ -4227,6 +4298,8 @@ export type FilterCondition = {
 }
 
 export const FilterConditionByteSize = 19
+
+export const FilterConditionAlignOf = 16
 
 export const packFilterCondition = (obj: FilterCondition): bigint => {
   let val = 0n
@@ -4346,26 +4419,28 @@ export const pushFilterCondition = (
 }
 
 export type FilterSelect = {
-  typeId: TypeId
-  edgeTypeId: TypeId
   size: number
+  typeEntry: number
+  typeId: TypeId
 }
 
-export const FilterSelectByteSize = 8
+export const FilterSelectByteSize = 14
+
+export const FilterSelectAlignOf = 16
 
 export const packFilterSelect = (obj: FilterSelect): bigint => {
   let val = 0n
-  val |= (BigInt(obj.typeId) & 65535n) << 0n
-  val |= (BigInt(obj.edgeTypeId) & 65535n) << 16n
-  val |= (BigInt(obj.size) & 4294967295n) << 32n
+  val |= (BigInt(obj.size) & 4294967295n) << 0n
+  val |= (BigInt(obj.typeEntry) & 18446744073709551615n) << 32n
+  val |= (BigInt(obj.typeId) & 65535n) << 96n
   return val
 }
 
 export const unpackFilterSelect = (val: bigint): FilterSelect => {
   return {
-    typeId: (Number((val >> 0n) & 65535n)) as TypeId,
-    edgeTypeId: (Number((val >> 16n) & 65535n)) as TypeId,
-    size: Number((val >> 32n) & 4294967295n),
+    size: Number((val >> 0n) & 4294967295n),
+    typeEntry: Number((val >> 32n) & 18446744073709551615n),
+    typeId: (Number((val >> 96n) & 65535n)) as TypeId,
   }
 }
 
@@ -4374,24 +4449,24 @@ export const writeFilterSelect = (
   header: FilterSelect,
   offset: number,
 ): number => {
-  writeUint16(buf, Number(header.typeId), offset)
-  offset += 2
-  writeUint16(buf, Number(header.edgeTypeId), offset)
-  offset += 2
   writeUint32(buf, Number(header.size), offset)
   offset += 4
+  writeUint64(buf, header.typeEntry, offset)
+  offset += 8
+  writeUint16(buf, Number(header.typeId), offset)
+  offset += 2
   return offset
 }
 
 export const writeFilterSelectProps = {
-  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, Number(value), offset)
-  },
-  edgeTypeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, Number(value), offset + 2)
-  },
   size: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, Number(value), offset + 4)
+    writeUint32(buf, Number(value), offset)
+  },
+  typeEntry: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint64(buf, value, offset + 4)
+  },
+  typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, Number(value), offset + 12)
   },
 }
 
@@ -4400,17 +4475,17 @@ export const readFilterSelect = (
   offset: number,
 ): FilterSelect => {
   const value: FilterSelect = {
-    typeId: (readUint16(buf, offset)) as TypeId,
-    edgeTypeId: (readUint16(buf, offset + 2)) as TypeId,
-    size: readUint32(buf, offset + 4),
+    size: readUint32(buf, offset),
+    typeEntry: readUint64(buf, offset + 4),
+    typeId: (readUint16(buf, offset + 12)) as TypeId,
   }
   return value
 }
 
 export const readFilterSelectProps = {
-    typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset)) as TypeId,
-    edgeTypeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 2)) as TypeId,
-    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 4),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    typeEntry: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 4),
+    typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 12)) as TypeId,
 }
 
 export const createFilterSelect = (header: FilterSelect): Uint8Array => {
@@ -4424,9 +4499,9 @@ export const pushFilterSelect = (
   header: FilterSelect,
 ): number => {
   const index = buf.length
-  buf.pushU16(Number(header.typeId))
-  buf.pushU16(Number(header.edgeTypeId))
   buf.pushU32(Number(header.size))
+  buf.pushU64(header.typeEntry)
+  buf.pushU16(Number(header.typeId))
   return index
 }
 

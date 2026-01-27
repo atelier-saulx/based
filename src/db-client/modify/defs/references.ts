@@ -235,13 +235,14 @@ export const references = class extends BasePropDef {
 export const reference = class extends BasePropDef {
   override type: PropTypeEnum = PropType.reference
   override pushValue(buf: AutoSizedUint8Array, value: any, op: ModifyEnum) {
-    console.error('TODO reference ALL THE CASES')
     if (typeof value === 'number') {
       pushModifyReferenceMetaHeader(buf, {
         id: value,
         isTmp: false,
         size: 0,
       })
+    } else {
+      console.error('TODO reference ALL THE CASES')
     }
 
     // buf.pushU32(value)
