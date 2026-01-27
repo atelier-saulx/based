@@ -3213,10 +3213,9 @@ export type FilterSelect = {
   size: number
   typeEntry: number
   typeId: TypeId
-  edgeTypeId: TypeId
 }
 
-export const FilterSelectByteSize = 16
+export const FilterSelectByteSize = 14
 
 export const FilterSelectAlignOf = 16
 
@@ -3225,7 +3224,6 @@ export const packFilterSelect = (obj: FilterSelect): bigint => {
   val |= (BigInt(obj.size) & 4294967295n) << 0n
   val |= (BigInt(obj.typeEntry) & 18446744073709551615n) << 32n
   val |= (BigInt(obj.typeId) & 65535n) << 96n
-  val |= (BigInt(obj.edgeTypeId) & 65535n) << 112n
   return val
 }
 
@@ -3234,7 +3232,6 @@ export const unpackFilterSelect = (val: bigint): FilterSelect => {
     size: Number((val >> 0n) & 4294967295n),
     typeEntry: Number((val >> 32n) & 18446744073709551615n),
     typeId: (Number((val >> 96n) & 65535n)) as TypeId,
-    edgeTypeId: (Number((val >> 112n) & 65535n)) as TypeId,
   }
 }
 
@@ -3249,8 +3246,6 @@ export const writeFilterSelect = (
   offset += 8
   writeUint16(buf, Number(header.typeId), offset)
   offset += 2
-  writeUint16(buf, Number(header.edgeTypeId), offset)
-  offset += 2
   return offset
 }
 
@@ -3264,9 +3259,6 @@ export const writeFilterSelectProps = {
   typeId: (buf: Uint8Array, value: TypeId, offset: number) => {
     writeUint16(buf, Number(value), offset + 12)
   },
-  edgeTypeId: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, Number(value), offset + 14)
-  },
 }
 
 export const readFilterSelect = (
@@ -3277,7 +3269,6 @@ export const readFilterSelect = (
     size: readUint32(buf, offset),
     typeEntry: readUint64(buf, offset + 4),
     typeId: (readUint16(buf, offset + 12)) as TypeId,
-    edgeTypeId: (readUint16(buf, offset + 14)) as TypeId,
   }
   return value
 }
@@ -3286,7 +3277,6 @@ export const readFilterSelectProps = {
     size: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
     typeEntry: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 4),
     typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 12)) as TypeId,
-    edgeTypeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 14)) as TypeId,
 }
 
 export const createFilterSelect = (header: FilterSelect): Uint8Array => {

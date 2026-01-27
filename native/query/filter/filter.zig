@@ -36,13 +36,12 @@ pub fn prepare(
             condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
 
-            std.debug.print("op: {any} start {any}  end {any} -> \n", .{ condition.op, i, end });
-
             switch (condition.op.compare) {
                 .selectSmallRef => {
-                    const index = i + q[i] + utils.sizeOf(t.FilterCondition);
-                    const select = utils.readPtr(t.FilterSelect, q, index + utils.sizeOf(t.FilterSelect) - condition.offset);
+                    // make a util for this
+                    const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
                     select.typeEntry = try Node.getType(ctx.db, select.typeId);
+
                     try prepare(q[end .. end + select.size], ctx, select.typeEntry);
                     i = end + select.size;
                 },
@@ -101,14 +100,16 @@ pub inline fn filter(
         const instruction = utils.readPtr(Instruction.CombinedOp, q, i + q[i]).*;
         pass = switch (instruction) {
             .nextOrIndex => blk: {
-                nextOrIndex = utils.readPtr(u64, q, index + utils.sizeOf(u64) - c.offset).*;
+                nextOrIndex = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 break :blk true;
             },
             .selectLargeRef => blk: {
                 break :blk true;
             },
             .selectSmallRef => blk: {
-                const select = utils.readPtr(t.FilterSelect, q, index + utils.sizeOf(t.FilterSelect) - c.offset);
+                // if edge can be a seperate thing
+
+                const select = utils.readPtr(t.FilterSelect, q, index + @alignOf(t.FilterSelect) - c.offset);
                 nextIndex += select.size;
                 if (Node.getNode(select.typeEntry, utils.readPtr(u32, v, 0).*)) |refNode| {
                     break :blk recursionErrorBoundary(filter, refNode, ctx, q[nextIndex - select.size .. nextIndex], select.typeEntry);

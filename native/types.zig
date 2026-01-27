@@ -776,6 +776,6 @@ pub const FilterSelect = packed struct {
     typeId: TypeId,
 
     // this is basicly another condition seperate from the ref thing itself
-    edgeTypeId: TypeId,
+    // edgeTypeId: TypeId,
     // you want EDGE INDEX as well
 };

@@ -66,6 +66,10 @@ const addRefs = (
     )
     const edgeTypeId = refDef.ref?.edgeNodeTypeId ?? 0
     const typeId = refDef.ref?.inverseTypeId ?? 0
+
+    // if edgeTypeId add an extra thing but we need ot know IF there is a edge filter defined this needs to be handled on the ref def wait for new def
+    // console.log(def)
+
     const { offset, condition } = conditionBuffer(
       { prop, len: FilterSelectAlignOf, start: 0 },
       FilterSelectByteSize,
@@ -76,7 +80,7 @@ const addRefs = (
       condition,
       {
         typeId,
-        edgeTypeId,
+        // edgeTypeId,
         size: byteSize(nestedRefs),
         typeEntry: 0,
       },
@@ -139,14 +143,14 @@ export const filterToBuffer = (
     // MOVE 1 up
   }
 
-  if (top && result.length > 0) {
-    console.dir(logger(def), { depth: 10 })
-    const totalByteLength = byteSize(result)
-    const res = new Uint8Array(totalByteLength)
-    const nResult = combineIntermediateResults(res, 0, result)
-    console.log('FILTER!', totalByteLength)
-    debugBuffer(res)
-  }
+  // if (top && result.length > 0) {
+  //   console.dir(logger(def), { depth: 10 })
+  //   const totalByteLength = byteSize(result)
+  //   const res = new Uint8Array(totalByteLength)
+  //   const nResult = combineIntermediateResults(res, 0, result)
+  //   console.log('FILTER!', totalByteLength)
+  //   debugBuffer(res)
+  // }
 
   return result
 }

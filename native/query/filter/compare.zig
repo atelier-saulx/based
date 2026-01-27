@@ -22,7 +22,7 @@ pub fn batch(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterC
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
-    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + size - c.offset]);
+    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + @alignOf(T) - c.offset]);
     const len = values.len / size;
     var j: usize = 0;
     switch (op) {
@@ -45,7 +45,7 @@ pub fn batchSmall(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.Fi
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
-    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + size - c.offset]);
+    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + @alignOf(T) - c.offset]);
     const vec: @Vector(vectorLen, T) = values[0..][0..vectorLen].*;
     switch (op) {
         .eq => {
@@ -98,12 +98,12 @@ pub fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     if (T == f64) {
         // Floats do not support ignore overflow
-        return (utils.readPtr(T, v, c.start).* - utils.readPtr(T, q, i + size - c.offset).*) <=
+        return (utils.readPtr(T, v, c.start).* - utils.readPtr(T, q, i + @alignOf(T) - c.offset).*) <=
             utils.readPtr(T, q, i + (size * 2) - c.offset).*;
     }
     // x >= 3 && x <= 11
     // (x -% 3) <= (11 - 3)
     // 3,8
-    return (utils.readPtr(T, v, c.start).* -% utils.readPtr(T, q, i + size - c.offset).*) <=
+    return (utils.readPtr(T, v, c.start).* -% utils.readPtr(T, q, i + @alignOf(T) - c.offset).*) <=
         utils.readPtr(T, q, i + (size * 2) - c.offset).*;
 }

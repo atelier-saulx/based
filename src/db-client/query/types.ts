@@ -66,7 +66,8 @@ export const isRefDef = (def: QueryDef): def is QueryDefRest => {
 export type QueryDefFilter = {
   partialOffsets?: Set<number> // need this for subs...
   conditions: Map<number, IntermediateByteCode[]>
-  references?: Map<number, QueryDefFilter>
+  references?: Map<number, QueryDefFilter> // make this { edge: QueryDefFilter, ref: QueryDefFilter }
+  // in reference we need EDGES as well
   // these cannot have OR read the same as a single condition
 
   nowOffset?: number // this is for subs
