@@ -125,7 +125,7 @@ fn createInstructionEnum() type {
     //     @compileLog(f.name, f.value);
     // }
 
-    @compileLog(newFields.len);
+    // @compileLog(newFields.len);
 
     return @Type(.{
         .@"enum" = .{
