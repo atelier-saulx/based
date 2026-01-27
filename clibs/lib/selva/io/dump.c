@@ -446,20 +446,25 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
     struct SelvaTypeBlock *block = selva_get_block(te->blocks, start);
     const sdb_nr_nodes_t nr_nodes = (block) ? block->nr_nodes_in_block : 0;
 
-    if (nr_nodes == 0) {
-        /*
-         * Don't save anything if the range is empty.
-         */
-        return SELVA_ENOENT;
-    }
+    /*
+     * TODO What to do if nr_nodes == 0
+     * Currently we just have to save because we are already committed to save
+     * this block as it's added to common.sdb.
+     */
 
     const enum SelvaTypeBlockStatus prev_block_status = atomic_fetch_or(&block->status.atomic, (uint32_t)SELVA_TYPE_BLOCK_STATUS_SAVING);
-    constexpr enum SelvaTypeBlockStatus block_sm = SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
-    if ((prev_block_status & block_sm) != block_sm) {
-        if (prev_block_status & (SELVA_TYPE_BLOCK_STATUS_LOADING | SELVA_TYPE_BLOCK_STATUS_SAVING)) {
-            err = SELVA_EINPROGRESS;
+    constexpr enum SelvaTypeBlockStatus block_sm_needs_save = SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY;
+    if (prev_block_status & (SELVA_TYPE_BLOCK_STATUS_LOADING | SELVA_TYPE_BLOCK_STATUS_SAVING)) {
+        err = SELVA_EINPROGRESS;
+        goto fail;
+    } else if ((prev_block_status & block_sm_needs_save) != block_sm_needs_save) {
+        if (prev_block_status & SELVA_TYPE_BLOCK_STATUS_FS) {
+            /* We now expect the dump to already exist. */
+            err = 0;
         } else {
-            err = 0; /* TODO Should this be an error instead? */
+            fprintf(stderr, "%s: Request to save a block %u:%u that's not dirty but neither saved\n",
+                    __func__, (unsigned)te->type, (unsigned)block_i);
+            err = 0;
         }
         goto fail;
     }

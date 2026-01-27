@@ -41,7 +41,7 @@ const walk = async (dir = p) => {
             !args.includes('--perf') &&
             !args.includes('--all') &&
             !args.includes('--scn') &&
-            ([...IGNORE_PATTERNS].some((pattern) => test.includes(pattern)) ||
+            ([...IGNORE_PATTERNS].some((pattern) => f.includes(pattern)) ||
               relPath.includes('scenarios/'))
           ) {
             continue
