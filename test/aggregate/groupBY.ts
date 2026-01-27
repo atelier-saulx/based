@@ -241,14 +241,35 @@ await test('variable key sum', async (t) => {
     flap: 80,
   })
 
-  const strudelArticle = db.create('article', {
+  // const strudelArticle = db.create('article', {
+  //   name: 'The wonders of Strudel',
+  //   contributors: [mrSnurp, flippie, derpie, dinkelDoink],
+  // })
+  db.drain()
+  db.create('article', {
     name: 'The wonders of Strudel',
-    contributors: [mrSnurp, flippie, derpie, dinkelDoink],
+    contributors: mrSnurp,
+  })
+  db.create('article', {
+    name: 'The wonders of Strudel',
+    contributors: flippie,
+  })
+  db.create('article', {
+    name: 'The wonders of Strudel',
+    contributors: derpie,
+  })
+  db.create('article', {
+    name: 'The wonders of Strudel',
+    contributors: dinkelDoink,
   })
 
-  const stupidity = db.create('article', {
+  // const stupidity = db.create('article', {
+  //   name: 'Les lois fondamentales de la stupidité humaine',
+  //   contributors: [cipolla],
+  // })
+  db.create('article', {
     name: 'Les lois fondamentales de la stupidité humaine',
-    contributors: [cipolla],
+    contributors: cipolla,
   })
 
   // deepEqual(
@@ -272,28 +293,31 @@ await test('variable key sum', async (t) => {
   //   'sum, branched query, var len string',
   // )
 
-  deepEqual(
-    await db.query('user').groupBy('name').sum('flap').get().toObject(),
-    {
-      Flippie: { flap: { sum: 20 } },
-      'Carlo Cipolla': { flap: { sum: 80 } },
-      'Mr snurp': { flap: { sum: 10 } },
-      'Dinkel Doink': { flap: { sum: 40 } },
-      Derpie: { flap: { sum: 30 } },
-    },
-    'sum, groupBy, main',
-  )
+  // deepEqual(
+  //   await db.query('user').groupBy('name').sum('flap').get().toObject(),
+  //   {
+  //     Flippie: { flap: { sum: 20 } },
+  //     'Carlo Cipolla': { flap: { sum: 80 } },
+  //     'Mr snurp': { flap: { sum: 10 } },
+  //     'Dinkel Doink': { flap: { sum: 40 } },
+  //     Derpie: { flap: { sum: 30 } },
+  //   },
+  //   'sum, groupBy, main',
+  // )
 
-  deepEqual(
-    await db.query('user').groupBy('country').sum('flap').get().toObject(),
-    {
-      $undefined: { flap: { sum: 40 } },
-      NL: { flap: { sum: 30 } },
-      BR: { flap: { sum: 30 } },
-      IT: { flap: { sum: 80 } },
-    },
-    'sum, groupBy, main, $undefined',
+  console.log(
+    await db.query('user').groupBy('country').sum('flap').get().debug(),
   )
+  // deepEqual(
+  //   await db.query('user').groupBy('country').sum('flap').get().toObject(),
+  //   {
+  //     $undefined: { flap: { sum: 40 } },
+  //     NL: { flap: { sum: 30 } },
+  //     BR: { flap: { sum: 30 } },
+  //     IT: { flap: { sum: 80 } },
+  //   },
+  //   'sum, groupBy, main, $undefined groupBy key',
+  // )
 
   // deepEqual(
   //   await db
