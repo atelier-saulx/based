@@ -1,10 +1,10 @@
-import type { EnumItem, SchemaEnum } from '../../schema.js'
-import { PropType } from '../../zigTsExports.js'
+import type { EnumItem, SchemaEnum } from '../../../schema.js'
+import { PropType, type PropTypeEnum } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 
 export const number = class extends BasePropDef {
-  override type: number = PropType.number
+  override type: PropTypeEnum = PropType.number
   override size = 8
   override pushValue(buf: AutoSizedUint8Array, value: number) {
     buf.pushDouble(value)
@@ -16,7 +16,7 @@ export const timestamp = class extends number {
 }
 
 export const uint8 = class extends BasePropDef {
-  override type: number = PropType.uint8
+  override type: PropTypeEnum = PropType.uint8
   override size = 1
   override pushValue(buf: AutoSizedUint8Array, value: number): void {
     buf.pushU8(value)
@@ -28,7 +28,7 @@ export const int8 = class extends uint8 {
 }
 
 export const uint16 = class extends BasePropDef {
-  override type: number = PropType.uint16
+  override type: PropTypeEnum = PropType.uint16
   override size = 2
   override pushValue(buf: AutoSizedUint8Array, value: number): void {
     buf.pushU16(value)
@@ -40,7 +40,7 @@ export const int16 = class extends uint16 {
 }
 
 export const uint32 = class extends BasePropDef {
-  override type: number = PropType.uint32
+  override type: PropTypeEnum = PropType.uint32
   override size = 4
   override pushValue(buf: AutoSizedUint8Array, value: number): void {
     buf.pushU32(value)

@@ -1,35 +1,58 @@
-import { LangCode, ModOp } from '../../zigTsExports.js'
+import { type SchemaTypes } from '../../schema.js'
 
-export const RANGE_ERR = 1
-export const MOD_OPS_TO_STRING = {
-  [ModOp.createProp]: 'create',
-  [ModOp.updateProp]: 'update',
-  [ModOp.increment]: 'update',
-  [ModOp.expire]: 'update',
-} as const
+type TypedArray =
+  | Uint8Array
+  | Float32Array
+  | Uint8Array
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Float32Array
+  | Float64Array
 
-export const enum SIZE {
-  DEFAULT_CURSOR = 11,
+type TypeMap = {
+  string: string
+  number: number
+  int8: number
+  uint8: number
+  int16: number
+  uint16: number
+  int32: number
+  uint32: number
+  boolean: boolean
+  text: string
+  json: any
+  timestamp: number | string | Date
+  binary: Uint8Array
+  alias: string
+  vector: TypedArray
+  colvec: TypedArray
+  cardinality: string | string[]
 }
 
-export type ModifyOpts = {
-  unsafe?: boolean
-  locale?: keyof typeof LangCode
+type InferProp<Prop, Types> = Prop extends { type: 'object'; props: infer P }
+  ? InferType<P, Types>
+  : Prop extends { type: infer T extends keyof TypeMap }
+    ? TypeMap[T]
+    : Prop extends { enum: infer E extends readonly any[] }
+      ? E[number]
+      : Prop extends { ref: string }
+        ? string | number
+        : Prop extends { items: { ref: string } }
+          ? (string | number)[]
+          : never
+
+type InferType<Props, Types> = {
+  [K in keyof Props as Props[K] extends { required: true }
+    ? K
+    : never]: InferProp<Props[K], Types>
+} & {
+  [K in keyof Props as Props[K] extends { required: true }
+    ? never
+    : K]?: InferProp<Props[K], Types>
 }
 
-export const NOEDGE_NOINDEX_REALID = 0
-export const EDGE_NOINDEX_REALID = 1
-export const EDGE_INDEX_REALID = 2
-export const NOEDGE_INDEX_REALID = 3
-export const NOEDGE_NOINDEX_TMPID = 4
-export const EDGE_NOINDEX_TMPID = 5
-export const EDGE_INDEX_TMPID = 6
-export const NOEDGE_INDEX_TMPID = 7
-
-// export const REF_OP_OVERWRITE = 0
-// export const REF_OP_UPDATE = 1
-// export const REF_OP_DELETE = 2
-// export const REF_OP_PUT_OVERWRITE = 3
-// export const REF_OP_PUT_ADD = 4
-
-// export type RefOp = typeof REF_OP_OVERWRITE | typeof REF_OP_UPDATE
+export type InferPayload<Types extends SchemaTypes<true>> = {
+  [K in keyof Types]: InferType<Types[K]['props'], Types>
+}

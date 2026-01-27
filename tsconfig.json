@@ -14,5 +14,5 @@
     "pretty": true
   },
   "include": ["src", "test", "scripts"],
-  "exclude": ["dist"]
+  "exclude": ["dist", "**/_*"]
 }

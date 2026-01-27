@@ -1,13 +1,14 @@
-import type { SchemaString, SchemaVector } from '../../schema.js'
+import native from '../../../native.js'
+import { NOT_COMPRESSED } from '../../../protocol/index.js'
+import type { SchemaString, SchemaVector } from '../../../schema.js'
 import {
   PropType,
   type LangCodeEnum,
   type ModifyEnum,
-} from '../../zigTsExports.js'
+  type PropTypeEnum,
+} from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
-
-const encoder = new TextEncoder()
 
 export const string = class extends BasePropDef {
   constructor(prop: SchemaString, path) {
@@ -20,21 +21,19 @@ export const string = class extends BasePropDef {
     if (this.size) {
     }
   }
-  override type: number = PropType.string
+  override type: PropTypeEnum = PropType.string
   override pushValue(
     buf: AutoSizedUint8Array,
-    val: unknown,
+    val: string,
     op: ModifyEnum,
     lang: LangCodeEnum,
   ) {
-    const isUint8 = val instanceof Uint8Array
-    if (val === null || val === '' || (isUint8 && val.byteLength === 0)) {
-      // deleteString(ctx, def, lang)
-      // return
-    }
-    // const encoded = encoder.encode(value)
-    // buf.set(encoded, buf.length)
-    // buf.length += encoded.length
+    const normalized = val.normalize('NFKD')
+    buf.pushU8(lang)
+    buf.pushU8(NOT_COMPRESSED)
+    const written = buf.pushString(normalized)
+    const crc = native.crc32(buf.subarray(buf.length - written))
+    buf.pushU32(crc)
   }
 }
 
@@ -83,7 +82,7 @@ export const vector = class extends BasePropDef {
     this.vectorSize = prop.size * 4
   }
   vectorSize: number
-  override type: number = PropType.vector
+  override type: PropTypeEnum = PropType.vector
   override pushValue(buf: AutoSizedUint8Array, value: any) {
     throw new Error('Serialize vector not implemented')
   }

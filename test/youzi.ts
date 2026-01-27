@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
-import { AutoSizedUint8Array } from '../src/modify/AutoSizedUint8Array.js'
-import { getTypeDefs, serializeCreate } from '../src/modify/index.js'
+import { AutoSizedUint8Array } from '../src/db-client/modify/AutoSizedUint8Array.js'
+import { getTypeDefs, serializeCreate } from '../src/db-client/modify/index.js'
 import { parseSchema } from '../src/schema.js'
 import { LangCode, Modify, pushModifyHeader } from '../src/zigTsExports.js'
 import test from './shared/test.js'
@@ -47,41 +47,114 @@ await test.skip('schema defs', async (t) => {
   const defs = getTypeDefs(schema)
 })
 
-await test('modify', async (t) => {
+await test.skip('modify raw', async (t) => {
   const db = new BasedDb({ path: t.tmp })
   await db.start({ clean: true })
+
   t.after(() => t.backup(db))
+
   await db.setSchema({
     types: {
       user: {
         age: 'number',
         rating: 'uint8',
+        // TODO refs have to be ordered
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+            $rank: 'uint8',
+          },
+        },
+        name: 'string',
       },
     },
   })
 
   const buf = new AutoSizedUint8Array()
-  const index = pushModifyHeader(buf, {
+  pushModifyHeader(buf, {
     opId: 0, // is filled on server
     opType: 0, // is filled on server
     schema: 0,
     count: 1,
   })
+
   serializeCreate(
     db.client.schema!,
     'user',
     {
       age: 32,
       rating: 5,
+      name: 'youzi',
     },
     buf,
     LangCode.nl,
   )
 
-  await db.server.modify(new Uint8Array(buf.view))
+  serializeCreate(
+    db.client.schema!,
+    'user',
+    {
+      age: 24,
+      rating: 54,
+      name: 'jamez',
+      friends: [{ id: 1, $rank: 5 }],
+    },
+    buf,
+    LangCode.nl,
+  )
+
+  await db.server.modify(buf.view)
+
   buf.flush()
 
   console.log('done did it!')
+
+  const res = await db.query('user').include('*', 'friends.*').get().toObject()
+  console.dir(res, { depth: null })
+})
+
+await test('modify client', async (t) => {
+  const db = new BasedDb({ path: t.tmp })
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        age: 'number',
+        rating: 'uint8',
+        // TODO refs have to be ordered
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+            $rank: 'uint8',
+          },
+        },
+        name: 'string',
+      },
+    },
+  })
+
+  const youzi = await db.create('user', {
+    age: 32,
+    rating: 5,
+    name: 'youzi',
+  })
+
+  const jamez = await db.create('user', {
+    age: 24,
+    rating: 54,
+    name: 'jamez',
+    friends: [{ id: 1, $rank: 5 }],
+  })
+
+  console.log('done did it!', { youzi, jamez })
+
+  const res = await db.query('user').include('*', 'friends.*').get().toObject()
+  console.dir(res, { depth: null })
 })
 
 // await test('reffies', async (t) => {

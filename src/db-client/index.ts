@@ -4,26 +4,35 @@ import { SubStore } from './query/subscription/index.js'
 import { DbShared } from '../shared/DbBase.js'
 import { DbClientHooks } from './hooks.js'
 import { setLocalClientSchema } from './setLocalClientSchema.js'
-import { ModifyOpts } from './modify/types.js'
-import { create } from './modify/create/index.js'
-import { Ctx } from './modify/Ctx.js'
-import { update } from './modify/update/index.js'
-import { del } from './modify/delete/index.js'
-import { expire } from './modify/expire/index.js'
-import { cancel, drain, schedule } from './modify/drain.js'
-import { insert, upsert } from './modify/upsert/index.js'
 import {
   parse,
   type SchemaIn,
   type SchemaMigrateFns,
   type SchemaOut,
 } from '../schema/index.js'
+import { AutoSizedUint8Array } from './modify/AutoSizedUint8Array.js'
+import { LangCode } from '../zigTsExports.js'
+import {
+  serializeCreate,
+  serializeDelete,
+  serializeUpdate,
+  ModifyCtx,
+  modify,
+  schedule,
+  flush,
+  ModifyItem,
+} from './modify/index.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
   maxModifySize?: number
   flushTime?: number
   debug?: boolean
+}
+
+export type ModifyOpts = {
+  unsafe?: boolean
+  locale?: keyof typeof LangCode
 }
 
 export class DbClient extends DbShared {
@@ -35,20 +44,17 @@ export class DbClient extends DbShared {
   }: DbClientOpts) {
     super()
     this.hooks = hooks
-    this.maxModifySize = maxModifySize
-    this.modifyCtx = new Ctx(
-      0,
-      new Uint8Array(
-        new ArrayBuffer(Math.min(1e3, maxModifySize), {
-          maxByteLength: maxModifySize,
-        }),
-      ),
-    )
-    this.flushTime = flushTime
-
+    // this.maxModifySize = maxModifySize
+    this.modifyCtx = {
+      buf: new AutoSizedUint8Array(256, maxModifySize),
+      flushTime,
+      batch: { count: 0 },
+      hooks,
+    }
     if (debug) {
       debugMode(this)
     }
+
     this.hooks.subscribeSchema((schema) => {
       setLocalClientSchema(this, schema)
     })
@@ -59,13 +65,16 @@ export class DbClient extends DbShared {
   hooks: DbClientHooks
 
   // modify
-  flushTime: number
-  writeTime: number = 0
-  isDraining = false
-  modifyCtx: Ctx
-  maxModifySize: number
-  upserting: Map<number, { o: Record<string, any>; p: Promise<number> }> =
-    new Map()
+  modifyCtx: ModifyCtx
+
+  // modify
+  // flushTime: number
+  // writeTime: number = 0
+  // isDraining = false
+  // // maxModifySize: number
+  // modifyCtx: ModifyCtx
+  // upserting: Map<number, { o: Record<string, any>; p: Promise<number> }> =
+  //   new Map()
 
   async schemaIsSet() {
     if (!this.schema) {
@@ -94,50 +103,51 @@ export class DbClient extends DbShared {
   }
 
   create(type: string, obj = {}, opts?: ModifyOpts): Promise<number> {
-    return create(this, type, obj, opts)
+    return modify(
+      this.modifyCtx,
+      serializeCreate,
+      this.schema!,
+      type,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    )
   }
 
-  async copy(
+  async update(
     type: string,
-    target: number,
-    objOrTransformFn?:
-      | Record<string, any>
-      | ((item: Record<string, any>) => Promise<any>),
+    id: number | Promise<number>,
+    obj = {},
+    opts?: ModifyOpts,
   ): Promise<number> {
-    const item = await this.query(type, target)
-      .include('*', '**.id')
-      .get()
-      .toObject()
-
-    if (typeof objOrTransformFn === 'function') {
-      const { id: _, ...props } = await objOrTransformFn(item)
-      return this.create(type, props)
+    if (id instanceof Promise) {
+      id = await id
     }
+    return modify(
+      this.modifyCtx,
+      serializeUpdate,
+      this.schema!,
+      type,
+      id,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    )
+  }
 
-    if (typeof objOrTransformFn === 'object' && objOrTransformFn !== null) {
-      const { id: _, ...props } = item
-      await Promise.all(
-        Object.keys(objOrTransformFn).map(async (key) => {
-          const val = objOrTransformFn[key]
-          if (val === null) {
-            delete props[key]
-          } else if (typeof val === 'function') {
-            const res = await val(item)
-            if (Array.isArray(res)) {
-              props[key] = await Promise.all(res)
-            } else {
-              props[key] = res
-            }
-          } else {
-            props[key] = val
-          }
-        }),
-      )
-      return this.create(type, props)
+  async delete(type: string, id: number | Promise<number>) {
+    if (id instanceof Promise) {
+      id = await id
     }
-
-    const { id: _, ...props } = item
-    return this.create(type, props)
+    return modify(
+      this.modifyCtx,
+      serializeDelete,
+      this.schema!,
+      type,
+      // TODO make it perf
+      id,
+      this.modifyCtx.buf,
+    )
   }
 
   query(
@@ -164,91 +174,9 @@ export class DbClient extends DbShared {
     return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
   }
 
-  update(
-    type: string,
-    id: number | Promise<number>,
-    value: any,
-    opts?: ModifyOpts,
-  ): Promise<number>
-
-  update(
-    type: string,
-    value: Record<string, any> & { id: number },
-    opts?: ModifyOpts,
-  ): Promise<number>
-
-  update(
-    typeOrValue: string | any,
-    idOverwriteOrValue:
-      | number
-      | Promise<number>
-      | boolean
-      | ModifyOpts
-      | (Record<string, any> & { id: number }),
-    value?: any,
-    opts?: ModifyOpts,
-  ): Promise<number> {
-    if (typeof typeOrValue !== 'string') {
-      return this.update(
-        '_root',
-        1,
-        typeOrValue,
-        idOverwriteOrValue as ModifyOpts,
-      )
-    }
-    if (typeof idOverwriteOrValue === 'object') {
-      if (
-        'then' in idOverwriteOrValue &&
-        typeof idOverwriteOrValue.then === 'function'
-      ) {
-        // @ts-ignore
-        if (idOverwriteOrValue.id) {
-          // @ts-ignore
-          return this.update(typeOrValue, idOverwriteOrValue.id, value, opts)
-        }
-        return idOverwriteOrValue.then((id: number) => {
-          return this.update(typeOrValue, id, value, opts)
-        })
-      }
-      if ('id' in idOverwriteOrValue) {
-        const { id, ...props } = idOverwriteOrValue
-        return this.update(typeOrValue, id, props, opts)
-      }
-    }
-    return update(this, typeOrValue, idOverwriteOrValue as number, value, opts)
-  }
-
-  upsert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
-    return upsert(this, type, obj, opts)
-  }
-
-  insert(type: string, obj: Record<string, any>, opts?: ModifyOpts) {
-    return insert(this, type, obj, opts)
-  }
-
-  delete(type: string, id: number | Promise<number>) {
-    if (
-      typeof id === 'object' &&
-      id !== null &&
-      'then' in id &&
-      typeof id.then === 'function'
-    ) {
-      // @ts-ignore
-      if (id.id) {
-        // @ts-ignore
-        id = id.id
-      } else {
-        // @ts-ignore
-        return id.then((id) => this.delete(type, id))
-      }
-    }
-    // @ts-ignore
-    return del(this, type, id)
-  }
-
-  expire(type: string, id: number, seconds: number) {
-    return expire(this, type, id, seconds)
-  }
+  // expire(type: string, id: number, seconds: number) {
+  //   return expire(this, type, id, seconds)
+  // }
 
   destroy() {
     this.stop()
@@ -261,21 +189,28 @@ export class DbClient extends DbShared {
       onClose()
     }
     this.subs.clear()
-    cancel(this.modifyCtx, Error('Db stopped - in-flight modify cancelled'))
+    // cancel(this.modifyCtx, Error('Db stopped - in-flight modify cancelled'))
   }
 
   // For more advanced / internal usage - use isModified instead for most cases
   async drain() {
-    if (this.upserting.size) {
-      await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
-    }
-    await drain(this, this.modifyCtx)
-    const t = this.writeTime
-    this.writeTime = 0
-    return t
+    // if (this.upserting.size) {
+    //   await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
+    // }
+    // await drain(this, this.modifyCtx)
+
+    // const t = this.writeTime
+    // this.writeTime = 0
+    flush(this.modifyCtx)
+    await this.modifyCtx.lastModify?.catch(noop)
+    // await this.modifyCtx.lastModify
+    // return t
   }
 
-  isModified() {
-    return schedule(this, this.modifyCtx)
+  async isModified() {
+    schedule(this.modifyCtx)
+    await this.modifyCtx.lastModify?.catch(noop)
   }
 }
+
+function noop() {}

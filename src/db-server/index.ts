@@ -182,7 +182,7 @@ export class DbServer extends DbShared {
   // allow 10 ids for special listeners on mod thread
   modifyCnt = 10
 
-  modify(payload: Uint8Array): Promise<Uint8Array | null> {
+  modify(payload: Uint8Array): Promise<Uint8Array> {
     this.modifyCnt++
     if (this.modifyCnt > MAX_ID) {
       this.modifyCnt = 10

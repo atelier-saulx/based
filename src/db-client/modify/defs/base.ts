@@ -1,5 +1,9 @@
-import type { SchemaProp } from '../../schema.js'
-import type { LangCodeEnum, ModifyEnum } from '../../zigTsExports.js'
+import type { SchemaProp } from '../../../schema.js'
+import type {
+  LangCodeEnum,
+  ModifyEnum,
+  PropTypeEnum,
+} from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
 import type { PropDef } from './index.js'
 
@@ -11,7 +15,7 @@ export class BasePropDef implements PropDef {
   id = 0
   start = 0
   size = 0
-  type = 0
+  type: PropTypeEnum = 0 as PropTypeEnum
   prop: SchemaProp<true>
   path: string[]
 

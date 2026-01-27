@@ -64,7 +64,7 @@ pub inline fn getNodeTypeId(node: Node) t.TypeId {
     return selva.c.selva_get_node_type(node);
 }
 
-pub inline fn upsertNode(_: *Modify.ModifyCtx, typeEntry: selva.Type, id: u32) !Node {
+pub inline fn upsertNode(typeEntry: selva.Type, id: u32) !Node {
     const res = selva.c.selva_upsert_node(typeEntry, id);
     // TODO Partials
     if (res.node == null) {
@@ -155,12 +155,12 @@ pub inline fn getNodeFromReference(dstType: selva.Type, ref: anytype) ?Node {
     return null;
 }
 
-pub inline fn ensureRefEdgeNode(ctx: *Modify.ModifyCtx, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) !Node {
+pub inline fn ensureRefEdgeNode(db: *DbCtx, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) !Node {
     std.debug.print("here we are?\n", .{});
-    const edgeNode = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0);
+    const edgeNode = selva.c.selva_fields_ensure_ref_edge(db.selva, node, efc, ref, 0);
     std.debug.print("here we are: {any}\n", .{edgeNode});
     if (edgeNode) |n| {
-        selva.markDirty(ctx, efc.edge_node_type, getNodeId(n));
+        selva.markDirty(db, efc.edge_node_type, getNodeId(n));
         return n;
     } else {
         return errors.SelvaError.SELVA_ENOTSUP;
@@ -176,8 +176,8 @@ pub inline fn getEdgeNode(db: *DbCtx, efc: selva.EdgeFieldConstraint, ref: selva
     return selva.c.selva_find_node(edge_type, ref.*.edge);
 }
 
-pub inline fn deleteNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) !void {
-    selva.c.selva_del_node(ctx.db.selva, typeEntry, node);
+pub inline fn deleteNode(db: *DbCtx, typeEntry: Type, node: Node) !void {
+    selva.c.selva_del_node(db.selva, typeEntry, node);
 }
 
 pub inline fn flushNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) void {
@@ -189,9 +189,9 @@ pub inline fn expireNode(ctx: *Modify.ModifyCtx, typeId: t.TypeId, nodeId: u32, 
     selva.markDirty(ctx, typeId, nodeId);
 }
 
-pub inline fn expire(ctx: *Modify.ModifyCtx) void {
+pub inline fn expire(db: *DbCtx) void {
     // Expire things before query
-    selva.c.selva_db_expire_tick(ctx.db.selva, std.time.timestamp());
+    selva.c.selva_db_expire_tick(db.selva, std.time.timestamp());
 }
 
 pub inline fn getNodeBlockHash(db: *DbCtx, typeEntry: Type, start: u32, hashOut: *SelvaHash128) c_int {

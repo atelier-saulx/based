@@ -3,7 +3,7 @@ import {
   type SchemaProp,
   type SchemaProps,
   type SchemaType,
-} from '../../schema.js'
+} from '../../../schema.js'
 import { defs, type TypeDef } from './index.js'
 
 const mainSorter = (a, b) => {

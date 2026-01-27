@@ -17,7 +17,7 @@ const parseZig = (input: string): string => {
   readUint64, readInt64, 
   readFloatLE, readDoubleLE
 } from './utils/index.js'
-import { AutoSizedUint8Array } from './modify/AutoSizedUint8Array.js'\n\n`
+import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\n\n`
 
   // Symbol tables
   const typeSizes: Record<string, number> = {

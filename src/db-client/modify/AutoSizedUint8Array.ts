@@ -1,9 +1,12 @@
+import native from '../../native.js'
 import {
   writeDoubleLE,
   writeFloatLE,
   writeUint64,
   writeInt64,
-} from '../utils/index.js'
+} from '../../utils/index.js'
+
+const ENCODER = new TextEncoder()
 
 // Runtime method injection
 const delegateMethods = [
@@ -49,7 +52,6 @@ export class AutoSizedUint8Array {
   private ensureCapacity(requiredCapacity: number): void {
     const currentCapacity = this.data.byteLength
     if (currentCapacity >= requiredCapacity) return
-
     if (requiredCapacity > this._maxCapacity) {
       throw AutoSizedUint8Array.ERR_OVERFLOW
     }
@@ -63,10 +65,6 @@ export class AutoSizedUint8Array {
       newCapacity > this._maxCapacity ? this._maxCapacity : newCapacity
 
     ;(this.data.buffer as any).resize(finalCapacity)
-  }
-
-  get capacity(): number {
-    return this.data.length
   }
 
   get view(): Uint8Array {
@@ -203,6 +201,20 @@ export class AutoSizedUint8Array {
     this.length = requiredEnd
   }
 
+  pushString(value: string): number {
+    const maxBytes = native.stringByteLength(value)
+    const requiredEnd = this.length + maxBytes
+    if (requiredEnd > this.data.length) {
+      this.ensureCapacity(requiredEnd)
+    }
+    const { written } = ENCODER.encodeInto(
+      value,
+      this.data.subarray(this.length),
+    )
+    this.length += written!
+    return written
+  }
+
   setU32(value: number, offset: number): void {
     const requiredEnd = offset + 4
     if (requiredEnd > this.data.length) {
@@ -234,7 +246,7 @@ export class AutoSizedUint8Array {
     return this.pushU8(byte)
   }
 
-  subarray(begin?: number, end?: number): Uint8Array {
+  subarray(begin: number = 0, end: number = this.length): Uint8Array {
     return this.view.subarray(begin, end)
   }
 

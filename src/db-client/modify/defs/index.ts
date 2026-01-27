@@ -1,5 +1,9 @@
-import type { SchemaProp } from '../../schema.js'
-import type { LangCodeEnum, ModifyEnum } from '../../zigTsExports.js'
+import type { SchemaProp } from '../../../schema.js'
+import type {
+  LangCodeEnum,
+  ModifyEnum,
+  PropTypeEnum,
+} from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
 import * as fixed from './fixed.js'
 import * as references from './references.js'
@@ -19,7 +23,7 @@ export type TypeDef = {
 
 export type PropDef = {
   id: number
-  type: number
+  type: PropTypeEnum
   start: number
   path: string[]
   size: number

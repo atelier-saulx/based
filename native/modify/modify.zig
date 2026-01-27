@@ -16,7 +16,6 @@ const utils = @import("../utils.zig");
 const Update = @import("update.zig");
 const dbSort = @import("../sort/sort.zig");
 const config = @import("config");
-const errors = @import("../errors.zig");
 const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
@@ -41,6 +40,7 @@ pub fn modifyThread(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
     ) catch undefined;
     return null;
 }
+
 fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     const args = try napi.getArgs(2, env, info);
     const batch = try napi.get([]u8, env, args[0]);
@@ -64,7 +64,7 @@ fn writeoutPrevNodeId(ctx: *ModifyCtx, resultLen: *u32, prevNodeId: u32, result:
     if (prevNodeId != 0) {
         utils.write(result, prevNodeId, resultLen.*);
         utils.writeAs(u8, result, ctx.err, resultLen.* + 4);
-        ctx.err = errors.ClientError.null;
+        ctx.err = t.ModifyError.null;
         resultLen.* += 5;
     }
 }
@@ -134,7 +134,7 @@ pub fn switchEdgeId(ctx: *ModifyCtx, srcId: u32, dstId: u32, refField: u8) anyer
         ctx.id = edgeId;
         ctx.node = edgeNode;
         if (ctx.node == null) {
-            ctx.err = errors.ClientError.nx;
+            ctx.err = t.ModifyError.nx;
         } else {
             // try subs.checkId(ctx);
             // It would be even better if we'd mark it dirty only in the case
@@ -152,7 +152,7 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) anyerror!usize {
         const op: t.ModOp = @enumFromInt(buf[i]);
         // TODO set i += 1; HERE and remove from each individual thing
         const data: []u8 = buf[i + 1 ..];
-        std.debug.print("OP: {any}\n", .{op});
+
         switch (op) {
             .padding => {
                 i += 1;
@@ -215,7 +215,7 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) anyerror!usize {
                     ctx.id = id;
                     ctx.node = Node.getNode(ctx.typeEntry.?, ctx.id);
                     if (ctx.node == null) {
-                        ctx.err = errors.ClientError.nx;
+                        ctx.err = t.ModifyError.nx;
                     } else {
                         // try subs.checkId(ctx);
                         // It would be even better if we'd mark it dirty only in the case
@@ -263,7 +263,7 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) anyerror!usize {
                     if (Fields.getAliasByName(ctx.typeEntry.?, prop, val)) |node| {
                         const id = Node.getNodeId(node);
                         write(buf, id, ctx.resultLen);
-                        write(buf, errors.ClientError.null, ctx.resultLen + 4);
+                        write(buf, t.ModifyError.null, ctx.resultLen + 4);
                         ctx.resultLen += 5;
                         nextIndex = endIndex;
                         break;
@@ -313,36 +313,163 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) anyerror!usize {
     return i;
 }
 
+pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u8, items: []align(1) t.ModifyResultItem) !void {
+    var j: usize = 0;
+    while (j < data.len) {
+        const propId = data[j];
+        const propSchema = try Schema.getFieldSchema(typeEntry, propId);
+        if (propId == 0) {
+            const main = utils.readNext(t.ModifyMainHeader, data, &j);
+            const value = data[j .. j + main.size];
+            const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
+            utils.copy(u8, current, value, main.start);
+            j += main.size;
+        } else {
+            const prop = utils.readNext(t.ModifyPropHeader, data, &j);
+            const value = data[j .. j + prop.size];
+            switch (prop.type) {
+                .reference => {
+                    const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
+                    const refTypeEntry = try Node.getType(db, refTypeId);
+                    // TODO add TMP handling
+                    const refId = read(u32, value, 0);
+                    if (Node.getNode(refTypeEntry, refId)) |dst| {
+                        _ = try References.writeReference(db, node, propSchema, dst);
+                    }
+                },
+                .references => {
+                    var k: usize = 0;
+
+                    if (@as(t.ModifyReferences, @enumFromInt(value[0])) == t.ModifyReferences.clear) {
+                        References.clearReferences(db, node, propSchema);
+                        k += 1;
+                    }
+
+                    while (k < value.len) {
+                        const references = utils.readNext(t.ModifyReferencesHeader, value, &k);
+                        const refs = value[k .. k + references.size];
+                        switch (references.op) {
+                            .ids => {
+                                const offset = utils.alignLeft(u32, refs);
+                                const u32Ids = read([]u32, refs[4 - offset .. refs.len - offset], 0);
+                                try References.putReferences(db, node, propSchema, u32Ids);
+                            },
+                            .idsWithMeta => {
+                                const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
+                                const refTypeEntry = try Node.getType(db, refTypeId);
+                                const count = read(u32, refs, 0);
+                                var x: usize = 4;
+                                _ = selva.c.selva_fields_prealloc_refs(db.selva, node, propSchema, count);
+                                while (x < refs.len) {
+                                    const meta = utils.readNext(t.ModifyReferencesMetaHeader, refs, &x);
+                                    var refId = meta.id;
+
+                                    if (meta.isTmp) {
+                                        // TODO handle isTmp case
+                                        refId = meta.id;
+                                    }
+
+                                    if (Node.getNode(refTypeEntry, refId)) |dst| {
+                                        const ref = try References.insertReference(db, node, propSchema, dst, meta.index, meta.withIndex);
+                                        if (meta.size != 0) {
+                                            const edgeProps = refs[x .. x + meta.size];
+                                            const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
+                                            const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
+                                            const edgeNode = try Node.ensureRefEdgeNode(db, node, edgeConstraint, ref.p.large);
+                                            try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                        }
+                                    }
+
+                                    x += meta.size;
+                                }
+                            },
+                            else => {},
+                        }
+
+                        k += references.size;
+                    }
+                },
+                else => {
+                    try Fields.write(node, propSchema, value);
+                },
+            }
+
+            j += prop.size;
+        }
+    }
+}
+
 pub fn modify(
     thread: *Thread.Thread,
     buf: []u8,
-    ctx: *DbCtx,
+    db: *DbCtx,
     opType: t.OpType,
 ) !void {
     var i: usize = 0;
+    var j: u32 = 4;
     const header = utils.readNext(t.ModifyHeader, buf, &i);
-    const size = 4 + header.count * 5;
+    const size = j + header.count * 5;
     const result = try thread.modify.result(size, header.opId, header.opType);
-    _ = result;
-    _ = ctx;
+    const items = std.mem.bytesAsSlice(t.ModifyResultItem, result[j..]);
     _ = opType;
+
     while (i < buf.len) {
         const op: t.Modify = @enumFromInt(buf[i]);
+
         switch (op) {
             .create => {
                 const create = utils.readNext(t.ModifyCreateHeader, buf, &i);
+                const typeEntry = try Node.getType(db, create.type);
                 const data: []u8 = buf[i .. i + create.size];
-                std.debug.print("create: {any}, {any}, {any}\n", .{ create.size, buf.len, data });
+                const id = db.ids[create.type - 1] + 1;
+                const node = try Node.upsertNode(typeEntry, id);
+                modifyProps(db, typeEntry, node, data, items) catch {
+                    // handle errors
+                };
+                db.ids[create.type - 1] = id;
+                utils.write(result, id, j);
+
+                utils.writeAs(u8, result, t.ModifyError.null, j + 4);
                 i += create.size;
+                j += 5;
             },
-            .update => {},
-            .delete => {},
+            .update => {
+                const update = utils.readNext(t.ModifyUpdateHeader, buf, &i);
+                const typeEntry = try Node.getType(db, update.type);
+                utils.write(result, update.id, j);
+                if (Node.getNode(typeEntry, update.id)) |node| {
+                    const data: []u8 = buf[i .. i + update.size];
+                    modifyProps(db, typeEntry, node, data, items) catch {
+                        // handle errors
+                    };
+                    utils.writeAs(u8, result, t.ModifyError.null, j + 4);
+                } else {
+                    utils.writeAs(u8, result, t.ModifyError.nx, j + 4);
+                }
+                i += update.size;
+                j += 5;
+            },
+            .delete => {
+                const delete = utils.readNext(t.ModifyDeleteHeader, buf, &i);
+                const typeEntry = try Node.getType(db, delete.type);
+                utils.write(result, delete.id, j);
+                if (Node.getNode(typeEntry, delete.id)) |node| {
+                    Node.deleteNode(db, typeEntry, node) catch {
+                        // handle errors
+                    };
+                    utils.writeAs(u8, result, t.ModifyError.null, j + 4);
+                } else {
+                    utils.writeAs(u8, result, t.ModifyError.nx, j + 4);
+                }
+                j += 5;
+            },
         }
     }
 
-    // const id = read(u32, batch, 0);
-    // const count = read(u32, batch, 13);
-    // const expectedLen = 4 + nodeCount * 5;
+    Node.expire(db);
+    utils.write(result, j, 0);
+
+    if (j < size) @memset(result[j..size], 0);
 }
 
 pub fn _modify(
@@ -351,7 +478,6 @@ pub fn _modify(
     dbCtx: *DbCtx,
     opType: t.OpType,
 ) !void {
-    std.debug.print("hahaha??\n", .{});
     const modifyId = read(u32, batch, 0);
     const nodeCount = read(u32, batch, 13);
     const expectedLen = 4 + nodeCount * 5;
@@ -370,7 +496,7 @@ pub fn _modify(
         .fieldType = t.PropType.null,
         .db = dbCtx,
         .batch = batch,
-        .err = errors.ClientError.null,
+        .err = t.ModifyError.null,
         .idSubs = null,
         .subTypes = null,
         .thread = thread,

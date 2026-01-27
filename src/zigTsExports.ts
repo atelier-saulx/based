@@ -8,7 +8,7 @@ import {
   readUint64, readInt64, 
   readFloatLE, readDoubleLE
 } from './utils/index.js'
-import { AutoSizedUint8Array } from './modify/AutoSizedUint8Array.js'
+import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'
 
 export type TypeId = number
 
@@ -660,7 +660,7 @@ export const pushModifyMainHeader = (
 
 export type ModifyPropHeader = {
   id: number
-  type: number
+  type: PropTypeEnum
   size: number
 }
 
@@ -677,7 +677,7 @@ export const packModifyPropHeader = (obj: ModifyPropHeader): bigint => {
 export const unpackModifyPropHeader = (val: bigint): ModifyPropHeader => {
   return {
     id: Number((val >> 0n) & 255n),
-    type: Number((val >> 8n) & 255n),
+    type: (Number((val >> 8n) & 255n)) as PropTypeEnum,
     size: Number((val >> 16n) & 4294967295n),
   }
 }
@@ -700,7 +700,7 @@ export const writeModifyPropHeaderProps = {
   id: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset] = Number(value)
   },
-  type: (buf: Uint8Array, value: number, offset: number) => {
+  type: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset + 1] = Number(value)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
@@ -714,7 +714,7 @@ export const readModifyPropHeader = (
 ): ModifyPropHeader => {
   const value: ModifyPropHeader = {
     id: buf[offset],
-    type: buf[offset + 1],
+    type: (buf[offset + 1]) as PropTypeEnum,
     size: readUint32(buf, offset + 2),
   }
   return value
@@ -722,7 +722,7 @@ export const readModifyPropHeader = (
 
 export const readModifyPropHeaderProps = {
     id: (buf: Uint8Array, offset: number) => buf[offset],
-    type: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    type: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as PropTypeEnum,
     size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
 }
 
@@ -746,7 +746,7 @@ export const pushModifyPropHeader = (
 export const ModifyReferences = {
   clear: 0,
   ids: 1,
-  idsAndEdges: 2,
+  idsWithMeta: 2,
   tmpIds: 3,
   delIds: 4,
   delTmpIds: 5,
@@ -755,7 +755,7 @@ export const ModifyReferences = {
 export const ModifyReferencesInverse = {
   0: 'clear',
   1: 'ids',
-  2: 'idsAndEdges',
+  2: 'idsWithMeta',
   3: 'tmpIds',
   4: 'delIds',
   5: 'delTmpIds',
@@ -764,7 +764,7 @@ export const ModifyReferencesInverse = {
 /**
   clear, 
   ids, 
-  idsAndEdges, 
+  idsWithMeta, 
   tmpIds, 
   delIds, 
   delTmpIds 
@@ -845,148 +845,297 @@ export const pushModifyReferencesHeader = (
   return index
 }
 
-export type ModifyEdgesHeader = {
+export type ModifyReferencesMetaHeader = {
   id: number
+  isTmp: boolean
   withIndex: boolean
   index: number
   size: number
 }
 
-export const ModifyEdgesHeaderByteSize = 13
+export const ModifyReferencesMetaHeaderByteSize = 13
 
-export const packModifyEdgesHeader = (obj: ModifyEdgesHeader): bigint => {
+export const packModifyReferencesMetaHeader = (obj: ModifyReferencesMetaHeader): bigint => {
   let val = 0n
   val |= (BigInt(obj.id) & 4294967295n) << 0n
-  val |= ((obj.withIndex ? 1n : 0n) & 1n) << 32n
-  val |= (BigInt(obj.index) & 4294967295n) << 33n
-  val |= (BigInt(obj.size) & 4294967295n) << 65n
+  val |= ((obj.isTmp ? 1n : 0n) & 1n) << 32n
+  val |= ((obj.withIndex ? 1n : 0n) & 1n) << 33n
+  val |= (BigInt(obj.index) & 4294967295n) << 40n
+  val |= (BigInt(obj.size) & 4294967295n) << 72n
   return val
 }
 
-export const unpackModifyEdgesHeader = (val: bigint): ModifyEdgesHeader => {
+export const unpackModifyReferencesMetaHeader = (val: bigint): ModifyReferencesMetaHeader => {
   return {
     id: Number((val >> 0n) & 4294967295n),
-    withIndex: ((val >> 32n) & 1n) === 1n,
-    index: Number((val >> 33n) & 4294967295n),
-    size: Number((val >> 65n) & 4294967295n),
+    isTmp: ((val >> 32n) & 1n) === 1n,
+    withIndex: ((val >> 33n) & 1n) === 1n,
+    index: Number((val >> 40n) & 4294967295n),
+    size: Number((val >> 72n) & 4294967295n),
   }
 }
 
-export const writeModifyEdgesHeader = (
+export const writeModifyReferencesMetaHeader = (
   buf: Uint8Array,
-  header: ModifyEdgesHeader,
+  header: ModifyReferencesMetaHeader,
   offset: number,
 ): number => {
   writeUint32(buf, Number(header.id), offset)
   offset += 4
   buf[offset] = 0
-  buf[offset] |= (((header.withIndex ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= ((header.index >>> 0) & 127) << 1
+  buf[offset] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.withIndex ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= ((0 >>> 0) & 63) << 2
   offset += 1
-  buf[offset] = 0
-  buf[offset] |= ((header.index >>> 7) & 255) << 0
-  offset += 1
-  buf[offset] = 0
-  buf[offset] |= ((header.index >>> 15) & 255) << 0
-  offset += 1
-  buf[offset] = 0
-  buf[offset] |= ((header.index >>> 23) & 255) << 0
-  offset += 1
-  buf[offset] = 0
-  buf[offset] |= ((header.index >>> 31) & 1) << 0
-  buf[offset] |= ((header.size >>> 0) & 127) << 1
-  offset += 1
-  buf[offset] = 0
-  buf[offset] |= ((header.size >>> 7) & 255) << 0
-  offset += 1
-  buf[offset] = 0
-  buf[offset] |= ((header.size >>> 15) & 255) << 0
-  offset += 1
-  buf[offset] = 0
-  buf[offset] |= ((header.size >>> 23) & 255) << 0
-  offset += 1
-  buf[offset] = 0
-  buf[offset] |= ((header.size >>> 31) & 1) << 0
+  writeUint32(buf, Number(header.index), offset)
+  offset += 4
+  writeUint32(buf, Number(header.size), offset)
+  offset += 4
   return offset
 }
 
-export const writeModifyEdgesHeaderProps = {
+export const writeModifyReferencesMetaHeaderProps = {
   id: (buf: Uint8Array, value: number, offset: number) => {
     writeUint32(buf, Number(value), offset)
   },
-  withIndex: (buf: Uint8Array, value: boolean, offset: number) => {
+  isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
+  withIndex: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+  },
   index: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 4] |= ((value >>> 0) & 127) << 1
-    buf[offset + 5] |= ((value >>> 7) & 255) << 0
-    buf[offset + 6] |= ((value >>> 15) & 255) << 0
-    buf[offset + 7] |= ((value >>> 23) & 255) << 0
-    buf[offset + 8] |= ((value >>> 31) & 1) << 0
+    writeUint32(buf, Number(value), offset + 5)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 8] |= ((value >>> 0) & 127) << 1
-    buf[offset + 9] |= ((value >>> 7) & 255) << 0
-    buf[offset + 10] |= ((value >>> 15) & 255) << 0
-    buf[offset + 11] |= ((value >>> 23) & 255) << 0
-    buf[offset + 12] |= ((value >>> 31) & 1) << 0
+    writeUint32(buf, Number(value), offset + 9)
   },
 }
 
-export const readModifyEdgesHeader = (
+export const readModifyReferencesMetaHeader = (
   buf: Uint8Array,
   offset: number,
-): ModifyEdgesHeader => {
-  const value: ModifyEdgesHeader = {
+): ModifyReferencesMetaHeader => {
+  const value: ModifyReferencesMetaHeader = {
     id: readUint32(buf, offset),
-    withIndex: (((buf[offset + 4] >>> 0) & 1)) === 1,
-    index: (((buf[offset + 4] >>> 1) & 127) | (((buf[offset + 5] >>> 0) & 255) << 7) | (((buf[offset + 6] >>> 0) & 255) << 15) | (((buf[offset + 7] >>> 0) & 255) << 23) | (((buf[offset + 8] >>> 0) & 1) << 31)),
-    size: (((buf[offset + 8] >>> 1) & 127) | (((buf[offset + 9] >>> 0) & 255) << 7) | (((buf[offset + 10] >>> 0) & 255) << 15) | (((buf[offset + 11] >>> 0) & 255) << 23) | (((buf[offset + 12] >>> 0) & 1) << 31)),
+    isTmp: (((buf[offset + 4] >>> 0) & 1)) === 1,
+    withIndex: (((buf[offset + 4] >>> 1) & 1)) === 1,
+    index: readUint32(buf, offset + 5),
+    size: readUint32(buf, offset + 9),
   }
   return value
 }
 
-export const readModifyEdgesHeaderProps = {
+export const readModifyReferencesMetaHeaderProps = {
     id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
-    withIndex: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 0) & 1)) === 1,
-    index: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 1) & 127) | (((buf[offset + 5] >>> 0) & 255) << 7) | (((buf[offset + 6] >>> 0) & 255) << 15) | (((buf[offset + 7] >>> 0) & 255) << 23) | (((buf[offset + 8] >>> 0) & 1) << 31)),
-    size: (buf: Uint8Array, offset: number) => (((buf[offset + 8] >>> 1) & 127) | (((buf[offset + 9] >>> 0) & 255) << 7) | (((buf[offset + 10] >>> 0) & 255) << 15) | (((buf[offset + 11] >>> 0) & 255) << 23) | (((buf[offset + 12] >>> 0) & 1) << 31)),
+    isTmp: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 0) & 1)) === 1,
+    withIndex: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 1) & 1)) === 1,
+    index: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 9),
 }
 
-export const createModifyEdgesHeader = (header: ModifyEdgesHeader): Uint8Array => {
-  const buffer = new Uint8Array(ModifyEdgesHeaderByteSize)
-  writeModifyEdgesHeader(buffer, header, 0)
+export const createModifyReferencesMetaHeader = (header: ModifyReferencesMetaHeader): Uint8Array => {
+  const buffer = new Uint8Array(ModifyReferencesMetaHeaderByteSize)
+  writeModifyReferencesMetaHeader(buffer, header, 0)
   return buffer
 }
 
-export const pushModifyEdgesHeader = (
+export const pushModifyReferencesMetaHeader = (
   buf: AutoSizedUint8Array,
-  header: ModifyEdgesHeader,
+  header: ModifyReferencesMetaHeader,
 ): number => {
   const index = buf.length
   buf.pushU32(Number(header.id))
   buf.pushU8(0)
-  buf.view[buf.length - 1] |= (((header.withIndex ? 1 : 0) >>> 0) & 1) << 0
-  buf.view[buf.length - 1] |= ((header.index >>> 0) & 127) << 1
-  buf.pushU8(0)
-  buf.view[buf.length - 1] |= ((header.index >>> 7) & 255) << 0
-  buf.pushU8(0)
-  buf.view[buf.length - 1] |= ((header.index >>> 15) & 255) << 0
-  buf.pushU8(0)
-  buf.view[buf.length - 1] |= ((header.index >>> 23) & 255) << 0
-  buf.pushU8(0)
-  buf.view[buf.length - 1] |= ((header.index >>> 31) & 1) << 0
-  buf.view[buf.length - 1] |= ((header.size >>> 0) & 127) << 1
-  buf.pushU8(0)
-  buf.view[buf.length - 1] |= ((header.size >>> 7) & 255) << 0
-  buf.pushU8(0)
-  buf.view[buf.length - 1] |= ((header.size >>> 15) & 255) << 0
-  buf.pushU8(0)
-  buf.view[buf.length - 1] |= ((header.size >>> 23) & 255) << 0
-  buf.pushU8(0)
-  buf.view[buf.length - 1] |= ((header.size >>> 31) & 1) << 0
+  buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= (((header.withIndex ? 1 : 0) >>> 0) & 1) << 1
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 63) << 2
+  buf.pushU32(Number(header.index))
+  buf.pushU32(Number(header.size))
   return index
 }
+
+export type ModifyReferenceMetaHeader = {
+  id: number
+  isTmp: boolean
+  size: number
+}
+
+export const ModifyReferenceMetaHeaderByteSize = 9
+
+export const packModifyReferenceMetaHeader = (obj: ModifyReferenceMetaHeader): bigint => {
+  let val = 0n
+  val |= (BigInt(obj.id) & 4294967295n) << 0n
+  val |= ((obj.isTmp ? 1n : 0n) & 1n) << 32n
+  val |= (BigInt(obj.size) & 4294967295n) << 40n
+  return val
+}
+
+export const unpackModifyReferenceMetaHeader = (val: bigint): ModifyReferenceMetaHeader => {
+  return {
+    id: Number((val >> 0n) & 4294967295n),
+    isTmp: ((val >> 32n) & 1n) === 1n,
+    size: Number((val >> 40n) & 4294967295n),
+  }
+}
+
+export const writeModifyReferenceMetaHeader = (
+  buf: Uint8Array,
+  header: ModifyReferenceMetaHeader,
+  offset: number,
+): number => {
+  writeUint32(buf, Number(header.id), offset)
+  offset += 4
+  buf[offset] = 0
+  buf[offset] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
+  writeUint32(buf, Number(header.size), offset)
+  offset += 4
+  return offset
+}
+
+export const writeModifyReferenceMetaHeaderProps = {
+  id: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset)
+  },
+  isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 4] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset + 5)
+  },
+}
+
+export const readModifyReferenceMetaHeader = (
+  buf: Uint8Array,
+  offset: number,
+): ModifyReferenceMetaHeader => {
+  const value: ModifyReferenceMetaHeader = {
+    id: readUint32(buf, offset),
+    isTmp: (((buf[offset + 4] >>> 0) & 1)) === 1,
+    size: readUint32(buf, offset + 5),
+  }
+  return value
+}
+
+export const readModifyReferenceMetaHeaderProps = {
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    isTmp: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 0) & 1)) === 1,
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
+}
+
+export const createModifyReferenceMetaHeader = (header: ModifyReferenceMetaHeader): Uint8Array => {
+  const buffer = new Uint8Array(ModifyReferenceMetaHeaderByteSize)
+  writeModifyReferenceMetaHeader(buffer, header, 0)
+  return buffer
+}
+
+export const pushModifyReferenceMetaHeader = (
+  buf: AutoSizedUint8Array,
+  header: ModifyReferenceMetaHeader,
+): number => {
+  const index = buf.length
+  buf.pushU32(Number(header.id))
+  buf.pushU8(0)
+  buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
+  buf.pushU32(Number(header.size))
+  return index
+}
+
+export type ModifyResultItem = {
+  id: number
+  err: ModifyErrorEnum
+}
+
+export const ModifyResultItemByteSize = 5
+
+export const packModifyResultItem = (obj: ModifyResultItem): bigint => {
+  let val = 0n
+  val |= (BigInt(obj.id) & 4294967295n) << 0n
+  val |= (BigInt(obj.err) & 255n) << 32n
+  return val
+}
+
+export const unpackModifyResultItem = (val: bigint): ModifyResultItem => {
+  return {
+    id: Number((val >> 0n) & 4294967295n),
+    err: (Number((val >> 32n) & 255n)) as ModifyErrorEnum,
+  }
+}
+
+export const writeModifyResultItem = (
+  buf: Uint8Array,
+  header: ModifyResultItem,
+  offset: number,
+): number => {
+  writeUint32(buf, Number(header.id), offset)
+  offset += 4
+  buf[offset] = Number(header.err)
+  offset += 1
+  return offset
+}
+
+export const writeModifyResultItemProps = {
+  id: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset)
+  },
+  err: (buf: Uint8Array, value: ModifyErrorEnum, offset: number) => {
+    buf[offset + 4] = Number(value)
+  },
+}
+
+export const readModifyResultItem = (
+  buf: Uint8Array,
+  offset: number,
+): ModifyResultItem => {
+  const value: ModifyResultItem = {
+    id: readUint32(buf, offset),
+    err: (buf[offset + 4]) as ModifyErrorEnum,
+  }
+  return value
+}
+
+export const readModifyResultItemProps = {
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    err: (buf: Uint8Array, offset: number) => (buf[offset + 4]) as ModifyErrorEnum,
+}
+
+export const createModifyResultItem = (header: ModifyResultItem): Uint8Array => {
+  const buffer = new Uint8Array(ModifyResultItemByteSize)
+  writeModifyResultItem(buffer, header, 0)
+  return buffer
+}
+
+export const pushModifyResultItem = (
+  buf: AutoSizedUint8Array,
+  header: ModifyResultItem,
+): number => {
+  const index = buf.length
+  buf.pushU32(Number(header.id))
+  buf.pushU8(Number(header.err))
+  return index
+}
+
+export const ModifyError = {
+  null: 0,
+  nx: 1,
+  unknown: 2,
+} as const
+
+export const ModifyErrorInverse = {
+  0: 'null',
+  1: 'nx',
+  2: 'unknown',
+} as const
+
+/**
+  null, 
+  nx, 
+  unknown 
+ */
+export type ModifyErrorEnum = (typeof ModifyError)[keyof typeof ModifyError]
 
 export const PropType = {
   null: 0,

@@ -1,5 +1,4 @@
 const Schema = @import("./selva/schema.zig");
-
 pub const TypeId = u16;
 
 pub const BridgeResponse = enum(u32) {
@@ -114,14 +113,14 @@ pub const ModifyMainHeader = packed struct {
 
 pub const ModifyPropHeader = packed struct {
     id: u8,
-    type: u8,
+    type: PropType,
     size: u32,
 };
 
 pub const ModifyReferences = enum(u8) {
     clear = 0,
     ids = 1,
-    idsAndEdges = 2,
+    idsWithMeta = 2,
     tmpIds = 3,
     delIds = 4,
     delTmpIds = 5,
@@ -132,11 +131,38 @@ pub const ModifyReferencesHeader = packed struct {
     size: u32,
 };
 
-pub const ModifyEdgesHeader = packed struct {
+// pub const ModifyReferencesMeta = enum(u8) {
+//     noTmpNoIndex = 0,
+//     tmpNoIndex = 1,
+//     tmpIndex = 2,
+//     noTmpIndex = 4,
+// };
+
+pub const ModifyReferencesMetaHeader = packed struct {
     id: u32,
+    isTmp: bool,
     withIndex: bool,
-    index: u32,
+    _padding: u6,
+    index: i32,
     size: u32,
+};
+
+pub const ModifyReferenceMetaHeader = packed struct {
+    id: u32,
+    isTmp: bool,
+    _padding: u7,
+    size: u32,
+};
+
+pub const ModifyResultItem = packed struct {
+    id: u32,
+    err: ModifyError,
+};
+
+pub const ModifyError = enum(u8) {
+    null = 0,
+    nx = 1,
+    unknown = 2,
 };
 
 pub const PropType = enum(u8) {

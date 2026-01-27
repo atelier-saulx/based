@@ -2,24 +2,22 @@ import {
   Modify,
   ModifyReferences,
   PropType,
+  pushModifyReferenceMetaHeader,
   pushModifyReferencesHeader,
+  pushModifyReferencesMetaHeader,
   writeModifyReferencesHeaderProps,
+  writeModifyReferencesMetaHeaderProps,
   type LangCodeEnum,
   type ModifyEnum,
-} from '../../zigTsExports.js'
+  type PropTypeEnum,
+} from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
-import type { SchemaProp } from '../../schema.js'
+import type { SchemaProp } from '../../../schema.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from './index.js'
 import { serializeProps } from '../index.js'
 
 type Edges = Record<`${string}`, unknown> | undefined
-
-const hasEdgesAndOrIndex = (obj: Record<string, any>): boolean | void => {
-  for (const i in obj) {
-    if (i[0] === '$') return true
-  }
-}
 
 const getEdges = (obj: Record<string, any>): Edges => {
   let edges: Edges
@@ -38,6 +36,8 @@ const serializeIds = (
   offset: number,
 ): number => {
   let i = offset
+  // one extra for padding
+  buf.pushU32(0)
   for (; i < ids.length; i++) {
     const id = ids[i]
     if (typeof id !== 'number') {
@@ -54,6 +54,8 @@ const serializeTmpIds = (
   offset: number,
 ): undefined | any => {
   let i = offset
+  // one extra for padding
+  buf.pushU32(0)
   for (; i < items.length; i++) {
     const item = items[i]
     if (typeof item !== 'object' || item === null || !item.tmpId) {
@@ -75,20 +77,44 @@ const serializeIdsAndMeta = (
   edgesType?: TypeDef,
 ): number => {
   let i = offset
+  const start = buf.reserveU32()
+
   for (; i < items.length; i++) {
     const item = items[i]
     if (item === null || typeof item !== 'object') {
       throw 'error'
     }
-    const edges = getEdges(item)
-    if (typeof item.id !== 'number' || !edges) {
+
+    // TODO handle tmp id
+    if (typeof item.id !== 'number') {
       break
     }
-    buf.pushU32(item.id)
+
+    const index = pushModifyReferencesMetaHeader(buf, {
+      id: item.id,
+      isTmp: false,
+      withIndex: '$index' in item,
+      index: item.$index,
+      size: 0,
+    })
+
     if (edgesType) {
-      serializeProps(edgesType.tree, edges, buf, op, lang)
+      const edges = getEdges(item)
+      if (edges) {
+        const start = buf.length
+        serializeProps(edgesType.tree, edges, buf, op, lang)
+        writeModifyReferencesMetaHeaderProps.size(
+          buf.data,
+          buf.length - start,
+          index,
+        )
+      }
     }
   }
+
+  // store the amount of refs (for prealloc)
+  buf.setU32(i - offset, start)
+
   return i
 }
 
@@ -130,11 +156,18 @@ const setReferences = (
       }
       if (typeof item.id === 'number') {
         // TODO can optimize, don't need whole object
-        if (hasEdgesAndOrIndex(item)) {
-          offset = serializeIdsAndMeta(buf, value, op, offset, lang, prop.edges)
-        } else {
-          // TODO with index
-        }
+        const index = pushModifyReferencesHeader(buf, {
+          op: ModifyReferences.idsWithMeta,
+          size: 0,
+        })
+        const start = buf.length
+        offset = serializeIdsAndMeta(buf, value, op, offset, lang, prop.edges)
+        writeModifyReferencesHeaderProps.size(
+          buf.data,
+          buf.length - start,
+          index,
+        )
+        continue
       }
     }
 
@@ -171,7 +204,7 @@ const deleteReferences = (buf: AutoSizedUint8Array, value: any[]) => {
 }
 
 export const references = class extends BasePropDef {
-  override type = PropType.references
+  override type: PropTypeEnum = PropType.references
   override pushValue(
     buf: AutoSizedUint8Array,
     value: any,
@@ -199,9 +232,18 @@ export const references = class extends BasePropDef {
   }
 }
 
-export const reference = class extends references {
-  override type = PropType.references
+export const reference = class extends BasePropDef {
+  override type: PropTypeEnum = PropType.reference
   override pushValue(buf: AutoSizedUint8Array, value: any, op: ModifyEnum) {
-    console.error('TODO reference')
+    console.error('TODO reference ALL THE CASES')
+    if (typeof value === 'number') {
+      pushModifyReferenceMetaHeader(buf, {
+        id: value,
+        isTmp: false,
+        size: 0,
+      })
+    }
+
+    // buf.pushU32(value)
   }
 }

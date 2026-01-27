@@ -156,16 +156,16 @@ await test('include', async (t) => {
 
   d = Date.now()
 
-  for (let i = 0; i < 1e7; i++) {
+  for (let i = 0; i < 1e6; i++) {
     db.create('simple', {
       nr: 67,
       // name: i % 2 ? 'b' : 'a',
       // nr: rand(0, 10),
     })
   }
-
+  console.log('---------------- start drain ?????----------------')
   await db.drain()
-
+  console.log('---------------- end drain ?????----------------')
   // {"all_attributes":{"_registerArt":"HRB","_registerNummer":"150148","additional_data":{"AD":true,"CD":true,"DK":true,"HD":false,"SI":true,"UT":true,"VÖ":false},"federal_state":"Hamburg","native_company_number":"Hamburg HRB 150148","registered_office":"Hamburg","registrar":"Hamburg"},"company_number":"K1101R_HRB150148","current_status":"currently registered","jurisdiction_code":"de","name":"olly UG (haftungsbeschränkt)","officers":[{"name":"Oliver Keunecke","other_attributes":{"city":"Hamburg","firstname":"Oliver","flag":"vertretungsberechtigt gemäß allgemeiner Vertretungsregelung","lastname":"Keunecke"},"position":"Geschäftsführer","start_date":"2018-02-06","type":"person"}],"registered_address":"Waidmannstraße 1, 22769 Hamburg.","retrieved_at":"2018-11-09T18:03:03Z"}
 
   await perf(

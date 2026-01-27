@@ -1,6 +1,6 @@
 import native from '../native.js'
-import { Ctx } from './modify/Ctx.js'
-import { resize } from './modify/resize.js'
+import { Ctx } from './_modify/Ctx.js'
+import { resize } from './_modify/resize.js'
 import { ENCODER, makeTmpBuffer, writeUint32 } from '../utils/uint8.js'
 import { COMPRESSED, NOT_COMPRESSED } from '../protocol/index.js'
 import { LangCode, LangCodeEnum } from '../zigTsExports.js'
@@ -18,7 +18,7 @@ export const write = (
   value = value.normalize('NFKD')
   buf[offset] = lang
   const { written: l } = ENCODER.encodeInto(value, buf.subarray(offset + 2))
-  let crc = native.crc32(buf.subarray(offset + 2, offset + 2 + l))
+  const crc = native.crc32(buf.subarray(offset + 2, offset + 2 + l))
   if (value.length > 200 && !noCompression) {
     const insertPos = offset + 6 + l
     const startPos = offset + 2
@@ -51,7 +51,13 @@ export const write = (
 export const stringCompress = (str: string): Uint8Array => {
   const s = str.normalize('NFKD')
   const tmpCompressBlock = getTmpBuffer(2 * native.stringByteLength(s) + 10)
-  const l = write({ buf: tmpCompressBlock } as Ctx, str, 0, LangCode.none, false)
+  const l = write(
+    { buf: tmpCompressBlock } as Ctx,
+    str,
+    0,
+    LangCode.none,
+    false,
+  )
   const nBuffer = new Uint8Array(l)
   nBuffer.set(tmpCompressBlock.subarray(0, l))
   return nBuffer
