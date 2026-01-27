@@ -22,7 +22,7 @@ const SELVA_ENOENT = -8
 
 const loadCommonId = idGenerator()
 const saveAllBlocksId = idGenerator()
-const loadBlockRawId = idGenerator()
+const loadBlockId = idGenerator()
 const getBlockHashId = idGenerator()
 const getBlockStatusesId = idGenerator()
 
@@ -82,13 +82,12 @@ export async function loadCommon(
   })
 }
 
-export async function loadBlockRaw(
+export async function loadBlock(
   db: DbServer,
   typeId: number,
-  start: number,
   block: number,
 ): Promise<Uint8Array> {
-  const id = loadBlockRawId.next().value
+  const id = loadBlockId.next().value
   const msg = new Uint8Array(11)
 
   writeUint32(msg, id, 0)
