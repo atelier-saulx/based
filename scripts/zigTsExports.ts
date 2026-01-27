@@ -374,6 +374,15 @@ const parseZig = (input: string): string => {
     const byteSize = Math.ceil(totalBits / 8)
     output += `export const ${name}ByteSize = ${byteSize}\n\n`
 
+    let alignOf = 1
+    while (alignOf < byteSize) {
+      alignOf *= 2
+    }
+    if (alignOf > 16) {
+      alignOf = 16
+    }
+    output += `export const ${name}AlignOf = ${alignOf}\n\n`
+
     structs[name] = { isPacked, bitSize: totalBits }
 
     if (isPacked) {

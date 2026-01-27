@@ -6,6 +6,8 @@ const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
 
+// Fns here are non-inline to avoid a too long switch statement in filter
+
 pub const Op = enum(u8) {
     eq = 1,
     lt = 2,

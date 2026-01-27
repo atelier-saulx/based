@@ -12,7 +12,7 @@ const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
 pub fn prepare(
     q: []u8,
-    _: *Query.QueryCtx,
+    ctx: *Query.QueryCtx,
     typeEntry: Node.Type,
 ) !void {
     var i: usize = 0;
@@ -27,23 +27,29 @@ pub fn prepare(
 
             q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i);
+
             if (condition.op.compare != t.FilterOpCompare.nextOrIndex) {
                 condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
             }
+
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
             condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
 
-            // we can expand the buffer here make a copy and make prepare a seperate fn
-            // Add reference select thing
-            //     // .selectLargeRef, .selectSmallRef => {
-            //     //     i += utils.sizeOf(t.FilterCondition);
-            //     //     const selectReference = utils.readNext(t.FilterSelect, q, &i);
-            //     //     prepare(q[i .. i + selectReference.size]);
-            //     //     i += selectReference.size;
-            //     // },
+            std.debug.print("op: {any} start {any}  end {any} -> \n", .{ condition.op, i, end });
 
-            i = end;
+            switch (condition.op.compare) {
+                .selectSmallRef => {
+                    const index = i + q[i] + utils.sizeOf(t.FilterCondition);
+                    const select = utils.readPtr(t.FilterSelect, q, index + utils.sizeOf(t.FilterSelect) - condition.offset);
+                    select.typeEntry = try Node.getType(ctx.db, select.typeId);
+                    try prepare(q[end .. end + select.size], ctx, select.typeEntry);
+                    i = end + select.size;
+                },
+                else => {
+                    i = end;
+                },
+            }
         } else {
             condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
             const totalSize = headerSize + condition.size;
@@ -56,20 +62,26 @@ pub fn prepare(
 
 pub fn recursionErrorBoundary(
     cb: anytype,
+    node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
-    value: []u8,
-    i: *usize,
+    typeEntry: Node.Type,
 ) bool {
-    return cb(ctx, q, value, i) catch |err| {
+    return cb(
+        node,
+        ctx,
+        q,
+        typeEntry,
+    ) catch |err| {
         std.debug.print("Filter: recursionErrorBoundary: Error {any} \n", .{err});
         return false;
     };
 }
 
+// maybe add an inline version as well?
 pub inline fn filter(
     node: Node.Node,
-    _: *Query.QueryCtx,
+    ctx: *Query.QueryCtx,
     q: []u8,
     typeEntry: Node.Type,
 ) !bool {
@@ -81,7 +93,7 @@ pub inline fn filter(
     while (i < nextOrIndex) {
         const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
         const index = i + q[i] + utils.sizeOf(t.FilterCondition);
-        const nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
+        var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
         if (prop != c.prop) {
             prop = c.prop;
             v = Fields.get(typeEntry, node, c.fieldSchema, .null);
@@ -90,6 +102,24 @@ pub inline fn filter(
         pass = switch (instruction) {
             .nextOrIndex => blk: {
                 nextOrIndex = utils.readPtr(u64, q, index + utils.sizeOf(u64) - c.offset).*;
+                break :blk true;
+            },
+            .selectLargeRef => blk: {
+                break :blk true;
+            },
+            .selectSmallRef => blk: {
+                const select = utils.readPtr(t.FilterSelect, q, index + utils.sizeOf(t.FilterSelect) - c.offset);
+                nextIndex += select.size;
+                if (Node.getNode(select.typeEntry, utils.readPtr(u32, v, 0).*)) |refNode| {
+                    break :blk recursionErrorBoundary(filter, refNode, ctx, q[nextIndex - select.size .. nextIndex], select.typeEntry);
+                } else {
+                    break :blk false;
+                }
+            },
+            .selectSmallRefs => blk: {
+                break :blk true;
+            },
+            .selectLargeRefs => blk: {
                 break :blk true;
             },
             inline else => |tag| blk: {

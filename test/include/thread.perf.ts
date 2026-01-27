@@ -1,19 +1,8 @@
-import {
-  fastPrng,
-  readUint32,
-  wait,
-  writeUint32,
-} from '../../src/utils/index.js'
+import { fastPrng, wait } from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
-import { italy } from '../shared/examples.js'
 import { BasedDb } from '../../src/index.js'
 import { registerQuery } from '../../src/db-client/query/registerQuery.js'
-import { register } from 'module'
-import native from '../../src/native.js'
-import { OpType } from '../../src/zigTsExports.js'
-import { styleText } from 'util'
-import { registerSubscription } from '../../src/db-client/query/subscription/toByteCode.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({
@@ -43,24 +32,18 @@ await test('include', async (t) => {
           nr: 'uint32',
           start: 'timestamp',
           end: 'timestamp',
+          // inverse: { ref: 'simple',}
+          target: { ref: 'simple', prop: 'target' },
         },
       },
     },
   })
-
-  console.log('SCHEMA DONE')
 
   const todos: number[] = []
   const rand = fastPrng(233221)
 
   await wait(100)
   let d = Date.now()
-
-  // db.create('todo', {
-  //   flap: 666,
-  //   // name: i % 2 ? 'b' : 'a',
-  //   nr: 2,
-  // })
 
   for (let i = 0; i < 5e6; i++) {
     db.create('simple', {
@@ -96,27 +79,14 @@ await test('include', async (t) => {
 
   registerQuery(x)
 
-  // console.log(
-  //   x.buffer,
-  //   await x.get().then((v) => {
-  //     console.log(v)
-  //     return v
-  //   }),
-  //   // x.§
-  // )
   // d = Date.now()
-
   // for (let i = 0; i < 100; i++) {
   //   //.range(0, 1)
-
   //   writeUint32(x.buffer!, i + 1, 8)
   //   writeUint32(x.buffer!, i + 1, 0)
-
   //   q.push(db.server.getQueryBuf(x.buffer!))
   // }
-
   // await Promise.all(q)
-
   // time = Date.now() - d
   // console.log('READ 5M', time, 'ms', (1000 / time) * 9 * 1e3, 'OPS per second')
 
@@ -158,21 +128,36 @@ await test('include', async (t) => {
 
   d = Date.now()
 
-  for (let i = 0; i < 1e7; i++) {
+  const simple = await db.create('simple', {
+    nr: 1001,
+  })
+
+  const simple2 = await db.create('simple', {
+    nr: 1002,
+  })
+
+  for (let i = 0; i < 10; i++) {
     db.create('simple', {
       nr: 67,
       start: d + i * 1e3,
       end: d + i * 1e3 + 10e3,
+      target: i % 2 ? simple2 : simple,
       // name: i % 2 ? 'b' : 'a',
       // nr: rand(0, 10),
     })
   }
 
   await db.drain()
+  time = Date.now() - d
+  console.log(
+    'CREATE + REF 10M',
+    time,
+    'ms',
+    (1000 / time) * 5e6,
+    'OPS per second',
+  )
 
-  // {"all_attributes":{"_registerArt":"HRB","_registerNummer":"150148","additional_data":{"AD":true,"CD":true,"DK":true,"HD":false,"SI":true,"UT":true,"VÖ":false},"federal_state":"Hamburg","native_company_number":"Hamburg HRB 150148","registered_office":"Hamburg","registrar":"Hamburg"},"company_number":"K1101R_HRB150148","current_status":"currently registered","jurisdiction_code":"de","name":"olly UG (haftungsbeschränkt)","officers":[{"name":"Oliver Keunecke","other_attributes":{"city":"Hamburg","firstname":"Oliver","flag":"vertretungsberechtigt gemäß allgemeiner Vertretungsregelung","lastname":"Keunecke"},"position":"Geschäftsführer","start_date":"2018-02-06","type":"person"}],"registered_address":"Waidmannstraße 1, 22769 Hamburg.","retrieved_at":"2018-11-09T18:03:03Z"}
-
-  await perf(
+  await perf.skip(
     async () => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
@@ -180,13 +165,7 @@ await test('include', async (t) => {
           db
             .query('simple')
             .include('nr')
-            // add more
-            // .filter('nr', '=', [1, 1, 1, 100 + i])
-            // .filter('nr', '=', [1, 1, 1, 100 + i])
             .filter('nr', '=', 100 + i)
-            // .filter('nr', '=', [11, 1e7 + i])
-            // .filter('flap', 'eqU32Batch', bigBatch) // should give results
-            // .filter('flap', 'eqU32BatchSmall', [1e7 + 1e7 + i]) // should give results
             .get(),
         )
       }
@@ -196,38 +175,14 @@ await test('include', async (t) => {
     { repeat: 100 },
   )
 
-  // time = Date.now() - d
-  // console.log('create 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
-
-  db.create('simple', {
-    nr: 99,
-  })
-
-  // | '='
-  // | '<'
-  // | '>'
-  // | '!='
-  // | '>='
-  // | '<='
-  // | '..'
-  // | '!..'
-  // | 'exists'
-  // | '!exists'
-  // | 'like'
-  // | '!like'
-  // | 'includes'
-  // | '!includes'
-
   await db
     .query('simple')
-    .include('nr', 'start', 'end') //  'start', 'end'
-    // .filter('nr', '>', 90)
-    // .and('nr', '<', 200)
-    .filter('start', '>', Date.now() - 1e3)
-    .and('end', '<', Date.now() + 10e3)
-    // .filter('nr', '>', 200)
-    .or('nr', '>', 90)
-    .range(0, 10)
+    .include('nr', 'start', 'end', 'target')
+    .filter('target.nr', '>', 1001)
+    // .filter('start', '>', Date.now() - 1e3)
+    // .and('end', '<', Date.now() + 10e3)
+    // .or('nr', '>', 90)
+    .range(0, 3)
     .get()
     .inspect(100)
 

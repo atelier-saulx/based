@@ -2,13 +2,12 @@ import { PropDef, PropDefEdge } from '../../../schema.js'
 import { getPropWriter } from '../../../schema/def/utils.js'
 import {
   FilterConditionByteSize,
+  FilterConditionAlignOf,
   FilterOp,
   FilterOpCompare,
   writeFilterCondition,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from './types.js'
-
-const COND_ALIGN_SPACE = 16
 
 export const conditionBuffer = (
   propDef: { start: number; prop: number; len: number } & Record<string, any>,
@@ -16,9 +15,9 @@ export const conditionBuffer = (
   op: FilterOp,
 ) => {
   const condition = new Uint8Array(
-    size + FilterConditionByteSize + COND_ALIGN_SPACE + 1 + propDef.len,
+    size + FilterConditionByteSize + FilterConditionAlignOf + 1 + propDef.len,
   )
-  condition[0] = 255
+  condition[0] = 255 // Means condition header is not aligned
   const offset =
     writeFilterCondition(
       condition,
@@ -28,11 +27,10 @@ export const conditionBuffer = (
         prop: propDef.prop,
         fieldSchema: 0,
         len: propDef.len,
-        offset: 255,
+        offset: 255, // Means value is not aligned
         size: size + propDef.len,
       },
-      // propDef.len - 1 is space for alignment
-      COND_ALIGN_SPACE + 1, //+ propDef.len - 1,
+      FilterConditionAlignOf + 1,
     ) + propDef.len
   return { condition, offset }
 }

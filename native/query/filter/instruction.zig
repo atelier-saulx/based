@@ -2,20 +2,37 @@ const std = @import("std");
 const t = @import("../../types.zig");
 const Compare = @import("compare.zig");
 
-fn createEnumField(propType: t.PropType, cmp: t.FilterOpCompare) std.builtin.Type.EnumField {
-    const val: u16 = (@as(u16, cmp.value) << 8) | propType.value;
+fn metaField(op: t.FilterOpCompare) std.builtin.Type.EnumField {
+    const propType = t.PropType.null;
+    const val: u16 = (@as(u16, @intFromEnum(op)) << 8) | @intFromEnum(propType);
     return .{
-        .name = propType.name ++ cmp.name,
+        .name = @tagName(op),
         .value = val,
     };
+}
+
+fn isNoMetaOp(op: t.FilterOpCompare, metaOps: []const std.builtin.Type.EnumField) bool {
+    for (metaOps) |metaOp| {
+        if (std.mem.eql(u8, metaOp.name, @tagName(op))) {
+            return false;
+        }
+    }
+    return true;
 }
 
 fn createInstructionEnum() type {
     const propTypeInfo = @typeInfo(t.PropType).@"enum";
     const compareInfo = @typeInfo(t.FilterOpCompare).@"enum";
 
-    // nextOrIndex
-    var total = 1;
+    const metaOps = [_]std.builtin.Type.EnumField{
+        metaField(t.FilterOpCompare.nextOrIndex),
+        metaField(t.FilterOpCompare.selectLargeRef),
+        metaField(t.FilterOpCompare.selectLargeRefs),
+        metaField(t.FilterOpCompare.selectSmallRef),
+        metaField(t.FilterOpCompare.selectSmallRefs),
+    };
+
+    var total = metaOps.len;
 
     for (propTypeInfo.fields) |propType| {
         const p: t.PropType = @enumFromInt(propType.value);
@@ -39,13 +56,12 @@ fn createInstructionEnum() type {
     }
 
     var newFields: [total]std.builtin.Type.EnumField = undefined;
-    var i: usize = 0;
 
-    newFields[i] = .{
-        .name = "nextOrIndex",
-        .value = (@as(u16, @intFromEnum(t.FilterOpCompare.nextOrIndex)) << 8) | @intFromEnum(t.PropType.null),
-    };
-    i += 1;
+    var i: usize = 0;
+    for (metaOps) |metaOp| {
+        newFields[i] = metaOp;
+        i += 1;
+    }
 
     for (propTypeInfo.fields) |propType| {
         const p: t.PropType = @enumFromInt(propType.value);
@@ -96,6 +112,8 @@ pub const OpMeta = struct {
 pub fn parseOp(comptime tag: CombinedOp) OpMeta {
     const val = @intFromEnum(tag);
 
+    @setEvalBranchQuota(10000);
+
     const op: t.FilterOpCompare = @enumFromInt(@as(u8, @truncate(val >> 8)));
     const propType: t.PropType = @enumFromInt(@as(u8, @truncate(val)));
 
@@ -140,9 +158,7 @@ fn propTypeToPrimitive(comptime propType: t.PropType) type {
         .int8 => i8,
         .timestamp => i64,
         .number => f64,
-
         // .boolean, .enum => u8,
-
         else => u8,
     };
 }
