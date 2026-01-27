@@ -328,6 +328,33 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
             const value = data[j .. j + prop.size];
             switch (prop.type) {
+                .cardinality => {
+                    var k: usize = 0;
+                    const cardinality = utils.readNext(t.ModifyCardinalityHeader, value, &k);
+                    const hll = try Fields.ensurePropTypeString(node, propSchema);
+                    selva.c.hll_init(hll, cardinality.precision, cardinality.sparse);
+                    while (k < value.len) {
+                        const hash = read(u64, value, k);
+                        selva.c.hll_add(hll, hash);
+                        k += 8;
+                    }
+                    // -------------OLD
+                    // const hllMode = data[0] == 0;
+                    // const hllPrecision = data[1];
+                    // const offset = 2;
+                    // const len = read(u32, data, offset);
+                    // const hll = try Fields.ensurePropTypeString(node, propSchema);
+                    // selva.c.hll_init(hll, hllPrecision, hllMode);
+                    // var i: usize = 4 + offset;
+                    // while (i < (len * 8) + offset) {
+                    //     const hash = read(u64, data, i);
+                    //     selva.c.hll_add(hll, hash);
+                    //     i += 8;
+                    // }
+                    // const newCount = selva.c.hll_count(hll);
+                    // addSortIndexOnCreation(ctx, newCount[0..4]) catch null;
+                    // return len * 8 + 6;
+                },
                 .reference => {
                     const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
                     const refTypeEntry = try Node.getType(db, refTypeId);

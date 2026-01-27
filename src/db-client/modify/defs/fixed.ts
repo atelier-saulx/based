@@ -1,4 +1,5 @@
 import type { EnumItem, SchemaEnum } from '../../../schema.js'
+import { convertToTimestamp } from '../../../utils/timestamp.js'
 import { PropType, type PropTypeEnum } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
@@ -13,6 +14,9 @@ export const number = class extends BasePropDef {
 
 export const timestamp = class extends number {
   override type = PropType.timestamp
+  override pushValue(buf: AutoSizedUint8Array, value: number | string) {
+    buf.pushI64(convertToTimestamp(value))
+  }
 }
 
 export const uint8 = class extends BasePropDef {

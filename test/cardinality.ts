@@ -2,6 +2,7 @@ import { BasedDb, xxHash64 } from '../src/index.js'
 import { ENCODER } from '../src/utils/uint8.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { getTypeDefs } from '../src/db-client/modify/index.js'
 
 await test('hll', async (t) => {
   const db = new BasedDb({
@@ -43,6 +44,7 @@ await test('hll', async (t) => {
     myUniqueValuesCount: 'myCoolValue',
   })
 
+  console.log('a')
   deepEqual(
     (
       await db
@@ -58,6 +60,7 @@ await test('hll', async (t) => {
       },
     ],
   )
+  console.log('b')
 
   deepEqual(
     (
@@ -365,7 +368,7 @@ await test('switches', async (t) => {
 
   const visits = ['Clint', 'Lee', 'Clint', 'Aldo', 'Lee']
 
-  const store1 = db.create('store', {
+  const store1 = await db.create('store', {
     name: 'Handsome Sportsman',
     visitors: visits,
     visits: visits.length,

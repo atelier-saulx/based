@@ -139,6 +139,7 @@ const setReferences = (
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
       continue
     }
+
     if (typeof item === 'object' && item !== null) {
       if (item.tmpId) {
         const index = pushModifyReferencesHeader(buf, {
@@ -154,6 +155,7 @@ const setReferences = (
         )
         continue
       }
+
       if (typeof item.id === 'number') {
         // TODO can optimize, don't need whole object
         const index = pushModifyReferencesHeader(buf, {

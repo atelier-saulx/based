@@ -1,17 +1,24 @@
 import native from '../../../native.js'
 import { NOT_COMPRESSED } from '../../../protocol/index.js'
-import type { SchemaString, SchemaVector } from '../../../schema.js'
+import type {
+  SchemaCardinality,
+  SchemaString,
+  SchemaVector,
+} from '../../../schema.js'
+import { ENCODER } from '../../../utils/uint8.js'
 import {
+  pushModifyCardinalityHeader,
   PropType,
   type LangCodeEnum,
   type ModifyEnum,
   type PropTypeEnum,
 } from '../../../zigTsExports.js'
+import { xxHash64 } from '../../xxHash64.js'
 import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 
 export const string = class extends BasePropDef {
-  constructor(prop: SchemaString, path) {
+  constructor(prop: SchemaString, path: string[]) {
     super(prop, path)
     if (prop.maxBytes && prop.maxBytes < 61) {
       this.size = prop.maxBytes + 1
@@ -58,7 +65,6 @@ export const binary = class extends BasePropDef {
   override type = PropType.binary
   override pushValue(buf: AutoSizedUint8Array, value: Uint8Array) {
     buf.set(value, buf.length)
-    buf.length += value.length
   }
 }
 
@@ -70,9 +76,40 @@ export const alias = class extends BasePropDef {
 }
 
 export const cardinality = class extends BasePropDef {
+  constructor(prop: SchemaCardinality, path) {
+    super(prop, path)
+    this.sparse = prop.mode === 'sparse'
+    this.precision = prop.precision ?? 8
+  }
+  sparse: boolean
+  precision: number
   override type = PropType.cardinality
   override pushValue(buf: AutoSizedUint8Array, value: any) {
-    throw new Error('Serialize cardinality not implemented')
+    if (value instanceof Uint8Array && value.byteLength !== 8) {
+      // buf.set(value, buf.length)
+      throw new Error('unhandled error cardi')
+    }
+
+    if (!Array.isArray(value)) {
+      value = [value]
+    }
+
+    if (value.length === 0) return
+
+    pushModifyCardinalityHeader(buf, this)
+
+    for (const item of value) {
+      // validate(item, def)
+      if (typeof item === 'string') {
+        buf.reserveU64()
+        xxHash64(ENCODER.encode(item), buf.data, buf.length - 8)
+      } else if (item instanceof Uint8Array && item.byteLength === 8) {
+        buf.set(item, buf.length)
+      } else {
+        throw new Error('unhandled error cardi')
+        // throw [def, val]
+      }
+    }
   }
 }
 

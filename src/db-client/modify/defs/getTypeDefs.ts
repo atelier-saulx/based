@@ -4,7 +4,9 @@ import {
   type SchemaProps,
   type SchemaType,
 } from '../../../schema.js'
-import { defs, type TypeDef } from './index.js'
+import { reorderProps } from '../../../schema/def/utils.js'
+import { PropType } from '../../../zigTsExports.js'
+import { defs, type PropDef, type PropDefClass, type TypeDef } from './index.js'
 
 const mainSorter = (a, b) => {
   if (a.size === 8) return -1
@@ -12,6 +14,31 @@ const mainSorter = (a, b) => {
   if (a.size === b.size) return 0
   return 1
 }
+
+const propIndexOffset = (prop: PropDef) => {
+  switch (prop.type) {
+    case PropType.microBuffer:
+    case PropType.vector:
+      return 'default' in prop.prop ? -600 : 0
+    case PropType.string:
+    case PropType.binary:
+    case PropType.json:
+      return 'default' in prop.prop ? -500 : 0
+    case PropType.text:
+      return 'default' in prop.prop ? -400 : 0
+    case PropType.references:
+    case PropType.reference:
+      return -300
+    case PropType.alias:
+    case PropType.aliases:
+    case PropType.colVec:
+      return 300
+    default:
+      return 0
+  }
+}
+
+const separateSorter = (a, b) => propIndexOffset(a) - propIndexOffset(b)
 
 const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
   const typeDef: TypeDef = {
@@ -21,8 +48,6 @@ const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
     main: [],
     tree: new Map(),
   }
-
-  let propId = 1
 
   const walk = (
     props: SchemaProps<true>,
@@ -50,7 +75,6 @@ const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
       if (def.size) {
         typeDef.main.push(def)
       } else {
-        def.id = propId++
         typeDef.separate.push(def)
       }
       typeDef.props.set(path.join('.'), def)
@@ -62,11 +86,17 @@ const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
 
   // -------- finish main --------
   typeDef.main.sort(mainSorter)
-
   let start = 0
   for (const prop of typeDef.main) {
     prop.start = start
     start += prop.size
+  }
+
+  // -------- finish separate ---------
+  typeDef.separate.sort(separateSorter)
+  let propId = 1
+  for (const prop of typeDef.separate) {
+    prop.id = propId++
   }
 
   return typeDef

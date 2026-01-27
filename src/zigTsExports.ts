@@ -1062,6 +1062,86 @@ export const pushModifyReferenceMetaHeader = (
   return index
 }
 
+export type ModifyCardinalityHeader = {
+  sparse: boolean
+  precision: number
+}
+
+export const ModifyCardinalityHeaderByteSize = 2
+
+export const ModifyCardinalityHeaderAlignOf = 2
+
+export const packModifyCardinalityHeader = (obj: ModifyCardinalityHeader): bigint => {
+  let val = 0n
+  val |= ((obj.sparse ? 1n : 0n) & 1n) << 0n
+  val |= (BigInt(obj.precision) & 255n) << 8n
+  return val
+}
+
+export const unpackModifyCardinalityHeader = (val: bigint): ModifyCardinalityHeader => {
+  return {
+    sparse: ((val >> 0n) & 1n) === 1n,
+    precision: Number((val >> 8n) & 255n),
+  }
+}
+
+export const writeModifyCardinalityHeader = (
+  buf: Uint8Array,
+  header: ModifyCardinalityHeader,
+  offset: number,
+): number => {
+  buf[offset] = 0
+  buf[offset] |= (((header.sparse ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
+  buf[offset] = Number(header.precision)
+  offset += 1
+  return offset
+}
+
+export const writeModifyCardinalityHeaderProps = {
+  sparse: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+  precision: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = Number(value)
+  },
+}
+
+export const readModifyCardinalityHeader = (
+  buf: Uint8Array,
+  offset: number,
+): ModifyCardinalityHeader => {
+  const value: ModifyCardinalityHeader = {
+    sparse: (((buf[offset] >>> 0) & 1)) === 1,
+    precision: buf[offset + 1],
+  }
+  return value
+}
+
+export const readModifyCardinalityHeaderProps = {
+    sparse: (buf: Uint8Array, offset: number) => (((buf[offset] >>> 0) & 1)) === 1,
+    precision: (buf: Uint8Array, offset: number) => buf[offset + 1],
+}
+
+export const createModifyCardinalityHeader = (header: ModifyCardinalityHeader): Uint8Array => {
+  const buffer = new Uint8Array(ModifyCardinalityHeaderByteSize)
+  writeModifyCardinalityHeader(buffer, header, 0)
+  return buffer
+}
+
+export const pushModifyCardinalityHeader = (
+  buf: AutoSizedUint8Array,
+  header: ModifyCardinalityHeader,
+): number => {
+  const index = buf.length
+  buf.pushU8(0)
+  buf.view[buf.length - 1] |= (((header.sparse ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
+  buf.pushU8(Number(header.precision))
+  return index
+}
+
 export type ModifyResultItem = {
   id: number
   err: ModifyErrorEnum
