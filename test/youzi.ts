@@ -1,5 +1,5 @@
 import { BasedDb } from '../src/index.js'
-import { AutoSizedUint8Array } from '../src/db-client/modify/AutoSizedUint8Array.js'
+import { AutoSizedUint8Array } from '../src/utils/AutoSizedUint8Array.js'
 import {
   flush,
   getTypeDefs,
@@ -12,9 +12,6 @@ import test from './shared/test.js'
 await test.skip('schema defs', async (t) => {
   const schema = parseSchema({
     types: {
-      // role: {
-      //   name: 'string',
-      // },
       user: {
         age: 'number',
         rating: 'uint8',

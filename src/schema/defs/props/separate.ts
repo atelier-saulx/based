@@ -10,11 +10,10 @@ import {
   pushModifyCardinalityHeader,
   PropType,
   type LangCodeEnum,
-  type ModifyEnum,
   type PropTypeEnum,
 } from '../../../zigTsExports.js'
-import { xxHash64 } from '../../xxHash64.js'
-import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
+import { xxHash64 } from '../../../db-client/xxHash64.js'
+import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 
 export const string = class extends BasePropDef {
@@ -26,23 +25,27 @@ export const string = class extends BasePropDef {
       this.size = prop.max * 2 + 1
     }
     if (this.size) {
+      // make it a fixed string prop!
+      this.type = PropType.stringFixed
+      this.pushValue = this.pushFixedValue
     }
   }
   override type: PropTypeEnum = PropType.string
   override pushValue(
     buf: AutoSizedUint8Array,
     val: string,
-    op: ModifyEnum,
     lang: LangCodeEnum,
   ) {
     const normalized = val.normalize('NFKD')
-    // make header!
+    // TODO make header!
+    // TODO compression
     buf.pushU8(lang)
     buf.pushU8(NOT_COMPRESSED)
     const written = buf.pushString(normalized)
     const crc = native.crc32(buf.subarray(buf.length - written))
     buf.pushU32(crc)
   }
+  pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
 }
 
 // TODO do it nice
@@ -52,13 +55,8 @@ export const text = class extends string {
 
 export const json = class extends string {
   override type = PropType.json
-  override pushValue(
-    buf: AutoSizedUint8Array,
-    value: any,
-    op: ModifyEnum,
-    lang: LangCodeEnum,
-  ) {
-    super.pushValue(buf, JSON.stringify(value), op, lang)
+  override pushValue(buf: AutoSizedUint8Array, value: any, lang: LangCodeEnum) {
+    super.pushValue(buf, JSON.stringify(value), lang)
   }
 }
 

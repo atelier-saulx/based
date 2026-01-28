@@ -12,11 +12,15 @@ import {
   type ModifyEnum,
   type PropTypeEnum,
 } from '../../../zigTsExports.js'
-import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
+import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type { SchemaProp } from '../../../schema.js'
 import { BasePropDef } from './base.js'
-import type { PropDef, TypeDef } from './index.js'
-import { ModifyItem, QueuedItem, serializeProps } from '../index.js'
+import type { PropDef, TypeDef } from '../index.js'
+import {
+  ModifyItem,
+  QueuedItem,
+  serializeProps,
+} from '../../../db-client/modify/index.js'
 
 type Edges = Record<`${string}`, unknown> | undefined
 
@@ -199,7 +203,7 @@ const deleteReferences = (buf: AutoSizedUint8Array, value: any[]) => {
   }
 }
 
-export const references = class extends BasePropDef {
+export const references = class References extends BasePropDef {
   override type: PropTypeEnum = PropType.references
   override pushValue(
     buf: AutoSizedUint8Array,
@@ -228,13 +232,13 @@ export const references = class extends BasePropDef {
   }
 }
 
-export const reference = class extends BasePropDef {
+export const reference = class Reference extends BasePropDef {
   override type: PropTypeEnum = PropType.reference
   override pushValue(
     buf: AutoSizedUint8Array,
     value: any,
-    op: ModifyEnum,
     lang: LangCodeEnum,
+    op: ModifyEnum,
   ) {
     const id = getRealId(value)
     if (id) {
