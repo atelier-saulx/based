@@ -5,8 +5,8 @@ import type {
   PropTypeEnum,
 } from '../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
-import * as fixed from './props/fixed.js'
 import * as references from './props/references.js'
+import * as fixed from './props/fixed.js'
 import * as vars from './props/separate.js'
 
 export type PropTree = Map<string, PropDef | PropTree>
@@ -29,6 +29,8 @@ export type PropDef = {
   edges?: TypeDef
   ref?: TypeDef
   refProp?: PropDef
+  typeDef: TypeDef
+  isEdge: boolean
   pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
@@ -38,7 +40,7 @@ export type PropDef = {
 }
 
 export type PropDefClass = {
-  new (prop: SchemaProp<true>, path: string[]): PropDef
+  new (prop: SchemaProp<true>, path: string[], typeDef: TypeDef): PropDef
 }
 
 export const defs: Record<

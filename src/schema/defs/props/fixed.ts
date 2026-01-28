@@ -3,6 +3,7 @@ import { convertToTimestamp } from '../../../utils/timestamp.js'
 import { PropType, type PropTypeEnum } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
+import type { TypeDef } from '../index.js'
 
 export const number = class Number extends BasePropDef {
   override type: PropTypeEnum = PropType.number
@@ -56,8 +57,8 @@ export const int32 = class Int32 extends uint32 {
 }
 
 export const enum_ = class Enum extends uint8 {
-  constructor(prop: SchemaEnum<true>, path: string[]) {
-    super(prop, path)
+  constructor(prop: SchemaEnum<true>, path: string[], typeDef: TypeDef) {
+    super(prop, path, typeDef)
     prop.enum.forEach((val, i) => {
       const byte = i + 1
       this.enum[byte] = val

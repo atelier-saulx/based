@@ -123,122 +123,6 @@ export const serializeDelete = <
   })
 }
 
-export class QueuedItem implements Promise<number> {
-  constructor(blocker: ModifyItem | QueuedItem, args: IArguments) {
-    while (blocker instanceof QueuedItem) {
-      blocker = blocker._blocker
-    }
-    this._blocker = blocker
-    this._args = args
-    blocker._batch.queue ??= []
-    blocker._batch.queue.push(this)
-  }
-  [Symbol.toStringTag]!: 'QueuedItem'
-  _args: IArguments
-  _item?: ModifyItem
-  _blocker: ModifyItem | QueuedItem
-  private _p?: Promise<number>
-
-  _promise() {
-    this._p ??=
-      this._item ||
-      new Promise((resolve) => {
-        this._resolve = resolve
-      })
-    return this._p
-  }
-
-  get id(): number | undefined {
-    return this._item?.id
-  }
-
-  get err(): ModifyErrorEnum | undefined {
-    return this._item?.err
-  }
-
-  _resolve?: (value: number | PromiseLike<number>) => void
-
-  then<Res1 = number, Res2 = never>(
-    onfulfilled?: ((value: number) => Res1 | PromiseLike<Res1>) | null,
-    onrejected?: ((reason: any) => Res2 | PromiseLike<Res2>) | null,
-  ): Promise<Res1 | Res2> {
-    return this._promise().then(onfulfilled, onrejected)
-  }
-  catch<Res = never>(
-    onrejected?: ((reason: any) => Res | PromiseLike<Res>) | null,
-  ): Promise<number | Res> {
-    return this._promise().catch(onrejected)
-  }
-  finally(onfinally?: (() => void) | null): Promise<number> {
-    return this._promise().finally(onfinally)
-  }
-}
-
-export class ModifyItem implements Promise<number> {
-  constructor(batch: ModifyBatch) {
-    this._batch = batch
-    this._index = batch.count++
-  }
-
-  [Symbol.toStringTag]!: 'ModifyItem'
-
-  private _p?: Promise<number>
-  _promise() {
-    this._p ??= new Promise((resolve, reject) => {
-      if (this.id) {
-        resolve(this.id)
-      } else if (this.err) {
-        reject(this.err)
-      } else {
-        this._resolve = resolve
-        this._reject = reject
-        this._batch.items ??= []
-        this._batch.items.push(this)
-      }
-    })
-
-    return this._p
-  }
-
-  _batch: ModifyBatch
-  _index: number
-  _id?: number
-  _err?: ModifyErrorEnum
-  _args?: IArguments
-
-  get id(): number | undefined {
-    if (this._batch.result) {
-      this._id = readUint32(this._batch.result, this._index * 5)
-    }
-    return this._id
-  }
-
-  get err(): ModifyErrorEnum | undefined {
-    if (this._batch.result) {
-      this._err = this._batch.result[this._index * 5 + 4] as ModifyErrorEnum
-    }
-    return this._err
-  }
-
-  _resolve?: (value: number | PromiseLike<number>) => void
-  _reject?: (reason?: any) => void
-
-  then<Res1 = number, Res2 = never>(
-    onfulfilled?: ((value: number) => Res1 | PromiseLike<Res1>) | null,
-    onrejected?: ((reason: any) => Res2 | PromiseLike<Res2>) | null,
-  ): Promise<Res1 | Res2> {
-    return this._promise().then(onfulfilled, onrejected)
-  }
-  catch<Res = never>(
-    onrejected?: ((reason: any) => Res | PromiseLike<Res>) | null,
-  ): Promise<number | Res> {
-    return this._promise().catch(onrejected)
-  }
-  finally(onfinally?: (() => void) | null): Promise<number> {
-    return this._promise().finally(onfinally)
-  }
-}
-
 type ModifySerializer =
   | typeof serializeCreate
   | typeof serializeUpdate
@@ -246,8 +130,8 @@ type ModifySerializer =
 
 type ModifyBatch = {
   count: number
-  items?: ModifyItem[]
-  queue?: QueuedItem[]
+  items?: ModifyCmd[]
+  queue?: ModifyCmd[]
   result?: Uint8Array
   flushed?: true
 }
@@ -256,7 +140,7 @@ export type ModifyCtx = {
   buf: AutoSizedUint8Array
   batch: ModifyBatch
   flushTime: number
-  lastModify?: ModifyItem | QueuedItem
+  lastModify?: ModifyCmd
   flushTimer?: NodeJS.Timeout | true | undefined
   hooks: {
     flushModify: (buf: Uint8Array<ArrayBufferLike>) => Promise<Uint8Array>
@@ -264,89 +148,163 @@ export type ModifyCtx = {
 }
 
 export const flush = (ctx: ModifyCtx) => {
-  if (ctx.buf.length) {
-    const batch = ctx.batch
-    writeModifyHeaderProps.count(ctx.buf.data, batch.count, 0)
-    batch.flushed = true
-    ctx.hooks.flushModify(ctx.buf.view).then((result) => {
-      batch.result = result
-      const items = batch.items
-      const queue = batch.queue
-      if (queue) {
-        batch.queue = undefined
-        for (const item of queue) {
-          const res = modify.apply(null, item._args)
-          item._item = res
-          item._resolve?.(res)
+  if (ctx.buf.length === 0) return
+  const batch = ctx.batch
+  writeModifyHeaderProps.count(ctx.buf.data, batch.count, 0)
+  batch.flushed = true
+  ctx.hooks.flushModify(ctx.buf.view).then((result) => {
+    batch.result = result
+    const items = batch.items
+    const queue = batch.queue
+    if (queue) {
+      batch.queue = undefined
+      for (const item of queue) {
+        item._exec.apply(item, item._arguments)
+        if (item._resolve) {
+          item._await()
         }
       }
-      if (items) {
-        batch.items = undefined
-        for (const item of items) {
-          const id = item.id
-          const err = item.err
-          if (err) {
-            item._reject!(err)
-          } else {
-            item._resolve!(id!)
-          }
-        }
-      }
-    })
-
-    ctx.buf.flush()
-    ctx.batch = { count: 0 }
-  }
-}
-
-export const schedule = (ctx: ModifyCtx) => {
-  if (!ctx.flushTimer) {
-    if (ctx.flushTime === 0) {
-      ctx.flushTimer = true
-      process.nextTick(() => {
-        ctx.flushTimer = undefined
-        flush(ctx)
-      })
-    } else {
-      ctx.flushTimer = setTimeout(() => {
-        ctx.flushTimer = undefined
-        flush(ctx)
-      }, ctx.flushTime)
     }
-  }
+    if (items) {
+      batch.items = undefined
+      for (const item of items) {
+        const id = item.id
+        const err = item.error
+        if (err) {
+          item._reject!(err)
+        } else {
+          item._resolve!(id!)
+        }
+      }
+    }
+  })
+
+  ctx.buf.flush()
+  ctx.batch = { count: 0 }
 }
 
-// TODO implement single ModifyCmd instead of both QueuedItem and ModifyItem
-export const modify = function <S extends ModifySerializer>(
-  ctx: ModifyCtx,
-  serialize: S,
-  ...args: Parameters<S>
-): Promise<number> {
-  const isEmpty = ctx.buf.length === 0
-  if (isEmpty) {
-    pushModifyHeader(ctx.buf, {
-      opId: 0, // is filled on server
-      opType: 0, // is filled on server
-      schema: args[0].hash,
-      count: 0,
-    })
-  }
-  const initialLength = ctx.buf.length
-  try {
-    ;(serialize as (...args: any[]) => void)(...args)
-  } catch (e) {
-    ctx.buf.length = initialLength
-    if (e === AutoSizedUint8Array.ERR_OVERFLOW) {
-      if (isEmpty) throw new Error('Range error')
+const schedule = (ctx: ModifyCtx) => {
+  if (ctx.flushTimer) return
+  if (ctx.flushTime === 0) {
+    ctx.flushTimer = true
+    process.nextTick(() => {
+      ctx.flushTimer = undefined
       flush(ctx)
-      return modify.apply(null, arguments)
-    } else if (e instanceof ModifyItem || e instanceof QueuedItem) {
-      return (ctx.lastModify = new QueuedItem(e, arguments))
-    } else {
-      throw e
+    })
+  } else {
+    ctx.flushTimer = setTimeout(() => {
+      ctx.flushTimer = undefined
+      flush(ctx)
+    }, ctx.flushTime)
+  }
+}
+
+export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
+  implements Promise<number>
+{
+  [Symbol.toStringTag]!: 'ModifyCmd'
+  constructor(ctx: ModifyCtx, serialize: S, ...args: Parameters<S>) {
+    this._exec(ctx, serialize, ...args)
+  }
+  private _result() {
+    if (this._batch?.result) {
+      this._id = readUint32(this._batch.result, this._index! * 5)
+      this._error = this._batch.result[this._index! * 5 + 4] as ModifyErrorEnum
     }
   }
+  get id(): number | undefined {
+    this._result()
+    return this._id
+  }
+  get error(): ModifyErrorEnum | undefined {
+    this._result()
+    return this._error
+  }
+  get tmpId(): number | undefined {
+    if (this._batch && !this._batch.flushed) {
+      return this._index
+    }
+  }
+  get promise(): Promise<number> {
+    this._promise ??= new Promise((resolve, reject) => {
+      if (this.id) {
+        resolve(this.id)
+      } else if (this.error) {
+        reject(this.error)
+      } else {
+        this._resolve = resolve
+        this._reject = reject
+        this._await()
+      }
+    })
+    return this._promise
+  }
 
-  schedule(ctx)
-  return (ctx.lastModify = new ModifyItem(ctx.batch))
+  private _id?: number
+  private _error?: ModifyErrorEnum
+  private _blocker?: ModifyCmd
+  private _index?: number
+  private _batch?: ModifyBatch
+  private _promise?: Promise<number>
+
+  _arguments?: IArguments
+  _resolve?: (value: number | PromiseLike<number>) => void
+  _reject?: (reason?: any) => void
+  _await() {
+    if (this._batch) {
+      this._batch.items ??= []
+      this._batch.items.push(this)
+    }
+  }
+  _exec(ctx: ModifyCtx, serialize: S, ...args: Parameters<S>) {
+    const isEmpty = ctx.buf.length === 0
+    if (isEmpty) {
+      pushModifyHeader(ctx.buf, {
+        opId: 0, // is filled on server
+        opType: 0, // is filled on server
+        schema: args[0].hash,
+        count: 0,
+      })
+    }
+    const initialLength = ctx.buf.length
+    try {
+      ;(serialize as any)(...args)
+    } catch (e) {
+      ctx.buf.length = initialLength
+      if (e === AutoSizedUint8Array.ERR_OVERFLOW) {
+        if (isEmpty) throw new Error('Range error')
+        flush(ctx)
+        return this._exec.apply(this, arguments)
+      } else if (e instanceof ModifyCmd) {
+        let blocker: ModifyCmd = e
+        while (blocker._blocker) blocker = blocker._blocker
+        blocker._batch!.queue ??= []
+        blocker._batch!.queue.push(this)
+        this._blocker = blocker
+        this._arguments = arguments
+      } else {
+        throw e
+      }
+    }
+
+    schedule(ctx)
+    this._batch = ctx.batch
+    this._index = ctx.batch.count++
+    ctx.lastModify = this
+  }
+
+  then<Res1 = number, Res2 = never>(
+    onfulfilled?: ((value: number) => Res1 | PromiseLike<Res1>) | null,
+    onrejected?: ((reason: any) => Res2 | PromiseLike<Res2>) | null,
+  ): Promise<Res1 | Res2> {
+    return this.promise.then(onfulfilled, onrejected)
+  }
+  catch<Res = never>(
+    onrejected?: ((reason: any) => Res | PromiseLike<Res>) | null,
+  ): Promise<number | Res> {
+    return this.promise.catch(onrejected)
+  }
+  finally(onfinally?: (() => void) | null): Promise<number> {
+    return this.promise.finally(onfinally)
+  }
 }

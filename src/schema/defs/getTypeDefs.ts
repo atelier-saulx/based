@@ -77,7 +77,7 @@ const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
         continue
       }
 
-      const def = new Def(prop, path)
+      const def = new Def(prop, path, typeDef)
       if (def.size) {
         typeDef.main.push(def)
       } else {

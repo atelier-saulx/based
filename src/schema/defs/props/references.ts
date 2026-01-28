@@ -16,11 +16,7 @@ import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type { SchemaProp } from '../../../schema.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from '../index.js'
-import {
-  ModifyItem,
-  QueuedItem,
-  serializeProps,
-} from '../../../db-client/modify/index.js'
+import { ModifyCmd, serializeProps } from '../../../db-client/modify/index.js'
 
 type Edges = Record<`${string}`, unknown> | undefined
 
@@ -53,7 +49,7 @@ const serializeIds = (
 
 const serializeTmpIds = (
   buf: AutoSizedUint8Array,
-  items: ModifyItem[],
+  items: ModifyCmd[],
   offset: number,
 ): undefined | any => {
   let i = offset
@@ -119,12 +115,11 @@ const serializeIdsAndMeta = (
 
 const getRealId = (item: any) => {
   if (typeof item === 'number') return item
-  if (item instanceof ModifyItem || item instanceof QueuedItem) return item.id
+  if (item instanceof ModifyCmd) return item.id
 }
 
 const getTmpId = (item: any) => {
-  if (item instanceof QueuedItem) item = item._item
-  if (item instanceof ModifyItem && !item._batch.flushed) return item._index
+  if (item instanceof ModifyCmd) return item.tmpId
 }
 
 const isValidRefObj = (item: any) =>
@@ -165,9 +160,9 @@ const setReferences = (
       const start = buf.length
       offset = serializeIdsAndMeta(buf, value, op, offset, lang, prop.edges)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-    } else if (item instanceof ModifyItem || item instanceof QueuedItem) {
+    } else if (item instanceof ModifyCmd) {
       throw item
-    } else if (item.id instanceof ModifyItem || item instanceof QueuedItem) {
+    } else if (item.id instanceof ModifyCmd) {
       throw item.id
     } else {
       throw 'bad ref!'
@@ -259,7 +254,7 @@ export const reference = class Reference extends BasePropDef {
       return
     }
 
-    if (value instanceof ModifyItem || value instanceof QueuedItem) {
+    if (value instanceof ModifyCmd) {
       throw value
     }
 
@@ -288,7 +283,7 @@ export const reference = class Reference extends BasePropDef {
         return
       }
 
-      if (value.id instanceof ModifyItem || value.id instanceof QueuedItem) {
+      if (value.id instanceof ModifyCmd) {
         throw value.id
       }
     }

@@ -15,17 +15,17 @@ import {
 import { xxHash64 } from '../../../db-client/xxHash64.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
+import type { TypeDef } from '../index.js'
 
-export const string = class extends BasePropDef {
-  constructor(prop: SchemaString, path: string[]) {
-    super(prop, path)
+export const string = class String extends BasePropDef {
+  constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
+    super(prop, path, typeDef)
     if (prop.maxBytes && prop.maxBytes < 61) {
       this.size = prop.maxBytes + 1
     } else if (prop.max && prop.max < 31) {
       this.size = prop.max * 2 + 1
     }
     if (this.size) {
-      // make it a fixed string prop!
       this.type = PropType.stringFixed
       this.pushValue = this.pushFixedValue
     }
@@ -49,34 +49,34 @@ export const string = class extends BasePropDef {
 }
 
 // TODO do it nice
-export const text = class extends string {
+export const text = class Text extends string {
   override type = PropType.text
 }
 
-export const json = class extends string {
+export const json = class Json extends string {
   override type = PropType.json
   override pushValue(buf: AutoSizedUint8Array, value: any, lang: LangCodeEnum) {
     super.pushValue(buf, JSON.stringify(value), lang)
   }
 }
 
-export const binary = class extends BasePropDef {
+export const binary = class Binary extends BasePropDef {
   override type = PropType.binary
   override pushValue(buf: AutoSizedUint8Array, value: Uint8Array) {
     buf.set(value, buf.length)
   }
 }
 
-export const alias = class extends BasePropDef {
+export const alias = class Alias extends BasePropDef {
   override type = PropType.alias
   override pushValue(buf: AutoSizedUint8Array, value: any) {
     throw new Error('Serialize alias not implemented')
   }
 }
 
-export const cardinality = class extends BasePropDef {
-  constructor(prop: SchemaCardinality, path) {
-    super(prop, path)
+export const cardinality = class Cardinality extends BasePropDef {
+  constructor(prop: SchemaCardinality, path: string[], typeDef: TypeDef) {
+    super(prop, path, typeDef)
     this.sparse = prop.mode === 'sparse'
     this.precision = prop.precision ?? 8
   }
@@ -112,9 +112,9 @@ export const cardinality = class extends BasePropDef {
   }
 }
 
-export const vector = class extends BasePropDef {
-  constructor(prop: SchemaVector, path) {
-    super(prop, path)
+export const vector = class Vector extends BasePropDef {
+  constructor(prop: SchemaVector, path: string[], typeDef: TypeDef) {
+    super(prop, path, typeDef)
     this.vectorSize = prop.size * 4
   }
   vectorSize: number
@@ -124,9 +124,9 @@ export const vector = class extends BasePropDef {
   }
 }
 
-export const colvec = class extends BasePropDef {
-  constructor(prop: SchemaVector, path) {
-    super(prop, path)
+export const colvec = class ColVec extends BasePropDef {
+  constructor(prop: SchemaVector, path: string[], typeDef: TypeDef) {
+    super(prop, path, typeDef)
     this.colvecSize = prop.size * getByteSize(prop.baseType)
   }
   colvecSize: number

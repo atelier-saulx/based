@@ -17,10 +17,8 @@ import {
   serializeDelete,
   serializeUpdate,
   ModifyCtx,
-  modify,
-  schedule,
   flush,
-  ModifyItem,
+  ModifyCmd,
 } from './modify/index.js'
 
 type DbClientOpts = {
@@ -103,7 +101,7 @@ export class DbClient extends DbShared {
   }
 
   create(type: string, obj = {}, opts?: ModifyOpts): Promise<number> {
-    return modify(
+    return new ModifyCmd(
       this.modifyCtx,
       serializeCreate,
       this.schema!,
@@ -112,6 +110,15 @@ export class DbClient extends DbShared {
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
     )
+    // return modify(
+    //   this.modifyCtx,
+    //   serializeCreate,
+    //   this.schema!,
+    //   type,
+    //   obj,
+    //   this.modifyCtx.buf,
+    //   opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    // )
   }
 
   update(
@@ -123,7 +130,8 @@ export class DbClient extends DbShared {
     // if (id instanceof Promise) {
     //   id = await id
     // }
-    return modify(
+
+    return new ModifyCmd(
       this.modifyCtx,
       serializeUpdate,
       this.schema!,
@@ -133,6 +141,16 @@ export class DbClient extends DbShared {
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
     )
+    // return modify(
+    //   this.modifyCtx,
+    //   serializeUpdate,
+    //   this.schema!,
+    //   type,
+    //   id,
+    //   obj,
+    //   this.modifyCtx.buf,
+    //   opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    // )
   }
 
   delete(
@@ -142,7 +160,7 @@ export class DbClient extends DbShared {
     // if (id instanceof Promise) {
     //   id = await id
     // }
-    return modify(
+    return new ModifyCmd(
       this.modifyCtx,
       serializeDelete,
       this.schema!,
@@ -151,6 +169,16 @@ export class DbClient extends DbShared {
       id,
       this.modifyCtx.buf,
     )
+
+    // return modify(
+    //   this.modifyCtx,
+    //   serializeDelete,
+    //   this.schema!,
+    //   type,
+    //   // TODO make it perf
+    //   id,
+    //   this.modifyCtx.buf,
+    // )
   }
 
   query(
@@ -197,18 +225,8 @@ export class DbClient extends DbShared {
 
   // For more advanced / internal usage - use isModified instead for most cases
   drain() {
-    // if (this.upserting.size) {
-    //   await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
-    // }
-    // await drain(this, this.modifyCtx)
-
-    // const t = this.writeTime
-    // this.writeTime = 0
     flush(this.modifyCtx)
     return this.isModified()
-    // await this.modifyCtx.lastModify?.catch(noop)
-    // await this.modifyCtx.lastModify
-    // return t
   }
 
   async isModified() {
