@@ -32,9 +32,7 @@ pub fn iterator(
                 continue;
             }
         }
-
         aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, &hadAccumulated);
-
         count += 1;
         if (count >= limit) break;
     }

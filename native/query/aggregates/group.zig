@@ -35,9 +35,7 @@ pub fn iterator(
                 continue;
             }
         }
-
         try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, &hadAccumulated);
-
         count += 1;
         if (count >= limit) break;
     }
