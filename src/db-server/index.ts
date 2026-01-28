@@ -193,8 +193,9 @@ export class DbServer extends DbShared {
     return new Promise((resolve) => {
       native.modify(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {
-        const resultLen = readUint32(v, 0)
-        resolve(v.subarray(4, resultLen))
+        const end = readUint32(v, 0)
+        const alignOffset = v[4]
+        resolve(v.subarray(5 + alignOffset, end))
       })
     })
   }

@@ -313,18 +313,20 @@ pub fn writeData(ctx: *ModifyCtx, buf: []u8) anyerror!usize {
     return i;
 }
 
-pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u8, items: []align(1) t.ModifyResultItem) !void {
+pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u8, items: []t.ModifyResultItem) !void {
     var j: usize = 0;
     while (j < data.len) {
         const propId = data[j];
         const propSchema = try Schema.getFieldSchema(typeEntry, propId);
         if (propId == 0) {
+            // main handling
             const main = utils.readNext(t.ModifyMainHeader, data, &j);
             const value = data[j .. j + main.size];
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
             utils.copy(u8, current, value, main.start);
             j += main.size;
         } else {
+            // separate handling
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
             const value = data[j .. j + prop.size];
             switch (prop.type) {
@@ -338,22 +340,6 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                         selva.c.hll_add(hll, hash);
                         k += 8;
                     }
-                    // -------------OLD
-                    // const hllMode = data[0] == 0;
-                    // const hllPrecision = data[1];
-                    // const offset = 2;
-                    // const len = read(u32, data, offset);
-                    // const hll = try Fields.ensurePropTypeString(node, propSchema);
-                    // selva.c.hll_init(hll, hllPrecision, hllMode);
-                    // var i: usize = 4 + offset;
-                    // while (i < (len * 8) + offset) {
-                    //     const hash = read(u64, data, i);
-                    //     selva.c.hll_add(hll, hash);
-                    //     i += 8;
-                    // }
-                    // const newCount = selva.c.hll_count(hll);
-                    // addSortIndexOnCreation(ctx, newCount[0..4]) catch null;
-                    // return len * 8 + 6;
                 },
                 .reference => {
                     const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
@@ -368,7 +354,6 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
 
                     if (Node.getNode(refTypeEntry, refId)) |dst| {
                         _ = try References.writeReference(db, node, propSchema, dst);
-
                         if (meta.size != 0) {
                             const edgeProps = value[k .. k + meta.size];
                             const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
@@ -379,12 +364,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                 },
                 .references => {
                     var k: usize = 0;
-
                     if (@as(t.ModifyReferences, @enumFromInt(value[0])) == t.ModifyReferences.clear) {
                         References.clearReferences(db, node, propSchema);
                         k += 1;
                     }
-
                     while (k < value.len) {
                         const references = utils.readNext(t.ModifyReferencesHeader, value, &k);
                         const refs = value[k .. k + references.size];
@@ -450,22 +433,24 @@ pub fn modify(
     thread: *Thread.Thread,
     buf: []u8,
     db: *DbCtx,
-    opType: t.OpType,
 ) !void {
     var i: usize = 0;
-    var j: u32 = 4;
+    var j: u32 = 5 + @alignOf(t.ModifyResultItem);
     const header = utils.readNext(t.ModifyHeader, buf, &i);
     const size = j + header.count * 5;
     const result = try thread.modify.result(size, header.opId, header.opType);
-    const items = std.mem.bytesAsSlice(t.ModifyResultItem, result[j..]);
-    _ = opType;
-
+    const alignIndex = thread.modify.index - size + j;
+    const offset: u8 = @truncate(alignIndex % @alignOf(t.ModifyResultItem));
+    result[4] = @alignOf(t.ModifyResultItem) - offset;
+    j -= offset;
+    const items = utils.toSlice(t.ModifyResultItem, result[j..]);
     while (i < buf.len) {
         const op: t.Modify = @enumFromInt(buf[i]);
 
         switch (op) {
             .create => {
-                const create = utils.readNext(t.ModifyCreateHeader, buf, &i);
+                const create = utils.read(t.ModifyCreateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateHeader);
                 const typeEntry = try Node.getType(db, create.type);
                 const data: []u8 = buf[i .. i + create.size];
                 const id = db.ids[create.type - 1] + 1;
@@ -475,13 +460,13 @@ pub fn modify(
                 };
                 db.ids[create.type - 1] = id;
                 utils.write(result, id, j);
-
                 utils.writeAs(u8, result, t.ModifyError.null, j + 4);
                 i += create.size;
                 j += 5;
             },
             .update => {
-                const update = utils.readNext(t.ModifyUpdateHeader, buf, &i);
+                const update = utils.read(t.ModifyUpdateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyUpdateHeader);
                 const typeEntry = try Node.getType(db, update.type);
                 utils.write(result, update.id, j);
                 if (Node.getNode(typeEntry, update.id)) |node| {
@@ -497,7 +482,8 @@ pub fn modify(
                 j += 5;
             },
             .delete => {
-                const delete = utils.readNext(t.ModifyDeleteHeader, buf, &i);
+                const delete = utils.read(t.ModifyDeleteHeader, buf, i);
+                i += utils.sizeOf(t.ModifyDeleteHeader);
                 const typeEntry = try Node.getType(db, delete.type);
                 utils.write(result, delete.id, j);
                 if (Node.getNode(typeEntry, delete.id)) |node| {
@@ -517,45 +503,4 @@ pub fn modify(
     utils.write(result, j, 0);
 
     if (j < size) @memset(result[j..size], 0);
-}
-
-pub fn _modify(
-    thread: *Thread.Thread,
-    batch: []u8,
-    dbCtx: *DbCtx,
-    opType: t.OpType,
-) !void {
-    const modifyId = read(u32, batch, 0);
-    const nodeCount = read(u32, batch, 13);
-    const expectedLen = 4 + nodeCount * 5;
-
-    var ctx: ModifyCtx = .{
-        .result = try thread.modify.result(expectedLen, modifyId, opType),
-        .resultLen = 4,
-        .field = undefined,
-        .typeId = 0,
-        .id = 0,
-        .currentSortIndex = null,
-        .typeSortIndex = null,
-        .node = null,
-        .typeEntry = null,
-        .fieldSchema = null,
-        .fieldType = t.PropType.null,
-        .db = dbCtx,
-        .batch = batch,
-        .err = t.ModifyError.null,
-        .idSubs = null,
-        .subTypes = null,
-        .thread = thread,
-    };
-
-    _ = try writeData(&ctx, batch[13 + 4 ..]);
-
-    Node.expire(&ctx);
-    writeoutPrevNodeId(&ctx, &ctx.resultLen, ctx.id, ctx.result);
-    write(ctx.result, ctx.resultLen, 0);
-
-    if (ctx.resultLen < expectedLen) {
-        @memset(ctx.result[ctx.resultLen..expectedLen], 0);
-    }
 }
