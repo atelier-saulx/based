@@ -136,8 +136,7 @@ export class QueuedItem implements Promise<number> {
   [Symbol.toStringTag]!: 'QueuedItem'
   _args: IArguments
   _item?: ModifyItem
-
-  private _blocker: ModifyItem
+  _blocker: ModifyItem | QueuedItem
   private _p?: Promise<number>
 
   _promise() {
@@ -148,6 +147,7 @@ export class QueuedItem implements Promise<number> {
       })
     return this._p
   }
+
   get id(): number | undefined {
     return this._item?.id
   }
@@ -178,7 +178,6 @@ export class ModifyItem implements Promise<number> {
   constructor(batch: ModifyBatch) {
     this._batch = batch
     this._index = batch.count++
-    batch.lastModify = this
   }
 
   [Symbol.toStringTag]!: 'ModifyItem'
@@ -251,14 +250,13 @@ type ModifyBatch = {
   queue?: QueuedItem[]
   result?: Uint8Array
   flushed?: true
-  lastModify?: ModifyItem
 }
 
 export type ModifyCtx = {
   buf: AutoSizedUint8Array
   batch: ModifyBatch
   flushTime: number
-
+  lastModify?: ModifyItem | QueuedItem
   flushTimer?: NodeJS.Timeout | true | undefined
   hooks: {
     flushModify: (buf: Uint8Array<ArrayBufferLike>) => Promise<Uint8Array>
@@ -342,12 +340,12 @@ export const modify = function <S extends ModifySerializer>(
       flush(ctx)
       return modify.apply(null, arguments)
     } else if (e instanceof ModifyItem || e instanceof QueuedItem) {
-      return new QueuedItem(e, arguments)
+      return (ctx.lastModify = new QueuedItem(e, arguments))
     } else {
       throw e
     }
   }
 
   schedule(ctx)
-  return new ModifyItem(ctx.batch)
+  return (ctx.lastModify = new ModifyItem(ctx.batch))
 }

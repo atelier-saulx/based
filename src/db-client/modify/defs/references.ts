@@ -118,6 +118,7 @@ const getRealId = (item: any) => {
 }
 
 const getTmpId = (item: any) => {
+  if (item instanceof QueuedItem) item = item._item
   if (item instanceof ModifyItem && !item._batch.flushed) return item._index
 }
 

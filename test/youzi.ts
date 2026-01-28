@@ -175,9 +175,6 @@ await test('modify client', async (t) => {
     friends: [jamez],
   })
 
-  // await db.drain()
-  console.log('done did it!', { youzi, jamez })
-
   const res = await db.query('user').include('*', 'friends').get().toObject()
   console.dir(res, { depth: null })
 })

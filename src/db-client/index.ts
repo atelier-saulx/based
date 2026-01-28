@@ -212,9 +212,7 @@ export class DbClient extends DbShared {
   }
 
   async isModified() {
-    while (this.modifyCtx.batch.lastModify) {
-      await this.modifyCtx.batch.lastModify.catch(noop)
-    }
+    await this.modifyCtx.lastModify?.catch(noop)
   }
 }
 
