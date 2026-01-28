@@ -127,8 +127,8 @@ await test('modify client', async (t) => {
   await db.setSchema({
     types: {
       user: {
-        age: 'number',
-        rating: 'uint8',
+        // age: 'number',
+        // rating: 'uint8',
         // TODO refs have to be ordered
         friends: {
           items: {
@@ -143,15 +143,11 @@ await test('modify client', async (t) => {
   })
 
   const youzi = db.create('user', {
-    age: 32,
-    rating: 5,
     name: 'youzi',
   })
 
   // olli uses TMPID for youzi
   const olli = db.create('user', {
-    age: 22,
-    rating: 256,
     name: 'olli',
     friends: [youzi],
   })
@@ -161,18 +157,29 @@ await test('modify client', async (t) => {
 
   // james WILL BE QUEUED until youzi is done -> because we need that reference
   const jamez = db.create('user', {
-    age: 24,
-    rating: 54,
     name: 'jamez',
     friends: [youzi],
   })
 
   // this WILL NOT BE QUEUED ----> different order
   const marco = db.create('user', {
-    age: 28,
-    rating: 100,
     name: 'mr marco',
-    // friends: [jamez],
+  })
+
+  jamez.then(() => {
+    const fulco = db
+      .create('user', {
+        name: 'mr fulco',
+        friends: [jamez],
+      })
+      .then(() => {
+        const tom = db
+          .create('user', {
+            name: 'mr tom',
+            friends: [jamez],
+          })
+          .then()
+      })
   })
 
   const res = await db.query('user').include('*', 'friends').get().toObject()
