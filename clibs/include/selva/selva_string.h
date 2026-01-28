@@ -43,10 +43,16 @@ enum selva_string_flags {
      * Compressed string.
      */
     SELVA_STRING_COMPRESS = 0x20,
+    /**
+     * Don't clear on initialization.
+     * This should be only used if the string will be fully initialized
+     * immediately. Otherwise there is a risk of leaking secrets.
+     */
+    SELVA_STRING_NOZERO = 0x40,
     SELVA_STRING_LEN_PARITY =  0x80,
 } __packed;
 
-#define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_STATIC | SELVA_STRING_COMPRESS | SELVA_STRING_LEN_PARITY))
+#define INVALID_FLAGS_MASK (~(SELVA_STRING_CRC | SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE | SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_STATIC | SELVA_STRING_COMPRESS | SELVA_STRING_NOZERO | SELVA_STRING_LEN_PARITY))
 
 /**
  * Header before compressed string.

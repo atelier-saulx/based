@@ -37,11 +37,17 @@ pub fn prepare(
             const end = totalSize + i;
 
             switch (condition.op.compare) {
-                .selectSmallRef => {
-                    // make a util for this
-                    const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
+                .selectLargeRefEdge => {
+                    // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
+                    // const edgeSelect = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
+                    // select.typeEntry = try Node.getType(ctx.db, select.typeId);
+                    // try prepare(q[end .. end + select.size], ctx, select.typeEntry);
+                    // i = end + select.size;
+                    i = end;
+                },
+                .selectRef => {
+                    const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - condition.offset);
                     select.typeEntry = try Node.getType(ctx.db, select.typeId);
-
                     try prepare(q[end .. end + select.size], ctx, select.typeEntry);
                     i = end + select.size;
                 },
@@ -71,6 +77,24 @@ pub fn recursionErrorBoundary(
     };
 }
 
+inline fn compare(
+    T: type,
+    comptime meta: Instruction.OpMeta,
+    q: []u8,
+    v: []u8,
+    index: usize,
+    c: *t.FilterCondition,
+) bool {
+    const res = switch (meta.func) {
+        .Single => Compare.single(meta.cmp, T, q, v, index, c),
+        .Range => Compare.range(T, q, v, index, c),
+        .Batch => Compare.batch(meta.cmp, T, q, v, index, c),
+        .BatchSmall => Compare.batchSmall(meta.cmp, T, q, v, index, c),
+    };
+    return if (meta.invert) !res else res;
+}
+
+// Check if this becomes better
 pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
     var i: usize = 0;
     var pass: bool = true;
@@ -85,17 +109,12 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
             prop = c.prop;
             v = Fields.getRaw(node, c.fieldSchema);
         }
-        const instruction = utils.readPtr(Instruction.CombinedOp, q, i + q[i]).*;
-        pass = switch (instruction) {
+        pass = switch (c.op.compare) {
             .nextOrIndex => blk: {
                 nextOrIndex = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 break :blk true;
             },
-            .selectLargeRef => blk: {
-                break :blk true;
-            },
-            .selectSmallRef => blk: {
-                // if edge can be a seperate thing
+            .selectRef => blk: {
                 const select = utils.readPtr(t.FilterSelect, q, index + @alignOf(t.FilterSelect) - c.offset);
                 nextIndex += select.size;
                 if (Node.getNode(select.typeEntry, utils.readPtr(u32, v, 0).*)) |refNode| {
@@ -104,24 +123,20 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
                     break :blk false;
                 }
             },
-            .selectSmallRefs => blk: {
+            .selectSmallRefs, .selectLargeRefsEdge, .selectLargeRefEdge, .selectLargeRefs => blk: {
                 break :blk true;
             },
-            .selectLargeRefs => blk: {
-                break :blk true;
-            },
-            inline else => |tag| blk: {
-                const meta = comptime Instruction.parseOp(tag);
-                const res = switch (meta.func) {
-                    .Single => Compare.single(meta.cmp, meta.T, q, v, index, c),
-                    .Range => Compare.range(meta.T, q, v, index, c),
-                    .Batch => Compare.batch(meta.cmp, meta.T, q, v, index, c),
-                    .BatchSmall => Compare.batchSmall(meta.cmp, meta.T, q, v, index, c),
+            inline else => |op| blk: {
+                const meta = comptime Instruction.parseOp(op);
+                break :blk switch (c.op.prop) {
+                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c),
+                    .uint16, .int16 => compare(u16, meta, q, v, index, c),
+                    .number => compare(f64, meta, q, v, index, c),
+                    .timestamp => compare(u64, meta, q, v, index, c),
+                    else => compare(u8, meta, q, v, index, c),
                 };
-                break :blk if (meta.invert) !res else res;
             },
         };
-
         if (!pass) {
             i = nextOrIndex;
             nextOrIndex = q.len;

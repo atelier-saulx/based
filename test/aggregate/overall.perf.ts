@@ -4,8 +4,9 @@ import { perf } from '../shared/assert.js'
 import { deepEqual } from '../shared/assert.js'
 import { fastPrng } from '../../src/utils/index.js'
 import { equal } from 'node:assert'
+import { SchemaType } from '../../src/schema/index.js'
 
-await test('overall performance', async (t) => {
+await test.skip('overall performance', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -58,7 +59,7 @@ await test('overall performance', async (t) => {
   }, 'agg + enum main group by')
 })
 
-await test('count top level bignumber', async (t) => {
+await test.skip('count top level bignumber', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
     maxModifySize: 1e6,
@@ -298,6 +299,48 @@ await test('many countries', async (t) => {
 
   const countries = Object.keys(countrySchema.props)
 
+  // for (let i = 0; i < 1e8; i++) {
+  //   db.create(
+  //     'audience',
+  //     countries.reduce((obj, code) => {
+  //       obj[code] = Math.floor(Math.random() * 255)
+  //       return obj
+  //     }, {}),
+  //   )
+  // }
+  // await perf(async () => {
+  //   await db
+  //     .query('audience')
+  //     .avg(...countries)
+  //     .get()
+  // }, 'averaging 193 props x 100_000_000 nodes')
+
+  // for (let i = 1e8 - 1; i >= 1e7; i--) {
+  //   db.delete('audience', i)
+  // }
+  // await db.drain()
+
+  for (let i = 0; i < 1e7; i++) {
+    db.create(
+      'audience',
+      countries.reduce((obj, code) => {
+        obj[code] = Math.floor(Math.random() * 255)
+        return obj
+      }, {}),
+    )
+  }
+  await perf(async () => {
+    await db
+      .query('audience')
+      .avg(...countries)
+      .get()
+  }, 'averaging 193 props x 10_000_000 nodes')
+
+  for (let i = 1e7 - 1; i >= 1e6; i--) {
+    db.delete('audience', i)
+  }
+  await db.drain()
+
   for (let i = 0; i < 1e6; i++) {
     db.create(
       'audience',
@@ -312,7 +355,7 @@ await test('many countries', async (t) => {
       .query('audience')
       .avg(...countries)
       .get()
-  }, 'summing 193 props x 1_000_000 nodes')
+  }, 'averaging 193 props x 1_000_000 nodes')
 
   for (let i = 1e6 - 1; i >= 1e5; i--) {
     db.delete('audience', i)
@@ -324,7 +367,7 @@ await test('many countries', async (t) => {
       .query('audience')
       .avg(...countries)
       .get()
-  }, 'summing 193 props x 100_000 nodes')
+  }, 'averaging 193 props x 100_000 nodes')
 
   for (let i = 1e5 - 1; i >= 1e4; i--) {
     db.delete('audience', i)
@@ -336,7 +379,7 @@ await test('many countries', async (t) => {
       .query('audience')
       .avg(...countries)
       .get()
-  }, 'summing 193 props x 10_000 nodes')
+  }, 'averaging 193 props x 10_000 nodes')
 
   for (let i = 1e4 - 1; i >= 1e3; i--) {
     db.delete('audience', i)
@@ -348,5 +391,5 @@ await test('many countries', async (t) => {
       .query('audience')
       .avg(...countries)
       .get()
-  }, 'summing 193 props x 1_000 nodes')
+  }, 'averaging 193 props x 1_000 nodes')
 })

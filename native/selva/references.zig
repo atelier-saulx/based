@@ -12,11 +12,11 @@ pub const ReferenceLarge = selva.ReferenceLarge;
 pub const ReferenceAny = selva.ReferenceAny;
 pub const References = selva.References;
 
-pub fn preallocReferences(ctx: *Modify.ModifyCtx, len: u64) void {
+pub inline fn preallocReferences(ctx: *Modify.ModifyCtx, len: u64) void {
     _ = selva.c.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
 }
 
-pub fn getReference(node: Node.Node, fieldSchema: Schema.FieldSchema) ?ReferenceLarge {
+pub inline fn getReference(node: Node.Node, fieldSchema: Schema.FieldSchema) ?ReferenceLarge {
     return selva.c.selva_fields_get_reference(node, fieldSchema);
 }
 
@@ -41,7 +41,7 @@ pub fn referencesHas(refs: References, dstNodeId: u32) bool {
     return selva.c.node_id_set_bsearch(refs.*.index, refs.*.refs, dstNodeId) != -1;
 }
 
-pub fn referencesGet(refs: ?References, dstNodeId: u32) ReferenceAny {
+pub inline fn referencesGet(refs: ?References, dstNodeId: u32) ReferenceAny {
     return selva.c.selva_fields_references_get(refs.?, dstNodeId);
 }
 
@@ -207,7 +207,7 @@ pub fn insertReference(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSch
     return ref;
 }
 
-pub fn moveReference(
+pub inline fn moveReference(
     node: Node.Node,
     fieldSchema: Schema.FieldSchema,
     index_old: isize,
@@ -221,7 +221,7 @@ pub fn moveReference(
     ));
 }
 
-pub fn swapReference(
+pub inline fn swapReference(
     node: Node.Node,
     fieldSchema: Schema.FieldSchema,
     index_a: selva.c.user_ssize_t,

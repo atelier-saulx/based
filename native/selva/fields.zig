@@ -88,7 +88,7 @@ pub fn set(node: Node.Node, fieldSchema: Schema.FieldSchema, data: []u8) !void {
     });
 }
 
-pub fn setText(node: Node.Node, fieldSchema: Schema.FieldSchema, str: []u8) !void {
+pub inline fn setText(node: Node.Node, fieldSchema: Schema.FieldSchema, str: []u8) !void {
     try errors.selva(selva.c.selva_fields_set_text(
         node,
         fieldSchema,
@@ -97,7 +97,7 @@ pub fn setText(node: Node.Node, fieldSchema: Schema.FieldSchema, str: []u8) !voi
     ));
 }
 
-pub fn setMicroBuffer(node: Node.Node, fieldSchema: Schema.FieldSchema, value: []u8) !void {
+pub inline fn setMicroBuffer(node: Node.Node, fieldSchema: Schema.FieldSchema, value: []u8) !void {
     try errors.selva(selva.c.selva_fields_set_micro_buffer(
         node,
         fieldSchema,
@@ -106,7 +106,7 @@ pub fn setMicroBuffer(node: Node.Node, fieldSchema: Schema.FieldSchema, value: [
     ));
 }
 
-pub fn setColvec(te: Node.Type, nodeId: selva.c.node_id_t, fieldSchema: Schema.FieldSchema, vec: []u8) void {
+pub inline fn setColvec(te: Node.Type, nodeId: selva.c.node_id_t, fieldSchema: Schema.FieldSchema, vec: []u8) void {
     selva.c.colvec_set_vec(
         te,
         nodeId,
@@ -134,11 +134,11 @@ pub fn ensureEdgePropTypeString(
     return selva.c.selva_fields_ensure_string(edge_node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
 }
 
-pub fn deleteField(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
+pub inline fn deleteField(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
     try errors.selva(selva.c.selva_fields_del(ctx.db.selva, node, fieldSchema));
 }
 
-pub fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {
+pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {
     return errors.selva(selva.c.selva_fields_set_text(ctx.node, fieldSchema, &selva.c.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.c.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
 }
 

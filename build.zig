@@ -92,35 +92,4 @@ pub fn build(b: *std.Build) !void {
     // It reuses the same module definition from the library being built.
     const check_step = b.step("check", "Check compilation for zls");
     check_step.dependOn(&lib.step);
-
-    addBench(b, target, node_hpath, headerPath, libPath);
-}
-
-fn addBench(
-    b: *std.Build,
-    target: std.Build.ResolvedTarget,
-    node_hpath: []const u8,
-    headerPath: []const u8,
-    libPath: []const u8,
-) void {
-    const bench_exe = b.addExecutable(.{
-        .name = "bench",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("bench.zig"),
-            .target = target,
-            .optimize = .ReleaseFast,
-        }),
-    });
-    bench_exe.root_module.link_libc = true;
-    bench_exe.root_module.addIncludePath(.{ .cwd_relative = node_hpath });
-    bench_exe.root_module.addIncludePath(.{ .cwd_relative = headerPath });
-    bench_exe.root_module.addLibraryPath(.{ .cwd_relative = libPath });
-    bench_exe.linkSystemLibrary("selva");
-    if (target.result.os.tag == .macos) {
-        bench_exe.linkFramework("Foundation");
-    }
-
-    const bench_run = b.addRunArtifact(bench_exe);
-    const bench_step = b.step("bench", "Run the equalOr benchmark");
-    bench_step.dependOn(&bench_run.step);
 }

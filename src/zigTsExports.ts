@@ -4227,10 +4227,11 @@ export const FilterOpCompare = {
   leBatch: 23,
   geBatchSmall: 24,
   leBatchSmall: 25,
-  selectLargeRef: 202,
   selectLargeRefs: 203,
-  selectSmallRef: 204,
+  selectRef: 204,
   selectSmallRefs: 205,
+  selectLargeRefEdge: 206,
+  selectLargeRefsEdge: 207,
   nextOrIndex: 253,
 } as const
 
@@ -4255,10 +4256,11 @@ export const FilterOpCompareInverse = {
   23: 'leBatch',
   24: 'geBatchSmall',
   25: 'leBatchSmall',
-  202: 'selectLargeRef',
   203: 'selectLargeRefs',
-  204: 'selectSmallRef',
+  204: 'selectRef',
   205: 'selectSmallRefs',
+  206: 'selectLargeRefEdge',
+  207: 'selectLargeRefsEdge',
   253: 'nextOrIndex',
 } as const
 
@@ -4283,10 +4285,11 @@ export const FilterOpCompareInverse = {
   leBatch, 
   geBatchSmall, 
   leBatchSmall, 
-  selectLargeRef, 
   selectLargeRefs, 
-  selectSmallRef, 
+  selectRef, 
   selectSmallRefs, 
+  selectLargeRefEdge, 
+  selectLargeRefsEdge, 
   nextOrIndex 
  */
 export type FilterOpCompareEnum = (typeof FilterOpCompare)[keyof typeof FilterOpCompare]

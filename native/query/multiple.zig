@@ -29,22 +29,26 @@ fn iterator(
     var offset: u32 = header.offset;
     var nodeCnt: u32 = 0;
     var filter: []u8 = undefined;
-
     if (It == t.QueryIteratorType.filter) {
         filter = utils.sliceNext(header.filterSize, q, i);
         try Filter.prepare(filter, ctx, typeEntry);
     }
-
     const nestedQuery = q[i.* .. i.* + header.includeSize];
+    while (offset > 0) {
+        const node = it.next() orelse return 0;
+        if (It == t.QueryIteratorType.filter) {
+            if (try Filter.filter(node, ctx, filter)) {
+                offset -= 1;
+            }
+        } else {
+            offset -= 1;
+        }
+    }
     while (it.next()) |node| {
         if (It == t.QueryIteratorType.filter) {
             if (!try Filter.filter(node, ctx, filter)) {
                 continue;
             }
-        }
-        if (offset != 0) {
-            offset -= 1;
-            continue;
         }
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(node));
@@ -71,11 +75,12 @@ fn iteratorEdge(
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
     const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
+
+    while (offset > 0) {
+        _ = it.next() orelse return 0;
+        offset -= 1;
+    }
     while (it.nextRef()) |ref| {
-        if (offset != 0) {
-            offset -= 1;
-            continue;
-        }
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(ref.node));
         try Include.include(ref.node, ctx, nestedQuery, typeEntry);

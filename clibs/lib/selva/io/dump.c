@@ -616,7 +616,7 @@ static int load_field_string(struct selva_io *io, struct SelvaNode *node, const 
         return 0;
     }
 
-    err = selva_fields_get_mutable_string(node, fs, meta.len - sizeof(uint32_t), &s);
+    err = selva_fields_get_mutable_string_unsafe(node, fs, meta.len - sizeof(uint32_t), &s);
     if (err) {
         return err;
     }

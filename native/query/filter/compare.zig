@@ -74,7 +74,7 @@ pub fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.Filter
     @setEvalBranchQuota(10000);
 
     const val = utils.readPtr(T, v, c.start).*;
-    const target = utils.readPtr(T, q, i + utils.sizeOf(T) - c.offset).*;
+    const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
     switch (op) {
         .eq => {
             return val == target;

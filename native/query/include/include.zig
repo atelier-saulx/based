@@ -34,7 +34,7 @@ pub fn recursionErrorBoundary(
     };
 }
 
-pub inline fn include(
+pub fn include(
     node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
@@ -92,6 +92,7 @@ pub inline fn include(
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
                     t.PropType.text => {
+                        // can be optmized... read next is quite slow because pointer
                         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
                     },
@@ -141,15 +142,15 @@ pub inline fn include(
                 }
             },
             .aggregates => {
-                std.debug.print("AGG not implemented yet\n", .{});
+                // std.debug.print("AGG not implemented yet\n", .{});
                 i += 1;
             },
             .aggregatesCount => {
-                std.debug.print("AGG count not implemented yet\n", .{});
+                // std.debug.print("AGG count not implemented yet\n", .{});
                 i += 1;
             },
             .referencesAggregation => {
-                std.debug.print("AGG refs not implemented yet\n", .{});
+                // std.debug.print("AGG refs not implemented yet\n", .{});
                 i += 1;
             },
         }
