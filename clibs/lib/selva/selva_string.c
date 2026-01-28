@@ -251,14 +251,29 @@ int selva_string_init(struct selva_string *s, const char *str, size_t len, enum 
 
     flags |= SELVA_STRING_STATIC | len_parity(len);
     if (flags & SELVA_STRING_MUTABLE_FIXED) {
-        set_string(s, str, len, flags);
+        if (flags & SELVA_STRING_NOZERO) {
+            s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
+            s->len = len;
+        } else {
+            set_string(s, str, len, flags);
+        }
     } else if (flags & SELVA_STRING_MUTABLE) {
         const size_t trail = (flags & SELVA_STRING_CRC) ? sizeof(uint32_t) : 0;
 
         s->p = selva_malloc(len + trail);
-        set_string(s, str, len, flags);
+        if (flags & SELVA_STRING_NOZERO) {
+            s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
+            s->len = len;
+        } else {
+            set_string(s, str, len, flags);
+        }
     } else {
-        set_string(s, str, len, flags);
+        if (flags & SELVA_STRING_NOZERO) {
+            s->flags = (flags & ~SELVA_STRING_LEN_PARITY) | len_parity(len);
+            s->len = len;
+        } else {
+            set_string(s, str, len, flags);
+        }
     }
 
     return 0;

@@ -118,6 +118,11 @@ int selva_fields_get_mutable_string(
         struct selva_string **s)
     __attribute__((access(write_only, 4)));
 
+/**
+ * Get mutable string field without intializing the string buffer.
+ */
+int selva_fields_get_mutable_string_unsafe(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s);
+
 SELVA_EXPORT
 void *selva_fields_ensure_micro_buffer(struct SelvaNode *node, const struct SelvaFieldSchema *fs);
 
