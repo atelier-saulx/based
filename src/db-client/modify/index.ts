@@ -13,7 +13,6 @@ import {
   writeModifyUpdateHeaderProps,
   type LangCodeEnum,
   type ModifyEnum,
-  type ModifyErrorEnum,
 } from '../../zigTsExports.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import type { PropDef, PropTree } from '../../schema/defs/index.js'
@@ -276,7 +275,8 @@ export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
       if (e === AutoSizedUint8Array.ERR_OVERFLOW) {
         if (isEmpty) throw new Error('Range error')
         flush(ctx)
-        return this._exec.apply(this, arguments)
+        this._exec.apply(this, arguments)
+        return
       } else if (e instanceof ModifyCmd) {
         let blocker: ModifyCmd = e
         while (blocker._blocker) blocker = blocker._blocker
@@ -284,6 +284,7 @@ export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
         blocker._batch!.dependents.push(this)
         this._blocker = blocker
         this._arguments = arguments
+        return
       } else if (this._arguments) {
         // its in async mode
         this._error = e

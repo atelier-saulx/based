@@ -9,7 +9,7 @@ import { parseSchema } from '../src/schema.js'
 import { LangCode, Modify, pushModifyHeader } from '../src/zigTsExports.js'
 import test from './shared/test.js'
 
-await test.skip('schema defs', async (t) => {
+await test('schema defs', async (t) => {
   const schema = parseSchema({
     types: {
       user: {
@@ -121,12 +121,10 @@ await test('modify client', async (t) => {
 
   t.after(() => t.backup(db))
 
-  await db.setSchema({
+  // When using setSchema, the return value is a typed client
+  const client = await db.setSchema({
     types: {
       user: {
-        // age: 'number',
-        // rating: 'uint8',
-        // TODO refs have to be ordered
         friends: {
           items: {
             ref: 'user',
@@ -144,44 +142,43 @@ await test('modify client', async (t) => {
     },
   })
 
-  const youzi = db.create('user', {
+  const youzi = client.create('user', {
     name: 'youzi',
   })
 
-  // olli uses TMPID for youzi
-  const olli = db.create('user', {
+  // olli uses ModifyCmd for youzi
+  const olli = client.create('user', {
     name: 'olli',
-    friends: [youzi],
+    friends: { add: [youzi] },
     friend: youzi,
   })
 
   // youzi is now in-flight
   flush(db.client.modifyCtx)
 
-  // james WILL BE QUEUED until youzi is done -> because we need that reference
-  const jamez = db.create('user', {
+  const jamez = client.create('user', {
     name: 'jamez',
     friend: { id: youzi, $rating: 10 },
   })
 
-  const marco = db.create('user', {
+  const marco = client.create('user', {
     name: 'mr marco',
     friends: [youzi],
   })
 
-  jamez.then(() => {
-    const fulco = db
+  jamez.then((jamezId) => {
+    const fulco = client
       .create('user', {
         name: 'mr fulco',
-        friends: [jamez],
-        friend: jamez,
+        friends: [jamezId],
+        friend: jamezId,
       })
       .then(() => {
-        const tom = db
+        const tom = client
           .create('user', {
             name: 'mr tom',
-            friends: [jamez],
-            friend: jamez,
+            friends: [jamezId],
+            friend: jamezId,
           })
           .then()
       })

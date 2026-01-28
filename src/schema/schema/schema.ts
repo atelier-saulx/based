@@ -49,7 +49,11 @@ type NormalizeProp<T> = T extends string
         : T extends { items: infer I }
           ? Omit<T, 'items'> & { type: 'references'; items: NormalizeProp<I> }
           : T extends { ref: string }
-            ? T & { type: 'reference' }
+            ? {
+                [K in keyof T]: K extends `$${string}`
+                  ? NormalizeProp<T[K]>
+                  : T[K]
+              } & { type: 'reference' }
             : T extends { enum: any[] }
               ? T & { type: 'enum' }
               : T
@@ -58,13 +62,15 @@ type NormalizeType<T> = T extends { props: infer P }
   ? Omit<T, 'props'> & { props: { [K in keyof P]: NormalizeProp<P[K]> } }
   : { props: { [K in keyof T]: NormalizeProp<T[K]> } }
 
-type ResolveSchema<S extends SchemaIn> = Omit<S, 'types' | 'locales'> & {
-  hash: number
-  locales: SchemaLocales<true>
+export type ResolveSchema<S extends { types: any }> = Omit<
+  SchemaOut,
+  'types' | 'locales'
+> & {
   types: {
     [K in keyof S['types']]: NormalizeType<S['types'][K]>
   }
-} & SchemaOut
+  locales: SchemaLocales<true>
+}
 
 const isMigrations = (v: unknown): v is SchemaMigrations =>
   isRecord(v) &&

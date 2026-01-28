@@ -9,6 +9,8 @@ import {
   type SchemaIn,
   type SchemaMigrateFns,
   type SchemaOut,
+  type ResolveSchema,
+  type Schema,
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 import { LangCode } from '../zigTsExports.js'
@@ -20,6 +22,7 @@ import {
   flush,
   ModifyCmd,
 } from './modify/index.js'
+import type { InferPayload } from './modify/types.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -33,7 +36,9 @@ export type ModifyOpts = {
   locale?: keyof typeof LangCode
 }
 
-export class DbClient extends DbShared {
+// ... imports
+
+export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
   constructor({
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -68,27 +73,31 @@ export class DbClient extends DbShared {
     }
   }
 
-  async setSchema(
-    schema: SchemaIn,
+  async setSchema<const T extends { types: any }>(
+    schema: T,
     transformFns?: SchemaMigrateFns,
-  ): Promise<SchemaOut['hash']> {
-    const strictSchema = parse(schema).schema
+  ): Promise<DbClient<ResolveSchema<T>>> {
+    const strictSchema = parse(schema as unknown as SchemaIn).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
       strictSchema as SchemaOut,
       transformFns,
     )
     if (this.stopped) {
-      return this.schema?.hash ?? 0
+      return this as unknown as DbClient<ResolveSchema<T>>
     }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
-      return this.schema?.hash ?? 0
+      return this as unknown as DbClient<ResolveSchema<T>>
     }
-    return schemaChecksum
+    return this as unknown as DbClient<ResolveSchema<T>>
   }
 
-  create(type: string, obj = {}, opts?: ModifyOpts): Promise<number> {
+  create<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    obj: InferPayload<S['types']>[T],
+    opts?: ModifyOpts,
+  ): ModifyCmd {
     return new ModifyCmd(
       this.modifyCtx,
       serializeCreate,
@@ -100,12 +109,12 @@ export class DbClient extends DbShared {
     )
   }
 
-  update(
-    type: string,
+  update<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
     id: number,
-    obj = {},
+    obj: InferPayload<S['types']>[T],
     opts?: ModifyOpts,
-  ): Promise<number> {
+  ): ModifyCmd {
     return new ModifyCmd(
       this.modifyCtx,
       serializeUpdate,
@@ -118,7 +127,7 @@ export class DbClient extends DbShared {
     )
   }
 
-  delete(type: string, id: number) {
+  delete(type: keyof S['types'] & string, id: number): ModifyCmd {
     return new ModifyCmd(
       this.modifyCtx,
       serializeDelete,

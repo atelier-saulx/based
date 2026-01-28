@@ -122,9 +122,11 @@ const getTmpId = (item: any) => {
   if (item instanceof ModifyCmd) return item.tmpId
 }
 
-const isValidRefObj = (item: any) =>
-  (typeof item === 'object' && item !== null && getRealId(item.id)) ||
-  getTmpId(item.id) !== undefined
+const isValidRefObj = (item: any) => {
+  if (typeof item === 'object' && item !== null) {
+    return getRealId(item.id) || getTmpId(item.id) !== undefined
+  }
+}
 
 const setReferences = (
   buf: AutoSizedUint8Array,
@@ -162,9 +164,10 @@ const setReferences = (
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
     } else if (item instanceof ModifyCmd) {
       throw item
-    } else if (item.id instanceof ModifyCmd) {
+    } else if (typeof item === 'object' && item?.id instanceof ModifyCmd) {
       throw item.id
     } else {
+      console.log('??', item, value)
       throw 'bad ref!'
     }
   }
