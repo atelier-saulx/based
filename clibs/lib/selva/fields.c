@@ -192,6 +192,33 @@ static struct selva_string *get_mutable_string(struct SelvaFields *fields, const
     return s;
 }
 
+/**
+ * Get a mutable string in fields at fs/nfo without initializing the buffer.
+ */
+static struct selva_string *get_mutable_string_unsafe(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, size_t len)
+{
+    struct selva_string *s = nfo2p(fields, nfo);
+
+    assert(nfo->in_use);
+    assert(s && ((uintptr_t)s & 7) == 0);
+
+    if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
+        int err;
+
+        if (fs->string.fixed_len == 0) {
+            err = selva_string_init(s, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC | SELVA_STRING_NOZERO);
+        } else {
+            assert(len <= fs->string.fixed_len);
+            err = selva_string_init(s, nullptr, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC | SELVA_STRING_NOZERO);
+        }
+        if (err) {
+            s = nullptr;
+        }
+    }
+
+    return s;
+}
+
 static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, const char *str, size_t len)
 {
     struct selva_string *s;
@@ -205,7 +232,7 @@ static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldS
 
     uint32_t crc;
     memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
-    s = get_mutable_string(fields, fs, nfo, len - sizeof(crc));
+    s = get_mutable_string_unsafe(fields, fs, nfo, len - sizeof(crc));
     (void)selva_string_replace_crc(s, str, len - sizeof(crc), crc);
     if (str[1] == 1) selva_string_set_compress(s);
 
@@ -875,7 +902,8 @@ static void unload_references(struct SelvaNode *node, const struct SelvaFieldSch
     }
     refs->size = SELVA_NODE_REFERENCE_NULL;
 }
-int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
+
+static inline int _selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, bool unsafe, size_t len, struct selva_string **s)
 {
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
@@ -889,9 +917,23 @@ int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFi
     }
 
     nfo = ensure_field(fields, fs);
-    *s = get_mutable_string(fields, fs, nfo, len);
+    if (unsafe) {
+        *s = get_mutable_string_unsafe(fields, fs, nfo, len);
+    } else {
+        *s = get_mutable_string(fields, fs, nfo, len);
+    }
 
     return !*s ? SELVA_EINVAL : 0;
+}
+
+int selva_fields_get_mutable_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
+{
+    return _selva_fields_get_mutable_string(node, fs, false, len, s);
+}
+
+int selva_fields_get_mutable_string_unsafe(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, struct selva_string **s)
+{
+    return _selva_fields_get_mutable_string(node, fs, true, len, s);
 }
 
 struct selva_string *selva_fields_ensure_string(struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t initial_len)
