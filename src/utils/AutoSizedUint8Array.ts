@@ -1,10 +1,10 @@
-import native from '../../native.js'
+import native from '../native.js'
 import {
   writeDoubleLE,
   writeFloatLE,
   writeUint64,
   writeInt64,
-} from '../../utils/index.js'
+} from './index.js'
 
 const ENCODER = new TextEncoder()
 

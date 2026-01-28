@@ -4,8 +4,8 @@ import type {
   ModifyEnum,
   PropTypeEnum,
 } from '../../../zigTsExports.js'
-import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
-import type { PropDef } from './index.js'
+import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
+import type { PropDef } from '../index.js'
 
 export class BasePropDef implements PropDef {
   constructor(prop: SchemaProp<true>, path: string[]) {
@@ -22,8 +22,8 @@ export class BasePropDef implements PropDef {
   pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    op: ModifyEnum,
     lang: LangCodeEnum,
+    op: ModifyEnum,
   ): void {
     // To be implemented by subclasses
   }

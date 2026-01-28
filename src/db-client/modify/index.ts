@@ -15,10 +15,10 @@ import {
   type ModifyEnum,
   type ModifyErrorEnum,
 } from '../../zigTsExports.js'
-import { AutoSizedUint8Array } from './AutoSizedUint8Array.js'
-import type { PropDef, PropTree } from './defs/index.js'
+import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import type { PropDef, PropTree } from '../../schema/defs/index.js'
 import { InferPayload } from './types.js'
-import { getTypeDefs } from './defs/getTypeDefs.js'
+import { getTypeDefs } from '../../schema/defs/getTypeDefs.js'
 import { readUint32 } from '../../utils/uint8.js'
 export { getTypeDefs }
 
@@ -316,7 +316,7 @@ export const schedule = (ctx: ModifyCtx) => {
   }
 }
 
-// TODO implement single ModifyCmd
+// TODO implement single ModifyCmd instead of both QueuedItem and ModifyItem
 export const modify = function <S extends ModifySerializer>(
   ctx: ModifyCtx,
   serialize: S,

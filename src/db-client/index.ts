@@ -10,7 +10,7 @@ import {
   type SchemaMigrateFns,
   type SchemaOut,
 } from '../schema/index.js'
-import { AutoSizedUint8Array } from './modify/AutoSizedUint8Array.js'
+import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 import { LangCode } from '../zigTsExports.js'
 import {
   serializeCreate,

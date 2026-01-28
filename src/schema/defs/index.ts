@@ -1,19 +1,17 @@
-import type { SchemaProp } from '../../../schema.js'
+import type { SchemaProp } from '../../schema.js'
 import type {
   LangCodeEnum,
   ModifyEnum,
   PropTypeEnum,
-} from '../../../zigTsExports.js'
-import type { AutoSizedUint8Array } from '../AutoSizedUint8Array.js'
-import * as fixed from './fixed.js'
-import * as references from './references.js'
-
-import * as vars from './vars.js'
+} from '../../zigTsExports.js'
+import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import * as fixed from './props/fixed.js'
+import * as references from './props/references.js'
+import * as vars from './props/separate.js'
 
 export type PropTree = Map<string, PropDef | PropTree>
 
 export type TypeDef = {
-  // mainSize: number
   id: number
   main: PropDef[]
   separate: PropDef[]

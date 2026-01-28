@@ -3,10 +3,9 @@ import {
   type SchemaProp,
   type SchemaProps,
   type SchemaType,
-} from '../../../schema.js'
-import { reorderProps } from '../../../schema/def/utils.js'
-import { PropType } from '../../../zigTsExports.js'
-import { defs, type PropDef, type PropDefClass, type TypeDef } from './index.js'
+} from '../../schema.js'
+import { PropType } from '../../zigTsExports.js'
+import { defs, type PropDef, type TypeDef } from './index.js'
 
 const mainSorter = (a, b) => {
   if (a.size === 8) return -1
@@ -17,20 +16,26 @@ const mainSorter = (a, b) => {
 
 const propIndexOffset = (prop: PropDef) => {
   switch (prop.type) {
+    // We pack default on the beginning, for smallest possible mem
     case PropType.microBuffer:
     case PropType.vector:
+      // microbuffers first
       return 'default' in prop.prop ? -600 : 0
     case PropType.string:
     case PropType.binary:
     case PropType.json:
+      // then strings
       return 'default' in prop.prop ? -500 : 0
+    // then text
     case PropType.text:
       return 'default' in prop.prop ? -400 : 0
+    // References go behind the defaults
     case PropType.references:
     case PropType.reference:
       return -300
+    // Aliases and colVec go last
     case PropType.alias:
-    case PropType.aliases:
+    case PropType.aliases: // TODO remove ALIASES
     case PropType.colVec:
       return 300
     default:
@@ -57,6 +62,7 @@ const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
     for (const key in props) {
       const prop = props[key]
       const path = [...pPath, key]
+
       if (prop.type === 'object') {
         const branch = new Map()
         walk(prop.props, path, branch)
@@ -84,7 +90,7 @@ const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
 
   walk(props, [], typeDef.tree)
 
-  // -------- finish main --------
+  // -------- sort and assign main --------
   typeDef.main.sort(mainSorter)
   let start = 0
   for (const prop of typeDef.main) {
@@ -92,7 +98,7 @@ const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
     start += prop.size
   }
 
-  // -------- finish separate ---------
+  // -------- sort and assign separate ---------
   typeDef.separate.sort(separateSorter)
   let propId = 1
   for (const prop of typeDef.separate) {
@@ -146,5 +152,6 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
   // ----------- add to cache --------
   cache.set(schema, typeDefs)
 
+  console.dir(typeDefs)
   return typeDefs
 }
