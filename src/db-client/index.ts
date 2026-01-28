@@ -42,7 +42,6 @@ export class DbClient extends DbShared {
   }: DbClientOpts) {
     super()
     this.hooks = hooks
-    // this.maxModifySize = maxModifySize
     this.modifyCtx = {
       buf: new AutoSizedUint8Array(256, maxModifySize),
       flushTime,
@@ -61,18 +60,7 @@ export class DbClient extends DbShared {
   subs = new Map<BasedDbQuery, SubStore>()
   stopped!: boolean
   hooks: DbClientHooks
-
-  // modify
   modifyCtx: ModifyCtx
-
-  // modify
-  // flushTime: number
-  // writeTime: number = 0
-  // isDraining = false
-  // // maxModifySize: number
-  // modifyCtx: ModifyCtx
-  // upserting: Map<number, { o: Record<string, any>; p: Promise<number> }> =
-  //   new Map()
 
   async schemaIsSet() {
     if (!this.schema) {
@@ -110,27 +98,14 @@ export class DbClient extends DbShared {
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
     )
-    // return modify(
-    //   this.modifyCtx,
-    //   serializeCreate,
-    //   this.schema!,
-    //   type,
-    //   obj,
-    //   this.modifyCtx.buf,
-    //   opts?.locale ? LangCode[opts.locale] : LangCode.none,
-    // )
   }
 
   update(
     type: string,
-    id: number, // | Promise<number>,
+    id: number,
     obj = {},
     opts?: ModifyOpts,
   ): Promise<number> {
-    // if (id instanceof Promise) {
-    //   id = await id
-    // }
-
     return new ModifyCmd(
       this.modifyCtx,
       serializeUpdate,
@@ -141,25 +116,9 @@ export class DbClient extends DbShared {
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
     )
-    // return modify(
-    //   this.modifyCtx,
-    //   serializeUpdate,
-    //   this.schema!,
-    //   type,
-    //   id,
-    //   obj,
-    //   this.modifyCtx.buf,
-    //   opts?.locale ? LangCode[opts.locale] : LangCode.none,
-    // )
   }
 
-  delete(
-    type: string,
-    id: number, // | Promise<number>
-  ) {
-    // if (id instanceof Promise) {
-    //   id = await id
-    // }
+  delete(type: string, id: number) {
     return new ModifyCmd(
       this.modifyCtx,
       serializeDelete,
@@ -169,16 +128,6 @@ export class DbClient extends DbShared {
       id,
       this.modifyCtx.buf,
     )
-
-    // return modify(
-    //   this.modifyCtx,
-    //   serializeDelete,
-    //   this.schema!,
-    //   type,
-    //   // TODO make it perf
-    //   id,
-    //   this.modifyCtx.buf,
-    // )
   }
 
   query(
@@ -204,10 +153,6 @@ export class DbClient extends DbShared {
   ): BasedDbQuery {
     return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
   }
-
-  // expire(type: string, id: number, seconds: number) {
-  //   return expire(this, type, id, seconds)
-  // }
 
   destroy() {
     this.stop()
