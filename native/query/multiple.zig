@@ -300,7 +300,7 @@ pub fn aggregates(
     const isSamplingSet = header.isSamplingSet;
     const hasGroupBy = header.hasGroupBy;
 
-    var filter: []u8 = undefined;
+    var filter: []u8 = &.{};
     if (header.filterSize > 0) {
         filter = utils.sliceNext(header.filterSize, q, &i);
         try Filter.prepare(filter, ctx, typeEntry);
