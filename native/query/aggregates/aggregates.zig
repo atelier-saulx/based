@@ -24,15 +24,12 @@ pub fn iterator(
 ) !u32 {
     var count: u32 = 0;
     var hadAccumulated: bool = false;
-    _ = ctx;
 
     while (it.next()) |node| {
         if (filterBuf.len > 0) {
-            // Filter Check
-            // utils.debugPrint("filterBuf: {any}\n", .{filterBuf});
-            // if (!try filter(node, ctx, q, typeEntry)) {
-            //     continue :nodeLoop;
-            // }
+            if (!try filter(node, ctx, filterBuf)) {
+                continue;
+            }
         }
 
         aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, &hadAccumulated);
