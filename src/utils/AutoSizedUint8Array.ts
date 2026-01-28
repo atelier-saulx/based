@@ -49,7 +49,7 @@ export class AutoSizedUint8Array {
     this._maxCapacity = maxCapacity
   }
 
-  private ensureCapacity(requiredCapacity: number): void {
+  private ensure(requiredCapacity: number): void {
     const currentCapacity = this.data.byteLength
     if (currentCapacity >= requiredCapacity) return
     if (requiredCapacity > this._maxCapacity) {
@@ -72,12 +72,12 @@ export class AutoSizedUint8Array {
   }
 
   set(array: ArrayLike<number>, offset: number = 0): void {
-    const requiredEnd = offset + array.length
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+    const end = offset + array.length
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     this.data.set(array, offset)
-    if (requiredEnd > this.length) this.length = requiredEnd
+    if (end > this.length) this.length = end
   }
 
   flush(): void {
@@ -86,8 +86,8 @@ export class AutoSizedUint8Array {
 
   fill(value: number, start: number = 0, end: number = this.length): this {
     if (end > this.length) {
-      if (end > this.data.byteLength) {
-        this.ensureCapacity(end)
+      if (end > this.data.length) {
+        this.ensure(end)
       }
       this.length = end
     }
@@ -95,165 +95,145 @@ export class AutoSizedUint8Array {
     return this
   }
 
-  copyWithin(target: number, start: number, end: number = this.length): this {
-    // Calculate required size conservatively if indices are positive
-    if (target >= 0 && start >= 0 && end >= 0 && end > start) {
-      const count = end - start
-      const requiredEnd = target + count
-      if (requiredEnd > this.data.byteLength) {
-        this.ensureCapacity(requiredEnd)
-      }
-      if (requiredEnd > this.length) {
-        this.length = requiredEnd
-      }
-    }
-    this.data.copyWithin(target, start, end)
-    return this
-  }
-
   get(index: number): number | undefined {
-    return index >= 0 && index < this.length ? this.data[index] : undefined
+    return index < this.length ? this.data[index] : undefined
   }
 
-  pushU8(value: number): void {
-    const requiredEnd = this.length + 1
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  pushUint8(value: number): void {
+    const end = this.length + 1
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     this.data[this.length] = value
-    this.length = requiredEnd
+    this.length = end
   }
 
-  setU8(value: number, offset: number): void {
-    const requiredEnd = offset + 1
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  writeUint8(value: number, offset: number): void {
+    const end = offset + 1
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     this.data[offset] = value
-    if (requiredEnd > this.length) this.length = requiredEnd
+    if (end > this.length) this.length = end
   }
 
-  pushU16(value: number): void {
-    const requiredEnd = this.length + 2
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  pushUint16(value: number): void {
+    const end = this.length + 2
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     this.data[this.length] = value
     this.data[this.length + 1] = value >> 8
-    this.length = requiredEnd
+    this.length = end
   }
 
-  setU16(value: number, offset: number): void {
-    const requiredEnd = offset + 2
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  writeUint16(value: number, offset: number): void {
+    const end = offset + 2
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     this.data[offset] = value
     this.data[offset + 1] = value >> 8
-    if (requiredEnd > this.length) this.length = requiredEnd
+    if (end > this.length) this.length = end
   }
 
-  pushU32(value: number): void {
-    const requiredEnd = this.length + 4
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  pushUint32(value: number): void {
+    const end = this.length + 4
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     this.data[this.length] = value
     this.data[this.length + 1] = value >> 8
     this.data[this.length + 2] = value >> 16
     this.data[this.length + 3] = value >> 24
-    this.length = requiredEnd
+    this.length = end
   }
 
-  pushDouble(value: number): void {
-    const requiredEnd = this.length + 8
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  pushDoubleLE(value: number): void {
+    const end = this.length + 8
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     writeDoubleLE(this.data, value, this.length)
-    this.length = requiredEnd
+    this.length = end
   }
 
-  pushF32(value: number): void {
-    const requiredEnd = this.length + 4
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  pushFloatLE(value: number): void {
+    const end = this.length + 4
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     writeFloatLE(this.data, value, this.length)
-    this.length = requiredEnd
+    this.length = end
   }
 
-  pushU64(value: number): void {
-    const requiredEnd = this.length + 8
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  pushUint64(value: number): void {
+    const end = this.length + 8
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     writeUint64(this.data, value, this.length)
-    this.length = requiredEnd
+    this.length = end
   }
 
-  pushI64(value: number): void {
-    const requiredEnd = this.length + 8
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  pushInt64(value: number): void {
+    const end = this.length + 8
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     writeInt64(this.data, value, this.length)
-    this.length = requiredEnd
+    this.length = end
   }
 
   pushString(value: string): number {
     const maxBytes = native.stringByteLength(value)
-    const requiredEnd = this.length + maxBytes
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+    const end = this.length + maxBytes
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     const { written } = ENCODER.encodeInto(
       value,
       this.data.subarray(this.length),
     )
-    this.length += written!
+    this.length += written
     return written
   }
 
-  setU32(value: number, offset: number): void {
-    const requiredEnd = offset + 4
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+  writeUint32(value: number, offset: number): void {
+    const end = offset + 4
+    if (end > this.data.length) {
+      this.ensure(end)
     }
     this.data[offset] = value
     this.data[offset + 1] = value >> 8
     this.data[offset + 2] = value >> 16
     this.data[offset + 3] = value >> 24
-    if (requiredEnd > this.length) this.length = requiredEnd
+    if (end > this.length) this.length = end
   }
 
-  reserveU32(): number {
+  reserveUint32(): number {
     const index = this.length
-    const requiredEnd = index + 4
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+    const end = index + 4
+    if (end > this.data.length) {
+      this.ensure(end)
     }
-    this.length = requiredEnd
+    this.length = end
     return index
   }
 
-  reserveU64(): number {
+  reserveUint64(): number {
     const index = this.length
-    const requiredEnd = index + 8
-    if (requiredEnd > this.data.length) {
-      this.ensureCapacity(requiredEnd)
+    const end = index + 8
+    if (end > this.data.length) {
+      this.ensure(end)
     }
-    this.length = requiredEnd
+    this.length = end
     return index
-  }
-
-  setSizeU32(start: number) {
-    this.setU32(this.length - start - 4, start)
   }
 
   // Core array methods restored for type safety and performance
   push(byte: number): void {
-    return this.pushU8(byte)
+    return this.pushUint8(byte)
   }
 
   subarray(begin: number = 0, end: number = this.length): Uint8Array {

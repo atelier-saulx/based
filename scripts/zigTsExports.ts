@@ -1051,44 +1051,44 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
         switch (prim) {
           case 'u8':
           case 'LangCode':
-            output += `  buf.pushU8(${valRef})\n`
+            output += `  buf.pushUint8(${valRef})\n`
             break
           case 'bool':
-            output += `  buf.pushU8(${valRef} ? 1 : 0)\n`
+            output += `  buf.pushUint8(${valRef} ? 1 : 0)\n`
             break
           case 'i8':
-            output += `  buf.pushU8(${valRef})\n`
+            output += `  buf.pushUint8(${valRef})\n`
             break
           case 'u16':
-            output += `  buf.pushU16(${valRef})\n`
+            output += `  buf.pushUint16(${valRef})\n`
             break
           case 'i16':
-            output += `  buf.pushU16(${valRef})\n`
+            output += `  buf.pushUint16(${valRef})\n`
             break
           case 'u32':
-            output += `  buf.pushU32(${valRef})\n`
+            output += `  buf.pushUint32(${valRef})\n`
             break
           case 'i32':
-            output += `  buf.pushU32(${valRef})\n`
+            output += `  buf.pushUint32(${valRef})\n`
             break
           case 'f32':
-            output += `  buf.pushF32(${valRef})\n`
+            output += `  buf.pushFloatLE(${valRef})\n`
             break
           case 'u64':
           case 'usize':
-            output += `  buf.pushU64(${valRef})\n`
+            output += `  buf.pushUint64(${valRef})\n`
             break
           case 'i64':
-            output += `  buf.pushI64(${valRef})\n`
+            output += `  buf.pushInt64(${valRef})\n`
             break
           case 'f64':
-            output += `  buf.pushDouble(${valRef})\n`
+            output += `  buf.pushDoubleLE(${valRef})\n`
             break
           default:
             // Fallback for unknown types or padding greater than handled above
             const byteCount = Math.ceil(f.bitSize / 8)
             for (let k = 0; k < byteCount; k++) {
-              output += `  buf.pushU8(0)\n`
+              output += `  buf.pushUint8(0)\n`
             }
         }
       })
@@ -1109,13 +1109,13 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
           }
 
           if (f.bitSize === 8) {
-            output += `  buf.pushU8(Number(${valWithTernary}))\n`
+            output += `  buf.pushUint8(Number(${valWithTernary}))\n`
           } else if (f.bitSize === 16) {
-            output += `  buf.pushU16(Number(${valWithTernary}))\n`
+            output += `  buf.pushUint16(Number(${valWithTernary}))\n`
           } else if (f.bitSize === 32) {
-            output += `  buf.pushU32(Number(${valWithTernary}))\n`
+            output += `  buf.pushUint32(Number(${valWithTernary}))\n`
           } else if (f.bitSize === 64) {
-            output += `  buf.pushU64(${valWithTernary})\n`
+            output += `  buf.pushUint64(${valWithTernary})\n`
           }
           currentBitGlobal += f.bitSize
         } else {
@@ -1138,10 +1138,10 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
 
             if (bitInByte === 0) {
               // New byte started
-              output += `  buf.pushU8(0)\n`
+              output += `  buf.pushUint8(0)\n`
             }
 
-            // Access the last byte using view directly OR ensure pushU8(0) initialized it
+            // Access the last byte using view directly OR ensure pushUint8(0) initialized it
             // We know we just pushed a byte if bitInByte == 0.
             // If bitInByte > 0, the byte exists at buf.length - 1
             // But we need to be careful about not relying on `buf.view` if possible?

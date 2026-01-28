@@ -9,14 +9,14 @@ export const number = class Number extends BasePropDef {
   override type: PropTypeEnum = PropType.number
   override size = 8
   override pushValue(buf: AutoSizedUint8Array, value: number) {
-    buf.pushDouble(value)
+    buf.pushDoubleLE(value)
   }
 }
 
 export const timestamp = class Timestamp extends number {
   override type = PropType.timestamp
   override pushValue(buf: AutoSizedUint8Array, value: number | string) {
-    buf.pushI64(convertToTimestamp(value))
+    buf.pushInt64(convertToTimestamp(value))
   }
 }
 
@@ -24,7 +24,7 @@ export const uint8 = class Uint8 extends BasePropDef {
   override type: PropTypeEnum = PropType.uint8
   override size = 1
   override pushValue(buf: AutoSizedUint8Array, value: number): void {
-    buf.pushU8(value)
+    buf.pushUint8(value)
   }
 }
 
@@ -36,7 +36,7 @@ export const uint16 = class Uint16 extends BasePropDef {
   override type: PropTypeEnum = PropType.uint16
   override size = 2
   override pushValue(buf: AutoSizedUint8Array, value: number): void {
-    buf.pushU16(value)
+    buf.pushUint16(value)
   }
 }
 
@@ -48,7 +48,7 @@ export const uint32 = class Uint32 extends BasePropDef {
   override type: PropTypeEnum = PropType.uint32
   override size = 4
   override pushValue(buf: AutoSizedUint8Array, value: number): void {
-    buf.pushU32(value)
+    buf.pushUint32(value)
   }
 }
 
@@ -70,7 +70,7 @@ export const enum_ = class Enum extends uint8 {
   vals = new Map<EnumItem, number>()
 
   override pushValue(buf: AutoSizedUint8Array, value: EnumItem): void {
-    buf.pushU8(this.vals.get(value) ?? 0)
+    buf.pushUint8(this.vals.get(value) ?? 0)
   }
 }
 
@@ -78,6 +78,6 @@ export const boolean = class Boolean extends BasePropDef {
   override type = PropType.boolean
   override size = 1
   override pushValue(buf: AutoSizedUint8Array, value: boolean): void {
-    buf.pushU8(value ? 1 : 0)
+    buf.pushUint8(value ? 1 : 0)
   }
 }

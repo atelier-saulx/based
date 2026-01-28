@@ -39,11 +39,11 @@ export const string = class String extends BasePropDef {
     const normalized = val.normalize('NFKD')
     // TODO make header!
     // TODO compression
-    buf.pushU8(lang)
-    buf.pushU8(NOT_COMPRESSED)
+    buf.pushUint8(lang)
+    buf.pushUint8(NOT_COMPRESSED)
     const written = buf.pushString(normalized)
     const crc = native.crc32(buf.subarray(buf.length - written))
-    buf.pushU32(crc)
+    buf.pushUint32(crc)
   }
   pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
 }
@@ -100,7 +100,7 @@ export const cardinality = class Cardinality extends BasePropDef {
     for (const item of value) {
       // validate(item, def)
       if (typeof item === 'string') {
-        buf.reserveU64()
+        buf.reserveUint64()
         xxHash64(ENCODER.encode(item), buf.data, buf.length - 8)
       } else if (item instanceof Uint8Array && item.byteLength === 8) {
         buf.set(item, buf.length)

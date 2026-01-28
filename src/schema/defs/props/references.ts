@@ -38,11 +38,11 @@ const serializeIds = (
 ): number => {
   let i = offset
   // one extra for padding
-  buf.pushU32(0)
+  buf.pushUint32(0)
   for (; i < ids.length; i++) {
     const id = getRealId(ids[i])
     if (!id) break
-    buf.pushU32(id)
+    buf.pushUint32(id)
   }
   return i
 }
@@ -54,11 +54,11 @@ const serializeTmpIds = (
 ): undefined | any => {
   let i = offset
   // one extra for padding
-  buf.pushU32(0)
+  buf.pushUint32(0)
   for (; i < items.length; i++) {
     const tmpId = getTmpId(items[i])
     if (tmpId === undefined) break
-    buf.pushU32(tmpId)
+    buf.pushUint32(tmpId)
   }
 
   return i
@@ -73,7 +73,7 @@ const serializeIdsAndMeta = (
   edgesType?: TypeDef,
 ): number => {
   let i = offset
-  const start = buf.reserveU32()
+  const start = buf.reserveUint32()
 
   for (; i < items.length; i++) {
     const item = items[i]
@@ -108,7 +108,7 @@ const serializeIdsAndMeta = (
   }
 
   // store the amount of refs (for prealloc)
-  buf.setU32(i - offset, start)
+  buf.writeUint32(i - offset, start)
 
   return i
 }
