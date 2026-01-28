@@ -75,7 +75,6 @@ fn iteratorEdge(
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
     const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
-
     while (offset > 0) {
         _ = it.next() orelse return 0;
         offset -= 1;
@@ -176,7 +175,9 @@ pub fn default(
             var it = try Sort.iterator(true, ctx.db, ctx.thread, header.typeId, &sortHeader);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },
-        else => {},
+        else => {
+            // not handled
+        },
     }
     ctx.thread.query.write(nodeCnt, sizeIndex);
 }
@@ -268,8 +269,9 @@ pub fn references(
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-
-        else => {},
+        else => {
+            // not handled
+        },
     }
 
     i.* += header.includeSize;
@@ -307,7 +309,6 @@ pub fn aggregates(
     if (hasGroupBy) {
         var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
         defer groupByHashMap.deinit();
-
         nodeCnt = try GroupBy.iterator(
             &groupByHashMap,
             &it,
