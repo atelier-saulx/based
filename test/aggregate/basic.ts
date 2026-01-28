@@ -70,16 +70,16 @@ await test('sum top level', async (t) => {
     'sum, top level, single prop',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('vote')
-  //     .filter('country', '=', 'aa')
-  //     .sum('NL')
-  //     .get()
-  //     .toObject(),
-  //   { NL: { sum: 20 } },
-  //   'sum with filter',
-  // )
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'aa')
+      .sum('NL')
+      .get()
+      .toObject(),
+    { NL: { sum: 20 } },
+    'sum with filter',
+  )
 
   deepEqual(
     await db.query('vote').sum('NL', 'AU').get().toObject(),
@@ -91,16 +91,16 @@ await test('sum top level', async (t) => {
     await db.query('vote').sum().get().toObject()
   }, 'sum() returning nothing')
 
-  //   deepEqual(
-  //     await db
-  //       .query('vote')
-  //       .filter('country', '=', 'zz')
-  //       .sum('NL')
-  //       .get()
-  //       .toObject(),
-  //     { NL: { sum: 0 } },
-  //     'sum with empty result set',
-  //   )
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'zz')
+      .sum('NL')
+      .get()
+      .toObject(),
+    { NL: { sum: 0 } },
+    'sum with empty result set',
+  )
 
   deepEqual(
     await db.query('vote').sum('flap.hello').get().toObject(),
@@ -174,16 +174,16 @@ await test('top level count', async (t) => {
     'count, top level, prop',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('vote')
-  //     .filter('country', '=', 'aa')
-  //     .count()
-  //     .get()
-  //     .toObject(),
-  //   { count: 2 },
-  //   'count, top level, with filter',
-  // )
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'aa')
+      .count()
+      .get()
+      .toObject(),
+    { count: 2 },
+    'count, top level, with filter',
+  )
 
   deepEqual(
     await db.query('vote').include('IT').count().get(),
@@ -191,28 +191,28 @@ await test('top level count', async (t) => {
     'count, top level, ignoring include',
   )
 
-  //   deepEqual(
-  //     await db
-  //       .query('vote')
-  //       .filter('country', '=', 'zz')
-  //       .count()
-  //       .get()
-  //       .toObject(),
-  //     { count: 0 },
-  //     'count, with no match filtering, string value',
-  //   )
+  deepEqual(
+    await db
+      .query('vote')
+      .filter('country', '=', 'zz')
+      .count()
+      .get()
+      .toObject(),
+    { count: 0 },
+    'count, with no match filtering, string value',
+  )
 
-  // deepEqual(
-  //   await db.query('vote').filter('NL', '=', 20).count().get(),
-  //   { count: 1 },
-  //   'count, with filtering an int value',
-  // )
+  deepEqual(
+    await db.query('vote').filter('NL', '=', 20).count().get(),
+    { count: 1 },
+    'count, with filtering an int value',
+  )
 
-  //   deepEqual(
-  //     await db.query('vote').filter('NL', '>', 1e6).count().get(),
-  //     { count: 0 },
-  //     'count, with no match filtering, int value',
-  //   )
+  deepEqual(
+    await db.query('vote').filter('NL', '>', 1e6).count().get(),
+    { count: 0 },
+    'count, with no match filtering, int value',
+  )
 })
 
 await test('two phase accumulation', async (t) => {
