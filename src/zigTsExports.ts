@@ -1167,6 +1167,7 @@ export const QUERY_ITERATOR_EDGE = 20
 export const QUERY_ITERATOR_EDGE_INCLUDE = 30
 export const QUERY_ITERATOR_SEARCH = 120
 export const QUERY_ITERATOR_SEARCH_VEC = 130
+export const QUERY_ITERATOR_AGGREGATES = 140
 export const QueryIteratorType = {
   default: 0,
   sort: 1,
@@ -1196,6 +1197,10 @@ export const QueryIteratorType = {
   searchFilter: 121,
   vec: 130,
   vecFilter: 131,
+  aggregate: 140,
+  aggregateFilter: 141,
+  groupBy: 142,
+  groupByFilter: 143,
 } as const
 
 export const QueryIteratorTypeInverse = {
@@ -1227,6 +1232,10 @@ export const QueryIteratorTypeInverse = {
   121: 'searchFilter',
   130: 'vec',
   131: 'vecFilter',
+  140: 'aggregate',
+  141: 'aggregateFilter',
+  142: 'groupBy',
+  143: 'groupByFilter',
 } as const
 
 /**
@@ -1257,7 +1266,11 @@ export const QueryIteratorTypeInverse = {
   search, 
   searchFilter, 
   vec, 
-  vecFilter 
+  vecFilter, 
+  aggregate, 
+  aggregateFilter, 
+  groupBy, 
+  groupByFilter 
  */
 export type QueryIteratorTypeEnum = (typeof QueryIteratorType)[keyof typeof QueryIteratorType]
 

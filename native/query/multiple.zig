@@ -294,17 +294,9 @@ pub fn aggregates(
 
     const header = utils.read(t.AggHeader, q, i);
     i += utils.sizeOf(t.AggHeader);
-    // utils.debugPrint("header: {any}\n", .{header});
     const typeId = header.typeId;
     const typeEntry = try Node.getType(ctx.db, typeId);
     const isSamplingSet = header.isSamplingSet;
-    const hasGroupBy = header.hasGroupBy;
-
-    var filter: []u8 = &.{};
-    if (header.filterSize > 0) {
-        filter = utils.sliceNext(header.filterSize, q, &i);
-        try Filter.prepare(filter, ctx, typeEntry);
-    }
 
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
@@ -312,16 +304,33 @@ pub fn aggregates(
     const hllAccumulator = Selva.c.selva_string_create(null, Selva.c.HLL_INIT_SIZE, Selva.c.SELVA_STRING_MUTABLE);
     defer Selva.c.selva_string_free(hllAccumulator);
 
-    const aggDefs = q[i..];
     var it = Node.iterator(false, typeEntry);
-    if (hasGroupBy) {
-        var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
-        defer groupByHashMap.deinit();
-        nodeCnt = try GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, filter, aggDefs, header.accumulatorSize, typeEntry, hllAccumulator);
-        try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, aggDefs);
-    } else {
-        nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, filter, aggDefs, accumulatorProp, typeEntry, hllAccumulator);
-        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, isSamplingSet, 0);
+    switch (header.iteratorType) {
+        .aggregate => {
+            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, false, undefined, q[i..], accumulatorProp, typeEntry, hllAccumulator);
+            try Aggregates.finalizeResults(ctx, q[i..], accumulatorProp, isSamplingSet, 0);
+        },
+        .aggregateFilter => {
+            const filter = utils.sliceNext(header.filterSize, q, &i);
+            try Filter.prepare(filter, ctx, typeEntry);
+            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, true, filter, q[i..], accumulatorProp, typeEntry, hllAccumulator);
+            try Aggregates.finalizeResults(ctx, q[i..], accumulatorProp, isSamplingSet, 0);
+        },
+        .groupBy => {
+            var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
+            defer groupByHashMap.deinit();
+            nodeCnt = try GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, false, undefined, q[i..], header.accumulatorSize, typeEntry, hllAccumulator);
+            try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, q[i..]);
+        },
+        .groupByFilter => {
+            const filter = utils.sliceNext(header.filterSize, q, &i);
+            try Filter.prepare(filter, ctx, typeEntry);
+            var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
+            defer groupByHashMap.deinit();
+            nodeCnt = try GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, true, filter, q[i..], header.accumulatorSize, typeEntry, hllAccumulator);
+            try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, q[i..]);
+        },
+        else => {},
     }
 }
 

@@ -33,6 +33,7 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     ? QueryType.aggregatesCount
     : QueryType.aggregates
 
+  const hasGroupBy = def.aggregate.groupBy ? true : false
   const hasSort = false // hardcoded
   // const hasSearch = !!def.search
   const sortSize = 0 // hardcoded
@@ -44,10 +45,10 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     offset: def.range.offset,
     limit: def.range.limit,
     filterSize,
-    iteratorType: getIteratorType(def, false),
+    iteratorType: getIteratorType(def, hasFilter),
     size: 0, // hardcoded
     sort: false, // hardcoded
-    hasGroupBy: def.aggregate.groupBy ? true : false,
+    hasGroupBy,
     resultsSize: def.aggregate.totalResultsSize,
     accumulatorSize: def.aggregate.totalAccumulatorSize,
     isSamplingSet: (def.aggregate?.option?.mode || 'sample') === 'sample',
@@ -56,7 +57,6 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     (sum, arr) => sum + arr.length,
     0,
   )
-  const hasGroupBy = aggHeader.hasGroupBy
   const groupByKeyPropByteSize = hasGroupBy ? GroupByKeyPropByteSize : 0
   const buffer = new Uint8Array(
     AggHeaderByteSize +

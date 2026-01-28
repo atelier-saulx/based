@@ -19,6 +19,7 @@ pub fn iterator(
     groupByHashMap: *GroupByHashMap,
     it: anytype,
     limit: u32,
+    comptime hasFilter: bool,
     filterBuf: []u8,
     aggDefs: []u8,
     accumulatorSize: usize,
@@ -29,7 +30,7 @@ pub fn iterator(
     var hadAccumulated: bool = false;
 
     while (it.next()) |node| {
-        if (filterBuf.len > 0) {
+        if (hasFilter) {
             if (!try filter(node, ctx, filterBuf)) {
                 continue;
             }
