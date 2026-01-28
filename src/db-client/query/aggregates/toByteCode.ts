@@ -35,8 +35,6 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
 
   const hasGroupBy = def.aggregate.groupBy ? true : false
   const hasSort = false // hardcoded
-  // const hasSearch = !!def.search
-  const sortSize = 0 // hardcoded
   let pos = 0
 
   let aggHeader: AggHeader = {
@@ -46,8 +44,7 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     limit: def.range.limit,
     filterSize,
     iteratorType: getIteratorType(def, hasFilter),
-    size: 0, // hardcoded
-    sort: false, // hardcoded
+    sort: hasSort,
     hasGroupBy,
     resultsSize: def.aggregate.totalResultsSize,
     accumulatorSize: def.aggregate.totalAccumulatorSize,
@@ -105,6 +102,5 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     }
   }
 
-  // here we do need to pass the filter thing as well
   return buffer
 }

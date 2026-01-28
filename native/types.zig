@@ -676,7 +676,6 @@ pub const AggHeader = packed struct {
     limit: u32,
     filterSize: u16,
     iteratorType: QueryIteratorType,
-    size: u16,
     resultsSize: u16,
     accumulatorSize: u16,
     sort: bool,

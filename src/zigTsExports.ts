@@ -2472,7 +2472,6 @@ export type AggHeader = {
   limit: number
   filterSize: number
   iteratorType: QueryIteratorTypeEnum
-  size: number
   resultsSize: number
   accumulatorSize: number
   sort: boolean
@@ -2480,7 +2479,7 @@ export type AggHeader = {
   isSamplingSet: boolean
 }
 
-export const AggHeaderByteSize = 21
+export const AggHeaderByteSize = 19
 
 export const AggHeaderAlignOf = 16
 
@@ -2492,12 +2491,11 @@ export const packAggHeader = (obj: AggHeader): bigint => {
   val |= (BigInt(obj.limit) & 4294967295n) << 56n
   val |= (BigInt(obj.filterSize) & 65535n) << 88n
   val |= (BigInt(obj.iteratorType) & 255n) << 104n
-  val |= (BigInt(obj.size) & 65535n) << 112n
-  val |= (BigInt(obj.resultsSize) & 65535n) << 128n
-  val |= (BigInt(obj.accumulatorSize) & 65535n) << 144n
-  val |= ((obj.sort ? 1n : 0n) & 1n) << 160n
-  val |= ((obj.hasGroupBy ? 1n : 0n) & 1n) << 161n
-  val |= ((obj.isSamplingSet ? 1n : 0n) & 1n) << 162n
+  val |= (BigInt(obj.resultsSize) & 65535n) << 112n
+  val |= (BigInt(obj.accumulatorSize) & 65535n) << 128n
+  val |= ((obj.sort ? 1n : 0n) & 1n) << 144n
+  val |= ((obj.hasGroupBy ? 1n : 0n) & 1n) << 145n
+  val |= ((obj.isSamplingSet ? 1n : 0n) & 1n) << 146n
   return val
 }
 
@@ -2509,12 +2507,11 @@ export const unpackAggHeader = (val: bigint): AggHeader => {
     limit: Number((val >> 56n) & 4294967295n),
     filterSize: Number((val >> 88n) & 65535n),
     iteratorType: (Number((val >> 104n) & 255n)) as QueryIteratorTypeEnum,
-    size: Number((val >> 112n) & 65535n),
-    resultsSize: Number((val >> 128n) & 65535n),
-    accumulatorSize: Number((val >> 144n) & 65535n),
-    sort: ((val >> 160n) & 1n) === 1n,
-    hasGroupBy: ((val >> 161n) & 1n) === 1n,
-    isSamplingSet: ((val >> 162n) & 1n) === 1n,
+    resultsSize: Number((val >> 112n) & 65535n),
+    accumulatorSize: Number((val >> 128n) & 65535n),
+    sort: ((val >> 144n) & 1n) === 1n,
+    hasGroupBy: ((val >> 145n) & 1n) === 1n,
+    isSamplingSet: ((val >> 146n) & 1n) === 1n,
   }
 }
 
@@ -2535,8 +2532,6 @@ export const writeAggHeader = (
   offset += 2
   buf[offset] = Number(header.iteratorType)
   offset += 1
-  writeUint16(buf, Number(header.size), offset)
-  offset += 2
   writeUint16(buf, Number(header.resultsSize), offset)
   offset += 2
   writeUint16(buf, Number(header.accumulatorSize), offset)
@@ -2569,23 +2564,20 @@ export const writeAggHeaderProps = {
   iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
     buf[offset + 13] = Number(value)
   },
-  size: (buf: Uint8Array, value: number, offset: number) => {
+  resultsSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 14)
   },
-  resultsSize: (buf: Uint8Array, value: number, offset: number) => {
+  accumulatorSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 16)
   },
-  accumulatorSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, Number(value), offset + 18)
-  },
   sort: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 20] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+    buf[offset + 18] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
   hasGroupBy: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 20] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    buf[offset + 18] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
   isSamplingSet: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 20] |= (((value ? 1 : 0) >>> 0) & 1) << 2
+    buf[offset + 18] |= (((value ? 1 : 0) >>> 0) & 1) << 2
   },
 }
 
@@ -2600,12 +2592,11 @@ export const readAggHeader = (
     limit: readUint32(buf, offset + 7),
     filterSize: readUint16(buf, offset + 11),
     iteratorType: (buf[offset + 13]) as QueryIteratorTypeEnum,
-    size: readUint16(buf, offset + 14),
-    resultsSize: readUint16(buf, offset + 16),
-    accumulatorSize: readUint16(buf, offset + 18),
-    sort: (((buf[offset + 20] >>> 0) & 1)) === 1,
-    hasGroupBy: (((buf[offset + 20] >>> 1) & 1)) === 1,
-    isSamplingSet: (((buf[offset + 20] >>> 2) & 1)) === 1,
+    resultsSize: readUint16(buf, offset + 14),
+    accumulatorSize: readUint16(buf, offset + 16),
+    sort: (((buf[offset + 18] >>> 0) & 1)) === 1,
+    hasGroupBy: (((buf[offset + 18] >>> 1) & 1)) === 1,
+    isSamplingSet: (((buf[offset + 18] >>> 2) & 1)) === 1,
   }
   return value
 }
@@ -2617,12 +2608,11 @@ export const readAggHeaderProps = {
     limit: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 7),
     filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 11),
     iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 13]) as QueryIteratorTypeEnum,
-    size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 14),
-    resultsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
-    accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 18),
-    sort: (buf: Uint8Array, offset: number) => (((buf[offset + 20] >>> 0) & 1)) === 1,
-    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 20] >>> 1) & 1)) === 1,
-    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 20] >>> 2) & 1)) === 1,
+    resultsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 14),
+    accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
+    sort: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 0) & 1)) === 1,
+    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 1) & 1)) === 1,
+    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 18] >>> 2) & 1)) === 1,
 }
 
 export const createAggHeader = (header: AggHeader): Uint8Array => {
