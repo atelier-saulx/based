@@ -16,7 +16,7 @@ import {
   type ModifyErrorEnum,
 } from '../../zigTsExports.js'
 import { AutoSizedUint8Array } from './AutoSizedUint8Array.js'
-import type { PropDef, PropTree, TypeDef } from './defs/index.js'
+import type { PropDef, PropTree } from './defs/index.js'
 import { InferPayload } from './types.js'
 import { getTypeDefs } from './defs/getTypeDefs.js'
 import { readUint32 } from '../../utils/uint8.js'
@@ -316,6 +316,7 @@ export const schedule = (ctx: ModifyCtx) => {
   }
 }
 
+// TODO implement single ModifyCmd
 export const modify = function <S extends ModifySerializer>(
   ctx: ModifyCtx,
   serialize: S,

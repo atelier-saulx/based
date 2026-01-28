@@ -358,10 +358,23 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                 .reference => {
                     const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
                     const refTypeEntry = try Node.getType(db, refTypeId);
-                    // TODO add TMP handling
-                    const refId = read(u32, value, 0);
+                    var k: usize = 0;
+                    const meta = utils.readNext(t.ModifyReferenceMetaHeader, value, &k);
+                    var refId = meta.id;
+
+                    if (meta.isTmp) {
+                        refId = items[refId].id;
+                    }
+
                     if (Node.getNode(refTypeEntry, refId)) |dst| {
                         _ = try References.writeReference(db, node, propSchema, dst);
+
+                        if (meta.size != 0) {
+                            const edgeProps = value[k .. k + meta.size];
+                            const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
+                            const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
+                            try modifyProps(db, edgeType, dst, edgeProps, items);
+                        }
                     }
                 },
                 .references => {
@@ -375,7 +388,6 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     while (k < value.len) {
                         const references = utils.readNext(t.ModifyReferencesHeader, value, &k);
                         const refs = value[k .. k + references.size];
-                        std.debug.print("ref op {any}\n", .{references.op});
                         switch (references.op) {
                             .ids => {
                                 const offset = utils.alignLeft(u32, refs);
@@ -388,7 +400,6 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                                 for (u32Ids) |*id| {
                                     id.* = items[id.*].id;
                                 }
-                                std.debug.print("hahah {any}\n", .{u32Ids});
                                 try References.putReferences(db, node, propSchema, u32Ids);
                             },
                             .idsWithMeta => {

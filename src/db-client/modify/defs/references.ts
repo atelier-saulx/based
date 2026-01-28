@@ -5,6 +5,7 @@ import {
   pushModifyReferenceMetaHeader,
   pushModifyReferencesHeader,
   pushModifyReferencesMetaHeader,
+  writeModifyReferenceMetaHeaderProps,
   writeModifyReferencesHeaderProps,
   writeModifyReferencesMetaHeaderProps,
   type LangCodeEnum,
@@ -229,17 +230,63 @@ export const references = class extends BasePropDef {
 
 export const reference = class extends BasePropDef {
   override type: PropTypeEnum = PropType.reference
-  override pushValue(buf: AutoSizedUint8Array, value: any, op: ModifyEnum) {
-    if (typeof value === 'number') {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: any,
+    op: ModifyEnum,
+    lang: LangCodeEnum,
+  ) {
+    const id = getRealId(value)
+    if (id) {
       pushModifyReferenceMetaHeader(buf, {
-        id: value,
+        id,
         isTmp: false,
         size: 0,
       })
-    } else {
-      console.error('TODO reference ALL THE CASES')
+      return
+    }
+    const tmpId = getTmpId(value)
+    if (tmpId !== undefined) {
+      pushModifyReferenceMetaHeader(buf, {
+        id: tmpId,
+        isTmp: true,
+        size: 0,
+      })
+      return
     }
 
-    // buf.pushU32(value)
+    if (value instanceof ModifyItem || value instanceof QueuedItem) {
+      throw value
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      const realId = getRealId(value.id)
+      const id = realId || getTmpId(value.id)
+      if (id !== undefined) {
+        const index = pushModifyReferenceMetaHeader(buf, {
+          id,
+          isTmp: !realId,
+          size: 0,
+        })
+        const prop: PropDef = this
+        if (prop.edges) {
+          const edges = getEdges(value)
+          if (edges) {
+            const start = buf.length
+            serializeProps(prop.edges.tree, edges, buf, op, lang)
+            writeModifyReferenceMetaHeaderProps.size(
+              buf.data,
+              buf.length - start,
+              index,
+            )
+          }
+        }
+        return
+      }
+
+      if (value.id instanceof ModifyItem || value.id instanceof QueuedItem) {
+        throw value.id
+      }
+    }
   }
 }

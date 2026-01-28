@@ -137,6 +137,11 @@ await test('modify client', async (t) => {
             $rank: 'uint8',
           },
         },
+        friend: {
+          ref: 'user',
+          prop: 'friend',
+          $rating: 'uint8',
+        },
         name: 'string',
       },
     },
@@ -150,6 +155,7 @@ await test('modify client', async (t) => {
   const olli = db.create('user', {
     name: 'olli',
     friends: [youzi],
+    friend: youzi,
   })
 
   // youzi is now in-flight
@@ -158,12 +164,12 @@ await test('modify client', async (t) => {
   // james WILL BE QUEUED until youzi is done -> because we need that reference
   const jamez = db.create('user', {
     name: 'jamez',
-    friends: [youzi],
+    friend: { id: youzi, $rating: 10 },
   })
 
-  // this WILL NOT BE QUEUED ----> different order
   const marco = db.create('user', {
     name: 'mr marco',
+    friends: [youzi],
   })
 
   jamez.then(() => {
@@ -171,18 +177,21 @@ await test('modify client', async (t) => {
       .create('user', {
         name: 'mr fulco',
         friends: [jamez],
+        friend: jamez,
       })
       .then(() => {
         const tom = db
           .create('user', {
             name: 'mr tom',
             friends: [jamez],
+            friend: jamez,
           })
           .then()
       })
   })
 
-  const res = await db.query('user').include('*', 'friends').get().toObject()
+  // this will await all queued modifies
+  const res = await db.query('user').include('*', 'friend').get().toObject()
   console.dir(res, { depth: null })
 })
 
