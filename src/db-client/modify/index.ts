@@ -130,8 +130,8 @@ type ModifySerializer =
 
 type ModifyBatch = {
   count: number
-  items?: ModifyCmd[]
-  queue?: ModifyCmd[]
+  promises?: ModifyCmd[]
+  dependents?: ModifyCmd[]
   result?: Uint8Array
   flushed?: true
 }
@@ -154,20 +154,20 @@ export const flush = (ctx: ModifyCtx) => {
   batch.flushed = true
   ctx.hooks.flushModify(ctx.buf.view).then((result) => {
     batch.result = result
-    const items = batch.items
-    const queue = batch.queue
-    if (queue) {
-      batch.queue = undefined
-      for (const item of queue) {
+    const promises = batch.promises
+    const dependents = batch.dependents
+    if (dependents) {
+      batch.dependents = undefined
+      for (const item of dependents) {
         item._exec.apply(item, item._arguments)
         if (item._resolve) {
           item._await()
         }
       }
     }
-    if (items) {
-      batch.items = undefined
-      for (const item of items) {
+    if (promises) {
+      batch.promises = undefined
+      for (const item of promises) {
         const id = item.id
         const err = item.error
         if (err) {
@@ -209,14 +209,16 @@ export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
   private _result() {
     if (this._batch?.result) {
       this._id = readUint32(this._batch.result, this._index! * 5)
-      this._error = this._batch.result[this._index! * 5 + 4] as ModifyErrorEnum
+      const errCode = this._batch.result[this._index! * 5 + 4]
+      if (errCode) this._error = new Error('ModifyError: ' + errCode)
+      this._batch = undefined
     }
   }
   get id(): number | undefined {
     this._result()
     return this._id
   }
-  get error(): ModifyErrorEnum | undefined {
+  get error(): Error | undefined {
     this._result()
     return this._error
   }
@@ -241,7 +243,7 @@ export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
   }
 
   private _id?: number
-  private _error?: ModifyErrorEnum
+  private _error?: Error
   private _blocker?: ModifyCmd
   private _index?: number
   private _batch?: ModifyBatch
@@ -252,8 +254,8 @@ export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
   _reject?: (reason?: any) => void
   _await() {
     if (this._batch) {
-      this._batch.items ??= []
-      this._batch.items.push(this)
+      this._batch.promises ??= []
+      this._batch.promises.push(this)
     }
   }
   _exec(ctx: ModifyCtx, serialize: S, ...args: Parameters<S>) {
@@ -278,11 +280,17 @@ export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
       } else if (e instanceof ModifyCmd) {
         let blocker: ModifyCmd = e
         while (blocker._blocker) blocker = blocker._blocker
-        blocker._batch!.queue ??= []
-        blocker._batch!.queue.push(this)
+        blocker._batch!.dependents ??= []
+        blocker._batch!.dependents.push(this)
         this._blocker = blocker
         this._arguments = arguments
+      } else if (this._arguments) {
+        // its in async mode
+        this._error = e
+        this._reject?.(e)
+        return
       } else {
+        this._error = e
         throw e
       }
     }
