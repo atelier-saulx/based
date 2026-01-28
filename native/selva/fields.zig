@@ -116,11 +116,11 @@ pub inline fn setColvec(te: Node.Type, nodeId: selva.c.node_id_t, fieldSchema: S
 }
 
 // TODO This is now hll specific but we might want to change it.
-pub inline fn ensurePropTypeString(
-    ctx: *Modify.ModifyCtx,
+pub fn ensurePropTypeString(
+    node: Node.Node,
     fieldSchema: Schema.FieldSchema,
 ) !*selva.c.selva_string {
-    return selva.c.selva_fields_ensure_string(ctx.node.?, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
+    return selva.c.selva_fields_ensure_string(node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
 pub fn ensureEdgePropTypeString(

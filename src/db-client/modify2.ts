@@ -1,4 +1,9 @@
-import { type SchemaTypes } from '../../schema.js'
+import {
+  parseSchema,
+  type Schema,
+  type SchemaOut,
+  type SchemaTypes,
+} from '../schema.js'
 
 type TypedArray =
   | Uint8Array
@@ -53,6 +58,36 @@ type InferType<Props, Types> = {
     : K]?: InferProp<Props[K], Types>
 }
 
-export type InferPayload<Types extends SchemaTypes<true>> = {
+type InferPayload<Types extends SchemaTypes<true>> = {
   [K in keyof Types]: InferType<Types[K]['props'], Types>
 }
+
+const schema = parseSchema({
+  types: {
+    user: {
+      props: {
+        name: 'string',
+        foo: 'string',
+      },
+    },
+  },
+})
+
+export const create = <
+  S extends SchemaOut = SchemaOut,
+  T extends keyof S['types'] = keyof S['types'],
+>(
+  schema: S,
+  type: T,
+  payload: InferPayload<S['types']>[T],
+) => {
+  const buf: Uint8Array = new Uint8Array(100)
+  buf
+
+  const buffers = []
+}
+
+create(schema, 'user', {
+  name: 'xxx',
+  foo: 'abc',
+})

@@ -2,7 +2,6 @@ import {
   assert,
   assertExpectedProps,
   deleteUndefined,
-  isBoolean,
   isFunction,
   isRecord,
   isString,
@@ -32,6 +31,40 @@ export type Schema<strict = false> = {
 
 export type SchemaIn = Schema<false> | Schema<true>
 export type SchemaOut = Schema<true>
+
+type NormalizeProp<T> = T extends string
+  ? { type: T }
+  : T extends readonly (infer U)[]
+    ? { type: 'enum'; enum: U[] }
+    : T extends { type: 'object'; props: infer P }
+      ? Omit<T, 'props'> & {
+          type: 'object'
+          props: { [K in keyof P]: NormalizeProp<P[K]> }
+        }
+      : T extends { props: infer P }
+        ? Omit<T, 'props'> & {
+            type: 'object'
+            props: { [K in keyof P]: NormalizeProp<P[K]> }
+          }
+        : T extends { items: infer I }
+          ? Omit<T, 'items'> & { type: 'references'; items: NormalizeProp<I> }
+          : T extends { ref: string }
+            ? T & { type: 'reference' }
+            : T extends { enum: any[] }
+              ? T & { type: 'enum' }
+              : T
+
+type NormalizeType<T> = T extends { props: infer P }
+  ? Omit<T, 'props'> & { props: { [K in keyof P]: NormalizeProp<P[K]> } }
+  : { props: { [K in keyof T]: NormalizeProp<T[K]> } }
+
+type ResolveSchema<S extends SchemaIn> = Omit<S, 'types' | 'locales'> & {
+  hash: number
+  locales: SchemaLocales<true>
+  types: {
+    [K in keyof S['types']]: NormalizeType<S['types'][K]>
+  }
+} & SchemaOut
 
 const isMigrations = (v: unknown): v is SchemaMigrations =>
   isRecord(v) &&
@@ -86,7 +119,10 @@ const track = <P extends Record<string, unknown>>(input: P): P => {
   return _track(input, 0, input)
 }
 
-export const parseSchema = (input: SchemaIn): SchemaOut => {
+/*
+  This returns a "public" parsed schema, suitable for external users
+*/
+export const parseSchema = <S extends SchemaIn>(input: S): ResolveSchema<S> => {
   const v: unknown = track(input)
   assert(isRecord(v), 'Schema should be record')
   try {
@@ -130,9 +166,10 @@ export const parseSchema = (input: SchemaIn): SchemaOut => {
       }
     }
 
+    // TODO we can remove hash from here after we finish new schema defs (internal schema)
     result.hash = hash(result)
 
-    return result
+    return result as ResolveSchema<S>
   } catch (e) {
     if (tracking) {
       e = Error(`${path.join('.')}: ${inspect(value)} - ${e}`, { cause: e })

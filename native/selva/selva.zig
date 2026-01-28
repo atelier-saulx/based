@@ -33,6 +33,7 @@ pub const c = @cImport({
 
 const std = @import("std");
 const Modify = @import("../modify/common.zig");
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const Node = *c.SelvaNode;
 pub const Aliases = *c.SelvaAliases;
@@ -54,8 +55,8 @@ pub fn selvaStringDestroy(str: ?c.selva_string) void {
 }
 
 // TODO Accept also Type as an arg
-pub inline fn markDirty(ctx: *Modify.ModifyCtx, typeId: u16, nodeId: u32) void {
-    c.selva_mark_dirty(c.selva_get_type_by_index(ctx.db.selva, typeId), nodeId);
+pub inline fn markDirty(db: *DbCtx, typeId: u16, nodeId: u32) void {
+    c.selva_mark_dirty(c.selva_get_type_by_index(db.selva, typeId), nodeId);
 }
 
 pub fn markReferencesDirty(ctx: *Modify.ModifyCtx, dstTypeId: u16, refs: []u32) void {

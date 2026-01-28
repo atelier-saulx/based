@@ -114,3 +114,72 @@ export function update(
     return handleError(db, ctx, update, arguments, e)
   }
 }
+
+// const simpleUpdate = () => {
+
+// }
+
+/*
+  CREATE
+
+  article {
+    body: 'xxx',
+    age: 10,
+    rating: 4
+  }
+
+  ==>
+
+  create|article|main:10,4|body:xxx
+
+  UPDATE
+
+  article 10 {
+    body: 'xxx',
+    age: 10,
+    rating: 4
+  }
+
+  ==>
+
+  update|article|id:10|main:0:10|main:1:4|body:xxx
+
+  update(u8)|size(u32)|type(u8)|id(u32)|...[prop(u8)]
+
+
+  propType,size,value
+  // age:number:81
+  1,4,81
+
+
+
+  name,string,value
+
+  
+  UPSERT
+
+  article 'abc', {
+    body: 'xxx',
+    age: 10,
+    rating: 4
+  }
+
+  ==>
+
+  upsert|article|abc|main:0:10|main:1:4|body:xxx
+
+
+
+
+
+
+
+
+
+  --------------------------------------------------------------------
+
+
+
+
+
+*/

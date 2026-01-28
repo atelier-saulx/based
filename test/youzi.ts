@@ -1,12 +1,55 @@
 import { BasedDb } from '../src/index.js'
-import { equal } from './shared/assert.js'
+import { AutoSizedUint8Array } from '../src/utils/AutoSizedUint8Array.js'
+import {
+  flush,
+  getTypeDefs,
+  serializeCreate,
+} from '../src/db-client/modify/index.js'
+import { parseSchema } from '../src/schema.js'
+import { LangCode, Modify, pushModifyHeader } from '../src/zigTsExports.js'
 import test from './shared/test.js'
 
-await test('reffies', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
+await test.skip('schema defs', async (t) => {
+  const schema = parseSchema({
+    types: {
+      user: {
+        age: 'number',
+        rating: 'uint8',
+        nested: {
+          props: {
+            friends: {
+              items: {
+                ref: 'user',
+                prop: 'nested.friends',
+                $rating: 'number',
+              },
+            },
+          },
+        },
+      },
+      // article: {
+      //   user: {
+      //     ref: 'user',
+      //     prop: 'articles',
+      //     $rating: 'number',
+      //     $role: {
+      //       ref: 'role',
+      //     },
+      //   },
+      //   users: {
+      //     items: {
+      //       ref: 'user',
+      //       prop: 'favourites',
+      //     },
+      //   },
+      // },
+    },
   })
+  const defs = getTypeDefs(schema)
+})
 
+await test.skip('modify raw', async (t) => {
+  const db = new BasedDb({ path: t.tmp })
   await db.start({ clean: true })
 
   t.after(() => t.backup(db))
@@ -14,32 +57,179 @@ await test('reffies', async (t) => {
   await db.setSchema({
     types: {
       user: {
-        name: 'string',
-        others: {
+        age: 'number',
+        rating: 'uint8',
+        // TODO refs have to be ordered
+        friends: {
           items: {
             ref: 'user',
-            prop: 'others',
-            // $rating: 'number',
+            prop: 'friends',
+            $rank: 'uint8',
           },
         },
+        name: 'string',
       },
     },
   })
 
-  const userId = await db.create('user', { name: 'a' })
-
-  await db.create('user', {
-    // others: [
-    //   {
-    //     id: userId,
-    //     // $rating: 1,
-    //   },
-    // ],
-    others: [userId],
-    name: 'bxxxxxxxx',
+  const buf = new AutoSizedUint8Array()
+  pushModifyHeader(buf, {
+    opId: 0, // is filled on server
+    opType: 0, // is filled on server
+    schema: 0,
+    count: 1,
   })
 
-  const res = await db.query('user').include('*', '**').get().toObject()
+  serializeCreate(
+    db.client.schema!,
+    'user',
+    {
+      age: 32,
+      rating: 5,
+      name: 'youzi',
+    },
+    buf,
+    LangCode.nl,
+  )
 
+  serializeCreate(
+    db.client.schema!,
+    'user',
+    {
+      age: 24,
+      rating: 54,
+      name: 'jamez',
+      friends: [{ id: 1, $rank: 5 }],
+    },
+    buf,
+    LangCode.nl,
+  )
+
+  await db.server.modify(buf.view)
+
+  buf.flush()
+
+  console.log('done did it!')
+
+  const res = await db.query('user').include('*', 'friends.*').get().toObject()
   console.dir(res, { depth: null })
 })
+
+await test('modify client', async (t) => {
+  const db = new BasedDb({ path: t.tmp })
+  await db.start({ clean: true })
+
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      user: {
+        // age: 'number',
+        // rating: 'uint8',
+        // TODO refs have to be ordered
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+            $rank: 'uint8',
+          },
+        },
+        friend: {
+          ref: 'user',
+          prop: 'friend',
+          $rating: 'uint8',
+        },
+        name: 'string',
+      },
+    },
+  })
+
+  const youzi = db.create('user', {
+    name: 'youzi',
+  })
+
+  // olli uses TMPID for youzi
+  const olli = db.create('user', {
+    name: 'olli',
+    friends: [youzi],
+    friend: youzi,
+  })
+
+  // youzi is now in-flight
+  flush(db.client.modifyCtx)
+
+  // james WILL BE QUEUED until youzi is done -> because we need that reference
+  const jamez = db.create('user', {
+    name: 'jamez',
+    friend: { id: youzi, $rating: 10 },
+  })
+
+  const marco = db.create('user', {
+    name: 'mr marco',
+    friends: [youzi],
+  })
+
+  jamez.then(() => {
+    const fulco = db
+      .create('user', {
+        name: 'mr fulco',
+        friends: [jamez],
+        friend: jamez,
+      })
+      .then(() => {
+        const tom = db
+          .create('user', {
+            name: 'mr tom',
+            friends: [jamez],
+            friend: jamez,
+          })
+          .then()
+      })
+  })
+
+  // this will await all queued modifies
+  const res = await db.query('user').include('*', 'friend').get().toObject()
+  console.dir(res, { depth: null })
+})
+
+// await test('reffies', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//   })
+
+//   await db.start({ clean: true })
+
+//   t.after(() => t.backup(db))
+
+//   await db.setSchema({
+//     types: {
+//       user: {
+//         name: 'string',
+//         others: {
+//           items: {
+//             ref: 'user',
+//             prop: 'others',
+//             $rating: 'number',
+//           },
+//         },
+//       },
+//     },
+//   })
+
+//   const userId = await db.create('user', { name: 'a' })
+
+//   await db.create('user', {
+//     others: [
+//       {
+//         id: userId,
+//         $rating: 20,
+//       },
+//     ],
+//     // others: [userId],
+//     name: 'bxxxxxxxx',
+//   })
+
+//   const res = await db.query('user').include('*', '**').get().toObject()
+
+//   console.dir(res, { depth: null })
+// })

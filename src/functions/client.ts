@@ -9,8 +9,8 @@ import type { DbClient } from '../db-client/index.js'
 export abstract class BasedFunctionClient {
   server: any
 
-  db: DbClient
-  dbs: Record<string, DbClient>
+  db!: DbClient
+  dbs!: Record<string, DbClient>
 
   abstract call(name: string, payload?: any, ctx?: Context): Promise<any>
 

@@ -554,7 +554,7 @@ class GetPromise extends Promise<BasedQueryResponse> {
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   skipValidation?: boolean = false
   target: QueryTarget
-  readSchema: ReaderSchema
+  readSchema!: ReaderSchema
   constructor(
     db: DbClient,
     type: string,

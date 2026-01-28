@@ -1,11 +1,11 @@
-import { stringCompress } from './db-client/string.js'
+// import { stringCompress } from './db-client/string.js'
 import { DbServer } from './db-server/index.js'
 import { DbClient } from './db-client/index.js'
 import { debugMode, debugServer } from './utils/debug.js'
 import { getDefaultHooks } from './db-client/hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import wait from './utils/wait.js'
-export { stringCompress }
+// export { stringCompress }
 export { DbClient, DbServer }
 export { xxHash64 } from './db-client/xxHash64.js'
 export { crc32 } from './db-client/crc32.js'
@@ -64,29 +64,29 @@ export class BasedDb extends Emitter {
     return this.client.create.apply(this.client, arguments)
   }
 
-  copy: DbClient['copy'] = function (this: BasedDb) {
-    return this.client.copy.apply(this.client, arguments)
-  }
+  // copy: DbClient['copy'] = function (this: BasedDb) {
+  //   return this.client.copy.apply(this.client, arguments)
+  // }
 
   update: DbClient['update'] = function (this: BasedDb) {
     return this.client.update.apply(this.client, arguments)
   }
 
-  upsert: DbClient['upsert'] = function (this: BasedDb) {
-    return this.client.upsert.apply(this.client, arguments)
-  }
+  // upsert: DbClient['upsert'] = function (this: BasedDb) {
+  //   return this.client.upsert.apply(this.client, arguments)
+  // }
 
-  insert: DbClient['insert'] = function (this: BasedDb) {
-    return this.client.insert.apply(this.client, arguments)
-  }
+  // insert: DbClient['insert'] = function (this: BasedDb) {
+  //   return this.client.insert.apply(this.client, arguments)
+  // }
 
   delete: DbClient['delete'] = function (this: BasedDb) {
     return this.client.delete.apply(this.client, arguments)
   }
 
-  expire: DbClient['expire'] = function (this: BasedDb) {
-    return this.client.expire.apply(this.client, arguments)
-  }
+  // expire: DbClient['expire'] = function (this: BasedDb) {
+  //   return this.client.expire.apply(this.client, arguments)
+  // }
 
   query: DbClient['query'] = function (this: BasedDb) {
     return this.client.query.apply(this.client, arguments)
@@ -135,7 +135,7 @@ export class BasedDb extends Emitter {
     await this.isModified()
     // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
     // Todo: clear all active queries, queues ETC
-    await wait(Math.max(this.client.flushTime + 10, 10))
+    await wait(Math.max(this.client.modifyCtx.flushTime + 10, 10))
     this.client.destroy()
     await this.server.destroy()
   }

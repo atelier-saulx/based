@@ -43,10 +43,10 @@ export class Tmp implements Promise<number> {
     this.batch = ctx.batch
     this.tmpId = ctx.batch.count++
   }
-  [Symbol.toStringTag]: 'ModifyPromise'
+  [Symbol.toStringTag]!: 'ModifyPromise'
   #schema: SchemaTypeDef
-  #id: number
-  #err: number
+  #id!: number
+  #err!: number
   get error(): Error | undefined {
     if (this.batch.ready && !this.id) {
       if (this.#err in errorMap) {

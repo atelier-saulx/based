@@ -8,7 +8,7 @@ export type DbClientHooks = {
     schema: SchemaOut,
     transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']>
-  flushModify(buf: Uint8Array): Promise<Uint8Array | null>
+  flushModify(buf: Uint8Array): Promise<Uint8Array>
   getQueryBuf(buf: Uint8Array): ReturnType<DbServer['getQueryBuf']>
   subscribe(
     q: BasedDbQuery,
@@ -26,7 +26,7 @@ export const getDefaultHooks = (server: DbServer): DbClientHooks => {
       onError: OnError,
     ) {
       server.subscribe(q.subscriptionBuffer!, onData)
-      return () => { }
+      return () => {}
     },
     setSchema(schema: SchemaOut, transformFns) {
       return server.setSchema(schema, transformFns)
@@ -41,17 +41,15 @@ export const getDefaultHooks = (server: DbServer): DbClientHooks => {
     },
     flushModify(buf: Uint8Array) {
       const x = buf.slice(0)
-
       const res = server.modify(x)
       if (res instanceof Promise) {
         return res.then((res) => {
           server.keepRefAliveTillThisPoint(x)
-          return res && new Uint8Array(res)
+          return new Uint8Array(res)
         })
       }
 
-
-      return Promise.resolve(res && new Uint8Array(res))
+      return Promise.resolve(new Uint8Array(res))
     },
     getQueryBuf(buf: Uint8Array) {
       return server.getQueryBuf(buf)

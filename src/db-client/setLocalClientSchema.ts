@@ -1,6 +1,6 @@
 import { DbClient } from '../index.js'
-import { cancel } from './modify/drain.js'
-import { Ctx, MODIFY_HEADER_SIZE } from './modify/Ctx.js'
+// import { cancel } from './_modify/drain.js'
+// import { Ctx, MODIFY_HEADER_SIZE } from './_modify/Ctx.js'
 import { updateTypeDefs, type SchemaOut } from '../schema/index.js'
 
 export const setLocalClientSchema = (client: DbClient, schema: SchemaOut) => {
@@ -12,12 +12,13 @@ export const setLocalClientSchema = (client: DbClient, schema: SchemaOut) => {
   client.schemaTypesParsed = schemaTypesParsed
   client.schemaTypesParsedById = schemaTypesParsedById
 
-  if (client.modifyCtx.index > MODIFY_HEADER_SIZE) {
-    console.info('Modify cancelled - schema updated')
-  }
+  console.warn('TODO schema CHANGE')
+  // if (client.modifyCtx.index > MODIFY_HEADER_SIZE) {
+  //   console.info('Modify cancelled - schema updated')
+  // }
 
-  cancel(client.modifyCtx, Error('Schema changed - in-flight modify cancelled'))
-  client.modifyCtx = new Ctx(schema.hash, client.modifyCtx.buf)
+  // cancel(client.modifyCtx, Error('Schema changed - in-flight modify cancelled'))
+  // client.modifyCtx = new Ctx(schema.hash, client.modifyCtx.buf)
 
   // resubscribe
   for (const [q, store] of client.subs) {

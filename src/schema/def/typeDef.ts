@@ -85,11 +85,8 @@ export const updateTypeDefs = (schema: SchemaOut) => {
             if (prop.edges) {
               const edgeTypeName = `_${[`${schemaType.type}_${prop.path.join('_')}`, `${dstType.type}_${dstType.props[prop.inversePropName as string].path.join('_')}`].sort().join(':')}`
 
-              // console.log(edgeTypeName, Object.keys(schemaTypesParsed))
-
               if (!schemaTypesParsed[edgeTypeName]) {
                 // make it
-                // console.log('have to make edge type')
                 //prop.edges, schema.types
 
                 // const type = schema.types[edgeTypeName]
@@ -115,9 +112,11 @@ export const updateTypeDefs = (schema: SchemaOut) => {
               }
 
               const edgeType = schemaTypesParsed[edgeTypeName]
+
               prop.edgeNodeTypeId = edgeType.id
               dstType.props[prop.inversePropName as string].edgeNodeTypeId =
                 edgeType.id
+              // prop.edgeType = edgeType
             } else {
               prop.edgeNodeTypeId = 0
             }

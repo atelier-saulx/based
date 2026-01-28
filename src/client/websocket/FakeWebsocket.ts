@@ -20,7 +20,8 @@ const syncSubs = (ws: FakeWebsocket) => {
 
 export class FakeWebsocket {
   url: string
-  authState: string[]
+  // TODO remove these ts guards
+  authState!: string[]
   constructor(url: string, restPrefix: string, client: BasedClient) {
     // wss://1x7j3eroh-5mzale2mp.based.dev/ze1xch7kjGQtwg
     const segments = url.split('/')
@@ -30,13 +31,13 @@ export class FakeWebsocket {
     this._r = restPrefix
     syncSubs(this)
   }
-  timer: ReturnType<typeof setTimeout>
+  timer!: ReturnType<typeof setTimeout>
   client: BasedClient
-  _c: boolean
+  _c!: boolean
   _r: string
-  _om: (x?: any) => void
-  _oe: (x?: any) => void
-  _oc: (x?: any) => void
+  _om!: (x?: any) => void
+  _oe!: (x?: any) => void
+  _oc!: (x?: any) => void
   close() {
     this._c = true
     if (this._oc) {

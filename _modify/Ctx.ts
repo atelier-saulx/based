@@ -8,7 +8,7 @@ export const MODIFY_HEADER_SIZE = 1 + 4 + 8 + 4
 export class Ctx {
   constructor(schemaChecksum: number, buf: Uint8Array<ArrayBufferLike>) {
     this.buf = buf
-    buf[4] = OpType.modify // make enum later 1 means normal MODIFY
+    buf[4] = OpType.modify
     writeUint64(buf, schemaChecksum, 5)
     this.reset()
   }
@@ -19,18 +19,18 @@ export class Ctx {
     this.cursor = {}
     this.batch = {}
   }
-  start: number
-  index: number
-  schema: SchemaTypeDef
+  start!: number
+  index!: number
+  schema!: SchemaTypeDef
   buf: Uint8Array<ArrayBufferLike>
-  max: number
-  size: number
+  max!: number
+  size!: number
   unsafe?: boolean
-  operation: ModOpEnum
+  operation!: ModOpEnum
   main: Map<PropDef, any> = new Map()
-  draining: Promise<void>
+  draining!: Promise<void>
   scheduled: Promise<void> | undefined
-  locale: LangCodeEnum
+  locale!: LangCodeEnum
   sort: number = 0
   sortText: number = 0
   defaults: number = 0
@@ -39,7 +39,6 @@ export class Ctx {
     prop?: number
     main?: number
     operation?: ModOpEnum
-    upserting?: boolean
   } = {}
   batch: {
     count?: number

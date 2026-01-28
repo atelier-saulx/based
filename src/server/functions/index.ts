@@ -24,9 +24,9 @@ export class BasedFunctions {
 
   reqId: number = 0
 
-  config: FunctionConfig
+  config!: FunctionConfig
 
-  unregisterTimeout: NodeJS.Timeout
+  unregisterTimeout!: NodeJS.Timeout
 
   installsInProgress: Record<string, Promise<any>> = {}
 

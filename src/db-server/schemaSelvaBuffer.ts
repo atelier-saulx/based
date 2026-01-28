@@ -1,7 +1,4 @@
-import {
-    writeUint16,
-    writeUint32,
-} from '../utils/index.js'
+import { writeUint16, writeUint32 } from '../utils/index.js'
 import native from '../native.js'
 import { LangCode, PropType, PropTypeEnum } from '../zigTsExports.js'
 import {
@@ -11,9 +8,9 @@ import {
   type PropDefEdge,
   type SchemaTypeDef,
 } from '../schema/index.js'
-import { write as writeString } from '../db-client/string.js'
+// import { write as writeString } from '../db-client/string.js'
 import { fillEmptyMain } from '../schema/def/fillEmptyMain.js'
-import {Ctx} from '../db-client/modify/Ctx.js'
+// import { Ctx } from '../db-client/_modify/Ctx.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
   NULL: 0,
@@ -117,27 +114,31 @@ const propDefBuffer = (
     type === PropType.json
   ) {
     if (prop.default && supportedDefaults.has(type)) {
-        const defaultValue = typeof prop.default === 'string'
-          ? prop.default.normalize('NFKD')
-          : type === PropType.json
-            ? JSON.stringify(prop.default)
-            : prop.default
-        const defaultLen = defaultValue instanceof Uint8Array
-          ? defaultValue.byteLength
-          : 2 * native.stringByteLength(defaultValue) + STRING_EXTRA_MAX
-        let buf = new Uint8Array(6 + defaultLen)
+      console.warn('TODO default!!')
+      // const defaultValue =
+      //   typeof prop.default === 'string'
+      //     ? prop.default.normalize('NFKD')
+      //     : type === PropType.json
+      //       ? JSON.stringify(prop.default)
+      //       : prop.default
+      // const defaultLen =
+      //   defaultValue instanceof Uint8Array
+      //     ? defaultValue.byteLength
+      //     : 2 * native.stringByteLength(defaultValue) + STRING_EXTRA_MAX
+      // let buf = new Uint8Array(6 + defaultLen)
 
-        buf[0] = selvaType
-        buf[1] = prop.len < 50 ? prop.len : 0
-        const l = (defaultValue instanceof Uint8Array)
-          ? (buf.set(defaultValue, 6), defaultLen)
-          : writeString({ buf } as Ctx, defaultValue, 6, LangCode.none, false)
-        if (l != buf.length) {
-          buf = buf.subarray(0, 6 + l)
-        }
-        writeUint32(buf, l, 2) // default len
+      // buf[0] = selvaType
+      // buf[1] = prop.len < 50 ? prop.len : 0
+      // const l =
+      //   defaultValue instanceof Uint8Array
+      //     ? (buf.set(defaultValue, 6), defaultLen)
+      //     : writeString({ buf } as Ctx, defaultValue, 6, LangCode.none, false)
+      // if (l != buf.length) {
+      //   buf = buf.subarray(0, 6 + l)
+      // }
+      // writeUint32(buf, l, 2) // default len
 
-      return [...buf]
+      // return [...buf]
     } else {
       const buf = new Uint8Array(6)
 
@@ -152,17 +153,18 @@ const propDefBuffer = (
     // [ type, nrDefaults, [len, default], [len, default]...]
 
     for (const langName in prop.default) {
-      const lang = LangCode[langName]
-      const value = prop.default[langName].normalize('NFKD')
-      const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
-      let buf = new Uint8Array(tmpLen)
+      console.warn('TODO default!!')
+      // const lang = LangCode[langName]
+      // const value = prop.default[langName].normalize('NFKD')
+      // const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
+      // let buf = new Uint8Array(tmpLen)
 
-      const l = writeString({ buf } as Ctx, value, 4, lang, false)
-      if (l != buf.length) {
-        buf = buf.subarray(0, 4 + l)
-      }
-      writeUint32(buf, l, 0) // length of the default
-      fs.push(...buf)
+      // const l = writeString({ buf } as Ctx, value, 4, lang, false)
+      // if (l != buf.length) {
+      //   buf = buf.subarray(0, 4 + l)
+      // }
+      // writeUint32(buf, l, 0) // length of the default
+      // fs.push(...buf)
     }
 
     return fs

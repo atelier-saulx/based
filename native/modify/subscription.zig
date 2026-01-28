@@ -191,6 +191,10 @@ pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
             .expire => {
                 i += 5;
             },
+            .end => {
+                i += 1;
+                break;
+            },
         }
     }
 }
