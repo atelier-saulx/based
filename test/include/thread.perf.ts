@@ -173,6 +173,25 @@ await test('include', async (t) => {
       }
       await Promise.all(q)
     },
+    '1M Nodes include',
+    { repeat: 100 },
+  )
+
+  await perf(
+    async () => {
+      const q: any[] = []
+      for (let i = 0; i < 5; i++) {
+        q.push(
+          db
+            .query('simple')
+            .include('id', 'nr')
+            // .range(0, 10e6 + i)
+            .filter('nr', '=', 100 + i)
+            .get(),
+        )
+      }
+      await Promise.all(q)
+    },
     '10M Nodes query',
     { repeat: 100 },
   )
