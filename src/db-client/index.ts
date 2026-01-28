@@ -212,7 +212,11 @@ export class DbClient extends DbShared {
   }
 
   async isModified() {
-    await this.modifyCtx.lastModify?.catch(noop)
+    let lastModify
+    while (lastModify !== this.modifyCtx.lastModify) {
+      lastModify = this.modifyCtx.lastModify
+      await lastModify.catch(noop)
+    }
   }
 }
 

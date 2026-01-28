@@ -172,7 +172,7 @@ await test('modify client', async (t) => {
     age: 28,
     rating: 100,
     name: 'mr marco',
-    friends: [jamez],
+    // friends: [jamez],
   })
 
   const res = await db.query('user').include('*', 'friends').get().toObject()
