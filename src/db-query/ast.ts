@@ -1,3 +1,5 @@
+import { PropDef } from '../schema/defs/index.js'
+
 export type FilterOp = {
   op: '=' | '<' | '>' | '..' | 'includes' | 'exists' | 'exist'
   val?: any
@@ -36,7 +38,10 @@ export type QueryAst = {
   >
 }
 
-type QueryAstNode = FilterAst | QueryAst
+export type QueryAstCtx = {
+  main: PropDef[]
+  // more?
+}
 
 // const x: QueryAst = {
 // type: 'user',

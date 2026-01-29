@@ -5,27 +5,31 @@ import {
   QueryType,
   ID_PROP,
   QueryHeaderByteSize,
+  readQueryHeaderProps,
+  writeQueryHeaderProps,
 } from '../../zigTsExports.js'
-import { QueryAst } from '../ast.js'
+import { QueryAst, QueryAstCtx } from '../ast.js'
+import { collect } from './collect.js'
+import { includeProps } from './include.js'
 import { getIteratorType } from './iteratorType.js'
 
-export const multiple = (
+export const defaultMultiple = (
   ast: QueryAst,
   buf: AutoSizedUint8Array,
   typeDef: TypeDef,
-  prop?: PropDef,
 ) => {
   let startOffset = buf.length
 
-  console.log('start here', startOffset)
-
   const offset = ast.range?.start || 0
 
+  // now include
+
+  // MAKE THIS DEFAULT
   const queryHeaderOffset = pushQueryHeader(buf, {
-    op: prop ? QueryType.references : QueryType.default,
-    prop: prop ? prop.id : ID_PROP,
+    op: QueryType.default,
+    prop: ID_PROP,
     includeSize: 0,
-    typeId: prop?.typeDef.id || typeDef.id,
+    typeId: typeDef.id,
     offset,
     limit: (ast.range?.end || 1000) + offset, // fix
     sort: false,
@@ -40,5 +44,10 @@ export const multiple = (
     // const buffer = new Uint8Array(QueryHeaderByteSize + searchSize + sortSize)
   })
 
-  //   use offset to write includeSize and filterSize
+  // make fn for this
+  const includeStart = buf.length
+  const ctx = collect(ast, buf, typeDef, [])
+  includeProps(buf, ctx.main)
+  const includeSize = buf.length - includeStart
+  writeQueryHeaderProps.includeSize(buf.data, includeSize, 0)
 }
