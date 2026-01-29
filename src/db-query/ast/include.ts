@@ -1,10 +1,4 @@
-import {
-  PropDef,
-  PropTree,
-  TypeDef,
-  isPropDef,
-} from '../../schema/defs/index.js'
-import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import { PropDef, TypeDef, isPropDef } from '../../schema/defs/index.js'
 import {
   IncludeOp,
   MAIN_PROP,
@@ -16,8 +10,6 @@ import {
 import { Ctx, Include, IncludeCtx, QueryAst } from './ast.js'
 import { readPropDef } from './readSchema.js'
 import { reference } from './single.js'
-
-// type IncludeOpts
 
 const includeProp = (ctx: Ctx, prop: PropDef, include: Include) => {
   pushIncludeHeader(ctx.query, {

@@ -58,7 +58,7 @@ await test('include', async (t) => {
 
   console.log('-------')
 
-  let d = Date.now()
+  // let d = Date.now()
 
   const ast = {
     type: 'user',
@@ -99,5 +99,14 @@ await test('include', async (t) => {
   const result = await db.server.getQueryBuf(ctx.query)
   debugBuffer(result)
 
-  console.log(resultToObject(ctx.readSchema, result, result.byteLength - 4))
+  const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
+
+  const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+
+  console.log(obj)
+
+  console.log(
+    JSON.stringify(obj).length,
+    readSchemaBuf.byteLength + result.byteLength,
+  )
 })

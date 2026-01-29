@@ -1,5 +1,4 @@
-import { PropDef, TypeDef } from '../../schema/defs/index.js'
-import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import { PropDef } from '../../schema/defs/index.js'
 import {
   pushQueryHeaderSingleReference,
   QueryType,
