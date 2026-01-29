@@ -16,7 +16,7 @@ import {
 import { LangCode, PropType } from '../../zigTsExports.js'
 import { Include, IncludeCtx, QueryAst } from '../ast.js'
 
-export const createReaderPropDef = (
+export const readPropDef = (
   p: PropDef,
   locales: ReaderLocales,
   include?: Include,

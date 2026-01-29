@@ -1,4 +1,3 @@
-import { create } from 'domain'
 import {
   ReaderSchemaEnum,
   type ReaderLocales,
@@ -6,11 +5,14 @@ import {
 } from '../../protocol/index.js'
 import { SchemaOut } from '../../schema.js'
 import { getTypeDefs } from '../../schema/defs/getTypeDefs.js'
-import { isPropDef, PropDef, TypeDef } from '../../schema/defs/index.js'
+import { isPropDef, TypeDef } from '../../schema/defs/index.js'
 import { LangCode, PropType } from '../../zigTsExports.js'
-import { Include, IncludeCtx, QueryAst } from '../ast.js'
+import { IncludeCtx, QueryAst } from '../ast.js'
 import { prepMain } from '../utils.js'
-import { createReaderPropDef } from './propDef.js'
+import { readPropDef } from './propDef.js'
+
+// put all files in here
+// rename all this stuff DbQueryReadSchema
 
 export const collect = (
   ast: QueryAst,
@@ -32,11 +34,7 @@ export const collect = (
         if (prop.id === 0) {
           ctx.main.push({ prop, include, start: prop.start })
         } else {
-          readSchema.props[prop.id] = createReaderPropDef(
-            prop,
-            locales,
-            include,
-          )
+          readSchema.props[prop.id] = readPropDef(prop, locales, include)
         }
       }
     } else {
@@ -45,9 +43,6 @@ export const collect = (
           main: ctx.main,
           tree: prop,
         })
-      } else {
-        // if EN, if NL
-        throw new Error(`Prop does not exist ${field}`)
       }
     }
   }
@@ -74,12 +69,7 @@ const toReadSchema = (
   })
   prepMain(ctx.main)
   for (const { prop, include, start } of ctx.main) {
-    readSchema.main.props[start ?? 0] = createReaderPropDef(
-      prop,
-      locales,
-      include,
-    )
-    console.log('start', start, 'X', prop.start)
+    readSchema.main.props[start ?? 0] = readPropDef(prop, locales, include)
     readSchema.main.len += prop.size
   }
   return readSchema
@@ -93,22 +83,17 @@ export const queryAstToReadSchema = (
   for (const lang in schema.locales) {
     locales[LangCode[lang]] = lang
   }
-
   if (!ast.type) {
     throw new Error('Query requires type')
   }
-
   const typeDefs = getTypeDefs(schema)
   const typeDef = typeDefs.get(ast.type)
-
   if (!typeDef) {
     throw new Error('Type does not exist')
   }
-
   if (!ast.target) {
     console.info('--------------------')
     return toReadSchema(ast, ReaderSchemaEnum.default, locales, typeDef)
   }
-
   throw new Error('not handled yet...')
 }
