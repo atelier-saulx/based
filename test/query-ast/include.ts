@@ -71,6 +71,9 @@ await test('include', async (t) => {
           cookie: { include: {} },
         },
       },
+
+      // NOW ADD MR FRIEND!
+
       // mrFriend: {
       //   // props: {
       //   //   name: { include: {} },
