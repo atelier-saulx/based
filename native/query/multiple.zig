@@ -148,6 +148,7 @@ pub fn default(
     q: []u8,
 ) !void {
     var i: usize = 0;
+    // make default header!
     const header = utils.readNext(t.QueryHeader, q, &i);
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);

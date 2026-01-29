@@ -1,6 +1,14 @@
-import { writeUint16, writeUint32 } from '../utils/index.js'
-import native from '../native.js'
-import { LangCode, PropType, PropTypeEnum } from '../zigTsExports.js'
+import { writeUint32 } from '../utils/index.js'
+import {
+  createSelvaSchemaColvec,
+  createSelvaSchemaRef,
+  createSelvaSchemaString,
+  createSelvaSchemaText,
+  LangCode,
+  PropType,
+  PropTypeEnum,
+  writeSelvaSchemaMicroBuffer,
+} from '../zigTsExports.js'
 import {
   EMPTY_MICRO_BUFFER,
   VECTOR_BASE_TYPE_SIZE_MAP,
@@ -47,7 +55,6 @@ const supportedDefaults = new Set<PropTypeEnum>([
   PropType.vector,
   PropType.json, // same as binary (Uint8Array)
 ])
-const STRING_EXTRA_MAX = 10
 
 function blockCapacity(blockCapacity: number): Uint8Array {
   const buf = new Uint8Array(Uint32Array.BYTES_PER_ELEMENT)
@@ -76,37 +83,43 @@ const propDefBuffer = (
 
   if (prop.len && (type === PropType.microBuffer || type === PropType.vector)) {
     const buf = new Uint8Array(4)
+    writeSelvaSchemaMicroBuffer(
+      buf,
+      {
+        type: selvaType,
+        len: prop.len,
+        hasDefault: ~~!!prop.default,
+      },
+      0,
+    )
 
-    buf[0] = selvaType
-    writeUint16(buf, prop.len, 1)
     if (prop.default) {
-      buf[3] = 1 // has default
       return [...buf, ...prop.default]
     } else {
-      buf[3] = 0 // has default
       return [...buf]
     }
   } else if (prop.len && type === PropType.colVec) {
-    const buf = new Uint8Array(5)
-
-    buf[0] = selvaType
     const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
-
-    writeUint16(buf, prop.len / baseSize, 1) // elements
-    writeUint16(buf, baseSize, 3) // element size
-    return [...buf]
+    return [
+      ...createSelvaSchemaColvec({
+        type: selvaType,
+        vecLen: prop.len / baseSize,
+        compSize: baseSize,
+        hasDefault: 0,
+      }),
+    ] // TODO Add support for default
   } else if (type === PropType.reference || type === PropType.references) {
-    const buf = new Uint8Array(11)
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName!]
-
-    buf[0] = selvaType // field type
-    buf[1] = makeEdgeConstraintFlags(prop) // flags
-    writeUint16(buf, dstType.id, 2) // dst_node_type
-    buf[4] = prop.inversePropNumber! // inverse_field
-    writeUint16(buf, prop.edgeNodeTypeId ?? 0, 5) // edge_node_type
-    writeUint32(buf, prop.referencesCapped ?? 0, 7)
-
-    return [...buf]
+    return [
+      ...createSelvaSchemaRef({
+        type: selvaType,
+        flags: makeEdgeConstraintFlags(prop),
+        dstNodeType: dstType.id,
+        inverseField: prop.inversePropNumber!,
+        edgeNodeType: prop.edgeNodeTypeId ?? 0,
+        capped: prop.referencesCapped ?? 0,
+      }),
+    ]
   } else if (
     type === PropType.string ||
     type === PropType.binary ||
@@ -140,34 +153,37 @@ const propDefBuffer = (
 
       // return [...buf]
     } else {
-      const buf = new Uint8Array(6)
-
-      buf[0] = selvaType
-      buf[1] = prop.len < 50 ? prop.len : 0
-      writeUint32(buf, 0, 2) // no default
-
-      return [...buf]
+      return [
+        ...createSelvaSchemaString({
+          type: selvaType,
+          fixedLen: prop.len < 50 ? prop.len : 0,
+          defaultLen: 0,
+        }),
+      ]
     }
   } else if (type === PropType.text) {
-    const fs: number[] = [selvaType, Object.keys(prop.default).length]
-    // [ type, nrDefaults, [len, default], [len, default]...]
+    // TODO Defaults
+    return [
+      ...createSelvaSchemaText({
+        type: selvaType,
+        nrDefaults: Object.keys(prop.default).length,
+      }),
+    ]
 
-    for (const langName in prop.default) {
-      console.warn('TODO default!!')
-      // const lang = LangCode[langName]
-      // const value = prop.default[langName].normalize('NFKD')
-      // const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
-      // let buf = new Uint8Array(tmpLen)
+    //for (const langName in prop.default) {
+    //  console.warn('TODO default!!')
+    // const lang = LangCode[langName]
+    // const value = prop.default[langName].normalize('NFKD')
+    // const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
+    // let buf = new Uint8Array(tmpLen)
 
-      // const l = writeString({ buf } as Ctx, value, 4, lang, false)
-      // if (l != buf.length) {
-      //   buf = buf.subarray(0, 4 + l)
-      // }
-      // writeUint32(buf, l, 0) // length of the default
-      // fs.push(...buf)
-    }
-
-    return fs
+    // const l = writeString({ buf } as Ctx, value, 4, lang, false)
+    // if (l != buf.length) {
+    //   buf = buf.subarray(0, 4 + l)
+    // }
+    // writeUint32(buf, l, 0) // length of the default
+    // fs.push(...buf)
+    //}
   }
   return [selvaType]
 }
