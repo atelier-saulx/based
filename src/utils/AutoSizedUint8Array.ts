@@ -4,9 +4,8 @@ import {
   writeFloatLE,
   writeUint64,
   writeInt64,
+  ENCODER,
 } from './index.js'
-
-const ENCODER = new TextEncoder()
 
 // Runtime method injection
 const delegateMethods = [

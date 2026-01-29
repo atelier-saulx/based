@@ -82,21 +82,39 @@ export const serializeCreate = <
   writeModifyCreateHeaderProps.size(buf.data, buf.length - start, index)
 }
 
+export const getRealId = (item: unknown) => {
+  if (typeof item === 'number') return item
+  if (item instanceof BasedModify) return item.id
+}
+
+export const getTmpId = (item: unknown) => {
+  if (item instanceof BasedModify) return item.tmpId
+}
+
 export const serializeUpdate = <
   S extends SchemaOut = SchemaOut,
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(
   schema: S,
   type: T,
-  id: number,
+  item: number | BasedModify<any>,
   payload: InferPayload<S['types']>[T],
   buf: AutoSizedUint8Array,
   lang: LangCodeEnum,
 ) => {
   const typeDef = getTypeDef(schema, type)
+  const realId = getRealId(item)
+  const id = realId || getTmpId(item)
+  if (id === undefined) {
+    if (item instanceof BasedModify) {
+      throw item
+    }
+    throw new Error('Invalid id')
+  }
   const index = pushModifyUpdateHeader(buf, {
     op: Modify.update,
     type: typeDef.id,
+    isTmp: !realId,
     id,
     size: 0,
   })
@@ -111,13 +129,22 @@ export const serializeDelete = <
 >(
   schema: S,
   type: T,
-  id: number,
+  item: number | BasedModify<any>,
   buf: AutoSizedUint8Array,
 ) => {
   const typeDef = getTypeDef(schema, type)
+  const realId = getRealId(item)
+  const id = realId || getTmpId(item)
+  if (id === undefined) {
+    if (item instanceof BasedModify) {
+      throw item
+    }
+    throw new Error('Invalid id')
+  }
   pushModifyDeleteHeader(buf, {
     op: Modify.delete,
     type: typeDef.id,
+    isTmp: !realId,
     id,
   })
 }
@@ -129,8 +156,8 @@ type ModifySerializer =
 
 type ModifyBatch = {
   count: number
-  promises?: ModifyCmd[]
-  dependents?: ModifyCmd[]
+  promises?: BasedModify<any>[]
+  dependents?: BasedModify<any>[]
   result?: Uint8Array
   flushed?: true
 }
@@ -139,7 +166,7 @@ export type ModifyCtx = {
   buf: AutoSizedUint8Array
   batch: ModifyBatch
   flushTime: number
-  lastModify?: ModifyCmd
+  lastModify?: BasedModify<any>
   flushTimer?: NodeJS.Timeout | true | undefined
   hooks: {
     flushModify: (buf: Uint8Array<ArrayBufferLike>) => Promise<Uint8Array>
@@ -198,10 +225,10 @@ const schedule = (ctx: ModifyCtx) => {
   }
 }
 
-export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
+export class BasedModify<S extends (...args: any[]) => any = ModifySerializer>
   implements Promise<number>
 {
-  [Symbol.toStringTag]!: 'ModifyCmd'
+  [Symbol.toStringTag]!: 'BasedModify'
   constructor(ctx: ModifyCtx, serialize: S, ...args: Parameters<S>) {
     this._exec(ctx, serialize, ...args)
   }
@@ -243,7 +270,7 @@ export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
 
   private _id?: number
   private _error?: Error
-  private _blocker?: ModifyCmd
+  private _blocker?: BasedModify
   private _index?: number
   private _batch?: ModifyBatch
   private _promise?: Promise<number>
@@ -277,8 +304,8 @@ export class ModifyCmd<S extends ModifySerializer = ModifySerializer>
         flush(ctx)
         this._exec.apply(this, arguments)
         return
-      } else if (e instanceof ModifyCmd) {
-        let blocker: ModifyCmd = e
+      } else if (e instanceof BasedModify) {
+        let blocker: BasedModify = e
         while (blocker._blocker) blocker = blocker._blocker
         blocker._batch!.dependents ??= []
         blocker._batch!.dependents.push(this)

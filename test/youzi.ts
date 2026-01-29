@@ -1,12 +1,12 @@
 import { BasedDb } from '../src/index.js'
 import { AutoSizedUint8Array } from '../src/utils/AutoSizedUint8Array.js'
+import { LangCode, pushModifyHeader } from '../src/zigTsExports.js'
 import {
   flush,
   getTypeDefs,
   serializeCreate,
 } from '../src/db-client/modify/index.js'
 import { parseSchema } from '../src/schema.js'
-import { LangCode, Modify, pushModifyHeader } from '../src/zigTsExports.js'
 import test from './shared/test.js'
 
 await test('schema defs', async (t) => {
@@ -59,7 +59,6 @@ await test.skip('modify raw', async (t) => {
       user: {
         age: 'number',
         rating: 'uint8',
-        // TODO refs have to be ordered
         friends: {
           items: {
             ref: 'user',
@@ -107,8 +106,6 @@ await test.skip('modify raw', async (t) => {
 
   await db.server.modify(buf.view)
 
-  console.log('done did it!')
-
   const res = await db.query('user').include('*', 'friends.*').get().toObject()
   console.dir(res, { depth: null })
 })
@@ -144,7 +141,7 @@ await test('modify client', async (t) => {
     name: 'youzi',
   })
 
-  // olli uses ModifyCmd for youzi
+  // olli uses BasedModify for youzi
   const olli = client.create('user', {
     name: 'olli',
     friends: { add: [youzi] },

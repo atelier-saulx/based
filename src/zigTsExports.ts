@@ -294,11 +294,12 @@ export const pushModifyHeader = (
 export type ModifyUpdateHeader = {
   op: ModifyEnum
   type: number
+  isTmp: boolean
   id: number
   size: number
 }
 
-export const ModifyUpdateHeaderByteSize = 10
+export const ModifyUpdateHeaderByteSize = 11
 
 export const ModifyUpdateHeaderAlignOf = 16
 
@@ -310,6 +311,10 @@ export const writeModifyUpdateHeader = (
   buf[offset] = Number(header.op)
   offset += 1
   buf[offset] = Number(header.type)
+  offset += 1
+  buf[offset] = 0
+  buf[offset] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
   offset += 1
   writeUint32(buf, Number(header.id), offset)
   offset += 4
@@ -325,11 +330,14 @@ export const writeModifyUpdateHeaderProps = {
   type: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 1] = Number(value)
   },
+  isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
   id: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, Number(value), offset + 2)
+    writeUint32(buf, Number(value), offset + 3)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, Number(value), offset + 6)
+    writeUint32(buf, Number(value), offset + 7)
   },
 }
 
@@ -340,8 +348,9 @@ export const readModifyUpdateHeader = (
   const value: ModifyUpdateHeader = {
     op: (buf[offset]) as ModifyEnum,
     type: buf[offset + 1],
-    id: readUint32(buf, offset + 2),
-    size: readUint32(buf, offset + 6),
+    isTmp: (((buf[offset + 2] >>> 0) & 1)) === 1,
+    id: readUint32(buf, offset + 3),
+    size: readUint32(buf, offset + 7),
   }
   return value
 }
@@ -349,8 +358,9 @@ export const readModifyUpdateHeader = (
 export const readModifyUpdateHeaderProps = {
     op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
     type: (buf: Uint8Array, offset: number) => buf[offset + 1],
-    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
-    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 6),
+    isTmp: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 0) & 1)) === 1,
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 3),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 7),
 }
 
 export const createModifyUpdateHeader = (header: ModifyUpdateHeader): Uint8Array => {
@@ -366,6 +376,9 @@ export const pushModifyUpdateHeader = (
   const index = buf.length
   buf.pushUint8(Number(header.op))
   buf.pushUint8(Number(header.type))
+  buf.pushUint8(0)
+  buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
   buf.pushUint32(Number(header.id))
   buf.pushUint32(Number(header.size))
   return index
@@ -374,10 +387,11 @@ export const pushModifyUpdateHeader = (
 export type ModifyDeleteHeader = {
   op: ModifyEnum
   type: number
+  isTmp: boolean
   id: number
 }
 
-export const ModifyDeleteHeaderByteSize = 6
+export const ModifyDeleteHeaderByteSize = 7
 
 export const ModifyDeleteHeaderAlignOf = 8
 
@@ -389,6 +403,10 @@ export const writeModifyDeleteHeader = (
   buf[offset] = Number(header.op)
   offset += 1
   buf[offset] = Number(header.type)
+  offset += 1
+  buf[offset] = 0
+  buf[offset] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
   offset += 1
   writeUint32(buf, Number(header.id), offset)
   offset += 4
@@ -402,8 +420,11 @@ export const writeModifyDeleteHeaderProps = {
   type: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 1] = Number(value)
   },
+  isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
   id: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, Number(value), offset + 2)
+    writeUint32(buf, Number(value), offset + 3)
   },
 }
 
@@ -414,7 +435,8 @@ export const readModifyDeleteHeader = (
   const value: ModifyDeleteHeader = {
     op: (buf[offset]) as ModifyEnum,
     type: buf[offset + 1],
-    id: readUint32(buf, offset + 2),
+    isTmp: (((buf[offset + 2] >>> 0) & 1)) === 1,
+    id: readUint32(buf, offset + 3),
   }
   return value
 }
@@ -422,7 +444,8 @@ export const readModifyDeleteHeader = (
 export const readModifyDeleteHeaderProps = {
     op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
     type: (buf: Uint8Array, offset: number) => buf[offset + 1],
-    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
+    isTmp: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 0) & 1)) === 1,
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 3),
 }
 
 export const createModifyDeleteHeader = (header: ModifyDeleteHeader): Uint8Array => {
@@ -438,6 +461,9 @@ export const pushModifyDeleteHeader = (
   const index = buf.length
   buf.pushUint8(Number(header.op))
   buf.pushUint8(Number(header.type))
+  buf.pushUint8(0)
+  buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
   buf.pushUint32(Number(header.id))
   return index
 }

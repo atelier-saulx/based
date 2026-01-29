@@ -1,6 +1,6 @@
 import { type SchemaTypes } from '../../schema.js'
 
-import type { ModifyCmd } from './index.js'
+import type { BasedModify } from './index.js'
 
 type TypedArray =
   | Uint8Array
@@ -43,15 +43,15 @@ type InferEdgeProps<Prop, Types> = {
 
 type InferRefValue<Prop, Types> =
   | number
-  | ModifyCmd
-  | ({ id: number | ModifyCmd } & InferEdgeProps<Prop, Types>)
+  | BasedModify<any>
+  | ({ id: number | BasedModify<any> } & InferEdgeProps<Prop, Types>)
 
 type InferReferences<Prop, Types> =
   | InferRefValue<Prop, Types>[]
   | {
       add?: InferRefValue<Prop, Types>[]
       update?: InferRefValue<Prop, Types>[]
-      delete?: (number | ModifyCmd)[]
+      delete?: (number | BasedModify<any>)[]
     }
 
 type InferProp<Prop, Types> = Prop extends { type: 'object'; props: infer P }

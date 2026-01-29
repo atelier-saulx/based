@@ -20,7 +20,7 @@ import {
   serializeUpdate,
   ModifyCtx,
   flush,
-  ModifyCmd,
+  BasedModify,
 } from './modify/index.js'
 import type { InferPayload } from './modify/types.js'
 
@@ -30,6 +30,10 @@ type DbClientOpts = {
   flushTime?: number
   debug?: boolean
 }
+
+type BasedCreatePromise = BasedModify<typeof serializeCreate>
+type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
+type BasedDeletePromise = BasedModify<typeof serializeDelete>
 
 export type ModifyOpts = {
   unsafe?: boolean
@@ -95,8 +99,8 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
     type: T,
     obj: InferPayload<S['types']>[T],
     opts?: ModifyOpts,
-  ): ModifyCmd {
-    return new ModifyCmd(
+  ): BasedCreatePromise {
+    return new BasedModify(
       this.modifyCtx,
       serializeCreate,
       this.schema!,
@@ -109,30 +113,32 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
 
   update<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    id: number,
+    target: number | BasedModify,
     obj: InferPayload<S['types']>[T],
     opts?: ModifyOpts,
-  ): ModifyCmd {
-    return new ModifyCmd(
+  ): BasedUpdatePromise {
+    return new BasedModify(
       this.modifyCtx,
       serializeUpdate,
       this.schema!,
       type,
-      id,
+      target,
       obj,
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
     )
   }
 
-  delete(type: keyof S['types'] & string, id: number): ModifyCmd {
-    return new ModifyCmd(
+  delete(
+    type: keyof S['types'] & string,
+    target: number | BasedModify,
+  ): BasedDeletePromise {
+    return new BasedModify(
       this.modifyCtx,
       serializeDelete,
       this.schema!,
       type,
-      // TODO make it perf
-      id,
+      target,
       this.modifyCtx.buf,
     )
   }

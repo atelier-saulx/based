@@ -16,7 +16,12 @@ import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type { SchemaProp } from '../../../schema.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from '../index.js'
-import { ModifyCmd, serializeProps } from '../../../db-client/modify/index.js'
+import {
+  BasedModify,
+  getRealId,
+  getTmpId,
+  serializeProps,
+} from '../../../db-client/modify/index.js'
 
 type Edges = Record<`${string}`, unknown> | undefined
 
@@ -49,7 +54,7 @@ const serializeIds = (
 
 const serializeTmpIds = (
   buf: AutoSizedUint8Array,
-  items: ModifyCmd[],
+  items: BasedModify[],
   offset: number,
 ): undefined | any => {
   let i = offset
@@ -113,15 +118,6 @@ const serializeIdsAndMeta = (
   return i
 }
 
-const getRealId = (item: any) => {
-  if (typeof item === 'number') return item
-  if (item instanceof ModifyCmd) return item.id
-}
-
-const getTmpId = (item: any) => {
-  if (item instanceof ModifyCmd) return item.tmpId
-}
-
 const isValidRefObj = (item: any) => {
   if (typeof item === 'object' && item !== null) {
     return getRealId(item.id) || getTmpId(item.id) !== undefined
@@ -162,9 +158,9 @@ const setReferences = (
       const start = buf.length
       offset = serializeIdsAndMeta(buf, value, op, offset, lang, prop.edges)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-    } else if (item instanceof ModifyCmd) {
+    } else if (item instanceof BasedModify) {
       throw item
-    } else if (typeof item === 'object' && item?.id instanceof ModifyCmd) {
+    } else if (typeof item === 'object' && item?.id instanceof BasedModify) {
       throw item.id
     } else {
       console.log('??', item, value)
@@ -257,7 +253,7 @@ export const reference = class Reference extends BasePropDef {
       return
     }
 
-    if (value instanceof ModifyCmd) {
+    if (value instanceof BasedModify) {
       throw value
     }
 
@@ -286,7 +282,7 @@ export const reference = class Reference extends BasePropDef {
         return
       }
 
-      if (value.id instanceof ModifyCmd) {
+      if (value.id instanceof BasedModify) {
         throw value.id
       }
     }

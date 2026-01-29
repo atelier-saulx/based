@@ -1,3 +1,5 @@
+import type { ResolveSchema, SchemaIn } from '../../src/schema.js'
+import { BasedDb, type DbClient } from '../../src/sdk.js'
 import test from './test.js'
 export * from './assert.js'
 export * from './examples.js'
@@ -29,4 +31,14 @@ export function logMemoryUsage() {
   if (memoryUsage.arrayBuffers !== undefined) {
     console.log(`  arrayBuffers: ${formatBytes(memoryUsage.arrayBuffers)}`)
   }
+}
+
+export const testDb = async <S extends SchemaIn>(
+  t,
+  schema: S,
+): Promise<DbClient<ResolveSchema<S>>> => {
+  const db = new BasedDb({ path: t.tmp })
+  await db.start({ clean: true })
+  t.after(() => db.destroy())
+  return db.setSchema(schema)
 }

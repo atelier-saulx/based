@@ -10,7 +10,7 @@ await test('boolean', async (t) => {
   // t.after(() => t.backup(db))
   t.after(() => db.stop(true))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       user: {
         props: {
@@ -20,35 +20,38 @@ await test('boolean', async (t) => {
     },
   })
 
-  const user1 = await db.create('user', {})
+  await client.create('user', {})
 
-  db.create('user', {
+  await client.create('user', {
     isNice: true,
   })
 
-  db.create('user', {
+  await client.create('user', {
     isNice: false,
   })
 
-  await db.drain()
+  await client.drain()
 
-  deepEqual((await db.query('user').get()).toObject(), [
+  deepEqual((await client.query('user').get()).toObject(), [
     { id: 1, isNice: false },
     { id: 2, isNice: true },
     { id: 3, isNice: false },
   ])
 
   deepEqual(
-    (await db.query('user').filter('isNice', '=', true).get()).toObject(),
+    (await client.query('user').filter('isNice', '=', true).get()).toObject(),
     [{ id: 2, isNice: true }],
   )
 
-  deepEqual((await db.query('user').filter('isNice').get()).toObject(), [
+  deepEqual((await client.query('user').filter('isNice').get()).toObject(), [
     { id: 2, isNice: true },
   ])
 
-  deepEqual((await db.query('user').filter('isNice', false).get()).toObject(), [
-    { id: 1, isNice: false },
-    { id: 3, isNice: false },
-  ])
+  deepEqual(
+    (await client.query('user').filter('isNice', '=', false).get()).toObject(),
+    [
+      { id: 1, isNice: false },
+      { id: 3, isNice: false },
+    ],
+  )
 })

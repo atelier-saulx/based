@@ -446,7 +446,7 @@ pub fn modify(
     const items = utils.toSlice(t.ModifyResultItem, result[j..]);
     while (i < buf.len) {
         const op: t.Modify = @enumFromInt(buf[i]);
-
+        // std.debug.print("op: {any}\n", .{op});
         switch (op) {
             .create => {
                 const create = utils.read(t.ModifyCreateHeader, buf, i);
@@ -455,6 +455,7 @@ pub fn modify(
                 const data: []u8 = buf[i .. i + create.size];
                 const id = db.ids[create.type - 1] + 1;
                 const node = try Node.upsertNode(typeEntry, id);
+                // std.debug.print("create id: {any}\n", .{id});
                 modifyProps(db, typeEntry, node, data, items) catch {
                     // handle errors
                 };
@@ -468,8 +469,10 @@ pub fn modify(
                 const update = utils.read(t.ModifyUpdateHeader, buf, i);
                 i += utils.sizeOf(t.ModifyUpdateHeader);
                 const typeEntry = try Node.getType(db, update.type);
-                utils.write(result, update.id, j);
-                if (Node.getNode(typeEntry, update.id)) |node| {
+                var id = update.id;
+                if (update.isTmp) id = items[id].id;
+                utils.write(result, id, j);
+                if (Node.getNode(typeEntry, id)) |node| {
                     const data: []u8 = buf[i .. i + update.size];
                     modifyProps(db, typeEntry, node, data, items) catch {
                         // handle errors
@@ -485,8 +488,10 @@ pub fn modify(
                 const delete = utils.read(t.ModifyDeleteHeader, buf, i);
                 i += utils.sizeOf(t.ModifyDeleteHeader);
                 const typeEntry = try Node.getType(db, delete.type);
-                utils.write(result, delete.id, j);
-                if (Node.getNode(typeEntry, delete.id)) |node| {
+                var id = delete.id;
+                if (delete.isTmp) id = items[id].id;
+                utils.write(result, id, j);
+                if (Node.getNode(typeEntry, id)) |node| {
                     Node.deleteNode(db, typeEntry, node) catch {
                         // handle errors
                     };
