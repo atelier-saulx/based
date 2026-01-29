@@ -36,8 +36,6 @@ export type ModifyOpts = {
   locale?: keyof typeof LangCode
 }
 
-// ... imports
-
 export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
   constructor({
     hooks,

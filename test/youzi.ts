@@ -107,8 +107,6 @@ await test.skip('modify raw', async (t) => {
 
   await db.server.modify(buf.view)
 
-  buf.flush()
-
   console.log('done did it!')
 
   const res = await db.query('user').include('*', 'friends.*').get().toObject()

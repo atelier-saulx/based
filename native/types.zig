@@ -2,6 +2,8 @@ const Schema = @import("selva/schema.zig");
 const Node = @import("selva/node.zig");
 
 pub const TypeId = u16;
+pub const SelvaFieldType = u8;
+pub const SelvaField = u8;
 
 pub const BridgeResponse = enum(u32) {
     query = 1,
@@ -885,4 +887,37 @@ pub const FilterSelect = packed struct {
     // this is basicly another condition seperate from the ref thing itself
     // edgeTypeId: TypeId,
     // you want EDGE INDEX as well
+};
+
+pub const SelvaSchemaMicroBuffer = packed struct {
+    type: SelvaFieldType,
+    len: u16,
+    hasDefault: u8,
+};
+
+pub const SelvaSchemaString = packed struct {
+    type: SelvaFieldType,
+    fixedLen: u8,
+    defaultLen: u32,
+};
+
+pub const SelvaSchemaText = packed struct {
+    type: SelvaFieldType,
+    nrDefaults: u8,
+};
+
+pub const SelvaSchemaRef = packed struct {
+    type: SelvaFieldType,
+    flags: u8,
+    dstNodeType: TypeId,
+    inverseField: SelvaField,
+    edgeNodeType: TypeId,
+    capped: u32,
+};
+
+pub const SelvaSchemaColvec = packed struct {
+    type: SelvaFieldType,
+    vecLen: u16,
+    compSize: u16,
+    hasDefault: u8,
 };

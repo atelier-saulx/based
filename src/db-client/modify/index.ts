@@ -178,7 +178,7 @@ export const flush = (ctx: ModifyCtx) => {
     }
   })
 
-  ctx.buf.flush()
+  ctx.buf.length = 0
   ctx.batch = { count: 0 }
 }
 

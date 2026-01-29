@@ -12,6 +12,10 @@ import { AutoSizedUint8Array } from './utils/AutoSizedUint8Array.js'
 
 export type TypeId = number
 
+export type SelvaFieldType = number
+
+export type SelvaField = number
+
 export const BridgeResponse = {
   query: 1,
   modify: 2,
@@ -4103,6 +4107,418 @@ export const pushFilterSelect = (
   buf.pushUint32(Number(header.size))
   buf.pushUint64(header.typeEntry)
   buf.pushUint16(Number(header.typeId))
+  return index
+}
+
+export type SelvaSchemaMicroBuffer = {
+  type: SelvaFieldType
+  len: number
+  hasDefault: number
+}
+
+export const SelvaSchemaMicroBufferByteSize = 4
+
+export const SelvaSchemaMicroBufferAlignOf = 4
+
+export const packSelvaSchemaMicroBuffer = (obj: SelvaSchemaMicroBuffer): number => {
+  let val = 0
+  val |= (Number(obj.type) & 255) << 0
+  val |= (Number(obj.len) & 65535) << 8
+  val |= (Number(obj.hasDefault) & 255) << 24
+  return val
+}
+
+export const unpackSelvaSchemaMicroBuffer = (val: number): SelvaSchemaMicroBuffer => {
+  return {
+    type: Number((val >>> 0) & 255),
+    len: Number((val >>> 8) & 65535),
+    hasDefault: Number((val >>> 24) & 255),
+  }
+}
+
+export const writeSelvaSchemaMicroBuffer = (
+  buf: Uint8Array,
+  header: SelvaSchemaMicroBuffer,
+  offset: number,
+): number => {
+  buf[offset] = Number(header.type)
+  offset += 1
+  writeUint16(buf, Number(header.len), offset)
+  offset += 2
+  buf[offset] = Number(header.hasDefault)
+  offset += 1
+  return offset
+}
+
+export const writeSelvaSchemaMicroBufferProps = {
+  type: (buf: Uint8Array, value: SelvaFieldType, offset: number) => {
+    buf[offset] = Number(value)
+  },
+  len: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, Number(value), offset + 1)
+  },
+  hasDefault: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 3] = Number(value)
+  },
+}
+
+export const readSelvaSchemaMicroBuffer = (
+  buf: Uint8Array,
+  offset: number,
+): SelvaSchemaMicroBuffer => {
+  const value: SelvaSchemaMicroBuffer = {
+    type: buf[offset],
+    len: readUint16(buf, offset + 1),
+    hasDefault: buf[offset + 3],
+  }
+  return value
+}
+
+export const readSelvaSchemaMicroBufferProps = {
+    type: (buf: Uint8Array, offset: number) => buf[offset],
+    len: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 1),
+    hasDefault: (buf: Uint8Array, offset: number) => buf[offset + 3],
+}
+
+export const createSelvaSchemaMicroBuffer = (header: SelvaSchemaMicroBuffer): Uint8Array => {
+  const buffer = new Uint8Array(SelvaSchemaMicroBufferByteSize)
+  writeSelvaSchemaMicroBuffer(buffer, header, 0)
+  return buffer
+}
+
+export const pushSelvaSchemaMicroBuffer = (
+  buf: AutoSizedUint8Array,
+  header: SelvaSchemaMicroBuffer,
+): number => {
+  const index = buf.length
+  buf.pushUint8(Number(header.type))
+  buf.pushUint16(Number(header.len))
+  buf.pushUint8(Number(header.hasDefault))
+  return index
+}
+
+export type SelvaSchemaString = {
+  type: SelvaFieldType
+  fixedLen: number
+  defaultLen: number
+}
+
+export const SelvaSchemaStringByteSize = 6
+
+export const SelvaSchemaStringAlignOf = 8
+
+export const writeSelvaSchemaString = (
+  buf: Uint8Array,
+  header: SelvaSchemaString,
+  offset: number,
+): number => {
+  buf[offset] = Number(header.type)
+  offset += 1
+  buf[offset] = Number(header.fixedLen)
+  offset += 1
+  writeUint32(buf, Number(header.defaultLen), offset)
+  offset += 4
+  return offset
+}
+
+export const writeSelvaSchemaStringProps = {
+  type: (buf: Uint8Array, value: SelvaFieldType, offset: number) => {
+    buf[offset] = Number(value)
+  },
+  fixedLen: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = Number(value)
+  },
+  defaultLen: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset + 2)
+  },
+}
+
+export const readSelvaSchemaString = (
+  buf: Uint8Array,
+  offset: number,
+): SelvaSchemaString => {
+  const value: SelvaSchemaString = {
+    type: buf[offset],
+    fixedLen: buf[offset + 1],
+    defaultLen: readUint32(buf, offset + 2),
+  }
+  return value
+}
+
+export const readSelvaSchemaStringProps = {
+    type: (buf: Uint8Array, offset: number) => buf[offset],
+    fixedLen: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    defaultLen: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
+}
+
+export const createSelvaSchemaString = (header: SelvaSchemaString): Uint8Array => {
+  const buffer = new Uint8Array(SelvaSchemaStringByteSize)
+  writeSelvaSchemaString(buffer, header, 0)
+  return buffer
+}
+
+export const pushSelvaSchemaString = (
+  buf: AutoSizedUint8Array,
+  header: SelvaSchemaString,
+): number => {
+  const index = buf.length
+  buf.pushUint8(Number(header.type))
+  buf.pushUint8(Number(header.fixedLen))
+  buf.pushUint32(Number(header.defaultLen))
+  return index
+}
+
+export type SelvaSchemaText = {
+  type: SelvaFieldType
+  nrDefaults: number
+}
+
+export const SelvaSchemaTextByteSize = 2
+
+export const SelvaSchemaTextAlignOf = 2
+
+export const packSelvaSchemaText = (obj: SelvaSchemaText): number => {
+  let val = 0
+  val |= (Number(obj.type) & 255) << 0
+  val |= (Number(obj.nrDefaults) & 255) << 8
+  return val
+}
+
+export const unpackSelvaSchemaText = (val: number): SelvaSchemaText => {
+  return {
+    type: Number((val >>> 0) & 255),
+    nrDefaults: Number((val >>> 8) & 255),
+  }
+}
+
+export const writeSelvaSchemaText = (
+  buf: Uint8Array,
+  header: SelvaSchemaText,
+  offset: number,
+): number => {
+  buf[offset] = Number(header.type)
+  offset += 1
+  buf[offset] = Number(header.nrDefaults)
+  offset += 1
+  return offset
+}
+
+export const writeSelvaSchemaTextProps = {
+  type: (buf: Uint8Array, value: SelvaFieldType, offset: number) => {
+    buf[offset] = Number(value)
+  },
+  nrDefaults: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = Number(value)
+  },
+}
+
+export const readSelvaSchemaText = (
+  buf: Uint8Array,
+  offset: number,
+): SelvaSchemaText => {
+  const value: SelvaSchemaText = {
+    type: buf[offset],
+    nrDefaults: buf[offset + 1],
+  }
+  return value
+}
+
+export const readSelvaSchemaTextProps = {
+    type: (buf: Uint8Array, offset: number) => buf[offset],
+    nrDefaults: (buf: Uint8Array, offset: number) => buf[offset + 1],
+}
+
+export const createSelvaSchemaText = (header: SelvaSchemaText): Uint8Array => {
+  const buffer = new Uint8Array(SelvaSchemaTextByteSize)
+  writeSelvaSchemaText(buffer, header, 0)
+  return buffer
+}
+
+export const pushSelvaSchemaText = (
+  buf: AutoSizedUint8Array,
+  header: SelvaSchemaText,
+): number => {
+  const index = buf.length
+  buf.pushUint8(Number(header.type))
+  buf.pushUint8(Number(header.nrDefaults))
+  return index
+}
+
+export type SelvaSchemaRef = {
+  type: SelvaFieldType
+  flags: number
+  dstNodeType: TypeId
+  inverseField: SelvaField
+  edgeNodeType: TypeId
+  capped: number
+}
+
+export const SelvaSchemaRefByteSize = 11
+
+export const SelvaSchemaRefAlignOf = 16
+
+export const writeSelvaSchemaRef = (
+  buf: Uint8Array,
+  header: SelvaSchemaRef,
+  offset: number,
+): number => {
+  buf[offset] = Number(header.type)
+  offset += 1
+  buf[offset] = Number(header.flags)
+  offset += 1
+  writeUint16(buf, Number(header.dstNodeType), offset)
+  offset += 2
+  buf[offset] = Number(header.inverseField)
+  offset += 1
+  writeUint16(buf, Number(header.edgeNodeType), offset)
+  offset += 2
+  writeUint32(buf, Number(header.capped), offset)
+  offset += 4
+  return offset
+}
+
+export const writeSelvaSchemaRefProps = {
+  type: (buf: Uint8Array, value: SelvaFieldType, offset: number) => {
+    buf[offset] = Number(value)
+  },
+  flags: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = Number(value)
+  },
+  dstNodeType: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, Number(value), offset + 2)
+  },
+  inverseField: (buf: Uint8Array, value: SelvaField, offset: number) => {
+    buf[offset + 4] = Number(value)
+  },
+  edgeNodeType: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, Number(value), offset + 5)
+  },
+  capped: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset + 7)
+  },
+}
+
+export const readSelvaSchemaRef = (
+  buf: Uint8Array,
+  offset: number,
+): SelvaSchemaRef => {
+  const value: SelvaSchemaRef = {
+    type: buf[offset],
+    flags: buf[offset + 1],
+    dstNodeType: (readUint16(buf, offset + 2)) as TypeId,
+    inverseField: buf[offset + 4],
+    edgeNodeType: (readUint16(buf, offset + 5)) as TypeId,
+    capped: readUint32(buf, offset + 7),
+  }
+  return value
+}
+
+export const readSelvaSchemaRefProps = {
+    type: (buf: Uint8Array, offset: number) => buf[offset],
+    flags: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    dstNodeType: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 2)) as TypeId,
+    inverseField: (buf: Uint8Array, offset: number) => buf[offset + 4],
+    edgeNodeType: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 5)) as TypeId,
+    capped: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 7),
+}
+
+export const createSelvaSchemaRef = (header: SelvaSchemaRef): Uint8Array => {
+  const buffer = new Uint8Array(SelvaSchemaRefByteSize)
+  writeSelvaSchemaRef(buffer, header, 0)
+  return buffer
+}
+
+export const pushSelvaSchemaRef = (
+  buf: AutoSizedUint8Array,
+  header: SelvaSchemaRef,
+): number => {
+  const index = buf.length
+  buf.pushUint8(Number(header.type))
+  buf.pushUint8(Number(header.flags))
+  buf.pushUint16(Number(header.dstNodeType))
+  buf.pushUint8(Number(header.inverseField))
+  buf.pushUint16(Number(header.edgeNodeType))
+  buf.pushUint32(Number(header.capped))
+  return index
+}
+
+export type SelvaSchemaColvec = {
+  type: SelvaFieldType
+  vecLen: number
+  compSize: number
+  hasDefault: number
+}
+
+export const SelvaSchemaColvecByteSize = 6
+
+export const SelvaSchemaColvecAlignOf = 8
+
+export const writeSelvaSchemaColvec = (
+  buf: Uint8Array,
+  header: SelvaSchemaColvec,
+  offset: number,
+): number => {
+  buf[offset] = Number(header.type)
+  offset += 1
+  writeUint16(buf, Number(header.vecLen), offset)
+  offset += 2
+  writeUint16(buf, Number(header.compSize), offset)
+  offset += 2
+  buf[offset] = Number(header.hasDefault)
+  offset += 1
+  return offset
+}
+
+export const writeSelvaSchemaColvecProps = {
+  type: (buf: Uint8Array, value: SelvaFieldType, offset: number) => {
+    buf[offset] = Number(value)
+  },
+  vecLen: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, Number(value), offset + 1)
+  },
+  compSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, Number(value), offset + 3)
+  },
+  hasDefault: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 5] = Number(value)
+  },
+}
+
+export const readSelvaSchemaColvec = (
+  buf: Uint8Array,
+  offset: number,
+): SelvaSchemaColvec => {
+  const value: SelvaSchemaColvec = {
+    type: buf[offset],
+    vecLen: readUint16(buf, offset + 1),
+    compSize: readUint16(buf, offset + 3),
+    hasDefault: buf[offset + 5],
+  }
+  return value
+}
+
+export const readSelvaSchemaColvecProps = {
+    type: (buf: Uint8Array, offset: number) => buf[offset],
+    vecLen: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 1),
+    compSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 3),
+    hasDefault: (buf: Uint8Array, offset: number) => buf[offset + 5],
+}
+
+export const createSelvaSchemaColvec = (header: SelvaSchemaColvec): Uint8Array => {
+  const buffer = new Uint8Array(SelvaSchemaColvecByteSize)
+  writeSelvaSchemaColvec(buffer, header, 0)
+  return buffer
+}
+
+export const pushSelvaSchemaColvec = (
+  buf: AutoSizedUint8Array,
+  header: SelvaSchemaColvec,
+): number => {
+  const index = buf.length
+  buf.pushUint8(Number(header.type))
+  buf.pushUint16(Number(header.vecLen))
+  buf.pushUint16(Number(header.compSize))
+  buf.pushUint8(Number(header.hasDefault))
   return index
 }
 

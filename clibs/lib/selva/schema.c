@@ -257,7 +257,7 @@ static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
         enum SelvaFieldType type;
         uint16_t vec_len; /*!< Length of a single vector. */
         uint16_t comp_size; /*!< Component size in the vector. */
-        uint8_t has_default;
+        schema_bool_t has_default;
     } __packed spec;
 
     if (ctx->len < sizeof(spec)) {
