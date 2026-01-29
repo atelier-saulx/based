@@ -80,10 +80,6 @@ export class AutoSizedUint8Array {
     if (end > this.length) this.length = end
   }
 
-  flush(): void {
-    this.length = 0
-  }
-
   fill(value: number, start: number = 0, end: number = this.length): this {
     if (end > this.length) {
       if (end > this.data.length) {
