@@ -148,11 +148,8 @@ pub fn default(
     q: []u8,
 ) !void {
     var i: usize = 0;
-    // make default header!
+    // make default header! use :type in iterator
     const header = utils.readNext(t.QueryHeader, q, &i);
-
-    std.debug.print("flap {any} \n", .{header});
-
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;

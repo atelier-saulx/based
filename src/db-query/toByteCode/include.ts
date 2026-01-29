@@ -1,4 +1,9 @@
-import { PropDef, TypeDef } from '../../schema/defs/index.js'
+import {
+  PropDef,
+  PropTree,
+  TypeDef,
+  isPropDef,
+} from '../../schema/defs/index.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import {
   IncludeOp,
@@ -8,13 +13,24 @@ import {
   pushIncludePartialHeader,
   pushIncludePartialProp,
 } from '../../zigTsExports.js'
-import { QueryAst } from '../ast.js'
+import { Include, QueryAst } from '../ast.js'
+import { reference } from './single.js'
 
 type IncludeCtx = {
-  main: PropDef[]
+  tree: PropTree
+  main: { prop: PropDef; include: Include }[]
 }
 
-const includeProp = (buf: AutoSizedUint8Array, prop: PropDef) => {
+// type IncludeOpts
+
+const includeProp = (
+  buf: AutoSizedUint8Array,
+  prop: PropDef,
+  include: Include,
+) => {
+  // ADD TEXT
+  // OPTS
+  // META
   pushIncludeHeader(buf, {
     op: IncludeOp.default,
     prop: prop.id,
@@ -24,27 +40,30 @@ const includeProp = (buf: AutoSizedUint8Array, prop: PropDef) => {
 
 const includeMainProps = (
   buf: AutoSizedUint8Array,
-  props: PropDef[],
+  props: { prop: PropDef; include: Include }[],
   typeDef: TypeDef,
 ) => {
-  props.sort((a, b) => (a.start < b.start ? -1 : a.start === b.start ? 0 : 1))
+  props.sort((a, b) =>
+    a.prop.start < b.prop.start ? -1 : a.prop.start === b.prop.start ? 0 : 1,
+  )
   if (props.length === typeDef.main.length) {
     pushIncludeHeader(buf, {
       op: IncludeOp.default,
       prop: 0,
       propType: PropType.microBuffer,
     })
-  } else {
+  } else if (props.length > 0) {
     pushIncludePartialHeader(buf, {
       op: IncludeOp.partial,
       prop: MAIN_PROP,
       propType: PropType.microBuffer,
       amount: props.length,
     })
-    for (const { start, size } of props) {
+    for (const { prop, include } of props) {
+      // include
       pushIncludePartialProp(buf, {
-        start,
-        size,
+        start: prop.start,
+        size: prop.size,
       })
     }
   }
@@ -54,27 +73,35 @@ export const collect = (
   ast: QueryAst,
   buf: AutoSizedUint8Array,
   typeDef: TypeDef,
-  path: string[],
-  ctx: IncludeCtx = { main: [] },
+  ctx: IncludeCtx,
 ) => {
+  // if ast.include.glob === '*' include all from schema
+  // same for ast.include.glob === '**'
   for (const field in ast.props) {
-    const propDef = typeDef.props.get(field)
-    if (propDef) {
-      // LANGUAGE
-      // $EDGE
-      if (propDef.type === PropType.reference) {
-        // REFERENCE
-      } else if (propDef.type === PropType.references) {
-        // REFERENCES
-      } else if (propDef.id === 0) {
-        ctx.main.push(propDef)
-      } else {
-        includeProp(buf, propDef)
+    const prop = ctx.tree.get(field)
+    const astProp = ast.props[field]
+    const include = astProp.include
+
+    if (isPropDef(prop)) {
+      console.log(prop.path)
+
+      if (prop.type === PropType.reference) {
+        reference(astProp, buf, prop)
+      } else if (include) {
+        if (prop.id === 0) {
+          ctx.main.push({ prop, include })
+        } else {
+          includeProp(buf, prop, include)
+        }
       }
     } else {
-      if ('props' in ast) {
-        collect(ast, buf, typeDef, [...path, field], ctx)
+      if (prop) {
+        collect(astProp, buf, typeDef, {
+          main: ctx.main,
+          tree: prop,
+        })
       } else {
+        // if EN, if NL
         throw new Error(`Prop does not exist ${field}`)
       }
     }
@@ -88,8 +115,10 @@ export const include = (
   typeDef: TypeDef,
 ): number => {
   const includeStart = buf.length
-  const ctx = collect(ast, buf, typeDef, [])
+  const ctx = collect(ast, buf, typeDef, {
+    main: [],
+    tree: typeDef.tree,
+  })
   includeMainProps(buf, ctx.main, typeDef)
-  const includeSize = buf.length - includeStart
-  return includeSize
+  return buf.length - includeStart
 }

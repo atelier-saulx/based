@@ -105,6 +105,7 @@ pub fn referenceEdge(
     i: *usize,
 ) !void {
     const header = utils.readNext(t.QueryHeaderSingleReference, q, i);
+
     const fs = try Schema.getFieldSchema(fromType, header.prop);
     if (References.getReference(from, fs)) |ref| {
         const typeEntry = try Node.getType(ctx.db, header.typeId);
@@ -121,6 +122,9 @@ pub fn referenceEdge(
 
             const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
             const e = Node.getNode(edgeTypeEntry, ref.edge);
+
+            std.debug.print("DERP ?? {any} mr node -> {any} \n", .{ e, node });
+
             if (e) |edge| {
                 const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
                 try ctx.thread.query.append(t.ReadOp.edge);

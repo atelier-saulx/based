@@ -19,13 +19,34 @@ await test('include', async (t) => {
         x: 'boolean',
         flap: 'uint32',
         y: 'uint16',
-        // object
+        cook: {
+          type: 'object',
+          props: {
+            cookie: 'number',
+          },
+        },
+        mrFriend: {
+          ref: 'user',
+          prop: 'mrFriend',
+          $level: 'uint32',
+        },
       },
     },
   })
 
-  client.create('user', { name: 'AAAAAAAAAA', y: 67, x: true, flap: 9999 })
-  client.create('user', { name: 'mr y' })
+  const a = client.create('user', {
+    name: 'AAAAAAAAAA',
+    y: 67,
+    x: true,
+    flap: 9999,
+  })
+  client.create('user', {
+    name: 'mr y',
+    cook: {
+      cookie: 1234,
+    },
+    mrFriend: { id: a, $level: 67 },
+  })
 
   await db.drain()
 
@@ -36,17 +57,31 @@ await test('include', async (t) => {
   const buf = new AutoSizedUint8Array(1000)
 
   let astB: Uint8Array = new Uint8Array()
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1; i++) {
     // registerQuery(db.query('user').include('name', 'x', 'y'))
     astB = queryAstToByteCode(
       client.schema!,
       {
         type: 'user',
         props: {
-          name: { include: {} },
-          y: { include: {} },
-          x: { include: {} },
-          // flap: { include: {} },
+          // name: { include: {} },
+          // y: { include: {} },
+          // x: { include: {} },
+          // cook: {
+          //   props: {
+          //     cookie: { include: {} },
+          //   },
+          // },
+          mrFriend: {
+            // props: {
+            //   name: { include: {} },
+            // },
+            edges: {
+              props: {
+                $level: { include: {} },
+              },
+            },
+          },
         },
       },
       buf,

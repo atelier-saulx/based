@@ -14,6 +14,15 @@ export type FilterAst = {
   }
   or?: FilterAst[]
   and?: FilterAst[]
+  edges?: FilterAst
+}
+
+export type Include = {
+  glob?: '*' | '**'
+  meta?: true | 'only' | false
+  maxChars?: number
+  maxBytes?: number
+  raw?: boolean
 }
 
 export type QueryAst = {
@@ -26,16 +35,11 @@ export type QueryAst = {
   props?: Record<
     string,
     QueryAst & {
-      include?: {
-        glob?: '*' | '**'
-        meta?: true | 'only' | false
-        maxChars?: number
-        maxBytes?: number
-        raw?: boolean
-      }
+      include?: Include
       select?: { start: number; end: number }
     }
   >
+  edges?: QueryAst
 }
 
 // const x: QueryAst = {
@@ -53,11 +57,16 @@ export type QueryAst = {
 //     props: {
 //       readBy: {
 //         filter: {
-//           props: {
-//             $rating: {
-//               ops: [{ val: 4, op: '>' }],
-//             },
-//           },
+// edges: {
+// $rating: {
+//             //  ops: [{ val: 4, op: '>' }],
+//             // },
+// }
+// props: {
+//   $rating: {
+//     ops: [{ val: 4, op: '>' }],
+//   },
+// },
 //         },
 //         props: {
 //           name: { include: { meta: 'only' } },

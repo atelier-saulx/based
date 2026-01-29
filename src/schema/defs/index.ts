@@ -39,6 +39,10 @@ export type PropDef = {
   ): void
 }
 
+export const isPropDef = (p: any): p is PropDef => {
+  return p && 'pushValue' in p && typeof p.pushValue === 'function'
+}
+
 export type PropDefClass = {
   new (prop: SchemaProp<true>, path: string[], typeDef: TypeDef): PropDef
 }

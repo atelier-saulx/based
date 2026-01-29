@@ -4,7 +4,7 @@ import {
   pushQueryHeader,
   QueryType,
   ID_PROP,
-  writeQueryHeaderProps,
+  writeQueryHeaderProps as props,
 } from '../../zigTsExports.js'
 import { QueryAst } from '../ast.js'
 import { include } from './include.js'
@@ -16,7 +16,7 @@ export const defaultMultiple = (
   typeDef: TypeDef,
 ) => {
   const rangeStart = ast.range?.start || 0
-  const queryHeaderOffset = pushQueryHeader(buf, {
+  const headerIndex = pushQueryHeader(buf, {
     op: QueryType.default,
     prop: ID_PROP,
     includeSize: 0,
@@ -30,12 +30,13 @@ export const defaultMultiple = (
     edgeTypeId: 0,
     edgeSize: 0,
     edgeFilterSize: 0,
-    size: 0, // total size + include // only used in ids now maybe remove?
-    // const buffer = new Uint8Array(QueryHeaderByteSize + searchSize + sortSize)
+    size: 0,
   })
-  writeQueryHeaderProps.includeSize(
-    buf.data,
-    include(ast, buf, typeDef),
-    queryHeaderOffset,
-  )
+  props.includeSize(buf.data, include(ast, buf, typeDef), headerIndex)
 }
+
+export const references = (
+  ast: QueryAst,
+  buf: AutoSizedUint8Array,
+  prop: PropDef,
+) => {}
