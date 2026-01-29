@@ -4136,6 +4136,95 @@ export const pushFilterSelect = (
   return index
 }
 
+export type SelvaSchemaHeader = {
+  blockCapacity: number
+  nrFields: number
+  nrFixedFields: number
+  nrVirtualFields: number
+  sdbVersion: number
+}
+
+export const SelvaSchemaHeaderByteSize = 8
+
+export const SelvaSchemaHeaderAlignOf = 8
+
+export const writeSelvaSchemaHeader = (
+  buf: Uint8Array,
+  header: SelvaSchemaHeader,
+  offset: number,
+): number => {
+  writeUint32(buf, Number(header.blockCapacity), offset)
+  offset += 4
+  buf[offset] = Number(header.nrFields)
+  offset += 1
+  buf[offset] = Number(header.nrFixedFields)
+  offset += 1
+  buf[offset] = Number(header.nrVirtualFields)
+  offset += 1
+  buf[offset] = Number(header.sdbVersion)
+  offset += 1
+  return offset
+}
+
+export const writeSelvaSchemaHeaderProps = {
+  blockCapacity: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset)
+  },
+  nrFields: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 4] = Number(value)
+  },
+  nrFixedFields: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 5] = Number(value)
+  },
+  nrVirtualFields: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 6] = Number(value)
+  },
+  sdbVersion: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 7] = Number(value)
+  },
+}
+
+export const readSelvaSchemaHeader = (
+  buf: Uint8Array,
+  offset: number,
+): SelvaSchemaHeader => {
+  const value: SelvaSchemaHeader = {
+    blockCapacity: readUint32(buf, offset),
+    nrFields: buf[offset + 4],
+    nrFixedFields: buf[offset + 5],
+    nrVirtualFields: buf[offset + 6],
+    sdbVersion: buf[offset + 7],
+  }
+  return value
+}
+
+export const readSelvaSchemaHeaderProps = {
+    blockCapacity: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    nrFields: (buf: Uint8Array, offset: number) => buf[offset + 4],
+    nrFixedFields: (buf: Uint8Array, offset: number) => buf[offset + 5],
+    nrVirtualFields: (buf: Uint8Array, offset: number) => buf[offset + 6],
+    sdbVersion: (buf: Uint8Array, offset: number) => buf[offset + 7],
+}
+
+export const createSelvaSchemaHeader = (header: SelvaSchemaHeader): Uint8Array => {
+  const buffer = new Uint8Array(SelvaSchemaHeaderByteSize)
+  writeSelvaSchemaHeader(buffer, header, 0)
+  return buffer
+}
+
+export const pushSelvaSchemaHeader = (
+  buf: AutoSizedUint8Array,
+  header: SelvaSchemaHeader,
+): number => {
+  const index = buf.length
+  buf.pushUint32(Number(header.blockCapacity))
+  buf.pushUint8(Number(header.nrFields))
+  buf.pushUint8(Number(header.nrFixedFields))
+  buf.pushUint8(Number(header.nrVirtualFields))
+  buf.pushUint8(Number(header.sdbVersion))
+  return index
+}
+
 export type SelvaSchemaMicroBuffer = {
   type: SelvaFieldType
   len: number
