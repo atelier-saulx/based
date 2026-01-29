@@ -87,18 +87,14 @@ await test('include', async (t) => {
   const ctx = astToQueryCtx(
     client.schema!,
     ast,
-    new AutoSizedUint8Array(1000),
-    new AutoSizedUint8Array(1000),
+    new AutoSizedUint8Array(1000), // this will be shared
+    new AutoSizedUint8Array(1000), // this will be shared
   )
 
   console.dir(ctx, { depth: 10 })
 
-  // debugBuffer(ctx.query)
-
   const result = await db.server.getQueryBuf(ctx.query)
   debugBuffer(result)
-
-  // console.log('====', deepEqual(x, x2))
 
   console.log(resultToObject(ctx.readSchema, result, result.byteLength - 4))
 })
