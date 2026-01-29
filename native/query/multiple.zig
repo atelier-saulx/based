@@ -22,7 +22,7 @@ fn iterator(
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
-    header: *const t.QueryHeader,
+    header: *const t.QueryHeader, // make this type
     typeEntry: Node.Type,
     i: *usize,
 ) !u32 {
@@ -150,6 +150,9 @@ pub fn default(
     var i: usize = 0;
     // make default header!
     const header = utils.readNext(t.QueryHeader, q, &i);
+
+    std.debug.print("flap {any} \n", .{header});
+
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;

@@ -38,11 +38,6 @@ export type QueryAst = {
   >
 }
 
-export type QueryAstCtx = {
-  main: PropDef[]
-  // more?
-}
-
 // const x: QueryAst = {
 // type: 'user',
 // locale: 'nl',

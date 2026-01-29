@@ -76,7 +76,7 @@ export const includeToBuffer = (
           i,
         )
         // This writes the actual address of the prop to be used on read
-        value[0] = m
+        value[0] = m // this is for the reader
         i += 4
         m += propDef.len
       }
@@ -92,6 +92,7 @@ export const includeToBuffer = (
     } else {
       for (const [start, value] of def.include.main.include.entries()) {
         value[0] = start
+        // this is for reading
       }
       result.push(
         createIncludeHeader({
