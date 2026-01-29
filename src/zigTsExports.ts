@@ -1,22 +1,14 @@
-import {
-  writeUint16,
-  writeInt16,
-  writeUint32,
-  writeInt32,
-  writeUint64,
-  writeInt64,
-  writeFloatLE,
-  writeDoubleLE,
-  readUint16,
-  readInt16,
-  readUint32,
-  readInt32,
-  readUint64,
-  readInt64,
-  readFloatLE,
-  readDoubleLE,
+import { 
+  writeUint16, writeInt16, 
+  writeUint32, writeInt32, 
+  writeUint64, writeInt64, 
+  writeFloatLE, writeDoubleLE,
+  readUint16, readInt16, 
+  readUint32, readInt32, 
+  readUint64, readInt64, 
+  readFloatLE, readDoubleLE
 } from './utils/index.js'
-import { AutoSizedUint8Array } from './utils/AutoSizedUint8Array.js'
+import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'
 
 export type TypeId = number
 
@@ -40,8 +32,7 @@ export const BridgeResponseInverse = {
   flushQuery, 
   flushModify 
  */
-export type BridgeResponseEnum =
-  (typeof BridgeResponse)[keyof typeof BridgeResponse]
+export type BridgeResponseEnum = (typeof BridgeResponse)[keyof typeof BridgeResponse]
 
 export const OpType = {
   id: 0,
@@ -231,24 +222,6 @@ export const ModifyHeaderByteSize = 17
 
 export const ModifyHeaderAlignOf = 16
 
-export const packModifyHeader = (obj: ModifyHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.opId) & 4294967295n) << 0n
-  val |= (BigInt(obj.opType) & 255n) << 32n
-  val |= (BigInt(obj.schema) & 18446744073709551615n) << 40n
-  val |= (BigInt(obj.count) & 4294967295n) << 104n
-  return val
-}
-
-export const unpackModifyHeader = (val: bigint): ModifyHeader => {
-  return {
-    opId: Number((val >> 0n) & 4294967295n),
-    opType: Number((val >> 32n) & 255n) as OpTypeEnum,
-    schema: Number((val >> 40n) & 18446744073709551615n),
-    count: Number((val >> 104n) & 4294967295n),
-  }
-}
-
 export const writeModifyHeader = (
   buf: Uint8Array,
   header: ModifyHeader,
@@ -286,7 +259,7 @@ export const readModifyHeader = (
 ): ModifyHeader => {
   const value: ModifyHeader = {
     opId: readUint32(buf, offset),
-    opType: buf[offset + 4] as OpTypeEnum,
+    opType: (buf[offset + 4]) as OpTypeEnum,
     schema: readUint64(buf, offset + 5),
     count: readUint32(buf, offset + 13),
   }
@@ -294,10 +267,10 @@ export const readModifyHeader = (
 }
 
 export const readModifyHeaderProps = {
-  opId: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
-  opType: (buf: Uint8Array, offset: number) => buf[offset + 4] as OpTypeEnum,
-  schema: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 5),
-  count: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 13),
+    opId: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    opType: (buf: Uint8Array, offset: number) => (buf[offset + 4]) as OpTypeEnum,
+    schema: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 5),
+    count: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 13),
 }
 
 export const createModifyHeader = (header: ModifyHeader): Uint8Array => {
@@ -328,24 +301,6 @@ export type ModifyUpdateHeader = {
 export const ModifyUpdateHeaderByteSize = 10
 
 export const ModifyUpdateHeaderAlignOf = 16
-
-export const packModifyUpdateHeader = (obj: ModifyUpdateHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.type) & 255n) << 8n
-  val |= (BigInt(obj.id) & 4294967295n) << 16n
-  val |= (BigInt(obj.size) & 4294967295n) << 48n
-  return val
-}
-
-export const unpackModifyUpdateHeader = (val: bigint): ModifyUpdateHeader => {
-  return {
-    op: Number((val >> 0n) & 255n) as ModifyEnum,
-    type: Number((val >> 8n) & 255n),
-    id: Number((val >> 16n) & 4294967295n),
-    size: Number((val >> 48n) & 4294967295n),
-  }
-}
 
 export const writeModifyUpdateHeader = (
   buf: Uint8Array,
@@ -383,7 +338,7 @@ export const readModifyUpdateHeader = (
   offset: number,
 ): ModifyUpdateHeader => {
   const value: ModifyUpdateHeader = {
-    op: buf[offset] as ModifyEnum,
+    op: (buf[offset]) as ModifyEnum,
     type: buf[offset + 1],
     id: readUint32(buf, offset + 2),
     size: readUint32(buf, offset + 6),
@@ -392,15 +347,13 @@ export const readModifyUpdateHeader = (
 }
 
 export const readModifyUpdateHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as ModifyEnum,
-  type: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 6),
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
+    type: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 6),
 }
 
-export const createModifyUpdateHeader = (
-  header: ModifyUpdateHeader,
-): Uint8Array => {
+export const createModifyUpdateHeader = (header: ModifyUpdateHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyUpdateHeaderByteSize)
   writeModifyUpdateHeader(buffer, header, 0)
   return buffer
@@ -427,22 +380,6 @@ export type ModifyDeleteHeader = {
 export const ModifyDeleteHeaderByteSize = 6
 
 export const ModifyDeleteHeaderAlignOf = 8
-
-export const packModifyDeleteHeader = (obj: ModifyDeleteHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.type) & 255n) << 8n
-  val |= (BigInt(obj.id) & 4294967295n) << 16n
-  return val
-}
-
-export const unpackModifyDeleteHeader = (val: bigint): ModifyDeleteHeader => {
-  return {
-    op: Number((val >> 0n) & 255n) as ModifyEnum,
-    type: Number((val >> 8n) & 255n),
-    id: Number((val >> 16n) & 4294967295n),
-  }
-}
 
 export const writeModifyDeleteHeader = (
   buf: Uint8Array,
@@ -475,7 +412,7 @@ export const readModifyDeleteHeader = (
   offset: number,
 ): ModifyDeleteHeader => {
   const value: ModifyDeleteHeader = {
-    op: buf[offset] as ModifyEnum,
+    op: (buf[offset]) as ModifyEnum,
     type: buf[offset + 1],
     id: readUint32(buf, offset + 2),
   }
@@ -483,14 +420,12 @@ export const readModifyDeleteHeader = (
 }
 
 export const readModifyDeleteHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as ModifyEnum,
-  type: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
+    type: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
 }
 
-export const createModifyDeleteHeader = (
-  header: ModifyDeleteHeader,
-): Uint8Array => {
+export const createModifyDeleteHeader = (header: ModifyDeleteHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyDeleteHeaderByteSize)
   writeModifyDeleteHeader(buffer, header, 0)
   return buffer
@@ -516,22 +451,6 @@ export type ModifyCreateHeader = {
 export const ModifyCreateHeaderByteSize = 6
 
 export const ModifyCreateHeaderAlignOf = 8
-
-export const packModifyCreateHeader = (obj: ModifyCreateHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.type) & 255n) << 8n
-  val |= (BigInt(obj.size) & 4294967295n) << 16n
-  return val
-}
-
-export const unpackModifyCreateHeader = (val: bigint): ModifyCreateHeader => {
-  return {
-    op: Number((val >> 0n) & 255n) as ModifyEnum,
-    type: Number((val >> 8n) & 255n),
-    size: Number((val >> 16n) & 4294967295n),
-  }
-}
 
 export const writeModifyCreateHeader = (
   buf: Uint8Array,
@@ -564,7 +483,7 @@ export const readModifyCreateHeader = (
   offset: number,
 ): ModifyCreateHeader => {
   const value: ModifyCreateHeader = {
-    op: buf[offset] as ModifyEnum,
+    op: (buf[offset]) as ModifyEnum,
     type: buf[offset + 1],
     size: readUint32(buf, offset + 2),
   }
@@ -572,14 +491,12 @@ export const readModifyCreateHeader = (
 }
 
 export const readModifyCreateHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as ModifyEnum,
-  type: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
+    type: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
 }
 
-export const createModifyCreateHeader = (
-  header: ModifyCreateHeader,
-): Uint8Array => {
+export const createModifyCreateHeader = (header: ModifyCreateHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyCreateHeaderByteSize)
   writeModifyCreateHeader(buffer, header, 0)
   return buffer
@@ -605,22 +522,6 @@ export type ModifyMainHeader = {
 export const ModifyMainHeaderByteSize = 5
 
 export const ModifyMainHeaderAlignOf = 8
-
-export const packModifyMainHeader = (obj: ModifyMainHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.id) & 255n) << 0n
-  val |= (BigInt(obj.start) & 65535n) << 8n
-  val |= (BigInt(obj.size) & 65535n) << 24n
-  return val
-}
-
-export const unpackModifyMainHeader = (val: bigint): ModifyMainHeader => {
-  return {
-    id: Number((val >> 0n) & 255n),
-    start: Number((val >> 8n) & 65535n),
-    size: Number((val >> 24n) & 65535n),
-  }
-}
 
 export const writeModifyMainHeader = (
   buf: Uint8Array,
@@ -661,14 +562,12 @@ export const readModifyMainHeader = (
 }
 
 export const readModifyMainHeaderProps = {
-  id: (buf: Uint8Array, offset: number) => buf[offset],
-  start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 1),
-  size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 3),
+    id: (buf: Uint8Array, offset: number) => buf[offset],
+    start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 1),
+    size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 3),
 }
 
-export const createModifyMainHeader = (
-  header: ModifyMainHeader,
-): Uint8Array => {
+export const createModifyMainHeader = (header: ModifyMainHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyMainHeaderByteSize)
   writeModifyMainHeader(buffer, header, 0)
   return buffer
@@ -694,22 +593,6 @@ export type ModifyPropHeader = {
 export const ModifyPropHeaderByteSize = 6
 
 export const ModifyPropHeaderAlignOf = 8
-
-export const packModifyPropHeader = (obj: ModifyPropHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.id) & 255n) << 0n
-  val |= (BigInt(obj.type) & 255n) << 8n
-  val |= (BigInt(obj.size) & 4294967295n) << 16n
-  return val
-}
-
-export const unpackModifyPropHeader = (val: bigint): ModifyPropHeader => {
-  return {
-    id: Number((val >> 0n) & 255n),
-    type: Number((val >> 8n) & 255n) as PropTypeEnum,
-    size: Number((val >> 16n) & 4294967295n),
-  }
-}
 
 export const writeModifyPropHeader = (
   buf: Uint8Array,
@@ -743,21 +626,19 @@ export const readModifyPropHeader = (
 ): ModifyPropHeader => {
   const value: ModifyPropHeader = {
     id: buf[offset],
-    type: buf[offset + 1] as PropTypeEnum,
+    type: (buf[offset + 1]) as PropTypeEnum,
     size: readUint32(buf, offset + 2),
   }
   return value
 }
 
 export const readModifyPropHeaderProps = {
-  id: (buf: Uint8Array, offset: number) => buf[offset],
-  type: (buf: Uint8Array, offset: number) => buf[offset + 1] as PropTypeEnum,
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
+    id: (buf: Uint8Array, offset: number) => buf[offset],
+    type: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as PropTypeEnum,
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
 }
 
-export const createModifyPropHeader = (
-  header: ModifyPropHeader,
-): Uint8Array => {
+export const createModifyPropHeader = (header: ModifyPropHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyPropHeaderByteSize)
   writeModifyPropHeader(buffer, header, 0)
   return buffer
@@ -800,8 +681,7 @@ export const ModifyReferencesInverse = {
   delIds, 
   delTmpIds 
  */
-export type ModifyReferencesEnum =
-  (typeof ModifyReferences)[keyof typeof ModifyReferences]
+export type ModifyReferencesEnum = (typeof ModifyReferences)[keyof typeof ModifyReferences]
 
 export type ModifyReferencesHeader = {
   op: ModifyReferencesEnum
@@ -811,24 +691,6 @@ export type ModifyReferencesHeader = {
 export const ModifyReferencesHeaderByteSize = 5
 
 export const ModifyReferencesHeaderAlignOf = 8
-
-export const packModifyReferencesHeader = (
-  obj: ModifyReferencesHeader,
-): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.size) & 4294967295n) << 8n
-  return val
-}
-
-export const unpackModifyReferencesHeader = (
-  val: bigint,
-): ModifyReferencesHeader => {
-  return {
-    op: Number((val >> 0n) & 255n) as ModifyReferencesEnum,
-    size: Number((val >> 8n) & 4294967295n),
-  }
-}
 
 export const writeModifyReferencesHeader = (
   buf: Uint8Array,
@@ -856,20 +718,18 @@ export const readModifyReferencesHeader = (
   offset: number,
 ): ModifyReferencesHeader => {
   const value: ModifyReferencesHeader = {
-    op: buf[offset] as ModifyReferencesEnum,
+    op: (buf[offset]) as ModifyReferencesEnum,
     size: readUint32(buf, offset + 1),
   }
   return value
 }
 
 export const readModifyReferencesHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as ModifyReferencesEnum,
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 1),
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyReferencesEnum,
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 1),
 }
 
-export const createModifyReferencesHeader = (
-  header: ModifyReferencesHeader,
-): Uint8Array => {
+export const createModifyReferencesHeader = (header: ModifyReferencesHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyReferencesHeaderByteSize)
   writeModifyReferencesHeader(buffer, header, 0)
   return buffer
@@ -896,30 +756,6 @@ export type ModifyReferencesMetaHeader = {
 export const ModifyReferencesMetaHeaderByteSize = 13
 
 export const ModifyReferencesMetaHeaderAlignOf = 16
-
-export const packModifyReferencesMetaHeader = (
-  obj: ModifyReferencesMetaHeader,
-): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.id) & 4294967295n) << 0n
-  val |= ((obj.isTmp ? 1n : 0n) & 1n) << 32n
-  val |= ((obj.withIndex ? 1n : 0n) & 1n) << 33n
-  val |= (BigInt(obj.index) & 4294967295n) << 40n
-  val |= (BigInt(obj.size) & 4294967295n) << 72n
-  return val
-}
-
-export const unpackModifyReferencesMetaHeader = (
-  val: bigint,
-): ModifyReferencesMetaHeader => {
-  return {
-    id: Number((val >> 0n) & 4294967295n),
-    isTmp: ((val >> 32n) & 1n) === 1n,
-    withIndex: ((val >> 33n) & 1n) === 1n,
-    index: Number((val >> 40n) & 4294967295n),
-    size: Number((val >> 72n) & 4294967295n),
-  }
-}
 
 export const writeModifyReferencesMetaHeader = (
   buf: Uint8Array,
@@ -964,8 +800,8 @@ export const readModifyReferencesMetaHeader = (
 ): ModifyReferencesMetaHeader => {
   const value: ModifyReferencesMetaHeader = {
     id: readUint32(buf, offset),
-    isTmp: ((buf[offset + 4] >>> 0) & 1) === 1,
-    withIndex: ((buf[offset + 4] >>> 1) & 1) === 1,
+    isTmp: (((buf[offset + 4] >>> 0) & 1)) === 1,
+    withIndex: (((buf[offset + 4] >>> 1) & 1)) === 1,
     index: readUint32(buf, offset + 5),
     size: readUint32(buf, offset + 9),
   }
@@ -973,18 +809,14 @@ export const readModifyReferencesMetaHeader = (
 }
 
 export const readModifyReferencesMetaHeaderProps = {
-  id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
-  isTmp: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 4] >>> 0) & 1) === 1,
-  withIndex: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 4] >>> 1) & 1) === 1,
-  index: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 9),
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    isTmp: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 0) & 1)) === 1,
+    withIndex: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 1) & 1)) === 1,
+    index: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 9),
 }
 
-export const createModifyReferencesMetaHeader = (
-  header: ModifyReferencesMetaHeader,
-): Uint8Array => {
+export const createModifyReferencesMetaHeader = (header: ModifyReferencesMetaHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyReferencesMetaHeaderByteSize)
   writeModifyReferencesMetaHeader(buffer, header, 0)
   return buffer
@@ -1014,26 +846,6 @@ export type ModifyReferenceMetaHeader = {
 export const ModifyReferenceMetaHeaderByteSize = 9
 
 export const ModifyReferenceMetaHeaderAlignOf = 16
-
-export const packModifyReferenceMetaHeader = (
-  obj: ModifyReferenceMetaHeader,
-): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.id) & 4294967295n) << 0n
-  val |= ((obj.isTmp ? 1n : 0n) & 1n) << 32n
-  val |= (BigInt(obj.size) & 4294967295n) << 40n
-  return val
-}
-
-export const unpackModifyReferenceMetaHeader = (
-  val: bigint,
-): ModifyReferenceMetaHeader => {
-  return {
-    id: Number((val >> 0n) & 4294967295n),
-    isTmp: ((val >> 32n) & 1n) === 1n,
-    size: Number((val >> 40n) & 4294967295n),
-  }
-}
 
 export const writeModifyReferenceMetaHeader = (
   buf: Uint8Array,
@@ -1069,22 +881,19 @@ export const readModifyReferenceMetaHeader = (
 ): ModifyReferenceMetaHeader => {
   const value: ModifyReferenceMetaHeader = {
     id: readUint32(buf, offset),
-    isTmp: ((buf[offset + 4] >>> 0) & 1) === 1,
+    isTmp: (((buf[offset + 4] >>> 0) & 1)) === 1,
     size: readUint32(buf, offset + 5),
   }
   return value
 }
 
 export const readModifyReferenceMetaHeaderProps = {
-  id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
-  isTmp: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 4] >>> 0) & 1) === 1,
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    isTmp: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 0) & 1)) === 1,
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
 }
 
-export const createModifyReferenceMetaHeader = (
-  header: ModifyReferenceMetaHeader,
-): Uint8Array => {
+export const createModifyReferenceMetaHeader = (header: ModifyReferenceMetaHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyReferenceMetaHeaderByteSize)
   writeModifyReferenceMetaHeader(buffer, header, 0)
   return buffer
@@ -1112,21 +921,17 @@ export const ModifyCardinalityHeaderByteSize = 2
 
 export const ModifyCardinalityHeaderAlignOf = 2
 
-export const packModifyCardinalityHeader = (
-  obj: ModifyCardinalityHeader,
-): bigint => {
-  let val = 0n
-  val |= ((obj.sparse ? 1n : 0n) & 1n) << 0n
-  val |= (BigInt(obj.precision) & 255n) << 8n
+export const packModifyCardinalityHeader = (obj: ModifyCardinalityHeader): number => {
+  let val = 0
+  val |= ((obj.sparse ? 1 : 0) & 1) << 0
+  val |= (Number(obj.precision) & 255) << 8
   return val
 }
 
-export const unpackModifyCardinalityHeader = (
-  val: bigint,
-): ModifyCardinalityHeader => {
+export const unpackModifyCardinalityHeader = (val: number): ModifyCardinalityHeader => {
   return {
-    sparse: ((val >> 0n) & 1n) === 1n,
-    precision: Number((val >> 8n) & 255n),
+    sparse: ((val >>> 0) & 1) === 1,
+    precision: Number((val >>> 8) & 255),
   }
 }
 
@@ -1158,20 +963,18 @@ export const readModifyCardinalityHeader = (
   offset: number,
 ): ModifyCardinalityHeader => {
   const value: ModifyCardinalityHeader = {
-    sparse: ((buf[offset] >>> 0) & 1) === 1,
+    sparse: (((buf[offset] >>> 0) & 1)) === 1,
     precision: buf[offset + 1],
   }
   return value
 }
 
 export const readModifyCardinalityHeaderProps = {
-  sparse: (buf: Uint8Array, offset: number) => ((buf[offset] >>> 0) & 1) === 1,
-  precision: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    sparse: (buf: Uint8Array, offset: number) => (((buf[offset] >>> 0) & 1)) === 1,
+    precision: (buf: Uint8Array, offset: number) => buf[offset + 1],
 }
 
-export const createModifyCardinalityHeader = (
-  header: ModifyCardinalityHeader,
-): Uint8Array => {
+export const createModifyCardinalityHeader = (header: ModifyCardinalityHeader): Uint8Array => {
   const buffer = new Uint8Array(ModifyCardinalityHeaderByteSize)
   writeModifyCardinalityHeader(buffer, header, 0)
   return buffer
@@ -1197,20 +1000,6 @@ export type ModifyResultItem = {
 export const ModifyResultItemByteSize = 5
 
 export const ModifyResultItemAlignOf = 8
-
-export const packModifyResultItem = (obj: ModifyResultItem): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.id) & 4294967295n) << 0n
-  val |= (BigInt(obj.err) & 255n) << 32n
-  return val
-}
-
-export const unpackModifyResultItem = (val: bigint): ModifyResultItem => {
-  return {
-    id: Number((val >> 0n) & 4294967295n),
-    err: Number((val >> 32n) & 255n) as ModifyErrorEnum,
-  }
-}
 
 export const writeModifyResultItem = (
   buf: Uint8Array,
@@ -1239,19 +1028,17 @@ export const readModifyResultItem = (
 ): ModifyResultItem => {
   const value: ModifyResultItem = {
     id: readUint32(buf, offset),
-    err: buf[offset + 4] as ModifyErrorEnum,
+    err: (buf[offset + 4]) as ModifyErrorEnum,
   }
   return value
 }
 
 export const readModifyResultItemProps = {
-  id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
-  err: (buf: Uint8Array, offset: number) => buf[offset + 4] as ModifyErrorEnum,
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    err: (buf: Uint8Array, offset: number) => (buf[offset + 4]) as ModifyErrorEnum,
 }
 
-export const createModifyResultItem = (
-  header: ModifyResultItem,
-): Uint8Array => {
+export const createModifyResultItem = (header: ModifyResultItem): Uint8Array => {
   const buffer = new Uint8Array(ModifyResultItemByteSize)
   writeModifyResultItem(buffer, header, 0)
   return buffer
@@ -1453,8 +1240,7 @@ export const ReferencesSelectInverse = {
   any, 
   all 
  */
-export type ReferencesSelectEnum =
-  (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
+export type ReferencesSelectEnum = (typeof ReferencesSelect)[keyof typeof ReferencesSelect]
 
 export const RefEdgeOp = {
   noEdgeNoIndexRealId: 0,
@@ -2141,30 +1927,6 @@ export const SortHeaderByteSize = 10
 
 export const SortHeaderAlignOf = 16
 
-export const packSortHeader = (obj: SortHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.order) & 255n) << 0n
-  val |= (BigInt(obj.prop) & 255n) << 8n
-  val |= (BigInt(obj.propType) & 255n) << 16n
-  val |= (BigInt(obj.start) & 65535n) << 24n
-  val |= (BigInt(obj.len) & 65535n) << 40n
-  val |= (BigInt(obj.lang) & 255n) << 56n
-  val |= (BigInt(obj.edgeType) & 65535n) << 64n
-  return val
-}
-
-export const unpackSortHeader = (val: bigint): SortHeader => {
-  return {
-    order: Number((val >> 0n) & 255n) as OrderEnum,
-    prop: Number((val >> 8n) & 255n),
-    propType: Number((val >> 16n) & 255n) as PropTypeEnum,
-    start: Number((val >> 24n) & 65535n),
-    len: Number((val >> 40n) & 65535n),
-    lang: Number((val >> 56n) & 255n) as LangCodeEnum,
-    edgeType: Number((val >> 64n) & 65535n),
-  }
-}
-
 export const writeSortHeader = (
   buf: Uint8Array,
   header: SortHeader,
@@ -2211,28 +1973,30 @@ export const writeSortHeaderProps = {
   },
 }
 
-export const readSortHeader = (buf: Uint8Array, offset: number): SortHeader => {
+export const readSortHeader = (
+  buf: Uint8Array,
+  offset: number,
+): SortHeader => {
   const value: SortHeader = {
-    order: buf[offset] as OrderEnum,
+    order: (buf[offset]) as OrderEnum,
     prop: buf[offset + 1],
-    propType: buf[offset + 2] as PropTypeEnum,
+    propType: (buf[offset + 2]) as PropTypeEnum,
     start: readUint16(buf, offset + 3),
     len: readUint16(buf, offset + 5),
-    lang: buf[offset + 7] as LangCodeEnum,
+    lang: (buf[offset + 7]) as LangCodeEnum,
     edgeType: readUint16(buf, offset + 8),
   }
   return value
 }
 
 export const readSortHeaderProps = {
-  order: (buf: Uint8Array, offset: number) => buf[offset] as OrderEnum,
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  propType: (buf: Uint8Array, offset: number) =>
-    buf[offset + 2] as PropTypeEnum,
-  start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 3),
-  len: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 5),
-  lang: (buf: Uint8Array, offset: number) => buf[offset + 7] as LangCodeEnum,
-  edgeType: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
+    order: (buf: Uint8Array, offset: number) => (buf[offset]) as OrderEnum,
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    propType: (buf: Uint8Array, offset: number) => (buf[offset + 2]) as PropTypeEnum,
+    start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 3),
+    len: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 5),
+    lang: (buf: Uint8Array, offset: number) => (buf[offset + 7]) as LangCodeEnum,
+    edgeType: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
 }
 
 export const createSortHeader = (header: SortHeader): Uint8Array => {
@@ -2353,8 +2117,7 @@ export const QueryIteratorTypeInverse = {
   vec, 
   vecFilter 
  */
-export type QueryIteratorTypeEnum =
-  (typeof QueryIteratorType)[keyof typeof QueryIteratorType]
+export type QueryIteratorTypeEnum = (typeof QueryIteratorType)[keyof typeof QueryIteratorType]
 
 export const QueryType = {
   id: 0,
@@ -2452,19 +2215,19 @@ export const IncludeHeaderByteSize = 3
 
 export const IncludeHeaderAlignOf = 4
 
-export const packIncludeHeader = (obj: IncludeHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.prop) & 255n) << 8n
-  val |= (BigInt(obj.propType) & 255n) << 16n
+export const packIncludeHeader = (obj: IncludeHeader): number => {
+  let val = 0
+  val |= (Number(obj.op) & 255) << 0
+  val |= (Number(obj.prop) & 255) << 8
+  val |= (Number(obj.propType) & 255) << 16
   return val
 }
 
-export const unpackIncludeHeader = (val: bigint): IncludeHeader => {
+export const unpackIncludeHeader = (val: number): IncludeHeader => {
   return {
-    op: Number((val >> 0n) & 255n) as IncludeOpEnum,
-    prop: Number((val >> 8n) & 255n),
-    propType: Number((val >> 16n) & 255n) as PropTypeEnum,
+    op: ((val >>> 0) & 255) as IncludeOpEnum,
+    prop: Number((val >>> 8) & 255),
+    propType: ((val >>> 16) & 255) as PropTypeEnum,
   }
 }
 
@@ -2499,18 +2262,17 @@ export const readIncludeHeader = (
   offset: number,
 ): IncludeHeader => {
   const value: IncludeHeader = {
-    op: buf[offset] as IncludeOpEnum,
+    op: (buf[offset]) as IncludeOpEnum,
     prop: buf[offset + 1],
-    propType: buf[offset + 2] as PropTypeEnum,
+    propType: (buf[offset + 2]) as PropTypeEnum,
   }
   return value
 }
 
 export const readIncludeHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as IncludeOpEnum,
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  propType: (buf: Uint8Array, offset: number) =>
-    buf[offset + 2] as PropTypeEnum,
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as IncludeOpEnum,
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    propType: (buf: Uint8Array, offset: number) => (buf[offset + 2]) as PropTypeEnum,
 }
 
 export const createIncludeHeader = (header: IncludeHeader): Uint8Array => {
@@ -2540,19 +2302,19 @@ export const IncludeMetaHeaderByteSize = 3
 
 export const IncludeMetaHeaderAlignOf = 4
 
-export const packIncludeMetaHeader = (obj: IncludeMetaHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.prop) & 255n) << 8n
-  val |= (BigInt(obj.propType) & 255n) << 16n
+export const packIncludeMetaHeader = (obj: IncludeMetaHeader): number => {
+  let val = 0
+  val |= (Number(obj.op) & 255) << 0
+  val |= (Number(obj.prop) & 255) << 8
+  val |= (Number(obj.propType) & 255) << 16
   return val
 }
 
-export const unpackIncludeMetaHeader = (val: bigint): IncludeMetaHeader => {
+export const unpackIncludeMetaHeader = (val: number): IncludeMetaHeader => {
   return {
-    op: Number((val >> 0n) & 255n) as IncludeOpEnum,
-    prop: Number((val >> 8n) & 255n),
-    propType: Number((val >> 16n) & 255n) as PropTypeEnum,
+    op: ((val >>> 0) & 255) as IncludeOpEnum,
+    prop: Number((val >>> 8) & 255),
+    propType: ((val >>> 16) & 255) as PropTypeEnum,
   }
 }
 
@@ -2587,23 +2349,20 @@ export const readIncludeMetaHeader = (
   offset: number,
 ): IncludeMetaHeader => {
   const value: IncludeMetaHeader = {
-    op: buf[offset] as IncludeOpEnum,
+    op: (buf[offset]) as IncludeOpEnum,
     prop: buf[offset + 1],
-    propType: buf[offset + 2] as PropTypeEnum,
+    propType: (buf[offset + 2]) as PropTypeEnum,
   }
   return value
 }
 
 export const readIncludeMetaHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as IncludeOpEnum,
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  propType: (buf: Uint8Array, offset: number) =>
-    buf[offset + 2] as PropTypeEnum,
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as IncludeOpEnum,
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    propType: (buf: Uint8Array, offset: number) => (buf[offset + 2]) as PropTypeEnum,
 }
 
-export const createIncludeMetaHeader = (
-  header: IncludeMetaHeader,
-): Uint8Array => {
+export const createIncludeMetaHeader = (header: IncludeMetaHeader): Uint8Array => {
   const buffer = new Uint8Array(IncludeMetaHeaderByteSize)
   writeIncludeMetaHeader(buffer, header, 0)
   return buffer
@@ -2630,26 +2389,6 @@ export type IncludePartialHeader = {
 export const IncludePartialHeaderByteSize = 5
 
 export const IncludePartialHeaderAlignOf = 8
-
-export const packIncludePartialHeader = (obj: IncludePartialHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.prop) & 255n) << 8n
-  val |= (BigInt(obj.propType) & 255n) << 16n
-  val |= (BigInt(obj.amount) & 65535n) << 24n
-  return val
-}
-
-export const unpackIncludePartialHeader = (
-  val: bigint,
-): IncludePartialHeader => {
-  return {
-    op: Number((val >> 0n) & 255n) as IncludeOpEnum,
-    prop: Number((val >> 8n) & 255n),
-    propType: Number((val >> 16n) & 255n) as PropTypeEnum,
-    amount: Number((val >> 24n) & 65535n),
-  }
-}
 
 export const writeIncludePartialHeader = (
   buf: Uint8Array,
@@ -2687,25 +2426,22 @@ export const readIncludePartialHeader = (
   offset: number,
 ): IncludePartialHeader => {
   const value: IncludePartialHeader = {
-    op: buf[offset] as IncludeOpEnum,
+    op: (buf[offset]) as IncludeOpEnum,
     prop: buf[offset + 1],
-    propType: buf[offset + 2] as PropTypeEnum,
+    propType: (buf[offset + 2]) as PropTypeEnum,
     amount: readUint16(buf, offset + 3),
   }
   return value
 }
 
 export const readIncludePartialHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as IncludeOpEnum,
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  propType: (buf: Uint8Array, offset: number) =>
-    buf[offset + 2] as PropTypeEnum,
-  amount: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 3),
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as IncludeOpEnum,
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    propType: (buf: Uint8Array, offset: number) => (buf[offset + 2]) as PropTypeEnum,
+    amount: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 3),
 }
 
-export const createIncludePartialHeader = (
-  header: IncludePartialHeader,
-): Uint8Array => {
+export const createIncludePartialHeader = (header: IncludePartialHeader): Uint8Array => {
   const buffer = new Uint8Array(IncludePartialHeaderByteSize)
   writeIncludePartialHeader(buffer, header, 0)
   return buffer
@@ -2732,17 +2468,17 @@ export const IncludePartialPropByteSize = 4
 
 export const IncludePartialPropAlignOf = 4
 
-export const packIncludePartialProp = (obj: IncludePartialProp): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.start) & 65535n) << 0n
-  val |= (BigInt(obj.size) & 65535n) << 16n
+export const packIncludePartialProp = (obj: IncludePartialProp): number => {
+  let val = 0
+  val |= (Number(obj.start) & 65535) << 0
+  val |= (Number(obj.size) & 65535) << 16
   return val
 }
 
-export const unpackIncludePartialProp = (val: bigint): IncludePartialProp => {
+export const unpackIncludePartialProp = (val: number): IncludePartialProp => {
   return {
-    start: Number((val >> 0n) & 65535n),
-    size: Number((val >> 16n) & 65535n),
+    start: Number((val >>> 0) & 65535),
+    size: Number((val >>> 16) & 65535),
   }
 }
 
@@ -2779,13 +2515,11 @@ export const readIncludePartialProp = (
 }
 
 export const readIncludePartialPropProps = {
-  start: (buf: Uint8Array, offset: number) => readUint16(buf, offset),
-  size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 2),
+    start: (buf: Uint8Array, offset: number) => readUint16(buf, offset),
+    size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 2),
 }
 
-export const createIncludePartialProp = (
-  header: IncludePartialProp,
-): Uint8Array => {
+export const createIncludePartialProp = (header: IncludePartialProp): Uint8Array => {
   const buffer = new Uint8Array(IncludePartialPropByteSize)
   writeIncludePartialProp(buffer, header, 0)
   return buffer
@@ -2812,26 +2546,6 @@ export type IncludeOpts = {
 export const IncludeOptsByteSize = 7
 
 export const IncludeOptsAlignOf = 8
-
-export const packIncludeOpts = (obj: IncludeOpts): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.end) & 4294967295n) << 0n
-  val |= ((obj.isChars ? 1n : 0n) & 1n) << 32n
-  val |= ((obj.hasOpts ? 1n : 0n) & 1n) << 33n
-  val |= (BigInt(obj.langFallbackSize) & 255n) << 40n
-  val |= (BigInt(obj.lang) & 255n) << 48n
-  return val
-}
-
-export const unpackIncludeOpts = (val: bigint): IncludeOpts => {
-  return {
-    end: Number((val >> 0n) & 4294967295n),
-    isChars: ((val >> 32n) & 1n) === 1n,
-    hasOpts: ((val >> 33n) & 1n) === 1n,
-    langFallbackSize: Number((val >> 40n) & 255n),
-    lang: Number((val >> 48n) & 255n) as LangCodeEnum,
-  }
-}
 
 export const writeIncludeOpts = (
   buf: Uint8Array,
@@ -2876,22 +2590,20 @@ export const readIncludeOpts = (
 ): IncludeOpts => {
   const value: IncludeOpts = {
     end: readUint32(buf, offset),
-    isChars: ((buf[offset + 4] >>> 0) & 1) === 1,
-    hasOpts: ((buf[offset + 4] >>> 1) & 1) === 1,
+    isChars: (((buf[offset + 4] >>> 0) & 1)) === 1,
+    hasOpts: (((buf[offset + 4] >>> 1) & 1)) === 1,
     langFallbackSize: buf[offset + 5],
-    lang: buf[offset + 6] as LangCodeEnum,
+    lang: (buf[offset + 6]) as LangCodeEnum,
   }
   return value
 }
 
 export const readIncludeOptsProps = {
-  end: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
-  isChars: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 4] >>> 0) & 1) === 1,
-  hasOpts: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 4] >>> 1) & 1) === 1,
-  langFallbackSize: (buf: Uint8Array, offset: number) => buf[offset + 5],
-  lang: (buf: Uint8Array, offset: number) => buf[offset + 6] as LangCodeEnum,
+    end: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    isChars: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 0) & 1)) === 1,
+    hasOpts: (buf: Uint8Array, offset: number) => (((buf[offset + 4] >>> 1) & 1)) === 1,
+    langFallbackSize: (buf: Uint8Array, offset: number) => buf[offset + 5],
+    lang: (buf: Uint8Array, offset: number) => (buf[offset + 6]) as LangCodeEnum,
 }
 
 export const createIncludeOpts = (header: IncludeOpts): Uint8Array => {
@@ -2923,20 +2635,6 @@ export type IncludeResponse = {
 export const IncludeResponseByteSize = 5
 
 export const IncludeResponseAlignOf = 8
-
-export const packIncludeResponse = (obj: IncludeResponse): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.prop) & 255n) << 0n
-  val |= (BigInt(obj.size) & 4294967295n) << 8n
-  return val
-}
-
-export const unpackIncludeResponse = (val: bigint): IncludeResponse => {
-  return {
-    prop: Number((val >> 0n) & 255n),
-    size: Number((val >> 8n) & 4294967295n),
-  }
-}
 
 export const writeIncludeResponse = (
   buf: Uint8Array,
@@ -2971,8 +2669,8 @@ export const readIncludeResponse = (
 }
 
 export const readIncludeResponseProps = {
-  prop: (buf: Uint8Array, offset: number) => buf[offset],
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 1),
+    prop: (buf: Uint8Array, offset: number) => buf[offset],
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 1),
 }
 
 export const createIncludeResponse = (header: IncludeResponse): Uint8Array => {
@@ -3003,28 +2701,6 @@ export type IncludeResponseMeta = {
 export const IncludeResponseMetaByteSize = 12
 
 export const IncludeResponseMetaAlignOf = 16
-
-export const packIncludeResponseMeta = (obj: IncludeResponseMeta): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.prop) & 255n) << 8n
-  val |= (BigInt(obj.lang) & 255n) << 16n
-  val |= ((obj.compressed ? 1n : 0n) & 1n) << 24n
-  val |= (BigInt(obj.crc32) & 4294967295n) << 32n
-  val |= (BigInt(obj.size) & 4294967295n) << 64n
-  return val
-}
-
-export const unpackIncludeResponseMeta = (val: bigint): IncludeResponseMeta => {
-  return {
-    op: Number((val >> 0n) & 255n) as ReadOpEnum,
-    prop: Number((val >> 8n) & 255n),
-    lang: Number((val >> 16n) & 255n) as LangCodeEnum,
-    compressed: ((val >> 24n) & 1n) === 1n,
-    crc32: Number((val >> 32n) & 4294967295n),
-    size: Number((val >> 64n) & 4294967295n),
-  }
-}
 
 export const writeIncludeResponseMeta = (
   buf: Uint8Array,
@@ -3074,10 +2750,10 @@ export const readIncludeResponseMeta = (
   offset: number,
 ): IncludeResponseMeta => {
   const value: IncludeResponseMeta = {
-    op: buf[offset] as ReadOpEnum,
+    op: (buf[offset]) as ReadOpEnum,
     prop: buf[offset + 1],
-    lang: buf[offset + 2] as LangCodeEnum,
-    compressed: ((buf[offset + 3] >>> 0) & 1) === 1,
+    lang: (buf[offset + 2]) as LangCodeEnum,
+    compressed: (((buf[offset + 3] >>> 0) & 1)) === 1,
     crc32: readUint32(buf, offset + 4),
     size: readUint32(buf, offset + 8),
   }
@@ -3085,18 +2761,15 @@ export const readIncludeResponseMeta = (
 }
 
 export const readIncludeResponseMetaProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as ReadOpEnum,
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  lang: (buf: Uint8Array, offset: number) => buf[offset + 2] as LangCodeEnum,
-  compressed: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 3] >>> 0) & 1) === 1,
-  crc32: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 4),
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 8),
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ReadOpEnum,
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    lang: (buf: Uint8Array, offset: number) => (buf[offset + 2]) as LangCodeEnum,
+    compressed: (buf: Uint8Array, offset: number) => (((buf[offset + 3] >>> 0) & 1)) === 1,
+    crc32: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 4),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 8),
 }
 
-export const createIncludeResponseMeta = (
-  header: IncludeResponseMeta,
-): Uint8Array => {
+export const createIncludeResponseMeta = (header: IncludeResponseMeta): Uint8Array => {
   const buffer = new Uint8Array(IncludeResponseMetaByteSize)
   writeIncludeResponseMeta(buffer, header, 0)
   return buffer
@@ -3128,24 +2801,6 @@ export type SubscriptionHeader = {
 export const SubscriptionHeaderByteSize = 5
 
 export const SubscriptionHeaderAlignOf = 8
-
-export const packSubscriptionHeader = (obj: SubscriptionHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.typeId) & 65535n) << 8n
-  val |= (BigInt(obj.fieldsLen) & 255n) << 24n
-  val |= (BigInt(obj.partialLen) & 255n) << 32n
-  return val
-}
-
-export const unpackSubscriptionHeader = (val: bigint): SubscriptionHeader => {
-  return {
-    op: Number((val >> 0n) & 255n) as OpTypeEnum,
-    typeId: Number((val >> 8n) & 65535n) as TypeId,
-    fieldsLen: Number((val >> 24n) & 255n),
-    partialLen: Number((val >> 32n) & 255n),
-  }
-}
 
 export const writeSubscriptionHeader = (
   buf: Uint8Array,
@@ -3183,8 +2838,8 @@ export const readSubscriptionHeader = (
   offset: number,
 ): SubscriptionHeader => {
   const value: SubscriptionHeader = {
-    op: buf[offset] as OpTypeEnum,
-    typeId: readUint16(buf, offset + 1) as TypeId,
+    op: (buf[offset]) as OpTypeEnum,
+    typeId: (readUint16(buf, offset + 1)) as TypeId,
     fieldsLen: buf[offset + 3],
     partialLen: buf[offset + 4],
   }
@@ -3192,16 +2847,13 @@ export const readSubscriptionHeader = (
 }
 
 export const readSubscriptionHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as OpTypeEnum,
-  typeId: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 1) as TypeId,
-  fieldsLen: (buf: Uint8Array, offset: number) => buf[offset + 3],
-  partialLen: (buf: Uint8Array, offset: number) => buf[offset + 4],
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as OpTypeEnum,
+    typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 1)) as TypeId,
+    fieldsLen: (buf: Uint8Array, offset: number) => buf[offset + 3],
+    partialLen: (buf: Uint8Array, offset: number) => buf[offset + 4],
 }
 
-export const createSubscriptionHeader = (
-  header: SubscriptionHeader,
-): Uint8Array => {
+export const createSubscriptionHeader = (header: SubscriptionHeader): Uint8Array => {
   const buffer = new Uint8Array(SubscriptionHeaderByteSize)
   writeSubscriptionHeader(buffer, header, 0)
   return buffer
@@ -3239,44 +2891,6 @@ export type QueryHeader = {
 export const QueryHeaderByteSize = 28
 
 export const QueryHeaderAlignOf = 16
-
-export const packQueryHeader = (obj: QueryHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.prop) & 255n) << 8n
-  val |= (BigInt(obj.typeId) & 65535n) << 16n
-  val |= (BigInt(obj.edgeTypeId) & 65535n) << 32n
-  val |= (BigInt(obj.offset) & 4294967295n) << 48n
-  val |= (BigInt(obj.limit) & 4294967295n) << 80n
-  val |= (BigInt(obj.filterSize) & 65535n) << 112n
-  val |= (BigInt(obj.searchSize) & 65535n) << 128n
-  val |= (BigInt(obj.edgeSize) & 65535n) << 144n
-  val |= (BigInt(obj.edgeFilterSize) & 65535n) << 160n
-  val |= (BigInt(obj.includeSize) & 65535n) << 176n
-  val |= (BigInt(obj.iteratorType) & 255n) << 192n
-  val |= (BigInt(obj.size) & 65535n) << 200n
-  val |= ((obj.sort ? 1n : 0n) & 1n) << 216n
-  return val
-}
-
-export const unpackQueryHeader = (val: bigint): QueryHeader => {
-  return {
-    op: Number((val >> 0n) & 255n) as QueryTypeEnum,
-    prop: Number((val >> 8n) & 255n),
-    typeId: Number((val >> 16n) & 65535n) as TypeId,
-    edgeTypeId: Number((val >> 32n) & 65535n) as TypeId,
-    offset: Number((val >> 48n) & 4294967295n),
-    limit: Number((val >> 80n) & 4294967295n),
-    filterSize: Number((val >> 112n) & 65535n),
-    searchSize: Number((val >> 128n) & 65535n),
-    edgeSize: Number((val >> 144n) & 65535n),
-    edgeFilterSize: Number((val >> 160n) & 65535n),
-    includeSize: Number((val >> 176n) & 65535n),
-    iteratorType: Number((val >> 192n) & 255n) as QueryIteratorTypeEnum,
-    size: Number((val >> 200n) & 65535n),
-    sort: ((val >> 216n) & 1n) === 1n,
-  }
-}
 
 export const writeQueryHeader = (
   buf: Uint8Array,
@@ -3350,11 +2964,7 @@ export const writeQueryHeaderProps = {
   includeSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 22)
   },
-  iteratorType: (
-    buf: Uint8Array,
-    value: QueryIteratorTypeEnum,
-    offset: number,
-  ) => {
+  iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
     buf[offset + 24] = Number(value)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
@@ -3370,10 +2980,10 @@ export const readQueryHeader = (
   offset: number,
 ): QueryHeader => {
   const value: QueryHeader = {
-    op: buf[offset] as QueryTypeEnum,
+    op: (buf[offset]) as QueryTypeEnum,
     prop: buf[offset + 1],
-    typeId: readUint16(buf, offset + 2) as TypeId,
-    edgeTypeId: readUint16(buf, offset + 4) as TypeId,
+    typeId: (readUint16(buf, offset + 2)) as TypeId,
+    edgeTypeId: (readUint16(buf, offset + 4)) as TypeId,
     offset: readUint32(buf, offset + 6),
     limit: readUint32(buf, offset + 10),
     filterSize: readUint16(buf, offset + 14),
@@ -3381,34 +2991,28 @@ export const readQueryHeader = (
     edgeSize: readUint16(buf, offset + 18),
     edgeFilterSize: readUint16(buf, offset + 20),
     includeSize: readUint16(buf, offset + 22),
-    iteratorType: buf[offset + 24] as QueryIteratorTypeEnum,
+    iteratorType: (buf[offset + 24]) as QueryIteratorTypeEnum,
     size: readUint16(buf, offset + 25),
-    sort: ((buf[offset + 27] >>> 0) & 1) === 1,
+    sort: (((buf[offset + 27] >>> 0) & 1)) === 1,
   }
   return value
 }
 
 export const readQueryHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as QueryTypeEnum,
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  typeId: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 2) as TypeId,
-  edgeTypeId: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 4) as TypeId,
-  offset: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 6),
-  limit: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 10),
-  filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 14),
-  searchSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
-  edgeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 18),
-  edgeFilterSize: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 20),
-  includeSize: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 22),
-  iteratorType: (buf: Uint8Array, offset: number) =>
-    buf[offset + 24] as QueryIteratorTypeEnum,
-  size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 25),
-  sort: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 27] >>> 0) & 1) === 1,
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as QueryTypeEnum,
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 2)) as TypeId,
+    edgeTypeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 4)) as TypeId,
+    offset: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 6),
+    limit: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 10),
+    filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 14),
+    searchSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
+    edgeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 18),
+    edgeFilterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 20),
+    includeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 22),
+    iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 24]) as QueryIteratorTypeEnum,
+    size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 25),
+    sort: (buf: Uint8Array, offset: number) => (((buf[offset + 27] >>> 0) & 1)) === 1,
 }
 
 export const createQueryHeader = (header: QueryHeader): Uint8Array => {
@@ -3454,30 +3058,6 @@ export type QueryHeaderSingle = {
 export const QueryHeaderSingleByteSize = 14
 
 export const QueryHeaderSingleAlignOf = 16
-
-export const packQueryHeaderSingle = (obj: QueryHeaderSingle): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.typeId) & 65535n) << 8n
-  val |= (BigInt(obj.prop) & 255n) << 24n
-  val |= (BigInt(obj.id) & 4294967295n) << 32n
-  val |= (BigInt(obj.filterSize) & 65535n) << 64n
-  val |= (BigInt(obj.includeSize) & 65535n) << 80n
-  val |= (BigInt(obj.aliasSize) & 65535n) << 96n
-  return val
-}
-
-export const unpackQueryHeaderSingle = (val: bigint): QueryHeaderSingle => {
-  return {
-    op: Number((val >> 0n) & 255n) as QueryTypeEnum,
-    typeId: Number((val >> 8n) & 65535n) as TypeId,
-    prop: Number((val >> 24n) & 255n),
-    id: Number((val >> 32n) & 4294967295n),
-    filterSize: Number((val >> 64n) & 65535n),
-    includeSize: Number((val >> 80n) & 65535n),
-    aliasSize: Number((val >> 96n) & 65535n),
-  }
-}
 
 export const writeQueryHeaderSingle = (
   buf: Uint8Array,
@@ -3530,8 +3110,8 @@ export const readQueryHeaderSingle = (
   offset: number,
 ): QueryHeaderSingle => {
   const value: QueryHeaderSingle = {
-    op: buf[offset] as QueryTypeEnum,
-    typeId: readUint16(buf, offset + 1) as TypeId,
+    op: (buf[offset]) as QueryTypeEnum,
+    typeId: (readUint16(buf, offset + 1)) as TypeId,
     prop: buf[offset + 3],
     id: readUint32(buf, offset + 4),
     filterSize: readUint16(buf, offset + 8),
@@ -3542,20 +3122,16 @@ export const readQueryHeaderSingle = (
 }
 
 export const readQueryHeaderSingleProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as QueryTypeEnum,
-  typeId: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 1) as TypeId,
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 3],
-  id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 4),
-  filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
-  includeSize: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 10),
-  aliasSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 12),
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as QueryTypeEnum,
+    typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 1)) as TypeId,
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 3],
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 4),
+    filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
+    includeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 10),
+    aliasSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 12),
 }
 
-export const createQueryHeaderSingle = (
-  header: QueryHeaderSingle,
-): Uint8Array => {
+export const createQueryHeaderSingle = (header: QueryHeaderSingle): Uint8Array => {
   const buffer = new Uint8Array(QueryHeaderSingleByteSize)
   writeQueryHeaderSingle(buffer, header, 0)
   return buffer
@@ -3588,32 +3164,6 @@ export type QueryHeaderSingleReference = {
 export const QueryHeaderSingleReferenceByteSize = 10
 
 export const QueryHeaderSingleReferenceAlignOf = 16
-
-export const packQueryHeaderSingleReference = (
-  obj: QueryHeaderSingleReference,
-): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.prop) & 255n) << 8n
-  val |= (BigInt(obj.typeId) & 65535n) << 16n
-  val |= (BigInt(obj.edgeTypeId) & 65535n) << 32n
-  val |= (BigInt(obj.edgeSize) & 65535n) << 48n
-  val |= (BigInt(obj.includeSize) & 65535n) << 64n
-  return val
-}
-
-export const unpackQueryHeaderSingleReference = (
-  val: bigint,
-): QueryHeaderSingleReference => {
-  return {
-    op: Number((val >> 0n) & 255n) as QueryTypeEnum,
-    prop: Number((val >> 8n) & 255n),
-    typeId: Number((val >> 16n) & 65535n) as TypeId,
-    edgeTypeId: Number((val >> 32n) & 65535n) as TypeId,
-    edgeSize: Number((val >> 48n) & 65535n),
-    includeSize: Number((val >> 64n) & 65535n),
-  }
-}
 
 export const writeQueryHeaderSingleReference = (
   buf: Uint8Array,
@@ -3661,10 +3211,10 @@ export const readQueryHeaderSingleReference = (
   offset: number,
 ): QueryHeaderSingleReference => {
   const value: QueryHeaderSingleReference = {
-    op: buf[offset] as QueryTypeEnum,
+    op: (buf[offset]) as QueryTypeEnum,
     prop: buf[offset + 1],
-    typeId: readUint16(buf, offset + 2) as TypeId,
-    edgeTypeId: readUint16(buf, offset + 4) as TypeId,
+    typeId: (readUint16(buf, offset + 2)) as TypeId,
+    edgeTypeId: (readUint16(buf, offset + 4)) as TypeId,
     edgeSize: readUint16(buf, offset + 6),
     includeSize: readUint16(buf, offset + 8),
   }
@@ -3672,19 +3222,15 @@ export const readQueryHeaderSingleReference = (
 }
 
 export const readQueryHeaderSingleReferenceProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as QueryTypeEnum,
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
-  typeId: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 2) as TypeId,
-  edgeTypeId: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 4) as TypeId,
-  edgeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 6),
-  includeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as QueryTypeEnum,
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 2)) as TypeId,
+    edgeTypeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 4)) as TypeId,
+    edgeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 6),
+    includeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
 }
 
-export const createQueryHeaderSingleReference = (
-  header: QueryHeaderSingleReference,
-): Uint8Array => {
+export const createQueryHeaderSingleReference = (header: QueryHeaderSingleReference): Uint8Array => {
   const buffer = new Uint8Array(QueryHeaderSingleReferenceByteSize)
   writeQueryHeaderSingleReference(buffer, header, 0)
   return buffer
@@ -3736,8 +3282,7 @@ export const VectorBaseTypeInverse = {
   float32, 
   float64 
  */
-export type VectorBaseTypeEnum =
-  (typeof VectorBaseType)[keyof typeof VectorBaseType]
+export type VectorBaseTypeEnum = (typeof VectorBaseType)[keyof typeof VectorBaseType]
 
 export type AggHeader = {
   op: QueryTypeEnum
@@ -3757,40 +3302,6 @@ export type AggHeader = {
 export const AggHeaderByteSize = 21
 
 export const AggHeaderAlignOf = 16
-
-export const packAggHeader = (obj: AggHeader): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.op) & 255n) << 0n
-  val |= (BigInt(obj.typeId) & 65535n) << 8n
-  val |= (BigInt(obj.offset) & 4294967295n) << 24n
-  val |= (BigInt(obj.limit) & 4294967295n) << 56n
-  val |= (BigInt(obj.filterSize) & 65535n) << 88n
-  val |= (BigInt(obj.iteratorType) & 255n) << 104n
-  val |= (BigInt(obj.size) & 65535n) << 112n
-  val |= (BigInt(obj.resultsSize) & 65535n) << 128n
-  val |= (BigInt(obj.accumulatorSize) & 65535n) << 144n
-  val |= ((obj.sort ? 1n : 0n) & 1n) << 160n
-  val |= ((obj.hasGroupBy ? 1n : 0n) & 1n) << 161n
-  val |= ((obj.isSamplingSet ? 1n : 0n) & 1n) << 162n
-  return val
-}
-
-export const unpackAggHeader = (val: bigint): AggHeader => {
-  return {
-    op: Number((val >> 0n) & 255n) as QueryTypeEnum,
-    typeId: Number((val >> 8n) & 65535n) as TypeId,
-    offset: Number((val >> 24n) & 4294967295n),
-    limit: Number((val >> 56n) & 4294967295n),
-    filterSize: Number((val >> 88n) & 65535n),
-    iteratorType: Number((val >> 104n) & 255n) as QueryIteratorTypeEnum,
-    size: Number((val >> 112n) & 65535n),
-    resultsSize: Number((val >> 128n) & 65535n),
-    accumulatorSize: Number((val >> 144n) & 65535n),
-    sort: ((val >> 160n) & 1n) === 1n,
-    hasGroupBy: ((val >> 161n) & 1n) === 1n,
-    isSamplingSet: ((val >> 162n) & 1n) === 1n,
-  }
-}
 
 export const writeAggHeader = (
   buf: Uint8Array,
@@ -3840,11 +3351,7 @@ export const writeAggHeaderProps = {
   filterSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 11)
   },
-  iteratorType: (
-    buf: Uint8Array,
-    value: QueryIteratorTypeEnum,
-    offset: number,
-  ) => {
+  iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
     buf[offset + 13] = Number(value)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
@@ -3867,44 +3374,40 @@ export const writeAggHeaderProps = {
   },
 }
 
-export const readAggHeader = (buf: Uint8Array, offset: number): AggHeader => {
+export const readAggHeader = (
+  buf: Uint8Array,
+  offset: number,
+): AggHeader => {
   const value: AggHeader = {
-    op: buf[offset] as QueryTypeEnum,
-    typeId: readUint16(buf, offset + 1) as TypeId,
+    op: (buf[offset]) as QueryTypeEnum,
+    typeId: (readUint16(buf, offset + 1)) as TypeId,
     offset: readUint32(buf, offset + 3),
     limit: readUint32(buf, offset + 7),
     filterSize: readUint16(buf, offset + 11),
-    iteratorType: buf[offset + 13] as QueryIteratorTypeEnum,
+    iteratorType: (buf[offset + 13]) as QueryIteratorTypeEnum,
     size: readUint16(buf, offset + 14),
     resultsSize: readUint16(buf, offset + 16),
     accumulatorSize: readUint16(buf, offset + 18),
-    sort: ((buf[offset + 20] >>> 0) & 1) === 1,
-    hasGroupBy: ((buf[offset + 20] >>> 1) & 1) === 1,
-    isSamplingSet: ((buf[offset + 20] >>> 2) & 1) === 1,
+    sort: (((buf[offset + 20] >>> 0) & 1)) === 1,
+    hasGroupBy: (((buf[offset + 20] >>> 1) & 1)) === 1,
+    isSamplingSet: (((buf[offset + 20] >>> 2) & 1)) === 1,
   }
   return value
 }
 
 export const readAggHeaderProps = {
-  op: (buf: Uint8Array, offset: number) => buf[offset] as QueryTypeEnum,
-  typeId: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 1) as TypeId,
-  offset: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 3),
-  limit: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 7),
-  filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 11),
-  iteratorType: (buf: Uint8Array, offset: number) =>
-    buf[offset + 13] as QueryIteratorTypeEnum,
-  size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 14),
-  resultsSize: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 16),
-  accumulatorSize: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 18),
-  sort: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 20] >>> 0) & 1) === 1,
-  hasGroupBy: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 20] >>> 1) & 1) === 1,
-  isSamplingSet: (buf: Uint8Array, offset: number) =>
-    ((buf[offset + 20] >>> 2) & 1) === 1,
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as QueryTypeEnum,
+    typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 1)) as TypeId,
+    offset: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 3),
+    limit: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 7),
+    filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 11),
+    iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 13]) as QueryIteratorTypeEnum,
+    size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 14),
+    resultsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
+    accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 18),
+    sort: (buf: Uint8Array, offset: number) => (((buf[offset + 20] >>> 0) & 1)) === 1,
+    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 20] >>> 1) & 1)) === 1,
+    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 20] >>> 2) & 1)) === 1,
 }
 
 export const createAggHeader = (header: AggHeader): Uint8Array => {
@@ -3943,19 +3446,15 @@ export const addMultiSubscriptionHeaderByteSize = 2
 
 export const addMultiSubscriptionHeaderAlignOf = 2
 
-export const packaddMultiSubscriptionHeader = (
-  obj: addMultiSubscriptionHeader,
-): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.typeId) & 65535n) << 0n
+export const packaddMultiSubscriptionHeader = (obj: addMultiSubscriptionHeader): number => {
+  let val = 0
+  val |= (Number(obj.typeId) & 65535) << 0
   return val
 }
 
-export const unpackaddMultiSubscriptionHeader = (
-  val: bigint,
-): addMultiSubscriptionHeader => {
+export const unpackaddMultiSubscriptionHeader = (val: number): addMultiSubscriptionHeader => {
   return {
-    typeId: Number((val >> 0n) & 65535n),
+    typeId: Number((val >>> 0) & 65535),
   }
 }
 
@@ -3986,12 +3485,10 @@ export const readaddMultiSubscriptionHeader = (
 }
 
 export const readaddMultiSubscriptionHeaderProps = {
-  typeId: (buf: Uint8Array, offset: number) => readUint16(buf, offset),
+    typeId: (buf: Uint8Array, offset: number) => readUint16(buf, offset),
 }
 
-export const createaddMultiSubscriptionHeader = (
-  header: addMultiSubscriptionHeader,
-): Uint8Array => {
+export const createaddMultiSubscriptionHeader = (header: addMultiSubscriptionHeader): Uint8Array => {
   const buffer = new Uint8Array(addMultiSubscriptionHeaderByteSize)
   writeaddMultiSubscriptionHeader(buffer, header, 0)
   return buffer
@@ -4014,19 +3511,15 @@ export const removeMultiSubscriptionHeaderByteSize = 2
 
 export const removeMultiSubscriptionHeaderAlignOf = 2
 
-export const packremoveMultiSubscriptionHeader = (
-  obj: removeMultiSubscriptionHeader,
-): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.typeId) & 65535n) << 0n
+export const packremoveMultiSubscriptionHeader = (obj: removeMultiSubscriptionHeader): number => {
+  let val = 0
+  val |= (Number(obj.typeId) & 65535) << 0
   return val
 }
 
-export const unpackremoveMultiSubscriptionHeader = (
-  val: bigint,
-): removeMultiSubscriptionHeader => {
+export const unpackremoveMultiSubscriptionHeader = (val: number): removeMultiSubscriptionHeader => {
   return {
-    typeId: Number((val >> 0n) & 65535n),
+    typeId: Number((val >>> 0) & 65535),
   }
 }
 
@@ -4057,12 +3550,10 @@ export const readremoveMultiSubscriptionHeader = (
 }
 
 export const readremoveMultiSubscriptionHeaderProps = {
-  typeId: (buf: Uint8Array, offset: number) => readUint16(buf, offset),
+    typeId: (buf: Uint8Array, offset: number) => readUint16(buf, offset),
 }
 
-export const createremoveMultiSubscriptionHeader = (
-  header: removeMultiSubscriptionHeader,
-): Uint8Array => {
+export const createremoveMultiSubscriptionHeader = (header: removeMultiSubscriptionHeader): Uint8Array => {
   const buffer = new Uint8Array(removeMultiSubscriptionHeaderByteSize)
   writeremoveMultiSubscriptionHeader(buffer, header, 0)
   return buffer
@@ -4089,28 +3580,6 @@ export type AggProp = {
 export const AggPropByteSize = 9
 
 export const AggPropAlignOf = 16
-
-export const packAggProp = (obj: AggProp): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.propId) & 255n) << 0n
-  val |= (BigInt(obj.propType) & 255n) << 8n
-  val |= (BigInt(obj.propDefStart) & 65535n) << 16n
-  val |= (BigInt(obj.aggFunction) & 255n) << 32n
-  val |= (BigInt(obj.resultPos) & 65535n) << 40n
-  val |= (BigInt(obj.accumulatorPos) & 65535n) << 56n
-  return val
-}
-
-export const unpackAggProp = (val: bigint): AggProp => {
-  return {
-    propId: Number((val >> 0n) & 255n),
-    propType: Number((val >> 8n) & 255n) as PropTypeEnum,
-    propDefStart: Number((val >> 16n) & 65535n),
-    aggFunction: Number((val >> 32n) & 255n) as AggFunctionEnum,
-    resultPos: Number((val >> 40n) & 65535n),
-    accumulatorPos: Number((val >> 56n) & 65535n),
-  }
-}
 
 export const writeAggProp = (
   buf: Uint8Array,
@@ -4153,12 +3622,15 @@ export const writeAggPropProps = {
   },
 }
 
-export const readAggProp = (buf: Uint8Array, offset: number): AggProp => {
+export const readAggProp = (
+  buf: Uint8Array,
+  offset: number,
+): AggProp => {
   const value: AggProp = {
     propId: buf[offset],
-    propType: buf[offset + 1] as PropTypeEnum,
+    propType: (buf[offset + 1]) as PropTypeEnum,
     propDefStart: readUint16(buf, offset + 2),
-    aggFunction: buf[offset + 4] as AggFunctionEnum,
+    aggFunction: (buf[offset + 4]) as AggFunctionEnum,
     resultPos: readUint16(buf, offset + 5),
     accumulatorPos: readUint16(buf, offset + 7),
   }
@@ -4166,16 +3638,12 @@ export const readAggProp = (buf: Uint8Array, offset: number): AggProp => {
 }
 
 export const readAggPropProps = {
-  propId: (buf: Uint8Array, offset: number) => buf[offset],
-  propType: (buf: Uint8Array, offset: number) =>
-    buf[offset + 1] as PropTypeEnum,
-  propDefStart: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 2),
-  aggFunction: (buf: Uint8Array, offset: number) =>
-    buf[offset + 4] as AggFunctionEnum,
-  resultPos: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 5),
-  accumulatorPos: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 7),
+    propId: (buf: Uint8Array, offset: number) => buf[offset],
+    propType: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as PropTypeEnum,
+    propDefStart: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 2),
+    aggFunction: (buf: Uint8Array, offset: number) => (buf[offset + 4]) as AggFunctionEnum,
+    resultPos: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 5),
+    accumulatorPos: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 7),
 }
 
 export const createAggProp = (header: AggProp): Uint8Array => {
@@ -4210,28 +3678,6 @@ export type GroupByKeyProp = {
 export const GroupByKeyPropByteSize = 11
 
 export const GroupByKeyPropAlignOf = 16
-
-export const packGroupByKeyProp = (obj: GroupByKeyProp): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.propId) & 255n) << 0n
-  val |= (BigInt(obj.propType) & 255n) << 8n
-  val |= (BigInt(obj.propDefStart) & 65535n) << 16n
-  val |= (BigInt(obj.stepType) & 255n) << 32n
-  val |= (BigInt(obj.stepRange) & 4294967295n) << 40n
-  val |= (BigInt(obj.timezone) & 65535n) << 72n
-  return val
-}
-
-export const unpackGroupByKeyProp = (val: bigint): GroupByKeyProp => {
-  return {
-    propId: Number((val >> 0n) & 255n),
-    propType: Number((val >> 8n) & 255n) as PropTypeEnum,
-    propDefStart: Number((val >> 16n) & 65535n),
-    stepType: Number((val >> 32n) & 255n),
-    stepRange: Number((val >> 40n) & 4294967295n),
-    timezone: Number((val >> 72n) & 65535n),
-  }
-}
 
 export const writeGroupByKeyProp = (
   buf: Uint8Array,
@@ -4280,7 +3726,7 @@ export const readGroupByKeyProp = (
 ): GroupByKeyProp => {
   const value: GroupByKeyProp = {
     propId: buf[offset],
-    propType: buf[offset + 1] as PropTypeEnum,
+    propType: (buf[offset + 1]) as PropTypeEnum,
     propDefStart: readUint16(buf, offset + 2),
     stepType: buf[offset + 4],
     stepRange: readUint32(buf, offset + 5),
@@ -4290,14 +3736,12 @@ export const readGroupByKeyProp = (
 }
 
 export const readGroupByKeyPropProps = {
-  propId: (buf: Uint8Array, offset: number) => buf[offset],
-  propType: (buf: Uint8Array, offset: number) =>
-    buf[offset + 1] as PropTypeEnum,
-  propDefStart: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 2),
-  stepType: (buf: Uint8Array, offset: number) => buf[offset + 4],
-  stepRange: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
-  timezone: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 9),
+    propId: (buf: Uint8Array, offset: number) => buf[offset],
+    propType: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as PropTypeEnum,
+    propDefStart: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 2),
+    stepType: (buf: Uint8Array, offset: number) => buf[offset + 4],
+    stepRange: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
+    timezone: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 9),
 }
 
 export const createGroupByKeyProp = (header: GroupByKeyProp): Uint8Array => {
@@ -4406,8 +3850,7 @@ export const FilterOpCompareInverse = {
   selectLargeRefsEdge, 
   nextOrIndex 
  */
-export type FilterOpCompareEnum =
-  (typeof FilterOpCompare)[keyof typeof FilterOpCompare]
+export type FilterOpCompareEnum = (typeof FilterOpCompare)[keyof typeof FilterOpCompare]
 
 export type FilterOp = {
   prop: PropTypeEnum
@@ -4418,17 +3861,17 @@ export const FilterOpByteSize = 2
 
 export const FilterOpAlignOf = 2
 
-export const packFilterOp = (obj: FilterOp): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.prop) & 255n) << 0n
-  val |= (BigInt(obj.compare) & 255n) << 8n
+export const packFilterOp = (obj: FilterOp): number => {
+  let val = 0
+  val |= (Number(obj.prop) & 255) << 0
+  val |= (Number(obj.compare) & 255) << 8
   return val
 }
 
-export const unpackFilterOp = (val: bigint): FilterOp => {
+export const unpackFilterOp = (val: number): FilterOp => {
   return {
-    prop: Number((val >> 0n) & 255n) as PropTypeEnum,
-    compare: Number((val >> 8n) & 255n) as FilterOpCompareEnum,
+    prop: ((val >>> 0) & 255) as PropTypeEnum,
+    compare: ((val >>> 8) & 255) as FilterOpCompareEnum,
   }
 }
 
@@ -4453,18 +3896,20 @@ export const writeFilterOpProps = {
   },
 }
 
-export const readFilterOp = (buf: Uint8Array, offset: number): FilterOp => {
+export const readFilterOp = (
+  buf: Uint8Array,
+  offset: number,
+): FilterOp => {
   const value: FilterOp = {
-    prop: buf[offset] as PropTypeEnum,
-    compare: buf[offset + 1] as FilterOpCompareEnum,
+    prop: (buf[offset]) as PropTypeEnum,
+    compare: (buf[offset + 1]) as FilterOpCompareEnum,
   }
   return value
 }
 
 export const readFilterOpProps = {
-  prop: (buf: Uint8Array, offset: number) => buf[offset] as PropTypeEnum,
-  compare: (buf: Uint8Array, offset: number) =>
-    buf[offset + 1] as FilterOpCompareEnum,
+    prop: (buf: Uint8Array, offset: number) => (buf[offset]) as PropTypeEnum,
+    compare: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as FilterOpCompareEnum,
 }
 
 export const createFilterOp = (header: FilterOp): Uint8Array => {
@@ -4496,30 +3941,6 @@ export type FilterCondition = {
 export const FilterConditionByteSize = 19
 
 export const FilterConditionAlignOf = 16
-
-export const packFilterCondition = (obj: FilterCondition): bigint => {
-  let val = 0n
-  val |= (packFilterOp(obj.op) & 65535n) << 0n
-  val |= (BigInt(obj.size) & 4294967295n) << 16n
-  val |= (BigInt(obj.prop) & 255n) << 48n
-  val |= (BigInt(obj.start) & 65535n) << 56n
-  val |= (BigInt(obj.len) & 255n) << 72n
-  val |= (BigInt(obj.fieldSchema) & 18446744073709551615n) << 80n
-  val |= (BigInt(obj.offset) & 255n) << 144n
-  return val
-}
-
-export const unpackFilterCondition = (val: bigint): FilterCondition => {
-  return {
-    op: unpackFilterOp((val >> 0n) & 65535n),
-    size: Number((val >> 16n) & 4294967295n),
-    prop: Number((val >> 48n) & 255n),
-    start: Number((val >> 56n) & 65535n),
-    len: Number((val >> 72n) & 255n),
-    fieldSchema: Number((val >> 80n) & 18446744073709551615n),
-    offset: Number((val >> 144n) & 255n),
-  }
-}
 
 export const writeFilterCondition = (
   buf: Uint8Array,
@@ -4572,7 +3993,7 @@ export const readFilterCondition = (
   offset: number,
 ): FilterCondition => {
   const value: FilterCondition = {
-    op: unpackFilterOp(BigInt(readUint16(buf, offset))),
+    op: unpackFilterOp(readUint16(buf, offset)),
     size: readUint32(buf, offset + 2),
     prop: buf[offset + 6],
     start: readUint16(buf, offset + 7),
@@ -4584,15 +4005,13 @@ export const readFilterCondition = (
 }
 
 export const readFilterConditionProps = {
-  op: (buf: Uint8Array, offset: number) =>
-    unpackFilterOp(BigInt(readUint16(buf, offset))),
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
-  prop: (buf: Uint8Array, offset: number) => buf[offset + 6],
-  start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 7),
-  len: (buf: Uint8Array, offset: number) => buf[offset + 9],
-  fieldSchema: (buf: Uint8Array, offset: number) =>
-    readUint64(buf, offset + 10),
-  offset: (buf: Uint8Array, offset: number) => buf[offset + 18],
+    op: (buf: Uint8Array, offset: number) => unpackFilterOp(readUint16(buf, offset)),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
+    prop: (buf: Uint8Array, offset: number) => buf[offset + 6],
+    start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 7),
+    len: (buf: Uint8Array, offset: number) => buf[offset + 9],
+    fieldSchema: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 10),
+    offset: (buf: Uint8Array, offset: number) => buf[offset + 18],
 }
 
 export const createFilterCondition = (header: FilterCondition): Uint8Array => {
@@ -4625,22 +4044,6 @@ export type FilterSelect = {
 export const FilterSelectByteSize = 14
 
 export const FilterSelectAlignOf = 16
-
-export const packFilterSelect = (obj: FilterSelect): bigint => {
-  let val = 0n
-  val |= (BigInt(obj.size) & 4294967295n) << 0n
-  val |= (BigInt(obj.typeEntry) & 18446744073709551615n) << 32n
-  val |= (BigInt(obj.typeId) & 65535n) << 96n
-  return val
-}
-
-export const unpackFilterSelect = (val: bigint): FilterSelect => {
-  return {
-    size: Number((val >> 0n) & 4294967295n),
-    typeEntry: Number((val >> 32n) & 18446744073709551615n),
-    typeId: Number((val >> 96n) & 65535n) as TypeId,
-  }
-}
 
 export const writeFilterSelect = (
   buf: Uint8Array,
@@ -4675,16 +4078,15 @@ export const readFilterSelect = (
   const value: FilterSelect = {
     size: readUint32(buf, offset),
     typeEntry: readUint64(buf, offset + 4),
-    typeId: readUint16(buf, offset + 12) as TypeId,
+    typeId: (readUint16(buf, offset + 12)) as TypeId,
   }
   return value
 }
 
 export const readFilterSelectProps = {
-  size: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
-  typeEntry: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 4),
-  typeId: (buf: Uint8Array, offset: number) =>
-    readUint16(buf, offset + 12) as TypeId,
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset),
+    typeEntry: (buf: Uint8Array, offset: number) => readUint64(buf, offset + 4),
+    typeId: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 12)) as TypeId,
 }
 
 export const createFilterSelect = (header: FilterSelect): Uint8Array => {
@@ -4703,3 +4105,4 @@ export const pushFilterSelect = (
   buf.pushU16(Number(header.typeId))
   return index
 }
+

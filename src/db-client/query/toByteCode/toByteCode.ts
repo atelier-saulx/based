@@ -232,12 +232,13 @@ export const queryToBuffer = (query: BasedDbQuery) => {
   const def = query.def!
   const bufs = defToBuffer(query.db, def)
   bufs.push(schemaChecksum(def))
-  const queryIdSize = 4
+  const queryIdSize = 4 // prob want 8 here...
   const totalByteLength = byteSize(bufs) + queryIdSize
   const res = new Uint8Array(totalByteLength)
   const queryIdTarget = new Uint8Array(4)
   bufs.unshift(queryIdTarget)
   combineIntermediateResults(res, 0, bufs)
+  // maybe make these ids 8 bytes seems to short...
   const queryId = crc32(res)
   writeUint32(res, queryId, 0)
   // debugBuffer(res)

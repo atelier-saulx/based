@@ -227,6 +227,15 @@ export class AutoSizedUint8Array {
     if (requiredEnd > this.length) this.length = requiredEnd
   }
 
+  setU64(value: number, offset: number): void {
+    const requiredEnd = offset + 8
+    if (requiredEnd > this.data.length) {
+      this.ensureCapacity(requiredEnd)
+    }
+    writeUint64(this.data, value, offset)
+    if (requiredEnd > this.length) this.length = requiredEnd
+  }
+
   reserveU32(): number {
     const index = this.length
     const requiredEnd = index + 4

@@ -264,6 +264,7 @@ export class QueryBranch<T> {
 
   groupBy(field: string, step?: StepInput): T {
     if (this.queryCommands) {
+      // query def
       this.queryCommands.push({
         method: 'groupBy',
         args: [field, step],

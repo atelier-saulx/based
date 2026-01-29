@@ -386,14 +386,10 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
 
     structs[name] = { isPacked, bitSize: totalBits }
 
-    if (isPacked) {
-      // Generate pack/unpack helpers for this packed struct (BigInt based for >32 bit support)
-      // Pack: takes Object -> returns bigint
-      // Unpack: takes bigint -> returns Object
-
+    if (isPacked && totalBits <= 32) {
       // Pack
-      output += `export const pack${name} = (obj: ${name}): bigint => {\n`
-      output += `  let val = 0n\n`
+      output += `export const pack${name} = (obj: ${name}): number => {\n`
+      output += `  let val = 0\n`
       let currentBit = 0
       fields.forEach((f) => {
         if (f.isPadding) {
@@ -402,22 +398,22 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
         }
         let valExpr = `obj.${f.name}`
         if (f.isBoolean) {
-          valExpr = `(${valExpr} ? 1n : 0n)`
+          valExpr = `(${valExpr} ? 1 : 0)`
         } else if (f.isStruct) {
           valExpr = `pack${f.type}(${valExpr})`
         } else {
-          // Cast to BigInt
-          valExpr = `BigInt(${valExpr})`
+          valExpr = `Number(${valExpr})`
         }
 
-        output += `  val |= (${valExpr} & ${(1n << BigInt(f.bitSize)) - 1n}n) << ${currentBit}n\n`
+        const mask = f.bitSize === 32 ? -1 : (1 << f.bitSize) - 1
+        output += `  val |= (${valExpr} & ${mask}) << ${currentBit}\n`
         currentBit += f.bitSize
       })
       output += `  return val\n`
       output += `}\n\n`
 
       // Unpack
-      output += `export const unpack${name} = (val: bigint): ${name} => {\n`
+      output += `export const unpack${name} = (val: number): ${name} => {\n`
       output += `  return {\n`
       currentBit = 0
       fields.forEach((f) => {
@@ -426,18 +422,20 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
           return
         }
 
-        let readExpr = `(val >> ${currentBit}n) & ${(1n << BigInt(f.bitSize)) - 1n}n`
+        const mask = f.bitSize === 32 ? -1 : (1 << f.bitSize) - 1
+        let readExpr = `(val >>> ${currentBit}) & ${mask}`
 
         if (f.isBoolean) {
-          readExpr = `(${readExpr}) === 1n`
+          readExpr = `(${readExpr}) === 1`
         } else if (f.isStruct) {
           readExpr = `unpack${f.type}(${readExpr})`
         } else {
-          readExpr = `Number(${readExpr})`
           if (f.type.endsWith('Enum')) {
             readExpr = `(${readExpr}) as ${f.type}`
           } else if (f.type === 'TypeId') {
             readExpr = `(${readExpr}) as TypeId`
+          } else {
+            readExpr = `Number(${readExpr})`
           }
         }
 
@@ -750,7 +748,7 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
           else if (sBits <= 32) readExpr = `readUint32(buf, ${offStr})`
           else readExpr = `readUint64(buf, ${offStr})`
 
-          readExpr = `unpack${prim}(BigInt(${readExpr}))`
+          readExpr = `unpack${prim}(${readExpr})`
         } else {
           switch (prim) {
             case 'u8':
@@ -860,7 +858,7 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
         }
 
         if (f.isStruct) {
-          readExpr = `unpack${f.type}(BigInt(${readExpr}))`
+          readExpr = `unpack${f.type}(${readExpr})`
         } else if (f.type.endsWith('Enum')) {
           readExpr = `(${readExpr}) as ${f.type}`
         } else if (f.type === 'TypeId') {
@@ -904,7 +902,7 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
           else if (sBits <= 32) readExpr = `readUint32(buf, ${offStr})`
           else readExpr = `readUint64(buf, ${offStr})`
 
-          readExpr = `unpack${prim}(BigInt(${readExpr}))`
+          readExpr = `unpack${prim}(${readExpr})`
         } else {
           switch (prim) {
             case 'u8':
@@ -1012,7 +1010,7 @@ import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'\
         }
 
         if (f.isStruct) {
-          readExpr = `unpack${f.type}(BigInt(${readExpr}))`
+          readExpr = `unpack${f.type}(${readExpr})`
         } else if (f.type.endsWith('Enum')) {
           readExpr = `(${readExpr}) as ${f.type}`
         } else if (f.type === 'TypeId') {
