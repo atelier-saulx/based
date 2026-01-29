@@ -1,5 +1,14 @@
 import { writeUint32 } from '../utils/index.js'
-import { createSelvaSchemaColvec, createSelvaSchemaRef, createSelvaSchemaString, createSelvaSchemaText, LangCode, PropType, PropTypeEnum, writeSelvaSchemaMicroBuffer } from '../zigTsExports.js'
+import {
+  createSelvaSchemaColvec,
+  createSelvaSchemaRef,
+  createSelvaSchemaString,
+  createSelvaSchemaText,
+  LangCode,
+  PropType,
+  PropTypeEnum,
+  writeSelvaSchemaMicroBuffer,
+} from '../zigTsExports.js'
 import {
   EMPTY_MICRO_BUFFER,
   VECTOR_BASE_TYPE_SIZE_MAP,
@@ -74,11 +83,15 @@ const propDefBuffer = (
 
   if (prop.len && (type === PropType.microBuffer || type === PropType.vector)) {
     const buf = new Uint8Array(4)
-    writeSelvaSchemaMicroBuffer(buf, {
-      type: selvaType,
-      len: prop.len,
-      hasDefault: ~~!!prop.default,
-    }, 0)
+    writeSelvaSchemaMicroBuffer(
+      buf,
+      {
+        type: selvaType,
+        len: prop.len,
+        hasDefault: ~~!!prop.default,
+      },
+      0,
+    )
 
     if (prop.default) {
       return [...buf, ...prop.default]
@@ -87,22 +100,26 @@ const propDefBuffer = (
     }
   } else if (prop.len && type === PropType.colVec) {
     const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
-    return [...createSelvaSchemaColvec({
-      type: selvaType,
-      vecLen: prop.len / baseSize,
-      compSize: baseSize,
-      hasDefault: 0,
-    })] // TODO Add support for default
+    return [
+      ...createSelvaSchemaColvec({
+        type: selvaType,
+        vecLen: prop.len / baseSize,
+        compSize: baseSize,
+        hasDefault: 0,
+      }),
+    ] // TODO Add support for default
   } else if (type === PropType.reference || type === PropType.references) {
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName!]
-    return [...createSelvaSchemaRef({
-      type: selvaType,
-      flags: makeEdgeConstraintFlags(prop),
-      dstNodeType: dstType.id,
-      inverseField: prop.inversePropNumber!,
-      edgeNodeType: prop.edgeNodeTypeId ?? 0,
-      capped: prop.referencesCapped ?? 0
-    })]
+    return [
+      ...createSelvaSchemaRef({
+        type: selvaType,
+        flags: makeEdgeConstraintFlags(prop),
+        dstNodeType: dstType.id,
+        inverseField: prop.inversePropNumber!,
+        edgeNodeType: prop.edgeNodeTypeId ?? 0,
+        capped: prop.referencesCapped ?? 0,
+      }),
+    ]
   } else if (
     type === PropType.string ||
     type === PropType.binary ||
@@ -136,32 +153,36 @@ const propDefBuffer = (
 
       // return [...buf]
     } else {
-      return [...createSelvaSchemaString({
-        type: selvaType,
-        fixedLen: prop.len < 50 ? prop.len : 0,
-        defaultLen: 0,
-      })]
+      return [
+        ...createSelvaSchemaString({
+          type: selvaType,
+          fixedLen: prop.len < 50 ? prop.len : 0,
+          defaultLen: 0,
+        }),
+      ]
     }
   } else if (type === PropType.text) {
     // TODO Defaults
-    return [...createSelvaSchemaText({
-      type: selvaType,
-      nrDefaults: Object.keys(prop.default).length,
-    })]
+    return [
+      ...createSelvaSchemaText({
+        type: selvaType,
+        nrDefaults: Object.keys(prop.default).length,
+      }),
+    ]
 
     //for (const langName in prop.default) {
     //  console.warn('TODO default!!')
-      // const lang = LangCode[langName]
-      // const value = prop.default[langName].normalize('NFKD')
-      // const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
-      // let buf = new Uint8Array(tmpLen)
+    // const lang = LangCode[langName]
+    // const value = prop.default[langName].normalize('NFKD')
+    // const tmpLen = 4 + 2 * native.stringByteLength(value) + STRING_EXTRA_MAX
+    // let buf = new Uint8Array(tmpLen)
 
-      // const l = writeString({ buf } as Ctx, value, 4, lang, false)
-      // if (l != buf.length) {
-      //   buf = buf.subarray(0, 4 + l)
-      // }
-      // writeUint32(buf, l, 0) // length of the default
-      // fs.push(...buf)
+    // const l = writeString({ buf } as Ctx, value, 4, lang, false)
+    // if (l != buf.length) {
+    //   buf = buf.subarray(0, 4 + l)
+    // }
+    // writeUint32(buf, l, 0) // length of the default
+    // fs.push(...buf)
     //}
   }
   return [selvaType]
