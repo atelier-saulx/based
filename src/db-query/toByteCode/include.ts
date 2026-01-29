@@ -13,13 +13,9 @@ import {
   pushIncludePartialHeader,
   pushIncludePartialProp,
 } from '../../zigTsExports.js'
-import { Include, QueryAst } from '../ast.js'
+import { Include, IncludeCtx, QueryAst } from '../ast.js'
+import { prepMain } from '../utils.js'
 import { reference } from './single.js'
-
-type IncludeCtx = {
-  tree: PropTree
-  main: { prop: PropDef; include: Include }[]
-}
 
 // type IncludeOpts
 
@@ -43,9 +39,7 @@ const includeMainProps = (
   props: { prop: PropDef; include: Include }[],
   typeDef: TypeDef,
 ) => {
-  props.sort((a, b) =>
-    a.prop.start < b.prop.start ? -1 : a.prop.start === b.prop.start ? 0 : 1,
-  )
+  prepMain(props)
   if (props.length === typeDef.main.length) {
     pushIncludeHeader(buf, {
       op: IncludeOp.default,
@@ -60,7 +54,6 @@ const includeMainProps = (
       amount: props.length,
     })
     for (const { prop, include } of props) {
-      // include
       pushIncludePartialProp(buf, {
         start: prop.start,
         size: prop.size,
@@ -81,15 +74,12 @@ export const collect = (
     const prop = ctx.tree.get(field)
     const astProp = ast.props[field]
     const include = astProp.include
-
     if (isPropDef(prop)) {
-      console.log(prop.path)
-
       if (prop.type === PropType.reference) {
         reference(astProp, buf, prop)
       } else if (include) {
         if (prop.id === 0) {
-          ctx.main.push({ prop, include })
+          ctx.main.push({ prop, include, start: prop.start })
         } else {
           includeProp(buf, prop, include)
         }

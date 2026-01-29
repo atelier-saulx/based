@@ -1,4 +1,4 @@
-import { PropDef } from '../schema/defs/index.js'
+import { PropDef, PropTree } from '../schema/defs/index.js'
 
 export type FilterOp = {
   op: '=' | '<' | '>' | '..' | 'includes' | 'exists' | 'exist'
@@ -23,6 +23,11 @@ export type Include = {
   maxChars?: number
   maxBytes?: number
   raw?: boolean
+}
+
+export type IncludeCtx = {
+  tree: PropTree
+  main: { start?: number; prop: PropDef; include: Include }[]
 }
 
 export type QueryAst = {
@@ -58,9 +63,11 @@ export type QueryAst = {
 //       readBy: {
 //         filter: {
 // edges: {
+// props: {
 // $rating: {
 //             //  ops: [{ val: 4, op: '>' }],
 //             // },
+// }
 // }
 // props: {
 //   $rating: {
