@@ -105,11 +105,11 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
   let maxTid = 0
 
   await Promise.all(
-    s.map(async (ab, i) => {
+    s.map(async (buf, i) => {
       const type = server.schemaTypesParsed[types[i]]
       maxTid = Math.max(maxTid, type.id)
       try {
-        await createSelvaType(server, type.id, new Uint8Array(ab))
+        await createSelvaType(server, type.id, buf)
       } catch (err) {
         throw new Error(
           `Cannot update schema on selva (native) ${type.type} ${err.message}`,

@@ -7,6 +7,12 @@ import {
   LangCode,
   PropType,
   PropTypeEnum,
+  pushSelvaSchemaColvec,
+  pushSelvaSchemaHeader,
+  pushSelvaSchemaMicroBuffer,
+  pushSelvaSchemaRef,
+  pushSelvaSchemaString,
+  pushSelvaSchemaText,
   writeSelvaSchemaMicroBuffer,
 } from '../zigTsExports.js'
 import {
@@ -18,6 +24,7 @@ import {
 } from '../schema/index.js'
 // import { write as writeString } from '../db-client/string.js'
 import { fillEmptyMain } from '../schema/def/fillEmptyMain.js'
+import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 // import { Ctx } from '../db-client/_modify/Ctx.js'
 
 const selvaFieldType: Readonly<Record<string, number>> = {
@@ -75,51 +82,42 @@ function makeEdgeConstraintFlags(prop: PropDef): number {
 }
 
 const propDefBuffer = (
+  schemaBuf: AutoSizedUint8Array,
   schema: { [key: string]: SchemaTypeDef },
   prop: PropDef,
-): number[] => {
+): void => {
   const type = prop.typeIndex
   const selvaType = selvaTypeMap[type]
 
   if (prop.len && (type === PropType.microBuffer || type === PropType.vector)) {
-    const buf = new Uint8Array(4)
-    writeSelvaSchemaMicroBuffer(
-      buf,
-      {
-        type: selvaType,
-        len: prop.len,
-        hasDefault: ~~!!prop.default,
-      },
-      0,
-    )
+    pushSelvaSchemaMicroBuffer(schemaBuf, {
+      type: selvaType,
+      len: prop.len,
+      hasDefault: ~~!!prop.default,
+    })
 
     if (prop.default) {
-      return [...buf, ...prop.default]
-    } else {
-      return [...buf]
+      schemaBuf.set(prop.default, schemaBuf.length)
     }
   } else if (prop.len && type === PropType.colVec) {
     const baseSize = VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
-    return [
-      ...createSelvaSchemaColvec({
-        type: selvaType,
-        vecLen: prop.len / baseSize,
-        compSize: baseSize,
-        hasDefault: 0,
-      }),
-    ] // TODO Add support for default
+    pushSelvaSchemaColvec(schemaBuf, {
+      type: selvaType,
+      vecLen: prop.len / baseSize,
+      compSize: baseSize,
+      hasDefault: 0,
+    })
+    // TODO Add support for default
   } else if (type === PropType.reference || type === PropType.references) {
     const dstType: SchemaTypeDef = schema[prop.inverseTypeName!]
-    return [
-      ...createSelvaSchemaRef({
-        type: selvaType,
-        flags: makeEdgeConstraintFlags(prop),
-        dstNodeType: dstType.id,
-        inverseField: prop.inversePropNumber!,
-        edgeNodeType: prop.edgeNodeTypeId ?? 0,
-        capped: prop.referencesCapped ?? 0,
-      }),
-    ]
+    pushSelvaSchemaRef(schemaBuf, {
+      type: selvaType,
+      flags: makeEdgeConstraintFlags(prop),
+      dstNodeType: dstType.id,
+      inverseField: prop.inversePropNumber!,
+      edgeNodeType: prop.edgeNodeTypeId ?? 0,
+      capped: prop.referencesCapped ?? 0,
+    })
   } else if (
     type === PropType.string ||
     type === PropType.binary ||
@@ -153,22 +151,18 @@ const propDefBuffer = (
 
       // return [...buf]
     } else {
-      return [
-        ...createSelvaSchemaString({
-          type: selvaType,
-          fixedLen: prop.len < 50 ? prop.len : 0,
-          defaultLen: 0,
-        }),
-      ]
+      pushSelvaSchemaString(schemaBuf, {
+        type: selvaType,
+        fixedLen: prop.len < 50 ? prop.len : 0,
+        defaultLen: 0,
+      })
     }
   } else if (type === PropType.text) {
     // TODO Defaults
-    return [
-      ...createSelvaSchemaText({
-        type: selvaType,
-        nrDefaults: Object.keys(prop.default).length,
-      }),
-    ]
+    pushSelvaSchemaText(schemaBuf, {
+      type: selvaType,
+      nrDefaults: Object.keys(prop.default).length,
+    })
 
     //for (const langName in prop.default) {
     //  console.warn('TODO default!!')
@@ -184,13 +178,14 @@ const propDefBuffer = (
     // writeUint32(buf, l, 0) // length of the default
     // fs.push(...buf)
     //}
+  } else {
+    schemaBuf.pushUint8(selvaType)
   }
-  return [selvaType]
 }
 
 export function schemaToSelvaBuffer(schema: {
   [key: string]: SchemaTypeDef
-}): ArrayBuffer[] {
+}): Uint8Array[] {
   return Object.values(schema).map((t) => {
     const props: PropDef[] = Object.values(t.props)
     const rest: PropDef[] = []
@@ -208,6 +203,8 @@ export function schemaToSelvaBuffer(schema: {
       default: fillEmptyMain(props, mainLen),
       len: mainLen,
     }
+
+    const buf = new AutoSizedUint8Array(4, 65536)
 
     for (const f of props) {
       if (!f.separate) {
@@ -233,14 +230,16 @@ export function schemaToSelvaBuffer(schema: {
     }
 
     rest.sort((a, b) => a.prop - b.prop)
-    return Uint8Array.from([
-      ...blockCapacity(t.blockCapacity), // u32 blockCapacity
-      nrFields, // u8 nrFields
-      nrFixedFields, // u8 nrFixedFields
-      virtualFields, // u8 nrVirtualFields
-      8, // u8 version (generally follows the sdb version)
-      ...propDefBuffer(schema, main),
-      ...rest.map((f) => propDefBuffer(schema, f)).flat(1),
-    ]).buffer
+
+    pushSelvaSchemaHeader(buf, {
+      blockCapacity: t.blockCapacity,
+      nrFields,
+      nrFixedFields,
+      nrVirtualFields: virtualFields,
+      sdbVersion: 8,
+    })
+    propDefBuffer(buf, schema, main)
+    rest.forEach((f) => propDefBuffer(buf, schema, f))
+    return buf.slice() // Doing a slice might reduce the mem pressure?
   })
 }

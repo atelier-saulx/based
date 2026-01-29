@@ -893,6 +893,14 @@ pub const FilterSelect = packed struct {
     // you want EDGE INDEX as well
 };
 
+pub const SelvaSchemaHeader = packed struct {
+    blockCapacity: u32,
+    nrFields: u8,
+    nrFixedFields: u8,
+    nrVirtualFields: u8,
+    sdbVersion: u8,
+};
+
 pub const SelvaSchemaMicroBuffer = packed struct {
     type: SelvaFieldType,
     len: u16,
