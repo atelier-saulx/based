@@ -1,5 +1,7 @@
 import { type SchemaTypes } from '../../schema.js'
 
+import type { ModifyCmd } from './index.js'
+
 type TypedArray =
   | Uint8Array
   | Float32Array
@@ -31,6 +33,27 @@ type TypeMap = {
   cardinality: string | string[]
 }
 
+type InferEdgeProps<Prop, Types> = {
+  [K in keyof Prop as K extends `$${string}`
+    ? K
+    : never]?: Prop[K] extends keyof TypeMap
+    ? TypeMap[Prop[K]]
+    : InferProp<Prop[K], Types>
+}
+
+type InferRefValue<Prop, Types> =
+  | number
+  | ModifyCmd
+  | ({ id: number | ModifyCmd } & InferEdgeProps<Prop, Types>)
+
+type InferReferences<Prop, Types> =
+  | InferRefValue<Prop, Types>[]
+  | {
+      add?: InferRefValue<Prop, Types>[]
+      update?: InferRefValue<Prop, Types>[]
+      delete?: (number | ModifyCmd)[]
+    }
+
 type InferProp<Prop, Types> = Prop extends { type: 'object'; props: infer P }
   ? InferType<P, Types>
   : Prop extends { type: infer T extends keyof TypeMap }
@@ -38,9 +61,9 @@ type InferProp<Prop, Types> = Prop extends { type: 'object'; props: infer P }
     : Prop extends { enum: infer E extends readonly any[] }
       ? E[number]
       : Prop extends { ref: string }
-        ? string | number
+        ? InferRefValue<Prop, Types>
         : Prop extends { items: { ref: string } }
-          ? (string | number)[]
+          ? InferReferences<Prop['items'], Types>
           : never
 
 type InferType<Props, Types> = {
@@ -53,6 +76,6 @@ type InferType<Props, Types> = {
     : K]?: InferProp<Props[K], Types>
 }
 
-export type InferPayload<Types extends SchemaTypes<true>> = {
+export type InferPayload<Types extends Record<string, any>> = {
   [K in keyof Types]: InferType<Types[K]['props'], Types>
 }

@@ -16,6 +16,7 @@ export type FilterAst = {
 
 export type QueryAst = {
   locale?: string
+  range?: { start: number; end: number }
   type?: string
   target?: string | number | (number | string)[] // '[id]'
   filter?: FilterAst

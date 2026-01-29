@@ -16,11 +16,7 @@ import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type { SchemaProp } from '../../../schema.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from '../index.js'
-import {
-  ModifyItem,
-  QueuedItem,
-  serializeProps,
-} from '../../../db-client/modify/index.js'
+import { ModifyCmd, serializeProps } from '../../../db-client/modify/index.js'
 
 type Edges = Record<`${string}`, unknown> | undefined
 
@@ -42,27 +38,27 @@ const serializeIds = (
 ): number => {
   let i = offset
   // one extra for padding
-  buf.pushU32(0)
+  buf.pushUint32(0)
   for (; i < ids.length; i++) {
     const id = getRealId(ids[i])
     if (!id) break
-    buf.pushU32(id)
+    buf.pushUint32(id)
   }
   return i
 }
 
 const serializeTmpIds = (
   buf: AutoSizedUint8Array,
-  items: ModifyItem[],
+  items: ModifyCmd[],
   offset: number,
 ): undefined | any => {
   let i = offset
   // one extra for padding
-  buf.pushU32(0)
+  buf.pushUint32(0)
   for (; i < items.length; i++) {
     const tmpId = getTmpId(items[i])
     if (tmpId === undefined) break
-    buf.pushU32(tmpId)
+    buf.pushUint32(tmpId)
   }
 
   return i
@@ -77,7 +73,7 @@ const serializeIdsAndMeta = (
   edgesType?: TypeDef,
 ): number => {
   let i = offset
-  const start = buf.reserveU32()
+  const start = buf.reserveUint32()
 
   for (; i < items.length; i++) {
     const item = items[i]
@@ -112,24 +108,25 @@ const serializeIdsAndMeta = (
   }
 
   // store the amount of refs (for prealloc)
-  buf.setU32(i - offset, start)
+  buf.writeUint32(i - offset, start)
 
   return i
 }
 
 const getRealId = (item: any) => {
   if (typeof item === 'number') return item
-  if (item instanceof ModifyItem || item instanceof QueuedItem) return item.id
+  if (item instanceof ModifyCmd) return item.id
 }
 
 const getTmpId = (item: any) => {
-  if (item instanceof QueuedItem) item = item._item
-  if (item instanceof ModifyItem && !item._batch.flushed) return item._index
+  if (item instanceof ModifyCmd) return item.tmpId
 }
 
-const isValidRefObj = (item: any) =>
-  (typeof item === 'object' && item !== null && getRealId(item.id)) ||
-  getTmpId(item.id) !== undefined
+const isValidRefObj = (item: any) => {
+  if (typeof item === 'object' && item !== null) {
+    return getRealId(item.id) || getTmpId(item.id) !== undefined
+  }
+}
 
 const setReferences = (
   buf: AutoSizedUint8Array,
@@ -165,11 +162,12 @@ const setReferences = (
       const start = buf.length
       offset = serializeIdsAndMeta(buf, value, op, offset, lang, prop.edges)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-    } else if (item instanceof ModifyItem || item instanceof QueuedItem) {
+    } else if (item instanceof ModifyCmd) {
       throw item
-    } else if (item.id instanceof ModifyItem || item instanceof QueuedItem) {
+    } else if (typeof item === 'object' && item?.id instanceof ModifyCmd) {
       throw item.id
     } else {
+      console.log('??', item, value)
       throw 'bad ref!'
     }
   }
@@ -259,7 +257,7 @@ export const reference = class Reference extends BasePropDef {
       return
     }
 
-    if (value instanceof ModifyItem || value instanceof QueuedItem) {
+    if (value instanceof ModifyCmd) {
       throw value
     }
 
@@ -288,7 +286,7 @@ export const reference = class Reference extends BasePropDef {
         return
       }
 
-      if (value.id instanceof ModifyItem || value.id instanceof QueuedItem) {
+      if (value.id instanceof ModifyCmd) {
         throw value.id
       }
     }

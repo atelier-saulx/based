@@ -8,7 +8,7 @@ import {
   readUint64, readInt64, 
   readFloatLE, readDoubleLE
 } from './utils/index.js'
-import { AutoSizedUint8Array } from './db-client/modify/AutoSizedUint8Array.js'
+import { AutoSizedUint8Array } from './utils/AutoSizedUint8Array.js'
 
 export type TypeId = number
 
@@ -284,10 +284,10 @@ export const pushModifyHeader = (
   header: ModifyHeader,
 ): number => {
   const index = buf.length
-  buf.pushU32(Number(header.opId))
-  buf.pushU8(Number(header.opType))
-  buf.pushU64(header.schema)
-  buf.pushU32(Number(header.count))
+  buf.pushUint32(Number(header.opId))
+  buf.pushUint8(Number(header.opType))
+  buf.pushUint64(header.schema)
+  buf.pushUint32(Number(header.count))
   return index
 }
 
@@ -364,10 +364,10 @@ export const pushModifyUpdateHeader = (
   header: ModifyUpdateHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.type))
-  buf.pushU32(Number(header.id))
-  buf.pushU32(Number(header.size))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.type))
+  buf.pushUint32(Number(header.id))
+  buf.pushUint32(Number(header.size))
   return index
 }
 
@@ -436,9 +436,9 @@ export const pushModifyDeleteHeader = (
   header: ModifyDeleteHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.type))
-  buf.pushU32(Number(header.id))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.type))
+  buf.pushUint32(Number(header.id))
   return index
 }
 
@@ -507,9 +507,9 @@ export const pushModifyCreateHeader = (
   header: ModifyCreateHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.type))
-  buf.pushU32(Number(header.size))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.type))
+  buf.pushUint32(Number(header.size))
   return index
 }
 
@@ -578,9 +578,9 @@ export const pushModifyMainHeader = (
   header: ModifyMainHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.id))
-  buf.pushU16(Number(header.start))
-  buf.pushU16(Number(header.size))
+  buf.pushUint8(Number(header.id))
+  buf.pushUint16(Number(header.start))
+  buf.pushUint16(Number(header.size))
   return index
 }
 
@@ -649,9 +649,9 @@ export const pushModifyPropHeader = (
   header: ModifyPropHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.id))
-  buf.pushU8(Number(header.type))
-  buf.pushU32(Number(header.size))
+  buf.pushUint8(Number(header.id))
+  buf.pushUint8(Number(header.type))
+  buf.pushUint32(Number(header.size))
   return index
 }
 
@@ -740,8 +740,8 @@ export const pushModifyReferencesHeader = (
   header: ModifyReferencesHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU32(Number(header.size))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint32(Number(header.size))
   return index
 }
 
@@ -827,13 +827,13 @@ export const pushModifyReferencesMetaHeader = (
   header: ModifyReferencesMetaHeader,
 ): number => {
   const index = buf.length
-  buf.pushU32(Number(header.id))
-  buf.pushU8(0)
+  buf.pushUint32(Number(header.id))
+  buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= (((header.withIndex ? 1 : 0) >>> 0) & 1) << 1
   buf.view[buf.length - 1] |= ((0 >>> 0) & 63) << 2
-  buf.pushU32(Number(header.index))
-  buf.pushU32(Number(header.size))
+  buf.pushUint32(Number(header.index))
+  buf.pushUint32(Number(header.size))
   return index
 }
 
@@ -904,11 +904,11 @@ export const pushModifyReferenceMetaHeader = (
   header: ModifyReferenceMetaHeader,
 ): number => {
   const index = buf.length
-  buf.pushU32(Number(header.id))
-  buf.pushU8(0)
+  buf.pushUint32(Number(header.id))
+  buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
-  buf.pushU32(Number(header.size))
+  buf.pushUint32(Number(header.size))
   return index
 }
 
@@ -985,10 +985,10 @@ export const pushModifyCardinalityHeader = (
   header: ModifyCardinalityHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(0)
+  buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.sparse ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
-  buf.pushU8(Number(header.precision))
+  buf.pushUint8(Number(header.precision))
   return index
 }
 
@@ -1049,8 +1049,8 @@ export const pushModifyResultItem = (
   header: ModifyResultItem,
 ): number => {
   const index = buf.length
-  buf.pushU32(Number(header.id))
-  buf.pushU8(Number(header.err))
+  buf.pushUint32(Number(header.id))
+  buf.pushUint8(Number(header.err))
   return index
 }
 
@@ -2010,13 +2010,13 @@ export const pushSortHeader = (
   header: SortHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.order))
-  buf.pushU8(Number(header.prop))
-  buf.pushU8(Number(header.propType))
-  buf.pushU16(Number(header.start))
-  buf.pushU16(Number(header.len))
-  buf.pushU8(Number(header.lang))
-  buf.pushU16(Number(header.edgeType))
+  buf.pushUint8(Number(header.order))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint8(Number(header.propType))
+  buf.pushUint16(Number(header.start))
+  buf.pushUint16(Number(header.len))
+  buf.pushUint8(Number(header.lang))
+  buf.pushUint16(Number(header.edgeType))
   return index
 }
 
@@ -2286,9 +2286,9 @@ export const pushIncludeHeader = (
   header: IncludeHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.prop))
-  buf.pushU8(Number(header.propType))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint8(Number(header.propType))
   return index
 }
 
@@ -2373,9 +2373,9 @@ export const pushIncludeMetaHeader = (
   header: IncludeMetaHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.prop))
-  buf.pushU8(Number(header.propType))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint8(Number(header.propType))
   return index
 }
 
@@ -2452,10 +2452,10 @@ export const pushIncludePartialHeader = (
   header: IncludePartialHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.prop))
-  buf.pushU8(Number(header.propType))
-  buf.pushU16(Number(header.amount))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint8(Number(header.propType))
+  buf.pushUint16(Number(header.amount))
   return index
 }
 
@@ -2530,8 +2530,8 @@ export const pushIncludePartialProp = (
   header: IncludePartialProp,
 ): number => {
   const index = buf.length
-  buf.pushU16(Number(header.start))
-  buf.pushU16(Number(header.size))
+  buf.pushUint16(Number(header.start))
+  buf.pushUint16(Number(header.size))
   return index
 }
 
@@ -2617,13 +2617,13 @@ export const pushIncludeOpts = (
   header: IncludeOpts,
 ): number => {
   const index = buf.length
-  buf.pushU32(Number(header.end))
-  buf.pushU8(0)
+  buf.pushUint32(Number(header.end))
+  buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.isChars ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= (((header.hasOpts ? 1 : 0) >>> 0) & 1) << 1
   buf.view[buf.length - 1] |= ((0 >>> 0) & 63) << 2
-  buf.pushU8(Number(header.langFallbackSize))
-  buf.pushU8(Number(header.lang))
+  buf.pushUint8(Number(header.langFallbackSize))
+  buf.pushUint8(Number(header.lang))
   return index
 }
 
@@ -2684,8 +2684,8 @@ export const pushIncludeResponse = (
   header: IncludeResponse,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.prop))
-  buf.pushU32(Number(header.size))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint32(Number(header.size))
   return index
 }
 
@@ -2780,14 +2780,14 @@ export const pushIncludeResponseMeta = (
   header: IncludeResponseMeta,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.prop))
-  buf.pushU8(Number(header.lang))
-  buf.pushU8(0)
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint8(Number(header.lang))
+  buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.compressed ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
-  buf.pushU32(Number(header.crc32))
-  buf.pushU32(Number(header.size))
+  buf.pushUint32(Number(header.crc32))
+  buf.pushUint32(Number(header.size))
   return index
 }
 
@@ -2864,10 +2864,10 @@ export const pushSubscriptionHeader = (
   header: SubscriptionHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU16(Number(header.typeId))
-  buf.pushU8(Number(header.fieldsLen))
-  buf.pushU8(Number(header.partialLen))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint16(Number(header.typeId))
+  buf.pushUint8(Number(header.fieldsLen))
+  buf.pushUint8(Number(header.partialLen))
   return index
 }
 
@@ -3026,20 +3026,20 @@ export const pushQueryHeader = (
   header: QueryHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.prop))
-  buf.pushU16(Number(header.typeId))
-  buf.pushU16(Number(header.edgeTypeId))
-  buf.pushU32(Number(header.offset))
-  buf.pushU32(Number(header.limit))
-  buf.pushU16(Number(header.filterSize))
-  buf.pushU16(Number(header.searchSize))
-  buf.pushU16(Number(header.edgeSize))
-  buf.pushU16(Number(header.edgeFilterSize))
-  buf.pushU16(Number(header.includeSize))
-  buf.pushU8(Number(header.iteratorType))
-  buf.pushU16(Number(header.size))
-  buf.pushU8(0)
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint16(Number(header.typeId))
+  buf.pushUint16(Number(header.edgeTypeId))
+  buf.pushUint32(Number(header.offset))
+  buf.pushUint32(Number(header.limit))
+  buf.pushUint16(Number(header.filterSize))
+  buf.pushUint16(Number(header.searchSize))
+  buf.pushUint16(Number(header.edgeSize))
+  buf.pushUint16(Number(header.edgeFilterSize))
+  buf.pushUint16(Number(header.includeSize))
+  buf.pushUint8(Number(header.iteratorType))
+  buf.pushUint16(Number(header.size))
+  buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
   return index
@@ -3142,13 +3142,13 @@ export const pushQueryHeaderSingle = (
   header: QueryHeaderSingle,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU16(Number(header.typeId))
-  buf.pushU8(Number(header.prop))
-  buf.pushU32(Number(header.id))
-  buf.pushU16(Number(header.filterSize))
-  buf.pushU16(Number(header.includeSize))
-  buf.pushU16(Number(header.aliasSize))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint16(Number(header.typeId))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint32(Number(header.id))
+  buf.pushUint16(Number(header.filterSize))
+  buf.pushUint16(Number(header.includeSize))
+  buf.pushUint16(Number(header.aliasSize))
   return index
 }
 
@@ -3241,12 +3241,12 @@ export const pushQueryHeaderSingleReference = (
   header: QueryHeaderSingleReference,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU8(Number(header.prop))
-  buf.pushU16(Number(header.typeId))
-  buf.pushU16(Number(header.edgeTypeId))
-  buf.pushU16(Number(header.edgeSize))
-  buf.pushU16(Number(header.includeSize))
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint16(Number(header.typeId))
+  buf.pushUint16(Number(header.edgeTypeId))
+  buf.pushUint16(Number(header.edgeSize))
+  buf.pushUint16(Number(header.includeSize))
   return index
 }
 
@@ -3421,16 +3421,16 @@ export const pushAggHeader = (
   header: AggHeader,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.op))
-  buf.pushU16(Number(header.typeId))
-  buf.pushU32(Number(header.offset))
-  buf.pushU32(Number(header.limit))
-  buf.pushU16(Number(header.filterSize))
-  buf.pushU8(Number(header.iteratorType))
-  buf.pushU16(Number(header.size))
-  buf.pushU16(Number(header.resultsSize))
-  buf.pushU16(Number(header.accumulatorSize))
-  buf.pushU8(0)
+  buf.pushUint8(Number(header.op))
+  buf.pushUint16(Number(header.typeId))
+  buf.pushUint32(Number(header.offset))
+  buf.pushUint32(Number(header.limit))
+  buf.pushUint16(Number(header.filterSize))
+  buf.pushUint8(Number(header.iteratorType))
+  buf.pushUint16(Number(header.size))
+  buf.pushUint16(Number(header.resultsSize))
+  buf.pushUint16(Number(header.accumulatorSize))
+  buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 1
   buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 2
@@ -3499,7 +3499,7 @@ export const pushaddMultiSubscriptionHeader = (
   header: addMultiSubscriptionHeader,
 ): number => {
   const index = buf.length
-  buf.pushU16(Number(header.typeId))
+  buf.pushUint16(Number(header.typeId))
   return index
 }
 
@@ -3564,7 +3564,7 @@ export const pushremoveMultiSubscriptionHeader = (
   header: removeMultiSubscriptionHeader,
 ): number => {
   const index = buf.length
-  buf.pushU16(Number(header.typeId))
+  buf.pushUint16(Number(header.typeId))
   return index
 }
 
@@ -3657,12 +3657,12 @@ export const pushAggProp = (
   header: AggProp,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.propId))
-  buf.pushU8(Number(header.propType))
-  buf.pushU16(Number(header.propDefStart))
-  buf.pushU8(Number(header.aggFunction))
-  buf.pushU16(Number(header.resultPos))
-  buf.pushU16(Number(header.accumulatorPos))
+  buf.pushUint8(Number(header.propId))
+  buf.pushUint8(Number(header.propType))
+  buf.pushUint16(Number(header.propDefStart))
+  buf.pushUint8(Number(header.aggFunction))
+  buf.pushUint16(Number(header.resultPos))
+  buf.pushUint16(Number(header.accumulatorPos))
   return index
 }
 
@@ -3755,12 +3755,12 @@ export const pushGroupByKeyProp = (
   header: GroupByKeyProp,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.propId))
-  buf.pushU8(Number(header.propType))
-  buf.pushU16(Number(header.propDefStart))
-  buf.pushU8(Number(header.stepType))
-  buf.pushU32(Number(header.stepRange))
-  buf.pushU16(Number(header.timezone))
+  buf.pushUint8(Number(header.propId))
+  buf.pushUint8(Number(header.propType))
+  buf.pushUint16(Number(header.propDefStart))
+  buf.pushUint8(Number(header.stepType))
+  buf.pushUint32(Number(header.stepRange))
+  buf.pushUint16(Number(header.timezone))
   return index
 }
 
@@ -3923,8 +3923,8 @@ export const pushFilterOp = (
   header: FilterOp,
 ): number => {
   const index = buf.length
-  buf.pushU8(Number(header.prop))
-  buf.pushU8(Number(header.compare))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint8(Number(header.compare))
   return index
 }
 
@@ -4025,13 +4025,13 @@ export const pushFilterCondition = (
   header: FilterCondition,
 ): number => {
   const index = buf.length
-  buf.pushU16(Number(packFilterOp(header.op)))
-  buf.pushU32(Number(header.size))
-  buf.pushU8(Number(header.prop))
-  buf.pushU16(Number(header.start))
-  buf.pushU8(Number(header.len))
-  buf.pushU64(header.fieldSchema)
-  buf.pushU8(Number(header.offset))
+  buf.pushUint16(Number(packFilterOp(header.op)))
+  buf.pushUint32(Number(header.size))
+  buf.pushUint8(Number(header.prop))
+  buf.pushUint16(Number(header.start))
+  buf.pushUint8(Number(header.len))
+  buf.pushUint64(header.fieldSchema)
+  buf.pushUint8(Number(header.offset))
   return index
 }
 
@@ -4100,9 +4100,9 @@ export const pushFilterSelect = (
   header: FilterSelect,
 ): number => {
   const index = buf.length
-  buf.pushU32(Number(header.size))
-  buf.pushU64(header.typeEntry)
-  buf.pushU16(Number(header.typeId))
+  buf.pushUint32(Number(header.size))
+  buf.pushUint64(header.typeEntry)
+  buf.pushUint16(Number(header.typeId))
   return index
 }
 

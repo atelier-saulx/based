@@ -9,6 +9,8 @@ import {
   type SchemaIn,
   type SchemaMigrateFns,
   type SchemaOut,
+  type ResolveSchema,
+  type Schema,
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 import { LangCode } from '../zigTsExports.js'
@@ -17,11 +19,10 @@ import {
   serializeDelete,
   serializeUpdate,
   ModifyCtx,
-  modify,
-  schedule,
   flush,
-  ModifyItem,
+  ModifyCmd,
 } from './modify/index.js'
+import type { InferPayload } from './modify/types.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -35,7 +36,9 @@ export type ModifyOpts = {
   locale?: keyof typeof LangCode
 }
 
-export class DbClient extends DbShared {
+// ... imports
+
+export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
   constructor({
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -44,7 +47,6 @@ export class DbClient extends DbShared {
   }: DbClientOpts) {
     super()
     this.hooks = hooks
-    // this.maxModifySize = maxModifySize
     this.modifyCtx = {
       buf: new AutoSizedUint8Array(256, maxModifySize),
       flushTime,
@@ -63,18 +65,7 @@ export class DbClient extends DbShared {
   subs = new Map<BasedDbQuery, SubStore>()
   stopped!: boolean
   hooks: DbClientHooks
-
-  // modify
   modifyCtx: ModifyCtx
-
-  // modify
-  // flushTime: number
-  // writeTime: number = 0
-  // isDraining = false
-  // // maxModifySize: number
-  // modifyCtx: ModifyCtx
-  // upserting: Map<number, { o: Record<string, any>; p: Promise<number> }> =
-  //   new Map()
 
   async schemaIsSet() {
     if (!this.schema) {
@@ -82,28 +73,32 @@ export class DbClient extends DbShared {
     }
   }
 
-  async setSchema(
-    schema: SchemaIn,
+  async setSchema<const T extends { types: any }>(
+    schema: T,
     transformFns?: SchemaMigrateFns,
-  ): Promise<SchemaOut['hash']> {
-    const strictSchema = parse(schema).schema
+  ): Promise<DbClient<ResolveSchema<T>>> {
+    const strictSchema = parse(schema as unknown as SchemaIn).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
       strictSchema as SchemaOut,
       transformFns,
     )
     if (this.stopped) {
-      return this.schema?.hash ?? 0
+      return this as unknown as DbClient<ResolveSchema<T>>
     }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
-      return this.schema?.hash ?? 0
+      return this as unknown as DbClient<ResolveSchema<T>>
     }
-    return schemaChecksum
+    return this as unknown as DbClient<ResolveSchema<T>>
   }
 
-  create(type: string, obj = {}, opts?: ModifyOpts): Promise<number> {
-    return modify(
+  create<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    obj: InferPayload<S['types']>[T],
+    opts?: ModifyOpts,
+  ): ModifyCmd {
+    return new ModifyCmd(
       this.modifyCtx,
       serializeCreate,
       this.schema!,
@@ -114,16 +109,13 @@ export class DbClient extends DbShared {
     )
   }
 
-  update(
-    type: string,
-    id: number, // | Promise<number>,
-    obj = {},
+  update<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    id: number,
+    obj: InferPayload<S['types']>[T],
     opts?: ModifyOpts,
-  ): Promise<number> {
-    // if (id instanceof Promise) {
-    //   id = await id
-    // }
-    return modify(
+  ): ModifyCmd {
+    return new ModifyCmd(
       this.modifyCtx,
       serializeUpdate,
       this.schema!,
@@ -135,14 +127,8 @@ export class DbClient extends DbShared {
     )
   }
 
-  delete(
-    type: string,
-    id: number, // | Promise<number>
-  ) {
-    // if (id instanceof Promise) {
-    //   id = await id
-    // }
-    return modify(
+  delete(type: keyof S['types'] & string, id: number): ModifyCmd {
+    return new ModifyCmd(
       this.modifyCtx,
       serializeDelete,
       this.schema!,
@@ -177,10 +163,6 @@ export class DbClient extends DbShared {
     return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
   }
 
-  // expire(type: string, id: number, seconds: number) {
-  //   return expire(this, type, id, seconds)
-  // }
-
   destroy() {
     this.stop()
     this.listeners = {}
@@ -197,18 +179,8 @@ export class DbClient extends DbShared {
 
   // For more advanced / internal usage - use isModified instead for most cases
   drain() {
-    // if (this.upserting.size) {
-    //   await Promise.all(Array.from(this.upserting).map(([, { p }]) => p))
-    // }
-    // await drain(this, this.modifyCtx)
-
-    // const t = this.writeTime
-    // this.writeTime = 0
     flush(this.modifyCtx)
     return this.isModified()
-    // await this.modifyCtx.lastModify?.catch(noop)
-    // await this.modifyCtx.lastModify
-    // return t
   }
 
   async isModified() {

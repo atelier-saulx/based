@@ -24,17 +24,14 @@ export const queryAstToByteCode = (
 
   const buf = new AutoSizedUint8Array(100)
 
-  const queryIdPos = buf.reserveU32()
+  const queryIdPos = buf.reserveUint32()
 
   if (!ast.target) {
     multiple(ast, buf, typeDef)
   }
 
-  // const checksumPos = buf.reserveU64()
-  buf.pushU64(schema.hash)
-  // buf.setU64(schema.hash, checksumPos)
-  const queryId = crc32(buf.view)
-  buf.setU32(queryId, queryIdPos)
+  buf.pushUint64(schema.hash)
+  buf.writeUint32(crc32(buf.view), queryIdPos)
 
   // buf.pack()
 
