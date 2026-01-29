@@ -1,4 +1,6 @@
-import { PropDef, PropTree } from '../schema/defs/index.js'
+import { ReaderLocales, ReaderSchema } from '../../protocol/index.js'
+import { PropDef, PropTree } from '../../schema/defs/index.js'
+import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 
 export type FilterOp = {
   op: '=' | '<' | '>' | '..' | 'includes' | 'exists' | 'exist'
@@ -27,7 +29,7 @@ export type Include = {
 
 export type IncludeCtx = {
   tree: PropTree
-  main: { start?: number; prop: PropDef; include: Include }[]
+  main: { prop: PropDef; include: Include }[]
 }
 
 export type QueryAst = {
@@ -45,6 +47,12 @@ export type QueryAst = {
     }
   >
   edges?: QueryAst
+}
+export type Ctx = {
+  query: AutoSizedUint8Array
+  readSchema: ReaderSchema
+  sub: AutoSizedUint8Array
+  locales: ReaderLocales
 }
 
 // const x: QueryAst = {

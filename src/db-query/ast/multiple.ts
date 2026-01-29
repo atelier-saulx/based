@@ -1,22 +1,17 @@
 import { PropDef, TypeDef } from '../../schema/defs/index.js'
-import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import {
   pushQueryHeader,
   QueryType,
   ID_PROP,
   writeQueryHeaderProps as props,
 } from '../../zigTsExports.js'
-import { QueryAst } from '../ast.js'
+import { Ctx, QueryAst } from './ast.js'
 import { include } from './include.js'
 import { getIteratorType } from './iteratorType.js'
 
-export const defaultMultiple = (
-  ast: QueryAst,
-  buf: AutoSizedUint8Array,
-  typeDef: TypeDef,
-) => {
+export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
-  const headerIndex = pushQueryHeader(buf, {
+  const headerIndex = pushQueryHeader(ctx.query, {
     op: QueryType.default,
     prop: ID_PROP,
     includeSize: 0,
@@ -32,11 +27,7 @@ export const defaultMultiple = (
     edgeFilterSize: 0,
     size: 0,
   })
-  props.includeSize(buf.data, include(ast, buf, typeDef), headerIndex)
+  props.includeSize(ctx.query.data, include(ast, ctx, typeDef), headerIndex)
 }
 
-export const references = (
-  ast: QueryAst,
-  buf: AutoSizedUint8Array,
-  prop: PropDef,
-) => {}
+export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {}

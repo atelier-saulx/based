@@ -5,15 +5,11 @@ import {
   QueryType,
   writeQueryHeaderSingleReferenceProps as props,
 } from '../../zigTsExports.js'
-import { QueryAst } from '../ast.js'
+import { Ctx, QueryAst } from './ast.js'
 import { include } from './include.js'
 
-export const reference = (
-  ast: QueryAst,
-  buf: AutoSizedUint8Array,
-  prop: PropDef,
-) => {
-  const headerIndex = pushQueryHeaderSingleReference(buf, {
+export const reference = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
+  const headerIndex = pushQueryHeaderSingleReference(ctx.query, {
     op: QueryType.reference,
     typeId: prop.typeDef.id,
     includeSize: 0,
@@ -21,16 +17,16 @@ export const reference = (
     edgeSize: 0,
     prop: prop.id,
   })
-  const size = include(ast, buf, prop.typeDef)
-  props.includeSize(buf.data, size, headerIndex)
+  const size = include(ast, ctx, prop.typeDef)
+  props.includeSize(ctx.query.data, size, headerIndex)
   if (ast.edges) {
     const edges = prop.edges
     if (!edges) {
       throw new Error('Ref does not have edges')
     }
-    props.op(buf.data, QueryType.referenceEdge, headerIndex)
-    props.edgeTypeId(buf.data, edges.id, headerIndex)
-    const size = include(ast.edges, buf, edges)
-    props.edgeSize(buf.data, size, headerIndex)
+    props.op(ctx.query.data, QueryType.referenceEdge, headerIndex)
+    props.edgeTypeId(ctx.query.data, edges.id, headerIndex)
+    const size = include(ast.edges, ctx, edges)
+    props.edgeSize(ctx.query.data, size, headerIndex)
   }
 }

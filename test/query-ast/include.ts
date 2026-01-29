@@ -1,18 +1,13 @@
 import { deSerializeSchema } from '../../dist/protocol/db-read/schema/deserialize.js'
 import { convertToReaderSchema } from '../../src/db-client/query/queryDefToReadSchema.js'
 import { registerQuery } from '../../src/db-client/query/registerQuery.js'
-import { QueryAst } from '../../src/db-query/ast.js'
-import { queryAstToReadSchema } from '../../src/db-query/readSchema/astToReadSchema.js'
-import { queryAstToByteCode } from '../../src/db-query/toByteCode/astToByteCode.js'
+import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import {
   resultToObject,
   serializeReaderSchema,
 } from '../../src/protocol/index.js'
-import { parseSchema, Schema } from '../../src/schema.js'
 import { BasedDb, debugBuffer } from '../../src/sdk.js'
 import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
-import deepEqual from '../../src/utils/deepEqual.js'
-import { testDb } from '../shared/index.js'
 
 import test from '../shared/test.js'
 
@@ -65,10 +60,6 @@ await test('include', async (t) => {
 
   let d = Date.now()
 
-  const buf = new AutoSizedUint8Array(1000)
-
-  let astB: Uint8Array = new Uint8Array()
-
   const ast = {
     type: 'user',
     props: {
@@ -93,38 +84,21 @@ await test('include', async (t) => {
     },
   }
 
-  const readSchema = queryAstToReadSchema(client.schema!, ast)
+  const ctx = astToQueryCtx(
+    client.schema!,
+    ast,
+    new AutoSizedUint8Array(1000),
+    new AutoSizedUint8Array(1000),
+  )
 
-  const bufS = serializeReaderSchema(readSchema)
+  console.dir(ctx, { depth: 10 })
 
-  console.log(readSchema, bufS)
+  // debugBuffer(ctx.query)
 
-  console.log('derp')
-
-  for (let i = 0; i < 1; i++) {
-    // registerQuery(db.query('user').include('name', 'x', 'y'))
-    astB = queryAstToByteCode(client.schema!, ast, buf)
-  }
-  console.log(Date.now() - d, 'ms')
-
-  debugBuffer(astB)
-
-  // console.log('--------------')
-  const result = await db.server.getQueryBuf(astB)
+  const result = await db.server.getQueryBuf(ctx.query)
   debugBuffer(result)
-
-  const x = deSerializeSchema(bufS, 0)
-
-  const yyy = db.query('user').include('name')
-  const xxxx = registerQuery(yyy)
-
-  const x2 = convertToReaderSchema(yyy.def!)
-
-  console.dir({ x }, { depth: 10 })
-
-  console.dir(x2, { depth: 10 })
 
   // console.log('====', deepEqual(x, x2))
 
-  console.log(resultToObject(x, result, result.byteLength - 4))
+  console.log(resultToObject(ctx.readSchema, result, result.byteLength - 4))
 })

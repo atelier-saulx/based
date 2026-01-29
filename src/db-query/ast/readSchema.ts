@@ -1,24 +1,36 @@
 import {
-  ReaderMeta,
+  ReaderLocales,
+  ReaderPropDef,
+  ReaderSchema,
   ReaderSchemaEnum,
-  type ReaderLocales,
-  type ReaderPropDef,
-  type ReaderSchema,
 } from '../../protocol/index.js'
 import { SchemaOut } from '../../schema.js'
-import { getTypeDefs } from '../../schema/defs/getTypeDefs.js'
-import {
-  isPropDef,
-  PropDef,
-  PropTree,
-  TypeDef,
-} from '../../schema/defs/index.js'
+import { PropDef } from '../../schema/defs/index.js'
 import { LangCode, PropType } from '../../zigTsExports.js'
-import { Include, IncludeCtx, QueryAst } from '../ast.js'
+import { Include } from './ast.js'
+
+export const readSchema = (type?: ReaderSchemaEnum): ReaderSchema => {
+  return {
+    readId: 0,
+    props: {},
+    search: false,
+    main: { len: 0, props: {} },
+    refs: {},
+    type: type ?? ReaderSchemaEnum.default,
+  }
+}
+
+export const getReaderLocales = (schema: SchemaOut): ReaderLocales => {
+  const locales: ReaderLocales = {}
+  for (const lang in schema.locales) {
+    locales[LangCode[lang]] = lang
+  }
+  return locales
+}
 
 export const readPropDef = (
   p: PropDef,
-  locales: ReaderLocales,
+  locales: ReaderLocales, //add in ctx
   include?: Include,
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
