@@ -160,3 +160,139 @@ await test('modify references no await', async (t) => {
 
   deepEqual(currentIds, expected, 'no await sequence')
 })
+
+await test('modify single reference on edge', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        name: 'string',
+      },
+      holder: {
+        toThing: {
+          ref: 'thing',
+          prop: 'holders',
+          $edgeRef: {
+            type: 'reference',
+            ref: 'thing',
+            prop: 'edgeRefHolders',
+          },
+        },
+      },
+    },
+  })
+
+  const t1 = await db.create('thing', { name: 't1' })
+  const t2 = await db.create('thing', { name: 't2' })
+  const target = await db.create('thing', { name: 'target' })
+
+  const h1 = await db.create('holder', {
+    toThing: {
+      id: target,
+      $edgeRef: t1,
+    },
+  })
+
+  // Verify
+  const getEdgeRef = async (id: number) => {
+    const res = await db
+      .query('holder', id)
+      .include('toThing.$edgeRef.id')
+      .get()
+      .toObject()
+    return res.toThing && !Array.isArray(res.toThing)
+      ? res.toThing.$edgeRef
+      : undefined
+  }
+
+  deepEqual((await getEdgeRef(h1))?.id, t1)
+
+  // Update
+  await db.update('holder', h1, {
+    toThing: {
+      id: target,
+      $edgeRef: t2,
+    },
+  })
+  deepEqual((await getEdgeRef(h1))?.id, t2)
+
+  // Update with object format
+  await db.update('holder', h1, {
+    toThing: {
+      id: target,
+      $edgeRef: { id: t1 },
+    },
+  })
+  deepEqual((await getEdgeRef(h1))?.id, t1)
+})
+
+await test('modify references on edge', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        name: 'string',
+      },
+      holder: {
+        toThing: {
+          ref: 'thing',
+          prop: 'holders',
+          $edgeRefs: {
+            type: 'references',
+            items: {
+              ref: 'thing',
+              prop: 'edgeRefsHolders',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  // Mixed awaited and not awaited
+  const t1 = await db.create('thing', { name: 't1' })
+  const t2Promise = db.create('thing', { name: 't2' })
+  const t2 = await t2Promise
+  const t3Promise = db.create('thing', { name: 't3' })
+  const t3 = await t3Promise
+  const target = await db.create('thing', { name: 'target' })
+
+  const h1 = await db.create('holder', {
+    toThing: {
+      id: target,
+      $edgeRefs: [t1, t2Promise],
+    },
+  })
+
+  const check = async (ids: number[], msg) => {
+    const res = await db
+      .query('holder', h1)
+      .include('toThing.$edgeRefs.id')
+      .get()
+      .toObject()
+
+    const edge = res.toThing && !Array.isArray(res.toThing) ? res.toThing : {}
+    const currentIds = edge.$edgeRefs?.map((v: any) => v.id) || []
+    currentIds.sort()
+    ids.sort()
+    deepEqual(currentIds, ids, msg)
+  }
+
+  await check([t1, t2], 'simple')
+
+  // Test add with promise
+  await db.update('holder', h1, {
+    toThing: { id: target, $edgeRefs: { add: [t3Promise] } },
+  })
+  await check([t1, t2, t3], 'add')
+
+  // Test delete with promise
+  await db.update('holder', h1, {
+    toThing: { id: target, $edgeRefs: { delete: [t2Promise] } },
+  })
+  await check([t1, t3], 'delete')
+
+  // Test replace (array) with promise
+  await db.update('holder', h1, {
+    toThing: { id: target, $edgeRefs: [t2Promise] },
+  })
+  await check([t2], 'replace')
+})

@@ -37,7 +37,7 @@ await test('include', async (t) => {
           items: {
             ref: 'user',
             prop: 'friends',
-            $level: 'uint32',
+            $level: 'number',
           },
         },
       },

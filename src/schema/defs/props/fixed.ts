@@ -15,7 +15,7 @@ export const number = class Number extends BasePropDef {
     if (typeof value !== 'number') {
       throw new Error('Invalid type for number ' + this.path.join('.'))
     }
-    const prop = this.prop as any
+    const prop = this.schema as any
     if (prop.min !== undefined && value < prop.min) {
       throw new Error(
         `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
@@ -41,7 +41,7 @@ export const timestamp = class Timestamp extends number {
     value: unknown,
   ): asserts value is number | string {
     const ts = convertToTimestamp(value as any)
-    const prop = this.prop as any
+    const prop = this.schema as any
     if (prop.min !== undefined && ts < prop.min) {
       throw new Error(
         `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
@@ -73,7 +73,7 @@ export const uint8 = class Uint8 extends BasePropDef {
     if (value < 0 || value > 255) {
       throw new Error('Value out of range for uint8 ' + this.path.join('.'))
     }
-    const prop = this.prop as any
+    const prop = this.schema as any
     if (prop.min !== undefined && value < prop.min) {
       throw new Error(
         `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
@@ -104,7 +104,7 @@ export const int8 = class Int8 extends uint8 {
     if (value < -128 || value > 127) {
       throw new Error('Value out of range for int8 ' + this.path.join('.'))
     }
-    const prop = this.prop as any
+    const prop = this.schema as any
     if (prop.min !== undefined && value < prop.min) {
       throw new Error(
         `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
@@ -136,7 +136,7 @@ export const uint16 = class Uint16 extends BasePropDef {
     if (value < 0 || value > 65535) {
       throw new Error('Value out of range for uint16 ' + this.path.join('.'))
     }
-    const prop = this.prop as any
+    const prop = this.schema as any
     if (prop.min !== undefined && value < prop.min) {
       throw new Error(
         `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
@@ -167,7 +167,7 @@ export const int16 = class Int16 extends uint16 {
     if (value < -32768 || value > 32767) {
       throw new Error('Value out of range for int16 ' + this.path.join('.'))
     }
-    const prop = this.prop as any
+    const prop = this.schema as any
     if (prop.min !== undefined && value < prop.min) {
       throw new Error(
         `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
@@ -199,7 +199,7 @@ export const uint32 = class Uint32 extends BasePropDef {
     if (value < 0 || value > 4294967295) {
       throw new Error('Value out of range for uint32 ' + this.path.join('.'))
     }
-    const prop = this.prop as any
+    const prop = this.schema as any
     if (prop.min !== undefined && value < prop.min) {
       throw new Error(
         `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
@@ -230,7 +230,7 @@ export const int32 = class Int32 extends uint32 {
     if (value < -2147483648 || value > 2147483647) {
       throw new Error('Value out of range for int32 ' + this.path.join('.'))
     }
-    const prop = this.prop as any
+    const prop = this.schema as any
     if (prop.min !== undefined && value < prop.min) {
       throw new Error(
         `Value ${value} is smaller than min ${prop.min} for ${this.path.join(

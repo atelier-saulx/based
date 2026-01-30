@@ -4,9 +4,11 @@ import { writeFile } from 'node:fs/promises'
 import native, { idGenerator } from '../native.js'
 import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
 import { readUint32, writeUint32 } from '../utils/index.js'
-import { OpType } from '../zigTsExports.js'
+import { OpType, pushSelvaSchemaHeader } from '../zigTsExports.js'
 import { serialize, updateTypeDefs, type SchemaOut } from '../schema/index.js'
 import { SCHEMA_FILE } from '../index.js'
+import { getTypeDefs } from '../schema/defs/getTypeDefs.js'
+import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 
 const schemaOpId = idGenerator()
 
@@ -103,7 +105,8 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
   const types = Object.keys(server.schemaTypesParsed)
   const s = schemaToSelvaBuffer(server.schemaTypesParsed)
   let maxTid = 0
-
+  // console.log('-----', schemaToSelvaBufferNew(server.schema!))
+  // process.exit()
   await Promise.all(
     s.map(async (buf, i) => {
       const type = server.schemaTypesParsed[types[i]]
@@ -124,3 +127,20 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
     server.save({ skipDirtyCheck: true }).catch(console.error)
   }
 }
+
+// function schemaToSelvaBufferNew(schema: SchemaOut): Uint8Array[] {
+//   const typeDefs = getTypeDefs(schema)
+//   const buf = new AutoSizedUint8Array(4, 65536)
+//   for (const [, typeDef] of typeDefs) {
+//     for (const propDef of typeDef.main) {
+//     }
+//   }
+
+//   pushSelvaSchemaHeader(buf, {
+//     blockCapacity: t.blockCapacity,
+//     nrFields: 1 + typeDef.separate.length,
+//     nrFixedFields,
+//     nrVirtualFields: virtualFields,
+//     sdbVersion: 8,
+//   })
+// }

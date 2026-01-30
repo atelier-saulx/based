@@ -57,6 +57,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
             const size = main.type.size();
             const value = data[j .. j + size];
+            std.debug.print("main: size {any} value {any} current {any}\n", .{ size, value, current });
             if (main.increment != .none) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.increment),
@@ -94,6 +95,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     if (meta.isTmp) refId = utils.read(u32, items, refId * resItemSize);
                     if (Node.getNode(refTypeEntry, refId)) |dst| {
                         _ = try References.writeReference(db, node, propSchema, dst);
+                        std.debug.print("meta.size {any}\n", .{meta.size});
                         if (meta.size != 0) {
                             const edgeProps = value[k .. k + meta.size];
                             const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);

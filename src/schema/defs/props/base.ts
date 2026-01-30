@@ -8,8 +8,8 @@ import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type { PropDef, TypeDef } from '../index.js'
 
 export class BasePropDef implements PropDef {
-  constructor(prop: SchemaProp<true>, path: string[], typeDef: TypeDef) {
-    this.prop = prop
+  constructor(schema: SchemaProp<true>, path: string[], typeDef: TypeDef) {
+    this.schema = schema
     this.path = path
     this.typeDef = typeDef
   }
@@ -17,7 +17,7 @@ export class BasePropDef implements PropDef {
   start = 0
   size = 0
   type: PropTypeEnum = 0 as PropTypeEnum
-  prop: SchemaProp<true>
+  schema: SchemaProp<true>
   path: string[]
   isEdge: boolean = false
   typeDef: TypeDef

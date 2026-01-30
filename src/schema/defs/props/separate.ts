@@ -39,7 +39,7 @@ export const string = class String extends BasePropDef {
     if (typeof val !== 'string') {
       throw new Error('Invalid type for string ' + this.path.join('.'))
     }
-    const prop = this.prop as SchemaString
+    const prop = this.schema as SchemaString
     if (prop.min !== undefined && val.length < prop.min) {
       throw new Error(
         `Length ${val.length} is smaller than min ${prop.min} for ${this.path.join(
@@ -104,7 +104,7 @@ export const binary = class Binary extends BasePropDef {
     if (!(value instanceof Uint8Array)) {
       throw new Error('Invalid type for binary ' + this.path.join('.'))
     }
-    const prop = this.prop as SchemaString
+    const prop = this.schema as SchemaString
     if (prop.maxBytes !== undefined && value.byteLength > prop.maxBytes) {
       throw new Error(
         `Byte length ${value.byteLength} is larger than maxBytes ${
