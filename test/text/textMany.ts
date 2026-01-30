@@ -11,9 +11,14 @@ const randLoc = () => languages[rng(0, languages.length - 1)]
 
 function makeMaxSchema() {
   const locs = {}
+  const defaults = {}
 
   for (const l of languages) {
-    locs[l] = { fallback: [randLoc(), randLoc()] }
+    locs[l] = 'haha'
+  }
+
+  for (const l of languages) {
+    locs[l] = { fallback: [randLoc(), randLoc()], default: defaults }
   }
 
   return locs
@@ -37,7 +42,7 @@ function setTextProps(): {
   const v = {}
 
   for (const l of languages) {
-    s[l] = 'hello'
+    if (rng(0, 1)) s[l] = 'hello'
   }
 
   for (let i = 0; i < N_PROPS; i++) {
