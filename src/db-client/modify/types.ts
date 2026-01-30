@@ -13,19 +13,21 @@ type TypedArray =
   | Float32Array
   | Float64Array
 
+type NumInc = number | { increment: number }
+
 type TypeMap = {
   string: string
-  number: number
-  int8: number
-  uint8: number
-  int16: number
-  uint16: number
-  int32: number
-  uint32: number
+  number: NumInc
+  int8: NumInc
+  uint8: NumInc
+  int16: NumInc
+  uint16: NumInc
+  int32: NumInc
+  uint32: NumInc
   boolean: boolean
   text: string
   json: any
-  timestamp: number | string | Date
+  timestamp: NumInc | string | Date
   binary: Uint8Array
   alias: string
   vector: TypedArray

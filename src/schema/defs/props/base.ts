@@ -30,14 +30,3 @@ export class BasePropDef implements PropDef {
     // To be implemented by subclasses
   }
 }
-
-const filter = [
-  {
-    field: 'nr',
-    op: '<',
-    value: 10,
-    and: {
-      field: 'nr',
-    },
-  },
-]

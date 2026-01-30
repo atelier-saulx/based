@@ -132,7 +132,8 @@ const setReferences = (
   lang: LangCodeEnum,
 ) => {
   let offset = 0
-  while (offset < value.length) {
+  const len = value.length
+  while (offset < len) {
     const item = value[offset]
     if (getRealId(item)) {
       const index = pushModifyReferencesHeader(buf, {
@@ -201,27 +202,34 @@ export const references = class References extends BasePropDef {
   override type: PropTypeEnum = PropType.references
   override pushValue(
     buf: AutoSizedUint8Array,
-    value: any,
+    value: unknown,
     op: ModifyEnum,
     lang: LangCodeEnum,
-  ) {
+  ): asserts value is any {
     if (typeof value !== 'object' || value === null) {
       throw new Error('References value must be an object and not null')
     }
+
+    const val = value as {
+      add?: any[]
+      update?: any[]
+      delete?: any[]
+    }
+
     if (Array.isArray(value)) {
       if (op === Modify.update) {
         buf.push(ModifyReferences.clear)
       }
       setReferences(buf, value, this, op, lang)
     }
-    if (value.add) {
-      setReferences(buf, value.add, this, op, lang)
+    if (val.add) {
+      setReferences(buf, val.add, this, op, lang)
     }
-    if (value.update) {
-      setReferences(buf, value.update, this, op, lang)
+    if (val.update) {
+      setReferences(buf, val.update, this, op, lang)
     }
-    if (value.delete) {
-      deleteReferences(buf, value)
+    if (val.delete) {
+      deleteReferences(buf, val.delete)
     }
   }
 }
@@ -230,10 +238,10 @@ export const reference = class Reference extends BasePropDef {
   override type: PropTypeEnum = PropType.reference
   override pushValue(
     buf: AutoSizedUint8Array,
-    value: any,
+    value: unknown,
     lang: LangCodeEnum,
     op: ModifyEnum,
-  ) {
+  ): asserts value is any {
     const id = getRealId(value)
     if (id) {
       pushModifyReferenceMetaHeader(buf, {
@@ -258,8 +266,9 @@ export const reference = class Reference extends BasePropDef {
     }
 
     if (typeof value === 'object' && value !== null) {
-      const realId = getRealId(value.id)
-      const id = realId || getTmpId(value.id)
+      const val = value as { id: any }
+      const realId = getRealId(val.id)
+      const id = realId || getTmpId(val.id)
       if (id !== undefined) {
         const index = pushModifyReferenceMetaHeader(buf, {
           id,
@@ -268,7 +277,7 @@ export const reference = class Reference extends BasePropDef {
         })
         const prop: PropDef = this
         if (prop.edges) {
-          const edges = getEdges(value)
+          const edges = getEdges(val)
           if (edges) {
             const start = buf.length
             serializeProps(prop.edges.tree, edges, buf, op, lang)
@@ -282,8 +291,8 @@ export const reference = class Reference extends BasePropDef {
         return
       }
 
-      if (value.id instanceof BasedModify) {
-        throw value.id
+      if (val.id instanceof BasedModify) {
+        throw val.id
       }
     }
   }

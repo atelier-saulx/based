@@ -151,7 +151,5 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
 
   // ----------- add to cache --------
   cache.set(schema, typeDefs)
-
-  console.dir(typeDefs)
   return typeDefs
 }

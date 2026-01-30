@@ -27,21 +27,49 @@ export const string = class String extends BasePropDef {
     }
     if (this.size) {
       this.type = PropType.stringFixed
-      this.pushValue = this.pushFixedValue
+      this.pushValue = this.pushFixedValue as any
     }
   }
   override type: PropTypeEnum = PropType.string
   override pushValue(
     buf: AutoSizedUint8Array,
-    val: string,
+    val: unknown,
     lang: LangCodeEnum,
-  ) {
+  ): asserts val is string {
+    if (typeof val !== 'string') {
+      throw new Error('Invalid type for string ' + this.path.join('.'))
+    }
+    const prop = this.prop as SchemaString
+    if (prop.min !== undefined && val.length < prop.min) {
+      throw new Error(
+        `Length ${val.length} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && val.length > prop.max) {
+      throw new Error(
+        `Length ${val.length} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
     const normalized = val.normalize('NFKD')
     // TODO make header!
     // TODO compression
     buf.pushUint8(lang)
     buf.pushUint8(NOT_COMPRESSED)
     const written = buf.pushString(normalized)
+
+    if (prop.maxBytes !== undefined) {
+      if (written > prop.maxBytes) {
+        throw new Error(
+          `Byte length ${written} is larger than maxBytes ${
+            prop.maxBytes
+          } for ${this.path.join('.')}`,
+        )
+      }
+    }
     const crc = native.crc32(buf.subarray(buf.length - written))
     buf.pushUint32(crc)
   }
@@ -55,21 +83,45 @@ export const text = class Text extends string {
 
 export const json = class Json extends string {
   override type = PropType.json
-  override pushValue(buf: AutoSizedUint8Array, value: any, lang: LangCodeEnum) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+    lang: LangCodeEnum,
+  ) {
+    if (value === undefined) {
+      throw new Error('Invalid undefined value for json ' + this.path.join('.'))
+    }
     super.pushValue(buf, JSON.stringify(value), lang)
   }
 }
 
 export const binary = class Binary extends BasePropDef {
   override type = PropType.binary
-  override pushValue(buf: AutoSizedUint8Array, value: Uint8Array) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is Uint8Array {
+    if (!(value instanceof Uint8Array)) {
+      throw new Error('Invalid type for binary ' + this.path.join('.'))
+    }
+    const prop = this.prop as SchemaString
+    if (prop.maxBytes !== undefined && value.byteLength > prop.maxBytes) {
+      throw new Error(
+        `Byte length ${value.byteLength} is larger than maxBytes ${
+          prop.maxBytes
+        } for ${this.path.join('.')}`,
+      )
+    }
     buf.set(value, buf.length)
   }
 }
 
 export const alias = class Alias extends BasePropDef {
   override type = PropType.alias
-  override pushValue(buf: AutoSizedUint8Array, value: any) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is any {
     throw new Error('Serialize alias not implemented')
   }
 }
@@ -83,7 +135,10 @@ export const cardinality = class Cardinality extends BasePropDef {
   sparse: boolean
   precision: number
   override type = PropType.cardinality
-  override pushValue(buf: AutoSizedUint8Array, value: any) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is any {
     if (value instanceof Uint8Array && value.byteLength !== 8) {
       // buf.set(value, buf.length)
       throw new Error('unhandled error cardi')
@@ -93,11 +148,13 @@ export const cardinality = class Cardinality extends BasePropDef {
       value = [value]
     }
 
-    if (value.length === 0) return
+    const items = value as any[]
+
+    if (items.length === 0) return
 
     pushModifyCardinalityHeader(buf, this)
 
-    for (const item of value) {
+    for (const item of items) {
       // validate(item, def)
       if (typeof item === 'string') {
         buf.reserveUint64()
@@ -105,8 +162,7 @@ export const cardinality = class Cardinality extends BasePropDef {
       } else if (item instanceof Uint8Array && item.byteLength === 8) {
         buf.set(item, buf.length)
       } else {
-        throw new Error('unhandled error cardi')
-        // throw [def, val]
+        throw new Error('Invalid value for cardinality ' + this.path.join('.'))
       }
     }
   }
@@ -119,7 +175,10 @@ export const vector = class Vector extends BasePropDef {
   }
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
-  override pushValue(buf: AutoSizedUint8Array, value: any) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is any {
     throw new Error('Serialize vector not implemented')
   }
 }
@@ -131,7 +190,10 @@ export const colvec = class ColVec extends BasePropDef {
   }
   colvecSize: number
   override type = PropType.colVec
-  override pushValue(buf: AutoSizedUint8Array, value: any) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is any {
     throw new Error('Serialize colvec not implemented')
   }
 }

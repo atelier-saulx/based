@@ -36,7 +36,7 @@ export const updateTypeDefs = (schema: SchemaOut) => {
   const schemaTypesParsedById: { [id: number]: SchemaTypeDef } = {}
 
   let typeIdCnt = 1
-  for (const typeName in schema.types) {
+  for (const typeName of Object.keys(schema.types).sort()) {
     const type = schema.types[typeName]
     const locales = schema.locales ?? { en: {} }
     const result = createEmptyDef(typeName, type, locales)

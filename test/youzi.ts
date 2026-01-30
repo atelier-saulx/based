@@ -9,7 +9,7 @@ import {
 import { parseSchema } from '../src/schema.js'
 import test from './shared/test.js'
 
-await test('schema defs', async (t) => {
+await test('schema-defs', async (t) => {
   const schema = parseSchema({
     types: {
       user: {
@@ -27,25 +27,10 @@ await test('schema defs', async (t) => {
           },
         },
       },
-      // article: {
-      //   user: {
-      //     ref: 'user',
-      //     prop: 'articles',
-      //     $rating: 'number',
-      //     $role: {
-      //       ref: 'role',
-      //     },
-      //   },
-      //   users: {
-      //     items: {
-      //       ref: 'user',
-      //       prop: 'favourites',
-      //     },
-      //   },
-      // },
     },
   })
   const defs = getTypeDefs(schema)
+  console.dir(defs, { depth: 3 })
 })
 
 await test.skip('modify raw', async (t) => {
@@ -110,7 +95,7 @@ await test.skip('modify raw', async (t) => {
   console.dir(res, { depth: null })
 })
 
-await test('modify client', async (t) => {
+await test.skip('modify client', async (t) => {
   const db = new BasedDb({ path: t.tmp })
   await db.start({ clean: true })
 

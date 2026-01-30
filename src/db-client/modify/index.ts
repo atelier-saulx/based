@@ -1,6 +1,7 @@
 import { SchemaOut } from '../../schema.js'
 import {
   Modify,
+  ModifyIncrement,
   pushModifyCreateHeader,
   pushModifyDeleteHeader,
   pushModifyHeader,
@@ -41,9 +42,22 @@ export const serializeProps = (
     } else {
       const prop = def as PropDef
       if (prop.size) {
-        pushModifyMainHeader(buf, prop)
-        prop.pushValue(buf, val, op, lang)
+        // main
+        const increment =
+          val !== null && typeof val === 'object' && (val as any).increment
+        pushModifyMainHeader(buf, {
+          id: 0,
+          start: prop.start,
+          type: prop.type,
+          increment: increment
+            ? increment < 0
+              ? ModifyIncrement.decrement
+              : ModifyIncrement.increment
+            : ModifyIncrement.none,
+        })
+        prop.pushValue(buf, increment ? Math.abs(increment) : val, op, lang)
       } else {
+        // separate
         const index = pushModifyPropHeader(buf, prop)
         const start = buf.length
         prop.pushValue(buf, val, op, lang)
