@@ -37,8 +37,8 @@ await test('include', async (t) => {
           items: {
             ref: 'user',
             prop: 'friends',
+            $level: 'uint32',
           },
-          // $level: 'uint32',
         },
       },
     },
@@ -70,7 +70,7 @@ await test('include', async (t) => {
       cookie: 1234,
     },
     // mrFriend: { id: a, $level: 67 },
-    friends: [a, b],
+    friends: [{ id: a, $level: 250 }, b],
   })
 
   await db.drain()
@@ -107,6 +107,11 @@ await test('include', async (t) => {
       friends: {
         props: {
           name: { include: {} },
+        },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
         },
       },
     },

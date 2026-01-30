@@ -24,7 +24,7 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     sort: false,
     filterSize: 0,
     searchSize: 0,
-    iteratorType: getIteratorType(),
+    iteratorType: getIteratorType(false, false),
     edgeTypeId: 0,
     edgeSize: 0,
     edgeFilterSize: 0,
@@ -41,16 +41,15 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     includeSize: 0,
     typeId: prop.typeDef.id,
     offset: rangeStart,
-    // good default?
     limit: (ast.range?.end || 100) + rangeStart,
     sort: false,
     filterSize: 0,
     searchSize: 0,
-    iteratorType: getIteratorType(),
+    iteratorType: getIteratorType(false, false),
     edgeTypeId: 0,
     edgeSize: 0,
     edgeFilterSize: 0,
-    size: 0,
+    size: 0, // this is only used for [IDS] handle this differently
   })
 
   const schema = readSchema()
@@ -58,6 +57,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     schema,
     prop: readPropDef(prop, ctx.locales, ast.include),
   }
+
   const size = include(
     ast,
     {
@@ -67,25 +67,27 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     prop.typeDef,
   )
   props.includeSize(ctx.query.data, size, headerIndex)
-  // QueryHeaderByteSize + searchSize + sortSize + includeSize
-  props.size(ctx.query.data, QueryHeaderByteSize + size, headerIndex)
 
   if (ast.edges) {
-    // const edges = prop.edges
-    // if (!edges) {
-    //   throw new Error('Ref does not have edges')
-    // }
-    // schema.edges = readSchema(ReaderSchemaEnum.edge)
-    // props.op(ctx.query.data, QueryType.referenceEdge, headerIndex)
-    // props.edgeTypeId(ctx.query.data, edges.id, headerIndex)
-    // const size = include(
-    //   ast.edges,
-    //   {
-    //     ...ctx,
-    //     readSchema: schema.edges,
-    //   },
-    //   edges,
-    // )
-    // props.edgeSize(ctx.query.data, size, headerIndex)
+    const edges = prop.edges
+    if (!edges) {
+      throw new Error('Ref does not have edges')
+    }
+    schema.edges = readSchema(ReaderSchemaEnum.edge)
+    props.edgeTypeId(ctx.query.data, edges.id, headerIndex)
+    const size = include(
+      ast.edges,
+      {
+        ...ctx,
+        readSchema: schema.edges,
+      },
+      edges,
+    )
+    props.iteratorType(
+      ctx.query.data,
+      getIteratorType(true, size > 0),
+      headerIndex,
+    )
+    props.edgeSize(ctx.query.data, size, headerIndex)
   }
 }

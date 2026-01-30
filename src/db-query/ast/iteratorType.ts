@@ -10,24 +10,23 @@ import {
 } from '../../zigTsExports.js'
 import { QueryDef, QueryDefType } from '../../db-client/query/types.js'
 
-export const getIteratorType = (): QueryIteratorTypeEnum => {
+export const getIteratorType = (
+  edge: boolean,
+  edgeInclude: boolean,
+): QueryIteratorTypeEnum => {
   const hasFilter: boolean = false
   const hasSearch = false //def.search?.size && def.search.size > 0
   const isVector = false // hasSearch && def.search!.isVector
   // const hasFilter = def.filter.size > 0
   const isDesc = false // def.order === Order.desc
-  const edgeInclude = false // def.edges
   const hasSort = false //
   // def.sort &&
   // (def.sort.prop !== ID_PROP || def.type === QueryDefType.References)
-  const hasEdges = false
   // def.type === QueryDefType.References &&
-  // @ts-ignore
-  // def.target.propDef.edgeNodeTypeId > 0
 
   let base = QUERY_ITERATOR_DEFAULT
 
-  if (hasEdges && !edgeInclude) {
+  if (edge && !edgeInclude) {
     base = QUERY_ITERATOR_EDGE
   }
 

@@ -181,7 +181,7 @@ export function defToBuffer(
         edgeTypeId,
         edgeSize,
         edgeFilterSize: 0, // this is nice
-        size: buffer.byteLength + includeSize,
+        size: buffer.byteLength + includeSize, // is this used? QueryHeaderByteSize + searchSize + sortSize + includeSize
       },
       0,
     )
