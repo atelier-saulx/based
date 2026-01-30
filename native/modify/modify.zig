@@ -12,7 +12,7 @@ const DbCtx = @import("../db/ctx.zig").DbCtx;
 const subs = @import("subscription.zig");
 
 pub const subscription = subs.suscription;
-
+const resItemSize = utils.sizeOf(t.ModifyResultItem);
 inline fn applyInc(comptime T: type, current: []u8, value: []u8, start: u16, op: t.ModifyIncrement) void {
     const curr = utils.read(T, current, start);
     const inc = utils.read(T, value, 0);
@@ -22,6 +22,12 @@ inline fn applyInc(comptime T: type, current: []u8, value: []u8, start: u16, op:
         else => return,
     };
     utils.write(value, res, 0);
+}
+
+inline fn writeResult(res: *t.ModifyResultItem, id: u32, err: t.ModifyError) void {
+    const ptr = @as([*]u8, @ptrCast(res));
+    utils.write(ptr[0..4], id, 0);
+    ptr[4] = @intFromEnum(err);
 }
 
 //  ----------NAPI-------------
@@ -40,7 +46,7 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     try dbCtx.threads.modify(batch);
 }
 
-pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u8, items: []t.ModifyResultItem) !void {
+pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u8, items: []u8) !void {
     var j: usize = 0;
     while (j < data.len) {
         const propId = data[j];
@@ -85,10 +91,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     var k: usize = 0;
                     const meta = utils.readNext(t.ModifyReferenceMetaHeader, value, &k);
                     var refId = meta.id;
-                    if (meta.isTmp) {
-                        refId = items[refId].id;
-                    }
-
+                    if (meta.isTmp) refId = utils.read(u32, items, refId * resItemSize);
                     if (Node.getNode(refTypeEntry, refId)) |dst| {
                         _ = try References.writeReference(db, node, propSchema, dst);
                         if (meta.size != 0) {
@@ -117,9 +120,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                             .tmpIds => {
                                 const offset = utils.alignLeft(u32, refs);
                                 const u32Ids = utils.read([]u32, refs[4 - offset .. refs.len - offset], 0);
-                                for (u32Ids) |*id| {
-                                    id.* = items[id.*].id;
-                                }
+                                for (u32Ids) |*id| id.* = utils.read(u32, items, id.* * resItemSize);
                                 try References.putReferences(db, node, propSchema, u32Ids);
                             },
                             .idsWithMeta => {
@@ -131,11 +132,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                                 while (x < refs.len) {
                                     const meta = utils.readNext(t.ModifyReferencesMetaHeader, refs, &x);
                                     var refId = meta.id;
-
-                                    if (meta.isTmp) {
-                                        refId = items[refId].id;
-                                    }
-
+                                    if (meta.isTmp) refId = utils.read(u32, items, refId * resItemSize);
                                     if (Node.getNode(refTypeEntry, refId)) |dst| {
                                         const ref = try References.insertReference(db, node, propSchema, dst, meta.index, meta.withIndex);
                                         if (meta.size != 0) {
@@ -148,6 +145,19 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                                     }
 
                                     x += meta.size;
+                                }
+                            },
+                            .delIds => {
+                                const offset = utils.alignLeft(u32, refs);
+                                const u32Ids = utils.read([]u32, refs[4 - offset .. refs.len - offset], 0);
+                                for (u32Ids) |id| try References.deleteReference(db, node, propSchema, id);
+                            },
+                            .delTmpIds => {
+                                const offset = utils.alignLeft(u32, refs);
+                                const u32Ids = utils.read([]u32, refs[4 - offset .. refs.len - offset], 0);
+                                for (u32Ids) |*id| {
+                                    const realId = utils.read(u32, items, id.* * resItemSize);
+                                    try References.deleteReference(db, node, propSchema, realId);
                                 }
                             },
                             else => {},
@@ -172,18 +182,13 @@ pub fn modify(
     db: *DbCtx,
 ) !void {
     var i: usize = 0;
-    var j: u32 = 5 + @alignOf(t.ModifyResultItem);
+    var j: u32 = 4;
     const header = utils.readNext(t.ModifyHeader, buf, &i);
-    const size = j + header.count * 5;
-    const result = try thread.modify.result(size, header.opId, header.opType);
-    const alignIndex = thread.modify.index - size + j;
-    const offset: u8 = @truncate(alignIndex % @alignOf(t.ModifyResultItem));
-    result[4] = @alignOf(t.ModifyResultItem) - offset;
-    j -= offset;
-    const items = utils.toSlice(t.ModifyResultItem, result[j..]);
+    const size = header.count * resItemSize;
+    const result = try thread.modify.result(j + size, header.opId, header.opType);
+    const items = result[j..];
     while (i < buf.len) {
         const op: t.Modify = @enumFromInt(buf[i]);
-        // std.debug.print("op: {any}\n", .{op});
         switch (op) {
             .create => {
                 const create = utils.read(t.ModifyCreateHeader, buf, i);
@@ -192,57 +197,58 @@ pub fn modify(
                 const data: []u8 = buf[i .. i + create.size];
                 const id = db.ids[create.type - 1] + 1;
                 const node = try Node.upsertNode(typeEntry, id);
-                // std.debug.print("create id: {any}\n", .{id});
                 modifyProps(db, typeEntry, node, data, items) catch {
                     // handle errors
                 };
                 db.ids[create.type - 1] = id;
                 utils.write(result, id, j);
-                utils.writeAs(u8, result, t.ModifyError.null, j + 4);
+                utils.write(result, t.ModifyError.null, j + 4);
                 i += create.size;
-                j += 5;
             },
             .update => {
                 const update = utils.read(t.ModifyUpdateHeader, buf, i);
                 i += utils.sizeOf(t.ModifyUpdateHeader);
                 const typeEntry = try Node.getType(db, update.type);
                 var id = update.id;
-                if (update.isTmp) id = items[id].id;
-                utils.write(result, id, j);
+                if (update.isTmp) id = utils.read(u32, items, id * resItemSize);
                 if (Node.getNode(typeEntry, id)) |node| {
                     const data: []u8 = buf[i .. i + update.size];
                     modifyProps(db, typeEntry, node, data, items) catch {
                         // handle errors
                     };
-                    utils.writeAs(u8, result, t.ModifyError.null, j + 4);
+                    utils.write(result, id, j);
+                    utils.write(result, t.ModifyError.null, j + 4);
                 } else {
-                    utils.writeAs(u8, result, t.ModifyError.nx, j + 4);
+                    utils.write(result, id, j);
+                    utils.write(result, t.ModifyError.nx, j + 4);
                 }
+                // std.debug.print("- update id: {any} res: {any}\n", .{ id, res });
                 i += update.size;
-                j += 5;
             },
             .delete => {
                 const delete = utils.read(t.ModifyDeleteHeader, buf, i);
                 i += utils.sizeOf(t.ModifyDeleteHeader);
                 const typeEntry = try Node.getType(db, delete.type);
                 var id = delete.id;
-                if (delete.isTmp) id = items[id].id;
-                utils.write(result, id, j);
+                if (delete.isTmp) id = utils.read(u32, items, id * resItemSize);
                 if (Node.getNode(typeEntry, id)) |node| {
                     Node.deleteNode(db, typeEntry, node) catch {
                         // handle errors
                     };
-                    utils.writeAs(u8, result, t.ModifyError.null, j + 4);
+                    utils.write(result, id, j);
+                    utils.write(result, t.ModifyError.null, j + 4);
                 } else {
-                    utils.writeAs(u8, result, t.ModifyError.nx, j + 4);
+                    utils.write(result, id, j);
+                    utils.write(result, t.ModifyError.nx, j + 4);
                 }
-                j += 5;
+
+                // std.debug.print("- delete id: {any} res: {any}\n", .{ id, res });
             },
         }
+        j += resItemSize;
     }
 
     Node.expire(db);
     utils.write(result, j, 0);
-
     if (j < size) @memset(result[j..size], 0);
 }

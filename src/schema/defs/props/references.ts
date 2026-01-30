@@ -164,7 +164,6 @@ const setReferences = (
     } else if (typeof item === 'object' && item?.id instanceof BasedModify) {
       throw item.id
     } else {
-      console.log('??', item, value)
       throw 'bad ref!'
     }
   }
@@ -174,7 +173,7 @@ const deleteReferences = (buf: AutoSizedUint8Array, value: any[]) => {
   let offset = 0
   while (offset < value.length) {
     const item = value[offset]
-    if (typeof item === 'number') {
+    if (getRealId(item)) {
       const index = pushModifyReferencesHeader(buf, {
         op: ModifyReferences.delIds,
         size: 0,
@@ -182,19 +181,19 @@ const deleteReferences = (buf: AutoSizedUint8Array, value: any[]) => {
       const start = buf.length
       offset = serializeIds(buf, value, offset)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-      continue
-    }
-    if (typeof item === 'object' && item !== null && item.tmpId) {
+    } else if (getTmpId(item) !== undefined) {
       const index = pushModifyReferencesHeader(buf, {
-        op: ModifyReferences.tmpIds,
+        op: ModifyReferences.delTmpIds,
         size: 0,
       })
       const start = buf.length
       offset = serializeTmpIds(buf, value, offset)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-      continue
+    } else if (item instanceof BasedModify) {
+      throw item
+    } else {
+      throw 'bad ref'
     }
-    throw 'bad ref'
   }
 }
 

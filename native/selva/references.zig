@@ -20,9 +20,9 @@ pub inline fn getReference(node: Node.Node, fieldSchema: Schema.FieldSchema) ?Re
     return selva.c.selva_fields_get_reference(node, fieldSchema);
 }
 
-pub fn deleteReference(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, id: u32) !void {
+pub fn deleteReference(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, id: u32) !void {
     try errors.selva(selva.c.selva_fields_del_ref(
-        ctx.db.selva,
+        db.selva,
         node,
         fieldSchema,
         id,
@@ -30,7 +30,7 @@ pub fn deleteReference(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Sch
 
     const efc = selva.c.selva_get_edge_field_constraint(fieldSchema);
     const dstType = efc.*.dst_node_type;
-    selva.markDirty(ctx.db, dstType, id);
+    selva.markDirty(db, dstType, id);
 }
 
 pub fn referencesHas(refs: References, dstNodeId: u32) bool {
