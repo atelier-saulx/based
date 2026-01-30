@@ -8,6 +8,7 @@ import {
   pushIncludePartialProp,
 } from '../../zigTsExports.js'
 import { Ctx, Include, IncludeCtx, QueryAst } from './ast.js'
+import { references } from './multiple.js'
 import { readPropDef } from './readSchema.js'
 import { reference } from './single.js'
 
@@ -74,7 +75,9 @@ export const collect = (
     const astProp = ast.props[field]
     const include = astProp.include
     if (isPropDef(prop)) {
-      if (prop.type === PropType.reference) {
+      if (prop.type === PropType.references) {
+        references(astProp, ctx, prop)
+      } else if (prop.type === PropType.reference) {
         reference(astProp, ctx, prop)
       } else if (include) {
         if (prop.id === 0) {

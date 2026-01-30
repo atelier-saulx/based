@@ -19,7 +19,7 @@ export const reference = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     prop: prop.id,
   })
 
-  const schema = readSchema(ReaderSchemaEnum.default)
+  const schema = readSchema()
   ctx.readSchema.refs[prop.id] = {
     schema,
     prop: readPropDef(prop, ctx.locales, ast.include),

@@ -33,11 +33,18 @@ await test('include', async (t) => {
           prop: 'mrFriend',
           $level: 'uint32',
         },
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+          },
+          // $level: 'uint32',
+        },
       },
     },
   })
 
-  const a = client.create('user', {
+  const a = await client.create('user', {
     name: 'AAAAAAAAAA',
     y: 67,
     x: true,
@@ -46,12 +53,24 @@ await test('include', async (t) => {
       cookie: 1234,
     },
   })
-  client.create('user', {
-    name: 'mr y',
+
+  const b = await client.create('user', {
+    name: 'BBBBBBBBB',
+    y: 67,
+    x: true,
+    flap: 9999,
     cook: {
       cookie: 1234,
     },
-    mrFriend: { id: a, $level: 67 },
+  })
+
+  client.create('user', {
+    name: 'CCCCCCCCC',
+    cook: {
+      cookie: 1234,
+    },
+    // mrFriend: { id: a, $level: 67 },
+    friends: [a, b],
   })
 
   await db.drain()
@@ -63,25 +82,31 @@ await test('include', async (t) => {
   const ast = {
     type: 'user',
     props: {
-      name: { include: {} },
-      y: { include: {} },
-      x: { include: {} },
-      cook: {
-        props: {
-          cookie: { include: {} },
-        },
-      },
+      // name: { include: {} },
+      // y: { include: {} },
+      // x: { include: {} },
+      // cook: {
+      //   props: {
+      //     cookie: { include: {} },
+      //   },
+      // },
 
-      // NOW ADD MR FRIEND!
+      // // NOW ADD MR FRIEND!
 
-      mrFriend: {
+      // mrFriend: {
+      //   props: {
+      //     name: { include: {} },
+      //   },
+      //   edges: {
+      //     props: {
+      //       $level: { include: {} },
+      //     },
+      //   },
+      // },
+
+      friends: {
         props: {
           name: { include: {} },
-        },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
         },
       },
     },
@@ -90,9 +115,15 @@ await test('include', async (t) => {
   const ctx = astToQueryCtx(
     client.schema!,
     ast,
-    new AutoSizedUint8Array(1000), // this will be shared
-    new AutoSizedUint8Array(1000), // this will be shared
+    new AutoSizedUint8Array(1000),
+    new AutoSizedUint8Array(1000),
   )
+
+  // TODO
+  // references
+  // edges
+  // TEXT - make this localized true
+  // OPTS
 
   console.dir(ctx, { depth: 10 })
 
@@ -103,7 +134,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.log(obj)
+  console.dir(obj, { depth: 10 })
 
   console.log(
     JSON.stringify(obj).length,
