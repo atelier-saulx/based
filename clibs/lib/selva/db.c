@@ -548,7 +548,6 @@ static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, stru
 void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     selva_mark_dirty(type, node->node_id);
-
     selva_remove_all_aliases(type, node->node_id);
     selva_fields_flush(db, node);
 }

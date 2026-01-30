@@ -137,10 +137,6 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)
     }
 
     remove_alias_by_dest(aliases, alias);
-
-    /*
-     * Remove this alias from by_name.
-     */
     remove_alias_by_name(aliases, alias);
     selva_free(alias);
 }
@@ -188,7 +184,7 @@ const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len)
 
 struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t field)
 {
-    size_t nr_aliases = type->ns.nr_aliases;
+    const size_t nr_aliases = type->ns.nr_aliases;
 
     for (size_t i = 0; i < nr_aliases; i++) {
         if (type->aliases[i].field == field) {
@@ -201,7 +197,7 @@ struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t fiel
 
 void selva_remove_all_aliases(struct SelvaTypeEntry *type, node_id_t node_id)
 {
-    size_t nr_aliases = type->ns.nr_aliases;
+    const size_t nr_aliases = type->ns.nr_aliases;
 
     for (size_t i = 0; i < nr_aliases; i++) {
         selva_del_alias_by_dest(&type->aliases[i], node_id);
