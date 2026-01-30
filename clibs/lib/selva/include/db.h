@@ -50,10 +50,8 @@ struct SelvaNode {
 static_assert(offsetof(struct SelvaNode, node_id) == 0);
 
 struct SelvaAlias {
-    RB_ENTRY(SelvaAlias) _entry1;
-    RB_ENTRY(SelvaAlias) _entry2;
-    struct SelvaAlias *prev;
-    struct SelvaAlias *next; /*!< Next alias for the same destination. */
+    RB_ENTRY(SelvaAlias) _entryByName;
+    RB_ENTRY(SelvaAlias) _entryByDest;
     node_id_t dest;
     uint32_t name_len;
     char name[] __counted_by(name_len);
@@ -90,7 +88,6 @@ struct SelvaTypeEntry {
     } *blocks;
     struct SelvaAliases {
         field_t field; /*!< Alias field. */
-        bool single; /*!< Only allow a single alias per node + field. */
         struct SelvaAliasesByName alias_by_name;
         struct SelvaAliasesByDest alias_by_dest;
         size_t nr_aliases; /*!< Number of aliases by name. */
@@ -168,8 +165,8 @@ struct SelvaDb {
 
 RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
-RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
-RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
+RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entryByName, SelvaAlias_cmp_name)
+RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entryByDest, SelvaAlias_cmp_dest)
 int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
 int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);

@@ -561,16 +561,11 @@ struct SelvaNodeRes selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAli
 
 /**
  * Get alias by destination id.
- * This may not seem very useful but this is actually the way that allows you to
- * traverse all aliases to the given node_id by following the `next` pointer or
- * by calling selva_get_next_alias().
  */
 SELVA_EXPORT
 const struct SelvaAlias *selva_get_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest);
 
-SELVA_EXPORT
-const struct SelvaAlias *selva_get_next_alias(const struct SelvaAlias *alias);
-
+/* TODO Is this needed as a separate func? */
 SELVA_EXPORT
 const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len) __attribute__((nonnull, pure));
 
