@@ -843,17 +843,17 @@ pub const FilterOpCompare = enum(u8) {
     // -----------
     gt = 14,
     lt = 15,
-    gtBatch = 16,
-    ltBatch = 17,
-    gtBatchSmall = 18,
-    ltBatchSmall = 19,
+    // gtBatch = 16,
+    // ltBatch = 17,
+    // gtBatchSmall = 18,
+    // ltBatchSmall = 19,
     // -----------
     ge = 20,
     le = 21,
-    geBatch = 22,
-    leBatch = 23,
-    geBatchSmall = 24,
-    leBatchSmall = 25,
+    // geBatch = 22,
+    // leBatch = 23,
+    // geBatchSmall = 24,
+    // leBatchSmall = 25,
     // -----------
     // eq = 12,
     // will become quite a lot :L > , < <=, >=

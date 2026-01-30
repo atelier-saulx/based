@@ -6,92 +6,70 @@ const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
 
-// Fns here are non-inline to avoid a too long switch statement in filter
-
-pub const Op = enum(u8) {
-    eq = 1,
-    lt = 2,
-    gt = 3,
-    le = 4,
-    ge = 5,
+pub const Function = enum(u8) {
+    eq,
+    lt,
+    gt,
+    le,
+    ge,
+    range,
+    eqBatch,
+    eqBatchSmall,
 };
 
-pub const Function = enum { Single, Range, Batch, BatchSmall };
-
-pub fn batch(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn eqBatch(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
     const values = utils.toSlice(T, q[i + size - c.offset .. c.size + @alignOf(T) - c.offset]);
     const len = values.len / size;
     var j: usize = 0;
-    switch (op) {
-        .eq => {
-            while (j <= (len)) : (j += vectorLen) {
-                const vec2: @Vector(vectorLen, T) = values[j..][0..vectorLen].*;
-                if (std.simd.countElementsWithValue(vec2, value) != 0) {
-                    return true;
-                }
-            }
-        },
-        else => {
-            return false;
-        },
+    while (j <= (len)) : (j += vectorLen) {
+        const vec2: @Vector(vectorLen, T) = values[j..][0..vectorLen].*;
+        if (std.simd.countElementsWithValue(vec2, value) != 0) {
+            return true;
+        }
     }
     return false;
 }
 
-pub fn batchSmall(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn eqBatchSmall(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
     const values = utils.toSlice(T, q[i + size - c.offset .. c.size + @alignOf(T) - c.offset]);
     const vec: @Vector(vectorLen, T) = values[0..][0..vectorLen].*;
-    switch (op) {
-        .eq => {
-            return (std.simd.countElementsWithValue(vec, value) != 0);
-        },
-        .lt => {
-            const valueSplat: @Vector(vectorLen, T) = @splat(value);
-            return @reduce(.Or, valueSplat > vec);
-        },
-        .gt => {
-            const valueSplat: @Vector(vectorLen, T) = @splat(value);
-            return @reduce(.Or, valueSplat < vec);
-        },
-        .le => {
-            const valueSplat: @Vector(vectorLen, T) = @splat(value);
-            return @reduce(.Or, valueSplat >= vec);
-        },
-        .ge => {
-            const valueSplat: @Vector(vectorLen, T) = @splat(value);
-            return @reduce(.Or, valueSplat <= vec);
-        },
-    }
+    return (std.simd.countElementsWithValue(vec, value) != 0);
 }
 
-pub fn single(comptime op: Op, T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
-    @setEvalBranchQuota(10000);
-
+pub fn eq(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
     const val = utils.readPtr(T, v, c.start).*;
     const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
-    switch (op) {
-        .eq => {
-            return val == target;
-        },
-        .lt => {
-            return val < target;
-        },
-        .gt => {
-            return val > target;
-        },
-        .le => {
-            return val <= target;
-        },
-        .ge => {
-            return val >= target;
-        },
-    }
+    return val == target;
+}
+
+pub fn lt(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+    const val = utils.readPtr(T, v, c.start).*;
+    const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
+    return val < target;
+}
+
+pub fn gt(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+    const val = utils.readPtr(T, v, c.start).*;
+    const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
+    return val > target;
+}
+
+pub fn le(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+    const val = utils.readPtr(T, v, c.start).*;
+    const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
+    return val <= target;
+}
+
+pub fn ge(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+    const val = utils.readPtr(T, v, c.start).*;
+    const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
+    return val >= target;
 }
 
 pub fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {

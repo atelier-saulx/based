@@ -79,6 +79,7 @@ fn iteratorEdge(
         _ = it.next() orelse return 0;
         offset -= 1;
     }
+
     while (it.nextRef()) |ref| {
         try ctx.thread.query.append(t.ReadOp.id);
         try ctx.thread.query.append(Node.getNodeId(ref.node));
@@ -217,6 +218,7 @@ pub fn references(
 
     switch (header.iteratorType) {
         .edgeInclude => {
+            std.debug.print("hello start IT => \n", .{});
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },

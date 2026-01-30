@@ -1,10 +1,5 @@
 import type { PropDef, PropDefEdge } from '../../../schema/index.js'
-import {
-  LangCode,
-  LangCodeEnum,
-  LangCodeInverse,
-  PropType,
-} from '../../../zigTsExports.js'
+import { PropType } from '../../../zigTsExports.js'
 import { IncludeField, IncludeOpts, QueryDef, QueryDefType } from '../types.js'
 
 export const getAll = (

@@ -109,6 +109,7 @@ const references: ReadInstruction = (q, result, i, item) => {
 }
 
 const edge: ReadInstruction = (q, result, i, item) => {
+  console.log('edge', i)
   return readInstruction(result[i], q.edges!, result, i + 1, item)
 }
 
@@ -130,6 +131,7 @@ const readInstruction = (
   } else if (instruction === ReadOp.edge) {
     return edge(q, result, i, item)
   } else if (instruction === 0) {
+    console.log('DERP', i)
     return readMain(q, result, i, item)
   } else {
     return readProp(instruction, q, result, i, item)

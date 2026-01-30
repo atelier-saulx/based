@@ -86,10 +86,14 @@ inline fn compare(
     c: *t.FilterCondition,
 ) bool {
     const res = switch (meta.func) {
-        .Single => Compare.single(meta.cmp, T, q, v, index, c),
-        .Range => Compare.range(T, q, v, index, c),
-        .Batch => Compare.batch(meta.cmp, T, q, v, index, c),
-        .BatchSmall => Compare.batchSmall(meta.cmp, T, q, v, index, c),
+        .eq => Compare.eq(T, q, v, index, c),
+        .le => Compare.le(T, q, v, index, c),
+        .lt => Compare.lt(T, q, v, index, c),
+        .ge => Compare.ge(T, q, v, index, c),
+        .gt => Compare.gt(T, q, v, index, c),
+        .range => Compare.range(T, q, v, index, c),
+        .eqBatch => Compare.eqBatch(T, q, v, index, c),
+        .eqBatchSmall => Compare.eqBatchSmall(T, q, v, index, c),
     };
     return if (meta.invert) !res else res;
 }
