@@ -70,8 +70,8 @@ static int SelvaTypeEntry_cmp(const struct SelvaTypeEntry *a, const struct Selva
 
 RB_GENERATE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_GENERATE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
-RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entry1, SelvaAlias_cmp_name)
-RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entry2, SelvaAlias_cmp_dest)
+RB_GENERATE(SelvaAliasesByName, SelvaAlias, _entryByName, SelvaAlias_cmp_name)
+RB_GENERATE(SelvaAliasesByDest, SelvaAlias, _entryByDest, SelvaAlias_cmp_dest)
 
 static bool node_expire_cmp(struct SelvaExpireToken *tok, selva_expire_cmp_arg_t arg)
 {
@@ -817,11 +817,7 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
         };
 
         alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
-        while (alias) {
-
-            selva_hash_update(hash_state, alias->name, alias->name_len);
-            alias = alias->next;
-        }
+        selva_hash_update(hash_state, alias->name, alias->name_len);
     }
 }
 
