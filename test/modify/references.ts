@@ -19,7 +19,7 @@ await test('modify single reference', async (t) => {
   const h1 = await db.create('holder', { dest: t1 })
 
   {
-    const res = await db.query('holder', h1).include('dest').get().toObject()
+    const res = await db.query('holder', h1).include('dest.id').get().toObject()
     deepEqual(res, {
       id: h1,
       dest: { id: t1 },
@@ -29,7 +29,7 @@ await test('modify single reference', async (t) => {
   await db.update('holder', h1, { dest: t2 })
 
   {
-    const res = await db.query('holder', h1).include('dest').get().toObject()
+    const res = await db.query('holder', h1).include('dest.id').get().toObject()
     deepEqual(res, {
       id: h1,
       dest: { id: t2 },
@@ -39,7 +39,7 @@ await test('modify single reference', async (t) => {
   await db.update('holder', h1, { dest: { id: t1 } })
 
   {
-    const res = await db.query('holder', h1).include('dest').get().toObject()
+    const res = await db.query('holder', h1).include('dest.id').get().toObject()
     deepEqual(res, {
       id: h1,
       dest: { id: t1 },

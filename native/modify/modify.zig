@@ -85,13 +85,11 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     var k: usize = 0;
                     const meta = utils.readNext(t.ModifyReferenceMetaHeader, value, &k);
                     var refId = meta.id;
-                    std.debug.print("reference id: {any}, istmp: {any}, refType: {any}\n", .{ refId, meta.isTmp, refTypeEntry });
                     if (meta.isTmp) {
                         refId = items[refId].id;
                     }
 
                     if (Node.getNode(refTypeEntry, refId)) |dst| {
-                        std.debug.print("write reference id: {any}, istmp: {any}", .{ refId, meta.isTmp });
                         _ = try References.writeReference(db, node, propSchema, dst);
                         if (meta.size != 0) {
                             const edgeProps = value[k .. k + meta.size];
