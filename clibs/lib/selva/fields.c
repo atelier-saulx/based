@@ -2127,12 +2127,11 @@ static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFi
     }
 }
 
-static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fields)
+static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fields, bool set_defaults)
 {
     const struct SelvaFieldsSchema *schema = &te->ns.fields_schema;
 
     fields->nr_fields = schema->nr_fields - schema->nr_virtual_fields;
-
     memcpy(fields->fields_map, schema->template.field_map_buf, schema->template.field_map_len);
 
     size_t data_len = schema->template.fixed_data_len;
@@ -2140,7 +2139,7 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
         fields->data_len = data_len;
         fields->data = selva_malloc(data_len);
 
-        if (schema->template.fixed_data_buf) {
+        if (schema->template.fixed_data_buf && set_defaults) {
             selva_fields_init_defaults(te, fields, schema);
         } else {
             memset(fields->data, 0, data_len);
@@ -2151,9 +2150,9 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
     }
 }
 
-void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
+void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, bool set_defaults)
 {
-    selva_fields_init(te, &node->fields);
+    selva_fields_init(te, &node->fields, set_defaults);
     if (te->ns.nr_colvecs > 0) {
         colvec_init_node(te, node);
     }
