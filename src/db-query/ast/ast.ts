@@ -33,19 +33,15 @@ export type IncludeCtx = {
 }
 
 export type QueryAst = {
+  include?: Include
+  select?: { start: number; end: number }
   locale?: string
   range?: { start: number; end: number }
   type?: string
   target?: string | number | (number | string)[]
   filter?: FilterAst
   sort?: { prop: string; order: 'asc' | 'desc' }
-  props?: Record<
-    string,
-    QueryAst & {
-      include?: Include
-      select?: { start: number; end: number }
-    }
-  >
+  props?: Record<string, QueryAst>
   edges?: QueryAst
 }
 export type Ctx = {

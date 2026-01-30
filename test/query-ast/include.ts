@@ -46,13 +46,13 @@ await test('include', async (t) => {
       cookie: 1234,
     },
   })
-  // client.create('user', {
-  //   name: 'mr y',
-  //   cook: {
-  //     cookie: 1234,
-  //   },
-  //   mrFriend: { id: a, $level: 67 },
-  // })
+  client.create('user', {
+    name: 'mr y',
+    cook: {
+      cookie: 1234,
+    },
+    mrFriend: { id: a, $level: 67 },
+  })
 
   await db.drain()
 
@@ -74,16 +74,16 @@ await test('include', async (t) => {
 
       // NOW ADD MR FRIEND!
 
-      // mrFriend: {
-      //   // props: {
-      //   //   name: { include: {} },
-      //   // },
-      //   edges: {
-      //     props: {
-      //       $level: { include: {} },
-      //     },
-      //   },
-      // },
+      mrFriend: {
+        props: {
+          name: { include: {} },
+        },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
+      },
     },
   }
 
