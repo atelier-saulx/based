@@ -38,14 +38,14 @@ await test('include', async (t) => {
           items: {
             ref: 'user',
             prop: 'friends',
-            $level: 'uint32',
+            $level: 'number',
           },
         },
       },
     },
   })
 
-  const a = await client.create('user', {
+  const a = client.create('user', {
     name: 'AAAAAAAAAA',
     y: 67,
     x: true,
@@ -55,7 +55,7 @@ await test('include', async (t) => {
     },
   })
 
-  const b = await client.create('user', {
+  const b = client.create('user', {
     name: 'BBBBBBBBB',
     y: 67,
     x: true,

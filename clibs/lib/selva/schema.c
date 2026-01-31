@@ -237,19 +237,6 @@ static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSch
     return 1;
 }
 
-static int type2fs_aliases(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
-{
-    struct SelvaFieldSchema *fs = &schema->field_schemas[field];
-
-    *fs = (struct SelvaFieldSchema){
-        .field = field,
-        .type = SELVA_FIELD_TYPE_ALIASES,
-        .alias_index = ctx->alias_index++,
-    };
-
-    return 1;
-}
-
 static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
@@ -311,10 +298,6 @@ static struct schemabuf_parser {
     [SELVA_FIELD_TYPE_ALIAS] = {
         .type = SELVA_FIELD_TYPE_ALIAS,
         .type2fs = type2fs_alias,
-    },
-    [SELVA_FIELD_TYPE_ALIASES] = {
-        .type = SELVA_FIELD_TYPE_ALIASES,
-        .type2fs = type2fs_aliases,
     },
     [SELVA_FIELD_TYPE_COLVEC] = {
         .type = SELVA_FIELD_TYPE_COLVEC,

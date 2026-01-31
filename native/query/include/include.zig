@@ -119,6 +119,7 @@ pub fn include(
             .default => {
                 const header = utils.readNext(t.IncludeHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
+                // std.debug.print("??? value {any} - {any}\n", .{ value, header });
                 switch (header.propType) {
                     t.PropType.text,
                     => {
@@ -132,8 +133,6 @@ pub fn include(
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
                     t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
-                        std.debug.print("flap flap {any} \n", .{value});
-
                         // Fixed size
                         try ctx.thread.query.append(header.prop);
                         try ctx.thread.query.append(value);

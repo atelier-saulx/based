@@ -41,7 +41,7 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_WEAK_REFERENCE __attribute__((deprecated)) = 6,
     SELVA_FIELD_TYPE_WEAK_REFERENCES __attribute__((deprecated)) = 7,
     SELVA_FIELD_TYPE_ALIAS = 8,
-    SELVA_FIELD_TYPE_ALIASES = 9,
+    SELVA_FIELD_TYPE_ALIASES __attribute__((deprecated)) = 9,
     SELVA_FIELD_TYPE_COLVEC = 10,
 } __packed;
 

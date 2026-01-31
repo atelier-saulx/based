@@ -1,4 +1,4 @@
-import type { SchemaProp } from '../../schema.js'
+import type { SchemaProp, SchemaType } from '../../schema.js'
 import type {
   LangCodeEnum,
   ModifyEnum,
@@ -17,6 +17,7 @@ export type TypeDef = {
   separate: PropDef[]
   props: Map<string, PropDef>
   tree: PropTree
+  schema: SchemaType<true>
 }
 
 export type PropDef = {
@@ -25,7 +26,7 @@ export type PropDef = {
   start: number
   path: string[]
   size: number
-  prop: SchemaProp<true>
+  schema: SchemaProp<true>
   edges?: TypeDef
   ref?: TypeDef
   refProp?: PropDef
@@ -37,6 +38,7 @@ export type PropDef = {
     op: ModifyEnum,
     lang: LangCodeEnum,
   ): void
+  pushSelvaSchema(buf: AutoSizedUint8Array): void
 }
 
 export const isPropDef = (p: any): p is PropDef => {
@@ -44,7 +46,7 @@ export const isPropDef = (p: any): p is PropDef => {
 }
 
 export type PropDefClass = {
-  new (prop: SchemaProp<true>, path: string[], typeDef: TypeDef): PropDef
+  new (schema: SchemaProp<true>, path: string[], typeDef: TypeDef): PropDef
 }
 
 export const defs: Record<

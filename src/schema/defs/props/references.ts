@@ -2,9 +2,11 @@ import {
   Modify,
   ModifyReferences,
   PropType,
+  PropTypeSelva,
   pushModifyReferenceMetaHeader,
   pushModifyReferencesHeader,
   pushModifyReferencesMetaHeader,
+  pushSelvaSchemaRef,
   writeModifyReferenceMetaHeaderProps,
   writeModifyReferencesHeaderProps,
   writeModifyReferencesMetaHeaderProps,
@@ -13,7 +15,11 @@ import {
   type PropTypeEnum,
 } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
-import type { SchemaProp } from '../../../schema.js'
+import type {
+  SchemaProp,
+  SchemaReference,
+  SchemaReferences,
+} from '../../../schema.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from '../index.js'
 import {
@@ -132,7 +138,8 @@ const setReferences = (
   lang: LangCodeEnum,
 ) => {
   let offset = 0
-  while (offset < value.length) {
+  const len = value.length
+  while (offset < len) {
     const item = value[offset]
     if (getRealId(item)) {
       const index = pushModifyReferencesHeader(buf, {
@@ -163,7 +170,6 @@ const setReferences = (
     } else if (typeof item === 'object' && item?.id instanceof BasedModify) {
       throw item.id
     } else {
-      console.log('??', item, value)
       throw 'bad ref!'
     }
   }
@@ -173,7 +179,7 @@ const deleteReferences = (buf: AutoSizedUint8Array, value: any[]) => {
   let offset = 0
   while (offset < value.length) {
     const item = value[offset]
-    if (typeof item === 'number') {
+    if (getRealId(item)) {
       const index = pushModifyReferencesHeader(buf, {
         op: ModifyReferences.delIds,
         size: 0,
@@ -181,59 +187,84 @@ const deleteReferences = (buf: AutoSizedUint8Array, value: any[]) => {
       const start = buf.length
       offset = serializeIds(buf, value, offset)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-      continue
-    }
-    if (typeof item === 'object' && item !== null && item.tmpId) {
+    } else if (getTmpId(item) !== undefined) {
       const index = pushModifyReferencesHeader(buf, {
-        op: ModifyReferences.tmpIds,
+        op: ModifyReferences.delTmpIds,
         size: 0,
       })
       const start = buf.length
       offset = serializeTmpIds(buf, value, offset)
       writeModifyReferencesHeaderProps.size(buf.data, buf.length - start, index)
-      continue
+    } else if (item instanceof BasedModify) {
+      throw item
+    } else {
+      throw 'bad ref'
     }
-    throw 'bad ref'
   }
 }
 
 export const references = class References extends BasePropDef {
   override type: PropTypeEnum = PropType.references
+  declare schema: SchemaReferences<true>
+  declare ref: TypeDef
+  declare refProp: PropDef
+  declare edges?: TypeDef
   override pushValue(
     buf: AutoSizedUint8Array,
-    value: any,
+    value: unknown,
     op: ModifyEnum,
     lang: LangCodeEnum,
-  ) {
+  ): asserts value is any {
     if (typeof value !== 'object' || value === null) {
       throw new Error('References value must be an object and not null')
     }
+
+    const val = value as {
+      add?: any[]
+      update?: any[]
+      delete?: any[]
+    }
+
     if (Array.isArray(value)) {
       if (op === Modify.update) {
         buf.push(ModifyReferences.clear)
       }
       setReferences(buf, value, this, op, lang)
     }
-    if (value.add) {
-      setReferences(buf, value.add, this, op, lang)
+    if (val.add) {
+      setReferences(buf, val.add, this, op, lang)
     }
-    if (value.update) {
-      setReferences(buf, value.update, this, op, lang)
+    if (val.update) {
+      setReferences(buf, val.update, this, op, lang)
     }
-    if (value.delete) {
-      deleteReferences(buf, value)
+    if (val.delete) {
+      deleteReferences(buf, val.delete)
     }
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaRef(buf, {
+      type: PropTypeSelva.references,
+      flags: makeEdgeConstraintFlags(this.schema.items),
+      dstNodeType: this.ref.id,
+      inverseField: this.refProp.id,
+      edgeNodeType: this.edges?.id ?? 0,
+      capped: this.schema.capped ?? 0,
+    })
   }
 }
 
 export const reference = class Reference extends BasePropDef {
   override type: PropTypeEnum = PropType.reference
+  declare schema: SchemaReference<true>
+  declare ref: TypeDef
+  declare refProp: PropDef
+  declare edges?: TypeDef
   override pushValue(
     buf: AutoSizedUint8Array,
-    value: any,
+    value: unknown,
     lang: LangCodeEnum,
     op: ModifyEnum,
-  ) {
+  ): asserts value is any {
     const id = getRealId(value)
     if (id) {
       pushModifyReferenceMetaHeader(buf, {
@@ -258,8 +289,9 @@ export const reference = class Reference extends BasePropDef {
     }
 
     if (typeof value === 'object' && value !== null) {
-      const realId = getRealId(value.id)
-      const id = realId || getTmpId(value.id)
+      const val = value as { id: any }
+      const realId = getRealId(val.id)
+      const id = realId || getTmpId(val.id)
       if (id !== undefined) {
         const index = pushModifyReferenceMetaHeader(buf, {
           id,
@@ -268,7 +300,7 @@ export const reference = class Reference extends BasePropDef {
         })
         const prop: PropDef = this
         if (prop.edges) {
-          const edges = getEdges(value)
+          const edges = getEdges(val)
           if (edges) {
             const start = buf.length
             serializeProps(prop.edges.tree, edges, buf, op, lang)
@@ -282,9 +314,25 @@ export const reference = class Reference extends BasePropDef {
         return
       }
 
-      if (value.id instanceof BasedModify) {
-        throw value.id
+      if (val.id instanceof BasedModify) {
+        throw val.id
       }
     }
   }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaRef(buf, {
+      type: PropTypeSelva.reference,
+      flags: makeEdgeConstraintFlags(this.schema),
+      dstNodeType: this.ref.id,
+      inverseField: this.refProp.id,
+      edgeNodeType: this.edges?.id ?? 0,
+      capped: 0,
+    })
+  }
+}
+
+function makeEdgeConstraintFlags(schema: SchemaReference): number {
+  let flags = 0
+  flags |= schema.dependent ? 0x01 : 0x00
+  return flags
 }

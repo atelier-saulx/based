@@ -113,10 +113,17 @@ pub const ModifyCreateHeader = packed struct {
     size: u32,
 };
 
+pub const ModifyIncrement = enum(u8) {
+    none = 0,
+    increment = 1,
+    decrement = 2,
+};
+
 pub const ModifyMainHeader = packed struct {
     id: u8,
+    type: PropType,
     start: u16,
-    size: u16,
+    increment: ModifyIncrement,
 };
 
 pub const ModifyPropHeader = packed struct {
@@ -266,8 +273,6 @@ pub const PropType = enum(u8) {
     pub fn size(self: PropType) u8 {
         switch (self) {
             .timestamp,
-            // .created,
-            // .updated,
             .number,
             => return 8,
             .int8,
@@ -285,6 +290,18 @@ pub const PropType = enum(u8) {
             else => return 0,
         }
     }
+};
+
+pub const PropTypeSelva = enum(u8) {
+    null = 0,
+    microBuffer = 1,
+    string = 2,
+    text = 3,
+    reference = 4,
+    references = 5,
+    alias = 8,
+    aliases = 9,
+    colVec = 10,
 };
 
 pub const RefOp = enum(u8) {

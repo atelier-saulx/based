@@ -11,6 +11,12 @@ import {
   PropType,
   type LangCodeEnum,
   type PropTypeEnum,
+  PropTypeSelva,
+  type PropTypeSelvaEnum,
+  pushSelvaSchemaColvec,
+  pushSelvaSchemaMicroBuffer,
+  pushSelvaSchemaString,
+  pushSelvaSchemaText,
 } from '../../../zigTsExports.js'
 import { xxHash64 } from '../../../db-client/xxHash64.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
@@ -27,50 +33,133 @@ export const string = class String extends BasePropDef {
     }
     if (this.size) {
       this.type = PropType.stringFixed
-      this.pushValue = this.pushFixedValue
+      this.pushValue = this.pushFixedValue as any
     }
   }
+
   override type: PropTypeEnum = PropType.string
   override pushValue(
     buf: AutoSizedUint8Array,
-    val: string,
+    val: unknown,
     lang: LangCodeEnum,
-  ) {
+  ): asserts val is string {
+    if (typeof val !== 'string') {
+      throw new Error('Invalid type for string ' + this.path.join('.'))
+    }
+    const prop = this.schema as SchemaString
+    if (prop.min !== undefined && val.length < prop.min) {
+      throw new Error(
+        `Length ${val.length} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && val.length > prop.max) {
+      throw new Error(
+        `Length ${val.length} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
     const normalized = val.normalize('NFKD')
     // TODO make header!
     // TODO compression
     buf.pushUint8(lang)
     buf.pushUint8(NOT_COMPRESSED)
     const written = buf.pushString(normalized)
+
+    if (prop.maxBytes !== undefined) {
+      if (written > prop.maxBytes) {
+        throw new Error(
+          `Byte length ${written} is larger than maxBytes ${
+            prop.maxBytes
+          } for ${this.path.join('.')}`,
+        )
+      }
+    }
     const crc = native.crc32(buf.subarray(buf.length - written))
     buf.pushUint32(crc)
   }
   pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLen: 0,
+      defaultLen: 0,
+    })
+  }
 }
 
 // TODO do it nice
 export const text = class Text extends string {
   override type = PropType.text
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaText(buf, {
+      type: PropTypeSelva.text,
+      nrDefaults: 0,
+    })
+  }
 }
 
 export const json = class Json extends string {
   override type = PropType.json
-  override pushValue(buf: AutoSizedUint8Array, value: any, lang: LangCodeEnum) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+    lang: LangCodeEnum,
+  ) {
+    if (value === undefined) {
+      throw new Error('Invalid undefined value for json ' + this.path.join('.'))
+    }
     super.pushValue(buf, JSON.stringify(value), lang)
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLen: 0,
+      defaultLen: 0,
+    })
   }
 }
 
 export const binary = class Binary extends BasePropDef {
   override type = PropType.binary
-  override pushValue(buf: AutoSizedUint8Array, value: Uint8Array) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is Uint8Array {
+    if (!(value instanceof Uint8Array)) {
+      throw new Error('Invalid type for binary ' + this.path.join('.'))
+    }
+    const prop = this.schema as SchemaString
+    if (prop.maxBytes !== undefined && value.byteLength > prop.maxBytes) {
+      throw new Error(
+        `Byte length ${value.byteLength} is larger than maxBytes ${
+          prop.maxBytes
+        } for ${this.path.join('.')}`,
+      )
+    }
     buf.set(value, buf.length)
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLen: 0,
+      defaultLen: 0,
+    })
   }
 }
 
 export const alias = class Alias extends BasePropDef {
   override type = PropType.alias
-  override pushValue(buf: AutoSizedUint8Array, value: any) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is any {
     throw new Error('Serialize alias not implemented')
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    buf.pushUint8(PropTypeSelva.alias)
   }
 }
 
@@ -83,7 +172,10 @@ export const cardinality = class Cardinality extends BasePropDef {
   sparse: boolean
   precision: number
   override type = PropType.cardinality
-  override pushValue(buf: AutoSizedUint8Array, value: any) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is any {
     if (value instanceof Uint8Array && value.byteLength !== 8) {
       // buf.set(value, buf.length)
       throw new Error('unhandled error cardi')
@@ -93,46 +185,76 @@ export const cardinality = class Cardinality extends BasePropDef {
       value = [value]
     }
 
-    if (value.length === 0) return
+    const items = value as any[]
+
+    if (items.length === 0) return
 
     pushModifyCardinalityHeader(buf, this)
 
-    for (const item of value) {
-      // validate(item, def)
+    for (const item of items) {
       if (typeof item === 'string') {
         buf.reserveUint64()
         xxHash64(ENCODER.encode(item), buf.data, buf.length - 8)
       } else if (item instanceof Uint8Array && item.byteLength === 8) {
         buf.set(item, buf.length)
       } else {
-        throw new Error('unhandled error cardi')
-        // throw [def, val]
+        throw new Error('Invalid value for cardinality ' + this.path.join('.'))
       }
     }
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLen: 0,
+      defaultLen: 0,
+    })
   }
 }
 
 export const vector = class Vector extends BasePropDef {
-  constructor(prop: SchemaVector, path: string[], typeDef: TypeDef) {
-    super(prop, path, typeDef)
-    this.vectorSize = prop.size * 4
+  constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
+    super(schema, path, typeDef)
+    this.vectorSize = schema.size * 4
   }
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
-  override pushValue(buf: AutoSizedUint8Array, value: any) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is any {
     throw new Error('Serialize vector not implemented')
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaMicroBuffer(buf, {
+      type: PropTypeSelva.colVec,
+      len: this.vectorSize,
+      hasDefault: 0, // TODO default
+    })
   }
 }
 
 export const colvec = class ColVec extends BasePropDef {
-  constructor(prop: SchemaVector, path: string[], typeDef: TypeDef) {
-    super(prop, path, typeDef)
-    this.colvecSize = prop.size * getByteSize(prop.baseType)
+  constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
+    super(schema, path, typeDef)
+    this.compSize = getByteSize(schema.baseType)
+    this.vecLen = schema.size * this.compSize
   }
-  colvecSize: number
+  compSize: number
+  vecLen: number
   override type = PropType.colVec
-  override pushValue(buf: AutoSizedUint8Array, value: any) {
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is any {
     throw new Error('Serialize colvec not implemented')
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaColvec(buf, {
+      type: PropTypeSelva.colVec,
+      vecLen: this.vecLen,
+      compSize: this.compSize,
+      hasDefault: 0,
+    })
   }
 }
 

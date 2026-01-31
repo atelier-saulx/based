@@ -41,7 +41,6 @@ static const size_t selva_field_data_size[] = {
     [SELVA_FIELD_TYPE_REFERENCES] = sizeof(struct SelvaNodeReferences),
     [SELVA_FIELD_TYPE_MICRO_BUFFER] = 0, /* check fs. */
     [SELVA_FIELD_TYPE_ALIAS] = 0, /* Aliases are stored separately under the type struct. */
-    [SELVA_FIELD_TYPE_ALIASES] = 0,
     [SELVA_FIELD_TYPE_COLVEC] = sizeof(void *),
 };
 
@@ -1823,7 +1822,7 @@ struct SelvaNode *selva_fields_ensure_ref_edge(
 {
     struct SelvaTypeEntry *edge_type = selva_get_type_by_index(db, efc->edge_node_type);
     struct SelvaNode *edge = nullptr;
-    
+
     if (!edge_type) {
         return nullptr;
     }
@@ -1976,7 +1975,6 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
             .len = selva_fields_get_data_size(fs),
         };
     case SELVA_FIELD_TYPE_ALIAS:
-    case SELVA_FIELD_TYPE_ALIASES:
     case SELVA_FIELD_TYPE_COLVEC:
         return (struct SelvaFieldsPointer){
             .ptr = nullptr,
@@ -2035,7 +2033,6 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         }
         break;
     case SELVA_FIELD_TYPE_ALIAS:
-    case SELVA_FIELD_TYPE_ALIASES:
     case SELVA_FIELD_TYPE_COLVEC:
         return SELVA_ENOTSUP;
     }
@@ -2337,7 +2334,6 @@ nil:
             } while (0);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
-        case SELVA_FIELD_TYPE_ALIASES:
         case SELVA_FIELD_TYPE_COLVEC:
             /*
              * NOP These are hashed in the node hash in db.c.

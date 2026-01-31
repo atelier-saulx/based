@@ -244,7 +244,6 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
             io->sdb_write(selva_fields_nfo2p(fields, nfo), sizeof(uint8_t), fs->smb.len, io);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
-        case SELVA_FIELD_TYPE_ALIASES:
         case SELVA_FIELD_TYPE_COLVEC:
             /* NOP */
             break;
@@ -264,36 +263,25 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
     save_node_fields(io, schema, node);
 }
 
-static void save_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
+static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 {
     const sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
 
     write_dump_magic(io, DUMP_MAGIC_ALIASES);
-    io->sdb_write(&nr_aliases, sizeof(nr_aliases), 1, io);
 
     for (size_t i = 0; i < nr_aliases; i++) {
         struct SelvaAliases *aliases = &te->aliases[i];
-        const struct SelvaAlias *alias_first;
-        const struct SelvaAlias *alias;
-        sdb_nr_aliases_t nr_aliases_by_dest = 0;
+        sdb_nr_aliases_t nr_aliases_by_name = aliases->nr_aliases;
+        struct SelvaAlias *alias;
 
-        alias_first = alias = selva_get_alias_by_dest(aliases, node_id);
-        while (alias) {
-            nr_aliases_by_dest++;
-            alias = alias->next;
-        }
-
-        io->sdb_write(&nr_aliases_by_dest, sizeof(nr_aliases_by_dest), 1, io);
-
-        alias = alias_first;
-        while (alias) {
+        io->sdb_write(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
+        RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
             const char *name_str = alias->name;
             const sdb_arr_len_t name_len = alias->name_len;
 
             io->sdb_write(&name_len, sizeof(name_len), 1, io);
             io->sdb_write(name_str, sizeof(*name_str), name_len, io);
-
-            alias = alias->next;
+            io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
         }
     }
 }
@@ -496,7 +484,6 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
         selva_hash128_t node_hash = selva_node_hash_update(db, te, node, tmp_hash_state);
         selva_hash_update(hash_state, &node_hash, sizeof(node_hash));
         save_node(&io, db, node);
-        save_aliases_node(&io, te, node->node_id);
     }
 
     /*
@@ -504,6 +491,7 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
      * note: colvec is hashed in node_hash.
      */
     selva_dump_save_colvec(&io, db, te, start);
+    save_aliases(&io, te);
 
     selva_hash128_t block_hash = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
@@ -784,7 +772,6 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
             err = load_field_micro_buffer(io, node, fs);
             break;
         case SELVA_FIELD_TYPE_ALIAS:
-        case SELVA_FIELD_TYPE_ALIASES:
             /* NOP */
             break;
         case SELVA_FIELD_TYPE_COLVEC:
@@ -836,29 +823,28 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
 }
 
 __attribute__((warn_unused_result))
-static int load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, node_id_t node_id)
+static int load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
 {
-    sdb_nr_aliases_t nr_aliases;
+    sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
 
     if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
         selva_io_errlog(io, "Invalid aliases magic for type %d", te->type);
         return SELVA_EINVAL;
     }
 
-    io->sdb_read(&nr_aliases, sizeof(nr_aliases), 1, io);
     for (sdb_nr_aliases_t i = 0; i < nr_aliases; i++) {
-        sdb_nr_aliases_t nr_aliases_by_dest;
+        sdb_nr_aliases_t nr_aliases_by_name;
 
-        io->sdb_read(&nr_aliases_by_dest, sizeof(nr_aliases_by_dest), 1, io);
-        for (size_t j = 0; j < nr_aliases_by_dest; j++) {
+        io->sdb_read(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
+        for (size_t j = 0; j < nr_aliases_by_name; j++) {
             sdb_arr_len_t name_len;
             struct SelvaAlias *alias;
 
             io->sdb_read(&name_len, sizeof(name_len), 1, io);
             alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len));
-            alias->name_len = name_len;
             io->sdb_read(alias->name, sizeof(char), name_len, io);
-            alias->dest = node_id;
+            alias->name_len = name_len;
+            io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
 
             selva_set_alias_p(&te->aliases[i], alias);
         }
@@ -870,7 +856,6 @@ static int load_aliases_node(struct selva_io *io, struct SelvaTypeEntry *te, nod
 __attribute__((warn_unused_result))
 static int load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
-    int err;
     sdb_nr_nodes_t nr_nodes;
 
     io->sdb_read(&nr_nodes, sizeof(nr_nodes), 1, io);
@@ -880,11 +865,6 @@ static int load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
         node_id = load_node(io, db, te);
         if (unlikely(node_id == 0)) {
             return SELVA_EINVAL;
-        }
-
-        err = load_aliases_node(io, te, node_id);
-        if (err) {
-            return err;
         }
     }
 
@@ -943,6 +923,7 @@ static int load_type(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEn
 
     err = load_nodes(io, db, te);
     err = (err) ?: load_colvec(io, te);
+    err = (err) ?: load_aliases(io, te);
 
     return err;
 }

@@ -20,15 +20,15 @@ const propIndexOffset = (prop: PropDef) => {
     case PropType.microBuffer:
     case PropType.vector:
       // microbuffers first
-      return 'default' in prop.prop ? -600 : 0
+      return 'default' in prop.schema ? -600 : 0
     case PropType.string:
     case PropType.binary:
     case PropType.json:
       // then strings
-      return 'default' in prop.prop ? -500 : 0
+      return 'default' in prop.schema ? -500 : 0
     // then text
     case PropType.text:
-      return 'default' in prop.prop ? -400 : 0
+      return 'default' in prop.schema ? -400 : 0
     // References go behind the defaults
     case PropType.references:
     case PropType.reference:
@@ -45,13 +45,15 @@ const propIndexOffset = (prop: PropDef) => {
 
 const separateSorter = (a, b) => propIndexOffset(a) - propIndexOffset(b)
 
-const getTypeDef = ({ props }: SchemaType<true>): TypeDef => {
+const getTypeDef = (schema: SchemaType<true>): TypeDef => {
+  const { props } = schema
   const typeDef: TypeDef = {
     id: 0,
     separate: [],
     props: new Map(),
     main: [],
     tree: new Map(),
+    schema,
   }
 
   const walk = (
@@ -123,7 +125,8 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
   for (const [typeName, typeDef] of typeDefs) {
     typeDef.id = typeId++
     for (const [propPath, def] of typeDef.props) {
-      const prop = def.prop.type === 'references' ? def.prop.items : def.prop
+      const prop =
+        def.schema.type === 'references' ? def.schema.items : def.schema
       if (prop.type !== 'reference') continue
       def.ref = typeDefs.get(prop.ref)!
       if (!prop.prop) {
@@ -151,7 +154,5 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
 
   // ----------- add to cache --------
   cache.set(schema, typeDefs)
-
-  console.dir(typeDefs)
   return typeDefs
 }
