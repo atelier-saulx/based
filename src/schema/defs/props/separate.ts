@@ -363,6 +363,10 @@ export const vector = class Vector extends BasePropDef {
   }
 }
 
+// This will become similair to Main BUFFER
+// and it can use it if there is an option used like "appendOnly: true" on the type
+// then we can switch to colvec for all main buffer props
+// if there are no var props we can iterate straight trough the colvec list using another iterator
 export const colvec = class ColVec extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
     super(schema, path, typeDef)
