@@ -7,19 +7,20 @@ import {
   QUERY_ITERATOR_SEARCH_VEC,
   QueryIteratorTypeEnum,
   Order,
+  QueryHeader,
 } from '../../zigTsExports.js'
 import { QueryDef, QueryDefType } from '../../db-client/query/types.js'
 
-export const getIteratorType = (
-  edge: boolean,
-  edgeInclude: boolean,
-): QueryIteratorTypeEnum => {
-  const hasFilter: boolean = false
+export const getIteratorType = (header: QueryHeader): QueryIteratorTypeEnum => {
+  const hasFilter: boolean = header.filterSize != 0
+  const edge: boolean = header.edgeTypeId != 0
+  const edgeInclude: boolean = header.edgeSize != 0
+
+  // const hasFilter = def.filter.size > 0
+  const hasSort = false //
+  const isDesc = false // def.order === Order.desc
   const hasSearch = false //def.search?.size && def.search.size > 0
   const isVector = false // hasSearch && def.search!.isVector
-  // const hasFilter = def.filter.size > 0
-  const isDesc = false // def.order === Order.desc
-  const hasSort = false //
   // def.sort &&
   // (def.sort.prop !== ID_PROP || def.type === QueryDefType.References)
   // def.type === QueryDefType.References &&

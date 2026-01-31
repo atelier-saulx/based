@@ -7,6 +7,7 @@ import {
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { include } from './include.js'
+import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
 
 export const reference = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {

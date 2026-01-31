@@ -5,9 +5,11 @@ import {
   QueryType,
   ID_PROP,
   writeQueryHeaderProps as props,
-  QueryHeaderByteSize,
+  QueryIteratorType,
+  readQueryHeader,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
+import { filter } from './filter/filter.js'
 import { include } from './include.js'
 import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
@@ -23,14 +25,29 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     limit: (ast.range?.end || 1000) + rangeStart,
     sort: false,
     filterSize: 0,
+
+    // Lets remove all this from the header and make specific ones
     searchSize: 0,
-    iteratorType: getIteratorType(false, false),
+    iteratorType: QueryIteratorType.default,
     edgeTypeId: 0,
     edgeSize: 0,
     edgeFilterSize: 0,
     size: 0,
   })
+
+  if (ast.filter) {
+    const filterSize = filter(ast.filter, ctx, typeDef)
+    console.log({ filterSize })
+    props.filterSize(ctx.query.data, filterSize, headerIndex)
+  }
+
   props.includeSize(ctx.query.data, include(ast, ctx, typeDef), headerIndex)
+
+  props.iteratorType(
+    ctx.query.data,
+    getIteratorType(readQueryHeader(ctx.query.data, headerIndex)),
+    headerIndex,
+  )
 }
 
 export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
@@ -45,7 +62,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     sort: false,
     filterSize: 0,
     searchSize: 0,
-    iteratorType: getIteratorType(false, false),
+    iteratorType: QueryIteratorType.default,
     edgeTypeId: 0,
     edgeSize: 0,
     edgeFilterSize: 0,
@@ -66,6 +83,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     },
     prop.typeDef,
   )
+
   props.includeSize(ctx.query.data, size, headerIndex)
 
   if (ast.edges) {
@@ -83,11 +101,13 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       },
       edges,
     )
-    props.iteratorType(
-      ctx.query.data,
-      getIteratorType(true, size > 0),
-      headerIndex,
-    )
+
     props.edgeSize(ctx.query.data, size, headerIndex)
   }
+
+  props.iteratorType(
+    ctx.query.data,
+    getIteratorType(readQueryHeader(ctx.query.data, headerIndex)),
+    headerIndex,
+  )
 }

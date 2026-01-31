@@ -1,6 +1,7 @@
 import { deSerializeSchema } from '../../dist/protocol/db-read/schema/deserialize.js'
 import { convertToReaderSchema } from '../../src/db-client/query/queryDefToReadSchema.js'
 import { registerQuery } from '../../src/db-client/query/registerQuery.js'
+import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import {
   resultToObject,
@@ -79,20 +80,23 @@ await test('include', async (t) => {
 
   // let d = Date.now()
 
-  const ast = {
+  const ast: QueryAst = {
     type: 'user',
+    filter: {
+      props: {
+        y: { ops: [{ op: '=', val: 67 }] },
+      },
+    },
     props: {
-      // name: { include: {} },
-      // y: { include: {} },
+      name: { include: {} },
+      y: { include: {} },
       // x: { include: {} },
       // cook: {
       //   props: {
       //     cookie: { include: {} },
       //   },
       // },
-
       // // NOW ADD MR FRIEND!
-
       // mrFriend: {
       //   props: {
       //     name: { include: {} },
@@ -103,26 +107,20 @@ await test('include', async (t) => {
       //     },
       //   },
       // },
-
-      friends: {
-        props: {
-          name: { include: {} },
-        },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
-      },
+      // friends: {
+      //   props: {
+      //     name: { include: {} },
+      //   },
+      //   edges: {
+      //     props: {
+      //       $level: { include: {} },
+      //     },
+      //   },
+      // },
     },
   }
 
-  const ctx = astToQueryCtx(
-    client.schema!,
-    ast,
-    new AutoSizedUint8Array(1000),
-    new AutoSizedUint8Array(1000),
-  )
+  const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
   // TODO
   // references

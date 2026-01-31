@@ -2,9 +2,36 @@ import { ReaderLocales, ReaderSchema } from '../../protocol/index.js'
 import { PropDef, PropTree } from '../../schema/defs/index.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 
+export type FilterOpts = {
+  lowerCase?: boolean
+  fn?:
+    | 'dotProduct'
+    | 'manhattanDistance'
+    | 'cosineSimilarity'
+    | 'euclideanDistance'
+  score?: number
+}
+
+export type Operator =
+  | '='
+  | '<'
+  | '>'
+  | '!='
+  | '>='
+  | '<='
+  | '..'
+  | '!..'
+  | 'exists'
+  | '!exists'
+  | 'like'
+  | '!like'
+  | 'includes'
+  | '!includes'
+
 export type FilterOp = {
-  op: '=' | '<' | '>' | '..' | 'includes' | 'exists' | 'exist'
+  op: Operator
   val?: any
+  opts?: FilterOpts
 }
 
 export type FilterAst = {
@@ -27,11 +54,6 @@ export type Include = {
   raw?: boolean
 }
 
-export type IncludeCtx = {
-  tree: PropTree
-  main: { prop: PropDef; include: Include }[]
-}
-
 export type QueryAst = {
   include?: Include
   select?: { start: number; end: number }
@@ -47,6 +69,5 @@ export type QueryAst = {
 export type Ctx = {
   query: AutoSizedUint8Array
   readSchema: ReaderSchema
-  sub: AutoSizedUint8Array
   locales: ReaderLocales
 }
