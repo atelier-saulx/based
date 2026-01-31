@@ -14,7 +14,7 @@ const mainSorter = (a, b) => {
   return 1
 }
 
-const propIndexOffset = (prop: PropDef) => {
+export const propIndexOffset = (prop: PropDef): number => {
   switch (prop.type) {
     // We pack default on the beginning, for smallest possible mem
     case PropType.microBuffer:

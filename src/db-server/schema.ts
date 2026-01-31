@@ -20,7 +20,7 @@ import {
   type SchemaOut,
 } from '../schema/index.js'
 import { SCHEMA_FILE } from '../index.js'
-import { getTypeDefs } from '../schema/defs/getTypeDefs.js'
+import { getTypeDefs, propIndexOffset } from '../schema/defs/getTypeDefs.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 
 const schemaOpId = idGenerator()
@@ -114,25 +114,10 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
       let nrVirtualFields = 0
 
       for (const prop of typeDef.separate) {
-        if (
-          'default' in prop.schema &&
-          prop.schema.default &&
-          supportedDefaults.has(prop.type)
-        ) {
-          // TODO what is fixedFields exactly
-          // could we make a return type in the prop.pushSelvaSchema for this?
+        const offset = propIndexOffset(prop)
+        if (offset < 0) {
           nrFixedFields++
-        } else if (
-          prop.type === PropType.reference ||
-          prop.type === PropType.references
-        ) {
-          nrFixedFields++
-        } else if (
-          prop.type === PropType.alias ||
-          prop.type === PropType.aliases ||
-          prop.type === PropType.colVec
-        ) {
-          // We assume that these are always the last props!
+        } else if (offset > 0) {
           nrVirtualFields++
         }
       }
@@ -163,7 +148,6 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
 
       // handle separate
       for (const prop of typeDef.separate) {
-        // TODO put defaults!
         prop.pushSelvaSchema(buf)
       }
 
