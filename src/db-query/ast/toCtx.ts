@@ -13,11 +13,11 @@ export const astToQueryCtx = (
   schema: SchemaOut,
   ast: QueryAst,
   query: AutoSizedUint8Array,
-  sub: AutoSizedUint8Array,
+  // sub: AutoSizedUint8Array, maybe we can just check the query for subs
+  // PREPARE
 ): {
   query: Uint8Array
   readSchema: ReaderSchema
-  subscription: Uint8Array // make this optional ?
 } => {
   query.length = 0
 
@@ -36,7 +36,6 @@ export const astToQueryCtx = (
 
   const ctx: Ctx = {
     query,
-    sub,
     readSchema: readSchema(),
     locales: getReaderLocales(schema),
   }
@@ -52,6 +51,5 @@ export const astToQueryCtx = (
   return {
     query: query.view.slice(),
     readSchema: ctx.readSchema,
-    subscription: new Uint8Array(0),
   }
 }

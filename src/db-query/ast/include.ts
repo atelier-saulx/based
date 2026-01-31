@@ -1,4 +1,9 @@
-import { PropDef, TypeDef, isPropDef } from '../../schema/defs/index.js'
+import {
+  PropDef,
+  PropTree,
+  TypeDef,
+  isPropDef,
+} from '../../schema/defs/index.js'
 import {
   IncludeOp,
   MAIN_PROP,
@@ -7,10 +12,15 @@ import {
   pushIncludePartialHeader,
   pushIncludePartialProp,
 } from '../../zigTsExports.js'
-import { Ctx, Include, IncludeCtx, QueryAst } from './ast.js'
+import { Ctx, Include, QueryAst } from './ast.js'
 import { references } from './multiple.js'
 import { readPropDef } from './readSchema.js'
 import { reference } from './single.js'
+
+type WalkCtx = {
+  tree: PropTree
+  main: { prop: PropDef; include: Include }[]
+}
 
 const includeProp = (ctx: Ctx, prop: PropDef, include: Include) => {
   pushIncludeHeader(ctx.query, {
@@ -29,15 +39,12 @@ const includeMainProps = (
   props.sort((a, b) =>
     a.prop.start < b.prop.start ? -1 : a.prop.start === b.prop.start ? 0 : 1,
   )
+
   let i = 0
   for (const { include, prop } of props) {
-    i += prop.size
-    ctx.readSchema.main.props[prop.start ?? 0] = readPropDef(
-      prop,
-      ctx.locales,
-      include,
-    )
+    ctx.readSchema.main.props[i] = readPropDef(prop, ctx.locales, include)
     ctx.readSchema.main.len += prop.size
+    i += prop.size
   }
   if (props.length === typeDef.main.length) {
     pushIncludeHeader(ctx.query, {
@@ -61,13 +68,8 @@ const includeMainProps = (
   }
 }
 
-export const collect = (
-  ast: QueryAst,
-  ctx: Ctx,
-  typeDef: TypeDef,
-  includeCtx: IncludeCtx,
-) => {
-  const { main, tree } = includeCtx
+const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
+  const { main, tree } = walkCtx
   // if ast.include.glob === '*' include all from schema
   // same for ast.include.glob === '**'
   for (const field in ast.props) {
@@ -88,7 +90,7 @@ export const collect = (
       }
     } else {
       if (prop) {
-        collect(astProp, ctx, typeDef, {
+        walk(astProp, ctx, typeDef, {
           main,
           tree: prop,
         })
@@ -98,15 +100,15 @@ export const collect = (
       }
     }
   }
-  return includeCtx
+  return walkCtx
 }
 
 export const include = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef): number => {
-  const includeStart = ctx.query.length
-  const { main } = collect(ast, ctx, typeDef, {
+  const startIndex = ctx.query.length
+  const { main } = walk(ast, ctx, typeDef, {
     main: [],
     tree: typeDef.tree,
   })
   includeMainProps(ctx, main, typeDef)
-  return ctx.query.length - includeStart
+  return ctx.query.length - startIndex
 }
