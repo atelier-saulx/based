@@ -1,8 +1,11 @@
 import type { SchemaProp } from '../../../schema.js'
-import type {
-  LangCodeEnum,
-  ModifyEnum,
-  PropTypeEnum,
+import {
+  PropType,
+  PropTypeSelva,
+  type LangCodeEnum,
+  type ModifyEnum,
+  type PropTypeEnum,
+  type PropTypeSelvaEnum,
 } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type { PropDef, TypeDef } from '../index.js'
@@ -16,7 +19,7 @@ export class BasePropDef implements PropDef {
   id = 0
   start = 0
   size = 0
-  type: PropTypeEnum = 0 as PropTypeEnum
+  type: PropTypeEnum = PropType.null
   schema: SchemaProp<true>
   path: string[]
   isEdge: boolean = false
@@ -27,6 +30,9 @@ export class BasePropDef implements PropDef {
     lang: LangCodeEnum,
     op: ModifyEnum,
   ): void {
+    // To be implemented by subclasses
+  }
+  pushSelvaSchema(buf: AutoSizedUint8Array): void {
     // To be implemented by subclasses
   }
 }

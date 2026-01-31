@@ -2,33 +2,28 @@ import { DbServer } from './index.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import native, { idGenerator } from '../native.js'
-import { schemaToSelvaBuffer } from './schemaSelvaBuffer.js'
 import { readUint32, writeUint32 } from '../utils/index.js'
-import { OpType, pushSelvaSchemaHeader } from '../zigTsExports.js'
-import { serialize, updateTypeDefs, type SchemaOut } from '../schema/index.js'
+import {
+  LangCode,
+  Modify,
+  OpType,
+  PropType,
+  PropTypeSelva,
+  pushSelvaSchemaHeader,
+  pushSelvaSchemaMicroBuffer,
+  type PropTypeEnum,
+} from '../zigTsExports.js'
+import {
+  BLOCK_CAPACITY_DEFAULT,
+  serialize,
+  updateTypeDefs,
+  type SchemaOut,
+} from '../schema/index.js'
 import { SCHEMA_FILE } from '../index.js'
 import { getTypeDefs } from '../schema/defs/getTypeDefs.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 
 const schemaOpId = idGenerator()
-
-async function getSchemaIds(db: DbServer): Promise<Uint32Array> {
-  const id = schemaOpId.next().value
-  const msg = new Uint8Array(5)
-
-  writeUint32(msg, id, 0)
-  msg[4] = OpType.getSchemaIds
-
-  return new Promise<Uint32Array>((resolve) => {
-    db.addOpOnceListener(OpType.getSchemaIds, id, (buf: Uint8Array) => {
-      const ids = new Uint32Array(buf.length / Uint32Array.BYTES_PER_ELEMENT)
-      const tmp = new Uint8Array(ids.buffer)
-      tmp.set(buf)
-      resolve(ids)
-    })
-    native.query(msg, db.dbCtxExternal)
-  })
-}
 
 function setSchemaIds(db: DbServer, ids: Uint32Array): Promise<void> {
   const id = schemaOpId.next().value
@@ -95,6 +90,13 @@ export async function createSelvaType(
   })
 }
 
+const supportedDefaults = new Set<PropTypeEnum>([
+  PropType.binary,
+  PropType.string,
+  PropType.text,
+  PropType.vector,
+  PropType.json, // same as binary (Uint8Array)
+])
 /**
  * Set schema used in native code.
  * This function should be only called when a new schema is set to an empty DB
@@ -102,45 +104,76 @@ export async function createSelvaType(
  * necessary because `common.sdb` already contains the required schema.
  */
 export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
-  const types = Object.keys(server.schemaTypesParsed)
-  const s = schemaToSelvaBuffer(server.schemaTypesParsed)
-  let maxTid = 0
-  // console.log('-----', schemaToSelvaBufferNew(server.schema!))
-  // process.exit()
+  const typeDefs = getTypeDefs(schema)
+  let maxTypeId = 0
   await Promise.all(
-    s.map(async (buf, i) => {
-      const type = server.schemaTypesParsed[types[i]]
-      maxTid = Math.max(maxTid, type.id)
-      try {
-        await createSelvaType(server, type.id, buf)
-      } catch (err) {
-        throw new Error(
-          `Cannot update schema on selva (native) ${type.type} ${err.message}`,
-        )
+    typeDefs.values().map((typeDef) => {
+      const buf = new AutoSizedUint8Array(4, 65536)
+      maxTypeId = Math.max(maxTypeId, typeDef.id)
+      let nrFixedFields = 1
+      let nrVirtualFields = 0
+
+      for (const prop of typeDef.separate) {
+        if (
+          'default' in prop.schema &&
+          prop.schema.default &&
+          supportedDefaults.has(prop.type)
+        ) {
+          // TODO what is fixedFields exactly
+          // could we make a return type in the prop.pushSelvaSchema for this?
+          nrFixedFields++
+        } else if (
+          prop.type === PropType.reference ||
+          prop.type === PropType.references
+        ) {
+          nrFixedFields++
+        } else if (
+          prop.type === PropType.alias ||
+          prop.type === PropType.aliases ||
+          prop.type === PropType.colVec
+        ) {
+          // We assume that these are always the last props!
+          nrVirtualFields++
+        }
       }
+
+      pushSelvaSchemaHeader(buf, {
+        blockCapacity: typeDef.schema.blockCapacity || BLOCK_CAPACITY_DEFAULT,
+        nrFields: 1 + typeDef.separate.length,
+        nrFixedFields,
+        nrVirtualFields,
+        sdbVersion: 8,
+      })
+
+      // handle main
+      const mainLen = typeDef.main.reduce((len, { size }) => len + size, 0)
+      pushSelvaSchemaMicroBuffer(buf, {
+        type: PropTypeSelva.microBuffer,
+        len: mainLen,
+        hasDefault: 1,
+      })
+
+      for (const prop of typeDef.main) {
+        if ('default' in prop.schema && prop.schema.default) {
+          prop.pushValue(buf, prop.schema.default, Modify.create, LangCode.none)
+        } else {
+          buf.fill(0, buf.length, buf.length + prop.size)
+        }
+      }
+
+      // handle separate
+      for (const prop of typeDef.separate) {
+        // TODO put defaults!
+        prop.pushSelvaSchema(buf)
+      }
+
+      return createSelvaType(server, typeDef.id, buf.view)
     }),
   )
 
-  await setSchemaIds(server, new Uint32Array(maxTid))
+  await setSchemaIds(server, new Uint32Array(maxTypeId))
 
   if (server.fileSystemPath) {
     server.save({ skipDirtyCheck: true }).catch(console.error)
   }
 }
-
-// function schemaToSelvaBufferNew(schema: SchemaOut): Uint8Array[] {
-//   const typeDefs = getTypeDefs(schema)
-//   const buf = new AutoSizedUint8Array(4, 65536)
-//   for (const [, typeDef] of typeDefs) {
-//     for (const propDef of typeDef.main) {
-//     }
-//   }
-
-//   pushSelvaSchemaHeader(buf, {
-//     blockCapacity: t.blockCapacity,
-//     nrFields: 1 + typeDef.separate.length,
-//     nrFixedFields,
-//     nrVirtualFields: virtualFields,
-//     sdbVersion: 8,
-//   })
-// }

@@ -11,6 +11,12 @@ import {
   PropType,
   type LangCodeEnum,
   type PropTypeEnum,
+  PropTypeSelva,
+  type PropTypeSelvaEnum,
+  pushSelvaSchemaColvec,
+  pushSelvaSchemaMicroBuffer,
+  pushSelvaSchemaString,
+  pushSelvaSchemaText,
 } from '../../../zigTsExports.js'
 import { xxHash64 } from '../../../db-client/xxHash64.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
@@ -30,6 +36,7 @@ export const string = class String extends BasePropDef {
       this.pushValue = this.pushFixedValue as any
     }
   }
+
   override type: PropTypeEnum = PropType.string
   override pushValue(
     buf: AutoSizedUint8Array,
@@ -74,11 +81,24 @@ export const string = class String extends BasePropDef {
     buf.pushUint32(crc)
   }
   pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLen: 0,
+      defaultLen: 0,
+    })
+  }
 }
 
 // TODO do it nice
 export const text = class Text extends string {
   override type = PropType.text
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaText(buf, {
+      type: PropTypeSelva.text,
+      nrDefaults: 0,
+    })
+  }
 }
 
 export const json = class Json extends string {
@@ -92,6 +112,13 @@ export const json = class Json extends string {
       throw new Error('Invalid undefined value for json ' + this.path.join('.'))
     }
     super.pushValue(buf, JSON.stringify(value), lang)
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLen: 0,
+      defaultLen: 0,
+    })
   }
 }
 
@@ -114,6 +141,13 @@ export const binary = class Binary extends BasePropDef {
     }
     buf.set(value, buf.length)
   }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLen: 0,
+      defaultLen: 0,
+    })
+  }
 }
 
 export const alias = class Alias extends BasePropDef {
@@ -123,6 +157,9 @@ export const alias = class Alias extends BasePropDef {
     value: unknown,
   ): asserts value is any {
     throw new Error('Serialize alias not implemented')
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    buf.pushUint8(PropTypeSelva.alias)
   }
 }
 
@@ -155,7 +192,6 @@ export const cardinality = class Cardinality extends BasePropDef {
     pushModifyCardinalityHeader(buf, this)
 
     for (const item of items) {
-      // validate(item, def)
       if (typeof item === 'string') {
         buf.reserveUint64()
         xxHash64(ENCODER.encode(item), buf.data, buf.length - 8)
@@ -166,12 +202,19 @@ export const cardinality = class Cardinality extends BasePropDef {
       }
     }
   }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaString(buf, {
+      type: PropTypeSelva.string,
+      fixedLen: 0,
+      defaultLen: 0,
+    })
+  }
 }
 
 export const vector = class Vector extends BasePropDef {
-  constructor(prop: SchemaVector, path: string[], typeDef: TypeDef) {
-    super(prop, path, typeDef)
-    this.vectorSize = prop.size * 4
+  constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
+    super(schema, path, typeDef)
+    this.vectorSize = schema.size * 4
   }
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
@@ -181,20 +224,37 @@ export const vector = class Vector extends BasePropDef {
   ): asserts value is any {
     throw new Error('Serialize vector not implemented')
   }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaMicroBuffer(buf, {
+      type: PropTypeSelva.colVec,
+      len: this.vectorSize,
+      hasDefault: 0, // TODO default
+    })
+  }
 }
 
 export const colvec = class ColVec extends BasePropDef {
-  constructor(prop: SchemaVector, path: string[], typeDef: TypeDef) {
-    super(prop, path, typeDef)
-    this.colvecSize = prop.size * getByteSize(prop.baseType)
+  constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
+    super(schema, path, typeDef)
+    this.compSize = getByteSize(schema.baseType)
+    this.vecLen = schema.size * this.compSize
   }
-  colvecSize: number
+  compSize: number
+  vecLen: number
   override type = PropType.colVec
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
   ): asserts value is any {
     throw new Error('Serialize colvec not implemented')
+  }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaColvec(buf, {
+      type: PropTypeSelva.colVec,
+      vecLen: this.vecLen,
+      compSize: this.compSize,
+      hasDefault: 0,
+    })
   }
 }
 

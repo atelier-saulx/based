@@ -292,6 +292,18 @@ pub const PropType = enum(u8) {
     }
 };
 
+pub const PropTypeSelva = enum(u8) {
+    null = 0,
+    microBuffer = 1,
+    string = 2,
+    text = 3,
+    reference = 4,
+    references = 5,
+    alias = 8,
+    aliases = 9,
+    colVec = 10,
+};
+
 pub const RefOp = enum(u8) {
     clear = 0,
     del = 1,

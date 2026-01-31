@@ -38,6 +38,7 @@ export type PropDef = {
     op: ModifyEnum,
     lang: LangCodeEnum,
   ): void
+  pushSelvaSchema(buf: AutoSizedUint8Array): void
 }
 
 export const isPropDef = (p: any): p is PropDef => {

@@ -1225,6 +1225,43 @@ export const PropTypeInverse = {
  */
 export type PropTypeEnum = (typeof PropType)[keyof typeof PropType]
 
+export const PropTypeSelva = {
+  null: 0,
+  microBuffer: 1,
+  string: 2,
+  text: 3,
+  reference: 4,
+  references: 5,
+  alias: 8,
+  aliases: 9,
+  colVec: 10,
+} as const
+
+export const PropTypeSelvaInverse = {
+  0: 'null',
+  1: 'microBuffer',
+  2: 'string',
+  3: 'text',
+  4: 'reference',
+  5: 'references',
+  8: 'alias',
+  9: 'aliases',
+  10: 'colVec',
+} as const
+
+/**
+  null, 
+  microBuffer, 
+  string, 
+  text, 
+  reference, 
+  references, 
+  alias, 
+  aliases, 
+  colVec 
+ */
+export type PropTypeSelvaEnum = (typeof PropTypeSelva)[keyof typeof PropTypeSelva]
+
 export const RefOp = {
   clear: 0,
   del: 1,

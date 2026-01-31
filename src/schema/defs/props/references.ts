@@ -2,9 +2,11 @@ import {
   Modify,
   ModifyReferences,
   PropType,
+  PropTypeSelva,
   pushModifyReferenceMetaHeader,
   pushModifyReferencesHeader,
   pushModifyReferencesMetaHeader,
+  pushSelvaSchemaRef,
   writeModifyReferenceMetaHeaderProps,
   writeModifyReferencesHeaderProps,
   writeModifyReferencesMetaHeaderProps,
@@ -13,7 +15,11 @@ import {
   type PropTypeEnum,
 } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
-import type { SchemaProp } from '../../../schema.js'
+import type {
+  SchemaProp,
+  SchemaReference,
+  SchemaReferences,
+} from '../../../schema.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from '../index.js'
 import {
@@ -199,6 +205,10 @@ const deleteReferences = (buf: AutoSizedUint8Array, value: any[]) => {
 
 export const references = class References extends BasePropDef {
   override type: PropTypeEnum = PropType.references
+  declare schema: SchemaReferences<true>
+  declare ref: TypeDef
+  declare refProp: PropDef
+  declare edges?: TypeDef
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
@@ -231,10 +241,24 @@ export const references = class References extends BasePropDef {
       deleteReferences(buf, val.delete)
     }
   }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaRef(buf, {
+      type: PropTypeSelva.references,
+      flags: makeEdgeConstraintFlags(this.schema.items),
+      dstNodeType: this.ref.id,
+      inverseField: this.refProp.id,
+      edgeNodeType: this.edges?.id ?? 0,
+      capped: this.schema.capped ?? 0,
+    })
+  }
 }
 
 export const reference = class Reference extends BasePropDef {
   override type: PropTypeEnum = PropType.reference
+  declare schema: SchemaReference<true>
+  declare ref: TypeDef
+  declare refProp: PropDef
+  declare edges?: TypeDef
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
@@ -295,4 +319,20 @@ export const reference = class Reference extends BasePropDef {
       }
     }
   }
+  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    pushSelvaSchemaRef(buf, {
+      type: PropTypeSelva.reference,
+      flags: makeEdgeConstraintFlags(this.schema),
+      dstNodeType: this.ref.id,
+      inverseField: this.refProp.id,
+      edgeNodeType: this.edges?.id ?? 0,
+      capped: 0,
+    })
+  }
+}
+
+function makeEdgeConstraintFlags(schema: SchemaReference): number {
+  let flags = 0
+  flags |= schema.dependent ? 0x01 : 0x00
+  return flags
 }
