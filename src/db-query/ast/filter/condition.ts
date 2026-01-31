@@ -1,4 +1,3 @@
-import { getPropWriter } from '../../../schema/def/utils.js'
 import { PropDef } from '../../../schema/defs/index.js'
 import {
   FilterConditionByteSize,
@@ -6,6 +5,8 @@ import {
   FilterOp,
   FilterOpCompare,
   writeFilterCondition,
+  ModifyEnum,
+  LangCodeEnum,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 
@@ -47,18 +48,21 @@ const opMap: Partial<Record<Operator, keyof typeof FilterOpCompare>> = {
 
 const getFilterOp = (
   propDef: PropDef,
-  write: ReturnType<typeof getPropWriter>,
   operator: Operator,
   size: number,
 ): {
   size: number
   op: FilterOp
-  write: ReturnType<typeof getPropWriter>
+  write: (buf: Uint8Array, val: any, offset: number) => void
 } => {
   const opName = opMap[operator]
 
   if (!opName) {
     throw new Error(`un supported op ${operator}`)
+  }
+
+  const write = (buf: Uint8Array, val: any, offset: number) => {
+    propDef.write(buf, val, offset)
   }
 
   if ((opName === 'eq' || opName === 'neq') && size > 1) {
@@ -92,8 +96,8 @@ const getFilterOp = (
       write: (condition: Uint8Array, v: any, offset: number) => {
         // x >= 3 && x <= 11
         // (x -% 3) <= (11 - 3)
-        write(condition, v[0], offset)
-        write(condition, v[1] - v[0], offset + propDef.size)
+        propDef.write(condition, v[0], offset)
+        propDef.write(condition, v[1] - v[0], offset + propDef.size)
         return condition
       },
     }
@@ -119,15 +123,7 @@ export const createCondition = (
     value = [value]
   }
 
-  const writer = getPropWriter(propDef.type)
-  // this needs to use propDef.write
-
-  const { op, size, write } = getFilterOp(
-    propDef,
-    writer,
-    operator,
-    value.length,
-  )
+  const { op, size, write } = getFilterOp(propDef, operator, value.length)
 
   // this is fixed make fixed and variable in a file
 

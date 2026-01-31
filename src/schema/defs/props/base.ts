@@ -27,8 +27,17 @@ export class BasePropDef implements PropDef {
   pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    lang: LangCodeEnum,
     op: ModifyEnum,
+    lang: LangCodeEnum,
+  ): void {
+    // To be implemented by subclasses
+  }
+  write(
+    buf: Uint8Array,
+    value: unknown,
+    offset: number,
+    op?: ModifyEnum,
+    lang?: LangCodeEnum,
   ): void {
     // To be implemented by subclasses
   }

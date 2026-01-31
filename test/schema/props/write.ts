@@ -103,14 +103,16 @@ await test('Separate props: write matches pushValue', async (t) => {
     // @ts-ignore
     const prop = new Ctor(schema, ['test'], {})
     const autoBuf = new AutoSizedUint8Array()
-    prop.pushValue(autoBuf, value, lang)
+    // @ts-ignore
+    prop.pushValue(autoBuf, value, undefined, lang)
 
     const pushResult = new Uint8Array(autoBuf.data.subarray(0, autoBuf.length))
 
     const writeBuf = new Uint8Array(pushResult.length + 10)
     const offset = 5
     // @ts-ignore
-    prop.write(writeBuf, value, offset, lang)
+    // @ts-ignore
+    prop.write(writeBuf, value, offset, undefined, lang)
 
     const writeResult = writeBuf.subarray(offset, offset + pushResult.length)
 

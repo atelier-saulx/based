@@ -36,8 +36,17 @@ export type PropDef = {
     buf: AutoSizedUint8Array,
     value: unknown,
     op: ModifyEnum,
-    lang: LangCodeEnum,
+    lang?: LangCodeEnum,
   ): void
+
+  write(
+    buf: Uint8Array,
+    val: any,
+    offset: number,
+    op?: ModifyEnum,
+    lang?: LangCodeEnum,
+  ): void
+
   pushSelvaSchema(buf: AutoSizedUint8Array): void
 }
 

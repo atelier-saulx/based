@@ -11,12 +11,14 @@ import {
   PropType,
   type LangCodeEnum,
   type PropTypeEnum,
+  type ModifyEnum,
   PropTypeSelva,
   pushSelvaSchemaColvec,
   pushSelvaSchemaMicroBuffer,
   pushSelvaSchemaString,
   pushSelvaSchemaText,
   writeModifyCardinalityHeader,
+  LangCode,
 } from '../../../zigTsExports.js'
 import { writeUint32 } from '../../../utils/index.js'
 import { xxHash64 } from '../../../db-client/xxHash64.js'
@@ -42,7 +44,8 @@ export const string = class String extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     val: unknown,
-    lang: LangCodeEnum,
+    _op?: ModifyEnum,
+    lang: LangCodeEnum = LangCode.none,
   ): asserts val is string {
     if (typeof val !== 'string') {
       throw new Error('Invalid type for string ' + this.path.join('.'))
@@ -81,7 +84,13 @@ export const string = class String extends BasePropDef {
     const crc = native.crc32(buf.subarray(buf.length - written))
     buf.pushUint32(crc)
   }
-  write(buf: Uint8Array, val: unknown, offset: number, lang: LangCodeEnum) {
+  override write(
+    buf: Uint8Array,
+    val: unknown,
+    offset: number,
+    _op?: ModifyEnum,
+    lang: LangCodeEnum = LangCode.none,
+  ): asserts val is string {
     if (typeof val !== 'string') {
       throw new Error('Invalid type for string ' + this.path.join('.'))
     }
@@ -118,6 +127,7 @@ export const string = class String extends BasePropDef {
     writeUint32(buf, crc, offset + 2 + written)
   }
   pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
+
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
@@ -143,23 +153,25 @@ export const json = class Json extends string {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    lang: LangCodeEnum,
+    op?: ModifyEnum,
+    lang: LangCodeEnum = LangCode.none,
   ) {
     if (value === undefined) {
       throw new Error('Invalid undefined value for json ' + this.path.join('.'))
     }
-    super.pushValue(buf, JSON.stringify(value), lang)
+    super.pushValue(buf, JSON.stringify(value), op, lang)
   }
   override write(
     buf: Uint8Array,
     value: unknown,
     offset: number,
-    lang: LangCodeEnum,
+    op?: ModifyEnum,
+    lang: LangCodeEnum = LangCode.none,
   ) {
     if (value === undefined) {
       throw new Error('Invalid undefined value for json ' + this.path.join('.'))
     }
-    super.write(buf, JSON.stringify(value), offset, lang)
+    super.write(buf, JSON.stringify(value), offset, op, lang)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
@@ -175,6 +187,8 @@ export const binary = class Binary extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
   ): asserts value is Uint8Array {
     if (!(value instanceof Uint8Array)) {
       throw new Error('Invalid type for binary ' + this.path.join('.'))
@@ -189,7 +203,13 @@ export const binary = class Binary extends BasePropDef {
     }
     buf.set(value, buf.length)
   }
-  write(buf: Uint8Array, value: unknown, offset: number) {
+  override write(
+    buf: Uint8Array,
+    value: unknown,
+    offset: number,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
+  ) {
     if (!(value instanceof Uint8Array)) {
       throw new Error('Invalid type for binary ' + this.path.join('.'))
     }
@@ -217,6 +237,8 @@ export const alias = class Alias extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
   ): asserts value is any {
     throw new Error('Serialize alias not implemented')
   }
@@ -237,6 +259,8 @@ export const cardinality = class Cardinality extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
   ): asserts value is any {
     if (value instanceof Uint8Array && value.byteLength !== 8) {
       // buf.set(value, buf.length)
@@ -264,7 +288,13 @@ export const cardinality = class Cardinality extends BasePropDef {
       }
     }
   }
-  write(buf: Uint8Array, value: unknown, offset: number) {
+  override write(
+    buf: Uint8Array,
+    value: unknown,
+    offset: number,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
+  ) {
     if (value instanceof Uint8Array && value.byteLength !== 8) {
       throw new Error('unhandled error cardi')
     }
@@ -310,10 +340,18 @@ export const vector = class Vector extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
   ): asserts value is any {
     throw new Error('Serialize vector not implemented')
   }
-  write(buf: Uint8Array, value: unknown, offset: number) {
+  override write(
+    buf: Uint8Array,
+    value: unknown,
+    offset: number,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
+  ) {
     throw new Error('Serialize vector not implemented')
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
@@ -337,10 +375,18 @@ export const colvec = class ColVec extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
+    _op: ModifyEnum,
+    _lang: LangCodeEnum,
   ): asserts value is any {
     throw new Error('Serialize colvec not implemented')
   }
-  write(buf: Uint8Array, value: unknown, offset: number) {
+  override write(
+    buf: Uint8Array,
+    value: unknown,
+    offset: number,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
+  ) {
     throw new Error('Serialize colvec not implemented')
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {

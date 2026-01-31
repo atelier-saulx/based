@@ -234,7 +234,7 @@ const isValidRefObj = (item: any) => {
 const setReferences = (
   buf: AutoSizedUint8Array,
   value: any[],
-  prop: PropDef,
+  prop: BasePropDef & { edges?: TypeDef },
   op: ModifyEnum,
   lang: LangCodeEnum,
 ) => {
@@ -279,7 +279,7 @@ const setReferences = (
 const setReferencesWrite = (
   buf: Uint8Array,
   value: any[],
-  prop: PropDef,
+  prop: BasePropDef & { edges?: TypeDef },
   op: ModifyEnum,
   lang: LangCodeEnum,
   bufOffset: number,
@@ -465,7 +465,7 @@ export const references = class References extends BasePropDef {
       deleteReferences(buf, val.delete)
     }
   }
-  write(
+  override write(
     buf: Uint8Array,
     value: unknown,
     offset: number,
@@ -524,8 +524,8 @@ export const reference = class Reference extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    lang: LangCodeEnum,
     op: ModifyEnum,
+    lang: LangCodeEnum,
   ): asserts value is any {
     const id = getRealId(value)
     if (id) {
@@ -560,7 +560,7 @@ export const reference = class Reference extends BasePropDef {
           isTmp: !realId,
           size: 0,
         })
-        const prop: PropDef = this
+        const prop = this
         if (prop.edges) {
           const edges = getEdges(val)
           if (edges) {
@@ -581,12 +581,12 @@ export const reference = class Reference extends BasePropDef {
       }
     }
   }
-  write(
+  override write(
     buf: Uint8Array,
     value: unknown,
     offset: number,
-    lang: LangCodeEnum,
     op: ModifyEnum,
+    lang: LangCodeEnum,
   ) {
     const id = getRealId(value)
     if (id) {
@@ -635,9 +635,7 @@ export const reference = class Reference extends BasePropDef {
           offset,
         )
         const start = offset
-
-        const prop: PropDef = this
-        if (prop.edges) {
+        if (this.edges) {
           const edges = getEdges(val)
           if (edges) {
             // TODO: Edges writing
