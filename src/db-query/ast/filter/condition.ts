@@ -18,7 +18,6 @@ export const conditionBuffer = (
   const condition = new Uint8Array(
     size + FilterConditionByteSize + FilterConditionAlignOf + 1 + propDef.size,
   )
-  console.log('COND BUFFER', size, condition)
   condition[0] = 255 // Means condition header is not aligned
   const offset =
     writeFilterCondition(
@@ -121,12 +120,16 @@ export const createCondition = (
   }
 
   const writer = getPropWriter(propDef.type)
+  // this needs to use propDef.write
+
   const { op, size, write } = getFilterOp(
     propDef,
     writer,
     operator,
     value.length,
   )
+
+  // this is fixed make fixed and variable in a file
 
   const vectorLen = 16 / size
 
@@ -145,6 +148,7 @@ export const createCondition = (
     console.log('derp', condition)
     return condition
   } else if (value.length > vectorLen) {
+    // only relevant for eq and neq
     const { condition, offset } = conditionBuffer(
       { ...propDef, start: propDef.start || 0 },
       value.length * size,
