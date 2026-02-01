@@ -1,4 +1,5 @@
 import { deSerializeSchema } from '../../dist/protocol/db-read/schema/deserialize.js'
+import { getTypeDefs } from '../../dist/schema/defs/getTypeDefs.js'
 import { convertToReaderSchema } from '../../src/db-client/query/queryDefToReadSchema.js'
 import { registerQuery } from '../../src/db-client/query/registerQuery.js'
 import { QueryAst } from '../../src/db-query/ast/ast.js'
@@ -44,6 +45,8 @@ await test('include', async (t) => {
       },
     },
   })
+
+  console.log(getTypeDefs(client.schema!).get('user')?.main)
 
   const a = client.create('user', {
     name: 'AAAAAAAAAA',

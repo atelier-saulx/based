@@ -10,6 +10,7 @@ import { defs, type PropDef, type TypeDef } from './index.js'
 const mainSorter = (a, b) => {
   if (a.size === 8) return -1
   if (a.size === 4 && b.size !== 8) return -1
+  if (a.size === 2 && a.size !== 4 && b.size !== 8) return -1
   if (a.size === b.size) return 0
   return 1
 }
