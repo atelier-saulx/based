@@ -22,22 +22,21 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     const ops = astProp.ops
 
     // AND & OR
-
     if (isPropDef(prop)) {
       if (prop.type === PropType.references) {
         // references(astProp, ctx, prop)
       } else if (prop.type === PropType.reference) {
+        // this can be added here
         // reference(astProp, ctx, prop)
       } else if (ops) {
-        console.log({ ops })
         if (prop.id === 0) {
           main.push({ prop, ops })
         } else {
           for (const op of ops) {
+            // can prob just push this directly
             const cond = createCondition(prop, op.op, op.val, op.opts)
             ctx.query.set(cond, ctx.query.length)
           }
-          //   includeProp(ctx, prop, include)
         }
       }
     } else {
@@ -57,23 +56,22 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
 
 export const filter = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef): number => {
   const startIndex = ctx.query.length
-  // doink
+
+  // or cond needs to be here
 
   const { main } = walk(ast, ctx, typeDef, {
     main: [],
     tree: typeDef.tree,
   })
 
-  console.log('collect dat main', main)
-
   for (const { prop, ops } of main) {
     for (const op of ops) {
       const cond = createCondition(prop, op.op, op.val, op.opts)
-      console.log(cond)
       ctx.query.set(cond, ctx.query.length)
     }
   }
-  // includeMainProps(ctx, main, typeDef)
+
+  // or filter needs to be here
 
   return ctx.query.length - startIndex
 }

@@ -1,4 +1,3 @@
-import { debugBuffer } from '../../../sdk.js'
 import { writeUint64 } from '../../../utils/uint8.js'
 import {
   FilterConditionByteSize,
@@ -9,7 +8,6 @@ import {
   PropType,
   writeFilterSelect,
 } from '../../../zigTsExports.js'
-import { combineIntermediateResults } from '../query.js'
 import { byteSize } from '../toByteCode/utils.js'
 import { IntermediateByteCode, QueryDefFilter } from '../types.js'
 import { conditionBuffer } from './condition.js'
@@ -17,7 +15,7 @@ import { conditionBuffer } from './condition.js'
 const addConditions = (
   result: IntermediateByteCode[],
   def: QueryDefFilter,
-  fromLastProp: number, // bit wrong for id...
+  fromLastProp: number,
 ) => {
   let lastProp = -1
   const prevProp = def.conditions.get(fromLastProp)
@@ -38,7 +36,6 @@ const getSelectOp = (
   edgeTypeId: number,
   isMulti: boolean,
 ): FilterOpCompareEnum => {
-  // very different
   if (edgeTypeId != 0) {
     return isMulti ? FilterOpCompare.selectLargeRefs : FilterOpCompare.selectRef
   }
@@ -134,21 +131,10 @@ export const filterToBuffer = (
     )
     const nextOrIndex = resultSize + condition.byteLength + fromIndex
 
-    // console.log('DERP', nextOrIndex)
-
     writeUint64(condition, nextOrIndex, offset)
     result.unshift(condition)
     result.push(filterToBuffer(def.or, lastProp, nextOrIndex, false))
   }
-
-  // if (top && result.length > 0) {
-  //   console.dir(logger(def), { depth: 10 })
-  //   const totalByteLength = byteSize(result)
-  //   const res = new Uint8Array(totalByteLength)
-  //   const nResult = combineIntermediateResults(res, 0, result)
-  //   console.log('FILTER!', totalByteLength)
-  //   debugBuffer(res)
-  // }
 
   return result
 }
