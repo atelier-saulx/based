@@ -4,12 +4,19 @@ import {
   PropTree,
   TypeDef,
 } from '../../../schema/defs/index.js'
-import { PropType } from '../../../zigTsExports.js'
+import { debugBuffer } from '../../../sdk.js'
+import { writeUint64 } from '../../../utils/uint8.js'
+import { FilterOpCompare, ID_PROP, PropType } from '../../../zigTsExports.js'
 import { Ctx, FilterAst, FilterOp } from '../ast.js'
-import { createCondition } from './condition.js'
+import {
+  conditionBuffer,
+  conditionByteSize,
+  createCondition,
+} from './condition.js'
 
 type WalkCtx = {
   tree: PropTree
+  prop: number
   main: { prop: PropDef; ops: FilterOp[] }[]
 }
 
@@ -32,10 +39,11 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
         if (prop.id === 0) {
           main.push({ prop, ops })
         } else {
+          walkCtx.prop = prop.id
           for (const op of ops) {
             // can prob just push this directly
-            const cond = createCondition(prop, op.op, op.val, op.opts)
-            ctx.query.set(cond, ctx.query.length)
+            const condition = createCondition(prop, op.op, op.val, op.opts)
+            ctx.query.set(condition, ctx.query.length)
           }
         }
       }
@@ -44,6 +52,7 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
         walk(astProp, ctx, typeDef, {
           main,
           tree: prop,
+          prop: walkCtx.prop,
         })
       } else {
         // if EN, if NL
@@ -54,24 +63,67 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   return walkCtx
 }
 
-export const filter = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef): number => {
+export const filter = (
+  ast: FilterAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  filterIndex: number = 0,
+  lastProp: number = ID_PROP,
+): number => {
   const startIndex = ctx.query.length
+
+  // need to pass the prop
 
   // or cond needs to be here
 
-  const { main } = walk(ast, ctx, typeDef, {
+  const walkCtx = {
     main: [],
     tree: typeDef.tree,
-  })
+    prop: lastProp,
+  }
+
+  // if (ast.or) {
+  //   ctx.query.reserve(conditionByteSize(8, 8))
+  // }
+
+  const { main } = walk(ast, ctx, typeDef, walkCtx)
 
   for (const { prop, ops } of main) {
+    // better to do main first scince they are usualy lighter filters...
+    walkCtx.prop = prop.id
     for (const op of ops) {
-      const cond = createCondition(prop, op.op, op.val, op.opts)
-      ctx.query.set(cond, ctx.query.length)
+      const condition = createCondition(prop, op.op, op.val, op.opts)
+      ctx.query.set(condition, ctx.query.length)
     }
   }
 
-  // or filter needs to be here
+  // if (ast.or) {
+  //   const resultSize = ctx.query.length - startIndex
+  //   const { offset, condition } = conditionBuffer(
+  //     { id: lastProp, size: 8, start: 0 },
+  //     8,
+  //     { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
+  //   )
+
+  //   const nextOrIndex = resultSize + filterIndex
+
+  //   console.info('NEXT OR INDEX', nextOrIndex)
+  //   writeUint64(condition, nextOrIndex, offset)
+  //   ctx.query.set(condition, startIndex)
+  //   // then add the actual OR cond
+
+  //   filter(
+  //     ast.or,
+  //     ctx,
+  //     typeDef,
+  //     ctx.query.length - startIndex + filterIndex,
+  //     walkCtx.prop,
+  //   )
+  // }
+
+  console.log('-------------------------DERP FILTER...')
+  debugBuffer(ctx.query.data, startIndex, ctx.query.length)
+  console.log('-------------------------DERP FILTER... DONE')
 
   return ctx.query.length - startIndex
 }

@@ -1,5 +1,4 @@
 import { ReaderLocales, ReaderSchema } from '../../protocol/index.js'
-import { PropDef, PropTree } from '../../schema/defs/index.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 
 export type FilterOpts = {
@@ -41,8 +40,8 @@ export type FilterAst = {
       select?: { start: number; end: number }
     }
   }
-  or?: FilterAst[]
-  and?: FilterAst[]
+  or?: FilterAst
+  and?: FilterAst
   edges?: FilterAst
 }
 
@@ -66,6 +65,7 @@ export type QueryAst = {
   props?: Record<string, QueryAst>
   edges?: QueryAst
 }
+
 export type Ctx = {
   query: AutoSizedUint8Array
   readSchema: ReaderSchema

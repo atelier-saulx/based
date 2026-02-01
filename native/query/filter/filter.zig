@@ -18,7 +18,7 @@ pub fn prepare(
     var i: usize = 0;
     while (i < q.len) {
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
-        var condition: *t.FilterCondition = undefined;
+        var c: *t.FilterCondition = undefined;
         // 255 means its unprepared - the condition new index will be set when aligned
 
         if (q[i] == 255) {
@@ -26,17 +26,18 @@ pub fn prepare(
             const totalSize = headerSize + condSize;
 
             q[i] = COND_ALIGN_BYTES - utils.alignLeft(t.FilterCondition, q[i + 1 .. i + totalSize]) + 1;
-            condition = utils.readPtr(t.FilterCondition, q, q[i] + i);
+            c = utils.readPtr(t.FilterCondition, q, q[i] + i);
 
-            if (condition.op.compare != t.FilterOpCompare.nextOrIndex) {
-                condition.fieldSchema = try Schema.getFieldSchema(typeEntry, condition.prop);
+            if (c.op.compare != t.FilterOpCompare.nextOrIndex) {
+                c.fieldSchema = try Schema.getFieldSchema(typeEntry, c.prop);
             }
 
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
-            condition.offset = utils.alignLeftLen(condition.len, q[nextI .. totalSize + i]);
+
+            c.offset = utils.alignLeftLen(c.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
 
-            switch (condition.op.compare) {
+            switch (c.op.compare) {
                 .selectLargeRefEdge => {
                     // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
                     // const edgeSelect = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
@@ -46,7 +47,7 @@ pub fn prepare(
                     i = end;
                 },
                 .selectRef => {
-                    const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - condition.offset);
+                    const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - c.offset);
                     select.typeEntry = try Node.getType(ctx.db, select.typeId);
                     try prepare(q[end .. end + select.size], ctx, select.typeEntry);
                     i = end + select.size;
@@ -56,8 +57,8 @@ pub fn prepare(
                 },
             }
         } else {
-            condition = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
-            const totalSize = headerSize + condition.size;
+            c = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
+            const totalSize = headerSize + c.size;
             const end = totalSize + i;
             i = end;
         }
@@ -109,10 +110,12 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
         const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
         const index = i + q[i] + utils.sizeOf(t.FilterCondition);
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
+
         if (prop != c.prop) {
             prop = c.prop;
             v = Fields.getRaw(node, c.fieldSchema);
         }
+
         pass = switch (c.op.compare) {
             .nextOrIndex => blk: {
                 nextOrIndex = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;

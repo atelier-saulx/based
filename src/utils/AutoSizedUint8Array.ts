@@ -235,6 +235,16 @@ export class AutoSizedUint8Array {
     return index
   }
 
+  reserve(amount: number): number {
+    const index = this.length
+    const end = index + amount
+    if (end > this.data.length) {
+      this.ensure(end)
+    }
+    this.length = end
+    return index
+  }
+
   // Core array methods restored for type safety and performance
   push(byte: number): void {
     return this.pushUint8(byte)

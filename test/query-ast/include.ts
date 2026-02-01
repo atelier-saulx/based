@@ -86,6 +86,11 @@ await test('include', async (t) => {
       props: {
         y: { ops: [{ op: '=', val: 67 }] },
       },
+      // or: {
+      //   props: {
+      //     y: { ops: [{ op: '=', val: 99 }] },
+      //   },
+      // },
     },
     props: {
       name: { include: {} },
