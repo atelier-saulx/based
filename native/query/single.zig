@@ -123,6 +123,8 @@ pub fn referenceEdge(
             const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
             const e = Node.getNode(edgeTypeEntry, ref.edge);
 
+            std.debug.print("edge {any} {any} \n", .{ e, ref.edge });
+
             if (e) |edge| {
                 const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
                 try ctx.thread.query.append(t.ReadOp.edge);

@@ -55,15 +55,15 @@ await test('include', async (t) => {
     },
   })
 
-  const b = client.create('user', {
-    name: 'BBBBBBBBB',
-    y: 67,
-    x: true,
-    flap: 9999,
-    cook: {
-      cookie: 1234,
-    },
-  })
+  // const b = client.create('user', {
+  //   name: 'BBBBBBBBB',
+  //   y: 67,
+  //   x: true,
+  //   flap: 9999,
+  //   cook: {
+  //     cookie: 1234,
+  //   },
+  // })
 
   await client.create('user', {
     name: 'CCCCCCCCC',
@@ -72,7 +72,7 @@ await test('include', async (t) => {
     },
     y: 0,
     mrFriend: { id: a, $level: 67 },
-    friends: [{ id: a, $level: 250 }, b],
+    // friends: [{ id: a, $level: 250 }, b],
   })
 
   await db.drain()
@@ -115,11 +115,16 @@ await test('include', async (t) => {
     props: {
       // name: { include: {} },
       y: { include: {} },
-      // mrFriend: {
-      //   props: {
-      //     y: { include: {} },
-      //   },
-
+      mrFriend: {
+        props: {
+          y: { include: {} },
+        },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
+      },
       //   // EDGE
 
       //   edges: {
@@ -129,16 +134,16 @@ await test('include', async (t) => {
       //   },
       // },
       // fix friends
-      friends: {
-        props: {
-          name: { include: {} },
-        },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
-      },
+      // friends: {
+      //   props: {
+      //     name: { include: {} },
+      //   },
+      //   edges: {
+      //     props: {
+      //       $level: { include: {} },
+      //     },
+      //   },
+      // },
     },
   }
 
