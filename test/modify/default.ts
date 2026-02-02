@@ -63,10 +63,9 @@ await test('modify - default values on edge', async (t) => {
     .include('member.$level')
     .include('member.id')
     .get()
+    .toObject()
 
-  // @ts-ignore
   deepEqual(resG1.member?.$role, 'member')
-  // @ts-ignore
   deepEqual(resG1.member?.$level, 1)
 
   // 2. Create edge with edge props
@@ -80,9 +79,8 @@ await test('modify - default values on edge', async (t) => {
     .include('member.$level')
     .include('member.id')
     .get()
+    .toObject()
 
-  // @ts-ignore
   deepEqual(resG2.member?.$role, 'admin')
-  // @ts-ignore
   deepEqual(resG2.member?.$level, 99)
 })

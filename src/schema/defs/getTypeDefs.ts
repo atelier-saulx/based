@@ -5,7 +5,7 @@ import {
   type SchemaType,
 } from '../../schema.js'
 import { PropType } from '../../zigTsExports.js'
-import { defs, type PropDef, type PropTree, type TypeDef } from './index.js'
+import { defs, type PropDef, type TypeDef } from './index.js'
 
 const mainSorter = (a, b) => {
   if (a.size === 8) return -1
