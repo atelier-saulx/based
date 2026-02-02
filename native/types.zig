@@ -82,6 +82,7 @@ pub const Modify = enum(u8) {
     update = 1,
     delete = 2,
     upsert = 3,
+    insert = 4,
 };
 
 pub const ModifyHeader = packed struct {
@@ -97,12 +98,6 @@ pub const ModifyUpdateHeader = packed struct {
     isTmp: bool,
     _padding: u7,
     id: u32,
-    size: u32,
-};
-
-pub const ModifyUpsertHeader = packed struct {
-    op: Modify,
-    type: u8,
     size: u32,
 };
 

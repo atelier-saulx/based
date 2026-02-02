@@ -10,7 +10,7 @@ import { getTypeDef } from './index.js'
 import { serializeProps } from './props.js'
 import type { InferPayload, InferTarget } from './types.js'
 
-export const serializeUpsert = <
+export const serializeInsert = <
   S extends SchemaOut = SchemaOut,
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(
@@ -23,7 +23,7 @@ export const serializeUpsert = <
 ) => {
   const typeDef = getTypeDef(schema, type)
   const index = pushModifyCreateHeader(buf, {
-    op: Modify.upsert,
+    op: Modify.insert,
     type: typeDef.id,
     size: 0,
   })

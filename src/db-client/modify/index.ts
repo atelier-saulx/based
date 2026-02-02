@@ -17,6 +17,7 @@ import type { serializeCreate } from './create.js'
 import type { serializeUpdate } from './update.js'
 import type { serializeDelete } from './delete.js'
 import type { serializeUpsert } from './upsert.js'
+import type { serializeInsert } from './insert.js'
 export { getTypeDefs }
 
 export const getTypeDef = (schema: SchemaOut, type: string) => {
@@ -60,6 +61,7 @@ type ModifySerializer =
   | typeof serializeUpdate
   | typeof serializeDelete
   | typeof serializeUpsert
+  | typeof serializeInsert
 
 type ModifyBatch = {
   count: number

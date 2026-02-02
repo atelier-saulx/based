@@ -20,6 +20,7 @@ import { serializeCreate } from './modify/create.js'
 import { serializeUpdate } from './modify/update.js'
 import { serializeDelete } from './modify/delete.js'
 import { serializeUpsert } from './modify/upsert.js'
+import { serializeInsert } from './modify/insert.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -32,6 +33,7 @@ type BasedCreatePromise = BasedModify<typeof serializeCreate>
 type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
 type BasedDeletePromise = BasedModify<typeof serializeDelete>
 type BasedUpsertPromise = BasedModify<typeof serializeUpsert>
+type BasedInsertPromise = BasedModify<typeof serializeInsert>
 
 export type ModifyOpts = {
   unsafe?: boolean
@@ -136,6 +138,24 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
     return new BasedModify(
       this.modifyCtx,
       serializeUpsert,
+      this.schema!,
+      type,
+      target,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    )
+  }
+
+  insert<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    target: InferTarget<S['types']>[T],
+    obj: InferPayload<S['types']>[T],
+    opts?: ModifyOpts,
+  ): BasedInsertPromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeInsert,
       this.schema!,
       type,
       target,

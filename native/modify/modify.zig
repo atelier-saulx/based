@@ -194,14 +194,19 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
     }
 }
 
-fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8, items: []u8) !Node.Node {
+const UpsertResult = struct {
+    node: Node.Node,
+    created: bool,
+};
+
+fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8, items: []u8) !UpsertResult {
     var j: usize = 0;
     while (j < data.len) {
         const prop = utils.readNext(t.ModifyPropHeader, data, &j);
         const value = data[j .. j + prop.size];
         if (prop.type == t.PropType.alias) {
             if (Fields.getAliasByName(typeEntry, prop.id, value)) |node| {
-                return node;
+                return .{ .node = node, .created = false };
             }
         }
         j += prop.size;
@@ -210,7 +215,7 @@ fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8, items:
     const node = try Node.upsertNode(typeEntry, id);
     db.ids[typeId - 1] = id;
     try modifyProps(db, typeEntry, node, data, items);
-    return node;
+    return .{ .node = node, .created = true };
 }
 
 pub fn modify(
@@ -262,19 +267,39 @@ pub fn modify(
                 i += update.size;
             },
             .upsert => {
-                const upsert = utils.read(t.ModifyUpsertHeader, buf, i);
-                i += utils.sizeOf(t.ModifyUpsertHeader);
+                const upsert = utils.read(t.ModifyCreateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateHeader);
                 const target = buf[i .. i + upsert.size];
                 i += upsert.size;
                 const typeEntry = try Node.getType(db, upsert.type);
-                const node = try upsertTarget(db, upsert.type, typeEntry, target, items);
+                const upsertRes = try upsertTarget(db, upsert.type, typeEntry, target, items);
                 const dataSize = utils.read(u32, buf, i);
                 i += 4;
                 const data = buf[i .. i + dataSize];
-                modifyProps(db, typeEntry, node, data, items) catch {
+                modifyProps(db, typeEntry, upsertRes.node, data, items) catch {
                     // handle errors
                 };
-                const id = Node.getNodeId(node);
+                const id = Node.getNodeId(upsertRes.node);
+                utils.write(result, id, j);
+                utils.write(result, t.ModifyError.null, j + 4);
+                i += dataSize;
+            },
+            .insert => {
+                const insert = utils.read(t.ModifyCreateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateHeader);
+                const target = buf[i .. i + insert.size];
+                i += insert.size;
+                const typeEntry = try Node.getType(db, insert.type);
+                const upsertRes = try upsertTarget(db, insert.type, typeEntry, target, items);
+                const dataSize = utils.read(u32, buf, i);
+                i += 4;
+                if (upsertRes.created) {
+                    const data = buf[i .. i + dataSize];
+                    modifyProps(db, typeEntry, upsertRes.node, data, items) catch {
+                        // handle errors
+                    };
+                }
+                const id = Node.getNodeId(upsertRes.node);
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
                 i += dataSize;

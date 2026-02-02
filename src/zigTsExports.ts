@@ -201,6 +201,7 @@ export const Modify = {
   update: 1,
   delete: 2,
   upsert: 3,
+  insert: 4,
 } as const
 
 export const ModifyInverse = {
@@ -208,13 +209,15 @@ export const ModifyInverse = {
   1: 'update',
   2: 'delete',
   3: 'upsert',
+  4: 'insert',
 } as const
 
 /**
   create, 
   update, 
   delete, 
-  upsert 
+  upsert, 
+  insert 
  */
 export type ModifyEnum = (typeof Modify)[keyof typeof Modify]
 
@@ -387,77 +390,6 @@ export const pushModifyUpdateHeader = (
   buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
   buf.pushUint32(Number(header.id))
-  buf.pushUint32(Number(header.size))
-  return index
-}
-
-export type ModifyUpsertHeader = {
-  op: ModifyEnum
-  type: number
-  size: number
-}
-
-export const ModifyUpsertHeaderByteSize = 6
-
-export const ModifyUpsertHeaderAlignOf = 8
-
-export const writeModifyUpsertHeader = (
-  buf: Uint8Array,
-  header: ModifyUpsertHeader,
-  offset: number,
-): number => {
-  buf[offset] = Number(header.op)
-  offset += 1
-  buf[offset] = Number(header.type)
-  offset += 1
-  writeUint32(buf, Number(header.size), offset)
-  offset += 4
-  return offset
-}
-
-export const writeModifyUpsertHeaderProps = {
-  op: (buf: Uint8Array, value: ModifyEnum, offset: number) => {
-    buf[offset] = Number(value)
-  },
-  type: (buf: Uint8Array, value: number, offset: number) => {
-    buf[offset + 1] = Number(value)
-  },
-  size: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, Number(value), offset + 2)
-  },
-}
-
-export const readModifyUpsertHeader = (
-  buf: Uint8Array,
-  offset: number,
-): ModifyUpsertHeader => {
-  const value: ModifyUpsertHeader = {
-    op: (buf[offset]) as ModifyEnum,
-    type: buf[offset + 1],
-    size: readUint32(buf, offset + 2),
-  }
-  return value
-}
-
-export const readModifyUpsertHeaderProps = {
-    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
-    type: (buf: Uint8Array, offset: number) => buf[offset + 1],
-    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
-}
-
-export const createModifyUpsertHeader = (header: ModifyUpsertHeader): Uint8Array => {
-  const buffer = new Uint8Array(ModifyUpsertHeaderByteSize)
-  writeModifyUpsertHeader(buffer, header, 0)
-  return buffer
-}
-
-export const pushModifyUpsertHeader = (
-  buf: AutoSizedUint8Array,
-  header: ModifyUpsertHeader,
-): number => {
-  const index = buf.length
-  buf.pushUint8(Number(header.op))
-  buf.pushUint8(Number(header.type))
   buf.pushUint32(Number(header.size))
   return index
 }
