@@ -97,29 +97,29 @@ export const filter = (
     }
   }
 
-  // if (ast.or) {
-  //   const resultSize = ctx.query.length - startIndex
-  //   const { offset, condition } = conditionBuffer(
-  //     { id: lastProp, size: 8, start: 0 },
-  //     8,
-  //     { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
-  //   )
+  if (ast.or) {
+    const resultSize = ctx.query.length - startIndex
+    const { offset, condition } = conditionBuffer(
+      { id: lastProp, size: 8, start: 0 },
+      8,
+      { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
+    )
 
-  //   const nextOrIndex = resultSize + filterIndex
+    const nextOrIndex = resultSize + filterIndex
 
-  //   console.info('NEXT OR INDEX', nextOrIndex)
-  //   writeUint64(condition, nextOrIndex, offset)
-  //   ctx.query.set(condition, startIndex)
-  //   // then add the actual OR cond
+    console.info('NEXT OR INDEX', nextOrIndex)
+    writeUint64(condition, nextOrIndex, offset)
+    ctx.query.set(condition, startIndex)
+    // then add the actual OR cond
 
-  //   filter(
-  //     ast.or,
-  //     ctx,
-  //     typeDef,
-  //     ctx.query.length - startIndex + filterIndex,
-  //     walkCtx.prop,
-  //   )
-  // }
+    filter(
+      ast.or,
+      ctx,
+      typeDef,
+      ctx.query.length - startIndex + filterIndex,
+      walkCtx.prop,
+    )
+  }
 
   console.log('-------------------------DERP FILTER...')
   debugBuffer(ctx.query.data, startIndex, ctx.query.length)

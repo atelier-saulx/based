@@ -1,7 +1,4 @@
-import { deSerializeSchema } from '../../dist/protocol/db-read/schema/deserialize.js'
 import { getTypeDefs } from '../../dist/schema/defs/getTypeDefs.js'
-import { convertToReaderSchema } from '../../src/db-client/query/queryDefToReadSchema.js'
-import { registerQuery } from '../../src/db-client/query/registerQuery.js'
 import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import {
@@ -68,11 +65,12 @@ await test('include', async (t) => {
     },
   })
 
-  client.create('user', {
+  await client.create('user', {
     name: 'CCCCCCCCC',
     cook: {
       cookie: 1234,
     },
+    y: 0,
     // mrFriend: { id: a, $level: 67 },
     friends: [{ id: a, $level: 250 }, b],
   })
@@ -87,13 +85,13 @@ await test('include', async (t) => {
     type: 'user',
     filter: {
       props: {
-        y: { ops: [{ op: '=', val: 67 }] },
+        y: { ops: [{ op: '=', val: 0 }] },
       },
-      // or: {
-      //   props: {
-      //     y: { ops: [{ op: '=', val: 99 }] },
-      //   },
-      // },
+      or: {
+        props: {
+          y: { ops: [{ op: '=', val: 67 }] },
+        },
+      },
     },
     props: {
       name: { include: {} },
