@@ -1,7 +1,7 @@
 import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
-await test.skip('upsert', async (t) => {
+await test('upsert', async (t) => {
   const db = await testDb(t, {
     types: {
       user: {
@@ -19,6 +19,8 @@ await test.skip('upsert', async (t) => {
     { email: 'youri@saulx.com', isNice: true },
   )
 
+  console.log('-----')
+
   //   // this is not
   //   const youzi2 = db.upsert(
   //     'user',
@@ -26,5 +28,5 @@ await test.skip('upsert', async (t) => {
   //     { email: 'youri@saulx.com', isNice: true },
   //   )
 
-  console.dir(await db.query('user').get())
+  console.dir(await db.query('user').get().toObject())
 })

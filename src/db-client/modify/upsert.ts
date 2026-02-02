@@ -3,9 +3,8 @@ import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import {
   Modify,
   pushModifyUpsertHeader,
-  writeModifyUpdateHeaderProps,
-  PropType,
   type LangCodeEnum,
+  writeModifyUpsertHeaderProps,
 } from '../../zigTsExports.js'
 import { getTypeDef } from './index.js'
 import { serializeProps } from './props.js'
@@ -32,10 +31,11 @@ export const serializeUpsert = <
   const startTarget = buf.length
   // TODO validate that its only aliases
   serializeProps(typeDef.tree, target, buf, Modify.create, lang)
-  writeModifyUpdateHeaderProps.size(buf.data, buf.length - startTarget, index)
+  writeModifyUpsertHeaderProps.size(buf.data, buf.length - startTarget, index)
   // serialize payload
   const sizePos = buf.reserveUint32()
   const startPayload = buf.length
   serializeProps(typeDef.tree, payload, buf, Modify.update, lang)
+  console.log('start:', buf.length - startPayload)
   buf.writeUint32(buf.length - startPayload, sizePos)
 }

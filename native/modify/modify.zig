@@ -57,7 +57,6 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
             const size = main.type.size();
             const value = data[j .. j + size];
-            // std.debug.print("main: size {any} value {any} current {any}\n", .{ size, value, current });
             if (main.increment != .none) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.increment),
@@ -195,13 +194,23 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
     }
 }
 
-// fn upsert(db: *DbCtx, typeEntry: ?Node.Type, data: []u8) !Node.Node {
-//     var j: usize = 0;
-//     while (j < data.len) {
-//         const propId = data[j];
-//         const propSchema = try Schema.getFieldSchema(typeEntry, propId);
-//     }
-// }
+fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8, items: []u8) !Node.Node {
+    var j: usize = 0;
+    while (j < data.len) {
+        const propId = data[j];
+        const prop = utils.readNext(t.ModifyPropHeader, data, &j);
+        const value = data[j .. j + prop.size];
+        if (prop.type == t.PropType.alias) {
+            if (Fields.getAliasByName(typeEntry, propId, value)) |node| {
+                return node;
+            }
+        }
+    }
+    const id = db.ids[typeId - 1] + 1;
+    const node = try Node.upsertNode(typeEntry, id);
+    try modifyProps(db, typeEntry, node, data, items);
+    return node;
+}
 
 pub fn modify(
     thread: *Thread.Thread,
@@ -249,17 +258,25 @@ pub fn modify(
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.nx, j + 4);
                 }
-                // std.debug.print("- update id: {any} res: {any}\n", .{ id, res });
                 i += update.size;
             },
-
             .upsert => {
-                // const upsert = utils.read(t.ModifyUpsertHeader, buf, i);
-                // i += utils.sizeOf(t.ModifyUpsertHeader);
-                // const typeEntry = try Node.getType(db, upsert.type);
-
-                // const prop = utils.readNext(t.ModifyPropHeader, buf, &i);
-                // const value = buf[i .. i + prop.size];
+                const upsert = utils.read(t.ModifyUpsertHeader, buf, i);
+                i += utils.sizeOf(t.ModifyUpsertHeader);
+                const target = buf[i .. i + upsert.size];
+                i += upsert.size;
+                const typeEntry = try Node.getType(db, upsert.type);
+                const node = try upsertTarget(db, upsert.type, typeEntry, target, items);
+                const dataSize = utils.read(u32, buf, i);
+                i += 4;
+                const data = buf[i .. i + dataSize];
+                modifyProps(db, typeEntry, node, data, items) catch {
+                    // handle errors
+                };
+                const id = Node.getNodeId(node);
+                utils.write(result, id, j);
+                utils.write(result, t.ModifyError.null, j + 4);
+                i += dataSize;
             },
             .delete => {
                 const delete = utils.read(t.ModifyDeleteHeader, buf, i);
@@ -277,8 +294,6 @@ pub fn modify(
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.nx, j + 4);
                 }
-
-                // std.debug.print("- delete id: {any} res: {any}\n", .{ id, res });
             },
         }
         j += resItemSize;

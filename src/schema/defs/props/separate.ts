@@ -167,8 +167,17 @@ export const binary = class Binary extends BasePropDef {
   }
 }
 
-export const alias = class Alias extends string {
+export const alias = class Alias extends BasePropDef {
   override type = PropType.alias
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is string {
+    if (typeof value !== 'string') {
+      throw new Error('Invalid type for alias ' + this.path.join('.'))
+    }
+    buf.pushString(value)
+  }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     buf.pushUint8(PropTypeSelva.alias)
   }
