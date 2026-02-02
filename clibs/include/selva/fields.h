@@ -98,17 +98,13 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
 #endif
 void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
 
+/**
+ * Ensure that we have a reference struct.
+ * NOTE: This function doesn't create the necessary edge node.
+ */
 struct SelvaNodeLargeReference *selva_fields_ensure_reference(
         struct SelvaNode *node,
         const struct SelvaFieldSchema *fs);
-
-SELVA_EXPORT
-struct SelvaNode *selva_fields_ensure_ref_edge(
-        struct SelvaDb *db,
-        struct SelvaNode *node,
-        const struct EdgeFieldConstraint *efc,
-        struct SelvaNodeLargeReference *ref,
-        node_id_t edge_id);
 
 SELVA_EXPORT
 int selva_fields_get_mutable_string(

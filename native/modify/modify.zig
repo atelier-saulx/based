@@ -142,9 +142,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                                         if (meta.size != 0) {
                                             const edgeProps = refs[x .. x + meta.size];
                                             const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
-                                            const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
-                                            const edgeNode = try Node.ensureRefEdgeNode(db, node, edgeConstraint, ref.p.large);
-                                            try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                            if (Node.getEdgeNode(db, edgeConstraint, ref.p.large)) |edgeNode| {
+                                                const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
+                                                try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                            } // TODO else err?
                                         }
                                     }
 

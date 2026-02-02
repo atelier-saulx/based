@@ -155,23 +155,14 @@ pub inline fn getNodeFromReference(dstType: selva.Type, ref: anytype) ?Node {
     return null;
 }
 
-pub inline fn ensureRefEdgeNode(db: *DbCtx, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) !Node {
-    const edgeNode = selva.c.selva_fields_ensure_ref_edge(db.selva, node, efc, ref, 0);
-    if (edgeNode) |n| {
-        selva.markDirty(db, efc.edge_node_type, getNodeId(n));
-        return n;
-    } else {
-        return errors.SelvaError.SELVA_ENOTSUP;
-    }
-}
-
 pub inline fn getEdgeNode(db: *DbCtx, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) ?Node {
     if (ref.*.edge == 0) {
         return null;
     }
 
     const edge_type = selva.c.selva_get_type_by_index(db.selva, efc.*.edge_node_type);
-    return selva.c.selva_find_node(edge_type, ref.*.edge);
+    // TODO Partials
+    return selva.c.selva_find_node(edge_type, ref.*.edge).node;
 }
 
 pub inline fn deleteNode(db: *DbCtx, typeEntry: Type, node: Node) !void {

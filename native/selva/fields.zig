@@ -125,13 +125,15 @@ pub fn ensurePropTypeString(
 
 pub fn ensureEdgePropTypeString(
     ctx: *Modify.ModifyCtx,
-    node: Node.Node,
     efc: Schema.EdgeFieldConstraint,
     ref: References.ReferenceLarge,
     fieldSchema: Schema.FieldSchema,
 ) !*selva.c.selva_string {
-    const edge_node = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0) orelse return errors.SelvaError.SELVA_ENOTSUP;
-    return selva.c.selva_fields_ensure_string(edge_node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
+    if (Node.getEdgeNode(ctx.db, efc, ref)) |edgeNode| {
+        return selva.c.selva_fields_ensure_string(edgeNode, fieldSchema, selva.c.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
+    } else {
+        return errors.SelvaError.SELVA_ENOENT;
+    }
 }
 
 pub inline fn deleteField(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
