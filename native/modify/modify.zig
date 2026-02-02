@@ -197,17 +197,18 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
 fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8, items: []u8) !Node.Node {
     var j: usize = 0;
     while (j < data.len) {
-        const propId = data[j];
         const prop = utils.readNext(t.ModifyPropHeader, data, &j);
         const value = data[j .. j + prop.size];
         if (prop.type == t.PropType.alias) {
-            if (Fields.getAliasByName(typeEntry, propId, value)) |node| {
+            if (Fields.getAliasByName(typeEntry, prop.id, value)) |node| {
                 return node;
             }
         }
+        j += prop.size;
     }
     const id = db.ids[typeId - 1] + 1;
     const node = try Node.upsertNode(typeEntry, id);
+    db.ids[typeId - 1] = id;
     try modifyProps(db, typeEntry, node, data, items);
     return node;
 }

@@ -36,6 +36,5 @@ export const serializeUpsert = <
   const sizePos = buf.reserveUint32()
   const startPayload = buf.length
   serializeProps(typeDef.tree, payload, buf, Modify.update, lang)
-  console.log('start:', buf.length - startPayload)
   buf.writeUint32(buf.length - startPayload, sizePos)
 }
