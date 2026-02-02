@@ -40,13 +40,10 @@ export class BasePropDef implements PropDef {
     op: ModifyEnum = Modify.create,
     lang: LangCodeEnum = LangCode.none,
   ): void {
-    if (sharedBuf) {
-      sharedBuf.data = buf
-      sharedBuf.maxLength = buf.length
-    } else {
-      sharedBuf = new AutoSizedUint8Array(0, buf.length, buf)
-    }
+    sharedBuf ??= new AutoSizedUint8Array(0, 0, buf)
+    sharedBuf.data = buf
     sharedBuf.length = offset
+    sharedBuf.maxLength = buf.length
     this.pushValue(sharedBuf, value, op, lang)
   }
   pushSelvaSchema(buf: AutoSizedUint8Array): void {
