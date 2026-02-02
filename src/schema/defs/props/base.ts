@@ -10,7 +10,8 @@ import {
 import { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type { PropDef, TypeDef } from '../index.js'
 
-let sharedBuf: AutoSizedUint8Array
+let writeBuf: AutoSizedUint8Array
+let validateBuf: AutoSizedUint8Array
 export class BasePropDef implements PropDef {
   constructor(schema: SchemaProp<true>, path: string[], typeDef: TypeDef) {
     this.schema = schema
@@ -40,11 +41,16 @@ export class BasePropDef implements PropDef {
     op: ModifyEnum = Modify.create,
     lang: LangCodeEnum = LangCode.none,
   ): void {
-    sharedBuf ??= new AutoSizedUint8Array(0, 0, buf)
-    sharedBuf.data = buf
-    sharedBuf.length = offset
-    sharedBuf.maxLength = buf.length
-    this.pushValue(sharedBuf, value, op, lang)
+    writeBuf ??= new AutoSizedUint8Array(0, 0, buf)
+    writeBuf.data = buf
+    writeBuf.length = offset
+    writeBuf.maxLength = buf.length
+    this.pushValue(writeBuf, value, op, lang)
+  }
+  validate(value: unknown, lang: LangCodeEnum = LangCode.none) {
+    validateBuf ??= new AutoSizedUint8Array()
+    validateBuf.length = 0
+    this.pushValue(writeBuf, value, Modify.create, lang)
   }
   pushSelvaSchema(buf: AutoSizedUint8Array): void {
     // To be implemented by subclasses

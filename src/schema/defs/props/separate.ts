@@ -196,11 +196,8 @@ export const cardinality = class Cardinality extends BasePropDef {
     }
 
     const items = value as any[]
-
     if (items.length === 0) return
-
     pushModifyCardinalityHeader(buf, this)
-
     for (const item of items) {
       if (typeof item === 'string') {
         buf.reserveUint64()

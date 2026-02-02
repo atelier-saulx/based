@@ -48,6 +48,7 @@ export type PropDef = {
   ): void
 
   pushSelvaSchema(buf: AutoSizedUint8Array): void
+  validate(val: unknown, lang?: LangCodeEnum): void
 }
 
 export const isPropDef = (p: any): p is PropDef => {
