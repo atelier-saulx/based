@@ -119,6 +119,7 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
         pass = switch (c.op.compare) {
             .nextOrIndex => blk: {
                 nextOrIndex = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
+                std.debug.print("hello OR {any} \n", .{nextOrIndex});
                 break :blk true;
             },
             .selectRef => blk: {

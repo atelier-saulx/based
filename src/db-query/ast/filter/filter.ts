@@ -82,9 +82,9 @@ export const filter = (
     prop: lastProp,
   }
 
-  // if (ast.or) {
-  //   ctx.query.reserve(conditionByteSize(8, 8))
-  // }
+  if (ast.or) {
+    ctx.query.reserve(conditionByteSize(8, 8))
+  }
 
   const { main } = walk(ast, ctx, typeDef, walkCtx)
 
@@ -99,15 +99,16 @@ export const filter = (
 
   if (ast.or) {
     const resultSize = ctx.query.length - startIndex
+    const nextOrIndex = resultSize + filterIndex
+
     const { offset, condition } = conditionBuffer(
       { id: lastProp, size: 8, start: 0 },
       8,
       { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
     )
 
-    const nextOrIndex = resultSize + filterIndex
-
     console.info('NEXT OR INDEX', nextOrIndex)
+    console.dir(ast.or, { depth: 10 })
     writeUint64(condition, nextOrIndex, offset)
     ctx.query.set(condition, startIndex)
     // then add the actual OR cond

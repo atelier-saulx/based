@@ -83,20 +83,20 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    // filter: {
-    //   props: {
-    //     y: { ops: [{ op: '=', val: 0 }] },
-    //     // add reference
-    //     // add references
-    //     // add edges
-    //   },
-    //   // add AND
-    //   or: {
-    //     props: {
-    //       y: { ops: [{ op: '=', val: 67 }] },
-    //     },
-    //   },
-    // },
+    filter: {
+      props: {
+        y: { ops: [{ op: '=', val: 0 }] },
+        // add reference
+        // add references
+        // add edges
+      },
+      // add AND
+      or: {
+        props: {
+          y: { ops: [{ op: '=', val: 67 }] },
+        },
+      },
+    },
     props: {
       // name: { include: {} },
       y: { include: {} },
@@ -114,18 +114,25 @@ await test('include', async (t) => {
       //   },
       // },
       // fix friends
-      friends: {
-        props: {
-          name: { include: {} },
-        },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
-      },
+      // friends: {
+      //   props: {
+      //     name: { include: {} },
+      //   },
+      //   edges: {
+      //     props: {
+      //       $level: { include: {} },
+      //     },
+      //   },
+      // },
     },
   }
+
+  // single ref edge filter
+  // sort
+  // variable filters
+
+  // in js
+  // meta include, text include (localized: true)
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
