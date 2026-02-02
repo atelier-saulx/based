@@ -158,6 +158,16 @@ await test('include', async (t) => {
 
   // TODO
 
+  // const bla = schema({
+  //   email: { type: 'string', format: 'email' },
+  //   subject: { type: 'string', max: 100 },
+  //   body: 'string'
+  // })
+
+  // const sendEmail = (x: bla) => {
+  //   return sendgrid.sendEmail('beerdejim@gmail.com')
+  // }
+
   // filter
   // AND + or (x.or.y).or(z)
   // reference + edge
@@ -176,6 +186,8 @@ await test('include', async (t) => {
   // references select
   // TEXT - make this localized true
   // meta
+
+  // SORT in js
 
   // subscriptions MULTI + references
   // subscriptions in modify
