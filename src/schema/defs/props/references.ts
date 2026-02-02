@@ -14,7 +14,6 @@ import {
   type ModifyEnum,
   type PropTypeEnum,
 } from '../../../zigTsExports.js'
-import { writeUint32 } from '../../../utils/index.js'
 import { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type {
   SchemaProp,
