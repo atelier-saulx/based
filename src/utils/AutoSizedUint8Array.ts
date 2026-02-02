@@ -34,34 +34,36 @@ export class AutoSizedUint8Array {
 
   data: Uint8Array
   length: number
-  private readonly _maxCapacity: number
+  maxLength: number
 
   constructor(
     initialCapacity: number = 256,
-    maxCapacity: number = 1024 * 1024 * 1024,
+    maxLength: number = 1024 * 1024 * 1024,
+    data: Uint8Array = new Uint8Array(
+      new (ArrayBuffer as any)(initialCapacity, {
+        maxByteLength: maxLength,
+      }),
+    ),
   ) {
-    const buffer = new (ArrayBuffer as any)(initialCapacity, {
-      maxByteLength: maxCapacity,
-    })
-    this.data = new Uint8Array(buffer)
+    this.data = data
     this.length = 0
-    this._maxCapacity = maxCapacity
+    this.maxLength = maxLength
   }
 
-  private ensure(requiredCapacity: number): void {
-    const currentCapacity = this.data.byteLength
-    if (currentCapacity >= requiredCapacity) return
-    if (requiredCapacity > this._maxCapacity) {
+  private ensure(requiredLength: number): void {
+    const currentLength = this.data.byteLength
+    if (currentLength >= requiredLength) return
+    if (requiredLength > this.maxLength) {
       throw AutoSizedUint8Array.ERR_OVERFLOW
     }
 
     // Manual Max for speed
-    const doubleCapacity = currentCapacity * 2
+    const doubleCapacity = currentLength * 2
     const newCapacity =
-      requiredCapacity > doubleCapacity ? requiredCapacity : doubleCapacity
-    // Cap at maxCapacity
+      requiredLength > doubleCapacity ? requiredLength : doubleCapacity
+    // Cap at maxLength
     const finalCapacity =
-      newCapacity > this._maxCapacity ? this._maxCapacity : newCapacity
+      newCapacity > this.maxLength ? this.maxLength : newCapacity
 
     ;(this.data.buffer as any).resize(finalCapacity)
   }

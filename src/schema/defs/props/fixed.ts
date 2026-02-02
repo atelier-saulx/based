@@ -1,12 +1,6 @@
 import type { EnumItem, SchemaEnum } from '../../../schema.js'
 import { convertToTimestamp } from '../../../utils/timestamp.js'
 import {
-  writeDoubleLE,
-  writeInt64,
-  writeUint16,
-  writeUint32,
-} from '../../../utils/index.js'
-import {
   PropType,
   type PropTypeEnum,
   type ModifyEnum,
@@ -108,16 +102,6 @@ export const number = class Number extends BasePropDef {
     const val = validateNumber(value, this.schema, this.path)
     buf.pushDoubleLE(val)
   }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateNumber(value, this.schema, this.path)
-    writeDoubleLE(buf, val, offset)
-  }
 }
 
 export const timestamp = class Timestamp extends number {
@@ -130,16 +114,6 @@ export const timestamp = class Timestamp extends number {
   ): asserts value is number | string {
     const ts = validateTimestamp(value, this.schema, this.path)
     buf.pushInt64(ts)
-  }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const ts = validateTimestamp(value, this.schema, this.path)
-    writeInt64(buf, ts, offset)
   }
 }
 
@@ -162,23 +136,6 @@ export const uint8 = class Uint8 extends BasePropDef {
     ) as number
     buf.pushUint8(val)
   }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'uint8',
-      0,
-      255,
-    ) as number
-    buf[offset] = val
-  }
 }
 
 export const int8 = class Int8 extends uint8 {
@@ -198,23 +155,6 @@ export const int8 = class Int8 extends uint8 {
       127,
     ) as number
     buf.pushUint8(val)
-  }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'int8',
-      -128,
-      127,
-    ) as number
-    buf[offset] = val
   }
 }
 
@@ -237,23 +177,6 @@ export const uint16 = class Uint16 extends BasePropDef {
     ) as number
     buf.pushUint16(val)
   }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'uint16',
-      0,
-      65535,
-    ) as number
-    writeUint16(buf, val, offset)
-  }
 }
 
 export const int16 = class Int16 extends uint16 {
@@ -273,23 +196,6 @@ export const int16 = class Int16 extends uint16 {
       32767,
     ) as number
     buf.pushUint16(val)
-  }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'int16',
-      -32768,
-      32767,
-    ) as number
-    writeUint16(buf, val, offset)
   }
 }
 
@@ -312,23 +218,6 @@ export const uint32 = class Uint32 extends BasePropDef {
     ) as number
     buf.pushUint32(val)
   }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'uint32',
-      0,
-      4294967295,
-    ) as number
-    writeUint32(buf, val, offset)
-  }
 }
 
 export const int32 = class Int32 extends uint32 {
@@ -348,23 +237,6 @@ export const int32 = class Int32 extends uint32 {
       2147483647,
     ) as number
     buf.pushUint32(val)
-  }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'int32',
-      -2147483648,
-      2147483647,
-    ) as number
-    writeUint32(buf, val, offset)
   }
 }
 
@@ -390,16 +262,6 @@ export const enum_ = class Enum extends uint8 {
     const val = validateEnum(value, this.vals, this.path)
     buf.pushUint8(val)
   }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateEnum(value as any, this.vals, this.path)
-    buf[offset] = val
-  }
 }
 
 export const boolean = class Boolean extends BasePropDef {
@@ -413,15 +275,5 @@ export const boolean = class Boolean extends BasePropDef {
   ): asserts value is boolean {
     const val = validateBoolean(value, this.path)
     buf.pushUint8(val)
-  }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    const val = validateBoolean(value, this.path)
-    buf[offset] = val
   }
 }

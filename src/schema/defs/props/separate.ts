@@ -17,10 +17,8 @@ import {
   pushSelvaSchemaMicroBuffer,
   pushSelvaSchemaString,
   pushSelvaSchemaText,
-  writeModifyCardinalityHeader,
   LangCode,
 } from '../../../zigTsExports.js'
-import { writeUint32 } from '../../../utils/index.js'
 import { xxHash64 } from '../../../db-client/xxHash64.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
@@ -84,48 +82,6 @@ export const string = class String extends BasePropDef {
     const crc = native.crc32(buf.subarray(buf.length - written))
     buf.pushUint32(crc)
   }
-  override write(
-    buf: Uint8Array,
-    val: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    lang: LangCodeEnum = LangCode.none,
-  ): asserts val is string {
-    if (typeof val !== 'string') {
-      throw new Error('Invalid type for string ' + this.path.join('.'))
-    }
-    const prop = this.schema as SchemaString
-    if (prop.min !== undefined && val.length < prop.min) {
-      throw new Error(
-        `Length ${val.length} is smaller than min ${prop.min} for ${this.path.join(
-          '.',
-        )}`,
-      )
-    }
-    if (prop.max !== undefined && val.length > prop.max) {
-      throw new Error(
-        `Length ${val.length} is larger than max ${prop.max} for ${this.path.join(
-          '.',
-        )}`,
-      )
-    }
-    const normalized = val.normalize('NFKD')
-    buf[offset] = lang
-    buf[offset + 1] = NOT_COMPRESSED
-    const { written } = ENCODER.encodeInto(normalized, buf.subarray(offset + 2))
-
-    if (prop.maxBytes !== undefined) {
-      if (written > prop.maxBytes) {
-        throw new Error(
-          `Byte length ${written} is larger than maxBytes ${
-            prop.maxBytes
-          } for ${this.path.join('.')}`,
-        )
-      }
-    }
-    const crc = native.crc32(buf.subarray(offset + 2, offset + 2 + written))
-    writeUint32(buf, crc, offset + 2 + written)
-  }
   pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
 
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
@@ -161,18 +117,6 @@ export const json = class Json extends string {
     }
     super.pushValue(buf, JSON.stringify(value), op, lang)
   }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    op?: ModifyEnum,
-    lang: LangCodeEnum = LangCode.none,
-  ) {
-    if (value === undefined) {
-      throw new Error('Invalid undefined value for json ' + this.path.join('.'))
-    }
-    super.write(buf, JSON.stringify(value), offset, op, lang)
-  }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
@@ -202,26 +146,6 @@ export const binary = class Binary extends BasePropDef {
       )
     }
     buf.set(value, buf.length)
-  }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    if (!(value instanceof Uint8Array)) {
-      throw new Error('Invalid type for binary ' + this.path.join('.'))
-    }
-    const prop = this.schema as SchemaString
-    if (prop.maxBytes !== undefined && value.byteLength > prop.maxBytes) {
-      throw new Error(
-        `Byte length ${value.byteLength} is larger than maxBytes ${
-          prop.maxBytes
-        } for ${this.path.join('.')}`,
-      )
-    }
-    buf.set(value, offset)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
@@ -288,39 +212,6 @@ export const cardinality = class Cardinality extends BasePropDef {
       }
     }
   }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
-    if (value instanceof Uint8Array && value.byteLength !== 8) {
-      throw new Error('unhandled error cardi')
-    }
-
-    if (!Array.isArray(value)) {
-      value = [value]
-    }
-
-    const items = value as any[]
-
-    if (items.length === 0) return
-
-    offset = writeModifyCardinalityHeader(buf, this, offset)
-
-    for (const item of items) {
-      if (typeof item === 'string') {
-        xxHash64(ENCODER.encode(item), buf, offset)
-        offset += 8
-      } else if (item instanceof Uint8Array && item.byteLength === 8) {
-        buf.set(item, offset)
-        offset += 8
-      } else {
-        throw new Error('Invalid value for cardinality ' + this.path.join('.'))
-      }
-    }
-  }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
@@ -343,15 +234,6 @@ export const vector = class Vector extends BasePropDef {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is any {
-    throw new Error('Serialize vector not implemented')
-  }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
     throw new Error('Serialize vector not implemented')
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
@@ -382,15 +264,6 @@ export const colvec = class ColVec extends BasePropDef {
     _op: ModifyEnum,
     _lang: LangCodeEnum,
   ): asserts value is any {
-    throw new Error('Serialize colvec not implemented')
-  }
-  override write(
-    buf: Uint8Array,
-    value: unknown,
-    offset: number,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ) {
     throw new Error('Serialize colvec not implemented')
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
