@@ -6,7 +6,6 @@ import {
   QUERY_ITERATOR_SEARCH,
   QUERY_ITERATOR_SEARCH_VEC,
   QueryIteratorTypeEnum,
-  Order,
   QueryHeader,
 } from '../../zigTsExports.js'
 import { QueryDef, QueryDefType } from '../../db-client/query/types.js'

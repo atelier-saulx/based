@@ -43,7 +43,7 @@ await test('include', async (t) => {
     },
   })
 
-  console.log(getTypeDefs(client.schema!).get('user')?.main)
+  // console.log(getTypeDefs(client.schema!).get('user')?.main)
 
   const a = client.create('user', {
     name: 'AAAAAAAAAA',
@@ -71,7 +71,7 @@ await test('include', async (t) => {
       cookie: 1234,
     },
     y: 0,
-    // mrFriend: { id: a, $level: 67 },
+    mrFriend: { id: a, $level: 67 },
     friends: [{ id: a, $level: 250 }, b],
   })
 
@@ -83,46 +83,47 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    filter: {
-      props: {
-        y: { ops: [{ op: '=', val: 0 }] },
-      },
-      or: {
-        props: {
-          y: { ops: [{ op: '=', val: 67 }] },
-        },
-      },
-    },
+    // filter: {
+    //   props: {
+    //     y: { ops: [{ op: '=', val: 0 }] },
+    //     // add reference
+    //     // add references
+    //     // add edges
+    //   },
+    //   // add AND
+    //   or: {
+    //     props: {
+    //       y: { ops: [{ op: '=', val: 67 }] },
+    //     },
+    //   },
+    // },
     props: {
-      name: { include: {} },
+      // name: { include: {} },
       y: { include: {} },
-      // x: { include: {} },
-      // cook: {
-      //   props: {
-      //     cookie: { include: {} },
-      //   },
-      // },
-      // // NOW ADD MR FRIEND!
       // mrFriend: {
       //   props: {
-      //     name: { include: {} },
+      //     y: { include: {} },
       //   },
+
+      //   // EDGE
+
       //   edges: {
       //     props: {
       //       $level: { include: {} },
       //     },
       //   },
       // },
-      // friends: {
-      //   props: {
-      //     name: { include: {} },
-      //   },
-      //   edges: {
-      //     props: {
-      //       $level: { include: {} },
-      //     },
-      //   },
-      // },
+      // fix friends
+      friends: {
+        props: {
+          name: { include: {} },
+        },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
+      },
     },
   }
 
@@ -134,7 +135,7 @@ await test('include', async (t) => {
   // TEXT - make this localized true
   // OPTS
 
-  console.dir(ctx, { depth: 10 })
+  // console.dir(ctx, { depth: 10 })
 
   const result = await db.server.getQueryBuf(ctx.query)
   debugBuffer(result)

@@ -51,6 +51,7 @@ export const reference = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       },
       edges,
     )
+
     props.edgeSize(ctx.query.data, size, headerIndex)
   }
 }
