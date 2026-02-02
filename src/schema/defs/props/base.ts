@@ -42,11 +42,11 @@ export class BasePropDef implements PropDef {
   ): void {
     if (sharedBuf) {
       sharedBuf.data = buf
-      sharedBuf.length = offset
       sharedBuf.maxLength = buf.length
     } else {
       sharedBuf = new AutoSizedUint8Array(0, buf.length, buf)
     }
+    sharedBuf.length = offset
     this.pushValue(sharedBuf, value, op, lang)
   }
   pushSelvaSchema(buf: AutoSizedUint8Array): void {
