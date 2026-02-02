@@ -100,8 +100,9 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                                 const edgeProps = value[k .. k + meta.size];
                                 const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
                                 const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
-                                const edgeNode = try Node.ensureRefEdgeNode(db, node, edgeConstraint, r);
-                                try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                if (Node.getEdgeNode(db, edgeConstraint, r)) |edgeNode| {
+                                    try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                } // TODO else error?
                             }
                         }
                     }
