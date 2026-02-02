@@ -85,6 +85,7 @@ await test('include', async (t) => {
     type: 'user',
     filter: {
       props: {
+        // 1
         y: { ops: [{ op: '=', val: 0 }] },
         // add reference
         // add references
@@ -92,10 +93,24 @@ await test('include', async (t) => {
       },
       // add AND
       or: {
+        // 4
         props: {
           y: { ops: [{ op: '=', val: 67 }] },
         },
       },
+      and: {
+        // 2
+        props: {
+          y: { ops: [{ op: '=', val: 10 }] },
+        },
+        or: {
+          // 3
+          props: {
+            y: { ops: [{ op: '=', val: 3 }] },
+          },
+        },
+      },
+      // ->4 1 ->3 2 ->4 3
     },
     props: {
       // name: { include: {} },
@@ -114,16 +129,16 @@ await test('include', async (t) => {
       //   },
       // },
       // fix friends
-      // friends: {
-      //   props: {
-      //     name: { include: {} },
-      //   },
-      //   edges: {
-      //     props: {
-      //       $level: { include: {} },
-      //     },
-      //   },
-      // },
+      friends: {
+        props: {
+          name: { include: {} },
+        },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
+      },
     },
   }
 
@@ -137,10 +152,33 @@ await test('include', async (t) => {
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
   // TODO
-  // references
-  // edges
+
+  // filter
+  // AND + or (x.or.y).or(z)
+  // reference + edge
+  // refernces filters? + select
+  // now parsing in filters
+  // finish all operators (exist ,!nexist) how to handle for fixed?
+  // var filters
+  //  like
+  //  references includes
+  //  includes
+  //. single ref or includes
+  //. eq STRING crc32 this is a seperate op /w branch check /w
+
+  // include
+  // JS
+  // references select
   // TEXT - make this localized true
-  // OPTS
+  // meta
+
+  // subscriptions MULTI + references
+  // subscriptions in modify
+  // subscription NOW reschedule
+  // now parsingio
+
+  // Based-server / client
+  // ctx .get bug
 
   // console.dir(ctx, { depth: 10 })
 
