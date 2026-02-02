@@ -94,13 +94,15 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     var refId = meta.id;
                     if (meta.isTmp) refId = utils.read(u32, items, refId * resItemSize);
                     if (Node.getNode(refTypeEntry, refId)) |dst| {
-                        _ = try References.writeReference(db, node, propSchema, dst);
-                        // std.debug.print("meta.size {any}\n", .{meta.size});
-                        if (meta.size != 0) {
-                            const edgeProps = value[k .. k + meta.size];
-                            const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
-                            const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
-                            try modifyProps(db, edgeType, dst, edgeProps, items);
+                        const ref = try References.writeReference(db, node, propSchema, dst);
+                        if (ref) |r| {
+                            if (meta.size != 0) {
+                                const edgeProps = value[k .. k + meta.size];
+                                const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
+                                const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
+                                const edgeNode = try Node.ensureRefEdgeNode(db, node, edgeConstraint, r);
+                                try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                            }
                         }
                     }
                 },
