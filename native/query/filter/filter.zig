@@ -149,6 +149,7 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
             i = nextOrIndex;
             nextOrIndex = q.len;
         } else {
+            //
             i = nextIndex;
         }
     }
