@@ -120,6 +120,9 @@ pub fn referenceEdge(
             const nestedQuery = q[i.* .. i.* + header.includeSize];
             try Include.include(node, ctx, nestedQuery, typeEntry);
 
+            // handle this case
+            // if ref.edge == 0
+
             const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
             const e = Node.getNode(edgeTypeEntry, ref.edge);
 

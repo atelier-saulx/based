@@ -90,6 +90,7 @@ pub fn ReferencesIteratorEdges(comptime desc: bool) type {
                     if (edgeNode) |n2| {
                         return ReferencesIteratorEdgesResult{ .node = n1, .edge = n2 };
                     }
+                    // no edge but node exsits
                 }
             }
             return null;
