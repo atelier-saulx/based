@@ -1,0 +1,32 @@
+import type { SchemaOut } from '../../schema.js'
+import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import {
+  Modify,
+  pushModifyCreateHeader,
+  writeModifyCreateHeaderProps,
+  type LangCodeEnum,
+} from '../../zigTsExports.js'
+import { getTypeDef } from './index.js'
+import { serializeProps } from './props.js'
+import type { InferPayload } from './types.js'
+
+export const serializeCreate = <
+  S extends SchemaOut = SchemaOut,
+  T extends keyof S['types'] & string = keyof S['types'] & string,
+>(
+  schema: S,
+  type: T,
+  payload: InferPayload<S['types']>[T],
+  buf: AutoSizedUint8Array,
+  lang: LangCodeEnum,
+) => {
+  const typeDef = getTypeDef(schema, type)
+  const index = pushModifyCreateHeader(buf, {
+    op: Modify.create,
+    type: typeDef.id,
+    size: 0,
+  })
+  const start = buf.length
+  serializeProps(typeDef.tree, payload, buf, Modify.create, lang)
+  writeModifyCreateHeaderProps.size(buf.data, buf.length - start, index)
+}

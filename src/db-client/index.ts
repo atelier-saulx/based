@@ -14,15 +14,12 @@ import {
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 import { LangCode } from '../zigTsExports.js'
-import {
-  serializeCreate,
-  serializeDelete,
-  serializeUpdate,
-  ModifyCtx,
-  flush,
-  BasedModify,
-} from './modify/index.js'
+import { ModifyCtx, flush, BasedModify } from './modify/index.js'
 import type { InferPayload } from './modify/types.js'
+import { serializeCreate } from './modify/create.js'
+import { serializeUpdate } from './modify/update.js'
+import { serializeDelete } from './modify/delete.js'
+import { serializeUpsert } from './modify/upsert.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -34,6 +31,7 @@ type DbClientOpts = {
 type BasedCreatePromise = BasedModify<typeof serializeCreate>
 type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
 type BasedDeletePromise = BasedModify<typeof serializeDelete>
+type BasedUpsertPromise = BasedModify<typeof serializeUpsert>
 
 export type ModifyOpts = {
   unsafe?: boolean
@@ -120,6 +118,24 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
     return new BasedModify(
       this.modifyCtx,
       serializeUpdate,
+      this.schema!,
+      type,
+      target,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    )
+  }
+
+  upsert<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    target: InferPayload<S['types']>[T],
+    obj: InferPayload<S['types']>[T],
+    opts?: ModifyOpts,
+  ): BasedUpsertPromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeUpsert,
       this.schema!,
       type,
       target,

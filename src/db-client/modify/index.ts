@@ -1,98 +1,30 @@
 import { SchemaOut } from '../../schema.js'
 import {
   Modify,
-  ModifyIncrement,
-  pushModifyCreateHeader,
   pushModifyDeleteHeader,
   pushModifyHeader,
-  pushModifyMainHeader,
-  pushModifyPropHeader,
   pushModifyUpdateHeader,
-  writeModifyCreateHeaderProps,
   writeModifyHeaderProps,
-  writeModifyPropHeaderProps,
   writeModifyUpdateHeaderProps,
   type LangCodeEnum,
-  type ModifyEnum,
 } from '../../zigTsExports.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
-import type { PropDef, PropTree } from '../../schema/defs/index.js'
 import { InferPayload } from './types.js'
 import { getTypeDefs } from '../../schema/defs/getTypeDefs.js'
 import { readUint32 } from '../../utils/uint8.js'
+import { serializeProps } from './props.js'
+import type { serializeCreate } from './create.js'
+import type { serializeUpdate } from './update.js'
+import type { serializeDelete } from './delete.js'
+import type { serializeUpsert } from './upsert.js'
 export { getTypeDefs }
 
-export const serializeProps = (
-  tree: PropTree,
-  data: any,
-  buf: AutoSizedUint8Array,
-  op: ModifyEnum,
-  lang: LangCodeEnum,
-) => {
-  for (const key in data) {
-    const def = tree.get(key)
-    if (def === undefined) {
-      continue
-    }
-    const val = data[key]
-    if (def.constructor === Map) {
-      if (val !== null && typeof val === 'object') {
-        serializeProps(def, val, buf, op, lang)
-      }
-    } else {
-      const prop = def as PropDef
-      if (prop.id === 0) {
-        // main
-        const increment = typeof val === 'object' && val?.increment
-        pushModifyMainHeader(buf, {
-          id: 0,
-          start: prop.start,
-          type: prop.type,
-          increment: increment
-            ? increment < 0
-              ? ModifyIncrement.decrement
-              : ModifyIncrement.increment
-            : ModifyIncrement.none,
-        })
-        prop.pushValue(buf, increment ? Math.abs(increment) : val, op, lang)
-      } else {
-        // separate
-        const index = pushModifyPropHeader(buf, prop)
-        const start = buf.length
-        prop.pushValue(buf, val, op, lang)
-        writeModifyPropHeaderProps.size(buf.data, buf.length - start, index)
-      }
-    }
-  }
-}
-
-const getTypeDef = (schema: SchemaOut, type: string) => {
+export const getTypeDef = (schema: SchemaOut, type: string) => {
   const typeDef = getTypeDefs(schema).get(type)
   if (!typeDef) {
     throw new Error(`Type ${type} not found`)
   }
   return typeDef
-}
-
-export const serializeCreate = <
-  S extends SchemaOut = SchemaOut,
-  T extends keyof S['types'] & string = keyof S['types'] & string,
->(
-  schema: S,
-  type: T,
-  payload: InferPayload<S['types']>[T],
-  buf: AutoSizedUint8Array,
-  lang: LangCodeEnum,
-) => {
-  const typeDef = getTypeDef(schema, type)
-  const index = pushModifyCreateHeader(buf, {
-    op: Modify.create,
-    type: typeDef.id,
-    size: 0,
-  })
-  const start = buf.length
-  serializeProps(typeDef.tree, payload, buf, Modify.create, lang)
-  writeModifyCreateHeaderProps.size(buf.data, buf.length - start, index)
 }
 
 export const getRealId = (item: unknown) => {
@@ -104,18 +36,12 @@ export const getTmpId = (item: unknown) => {
   if (item instanceof BasedModify) return item.tmpId
 }
 
-export const serializeUpdate = <
-  S extends SchemaOut = SchemaOut,
-  T extends keyof S['types'] & string = keyof S['types'] & string,
+export const assignTarget = <
+  H extends Record<string, any> & { id?: number; isTmp?: boolean },
 >(
-  schema: S,
-  type: T,
-  item: number | BasedModify<any>,
-  payload: InferPayload<S['types']>[T],
-  buf: AutoSizedUint8Array,
-  lang: LangCodeEnum,
-) => {
-  const typeDef = getTypeDef(schema, type)
+  item: unknown,
+  header: H,
+): H & { id: number; isTmp: boolean } => {
   const realId = getRealId(item)
   const id = realId || getTmpId(item)
   if (id === undefined) {
@@ -124,48 +50,16 @@ export const serializeUpdate = <
     }
     throw new Error('Invalid id')
   }
-  const index = pushModifyUpdateHeader(buf, {
-    op: Modify.update,
-    type: typeDef.id,
-    isTmp: !realId,
-    id,
-    size: 0,
-  })
-  const start = buf.length
-  serializeProps(typeDef.tree, payload, buf, Modify.update, lang)
-  writeModifyUpdateHeaderProps.size(buf.data, buf.length - start, index)
-}
-
-export const serializeDelete = <
-  S extends SchemaOut = SchemaOut,
-  T extends keyof S['types'] & string = keyof S['types'] & string,
->(
-  schema: S,
-  type: T,
-  item: number | BasedModify<any>,
-  buf: AutoSizedUint8Array,
-) => {
-  const typeDef = getTypeDef(schema, type)
-  const realId = getRealId(item)
-  const id = realId || getTmpId(item)
-  if (id === undefined) {
-    if (item instanceof BasedModify) {
-      throw item
-    }
-    throw new Error('Invalid id')
-  }
-  pushModifyDeleteHeader(buf, {
-    op: Modify.delete,
-    type: typeDef.id,
-    isTmp: !realId,
-    id,
-  })
+  header.id = id
+  header.isTmp = !realId
+  return header as H & { id: number; isTmp: boolean }
 }
 
 type ModifySerializer =
   | typeof serializeCreate
   | typeof serializeUpdate
   | typeof serializeDelete
+  | typeof serializeUpsert
 
 type ModifyBatch = {
   count: number
