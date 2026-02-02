@@ -95,8 +95,8 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     if (meta.isTmp) refId = utils.read(u32, items, refId * resItemSize);
                     if (Node.getNode(refTypeEntry, refId)) |dst| {
                         const ref = try References.writeReference(db, node, propSchema, dst);
-                        if (ref) |r| {
-                            if (meta.size != 0) {
+                        if (meta.size != 0) {
+                            if (ref) |r| {
                                 const edgeProps = value[k .. k + meta.size];
                                 const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
                                 const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
