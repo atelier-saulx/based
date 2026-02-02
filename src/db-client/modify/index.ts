@@ -41,10 +41,9 @@ export const serializeProps = (
       }
     } else {
       const prop = def as PropDef
-      if (prop.size) {
+      if (prop.id === 0) {
         // main
-        const increment =
-          val !== null && typeof val === 'object' && (val as any).increment
+        const increment = typeof val === 'object' && val?.increment
         pushModifyMainHeader(buf, {
           id: 0,
           start: prop.start,

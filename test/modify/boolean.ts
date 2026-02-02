@@ -59,20 +59,17 @@ await test('modify boolean on edge', async (t) => {
   })
 
   const u1 = await db.create('user', { isNice: true })
-  console.log('???')
   const a = db.create('holder', {
     toUser: {
       id: u1,
     },
   })
-  console.log('???------')
   const b = await db.create('holder', {
     toUser: {
       id: u1,
       $edgeBool: true,
     },
   })
-  console.log('=================')
   const c = db.create('holder', {
     toUser: {
       id: u1,
