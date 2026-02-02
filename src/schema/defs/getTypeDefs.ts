@@ -5,7 +5,7 @@ import {
   type SchemaType,
 } from '../../schema.js'
 import { PropType } from '../../zigTsExports.js'
-import { defs, type PropDef, type TypeDef } from './index.js'
+import { defs, type PropDef, type PropTree, type TypeDef } from './index.js'
 
 const mainSorter = (a, b) => {
   if (a.size === 8) return -1
@@ -46,6 +46,25 @@ export const propIndexOffset = (prop: PropDef): number => {
 
 const separateSorter = (a, b) => propIndexOffset(a) - propIndexOffset(b)
 
+const addPropDef = (
+  prop: SchemaProp<true>,
+  path: string[],
+  typeDef: TypeDef,
+) => {
+  const Def = defs[prop.type]
+  if (!Def) {
+    throw 'unknown def'
+  }
+
+  const def: PropDef = new Def(prop, path, typeDef)
+  if (def.size) {
+    typeDef.main.push(def)
+  } else {
+    typeDef.separate.push(def)
+  }
+  return def
+}
+
 const getTypeDef = (schema: SchemaType<true>): TypeDef => {
   const { props } = schema
   const typeDef: TypeDef = {
@@ -70,43 +89,15 @@ const getTypeDef = (schema: SchemaType<true>): TypeDef => {
         const branch = new Map()
         walk(prop.props, path, branch)
         tree.set(key, branch)
-        continue
-      }
-
-      const Def = defs[prop.type]
-      if (!Def) {
-        console.error('unknown def')
-        // TODO: handle missing type
-        continue
-      }
-
-      const def = new Def(prop, path, typeDef)
-      if (def.size) {
-        typeDef.main.push(def)
       } else {
-        typeDef.separate.push(def)
+        const def = addPropDef(prop, path, typeDef)
+        typeDef.props.set(path.join('.'), def)
+        tree.set(key, def)
       }
-      typeDef.props.set(path.join('.'), def)
-      tree.set(key, def)
     }
   }
 
   walk(props, [], typeDef.tree)
-
-  // -------- sort and assign main --------
-  typeDef.main.sort(mainSorter)
-  let start = 0
-  for (const prop of typeDef.main) {
-    prop.start = start
-    start += prop.size
-  }
-
-  // -------- sort and assign separate ---------
-  typeDef.separate.sort(separateSorter)
-  let propId = 1
-  for (const prop of typeDef.separate) {
-    prop.id = propId++
-  }
 
   return typeDef
 }
@@ -130,10 +121,24 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
         def.schema.type === 'references' ? def.schema.items : def.schema
       if (prop.type !== 'reference') continue
       def.ref = typeDefs.get(prop.ref)!
-      if (!prop.prop) {
-        continue
+      if (prop.prop) {
+        def.refProp = def.ref.props.get(prop.prop)!
+      } else {
+        def.refProp = addPropDef(
+          {
+            type: 'references',
+            items: {
+              type: 'reference',
+              ref: typeName,
+              prop: propPath,
+            },
+          },
+          [`${typeName}.${propPath}`],
+          def.ref,
+        )
+        def.refProp.ref = typeDef
+        def.refProp.refProp = def
       }
-      def.refProp = def.ref.props.get(prop.prop)!
       const inverseEdges = def.refProp.edges
       if (inverseEdges) {
         def.edges = inverseEdges
@@ -150,6 +155,23 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
         const edgeTypeName = `_${typeName}.${propPath}`
         typeDefs.set(edgeTypeName, def.edges)
       }
+    }
+  }
+
+  for (const [, typeDef] of typeDefs) {
+    // -------- sort and assign main --------
+    typeDef.main.sort(mainSorter)
+    let start = 0
+    for (const prop of typeDef.main) {
+      prop.start = start
+      start += prop.size
+    }
+
+    // -------- sort and assign separate ---------
+    typeDef.separate.sort(separateSorter)
+    let propId = 1
+    for (const prop of typeDef.separate) {
+      prop.id = propId++
     }
   }
 

@@ -109,7 +109,6 @@ const references: ReadInstruction = (q, result, i, item) => {
 }
 
 const edge: ReadInstruction = (q, result, i, item) => {
-  console.log('edge', i)
   return readInstruction(result[i], q.edges!, result, i + 1, item)
 }
 

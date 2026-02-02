@@ -11,20 +11,24 @@ import { parseProp, type SchemaProp } from './prop.js'
 import type { SchemaReferences } from './references.js'
 import type { SchemaOut } from './schema.js'
 
-type EdgeExcludedProps = 'prop' | `$${string}`
+type ReferenceProps<strict, nested> = nested extends true
+  ? { prop?: never; dependent?: never; [edge: `$${string}`]: never }
+  : {
+      prop: string
+      dependent?: boolean
+      [edge: `$${string}`]:
+        | Exclude<
+            SchemaProp<strict>,
+            SchemaReferences<strict> | SchemaReference<strict>
+          >
+        | SchemaReferences<strict, true>
+        | SchemaReference<strict, true>
+    }
 
-export type SchemaReference<strict = false> = Base &
+export type SchemaReference<strict = false, nested = false> = Base &
   RequiredIfStrict<{ type: 'reference' }, strict> & {
     ref: string
-  } & {
-    prop: string
-    dependent?: boolean
-    [edge: `$${string}`]:
-      | Exclude<SchemaProp<strict>, SchemaReferences<strict>>
-      | (Omit<SchemaReferences<strict>, 'items'> & {
-          items: Omit<SchemaReference<strict>, EdgeExcludedProps>
-        })
-  }
+  } & ReferenceProps<strict, nested>
 
 let parsingEdges: boolean
 export const parseReference = (

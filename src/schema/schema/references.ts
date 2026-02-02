@@ -3,10 +3,10 @@ import { parseReference, type SchemaReference } from './reference.js'
 import type { SchemaOut } from './schema.js'
 import { assert, isRecord, type RequiredIfStrict } from './shared.js'
 
-export type SchemaReferences<strict = true> = Base &
+export type SchemaReferences<strict = true, nested = false> = Base &
   RequiredIfStrict<{ type: 'references' }, strict> & {
     capped?: number
-    items: Omit<SchemaReference<strict>, keyof Base>
+    items: Omit<SchemaReference<strict, nested>, keyof Base>
   }
 
 export const parseReferences = (

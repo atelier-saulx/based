@@ -174,7 +174,6 @@ await test('modify single reference on edge', async (t) => {
           $edgeRef: {
             type: 'reference',
             ref: 'thing',
-            prop: 'edgeRefHolders',
           },
         },
       },
@@ -239,7 +238,7 @@ await test('modify references on edge', async (t) => {
             type: 'references',
             items: {
               ref: 'thing',
-              prop: 'edgeRefsHolders',
+              // prop: 'edgeRefsHolders',
             },
           },
         },
