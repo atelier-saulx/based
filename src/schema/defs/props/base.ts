@@ -1,15 +1,16 @@
 import type { SchemaProp } from '../../../schema.js'
 import {
+  LangCode,
+  Modify,
   PropType,
-  PropTypeSelva,
   type LangCodeEnum,
   type ModifyEnum,
   type PropTypeEnum,
-  type PropTypeSelvaEnum,
 } from '../../../zigTsExports.js'
-import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
+import { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import type { PropDef, TypeDef } from '../index.js'
 
+let sharedBuf: AutoSizedUint8Array
 export class BasePropDef implements PropDef {
   constructor(schema: SchemaProp<true>, path: string[], typeDef: TypeDef) {
     this.schema = schema
@@ -36,10 +37,14 @@ export class BasePropDef implements PropDef {
     buf: Uint8Array,
     value: unknown,
     offset: number,
-    op?: ModifyEnum,
-    lang?: LangCodeEnum,
+    op: ModifyEnum = Modify.create,
+    lang: LangCodeEnum = LangCode.none,
   ): void {
-    // To be implemented by subclasses
+    sharedBuf ??= new AutoSizedUint8Array(0, 0, buf)
+    sharedBuf.data = buf
+    sharedBuf.length = offset
+    sharedBuf.maxLength = buf.length
+    this.pushValue(sharedBuf, value, op, lang)
   }
   pushSelvaSchema(buf: AutoSizedUint8Array): void {
     // To be implemented by subclasses

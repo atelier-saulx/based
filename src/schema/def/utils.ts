@@ -110,15 +110,10 @@ export const sortMainProps = (
 ) => {
   const sizeA = REVERSE_SIZE_MAP[a.typeIndex]
   const sizeB = REVERSE_SIZE_MAP[b.typeIndex]
-  if (sizeA === 8) {
-    return -1
-  }
-  if (sizeA === 4 && sizeB !== 8) {
-    return -1
-  }
-  if (sizeA === sizeB) {
-    return 0
-  }
+  if (sizeA === 8) return -1
+  if (sizeA === 4 && sizeB !== 8) return -1
+  if (sizeA === 2 && sizeB !== 4 && sizeB !== 8) return -1
+  if (sizeA === sizeB) return 0
   return 1
 }
 
