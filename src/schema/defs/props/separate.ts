@@ -18,6 +18,7 @@ import {
   pushSelvaSchemaString,
   pushSelvaSchemaText,
   LangCode,
+  writeSelvaSchemaStringProps,
 } from '../../../zigTsExports.js'
 import { xxHash64 } from '../../../db-client/xxHash64.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
@@ -37,7 +38,7 @@ export const string = class String extends BasePropDef {
       this.pushValue = this.pushFixedValue as any
     }
   }
-
+  declare schema: SchemaString
   override type: PropTypeEnum = PropType.string
   override pushValue(
     buf: AutoSizedUint8Array,
@@ -82,14 +83,24 @@ export const string = class String extends BasePropDef {
     const crc = native.crc32(buf.subarray(buf.length - written))
     buf.pushUint32(crc)
   }
+
   pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
 
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    pushSelvaSchemaString(buf, {
+    const index = pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
       fixedLen: 0,
       defaultLen: 0,
     })
+    if (this.schema.default) {
+      const start = buf.length
+      this.pushValue(buf, this.schema.default)
+      writeSelvaSchemaStringProps.defaultLen(
+        buf.data,
+        buf.length - start,
+        index,
+      )
+    }
   }
 }
 

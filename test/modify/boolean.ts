@@ -85,8 +85,6 @@ await test('modify boolean on edge', async (t) => {
     .get()
     .toObject()
 
-  console.dir(resA, { depth: null })
-
   deepEqual(resA.toUser?.$edgeBool, false)
 
   // Check b (true)
