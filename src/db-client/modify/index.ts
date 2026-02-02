@@ -1,18 +1,8 @@
 import { SchemaOut } from '../../schema.js'
-import {
-  Modify,
-  pushModifyDeleteHeader,
-  pushModifyHeader,
-  pushModifyUpdateHeader,
-  writeModifyHeaderProps,
-  writeModifyUpdateHeaderProps,
-  type LangCodeEnum,
-} from '../../zigTsExports.js'
+import { pushModifyHeader, writeModifyHeaderProps } from '../../zigTsExports.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
-import { InferPayload } from './types.js'
 import { getTypeDefs } from '../../schema/defs/getTypeDefs.js'
 import { readUint32 } from '../../utils/uint8.js'
-import { serializeProps } from './props.js'
 import type { serializeCreate } from './create.js'
 import type { serializeUpdate } from './update.js'
 import type { serializeDelete } from './delete.js'
