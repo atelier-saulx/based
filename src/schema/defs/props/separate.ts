@@ -167,16 +167,8 @@ export const binary = class Binary extends BasePropDef {
   }
 }
 
-export const alias = class Alias extends BasePropDef {
+export const alias = class Alias extends string {
   override type = PropType.alias
-  override pushValue(
-    buf: AutoSizedUint8Array,
-    value: unknown,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
-  ): asserts value is any {
-    throw new Error('Serialize alias not implemented')
-  }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     buf.pushUint8(PropTypeSelva.alias)
   }

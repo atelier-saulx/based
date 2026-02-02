@@ -46,7 +46,7 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     try dbCtx.threads.modify(batch);
 }
 
-pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u8, items: []u8) !void {
+pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, items: []u8) !void {
     var j: usize = 0;
     while (j < data.len) {
         const propId = data[j];
@@ -75,6 +75,19 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
             const value = data[j .. j + prop.size];
             switch (prop.type) {
+                .alias => {
+                    if (value.len == 0) continue;
+                    const id = Node.getNodeId(node);
+                    const old = try Fields.setAlias(typeEntry, id, prop.id, value);
+                    if (old > 0) {
+                        // TODO sort for everything
+                        // if (ctx.currentSortIndex != null) {
+                        //     sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
+                        // }
+                        const typeId = Node.getNodeTypeId(node);
+                        selva.markDirty(db, typeId, old);
+                    }
+                },
                 .cardinality => {
                     var k: usize = 0;
                     const cardinality = utils.readNext(t.ModifyCardinalityHeader, value, &k);
@@ -182,6 +195,14 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
     }
 }
 
+// fn upsert(db: *DbCtx, typeEntry: ?Node.Type, data: []u8) !Node.Node {
+//     var j: usize = 0;
+//     while (j < data.len) {
+//         const propId = data[j];
+//         const propSchema = try Schema.getFieldSchema(typeEntry, propId);
+//     }
+// }
+
 pub fn modify(
     thread: *Thread.Thread,
     buf: []u8,
@@ -230,6 +251,15 @@ pub fn modify(
                 }
                 // std.debug.print("- update id: {any} res: {any}\n", .{ id, res });
                 i += update.size;
+            },
+
+            .upsert => {
+                // const upsert = utils.read(t.ModifyUpsertHeader, buf, i);
+                // i += utils.sizeOf(t.ModifyUpsertHeader);
+                // const typeEntry = try Node.getType(db, upsert.type);
+
+                // const prop = utils.readNext(t.ModifyPropHeader, buf, &i);
+                // const value = buf[i .. i + prop.size];
             },
             .delete => {
                 const delete = utils.read(t.ModifyDeleteHeader, buf, i);

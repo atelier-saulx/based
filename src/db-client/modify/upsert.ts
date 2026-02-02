@@ -1,14 +1,15 @@
-import type { SchemaOut } from '../../schema.js'
+import { type SchemaOut } from '../../schema.js'
 import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import {
   Modify,
   pushModifyUpsertHeader,
   writeModifyUpdateHeaderProps,
+  PropType,
   type LangCodeEnum,
 } from '../../zigTsExports.js'
 import { getTypeDef } from './index.js'
 import { serializeProps } from './props.js'
-import type { InferPayload } from './types.js'
+import type { InferPayload, InferTarget } from './types.js'
 
 export const serializeUpsert = <
   S extends SchemaOut = SchemaOut,
@@ -16,7 +17,7 @@ export const serializeUpsert = <
 >(
   schema: S,
   type: T,
-  target: InferPayload<S['types']>[T],
+  target: InferTarget<S['types']>[T],
   payload: InferPayload<S['types']>[T],
   buf: AutoSizedUint8Array,
   lang: LangCodeEnum,
@@ -29,6 +30,7 @@ export const serializeUpsert = <
   })
   // serialize target
   const startTarget = buf.length
+  // TODO validate that its only aliases
   serializeProps(typeDef.tree, target, buf, Modify.create, lang)
   writeModifyUpdateHeaderProps.size(buf.data, buf.length - startTarget, index)
   // serialize payload

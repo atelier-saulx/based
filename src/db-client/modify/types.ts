@@ -81,3 +81,11 @@ type InferType<Props, Types> = {
 export type InferPayload<Types extends Record<string, any>> = {
   [K in keyof Types]: InferType<Types[K]['props'], Types>
 }
+
+type InferAliasProps<Props> = {
+  [K in keyof Props as Props[K] extends { type: 'alias' } ? K : never]?: string
+}
+
+export type InferTarget<Types extends Record<string, any>> = {
+  [K in keyof Types]: InferAliasProps<Types[K]['props']>
+}

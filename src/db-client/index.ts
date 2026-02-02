@@ -15,7 +15,7 @@ import {
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 import { LangCode } from '../zigTsExports.js'
 import { ModifyCtx, flush, BasedModify } from './modify/index.js'
-import type { InferPayload } from './modify/types.js'
+import type { InferPayload, InferTarget } from './modify/types.js'
 import { serializeCreate } from './modify/create.js'
 import { serializeUpdate } from './modify/update.js'
 import { serializeDelete } from './modify/delete.js'
@@ -129,7 +129,7 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
 
   upsert<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    target: InferPayload<S['types']>[T],
+    target: InferTarget<S['types']>[T],
     obj: InferPayload<S['types']>[T],
     opts?: ModifyOpts,
   ): BasedUpsertPromise {

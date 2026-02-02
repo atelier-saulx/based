@@ -1,6 +1,6 @@
-import { deepEqual } from '../shared/assert.js'
-import { testDb } from '../shared/index.js'
-import test from '../shared/test.js'
+import { deepEqual } from '../../shared/assert.js'
+import { testDb } from '../../shared/index.js'
+import test from '../../shared/test.js'
 
 await test('modify timestamp', async (t) => {
   const db = await testDb(t, {
