@@ -199,7 +199,7 @@ const UpsertResult = struct {
     created: bool,
 };
 
-fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8, items: []u8) !UpsertResult {
+inline fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8) !UpsertResult {
     var j: usize = 0;
     while (j < data.len) {
         const prop = utils.readNext(t.ModifyPropHeader, data, &j);
@@ -214,7 +214,6 @@ fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8, items:
     const id = db.ids[typeId - 1] + 1;
     const node = try Node.upsertNode(typeEntry, id);
     db.ids[typeId - 1] = id;
-    try modifyProps(db, typeEntry, node, data, items);
     return .{ .node = node, .created = true };
 }
 
@@ -272,7 +271,10 @@ pub fn modify(
                 const target = buf[i .. i + upsert.size];
                 i += upsert.size;
                 const typeEntry = try Node.getType(db, upsert.type);
-                const upsertRes = try upsertTarget(db, upsert.type, typeEntry, target, items);
+                const upsertRes = try upsertTarget(db, upsert.type, typeEntry, target);
+                if (upsertRes.created) {
+                    try modifyProps(db, typeEntry, upsertRes.node, target, items);
+                }
                 const dataSize = utils.read(u32, buf, i);
                 i += 4;
                 const data = buf[i .. i + dataSize];
@@ -290,10 +292,11 @@ pub fn modify(
                 const target = buf[i .. i + insert.size];
                 i += insert.size;
                 const typeEntry = try Node.getType(db, insert.type);
-                const upsertRes = try upsertTarget(db, insert.type, typeEntry, target, items);
+                const upsertRes = try upsertTarget(db, insert.type, typeEntry, target);
                 const dataSize = utils.read(u32, buf, i);
                 i += 4;
                 if (upsertRes.created) {
+                    try modifyProps(db, typeEntry, upsertRes.node, target, items);
                     const data = buf[i .. i + dataSize];
                     modifyProps(db, typeEntry, upsertRes.node, data, items) catch {
                         // handle errors

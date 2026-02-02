@@ -20,10 +20,11 @@ export const serializeUpsert = <
   payload: InferPayload<S['types']>[T],
   buf: AutoSizedUint8Array,
   lang: LangCodeEnum,
+  op: typeof Modify.insert | typeof Modify.upsert,
 ) => {
   const typeDef = getTypeDef(schema, type)
   const index = pushModifyCreateHeader(buf, {
-    op: Modify.upsert,
+    op,
     type: typeDef.id,
     size: 0,
   })

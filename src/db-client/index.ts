@@ -13,14 +13,13 @@ import {
   type Schema,
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
-import { LangCode } from '../zigTsExports.js'
+import { LangCode, Modify } from '../zigTsExports.js'
 import { ModifyCtx, flush, BasedModify } from './modify/index.js'
 import type { InferPayload, InferTarget } from './modify/types.js'
 import { serializeCreate } from './modify/create.js'
 import { serializeUpdate } from './modify/update.js'
 import { serializeDelete } from './modify/delete.js'
 import { serializeUpsert } from './modify/upsert.js'
-import { serializeInsert } from './modify/insert.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -33,7 +32,7 @@ type BasedCreatePromise = BasedModify<typeof serializeCreate>
 type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
 type BasedDeletePromise = BasedModify<typeof serializeDelete>
 type BasedUpsertPromise = BasedModify<typeof serializeUpsert>
-type BasedInsertPromise = BasedModify<typeof serializeInsert>
+type BasedInsertPromise = BasedUpsertPromise
 
 export type ModifyOpts = {
   unsafe?: boolean
@@ -144,6 +143,7 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
       obj,
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
+      Modify.upsert,
     )
   }
 
@@ -155,13 +155,14 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
   ): BasedInsertPromise {
     return new BasedModify(
       this.modifyCtx,
-      serializeInsert,
+      serializeUpsert,
       this.schema!,
       type,
       target,
       obj,
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
+      Modify.insert,
     )
   }
 
