@@ -384,8 +384,8 @@ export const enum_ = class Enum extends uint8 {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    _op: ModifyEnum,
-    _lang: LangCodeEnum,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
   ): asserts value is EnumItem {
     const val = validateEnum(value, this.vals, this.path)
     buf.pushUint8(val)
@@ -408,8 +408,8 @@ export const boolean = class Boolean extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    _op: ModifyEnum,
-    _lang: LangCodeEnum,
+    _op?: ModifyEnum,
+    _lang?: LangCodeEnum,
   ): asserts value is boolean {
     const val = validateBoolean(value, this.path)
     buf.pushUint8(val)
