@@ -78,6 +78,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                     if (value.len == 0) continue;
                     const id = Node.getNodeId(node);
                     const old = try Fields.setAlias(typeEntry, id, prop.id, value);
+                    // std.debug.print("value {any} {any} {d} {d} {any}\n", .{ typeEntry, value, id, prop.id, old });
                     if (old > 0) {
                         // TODO sort for everything
                         // if (ctx.currentSortIndex != null) {
