@@ -1,3 +1,4 @@
+import type { IntervalString } from '../../db-client/query/aggregates/types.js'
 import { ReaderLocales, ReaderSchema } from '../../protocol/index.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 
@@ -64,10 +65,21 @@ export type QueryAst = {
   sort?: { prop: string; order: 'asc' | 'desc' }
   props?: Record<string, QueryAst>
   edges?: QueryAst
-  // ----------- add aggregate stuff
+  // ----------- Aggregate stuff
+  count?: { props: string | void }
+  sum?: { props: string | string[] }
+  cardinality?: { props: string | string[] }
+  avg?: { props: string | string[] }
+  harmonicMean?: { props: string | string[] }
+  max?: { props: string | string[] }
+  min?: { props: string | string[] }
+  stddev?: { props: string | string[]; samplingMode: 'sample' | 'population' }
+  var?: { props: string | string[]; samplingMode: 'sample' | 'population' }
   groupBy?: {
-    field: string
-    // step?: Step
+    prop: string
+    step?: number | IntervalString
+    timeZone?: string
+    display?: Intl.DateTimeFormat
   }
 }
 
