@@ -4,6 +4,7 @@ import type {
   SchemaBinary,
   SchemaCardinality,
   SchemaString,
+  SchemaText,
   SchemaVector,
 } from '../../../schema.js'
 import { ENCODER } from '../../../utils/uint8.js'
@@ -67,7 +68,8 @@ export const string = class String extends BasePropDef {
     if (typeof val !== 'string') {
       throw new Error('Invalid type for string ' + this.path.join('.'))
     }
-    const prop = this.schema as SchemaString
+
+    const prop = this.schema
     if (prop.min !== undefined && val.length < prop.min) {
       throw new Error(
         `Length ${val.length} is smaller than min ${prop.min} for ${this.path.join(
@@ -92,7 +94,7 @@ export const string = class String extends BasePropDef {
     buf.pushUint32(crc)
   }
 
-  pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
+  // pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
 
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     const index = pushSelvaSchemaString(buf, {
@@ -112,9 +114,10 @@ export const string = class String extends BasePropDef {
   }
 }
 
-// TODO do it nice
 export const text = class Text extends string {
   override type = PropType.text
+  // @ts-ignore
+  declare schema: SchemaText
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
@@ -136,10 +139,18 @@ export const text = class Text extends string {
     }
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    pushSelvaSchemaText(buf, {
-      type: PropTypeSelva.text,
-      nrDefaults: 0,
-    })
+    if (this.schema.default) {
+      pushSelvaSchemaText(buf, {
+        type: PropTypeSelva.text,
+        nrDefaults: Object.keys(this.schema.default).length,
+      })
+      this.pushValue(buf, this.schema.default)
+    } else {
+      pushSelvaSchemaText(buf, {
+        type: PropTypeSelva.text,
+        nrDefaults: 0,
+      })
+    }
   }
 }
 
@@ -155,13 +166,6 @@ export const json = class Json extends string {
       throw new Error('Invalid undefined value for json ' + this.path.join('.'))
     }
     super.pushValue(buf, JSON.stringify(value), op, lang)
-  }
-  override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    pushSelvaSchemaString(buf, {
-      type: PropTypeSelva.string,
-      fixedLen: 0,
-      defaultLen: 0,
-    })
   }
 }
 

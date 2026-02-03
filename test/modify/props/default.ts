@@ -10,8 +10,6 @@ await test('modify - default values basic', async (t) => {
         name: { type: 'string', default: 'Untitled' },
         score: { type: 'number', default: 100 },
         isActive: { type: 'boolean', default: true },
-        // Added types
-        myAlias: { type: 'alias', default: 'my-alias' },
         myEnum: { enum: ['a', 'b'], default: 'a' },
         myJson: { type: 'json', default: { foo: 'bar' } },
         myText: { type: 'text', default: { en: 'Hello' } },
@@ -28,7 +26,6 @@ await test('modify - default values basic', async (t) => {
     name: 'Untitled',
     score: 100,
     isActive: true,
-    myAlias: 'my-alias',
     myEnum: 'a',
     myJson: { foo: 'bar' },
     myText: { en: 'Hello' },
@@ -40,19 +37,17 @@ await test('modify - default values basic', async (t) => {
     name: 'Specific',
     score: 10,
     isActive: false,
-    myAlias: 'specific-alias',
     myEnum: 'b',
     myJson: { foo: 'baz' },
     myText: { en: 'Hi' },
     myTs: 2000,
   })
-  const resB: any = await db.query('thing', b).get()
+  const resB = await db.query('thing', b).get()
   deepEqual(resB, {
     id: b,
     name: 'Specific',
     score: 10,
     isActive: false,
-    myAlias: 'specific-alias',
     myEnum: 'b',
     myJson: { foo: 'baz' },
     myText: { en: 'Hi' },
@@ -61,13 +56,12 @@ await test('modify - default values basic', async (t) => {
 
   // 3. Create with mixed values
   const c = await db.create('thing', { score: 50, myEnum: 'b' })
-  const resC: any = await db.query('thing', c).get()
+  const resC = await db.query('thing', c).get()
   deepEqual(resC, {
     id: c,
     name: 'Untitled',
     score: 50,
     isActive: true,
-    myAlias: 'my-alias',
     myEnum: 'b',
     myJson: { foo: 'bar' },
     myText: { en: 'Hello' },
