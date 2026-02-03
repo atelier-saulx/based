@@ -1,4 +1,5 @@
 import { QueryDef, IntermediateByteCode } from '../types.js'
+import { byteSize } from '../toByteCode/utils.js'
 import { isRootCountOnly } from './aggregates.js'
 import {
   QueryType,
@@ -11,6 +12,8 @@ import {
   AggPropByteSize,
 } from '../../../zigTsExports.js'
 import { getIteratorType } from '../toByteCode/iteratorType.js'
+import { filterToBuffer } from '../filter/toByteCode.js'
+import { combineIntermediateResults } from '../query.js'
 
 export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
   if (def.schema == null) {
@@ -21,14 +24,18 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
   }
 
   // QueryHeader
-  const filterSize = 0 // def.filter.size later...
+  const filter = filterToBuffer(def.filter)
+  def.filter.conditions
+  const filterSize = byteSize(filter) || 0
+  const hasFilter = filterSize > 0
+
   const queryType = isRootCountOnly(def, filterSize)
     ? QueryType.aggregatesCount
     : QueryType.aggregates
+
+  const hasGroupBy = def.aggregate.groupBy ? true : false
   const hasSort = false // hardcoded
-  // const hasSearch = !!def.search
-  // const hasFilter = def.filter.size > 0
-  const sortSize = 0 // hardcoded
+  let pos = 0
 
   let aggHeader: AggHeader = {
     op: queryType,
@@ -36,10 +43,9 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     offset: def.range.offset,
     limit: def.range.limit,
     filterSize,
-    iteratorType: getIteratorType(def, false),
-    size: 0, // hardcoded
-    sort: false, // hardcoded
-    hasGroupBy: def.aggregate.groupBy ? true : false,
+    iteratorType: getIteratorType(def, hasFilter),
+    sort: hasSort,
+    hasGroupBy,
     resultsSize: def.aggregate.totalResultsSize,
     accumulatorSize: def.aggregate.totalAccumulatorSize,
     isSamplingSet: (def.aggregate?.option?.mode || 'sample') === 'sample',
@@ -48,17 +54,26 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     (sum, arr) => sum + arr.length,
     0,
   )
-  const hasGroupBy = aggHeader.hasGroupBy
+  const groupByKeyPropByteSize = hasGroupBy ? GroupByKeyPropByteSize : 0
   const buffer = new Uint8Array(
     AggHeaderByteSize +
+      filterSize +
       numPropsOrFuncs * AggPropByteSize +
-      (hasGroupBy ? GroupByKeyPropByteSize : 0),
+      groupByKeyPropByteSize,
   )
   const aggHeaderBuff = createAggHeader(aggHeader)
-  buffer.set(aggHeaderBuff, 0)
+  buffer.set(aggHeaderBuff, pos)
+  pos += AggHeaderByteSize
+
+  if (hasFilter) {
+    const filterBuff = new Uint8Array(filterSize)
+    combineIntermediateResults(filterBuff, 0, filter)
+    buffer.set(filterBuff, pos)
+    pos += filterSize
+  }
 
   let aggPropMap = def.aggregate.aggregates
-  let pos = AggHeaderByteSize
+
   if (def.aggregate.groupBy) {
     const gp = def.aggregate.groupBy
     const groupByKeyPropDef = createGroupByKeyProp({
@@ -87,6 +102,5 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     }
   }
 
-  // here we do need to pass the filter thing as well
   return buffer
 }

@@ -12,11 +12,14 @@ const t = @import("../../types.zig");
 const resultHeaderOffset = @import("../../thread/results.zig").resultHeaderOffset;
 const Aggregates = @import("aggregates.zig");
 const GroupByHashMap = @import("hashMap.zig").GroupByHashMap;
+const filter = @import("../filter/filter.zig").filter;
 
 pub fn iterator(
+    ctx: *Query.QueryCtx,
     groupByHashMap: *GroupByHashMap,
     it: anytype,
     limit: u32,
+    comptime hasFilter: bool,
     filterBuf: []u8,
     aggDefs: []u8,
     accumulatorSize: usize,
@@ -27,12 +30,12 @@ pub fn iterator(
     var hadAccumulated: bool = false;
 
     while (it.next()) |node| {
-        if (filterBuf.len > 0) {
-            // Filter Check
+        if (hasFilter) {
+            if (!try filter(node, ctx, filterBuf)) {
+                continue;
+            }
         }
-
         try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, &hadAccumulated);
-
         count += 1;
         if (count >= limit) break;
     }
