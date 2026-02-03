@@ -661,7 +661,9 @@ struct SelvaNodeRes selva_upsert_node(struct SelvaTypeEntry *type, node_id_t nod
         }
     }
 
-    selva_fields_init_node(type, node);
+    /* Don't set defaults if we are loading. */
+    const bool set_defaults = !(res.block_status & SELVA_TYPE_BLOCK_STATUS_LOADING);
+    selva_fields_init_node(type, node, set_defaults);
 
     atomic_fetch_or_explicit(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY), memory_order_release);
     block->nr_nodes_in_block++;
