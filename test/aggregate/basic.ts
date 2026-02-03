@@ -1086,3 +1086,118 @@ await test('numeric types', async (t) => {
 //     'range group by references',
 //   )
 // })
+
+// await test('count props', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//     maxModifySize: 1e6,
+//   })
+
+//   await db.start({ clean: true })
+//   t.after(() => db.stop())
+
+//   await db.setSchema({
+//     types: {
+//       vehicle: {
+//         props: {
+//           plate: 'string',
+//           year: 'unint16',
+//         },
+//       },
+//       trip: {
+//         props: {
+//           distance: 'number',
+//           vehicle: {
+//             ref: 'vehicle',
+//             prop: 'vehicle',
+//           },
+//         },
+//       },
+//     },
+//   })
+
+//   const v1 = db.create('vehicle', {
+//     plate: 'KKK1234',
+//     year: 2023,
+//   })
+//   db.create('trip', {
+//     distance: 813.1,
+//     vehicle: v1,
+//   })
+//   db.create('trip', {
+//     distance: 1023.1,
+//   })
+//   const v1 = db.create('vehicle', {
+//     plate: 'LAL0001',
+//   })
+//   await db.query('trip').count().get().inspect() // should count nodes --> count = 2
+//   await db.query('trip').count('vehicle').get().inspect() // shoudl count refs --> count = 1
+//   await db.query('vehicle').count('year').get().inspect() // should ignore undefined props --> count = 1
+// })
+
+// await test('groupBy multiple props', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//     maxModifySize: 1e6,
+//   })
+
+//   await db.start({ clean: true })
+//   t.after(() => db.stop())
+
+//   await db.setSchema({
+//     types: {
+//       vehicle: {
+//         props: {
+//           plate: 'string',
+//           decade: 'uint16',
+//           brand: 'string',
+//         },
+//       },
+//     },
+//   })
+
+//   const v1 = db.create('vehicle', {
+//     plate: 'KKK1234',
+//     year: 2020,
+//     brand: 'Volkswagen',
+//   })
+//   const v2 = db.create('vehicle', {
+//     plate: 'LAL0001',
+//     year: 1990,
+//     brand: 'Volkswagen',
+//   })
+//   const v3 = db.create('vehicle', {
+//     plate: 'BYD8001',
+//     year: 2020,
+//     brand: 'BYD',
+//   })
+
+//   await db.query('vehicle').count().groupBy('brand').get().inspect()
+/*
+  {
+     BYD: {
+       count: 1 count
+     },
+     Volkswagen: {
+       count: 2 count
+     }
+  }
+  */
+
+// await db.query('vehicle').count().groupBy('decade','brand').get().inspect()
+/*
+{
+  [BYD, 2020]: {
+    count: 1 count
+  },
+  [BYD, 1990]: {
+    count: 0 count
+  },
+ [Volkswagen, 1990]: {
+  count: 2,
+ },
+ [Volkswagen, 2020]: {
+  count: 0,
+ }
+*/
+// })

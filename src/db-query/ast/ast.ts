@@ -65,21 +65,20 @@ export type QueryAst = {
   sort?: { prop: string; order: 'asc' | 'desc' }
   props?: Record<string, QueryAst>
   edges?: QueryAst
-  // ----------- Aggregate stuff
   count?: { props: string | void }
-  sum?: { props: string | string[] }
-  cardinality?: { props: string | string[] }
-  avg?: { props: string | string[] }
-  harmonicMean?: { props: string | string[] }
-  max?: { props: string | string[] }
-  min?: { props: string | string[] }
-  stddev?: { props: string | string[]; samplingMode?: 'sample' | 'population' }
-  var?: { props: string | string[]; samplingMode?: 'sample' | 'population' }
+  sum?: { props: string[] }
+  cardinality?: { props: string[] }
+  avg?: { props: string[] }
+  harmonicMean?: { props: string[] }
+  max?: { props: string[] }
+  min?: { props: string[] }
+  stddev?: { props: string[]; samplingMode?: 'sample' | 'population' }
+  var?: { props: string[]; samplingMode?: 'sample' | 'population' }
   groupBy?: {
     prop: string
     step?: number | IntervalString
     timeZone?: string
-    display?: Intl.DateTimeFormat
+    timeFormat?: Intl.DateTimeFormat
   }
 }
 

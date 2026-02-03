@@ -11,6 +11,7 @@ const t = @import("../../types.zig");
 const multiple = @import("../multiple.zig");
 const single = @import("../single.zig");
 const References = @import("../../selva/references.zig");
+const aggregateRefs = @import("../aggregates/references.zig");
 
 inline fn get(typeEntry: Node.Type, node: Node.Node, header: anytype) ![]u8 {
     return Fields.get(
@@ -143,16 +144,16 @@ pub fn include(
                 }
             },
             .aggregates => {
-                // std.debug.print("AGG not implemented yet\n", .{});
+                std.debug.print("AGG not implemented yet\n", .{});
                 i += 1;
             },
             .aggregatesCount => {
-                // std.debug.print("AGG count not implemented yet\n", .{});
+                std.debug.print("AGG count not implemented yet\n", .{});
                 i += 1;
             },
             .referencesAggregation => {
-                // std.debug.print("AGG refs not implemented yet\n", .{});
-                i += 1;
+                try aggregateRefs.aggregateRefsProps(ctx, q, node, typeEntry, &i);
+                i += q.len - i;
             },
         }
     }
