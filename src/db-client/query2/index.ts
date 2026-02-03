@@ -1,3 +1,4 @@
+import type { QueryAst } from '../../db-query/ast/ast.js'
 import type { InferSchemaOutput, PickOutput, ResolveInclude } from './types.js'
 
 export class BasedQuery2<
@@ -6,13 +7,11 @@ export class BasedQuery2<
   K extends keyof S['types'][T]['props'] | '*' | '**' = '*',
   IsSingle extends boolean = false,
 > {
-  constructor(type: T, id?: number) {
-    this.type = type
-    this.id = id
+  constructor(type: T, target?: number) {
+    this.ast.type = type as string
+    this.ast.target = target
   }
-  type: T
-  id?: number
-
+  ast: QueryAst = {}
   async get(): Promise<
     IsSingle extends true
       ? PickOutput<S, T, ResolveInclude<S['types'][T]['props'], K>>
@@ -22,8 +21,17 @@ export class BasedQuery2<
   }
 
   include<F extends (keyof S['types'][T]['props'] | '*' | '**')[]>(
-    ...fields: F
+    ...props: F
   ): BasedQuery2<S, T, (K extends '*' ? never : K) | F[number], IsSingle> {
+    for (const prop of props) {
+      const path = (prop as string).split('.')
+      let target = this.ast
+      for (const key of path) {
+        target.props ??= {}
+        target = target.props[key] = {}
+      }
+      target.include = {}
+    }
     return this as any
   }
 }
