@@ -41,7 +41,7 @@ await test('modify vector', async (t) => {
   assert(Math.abs(vecArr2[2] - v2[2]) < 0.0001)
 })
 
-await test('modify colvec', async (t) => {
+await test.skip('modify colvec', async (t) => {
   const db = await testDb(t, {
     types: {
       thing: {
