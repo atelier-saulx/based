@@ -150,8 +150,6 @@ export const binary = class Binary extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
   ): asserts value is Uint8Array {
     if (!(value instanceof Uint8Array)) {
       throw new Error('Invalid type for binary ' + this.path.join('.'))
@@ -202,14 +200,7 @@ export const cardinality = class Cardinality extends BasePropDef {
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
-    _op?: ModifyEnum,
-    _lang?: LangCodeEnum,
   ): asserts value is any {
-    if (value instanceof Uint8Array && value.byteLength !== 8) {
-      // buf.set(value, buf.length)
-      throw new Error('unhandled error cardi')
-    }
-
     if (!Array.isArray(value)) {
       value = [value]
     }

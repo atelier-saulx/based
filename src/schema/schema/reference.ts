@@ -10,6 +10,7 @@ import {
 import { parseProp, type SchemaProp } from './prop.js'
 import type { SchemaReferences } from './references.js'
 import type { SchemaOut } from './schema.js'
+import type { SchemaAlias } from './alias.js'
 
 type ReferenceProps<strict, nested> = nested extends true
   ? { prop?: never; dependent?: never; [edge: `$${string}`]: never }
@@ -19,7 +20,10 @@ type ReferenceProps<strict, nested> = nested extends true
       [edge: `$${string}`]:
         | Exclude<
             SchemaProp<strict>,
-            SchemaReferences<strict> | SchemaReference<strict>
+            | SchemaReferences<strict>
+            | SchemaReference<strict>
+            | SchemaAlias
+            | 'alias'
           >
         | SchemaReferences<strict, true>
         | SchemaReference<strict, true>
@@ -61,7 +65,9 @@ export const parseReference = (
   parsingEdges = true
   for (const key in def) {
     if (key.startsWith('$')) {
-      result[key] = parseProp(def[key], locales)
+      const edge = parseProp(def[key], locales)
+      assert(edge.type !== 'alias', 'Edge alias not allowed')
+      result[key] = edge
     }
   }
   parsingEdges = false

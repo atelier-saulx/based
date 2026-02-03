@@ -4,33 +4,75 @@ import test from '../../shared/test.js'
 
 await test('modify - default values basic', async (t) => {
   const db = await testDb(t, {
+    locales: { en: true },
     types: {
       thing: {
         name: { type: 'string', default: 'Untitled' },
         score: { type: 'number', default: 100 },
         isActive: { type: 'boolean', default: true },
+        // Added types
+        myAlias: { type: 'alias', default: 'my-alias' },
+        myEnum: { enum: ['a', 'b'], default: 'a' },
+        myJson: { type: 'json', default: { foo: 'bar' } },
+        myText: { type: 'text', default: { en: 'Hello' } },
+        myTs: { type: 'timestamp', default: 1000 },
       },
     },
   })
 
   // 1. Create with no values provided
   const a = await db.create('thing', {})
-  const resA = await db.query('thing', a).get()
-  deepEqual(resA, { id: a, name: 'Untitled', score: 100, isActive: true })
+  const resA: any = await db.query('thing', a).get()
+  deepEqual(resA, {
+    id: a,
+    name: 'Untitled',
+    score: 100,
+    isActive: true,
+    myAlias: 'my-alias',
+    myEnum: 'a',
+    myJson: { foo: 'bar' },
+    myText: { en: 'Hello' },
+    myTs: 1000,
+  })
 
   // 2. Create with specific values (override default)
   const b = await db.create('thing', {
     name: 'Specific',
     score: 10,
     isActive: false,
+    myAlias: 'specific-alias',
+    myEnum: 'b',
+    myJson: { foo: 'baz' },
+    myText: { en: 'Hi' } as any,
+    myTs: 2000,
   })
-  const resB = await db.query('thing', b).get()
-  deepEqual(resB, { id: b, name: 'Specific', score: 10, isActive: false })
+  const resB: any = await db.query('thing', b).get()
+  deepEqual(resB, {
+    id: b,
+    name: 'Specific',
+    score: 10,
+    isActive: false,
+    myAlias: 'specific-alias',
+    myEnum: 'b',
+    myJson: { foo: 'baz' },
+    myText: { en: 'Hi' },
+    myTs: 2000,
+  })
 
   // 3. Create with mixed values
-  const c = await db.create('thing', { score: 50 })
-  const resC = await db.query('thing', c).get()
-  deepEqual(resC, { id: c, name: 'Untitled', score: 50, isActive: true })
+  const c = await db.create('thing', { score: 50, myEnum: 'b' })
+  const resC: any = await db.query('thing', c).get()
+  deepEqual(resC, {
+    id: c,
+    name: 'Untitled',
+    score: 50,
+    isActive: true,
+    myAlias: 'my-alias',
+    myEnum: 'b',
+    myJson: { foo: 'bar' },
+    myText: { en: 'Hello' },
+    myTs: 1000,
+  })
 })
 
 await test('modify - default values on edge', async (t) => {
@@ -45,6 +87,10 @@ await test('modify - default values on edge', async (t) => {
           prop: 'groups',
           $role: { type: 'string', default: 'member' },
           $level: { type: 'number', default: 1 },
+          $edgeAlias: { type: 'alias', default: 'edge-default-alias' },
+          $edgeEnum: { enum: ['a', 'b'], default: 'a' },
+          $edgeJson: { type: 'json', default: { foo: 'bar' } },
+          $edgeText: { type: 'text', default: { en: 'Hello' } },
         },
       },
     },
@@ -70,17 +116,56 @@ await test('modify - default values on edge', async (t) => {
 
   // 2. Create edge with edge props
   const g2 = await db.create('group', {
-    member: { id: u1, $role: 'admin', $level: 99 },
+    member: {
+      id: u1,
+      $role: 'admin',
+      $level: 99,
+      $edgeAlias: 'specific-alias',
+      $edgeEnum: 'b',
+      $edgeJson: { foo: 'baz' },
+      $edgeText: { en: 'Hi' } as any,
+    },
   })
 
-  const resG2 = await db
+  const resG2: any = await db
     .query('group', g2)
     .include('member.$role')
     .include('member.$level')
     .include('member.id')
+    .include('member.$edgeAlias')
+    .include('member.$edgeEnum')
+    .include('member.$edgeJson')
+    .include('member.$edgeText')
     .get()
     .toObject()
 
   deepEqual(resG2.member?.$role, 'admin')
   deepEqual(resG2.member?.$level, 99)
+  deepEqual(resG2.member?.$edgeAlias, 'specific-alias')
+  deepEqual(resG2.member?.$edgeEnum, 'b')
+  deepEqual(resG2.member?.$edgeJson, { foo: 'baz' })
+  deepEqual(resG2.member?.$edgeText, { en: 'Hi' })
+
+  // 3. Check defaults on edge
+  const g3 = await db.create('group', {
+    member: { id: u1 },
+  })
+
+  const resG3: any = await db
+    .query('group', g3)
+    .include('member.$role')
+    .include('member.$level')
+    .include('member.$edgeAlias')
+    .include('member.$edgeEnum')
+    .include('member.$edgeJson')
+    .include('member.$edgeText')
+    .get()
+    .toObject()
+
+  deepEqual(resG3.member?.$role, 'member')
+  deepEqual(resG3.member?.$level, 1)
+  deepEqual(resG3.member?.$edgeAlias, 'edge-default-alias')
+  deepEqual(resG3.member?.$edgeEnum, 'a')
+  deepEqual(resG3.member?.$edgeJson, { foo: 'bar' })
+  deepEqual(resG3.member?.$edgeText, { en: 'Hello' })
 })

@@ -47,3 +47,68 @@ await test('modify object', async (t) => {
     },
   })
 })
+
+await test('modify object on edge', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        info: { type: 'object', props: { a: 'string' } },
+      },
+      holder: {
+        toThing: {
+          ref: 'thing',
+          prop: 'holders',
+          $edgeInfo: {
+            type: 'object',
+            props: {
+              title: 'string',
+              count: 'number',
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const targetId = await db.create('thing', { info: { a: 'a' } })
+  const id1 = await db.create('holder', {
+    toThing: {
+      id: targetId,
+      $edgeInfo: {
+        title: 'edge title',
+        count: 5,
+      },
+    },
+  })
+
+  const res1 = await db
+    .query('holder', id1)
+    .include('toThing.$edgeInfo')
+    .get()
+    .toObject()
+
+  deepEqual(res1.toThing?.$edgeInfo, {
+    title: 'edge title',
+    count: 5,
+  })
+
+  // Partial update
+  await db.update('holder', id1, {
+    toThing: {
+      id: targetId,
+      $edgeInfo: {
+        count: 15,
+      },
+    },
+  })
+
+  const res2 = await db
+    .query('holder', id1)
+    .include('toThing.$edgeInfo')
+    .get()
+    .toObject()
+  deepEqual(res2.toThing?.$edgeInfo, {
+    title: 'edge title',
+    count: 15,
+  })
+})

@@ -31,3 +31,52 @@ await test('modify json', async (t) => {
     data: arr,
   })
 })
+
+await test('modify json on edge', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        data: 'json',
+      },
+      holder: {
+        toThing: {
+          ref: 'thing',
+          prop: 'holders',
+          $edgeData: 'json',
+        },
+      },
+    },
+  })
+
+  const obj = { foo: 'bar' }
+  const targetId = await db.create('thing', { data: {} })
+  const id1 = await db.create('holder', {
+    toThing: {
+      id: targetId,
+      $edgeData: obj,
+    },
+  })
+
+  const res1 = await db
+    .query('holder', id1)
+    .include('toThing.$edgeData')
+    .get()
+    .toObject()
+
+  deepEqual(res1.toThing?.$edgeData, obj)
+
+  const obj2 = { baz: 'qux' }
+  await db.update('holder', id1, {
+    toThing: {
+      id: targetId,
+      $edgeData: obj2,
+    },
+  })
+
+  const res2 = await db
+    .query('holder', id1)
+    .include('toThing.$edgeData')
+    .get()
+    .toObject()
+  deepEqual(res2.toThing?.$edgeData, obj2)
+})

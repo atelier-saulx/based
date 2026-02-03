@@ -100,8 +100,11 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                 .cardinality => {
                     var k: usize = 0;
                     const cardinality = utils.readNext(t.ModifyCardinalityHeader, value, &k);
-                    const hll = try Fields.ensurePropTypeString(node, propSchema);
-                    selva.c.hll_init(hll, cardinality.precision, cardinality.sparse);
+                    var hll = selva.c.selva_fields_get_selva_string(node, propSchema);
+                    if (hll == null) {
+                        hll = try Fields.ensurePropTypeString(node, propSchema);
+                        selva.c.hll_init(hll, cardinality.precision, cardinality.sparse);
+                    }
                     while (k < value.len) {
                         const hash = utils.read(u64, value, k);
                         selva.c.hll_add(hll, hash);

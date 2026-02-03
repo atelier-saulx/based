@@ -27,3 +27,52 @@ await test('modify binary', async (t) => {
   const res2 = await db.query('thing', id1).get().toObject()
   deepEqual(res2.blob, b2)
 })
+
+await test('modify binary on edge', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        blob: 'binary',
+      },
+      holder: {
+        toThing: {
+          ref: 'thing',
+          prop: 'holders',
+          $edgeBlob: 'binary',
+        },
+      },
+    },
+  })
+
+  const b1 = new Uint8Array([1, 2, 3])
+  const targetId = await db.create('thing', { blob: b1 })
+  const id1 = await db.create('holder', {
+    toThing: {
+      id: targetId,
+      $edgeBlob: b1,
+    },
+  })
+
+  const res1 = await db
+    .query('holder', id1)
+    .include('toThing.$edgeBlob')
+    .get()
+    .toObject()
+
+  deepEqual(res1.toThing?.$edgeBlob, b1)
+
+  const b2 = new Uint8Array([4, 5, 6, 7])
+  await db.update('holder', id1, {
+    toThing: {
+      id: targetId,
+      $edgeBlob: b2,
+    },
+  })
+
+  const res2 = await db
+    .query('holder', id1)
+    .include('toThing.$edgeBlob')
+    .get()
+    .toObject()
+  deepEqual(res2.toThing?.$edgeBlob, b2)
+})
