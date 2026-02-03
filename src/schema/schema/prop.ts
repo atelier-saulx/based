@@ -47,6 +47,7 @@ export type SchemaPropShorthand =
   | 'cardinality'
   | NumberType
   | EnumItem[]
+  | readonly EnumItem[]
 
 export type SchemaProp<strict = false> =
   | SchemaPropObj<strict>

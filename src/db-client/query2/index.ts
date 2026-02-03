@@ -4,27 +4,40 @@ export class BasedQuery2<
   S extends { types: any } = { types: any },
   T extends keyof S['types'] = any,
   K extends (keyof S['types'][T]['props'] | '*' | '**') | 'ALL' = 'ALL',
+  IsSingle extends boolean = false,
 > {
-  constructor(type: T) {
+  constructor(type: T, id?: number) {
     this.type = type
+    if (id !== undefined) {
+      this.id = id
+    }
   }
   type: T
+  id?: number
 
   async get(): Promise<{
-    data: (K extends 'ALL'
-      ? InferSchemaOutput<S, T>
-      : PickOutput<
-          S,
-          T,
-          ResolveInclude<S['types'][T]['props'], Exclude<K, 'ALL'>>
-        >)[]
+    data: IsSingle extends true
+      ? [K] extends ['ALL']
+        ? InferSchemaOutput<S, T>
+        : PickOutput<
+            S,
+            T,
+            ResolveInclude<S['types'][T]['props'], Exclude<K, 'ALL'>>
+          >
+      : ([K] extends ['ALL']
+          ? InferSchemaOutput<S, T>
+          : PickOutput<
+              S,
+              T,
+              ResolveInclude<S['types'][T]['props'], Exclude<K, 'ALL'>>
+            >)[]
   }> {
-    return { data: [] }
+    return { data: [] as any }
   }
 
   include<F extends (keyof S['types'][T]['props'] | '*' | '**')[]>(
     ...fields: F
-  ): BasedQuery2<S, T, (K extends 'ALL' ? never : K) | F[number]> {
+  ): BasedQuery2<S, T, (K extends 'ALL' ? never : K) | F[number], IsSingle> {
     return this as any
   }
 }

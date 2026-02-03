@@ -280,9 +280,12 @@ const createSchemaTypeDef = (
     }
 
     if (schemaProp.type === 'enum') {
+      // @ts-ignore
       prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
       prop.reverseEnum = {}
+      // @ts-ignore
       for (let i = 0; i < prop.enum.length; i++) {
+        // @ts-ignore
         prop.reverseEnum[prop.enum[i]] = i
       }
     } else if (schemaProp.type === 'references') {

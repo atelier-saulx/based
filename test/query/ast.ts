@@ -1,7 +1,7 @@
 import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
-await test('query types', async (t) => {
+await test('query ast', async (t) => {
   const db = await testDb(t, {
     types: {
       user: {
@@ -27,6 +27,7 @@ await test('query types', async (t) => {
         card: 'cardinality',
         myEnum: ['a', 'b'],
         nested: {
+          type: 'object',
           props: {
             a: 'string',
           },
@@ -190,24 +191,4 @@ await test('query types', async (t) => {
     // @ts-expect-error
     const myRef: number = data.myRef
   }
-})
-
-await test('query types', async (t) => {
-  const db = await testDb(t, {
-    types: {
-      user: {
-        isNice: 'boolean',
-      },
-    },
-  })
-
-  const id = await db.create('user', {
-    isNice: true,
-  })
-
-  const {
-    data: { name, isNice },
-  } = await db.query2('user', id).get()
-
-  console.log({ name, isNice })
 })
