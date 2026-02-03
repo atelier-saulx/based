@@ -64,6 +64,7 @@ export type QueryAst = {
   sort?: { prop: string; order: 'asc' | 'desc' }
   props?: Record<string, QueryAst>
   edges?: QueryAst
+  // ----------- add aggregate stuff
 }
 
 export type Ctx = {
