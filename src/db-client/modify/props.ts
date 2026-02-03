@@ -7,8 +7,6 @@ import {
   writeModifyPropHeaderProps,
   type LangCodeEnum,
   type ModifyEnum,
-  PropType,
-  LangCode,
 } from '../../zigTsExports.js'
 
 export const serializeProps = (
@@ -25,8 +23,14 @@ export const serializeProps = (
     }
     const val = data[key]
     if (def.constructor === Map) {
-      if (val !== null && typeof val === 'object') {
-        serializeProps(def, val, buf, op, lang)
+      if (typeof val === 'object') {
+        if (val === null) {
+          const empty = {}
+          for (const [key] of def) empty[key] = null
+          serializeProps(def, empty, buf, op, lang)
+        } else {
+          serializeProps(def, val, buf, op, lang)
+        }
       }
     } else {
       const prop = def as PropDef

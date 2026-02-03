@@ -68,7 +68,11 @@ await test('modify text', async (t) => {
   await db.update('thing', id1, {
     content: null,
   })
-  deepEqual((await db.query('thing', id1).get().toObject()).content, undefined)
+  deepEqual((await db.query('thing', id1).get().toObject()).content, {
+    nl: '',
+    en: '',
+    de: '',
+  })
 })
 
 await test('modify text on edge', async (t) => {

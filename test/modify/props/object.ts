@@ -55,13 +55,17 @@ await test('modify object', async (t) => {
   })
   deepEqual((await db.query('thing', id1).get().toObject()).info, {
     count: 20,
+    title: '',
   })
 
   // Delete whole object
   await db.update('thing', id1, {
     info: null,
   })
-  deepEqual((await db.query('thing', id1).get().toObject()).info, undefined)
+  deepEqual((await db.query('thing', id1).get().toObject()).info, {
+    count: 0,
+    title: '',
+  })
 })
 
 await test('modify object on edge', async (t) => {

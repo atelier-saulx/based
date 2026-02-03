@@ -19,9 +19,19 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
+pub fn ensureCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema, hllPrecision: u8, hllMode: bool) *selva.c.struct_selva_string {
+    var data = selva.c.selva_fields_get_selva_string(node, fieldSchema);
+    if (data == null) {
+        data = selva.c.selva_fields_ensure_string(node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
+        selva.c.hll_init(data, hllPrecision, hllMode);
+    }
+
+    return data;
+}
+
 pub fn getCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
     if (selva.c.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
-        const countDistinct = selva.c.hll_count(@ptrCast(stored));
+        const countDistinct = selva.c.hll_count(stored);
         return countDistinct[0..4];
     } else {
         return null;
@@ -35,7 +45,7 @@ pub fn getCardinalityReference(db: *DbCtx, efc: Schema.EdgeFieldConstraint, ref:
     }
 
     if (selva.c.selva_fields_get_selva_string(edge_node, fieldSchema) orelse null) |stored| {
-        const countDistinct = selva.c.hll_count(@ptrCast(stored));
+        const countDistinct = selva.c.hll_count(stored);
         return countDistinct[0..4];
     } else {
         return emptySlice;
