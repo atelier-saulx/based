@@ -1860,7 +1860,7 @@ struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const
 
     struct selva_string *s = nfo2p(fields, nfo);
 
-    return (selva_string_get_len(s) != 0) ? s : nullptr;
+    return (s->flags & SELVA_STRING_STATIC) ? s : nullptr;
 }
 
 struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
