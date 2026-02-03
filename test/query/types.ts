@@ -1,0 +1,93 @@
+import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
+import test from '../shared/test.js'
+
+await test('query types', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      user: {
+        isNice: 'boolean',
+      },
+      everything: {
+        s: 'string',
+        n: 'number',
+        i8: 'int8',
+        u8: 'uint8',
+        i16: 'int16',
+        u16: 'uint16',
+        i32: 'int32',
+        u32: 'uint32',
+        b: 'boolean',
+        txt: 'text',
+        js: 'json',
+        ts: 'timestamp',
+        bin: 'binary',
+        als: 'alias',
+        // vec: 'vector',
+        // col: 'colvec',
+        card: 'cardinality',
+        myEnum: { enum: ['a', 'b'] as const },
+        nested: {
+          type: 'object',
+          props: {
+            a: 'string',
+          },
+        },
+        myRef: { ref: 'user', prop: 'backRef' },
+        myRefs: { items: { ref: 'user', prop: 'backRefs' } },
+      },
+    },
+  })
+
+  await db.create('user', {
+    isNice: true,
+  })
+
+  const query = db.query2('user')
+  const { data } = await query.get()
+
+  if (data.length > 0) {
+    const user = data[0]
+    // Should be strictly boolean, not boolean | null | undefined
+    const isNice: boolean = user.isNice
+    const id: number = user.id
+    // @ts-expect-error
+    const wrong: string = user.isNice
+    // @ts-expect-error
+    const unknown = user.something
+  }
+
+  const query2 = db.query2('everything')
+  const res = await query2.get()
+  const everything = res.data[0]
+
+  if (res.data.length > 0) {
+    const s: string = everything.s
+    const n: number = everything.n
+    const i8: number = everything.i8
+    const u8: number = everything.u8
+    const i16: number = everything.i16
+    const u16: number = everything.u16
+    const i32: number = everything.i32
+    const u32: number = everything.u32
+    const b: boolean = everything.b
+    const txt: string = everything.txt
+    const js: any = everything.js
+    const ts: number = everything.ts
+    const bin: Uint8Array = everything.bin
+    const als: string = everything.als
+    const card: number = everything.card
+    const myEnum: 'a' | 'b' = everything.myEnum
+    const nestedA: string = everything.nested.a
+    const myRef: number = everything.myRef
+    const myRefs: number[] = everything.myRefs
+    const id: number = everything.id
+
+    // @ts-expect-error
+    const wrongEnum: 'c' = everything.myEnum
+    // @ts-expect-error
+    const wrongRef: string = everything.myRef
+    // @ts-expect-error
+    const wrongRefs: number = everything.myRefs
+  }
+})

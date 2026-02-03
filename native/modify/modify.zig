@@ -107,9 +107,6 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                 .cardinality => {
                     if (prop.size == 0) {
                         try Fields.deleteField(db, node, propSchema);
-                        if (selva.c.selva_fields_get_selva_string(node, propSchema)) |bla| {
-                            utils.debugPrint("ITS STILL HERE! {any}\n", .{bla});
-                        }
                         continue;
                     }
                     var k: usize = 0;
