@@ -78,7 +78,16 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                     if (value.len == 0) continue;
                     const id = Node.getNodeId(node);
                     const old = try Fields.setAlias(typeEntry, id, prop.id, value);
-                    // std.debug.print("value {any} {any} {d} {d} {any}\n", .{ typeEntry, value, id, prop.id, old });
+                    // std.debug.print("value {any} {any} {d} {d} {any}\n", .{ node, value, id, prop.id, old });
+                    // if (Fields.getAliasByName(typeEntry, prop.id, value)) |node2| {
+                    //     const res = Fields.get(
+                    //         typeEntry,
+                    //         node,
+                    //         propSchema,
+                    //         prop.type,
+                    //     );
+                    //     std.debug.print("node {any} {any} {any}\n", .{ node, node2, res });
+                    // }
                     if (old > 0) {
                         // TODO sort for everything
                         // if (ctx.currentSortIndex != null) {
