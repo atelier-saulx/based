@@ -26,6 +26,13 @@ await test('modify binary', async (t) => {
 
   const res2 = await db.query('thing', id1).get().toObject()
   deepEqual(res2.blob, b2)
+
+  // Delete
+  await db.update('thing', id1, {
+    blob: null,
+  })
+  const res3 = await db.query('thing', id1).get().toObject()
+  deepEqual(res3.blob, new Uint8Array())
 })
 
 await test('modify binary on edge', async (t) => {

@@ -97,7 +97,7 @@ type InferType<
 } & {
   [K in keyof Props as Props[K] extends { required: true }
     ? never
-    : K]?: InferProp<Props[K], Types, Locales>
+    : K]?: InferProp<Props[K], Types, Locales> | null
 }
 
 export type InferPayload<

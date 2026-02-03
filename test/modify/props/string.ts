@@ -70,6 +70,16 @@ await test('modify string', async (t) => {
     id: id1,
     name: s6,
   })
+
+  // Delete
+  await db.update('thing', id1, {
+    name: null,
+  })
+
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    name: '', // Should probably be empty string for string props?
+  })
 })
 
 await test('modify string on edge', async (t) => {

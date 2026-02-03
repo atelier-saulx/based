@@ -30,6 +30,12 @@ await test('modify json', async (t) => {
     id: id1,
     data: arr,
   })
+
+  // Delete
+  await db.update('thing', id1, {
+    data: null,
+  })
+  deepEqual((await db.query('thing', id1).get().toObject()).data, undefined)
 })
 
 await test('modify json on edge', async (t) => {

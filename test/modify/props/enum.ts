@@ -28,6 +28,12 @@ await test('modify enum', async (t) => {
     id: id1,
     option: 'second',
   })
+
+  // Delete
+  await db.update('thing', id1, {
+    option: null,
+  })
+  deepEqual((await db.query('thing', id1).get().toObject()).option, undefined)
 })
 
 await test('modify enum on edge', async (t) => {

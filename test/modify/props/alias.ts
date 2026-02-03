@@ -48,15 +48,16 @@ await test('modify alias', async (t) => {
     id: id1,
     myAlias: '',
   })
-  deepEqual(await db.query('thing', id2).get(), {
-    id: id2,
-    myAlias: 'another-alias',
+  // Delete
+  await db.update('thing', id2, {
+    myAlias: null,
   })
+  deepEqual((await db.query('thing', id2).get().toObject()).myAlias, '')
 })
 
 await test('schema alias on edge not allowed', async (t) => {
-  throws(async () => {
-    const schema = parseSchema({
+  throws(async () =>
+    parseSchema({
       types: {
         thing: {
           myAlias: 'alias',
@@ -70,7 +71,6 @@ await test('schema alias on edge not allowed', async (t) => {
           },
         },
       },
-    })
-    console.log(schema)
-  })
+    }),
+  )
 })

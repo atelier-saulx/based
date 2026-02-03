@@ -39,6 +39,13 @@ await test('modify vector', async (t) => {
   assert(Math.abs(vecArr2[0] - v2[0]) < 0.0001)
   assert(Math.abs(vecArr2[1] - v2[1]) < 0.0001)
   assert(Math.abs(vecArr2[2] - v2[2]) < 0.0001)
+
+  // Delete
+  await db.update('thing', id1, {
+    vec: null,
+  })
+  const res3 = await db.query('thing', id1).get().toObject()
+  assert(res3.vec === undefined)
 })
 
 await test.skip('modify colvec', async (t) => {
@@ -78,6 +85,13 @@ await test.skip('modify colvec', async (t) => {
   assert(Math.abs(vecArr2[0] - v2[0]) < 0.0001)
   assert(Math.abs(vecArr2[1] - v2[1]) < 0.0001)
   assert(Math.abs(vecArr2[2] - v2[2]) < 0.0001)
+
+  // Delete
+  await db.update('thing', id1, {
+    vec: null,
+  })
+  const res3 = await db.query('thing', id1).get().toObject()
+  assert(res3.vec === undefined)
 })
 
 await test('modify vector on edge', async (t) => {

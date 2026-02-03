@@ -33,7 +33,17 @@ await test('modify boolean', async (t) => {
 
   db.update('user', a, { isNice: false })
   db.update('user', b, { isNice: false })
-  db.update('user', c, { isNice: false })
+
+  deepEqual(await db.query('user').get(), [
+    { id: 1, isNice: false },
+    { id: 2, isNice: false },
+    { id: 3, isNice: true },
+  ])
+
+  // Delete
+  db.update('user', a, { isNice: null })
+  db.update('user', b, { isNice: null })
+  db.update('user', c, { isNice: null })
 
   deepEqual(await db.query('user').get(), [
     { id: 1, isNice: false },

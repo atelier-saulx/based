@@ -85,29 +85,26 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                     }
                 },
                 .alias => {
-                    if (value.len == 0) continue;
                     const id = Node.getNodeId(node);
-                    const old = try Fields.setAlias(typeEntry, id, prop.id, value);
-                    // std.debug.print("value {any} {any} {d} {d} {any}\n", .{ node, value, id, prop.id, old });
-                    // if (Fields.getAliasByName(typeEntry, prop.id, value)) |node2| {
-                    //     const res = Fields.get(
-                    //         typeEntry,
-                    //         node,
-                    //         propSchema,
-                    //         prop.type,
-                    //     );
-                    //     std.debug.print("node {any} {any} {any}\n", .{ node, node2, res });
-                    // }
-                    if (old > 0) {
+                    if (prop.size == 0) {
+                        try Fields.delAlias(typeEntry, id, prop.id);
+                        continue;
+                    }
+                    const prev = try Fields.setAlias(typeEntry, id, prop.id, value);
+                    if (prev > 0) {
                         // TODO sort for everything
                         // if (ctx.currentSortIndex != null) {
-                        //     sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, old).?);
+                        //     sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, prev).?);
                         // }
                         const typeId = Node.getNodeTypeId(node);
-                        selva.markDirty(db, typeId, old);
+                        selva.markDirty(db, typeId, prev);
                     }
                 },
                 .cardinality => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     var k: usize = 0;
                     const cardinality = utils.readNext(t.ModifyCardinalityHeader, value, &k);
                     var hll = selva.c.selva_fields_get_selva_string(node, propSchema);
@@ -122,6 +119,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                     }
                 },
                 .reference => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
                     const refTypeEntry = try Node.getType(db, refTypeId);
                     var k: usize = 0;
@@ -143,6 +144,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                     }
                 },
                 .references => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     var k: usize = 0;
                     if (@as(t.ModifyReferences, @enumFromInt(value[0])) == t.ModifyReferences.clear) {
                         References.clearReferences(db, node, propSchema);
@@ -208,6 +213,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                     }
                 },
                 else => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     try Fields.set(node, propSchema, value);
                 },
             }

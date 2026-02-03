@@ -28,8 +28,8 @@ pub fn getCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
     }
 }
 
-pub fn getCardinalityReference(ctx: *DbCtx, efc: Schema.EdgeFieldConstraint, ref: References.ReferenceLarge, fieldSchema: Schema.FieldSchema) []u8 {
-    const edge_node = Node.getEdgeNode(ctx, efc, ref);
+pub fn getCardinalityReference(db: *DbCtx, efc: Schema.EdgeFieldConstraint, ref: References.ReferenceLarge, fieldSchema: Schema.FieldSchema) []u8 {
+    const edge_node = Node.getEdgeNode(db, efc, ref);
     if (edge_node == null) {
         return emptySlice;
     }
@@ -136,8 +136,8 @@ pub fn ensureEdgePropTypeString(
     }
 }
 
-pub inline fn deleteField(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
-    try errors.selva(selva.c.selva_fields_del(ctx.db.selva, node, fieldSchema));
+pub inline fn deleteField(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
+    try errors.selva(selva.c.selva_fields_del(db.selva, node, fieldSchema));
 }
 
 pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {

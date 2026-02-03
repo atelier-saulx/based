@@ -51,6 +51,12 @@ await test('modify single reference', async (t) => {
       dest: { id: realT1 },
     })
   }
+
+  // Delete
+  await db.update('holder', h1, { dest: null })
+  deepEqual(await db.query('holder', h1).include('dest').get(), {
+    id: h1,
+  })
 })
 
 await test('modify references', async (t) => {
@@ -106,6 +112,10 @@ await test('modify references', async (t) => {
   // Test update (acts as add/upsert for references list) with promise
   await db.update('holder', h1, { dests: { update: [t3Promise] } })
   await check([t2, t3], 'update')
+
+  // Delete all
+  await db.update('holder', h1, { dests: null })
+  await check([], 'delete all')
 })
 
 await test('modify references no await', async (t) => {

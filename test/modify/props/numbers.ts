@@ -144,6 +144,21 @@ await test('modify numbers', async (t) => {
     u32: 100001,
     i32: -100001,
   })
+
+  // Delete
+  await db.update('thing', id1, {
+    n: null,
+    u8: null,
+    i8: null,
+    u16: null,
+    i16: null,
+    u32: null,
+    i32: null,
+  })
+
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+  })
 })
 
 await test('modify numbers on edge', async (t) => {

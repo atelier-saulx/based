@@ -43,13 +43,19 @@ export const serializeProps = (
               : ModifyIncrement.increment
             : ModifyIncrement.none,
         })
-        prop.pushValue(buf, increment ? Math.abs(increment) : val, op, lang)
+        if (val === null) {
+          buf.fill(0, buf.length, buf.length + prop.size)
+        } else {
+          prop.pushValue(buf, increment ? Math.abs(increment) : val, op, lang)
+        }
       } else {
         // separate
         const index = pushModifyPropHeader(buf, prop)
-        const start = buf.length
-        prop.pushValue(buf, val, op, lang)
-        writeModifyPropHeaderProps.size(buf.data, buf.length - start, index)
+        if (val !== null) {
+          const start = buf.length
+          prop.pushValue(buf, val, op, lang)
+          writeModifyPropHeaderProps.size(buf.data, buf.length - start, index)
+        }
       }
     }
   }

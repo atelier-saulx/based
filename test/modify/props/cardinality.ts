@@ -35,6 +35,13 @@ await test('modify cardinality basic', async (t) => {
   })
   const res3 = await db.query('thing', id1).get().toObject()
   deepEqual(res3.counter, 2)
+
+  // Delete
+  await db.update('thing', id1, {
+    counter: null,
+  })
+  const res4 = await db.query('thing', id1).get().toObject()
+  deepEqual(res4.counter, undefined)
 })
 
 await test('modify cardinality on edge', async (t) => {

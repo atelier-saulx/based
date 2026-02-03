@@ -46,6 +46,22 @@ await test('modify object', async (t) => {
       count: 20,
     },
   })
+
+  // Delete nested prop
+  await db.update('thing', id1, {
+    info: {
+      title: null,
+    },
+  })
+  deepEqual((await db.query('thing', id1).get().toObject()).info, {
+    count: 20,
+  })
+
+  // Delete whole object
+  await db.update('thing', id1, {
+    info: null,
+  })
+  deepEqual((await db.query('thing', id1).get().toObject()).info, undefined)
 })
 
 await test('modify object on edge', async (t) => {

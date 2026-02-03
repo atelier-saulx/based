@@ -63,6 +63,12 @@ await test('modify text', async (t) => {
       nl: 'Hallo',
     },
   })
+
+  // Delete
+  await db.update('thing', id1, {
+    content: null,
+  })
+  deepEqual((await db.query('thing', id1).get().toObject()).content, undefined)
 })
 
 await test('modify text on edge', async (t) => {
