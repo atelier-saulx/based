@@ -1,6 +1,7 @@
 import native from '../../../native.js'
 import { NOT_COMPRESSED } from '../../../protocol/index.js'
 import type {
+  SchemaBinary,
   SchemaCardinality,
   SchemaString,
   SchemaVector,
@@ -24,6 +25,22 @@ import { xxHash64 } from '../../../db-client/xxHash64.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
+
+const validateMaxBytes = (
+  bytes: number,
+  prop: { maxBytes?: number },
+  path: string[],
+) => {
+  if (prop.maxBytes !== undefined) {
+    if (bytes > prop.maxBytes) {
+      throw new Error(
+        `Byte length ${bytes} is larger than maxBytes ${
+          prop.maxBytes
+        } for ${path.join('.')}`,
+      )
+    }
+  }
+}
 
 export const string = class String extends BasePropDef {
   constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
@@ -64,22 +81,12 @@ export const string = class String extends BasePropDef {
         )}`,
       )
     }
+
     const normalized = val.normalize('NFKD')
-    // TODO make header!
-    // TODO compression
     buf.pushUint8(lang)
     buf.pushUint8(NOT_COMPRESSED)
     const written = buf.pushString(normalized)
-
-    if (prop.maxBytes !== undefined) {
-      if (written > prop.maxBytes) {
-        throw new Error(
-          `Byte length ${written} is larger than maxBytes ${
-            prop.maxBytes
-          } for ${this.path.join('.')}`,
-        )
-      }
-    }
+    validateMaxBytes(written, prop, this.path)
     const crc = native.crc32(buf.subarray(buf.length - written))
     buf.pushUint32(crc)
   }
@@ -139,6 +146,7 @@ export const json = class Json extends string {
 
 export const binary = class Binary extends BasePropDef {
   override type = PropType.binary
+  declare schema: SchemaBinary
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
@@ -148,15 +156,14 @@ export const binary = class Binary extends BasePropDef {
     if (!(value instanceof Uint8Array)) {
       throw new Error('Invalid type for binary ' + this.path.join('.'))
     }
-    const prop = this.schema as SchemaString
-    if (prop.maxBytes !== undefined && value.byteLength > prop.maxBytes) {
-      throw new Error(
-        `Byte length ${value.byteLength} is larger than maxBytes ${
-          prop.maxBytes
-        } for ${this.path.join('.')}`,
-      )
-    }
+
+    validateMaxBytes(value.byteLength, this.schema, this.path)
+
+    const crc = native.crc32(value)
+    buf.pushUint8(LangCode.none)
+    buf.pushUint8(NOT_COMPRESSED)
     buf.set(value, buf.length)
+    buf.pushUint32(crc)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {

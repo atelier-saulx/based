@@ -15,9 +15,8 @@ await test('modify binary', async (t) => {
   const id1 = await db.create('thing', {
     blob: b1,
   })
+  const res1 = await db.query('thing', id1).get().toObject()
 
-  const res1: any = await db.query('thing', id1).get()
-  // Depending on how binary is returned (buffer or Uint8Array), likely Uint8Array as per rules
   deepEqual(res1.blob, b1)
 
   const b2 = new Uint8Array([4, 5, 6, 7])
@@ -25,6 +24,6 @@ await test('modify binary', async (t) => {
     blob: b2,
   })
 
-  const res2: any = await db.query('thing', id1).get()
+  const res2 = await db.query('thing', id1).get().toObject()
   deepEqual(res2.blob, b2)
 })
