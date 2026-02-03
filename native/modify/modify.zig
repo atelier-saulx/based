@@ -276,6 +276,7 @@ pub fn modify(
                 db.ids[create.type - 1] = id;
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
+                selva.markDirty(db, create.type, id);
                 i += create.size;
             },
             .update => {
@@ -291,6 +292,7 @@ pub fn modify(
                     };
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.null, j + 4);
+                    selva.markDirty(db, update.type, id);
                 } else {
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.nx, j + 4);
@@ -316,6 +318,7 @@ pub fn modify(
                 const id = Node.getNodeId(upsertRes.node);
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
+                selva.markDirty(db, upsert.type, id);
                 i += dataSize;
             },
             .insert => {
@@ -326,6 +329,7 @@ pub fn modify(
                 const typeEntry = try Node.getType(db, insert.type);
                 const upsertRes = try upsertTarget(db, insert.type, typeEntry, target);
                 const dataSize = utils.read(u32, buf, i);
+                const id = Node.getNodeId(upsertRes.node);
                 i += 4;
                 if (upsertRes.created) {
                     try modifyProps(db, typeEntry, upsertRes.node, target, items);
@@ -333,8 +337,8 @@ pub fn modify(
                     modifyProps(db, typeEntry, upsertRes.node, data, items) catch {
                         // handle errors
                     };
+                    selva.markDirty(db, insert.type, id);
                 }
-                const id = Node.getNodeId(upsertRes.node);
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
                 i += dataSize;
@@ -351,6 +355,7 @@ pub fn modify(
                     };
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.null, j + 4);
+                    selva.markDirty(db, delete.type, id);
                 } else {
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.nx, j + 4);
