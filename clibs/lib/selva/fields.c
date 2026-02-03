@@ -702,6 +702,7 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
         (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i);
     }
 
+    selva_mark_dirty(selva_get_type_by_index(db, fs_dst->edge_constraint.dst_node_type), src_node_id);
     selva_mark_dirty(dst_type, dst_node_id);
 }
 
