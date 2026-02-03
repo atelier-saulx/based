@@ -175,10 +175,6 @@ pub const ModifyCardinalityHeader = packed struct {
     sparse: bool,
     _padding: u7,
     precision: u8,
-    // id: u32,
-    // isTmp: bool,
-    // _padding: u7,
-    // size: u32,
 };
 
 pub const ModifyResultItem = packed struct {

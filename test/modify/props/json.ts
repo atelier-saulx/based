@@ -35,7 +35,7 @@ await test('modify json', async (t) => {
   await db.update('thing', id1, {
     data: null,
   })
-  deepEqual((await db.query('thing', id1).get().toObject()).data, undefined)
+  deepEqual((await db.query('thing', id1).get().toObject()).data, null)
 })
 
 await test('modify json on edge', async (t) => {

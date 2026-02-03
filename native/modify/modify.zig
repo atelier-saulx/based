@@ -103,12 +103,15 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                 .cardinality => {
                     if (prop.size == 0) {
                         try Fields.deleteField(db, node, propSchema);
+                        if (selva.c.selva_fields_get_selva_string(node, propSchema)) |bla| {
+                            utils.debugPrint("ITS STILL HERE! {any}\n", .{bla});
+                        }
                         continue;
                     }
                     var k: usize = 0;
                     const cardinality = utils.readNext(t.ModifyCardinalityHeader, value, &k);
                     var hll = selva.c.selva_fields_get_selva_string(node, propSchema);
-                    if (hll == null) {
+                    if (hll == null) { // TODO check if this is null after delete!
                         hll = try Fields.ensurePropTypeString(node, propSchema);
                         selva.c.hll_init(hll, cardinality.precision, cardinality.sparse);
                     }
