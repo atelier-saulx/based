@@ -63,13 +63,19 @@ export const parseReference = (
   }
 
   parsingEdges = true
-  for (const key in def) {
-    if (key.startsWith('$')) {
-      const edge = parseProp(def[key], locales)
-      assert(edge.type !== 'alias', 'Edge alias not allowed')
-      result[key] = edge
+  try {
+    for (const key in def) {
+      if (key.startsWith('$')) {
+        const edge = parseProp(def[key], locales)
+        assert(edge.type !== 'alias', 'Edge alias not allowed')
+        result[key] = edge
+      }
     }
+  } catch (e) {
+    parsingEdges = false
+    throw e
   }
+
   parsingEdges = false
   if (fromReferences) {
     deleteUndefined(result)
