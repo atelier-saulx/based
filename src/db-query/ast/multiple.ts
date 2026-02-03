@@ -13,9 +13,16 @@ import { filter } from './filter/filter.js'
 import { include } from './include.js'
 import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
+import { isAggregateAst, pushAggregatesQuery } from './aggregates.js'
 
 export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
+
+  if (isAggregateAst(ast)) {
+    pushAggregatesQuery(ast, ctx, typeDef)
+    return
+  }
+
   const headerIndex = pushQueryHeader(ctx.query, {
     op: QueryType.default,
     prop: ID_PROP,
