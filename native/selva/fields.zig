@@ -38,20 +38,6 @@ pub fn getCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
     }
 }
 
-pub fn getCardinalityReference(db: *DbCtx, efc: Schema.EdgeFieldConstraint, ref: References.ReferenceLarge, fieldSchema: Schema.FieldSchema) []u8 {
-    const edge_node = Node.getEdgeNode(db, efc, ref);
-    if (edge_node == null) {
-        return emptySlice;
-    }
-
-    if (selva.c.selva_fields_get_selva_string(edge_node, fieldSchema) orelse null) |stored| {
-        const countDistinct = selva.c.hll_count(stored);
-        return countDistinct[0..4];
-    } else {
-        return emptySlice;
-    }
-}
-
 pub fn get(
     typeEntry: ?Node.Type,
     node: Node.Node,

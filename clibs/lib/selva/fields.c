@@ -167,49 +167,36 @@ static struct SelvaFieldInfo *ensure_field_references(struct SelvaFields *fields
 
 /**
  * Get a mutable string in fields at fs/nfo.
+ * @param unsafe Get a mutable string in fields at fs/nfo without initializing the buffer.
  */
-static struct selva_string *get_mutable_string(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, size_t len)
+static inline struct selva_string *get_mutable_string(
+        struct SelvaFields *fields,
+        const struct SelvaFieldSchema *fs,
+        struct SelvaFieldInfo *nfo,
+        size_t initial_len,
+        bool unsafe)
 {
     struct selva_string *s = nfo2p(fields, nfo);
 
     assert(nfo->in_use);
+#if 0
     assert(s && ((uintptr_t)s & 7) == 0);
+#endif
 
-    if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
+    if (!(s->flags & SELVA_STRING_STATIC)) {
         int err;
 
         if (fs->string.fixed_len == 0) {
-            err = selva_string_init(s, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC);
+            const enum selva_string_flags flags =
+                SELVA_STRING_MUTABLE | SELVA_STRING_CRC |
+                (unsafe ? SELVA_STRING_NOZERO : 0);
+            err = selva_string_init(s, nullptr, initial_len, flags);
         } else {
-            assert(len <= fs->string.fixed_len);
-            err = selva_string_init(s, nullptr, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC);
-        }
-        if (err) {
-            s = nullptr;
-        }
-    }
-
-    return s;
-}
-
-/**
- * Get a mutable string in fields at fs/nfo without initializing the buffer.
- */
-static struct selva_string *get_mutable_string_unsafe(struct SelvaFields *fields, const struct SelvaFieldSchema *fs, struct SelvaFieldInfo *nfo, size_t len)
-{
-    struct selva_string *s = nfo2p(fields, nfo);
-
-    assert(nfo->in_use);
-    assert(s && ((uintptr_t)s & 7) == 0);
-
-    if (!(s->flags & SELVA_STRING_STATIC)) { /* Previously initialized. */
-        int err;
-
-        if (fs->string.fixed_len == 0) {
-            err = selva_string_init(s, nullptr, len, SELVA_STRING_MUTABLE | SELVA_STRING_CRC | SELVA_STRING_NOZERO);
-        } else {
-            assert(len <= fs->string.fixed_len);
-            err = selva_string_init(s, nullptr, fs->string.fixed_len, SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC | SELVA_STRING_NOZERO);
+            const enum selva_string_flags flags =
+                SELVA_STRING_MUTABLE_FIXED | SELVA_STRING_CRC |
+                (unsafe ? SELVA_STRING_NOZERO : 0);
+            assert(initial_len <= fs->string.fixed_len);
+            err = selva_string_init(s, nullptr, fs->string.fixed_len, flags);
         }
         if (err) {
             s = nullptr;
@@ -232,7 +219,7 @@ static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldS
 
     uint32_t crc;
     memcpy(&crc, str + len - sizeof(crc), sizeof(crc));
-    s = get_mutable_string_unsafe(fields, fs, nfo, len - sizeof(crc));
+    s = get_mutable_string(fields, fs, nfo, len - sizeof(crc), true);
     (void)selva_string_replace_crc(s, str, len - sizeof(crc), crc);
     if (str[1] == 1) selva_string_set_compress(s);
 
@@ -944,11 +931,7 @@ static inline int _selva_fields_get_mutable_string(struct SelvaNode *node, const
     }
 
     nfo = ensure_field(fields, fs);
-    if (unsafe) {
-        *s = get_mutable_string_unsafe(fields, fs, nfo, len);
-    } else {
-        *s = get_mutable_string(fields, fs, nfo, len);
-    }
+    *s = get_mutable_string(fields, fs, nfo, len, unsafe);
 
     return !*s ? SELVA_EINVAL : 0;
 }
@@ -972,7 +955,7 @@ struct selva_string *selva_fields_ensure_string(struct SelvaNode *node, const st
     struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo = ensure_field(fields, fs);
 
-    return get_mutable_string(fields, fs, nfo, initial_len);
+    return get_mutable_string(fields, fs, nfo, initial_len, false);
 }
 
 static void del_field_text(struct SelvaFields *fields, struct SelvaFieldInfo *nfo)
@@ -1877,7 +1860,7 @@ struct selva_string *selva_fields_get_selva_string(struct SelvaNode *node, const
 
     struct selva_string *s = nfo2p(fields, nfo);
 
-    return (selva_string_get_len(s) != 0) ? s : nullptr;
+    return (s->flags & SELVA_STRING_STATIC) ? s : nullptr;
 }
 
 struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const struct SelvaFieldSchema *fs)
@@ -2019,13 +2002,64 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
     (void)clear_references(db, node, fs);
 }
 
-static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fields)
+static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFields *fields, const struct SelvaFieldsSchema *schema)
+{
+    const uint8_t *schema_buf = te->schema_buf;
+    size_t data_len = schema->template.fixed_data_len;
+
+    memcpy(fields->data, schema->template.fixed_data_buf, data_len);
+
+    /*
+     * Handle defaults that needs to allocate memory per each node.
+     */
+    for (size_t i = 0; i < schema->nr_fixed_fields; i++) {
+        const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
+
+        if (fs->type == SELVA_FIELD_TYPE_STRING) {
+            if (fs->string.default_off > 0) {
+                const void *default_str = schema_buf + fs->string.default_off;
+                size_t default_len = fs->string.default_len;
+                struct SelvaFieldInfo *nfo;
+                int err;
+
+                nfo = ensure_field(fields, fs);
+                err = set_field_string(fields, fs, nfo, default_str, default_len);
+                if (unlikely(err)) {
+                    /* TODO panic is not nice here. */
+                    db_panic("Failed to set string default");
+                }
+            }
+        } else if (fs->type == SELVA_FIELD_TYPE_TEXT) {
+            const size_t nr_defaults = fs->text.nr_defaults;
+            size_t off = fs->text.defaults_off;
+            if (nr_defaults > 0 && off > 0) {
+                struct ensure_text_field tf;
+
+                tf = ensure_text_field(fields, fs, selva_lang_none);
+                tf.text->tl = selva_malloc(nr_defaults * sizeof(*tf.text->tl));
+                tf.text->len = nr_defaults;
+
+                for (size_t i = 0; i < nr_defaults; i++) {
+                    uint32_t len;
+                    uint32_t crc;
+
+                    memcpy(&len, te->schema_buf + off, sizeof(len));
+                    off += sizeof(len);
+                    memcpy(&crc, schema_buf + off + len - sizeof(crc), sizeof(crc));
+                    init_tl(&tf.text->tl[i], (const char *)(schema_buf + off), len - sizeof(crc), crc);
+                    off += len;
+                }
+            }
+        }
+        /* SELVA_FIELD_TYPE_COLVEC handled in colvec_init_node() */
+    }
+}
+
+static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fields, bool set_defaults)
 {
     const struct SelvaFieldsSchema *schema = &te->ns.fields_schema;
-    const uint8_t *schema_buf = te->schema_buf;
 
     fields->nr_fields = schema->nr_fields - schema->nr_virtual_fields;
-
     memcpy(fields->fields_map, schema->template.field_map_buf, schema->template.field_map_len);
 
     size_t data_len = schema->template.fixed_data_len;
@@ -2033,53 +2067,8 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
         fields->data_len = data_len;
         fields->data = selva_malloc(data_len);
 
-        if (schema->template.fixed_data_buf) {
-            memcpy(fields->data, schema->template.fixed_data_buf, data_len);
-
-            /*
-             * Handle defaults that needs to allocate memory per each node.
-             */
-            for (size_t i = 0; i < schema->nr_fixed_fields; i++) {
-                const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
-
-                if (fs->type == SELVA_FIELD_TYPE_STRING) {
-                    if (fs->string.default_off > 0) {
-                        const void *default_str = schema_buf + fs->string.default_off;
-                        size_t default_len = fs->string.default_len;
-                        struct SelvaFieldInfo *nfo;
-                        int err;
-
-                        nfo = ensure_field(fields, fs);
-                        err = set_field_string(fields, fs, nfo, default_str, default_len);
-                        if (unlikely(err)) {
-                            /* TODO panic is not nice here. */
-                            db_panic("Failed to set string default");
-                        }
-                    }
-                } else if (fs->type == SELVA_FIELD_TYPE_TEXT) {
-                    const size_t nr_defaults = fs->text.nr_defaults;
-                    size_t off = fs->text.defaults_off;
-                    if (nr_defaults > 0 && off > 0) {
-                        struct ensure_text_field tf;
-
-                        tf = ensure_text_field(fields, fs, selva_lang_none);
-                        tf.text->tl = selva_malloc(nr_defaults * sizeof(*tf.text->tl));
-                        tf.text->len = nr_defaults;
-
-                        for (size_t i = 0; i < nr_defaults; i++) {
-                            uint32_t len;
-                            uint32_t crc;
-
-                            memcpy(&len, te->schema_buf + off, sizeof(len));
-                            off += sizeof(len);
-                            memcpy(&crc, schema_buf + off + len - sizeof(crc), sizeof(crc));
-                            init_tl(&tf.text->tl[i], (const char *)(schema_buf + off), len - sizeof(crc), crc);
-                            off += len;
-                        }
-                    }
-                }
-                /* SELVA_FIELD_TYPE_COLVEC handled in colvec_init_node() */
-            }
+        if (schema->template.fixed_data_buf && set_defaults) {
+            selva_fields_init_defaults(te, fields, schema);
         } else {
             memset(fields->data, 0, data_len);
         }
@@ -2089,9 +2078,9 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
     }
 }
 
-void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
+void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, bool set_defaults)
 {
-    selva_fields_init(te, &node->fields);
+    selva_fields_init(te, &node->fields, set_defaults);
     if (te->ns.nr_colvecs > 0) {
         colvec_init_node(te, node);
     }

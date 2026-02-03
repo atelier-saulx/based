@@ -33,7 +33,7 @@ export function logMemoryUsage() {
   }
 }
 
-export const testDb = async <S extends SchemaIn>(
+export const testDb = async <const S extends SchemaIn>(
   t,
   schema: S,
 ): Promise<DbClient<ResolveSchema<S>>> => {

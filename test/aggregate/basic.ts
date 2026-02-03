@@ -91,16 +91,16 @@ await test('sum top level', async (t) => {
     await db.query('vote').sum().get().toObject()
   }, 'sum() returning nothing')
 
-  //   deepEqual(
-  //     await db
-  //       .query('vote')
-  //       .filter('country', '=', 'zz')
-  //       .sum('NL')
-  //       .get()
-  //       .toObject(),
-  //     { NL: { sum: 0 } },
-  //     'sum with empty result set',
-  //   )
+  // deepEqual(
+  //   await db
+  //     .query('vote')
+  //     .filter('country', '=', 'zz')
+  //     .sum('NL')
+  //     .get()
+  //     .toObject(),
+  //   { NL: { sum: 0 } },
+  //   'sum with empty result set',
+  // )
 
   deepEqual(
     await db.query('vote').sum('flap.hello').get().toObject(),
@@ -191,28 +191,28 @@ await test('top level count', async (t) => {
     'count, top level, ignoring include',
   )
 
-  //   deepEqual(
-  //     await db
-  //       .query('vote')
-  //       .filter('country', '=', 'zz')
-  //       .count()
-  //       .get()
-  //       .toObject(),
-  //     { count: 0 },
-  //     'count, with no match filtering, string value',
-  //   )
-
   // deepEqual(
-  //   await db.query('vote').filter('NL', '=', 20).count().get(),
-  //   { count: 1 },
-  //   'count, with filtering an int value',
+  //   await db
+  //     .query('vote')
+  //     .filter('country', '=', 'zz')
+  //     .count()
+  //     .get()
+  //     .toObject(),
+  //   { count: 0 },
+  //   'count, with no match filtering, string value',
   // )
 
-  //   deepEqual(
-  //     await db.query('vote').filter('NL', '>', 1e6).count().get(),
-  //     { count: 0 },
-  //     'count, with no match filtering, int value',
-  //   )
+  deepEqual(
+    await db.query('vote').filter('NL', '=', 20).count().get(),
+    { count: 1 },
+    'count, with filtering an int value',
+  )
+
+  deepEqual(
+    await db.query('vote').filter('NL', '>', 1e6).count().get(),
+    { count: 0 },
+    'count, with no match filtering, int value',
+  )
 })
 
 await test('two phase accumulation', async (t) => {

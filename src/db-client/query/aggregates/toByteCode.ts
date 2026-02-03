@@ -1,16 +1,23 @@
-import { QueryDef, IntermediateByteCode } from '../types.js'
+import { QueryDef, QueryDefType, IntermediateByteCode } from '../types.js'
+import { byteSize } from '../toByteCode/utils.js'
 import { isRootCountOnly } from './aggregates.js'
 import {
   QueryType,
   AggHeader,
+  AggRefsHeader,
   createAggHeader,
+  createAggRefsHeader,
   createAggProp,
   createGroupByKeyProp,
   GroupByKeyPropByteSize,
   AggHeaderByteSize,
+  AggRefsHeaderByteSize,
   AggPropByteSize,
+  IncludeOp,
 } from '../../../zigTsExports.js'
 import { getIteratorType } from '../toByteCode/iteratorType.js'
+import { filterToBuffer } from '../filter/toByteCode.js'
+import { combineIntermediateResults } from '../query.js'
 
 export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
   if (def.schema == null) {
@@ -21,44 +28,69 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
   }
 
   // QueryHeader
-  const filterSize = 0 // def.filter.size later...
-  const queryType = isRootCountOnly(def, filterSize)
-    ? QueryType.aggregatesCount
-    : QueryType.aggregates
-  const hasSort = false // hardcoded
-  // const hasSearch = !!def.search
-  // const hasFilter = def.filter.size > 0
-  const sortSize = 0 // hardcoded
-
-  let aggHeader: AggHeader = {
-    op: queryType,
-    typeId: def.schema!.id,
-    offset: def.range.offset,
-    limit: def.range.limit,
-    filterSize,
-    iteratorType: getIteratorType(def, false),
-    size: 0, // hardcoded
-    sort: false, // hardcoded
-    hasGroupBy: def.aggregate.groupBy ? true : false,
-    resultsSize: def.aggregate.totalResultsSize,
-    accumulatorSize: def.aggregate.totalAccumulatorSize,
-    isSamplingSet: (def.aggregate?.option?.mode || 'sample') === 'sample',
-  }
+  const filter = filterToBuffer(def.filter)
+  const filterSize = byteSize(filter) || 0
+  const hasFilter = filterSize > 0
+  const hasGroupBy = def.aggregate.groupBy ? true : false
   const numPropsOrFuncs = [...def.aggregate.aggregates.values()].reduce(
     (sum, arr) => sum + arr.length,
     0,
   )
-  const hasGroupBy = aggHeader.hasGroupBy
-  const buffer = new Uint8Array(
-    AggHeaderByteSize +
-      numPropsOrFuncs * AggPropByteSize +
-      (hasGroupBy ? GroupByKeyPropByteSize : 0),
-  )
-  const aggHeaderBuff = createAggHeader(aggHeader)
-  buffer.set(aggHeaderBuff, 0)
+  const groupByKeyPropByteSize = hasGroupBy ? GroupByKeyPropByteSize : 0
+
+  const commonHeader = {
+    offset: def.range.offset,
+    filterSize,
+    hasGroupBy,
+    resultsSize: def.aggregate.totalResultsSize,
+    accumulatorSize: def.aggregate.totalAccumulatorSize,
+    isSamplingSet: (def.aggregate?.option?.mode || 'sample') === 'sample',
+  }
+
+  let headerBuffer: Uint8Array
+
+  if (def.type == QueryDefType.References) {
+    headerBuffer = createAggRefsHeader({
+      ...commonHeader,
+      op: IncludeOp.referencesAggregation,
+      targetProp: def.target.propDef?.prop || 0,
+    })
+  } else {
+    const queryType = isRootCountOnly(def, filterSize)
+      ? QueryType.aggregatesCount
+      : QueryType.aggregates
+
+    headerBuffer = createAggHeader({
+      ...commonHeader,
+      op: queryType,
+      typeId: def.schema.id,
+      limit: def.range.limit,
+      iteratorType: getIteratorType(def, hasFilter),
+    })
+  }
+
+  const headerSize = headerBuffer.length
+  const totalSize =
+    headerSize +
+    filterSize +
+    numPropsOrFuncs * AggPropByteSize +
+    groupByKeyPropByteSize
+  const buffer = new Uint8Array(totalSize)
+
+  let pos = 0
+
+  buffer.set(headerBuffer, pos)
+  pos += headerSize
+
+  if (hasFilter) {
+    const filterBuff = new Uint8Array(filterSize)
+    combineIntermediateResults(filterBuff, 0, filter)
+    buffer.set(filterBuff, pos)
+    pos += filterSize
+  }
 
   let aggPropMap = def.aggregate.aggregates
-  let pos = AggHeaderByteSize
+
   if (def.aggregate.groupBy) {
     const gp = def.aggregate.groupBy
     const groupByKeyPropDef = createGroupByKeyProp({
@@ -87,6 +119,5 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     }
   }
 
-  // here we do need to pass the filter thing as well
   return buffer
 }

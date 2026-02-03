@@ -5,6 +5,7 @@ import {
   QUERY_ITERATOR_EDGE_INCLUDE,
   QUERY_ITERATOR_SEARCH,
   QUERY_ITERATOR_SEARCH_VEC,
+  QUERY_ITERATOR_AGGREGATES,
   QueryIteratorTypeEnum,
   Order,
 } from '../../../zigTsExports.js'
@@ -26,6 +27,8 @@ export const getIteratorType = (
     def.type === QueryDefType.References &&
     // @ts-ignore
     def.target.propDef.edgeNodeTypeId > 0
+  const isAggregates = def.aggregate !== null
+  const hasGroupBy = def?.aggregate?.groupBy ? true : false
 
   let base = QUERY_ITERATOR_DEFAULT
 
@@ -74,6 +77,16 @@ export const getIteratorType = (
       } else {
         base += 0
       }
+    }
+  }
+
+  if (isAggregates) {
+    base = QUERY_ITERATOR_AGGREGATES
+    if (hasGroupBy) {
+      base += 2
+    }
+    if (hasFilter) {
+      base += 1
     }
   }
 

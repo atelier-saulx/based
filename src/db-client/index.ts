@@ -20,6 +20,7 @@ import { serializeCreate } from './modify/create.js'
 import { serializeUpdate } from './modify/update.js'
 import { serializeDelete } from './modify/delete.js'
 import { serializeUpsert } from './modify/upsert.js'
+import { BasedQuery2 } from './query2/index.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -92,6 +93,12 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
       return this as unknown as DbClient<ResolveSchema<T>>
     }
     return this as unknown as DbClient<ResolveSchema<T>>
+  }
+
+  query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+  ) {
+    return new BasedQuery2<S, T>(type)
   }
 
   create<T extends keyof S['types'] & string = keyof S['types'] & string>(
