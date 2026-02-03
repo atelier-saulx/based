@@ -16,8 +16,8 @@ export const serializeUpsert = <
 >(
   schema: S,
   type: T,
-  target: InferTarget<S['types']>[T],
-  payload: InferPayload<S['types']>[T],
+  target: InferTarget<S, T>,
+  payload: InferPayload<S, T>,
   buf: AutoSizedUint8Array,
   lang: LangCodeEnum,
   op: typeof Modify.insert | typeof Modify.upsert,

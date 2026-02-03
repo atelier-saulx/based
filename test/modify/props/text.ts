@@ -20,7 +20,7 @@ await test('modify text', async (t) => {
     content: {
       en: 'Hello',
       de: 'Hallo',
-    } as any,
+    },
   })
 
   deepEqual(await db.query('thing', id1).get(), {
@@ -28,6 +28,7 @@ await test('modify text', async (t) => {
     content: {
       en: 'Hello',
       de: 'Hallo',
+      nl: '',
     },
   })
 
@@ -35,7 +36,7 @@ await test('modify text', async (t) => {
   await db.update('thing', id1, {
     content: {
       nl: 'Hallo',
-    } as any,
+    },
   })
 
   deepEqual(await db.query('thing', id1).get(), {
@@ -51,7 +52,7 @@ await test('modify text', async (t) => {
   await db.update('thing', id1, {
     content: {
       en: 'Hi',
-    } as any,
+    },
   })
 
   deepEqual(await db.query('thing', id1).get(), {

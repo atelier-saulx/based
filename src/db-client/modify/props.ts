@@ -7,6 +7,8 @@ import {
   writeModifyPropHeaderProps,
   type LangCodeEnum,
   type ModifyEnum,
+  PropType,
+  LangCode,
 } from '../../zigTsExports.js'
 
 export const serializeProps = (

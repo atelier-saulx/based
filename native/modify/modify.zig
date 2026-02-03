@@ -74,6 +74,16 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
             const value = data[j .. j + prop.size];
             switch (prop.type) {
+                .text => {
+                    var k: usize = 0;
+                    while (k < value.len) {
+                        const textSize = utils.read(u32, value, k);
+                        k += 4;
+                        const textValue = value[k .. k + textSize];
+                        k += textSize;
+                        try Fields.setText(node, propSchema, textValue);
+                    }
+                },
                 .alias => {
                     if (value.len == 0) continue;
                     const id = Node.getNodeId(node);

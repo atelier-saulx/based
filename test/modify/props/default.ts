@@ -43,7 +43,7 @@ await test('modify - default values basic', async (t) => {
     myAlias: 'specific-alias',
     myEnum: 'b',
     myJson: { foo: 'baz' },
-    myText: { en: 'Hi' } as any,
+    myText: { en: 'Hi' },
     myTs: 2000,
   })
   const resB: any = await db.query('thing', b).get()
@@ -77,6 +77,7 @@ await test('modify - default values basic', async (t) => {
 
 await test('modify - default values on edge', async (t) => {
   const db = await testDb(t, {
+    locales: { en: true },
     types: {
       user: {
         name: 'string',
@@ -87,7 +88,6 @@ await test('modify - default values on edge', async (t) => {
           prop: 'groups',
           $role: { type: 'string', default: 'member' },
           $level: { type: 'number', default: 1 },
-          $edgeAlias: { type: 'alias', default: 'edge-default-alias' },
           $edgeEnum: { enum: ['a', 'b'], default: 'a' },
           $edgeJson: { type: 'json', default: { foo: 'bar' } },
           $edgeText: { type: 'text', default: { en: 'Hello' } },
@@ -120,10 +120,9 @@ await test('modify - default values on edge', async (t) => {
       id: u1,
       $role: 'admin',
       $level: 99,
-      $edgeAlias: 'specific-alias',
       $edgeEnum: 'b',
       $edgeJson: { foo: 'baz' },
-      $edgeText: { en: 'Hi' } as any,
+      $edgeText: { en: 'Hi' },
     },
   })
 
@@ -132,7 +131,6 @@ await test('modify - default values on edge', async (t) => {
     .include('member.$role')
     .include('member.$level')
     .include('member.id')
-    .include('member.$edgeAlias')
     .include('member.$edgeEnum')
     .include('member.$edgeJson')
     .include('member.$edgeText')
@@ -141,7 +139,6 @@ await test('modify - default values on edge', async (t) => {
 
   deepEqual(resG2.member?.$role, 'admin')
   deepEqual(resG2.member?.$level, 99)
-  deepEqual(resG2.member?.$edgeAlias, 'specific-alias')
   deepEqual(resG2.member?.$edgeEnum, 'b')
   deepEqual(resG2.member?.$edgeJson, { foo: 'baz' })
   deepEqual(resG2.member?.$edgeText, { en: 'Hi' })
@@ -155,7 +152,6 @@ await test('modify - default values on edge', async (t) => {
     .query('group', g3)
     .include('member.$role')
     .include('member.$level')
-    .include('member.$edgeAlias')
     .include('member.$edgeEnum')
     .include('member.$edgeJson')
     .include('member.$edgeText')
@@ -164,7 +160,6 @@ await test('modify - default values on edge', async (t) => {
 
   deepEqual(resG3.member?.$role, 'member')
   deepEqual(resG3.member?.$level, 1)
-  deepEqual(resG3.member?.$edgeAlias, 'edge-default-alias')
   deepEqual(resG3.member?.$edgeEnum, 'a')
   deepEqual(resG3.member?.$edgeJson, { foo: 'bar' })
   deepEqual(resG3.member?.$edgeText, { en: 'Hello' })

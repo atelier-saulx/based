@@ -16,7 +16,7 @@ export const serializeCreate = <
 >(
   schema: S,
   type: T,
-  payload: InferPayload<S['types']>[T],
+  payload: InferPayload<S, T>,
   buf: AutoSizedUint8Array,
   lang: LangCodeEnum,
 ) => {

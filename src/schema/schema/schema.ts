@@ -62,6 +62,8 @@ type NormalizeType<T> = T extends { props: infer P }
   ? Omit<T, 'props'> & { props: { [K in keyof P]: NormalizeProp<P[K]> } }
   : { props: { [K in keyof T]: NormalizeProp<T[K]> } }
 
+import { type LangName, type SchemaLocale } from './locales.js'
+
 export type ResolveSchema<S extends { types: any }> = Omit<
   SchemaOut,
   'types' | 'locales'
@@ -69,7 +71,13 @@ export type ResolveSchema<S extends { types: any }> = Omit<
   types: {
     [K in keyof S['types']]: NormalizeType<S['types'][K]>
   }
-  locales: SchemaLocales<true>
+  locales: S extends { locales: infer L }
+    ? L extends readonly (infer K extends LangName)[]
+      ? Partial<Record<K, SchemaLocale<true>>>
+      : L extends Record<infer K, any>
+        ? Partial<Record<K & LangName, SchemaLocale<true>>>
+        : SchemaLocales<true>
+    : SchemaLocales<true>
 }
 
 const isMigrations = (v: unknown): v is SchemaMigrations =>

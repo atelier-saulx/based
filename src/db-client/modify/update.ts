@@ -17,7 +17,7 @@ export const serializeUpdate = <
   schema: S,
   type: T,
   item: number | BasedModify<any>,
-  payload: InferPayload<S['types']>[T],
+  payload: InferPayload<S, T>,
   buf: AutoSizedUint8Array,
   lang: LangCodeEnum,
 ) => {

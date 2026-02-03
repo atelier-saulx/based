@@ -96,7 +96,7 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
 
   create<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    obj: InferPayload<S['types']>[T],
+    obj: InferPayload<S, T>,
     opts?: ModifyOpts,
   ): BasedCreatePromise {
     return new BasedModify(
@@ -113,7 +113,7 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
   update<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     target: number | BasedModify,
-    obj: InferPayload<S['types']>[T],
+    obj: InferPayload<S, T>,
     opts?: ModifyOpts,
   ): BasedUpdatePromise {
     return new BasedModify(
@@ -130,8 +130,8 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
 
   upsert<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    target: InferTarget<S['types']>[T],
-    obj: InferPayload<S['types']>[T],
+    target: InferTarget<S, T>,
+    obj: InferPayload<S, T>,
     opts?: ModifyOpts,
   ): BasedUpsertPromise {
     return new BasedModify(
@@ -149,8 +149,8 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
 
   insert<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    target: InferTarget<S['types']>[T],
-    obj: InferPayload<S['types']>[T],
+    target: InferTarget<S, T>,
+    obj: InferPayload<S, T>,
     opts?: ModifyOpts,
   ): BasedInsertPromise {
     return new BasedModify(

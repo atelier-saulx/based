@@ -45,15 +45,16 @@ const validateMaxBytes = (
 export const string = class String extends BasePropDef {
   constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
     super(prop, path, typeDef)
-    if (prop.maxBytes && prop.maxBytes < 61) {
-      this.size = prop.maxBytes + 1
-    } else if (prop.max && prop.max < 31) {
-      this.size = prop.max * 2 + 1
-    }
-    if (this.size) {
-      this.type = PropType.stringFixed
-      this.pushValue = this.pushFixedValue as any
-    }
+    // TODO!
+    // if (prop.maxBytes && prop.maxBytes < 61) {
+    //   this.size = prop.maxBytes + 1
+    // } else if (prop.max && prop.max < 31) {
+    //   this.size = prop.max * 2 + 1
+    // }
+    // if (this.size) {
+    //   this.type = PropType.stringFixed
+    //   this.pushValue = this.pushFixedValue as any
+    // }
   }
   declare schema: SchemaString
   override type: PropTypeEnum = PropType.string
@@ -114,6 +115,26 @@ export const string = class String extends BasePropDef {
 // TODO do it nice
 export const text = class Text extends string {
   override type = PropType.text
+  override pushValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+    op?: ModifyEnum,
+    lang: LangCodeEnum = LangCode.none,
+  ) {
+    if (typeof value === 'string') {
+      const index = buf.reserveUint32()
+      const start = buf.length
+      super.pushValue(buf, value, op, lang)
+      buf.writeUint32(buf.length - start, index)
+    } else if (typeof value === 'object' && value !== null) {
+      for (const key in value) {
+        const index = buf.reserveUint32()
+        const start = buf.length
+        super.pushValue(buf, value[key], op, LangCode[key])
+        buf.writeUint32(buf.length - start, index)
+      }
+    }
+  }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaText(buf, {
       type: PropTypeSelva.text,
