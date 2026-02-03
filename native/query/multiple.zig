@@ -33,7 +33,7 @@ fn iterator(
         filter = utils.sliceNext(header.filterSize, q, i);
         try Filter.prepare(filter, ctx, typeEntry);
     }
-
+    utils.debugPrint("i.* .. i.* + header.includeSize: {d} .. {d}\n", .{ i.*, i.* + header.includeSize });
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (offset > 0) {
         const node = it.next() orelse return 0;
@@ -296,7 +296,9 @@ pub fn aggregates(
     var nodeCnt: u32 = 0;
 
     const header = utils.read(t.AggHeader, q, i);
+
     i += utils.sizeOf(t.AggHeader);
+    std.debug.print("header: {any}\n", .{header});
     const typeId = header.typeId;
     const typeEntry = try Node.getType(ctx.db, typeId);
     const isSamplingSet = header.isSamplingSet;
@@ -349,28 +351,3 @@ pub fn aggregatesCount(
     const count: u32 = @truncate(Node.getNodeCount(typeEntry));
     try ctx.thread.query.append(count);
 }
-
-// pub fn aggregatesReferences(
-//     ctx: *Query.QueryCtx,
-//     q: []u8,
-//     from: Node.Node,
-//     fromType: Selva.Type,
-//     i: *usize,
-// ) !void {
-//     const header = utils.readNext(t.AggHeader, q, &i);
-//     utils.debugPrint("header: {any}\n", .{header});
-//     // const aggDefs = q[i..];
-//     const typeId = header.typeId;
-//     const typeEntry = try Node.getType(ctx.db, typeId);
-//     // var hadAccumulated: bool = false;
-//     // const isSamplingSet = header.isSamplingSet;
-//     const hasGroupBy = header.hasGroupBy;
-
-//     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
-//     @memset(accumulatorProp, 0);
-//     defer ctx.db.allocator.free(accumulatorProp);
-
-//     if (hasGroupBy) {} else {
-//         const fs = try Schema.getFieldSchema(fromType, header.prop);
-//     }
-// }
