@@ -75,6 +75,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
             const value = data[j .. j + prop.size];
             switch (prop.type) {
                 .text => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     var k: usize = 0;
                     while (k < value.len) {
                         const textSize = utils.read(u32, value, k);

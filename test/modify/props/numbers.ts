@@ -157,7 +157,14 @@ await test('modify numbers', async (t) => {
   })
 
   deepEqual(await db.query('thing', id1).get(), {
-    id: id1,
+    id: 1,
+    n: 0,
+    i32: 0,
+    u32: 0,
+    i16: 0,
+    u16: 0,
+    u8: 0,
+    i8: 0,
   })
 })
 
