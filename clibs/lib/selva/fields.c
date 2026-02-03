@@ -1941,8 +1941,9 @@ static void del_field_string(struct SelvaFields *fields, struct SelvaFieldInfo *
     }
 }
 
-static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFields *fields, const struct SelvaFieldSchema *fs, bool unload)
+static int fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, bool unload)
 {
+    struct SelvaFields *fields = &node->fields;
     struct SelvaFieldInfo *nfo;
     enum SelvaFieldType type;
 
@@ -1958,7 +1959,8 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
         break;
     case SELVA_FIELD_TYPE_STRING:
         del_field_string(fields, nfo);
-        return 0; /* Don't clear. */
+        selva_mark_dirty(selva_get_type_by_index(db, node->type), node->node_id);
+        return 0; /* Don't clear it. */
     case SELVA_FIELD_TYPE_TEXT:
         del_field_text(fields, nfo);
         break;
@@ -1987,9 +1989,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, struct SelvaFi
 
 int selva_fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
-    struct SelvaFields *fields = &node->fields;
-
-    return fields_del(db, node, fields, fs, false);
+    return fields_del(db, node, fs, false);
 }
 
 int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, node_id_t dst_node_id)
@@ -2094,8 +2094,8 @@ void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
 void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node)
 {
     const struct SelvaNodeSchema *ns = selva_get_ns_by_te(selva_get_type_by_node(db, node));
-    const field_t nr_fields = node->fields.nr_fields;
     struct SelvaFields *fields = &node->fields;
+    const field_t nr_fields = fields->nr_fields;
 
     for (field_t field = 0; field < nr_fields; field++) {
         if (fields->fields_map[field].in_use) {
@@ -2107,7 +2107,7 @@ void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node)
                 db_panic("No field schema found");
             }
 
-            err = fields_del(db, node, fields, fs, false);
+            err = fields_del(db, node, fs, false);
             if (unlikely(err)) {
                 db_panic("Failed to remove a field: %s", selva_strerror(err));
             }
@@ -2128,8 +2128,8 @@ void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node)
 static inline void fields_destroy(struct SelvaDb *db, struct SelvaNode *node, bool unload)
 {
     const struct SelvaNodeSchema *ns = selva_get_ns_by_te(selva_get_type_by_node(db, node));
-    const field_t nr_fields = node->fields.nr_fields;
     struct SelvaFields *fields = &node->fields;
+    const field_t nr_fields = fields->nr_fields;
 
     for (field_t field = 0; field < nr_fields; field++) {
         if (fields->fields_map[field].in_use) {
@@ -2141,7 +2141,7 @@ static inline void fields_destroy(struct SelvaDb *db, struct SelvaNode *node, bo
                 db_panic("No field schema found");
             }
 
-            err = fields_del(db, node, fields, fs, unload);
+            err = fields_del(db, node, fs, unload);
             if (unlikely(err)) {
                 db_panic("Failed to remove a field: %s", selva_strerror(err));
             }
