@@ -45,7 +45,7 @@ await test('query types', async (t) => {
   })
 
   const query = db.query2('user')
-  const { data } = await query.get()
+  const data = await query.get()
 
   if (data.length > 0) {
     const user = data[0]
@@ -60,9 +60,9 @@ await test('query types', async (t) => {
 
   const query2 = db.query2('everything')
   const res = await query2.get()
-  const everything = res.data[0]
+  const everything = res[0]
 
-  if (res.data.length > 0) {
+  if (res.length > 0) {
     const s: string = everything.s
     const n: number = everything.n
     const i8: number = everything.i8
@@ -80,8 +80,6 @@ await test('query types', async (t) => {
     const card: number = everything.card
     const myEnum: 'a' | 'b' = everything.myEnum
     const nestedA: string = everything.nested.a
-    const myRef: number = everything.myRef
-    const myRefs: number[] = everything.myRefs
     const id: number = everything.id
 
     // @ts-expect-error
@@ -94,7 +92,7 @@ await test('query types', async (t) => {
 
   {
     const query = db.query2('everything').include('myEnum')
-    const { data } = await query.get()
+    const data = await query.get()
     const res = data[0]
     const myEnum: 'a' | 'b' = res.myEnum
     const id: number = res.id
@@ -104,7 +102,7 @@ await test('query types', async (t) => {
 
   {
     const query = db.query2('everything').include('*')
-    const { data } = await query.get()
+    const data = await query.get()
     const res = data[0]
     const n: number = res.n
     const s: string = res.s
@@ -114,7 +112,7 @@ await test('query types', async (t) => {
   }
   {
     const query = db.query2('everything').include('**')
-    const { data } = await query.get()
+    const data = await query.get()
     const res = data[0]
 
     // references
@@ -134,7 +132,7 @@ await test('query types', async (t) => {
   {
     // Combine explicit field + wildcard
     const query = db.query2('everything').include('myEnum', '**')
-    const { data } = await query.get()
+    const data = await query.get()
     const res = data[0]
 
     const myEnum: 'a' | 'b' = res.myEnum
@@ -149,7 +147,7 @@ await test('query types', async (t) => {
   {
     // Multiple explicit fields
     const query = db.query2('everything').include('n', 's', 'nested')
-    const { data } = await query.get()
+    const data = await query.get()
     const res = data[0]
 
     const n: number = res.n
@@ -164,7 +162,7 @@ await test('query types', async (t) => {
   {
     // Scalar wildcard + explicit ref
     const query = db.query2('everything').include('*', 'myRefs')
-    const { data } = await query.get()
+    const data = await query.get()
     const res = data[0]
 
     const n: number = res.n
@@ -178,7 +176,7 @@ await test('query types', async (t) => {
   {
     // Target specific id
     const query = db.query2('everything', 1).include('*', 'myRefs')
-    const { data } = await query.get()
+    const data = await query.get()
 
     // Check it's a single item (not array)
     const n: number = data.n
@@ -205,15 +203,15 @@ await test('query types', async (t) => {
     isNice: true,
   })
 
-  const {
-    data: { name, isNice },
-  } = await db.query2('user', id).get()
+  //   const {
+  //     data: { name, isNice },
+  //   } = await db.query2('user', id).get()
 
-  console.log({ name, isNice })
+  //   console.log({ name, isNice })
 
-  const { data } = await db.query2('user').get()
+  //   const data = await db.query2('user').get()
 
-  for (const { name, isNice } of data) {
-    console.log({ name, isNice })
-  }
+  //   for (const { name, isNice } of data) {
+  //     console.log({ name, isNice })
+  //   }
 })

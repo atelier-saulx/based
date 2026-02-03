@@ -97,16 +97,16 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
 
   query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-  ): BasedQuery2<S, T, 'ALL', false>
+  ): BasedQuery2<S, T, '*', false>
   query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id: number,
-  ): BasedQuery2<S, T, 'ALL', true>
+  ): BasedQuery2<S, T, '*', true>
   query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id?: number,
-  ): BasedQuery2<S, T, 'ALL', boolean> {
-    return new BasedQuery2<S, T, 'ALL', any>(type, id)
+  ): BasedQuery2<S, T, '*', boolean> {
+    return new BasedQuery2<S, T, '*', any>(type, id)
   }
 
   create<T extends keyof S['types'] & string = keyof S['types'] & string>(
