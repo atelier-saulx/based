@@ -210,4 +210,10 @@ await test('query types', async (t) => {
   } = await db.query2('user', id).get()
 
   console.log({ name, isNice })
+
+  const { data } = await db.query2('user').get()
+
+  for (const { name, isNice } of data) {
+    console.log({ name, isNice })
+  }
 })
