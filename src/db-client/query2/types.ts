@@ -83,7 +83,13 @@ export type RefKeys<Props> = {
 export type ResolveInclude<
   Props,
   K extends keyof Props | '*' | '**',
-> = K extends '*' ? NonRefKeys<Props> : K extends '**' ? RefKeys<Props> : K
+> = K extends any
+  ? K extends '*'
+    ? NonRefKeys<Props>
+    : K extends '**'
+      ? RefKeys<Props>
+      : K
+  : never
 
 export type IncludeSelection<
   S extends { types: any; locales?: any },
@@ -94,5 +100,8 @@ export type IncludeSelection<
 export type PickOutput<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
-  K extends keyof S['types'][T]['props'],
-> = Pick<InferSchemaOutput<S, T>, K | 'id'>
+  K,
+> = Pick<
+  InferSchemaOutput<S, T>,
+  Extract<K, keyof InferSchemaOutput<S, T>> | 'id'
+>

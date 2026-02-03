@@ -10,86 +10,6 @@ import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
 
-const validateNumber = (value: unknown, prop: any, path: string[]) => {
-  if (typeof value !== 'number') {
-    throw new Error('Invalid type for number ' + path.join('.'))
-  }
-  if (prop.min !== undefined && value < prop.min) {
-    throw new Error(
-      `Value ${value} is smaller than min ${prop.min} for ${path.join('.')}`,
-    )
-  }
-  if (prop.max !== undefined && value > prop.max) {
-    throw new Error(
-      `Value ${value} is larger than max ${prop.max} for ${path.join('.')}`,
-    )
-  }
-  return value
-}
-
-const validateTimestamp = (value: unknown, prop: any, path: string[]) => {
-  const ts = convertToTimestamp(value as any)
-  if (prop.min !== undefined && ts < prop.min) {
-    throw new Error(
-      `Value ${value} is smaller than min ${prop.min} for ${path.join('.')}`,
-    )
-  }
-  if (prop.max !== undefined && ts > prop.max) {
-    throw new Error(
-      `Value ${value} is larger than max ${prop.max} for ${path.join('.')}`,
-    )
-  }
-  return ts
-}
-
-const validateInteger = (
-  value: unknown,
-  prop: any,
-  path: string[],
-  type: string,
-  min: number,
-  max: number,
-) => {
-  if (typeof value !== 'number' || !Number.isInteger(value)) {
-    throw new Error(`Invalid type for ${type} ` + path.join('.'))
-  }
-  if (value < min || value > max) {
-    throw new Error(`Value out of range for ${type} ` + path.join('.'))
-  }
-  if (prop.min !== undefined && value < prop.min) {
-    throw new Error(
-      `Value ${value} is smaller than min ${prop.min} for ${path.join('.')}`,
-    )
-  }
-  if (prop.max !== undefined && value > prop.max) {
-    throw new Error(
-      `Value ${value} is larger than max ${prop.max} for ${path.join('.')}`,
-    )
-  }
-  return value
-}
-
-const validateEnum = (
-  value: unknown,
-  vals: Map<EnumItem, number>,
-  path: string[],
-) => {
-  if (typeof value !== 'string' && typeof value !== 'number') {
-    throw new Error('Invalid type for enum ' + path.join('.'))
-  }
-  if (!vals.has(value)) {
-    throw new Error(`Invalid enum value ${value} for ${path.join('.')}`)
-  }
-  return vals.get(value) ?? 0
-}
-
-const validateBoolean = (value: unknown, path: string[]) => {
-  if (typeof value !== 'boolean') {
-    throw new Error('Invalid type for boolean ' + path.join('.'))
-  }
-  return value ? 1 : 0
-}
-
 export const number = class Number extends BasePropDef {
   override type: PropTypeEnum = PropType.number
   override size = 8
@@ -99,8 +19,25 @@ export const number = class Number extends BasePropDef {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is number {
-    const val = validateNumber(value, this.schema, this.path)
-    buf.pushDoubleLE(val)
+    if (typeof value !== 'number') {
+      throw new Error('Invalid type for number ' + this.path.join('.'))
+    }
+    const prop = this.schema as any
+    if (prop.min !== undefined && value < prop.min) {
+      throw new Error(
+        `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && value > prop.max) {
+      throw new Error(
+        `Value ${value} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    buf.pushDoubleLE(value)
   }
 }
 
@@ -112,7 +49,22 @@ export const timestamp = class Timestamp extends number {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is number | string {
-    const ts = validateTimestamp(value, this.schema, this.path)
+    const ts = convertToTimestamp(value as any)
+    const prop = this.schema as any
+    if (prop.min !== undefined && ts < prop.min) {
+      throw new Error(
+        `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && ts > prop.max) {
+      throw new Error(
+        `Value ${value} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
     buf.pushInt64(ts)
   }
 }
@@ -126,15 +78,28 @@ export const uint8 = class Uint8 extends BasePropDef {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is number {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'uint8',
-      0,
-      255,
-    ) as number
-    buf.pushUint8(val)
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+      throw new Error('Invalid type for uint8 ' + this.path.join('.'))
+    }
+    if (value < 0 || value > 255) {
+      throw new Error('Value out of range for uint8 ' + this.path.join('.'))
+    }
+    const prop = this.schema as any
+    if (prop.min !== undefined && value < prop.min) {
+      throw new Error(
+        `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && value > prop.max) {
+      throw new Error(
+        `Value ${value} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    buf.pushUint8(value)
   }
 }
 
@@ -146,15 +111,28 @@ export const int8 = class Int8 extends uint8 {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is number {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'int8',
-      -128,
-      127,
-    ) as number
-    buf.pushUint8(val)
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+      throw new Error('Invalid type for int8 ' + this.path.join('.'))
+    }
+    if (value < -128 || value > 127) {
+      throw new Error('Value out of range for int8 ' + this.path.join('.'))
+    }
+    const prop = this.schema as any
+    if (prop.min !== undefined && value < prop.min) {
+      throw new Error(
+        `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && value > prop.max) {
+      throw new Error(
+        `Value ${value} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    buf.pushUint8(value)
   }
 }
 
@@ -167,15 +145,28 @@ export const uint16 = class Uint16 extends BasePropDef {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is number {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'uint16',
-      0,
-      65535,
-    ) as number
-    buf.pushUint16(val)
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+      throw new Error('Invalid type for uint16 ' + this.path.join('.'))
+    }
+    if (value < 0 || value > 65535) {
+      throw new Error('Value out of range for uint16 ' + this.path.join('.'))
+    }
+    const prop = this.schema as any
+    if (prop.min !== undefined && value < prop.min) {
+      throw new Error(
+        `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && value > prop.max) {
+      throw new Error(
+        `Value ${value} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    buf.pushUint16(value)
   }
 }
 
@@ -187,15 +178,28 @@ export const int16 = class Int16 extends uint16 {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is number {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'int16',
-      -32768,
-      32767,
-    ) as number
-    buf.pushUint16(val)
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+      throw new Error('Invalid type for int16 ' + this.path.join('.'))
+    }
+    if (value < -32768 || value > 32767) {
+      throw new Error('Value out of range for int16 ' + this.path.join('.'))
+    }
+    const prop = this.schema as any
+    if (prop.min !== undefined && value < prop.min) {
+      throw new Error(
+        `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && value > prop.max) {
+      throw new Error(
+        `Value ${value} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    buf.pushUint16(value)
   }
 }
 
@@ -208,15 +212,28 @@ export const uint32 = class Uint32 extends BasePropDef {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is number {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'uint32',
-      0,
-      4294967295,
-    ) as number
-    buf.pushUint32(val)
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+      throw new Error('Invalid type for uint32 ' + this.path.join('.'))
+    }
+    if (value < 0 || value > 4294967295) {
+      throw new Error('Value out of range for uint32 ' + this.path.join('.'))
+    }
+    const prop = this.schema as any
+    if (prop.min !== undefined && value < prop.min) {
+      throw new Error(
+        `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && value > prop.max) {
+      throw new Error(
+        `Value ${value} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    buf.pushUint32(value)
   }
 }
 
@@ -228,15 +245,28 @@ export const int32 = class Int32 extends uint32 {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is number {
-    const val = validateInteger(
-      value,
-      this.schema,
-      this.path,
-      'int32',
-      -2147483648,
-      2147483647,
-    ) as number
-    buf.pushUint32(val)
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+      throw new Error('Invalid type for int32 ' + this.path.join('.'))
+    }
+    if (value < -2147483648 || value > 2147483647) {
+      throw new Error('Value out of range for int32 ' + this.path.join('.'))
+    }
+    const prop = this.schema as any
+    if (prop.min !== undefined && value < prop.min) {
+      throw new Error(
+        `Value ${value} is smaller than min ${prop.min} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    if (prop.max !== undefined && value > prop.max) {
+      throw new Error(
+        `Value ${value} is larger than max ${prop.max} for ${this.path.join(
+          '.',
+        )}`,
+      )
+    }
+    buf.pushUint32(value)
   }
 }
 
@@ -259,7 +289,13 @@ export const enum_ = class Enum extends uint8 {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is EnumItem {
-    const val = validateEnum(value, this.vals, this.path)
+    if (typeof value !== 'string' && typeof value !== 'number') {
+      throw new Error('Invalid type for enum ' + this.path.join('.'))
+    }
+    if (!this.vals.has(value)) {
+      throw new Error(`Invalid enum value ${value} for ${this.path.join('.')}`)
+    }
+    const val = this.vals.get(value) ?? 0
     buf.pushUint8(val)
   }
 }
@@ -273,7 +309,10 @@ export const boolean = class Boolean extends BasePropDef {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is boolean {
-    const val = validateBoolean(value, this.path)
+    if (typeof value !== 'boolean') {
+      throw new Error('Invalid type for boolean ' + this.path.join('.'))
+    }
+    const val = value ? 1 : 0
     buf.pushUint8(val)
   }
 }

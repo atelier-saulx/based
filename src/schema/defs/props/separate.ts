@@ -131,11 +131,18 @@ export const text = class Text extends string {
       buf.writeUint32(buf.length - start, index)
     } else if (typeof value === 'object' && value !== null) {
       for (const key in value) {
+        if (!(key in LangCode)) {
+          throw new Error(
+            `Invalid locale ${key} for text ${this.path.join('.')}`,
+          )
+        }
         const index = buf.reserveUint32()
         const start = buf.length
         super.pushValue(buf, value[key], op, LangCode[key])
         buf.writeUint32(buf.length - start, index)
       }
+    } else {
+      throw new Error('Invalid type for text ' + this.path.join('.'))
     }
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {

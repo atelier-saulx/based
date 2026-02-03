@@ -92,7 +92,7 @@ await test('modify - validation', async (t) => {
     'text value should fail with number',
   )
   await throws(
-    () => db.create('thing', { myText: { de: 'hello' } as any }),
+    () => db.create('thing', { myText: { xx: 'hello' } as any }),
     'text should fail with invalid locale',
   )
   await db.create('thing', { myText: { en: 'works' } })
