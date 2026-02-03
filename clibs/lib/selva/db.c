@@ -238,11 +238,6 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
     }
 }
 
-static inline void clear_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
-{
-    del_all_nodes(db, te);
-}
-
 static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     /*
@@ -275,7 +270,7 @@ static void del_all_types(struct SelvaDb *db)
     struct SelvaTypeEntry *tmp;
 
     RB_FOREACH_SAFE(te, SelvaTypeEntryIndex, &db->types.index, tmp) {
-        clear_type(db, te);
+        del_all_nodes(db, te);
     }
 
     RB_FOREACH_SAFE(te, SelvaTypeEntryIndex, &db->types.index, tmp) {

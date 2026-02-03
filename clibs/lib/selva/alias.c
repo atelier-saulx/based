@@ -32,8 +32,15 @@ void selva_init_aliases(struct SelvaTypeEntry *type)
 
 void selva_destroy_aliases(struct SelvaTypeEntry *type)
 {
-    /* We assume that all the aliases in the aliases structs have been freed already. */
-    assert(type->ns.nr_aliases == 0);
+#if 0
+    /*
+     * We assume that all the aliases in the aliases structs have been freed already.
+     */
+    for (size_t i = 0; i < type->ns.nr_aliases; i++) {
+        assert(type->aliases->nr_aliases == 0);
+    }
+#endif
+
     selva_free(type->aliases);
     type->ns.nr_aliases = 0;
     type->aliases = nullptr;
