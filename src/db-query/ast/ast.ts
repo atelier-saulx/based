@@ -65,6 +65,10 @@ export type QueryAst = {
   props?: Record<string, QueryAst>
   edges?: QueryAst
   // ----------- add aggregate stuff
+  groupBy?: {
+    field: string
+    // step?: Step
+  }
 }
 
 export type Ctx = {
