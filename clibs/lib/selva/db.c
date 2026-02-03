@@ -811,9 +811,14 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
         struct SelvaAlias find = {
             .dest = dest,
         };
+        field_t f = i;
 
         alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
-        selva_hash_update(hash_state, alias->name, alias->name_len);
+        if (alias) {
+            selva_hash_update(hash_state, &f, sizeof(f));
+            selva_hash_update(hash_state, &dest, sizeof(dest));
+            selva_hash_update(hash_state, alias->name, alias->name_len);
+        }
     }
 }
 
