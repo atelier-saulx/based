@@ -2002,13 +2002,64 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
     (void)clear_references(db, node, fs);
 }
 
-static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fields)
+static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFields *fields, const struct SelvaFieldsSchema *schema)
+{
+    const uint8_t *schema_buf = te->schema_buf;
+    size_t data_len = schema->template.fixed_data_len;
+
+    memcpy(fields->data, schema->template.fixed_data_buf, data_len);
+
+    /*
+     * Handle defaults that needs to allocate memory per each node.
+     */
+    for (size_t i = 0; i < schema->nr_fixed_fields; i++) {
+        const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
+
+        if (fs->type == SELVA_FIELD_TYPE_STRING) {
+            if (fs->string.default_off > 0) {
+                const void *default_str = schema_buf + fs->string.default_off;
+                size_t default_len = fs->string.default_len;
+                struct SelvaFieldInfo *nfo;
+                int err;
+
+                nfo = ensure_field(fields, fs);
+                err = set_field_string(fields, fs, nfo, default_str, default_len);
+                if (unlikely(err)) {
+                    /* TODO panic is not nice here. */
+                    db_panic("Failed to set string default");
+                }
+            }
+        } else if (fs->type == SELVA_FIELD_TYPE_TEXT) {
+            const size_t nr_defaults = fs->text.nr_defaults;
+            size_t off = fs->text.defaults_off;
+            if (nr_defaults > 0 && off > 0) {
+                struct ensure_text_field tf;
+
+                tf = ensure_text_field(fields, fs, selva_lang_none);
+                tf.text->tl = selva_malloc(nr_defaults * sizeof(*tf.text->tl));
+                tf.text->len = nr_defaults;
+
+                for (size_t i = 0; i < nr_defaults; i++) {
+                    uint32_t len;
+                    uint32_t crc;
+
+                    memcpy(&len, te->schema_buf + off, sizeof(len));
+                    off += sizeof(len);
+                    memcpy(&crc, schema_buf + off + len - sizeof(crc), sizeof(crc));
+                    init_tl(&tf.text->tl[i], (const char *)(schema_buf + off), len - sizeof(crc), crc);
+                    off += len;
+                }
+            }
+        }
+        /* SELVA_FIELD_TYPE_COLVEC handled in colvec_init_node() */
+    }
+}
+
+static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fields, bool set_defaults)
 {
     const struct SelvaFieldsSchema *schema = &te->ns.fields_schema;
-    const uint8_t *schema_buf = te->schema_buf;
 
     fields->nr_fields = schema->nr_fields - schema->nr_virtual_fields;
-
     memcpy(fields->fields_map, schema->template.field_map_buf, schema->template.field_map_len);
 
     size_t data_len = schema->template.fixed_data_len;
@@ -2016,53 +2067,8 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
         fields->data_len = data_len;
         fields->data = selva_malloc(data_len);
 
-        if (schema->template.fixed_data_buf) {
-            memcpy(fields->data, schema->template.fixed_data_buf, data_len);
-
-            /*
-             * Handle defaults that needs to allocate memory per each node.
-             */
-            for (size_t i = 0; i < schema->nr_fixed_fields; i++) {
-                const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
-
-                if (fs->type == SELVA_FIELD_TYPE_STRING) {
-                    if (fs->string.default_off > 0) {
-                        const void *default_str = schema_buf + fs->string.default_off;
-                        size_t default_len = fs->string.default_len;
-                        struct SelvaFieldInfo *nfo;
-                        int err;
-
-                        nfo = ensure_field(fields, fs);
-                        err = set_field_string(fields, fs, nfo, default_str, default_len);
-                        if (unlikely(err)) {
-                            /* TODO panic is not nice here. */
-                            db_panic("Failed to set string default");
-                        }
-                    }
-                } else if (fs->type == SELVA_FIELD_TYPE_TEXT) {
-                    const size_t nr_defaults = fs->text.nr_defaults;
-                    size_t off = fs->text.defaults_off;
-                    if (nr_defaults > 0 && off > 0) {
-                        struct ensure_text_field tf;
-
-                        tf = ensure_text_field(fields, fs, selva_lang_none);
-                        tf.text->tl = selva_malloc(nr_defaults * sizeof(*tf.text->tl));
-                        tf.text->len = nr_defaults;
-
-                        for (size_t i = 0; i < nr_defaults; i++) {
-                            uint32_t len;
-                            uint32_t crc;
-
-                            memcpy(&len, te->schema_buf + off, sizeof(len));
-                            off += sizeof(len);
-                            memcpy(&crc, schema_buf + off + len - sizeof(crc), sizeof(crc));
-                            init_tl(&tf.text->tl[i], (const char *)(schema_buf + off), len - sizeof(crc), crc);
-                            off += len;
-                        }
-                    }
-                }
-                /* SELVA_FIELD_TYPE_COLVEC handled in colvec_init_node() */
-            }
+        if (schema->template.fixed_data_buf && set_defaults) {
+            selva_fields_init_defaults(te, fields, schema);
         } else {
             memset(fields->data, 0, data_len);
         }
@@ -2072,9 +2078,9 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
     }
 }
 
-void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
+void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, bool set_defaults)
 {
-    selva_fields_init(te, &node->fields);
+    selva_fields_init(te, &node->fields, set_defaults);
     if (te->ns.nr_colvecs > 0) {
         colvec_init_node(te, node);
     }

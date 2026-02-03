@@ -614,6 +614,7 @@ pub const QUERY_ITERATOR_EDGE = 20;
 pub const QUERY_ITERATOR_EDGE_INCLUDE = 30;
 pub const QUERY_ITERATOR_SEARCH = 120;
 pub const QUERY_ITERATOR_SEARCH_VEC = 130;
+pub const QUERY_ITERATOR_AGGREGATES = 140;
 
 pub const QueryIteratorType = enum(u8) {
     default = 0,
@@ -650,6 +651,10 @@ pub const QueryIteratorType = enum(u8) {
     vec = 130,
     vecFilter = 131,
     // add edge include / edge later
+    aggregate = 140,
+    aggregateFilter = 141,
+    groupBy = 142,
+    groupByFilter = 143,
 };
 
 // include op needs overlap with this
@@ -795,7 +800,6 @@ pub const AggHeader = packed struct {
     limit: u32,
     filterSize: u16,
     iteratorType: QueryIteratorType,
-    size: u16,
     resultsSize: u16,
     accumulatorSize: u16,
     sort: bool,
