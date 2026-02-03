@@ -83,3 +83,31 @@ await test('modify cardinality on edge', async (t) => {
     .toObject()
   deepEqual(res2.toThing?.$edgeCounter, 2)
 })
+
+await test('modify cardinality array', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        counter: 'cardinality',
+      },
+    },
+  })
+
+  // Create with array
+  const id1 = await db.create('thing', {
+    counter: ['item1', 'item2'],
+  })
+
+  const res1 = await db.query('thing', id1).get().toObject()
+  // Should have 2 unique items
+  deepEqual(res1.counter, 2)
+
+  // Update with array (one new, one duplicate)
+  await db.update('thing', id1, {
+    counter: ['item2', 'item3'],
+  })
+
+  const res2 = await db.query('thing', id1).get().toObject()
+  // item1, item2, item3 -> 3 unique items
+  deepEqual(res2.counter, 3)
+})
