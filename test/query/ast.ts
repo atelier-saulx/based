@@ -26,5 +26,7 @@ await test('query types', async (t) => {
     .include('isNice', 'name')
     .include((select) => select('otherUsers').include('name'))
 
-  const result = query.get()
+  const result = await query.get()
+
+  result[0].otherUsers
 })

@@ -7,6 +7,16 @@ type TypedArray =
   | Int32Array
   | Uint32Array
   | Float64Array
+import type { ResolvedProps } from '../../schema/index.js'
+
+export type InferSchemaOutput<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+> = InferType<
+  ResolvedProps<S['types'], T>,
+  S['types'],
+  S['locales'] extends Record<string, any> ? S['locales'] : {}
+> & { id: number }
 
 type TypeMap = {
   string: string
@@ -28,10 +38,14 @@ type TypeMap = {
   cardinality: number
 }
 
+// Helper to check if Selection is provided (not never/any/unknown default behavior)
+type IsSelected<T> = [T] extends [never] ? false : true
+
 type InferProp<
   Prop,
   Types,
   Locales extends Record<string, any> = Record<string, any>,
+  Selection = never,
 > = Prop extends { type: 'text' }
   ? string
   : Prop extends { type: 'object'; props: infer P }
@@ -40,10 +54,18 @@ type InferProp<
       ? TypeMap[T]
       : Prop extends { enum: infer E extends readonly any[] }
         ? E[number]
-        : Prop extends { ref: string }
-          ? number // ID
-          : Prop extends { items: { ref: string } }
-            ? number[] // IDs
+        : Prop extends { ref: infer R extends string }
+          ? IsSelected<Selection> extends true
+            ? R extends keyof Types
+              ? PickOutput<{ types: Types; locales: Locales }, R, Selection>
+              : never
+            : number // ID
+          : Prop extends { items: { ref: infer R extends string } }
+            ? IsSelected<Selection> extends true
+              ? R extends keyof Types
+                ? PickOutput<{ types: Types; locales: Locales }, R, Selection>[]
+                : never
+              : number[] // IDs
             : unknown
 
 type InferType<
@@ -53,15 +75,6 @@ type InferType<
 > = {
   [K in keyof Props]: InferProp<Props[K], Types, Locales>
 }
-
-export type InferSchemaOutput<
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'],
-> = InferType<
-  S['types'][T]['props'],
-  S['types'],
-  S['locales'] extends Record<string, any> ? S['locales'] : {}
-> & { id: number }
 
 // Helpers for include
 type IsRefProp<P> = P extends { type: 'reference' } | { type: 'references' }
@@ -82,7 +95,7 @@ export type RefKeys<Props> = {
 
 export type ResolveInclude<
   Props,
-  K extends keyof Props | '*' | '**',
+  K extends keyof Props | '*' | '**' | { field: any; select: any },
 > = K extends any
   ? K extends '*'
     ? NonRefKeys<Props>
@@ -94,14 +107,28 @@ export type ResolveInclude<
 export type IncludeSelection<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
-  K extends keyof S['types'][T]['props'] | '*',
-> = ResolveInclude<S['types'][T]['props'], K>
+  K extends keyof ResolvedProps<S['types'], T> | '*',
+> = ResolveInclude<ResolvedProps<S['types'], T>, K>
 
 export type PickOutput<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
   K,
-> = Pick<
-  InferSchemaOutput<S, T>,
-  Extract<K, keyof InferSchemaOutput<S, T>> | 'id'
->
+> = {
+  [P in
+    | Extract<K, keyof InferSchemaOutput<S, T>>
+    | 'id']: P extends keyof ResolvedProps<S['types'], T>
+    ? IsRefProp<ResolvedProps<S['types'], T>[P]> extends true
+      ? ResolvedProps<S['types'], T>[P] extends { items: any }
+        ? { id: number }[]
+        : { id: number }
+      : InferSchemaOutput<S, T>[P]
+    : InferSchemaOutput<S, T>[P]
+} & {
+  [Item in Extract<K, { field: any; select: any }> as Item['field']]: InferProp<
+    ResolvedProps<S['types'], T>[Item['field']],
+    S['types'],
+    S['locales'] extends Record<string, any> ? S['locales'] : {},
+    Item['select']
+  >
+}
