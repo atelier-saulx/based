@@ -237,7 +237,7 @@ await test('text', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      fi: { fallback: 'en' },
+      fi: { fallback: ['en'] },
     },
     types: {
       article: {
