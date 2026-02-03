@@ -250,9 +250,9 @@ await test('query types', async (t) => {
       .include((select) => select('backRefs').include('myEnum'))
     const data = await query.get()
 
-    for (const { id, myEnum, nonExistent } of data.backRefs) {
-      console.log({ id, myEnum, nonExistent })
-    }
+    // for (const { id, myEnum, nonExistent } of data.backRefs) {
+    //   console.log({ id, myEnum, nonExistent })
+    // }
   }
 })
 
@@ -261,43 +261,15 @@ await test('query types', async (t) => {
     types: {
       user: {
         isNice: 'boolean',
-      },
-      article: {
-        title: 'string',
-        readers: {
-          ref: 'user',
-          prop: 'readArticles',
+        name: {
+          type: 'string',
+          required: true,
         },
       },
     },
   })
 
-  const id = await db.create('user', {
-    isNice: true,
-    readArticles: [1],
-  })
-
-  const users = await db
-    .query2('user')
-    .include('isNice')
-    .include((select) => select('readArticles').include('title'))
-    .get()
-
-  for (const { isNice, readArticles } of users) {
-    for (const article of readArticles) {
-      const { title, wrongField } = article
-    }
-  }
-
-  //   const {
-  //     data: { name, isNice },
-  //   } = await db.query2('user', id).get()
-
-  //   console.log({ name, isNice })
-
-  //   const data = await db.query2('user').get()
-
-  //   for (const { name, isNice } of data) {
-  //     console.log({ name, isNice })
-  //   }
+  //   const id = await db.create('user', {
+  //     isNice: true,
+  //   })
 })

@@ -1,4 +1,8 @@
-import type { ResolveSchema, SchemaIn } from '../../src/schema.js'
+import type {
+  ResolveSchema,
+  SchemaIn,
+  ValidateSchema,
+} from '../../src/schema.js'
 import { BasedDb, type DbClient } from '../../src/sdk.js'
 import test from './test.js'
 export * from './assert.js'
@@ -35,10 +39,10 @@ export function logMemoryUsage() {
 
 export const testDb = async <const S extends SchemaIn>(
   t,
-  schema: S,
+  schema: S & ValidateSchema<S>,
 ): Promise<DbClient<ResolveSchema<S>>> => {
   const db = new BasedDb({ path: t.tmp })
   await db.start({ clean: true })
   t.after(() => db.destroy())
-  return db.setSchema(schema)
+  return db.setSchema(schema) as unknown as Promise<DbClient<ResolveSchema<S>>>
 }

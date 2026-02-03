@@ -116,6 +116,80 @@ type NormalizeType<T> = T extends { props: infer P }
   ? Omit<T, 'props'> & { props: { [K in keyof P]: NormalizeProp<P[K]> } }
   : { props: { [K in keyof T]: NormalizeProp<T[K]> } }
 
+// Helper to extract props from a type definition (explicit or shorthand)
+type GetProps<T> = T extends { props: infer P } ? P : T
+
+// Helper to find "Incoming Claims" - properties on TargetRef that explicitly point to MyType.MyProp
+type GetIncomingClaims<Types, TargetRef extends keyof Types, MyType, MyProp> = {
+  [K in keyof GetProps<Types[TargetRef]>]: GetProps<
+    Types[TargetRef]
+  >[K] extends infer TargetProp
+    ? TargetProp extends { ref: MyType; prop: MyProp }
+      ? K
+      : TargetProp extends { items: { ref: MyType; prop: MyProp } }
+        ? K
+        : never
+    : never
+}[keyof GetProps<Types[TargetRef]>]
+
+type ValidateProp<Prop, Types, TName, PName> = Prop extends {
+  ref: infer Ref extends string
+  prop: infer BackProp extends string
+}
+  ? Ref extends keyof Types
+    ? GetIncomingClaims<Types, Ref, TName, PName> extends infer Claims
+      ? [Claims] extends [never]
+        ? Prop
+        : BackProp extends Claims
+          ? Prop
+          : { ref: Ref; prop: Claims } & Omit<Prop, 'ref' | 'prop'>
+      : never
+    : Prop
+  : Prop extends {
+        items: {
+          ref: infer Ref extends string
+          prop: infer BackProp extends string
+        }
+      }
+    ? Ref extends keyof Types
+      ? GetIncomingClaims<Types, Ref, TName, PName> extends infer Claims
+        ? [Claims] extends [never]
+          ? Prop
+          : BackProp extends Claims
+            ? Prop
+            : Prop extends { items: infer I }
+              ? {
+                  items: { ref: Ref; prop: Claims } & Omit<I, 'ref' | 'prop'>
+                } & Omit<Prop, 'items'>
+              : Prop
+        : never
+      : Prop
+    : Prop
+
+type ValidateProps<Props, Types, TName extends string> = {
+  [K in keyof Props]: ValidateProp<Props[K], Types, TName, K & string>
+}
+
+export type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
+  types: {
+    [K in keyof S['types']]: S['types'][K] extends { props: infer P }
+      ? { props: ValidateProps<P, S['types'], K & string> } & Omit<
+          S['types'][K],
+          'props'
+        >
+      : {
+          [P in keyof S['types'][K]]: P extends
+            | 'hooks'
+            | 'blockCapacity'
+            | 'insertOnly'
+            | 'capped'
+            | 'partial'
+            ? S['types'][K][P]
+            : ValidateProp<S['types'][K][P], S['types'], K & string, P & string>
+        }
+  }
+}
+
 import { type LangName, type SchemaLocale } from './locales.js'
 
 export type ResolveSchema<S extends { types: any }> = Omit<
