@@ -31,8 +31,4 @@ await test('types', async () => {
       },
     },
   })
-
-  const myType: SchemaReferences = schemaOut.types.coolUser.props
-    .myType as SchemaReferences
-  console.log({ myType })
 })
