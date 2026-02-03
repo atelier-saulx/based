@@ -39,6 +39,7 @@
  */
 #define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
 #define DUMP_MAGIC_EXPIRE       2147483647 /* common.sdb */
+#define DUMP_MAGIC_ALIASES      4019181209 /* common.sdb */
 #define DUMP_MAGIC_COMMON_IDS   2974848157 /* common.sdb */
 #define DUMP_MAGIC_COMMON_BLOCKS 2734165127 /* common.sdb */
 #define DUMP_MAGIC_TYPES        3550908863 /* [block].sdb */
@@ -48,7 +49,6 @@
 #define DUMP_MAGIC_FIELD_BEGIN  3734376047
 #endif
 #define DUMP_MAGIC_FIELD_END    2944546091
-#define DUMP_MAGIC_ALIASES      4019181209
 #define DUMP_MAGIC_COLVEC       1901731729
 #define DUMP_MAGIC_BLOCK_HASH   2898966349
 
@@ -263,29 +263,6 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
     save_node_fields(io, schema, node);
 }
 
-static void save_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
-{
-    const sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
-
-    write_dump_magic(io, DUMP_MAGIC_ALIASES);
-
-    for (size_t i = 0; i < nr_aliases; i++) {
-        struct SelvaAliases *aliases = &te->aliases[i];
-        sdb_nr_aliases_t nr_aliases_by_name = aliases->nr_aliases;
-        struct SelvaAlias *alias;
-
-        io->sdb_write(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
-        RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
-            const char *name_str = alias->name;
-            const sdb_arr_len_t name_len = alias->name_len;
-
-            io->sdb_write(&name_len, sizeof(name_len), 1, io);
-            io->sdb_write(name_str, sizeof(*name_str), name_len, io);
-            io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
-        }
-    }
-}
-
 static void save_schema(struct selva_io *io, struct SelvaDb *db)
 {
     const sdb_nr_types_t nr_types = db->types.count;
@@ -329,6 +306,33 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
         } while ((token = token->next));
     }
 
+}
+
+static void save_aliases(struct selva_io *io, struct SelvaDb *db)
+{
+    struct SelvaTypeEntry *te;
+
+    write_dump_magic(io, DUMP_MAGIC_ALIASES);
+
+    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
+        const sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
+
+        for (size_t i = 0; i < nr_aliases; i++) {
+            struct SelvaAliases *aliases = &te->aliases[i];
+            sdb_nr_aliases_t nr_aliases_by_name = aliases->nr_aliases;
+            struct SelvaAlias *alias;
+
+            io->sdb_write(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
+            RB_FOREACH(alias, SelvaAliasesByName, &aliases->alias_by_name) {
+                const char *name_str = alias->name;
+                const sdb_arr_len_t name_len = alias->name_len;
+
+                io->sdb_write(&name_len, sizeof(name_len), 1, io);
+                io->sdb_write(name_str, sizeof(*name_str), name_len, io);
+                io->sdb_write(&alias->dest, sizeof(alias->dest), 1, io);
+            }
+        }
+    }
 }
 
 static void save_common_ids(struct selva_io *io, const node_id_t *ids_data, size_t meta_len)
@@ -384,6 +388,7 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
      */
     save_schema(&io, db);
     save_expire(&io, db);
+    save_aliases(&io, db);
     save_common_ids(&io, com->ids_data, com->ids_len);
     save_common_blocks(&io, db, com);
 
@@ -491,7 +496,6 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
      * note: colvec is hashed in node_hash.
      */
     selva_dump_save_colvec(&io, db, te, start);
-    save_aliases(&io, te);
 
     selva_hash128_t block_hash = selva_hash_digest(hash_state);
     selva_hash_free_state(hash_state);
@@ -549,33 +553,6 @@ static int load_schema(struct selva_io *io, struct SelvaDb *db)
             selva_io_errlog(io, "Failed to create a node type entry: %s", selva_strerror(err));
             return SELVA_EINVAL;
         }
-    }
-
-    return 0;
-}
-
-__attribute__((warn_unused_result))
-static int load_expire(struct selva_io *io, struct SelvaDb *db)
-{
-    sdb_arr_len_t count;
-
-    if (!read_dump_magic(io, DUMP_MAGIC_EXPIRE)) {
-        selva_io_errlog(io, "Ivalid types magic");
-        return SELVA_EINVAL;
-    }
-
-    io->sdb_read(&count, sizeof(count), 1, io);
-
-    for (sdb_arr_len_t i = 0; i < count; i++) {
-        node_type_t type;
-        node_id_t node_id;
-        int64_t expire;
-
-        io->sdb_read(&type, sizeof(type), 1, io);
-        io->sdb_read(&node_id, sizeof(node_id), 1, io);
-        io->sdb_read(&expire, sizeof(expire), 1, io);
-
-        selva_expire_node(db, type, node_id, expire, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
     }
 
     return 0;
@@ -823,37 +800,6 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
 }
 
 __attribute__((warn_unused_result))
-static int load_aliases(struct selva_io *io, struct SelvaTypeEntry *te)
-{
-    sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
-
-    if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
-        selva_io_errlog(io, "Invalid aliases magic for type %d", te->type);
-        return SELVA_EINVAL;
-    }
-
-    for (sdb_nr_aliases_t i = 0; i < nr_aliases; i++) {
-        sdb_nr_aliases_t nr_aliases_by_name;
-
-        io->sdb_read(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
-        for (size_t j = 0; j < nr_aliases_by_name; j++) {
-            sdb_arr_len_t name_len;
-            struct SelvaAlias *alias;
-
-            io->sdb_read(&name_len, sizeof(name_len), 1, io);
-            alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len));
-            io->sdb_read(alias->name, sizeof(char), name_len, io);
-            alias->name_len = name_len;
-            io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
-
-            selva_set_alias_p(&te->aliases[i], alias);
-        }
-    }
-
-    return 0;
-}
-
-__attribute__((warn_unused_result))
 static int load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     sdb_nr_nodes_t nr_nodes;
@@ -923,9 +869,70 @@ static int load_type(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEn
 
     err = load_nodes(io, db, te);
     err = (err) ?: load_colvec(io, te);
-    err = (err) ?: load_aliases(io, te);
 
     return err;
+}
+
+__attribute__((warn_unused_result))
+static int load_expire(struct selva_io *io, struct SelvaDb *db)
+{
+    sdb_arr_len_t count;
+
+    if (!read_dump_magic(io, DUMP_MAGIC_EXPIRE)) {
+        selva_io_errlog(io, "Ivalid types magic");
+        return SELVA_EINVAL;
+    }
+
+    io->sdb_read(&count, sizeof(count), 1, io);
+
+    for (sdb_arr_len_t i = 0; i < count; i++) {
+        node_type_t type;
+        node_id_t node_id;
+        int64_t expire;
+
+        io->sdb_read(&type, sizeof(type), 1, io);
+        io->sdb_read(&node_id, sizeof(node_id), 1, io);
+        io->sdb_read(&expire, sizeof(expire), 1, io);
+
+        selva_expire_node(db, type, node_id, expire, SELVA_EXPIRE_NODE_STRATEGY_IGNORE);
+    }
+
+    return 0;
+}
+
+__attribute__((warn_unused_result))
+static int load_aliases(struct selva_io *io, struct SelvaDb *db)
+{
+    struct SelvaTypeEntry *te;
+
+    if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
+        selva_io_errlog(io, "Invalid aliases magic");
+        return SELVA_EINVAL;
+    }
+
+    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
+        const sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
+
+        for (sdb_nr_aliases_t i = 0; i < nr_aliases; i++) {
+            sdb_nr_aliases_t nr_aliases_by_name;
+
+            io->sdb_read(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
+            for (size_t j = 0; j < nr_aliases_by_name; j++) {
+                sdb_arr_len_t name_len;
+                struct SelvaAlias *alias;
+
+                io->sdb_read(&name_len, sizeof(name_len), 1, io);
+                alias = selva_malloc(sizeof_wflex(struct SelvaAlias, name, name_len));
+                io->sdb_read(alias->name, sizeof(char), name_len, io);
+                alias->name_len = name_len;
+                io->sdb_read(&alias->dest, sizeof(alias->dest), 1, io);
+
+                selva_set_alias_p(&te->aliases[i], alias);
+            }
+        }
+    }
+
+    return 0;
 }
 
 __attribute__((warn_unused_result))
@@ -1011,6 +1018,7 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
 
     err = load_schema(&io, db);
     err = err ?: load_expire(&io, db);
+    err = err ?: load_aliases(&io, db);
     err = err ?: load_common_ids(&io, com);
     err = err ?: load_common_blocks(&io, db, com);
     selva_io_end(&io, nullptr);
