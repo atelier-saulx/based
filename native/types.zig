@@ -678,10 +678,21 @@ pub const AggHeader = packed struct {
     iteratorType: QueryIteratorType,
     resultsSize: u16,
     accumulatorSize: u16,
-    sort: bool,
     hasGroupBy: bool,
     isSamplingSet: bool,
-    _padding: u5,
+    _padding: u6,
+};
+
+pub const AggRefsHeader = packed struct {
+    op: IncludeOp,
+    targetProp: u8,
+    offset: u32,
+    filterSize: u16,
+    resultsSize: u16,
+    accumulatorSize: u16,
+    hasGroupBy: bool,
+    isSamplingSet: bool,
+    _padding: u6,
 };
 
 pub const addMultiSubscriptionHeader = packed struct {
