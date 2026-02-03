@@ -73,8 +73,8 @@ export type QueryAst = {
   harmonicMean?: { props: string | string[] }
   max?: { props: string | string[] }
   min?: { props: string | string[] }
-  stddev?: { props: string | string[]; samplingMode: 'sample' | 'population' }
-  var?: { props: string | string[]; samplingMode: 'sample' | 'population' }
+  stddev?: { props: string | string[]; samplingMode?: 'sample' | 'population' }
+  var?: { props: string | string[]; samplingMode?: 'sample' | 'population' }
   groupBy?: {
     prop: string
     step?: number | IntervalString
