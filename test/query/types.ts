@@ -26,7 +26,7 @@ await test('query types', async (t) => {
         // vec: 'vector',
         // col: 'colvec',
         card: 'cardinality',
-        myEnum: { enum: ['a', 'b'] as const },
+        myEnum: { enum: ['a', 'b'] },
         nested: {
           type: 'object',
           props: {
@@ -89,5 +89,88 @@ await test('query types', async (t) => {
     const wrongRef: string = everything.myRef
     // @ts-expect-error
     const wrongRefs: number = everything.myRefs
+  }
+
+  {
+    const query = db.query2('everything').include('myEnum')
+    const { data } = await query.get()
+    const res = data[0]
+    const myEnum: 'a' | 'b' = res.myEnum
+    const id: number = res.id
+    // @ts-expect-error
+    const n: number = res.n
+  }
+
+  {
+    const query = db.query2('everything').include('*')
+    const { data } = await query.get()
+    const res = data[0]
+    const n: number = res.n
+    const s: string = res.s
+    const myEnum: 'a' | 'b' = res.myEnum
+    // @ts-expect-error
+    const myRef = res.myRef
+  }
+  {
+    const query = db.query2('everything').include('**')
+    const { data } = await query.get()
+    const res = data[0]
+
+    // references
+    const myRef: number = res.myRef
+    const myRefs: number[] = res.myRefs
+    const id: number = res.id
+
+    // Scalars should be missing
+    // @ts-expect-error
+    const n: number = res.n
+    // @ts-expect-error
+    const s: string = res.s
+    // @ts-expect-error
+    const myEnum: 'a' | 'b' = res.myEnum
+  }
+
+  {
+    // Combine explicit field + wildcard
+    const query = db.query2('everything').include('myEnum', '**')
+    const { data } = await query.get()
+    const res = data[0]
+
+    const myEnum: 'a' | 'b' = res.myEnum
+    const myRef: number = res.myRef
+    const myRefs: number[] = res.myRefs
+
+    // Other scalars missing
+    // @ts-expect-error
+    const n: number = res.n
+  }
+
+  {
+    // Multiple explicit fields
+    const query = db.query2('everything').include('n', 's', 'nested')
+    const { data } = await query.get()
+    const res = data[0]
+
+    const n: number = res.n
+    const s: string = res.s
+    const nestedA: string = res.nested.a
+
+    // Missing
+    // @ts-expect-error
+    const myEnum: 'a' | 'b' = res.myEnum
+  }
+
+  {
+    // Scalar wildcard + explicit ref
+    const query = db.query2('everything').include('*', 'myRefs')
+    const { data } = await query.get()
+    const res = data[0]
+
+    const n: number = res.n
+    const myRefs: number[] = res.myRefs
+
+    // Excluded ref
+    // @ts-expect-error
+    const myRef: number = res.myRef
   }
 })

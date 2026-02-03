@@ -62,3 +62,37 @@ export type InferSchemaOutput<
   S['types'],
   S['locales'] extends Record<string, any> ? S['locales'] : {}
 > & { id: number }
+
+// Helpers for include
+type IsRefProp<P> = P extends { type: 'reference' } | { type: 'references' }
+  ? true
+  : P extends { ref: any }
+    ? true
+    : P extends { items: { ref: any } }
+      ? true
+      : false
+
+export type NonRefKeys<Props> = {
+  [K in keyof Props]: IsRefProp<Props[K]> extends true ? never : K
+}[keyof Props]
+
+export type RefKeys<Props> = {
+  [K in keyof Props]: IsRefProp<Props[K]> extends true ? K : never
+}[keyof Props]
+
+export type ResolveInclude<
+  Props,
+  K extends keyof Props | '*' | '**',
+> = K extends '*' ? NonRefKeys<Props> : K extends '**' ? RefKeys<Props> : K
+
+export type IncludeSelection<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+  K extends keyof S['types'][T]['props'] | '*',
+> = ResolveInclude<S['types'][T]['props'], K>
+
+export type PickOutput<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+  K extends keyof S['types'][T]['props'],
+> = Pick<InferSchemaOutput<S, T>, K | 'id'>

@@ -54,7 +54,7 @@ type NormalizeProp<T> = T extends string
                   ? NormalizeProp<T[K]>
                   : T[K]
               } & { type: 'reference' }
-            : T extends { enum: any[] }
+            : T extends { enum: readonly any[] }
               ? T & { type: 'enum' }
               : T
 
