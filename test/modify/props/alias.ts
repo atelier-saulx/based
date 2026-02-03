@@ -16,6 +16,9 @@ await test('modify alias', async (t) => {
   const id1 = await db.create('thing', {
     myAlias: 'my-alias-value',
   })
+  const id2 = await db.create('thing', {
+    myAlias: 'b-alias',
+  })
 
   deepEqual(await db.query('thing', id1).get(), {
     id: id1,
@@ -29,6 +32,24 @@ await test('modify alias', async (t) => {
 
   deepEqual(await db.query('thing', id1).get(), {
     id: id1,
+    myAlias: 'another-alias',
+  })
+
+  await db.update('thing', id2, {
+    myAlias: 'another-alias',
+  })
+
+  deepEqual(await db.query('thing', { myAlias: 'b-alias' }).get(), null)
+  deepEqual(await db.query('thing', { myAlias: 'another-alias' }).get(), {
+    id: id2,
+    myAlias: 'another-alias',
+  })
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    myAlias: '',
+  })
+  deepEqual(await db.query('thing', id2).get(), {
+    id: id2,
     myAlias: 'another-alias',
   })
 })
