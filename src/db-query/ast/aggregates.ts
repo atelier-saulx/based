@@ -12,6 +12,7 @@ import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
 import { aggregateTypeMap } from '../../db-client/query/aggregates/types.js'
 import { readPropDef } from './readSchema.js'
+import { truncate } from 'node:fs'
 
 export const pushAggregatesQuery = (
   ast: QueryAst,
@@ -78,7 +79,7 @@ const buildAggregateHeader = (
     hasGroupBy,
     resultsSize: sizes.result,
     accumulatorSize: sizes.accumulator,
-    isSamplingSet: true, // TODO : later
+    isSamplingSet: checkSamplingMode(ast),
   }
 
   const isCountOnly = isRootCountOnly(ast)
@@ -133,6 +134,11 @@ const pushAggregates = (
         : []
 
     if (key === 'count' && props.length === 0) {
+      ctx.readSchema.aggregate?.aggregates.push({
+        path: ['count'],
+        type: fn,
+        resultPos: sizes.result,
+      })
       continue
     }
 
@@ -193,4 +199,13 @@ export const isAggregateAst = (ast: QueryAst) => {
     ast.harmonicMean ||
     ast.cardinality
   )
+}
+
+const checkSamplingMode = (ast: QueryAst): boolean => {
+  if (
+    ast['stddev']?.samplingMode === 'population' ||
+    ast['var']?.samplingMode === 'population'
+  )
+    return false
+  else return true
 }

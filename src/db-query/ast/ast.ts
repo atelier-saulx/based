@@ -67,7 +67,7 @@ export type QueryAst = {
   sort?: { prop: string; order: 'asc' | 'desc' }
   props?: Record<string, QueryAst>
   edges?: QueryAst
-  count?: { props: string | void }
+  count?: { props?: string }
   sum?: { props: string[] }
   cardinality?: { props: string[] }
   avg?: { props: string[] }

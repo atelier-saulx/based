@@ -1,5 +1,4 @@
 import { QueryAst } from '../../src/db-query/ast/ast.js'
-import { testDb } from '../shared/index.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
 import { BasedDb, debugBuffer } from '../../src/sdk.js'
@@ -7,6 +6,7 @@ import {
   resultToObject,
   serializeReaderSchema,
 } from '../../src/protocol/index.js'
+import { deepEqual } from 'assert'
 
 import test from '../shared/test.js'
 
@@ -20,26 +20,40 @@ await test('aggregate', async (t) => {
     types: {
       user: {
         age: 'uint8',
+        balance: 'number',
       },
     },
   })
 
   const a = client.create('user', {
     age: 18,
+    balance: -130.2,
   })
-  const back = client.create('user', {
+  const b = client.create('user', {
     age: 30,
+    balance: 0,
+  })
+  const c = client.create('user', {
+    age: 41,
+    balance: 1500.5,
   })
 
   await db.drain()
   const ast: QueryAst = {
     type: 'user',
-    // props: {
-    //   age: { include: {} },
+    // sum: {
+    //   props: ['age', 'balance'],
     // },
-    sum: {
-      props: ['age'],
-    },
+    // stddev: {
+    //   props: ['age'],
+    //   samplingMode: 'population',
+    // },
+    // var: {
+    //   props: ['age'],
+    // },
+    // count: { props: 'age' },
+    // count: { props: 'balance' },
+    count: {},
   }
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
   const result = await db.server.getQueryBuf(ctx.query)
@@ -49,13 +63,22 @@ await test('aggregate', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
+  // deepEqual(
+  //   obj,
+  //   {
+  //     age: { sum: 89, stddev: 9.392668535736911, variance: 88.22222222222217 },
+  //     balance: { sum: 1370.3 },
+  //   },
+  //   'basic accum, no groupby, no refs',
+  // )
+
   console.dir(obj, { depth: 10 })
 
-  console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
+  // console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
 
-  console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
+  // console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
 
-  const r = await db.query('user').sum('age').get()
-  r.debug()
-  r.inspect(10)
+  // const r = await db.query('user').count().get()
+  // r.debug()
+  // r.inspect(10)
 })
