@@ -50,7 +50,7 @@ export class AutoSizedUint8Array {
     this.maxLength = maxLength
   }
 
-  private ensure(requiredLength: number): void {
+  ensure(requiredLength: number): void {
     const currentLength = this.data.byteLength
     if (currentLength >= requiredLength) return
     if (requiredLength > this.maxLength) {

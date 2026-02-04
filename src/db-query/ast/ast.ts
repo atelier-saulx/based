@@ -34,12 +34,14 @@ export type FilterOp = {
   opts?: FilterOpts
 }
 
+export type FilterLeaf = FilterAst & {
+  ops?: FilterOp[]
+  select?: { start: number; end: number }
+}
+
 export type FilterAst = {
   props?: {
-    [key: string]: FilterAst & {
-      ops?: FilterOp[]
-      select?: { start: number; end: number }
-    }
+    [key: string]: FilterLeaf
   }
   or?: FilterAst
   and?: FilterAst

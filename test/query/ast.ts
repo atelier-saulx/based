@@ -23,8 +23,11 @@ await test('query types', async (t) => {
 
   const query = db
     .query2('user')
-    .include('isNice', 'name')
-    .include((select) => select('otherUsers').include('name'))
+    .include('isNice', 'name', 'otherUsers.name')
+    .include((select) =>
+      select('otherUsers').include('name').filter('name', '=', 'youzi'),
+    )
+    .filter('otherUsers.name', '=', 'youzi')
 
   const result = await query.get()
 

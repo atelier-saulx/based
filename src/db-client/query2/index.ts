@@ -1,5 +1,14 @@
-import type { QueryAst } from '../../db-query/ast/ast.js'
-import type { PickOutput, ResolveInclude } from './types.js'
+import type { FilterLeaf, QueryAst } from '../../db-query/ast/ast.js'
+import type {
+  PickOutput,
+  ResolveInclude,
+  InferProp,
+  Path,
+  FilterOpts, // FilterOpts
+  Operator,
+  ResolveDotPath,
+  InferPathType,
+} from './types.js'
 import type { ResolvedProps } from '../../schema/index.js'
 
 class QueryBranch<
@@ -9,7 +18,8 @@ class QueryBranch<
     | keyof ResolvedProps<S['types'], T>
     | '*'
     | '**'
-    | { field: any; select: any } = '*',
+    | { field: any; select: any }
+    | string = '*', // Allow string for potential dot paths
   IsSingle extends boolean = false,
   SourceField extends string | number | symbol | undefined = undefined,
   IsRoot extends boolean = false,
@@ -21,6 +31,7 @@ class QueryBranch<
   include<
     F extends (
       | keyof ResolvedProps<S['types'], T>
+      | Path<S['types'], T>
       | '*'
       | '**'
       | ((q: SelectFn<S, T>) => QueryBranch<S, any, any, any, any>)
@@ -42,14 +53,19 @@ class QueryBranch<
         SourceField,
         IsRoot
       > {
-    for (const prop of props) {
+    for (const prop of props as (string | Function)[]) {
       let target = this.ast
       if (typeof prop === 'function') {
-        const { ast } = (prop as any)((field: any) => new QueryBranch(field))
-        target.props ??= {}
-        target.props[ast.type] = ast
+        prop((prop: string) => {
+          const path = prop.split('.')
+          for (const key of path) {
+            target.props ??= {}
+            target = target.props[key] = {}
+          }
+          return new QueryBranch(target)
+        })
       } else {
-        const path = (prop as string).split('.')
+        const path = prop.split('.')
         for (const key of path) {
           target.props ??= {}
           target = target.props[key] = {}
@@ -60,7 +76,20 @@ class QueryBranch<
     return this as any
   }
 
-  filter(...args: any[]): this {
+  filter<P extends keyof ResolvedProps<S['types'], T> | Path<S['types'], T>>(
+    prop: P,
+    op: Operator,
+    val: InferPathType<S, T, P>,
+    opts?: FilterOpts,
+  ): this {
+    let target: FilterLeaf = (this.ast.filter ??= {})
+    const path = (prop as string).split('.')
+    for (const key of path) {
+      target.props ??= {}
+      target = target.props[key] = {}
+    }
+    target.ops ??= []
+    target.ops.push({ op, val })
     return this
   }
 }
@@ -72,7 +101,8 @@ export class BasedQuery2<
     | keyof ResolvedProps<S['types'], T>
     | '*'
     | '**'
-    | { field: any; select: any } = '*',
+    | { field: any; select: any }
+    | string = '*',
   IsSingle extends boolean = false,
 > extends QueryBranch<S, T, K, IsSingle, undefined, true> {
   constructor(type: T, target?: number) {
@@ -107,6 +137,7 @@ type SelectFn<S extends { types: any }, T extends keyof S['types']> = <
   P
 >
 
+// ResolveIncludeArgs needs to stay here because it refers to QueryBranch
 export type ResolveIncludeArgs<T> = T extends (
   q: any,
 ) => QueryBranch<
@@ -118,4 +149,6 @@ export type ResolveIncludeArgs<T> = T extends (
   any
 >
   ? { field: SourceField; select: K }
-  : T
+  : T extends string
+    ? ResolveDotPath<T>
+    : T

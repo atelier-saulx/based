@@ -1,5 +1,5 @@
 import native from '../../../native.js'
-import { NOT_COMPRESSED } from '../../../protocol/index.js'
+import { COMPRESSED, NOT_COMPRESSED } from '../../../protocol/index.js'
 import type {
   SchemaBinary,
   SchemaCardinality,
@@ -78,8 +78,11 @@ export const string = class String extends BasePropDef {
     if (this.size) {
       this.type = PropType.stringFixed
       this.pushValue = this.pushFixedValue
+    } else if (prop.compression === 'none') {
+      this.deflate = false
     }
   }
+  deflate = true
   declare schema: SchemaString
   override type: PropTypeEnum = PropType.string
   override pushValue(
@@ -91,6 +94,23 @@ export const string = class String extends BasePropDef {
     validateString(value, this.schema, this.path)
     const normalized = value.normalize('NFKD')
     buf.pushUint8(lang)
+    if (this.deflate && normalized.length > 200) {
+      buf.pushUint8(COMPRESSED)
+      const sizePos = buf.reserveUint32()
+      const stringPos = buf.length
+      const written = buf.pushString(normalized)
+      buf.pushString(normalized)
+      const size = native.compress(buf.data, stringPos, written)
+      if (size !== 0) {
+        buf.writeUint32(written, sizePos)
+        buf.length = stringPos + size
+        validateMaxBytes(size, this.schema, this.path)
+        const crc = native.crc32(buf.subarray(stringPos))
+        buf.pushUint32(crc)
+        return
+      }
+      buf.length = sizePos - 1
+    }
     buf.pushUint8(NOT_COMPRESSED)
     const written = buf.pushString(normalized)
     validateMaxBytes(written, this.schema, this.path)

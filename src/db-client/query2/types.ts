@@ -41,7 +41,7 @@ type TypeMap = {
 // Helper to check if Selection is provided (not never/any/unknown default behavior)
 type IsSelected<T> = [T] extends [never] ? false : true
 
-type InferProp<
+export type InferProp<
   Prop,
   Types,
   Locales extends Record<string, any> = Record<string, any>,
@@ -93,10 +93,7 @@ export type RefKeys<Props> = {
   [K in keyof Props]: IsRefProp<Props[K]> extends true ? K : never
 }[keyof Props]
 
-export type ResolveInclude<
-  Props,
-  K extends keyof Props | '*' | '**' | { field: any; select: any },
-> = K extends any
+export type ResolveInclude<Props, K> = K extends any
   ? K extends '*'
     ? NonRefKeys<Props>
     : K extends '**'
@@ -107,7 +104,7 @@ export type ResolveInclude<
 export type IncludeSelection<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
-  K extends keyof ResolvedProps<S['types'], T> | '*',
+  K,
 > = ResolveInclude<ResolvedProps<S['types'], T>, K>
 
 export type PickOutput<
@@ -125,10 +122,81 @@ export type PickOutput<
       : InferSchemaOutput<S, T>[P]
     : InferSchemaOutput<S, T>[P]
 } & {
-  [Item in Extract<K, { field: any; select: any }> as Item['field']]: InferProp<
-    ResolvedProps<S['types'], T>[Item['field']],
+  [Item in Extract<K, { field: any; select: any }> as Item['field'] &
+    keyof ResolvedProps<S['types'], T>]: InferProp<
+    ResolvedProps<S['types'], T>[Item['field'] &
+      keyof ResolvedProps<S['types'], T>],
     S['types'],
     S['locales'] extends Record<string, any> ? S['locales'] : {},
     Item['select']
   >
 }
+
+export type FilterOpts = {
+  lowerCase?: boolean
+  fn?:
+    | 'dotProduct'
+    | 'manhattanDistance'
+    | 'cosineSimilarity'
+    | 'euclideanDistance'
+  score?: number
+}
+
+export type Operator =
+  | '='
+  | '<'
+  | '>'
+  | '!='
+  | '>='
+  | '<='
+  | '..'
+  | '!..'
+  | 'exists'
+  | '!exists'
+  | 'like'
+  | '!like'
+  | 'includes'
+  | '!includes'
+
+type Prev = [never, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+export type Path<Schema, T extends keyof Schema, Depth extends number = 5> = [
+  Depth,
+] extends [never]
+  ? never
+  : {
+      [K in keyof ResolvedProps<Schema, T> & string]:
+        | K
+        | (ResolvedProps<Schema, T>[K] extends { ref: infer R extends string }
+            ? `${K}.${Path<Schema, R & keyof Schema, Prev[Depth]>}`
+            : ResolvedProps<Schema, T>[K] extends {
+                  items: { ref: infer R extends string }
+                }
+              ? `${K}.${Path<Schema, R & keyof Schema, Prev[Depth]>}`
+              : never)
+    }[keyof ResolvedProps<Schema, T> & string]
+
+export type ResolveDotPath<T extends string> =
+  T extends `${infer Head}.${infer Tail}`
+    ? { field: Head; select: ResolveDotPath<Tail> }
+    : T
+
+export type InferPathType<
+  S extends { types: any },
+  T extends keyof S['types'],
+  P,
+> = P extends keyof ResolvedProps<S['types'], T>
+  ? InferProp<ResolvedProps<S['types'], T>[P], S['types']>
+  : P extends `${infer Head}.${infer Tail}`
+    ? Head extends keyof ResolvedProps<S['types'], T>
+      ? ResolvedProps<S['types'], T>[Head] extends {
+          ref: infer R extends string
+        }
+        ? InferPathType<S, R & keyof S['types'], Tail>
+        : ResolvedProps<S['types'], T>[Head] extends {
+              items: { ref: infer R extends string }
+            }
+          ? InferPathType<S, R & keyof S['types'], Tail>
+          : never
+      : never
+    : never

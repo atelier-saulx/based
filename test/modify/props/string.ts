@@ -253,3 +253,47 @@ await test('modify fixed string', async (t) => {
     name: '',
   })
 })
+
+await test('modify long string', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        name: 'string',
+      },
+      longCompressedString: {
+        name: {
+          type: 'string',
+        },
+      },
+    },
+  })
+
+  // String > 200 chars (triggers compression if enabled)
+  const s1 = 'a'.repeat(250)
+  const id1 = await db.create('thing', {
+    name: s1,
+  })
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    name: s1,
+  })
+
+  // Mixed content string > 200 chars
+  const s2 = 'abcdefghijklmnopqrstuvwxyz'.repeat(10) // 260 chars
+  await db.update('thing', id1, {
+    name: s2,
+  })
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    name: s2,
+  })
+
+  // Test no compression option
+  const id2 = await db.create('longCompressedString', {
+    name: s1,
+  })
+  deepEqual(await db.query('longCompressedString', id2).get(), {
+    id: id2,
+    name: s1,
+  })
+})
