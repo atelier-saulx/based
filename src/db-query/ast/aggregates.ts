@@ -11,6 +11,7 @@ import {
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
 import { aggregateTypeMap } from '../../db-client/query/aggregates/types.js'
+import { readPropDef } from './readSchema.js'
 
 export const pushAggregatesQuery = (
   ast: QueryAst,
@@ -19,6 +20,10 @@ export const pushAggregatesQuery = (
 ) => {
   const headerStartPos = ctx.query.length
   ctx.query.length += AggHeaderByteSize
+  ctx.readSchema.aggregate = {
+    aggregates: [],
+    totalResultsSize: 0,
+  }
 
   let filterSize = 0
   if (ast.filter) {
@@ -131,6 +136,7 @@ const pushAggregates = (
       continue
     }
 
+    let i = 0
     for (const propName of props) {
       const propDef = typeDef.props.get(propName)
       if (!propDef) {
@@ -156,6 +162,14 @@ const pushAggregates = (
         resultPos: sizes.result,
         accumulatorPos: sizes.accumulator,
       })
+      ctx.readSchema.aggregate?.aggregates.push({
+        path: propDef.path!,
+        type: fn,
+        resultPos: sizes.result,
+      })
+      ctx.readSchema.main.props[i] = readPropDef(propDef, ctx.locales)
+      ctx.readSchema.main.len += propDef.size
+      i += propDef.size
 
       ctx.query.data.set(buffer, ctx.query.length)
       ctx.query.length += AggPropByteSize
