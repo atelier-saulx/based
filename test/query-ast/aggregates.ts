@@ -31,6 +31,7 @@ await test('aggregate', async (t) => {
     age: 30,
   })
 
+  await db.drain()
   const ast: QueryAst = {
     type: 'user',
     // props: {
@@ -44,18 +45,16 @@ await test('aggregate', async (t) => {
   const result = await db.server.getQueryBuf(ctx.query)
   debugBuffer(result)
 
-  const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
+  const readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
   console.dir(obj, { depth: 10 })
 
-  console.log(
-    JSON.stringify(obj).length,
-    readSchemaBuf.byteLength + result.byteLength,
-  )
+  console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
 
   console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
+
   const r = await db.query('user').sum('age').get()
   r.debug()
   r.inspect(10)
