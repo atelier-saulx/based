@@ -875,7 +875,7 @@ await test('single ref save and load', async (t) => {
   const users = [{ email: '1@saulx.com' }, { email: '2@saulx.com' }]
 
   for (const user of users) {
-    await db.upsert('user', user)
+    await db.upsert('user', { email: user.email }, {})
   }
 
   await db.stop()
@@ -1026,7 +1026,7 @@ await test('reference to a non-existing node', async (t) => {
     articles: [],
   })
 
-  const article = await db.create('article')
+  const article = await db.create('article', {})
   deepEqual(article, 1)
 
   deepEqual(await db.query('user', mrSnurp).include('**').get(), {
