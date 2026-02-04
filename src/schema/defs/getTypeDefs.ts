@@ -53,7 +53,7 @@ const addPropDef = (
 ) => {
   const Def = defs[prop.type]
   if (!Def) {
-    throw 'unknown def'
+    throw new Error('Unknown def')
   }
 
   const def: PropDef = new Def(prop, path, typeDef)
