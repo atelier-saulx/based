@@ -1,37 +1,9 @@
-import { createHash } from 'node:crypto'
 import { readdir } from 'node:fs/promises'
-import { BasedDb, DbServer } from '../../src/index.js'
+import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
 import { deepEqual, equal, notEqual } from '../shared/assert.js'
-import { getBlockHash, getBlockStatuses } from '../../src/db-server/blocks.js'
-
-const getActiveBlocks = async (
-  db: DbServer,
-  tc: number,
-): Promise<Array<number>> =>
-  (await getBlockStatuses(db, tc)).reduce((acc, cur, i) => {
-    if (cur) {
-      acc.push(i)
-    }
-    return acc
-  }, [] as Array<number>)
-const block2start = (block: number, capacity: number): number =>
-  block * capacity + 1
-const hashType = async (db: DbServer, typeName: string): Promise<string> => {
-  const tc = db.schemaTypesParsed[typeName].id
-  const capacity = db.schemaTypesParsed[typeName].blockCapacity
-  const hash = createHash('sha256')
-  const bhs = await Promise.all(
-    (await getActiveBlocks(db, tc)).map((block) =>
-      getBlockHash(db, tc, block2start(block, capacity)),
-    ),
-  )
-  for (const bh of bhs) {
-    hash.update(bh)
-  }
-  return hash.digest('hex')
-}
+import { countDirtyBlocks, hashType } from '../shared/index.js'
 
 await test('save simple range', async (t) => {
   const db = new BasedDb({
@@ -194,19 +166,6 @@ await test('save simple range', async (t) => {
     ],
   )
 })
-
-async function countDirtyBlocks(server: DbServer) {
-  let n = 0
-
-  for (const t of Object.keys(server.schemaTypesParsedById)) {
-    n += (await getBlockStatuses(server, Number(t))).reduce(
-      (acc, cur) => acc + ~~!!(cur & 0x4),
-      0,
-    )
-  }
-
-  return n
-}
 
 await test('reference changes', async (t) => {
   const db = new BasedDb({
