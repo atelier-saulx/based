@@ -10,7 +10,7 @@ import { deepEqual } from 'assert'
 
 import test from '../shared/test.js'
 
-await test('aggregate', async (t) => {
+await test('basic', async (t) => {
   const db = new BasedDb({ path: t.tmp })
   await db.start({ clean: true })
   t.after(() => db.destroy())
@@ -41,19 +41,17 @@ await test('aggregate', async (t) => {
   await db.drain()
   const ast: QueryAst = {
     type: 'user',
-    // sum: {
-    //   props: ['age', 'balance'],
-    // },
-    // stddev: {
-    //   props: ['age'],
-    //   samplingMode: 'population',
-    // },
-    // var: {
-    //   props: ['age'],
-    // },
-    // count: { props: 'age' },
-    // count: { props: 'balance' },
-    sum: { props: ['age'] },
+    sum: {
+      props: ['age', 'balance'],
+    },
+    stddev: {
+      props: ['age'],
+      samplingMode: 'population',
+    },
+    var: {
+      props: ['age'],
+    },
+    // count: { props: 'age' }, // not implementd yet
     count: {},
   }
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
@@ -64,22 +62,23 @@ await test('aggregate', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  // deepEqual(
-  //   obj,
-  //   {
-  //     age: { sum: 89, stddev: 9.392668535736911, variance: 88.22222222222217 },
-  //     balance: { sum: 1370.3 },
-  //   },
-  //   'basic accum, no groupby, no refs',
-  // )
+  deepEqual(
+    obj,
+    {
+      age: { sum: 89, stddev: 9.392668535736911, variance: 88.22222222222217 },
+      balance: { sum: 1370.3 },
+      count: 3,
+    },
+    'basic accum, no groupby, no refs',
+  )
 
   console.dir(obj, { depth: 10 })
 
   console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
 
-  console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
+  // console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
 
-  const r = await db.query('user').count().sum('age').get()
-  r.debug()
-  r.inspect(10)
+  // const r = await db.query('user').count().sum('age').get()
+  // r.debug()
+  // r.inspect(10)
 })
