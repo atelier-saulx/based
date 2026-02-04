@@ -53,6 +53,7 @@ await test('aggregate', async (t) => {
     // },
     // count: { props: 'age' },
     // count: { props: 'balance' },
+    sum: { props: ['age'] },
     count: {},
   }
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
@@ -74,11 +75,11 @@ await test('aggregate', async (t) => {
 
   console.dir(obj, { depth: 10 })
 
-  // console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
+  console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
 
-  // console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
+  console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
 
-  // const r = await db.query('user').count().get()
-  // r.debug()
-  // r.inspect(10)
+  const r = await db.query('user').count().sum('age').get()
+  r.debug()
+  r.inspect(10)
 })

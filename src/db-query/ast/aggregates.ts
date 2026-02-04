@@ -1,4 +1,4 @@
-import { TypeDef } from '../../schema/defs/index.js'
+import { TypeDef, PropDef } from '../../schema/defs/index.js'
 import {
   QueryType,
   QueryIteratorType,
@@ -127,24 +127,32 @@ const pushAggregates = (
     const data = ast[key]
     if (!data) continue
 
-    const props = Array.isArray(data.props)
+    let props = Array.isArray(data.props)
       ? data.props
       : data.props
         ? [data.props]
         : []
 
+    let i = 0
     if (key === 'count' && props.length === 0) {
       ctx.readSchema.aggregate?.aggregates.push({
         path: ['count'],
         type: fn,
         resultPos: sizes.result,
       })
-      continue
+      props.push('count')
     }
 
-    let i = 0
     for (const propName of props) {
-      const propDef = typeDef.props.get(propName)
+      let propDef: PropDef | any = typeDef.props.get(propName)
+      if (propName === 'count' && fn === AggFunction.count) {
+        propDef = {
+          id: 255,
+          path: [propName],
+          start: 0,
+          type: 1,
+        }
+      }
       if (!propDef) {
         throw new Error(`Aggregate property '${propName}' not found`)
       }

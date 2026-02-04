@@ -51,6 +51,7 @@ pub inline fn aggregateProps(
 
     var i: usize = 0;
     while (i < aggDefs.len) {
+        utils.debugPrint("aggDefs: {any}\n", .{aggDefs});
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
         utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
         utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
