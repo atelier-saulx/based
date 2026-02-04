@@ -51,12 +51,12 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
     while (j < data.len) {
         const propId = data[j];
         const propSchema = try Schema.getFieldSchema(typeEntry, propId);
+
         if (propId == 0) {
             // main handling
             const main = utils.readNext(t.ModifyMainHeader, data, &j);
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
-            const size = main.type.size();
-            const value = data[j .. j + size];
+            const value = data[j .. j + main.size];
             if (main.increment != .none) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.increment),
@@ -68,7 +68,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                 }
             }
             utils.copy(u8, current, value, main.start);
-            j += size;
+            j += main.size;
         } else {
             // separate handling
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);

@@ -430,7 +430,6 @@ await test('upsert', async (t) => {
       },
     },
   })
-
   const joe = db.create('person', {
     name: 'Joe',
     alias: 'boss',

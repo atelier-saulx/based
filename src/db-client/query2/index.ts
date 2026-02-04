@@ -2,7 +2,7 @@ import type { QueryAst } from '../../db-query/ast/ast.js'
 import type { PickOutput, ResolveInclude } from './types.js'
 import type { ResolvedProps } from '../../schema/index.js'
 
-export class BasedQuery2<
+class QueryBranch<
   S extends { types: any } = { types: any },
   T extends keyof S['types'] = any,
   K extends
@@ -12,41 +12,40 @@ export class BasedQuery2<
     | { field: any; select: any } = '*',
   IsSingle extends boolean = false,
   SourceField extends string | number | symbol | undefined = undefined,
+  IsRoot extends boolean = false,
 > {
-  constructor(type: T, target?: number) {
-    this.ast.type = type as string
-    this.ast.target = target
+  constructor(ast: QueryAst) {
+    this.ast = ast
   }
-
-  ast: QueryAst = {}
-  async get(): Promise<
-    IsSingle extends true
-      ? PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>
-      : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
-  > {
-    return [] as any
-  }
-
+  ast: QueryAst
   include<
     F extends (
       | keyof ResolvedProps<S['types'], T>
       | '*'
       | '**'
-      | ((q: SelectFn<S, T>) => BasedQuery2<S, any, any, any, any>)
+      | ((q: SelectFn<S, T>) => QueryBranch<S, any, any, any, any>)
     )[],
   >(
     ...props: F
-  ): BasedQuery2<
-    S,
-    T,
-    (K extends '*' ? never : K) | ResolveIncludeArgs<F[number]>,
-    IsSingle,
-    SourceField
-  > {
+  ): IsRoot extends true
+    ? BasedQuery2<
+        S,
+        T,
+        (K extends '*' ? never : K) | ResolveIncludeArgs<F[number]>,
+        IsSingle
+      >
+    : QueryBranch<
+        S,
+        T,
+        (K extends '*' ? never : K) | ResolveIncludeArgs<F[number]>,
+        IsSingle,
+        SourceField,
+        IsRoot
+      > {
     for (const prop of props) {
       let target = this.ast
       if (typeof prop === 'function') {
-        const { ast } = (prop as any)((field: any) => new BasedQuery2(field))
+        const { ast } = (prop as any)((field: any) => new QueryBranch(field))
         target.props ??= {}
         target.props[ast.type] = ast
       } else {
@@ -60,13 +59,41 @@ export class BasedQuery2<
     }
     return this as any
   }
+
+  filter(...args: any[]): this {
+    return this
+  }
+}
+
+export class BasedQuery2<
+  S extends { types: any } = { types: any },
+  T extends keyof S['types'] = any,
+  K extends
+    | keyof ResolvedProps<S['types'], T>
+    | '*'
+    | '**'
+    | { field: any; select: any } = '*',
+  IsSingle extends boolean = false,
+> extends QueryBranch<S, T, K, IsSingle, undefined, true> {
+  constructor(type: T, target?: number) {
+    super({})
+    this.ast.type = type as string
+    this.ast.target = target
+  }
+  async get(): Promise<
+    IsSingle extends true
+      ? PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>
+      : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
+  > {
+    return [] as any
+  }
 }
 
 type SelectFn<S extends { types: any }, T extends keyof S['types']> = <
   P extends keyof ResolvedProps<S['types'], T>,
 >(
   field: P,
-) => BasedQuery2<
+) => QueryBranch<
   S,
   ResolvedProps<S['types'], T>[P] extends { ref: infer R extends string }
     ? R
@@ -82,6 +109,13 @@ type SelectFn<S extends { types: any }, T extends keyof S['types']> = <
 
 export type ResolveIncludeArgs<T> = T extends (
   q: any,
-) => BasedQuery2<infer S, infer T, infer K, infer Single, infer SourceField>
+) => QueryBranch<
+  infer S,
+  infer T,
+  infer K,
+  infer Single,
+  infer SourceField,
+  any
+>
   ? { field: SourceField; select: K }
   : T

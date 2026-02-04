@@ -107,8 +107,9 @@ export const string = class String extends BasePropDef {
     validateMaxBytes(size, this.schema, this.path)
     buf.pushUint8(size)
     buf.pushString(value)
-    if (size < this.size) {
-      buf.fill(0, buf.length, buf.length + this.size - size)
+    const padEnd = this.size - size - 1
+    if (padEnd) {
+      buf.fill(0, buf.length, buf.length + padEnd)
     }
   }
 

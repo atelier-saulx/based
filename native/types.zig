@@ -124,8 +124,9 @@ pub const ModifyIncrement = enum(u8) {
 pub const ModifyMainHeader = packed struct {
     id: u8,
     type: PropType,
-    start: u16,
     increment: ModifyIncrement,
+    size: u8,
+    start: u16,
 };
 
 pub const ModifyPropHeader = packed struct {

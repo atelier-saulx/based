@@ -191,3 +191,65 @@ await test('modify string on edge', async (t) => {
     .toObject()
   deepEqual(res6.toThing?.$edgeName, s6)
 })
+
+await test('modify fixed string', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        name: {
+          type: 'string',
+          max: 16,
+        },
+      },
+    },
+  })
+
+  // Basic string
+  const s1 = 'hello'
+  const id1 = await db.create('thing', {
+    name: s1,
+  })
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    name: s1,
+  })
+
+  // Update to another string
+  const s2 = 'world'
+  await db.update('thing', id1, {
+    name: s2,
+  })
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    name: s2,
+  })
+
+  // String with spaces
+  const s3 = 'foo bar'
+  await db.update('thing', id1, {
+    name: s3,
+  })
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    name: s3,
+  })
+
+  // Max length string
+  const s4 = 'a'.repeat(16)
+  await db.update('thing', id1, {
+    name: s4,
+  })
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    name: s4,
+  })
+
+  // Delete
+  await db.update('thing', id1, {
+    name: null,
+  })
+  deepEqual(await db.query('thing', id1).get(), {
+    id: id1,
+    name: '',
+  })
+})

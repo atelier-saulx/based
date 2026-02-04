@@ -13,7 +13,7 @@ await test('modify - default values basic', async (t) => {
         myEnum: { enum: ['a', 'b'], default: 'a' },
         myJson: { type: 'json', default: { foo: 'bar' } },
         myText: { type: 'text', default: { en: 'Hello' } },
-        myTs: { type: 'timestamp', default: '1000' },
+        myTs: { type: 'timestamp', default: 1000 },
       },
     },
   })

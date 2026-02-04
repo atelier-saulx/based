@@ -72,4 +72,17 @@ await test('upsert', async (t) => {
     email: 'bla@bla.com',
     isNice: false,
   })
+
+  const id5 = await db.create('user', {
+    email: 'newkid@block.com',
+    isNice: true,
+  })
+
+  const res5 = await db.upsert(
+    'user',
+    { email: 'newkid@block.com' },
+    { isNice: false },
+  )
+
+  deepEqual(id5, res5)
 })
