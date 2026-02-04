@@ -13,6 +13,7 @@ export type PropTree = Map<string, PropDef | PropTree>
 
 export type TypeDef = {
   id: number
+  name: string
   main: PropDef[]
   separate: PropDef[]
   props: Map<string, PropDef>

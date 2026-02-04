@@ -69,6 +69,7 @@ const getTypeDef = (schema: SchemaType<true>): TypeDef => {
   const { props } = schema
   const typeDef: TypeDef = {
     id: 0,
+    name: '',
     separate: [],
     props: new Map(),
     main: [],
@@ -116,6 +117,7 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
   let typeId = 1
   for (const [typeName, typeDef] of typeDefs) {
     typeDef.id = typeId++
+    typeDef.name = typeName
     for (const [propPath, def] of typeDef.props) {
       const prop =
         def.schema.type === 'references' ? def.schema.items : def.schema
