@@ -437,10 +437,7 @@ await test('upsert', async (t) => {
   })
   await db.drain()
   await db.save()
-  await db.upsert('person', {
-    alias: 'boss',
-    age: 42,
-  })
+  await db.upsert('person', { alias: 'boss' }, { age: 42 })
   await db.drain()
   await db.save()
 
@@ -588,10 +585,7 @@ await test('simulated periodic save', async (t) => {
   await db.save()
 
   // change a node using an alias
-  db.upsert('person', {
-    alias: 'slim',
-    name: 'Shady',
-  })
+  db.upsert('person', { alias: 'slim' }, { name: 'Shady' })
   await db.drain()
 
   await db.save()
