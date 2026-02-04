@@ -82,26 +82,6 @@ export const string = class String extends BasePropDef {
   }
   declare schema: SchemaString
   override type: PropTypeEnum = PropType.string
-  override validate(value: unknown): asserts value is string {
-    if (typeof value !== 'string') {
-      throw new Error('Invalid type for string ' + this.path.join('.'))
-    }
-    const prop = this.schema
-    if (prop.min !== undefined && value.length < prop.min) {
-      throw new Error(
-        `Length ${value.length} is smaller than min ${prop.min} for ${this.path.join(
-          '.',
-        )}`,
-      )
-    }
-    if (prop.max !== undefined && value.length > prop.max) {
-      throw new Error(
-        `Length ${value.length} is larger than max ${prop.max} for ${this.path.join(
-          '.',
-        )}`,
-      )
-    }
-  }
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
@@ -205,31 +185,47 @@ export const json = class Json extends string {
     op?: ModifyEnum,
     lang: LangCodeEnum = LangCode.none,
   ) {
-    if (value === undefined) {
-      throw new Error('Invalid undefined value for json ' + this.path.join('.'))
-    }
     super.pushValue(buf, JSON.stringify(value), op, lang)
   }
 }
 
 export const binary = class Binary extends BasePropDef {
-  override type = PropType.binary
+  constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
+    super(prop, path, typeDef)
+    if (prop.maxBytes && prop.maxBytes < 61) {
+      this.size = prop.maxBytes + 1
+    }
+    if (this.size) {
+      this.type = PropType.binaryFixed
+      this.pushValue = this.pushFixedValue
+    }
+  }
+  override type: PropTypeEnum = PropType.binary
   declare schema: SchemaBinary
+  override validate(value: unknown): asserts value is Uint8Array {
+    if (!(value instanceof Uint8Array)) {
+      throw new Error('Invalid type for binary ' + this.path.join('.'))
+    }
+    validateMaxBytes(value.byteLength, this.schema, this.path)
+  }
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
   ): asserts value is Uint8Array {
-    if (!(value instanceof Uint8Array)) {
-      throw new Error('Invalid type for binary ' + this.path.join('.'))
-    }
-
-    validateMaxBytes(value.byteLength, this.schema, this.path)
-
+    this.validate(value)
     const crc = native.crc32(value)
     buf.pushUint8(LangCode.none)
     buf.pushUint8(NOT_COMPRESSED)
     buf.set(value, buf.length)
     buf.pushUint32(crc)
+  }
+  pushFixedValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is Uint8Array {
+    this.validate(value)
+    buf.pushUint8(value.byteLength)
+    buf.set(value, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
