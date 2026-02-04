@@ -40,7 +40,7 @@ export class AutoSizedUint8Array {
     initialCapacity: number = 256,
     maxLength: number = 1024 * 1024 * 1024,
     data: Uint8Array = new Uint8Array(
-      new (ArrayBuffer as any)(initialCapacity, {
+      new ArrayBuffer(initialCapacity, {
         maxByteLength: maxLength,
       }),
     ),

@@ -99,7 +99,8 @@ export const string = class String extends BasePropDef {
       const sizePos = buf.reserveUint32()
       const stringPos = buf.length
       const written = buf.pushString(normalized)
-      buf.pushString(normalized)
+      buf.ensure(buf.length + written)
+      buf.data.copyWithin(buf.length, buf.length - written, buf.length)
       const size = native.compress(buf.data, stringPos, written)
       if (size !== 0) {
         buf.writeUint32(written, sizePos)
