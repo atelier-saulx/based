@@ -72,13 +72,13 @@ export class BasedDb extends Emitter {
     return this.client.update.apply(this.client, arguments)
   }
 
-  // upsert: DbClient['upsert'] = function (this: BasedDb) {
-  //   return this.client.upsert.apply(this.client, arguments)
-  // }
+  upsert: DbClient['upsert'] = function (this: BasedDb) {
+    return this.client.upsert.apply(this.client, arguments)
+  }
 
-  // insert: DbClient['insert'] = function (this: BasedDb) {
-  //   return this.client.insert.apply(this.client, arguments)
-  // }
+  insert: DbClient['insert'] = function (this: BasedDb) {
+    return this.client.insert.apply(this.client, arguments)
+  }
 
   delete: DbClient['delete'] = function (this: BasedDb) {
     return this.client.delete.apply(this.client, arguments)
