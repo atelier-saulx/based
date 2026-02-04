@@ -316,7 +316,7 @@ export const parseSchema = <const S extends SchemaIn>(
     // TODO we can remove hash from here after we finish new schema defs (internal schema)
     result.hash = hash(result)
 
-    return result as unknown as ResolveSchema<S>
+    return result as ResolveSchema<S>
   } catch (e) {
     if (tracking) {
       e = Error(`${path.join('.')}: ${inspect(value)} - ${e}`, { cause: e })

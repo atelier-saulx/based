@@ -1,5 +1,5 @@
 import type { QueryAst } from '../../db-query/ast/ast.js'
-import type { InferSchemaOutput, PickOutput, ResolveInclude } from './types.js'
+import type { PickOutput, ResolveInclude } from './types.js'
 import type { ResolvedProps } from '../../schema/index.js'
 
 export class BasedQuery2<
@@ -44,20 +44,19 @@ export class BasedQuery2<
     SourceField
   > {
     for (const prop of props) {
-      if (typeof prop === 'function') {
-        const nestedQuery = (prop as any)(
-          (field: any) => new BasedQuery2(field),
-        )
-        // TODO: Merge nested AST
-        continue
-      }
-      const path = (prop as string).split('.')
       let target = this.ast
-      for (const key of path) {
+      if (typeof prop === 'function') {
+        const { ast } = (prop as any)((field: any) => new BasedQuery2(field))
         target.props ??= {}
-        target = target.props[key] = {}
+        target.props[ast.type] = ast
+      } else {
+        const path = (prop as string).split('.')
+        for (const key of path) {
+          target.props ??= {}
+          target = target.props[key] = {}
+        }
+        target.include = {}
       }
-      target.include = {}
     }
     return this as any
   }

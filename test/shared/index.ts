@@ -44,5 +44,5 @@ export const testDb = async <const S extends SchemaIn>(
   const db = new BasedDb({ path: t.tmp })
   await db.start({ clean: true })
   t.after(() => db.destroy())
-  return db.setSchema(schema) as unknown as Promise<DbClient<ResolveSchema<S>>>
+  return db.setSchema(schema) as unknown as DbClient<ResolveSchema<S>>
 }
