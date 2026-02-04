@@ -28,5 +28,7 @@ await test('query types', async (t) => {
 
   const result = await query.get()
 
-  result[0].otherUsers
+  // result[0].otherUsers
+
+  console.dir(query.ast, { depth: null })
 })

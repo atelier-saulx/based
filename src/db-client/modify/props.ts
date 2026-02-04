@@ -41,6 +41,7 @@ export const serializeProps = (
           id: 0,
           start: prop.start,
           type: prop.type,
+          size: prop.size,
           increment: increment
             ? increment < 0
               ? ModifyIncrement.decrement

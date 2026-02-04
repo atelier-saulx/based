@@ -571,11 +571,12 @@ export type ModifyIncrementEnum = (typeof ModifyIncrement)[keyof typeof ModifyIn
 export type ModifyMainHeader = {
   id: number
   type: PropTypeEnum
-  start: number
   increment: ModifyIncrementEnum
+  size: number
+  start: number
 }
 
-export const ModifyMainHeaderByteSize = 5
+export const ModifyMainHeaderByteSize = 6
 
 export const ModifyMainHeaderAlignOf = 8
 
@@ -588,10 +589,12 @@ export const writeModifyMainHeader = (
   offset += 1
   buf[offset] = Number(header.type)
   offset += 1
-  writeUint16(buf, Number(header.start), offset)
-  offset += 2
   buf[offset] = Number(header.increment)
   offset += 1
+  buf[offset] = Number(header.size)
+  offset += 1
+  writeUint16(buf, Number(header.start), offset)
+  offset += 2
   return offset
 }
 
@@ -602,11 +605,14 @@ export const writeModifyMainHeaderProps = {
   type: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset + 1] = Number(value)
   },
-  start: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, Number(value), offset + 2)
-  },
   increment: (buf: Uint8Array, value: ModifyIncrementEnum, offset: number) => {
-    buf[offset + 4] = Number(value)
+    buf[offset + 2] = Number(value)
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 3] = Number(value)
+  },
+  start: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, Number(value), offset + 4)
   },
 }
 
@@ -617,8 +623,9 @@ export const readModifyMainHeader = (
   const value: ModifyMainHeader = {
     id: buf[offset],
     type: (buf[offset + 1]) as PropTypeEnum,
-    start: readUint16(buf, offset + 2),
-    increment: (buf[offset + 4]) as ModifyIncrementEnum,
+    increment: (buf[offset + 2]) as ModifyIncrementEnum,
+    size: buf[offset + 3],
+    start: readUint16(buf, offset + 4),
   }
   return value
 }
@@ -626,8 +633,9 @@ export const readModifyMainHeader = (
 export const readModifyMainHeaderProps = {
     id: (buf: Uint8Array, offset: number) => buf[offset],
     type: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as PropTypeEnum,
-    start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 2),
-    increment: (buf: Uint8Array, offset: number) => (buf[offset + 4]) as ModifyIncrementEnum,
+    increment: (buf: Uint8Array, offset: number) => (buf[offset + 2]) as ModifyIncrementEnum,
+    size: (buf: Uint8Array, offset: number) => buf[offset + 3],
+    start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 4),
 }
 
 export const createModifyMainHeader = (header: ModifyMainHeader): Uint8Array => {
@@ -643,8 +651,9 @@ export const pushModifyMainHeader = (
   const index = buf.length
   buf.pushUint8(Number(header.id))
   buf.pushUint8(Number(header.type))
-  buf.pushUint16(Number(header.start))
   buf.pushUint8(Number(header.increment))
+  buf.pushUint8(Number(header.size))
+  buf.pushUint16(Number(header.start))
   return index
 }
 

@@ -43,58 +43,75 @@ const validateMaxBytes = (
   }
 }
 
+function validateString(
+  value: unknown,
+  prop: { min?: number; max?: number },
+  path: string[],
+): asserts value is string {
+  if (typeof value !== 'string') {
+    throw new Error('Invalid type for string ' + path.join('.'))
+  }
+  if (prop.min !== undefined && value.length < prop.min) {
+    throw new Error(
+      `Length ${value.length} is smaller than min ${prop.min} for ${path.join(
+        '.',
+      )}`,
+    )
+  }
+  if (prop.max !== undefined && value.length > prop.max) {
+    throw new Error(
+      `Length ${value.length} is larger than max ${prop.max} for ${path.join(
+        '.',
+      )}`,
+    )
+  }
+}
+
 export const string = class String extends BasePropDef {
   constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
     super(prop, path, typeDef)
-    // TODO!
-    // if (prop.maxBytes && prop.maxBytes < 61) {
-    //   this.size = prop.maxBytes + 1
-    // } else if (prop.max && prop.max < 31) {
-    //   this.size = prop.max * 2 + 1
-    // }
-    // if (this.size) {
-    //   this.type = PropType.stringFixed
-    //   this.pushValue = this.pushFixedValue as any
-    // }
+    if (prop.maxBytes && prop.maxBytes < 61) {
+      this.size = prop.maxBytes + 1
+    } else if (prop.max && prop.max < 31) {
+      this.size = prop.max * 2 + 1
+    }
+    if (this.size) {
+      this.type = PropType.stringFixed
+      this.pushValue = this.pushFixedValue
+    }
   }
   declare schema: SchemaString
   override type: PropTypeEnum = PropType.string
   override pushValue(
     buf: AutoSizedUint8Array,
-    val: unknown,
+    value: unknown,
     _op?: ModifyEnum,
     lang: LangCodeEnum = LangCode.none,
-  ): asserts val is string {
-    if (typeof val !== 'string') {
-      throw new Error('Invalid type for string ' + this.path.join('.'))
-    }
-
-    const prop = this.schema
-    if (prop.min !== undefined && val.length < prop.min) {
-      throw new Error(
-        `Length ${val.length} is smaller than min ${prop.min} for ${this.path.join(
-          '.',
-        )}`,
-      )
-    }
-    if (prop.max !== undefined && val.length > prop.max) {
-      throw new Error(
-        `Length ${val.length} is larger than max ${prop.max} for ${this.path.join(
-          '.',
-        )}`,
-      )
-    }
-
-    const normalized = val.normalize('NFKD')
+  ): asserts value is string {
+    validateString(value, this.schema, this.path)
+    const normalized = value.normalize('NFKD')
     buf.pushUint8(lang)
     buf.pushUint8(NOT_COMPRESSED)
     const written = buf.pushString(normalized)
-    validateMaxBytes(written, prop, this.path)
+    validateMaxBytes(written, this.schema, this.path)
     const crc = native.crc32(buf.subarray(buf.length - written))
     buf.pushUint32(crc)
   }
 
-  // pushFixedValue(buf: AutoSizedUint8Array, val: string, lang: LangCodeEnum) {}
+  pushFixedValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is string {
+    validateString(value, this.schema, this.path)
+    const size = native.stringByteLength(value)
+    validateMaxBytes(size, this.schema, this.path)
+    buf.pushUint8(size)
+    buf.pushString(value)
+    const padEnd = this.size - size - 1
+    if (padEnd) {
+      buf.fill(0, buf.length, buf.length + padEnd)
+    }
+  }
 
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     const index = pushSelvaSchemaString(buf, {
@@ -169,31 +186,47 @@ export const json = class Json extends string {
     op?: ModifyEnum,
     lang: LangCodeEnum = LangCode.none,
   ) {
-    if (value === undefined) {
-      throw new Error('Invalid undefined value for json ' + this.path.join('.'))
-    }
     super.pushValue(buf, JSON.stringify(value), op, lang)
   }
 }
 
 export const binary = class Binary extends BasePropDef {
-  override type = PropType.binary
+  constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
+    super(prop, path, typeDef)
+    if (prop.maxBytes && prop.maxBytes < 61) {
+      this.size = prop.maxBytes + 1
+    }
+    if (this.size) {
+      this.type = PropType.binaryFixed
+      this.pushValue = this.pushFixedValue
+    }
+  }
+  override type: PropTypeEnum = PropType.binary
   declare schema: SchemaBinary
+  override validate(value: unknown): asserts value is Uint8Array {
+    if (!(value instanceof Uint8Array)) {
+      throw new Error('Invalid type for binary ' + this.path.join('.'))
+    }
+    validateMaxBytes(value.byteLength, this.schema, this.path)
+  }
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
   ): asserts value is Uint8Array {
-    if (!(value instanceof Uint8Array)) {
-      throw new Error('Invalid type for binary ' + this.path.join('.'))
-    }
-
-    validateMaxBytes(value.byteLength, this.schema, this.path)
-
+    this.validate(value)
     const crc = native.crc32(value)
     buf.pushUint8(LangCode.none)
     buf.pushUint8(NOT_COMPRESSED)
     buf.set(value, buf.length)
     buf.pushUint32(crc)
+  }
+  pushFixedValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+  ): asserts value is Uint8Array {
+    this.validate(value)
+    buf.pushUint8(value.byteLength)
+    buf.set(value, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
