@@ -64,33 +64,38 @@ export const string = class String extends BasePropDef {
     value: unknown,
     _op?: ModifyEnum,
     lang: LangCodeEnum = LangCode.none,
-  ): asserts value is string {
-    validateString(value, this.schema, this.path)
-    const normalized = value.normalize('NFKD')
-    buf.pushUint8(lang)
-    if (this.deflate && normalized.length > 200) {
-      buf.pushUint8(COMPRESSED)
-      const sizePos = buf.reserveUint32()
-      const stringPos = buf.length
-      const written = buf.pushString(normalized)
-      buf.ensure(buf.length + written)
-      buf.data.copyWithin(buf.length, buf.length - written, buf.length)
-      const size = native.compress(buf.data, stringPos, written)
-      if (size !== 0) {
-        buf.writeUint32(written, sizePos)
-        buf.length = stringPos + size
-        validateMaxBytes(size, this.schema, this.path)
-        const crc = native.crc32(buf.subarray(stringPos))
-        buf.pushUint32(crc)
-        return
+  ): asserts value is string | Uint8Array {
+    if (value instanceof Uint8Array) {
+      buf.pushUint32(value.byteLength)
+      buf.set(value, buf.length)
+    } else {
+      validateString(value, this.schema, this.path)
+      const normalized = value.normalize('NFKD')
+      buf.pushUint8(lang)
+      if (this.deflate && normalized.length > 200) {
+        buf.pushUint8(COMPRESSED)
+        const sizePos = buf.reserveUint32()
+        const stringPos = buf.length
+        const written = buf.pushString(normalized)
+        buf.ensure(buf.length + written)
+        buf.data.copyWithin(buf.length, buf.length - written, buf.length)
+        const size = native.compress(buf.data, stringPos, written)
+        if (size !== 0) {
+          buf.writeUint32(written, sizePos)
+          buf.length = stringPos + size
+          validateMaxBytes(size, this.schema, this.path)
+          const crc = native.crc32(buf.subarray(stringPos))
+          buf.pushUint32(crc)
+          return
+        }
+        buf.length = sizePos - 1
       }
-      buf.length = sizePos - 1
+      buf.pushUint8(NOT_COMPRESSED)
+      const written = buf.pushString(normalized)
+      validateMaxBytes(written, this.schema, this.path)
+      const crc = native.crc32(buf.subarray(buf.length - written))
+      buf.pushUint32(crc)
     }
-    buf.pushUint8(NOT_COMPRESSED)
-    const written = buf.pushString(normalized)
-    validateMaxBytes(written, this.schema, this.path)
-    const crc = native.crc32(buf.subarray(buf.length - written))
-    buf.pushUint32(crc)
   }
 
   pushFixedValue(
