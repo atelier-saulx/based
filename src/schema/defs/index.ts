@@ -7,7 +7,11 @@ import type {
 import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import * as references from './props/references.js'
 import * as fixed from './props/fixed.js'
-import * as vars from './props/separate.js'
+import * as alias from './props/alias.js'
+import * as binary from './props/binary.js'
+import * as cardinality from './props/cardinality.js'
+import * as strings from './props/strings.js'
+import * as vector from './props/vector.js'
 
 export type PropTree = Map<string, PropDef | PropTree>
 
@@ -66,6 +70,10 @@ export const defs: Record<
 > = {
   ...references,
   ...fixed,
-  ...vars,
+  ...alias,
+  ...binary,
+  ...cardinality,
+  ...strings,
+  ...vector,
   enum: fixed.enum_,
 }

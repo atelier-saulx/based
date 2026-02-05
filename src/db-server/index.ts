@@ -203,6 +203,7 @@ export class DbServer extends DbShared {
     schema: SchemaOut,
     transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']> {
+    console.log('????')
     if (this.stopped || !this.dbCtxExternal) {
       throw new Error('Db is stopped')
     }
@@ -220,10 +221,13 @@ export class DbServer extends DbShared {
       await migrate(this, this.schema, schema, transformFns)
       return this.schema.hash
     }
-
+    console.log('????1')
     setSchemaOnServer(this, schema)
+    console.log('????2')
     await setNativeSchema(this, schema)
+    console.log('????3')
     await writeSchemaFile(this, schema)
+    console.log('????4')
 
     process.nextTick(() => {
       this.emit('schema', this.schema!)

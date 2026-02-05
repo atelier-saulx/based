@@ -76,17 +76,21 @@ export async function createSelvaType(
   msg[4] = OpType.createType
   msg.set(schema, 5)
   return new Promise((resolve, reject) => {
-    server.addOpOnceListener(OpType.createType, typeDef.id, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
-      if (err) {
-        const errMsg = `Create type '${typeDef.name}' (${typeDef.id}) failed: ${native.selvaStrerror(err)}`
-        server.emit('error', errMsg)
-        reject(new Error(errMsg))
-      } else {
-        resolve()
-      }
-      server.keepRefAliveTillThisPoint(msg)
-    })
+    server.addOpOnceListener(
+      OpType.createType,
+      typeDef.id,
+      (buf: Uint8Array) => {
+        const err = readUint32(buf, 0)
+        if (err) {
+          const errMsg = `Create type '${typeDef.name}' (${typeDef.id}) failed: ${native.selvaStrerror(err)}`
+          server.emit('error', errMsg)
+          reject(new Error(errMsg))
+        } else {
+          resolve()
+        }
+        server.keepRefAliveTillThisPoint(msg)
+      },
+    )
     native.modify(msg, server.dbCtxExternal)
   })
 }
@@ -109,7 +113,7 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
   let maxTypeId = 0
   await Promise.all(
     typeDefs.values().map((typeDef) => {
-      const buf = new AutoSizedUint8Array(4, 65536)
+      const buf = new AutoSizedUint8Array()
       maxTypeId = Math.max(maxTypeId, typeDef.id)
       let nrFixedFields = 1
       let nrVirtualFields = 0

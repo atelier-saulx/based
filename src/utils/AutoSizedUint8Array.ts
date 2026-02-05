@@ -30,7 +30,7 @@ const delegateMethods = [
 ] as const
 
 export class AutoSizedUint8Array {
-  static readonly ERR_OVERFLOW = 1
+  static readonly ERR_OVERFLOW = Error('ERR_OVERFLOW')
 
   data: Uint8Array
   length: number
