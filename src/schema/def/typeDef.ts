@@ -127,7 +127,7 @@ export const updateTypeDefs = (schema: SchemaOut) => {
     }
   }
 
-  // A hack to sync the prop ids:
+  // A hack to sync the type and prop ids:
   const newDefs = getTypeDefs(schema)
   for (const [type, typeDef] of newDefs) {
     const oldTypeDef = schemaTypesParsed[type]
