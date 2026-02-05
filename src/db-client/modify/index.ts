@@ -134,7 +134,6 @@ export class BasedModify<S extends (...args: any[]) => any = ModifySerializer>
       this._id = readUint32(this._batch.result, this._index! * 5)
       const errCode = this._batch.result[this._index! * 5 + 4]
       if (errCode) this._error = new Error('ModifyError: ' + errCode)
-      this._batch = undefined
     }
   }
   get id(): number | undefined {
