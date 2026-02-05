@@ -1,5 +1,5 @@
 import { BasedDb } from '../src/index.js'
-import { throws } from './shared/assert.js'
+import { deepEqual, throws } from './shared/assert.js'
 import test from './shared/test.js'
 
 await test('insert only => no delete', async (t) => {
@@ -24,6 +24,7 @@ await test('insert only => no delete', async (t) => {
   const a = await db.create('audit', { v: 100 })
   await db.create('audit', { v: 100 })
   await throws(() => db.delete('audit', a))
+  deepEqual(await db.query('audit', a).get(), { id: 1, v: 100 })
 })
 
 await test('colvec requires insertOnly', async (t) => {
