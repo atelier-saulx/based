@@ -17,10 +17,6 @@ await test('query types', async (t) => {
     },
   })
 
-  await db.create('user', {
-    isNice: true,
-  })
-
   const query = db
     .query2('user')
     .include('isNice', 'name', 'otherUsers.name')
@@ -28,10 +24,6 @@ await test('query types', async (t) => {
       select('otherUsers').include('name').filter('name', '=', 'youzi'),
     )
     .filter('otherUsers.name', '=', 'youzi')
-
-  const result = await query.get()
-
-  // result[0].otherUsers
 
   console.dir(query.ast, { depth: null })
 })
