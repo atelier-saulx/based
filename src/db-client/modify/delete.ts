@@ -13,6 +13,9 @@ export const serializeDelete = <
   buf: AutoSizedUint8Array,
 ) => {
   const typeDef = getTypeDef(schema, type)
+  if (typeDef.schema.insertOnly) {
+    throw new Error('This type is insertOnly')
+  }
   const header = assignTarget(item, {
     op: Modify.delete,
     type: typeDef.id,
