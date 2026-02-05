@@ -29,7 +29,7 @@ export const vector = class Vector extends BasePropDef {
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaMicroBuffer(buf, {
-      type: PropTypeSelva.colVec,
+      type: PropTypeSelva.microBuffer,
       len: this.vectorSize,
       hasDefault: 0, // TODO default
     })
