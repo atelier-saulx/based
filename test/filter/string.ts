@@ -1,10 +1,28 @@
-import { BasedDb, stringCompress as compress } from '../../src/index.js'
+import { BasedDb } from '../../src/index.js'
 import { ENCODER } from '../../src/utils/uint8.js'
 import test from '../shared/test.js'
 import { equal, deepEqual } from '../shared/assert.js'
 import { italy, sentence, readBible } from '../shared/examples.js'
 import { decompress } from '../../src/protocol/index.js'
+import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
+import { defs } from '../../src/schema/defs/index.js'
+import { Modify } from '../../src/zigTsExports.js'
 
+const buf = new AutoSizedUint8Array()
+const s = new defs.string({ type: 'string' }, [], {
+  id: 0,
+  name: '',
+  main: [],
+  separate: [],
+  props: new Map(),
+  tree: new Map(),
+  schema: { props: {} },
+})
+const compress = (str: string) => {
+  buf.length = 0
+  s.pushValue(buf, str, Modify.create)
+  return buf.view.slice()
+}
 const bible = readBible()
 
 const capitals =
@@ -43,7 +61,6 @@ await test('variable size (string/binary)', async (t) => {
   equal(decompress(compressedSentence), sentence, 'compress / decompress api')
   const compressedItaly = compress(italy)
   equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
-
   for (let i = 0; i < 1000; i++) {
     const str = 'en'
     db.create('article', {

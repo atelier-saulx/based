@@ -1,3 +1,4 @@
+import { ENCODER } from '../../../src/utils/index.js'
 import { deepEqual } from '../../shared/assert.js'
 import { testDb } from '../../shared/index.js'
 import test from '../../shared/test.js'
@@ -49,9 +50,9 @@ await test('mixed props', async (t) => {
       r: 'a',
       q: {
         id: 1,
-        age: 33,
         name: 'T',
         email: 't@t.com',
+        age: 33,
         story: 'hello',
         alias: 't',
       },
@@ -61,9 +62,9 @@ await test('mixed props', async (t) => {
   deepEqual(user, [
     {
       id: 1,
-      age: 33,
       name: 'T',
       email: 't@t.com',
+      age: 33,
       story: 'hello',
       alias: 't',
       test: [{ id: 1, r: 'a' }],

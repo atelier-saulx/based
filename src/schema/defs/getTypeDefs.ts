@@ -44,7 +44,8 @@ export const propIndexOffset = (prop: PropDef): number => {
   }
 }
 
-const separateSorter = (a, b) => propIndexOffset(a) - propIndexOffset(b)
+const separateSorter = (a: PropDef, b: PropDef) =>
+  propIndexOffset(a) - propIndexOffset(b)
 
 const addPropDef = (
   prop: SchemaProp<true>,

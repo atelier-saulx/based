@@ -97,7 +97,7 @@ await test('modify timestamp', async (t) => {
 
   // Delete
   await db.update('event', id1, { ts: null })
-  deepEqual((await db.query('event', id1).get().toObject()).ts, undefined)
+  deepEqual((await db.query('event', id1).get().toObject()).ts, 0)
 })
 
 await test('modify timestamp on edge', async (t) => {

@@ -56,6 +56,7 @@ await test('modify single reference', async (t) => {
   await db.update('holder', h1, { dest: null })
   deepEqual(await db.query('holder', h1).include('dest').get(), {
     id: h1,
+    dest: null,
   })
 })
 

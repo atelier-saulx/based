@@ -30,6 +30,7 @@ import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import type { SchemaType } from '../schema/type.js'
 import { PropType } from '../../zigTsExports.js'
 import type { SchemaLocales } from '../schema/locales.js'
+import { getTypeDefs } from '../defs/getTypeDefs.js'
 
 export const updateTypeDefs = (schema: SchemaOut) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
@@ -123,6 +124,16 @@ export const updateTypeDefs = (schema: SchemaOut) => {
           }
         }
       }
+    }
+  }
+
+  // A hack to sync the prop ids:
+  const newDefs = getTypeDefs(schema)
+  for (const [type, typeDef] of newDefs) {
+    const oldTypeDef = schemaTypesParsed[type]
+    oldTypeDef.id = typeDef.id
+    for (const path in oldTypeDef.props) {
+      oldTypeDef.props[path].prop = typeDef.props.get(path)!.id
     }
   }
 
