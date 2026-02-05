@@ -17,17 +17,24 @@ await test('locales', async (t) => {
     locales[key] = {}
   }
 
+  const thing = {
+    text: 'text',
+    string: 'string',
+  }
+
+  let j = 200
+  while (j--) {
+    thing['text' + j] = 'text'
+  }
+
   await db.setSchema({
     locales,
     types: {
-      thing: {
-        text: 'text',
-        string: 'string',
-      },
+      // @ts-ignore
+      thing,
     },
   })
-
-  let i = 1000
+  let i = 10
   while (i--) {
     const payload: any = {
       string: 'xxx',
@@ -37,14 +44,10 @@ await test('locales', async (t) => {
     for (const key of langs) {
       payload.text[key] = key
     }
-
     db.create('thing', payload)
   }
-
   await db.drain()
-
   const things = await db.query('thing').get().toObject()
-
   for (const thing of things) {
     const payload: any = {
       string: null,
@@ -57,9 +60,7 @@ await test('locales', async (t) => {
 
     db.update('thing', thing.id, payload)
   }
-
   await db.drain()
-
   const updatedThings = await db.query('thing').get().toObject()
 
   for (const thing of updatedThings) {

@@ -8,7 +8,7 @@ import {
   writeMainCursor,
   writeTypeCursor,
 } from '../cursor.js'
-import { getByPath, writeUint16 } from '@based/utils'
+import { getByPath, writeUint16, writeUint32 } from '@based/utils'
 import { writeMainValue } from '../props/main.js'
 import { Tmp } from '../Tmp.js'
 import { DbClient } from '../../../index.js'
@@ -98,7 +98,7 @@ const writeSortableText = (ctx: Ctx) => {
     reserve(ctx, 3)
     writeU8(ctx, ADD_EMPTY_SORT_TEXT)
     const index = ctx.index
-    ctx.index += 2
+    ctx.index += 4
     const start = ctx.index
     const amount = ctx.schema.localeSize + 1
     const len = amount * ctx.schema.separateTextSort.props.length
@@ -120,7 +120,7 @@ const writeSortableText = (ctx: Ctx) => {
         writeU8(ctx, lang)
       }
     }
-    writeUint16(ctx.array, ctx.index - start, index)
+    writeUint32(ctx.array, ctx.index - start, index)
     if (ctx.sortText) {
       buf.set(ctx.schema.separateTextSort.buffer, 0)
     }

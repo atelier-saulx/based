@@ -29,12 +29,13 @@ pub fn addEmptyToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
 }
 
 pub fn addEmptyTextToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
-    const len = read(u16, data, 0);
+    const len = read(u32, data, 0);
+    const end = len + 4;
     if (ctx.typeSortIndex == null) {
-        return len + 2;
+        return end;
     }
-    var i: usize = 2;
-    while (i < len) {
+    var i: usize = 4;
+    while (i < end) {
         const field = data[i];
         i += 1;
         const langs = data[i] + i + 1;
@@ -54,5 +55,5 @@ pub fn addEmptyTextToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
         }
     }
 
-    return len + 2;
+    return end;
 }
