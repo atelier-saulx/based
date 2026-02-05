@@ -131,9 +131,10 @@ export const updateTypeDefs = (schema: SchemaOut) => {
   const newDefs = getTypeDefs(schema)
   for (const [type, typeDef] of newDefs) {
     const oldTypeDef = schemaTypesParsed[type]
-    oldTypeDef.id = typeDef.id
-    for (const path in oldTypeDef.props) {
-      oldTypeDef.props[path].prop = typeDef.props.get(path)!.id
+    if (oldTypeDef) {
+      for (const path in oldTypeDef.props) {
+        oldTypeDef.props[path].prop = typeDef.props.get(path)!.id
+      }
     }
   }
 
