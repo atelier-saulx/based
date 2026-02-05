@@ -11,11 +11,24 @@ import {
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
+import { isTypedArray } from 'util/types'
+
+const baseTypeSize: { [K in SchemaVector['baseType']]: number } = {
+  number: 8,
+  int8: 1,
+  uint8: 1,
+  int16: 2,
+  uint16: 2,
+  int32: 4,
+  uint32: 4,
+  float32: 8,
+  float64: 8,
+}
 
 export const vector = class Vector extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
     super(schema, path, typeDef)
-    this.vectorSize = schema.size * 4
+    this.vectorSize = schema.size * baseTypeSize[schema.baseType]
   }
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
@@ -25,7 +38,14 @@ export const vector = class Vector extends BasePropDef {
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is any {
-    throw new Error('Serialize vector not implemented')
+    if (!isTypedArray(value)) {
+      throw new Error('Not a typed array')
+    }
+    const v = new Uint8Array(value.buffer).subarray(
+      0,
+      Math.min(value.byteLength, this.vectorSize),
+    )
+    buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaMicroBuffer(buf, {
@@ -36,14 +56,14 @@ export const vector = class Vector extends BasePropDef {
   }
 }
 
-// This will become similair to Main BUFFER
+// This will become similar to Main BUFFER
 // and it can use it if there is an option used like "appendOnly: true" on the type
 // then we can switch to colvec for all main buffer props
 // if there are no var props we can iterate straight trough the colvec list using another iterator
 export const colvec = class ColVec extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
     super(schema, path, typeDef)
-    this.compSize = getByteSize(schema.baseType)
+    this.compSize = baseTypeSize[schema.baseType]
     this.vecLen = schema.size * this.compSize
   }
   compSize: number
@@ -55,7 +75,14 @@ export const colvec = class ColVec extends BasePropDef {
     _op: ModifyEnum,
     _lang: LangCodeEnum,
   ): asserts value is any {
-    throw new Error('Serialize colvec not implemented')
+    if (!isTypedArray(value)) {
+      throw new Error('Not a typed array')
+    }
+    const v = new Uint8Array(value.buffer).subarray(
+      0,
+      Math.min(value.byteLength, this.vecLen),
+    )
+    buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaColvec(buf, {
@@ -64,22 +91,5 @@ export const colvec = class ColVec extends BasePropDef {
       compSize: this.compSize,
       hasDefault: 0,
     })
-  }
-}
-
-function getByteSize(str?: string) {
-  switch (str) {
-    case 'int8':
-    case 'uint8':
-      return 1
-    case 'int16':
-    case 'uint16':
-      return 2
-    case 'int32':
-    case 'uint32':
-    case 'float32':
-      return 4
-    default:
-      return 8
   }
 }
