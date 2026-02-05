@@ -17,13 +17,25 @@ await test('query types', async (t) => {
     },
   })
 
-  const query = db
-    .query2('user')
-    .include('isNice', 'name', 'otherUsers.name')
-    .include((select) =>
-      select('otherUsers').include('name').filter('name', '=', 'youzi'),
-    )
-    .filter('otherUsers.name', '=', 'youzi')
+  db.create('user', {
+    isNice: true,
+  })
+
+  const query = db.query2('user').include('isNice', 'name', 'otherUsers.name')
+  // .include((select) =>
+  //   select('otherUsers').include('name').filter('name', '=', 'youzi'),
+  // )
+  // .filter('otherUsers.name', '=', 'youzi')
 
   console.dir(query.ast, { depth: null })
+  const proxy = await query.get()
+  console.log('-----------')
+  proxy
+  console.log('-----------1')
+  // proxy.forEach((a, b, c) => console.log('WAZZUP', { a, b, c }))
+  for (const i of proxy) {
+    console.log({ i })
+  }
+
+  //
 })

@@ -2,14 +2,17 @@ import type { FilterLeaf, QueryAst } from '../../db-query/ast/ast.js'
 import type {
   PickOutput,
   ResolveInclude,
-  InferProp,
   Path,
-  FilterOpts, // FilterOpts
+  FilterOpts,
   Operator,
   ResolveDotPath,
   InferPathType,
 } from './types.js'
-import type { ResolvedProps } from '../../schema/index.js'
+import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
+import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
+import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import type { DbClient } from '../../sdk.js'
+import { proxyResult } from './result.js'
 
 class QueryBranch<
   S extends { types: any } = { types: any },
@@ -105,17 +108,29 @@ export class BasedQuery2<
     | string = '*',
   IsSingle extends boolean = false,
 > extends QueryBranch<S, T, K, IsSingle, undefined, true> {
-  constructor(type: T, target?: number) {
+  constructor(db: DbClient, type: T, target?: number) {
     super({})
     this.ast.type = type as string
     this.ast.target = target
+    this.db = db
   }
+  db: DbClient
   async get(): Promise<
     IsSingle extends true
       ? PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>
       : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
   > {
-    return [] as any
+    if (!this.db.schema) {
+      await this.db.once('schema')
+    }
+    await this.db.isModified()
+    const ctx = astToQueryCtx(
+      this.db.schema!,
+      this.ast,
+      new AutoSizedUint8Array(1000),
+    )
+    const result = await this.db.hooks.getQueryBuf(ctx.query)
+    return proxyResult(result, ctx.readSchema) as any
   }
 }
 
