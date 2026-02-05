@@ -11,10 +11,10 @@ import {
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
-import {isTypedArray} from 'util/types'
+import { isTypedArray } from 'util/types'
 
 const baseTypeSize: { [K in SchemaVector['baseType']]: number } = {
-  'number': 8,
+  number: 8,
   int8: 1,
   uint8: 1,
   int16: 2,
@@ -41,7 +41,10 @@ export const vector = class Vector extends BasePropDef {
     if (!isTypedArray(value)) {
       throw new Error('Not a typed array')
     }
-    const v = new Uint8Array(value.buffer).subarray(0, Math.min(value.byteLength, this.vectorSize))
+    const v = new Uint8Array(value.buffer).subarray(
+      0,
+      Math.min(value.byteLength, this.vectorSize),
+    )
     buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
@@ -75,7 +78,10 @@ export const colvec = class ColVec extends BasePropDef {
     if (!isTypedArray(value)) {
       throw new Error('Not a typed array')
     }
-    const v = new Uint8Array(value.buffer).subarray(0, Math.min(value.byteLength, this.vecLen))
+    const v = new Uint8Array(value.buffer).subarray(
+      0,
+      Math.min(value.byteLength, this.vecLen),
+    )
     buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
