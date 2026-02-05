@@ -1,3 +1,4 @@
+import { $buffer } from '../../src/db-client/query2/result.js'
 import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
@@ -36,6 +37,8 @@ await test('query types', async (t) => {
   for (const i of proxy) {
     console.log({ i })
   }
+
+  console.log('-->', proxy[$buffer])
 
   //
 })
