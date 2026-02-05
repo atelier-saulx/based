@@ -14,7 +14,7 @@ export type SchemaVector = Base & {
    * Base type of the vector.
    * float64 == number
    */
-  baseType?: (typeof vectorBaseTypes)[number]
+  baseType: (typeof vectorBaseTypes)[number]
 }
 
 export const parseVector = (def: Record<string, unknown>): SchemaVector => {
