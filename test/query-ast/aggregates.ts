@@ -72,7 +72,7 @@ await test('basic', async (t) => {
     'basic accum, no groupby, no refs',
   )
 
-  console.dir(obj, { depth: 10 })
+  // console.dir(obj, { depth: 10 })
 
   console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
 
@@ -81,4 +81,79 @@ await test('basic', async (t) => {
   // const r = await db.query('user').count().sum('age').get()
   // r.debug()
   // r.inspect(10)
+})
+
+await test('group by', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  const client = await db.setSchema({
+    types: {
+      trip: {
+        pickup: 'timestamp',
+        dropoff: 'timestamp',
+        distance: 'number',
+        vendorIduint8: 'uint8',
+        vendorIdint8: 'int8',
+        vendorIduint16: 'uint16',
+        vendorIdint16: 'int16',
+        vendorIduint32: 'int32',
+        vendorIdint32: 'int32',
+        vendorIdnumber: 'number',
+        vendorName: 'string',
+      },
+    },
+  })
+
+  db.create('trip', {
+    vendorIduint8: 13,
+    vendorIdint8: 13,
+    vendorIduint16: 813,
+    vendorIdint16: 813,
+    vendorIduint32: 813,
+    vendorIdint32: 813,
+    vendorIdnumber: 813.813,
+    vendorName: 'Derp taxis',
+    pickup: new Date('11/12/2024 11:00'),
+    dropoff: new Date('11/12/2024 11:10'),
+    distance: 513.44,
+  })
+
+  await db.drain()
+  const ast: QueryAst = {
+    type: 'trip',
+    sum: {
+      props: ['distance'],
+    },
+    // count: {},
+    groupBy: {
+      prop: 'vendorName',
+      // step?: number | IntervalString
+      // timeZone?: string
+      // timeFormat?: Intl.DateTimeFormat
+    },
+  }
+  // const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
+  // const result = await db.server.getQueryBuf(ctx.query)
+  // debugBuffer(result)
+
+  // const readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
+
+  // const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+
+  // console.dir(obj, { depth: 10 })
+
+  console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
+
+  const r = await db
+    .query('trip')
+    // .count()
+    .sum('distance')
+    .groupBy('vendorName')
+    .get()
+  r.debug()
+  r.inspect(10)
 })

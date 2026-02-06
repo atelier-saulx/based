@@ -6,13 +6,21 @@ import {
   AggHeaderByteSize,
   createAggHeader,
   createAggProp,
+  createGroupByKeyProp,
+  GroupByKeyPropByteSize,
   AggPropByteSize,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
-import { aggregateTypeMap } from '../../db-client/query/aggregates/types.js'
+import {
+  aggregateTypeMap,
+  IntervalString,
+  Interval,
+} from '../../db-client/query/aggregates/types.js'
 import { readPropDef } from './readSchema.js'
-import { truncate } from 'node:fs'
+import { getTimeZoneOffsetInMinutes } from '../../db-client/query/aggregates/aggregates.js'
+
+type Sizes = { result: number; accumulator: number }
 
 export const pushAggregatesQuery = (
   ast: QueryAst,
@@ -31,12 +39,12 @@ export const pushAggregatesQuery = (
     filterSize = filter(ast.filter, ctx, typeDef)
   }
 
-  const sizes = {
+  let sizes: Sizes = {
     result: 0,
     accumulator: 0,
   }
 
-  const hasGroupBy = false // TODO : later
+  const hasGroupBy = pushGroupBy(ast, ctx, typeDef, sizes)
 
   pushAggregates(ast, ctx, typeDef, sizes)
 
@@ -69,7 +77,7 @@ const buildAggregateHeader = (
   typeDef: TypeDef,
   filterSize: number,
   hasGroupBy: boolean,
-  sizes: { result: number; accumulator: number },
+  sizes: Sizes,
 ) => {
   const rangeStart = ast.range?.start || 0
 
@@ -216,4 +224,55 @@ const checkSamplingMode = (ast: QueryAst): boolean => {
   )
     return false
   else return true
+}
+
+const pushGroupBy = (
+  ast: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  sizes: Sizes,
+): boolean => {
+  if (!ast.groupBy) return false
+
+  const { prop: propName, step, timeZone } = ast.groupBy
+  const propDef = typeDef.props.get(propName)
+
+  if (!propDef) {
+    throw new Error(`Group By property '${propName}' not found in AST.`)
+    // to put the equivalent to aggregationFieldDoesNotExist to handle the error
+  }
+
+  const { stepType, stepRange } = step
+    ? parseStep(step)
+    : { stepType: 0, stepRange: 0 }
+
+  const timeZoneOffset = timeZone ? getTimeZoneOffsetInMinutes(timeZone) : 0
+
+  const buffer = createGroupByKeyProp({
+    propId: propDef.id,
+    propType: propDef.type || 0,
+    propDefStart: propDef.start || 0,
+    stepType,
+    stepRange,
+    timezone: timeZoneOffset,
+  })
+
+  ctx.query.data.set(buffer, ctx.query.length)
+  ctx.query.length += GroupByKeyPropByteSize
+
+  return true
+}
+
+type Step = { stepType: number; stepRange: number }
+const parseStep = (step: number | IntervalString): Step => {
+  let stepRange = 0
+  let stepType = 0
+  if (typeof step === 'string') {
+    const intervalEnumKey = step as IntervalString
+    stepType = Interval[intervalEnumKey]
+  } else {
+    // validateStepRange(def, step) // TODO: see/make the equivalent for def.errors
+    stepRange = step
+  }
+  return { stepType, stepRange } as Step
 }
