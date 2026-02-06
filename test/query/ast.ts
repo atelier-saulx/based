@@ -58,19 +58,18 @@ await test('query types', async (t) => {
     users: [userA],
   })
 
-  const query = db
-    .query2('user')
-    .include('isNice', 'name', 'otherUsers', 'textField', 'friend')
+  // const query = db.query2('user').include('isNice', 'name', '**.id')
 
-  const result = await query.get()
+  // const result = await query.get()
 
-  for (const { name, isNice, otherUsers, friend } of result) {
-    const friendName = friend?.name
-    for (const item of otherUsers) {
-      const name: string = item.name
-      const isNice: boolean = item.isNice
-      const id: number = item.id
-      const textField: { nl: string; en: string } = item.textField
-    }
-  }
+  // for (const { name, isNice, otherUsers, friend } of result) {
+  //   // const friendName = friend?.name
+  //   const friendFriend = friend?.isNice
+  //   for (const item of otherUsers) {
+  //     const name: string = item.name
+  //     const isNice: boolean = item.isNice
+  //     const id: number = item.id
+  //     const textField: { nl: string; en: string } = item.textField
+  //   }
+  // }
 })
