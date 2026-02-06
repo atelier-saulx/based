@@ -20,21 +20,21 @@ await test('modify cardinality basic', async (t) => {
   // Assuming we can read the count? Or the approximation.
   // The query might return the count.
   const res1 = await db.query2('thing', id1).get()
-  deepEqual(res1.counter, 1)
+  deepEqual(res1?.counter, 1)
 
   // Add another unique item
   await db.update('thing', id1, {
     counter: 'item2',
   })
   const res2 = await db.query2('thing', id1).get()
-  deepEqual(res2.counter, 2)
+  deepEqual(res2?.counter, 2)
 
   // Add duplicate item (count shouldn't change)
   await db.update('thing', id1, {
     counter: 'item1',
   })
   const res3 = await db.query2('thing', id1).get()
-  deepEqual(res3.counter, 2)
+  deepEqual(res3?.counter, 2)
 
   // Delete
   await db.update('thing', id1, {
@@ -42,7 +42,7 @@ await test('modify cardinality basic', async (t) => {
   })
 
   const res4 = await db.query2('thing', id1).get()
-  deepEqual(res4.counter, 0)
+  deepEqual(res4?.counter, 0)
 })
 
 await test('modify cardinality on edge', async (t) => {
@@ -74,7 +74,7 @@ await test('modify cardinality on edge', async (t) => {
     .include('toThing.$edgeCounter')
     .get()
 
-  deepEqual(res1.toThing?.$edgeCounter, 1)
+  deepEqual(res1?.toThing.$edgeCounter, 1)
 
   await db.update('holder', id1, {
     toThing: {
@@ -88,7 +88,7 @@ await test('modify cardinality on edge', async (t) => {
     .include('toThing.$edgeCounter')
     .get()
 
-  deepEqual(res2.toThing?.$edgeCounter, 2)
+  deepEqual(res2?.toThing.$edgeCounter, 2)
 })
 
 await test('modify cardinality array', async (t) => {
@@ -107,7 +107,7 @@ await test('modify cardinality array', async (t) => {
 
   const res1 = await db.query2('thing', id1).get()
   // Should have 2 unique items
-  deepEqual(res1.counter, 2)
+  deepEqual(res1?.counter, 2)
 
   // Update with array (one new, one duplicate)
   await db.update('thing', id1, {
@@ -116,5 +116,5 @@ await test('modify cardinality array', async (t) => {
 
   const res2 = await db.query2('thing', id1).get()
   // item1, item2, item3 -> 3 unique items
-  deepEqual(res2.counter, 3)
+  deepEqual(res2?.counter, 3)
 })

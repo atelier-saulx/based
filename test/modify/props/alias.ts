@@ -48,7 +48,7 @@ await test('modify alias', async (t) => {
   await db.update('thing', id2, {
     myAlias: null,
   })
-  deepEqual((await db.query2('thing', id2).get()).myAlias, '')
+  deepEqual((await db.query2('thing', id2).get())!.myAlias, '')
 })
 
 await test('schema alias on edge not allowed', async (t) => {

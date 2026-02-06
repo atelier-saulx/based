@@ -104,8 +104,8 @@ await test('modify - default values on edge', async (t) => {
     .include('member.id')
     .get()
 
-  deepEqual(resG1.member?.$role, 'member')
-  deepEqual(resG1.member?.$level, 1)
+  deepEqual(resG1?.member.$role, 'member')
+  deepEqual(resG1?.member.$level, 1)
 
   // 2. Create edge with edge props
   const g2 = await db.create('group', {

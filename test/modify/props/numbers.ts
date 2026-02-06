@@ -249,18 +249,20 @@ await test('modify numbers on edge', async (t) => {
       )
       .get()
 
-    if (!res.toThing || Array.isArray(res.toThing)) {
+    const toThing = res?.toThing
+
+    if (!toThing || Array.isArray(toThing)) {
       return {}
     }
 
     return {
-      edgeN: res.toThing.$edgeN,
-      edgeU8: res.toThing.$edgeU8,
-      edgeI8: res.toThing.$edgeI8,
-      edgeU16: res.toThing.$edgeU16,
-      edgeI16: res.toThing.$edgeI16,
-      edgeU32: res.toThing.$edgeU32,
-      edgeI32: res.toThing.$edgeI32,
+      edgeN: toThing.$edgeN,
+      edgeU8: toThing.$edgeU8,
+      edgeI8: toThing.$edgeI8,
+      edgeU16: toThing.$edgeU16,
+      edgeI16: toThing.$edgeI16,
+      edgeU32: toThing.$edgeU32,
+      edgeI32: toThing.$edgeI32,
     }
   }
 

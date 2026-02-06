@@ -111,13 +111,12 @@ export class BasedQuery2<
   db: DbClient
   async get(): Promise<
     IsSingle extends true
-      ? PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>
+      ? PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>> | null
       : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
   > {
     if (!this.ast.props) {
       this.include('*')
     }
-    // console.dir(this.ast, { depth: null })
 
     if (!this.db.schema) {
       await this.db.once('schema')
@@ -128,7 +127,6 @@ export class BasedQuery2<
       this.ast,
       new AutoSizedUint8Array(1000),
     )
-    // console.dir(ctx.readSchema, { depth: null })
     const result = await this.db.hooks.getQueryBuf(ctx.query)
     return proxyResult(result, ctx.readSchema) as any
   }

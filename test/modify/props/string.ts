@@ -110,7 +110,7 @@ await test('modify string on edge', async (t) => {
 
   const res1 = await db.query2('holder', id1).include('toThing.$edgeName').get()
 
-  deepEqual(res1.toThing?.$edgeName, s1)
+  deepEqual(res1?.toThing?.$edgeName, s1)
 
   // Update to another string
   const s2 = 'world'
@@ -121,7 +121,7 @@ await test('modify string on edge', async (t) => {
     },
   })
   const res2 = await db.query2('holder', id1).include('toThing.$edgeName').get()
-  deepEqual(res2.toThing?.$edgeName, s2)
+  deepEqual(res2?.toThing?.$edgeName, s2)
 
   // String with spaces
   const s3 = 'foo bar'
@@ -132,7 +132,7 @@ await test('modify string on edge', async (t) => {
     },
   })
   const res3 = await db.query2('holder', id1).include('toThing.$edgeName').get()
-  deepEqual(res3.toThing?.$edgeName, s3)
+  deepEqual(res3?.toThing?.$edgeName, s3)
 
   // Empty string
   const s4 = ''
@@ -143,7 +143,7 @@ await test('modify string on edge', async (t) => {
     },
   })
   const res4 = await db.query2('holder', id1).include('toThing.$edgeName').get()
-  deepEqual(res4.toThing?.$edgeName, s4)
+  deepEqual(res4?.toThing?.$edgeName, s4)
 
   // Unicode / Special characters
   const s5 = 'ñàéïô SPECIAL !@#$%^&*()_+ 123'
@@ -154,7 +154,7 @@ await test('modify string on edge', async (t) => {
     },
   })
   const res5 = await db.query2('holder', id1).include('toThing.$edgeName').get()
-  deepEqual(res5.toThing?.$edgeName, s5.normalize('NFD'))
+  deepEqual(res5?.toThing?.$edgeName, s5.normalize('NFD'))
 
   // Long string
   const s6 = 'a'.repeat(1000)
@@ -165,7 +165,7 @@ await test('modify string on edge', async (t) => {
     },
   })
   const res6 = await db.query2('holder', id1).include('toThing.$edgeName').get()
-  deepEqual(res6.toThing?.$edgeName, s6)
+  deepEqual(res6?.toThing?.$edgeName, s6)
 })
 
 await test('modify fixed string', async (t) => {

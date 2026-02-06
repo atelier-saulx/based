@@ -93,12 +93,12 @@ await test('modify boolean on edge', async (t) => {
     .query2('holder', await a)
     .include('toUser.$edgeBool')
     .get()
-  deepEqual(resA.toUser?.$edgeBool, false)
+  deepEqual(resA?.toUser?.$edgeBool, false)
 
   // Check b (true)
   const resB = await db.query2('holder', b).include('toUser.$edgeBool').get()
-  resB.toUser?.$edgeBool
-  deepEqual(resB.toUser?.$edgeBool, true)
+  resB?.toUser?.$edgeBool
+  deepEqual(resB?.toUser?.$edgeBool, true)
 
   // Check c (false)
   const resC = await db
@@ -106,7 +106,7 @@ await test('modify boolean on edge', async (t) => {
     .include('toUser.$edgeBool')
     .get()
 
-  deepEqual(resC.toUser?.$edgeBool, false)
+  deepEqual(resC?.toUser?.$edgeBool, false)
 
   // Updates to true
   db.update('holder', await a, { toUser: { id: u1, $edgeBool: true } })
@@ -118,16 +118,16 @@ await test('modify boolean on edge', async (t) => {
     .include('toUser.$edgeBool')
     .get()
 
-  deepEqual(resA2.toUser?.$edgeBool, true)
+  deepEqual(resA2?.toUser?.$edgeBool, true)
   const resB2 = await db.query2('holder', b).include('toUser.$edgeBool').get()
 
-  deepEqual(resB2.toUser?.$edgeBool, true)
+  deepEqual(resB2?.toUser?.$edgeBool, true)
   const resC2 = await db
     .query2('holder', await c)
     .include('toUser.$edgeBool')
     .get()
 
-  deepEqual(resC2.toUser?.$edgeBool, true)
+  deepEqual(resC2?.toUser?.$edgeBool, true)
 
   // Updates to false
   db.update('holder', await a, { toUser: { id: u1, $edgeBool: false } })
@@ -139,14 +139,14 @@ await test('modify boolean on edge', async (t) => {
     .include('toUser.$edgeBool')
     .get()
 
-  deepEqual(resA3.toUser?.$edgeBool, false)
+  deepEqual(resA3?.toUser?.$edgeBool, false)
   const resB3 = await db.query2('holder', b).include('toUser.$edgeBool').get()
 
-  deepEqual(resB3.toUser?.$edgeBool, false)
+  deepEqual(resB3?.toUser?.$edgeBool, false)
   const resC3 = await db
     .query2('holder', await c)
     .include('toUser.$edgeBool')
     .get()
 
-  deepEqual(resC3.toUser?.$edgeBool, false)
+  deepEqual(resC3?.toUser?.$edgeBool, false)
 })

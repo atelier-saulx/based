@@ -79,7 +79,7 @@ export type InferProp<
   Locales extends Record<string, any> = Record<string, any>,
   Selection = never,
 > = Prop extends { type: 'text' }
-  ? string
+  ? { [K in keyof Locales]-?: string }
   : Prop extends { type: 'object'; props: infer P }
     ? InferType<P, Types, Locales>
     : Prop extends { type: infer T extends keyof TypeMap }
@@ -96,7 +96,7 @@ export type InferProp<
                     ResolvedProps<Types, R> & FilterEdges<Prop>,
                     Selection
                   >
-                >
+                > | null
               : never
             : number // ID
           : Prop extends {
@@ -164,9 +164,12 @@ export type PickOutput<
     | Extract<K, keyof InferSchemaOutput<S, T>>
     | 'id']: P extends keyof ResolvedProps<S['types'], T>
     ? IsRefProp<ResolvedProps<S['types'], T>[P]> extends true
-      ? ResolvedProps<S['types'], T>[P] extends { items: any }
-        ? { id: number }[]
-        : { id: number }
+      ? InferProp<
+          ResolvedProps<S['types'], T>[P],
+          S['types'],
+          S['locales'] extends Record<string, any> ? S['locales'] : {},
+          '*'
+        >
       : InferSchemaOutput<S, T>[P]
     : InferSchemaOutput<S, T>[P]
 } & {
