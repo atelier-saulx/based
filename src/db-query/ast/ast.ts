@@ -49,7 +49,7 @@ export type FilterAst = {
 }
 
 export type Include = {
-  glob?: '*' | '**'
+  // glob?: '*' | '**' // youri thinks we can just do these as props
   meta?: true | 'only' | false
   maxChars?: number
   maxBytes?: number

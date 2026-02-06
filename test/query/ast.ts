@@ -17,6 +17,11 @@ await test('query types', async (t) => {
       user: {
         name: 'string',
         isNice: 'boolean',
+        friend: {
+          ref: 'user',
+          prop: 'friend',
+          $rank: 'number',
+        },
         otherUsers: {
           items: {
             ref: 'user',
@@ -43,6 +48,7 @@ await test('query types', async (t) => {
     .include(
       'isNice',
       'name',
+      'friend.$rank',
       'otherUsers.$role',
       'otherUsers.name',
       'otherUsers.isNice',
@@ -50,7 +56,8 @@ await test('query types', async (t) => {
 
   const result = await query.get()
 
-  for (const { name, isNice, otherUsers } of result) {
+  for (const { name, isNice, otherUsers, friend } of result) {
+    const $rank: number = friend.$rank
     for (const item of otherUsers) {
       const name: string = item.name
       const isNice: boolean = item.isNice
@@ -58,49 +65,4 @@ await test('query types', async (t) => {
       const $role: string = item.$role
     }
   }
-
-  // .include((select) =>
-  //   select('otherUsers').include('name').filter('name', '=', 'youzi'),
-  // )
-  // .filter('otherUsers.name', '=', 'youzi')
-
-  // console.dir(query.ast, { depth: null })
-  // const proxy = await query.get()
-  // console.log('-----------', proxy)
-  // proxy
-  // console.log('-----------1')
-  // // proxy.forEach((a, b, c) => console.log('WAZZUP', { a, b, c }))
-  // for (const i of proxy) {
-  //   console.log({ i })
-  // }
-
-  // console.log('-->', proxy[$buffer])
-  // console.log('???', proxy)
-  // console.log('WOW', proxy[0])
-  // console.log('json', JSON.stringify(proxy))
-  // for (const i of proxy) {
-  //   console.log({ i })
-  // }
-
-  // //
-
-  // const $result = Symbol()
-  // const tmp = []
-  // const proxy = new Proxy(tmp, {
-  //   get(a, b) {
-  //     console.log('get youzi')
-  //     // @ts-ignore
-  //     tmp[$result].__proto__ = { bla: true }
-  //     return a[b]
-  //   },
-  // })
-
-  // const result = tmp[$result] = {
-  //   __proto__: proxy,
-  // }
-
-  // // @ts-ignore
-  // console.log('--->', result.bla)
-  // // @ts-ignore
-  // console.log('--->', result.bla)
 })

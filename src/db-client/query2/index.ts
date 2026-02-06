@@ -139,6 +139,9 @@ export class BasedQuery2<
       ? PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>
       : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
   > {
+    if (!this.ast.props && !this.ast.include) {
+      this.include('*')
+    }
     if (!this.db.schema) {
       await this.db.once('schema')
     }

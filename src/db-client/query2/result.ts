@@ -3,6 +3,7 @@ import {
   type ReaderSchema,
   ReaderSchemaEnum,
 } from '../../protocol/index.js'
+import { readUint32 } from '../../utils/uint8.js'
 
 export const $buffer = Symbol()
 export const $schema = Symbol()
@@ -10,6 +11,7 @@ export const $result = Symbol()
 
 const define = (result: any) => {
   result.__proto__ = []
+  if ('length' in result) result.length = 0
   const data = resultToObject(
     result[$schema],
     result[$buffer],
@@ -51,11 +53,16 @@ const handler: ProxyHandler<any> = {
 }
 
 export const proxyResult = (buffer: Uint8Array, schema: ReaderSchema) => {
-  const single = schema.type === ReaderSchemaEnum.single
-  const stub = single ? {} : []
-  const result = single ? {} : []
+  let stub, result
+  if (schema.type === ReaderSchemaEnum.single) {
+    stub = {}
+    result = {}
+  } else {
+    stub = []
+    result = []
+    result.length = readUint32(buffer, 0)
+  }
   const proxy = new Proxy(stub, handler)
-
   result[$buffer] = buffer
   result[$schema] = schema
   stub[$result] = result
