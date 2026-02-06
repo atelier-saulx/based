@@ -31,18 +31,18 @@ type DbClientOpts = {
   debug?: boolean
 }
 
-type BasedCreatePromise = BasedModify<typeof serializeCreate>
-type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
-type BasedDeletePromise = BasedModify<typeof serializeDelete>
-type BasedUpsertPromise = BasedModify<typeof serializeUpsert>
-type BasedInsertPromise = BasedUpsertPromise
+export type BasedCreatePromise = BasedModify<typeof serializeCreate>
+export type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
+export type BasedDeletePromise = BasedModify<typeof serializeDelete>
+export type BasedUpsertPromise = BasedModify<typeof serializeUpsert>
+export type BasedInsertPromise = BasedUpsertPromise
 
 export type ModifyOpts = {
   unsafe?: boolean
   locale?: keyof typeof LangCode
 }
 
-export class DbClient<S extends SchemaOut = SchemaOut> extends DbShared {
+export class DbClient<S extends { types: any } = SchemaOut> extends DbShared {
   constructor({
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,

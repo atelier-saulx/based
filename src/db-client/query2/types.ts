@@ -45,33 +45,40 @@ export type FilterEdges<T> = {
   [K in keyof T as K extends `$${string}` ? K : never]: T[K]
 }
 
+// Utility to clean up intersection types
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
 export type PickOutputFromProps<
   S extends { types: any; locales?: any },
   Props,
   K,
-> = {
-  [P in Extract<K, keyof Props & string> | 'id']: P extends 'id'
-    ? number
-    : P extends keyof Props
-      ? IsRefProp<Props[P]> extends true
-        ? Props[P] extends { items: any }
-          ? { id: number }[]
-          : { id: number }
-        : InferProp<
-            Props[P],
-            S['types'],
-            S['locales'] extends Record<string, any> ? S['locales'] : {}
-          >
-      : never
-} & {
-  [Item in Extract<K, { field: any; select: any }> as Item['field'] &
-    keyof Props]: InferProp<
-    Props[Item['field'] & keyof Props],
-    S['types'],
-    S['locales'] extends Record<string, any> ? S['locales'] : {},
-    Item['select']
-  >
-}
+> = Prettify<
+  {
+    [P in Extract<K, keyof Props & string> | 'id']: P extends 'id'
+      ? number
+      : P extends keyof Props
+        ? IsRefProp<Props[P]> extends true
+          ? Props[P] extends { items: any }
+            ? { id: number }[]
+            : { id: number }
+          : InferProp<
+              Props[P],
+              S['types'],
+              S['locales'] extends Record<string, any> ? S['locales'] : {}
+            >
+        : never
+  } & {
+    [Item in Extract<K, { field: any; select: any }> as Item['field'] &
+      keyof Props]: InferProp<
+      Props[Item['field'] & keyof Props],
+      S['types'],
+      S['locales'] extends Record<string, any> ? S['locales'] : {},
+      Item['select']
+    >
+  }
+>
 
 export type InferProp<
   Prop,
@@ -159,29 +166,31 @@ export type PickOutput<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
   K,
-> = {
-  [P in
-    | Extract<K, keyof InferSchemaOutput<S, T>>
-    | 'id']: P extends keyof ResolvedProps<S['types'], T>
-    ? IsRefProp<ResolvedProps<S['types'], T>[P]> extends true
-      ? InferProp<
-          ResolvedProps<S['types'], T>[P],
-          S['types'],
-          S['locales'] extends Record<string, any> ? S['locales'] : {},
-          '*'
-        >
+> = Prettify<
+  {
+    [P in
+      | Extract<K, keyof InferSchemaOutput<S, T>>
+      | 'id']: P extends keyof ResolvedProps<S['types'], T>
+      ? IsRefProp<ResolvedProps<S['types'], T>[P]> extends true
+        ? InferProp<
+            ResolvedProps<S['types'], T>[P],
+            S['types'],
+            S['locales'] extends Record<string, any> ? S['locales'] : {},
+            '*'
+          >
+        : InferSchemaOutput<S, T>[P]
       : InferSchemaOutput<S, T>[P]
-    : InferSchemaOutput<S, T>[P]
-} & {
-  [Item in Extract<K, { field: any; select: any }> as Item['field'] &
-    keyof ResolvedProps<S['types'], T>]: InferProp<
-    ResolvedProps<S['types'], T>[Item['field'] &
-      keyof ResolvedProps<S['types'], T>],
-    S['types'],
-    S['locales'] extends Record<string, any> ? S['locales'] : {},
-    Item['select']
-  >
-}
+  } & {
+    [Item in Extract<K, { field: any; select: any }> as Item['field'] &
+      keyof ResolvedProps<S['types'], T>]: InferProp<
+      ResolvedProps<S['types'], T>[Item['field'] &
+        keyof ResolvedProps<S['types'], T>],
+      S['types'],
+      S['locales'] extends Record<string, any> ? S['locales'] : {},
+      Item['select']
+    >
+  }
+>
 
 export type FilterOpts = {
   lowerCase?: boolean

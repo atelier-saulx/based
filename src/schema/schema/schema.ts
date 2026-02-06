@@ -58,6 +58,11 @@ type NormalizeProp<T> = T extends string
               ? T & { type: 'enum' }
               : T
 
+// Utility to normalize properties in an object
+type NormalizeEdges<T> = {
+  [K in keyof T]: NormalizeProp<T[K]>
+}
+
 // Utility to convert a Union to an Intersection
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   k: infer I,
@@ -87,7 +92,11 @@ type GetBackRefs<Types, TName> = UnionToIntersection<
               type: 'reference'
               ref: K & string
               prop: P & string
-            }
+            } & NormalizeEdges<
+              Props[P] extends { items: infer I }
+                ? Omit<I, 'ref' | 'prop' | 'type'>
+                : Omit<Props[P], 'ref' | 'prop' | 'type'>
+            >
           }
         }
       : never
@@ -108,8 +117,7 @@ export type ResolvedProps<
     K,
     string
   >]: (Props &
-    ([BackRefs] extends [never] ? {} : Omit<BackRefs, keyof Props>))[K] &
-    SchemaProp<true>
+    ([BackRefs] extends [never] ? {} : Omit<BackRefs, keyof Props>))[K]
 }
 
 type NormalizeType<T> = T extends { props: infer P }
@@ -192,23 +200,28 @@ export type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
 
 import { type LangName, type SchemaLocale } from './locales.js'
 
-export type ResolveSchema<S extends { types: any }> = Omit<
-  SchemaOut,
-  'types' | 'locales'
-> & {
-  types: {
-    [K in keyof S['types']]: Omit<NormalizeType<S['types'][K]>, 'props'> & {
-      props: ResolvedProps<S['types'], K>
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
+export type ResolveSchema<S extends { types: any }> = Prettify<
+  Omit<SchemaOut, 'types' | 'locales'> & {
+    types: {
+      [K in keyof S['types']]: Prettify<
+        Omit<NormalizeType<S['types'][K]>, 'props'> & {
+          props: ResolvedProps<S['types'], K>
+        }
+      >
     }
+    locales: S extends { locales: infer L }
+      ? L extends readonly (infer K extends LangName)[]
+        ? Partial<Record<K, SchemaLocale<true>>>
+        : L extends Record<infer K, any>
+          ? Partial<Record<K & LangName, SchemaLocale<true>>>
+          : SchemaLocales<true>
+      : SchemaLocales<true>
   }
-  locales: S extends { locales: infer L }
-    ? L extends readonly (infer K extends LangName)[]
-      ? Partial<Record<K, SchemaLocale<true>>>
-      : L extends Record<infer K, any>
-        ? Partial<Record<K & LangName, SchemaLocale<true>>>
-        : SchemaLocales<true>
-    : SchemaLocales<true>
-}
+>
 
 const isMigrations = (v: unknown): v is SchemaMigrations =>
   isRecord(v) &&
@@ -316,7 +329,7 @@ export const parseSchema = <const S extends SchemaIn>(
     // TODO we can remove hash from here after we finish new schema defs (internal schema)
     result.hash = hash(result)
 
-    return result as ResolveSchema<S>
+    return result as unknown as ResolveSchema<S>
   } catch (e) {
     if (tracking) {
       e = Error(`${path.join('.')}: ${inspect(value)} - ${e}`, { cause: e })

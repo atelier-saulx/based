@@ -35,14 +35,22 @@ type TypeMap = {
   cardinality: string | string[]
 }
 
+type EdgeKeys<T> = keyof T extends infer K
+  ? K extends string
+    ? string extends K
+      ? never
+      : K extends `$${string}`
+        ? K
+        : never
+    : never
+  : never
+
 type InferEdgeProps<
   Prop,
   Types,
   Locales extends Record<string, any> = Record<string, any>,
 > = {
-  [K in keyof Prop as K extends `$${string}`
-    ? K
-    : never]?: Prop[K] extends keyof TypeMap
+  [K in EdgeKeys<Prop>]?: Prop[K] extends keyof TypeMap
     ? TypeMap[Prop[K]]
     : InferProp<Prop[K], Types, Locales>
 }
@@ -53,8 +61,14 @@ type InferRefValue<
   Locales extends Record<string, any> = Record<string, any>,
 > =
   | number
-  | BasedModify<any>
-  | ({ id: number | BasedModify<any> } & InferEdgeProps<Prop, Types, Locales>)
+  | BasedModify<never>
+  | (EdgeKeys<Prop> extends never
+      ? { id: number | BasedModify<never> }
+      : { id: number | BasedModify<never> } & InferEdgeProps<
+          Prop,
+          Types,
+          Locales
+        >)
 
 type InferReferences<
   Prop,
@@ -63,9 +77,9 @@ type InferReferences<
 > =
   | InferRefValue<Prop, Types, Locales>[]
   | {
-      add?: InferRefValue<Prop, Types, Locales>[]
-      update?: InferRefValue<Prop, Types, Locales>[]
-      delete?: (number | BasedModify<any>)[]
+      add?: Prettify<InferRefValue<Prop, Types, Locales>>[]
+      update?: Prettify<InferRefValue<Prop, Types, Locales>>[]
+      delete?: (number | BasedModify<never>)[]
     }
 
 type InferProp<
@@ -81,24 +95,38 @@ type InferProp<
       : Prop extends { enum: infer E extends readonly any[] }
         ? E[number]
         : Prop extends { ref: string }
-          ? InferRefValue<Prop, Types, Locales>
+          ? Prettify<InferRefValue<Prop, Types, Locales>>
           : Prop extends { items: { ref: string } }
-            ? InferReferences<Prop['items'], Types, Locales>
+            ? Prettify<InferReferences<Prop['items'], Types, Locales>>
             : never
+
+type Prettify<Target> = Target extends any
+  ? Target extends (infer U)[]
+    ? Prettify<U>[]
+    : Target extends BasedModify<any>
+      ? Target
+      : Target extends object
+        ? {
+            -readonly [K in keyof Target]: Target[K]
+          }
+        : Target
+  : never
 
 type InferType<
   Props,
   Types,
   Locales extends Record<string, any> = Record<string, any>,
-> = {
-  [K in keyof Props as Props[K] extends { required: true }
-    ? K
-    : never]: InferProp<Props[K], Types, Locales>
-} & {
-  [K in keyof Props as Props[K] extends { required: true }
-    ? never
-    : K]?: InferProp<Props[K], Types, Locales> | null
-}
+> = Prettify<
+  {
+    [K in keyof Props as Props[K] extends { required: true }
+      ? K
+      : never]: InferProp<Props[K], Types, Locales>
+  } & {
+    [K in keyof Props as Props[K] extends { required: true }
+      ? never
+      : K]?: InferProp<Props[K], Types, Locales> | null
+  }
+>
 
 export type InferPayload<
   S extends { types: any; locales?: any },

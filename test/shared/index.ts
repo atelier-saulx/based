@@ -39,14 +39,57 @@ export function logMemoryUsage() {
   }
 }
 
+import {
+  BasedCreatePromise,
+  BasedDeletePromise,
+  BasedInsertPromise,
+  BasedUpdatePromise,
+  BasedUpsertPromise,
+  ModifyOpts,
+  InferPayload,
+  InferTarget,
+  BasedModify,
+} from '../../src/sdk.js'
+
+export interface BasedTestDb<S extends SchemaIn>
+  extends DbClient<ResolveSchema<S>> {
+  create<T extends keyof S['types'] & string>(
+    type: T,
+    obj: InferPayload<ResolveSchema<S>, T>,
+    opts?: ModifyOpts,
+  ): BasedCreatePromise
+  update<T extends keyof S['types'] & string>(
+    type: T,
+    target: number | BasedModify,
+    obj: InferPayload<ResolveSchema<S>, T>,
+    opts?: ModifyOpts,
+  ): BasedUpdatePromise
+  upsert<T extends keyof S['types'] & string>(
+    type: T,
+    target: InferTarget<ResolveSchema<S>, T>,
+    obj: InferPayload<ResolveSchema<S>, T>,
+    opts?: ModifyOpts,
+  ): BasedUpsertPromise
+  insert<T extends keyof S['types'] & string>(
+    type: T,
+    target: InferTarget<ResolveSchema<S>, T>,
+    obj: InferPayload<ResolveSchema<S>, T>,
+    opts?: ModifyOpts,
+  ): BasedInsertPromise
+  delete(
+    type: keyof S['types'] & string,
+    target: number | BasedModify,
+  ): BasedDeletePromise
+}
+
 export const testDb = async <const S extends SchemaIn>(
   t,
   schema: S & ValidateSchema<S>,
-): Promise<DbClient<ResolveSchema<S>>> => {
+): Promise<BasedTestDb<S>> => {
   const db = new BasedDb({ path: t.tmp })
   await db.start({ clean: true })
   t.after(() => db.destroy())
-  return db.setSchema(schema) as unknown as DbClient<ResolveSchema<S>>
+  return db.setSchema(schema) as unknown as BasedTestDb<S>
 }
 
 export async function countDirtyBlocks(server: DbServer) {
@@ -76,7 +119,10 @@ export const getActiveBlocks = async (
 const block2start = (block: number, capacity: number): number =>
   block * capacity + 1
 
-export const hashType = async (db: DbServer, typeName: string): Promise<string> => {
+export const hashType = async (
+  db: DbServer,
+  typeName: string,
+): Promise<string> => {
   const tc = db.schemaTypesParsed[typeName].id
   const capacity = db.schemaTypesParsed[typeName].blockCapacity
   const hash = createHash('sha256')

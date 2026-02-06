@@ -45,7 +45,12 @@ await test('query types', async (t) => {
       nl: 'mijn text',
       en: 'my text',
     },
-    // annoyingThings: []
+    annoyingThings: [
+      {
+        id: 2,
+        // $snurk: true,
+      },
+    ],
   })
 
   db.create('soAnnoy', {

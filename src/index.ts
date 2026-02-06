@@ -7,6 +7,15 @@ import { Emitter } from './shared/Emitter.js'
 import wait from './utils/wait.js'
 // export { stringCompress }
 export { DbClient, DbServer }
+export type {
+  BasedCreatePromise,
+  BasedUpdatePromise,
+  BasedDeletePromise,
+  BasedUpsertPromise,
+  BasedInsertPromise,
+  ModifyOpts,
+} from './db-client/index.js'
+export type { InferPayload, InferTarget } from './db-client/modify/types.js'
 export { xxHash64 } from './db-client/xxHash64.js'
 export { crc32 } from './db-client/crc32.js'
 export { default as createHash } from './db-server/dbHash.js'
@@ -15,6 +24,7 @@ export * from './db-client/query/query.js'
 export * from './db-client/query/BasedDbQuery.js'
 export * from './db-client/query/BasedQueryResponse.js'
 export * from './db-client/hooks.js'
+export { BasedModify } from './db-client/modify/index.js'
 
 export const SCHEMA_FILE_DEPRECATED = 'schema.json'
 export const SCHEMA_FILE = 'schema.bin'
