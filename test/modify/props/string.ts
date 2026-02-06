@@ -16,7 +16,7 @@ await test('modify string', async (t) => {
   const id1 = await db.create('thing', {
     name: s1,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s1,
   })
@@ -26,7 +26,7 @@ await test('modify string', async (t) => {
   await db.update('thing', id1, {
     name: s2,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s2,
   })
@@ -36,7 +36,7 @@ await test('modify string', async (t) => {
   await db.update('thing', id1, {
     name: s3,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s3,
   })
@@ -46,7 +46,7 @@ await test('modify string', async (t) => {
   await db.update('thing', id1, {
     name: s4,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s4,
   })
@@ -56,7 +56,7 @@ await test('modify string', async (t) => {
   await db.update('thing', id1, {
     name: s5,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s5.normalize('NFD'),
   })
@@ -66,7 +66,7 @@ await test('modify string', async (t) => {
   await db.update('thing', id1, {
     name: s6,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s6,
   })
@@ -76,7 +76,7 @@ await test('modify string', async (t) => {
     name: null,
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: '', // Should probably be empty string for string props?
   })
@@ -108,11 +108,7 @@ await test('modify string on edge', async (t) => {
     },
   })
 
-  const res1 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeName')
-    .get()
-    .toObject()
+  const res1 = await db.query2('holder', id1).include('toThing.$edgeName').get()
 
   deepEqual(res1.toThing?.$edgeName, s1)
 
@@ -124,11 +120,7 @@ await test('modify string on edge', async (t) => {
       $edgeName: s2,
     },
   })
-  const res2 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeName')
-    .get()
-    .toObject()
+  const res2 = await db.query2('holder', id1).include('toThing.$edgeName').get()
   deepEqual(res2.toThing?.$edgeName, s2)
 
   // String with spaces
@@ -139,11 +131,7 @@ await test('modify string on edge', async (t) => {
       $edgeName: s3,
     },
   })
-  const res3 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeName')
-    .get()
-    .toObject()
+  const res3 = await db.query2('holder', id1).include('toThing.$edgeName').get()
   deepEqual(res3.toThing?.$edgeName, s3)
 
   // Empty string
@@ -154,11 +142,7 @@ await test('modify string on edge', async (t) => {
       $edgeName: s4,
     },
   })
-  const res4 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeName')
-    .get()
-    .toObject()
+  const res4 = await db.query2('holder', id1).include('toThing.$edgeName').get()
   deepEqual(res4.toThing?.$edgeName, s4)
 
   // Unicode / Special characters
@@ -169,11 +153,7 @@ await test('modify string on edge', async (t) => {
       $edgeName: s5,
     },
   })
-  const res5 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeName')
-    .get()
-    .toObject()
+  const res5 = await db.query2('holder', id1).include('toThing.$edgeName').get()
   deepEqual(res5.toThing?.$edgeName, s5.normalize('NFD'))
 
   // Long string
@@ -184,11 +164,7 @@ await test('modify string on edge', async (t) => {
       $edgeName: s6,
     },
   })
-  const res6 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeName')
-    .get()
-    .toObject()
+  const res6 = await db.query2('holder', id1).include('toThing.$edgeName').get()
   deepEqual(res6.toThing?.$edgeName, s6)
 })
 
@@ -209,7 +185,7 @@ await test('modify fixed string', async (t) => {
   const id1 = await db.create('thing', {
     name: s1,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s1,
   })
@@ -219,7 +195,7 @@ await test('modify fixed string', async (t) => {
   await db.update('thing', id1, {
     name: s2,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s2,
   })
@@ -229,7 +205,7 @@ await test('modify fixed string', async (t) => {
   await db.update('thing', id1, {
     name: s3,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s3,
   })
@@ -239,7 +215,7 @@ await test('modify fixed string', async (t) => {
   await db.update('thing', id1, {
     name: s4,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s4,
   })
@@ -248,7 +224,7 @@ await test('modify fixed string', async (t) => {
   await db.update('thing', id1, {
     name: null,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: '',
   })
@@ -273,7 +249,7 @@ await test('modify long string', async (t) => {
   const id1 = await db.create('thing', {
     name: s1,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s1,
   })
@@ -283,7 +259,7 @@ await test('modify long string', async (t) => {
   await db.update('thing', id1, {
     name: s2,
   })
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     name: s2,
   })
@@ -292,7 +268,7 @@ await test('modify long string', async (t) => {
   const id2 = await db.create('longCompressedString', {
     name: s1,
   })
-  deepEqual(await db.query('longCompressedString', id2).get(), {
+  deepEqual(await db.query2('longCompressedString', id2).get(), {
     id: id2,
     name: s1,
   })

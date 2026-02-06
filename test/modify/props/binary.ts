@@ -15,7 +15,7 @@ await test('modify binary', async (t) => {
   const id1 = await db.create('thing', {
     blob: b1,
   })
-  const res1 = await db.query('thing', id1).get().toObject()
+  const res1 = await db.query2('thing', id1).get()
 
   deepEqual(res1.blob, b1)
 
@@ -24,14 +24,14 @@ await test('modify binary', async (t) => {
     blob: b2,
   })
 
-  const res2 = await db.query('thing', id1).get().toObject()
+  const res2 = await db.query2('thing', id1).get()
   deepEqual(res2.blob, b2)
 
   // Delete
   await db.update('thing', id1, {
     blob: null,
   })
-  const res3 = await db.query('thing', id1).get().toObject()
+  const res3 = await db.query2('thing', id1).get()
   deepEqual(res3.blob, new Uint8Array())
 })
 
@@ -60,11 +60,7 @@ await test('modify binary on edge', async (t) => {
     },
   })
 
-  const res1 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeBlob')
-    .get()
-    .toObject()
+  const res1 = await db.query2('holder', id1).include('toThing.$edgeBlob').get()
 
   deepEqual(res1.toThing?.$edgeBlob, b1)
 
@@ -76,10 +72,7 @@ await test('modify binary on edge', async (t) => {
     },
   })
 
-  const res2 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeBlob')
-    .get()
-    .toObject()
+  const res2 = await db.query2('holder', id1).include('toThing.$edgeBlob').get()
+
   deepEqual(res2.toThing?.$edgeBlob, b2)
 })

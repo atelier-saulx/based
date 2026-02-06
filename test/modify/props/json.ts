@@ -16,7 +16,7 @@ await test('modify json', async (t) => {
     data: obj,
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     data: obj,
   })
@@ -26,7 +26,7 @@ await test('modify json', async (t) => {
     data: arr,
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     data: arr,
   })
@@ -35,7 +35,7 @@ await test('modify json', async (t) => {
   await db.update('thing', id1, {
     data: null,
   })
-  deepEqual((await db.query('thing', id1).get().toObject()).data, null)
+  deepEqual((await db.query2('thing', id1).get()).data, null)
 })
 
 await test('modify json on edge', async (t) => {
@@ -63,11 +63,7 @@ await test('modify json on edge', async (t) => {
     },
   })
 
-  const res1 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeData')
-    .get()
-    .toObject()
+  const res1 = await db.query2('holder', id1).include('toThing.$edgeData').get()
 
   deepEqual(res1.toThing?.$edgeData, obj)
 
@@ -79,10 +75,6 @@ await test('modify json on edge', async (t) => {
     },
   })
 
-  const res2 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeData')
-    .get()
-    .toObject()
+  const res2 = await db.query2('holder', id1).include('toThing.$edgeData').get()
   deepEqual(res2.toThing?.$edgeData, obj2)
 })

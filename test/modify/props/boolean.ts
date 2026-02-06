@@ -93,15 +93,11 @@ await test('modify boolean on edge', async (t) => {
     .query2('holder', await a)
     .include('toUser.$edgeBool')
     .get()
-
   deepEqual(resA.toUser?.$edgeBool, false)
 
   // Check b (true)
-  const resB = await db
-    .query2('holder', await b)
-    .include('toUser.$edgeBool')
-    .get()
-
+  const resB = await db.query2('holder', b).include('toUser.$edgeBool').get()
+  resB.toUser?.$edgeBool
   deepEqual(resB.toUser?.$edgeBool, true)
 
   // Check c (false)
@@ -114,7 +110,7 @@ await test('modify boolean on edge', async (t) => {
 
   // Updates to true
   db.update('holder', await a, { toUser: { id: u1, $edgeBool: true } })
-  db.update('holder', await b, { toUser: { id: u1, $edgeBool: true } })
+  db.update('holder', b, { toUser: { id: u1, $edgeBool: true } })
   db.update('holder', await c, { toUser: { id: u1, $edgeBool: true } })
 
   const resA2 = await db
@@ -123,10 +119,7 @@ await test('modify boolean on edge', async (t) => {
     .get()
 
   deepEqual(resA2.toUser?.$edgeBool, true)
-  const resB2 = await db
-    .query2('holder', await b)
-    .include('toUser.$edgeBool')
-    .get()
+  const resB2 = await db.query2('holder', b).include('toUser.$edgeBool').get()
 
   deepEqual(resB2.toUser?.$edgeBool, true)
   const resC2 = await db
@@ -138,7 +131,7 @@ await test('modify boolean on edge', async (t) => {
 
   // Updates to false
   db.update('holder', await a, { toUser: { id: u1, $edgeBool: false } })
-  db.update('holder', await b, { toUser: { id: u1, $edgeBool: false } })
+  db.update('holder', b, { toUser: { id: u1, $edgeBool: false } })
   db.update('holder', await c, { toUser: { id: u1, $edgeBool: false } })
 
   const resA3 = await db
@@ -147,10 +140,7 @@ await test('modify boolean on edge', async (t) => {
     .get()
 
   deepEqual(resA3.toUser?.$edgeBool, false)
-  const resB3 = await db
-    .query2('holder', await b)
-    .include('toUser.$edgeBool')
-    .get()
+  const resB3 = await db.query2('holder', b).include('toUser.$edgeBool').get()
 
   deepEqual(resB3.toUser?.$edgeBool, false)
   const resC3 = await db

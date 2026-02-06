@@ -37,13 +37,8 @@ await test('mixed props', async (t) => {
     r: 'a',
   })
 
-  const typeTest = await db
-    .query('typeTest')
-    .include('*', '**')
-    .get()
-    .toObject()
-  const user = await db.query('user').include('*', '**').get().toObject()
-
+  console.log('-------a')
+  const typeTest = await db.query2('typeTest').include('*', '**').get()
   deepEqual(typeTest, [
     {
       id: 1,
@@ -58,6 +53,8 @@ await test('mixed props', async (t) => {
       },
     },
   ])
+  console.log('-------b')
+  const user = await db.query2('user').include('*', '**').get()
 
   deepEqual(user, [
     {

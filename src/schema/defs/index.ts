@@ -1,4 +1,4 @@
-import type { SchemaProp, SchemaType } from '../../schema.js'
+import type { SchemaOut, SchemaProp, SchemaType } from '../../schema.js'
 import type {
   LangCodeEnum,
   ModifyEnum,
@@ -23,6 +23,7 @@ export type TypeDef = {
   props: Map<string, PropDef>
   tree: PropTree
   schema: SchemaType<true>
+  schemaRoot: SchemaOut
 }
 
 export type PropDef = {

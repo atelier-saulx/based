@@ -19,7 +19,7 @@ await test('modify timestamp', async (t) => {
     ts: t1,
   })
 
-  deepEqual(await db.query('event', id1).get(), {
+  deepEqual(await db.query2('event', id1).get(), {
     id: id1,
     ts: t1,
   })
@@ -28,7 +28,7 @@ await test('modify timestamp', async (t) => {
     ts: t2,
   })
 
-  deepEqual(await db.query('event', id1).get(), {
+  deepEqual(await db.query2('event', id1).get(), {
     id: id1,
     ts: t2,
   })
@@ -37,41 +37,41 @@ await test('modify timestamp', async (t) => {
     ts: t3,
   })
 
-  deepEqual(await db.query('event', id1).get(), {
+  deepEqual(await db.query2('event', id1).get(), {
     id: id1,
     ts: t3,
   })
 
   // Edge cases
   await db.update('event', id1, { ts: 0 })
-  deepEqual(await db.query('event', id1).get(), { id: id1, ts: 0 })
+  deepEqual(await db.query2('event', id1).get(), { id: id1, ts: 0 })
 
   const farFuture = 8640000000000000 // Max JS Date timestamp
   await db.update('event', id1, { ts: farFuture })
-  deepEqual(await db.query('event', id1).get(), { id: id1, ts: farFuture })
+  deepEqual(await db.query2('event', id1).get(), { id: id1, ts: farFuture })
 
   // Increment
   await db.update('event', id1, { ts: 1000 })
   await db.update('event', id1, {
     ts: { increment: 1000 },
   })
-  deepEqual(await db.query('event', id1).get(), { id: id1, ts: 2000 })
+  deepEqual(await db.query2('event', id1).get(), { id: id1, ts: 2000 })
 
   await db.update('event', id1, {
     ts: { increment: -500 },
   })
-  deepEqual(await db.query('event', id1).get(), { id: id1, ts: 1500 })
+  deepEqual(await db.query2('event', id1).get(), { id: id1, ts: 1500 })
 
   // String formats
   const now = Date.now()
   await db.update('event', id1, { ts: 'now' })
-  const r1: any = await db.query('event', id1).get()
+  const r1: any = await db.query2('event', id1).get()
   if (Math.abs(r1.ts - now) > 200) {
     throw new Error(`Timestamp 'now' is too far off: ${r1.ts} vs ${now}`)
   }
 
   await db.update('event', id1, { ts: 'now + 1h' })
-  const r2: any = await db.query('event', id1).get()
+  const r2: any = await db.query2('event', id1).get()
   const t2Expr = now + 1000 * 60 * 60
   if (Math.abs(r2.ts - t2Expr) > 200) {
     throw new Error(
@@ -80,7 +80,7 @@ await test('modify timestamp', async (t) => {
   }
 
   await db.update('event', id1, { ts: 'now - 1d' })
-  const r3: any = await db.query('event', id1).get()
+  const r3: any = await db.query2('event', id1).get()
   const t3Expr = now - 1000 * 60 * 60 * 24
   if (Math.abs(r3.ts - t3Expr) > 200) {
     throw new Error(
@@ -92,12 +92,12 @@ await test('modify timestamp', async (t) => {
   const dateStr = '2025-01-01T00:00:00.000Z'
   const dateTs = new Date(dateStr).valueOf()
   await db.update('event', id1, { ts: dateStr })
-  const r4: any = await db.query('event', id1).get()
+  const r4: any = await db.query2('event', id1).get()
   deepEqual(r4, { id: id1, ts: dateTs })
 
   // Delete
   await db.update('event', id1, { ts: null })
-  deepEqual((await db.query('event', id1).get().toObject()).ts, 0)
+  deepEqual((await db.query2('event', id1).get()).ts, 0)
 })
 
 await test('modify timestamp on edge', async (t) => {
@@ -131,11 +131,8 @@ await test('modify timestamp on edge', async (t) => {
 
   // Helper
   const getEdgeTs = async (id: number) => {
-    const res = await db
-      .query('holder', id)
-      .include('toEvent.$edgeTs')
-      .get()
-      .toObject()
+    const res = await db.query2('holder', id).include('toEvent.$edgeTs').get()
+
     return res.toEvent?.$edgeTs || 0
   }
 

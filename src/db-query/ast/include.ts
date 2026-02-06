@@ -52,7 +52,7 @@ const includeMainProps = (
       prop: 0,
       propType: PropType.microBuffer,
     })
-  } else if (props.length > 0) {
+  } else {
     pushIncludePartialHeader(ctx.query, {
       op: IncludeOp.partial,
       prop: MAIN_PROP,
@@ -91,33 +91,42 @@ const walkProp = (
         includeProp(ctx, prop, include)
       }
     }
+  } else if (prop) {
+    walk(astProp, ctx, typeDef, {
+      main,
+      tree: prop,
+    })
   } else {
-    if (prop) {
-      walk(astProp, ctx, typeDef, {
-        main,
-        tree: prop,
-      })
-    } else {
-      // if EN, if NL
-      throw new Error(`Prop does not exist ${field}`)
-    }
+    // if EN, if NL
+    throw new Error(`Prop does not exist ${field}`)
   }
 }
 
 const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
+  if (ast.include) {
+    ast.props ??= {}
+    ast.props['*'] ??= {}
+    ast.props['*'].include ??= ast.include
+  }
   // if ast.include.glob === '*' include all from schema
   // youri thinks we can just set this as a field, simpler (also for nested things like bla.**.id)
   // same for ast.include.glob === '**'
   for (const field in ast.props) {
     const astProp = ast.props[field]
+    if (field === 'id') {
+      continue
+    }
     if (field === '*') {
-      for (const [field, prop] of typeDef.tree) {
-        if ('ref' in prop) continue
-        walkProp(astProp, ctx, typeDef, walkCtx, field)
+      for (const [field, prop] of walkCtx.tree) {
+        if (!('ref' in prop)) {
+          walkProp(astProp, ctx, typeDef, walkCtx, field)
+        }
       }
     } else if (field === '**') {
       for (const [field, prop] of typeDef.tree) {
-        if ('ref' in prop) walkProp(astProp, ctx, typeDef, walkCtx, field)
+        if ('ref' in prop) {
+          walkProp(astProp, ctx, typeDef, walkCtx, field)
+        }
       }
     } else {
       walkProp(astProp, ctx, typeDef, walkCtx, field)
@@ -132,6 +141,6 @@ export const include = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef): number => {
     main: [],
     tree: typeDef.tree,
   })
-  includeMainProps(ctx, main, typeDef)
+  if (main.length) includeMainProps(ctx, main, typeDef)
   return ctx.query.length - startIndex
 }

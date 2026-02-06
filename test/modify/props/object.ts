@@ -24,7 +24,7 @@ await test('modify object', async (t) => {
     },
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     info: {
       title: 'my title',
@@ -39,7 +39,7 @@ await test('modify object', async (t) => {
     },
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     info: {
       title: 'my title',
@@ -53,7 +53,7 @@ await test('modify object', async (t) => {
       title: null,
     },
   })
-  deepEqual((await db.query('thing', id1).get().toObject()).info, {
+  deepEqual((await db.query2('thing', id1).get()).info, {
     count: 20,
     title: '',
   })
@@ -62,7 +62,7 @@ await test('modify object', async (t) => {
   await db.update('thing', id1, {
     info: null,
   })
-  deepEqual((await db.query('thing', id1).get().toObject()).info, {
+  deepEqual((await db.query2('thing', id1).get()).info, {
     count: 0,
     title: '',
   })
@@ -101,11 +101,7 @@ await test('modify object on edge', async (t) => {
     },
   })
 
-  const res1 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeInfo')
-    .get()
-    .toObject()
+  const res1 = await db.query2('holder', id1).include('toThing.$edgeInfo').get()
 
   deepEqual(res1.toThing?.$edgeInfo, {
     title: 'edge title',
@@ -122,11 +118,8 @@ await test('modify object on edge', async (t) => {
     },
   })
 
-  const res2 = await db
-    .query('holder', id1)
-    .include('toThing.$edgeInfo')
-    .get()
-    .toObject()
+  const res2 = await db.query2('holder', id1).include('toThing.$edgeInfo').get()
+
   deepEqual(res2.toThing?.$edgeInfo, {
     title: 'edge title',
     count: 15,

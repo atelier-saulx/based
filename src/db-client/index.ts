@@ -11,6 +11,7 @@ import {
   type SchemaOut,
   type ResolveSchema,
   type Schema,
+  type ResolvedProps,
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 import { LangCode, Modify } from '../zigTsExports.js'
@@ -21,6 +22,7 @@ import { serializeUpdate } from './modify/update.js'
 import { serializeDelete } from './modify/delete.js'
 import { serializeUpsert } from './modify/upsert.js'
 import { BasedQuery2 } from './query2/index.js'
+import type { InferSchemaOutput } from './query2/types.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -100,11 +102,11 @@ export class DbClient<S extends SchemaOut = SchemaOut> extends DbShared {
   ): BasedQuery2<S, T, '*', false>
   query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    id: number,
+    id: number | Partial<InferSchemaOutput<S, T>>,
   ): BasedQuery2<S, T, '*', true>
   query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    id?: number,
+    id?: number | Partial<InferSchemaOutput<S, T>>,
   ): BasedQuery2<S, T, '*', boolean> {
     return new BasedQuery2<S, T, '*', any>(this, type, id)
   }

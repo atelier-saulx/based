@@ -62,7 +62,7 @@ export type QueryAst = {
   locale?: string
   range?: { start: number; end: number }
   type?: string
-  target?: string | number | (number | string)[]
+  target?: number | number[] | Record<string, any>
   filter?: FilterAst
   sort?: { prop: string; order: 'asc' | 'desc' }
   props?: Record<string, QueryAst>

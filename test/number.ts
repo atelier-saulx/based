@@ -78,7 +78,6 @@ await test('basic', async (t) => {
       }
     }),
   )
-  console.log('==========================')
   const newThing = await db.create('user', {
     number: {
       increment: 12,

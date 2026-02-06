@@ -8,6 +8,7 @@ import type {
   ResolveDotPath,
   InferPathType,
   FilterEdges,
+  InferSchemaOutput,
 } from './types.js'
 import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
 import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
@@ -60,35 +61,10 @@ class QueryBranch<
         EdgeProps
       > {
     for (const prop of props as (string | Function)[]) {
-      let target = this.ast
       if (typeof prop === 'function') {
-        prop((prop: string) => {
-          const path = prop.split('.')
-          for (const key of path) {
-            if (key[0] === '$') {
-              target.edges ??= {}
-              target.edges.props ??= {}
-              target = target.edges.props[key] = {}
-            } else {
-              target.props ??= {}
-              target = target.props[key] = {}
-            }
-          }
-          return new QueryBranch(target)
-        })
+        prop((prop: string) => new QueryBranch(traverse(this.ast, prop)))
       } else {
-        const path = prop.split('.')
-        for (const key of path) {
-          if (key[0] === '$') {
-            target.edges ??= {}
-            target.edges.props ??= {}
-            target = target.edges.props[key] = {}
-          } else {
-            target.props ??= {}
-            target = target.props[key] = {}
-          }
-        }
-        target.include = {}
+        traverse(this.ast, prop).include = {}
       }
     }
     return this as any
@@ -104,12 +80,7 @@ class QueryBranch<
     val: InferPathType<S, T, P>,
     opts?: FilterOpts,
   ): this {
-    let target: FilterLeaf = (this.ast.filter ??= {})
-    const path = (prop as string).split('.')
-    for (const key of path) {
-      target.props ??= {}
-      target = target.props[key] = {}
-    }
+    const target = traverse((this.ast.filter ??= {}), prop as string)
     target.ops ??= []
     target.ops.push({ op, val })
     return this
@@ -127,7 +98,11 @@ export class BasedQuery2<
     | string = '*',
   IsSingle extends boolean = false,
 > extends QueryBranch<S, T, K, IsSingle, undefined, true, {}> {
-  constructor(db: DbClient, type: T, target?: number) {
+  constructor(
+    db: DbClient,
+    type: T,
+    target?: number | Partial<InferSchemaOutput<S, T>>,
+  ) {
     super({})
     this.ast.type = type as string
     this.ast.target = target
@@ -139,9 +114,11 @@ export class BasedQuery2<
       ? PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>
       : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
   > {
-    if (!this.ast.props && !this.ast.include) {
+    if (!this.ast.props) {
       this.include('*')
     }
+    // console.dir(this.ast, { depth: null })
+
     if (!this.db.schema) {
       await this.db.once('schema')
     }
@@ -151,6 +128,7 @@ export class BasedQuery2<
       this.ast,
       new AutoSizedUint8Array(1000),
     )
+    // console.dir(ctx.readSchema, { depth: null })
     const result = await this.db.hooks.getQueryBuf(ctx.query)
     return proxyResult(result, ctx.readSchema) as any
   }
@@ -195,3 +173,18 @@ export type ResolveIncludeArgs<T> = T extends (
   : T extends string
     ? ResolveDotPath<T>
     : T
+
+function traverse(target: any, prop: string) {
+  const path = prop.split('.')
+  for (const key of path) {
+    if (key[0] === '$') {
+      target.edges ??= {}
+      target.edges.props ??= {}
+      target = target.edges.props[key] ??= {}
+    } else {
+      target.props ??= {}
+      target = target.props[key] ??= {}
+    }
+  }
+  return target
+}

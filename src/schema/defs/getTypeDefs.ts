@@ -66,16 +66,21 @@ const addPropDef = (
   return def
 }
 
-const getTypeDef = (schema: SchemaType<true>): TypeDef => {
+const getTypeDef = (
+  name: string,
+  schema: SchemaType<true>,
+  schemaRoot: SchemaOut,
+): TypeDef => {
   const { props } = schema
   const typeDef: TypeDef = {
     id: 0,
-    name: '',
+    name,
     separate: [],
     props: new Map(),
     main: [],
     tree: new Map(),
     schema,
+    schemaRoot,
   }
 
   const walk = (
@@ -111,14 +116,13 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
   const typeDefs = new Map(
     Object.entries(schema.types)
       .sort()
-      .map(([key, type]) => [key, getTypeDef(type)]),
+      .map(([name, type]) => [name, getTypeDef(name, type, schema)]),
   )
 
   // -------- connect references, add edges and assign ids --------
   let typeId = 1
   for (const [typeName, typeDef] of typeDefs) {
     typeDef.id = typeId++
-    typeDef.name = typeName
     for (const [propPath, def] of typeDef.props) {
       const prop =
         def.schema.type === 'references' ? def.schema.items : def.schema
@@ -154,8 +158,8 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
         edges[edge] = prop[edge]
       }
       if (edges) {
-        def.edges = getTypeDef({ props: edges })
         const edgeTypeName = `_${typeName}.${propPath}`
+        def.edges = getTypeDef(edgeTypeName, { props: edges }, schema)
         typeDefs.set(edgeTypeName, def.edges)
       }
     }

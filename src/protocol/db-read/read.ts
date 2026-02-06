@@ -18,6 +18,7 @@ import {
   PropType,
   readIncludeResponseMeta,
   ReadOp,
+  ReadOpInverse,
 } from '../../zigTsExports.js'
 
 export * from './types.js'
@@ -109,7 +110,9 @@ const references: ReadInstruction = (q, result, i, item) => {
 }
 
 const edge: ReadInstruction = (q, result, i, item) => {
-  return readInstruction(result[i], q.edges!, result, i + 1, item)
+  const size = readUint32(result, i)
+  i += 4
+  return readProps(q.edges!, result, i, i + size, item)
 }
 
 const readInstruction = (

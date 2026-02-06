@@ -57,6 +57,7 @@ export const readProp = (
     if (size === 0) {
       // do nothing
     } else {
+      console.log('->', prop.typeIndex)
       if (!prop.locales || prop.meta! > 2) {
         addProp(prop, readString(result, i + 4, size, true), item)
       } else {

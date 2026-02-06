@@ -49,7 +49,7 @@ pub fn include(
     var i: usize = 0;
     while (i < q.len) {
         const op: t.IncludeOp = @enumFromInt(q[i]);
-
+        // std.debug.print("includeop: {any} - {any}\n", .{ op, q });
         switch (op) {
             // add .referenceEdge?
             .reference => {
@@ -122,18 +122,18 @@ pub fn include(
                 const value = try get(typeEntry, node, &header);
                 // std.debug.print("??? value {any} - {any}\n", .{ value, header });
                 switch (header.propType) {
-                    t.PropType.text,
+                    .text,
                     => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
                             try append.stripCrc32(ctx.thread, header.prop, textValue);
                         }
                     },
-                    t.PropType.binary, t.PropType.string, t.PropType.json => {
+                    .binary, .string, .json => {
                         // utils.printString("derp", value);
                         try append.stripCrc32(ctx.thread, header.prop, value);
                     },
-                    t.PropType.microBuffer, t.PropType.vector, t.PropType.colVec => {
+                    .microBuffer, .vector, .colVec => {
                         // Fixed size
                         try ctx.thread.query.append(header.prop);
                         try ctx.thread.query.append(value);

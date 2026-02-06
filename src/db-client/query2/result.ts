@@ -10,16 +10,29 @@ export const $schema = Symbol()
 export const $result = Symbol()
 
 const define = (result: any) => {
-  result.__proto__ = []
-  if ('length' in result) result.length = 0
-  const data = resultToObject(
-    result[$schema],
-    result[$buffer],
-    result[$buffer].byteLength - 4,
-    0,
-    result,
-  )
-  if (data !== result) result.__proto__ = data
+  if ('length' in result) {
+    result.__proto__ = Array.prototype
+    result.length = 0
+    resultToObject(
+      result[$schema],
+      result[$buffer],
+      result[$buffer].byteLength - 4,
+      0,
+      result,
+    )
+  } else {
+    result.__proto__ = Object.prototype
+    Object.assign(
+      result,
+      resultToObject(
+        result[$schema],
+        result[$buffer],
+        result[$buffer].byteLength - 4,
+        0,
+      ),
+    )
+  }
+
   Object.defineProperty(result, $buffer, { enumerable: false })
   Object.defineProperty(result, $schema, { enumerable: false })
 }
@@ -37,6 +50,7 @@ const handler: ProxyHandler<any> = {
         return undefined
       }
     }
+
     define(result)
     return result[prop]
   },
@@ -53,14 +67,17 @@ const handler: ProxyHandler<any> = {
 }
 
 export const proxyResult = (buffer: Uint8Array, schema: ReaderSchema) => {
+  const single = schema.type === ReaderSchemaEnum.single
+  const length = readUint32(buffer, 0)
+  if (length === 0) return single ? null : []
   let stub, result
-  if (schema.type === ReaderSchemaEnum.single) {
+  if (single) {
     stub = {}
     result = {}
   } else {
     stub = []
     result = []
-    result.length = readUint32(buffer, 0)
+    result.length = length
   }
   const proxy = new Proxy(stub, handler)
   result[$buffer] = buffer

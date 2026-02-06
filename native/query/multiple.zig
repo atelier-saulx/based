@@ -86,7 +86,15 @@ fn iteratorEdge(
         try ctx.thread.query.append(Node.getNodeId(ref.node));
         try Include.include(ref.node, ctx, nestedQuery, typeEntry);
         try ctx.thread.query.append(t.ReadOp.edge);
+        const edgesByteSizeIndex = try ctx.thread.query.reserve(4);
+        const edgeStartIndex = ctx.thread.query.index;
         try Include.include(ref.edge, ctx, edgeQuery, edgeTypeEntry);
+        ctx.thread.query.writeAs(
+            u32,
+            @truncate(ctx.thread.query.index - edgeStartIndex),
+            edgesByteSizeIndex,
+        );
+        // try Include.include(ref.edge, ctx, edgeQuery, edgeTypeEntry);
         nodeCnt += 1;
         if (nodeCnt >= header.limit) {
             break;
@@ -297,7 +305,6 @@ pub fn aggregates(
     const header = utils.read(t.AggHeader, q, i);
 
     i += utils.sizeOf(t.AggHeader);
-    std.debug.print("header: {any}\n", .{header});
     const typeId = header.typeId;
     const typeEntry = try Node.getType(ctx.db, typeId);
     const isSamplingSet = header.isSamplingSet;

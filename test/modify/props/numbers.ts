@@ -49,7 +49,7 @@ await test('modify numbers', async (t) => {
     i32: -2147483648,
   })
 
-  deepEqual(await db.query('thing').get(), [
+  deepEqual(await db.query2('thing').get(), [
     {
       id: id1,
       n: 1.5,
@@ -92,7 +92,7 @@ await test('modify numbers', async (t) => {
     i32: -100001,
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     n: 2.5,
     u8: 11,
@@ -113,7 +113,7 @@ await test('modify numbers', async (t) => {
     i32: { increment: 1 },
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     n: 5,
     u8: 12,
@@ -134,7 +134,7 @@ await test('modify numbers', async (t) => {
     i32: { increment: -1 },
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: id1,
     n: 2.5,
     u8: 11,
@@ -156,7 +156,7 @@ await test('modify numbers', async (t) => {
     i32: null,
   })
 
-  deepEqual(await db.query('thing', id1).get(), {
+  deepEqual(await db.query2('thing', id1).get(), {
     id: 1,
     n: 0,
     i32: 0,
@@ -237,7 +237,7 @@ await test('modify numbers on edge', async (t) => {
   // Helper to get edge props
   const getEdgeProps = async (id: number) => {
     const res = await db
-      .query('holder', id)
+      .query2('holder', id)
       .include(
         'toThing.$edgeN',
         'toThing.$edgeU8',
@@ -248,7 +248,6 @@ await test('modify numbers on edge', async (t) => {
         'toThing.$edgeI32',
       )
       .get()
-      .toObject()
 
     if (!res.toThing || Array.isArray(res.toThing)) {
       return {}

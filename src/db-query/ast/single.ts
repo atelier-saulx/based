@@ -1,19 +1,70 @@
 import { ReaderSchemaEnum } from '../../protocol/index.js'
-import { PropDef } from '../../schema/defs/index.js'
+import { PropDef, type TypeDef } from '../../schema/defs/index.js'
 import {
   pushQueryHeaderSingleReference,
   QueryType,
   writeQueryHeaderSingleReferenceProps as props,
+  pushQueryHeaderSingle,
+  writeQueryHeaderSingleProps,
+  PropType,
+  Modify,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { include } from './include.js'
-import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
+
+export const defaultSingle = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
+  let id = 0
+  let prop = 0
+  let aliasProp: PropDef | undefined
+  let aliasValue
+  if (typeof ast.target === 'number') {
+    id = ast.target
+  } else if (typeof ast.target === 'object' && ast.target !== null) {
+    for (const key in ast.target) {
+      aliasProp = typeDef.props.get(key)
+      if (aliasProp?.type !== PropType.alias) {
+        throw new Error('invalid alias target')
+      }
+      prop = aliasProp.id
+      aliasValue = ast.target[key]
+      break
+    }
+  } else {
+    throw new Error('ast.target not supported (yet)')
+  }
+
+  const headerIndex = pushQueryHeaderSingle(ctx.query, {
+    op: aliasProp ? QueryType.alias : QueryType.id,
+    includeSize: 0,
+    typeId: typeDef.id,
+    filterSize: 0,
+    aliasSize: 0,
+    id,
+    prop,
+  })
+
+  if (aliasProp) {
+    const start = ctx.query.length
+    aliasProp.pushValue(ctx.query, aliasValue, Modify.create)
+    writeQueryHeaderSingleProps.aliasSize(
+      ctx.query.data,
+      ctx.query.length - start,
+      headerIndex,
+    )
+  }
+
+  writeQueryHeaderSingleProps.includeSize(
+    ctx.query.data,
+    include(ast, ctx, typeDef),
+    headerIndex,
+  )
+}
 
 export const reference = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   const headerIndex = pushQueryHeaderSingleReference(ctx.query, {
     op: QueryType.reference,
-    typeId: prop.typeDef.id,
+    typeId: prop.ref!.id,
     includeSize: 0,
     edgeTypeId: 0,
     edgeSize: 0,
@@ -31,7 +82,7 @@ export const reference = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       ...ctx,
       readSchema: schema,
     },
-    prop.typeDef,
+    prop.ref!,
   )
   props.includeSize(ctx.query.data, size, headerIndex)
 

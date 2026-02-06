@@ -20,7 +20,7 @@ await test('modify - default values basic', async (t) => {
 
   // 1. Create with no values provided
   const a = await db.create('thing', {})
-  const resA: any = await db.query('thing', a).get()
+  const resA: any = await db.query2('thing', a).get()
   deepEqual(resA, {
     id: a,
     name: 'Untitled',
@@ -42,7 +42,7 @@ await test('modify - default values basic', async (t) => {
     myText: { en: 'Hi' },
     myTs: 2000,
   })
-  const resB = await db.query('thing', b).get()
+  const resB = await db.query2('thing', b).get()
   deepEqual(resB, {
     id: b,
     name: 'Specific',
@@ -56,7 +56,7 @@ await test('modify - default values basic', async (t) => {
 
   // 3. Create with mixed values
   const c = await db.create('thing', { score: 50, myEnum: 'b' })
-  const resC = await db.query('thing', c).get()
+  const resC = await db.query2('thing', c).get()
   deepEqual(resC, {
     id: c,
     name: 'Untitled',
@@ -98,12 +98,11 @@ await test('modify - default values on edge', async (t) => {
   })
 
   const resG1 = await db
-    .query('group', g1)
+    .query2('group', g1)
     .include('member.$role')
     .include('member.$level')
     .include('member.id')
     .get()
-    .toObject()
 
   deepEqual(resG1.member?.$role, 'member')
   deepEqual(resG1.member?.$level, 1)
@@ -121,7 +120,7 @@ await test('modify - default values on edge', async (t) => {
   })
 
   const resG2: any = await db
-    .query('group', g2)
+    .query2('group', g2)
     .include('member.$role')
     .include('member.$level')
     .include('member.id')
@@ -129,7 +128,6 @@ await test('modify - default values on edge', async (t) => {
     .include('member.$edgeJson')
     .include('member.$edgeText')
     .get()
-    .toObject()
 
   deepEqual(resG2.member?.$role, 'admin')
   deepEqual(resG2.member?.$level, 99)
@@ -143,14 +141,13 @@ await test('modify - default values on edge', async (t) => {
   })
 
   const resG3: any = await db
-    .query('group', g3)
+    .query2('group', g3)
     .include('member.$role')
     .include('member.$level')
     .include('member.$edgeEnum')
     .include('member.$edgeJson')
     .include('member.$edgeText')
     .get()
-    .toObject()
 
   deepEqual(resG3.member?.$role, 'member')
   deepEqual(resG3.member?.$level, 1)
