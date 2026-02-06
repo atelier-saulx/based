@@ -279,7 +279,7 @@ const createSchemaTypeDef = (
       prop.typeIndex === PropType.colVec
     ) {
       prop.vectorBaseType = schemaVectorBaseTypeToEnum(
-        ('baseType' in schemaProp && schemaProp.baseType) || 'number',
+        ('baseType' in schemaProp && schemaProp.baseType) || 'float64',
       )
     }
 

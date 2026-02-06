@@ -1,8 +1,17 @@
 import { assert, isNatural, isString } from './shared.js'
 import { parseBase, type Base } from './base.js'
-import { numberTypes } from './number.js'
 
-const vectorBaseTypes = [...numberTypes, 'float32', 'float64'] as const
+// TODO This should probably come from zigTsExports.ts
+const vectorBaseTypes = [
+  'int8',
+  'uint8',
+  'int16',
+  'uint16',
+  'int32',
+  'uint32',
+  'float32',
+  'float64',
+] as const
 
 export type SchemaVector = Base & {
   type: 'vector' | 'colvec'

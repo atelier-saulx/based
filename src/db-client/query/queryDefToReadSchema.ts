@@ -1,6 +1,15 @@
 import { IncludeOpts, QueryDef, Target } from './types.js'
-import { LangCode, LangCodeInverse, PropType } from '../../zigTsExports.js'
-import { type PropDef, type PropDefEdge } from '../../schema/index.js'
+import {
+  LangCode,
+  LangCodeInverse,
+  PropType,
+  VectorBaseType,
+} from '../../zigTsExports.js'
+import {
+  SchemaVector,
+  type PropDef,
+  type PropDefEdge,
+} from '../../schema/index.js'
 import {
   ReaderMeta,
   ReaderSchemaEnum,
@@ -34,7 +43,8 @@ const createReaderPropDef = (
     readerPropDef.enum = p.enum
   }
   if (p.typeIndex === PropType.vector || p.typeIndex === PropType.colVec) {
-    readerPropDef.vectorBaseType = p.vectorBaseType
+    readerPropDef.vectorBaseType =
+      VectorBaseType[(p.schema as SchemaVector).baseType]
     readerPropDef.len = p.len
   }
   if (p.typeIndex === PropType.cardinality) {
