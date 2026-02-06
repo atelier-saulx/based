@@ -169,8 +169,8 @@ pub inline fn deleteNode(db: *DbCtx, typeEntry: Type, node: Node) !void {
     selva.c.selva_del_node(db.selva, typeEntry, node);
 }
 
-pub inline fn flushNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) void {
-    selva.c.selva_flush_node(ctx.db.selva, typeEntry, node);
+pub inline fn flushNode(db: *DbCtx, typeEntry: Type, node: Node) void {
+    selva.c.selva_flush_node(db.selva, typeEntry, node);
 }
 
 pub inline fn expireNode(ctx: *Modify.ModifyCtx, typeId: t.TypeId, nodeId: u32, ts: i64) void {

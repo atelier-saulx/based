@@ -4,6 +4,8 @@ import {
   Modify,
   pushModifyCreateHeader,
   writeModifyCreateHeaderProps,
+  pushModifyCreateRingHeader,
+  writeModifyCreateRingHeaderProps,
   type LangCodeEnum,
 } from '../../zigTsExports.js'
 import { getTypeDef } from './index.js'
@@ -21,12 +23,28 @@ export const serializeCreate = <
   lang: LangCodeEnum,
 ) => {
   const typeDef = getTypeDef(schema, type)
-  const index = pushModifyCreateHeader(buf, {
-    op: Modify.create,
-    type: typeDef.id,
-    size: 0,
-  })
-  const start = buf.length
-  serializeProps(typeDef.tree, payload, buf, Modify.create, lang)
-  writeModifyCreateHeaderProps.size(buf.data, buf.length - start, index)
+  const maxNodeId = typeDef.schema.capped ?? 0
+
+  if (maxNodeId ?? 0 > 0) {
+    const index = pushModifyCreateRingHeader(buf, {
+      op: Modify.createRing,
+      type: typeDef.id,
+      maxNodeId,
+      size: 0,
+    })
+    const start = buf.length
+
+    serializeProps(typeDef.tree, payload, buf, Modify.create, lang)
+    writeModifyCreateRingHeaderProps.size(buf.data, buf.length - start, index)
+  } else {
+    const index = pushModifyCreateHeader(buf, {
+      op: Modify.create,
+      type: typeDef.id,
+      size: 0,
+    })
+    const start = buf.length
+
+    serializeProps(typeDef.tree, payload, buf, Modify.create, lang)
+    writeModifyCreateHeaderProps.size(buf.data, buf.length - start, index)
+  }
 }
