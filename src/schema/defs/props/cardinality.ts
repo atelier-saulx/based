@@ -35,7 +35,7 @@ export const cardinality = class Cardinality extends BasePropDef {
       if (typeof item === 'string') {
         buf.reserveUint64()
         xxHash64(ENCODER.encode(item), buf.data, buf.length - 8)
-      } else if (item instanceof Uint8Array) {
+      } else if (item instanceof Uint8Array && item.byteLength === 8) {
         buf.set(item, buf.length)
       } else {
         throw new Error('Invalid value for cardinality ' + this.path.join('.'))
