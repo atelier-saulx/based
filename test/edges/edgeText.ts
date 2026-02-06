@@ -13,7 +13,7 @@ await test.skip('text in an edge prop', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      it: { fallback: 'en' },
+      it: { fallback: ['en'] },
     },
     types: {
       user: {
