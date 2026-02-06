@@ -61,7 +61,7 @@ await test('string', async (t) => {
   })
   const { name, role, resume } = await db
     .query('user', one)
-    .include('name', { raw: true })
+    .include(['name', 'role', 'resume'], { raw: true })
     .get()
     .toObject()
 
