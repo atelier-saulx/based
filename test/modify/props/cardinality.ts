@@ -74,7 +74,7 @@ await test('modify cardinality on edge', async (t) => {
     .include('toThing.$edgeCounter')
     .get()
 
-  deepEqual(res1?.toThing.$edgeCounter, 1)
+  deepEqual(res1?.toThing?.$edgeCounter, 1)
 
   await db.update('holder', id1, {
     toThing: {
@@ -88,7 +88,7 @@ await test('modify cardinality on edge', async (t) => {
     .include('toThing.$edgeCounter')
     .get()
 
-  deepEqual(res2?.toThing.$edgeCounter, 2)
+  deepEqual(res2?.toThing?.$edgeCounter, 2)
 })
 
 await test('modify cardinality array', async (t) => {
