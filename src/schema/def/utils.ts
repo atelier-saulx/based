@@ -53,7 +53,7 @@ export const propIsNumerical = (prop: PropDef | PropDefEdge) => {
 export const schemaVectorBaseTypeToEnum = (
   vector: SchemaVector['baseType'],
 ): VectorBaseTypeEnum => {
-  if (vector === 'number' || vector === undefined) {
+  if (vector === undefined) {
     return VectorBaseType.float64
   }
   return VectorBaseTypeInverse[vector]

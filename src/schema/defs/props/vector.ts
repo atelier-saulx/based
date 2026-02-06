@@ -14,7 +14,6 @@ import type { TypeDef } from '../index.js'
 import { isTypedArray } from 'util/types'
 
 const baseTypeSize: { [K in SchemaVector['baseType']]: number } = {
-  number: 8,
   int8: 1,
   uint8: 1,
   int16: 2,
@@ -32,15 +31,18 @@ export const vector = class Vector extends BasePropDef {
   }
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
+  override validate(value: unknown): asserts value is Uint8Array {
+    if (!isTypedArray(value)) {
+      throw new Error('Not a typed array')
+    }
+  }
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
     _op?: ModifyEnum,
     _lang?: LangCodeEnum,
   ): asserts value is any {
-    if (!isTypedArray(value)) {
-      throw new Error('Not a typed array')
-    }
+    this.validate(value)
     const v = new Uint8Array(value.buffer).subarray(
       0,
       Math.min(value.byteLength, this.vectorSize),
@@ -69,15 +71,18 @@ export const colvec = class ColVec extends BasePropDef {
   compSize: number
   vecLen: number
   override type = PropType.colVec
+  override validate(value: unknown): asserts value is Uint8Array {
+    if (!isTypedArray(value)) {
+      throw new Error('Not a typed array')
+    }
+  }
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
     _op: ModifyEnum,
     _lang: LangCodeEnum,
   ): asserts value is any {
-    if (!isTypedArray(value)) {
-      throw new Error('Not a typed array')
-    }
+    this.validate(value)
     const v = new Uint8Array(value.buffer).subarray(
       0,
       Math.min(value.byteLength, this.vecLen),
@@ -89,7 +94,7 @@ export const colvec = class ColVec extends BasePropDef {
       type: PropTypeSelva.colVec,
       vecLen: this.vecLen,
       compSize: this.compSize,
-      hasDefault: 0,
+      hasDefault: 0, // TODO default
     })
   }
 }

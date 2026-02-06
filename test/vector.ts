@@ -49,7 +49,8 @@ async function initDb(t) {
 
 await test('vector set/get', async (t) => {
   const db = await initDb(t)
-  const res = (await db.query('data').get()).toObject()
+
+  const res = (await db.query('data').include('name', 'a').get()).toObject()
   for (const r of res) {
     const a = new Uint8Array(r.a.buffer, 0, r.a.byteLength)
     const b = new Uint8Array(new Float32Array(data[r.name]).buffer)
