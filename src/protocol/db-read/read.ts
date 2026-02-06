@@ -165,6 +165,7 @@ export const resultToObject = (
   result: Uint8Array,
   end: number,
   offset: number = 0,
+  items: AggItem | [Item] = [],
 ) => {
   if (q.aggregate) {
     return readAggregate(q, result, 0, result.byteLength - 4)
@@ -176,10 +177,9 @@ export const resultToObject = (
     if (q.type === ReaderSchemaEnum.single) {
       return null
     }
-    return []
+    return items
   }
 
-  let items: AggItem | [Item] = []
   let i = 5 + offset
 
   const readHook = q.hook

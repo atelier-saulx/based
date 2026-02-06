@@ -76,6 +76,7 @@ const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     const prop = tree.get(field)
     const astProp = ast.props[field]
     const include = astProp.include
+
     if (isPropDef(prop)) {
       if (prop.type === PropType.references) {
         references(astProp, ctx, prop)

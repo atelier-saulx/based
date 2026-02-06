@@ -16,6 +16,9 @@ await test('include', async (t) => {
   t.after(() => db.destroy())
   const client = await db.setSchema({
     types: {
+      friend: {
+        y: 'uint16',
+      },
       user: {
         name: 'string',
         x: 'boolean',
