@@ -198,22 +198,25 @@ export type ModOpEnum = (typeof ModOp)[keyof typeof ModOp]
 
 export const Modify = {
   create: 0,
-  update: 1,
-  delete: 2,
-  upsert: 3,
-  insert: 4,
+  createRing: 1,
+  update: 2,
+  delete: 3,
+  upsert: 4,
+  insert: 5,
 } as const
 
 export const ModifyInverse = {
   0: 'create',
-  1: 'update',
-  2: 'delete',
-  3: 'upsert',
-  4: 'insert',
+  1: 'createRing',
+  2: 'update',
+  3: 'delete',
+  4: 'upsert',
+  5: 'insert',
 } as const
 
 /**
   create, 
+  createRing, 
   update, 
   delete, 
   upsert, 
@@ -545,6 +548,86 @@ export const pushModifyCreateHeader = (
   const index = buf.length
   buf.pushUint8(Number(header.op))
   buf.pushUint8(Number(header.type))
+  buf.pushUint32(Number(header.size))
+  return index
+}
+
+export type ModifyCreateRingHeader = {
+  op: ModifyEnum
+  type: number
+  maxNodeId: number
+  size: number
+}
+
+export const ModifyCreateRingHeaderByteSize = 10
+
+export const ModifyCreateRingHeaderAlignOf = 16
+
+export const writeModifyCreateRingHeader = (
+  buf: Uint8Array,
+  header: ModifyCreateRingHeader,
+  offset: number,
+): number => {
+  buf[offset] = Number(header.op)
+  offset += 1
+  buf[offset] = Number(header.type)
+  offset += 1
+  writeUint32(buf, Number(header.maxNodeId), offset)
+  offset += 4
+  writeUint32(buf, Number(header.size), offset)
+  offset += 4
+  return offset
+}
+
+export const writeModifyCreateRingHeaderProps = {
+  op: (buf: Uint8Array, value: ModifyEnum, offset: number) => {
+    buf[offset] = Number(value)
+  },
+  type: (buf: Uint8Array, value: number, offset: number) => {
+    buf[offset + 1] = Number(value)
+  },
+  maxNodeId: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset + 2)
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset + 6)
+  },
+}
+
+export const readModifyCreateRingHeader = (
+  buf: Uint8Array,
+  offset: number,
+): ModifyCreateRingHeader => {
+  const value: ModifyCreateRingHeader = {
+    op: (buf[offset]) as ModifyEnum,
+    type: buf[offset + 1],
+    maxNodeId: readUint32(buf, offset + 2),
+    size: readUint32(buf, offset + 6),
+  }
+  return value
+}
+
+export const readModifyCreateRingHeaderProps = {
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
+    type: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    maxNodeId: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 6),
+}
+
+export const createModifyCreateRingHeader = (header: ModifyCreateRingHeader): Uint8Array => {
+  const buffer = new Uint8Array(ModifyCreateRingHeaderByteSize)
+  writeModifyCreateRingHeader(buffer, header, 0)
+  return buffer
+}
+
+export const pushModifyCreateRingHeader = (
+  buf: AutoSizedUint8Array,
+  header: ModifyCreateRingHeader,
+): number => {
+  const index = buf.length
+  buf.pushUint8(Number(header.op))
+  buf.pushUint8(Number(header.type))
+  buf.pushUint32(Number(header.maxNodeId))
   buf.pushUint32(Number(header.size))
   return index
 }

@@ -79,10 +79,11 @@ pub const ModOp = enum(u8) {
 
 pub const Modify = enum(u8) {
     create = 0,
-    update = 1,
-    delete = 2,
-    upsert = 3,
-    insert = 4,
+    createRing = 1,
+    update = 2,
+    delete = 3,
+    upsert = 4,
+    insert = 5,
 };
 
 pub const ModifyHeader = packed struct {
@@ -112,6 +113,13 @@ pub const ModifyDeleteHeader = packed struct {
 pub const ModifyCreateHeader = packed struct {
     op: Modify,
     type: u8,
+    size: u32,
+};
+
+pub const ModifyCreateRingHeader = packed struct {
+    op: Modify,
+    type: u8,
+    maxNodeId: u32,
     size: u32,
 };
 

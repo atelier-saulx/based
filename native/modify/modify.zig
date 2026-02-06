@@ -280,7 +280,28 @@ pub fn modify(
                 db.ids[create.type - 1] = id;
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
-                selva.markDirty(db, create.type, id);
+                i += create.size;
+            },
+            .createRing => {
+                const create = utils.read(t.ModifyCreateRingHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateRingHeader);
+                const typeEntry = try Node.getType(db, create.type);
+                const data: []u8 = buf[i .. i + create.size];
+                const nextId = db.ids[create.type - 1] % create.maxNodeId + 1;
+
+                var node = Node.getNode(typeEntry, nextId);
+                if (node) |oldNode| {
+                    Node.flushNode(db, typeEntry, oldNode);
+                } else {
+                    node = try Node.upsertNode(typeEntry, nextId);
+                }
+
+                modifyProps(db, typeEntry, node.?, data, items) catch {
+                    // handle errors
+                };
+                db.ids[create.type - 1] = nextId;
+                utils.write(result, nextId, j);
+                utils.write(result, t.ModifyError.null, j + 4);
                 i += create.size;
             },
             .update => {
