@@ -136,15 +136,15 @@ await test('group by', async (t) => {
       // timeFormat?: Intl.DateTimeFormat
     },
   }
-  // const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
-  // const result = await db.server.getQueryBuf(ctx.query)
-  // debugBuffer(result)
+  const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
+  const result = await db.server.getQueryBuf(ctx.query)
+  debugBuffer(result)
 
-  // const readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
+  const readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 
-  // const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+  const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  // console.dir(obj, { depth: 10 })
+  console.dir(obj, { depth: 10 })
 
   console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
 
@@ -154,6 +154,7 @@ await test('group by', async (t) => {
     .sum('distance')
     .groupBy('vendorName')
     .get()
+
   r.debug()
-  r.inspect(10)
+  console.dir(r.toObject(), { depth: 10 })
 })

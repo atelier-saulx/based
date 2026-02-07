@@ -9,6 +9,7 @@ import {
   createGroupByKeyProp,
   GroupByKeyPropByteSize,
   AggPropByteSize,
+  type QueryIteratorTypeEnum,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
@@ -97,15 +98,16 @@ const buildAggregateHeader = (
 
   // TODO: references
 
+  let iteratorType = QueryIteratorType.aggregate
+  if (hasGroupBy) iteratorType += 2
+  if (filterSize > 0) iteratorType += 1
+
   headerBuffer = createAggHeader({
     ...commonHeader,
     op,
     typeId: typeDef.id,
     limit: (ast.range?.end || 1000) + rangeStart,
-    iteratorType:
-      filterSize === 0
-        ? QueryIteratorType.aggregate
-        : QueryIteratorType.aggregateFilter, // TODO : later
+    iteratorType: iteratorType as QueryIteratorTypeEnum,
   })
   return headerBuffer
 }
@@ -116,6 +118,12 @@ const pushAggregates = (
   typeDef: TypeDef,
   sizes: { result: number; accumulator: number },
 ) => {
+  ctx.readSchema.aggregate = ctx.readSchema.aggregate || {
+    aggregates: [],
+    totalResultsSize: 0,
+    groupBy: undefined,
+  }
+
   // this for loop may be temporary
   // need to support repeated funcs or keep it very strict
   // adding a validation to force only distinct funcs with props[]
@@ -198,6 +206,8 @@ const pushAggregates = (
 
       sizes.result += resSize
       sizes.accumulator += accSize
+
+      ctx.readSchema.aggregate.totalResultsSize += resSize
     }
   }
 }
@@ -259,7 +269,14 @@ const pushGroupBy = (
 
   ctx.query.data.set(buffer, ctx.query.length)
   ctx.query.length += GroupByKeyPropByteSize
-
+  if (ctx.readSchema.aggregate) {
+    ctx.readSchema.aggregate.groupBy = {
+      typeIndex: propDef.type,
+      //   stepRange, // MV: TODO review
+      //   stepType: false,
+      //   enum: [],
+    }
+  }
   return true
 }
 
