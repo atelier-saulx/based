@@ -10,6 +10,7 @@ import {
   GroupByKeyPropByteSize,
   AggPropByteSize,
   type QueryIteratorTypeEnum,
+  type AggFunctionEnum,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
@@ -124,24 +125,13 @@ const pushAggregates = (
     groupBy: undefined,
   }
 
-  // this for loop may be temporary
-  // need to support repeated funcs or keep it very strict
-  // adding a validation to force only distinct funcs with props[]
-  const aggs = [
-    { key: 'count', fn: AggFunction.count },
-    { key: 'sum', fn: AggFunction.sum },
-    { key: 'avg', fn: AggFunction.avg },
-    { key: 'min', fn: AggFunction.min },
-    { key: 'max', fn: AggFunction.max },
-    { key: 'cardinality', fn: AggFunction.cardinality },
-    { key: 'stddev', fn: AggFunction.stddev },
-    { key: 'var', fn: AggFunction.variance },
-    { key: 'harmonicMean', fn: AggFunction.hmean },
-  ]
+  for (const key in AggFunction) {
+    if (!(key in ast)) continue
 
-  for (const { key, fn } of aggs) {
     const data = ast[key]
     if (!data) continue
+
+    const fn = AggFunction[key]
 
     let props = Array.isArray(data.props)
       ? data.props
