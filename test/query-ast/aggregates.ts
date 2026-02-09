@@ -117,34 +117,149 @@ await test('group by', async (t) => {
     vendorIdint32: 813,
     vendorIdnumber: 813.813,
     vendorName: 'Derp taxis',
-    pickup: new Date('11/12/2024 11:00'),
-    dropoff: new Date('11/12/2024 11:10'),
+    pickup: new Date('2024-12-11T11:00-03:00'),
+    dropoff: new Date('2024-12-11T11:10-03:00'),
     distance: 513.44,
   })
 
+  db.create('trip', {
+    vendorIduint8: 13,
+    vendorIdint8: 13,
+    vendorIduint16: 813,
+    vendorIdint16: 813,
+    vendorIduint32: 813,
+    vendorIdint32: 813,
+    vendorIdnumber: 813.813,
+    vendorName: 'Derp taxis',
+    pickup: new Date('2024-12-11T13:00-03:00'),
+    dropoff: new Date('2024-12-11T13:30-03:00'),
+    distance: 100.1,
+  })
+
   await db.drain()
-  const ast: QueryAst = {
+
+  // ---------------  Group By string key ---------------  //
+  let ast: any
+  let ctx: any
+  let result: any
+  let readSchemaBuf: any
+  let obj: any
+
+  ast = {
     type: 'trip',
     sum: {
       props: ['distance'],
     },
-    // count: {},
     groupBy: {
       prop: 'vendorName',
-      // step?: number | IntervalString
-      // timeZone?: string
-      // timeFormat?: Intl.DateTimeFormat
+    },
+  } as QueryAst
+  ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
+  result = await db.server.getQueryBuf(ctx.query)
+  // debugBuffer(result)
+
+  readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
+
+  obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+
+  // console.dir(obj, { depth: 10 })
+  deepEqual(
+    obj,
+    { 'Derp taxis': { distance: { sum: 613.5400000000001 } } },
+    'Group By string key',
+  ) // TODO: rounding check
+
+  // ---------------  Group By numeric key ---------------  //
+  ast = {
+    type: 'trip',
+    sum: {
+      props: ['distance'],
+    },
+    count: {},
+    groupBy: {
+      prop: 'vendorIduint32',
     },
   }
-  const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
-  const result = await db.server.getQueryBuf(ctx.query)
-  debugBuffer(result)
+  ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
+  result = await db.server.getQueryBuf(ctx.query)
 
-  const readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
+  readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 
-  const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+  obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  deepEqual(
+    obj,
+    { '813': { count: 2, distance: { sum: 613.5400000000001 } } },
+    'Group By numeric key',
+  )
+
+  // ---------------  Group By named interval ---------------  //
+
+  const dtFormat = new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: 'America/Sao_Paulo',
+  })
+
+  ast = {
+    type: 'trip',
+    sum: {
+      props: ['distance'],
+    },
+    count: {},
+    groupBy: {
+      prop: 'pickup',
+      step: 'day',
+      timeFormat: dtFormat,
+      timeZone: 'America/Sao_Paulo',
+    },
+  } as QueryAst
+  ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
+  result = await db.server.getQueryBuf(ctx.query)
+
+  readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
+
+  obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+
+  deepEqual(
+    obj,
+    { '11': { count: 2, distance: { sum: 613.5400000000001 } } },
+    'Group By named interval',
+  )
+
+  // ---------------  Group By range interval with output format ---------------  //
+  ast = {
+    type: 'trip',
+    sum: {
+      props: ['distance'],
+    },
+    count: {},
+    groupBy: {
+      prop: 'pickup',
+      step: 2.5 * 60 * 60, // 2:30h = 2.5 * 3600s
+      display: dtFormat,
+      timeZone: 'America/Sao_Paulo',
+    },
+  } as QueryAst
+  ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
+  result = await db.server.getQueryBuf(ctx.query)
+
+  readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
+
+  obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+
+  deepEqual(
+    obj,
+    {
+      '11/12/2024 11:00 – 13:30': {
+        count: 2,
+        distance: { sum: 613.5400000000001 },
+      },
+    },
+    'Group By range interval with output format',
+  )
+
+  // ---------------  Group By enum keys ---------------  //
 
   console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
 
@@ -152,7 +267,11 @@ await test('group by', async (t) => {
     .query('trip')
     // .count()
     .sum('distance')
-    .groupBy('vendorName')
+    .groupBy('pickup', {
+      timeZone: 'America/Sao_Paulo',
+      display: dtFormat,
+      step: 2.5 * 60 * 60, // 2:30h = 2.5 * 3600s
+    })
     .get()
 
   r.debug()

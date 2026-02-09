@@ -80,7 +80,7 @@ export type QueryAst = {
     prop: string
     step?: number | IntervalString
     timeZone?: string
-    timeFormat?: Intl.DateTimeFormat
+    display?: Intl.DateTimeFormat
   }
 }
 

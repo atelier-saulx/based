@@ -11,6 +11,7 @@ import {
   AggPropByteSize,
   type QueryIteratorTypeEnum,
   type AggFunctionEnum,
+  IntervalInverse,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
@@ -234,7 +235,7 @@ const pushGroupBy = (
 ): boolean => {
   if (!ast.groupBy) return false
 
-  const { prop: propName, step, timeZone } = ast.groupBy
+  const { prop: propName, step, timeZone, display } = ast.groupBy
   const propDef = typeDef.props.get(propName)
 
   if (!propDef) {
@@ -259,14 +260,17 @@ const pushGroupBy = (
 
   ctx.query.data.set(buffer, ctx.query.length)
   ctx.query.length += GroupByKeyPropByteSize
+
   if (ctx.readSchema.aggregate) {
     ctx.readSchema.aggregate.groupBy = {
       typeIndex: propDef.type,
-      //   stepRange, // MV: TODO review
-      //   stepType: false,
-      //   enum: [],
+      stepRange,
+      ...(stepType !== 0 && { stepType: IntervalInverse[stepType] }),
+      ...(display !== undefined && { display }),
+      //   enum: [], // TODO: review enum engine
     }
   }
+
   return true
 }
 
