@@ -90,6 +90,8 @@ await test('group by', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.stop())
 
+  const tripClass = ['Cupper', 'Silver', 'Gold']
+
   const client = await db.setSchema({
     types: {
       trip: {
@@ -104,6 +106,7 @@ await test('group by', async (t) => {
         vendorIdint32: 'int32',
         vendorIdnumber: 'number',
         vendorName: 'string',
+        class: tripClass,
       },
     },
   })
@@ -120,6 +123,7 @@ await test('group by', async (t) => {
     pickup: new Date('2024-12-11T11:00-03:00'),
     dropoff: new Date('2024-12-11T11:10-03:00'),
     distance: 513.44,
+    class: 'Cupper',
   })
 
   db.create('trip', {
@@ -134,16 +138,18 @@ await test('group by', async (t) => {
     pickup: new Date('2024-12-11T13:00-03:00'),
     dropoff: new Date('2024-12-11T13:30-03:00'),
     distance: 100.1,
+    class: 'Gold',
   })
 
   await db.drain()
 
-  // ---------------  Group By string key ---------------  //
   let ast: any
   let ctx: any
   let result: any
   let readSchemaBuf: any
   let obj: any
+
+  // ---------------  Group By string key ---------------  //
 
   ast = {
     type: 'trip',
@@ -261,19 +267,41 @@ await test('group by', async (t) => {
 
   // ---------------  Group By enum keys ---------------  //
 
-  console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
+  ast = {
+    type: 'trip',
+    sum: {
+      props: ['distance'],
+    },
+    count: {},
+    groupBy: {
+      prop: 'class',
+    },
+  } as QueryAst
+  ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
+  result = await db.server.getQueryBuf(ctx.query)
 
-  const r = await db
-    .query('trip')
-    // .count()
-    .sum('distance')
-    .groupBy('pickup', {
-      timeZone: 'America/Sao_Paulo',
-      display: dtFormat,
-      step: 2.5 * 60 * 60, // 2:30h = 2.5 * 3600s
-    })
-    .get()
+  readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 
-  r.debug()
-  console.dir(r.toObject(), { depth: 10 })
+  obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+
+  deepEqual(
+    obj,
+    {
+      Cupper: { count: 1, distance: { sum: 513.44 } },
+      Gold: { count: 1, distance: { sum: 100.1 } },
+    },
+    'Group By enum keys',
+  )
+
+  // console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
+
+  // const r = await db
+  //   .query('trip')
+  //   // .count()
+  //   .sum('distance')
+  //   .groupBy('class', {})
+  //   .get()
+
+  // r.debug()
+  // console.dir(r.toObject(), { depth: 10 })
 })

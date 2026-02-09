@@ -12,6 +12,7 @@ import {
   type QueryIteratorTypeEnum,
   type AggFunctionEnum,
   IntervalInverse,
+  PropType,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
@@ -22,6 +23,7 @@ import {
 } from '../../db-client/query/aggregates/types.js'
 import { readPropDef } from './readSchema.js'
 import { getTimeZoneOffsetInMinutes } from '../../db-client/query/aggregates/aggregates.js'
+import type { Enum } from 'valibot'
 
 type Sizes = { result: number; accumulator: number }
 
@@ -258,6 +260,12 @@ const pushGroupBy = (
     timezone: timeZoneOffset,
   })
 
+  let enumProxy
+  if (propDef.type === PropType.enum) {
+    // @ts-ignore
+    enumProxy = Object.values(propDef.enum)
+  }
+
   ctx.query.data.set(buffer, ctx.query.length)
   ctx.query.length += GroupByKeyPropByteSize
 
@@ -267,7 +275,7 @@ const pushGroupBy = (
       stepRange,
       ...(stepType !== 0 && { stepType: IntervalInverse[stepType] }),
       ...(display !== undefined && { display }),
-      //   enum: [], // TODO: review enum engine
+      ...(enumProxy !== undefined && { enum: enumProxy }),
     }
   }
 

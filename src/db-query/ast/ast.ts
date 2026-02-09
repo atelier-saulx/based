@@ -81,6 +81,7 @@ export type QueryAst = {
     step?: number | IntervalString
     timeZone?: string
     display?: Intl.DateTimeFormat
+    enum?: string[]
   }
 }
 
