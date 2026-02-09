@@ -102,7 +102,7 @@ await test('query by vector', async (t) => {
   deepEqual(r2.length, 1)
 })
 
-// this is broken! see https://linear.app/1ce/issue/FDN-1302 needs alignment!
+// FIXME this is broken! see https://linear.app/1ce/issue/FDN-1302 needs alignment!
 await test.skip('vector like', async (t) => {
   const db = await initDb(t)
 
