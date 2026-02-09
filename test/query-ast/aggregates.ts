@@ -48,7 +48,7 @@ await test('basic', async (t) => {
       props: ['age'],
       samplingMode: 'population',
     },
-    var: {
+    variance: {
       props: ['age'],
     },
     // count: { props: 'age' }, // not implementd yet
@@ -56,11 +56,12 @@ await test('basic', async (t) => {
   }
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
   const result = await db.server.getQueryBuf(ctx.query)
-  debugBuffer(result)
+  // debugBuffer(result)
 
   const readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
+  // console.dir(obj, { depth: 10 })
 
   deepEqual(
     obj,
@@ -72,15 +73,7 @@ await test('basic', async (t) => {
     'basic accum, no groupby, no refs',
   )
 
-  // console.dir(obj, { depth: 10 })
-
-  console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
-
-  // console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
-
-  // const r = await db.query('user').count().sum('age').get()
-  // r.debug()
-  // r.inspect(10)
+  // console.log(JSON.stringify(obj), readSchemaBuf.byteLength, result.byteLength)
 })
 
 await test('group by', async (t) => {
