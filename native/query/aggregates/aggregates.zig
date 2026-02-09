@@ -52,8 +52,8 @@ pub inline fn aggregateProps(
     var i: usize = 0;
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
-        utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
-        utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
+        // utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
+        // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
         var value: []u8 = undefined;
         if (currentAggDef.aggFunction == t.AggFunction.count) {
             accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
@@ -112,7 +112,7 @@ pub inline fn accumulate(
             switch (aggFunction) {
                 .sum => {
                     writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propTypeTag, value, start), accumulatorPos);
-                    utils.debugPrint("❤️ v: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
+                    // utils.debugPrint("❤️ v: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .avg => {
                     const val = microbufferToF64(propTypeTag, value, start);
