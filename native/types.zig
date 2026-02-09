@@ -95,7 +95,7 @@ pub const ModifyHeader = packed struct {
 
 pub const ModifyUpdateHeader = packed struct {
     op: Modify,
-    type: u8,
+    type: TypeId,
     isTmp: bool,
     _padding: u7,
     id: u32,
@@ -104,7 +104,7 @@ pub const ModifyUpdateHeader = packed struct {
 
 pub const ModifyDeleteHeader = packed struct {
     op: Modify,
-    type: u8,
+    type: TypeId,
     isTmp: bool,
     _padding: u7,
     id: u32,
@@ -112,13 +112,13 @@ pub const ModifyDeleteHeader = packed struct {
 
 pub const ModifyCreateHeader = packed struct {
     op: Modify,
-    type: u8,
+    type: TypeId,
     size: u32,
 };
 
 pub const ModifyCreateRingHeader = packed struct {
     op: Modify,
-    type: u8,
+    type: TypeId,
     maxNodeId: u32,
     size: u32,
 };
