@@ -69,7 +69,7 @@ const isRootCountOnly = (ast: QueryAst) => {
     !ast.min &&
     !ast.max &&
     !ast.stddev &&
-    !ast.var &&
+    !ast.variance &&
     !ast.harmonicMean &&
     !ast.cardinality
   )
@@ -212,7 +212,7 @@ export const isAggregateAst = (ast: QueryAst) => {
     ast.min ||
     ast.max ||
     ast.stddev ||
-    ast.var ||
+    ast.variance ||
     ast.harmonicMean ||
     ast.cardinality
   )
