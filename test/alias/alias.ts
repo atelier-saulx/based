@@ -40,27 +40,22 @@ await test('simple', async (t) => {
     'One alias',
   )
 
-  deepEqual((await db.query('user', user2).get()).toObject(), {
+  deepEqual(await db.query('user', user2).get(), {
     id: 2,
     externalId: 'cool2',
     potato: '',
   })
 
-  deepEqual(
-    (await db.query('user').filter('externalId', '=', 'cool').get()).toObject(),
-    [
-      {
-        id: 1,
-        externalId: 'cool',
-        potato: '',
-      },
-    ],
-  )
+  deepEqual(await db.query('user').filter('externalId', '=', 'cool').get(), [
+    {
+      id: 1,
+      externalId: 'cool',
+      potato: '',
+    },
+  ])
 
   deepEqual(
-    (
-      await db.query('user').filter('externalId', 'includes', 'cool').get()
-    ).toObject(),
+    await db.query('user').filter('externalId', 'includes', 'cool').get(),
     [
       {
         id: 1,
@@ -79,7 +74,7 @@ await test('simple', async (t) => {
     potato: 'success',
   })
 
-  deepEqual((await db.query('user', res1).get()).toObject(), {
+  deepEqual(await db.query('user', res1).get(), {
     id: 3,
     externalId: 'potato',
     potato: 'success',
@@ -88,31 +83,25 @@ await test('simple', async (t) => {
     externalId: 'potato',
     potato: 'wrong',
   })
-  deepEqual((await db.query('user', res2).get()).toObject(), {
+  deepEqual(await db.query('user', res2).get(), {
     id: 3,
     externalId: 'potato',
     potato: 'wrong',
   })
   deepEqual(
-    (
-      await db.query('user', { externalId: 'i-dont-exists-haha!' }).get()
-    ).toObject(),
+    await db.query('user', { externalId: 'i-dont-exists-haha!' }).get(),
     null,
     'Get non existing alias',
   )
 
-  deepEqual(
-    (await db.query('user', 123).get()).toObject(),
-    null,
-    'Get non existing id',
-  )
+  deepEqual(await db.query('user', 123).get(), null, 'Get non existing id')
 
   await db.create('user', {
     potato: 'power',
     externalId: 'cool',
   })
 
-  deepEqual(await db.query('user').get().toObject(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, externalId: '', potato: '' },
     { id: 2, externalId: 'cool2', potato: '' },
     { id: 3, externalId: 'potato', potato: 'wrong' },
@@ -159,7 +148,7 @@ await test('alias - references', async (t) => {
   })
 
   deepEqual(
-    await db.query('user').include('email', 'friends').get().toObject(),
+    await db.query('user').include('email', 'friends').get(),
     [
       {
         id: 1,
@@ -185,7 +174,7 @@ await test('alias - references', async (t) => {
   })
 
   deepEqual(
-    await db.query('user').include('friends', 'email').get().toObject(),
+    await db.query('user').include('friends', 'email').get(),
     [
       {
         id: 1,
@@ -205,8 +194,7 @@ await test('alias - references', async (t) => {
     await db
       .query('user')
       .filter('email', 'includes', '2', { lowerCase: true })
-      .get()
-      .toObject(),
+      .get(),
     [{ id: 2, name: '2', email: '2@saulx.com' }],
     'update 2',
   )
@@ -241,8 +229,7 @@ await test('Get single node by alias', async (t) => {
       .query('user', {
         email: '2@saulx.com',
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: '2',
@@ -312,8 +299,7 @@ await test('Update existing alias field', async (t) => {
       .query('user', {
         email,
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: 'nuno',
@@ -335,8 +321,7 @@ await test('Update existing alias field', async (t) => {
       .query('user', {
         email,
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: 'nuno',
@@ -359,8 +344,7 @@ await test('Update existing alias field', async (t) => {
       .query('user', {
         email,
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: 'nuno',
@@ -414,7 +398,7 @@ await test('same-name-alias', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query('round').get().toObject(), [
+  deepEqual(await db.query('round').get(), [
     { id: 1, name: 'semi1' },
     { id: 2, name: 'semi2' },
     { id: 3, name: 'final' },
@@ -455,7 +439,7 @@ await test('nested alias', async (t) => {
     },
   })
 
-  deepEqual(await db.query('thing').get().toObject(), [
+  deepEqual(await db.query('thing').get(), [
     { id: 1, obj: { a: 'jibber', b: '' } },
     { id: 2, obj: { b: 'flurp', a: '' } },
   ])
@@ -522,8 +506,7 @@ await test('Get single node by alias', async (t) => {
       .query('user', {
         email: '2@saulx.com',
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: '2',
@@ -577,8 +560,7 @@ await test('Update existing alias field', async (t) => {
       .query('user', {
         email,
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: 'nuno',
@@ -601,8 +583,7 @@ await test('Update existing alias field', async (t) => {
       .query('user', {
         email,
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: 'nuno',
@@ -624,8 +605,7 @@ await test('Update existing alias field', async (t) => {
       .query('user', {
         email,
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: 'nuno',
@@ -648,8 +628,7 @@ await test('Update existing alias field', async (t) => {
       .query('user', {
         email,
       })
-      .get()
-      .toObject(),
+      .get(),
     {
       id: 1,
       name: 'nuno',
@@ -700,7 +679,7 @@ await test('same-name-alias', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query('round').get().toObject(), [
+  deepEqual(await db.query('round').get(), [
     { id: 1, name: 'semi1' },
     { id: 2, name: 'semi2' },
     { id: 3, name: 'final' },
