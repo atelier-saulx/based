@@ -12,7 +12,7 @@ const data = {
   car: [81.6, -72.1, 16, -20.2, 102],
 }
 
-async function initDb(t) {
+async function initDb(t: Parameters<Parameters<typeof test>[1]>[0]): Promise<BasedDb> {
   const db = new BasedDb({
     path: t.tmp,
   })
