@@ -308,3 +308,14 @@ pub fn getAliasByName(typeEntry: Node.Type, field: u8, aliasName: []u8) ?Node.No
     // TODO Partials
     return res.node;
 }
+
+pub fn getAliasByNode(typeEntry: Node.Type, node: Node.Node, field: u8) ![]const u8 {
+    if (selva.c.selva_get_aliases(typeEntry, field)) |aliases| {
+        if (selva.c.selva_get_alias_by_dest(aliases, Node.getNodeId(node))) |alias| {
+            var len: usize = undefined;
+            const name = selva.c.selva_get_alias_name(alias, &len);
+            return name[0..len];
+        }
+    }
+    return errors.SelvaError.SELVA_ENOENT;
+}
