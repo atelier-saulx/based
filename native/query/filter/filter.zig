@@ -82,7 +82,7 @@ inline fn compare(
     T: type,
     comptime meta: Instruction.OpMeta,
     q: []u8,
-    v: []u8,
+    v: []const u8,
     index: usize,
     c: *t.FilterCondition,
 ) bool {
@@ -103,7 +103,7 @@ inline fn compare(
 pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
     var i: usize = 0;
     var pass: bool = true;
-    var v: []u8 = undefined;
+    var v: []const u8 = undefined;
     var prop: u8 = 255;
     var nextOrIndex: usize = q.len;
     while (i < nextOrIndex) {
