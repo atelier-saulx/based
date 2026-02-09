@@ -10,7 +10,6 @@ import {
   GroupByKeyPropByteSize,
   AggPropByteSize,
   type QueryIteratorTypeEnum,
-  type AggFunctionEnum,
   IntervalInverse,
   PropType,
 } from '../../zigTsExports.js'
@@ -23,7 +22,6 @@ import {
 } from '../../db-client/query/aggregates/types.js'
 import { readPropDef } from './readSchema.js'
 import { getTimeZoneOffsetInMinutes } from '../../db-client/query/aggregates/aggregates.js'
-import type { Enum } from 'valibot'
 
 type Sizes = { result: number; accumulator: number }
 
