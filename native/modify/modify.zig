@@ -235,7 +235,7 @@ const UpsertResult = struct {
     created: bool,
 };
 
-inline fn upsertTarget(db: *DbCtx, typeId: u8, typeEntry: Node.Type, data: []u8) !UpsertResult {
+inline fn upsertTarget(db: *DbCtx, typeId: u16, typeEntry: Node.Type, data: []u8) !UpsertResult {
     var j: usize = 0;
     while (j < data.len) {
         const prop = utils.readNext(t.ModifyPropHeader, data, &j);

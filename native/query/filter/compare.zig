@@ -17,7 +17,7 @@ pub const Function = enum(u8) {
     eqBatchSmall,
 };
 
-pub fn eqBatch(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn eqBatch(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
@@ -33,7 +33,7 @@ pub fn eqBatch(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool 
     return false;
 }
 
-pub fn eqBatchSmall(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn eqBatchSmall(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
@@ -42,37 +42,37 @@ pub fn eqBatchSmall(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) 
     return (std.simd.countElementsWithValue(vec, value) != 0);
 }
 
-pub fn eq(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn eq(comptime T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const val = utils.readPtr(T, v, c.start).*;
     const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
     return val == target;
 }
 
-pub fn lt(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn lt(comptime T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const val = utils.readPtr(T, v, c.start).*;
     const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
     return val < target;
 }
 
-pub fn gt(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn gt(comptime T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const val = utils.readPtr(T, v, c.start).*;
     const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
     return val > target;
 }
 
-pub fn le(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn le(comptime T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const val = utils.readPtr(T, v, c.start).*;
     const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
     return val <= target;
 }
 
-pub fn ge(comptime T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn ge(comptime T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const val = utils.readPtr(T, v, c.start).*;
     const target = utils.readPtr(T, q, i + @alignOf(T) - c.offset).*;
     return val >= target;
 }
 
-pub fn range(T: type, q: []u8, v: []u8, i: usize, c: *t.FilterCondition) bool {
+pub fn range(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
     const size = utils.sizeOf(T);
     if (T == f64) {
         // Floats do not support ignore overflow
