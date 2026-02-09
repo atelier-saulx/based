@@ -126,13 +126,11 @@ pub inline fn accumulate(
                     writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
                 },
                 .min => {
-                    // utils.debugPrint("hadAccumulated: {any} {d} {d}\n", .{ hadAccumulated.*, accumulatorPos, microbufferToF64(propTypeTag, value, start) });
                     if (!hadAccumulated.*) {
                         writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
                     } else {
                         writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
                     }
-                    // utils.debugPrint("ficou: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .max => {
                     if (!hadAccumulated.*) {
