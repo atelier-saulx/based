@@ -60,17 +60,8 @@ await test('include', async (t) => {
       cookie: 1234,
     },
     y: 0,
-    // mrFriend: { id: a, $level: 99 },
+    mrFriend: { id: a, $level: 99 },
   })
-
-  // await client.create('user', {
-  //   name: 'DDDDDDDD',
-  //   cook: {
-  //     cookie: 1234,
-  //   },
-  //   y: 4,
-  //   mrFriend: { id: a, $level: 99 },
-  // })
 
   await db.drain()
 

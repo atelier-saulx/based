@@ -183,10 +183,24 @@ pub fn referenceEdge(
 
             std.debug.print("edge {any} {any} \n", .{ e, ref.edge });
 
+            // dont think this is nessecary
+
             if (e) |edge| {
                 const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
                 try ctx.thread.query.append(t.ReadOp.edge);
+
+                const edgesByteSizeIndex = try ctx.thread.query.reserve(4);
+                const edgeStartIndex = ctx.thread.query.index;
+
                 try Include.include(edge, ctx, edgeQuery, edgeTypeEntry);
+
+                ctx.thread.query.writeAs(
+                    u32,
+                    @truncate(ctx.thread.query.index - edgeStartIndex),
+                    edgesByteSizeIndex,
+                );
+            } else {
+                std.log.err("singe ref edge -> WRONG EDGE HAS TO BE THERE!\n", .{});
             }
 
             ctx.thread.query.writeAs(
