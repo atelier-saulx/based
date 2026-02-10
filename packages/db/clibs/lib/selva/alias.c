@@ -29,6 +29,7 @@ void selva_init_aliases(struct SelvaTypeEntry *type)
             assert(fs->alias_index < type->ns.nr_aliases);
 #endif
             field_aliases->field = fs->field;
+            field_aliases->nr_aliases = 0;
             RB_INIT(&field_aliases->alias_by_name);
             RB_INIT(&field_aliases->alias_by_dest);
             __attribute__((__fallthrough__));
