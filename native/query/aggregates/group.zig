@@ -90,7 +90,7 @@ inline fn aggregatePropsWithGroupBy(
     var keyValue: []u8 = undefined;
 
     const propSchema = Schema.getFieldSchema(typeEntry, currentKeyPropDef.propId) catch {
-        i += @sizeOf(t.GroupByKeyProp);
+        i += utils.sizeOf(t.GroupByKeyProp);
         return;
     };
 
@@ -116,6 +116,28 @@ pub inline fn finalizeGroupResults(
     ctx: *Query.QueryCtx,
     groupByHashMap: *GroupByHashMap,
     header: t.AggHeader,
+    aggDefs: []u8,
+) !void {
+    var it = groupByHashMap.iterator();
+
+    while (it.next()) |entry| {
+        const key = entry.key_ptr.*;
+        const keyLen: u16 = @intCast(key.len);
+        if (key.len > 0) {
+            try ctx.thread.query.append(keyLen);
+            try ctx.thread.query.append(key);
+        }
+
+        const accumulatorProp = entry.value_ptr.*;
+
+        try Aggregates.finalizeResults(ctx, aggDefs, accumulatorProp, header.isSamplingSet, @bitSizeOf(t.GroupByKeyProp) / 8);
+    }
+}
+
+pub inline fn finalizeRefsGroupResults(
+    ctx: *Query.QueryCtx,
+    groupByHashMap: *GroupByHashMap,
+    header: t.AggRefsHeader,
     aggDefs: []u8,
 ) !void {
     var it = groupByHashMap.iterator();
