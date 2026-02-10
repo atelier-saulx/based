@@ -5,7 +5,11 @@ import { BasedQueryResponse } from '../../src/db-client/query/BasedQueryResponse
 import { PropTypeInverse } from '../../src/zigTsExports.js'
 export { perf } from './perf.js'
 
-export const deepEqual = <A>(a: A, b: NoInfer<A extends BasedQueryResponse ? ReturnType<A['toObject']> : A>, msg?: string) => {
+export const deepEqual = <A>(
+  a: A,
+  b: NoInfer<A extends BasedQueryResponse ? ReturnType<A['toObject']> : A>,
+  msg?: string,
+) => {
   if (a instanceof BasedQueryResponse) {
     a = a.toObject()
   }
