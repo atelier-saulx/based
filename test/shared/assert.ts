@@ -5,8 +5,7 @@ import { BasedQueryResponse } from '../../src/db-client/query/BasedQueryResponse
 import { PropTypeInverse } from '../../src/zigTsExports.js'
 export { perf } from './perf.js'
 
-// add fn
-export const deepEqual = <A>(a: A, b: NoInfer<A>, msg?: string) => {
+export const deepEqual = <A>(a: A, b: NoInfer<A extends BasedQueryResponse ? ReturnType<A['toObject']> : A>, msg?: string) => {
   if (a instanceof BasedQueryResponse) {
     a = a.toObject()
   }
@@ -25,9 +24,9 @@ ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
   }
 }
 
-export const notEqual = (a, b, msg?: string) => {
+export const notEqual = (a: any, b: any, msg?: string) => {
   if (uDeepEqual(a, b)) {
-    const m = `${msg || 'Should not be equal:'} 
+    const m = `${msg || 'Should not be equal:'}
 ------------------ A ---------------------
 ${util.inspect(a, { depth: 10, maxStringLength: 60 })}
 ------------------ B ---------------------
