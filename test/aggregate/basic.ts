@@ -61,7 +61,7 @@ await test('sum top level', async (t) => {
   db.create('sequence', { votes: nl2 })
   db.create('sequence', { votes: au1 })
 
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+  // const s = db.create('sequence', { votes: [nl1, nl2, au1] }) // create with an array not implemented yet
 
   // top level  ----------------------------------
   deepEqual(
@@ -275,7 +275,7 @@ await test('two phase accumulation', async (t) => {
     country: 'Brazil',
     NL: 50,
   })
-  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
+  // const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] }) // create multiple with an array is not implemented yet
   db.drain()
   db.create('sequence', { votes: nl1 })
   db.create('sequence', { votes: nl2 })
@@ -340,49 +340,49 @@ await test('two phase accumulation', async (t) => {
     'stddev, top level, groupBy',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').stddev('NL', { mode: 'population' }))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         NL: { stddev: 13.922643427165687 },
-  //       },
-  //     },
-  //   ],
-  //   'stddev, branched References, no groupBy',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').stddev('NL', { mode: 'population' }))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: { stddev: 13.922643427165687 },
+        },
+      },
+    ],
+    'stddev, branched References, no groupBy',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) =>
-  //       q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
-  //     )
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         Brazil: {
-  //           NL: { stddev: 0 },
-  //         },
-  //         bb: {
-  //           NL: { stddev: 6.5 },
-  //         },
-  //         aa: {
-  //           NL: { stddev: 2.5 },
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'stddev, branched References, groupBy',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
+      )
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          Brazil: {
+            NL: { stddev: 0 },
+          },
+          bb: {
+            NL: { stddev: 6.5 },
+          },
+          aa: {
+            NL: { stddev: 2.5 },
+          },
+        },
+      },
+    ],
+    'stddev, branched References, groupBy',
+  )
 })
 
 await test('numeric types', async (t) => {
@@ -461,7 +461,7 @@ await test('numeric types', async (t) => {
     PL: -50,
     FI: -50.999,
   })
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
+  // const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] }) // create with an array not implemented yet
   db.drain()
   db.create('sequence', { votes: nl1 })
   db.create('sequence', { votes: nl2 })
@@ -715,260 +715,260 @@ await test('numeric types', async (t) => {
     'min, main, group by',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').sum('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         NL: { sum: 176 },
-  //       },
-  //     },
-  //   ],
-  //   'references, not grouped',
-  // )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').avg('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         NL: { avg: 35.2 },
-  //       },
-  //     },
-  //   ],
-  //   'avg, references, not grouped',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').sum('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: { sum: 176 },
+        },
+      },
+    ],
+    'references, not grouped',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').avg('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: { avg: 35.2 },
+        },
+      },
+    ],
+    'avg, references, not grouped',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').harmonicMean('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         NL: { hmean: 24.18565978675536 },
-  //       },
-  //     },
-  //   ],
-  //   'harmonic_mean, references, not grouped',
-  // )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').groupBy('region').sum('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: {
-  //           NL: { sum: 33 },
-  //         },
-  //         aa: {
-  //           NL: { sum: 93 },
-  //         },
-  //         Great: {
-  //           NL: { sum: 50 },
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'sum, references, group by',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').harmonicMean('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          NL: { hmean: 24.18565978675536 },
+        },
+      },
+    ],
+    'harmonic_mean, references, not grouped',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').sum('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: { sum: 33 },
+          },
+          aa: {
+            NL: { sum: 93 },
+          },
+          Great: {
+            NL: { sum: 50 },
+          },
+        },
+      },
+    ],
+    'sum, references, group by',
+  )
 
-  //   // await db.query('vote').groupBy('sequence').sum('NL').get().inspect()
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').count())
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: { count: 2 },
+          aa: { count: 2 },
+          Great: { count: 1 },
+        },
+      },
+    ],
+    'count, references, group by',
+  )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
+      )
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: { stddev: 6.5 },
+          },
+          aa: {
+            NL: { stddev: 3.5 },
+          },
+          Great: {
+            NL: { stddev: 0 },
+          },
+        },
+      },
+    ],
+    'stddev, references, group by',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').groupBy('region').count())
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: { count: 2 },
-  //         aa: { count: 2 },
-  //         Great: { count: 1 },
-  //       },
-  //     },
-  //   ],
-  //   'count, references, group by',
-  // )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) =>
-  //       q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
-  //     )
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: {
-  //           NL: { stddev: 6.5 },
-  //         },
-  //         aa: {
-  //           NL: { stddev: 3.5 },
-  //         },
-  //         Great: {
-  //           NL: { stddev: 0 },
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'stddev, references, group by',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').stddev('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: { NL: { stddev: 9.192388155425117 } },
+          aa: { NL: { stddev: 4.949747468305833 } },
+          Great: { NL: { stddev: 0 } },
+        },
+      },
+    ],
+    'stddev, references, group by',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').groupBy('region').stddev('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: { NL: { stddev: 9.192388155425117 } },
-  //         aa: { NL: { stddev: 4.949747468305833 } },
-  //         Great: { NL: { stddev: 0 } },
-  //       },
-  //     },
-  //   ],
-  //   'stddev, references, group by',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').groupBy('region').var('NL', { mode: 'population' }),
+      )
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: { variance: 42.25 },
+          },
+          aa: {
+            NL: { variance: 12.25 },
+          },
+          Great: {
+            NL: { variance: 0 },
+          },
+        },
+      },
+    ],
+    'variance, references, group by, pop',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) =>
-  //       q('votes').groupBy('region').var('NL', { mode: 'population' }),
-  //     )
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: {
-  //           NL: { variance: 42.25 },
-  //         },
-  //         aa: {
-  //           NL: { variance: 12.25 },
-  //         },
-  //         Great: {
-  //           NL: { variance: 0 },
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'variance, references, group by, pop',
-  // )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) =>
-  //       q('votes').groupBy('region').var('NL', { mode: 'sample' }),
-  //     )
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: { NL: { variance: 84.5 } },
-  //         aa: { NL: { variance: 24.5 } },
-  //         Great: { NL: { variance: 0 } },
-  //       },
-  //     },
-  //   ],
-  //   'variance, references, group by, sample',
-  // )
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').groupBy('region').var('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: { NL: { variance: 84.5 } },
-  //         aa: { NL: { variance: 24.5 } },
-  //         Great: { NL: { variance: 0 } },
-  //       },
-  //     },
-  //   ],
-  //   'variance, references, group by, defaul (sample)',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) =>
+        q('votes').groupBy('region').var('NL', { mode: 'sample' }),
+      )
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: { NL: { variance: 84.5 } },
+          aa: { NL: { variance: 24.5 } },
+          Great: { NL: { variance: 0 } },
+        },
+      },
+    ],
+    'variance, references, group by, sample',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').groupBy('region').avg('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: {
-  //           NL: { avg: 16.5 },
-  //         },
-  //         aa: {
-  //           NL: { avg: 46.5 },
-  //         },
-  //         Great: {
-  //           NL: { avg: 50 },
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'avg, references, group by',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').var('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: { NL: { variance: 84.5 } },
+          aa: { NL: { variance: 24.5 } },
+          Great: { NL: { variance: 0 } },
+        },
+      },
+    ],
+    'variance, references, group by, defaul (sample)',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query('sequence')
-  //     .include((q) => q('votes').groupBy('region').harmonicMean('NL'))
-  //     .get()
-  //     .toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       votes: {
-  //         bb: {
-  //           NL: { hmean: 13.93939393939394 },
-  //         },
-  //         aa: {
-  //           NL: { hmean: 46.236559139784944 },
-  //         },
-  //         Great: {
-  //           NL: { hmean: 50 },
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'harmonic_mean, references, group by',
-  // )
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').avg('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: { avg: 16.5 },
+          },
+          aa: {
+            NL: { avg: 46.5 },
+          },
+          Great: {
+            NL: { avg: 50 },
+          },
+        },
+      },
+    ],
+    'avg, references, group by',
+  )
+
+  deepEqual(
+    await db
+      .query('sequence')
+      .include((q) => q('votes').groupBy('region').harmonicMean('NL'))
+      .get()
+      .toObject(),
+    [
+      {
+        id: 1,
+        votes: {
+          bb: {
+            NL: { hmean: 13.93939393939394 },
+          },
+          aa: {
+            NL: { hmean: 46.236559139784944 },
+          },
+          Great: {
+            NL: { hmean: 50 },
+          },
+        },
+      },
+    ],
+    'harmonic_mean, references, group by',
+  )
 })
 
 await test('fixed length strings', async (t) => {
@@ -1002,9 +1002,10 @@ await test('fixed length strings', async (t) => {
       name: `lala ${rnd(0, 10)}`,
       flap: Math.random() * 100,
     })
+    db.drain()
     db.create('shelve', {
       code: `S${rnd(0, 10)}`,
-      products: [p],
+      products: p,
     })
   }
 
@@ -1024,19 +1025,19 @@ await test('fixed length strings', async (t) => {
     'fixed length strings on main',
   )
 
-  // equal(
-  //   Number(
-  //     Object.keys(
-  //       await db
-  //         .query('shelve')
-  //         .include((q) => q('products').avg('flap').groupBy('name'))
-  //         .get()
-  //         .toObject(),
-  //     )[0].substring(4, 6),
-  //   ) < 100,
-  //   true,
-  //   'fixed length strings on references',
-  // )
+  equal(
+    Number(
+      Object.keys(
+        await db
+          .query('shelve')
+          .include((q) => q('products').avg('flap').groupBy('name'))
+          .get()
+          .toObject(),
+      )[0].substring(4, 6),
+    ) < 100,
+    true,
+    'fixed length strings on references',
+  )
 })
 
 await test('range', async (t) => {
@@ -1097,7 +1098,7 @@ await test('range', async (t) => {
     db.drain()
     db.create('employee', {
       name: `emplala ${rnd(0, 10)}`,
-      area: [t],
+      area: t,
     })
     db.drain()
   }
@@ -1116,18 +1117,18 @@ await test('range', async (t) => {
     'range group by main',
   )
 
-  // deepEqual(
-  //   Object.keys(
-  //     await db
-  //       .query('employee')
-  //       .include((q) => q('area').groupBy('name').sum('flap'), '*')
-  //       .range(0, 2)
-  //       .get()
-  //       .toObject(),
-  //   ).length,
-  //   2,
-  //   'range group by references',
-  // )
+  deepEqual(
+    Object.keys(
+      await db
+        .query('employee')
+        .include((q) => q('area').groupBy('name').sum('flap'), '*')
+        .range(0, 2)
+        .get()
+        .toObject(),
+    ).length,
+    2,
+    'range group by references',
+  )
 })
 
 // await test('count props', async (t) => {
