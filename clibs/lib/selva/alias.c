@@ -58,16 +58,21 @@ static struct SelvaAlias *insert_alias_by_name(struct SelvaAliases *aliases, str
      return old_alias;
 }
 
-static inline void remove_alias_by_dest(struct SelvaAliases *aliases, struct SelvaAlias *alias)
-{
-    RB_REMOVE(SelvaAliasesByDest, &aliases->alias_by_dest, alias);
-}
-
 static inline void remove_alias_by_name(struct SelvaAliases *aliases, struct SelvaAlias *alias)
 {
     struct SelvaAlias *removed = RB_REMOVE(SelvaAliasesByName, &aliases->alias_by_name, alias);
     assert(removed);
     aliases->nr_aliases--;
+}
+
+static inline struct SelvaAlias *insert_alias_by_dest(struct SelvaAliases *aliases, struct SelvaAlias *alias)
+{
+    return RB_INSERT(SelvaAliasesByDest, &aliases->alias_by_dest, alias);
+}
+
+static inline void remove_alias_by_dest(struct SelvaAliases *aliases, struct SelvaAlias *alias)
+{
+    (void)RB_REMOVE(SelvaAliasesByDest, &aliases->alias_by_dest, alias);
 }
 
 static void del_alias(struct SelvaAliases *aliases, struct SelvaAlias *alias)
@@ -93,7 +98,7 @@ node_id_t selva_set_alias_p(struct SelvaAliases *aliases, struct SelvaAlias *new
         del_alias(aliases, old_alias);
     }
 
-    while ((old_by_dest = RB_INSERT(SelvaAliasesByDest, &aliases->alias_by_dest, new_alias))) {
+    while ((old_by_dest = insert_alias_by_dest(aliases, new_alias))) {
         del_alias(aliases, old_by_dest);
     }
 
@@ -137,11 +142,9 @@ void selva_del_alias_by_dest(struct SelvaAliases *aliases, node_id_t dest)
     };
     struct SelvaAlias *alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
 
-    if (!alias) {
-        return;
+    if (alias) {
+        del_alias(aliases, alias);
     }
-
-    del_alias(aliases, alias);
 }
 
 struct SelvaNodeRes selva_get_alias(struct SelvaTypeEntry *type, struct SelvaAliases *aliases, const char *name_str, size_t name_len)

@@ -315,7 +315,7 @@ static void save_aliases(struct selva_io *io, struct SelvaDb *db)
     write_dump_magic(io, DUMP_MAGIC_ALIASES);
 
     RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
-        const sdb_nr_aliases_t nr_fields = te->ns.nr_alias_fields;
+        const size_t nr_fields = te->ns.nr_alias_fields;
 
         for (size_t i = 0; i < nr_fields; i++) {
             struct SelvaAliases *aliases = &te->aliases[i];
@@ -911,9 +911,9 @@ static int load_aliases(struct selva_io *io, struct SelvaDb *db)
     }
 
     RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
-        const sdb_nr_aliases_t nr_fields = te->ns.nr_alias_fields;
+        const size_t nr_fields = te->ns.nr_alias_fields;
 
-        for (sdb_nr_aliases_t i = 0; i < nr_fields; i++) {
+        for (size_t i = 0; i < nr_fields; i++) {
             sdb_nr_aliases_t nr_aliases_by_name;
 
             io->sdb_read(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
