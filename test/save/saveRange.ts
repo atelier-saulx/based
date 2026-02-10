@@ -59,15 +59,12 @@ await test('save simple range', async (t) => {
     age: 1337,
   })
   await db.drain()
-  deepEqual(
-    (await db.query('user').include('age').range(0, 1).get()).toObject(),
-    [
-      {
-        id: 1,
-        age: 1337,
-      },
-    ],
-  )
+  deepEqual(await db.query('user').include('age').range(0, 1).get(), [
+    {
+      id: 1,
+      age: 1337,
+    },
+  ])
 
   const save2_start = performance.now()
   await db.save()
@@ -107,23 +104,18 @@ await test('save simple range', async (t) => {
   notEqual(firstHash, secondHash)
   equal(secondHash, thirdHash)
 
+  deepEqual(await newDb.query('user').include('age').range(0, 1).get(), [
+    {
+      id: 1,
+      age: 1337,
+    },
+  ])
   deepEqual(
-    (await newDb.query('user').include('age').range(0, 1).get()).toObject(),
-    [
-      {
-        id: 1,
-        age: 1337,
-      },
-    ],
-  )
-  deepEqual(
-    (
-      await newDb
-        .query('user')
-        .include('age')
-        .range(200000, 200000 + 1)
-        .get()
-    ).toObject(),
+    await newDb
+      .query('user')
+      .include('age')
+      .range(200000, 200000 + 1)
+      .get(),
     [
       {
         id: 200001,
@@ -132,28 +124,23 @@ await test('save simple range', async (t) => {
     ],
   )
 
-  deepEqual(
-    (await newDb.query('user').include('name').range(0, 2).get()).toObject(),
-    [
-      {
-        id: 1,
-        name: 'mr flop 1',
-      },
-      {
-        id: 2,
-        name: 'mr flop 2',
-      },
-    ],
-  )
+  deepEqual(await newDb.query('user').include('name').range(0, 2).get(), [
+    {
+      id: 1,
+      name: 'mr flop 1',
+    },
+    {
+      id: 2,
+      name: 'mr flop 2',
+    },
+  ])
 
   deepEqual(
-    (
-      await newDb
-        .query('user')
-        .include('name')
-        .range(200_000, 200_000 + 2)
-        .get()
-    ).toObject(),
+    await newDb
+      .query('user')
+      .include('name')
+      .range(200_000, 200_000 + 2)
+      .get(),
     [
       {
         id: 200001,

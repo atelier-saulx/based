@@ -38,11 +38,11 @@ await test('delete', async (t) => {
   await db.delete('user', simple)
   await db.drain()
 
-  deepEqual((await db.query('user').get()).toObject(), [])
+  deepEqual(await db.query('user').get(), [])
 
   const nurp = db.create('nurp', {})
   await db.drain()
-  deepEqual((await db.query('nurp').include('email').get()).toObject(), [
+  deepEqual(await db.query('nurp').include('email').get(), [
     {
       email: '',
       id: 1,
@@ -52,7 +52,7 @@ await test('delete', async (t) => {
   db.delete('nurp', nurp)
   await db.drain()
 
-  deepEqual((await db.query('user').include('email').get()).toObject(), [])
+  deepEqual(await db.query('user').include('email').get(), [])
 
   const nurp2 = db.create('nurp', { email: 'flippie' })
   await db.drain()
@@ -62,7 +62,7 @@ await test('delete', async (t) => {
   })
   await db.drain()
 
-  deepEqual((await db.query('nurp').include('email').get()).toObject(), [
+  deepEqual(await db.query('nurp').include('email').get(), [
     {
       email: '',
       id: 2,
@@ -104,12 +104,12 @@ await test('non existing 1', async (t) => {
   db.delete('user', simple)
   await db.drain()
 
-  deepEqual((await db.query('user').get()).toObject(), [])
+  deepEqual(await db.query('user').get(), [])
 
   const nurp = db.create('nurp', {})
   await db.drain()
 
-  deepEqual((await db.query('nurp').include('email').get()).toObject(), [
+  deepEqual(await db.query('nurp').include('email').get(), [
     {
       email: '',
       id: 1,
@@ -157,13 +157,13 @@ await test('non existing 2', async (t) => {
 
   await db.delete('user', simple)
 
-  deepEqual((await db.query('user').get()).toObject(), [])
+  deepEqual(await db.query('user').get(), [])
 
   db.create('nurp', {})
 
   await db.drain()
 
-  deepEqual((await db.query('nurp').include('email').get()).toObject(), [
+  deepEqual(await db.query('nurp').include('email').get(), [
     {
       email: '',
       id: 1,
@@ -223,6 +223,6 @@ await test('save', async (t) => {
 
   t.after(() => db2.destroy(), true)
 
-  deepEqual(await db2.query('user').include('id').get().toObject(), [{ id: 2 }])
-  deepEqual(await db.query('user').include('id').get().toObject(), [{ id: 2 }])
+  deepEqual(await db2.query('user').include('id').get(), [{ id: 2 }])
+  deepEqual(await db.query('user').include('id').get(), [{ id: 2 }])
 })

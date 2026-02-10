@@ -674,8 +674,7 @@ await test('query', async (t) => {
       .query('user')
       .filter('name', 'includes', '')
       .include('name')
-      .get()
-      .toObject(),
+      .get(),
     allData,
     'skip empty string',
   )
@@ -685,8 +684,7 @@ await test('query', async (t) => {
       .query('user', [])
       .filter('name', 'includes', '')
       .include('name')
-      .get()
-      .toObject(),
+      .get(),
     [],
     'ignore empty ids',
   )
@@ -696,8 +694,7 @@ await test('query', async (t) => {
       .query('user')
       .filter('friend.description.en', '=', undefined)
       .include('name')
-      .get()
-      .toObject(),
+      .get(),
     allData,
     'skip undefined',
   )
@@ -837,7 +834,7 @@ await test('query - no schema', async (t) => {
   }, false)
 
   await db.schemaIsSet()
-  deepEqual(await db.query('user').get().toObject(), [])
+  deepEqual(await db.query('user').get(), [])
 })
 
 await test('minmax', async (t) => {
@@ -868,7 +865,7 @@ await test('minmax', async (t) => {
     number: 0.5,
   })
 
-  deepEqual(await db.query('user', id).get().toObject(), {
+  deepEqual(await db.query('user', id).get(), {
     name: 'luigi',
     number: 0.5,
     id,

@@ -46,45 +46,37 @@ await test('simple', async (t) => {
 
   await db.drain()
 
-  deepEqual(
-    (await db.query('user').include('name', 'snurp').get()).toObject(),
-    [
-      {
-        id: 1,
-        snurp: 'derp derp',
-        name: '',
-      },
-    ],
-  )
+  deepEqual(await db.query('user').include('name', 'snurp').get(), [
+    {
+      id: 1,
+      snurp: 'derp derp',
+      name: '',
+    },
+  ])
+
+  deepEqual(await db.query('user').include('name', 'snurp', 'age').get(), [
+    {
+      id: 1,
+      age: 99,
+      snurp: 'derp derp',
+      name: '',
+    },
+  ])
 
   deepEqual(
-    (await db.query('user').include('name', 'snurp', 'age').get()).toObject(),
-    [
-      {
-        id: 1,
-        age: 99,
-        snurp: 'derp derp',
-        name: '',
-      },
-    ],
-  )
-
-  deepEqual(
-    (
-      await db
-        .query('user')
-        .include(
-          'name',
-          'snurp',
-          'age',
-          'email',
-          'flap',
-          'burp',
-          'location.x',
-          'location.y',
-        )
-        .get()
-    ).toObject(),
+    await db
+      .query('user')
+      .include(
+        'name',
+        'snurp',
+        'age',
+        'email',
+        'flap',
+        'burp',
+        'location.x',
+        'location.y',
+      )
+      .get(),
     [
       {
         id: 1,
@@ -99,19 +91,16 @@ await test('simple', async (t) => {
     ],
   )
 
-  deepEqual(
-    (await db.query('user').include('location.label').get()).toObject(),
-    [
-      {
-        id: 1,
-        location: {
-          label: 'BLA BLA',
-        },
+  deepEqual(await db.query('user').include('location.label').get(), [
+    {
+      id: 1,
+      location: {
+        label: 'BLA BLA',
       },
-    ],
-  )
+    },
+  ])
 
-  deepEqual((await db.query('user').include('location').get()).toObject(), [
+  deepEqual(await db.query('user').include('location').get(), [
     {
       id: 1,
       location: {
@@ -122,36 +111,31 @@ await test('simple', async (t) => {
     },
   ])
 
-  deepEqual(
-    (await db.query('user').include('location', 'burp').get()).toObject(),
-    [
-      {
-        id: 1,
-        burp: 66,
-        location: {
-          x: 0,
-          y: 0,
-          label: 'BLA BLA',
-        },
+  deepEqual(await db.query('user').include('location', 'burp').get(), [
+    {
+      id: 1,
+      burp: 66,
+      location: {
+        x: 0,
+        y: 0,
+        label: 'BLA BLA',
       },
-    ],
-  )
+    },
+  ])
 
   deepEqual(
-    (
-      await db
-        .query('user')
-        .include(
-          'age',
-          'email',
-          'flap',
-          'burp',
-          'location.x',
-          'location.y',
-          'location.label',
-        )
-        .get()
-    ).toObject(),
+    await db
+      .query('user')
+      .include(
+        'age',
+        'email',
+        'flap',
+        'burp',
+        'location.x',
+        'location.y',
+        'location.label',
+      )
+      .get(),
     [
       {
         id: 1,
@@ -164,7 +148,7 @@ await test('simple', async (t) => {
     ],
   )
 
-  deepEqual((await db.query('user').get()).toObject(), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       name: '',
@@ -282,13 +266,11 @@ await test('string + refs', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db
-        .query('simple')
-        .include('user.name', 'user.myBlup.name')
-        .range(0, 1)
-        .get()
-    ).toObject(),
+    await db
+      .query('simple')
+      .include('user.name', 'user.myBlup.name')
+      .range(0, 1)
+      .get(),
     [
       {
         id: 1,
@@ -311,9 +293,7 @@ await test('string + refs', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('simple').include('user.name', 'user.myBlup.name').get()
-    ).toObject(),
+    await db.query('simple').include('user.name', 'user.myBlup.name').get(),
     [
       {
         id: 1,
@@ -453,7 +433,7 @@ await test('Big string', async (t) => {
   await db.drain()
 
   deepEqual(
-    (await db.query('file').get()).toObject(),
+    await db.query('file').get(),
     [
       {
         id: 1,
