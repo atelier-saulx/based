@@ -181,7 +181,7 @@ pub fn referenceEdge(
             const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
             const e = Node.getNode(edgeTypeEntry, ref.edge);
 
-            std.debug.print("edge {any} {any} \n", .{ e, ref.edge });
+            // std.debug.print("edge {any} {any} \n", .{ e, ref.edge });
 
             // dont think this is nessecary
 
