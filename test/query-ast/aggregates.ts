@@ -15,7 +15,6 @@ await test('basic', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  // const client = await testDb(t, {
   const client = await db.setSchema({
     types: {
       user: {

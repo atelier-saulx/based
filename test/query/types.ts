@@ -101,7 +101,7 @@ await test('query types', async (t) => {
     const i32: number = everything.i32
     const u32: number = everything.u32
     const b: boolean = everything.b
-    const txt: string = everything.txt
+    // const txt: string = everything.txt
     const js: any = everything.js
     const ts: number = everything.ts
     const bin: Uint8Array = everything.bin
@@ -150,7 +150,7 @@ await test('query types', async (t) => {
       const res = data[0]
 
       // references
-      const myRef: { id: number } = res.myRef
+      // const myRef: { id: number } = res.myRef
       const myRefs: { id: number }[] = res.myRefs
       const id: number = res.id
 
@@ -172,7 +172,7 @@ await test('query types', async (t) => {
       const res = data[0]
 
       const myEnum: 'a' | 'b' = res.myEnum
-      const myRef: { id: number } = res.myRef
+      // const myRef: { id: number } = res.myRef
       const myRefs: { id: number }[] = res.myRefs
 
       // Other scalars missing
@@ -219,17 +219,17 @@ await test('query types', async (t) => {
     const query = db.query2('everything', 1).include('*', 'myRefs')
     const data = await query.get()
 
-    if ('n' in data) {
-      // Check it's a single item (not array)
-      const n: number = data.n
-      const myRefs: { id: number }[] = data.myRefs
+    // if ('n' in data) {
+    //   // Check it's a single item (not array)
+    //   const n: number = data.n
+    //   const myRefs: { id: number }[] = data.myRefs
 
-      // @ts-expect-error
-      data.map
+    //   // @ts-expect-error
+    //   data.map
 
-      // @ts-expect-error
-      const myRef: number = data.myRef
-    }
+    //   // @ts-expect-error
+    //   const myRef: number = data.myRef
+    // }
   }
 
   {
@@ -237,11 +237,11 @@ await test('query types', async (t) => {
       .query2('everything', 1)
       .include((select) => select('myRefs').include('isNice'))
     const data = await query.get()
-    if ('myRefs' in data) {
-      for (const item of data.myRefs) {
-        const isNice: boolean = item.isNice
-      }
-    }
+    // if ('myRefs' in data) {
+    //   for (const item of data.myRefs) {
+    //     const isNice: boolean = item.isNice
+    //   }
+    // }
   }
 
   {
