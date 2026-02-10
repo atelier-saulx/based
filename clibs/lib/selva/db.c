@@ -805,7 +805,7 @@ extern inline node_type_t selva_get_node_type(const struct SelvaNode *node);
  */
 static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *type, node_id_t dest)
 {
-    for (size_t i = 0; i < type->ns.nr_aliases; i++) {
+    for (size_t i = 0; i < type->ns.nr_alias_fields; i++) {
         struct SelvaAliases *aliases = &type->aliases[i];
         const struct SelvaAlias *alias;
         struct SelvaAlias find = {
@@ -827,7 +827,7 @@ static void hash_col_fields(struct SelvaTypeEntry *type, node_id_t node_id, selv
     /*
      * colvec fields.
      */
-    for (size_t i = 0; i < type->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < type->ns.nr_colvec_fields; i++) {
         struct SelvaColvec *colvec = &type->col_fields.colvec[i];
 
         colvec_hash_update(type, node_id, colvec, tmp_hash_state);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 SAULX
+ * Copyright (c) 2024-2026 SAULX
  * SPDX-License-Identifier: MIT
  *
  * A colvec is a columnar vector field in Selva. Specifically a colvec structure
@@ -29,7 +29,7 @@ static inline size_t colvec_slab_off(size_t block_capacity, size_t vec_size, nod
 
 void colvec_init_te(struct SelvaTypeEntry *te)
 {
-    size_t nr_colvecs = te->ns.nr_colvecs;
+    size_t nr_colvecs = te->ns.nr_colvec_fields;
     struct SelvaNodeSchema *ns = &te->ns;
     size_t nr_blocks = te->blocks->len;
     size_t block_capacity = selva_get_block_capacity(te);
@@ -48,7 +48,7 @@ void colvec_init_te(struct SelvaTypeEntry *te)
             size_t ci = fs->colvec.index;
             size_t slab_size = block_capacity * fs->colvec.vec_len * fs->colvec.comp_size;
 
-            assert(ci < ns->nr_colvecs);
+            assert(ci < ns->nr_colvec_fields);
 
             te->col_fields.colvec[ci] = (struct SelvaColvec){
                 .field = i,
@@ -62,7 +62,7 @@ void colvec_init_te(struct SelvaTypeEntry *te)
 
 void colvec_deinit_te(struct SelvaTypeEntry *te)
 {
-    for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
         struct SelvaColvec *colvec = &te->col_fields.colvec[i];
         block_id_t blocks_len = te->blocks->len;
 
@@ -100,7 +100,7 @@ void colvec_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
     /*
      * Initialize each col field of this node.
      */
-    for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
         struct SelvaColvec *colvec = &te->col_fields.colvec[i];
         const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(&te->ns.fields_schema, colvec->field);
         uint8_t *slab = colvec_init_slab(colvec, block_i);

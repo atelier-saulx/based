@@ -2081,7 +2081,7 @@ static void selva_fields_init(struct SelvaTypeEntry *te, struct SelvaFields *fie
 void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, bool set_defaults)
 {
     selva_fields_init(te, &node->fields, set_defaults);
-    if (te->ns.nr_colvecs > 0) {
+    if (te->ns.nr_colvec_fields > 0) {
         colvec_init_node(te, node);
     }
 }

@@ -14,7 +14,7 @@ void selva_init_aliases(struct SelvaTypeEntry *type)
     const struct SelvaFieldsSchema *fields_schema = &type->ns.fields_schema;
     const size_t nr_fields = fields_schema->nr_fields;
 
-    type->aliases = selva_malloc(type->ns.nr_aliases * sizeof(struct SelvaAliases));
+    type->aliases = selva_malloc(type->ns.nr_alias_fields * sizeof(struct SelvaAliases));
 
     for (size_t i = 0; i < nr_fields; i++) {
         const struct SelvaFieldSchema *fs = &fields_schema->field_schemas[i];
@@ -22,7 +22,7 @@ void selva_init_aliases(struct SelvaTypeEntry *type)
         if (fs->type == SELVA_FIELD_TYPE_ALIAS) {
             struct SelvaAliases *field_aliases = &type->aliases[fs->alias_index];
 
-            assert(fs->alias_index < type->ns.nr_aliases);
+            assert(fs->alias_index < type->ns.nr_alias_fields);
             field_aliases->field = fs->field;
             RB_INIT(&field_aliases->alias_by_name);
             RB_INIT(&field_aliases->alias_by_dest);
@@ -36,13 +36,13 @@ void selva_destroy_aliases(struct SelvaTypeEntry *type)
     /*
      * We assume that all the aliases in the aliases structs have been freed already.
      */
-    for (size_t i = 0; i < type->ns.nr_aliases; i++) {
+    for (size_t i = 0; i < type->ns.nr_alias_fields; i++) {
         assert(type->aliases->nr_aliases == 0);
     }
 #endif
 
     selva_free(type->aliases);
-    type->ns.nr_aliases = 0;
+    type->ns.nr_alias_fields = 0;
     type->aliases = nullptr;
 }
 
@@ -187,7 +187,7 @@ const char *selva_get_alias_name(const struct SelvaAlias *alias, size_t *len)
 
 struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t field)
 {
-    const size_t nr_aliases = type->ns.nr_aliases;
+    const size_t nr_aliases = type->ns.nr_alias_fields;
 
     for (size_t i = 0; i < nr_aliases; i++) {
         if (type->aliases[i].field == field) {
@@ -200,7 +200,7 @@ struct SelvaAliases *selva_get_aliases(struct SelvaTypeEntry *type, field_t fiel
 
 void selva_remove_all_aliases(struct SelvaTypeEntry *type, node_id_t node_id)
 {
-    const size_t nr_aliases = type->ns.nr_aliases;
+    const size_t nr_aliases = type->ns.nr_alias_fields;
 
     for (size_t i = 0; i < nr_aliases; i++) {
         selva_del_alias_by_dest(&type->aliases[i], node_id);
