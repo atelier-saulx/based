@@ -46,18 +46,17 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     try dbCtx.threads.modify(batch);
 }
 
-pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u8, items: []u8) !void {
+pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, items: []u8) !void {
     var j: usize = 0;
     while (j < data.len) {
         const propId = data[j];
         const propSchema = try Schema.getFieldSchema(typeEntry, propId);
+
         if (propId == 0) {
             // main handling
             const main = utils.readNext(t.ModifyMainHeader, data, &j);
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
-            const size = main.type.size();
-            const value = data[j .. j + size];
-            // std.debug.print("main: size {any} value {any} current {any}\n", .{ size, value, current });
+            const value = data[j .. j + main.size];
             if (main.increment != .none) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.increment),
@@ -69,17 +68,54 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                 }
             }
             utils.copy(u8, current, value, main.start);
-            j += size;
+            j += main.size;
         } else {
             // separate handling
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
             const value = data[j .. j + prop.size];
             switch (prop.type) {
+                .text => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
+                    var k: usize = 0;
+                    while (k < value.len) {
+                        const textSize = utils.read(u32, value, k);
+                        k += 4;
+                        const textValue = value[k .. k + textSize];
+                        k += textSize;
+                        try Fields.setText(node, propSchema, textValue);
+                    }
+                },
+                .alias => {
+                    const id = Node.getNodeId(node);
+                    if (prop.size == 0) {
+                        try Fields.delAlias(typeEntry, id, prop.id);
+                        continue;
+                    }
+                    const prev = try Fields.setAlias(typeEntry, id, prop.id, value);
+                    if (prev > 0) {
+                        // TODO sort for everything
+                        // if (ctx.currentSortIndex != null) {
+                        //     sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, prev).?);
+                        // }
+                        const typeId = Node.getNodeTypeId(node);
+                        selva.markDirty(db, typeId, prev);
+                    }
+                },
                 .cardinality => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     var k: usize = 0;
                     const cardinality = utils.readNext(t.ModifyCardinalityHeader, value, &k);
-                    const hll = try Fields.ensurePropTypeString(node, propSchema);
-                    selva.c.hll_init(hll, cardinality.precision, cardinality.sparse);
+                    var hll = selva.c.selva_fields_get_selva_string(node, propSchema);
+                    if (hll == null) { // TODO check if this is null after delete!
+                        hll = try Fields.ensurePropTypeString(node, propSchema);
+                        selva.c.hll_init(hll, cardinality.precision, cardinality.sparse);
+                    }
                     while (k < value.len) {
                         const hash = utils.read(u64, value, k);
                         selva.c.hll_add(hll, hash);
@@ -87,6 +123,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     }
                 },
                 .reference => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
                     const refTypeEntry = try Node.getType(db, refTypeId);
                     var k: usize = 0;
@@ -100,13 +140,18 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                                 const edgeProps = value[k .. k + meta.size];
                                 const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
                                 const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
-                                const edgeNode = try Node.ensureRefEdgeNode(db, node, edgeConstraint, r);
-                                try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                if (Node.getEdgeNode(db, edgeConstraint, r)) |edgeNode| {
+                                    try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                } // TODO else error?
                             }
                         }
                     }
                 },
                 .references => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     var k: usize = 0;
                     if (@as(t.ModifyReferences, @enumFromInt(value[0])) == t.ModifyReferences.clear) {
                         References.clearReferences(db, node, propSchema);
@@ -142,9 +187,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                                         if (meta.size != 0) {
                                             const edgeProps = refs[x .. x + meta.size];
                                             const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
-                                            const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
-                                            const edgeNode = try Node.ensureRefEdgeNode(db, node, edgeConstraint, ref.p.large);
-                                            try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                            if (Node.getEdgeNode(db, edgeConstraint, ref.p.large)) |edgeNode| {
+                                                const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
+                                                try modifyProps(db, edgeType, edgeNode, edgeProps, items);
+                                            } // TODO else err?
                                         }
                                     }
 
@@ -171,6 +217,10 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
                     }
                 },
                 else => {
+                    if (prop.size == 0) {
+                        try Fields.deleteField(db, node, propSchema);
+                        continue;
+                    }
                     try Fields.set(node, propSchema, value);
                 },
             }
@@ -178,6 +228,29 @@ pub fn modifyProps(db: *DbCtx, typeEntry: ?Node.Type, node: Node.Node, data: []u
             j += prop.size;
         }
     }
+}
+
+const UpsertResult = struct {
+    node: Node.Node,
+    created: bool,
+};
+
+inline fn upsertTarget(db: *DbCtx, typeId: u16, typeEntry: Node.Type, data: []u8) !UpsertResult {
+    var j: usize = 0;
+    while (j < data.len) {
+        const prop = utils.readNext(t.ModifyPropHeader, data, &j);
+        const value = data[j .. j + prop.size];
+        if (prop.type == t.PropType.alias) {
+            if (Fields.getAliasByName(typeEntry, prop.id, value)) |node| {
+                return .{ .node = node, .created = false };
+            }
+        }
+        j += prop.size;
+    }
+    const id = db.ids[typeId - 1] + 1;
+    const node = try Node.upsertNode(typeEntry, id);
+    db.ids[typeId - 1] = id;
+    return .{ .node = node, .created = true };
 }
 
 pub fn modify(
@@ -209,6 +282,28 @@ pub fn modify(
                 utils.write(result, t.ModifyError.null, j + 4);
                 i += create.size;
             },
+            .createRing => {
+                const create = utils.read(t.ModifyCreateRingHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateRingHeader);
+                const typeEntry = try Node.getType(db, create.type);
+                const data: []u8 = buf[i .. i + create.size];
+                const nextId = db.ids[create.type - 1] % create.maxNodeId + 1;
+
+                var node = Node.getNode(typeEntry, nextId);
+                if (node) |oldNode| {
+                    Node.flushNode(db, typeEntry, oldNode);
+                } else {
+                    node = try Node.upsertNode(typeEntry, nextId);
+                }
+
+                modifyProps(db, typeEntry, node.?, data, items) catch {
+                    // handle errors
+                };
+                db.ids[create.type - 1] = nextId;
+                utils.write(result, nextId, j);
+                utils.write(result, t.ModifyError.null, j + 4);
+                i += create.size;
+            },
             .update => {
                 const update = utils.read(t.ModifyUpdateHeader, buf, i);
                 i += utils.sizeOf(t.ModifyUpdateHeader);
@@ -222,12 +317,56 @@ pub fn modify(
                     };
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.null, j + 4);
+                    selva.markDirty(db, update.type, id);
                 } else {
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.nx, j + 4);
                 }
-                // std.debug.print("- update id: {any} res: {any}\n", .{ id, res });
                 i += update.size;
+            },
+            .upsert => {
+                const upsert = utils.read(t.ModifyCreateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateHeader);
+                const target = buf[i .. i + upsert.size];
+                i += upsert.size;
+                const typeEntry = try Node.getType(db, upsert.type);
+                const upsertRes = try upsertTarget(db, upsert.type, typeEntry, target);
+                if (upsertRes.created) {
+                    try modifyProps(db, typeEntry, upsertRes.node, target, items);
+                }
+                const dataSize = utils.read(u32, buf, i);
+                i += 4;
+                const data = buf[i .. i + dataSize];
+                modifyProps(db, typeEntry, upsertRes.node, data, items) catch {
+                    // handle errors
+                };
+                const id = Node.getNodeId(upsertRes.node);
+                utils.write(result, id, j);
+                utils.write(result, t.ModifyError.null, j + 4);
+                selva.markDirty(db, upsert.type, id);
+                i += dataSize;
+            },
+            .insert => {
+                const insert = utils.read(t.ModifyCreateHeader, buf, i);
+                i += utils.sizeOf(t.ModifyCreateHeader);
+                const target = buf[i .. i + insert.size];
+                i += insert.size;
+                const typeEntry = try Node.getType(db, insert.type);
+                const upsertRes = try upsertTarget(db, insert.type, typeEntry, target);
+                const dataSize = utils.read(u32, buf, i);
+                const id = Node.getNodeId(upsertRes.node);
+                i += 4;
+                if (upsertRes.created) {
+                    try modifyProps(db, typeEntry, upsertRes.node, target, items);
+                    const data = buf[i .. i + dataSize];
+                    modifyProps(db, typeEntry, upsertRes.node, data, items) catch {
+                        // handle errors
+                    };
+                    selva.markDirty(db, insert.type, id);
+                }
+                utils.write(result, id, j);
+                utils.write(result, t.ModifyError.null, j + 4);
+                i += dataSize;
             },
             .delete => {
                 const delete = utils.read(t.ModifyDeleteHeader, buf, i);
@@ -241,12 +380,11 @@ pub fn modify(
                     };
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.null, j + 4);
+                    selva.markDirty(db, delete.type, id);
                 } else {
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.nx, j + 4);
                 }
-
-                // std.debug.print("- delete id: {any} res: {any}\n", .{ id, res });
             },
         }
         j += resItemSize;

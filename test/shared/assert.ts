@@ -6,7 +6,7 @@ import { PropTypeInverse } from '../../src/zigTsExports.js'
 export { perf } from './perf.js'
 
 // add fn
-export const deepEqual = (a, b, msg?: string) => {
+export const deepEqual = <A>(a: A, b: NoInfer<A>, msg?: string) => {
   if (a instanceof BasedQueryResponse) {
     a = a.toObject()
   }

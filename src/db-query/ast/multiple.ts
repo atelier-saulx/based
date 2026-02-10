@@ -13,9 +13,16 @@ import { filter } from './filter/filter.js'
 import { include } from './include.js'
 import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
+import { isAggregateAst, pushAggregatesQuery } from './aggregates.js'
 
 export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
+
+  if (isAggregateAst(ast)) {
+    pushAggregatesQuery(ast, ctx, typeDef)
+    return
+  }
+
   const headerIndex = pushQueryHeader(ctx.query, {
     op: QueryType.default,
     prop: ID_PROP,
@@ -37,7 +44,6 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
 
   if (ast.filter) {
     const filterSize = filter(ast.filter, ctx, typeDef)
-    console.log({ filterSize })
     props.filterSize(ctx.query.data, filterSize, headerIndex)
   }
 
@@ -56,7 +62,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     op: QueryType.references,
     prop: prop.id,
     includeSize: 0,
-    typeId: prop.typeDef.id,
+    typeId: prop.ref!.id,
     offset: rangeStart,
     limit: (ast.range?.end || 100) + rangeStart,
     sort: false,
@@ -81,7 +87,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       ...ctx,
       readSchema: schema,
     },
-    prop.typeDef,
+    prop.ref!,
   )
 
   props.includeSize(ctx.query.data, size, headerIndex)

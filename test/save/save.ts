@@ -1,4 +1,4 @@
-import { BasedDb, filter } from '../../src/index.js'
+import { BasedDb } from '../../src/index.js'
 import { deepEqual, equal } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { setTimeout } from 'node:timers/promises'
@@ -12,20 +12,20 @@ await test('simple', async (t) => {
 
   await db.setSchema({
     locales: {
-      en: { required: true },
-      fr: { required: true },
-      nl: { required: true },
-      el: { required: true },
-      he: { required: true },
-      it: { required: true },
-      lv: { required: true },
-      lb: { required: true },
-      ro: { required: true },
-      sl: { required: true },
-      es: { required: true },
-      de: { required: true },
-      cs: { required: true },
-      et: { required: true },
+      en: {},
+      fr: {},
+      nl: {},
+      el: {},
+      he: {},
+      it: {},
+      lv: {},
+      lb: {},
+      ro: {},
+      sl: {},
+      es: {},
+      de: {},
+      cs: {},
+      et: {},
     },
     types: {
       user: {
@@ -237,7 +237,7 @@ await test('text', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      fi: { fallback: 'en' },
+      fi: { fallback: ['en'] },
     },
     types: {
       article: {
@@ -430,17 +430,13 @@ await test('upsert', async (t) => {
       },
     },
   })
-
   const joe = db.create('person', {
     name: 'Joe',
     alias: 'boss',
   })
   await db.drain()
   await db.save()
-  await db.upsert('person', {
-    alias: 'boss',
-    age: 42,
-  })
+  await db.upsert('person', { alias: 'boss' }, { age: 42 })
   await db.drain()
   await db.save()
 
@@ -588,10 +584,7 @@ await test('simulated periodic save', async (t) => {
   await db.save()
 
   // change a node using an alias
-  db.upsert('person', {
-    alias: 'slim',
-    name: 'Shady',
-  })
+  db.upsert('person', { alias: 'slim' }, { name: 'Shady' })
   await db.drain()
 
   await db.save()

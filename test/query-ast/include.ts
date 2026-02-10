@@ -16,6 +16,9 @@ await test('include', async (t) => {
   t.after(() => db.destroy())
   const client = await db.setSchema({
     types: {
+      friend: {
+        y: 'uint16',
+      },
       user: {
         name: 'string',
         x: 'boolean',
@@ -71,7 +74,7 @@ await test('include', async (t) => {
       cookie: 1234,
     },
     y: 0,
-    mrFriend: { id: a, $level: 67 },
+    mrFriend: { id: a, $level: 99 },
     // friends: [{ id: a, $level: 250 }, b],
   })
 

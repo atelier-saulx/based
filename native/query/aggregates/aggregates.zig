@@ -16,6 +16,7 @@ pub fn iterator(
     ctx: *Query.QueryCtx,
     it: anytype,
     limit: u32,
+    comptime hasFilter: bool,
     filterBuf: []u8,
     aggDefs: []u8,
     accumulatorProp: []u8,
@@ -24,19 +25,14 @@ pub fn iterator(
 ) !u32 {
     var count: u32 = 0;
     var hadAccumulated: bool = false;
-    _ = ctx;
 
     while (it.next()) |node| {
-        if (filterBuf.len > 0) {
-            // Filter Check
-            // utils.debugPrint("filterBuf: {any}\n", .{filterBuf});
-            // if (!try filter(node, ctx, q, typeEntry)) {
-            //     continue :nodeLoop;
-            // }
+        if (hasFilter) {
+            if (!try filter(node, ctx, filterBuf)) {
+                continue;
+            }
         }
-
         aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, &hadAccumulated);
-
         count += 1;
         if (count >= limit) break;
     }
@@ -116,6 +112,7 @@ pub inline fn accumulate(
             switch (aggFunction) {
                 .sum => {
                     writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propTypeTag, value, start), accumulatorPos);
+                    // utils.debugPrint("❤️ v: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .avg => {
                     const val = microbufferToF64(propTypeTag, value, start);
@@ -129,13 +126,11 @@ pub inline fn accumulate(
                     writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
                 },
                 .min => {
-                    // utils.debugPrint("hadAccumulated: {any} {d} {d}\n", .{ hadAccumulated.*, accumulatorPos, microbufferToF64(propTypeTag, value, start) });
                     if (!hadAccumulated.*) {
                         writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
                     } else {
                         writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
                     }
-                    // utils.debugPrint("ficou: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .max => {
                     if (!hadAccumulated.*) {
@@ -209,6 +204,7 @@ pub inline fn finalizeResults(
     initialAggDefOffset: usize,
 ) !void {
     var i: usize = initialAggDefOffset;
+
     const initialResultOffset = ctx.thread.query.index;
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);

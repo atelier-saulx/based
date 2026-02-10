@@ -1,6 +1,6 @@
-import { deepEqual } from '../shared/assert.js'
-import { testDb } from '../shared/index.js'
-import test from '../shared/test.js'
+import { deepEqual } from '../../shared/assert.js'
+import { testDb } from '../../shared/index.js'
+import test from '../../shared/test.js'
 
 await test('modify single reference', async (t) => {
   const db = await testDb(t, {
@@ -23,7 +23,8 @@ await test('modify single reference', async (t) => {
   const realT2 = await t2
 
   {
-    const res = await db.query('holder', h1).include('dest.id').get().toObject()
+    const res = await db.query2('holder', h1).include('dest.id').get()
+
     deepEqual(res, {
       id: h1,
       dest: { id: realT1 },
@@ -34,7 +35,8 @@ await test('modify single reference', async (t) => {
   await db.update('holder', h1, { dest: t2 })
 
   {
-    const res = await db.query('holder', h1).include('dest.id').get().toObject()
+    const res = await db.query2('holder', h1).include('dest.id').get()
+
     deepEqual(res, {
       id: h1,
       dest: { id: realT2 },
@@ -45,12 +47,20 @@ await test('modify single reference', async (t) => {
   await db.update('holder', h1, { dest: { id: t1 } })
 
   {
-    const res = await db.query('holder', h1).include('dest.id').get().toObject()
+    const res = await db.query2('holder', h1).include('dest.id').get()
+
     deepEqual(res, {
       id: h1,
       dest: { id: realT1 },
     })
   }
+
+  // Delete
+  await db.update('holder', h1, { dest: null })
+  deepEqual(await db.query2('holder', h1).include('dest').get(), {
+    id: h1,
+    dest: null,
+  })
 })
 
 await test('modify references', async (t) => {
@@ -82,7 +92,7 @@ await test('modify references', async (t) => {
   const h1 = await db.create('holder', { dests: [t1, t2Promise] })
 
   const check = async (ids: number[], msg) => {
-    const res = await db.query('holder', h1).include('dests').get().toObject()
+    const res = await db.query2('holder', h1).include('dests').get()
     const currentIds = res.dests?.map((v: any) => v.id) || []
     currentIds.sort()
     ids.sort()
@@ -106,6 +116,10 @@ await test('modify references', async (t) => {
   // Test update (acts as add/upsert for references list) with promise
   await db.update('holder', h1, { dests: { update: [t3Promise] } })
   await check([t2, t3], 'update')
+
+  // Delete all
+  await db.update('holder', h1, { dests: null })
+  await check([], 'delete all')
 })
 
 await test('modify references no await', async (t) => {
@@ -148,10 +162,9 @@ await test('modify references no await', async (t) => {
 
   // Verify
   const res = await db
-    .query('holder', await h1)
+    .query2('holder', await h1)
     .include('dests.id')
     .get()
-    .toObject()
 
   const currentIds = res.dests?.map((v: any) => v.id) || []
   currentIds.sort()
@@ -174,7 +187,6 @@ await test('modify single reference on edge', async (t) => {
           $edgeRef: {
             type: 'reference',
             ref: 'thing',
-            prop: 'edgeRefHolders',
           },
         },
       },
@@ -195,10 +207,10 @@ await test('modify single reference on edge', async (t) => {
   // Verify
   const getEdgeRef = async (id: number) => {
     const res = await db
-      .query('holder', id)
+      .query2('holder', id)
       .include('toThing.$edgeRef.id')
       .get()
-      .toObject()
+
     return res.toThing && !Array.isArray(res.toThing)
       ? res.toThing.$edgeRef
       : undefined
@@ -239,7 +251,7 @@ await test('modify references on edge', async (t) => {
             type: 'references',
             items: {
               ref: 'thing',
-              prop: 'edgeRefsHolders',
+              // prop: 'edgeRefsHolders',
             },
           },
         },
@@ -264,10 +276,9 @@ await test('modify references on edge', async (t) => {
 
   const check = async (ids: number[], msg) => {
     const res = await db
-      .query('holder', h1)
+      .query2('holder', h1)
       .include('toThing.$edgeRefs.id')
       .get()
-      .toObject()
 
     const edge = res.toThing && !Array.isArray(res.toThing) ? res.toThing : {}
     const currentIds = edge.$edgeRefs?.map((v: any) => v.id) || []

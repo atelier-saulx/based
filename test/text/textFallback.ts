@@ -12,8 +12,8 @@ await test('textFallback', async (t) => {
 
   await db.setSchema({
     locales: {
-      en: true, // do not know what required means
-      nl: { fallback: 'en' },
+      en: true,
+      nl: { fallback: ['en'] },
     },
     types: {
       project: {

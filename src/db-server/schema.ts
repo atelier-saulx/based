@@ -22,6 +22,7 @@ import {
 import { SCHEMA_FILE } from '../index.js'
 import { getTypeDefs, propIndexOffset } from '../schema/defs/getTypeDefs.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
+import { TypeDef } from '../schema/defs/index.js'
 
 const schemaOpId = idGenerator()
 
@@ -65,27 +66,31 @@ export const writeSchemaFile = async (server: DbServer, schema: SchemaOut) => {
 
 export async function createSelvaType(
   server: DbServer,
-  typeId: number,
+  typeDef: TypeDef,
   schema: Uint8Array,
 ): Promise<void> {
   const msg = new Uint8Array(5 + schema.byteLength)
 
-  writeUint32(msg, typeId, 0)
+  writeUint32(msg, typeDef.id, 0)
 
   msg[4] = OpType.createType
   msg.set(schema, 5)
   return new Promise((resolve, reject) => {
-    server.addOpOnceListener(OpType.createType, typeId, (buf: Uint8Array) => {
-      const err = readUint32(buf, 0)
-      if (err) {
-        const errMsg = `Create type ${typeId} failed: ${native.selvaStrerror(err)}`
-        server.emit('error', errMsg)
-        reject(new Error(errMsg))
-      } else {
-        resolve()
-      }
-      server.keepRefAliveTillThisPoint(msg)
-    })
+    server.addOpOnceListener(
+      OpType.createType,
+      typeDef.id,
+      (buf: Uint8Array) => {
+        const err = readUint32(buf, 0)
+        if (err) {
+          const errMsg = `Create type '${typeDef.name}' (${typeDef.id}) failed: ${native.selvaStrerror(err)}`
+          server.emit('error', errMsg)
+          reject(new Error(errMsg))
+        } else {
+          resolve()
+        }
+        server.keepRefAliveTillThisPoint(msg)
+      },
+    )
     native.modify(msg, server.dbCtxExternal)
   })
 }
@@ -108,7 +113,7 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
   let maxTypeId = 0
   await Promise.all(
     typeDefs.values().map((typeDef) => {
-      const buf = new AutoSizedUint8Array(4, 65536)
+      const buf = new AutoSizedUint8Array()
       maxTypeId = Math.max(maxTypeId, typeDef.id)
       let nrFixedFields = 1
       let nrVirtualFields = 0
@@ -151,7 +156,7 @@ export const setNativeSchema = async (server: DbServer, schema: SchemaOut) => {
         prop.pushSelvaSchema(buf)
       }
 
-      return createSelvaType(server, typeDef.id, buf.view)
+      return createSelvaType(server, typeDef, buf.view)
     }),
   )
 

@@ -19,26 +19,22 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
+pub fn ensureCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema, hllPrecision: u8, hllMode: bool) *selva.c.struct_selva_string {
+    var data = selva.c.selva_fields_get_selva_string(node, fieldSchema);
+    if (data == null) {
+        data = selva.c.selva_fields_ensure_string(node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
+        selva.c.hll_init(data, hllPrecision, hllMode);
+    }
+
+    return data;
+}
+
 pub fn getCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema) ?[]u8 {
     if (selva.c.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
-        const countDistinct = selva.c.hll_count(@ptrCast(stored));
+        const countDistinct = selva.c.hll_count(stored);
         return countDistinct[0..4];
     } else {
         return null;
-    }
-}
-
-pub fn getCardinalityReference(ctx: *DbCtx, efc: Schema.EdgeFieldConstraint, ref: References.ReferenceLarge, fieldSchema: Schema.FieldSchema) []u8 {
-    const edge_node = Node.getEdgeNode(ctx, efc, ref);
-    if (edge_node == null) {
-        return emptySlice;
-    }
-
-    if (selva.c.selva_fields_get_selva_string(edge_node, fieldSchema) orelse null) |stored| {
-        const countDistinct = selva.c.hll_count(@ptrCast(stored));
-        return countDistinct[0..4];
-    } else {
-        return emptySlice;
     }
 }
 
@@ -51,6 +47,10 @@ pub fn get(
     if (propType == t.PropType.alias) {
         const target = Node.getNodeId(node);
         const typeAliases = selva.c.selva_get_aliases(typeEntry, fieldSchema.field);
+        if (typeAliases == null) {
+            std.log.err("not an alias prop {any}", .{ fieldSchema });
+            return @as([*]u8, undefined)[0..0];
+        }
         const alias = selva.c.selva_get_alias_by_dest(typeAliases, target);
         if (alias == null) {
             return @as([*]u8, undefined)[0..0];
@@ -125,17 +125,19 @@ pub fn ensurePropTypeString(
 
 pub fn ensureEdgePropTypeString(
     ctx: *Modify.ModifyCtx,
-    node: Node.Node,
     efc: Schema.EdgeFieldConstraint,
     ref: References.ReferenceLarge,
     fieldSchema: Schema.FieldSchema,
 ) !*selva.c.selva_string {
-    const edge_node = selva.c.selva_fields_ensure_ref_edge(ctx.db.selva, node, efc, ref, 0) orelse return errors.SelvaError.SELVA_ENOTSUP;
-    return selva.c.selva_fields_ensure_string(edge_node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
+    if (Node.getEdgeNode(ctx.db, efc, ref)) |edgeNode| {
+        return selva.c.selva_fields_ensure_string(edgeNode, fieldSchema, selva.c.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
+    } else {
+        return errors.SelvaError.SELVA_ENOENT;
+    }
 }
 
-pub inline fn deleteField(ctx: *Modify.ModifyCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
-    try errors.selva(selva.c.selva_fields_del(ctx.db.selva, node, fieldSchema));
+pub inline fn deleteField(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
+    try errors.selva(selva.c.selva_fields_del(db.selva, node, fieldSchema));
 }
 
 pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {
@@ -305,4 +307,15 @@ pub fn getAliasByName(typeEntry: Node.Type, field: u8, aliasName: []u8) ?Node.No
     const res = selva.c.selva_get_alias(typeEntry, typeAliases, aliasName.ptr, aliasName.len);
     // TODO Partials
     return res.node;
+}
+
+pub fn getAliasByNode(typeEntry: Node.Type, node: Node.Node, field: u8) ![]const u8 {
+    if (selva.c.selva_get_aliases(typeEntry, field)) |aliases| {
+        if (selva.c.selva_get_alias_by_dest(aliases, Node.getNodeId(node))) |alias| {
+            var len: usize = undefined;
+            const name = selva.c.selva_get_alias_name(alias, &len);
+            return name[0..len];
+        }
+    }
+    return errors.SelvaError.SELVA_ENOENT;
 }

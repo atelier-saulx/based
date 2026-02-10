@@ -52,7 +52,7 @@ const includeMainProps = (
       prop: 0,
       propType: PropType.microBuffer,
     })
-  } else if (props.length > 0) {
+  } else {
     pushIncludePartialHeader(ctx.query, {
       op: IncludeOp.partial,
       prop: MAIN_PROP,
@@ -68,36 +68,68 @@ const includeMainProps = (
   }
 }
 
-const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
+const walkProp = (
+  astProp: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  walkCtx: WalkCtx,
+  field: string,
+) => {
   const { main, tree } = walkCtx
+  const prop = tree.get(field)
+  const include = astProp.include
+
+  if (isPropDef(prop)) {
+    if (prop.type === PropType.references) {
+      references(astProp, ctx, prop)
+    } else if (prop.type === PropType.reference) {
+      reference(astProp, ctx, prop)
+    } else if (include) {
+      if (prop.id === 0) {
+        main.push({ prop, include })
+      } else {
+        includeProp(ctx, prop, include)
+      }
+    }
+  } else if (prop) {
+    walk(astProp, ctx, typeDef, {
+      main,
+      tree: prop,
+    })
+  } else {
+    // if EN, if NL
+    throw new Error(`Prop does not exist ${field}`)
+  }
+}
+
+const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
+  if (ast.include) {
+    ast.props ??= {}
+    ast.props['*'] ??= {}
+    ast.props['*'].include ??= ast.include
+  }
   // if ast.include.glob === '*' include all from schema
+  // youri thinks we can just set this as a field, simpler (also for nested things like bla.**.id)
   // same for ast.include.glob === '**'
   for (const field in ast.props) {
-    const prop = tree.get(field)
     const astProp = ast.props[field]
-    const include = astProp.include
-    if (isPropDef(prop)) {
-      if (prop.type === PropType.references) {
-        references(astProp, ctx, prop)
-      } else if (prop.type === PropType.reference) {
-        reference(astProp, ctx, prop)
-      } else if (include) {
-        if (prop.id === 0) {
-          main.push({ prop, include })
-        } else {
-          includeProp(ctx, prop, include)
+    if (field === 'id') {
+      continue
+    }
+    if (field === '*') {
+      for (const [field, prop] of walkCtx.tree) {
+        if (!('ref' in prop)) {
+          walkProp(astProp, ctx, typeDef, walkCtx, field)
+        }
+      }
+    } else if (field === '**') {
+      for (const [field, prop] of typeDef.tree) {
+        if ('ref' in prop) {
+          walkProp(astProp, ctx, typeDef, walkCtx, field)
         }
       }
     } else {
-      if (prop) {
-        walk(astProp, ctx, typeDef, {
-          main,
-          tree: prop,
-        })
-      } else {
-        // if EN, if NL
-        throw new Error(`Prop does not exist ${field}`)
-      }
+      walkProp(astProp, ctx, typeDef, walkCtx, field)
     }
   }
   return walkCtx
@@ -109,6 +141,6 @@ export const include = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef): number => {
     main: [],
     tree: typeDef.tree,
   })
-  includeMainProps(ctx, main, typeDef)
+  if (main.length) includeMainProps(ctx, main, typeDef)
   return ctx.query.length - startIndex
 }

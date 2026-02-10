@@ -44,17 +44,43 @@ export const propIndexOffset = (prop: PropDef): number => {
   }
 }
 
-const separateSorter = (a, b) => propIndexOffset(a) - propIndexOffset(b)
+const separateSorter = (a: PropDef, b: PropDef) =>
+  propIndexOffset(a) - propIndexOffset(b)
 
-const getTypeDef = (schema: SchemaType<true>): TypeDef => {
+const addPropDef = (
+  prop: SchemaProp<true>,
+  path: string[],
+  typeDef: TypeDef,
+) => {
+  const Def = defs[prop.type]
+  if (!Def) {
+    throw new Error('Unknown def')
+  }
+
+  const def: PropDef = new Def(prop, path, typeDef)
+  if (def.size) {
+    typeDef.main.push(def)
+  } else {
+    typeDef.separate.push(def)
+  }
+  return def
+}
+
+const getTypeDef = (
+  name: string,
+  schema: SchemaType<true>,
+  schemaRoot: SchemaOut,
+): TypeDef => {
   const { props } = schema
   const typeDef: TypeDef = {
     id: 0,
+    name,
     separate: [],
     props: new Map(),
     main: [],
     tree: new Map(),
     schema,
+    schemaRoot,
   }
 
   const walk = (
@@ -70,43 +96,15 @@ const getTypeDef = (schema: SchemaType<true>): TypeDef => {
         const branch = new Map()
         walk(prop.props, path, branch)
         tree.set(key, branch)
-        continue
-      }
-
-      const Def = defs[prop.type]
-      if (!Def) {
-        console.error('unknown def')
-        // TODO: handle missing type
-        continue
-      }
-
-      const def = new Def(prop, path, typeDef)
-      if (def.size) {
-        typeDef.main.push(def)
       } else {
-        typeDef.separate.push(def)
+        const def = addPropDef(prop, path, typeDef)
+        typeDef.props.set(path.join('.'), def)
+        tree.set(key, def)
       }
-      typeDef.props.set(path.join('.'), def)
-      tree.set(key, def)
     }
   }
 
   walk(props, [], typeDef.tree)
-
-  // -------- sort and assign main --------
-  typeDef.main.sort(mainSorter)
-  let start = 0
-  for (const prop of typeDef.main) {
-    prop.start = start
-    start += prop.size
-  }
-
-  // -------- sort and assign separate ---------
-  typeDef.separate.sort(separateSorter)
-  let propId = 1
-  for (const prop of typeDef.separate) {
-    prop.id = propId++
-  }
 
   return typeDef
 }
@@ -118,7 +116,7 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
   const typeDefs = new Map(
     Object.entries(schema.types)
       .sort()
-      .map(([key, type]) => [key, getTypeDef(type)]),
+      .map(([name, type]) => [name, getTypeDef(name, type, schema)]),
   )
 
   // -------- connect references, add edges and assign ids --------
@@ -130,10 +128,24 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
         def.schema.type === 'references' ? def.schema.items : def.schema
       if (prop.type !== 'reference') continue
       def.ref = typeDefs.get(prop.ref)!
-      if (!prop.prop) {
-        continue
+      if (prop.prop) {
+        def.refProp = def.ref.props.get(prop.prop)!
+      } else {
+        def.refProp = addPropDef(
+          {
+            type: 'references',
+            items: {
+              type: 'reference',
+              ref: typeName,
+              prop: propPath,
+            },
+          },
+          [`${typeName}.${propPath}`],
+          def.ref,
+        )
+        def.refProp.ref = typeDef
+        def.refProp.refProp = def
       }
-      def.refProp = def.ref.props.get(prop.prop)!
       const inverseEdges = def.refProp.edges
       if (inverseEdges) {
         def.edges = inverseEdges
@@ -146,10 +158,27 @@ export const getTypeDefs = (schema: SchemaOut): Map<string, TypeDef> => {
         edges[edge] = prop[edge]
       }
       if (edges) {
-        def.edges = getTypeDef({ props: edges })
         const edgeTypeName = `_${typeName}.${propPath}`
+        def.edges = getTypeDef(edgeTypeName, { props: edges }, schema)
         typeDefs.set(edgeTypeName, def.edges)
       }
+    }
+  }
+
+  for (const [, typeDef] of typeDefs) {
+    // -------- sort and assign main --------
+    typeDef.main.sort(mainSorter)
+    let start = 0
+    for (const prop of typeDef.main) {
+      prop.start = start
+      start += prop.size
+    }
+
+    // -------- sort and assign separate ---------
+    typeDef.separate.sort(separateSorter)
+    let propId = 1
+    for (const prop of typeDef.separate) {
+      prop.id = propId++
     }
   }
 

@@ -468,10 +468,7 @@ export const deSerializeInner = (
 
   if (isSchemaProp) {
     const type = buf[i]
-    const parsedType = PropTypeInverse[type]
-    if (type !== PropType.enum) {
-      obj.type = parsedType
-    }
+    obj.type = PropTypeInverse[type]
     i += 1
   }
 

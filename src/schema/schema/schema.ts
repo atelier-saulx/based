@@ -54,23 +54,174 @@ type NormalizeProp<T> = T extends string
                   ? NormalizeProp<T[K]>
                   : T[K]
               } & { type: 'reference' }
-            : T extends { enum: any[] }
+            : T extends { enum: readonly any[] }
               ? T & { type: 'enum' }
               : T
+
+// Utility to normalize properties in an object
+type NormalizeEdges<T> = {
+  [K in keyof T]: NormalizeProp<T[K]>
+}
+
+// Utility to convert a Union to an Intersection
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+  k: infer I,
+) => void
+  ? I
+  : never
+
+// Helper to find Props in other types that reference TName with a specific 'prop' field
+type GetBackRefs<Types, TName> = UnionToIntersection<
+  {
+    [K in keyof Types]: (
+      Types[K] extends { props: infer P } ? P : Types[K]
+    ) extends infer Props
+      ? {
+          [P in keyof Props as Props[P] extends {
+            ref: TName
+            prop: infer BackProp extends string
+          }
+            ? BackProp
+            : Props[P] extends {
+                  items: { ref: TName; prop: infer BackProp extends string }
+                }
+              ? BackProp
+              : never]: {
+            type: 'references'
+            items: {
+              type: 'reference'
+              ref: K & string
+              prop: P & string
+            } & NormalizeEdges<
+              Props[P] extends { items: infer I }
+                ? Omit<I, 'ref' | 'prop' | 'type'>
+                : Omit<Props[P], 'ref' | 'prop' | 'type'>
+            >
+          }
+        }
+      : never
+  }[keyof Types]
+>
+
+import type { SchemaProp } from './prop.js'
+
+// ResolvedProps combines explicit props with inferred back-reference props
+export type ResolvedProps<
+  Types,
+  TName extends keyof Types,
+  Props = NormalizeType<Types[TName]> extends { props: infer P } ? P : {},
+  BackRefs = GetBackRefs<Types, TName>,
+> = {
+  [K in keyof (Props &
+    ([BackRefs] extends [never] ? {} : Omit<BackRefs, keyof Props>)) as Extract<
+    K,
+    string
+  >]: (Props &
+    ([BackRefs] extends [never] ? {} : Omit<BackRefs, keyof Props>))[K]
+}
 
 type NormalizeType<T> = T extends { props: infer P }
   ? Omit<T, 'props'> & { props: { [K in keyof P]: NormalizeProp<P[K]> } }
   : { props: { [K in keyof T]: NormalizeProp<T[K]> } }
 
-export type ResolveSchema<S extends { types: any }> = Omit<
-  SchemaOut,
-  'types' | 'locales'
-> & {
-  types: {
-    [K in keyof S['types']]: NormalizeType<S['types'][K]>
-  }
-  locales: SchemaLocales<true>
+// Helper to extract props from a type definition (explicit or shorthand)
+type GetProps<T> = T extends { props: infer P } ? P : T
+
+// Helper to find "Incoming Claims" - properties on TargetRef that explicitly point to MyType.MyProp
+type GetIncomingClaims<Types, TargetRef extends keyof Types, MyType, MyProp> = {
+  [K in keyof GetProps<Types[TargetRef]>]: GetProps<
+    Types[TargetRef]
+  >[K] extends infer TargetProp
+    ? TargetProp extends { ref: MyType; prop: MyProp }
+      ? K
+      : TargetProp extends { items: { ref: MyType; prop: MyProp } }
+        ? K
+        : never
+    : never
+}[keyof GetProps<Types[TargetRef]>]
+
+type ValidateProp<Prop, Types, TName, PName> = Prop extends {
+  ref: infer Ref extends string
+  prop: infer BackProp extends string
 }
+  ? Ref extends keyof Types
+    ? GetIncomingClaims<Types, Ref, TName, PName> extends infer Claims
+      ? [Claims] extends [never]
+        ? Prop
+        : BackProp extends Claims
+          ? Prop
+          : { ref: Ref; prop: Claims } & Omit<Prop, 'ref' | 'prop'>
+      : never
+    : Prop
+  : Prop extends {
+        items: {
+          ref: infer Ref extends string
+          prop: infer BackProp extends string
+        }
+      }
+    ? Ref extends keyof Types
+      ? GetIncomingClaims<Types, Ref, TName, PName> extends infer Claims
+        ? [Claims] extends [never]
+          ? Prop
+          : BackProp extends Claims
+            ? Prop
+            : Prop extends { items: infer I }
+              ? {
+                  items: { ref: Ref; prop: Claims } & Omit<I, 'ref' | 'prop'>
+                } & Omit<Prop, 'items'>
+              : Prop
+        : never
+      : Prop
+    : Prop
+
+type ValidateProps<Props, Types, TName extends string> = {
+  [K in keyof Props]: ValidateProp<Props[K], Types, TName, K & string>
+}
+
+export type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
+  types: {
+    [K in keyof S['types']]: S['types'][K] extends { props: infer P }
+      ? { props: ValidateProps<P, S['types'], K & string> } & Omit<
+          S['types'][K],
+          'props'
+        >
+      : {
+          [P in keyof S['types'][K]]: P extends
+            | 'hooks'
+            | 'blockCapacity'
+            | 'insertOnly'
+            | 'capped'
+            | 'partial'
+            ? S['types'][K][P]
+            : ValidateProp<S['types'][K][P], S['types'], K & string, P & string>
+        }
+  }
+}
+
+import { type LangName, type SchemaLocale } from './locales.js'
+
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
+export type ResolveSchema<S extends { types: any }> = Prettify<
+  Omit<SchemaOut, 'types' | 'locales'> & {
+    types: {
+      [K in keyof S['types']]: Prettify<
+        Omit<NormalizeType<S['types'][K]>, 'props'> & {
+          props: ResolvedProps<S['types'], K>
+        }
+      >
+    }
+    locales: S extends { locales: infer L }
+      ? L extends readonly (infer K extends LangName)[]
+        ? Partial<Record<K, SchemaLocale<true>>>
+        : L extends Record<infer K, any>
+          ? Partial<Record<K & LangName, SchemaLocale<true>>>
+          : SchemaLocales<true>
+      : SchemaLocales<true>
+  }
+>
 
 const isMigrations = (v: unknown): v is SchemaMigrations =>
   isRecord(v) &&
@@ -128,7 +279,9 @@ const track = <P extends Record<string, unknown>>(input: P): P => {
 /*
   This returns a "public" parsed schema, suitable for external users
 */
-export const parseSchema = <S extends SchemaIn>(input: S): ResolveSchema<S> => {
+export const parseSchema = <const S extends SchemaIn>(
+  input: S,
+): ResolveSchema<S> => {
   const v: unknown = track(input)
   assert(isRecord(v), 'Schema should be record')
   try {
@@ -161,6 +314,7 @@ export const parseSchema = <S extends SchemaIn>(input: S): ResolveSchema<S> => {
       defaultTimezone: v.defaultTimezone,
       migrations: v.migrations,
       types,
+      hash: v.hash,
     }) as SchemaOut
 
     assertExpectedProps(result, v)
@@ -175,7 +329,7 @@ export const parseSchema = <S extends SchemaIn>(input: S): ResolveSchema<S> => {
     // TODO we can remove hash from here after we finish new schema defs (internal schema)
     result.hash = hash(result)
 
-    return result as ResolveSchema<S>
+    return result as unknown as ResolveSchema<S>
   } catch (e) {
     if (tracking) {
       e = Error(`${path.join('.')}: ${inspect(value)} - ${e}`, { cause: e })

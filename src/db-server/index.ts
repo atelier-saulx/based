@@ -220,7 +220,6 @@ export class DbServer extends DbShared {
       await migrate(this, this.schema, schema, transformFns)
       return this.schema.hash
     }
-
     setSchemaOnServer(this, schema)
     await setNativeSchema(this, schema)
     await writeSchemaFile(this, schema)

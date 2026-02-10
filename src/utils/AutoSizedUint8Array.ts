@@ -30,7 +30,7 @@ const delegateMethods = [
 ] as const
 
 export class AutoSizedUint8Array {
-  static readonly ERR_OVERFLOW = 1
+  static readonly ERR_OVERFLOW = Error('ERR_OVERFLOW')
 
   data: Uint8Array
   length: number
@@ -40,7 +40,7 @@ export class AutoSizedUint8Array {
     initialCapacity: number = 256,
     maxLength: number = 1024 * 1024 * 1024,
     data: Uint8Array = new Uint8Array(
-      new (ArrayBuffer as any)(initialCapacity, {
+      new ArrayBuffer(initialCapacity, {
         maxByteLength: maxLength,
       }),
     ),
@@ -50,7 +50,7 @@ export class AutoSizedUint8Array {
     this.maxLength = maxLength
   }
 
-  private ensure(requiredLength: number): void {
+  ensure(requiredLength: number): void {
     const currentLength = this.data.byteLength
     if (currentLength >= requiredLength) return
     if (requiredLength > this.maxLength) {

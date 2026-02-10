@@ -11,18 +11,18 @@ import {
   type SchemaOut,
   type ResolveSchema,
   type Schema,
+  type ResolvedProps,
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
-import { LangCode } from '../zigTsExports.js'
-import {
-  serializeCreate,
-  serializeDelete,
-  serializeUpdate,
-  ModifyCtx,
-  flush,
-  BasedModify,
-} from './modify/index.js'
-import type { InferPayload } from './modify/types.js'
+import { LangCode, Modify } from '../zigTsExports.js'
+import { ModifyCtx, flush, BasedModify } from './modify/index.js'
+import type { InferPayload, InferTarget } from './modify/types.js'
+import { serializeCreate } from './modify/create.js'
+import { serializeUpdate } from './modify/update.js'
+import { serializeDelete } from './modify/delete.js'
+import { serializeUpsert } from './modify/upsert.js'
+import { BasedQuery2 } from './query2/index.js'
+import type { InferSchemaOutput } from './query2/types.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -31,16 +31,18 @@ type DbClientOpts = {
   debug?: boolean
 }
 
-type BasedCreatePromise = BasedModify<typeof serializeCreate>
-type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
-type BasedDeletePromise = BasedModify<typeof serializeDelete>
+export type BasedCreatePromise = BasedModify<typeof serializeCreate>
+export type BasedUpdatePromise = BasedModify<typeof serializeUpdate>
+export type BasedDeletePromise = BasedModify<typeof serializeDelete>
+export type BasedUpsertPromise = BasedModify<typeof serializeUpsert>
+export type BasedInsertPromise = BasedUpsertPromise
 
 export type ModifyOpts = {
   unsafe?: boolean
   locale?: keyof typeof LangCode
 }
 
-export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
+export class DbClient<S extends { types: any } = SchemaOut> extends DbShared {
   constructor({
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -75,29 +77,43 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
     }
   }
 
-  async setSchema<const T extends { types: any }>(
+  async setSchema<const T extends SchemaIn>(
     schema: T,
     transformFns?: SchemaMigrateFns,
   ): Promise<DbClient<ResolveSchema<T>>> {
-    const strictSchema = parse(schema as unknown as SchemaIn).schema
+    const strictSchema = parse(schema).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
       strictSchema as SchemaOut,
       transformFns,
     )
     if (this.stopped) {
-      return this as unknown as DbClient<ResolveSchema<T>>
+      return this as DbClient<ResolveSchema<T>>
     }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
-      return this as unknown as DbClient<ResolveSchema<T>>
+      return this as DbClient<ResolveSchema<T>>
     }
-    return this as unknown as DbClient<ResolveSchema<T>>
+    return this as DbClient<ResolveSchema<T>>
+  }
+
+  query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+  ): BasedQuery2<S, T, '*', false>
+  query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    id: number | Partial<InferSchemaOutput<S, T>>,
+  ): BasedQuery2<S, T, '*', true>
+  query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    id?: number | Partial<InferSchemaOutput<S, T>>,
+  ): BasedQuery2<S, T, '*', boolean> {
+    return new BasedQuery2<S, T, '*', any>(this, type, id)
   }
 
   create<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    obj: InferPayload<S['types']>[T],
+    obj: InferPayload<S, T>,
     opts?: ModifyOpts,
   ): BasedCreatePromise {
     return new BasedModify(
@@ -114,7 +130,7 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
   update<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     target: number | BasedModify,
-    obj: InferPayload<S['types']>[T],
+    obj: InferPayload<S, T>,
     opts?: ModifyOpts,
   ): BasedUpdatePromise {
     return new BasedModify(
@@ -126,6 +142,44 @@ export class DbClient<S extends Schema<any> = SchemaOut> extends DbShared {
       obj,
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
+    )
+  }
+
+  upsert<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    target: InferTarget<S, T>,
+    obj: InferPayload<S, T>,
+    opts?: ModifyOpts,
+  ): BasedUpsertPromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeUpsert,
+      this.schema!,
+      type,
+      target,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+      Modify.upsert,
+    )
+  }
+
+  insert<T extends keyof S['types'] & string = keyof S['types'] & string>(
+    type: T,
+    target: InferTarget<S, T>,
+    obj: InferPayload<S, T>,
+    opts?: ModifyOpts,
+  ): BasedInsertPromise {
+    return new BasedModify(
+      this.modifyCtx,
+      serializeUpsert,
+      this.schema!,
+      type,
+      target,
+      obj,
+      this.modifyCtx.buf,
+      opts?.locale ? LangCode[opts.locale] : LangCode.none,
+      Modify.insert,
     )
   }
 

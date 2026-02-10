@@ -18,6 +18,7 @@ import {
   PropType,
   readIncludeResponseMeta,
   ReadOp,
+  ReadOpInverse,
 } from '../../zigTsExports.js'
 
 export * from './types.js'
@@ -109,8 +110,9 @@ const references: ReadInstruction = (q, result, i, item) => {
 }
 
 const edge: ReadInstruction = (q, result, i, item) => {
-  console.log('edge', i)
-  return readInstruction(result[i], q.edges!, result, i + 1, item)
+  const size = readUint32(result, i)
+  i += 4
+  return readProps(q.edges!, result, i, i + size, item)
 }
 
 const readInstruction = (
@@ -166,6 +168,7 @@ export const resultToObject = (
   result: Uint8Array,
   end: number,
   offset: number = 0,
+  items: AggItem | [Item] = [],
 ) => {
   if (q.aggregate) {
     return readAggregate(q, result, 0, result.byteLength - 4)
@@ -177,10 +180,9 @@ export const resultToObject = (
     if (q.type === ReaderSchemaEnum.single) {
       return null
     }
-    return []
+    return items
   }
 
-  let items: AggItem | [Item] = []
   let i = 5 + offset
 
   const readHook = q.hook

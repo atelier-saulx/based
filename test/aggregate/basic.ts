@@ -91,16 +91,16 @@ await test('sum top level', async (t) => {
     await db.query('vote').sum().get().toObject()
   }, 'sum() returning nothing')
 
-  //   deepEqual(
-  //     await db
-  //       .query('vote')
-  //       .filter('country', '=', 'zz')
-  //       .sum('NL')
-  //       .get()
-  //       .toObject(),
-  //     { NL: { sum: 0 } },
-  //     'sum with empty result set',
-  //   )
+  // deepEqual(
+  //   await db
+  //     .query('vote')
+  //     .filter('country', '=', 'zz')
+  //     .sum('NL')
+  //     .get()
+  //     .toObject(),
+  //   { NL: { sum: 0 } },
+  //   'sum with empty result set',
+  // )
 
   deepEqual(
     await db.query('vote').sum('flap.hello').get().toObject(),
@@ -191,28 +191,28 @@ await test('top level count', async (t) => {
     'count, top level, ignoring include',
   )
 
-  //   deepEqual(
-  //     await db
-  //       .query('vote')
-  //       .filter('country', '=', 'zz')
-  //       .count()
-  //       .get()
-  //       .toObject(),
-  //     { count: 0 },
-  //     'count, with no match filtering, string value',
-  //   )
-
   // deepEqual(
-  //   await db.query('vote').filter('NL', '=', 20).count().get(),
-  //   { count: 1 },
-  //   'count, with filtering an int value',
+  //   await db
+  //     .query('vote')
+  //     .filter('country', '=', 'zz')
+  //     .count()
+  //     .get()
+  //     .toObject(),
+  //   { count: 0 },
+  //   'count, with no match filtering, string value',
   // )
 
-  //   deepEqual(
-  //     await db.query('vote').filter('NL', '>', 1e6).count().get(),
-  //     { count: 0 },
-  //     'count, with no match filtering, int value',
-  //   )
+  deepEqual(
+    await db.query('vote').filter('NL', '=', 20).count().get(),
+    { count: 1 },
+    'count, with filtering an int value',
+  )
+
+  deepEqual(
+    await db.query('vote').filter('NL', '>', 1e6).count().get(),
+    { count: 0 },
+    'count, with no match filtering, int value',
+  )
 })
 
 await test('two phase accumulation', async (t) => {
@@ -1085,4 +1085,119 @@ await test('numeric types', async (t) => {
 //     2,
 //     'range group by references',
 //   )
+// })
+
+// await test('count props', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//     maxModifySize: 1e6,
+//   })
+
+//   await db.start({ clean: true })
+//   t.after(() => db.stop())
+
+//   await db.setSchema({
+//     types: {
+//       vehicle: {
+//         props: {
+//           plate: 'string',
+//           year: 'unint16',
+//         },
+//       },
+//       trip: {
+//         props: {
+//           distance: 'number',
+//           vehicle: {
+//             ref: 'vehicle',
+//             prop: 'vehicle',
+//           },
+//         },
+//       },
+//     },
+//   })
+
+//   const v1 = db.create('vehicle', {
+//     plate: 'KKK1234',
+//     year: 2023,
+//   })
+//   db.create('trip', {
+//     distance: 813.1,
+//     vehicle: v1,
+//   })
+//   db.create('trip', {
+//     distance: 1023.1,
+//   })
+//   const v1 = db.create('vehicle', {
+//     plate: 'LAL0001',
+//   })
+//   await db.query('trip').count().get().inspect() // should count nodes --> count = 2
+//   await db.query('trip').count('vehicle').get().inspect() // shoudl count refs --> count = 1
+//   await db.query('vehicle').count('year').get().inspect() // should ignore undefined props --> count = 1
+// })
+
+// await test('groupBy multiple props', async (t) => {
+//   const db = new BasedDb({
+//     path: t.tmp,
+//     maxModifySize: 1e6,
+//   })
+
+//   await db.start({ clean: true })
+//   t.after(() => db.stop())
+
+//   await db.setSchema({
+//     types: {
+//       vehicle: {
+//         props: {
+//           plate: 'string',
+//           decade: 'uint16',
+//           brand: 'string',
+//         },
+//       },
+//     },
+//   })
+
+//   const v1 = db.create('vehicle', {
+//     plate: 'KKK1234',
+//     year: 2020,
+//     brand: 'Volkswagen',
+//   })
+//   const v2 = db.create('vehicle', {
+//     plate: 'LAL0001',
+//     year: 1990,
+//     brand: 'Volkswagen',
+//   })
+//   const v3 = db.create('vehicle', {
+//     plate: 'BYD8001',
+//     year: 2020,
+//     brand: 'BYD',
+//   })
+
+//   await db.query('vehicle').count().groupBy('brand').get().inspect()
+/*
+  {
+     BYD: {
+       count: 1 count
+     },
+     Volkswagen: {
+       count: 2 count
+     }
+  }
+  */
+
+// await db.query('vehicle').count().groupBy('decade','brand').get().inspect()
+/*
+{
+  [BYD, 2020]: {
+    count: 1 count
+  },
+  [BYD, 1990]: {
+    count: 0 count
+  },
+ [Volkswagen, 1990]: {
+  count: 2,
+ },
+ [Volkswagen, 2020]: {
+  count: 0,
+ }
+*/
 // })

@@ -26,8 +26,8 @@ import {
   BasedModify,
   getRealId,
   getTmpId,
-  serializeProps,
 } from '../../../db-client/modify/index.js'
+import { serializeProps } from '../../../db-client/modify/props.js'
 
 type Edges = Record<`${string}`, unknown> | undefined
 

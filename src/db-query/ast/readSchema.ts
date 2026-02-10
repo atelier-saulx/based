@@ -49,9 +49,20 @@ export const readPropDef = (
   //       opts?.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
   //   }
   // }
-  if (p.type === PropType.enum) {
-    // console.log(p)
-    // readerPropDef.enum = p.prop.enum
+  if ('vals' in p) {
+    // @ts-ignore TODO make this nice
+    readerPropDef.enum = Array.from(p.vals.keys())
+  }
+
+  if (p.type === PropType.text) {
+    // @ts-ignore TODO make this nice
+    readerPropDef.locales = Object.keys(p.typeDef.schemaRoot.locales).reduce(
+      (map, lang: string) => {
+        map[LangCode[lang]] = lang
+        return map
+      },
+      {},
+    )
   }
   // if (p.type === PropType.vector || p.type === PropType.colVec) {
   //   readerPropDef.vectorBaseType = p.vectorBaseType

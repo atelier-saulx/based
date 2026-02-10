@@ -170,13 +170,10 @@ await test('non existing 2', async (t) => {
     },
   ])
 
-  // this can be handled in js
   throws(() => db.delete('nurp', 213123123))
-
   throws(() => db.delete('user', simple))
-
-  // this has to be ignored in C
   throws(() => db.delete('user', simple))
+  throws(() => db.delete('user', 0))
 })
 
 await test('save', async (t) => {

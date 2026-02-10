@@ -238,11 +238,6 @@ static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
     }
 }
 
-static inline void clear_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
-{
-    del_all_nodes(db, te);
-}
-
 static void destroy_type(struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     /*
@@ -275,7 +270,7 @@ static void del_all_types(struct SelvaDb *db)
     struct SelvaTypeEntry *tmp;
 
     RB_FOREACH_SAFE(te, SelvaTypeEntryIndex, &db->types.index, tmp) {
-        clear_type(db, te);
+        del_all_nodes(db, te);
     }
 
     RB_FOREACH_SAFE(te, SelvaTypeEntryIndex, &db->types.index, tmp) {
@@ -660,7 +655,9 @@ struct SelvaNodeRes selva_upsert_node(struct SelvaTypeEntry *type, node_id_t nod
         }
     }
 
-    selva_fields_init_node(type, node);
+    /* Don't set defaults if we are loading. */
+    const bool set_defaults = !(res.block_status & SELVA_TYPE_BLOCK_STATUS_LOADING);
+    selva_fields_init_node(type, node, set_defaults);
 
     atomic_fetch_or_explicit(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_INMEM | SELVA_TYPE_BLOCK_STATUS_DIRTY), memory_order_release);
     block->nr_nodes_in_block++;
@@ -814,9 +811,14 @@ static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *
         struct SelvaAlias find = {
             .dest = dest,
         };
+        field_t f = i;
 
         alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
-        selva_hash_update(hash_state, alias->name, alias->name_len);
+        if (alias) {
+            selva_hash_update(hash_state, &f, sizeof(f));
+            selva_hash_update(hash_state, &dest, sizeof(dest));
+            selva_hash_update(hash_state, alias->name, alias->name_len);
+        }
     }
 }
 

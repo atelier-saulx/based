@@ -79,8 +79,11 @@ pub const ModOp = enum(u8) {
 
 pub const Modify = enum(u8) {
     create = 0,
-    update = 1,
-    delete = 2,
+    createRing = 1,
+    update = 2,
+    delete = 3,
+    upsert = 4,
+    insert = 5,
 };
 
 pub const ModifyHeader = packed struct {
@@ -92,7 +95,7 @@ pub const ModifyHeader = packed struct {
 
 pub const ModifyUpdateHeader = packed struct {
     op: Modify,
-    type: u8,
+    type: TypeId,
     isTmp: bool,
     _padding: u7,
     id: u32,
@@ -101,7 +104,7 @@ pub const ModifyUpdateHeader = packed struct {
 
 pub const ModifyDeleteHeader = packed struct {
     op: Modify,
-    type: u8,
+    type: TypeId,
     isTmp: bool,
     _padding: u7,
     id: u32,
@@ -109,7 +112,14 @@ pub const ModifyDeleteHeader = packed struct {
 
 pub const ModifyCreateHeader = packed struct {
     op: Modify,
-    type: u8,
+    type: TypeId,
+    size: u32,
+};
+
+pub const ModifyCreateRingHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    maxNodeId: u32,
     size: u32,
 };
 
@@ -122,8 +132,9 @@ pub const ModifyIncrement = enum(u8) {
 pub const ModifyMainHeader = packed struct {
     id: u8,
     type: PropType,
-    start: u16,
     increment: ModifyIncrement,
+    size: u8,
+    start: u16,
 };
 
 pub const ModifyPropHeader = packed struct {
@@ -173,10 +184,6 @@ pub const ModifyCardinalityHeader = packed struct {
     sparse: bool,
     _padding: u7,
     precision: u8,
-    // id: u32,
-    // isTmp: bool,
-    // _padding: u7,
-    // size: u32,
 };
 
 pub const ModifyResultItem = packed struct {
@@ -616,6 +623,7 @@ pub const QUERY_ITERATOR_EDGE = 20;
 pub const QUERY_ITERATOR_EDGE_INCLUDE = 30;
 pub const QUERY_ITERATOR_SEARCH = 120;
 pub const QUERY_ITERATOR_SEARCH_VEC = 130;
+pub const QUERY_ITERATOR_AGGREGATES = 140;
 
 pub const QueryIteratorType = enum(u8) {
     default = 0,
@@ -652,6 +660,10 @@ pub const QueryIteratorType = enum(u8) {
     vec = 130,
     vecFilter = 131,
     // add edge include / edge later
+    aggregate = 140,
+    aggregateFilter = 141,
+    groupBy = 142,
+    groupByFilter = 143,
 };
 
 // include op needs overlap with this
@@ -797,13 +809,23 @@ pub const AggHeader = packed struct {
     limit: u32,
     filterSize: u16,
     iteratorType: QueryIteratorType,
-    size: u16,
     resultsSize: u16,
     accumulatorSize: u16,
-    sort: bool,
     hasGroupBy: bool,
     isSamplingSet: bool,
-    _padding: u5,
+    _padding: u6,
+};
+
+pub const AggRefsHeader = packed struct {
+    op: IncludeOp,
+    targetProp: u8,
+    offset: u32,
+    filterSize: u16,
+    resultsSize: u16,
+    accumulatorSize: u16,
+    hasGroupBy: bool,
+    isSamplingSet: bool,
+    _padding: u6,
 };
 
 pub const addMultiSubscriptionHeader = packed struct {

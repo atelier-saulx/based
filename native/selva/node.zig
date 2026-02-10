@@ -11,15 +11,28 @@ const DbCtx = @import("../db/ctx.zig").DbCtx;
 pub const Type = selva.Type;
 pub const Node = selva.Node;
 
-pub inline fn getType(ctx: *DbCtx, typeId: t.TypeId) !Type {
-    const selvaTypeEntry: ?Type = selva.c.selva_get_type_by_index(
-        ctx.selva.?,
-        typeId,
-    );
-    if (selvaTypeEntry == null) {
-        return errors.SelvaError.SELVA_EINTYPE;
+pub inline fn getType(ctx: *DbCtx, v: anytype) !Type {
+    var selvaTypeEntry: ?Type = undefined;
+
+    if (comptime @TypeOf(v) == t.TypeId) {
+        selvaTypeEntry = selva.c.selva_get_type_by_index(
+            ctx.selva.?,
+            v,
+        );
+    } else if (comptime @TypeOf(v) == selva.Node or
+               @TypeOf(v) == ?selva.Node) {
+        if (comptime @TypeOf(v) == ?selva.Node) {
+            if (v == null) {
+                return errors.SelvaError.SELVA_ENOENT;
+            }
+        }
+        selvaTypeEntry = selva.c.selva_get_type_by_node(ctx.selva.?, v);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(v));
+        @compileError("Invalid type");
     }
-    return selvaTypeEntry.?;
+
+    return if (selvaTypeEntry == null) errors.SelvaError.SELVA_EINTYPE else selvaTypeEntry.?;
 }
 
 pub inline fn getRefDstType(ctx: *DbCtx, sch: anytype) !Type {
@@ -155,31 +168,22 @@ pub inline fn getNodeFromReference(dstType: selva.Type, ref: anytype) ?Node {
     return null;
 }
 
-pub inline fn ensureRefEdgeNode(db: *DbCtx, node: Node, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) !Node {
-    const edgeNode = selva.c.selva_fields_ensure_ref_edge(db.selva, node, efc, ref, 0);
-    if (edgeNode) |n| {
-        selva.markDirty(db, efc.edge_node_type, getNodeId(n));
-        return n;
-    } else {
-        return errors.SelvaError.SELVA_ENOTSUP;
-    }
-}
-
 pub inline fn getEdgeNode(db: *DbCtx, efc: selva.EdgeFieldConstraint, ref: selva.ReferenceLarge) ?Node {
     if (ref.*.edge == 0) {
         return null;
     }
 
     const edge_type = selva.c.selva_get_type_by_index(db.selva, efc.*.edge_node_type);
-    return selva.c.selva_find_node(edge_type, ref.*.edge);
+    // TODO Partials
+    return selva.c.selva_find_node(edge_type, ref.*.edge).node;
 }
 
 pub inline fn deleteNode(db: *DbCtx, typeEntry: Type, node: Node) !void {
     selva.c.selva_del_node(db.selva, typeEntry, node);
 }
 
-pub inline fn flushNode(ctx: *Modify.ModifyCtx, typeEntry: Type, node: Node) void {
-    selva.c.selva_flush_node(ctx.db.selva, typeEntry, node);
+pub inline fn flushNode(db: *DbCtx, typeEntry: Type, node: Node) void {
+    selva.c.selva_flush_node(db.selva, typeEntry, node);
 }
 
 pub inline fn expireNode(ctx: *Modify.ModifyCtx, typeId: t.TypeId, nodeId: u32, ts: i64) void {

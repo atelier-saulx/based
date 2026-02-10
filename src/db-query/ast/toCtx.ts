@@ -8,6 +8,7 @@ import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import { Ctx, QueryAst } from './ast.js'
 import { defaultMultiple } from './multiple.js'
 import { getReaderLocales, readSchema } from './readSchema.js'
+import { defaultSingle } from './single.js'
 
 export const astToQueryCtx = (
   schema: SchemaOut,
@@ -40,7 +41,10 @@ export const astToQueryCtx = (
     locales: getReaderLocales(schema),
   }
 
-  if (!ast.target) {
+  if (ast.target) {
+    defaultSingle(ast, ctx, typeDef)
+    ctx.readSchema.type = ReaderSchemaEnum.single
+  } else {
     defaultMultiple(ast, ctx, typeDef)
   }
 

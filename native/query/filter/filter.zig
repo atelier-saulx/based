@@ -4,6 +4,7 @@ const utils = @import("../../utils.zig");
 const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
+const Selva = @import("../../selva/selva.zig");
 const t = @import("../../types.zig");
 const Compare = @import("compare.zig");
 const Select = @import("select.zig");
@@ -82,7 +83,7 @@ inline fn compare(
     T: type,
     comptime meta: Instruction.OpMeta,
     q: []u8,
-    v: []u8,
+    v: []const u8,
     index: usize,
     c: *t.FilterCondition,
 ) bool {
@@ -103,7 +104,7 @@ inline fn compare(
 pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
     var i: usize = 0;
     var pass: bool = true;
-    var v: []u8 = undefined;
+    var v: []const u8 = undefined;
     var prop: u8 = 255;
     var nextOrIndex: usize = q.len;
     while (i < nextOrIndex) {
@@ -113,7 +114,11 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
 
         if (prop != c.prop) {
             prop = c.prop;
-            v = Fields.getRaw(node, c.fieldSchema);
+            if (c.fieldSchema.type == Selva.c.SELVA_FIELD_TYPE_ALIAS) {
+                v = try Fields.getAliasByNode(try Node.getType(ctx.db, node), node, c.fieldSchema.field);
+            } else {
+                v = Fields.getRaw(node, c.fieldSchema);
+            }
         }
 
         pass = switch (c.op.compare) {

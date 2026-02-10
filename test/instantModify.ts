@@ -4,6 +4,7 @@ import test from './shared/test.js'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { Worker } from 'node:worker_threads'
+
 await test.skip('instantModify', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
@@ -16,8 +17,8 @@ await test.skip('instantModify', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      it: { fallback: 'en' },
-      fi: { fallback: 'en' },
+      it: { fallback: ['en'] },
+      fi: { fallback: ['en'] },
     },
     types: {
       country: {
