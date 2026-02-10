@@ -315,9 +315,9 @@ static void save_aliases(struct selva_io *io, struct SelvaDb *db)
     write_dump_magic(io, DUMP_MAGIC_ALIASES);
 
     RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
-        const sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
+        const size_t nr_fields = te->ns.nr_alias_fields;
 
-        for (size_t i = 0; i < nr_aliases; i++) {
+        for (size_t i = 0; i < nr_fields; i++) {
             struct SelvaAliases *aliases = &te->aliases[i];
             sdb_nr_aliases_t nr_aliases_by_name = aliases->nr_aliases;
             struct SelvaAlias *alias;
@@ -411,7 +411,7 @@ static void selva_dump_save_colvec(struct selva_io *io, struct SelvaDb *, struct
     io->sdb_write(&block_i, sizeof(block_i), 1, io);
     static_assert(sizeof(block_i) == sizeof(uint32_t));
 
-    for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
         struct SelvaColvec *colvec = &te->col_fields.colvec[i];
         uint8_t *slab = (uint8_t *)colvec->v[block_i];
         uint8_t slab_present = !!slab;
@@ -829,7 +829,7 @@ static int load_colvec(struct selva_io *io, struct SelvaTypeEntry *te)
     io->sdb_read(&block_i, sizeof(block_i), 1, io);
     static_assert(sizeof(block_i) == sizeof(uint32_t));
 
-    for (size_t i = 0; i < te->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
         uint8_t slab_present;
 
         io->sdb_read(&slab_present, sizeof(slab_present), 1, io);
@@ -911,9 +911,9 @@ static int load_aliases(struct selva_io *io, struct SelvaDb *db)
     }
 
     RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
-        const sdb_nr_aliases_t nr_aliases = te->ns.nr_aliases;
+        const size_t nr_fields = te->ns.nr_alias_fields;
 
-        for (sdb_nr_aliases_t i = 0; i < nr_aliases; i++) {
+        for (size_t i = 0; i < nr_fields; i++) {
             sdb_nr_aliases_t nr_aliases_by_name;
 
             io->sdb_read(&nr_aliases_by_name, sizeof(nr_aliases_by_name), 1, io);
