@@ -189,8 +189,6 @@ pub fn referenceEdge(
                 try Include.include(edge, ctx, edgeQuery, edgeTypeEntry);
             }
 
-            // i.* += header.edgeSize;
-
             ctx.thread.query.writeAs(
                 u32,
                 @truncate(ctx.thread.query.index - startIndex),
