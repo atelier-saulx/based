@@ -92,12 +92,7 @@ await test('include', async (t) => {
         // add edges
       },
       // add AND
-      or: {
-        // 4
-        props: {
-          y: { ops: [{ op: '=', val: 67 }] },
-        },
-      },
+
       and: {
         // 2
         props: {
@@ -108,9 +103,31 @@ await test('include', async (t) => {
           props: {
             y: { ops: [{ op: '=', val: 3 }] },
           },
+          // 4
+          or: {
+            props: {
+              y: { ops: [{ op: '=', val: 4 }] },
+            },
+          },
         },
       },
-      // ->4 1 ->3 2 ->4 3
+
+      or: {
+        // 5
+        props: {
+          y: { ops: [{ op: '=', val: 67 }] },
+        },
+      },
+
+      // (y=0 & ((y=10&x=100) | y=3 | y=4)) | y=67
+      // 1:y=0
+      // 2:y=10&x=100
+      // 3:y=3
+      // 4:y=4
+      // 5:y=67
+      // >5 1 >3 2 >4 3 >5 67
+
+      // > means this is the next evaluation if it does not pass if any does not pass in the group e.g. (y=10) in 2 then its does not pass and return
     },
     props: {
       // name: { include: {} },
@@ -125,6 +142,9 @@ await test('include', async (t) => {
           },
         },
       },
+
+      // y=4
+
       //   // EDGE
 
       //   edges: {
