@@ -38,8 +38,6 @@ pub const OpType = enum(u8) {
     loadBlock = 128,
     unloadBlock = 129,
     loadCommon = 130,
-    createType = 131,
-    setSchemaIds = 132,
     emptyMod = 133,
 
     // --------------------

@@ -499,8 +499,8 @@ int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t le
     }
 
     int err = parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
-    ns->nr_aliases = ctx.alias_index;
-    ns->nr_colvecs = ctx.colvec_index;
+    ns->nr_alias_fields = ctx.alias_index;
+    ns->nr_colvec_fields = ctx.colvec_index;
 
     return err;
 }

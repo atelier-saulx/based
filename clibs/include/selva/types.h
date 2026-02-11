@@ -100,8 +100,8 @@ struct SelvaFieldsSchema {
 };
 
 struct SelvaNodeSchema {
-    size_t nr_aliases; /*!< Number of alias fields in this type. */
-    size_t nr_colvecs; /*!< Number of columnar vector fields. */
+    size_t nr_alias_fields; /*!< Number of alias fields in this type. */
+    size_t nr_colvec_fields; /*!< Number of columnar vector fields. */
     struct SelvaFieldsSchema fields_schema;
     /* Nothing must be put after this line. */
 };

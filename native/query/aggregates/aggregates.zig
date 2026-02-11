@@ -53,23 +53,23 @@ pub inline fn aggregateProps(
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
         // utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
-        // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
+        utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
         var value: []u8 = undefined;
         if (currentAggDef.aggFunction == t.AggFunction.count) {
             accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
         } else {
             if (currentAggDef.propId != t.MAIN_PROP and currentAggDef.aggFunction != t.AggFunction.cardinality) {
-                i += @sizeOf(t.AggProp);
+                i += utils.sizeOf(t.AggProp);
                 continue;
             }
             const propSchema = Schema.getFieldSchema(typeEntry, currentAggDef.propId) catch {
-                i += @sizeOf(t.AggProp);
+                i += utils.sizeOf(t.AggProp);
                 continue;
             };
             if (currentAggDef.aggFunction == t.AggFunction.cardinality) {
                 const hllValue = Selva.c.selva_fields_get_selva_string(node, propSchema) orelse null;
                 if (hllValue == null) {
-                    i += @sizeOf(t.AggProp);
+                    i += utils.sizeOf(t.AggProp);
                     continue;
                 }
                 if (!hadAccumulated.*) {
@@ -112,7 +112,7 @@ pub inline fn accumulate(
             switch (aggFunction) {
                 .sum => {
                     writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propTypeTag, value, start), accumulatorPos);
-                    // utils.debugPrint("❤️ v: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
+                    utils.debugPrint("❤️ v: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .avg => {
                     const val = microbufferToF64(propTypeTag, value, start);

@@ -83,7 +83,7 @@ export interface BasedTestDb<S extends SchemaIn>
 }
 
 export const testDb = async <const S extends SchemaIn>(
-  t,
+  t: Parameters<Parameters<typeof test>[1]>[0],
   schema: S & ValidateSchema<S>,
 ): Promise<BasedTestDb<S>> => {
   const db = new BasedDb({ path: t.tmp })

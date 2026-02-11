@@ -51,7 +51,7 @@ struct selva_dump_common_data {
  * Create a new DB instance.
  */
 SELVA_EXPORT
-struct SelvaDb *selva_db_create(void);
+struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len]);
 
 /**
  * Destroy a DB instance.
@@ -64,13 +64,6 @@ void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
  */
 SELVA_EXPORT
 int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname_len) __attribute__((nonnull));
-
-/**
- * Create a new node type with a schema.
- * @param type must not exist before.
- */
-SELVA_EXPORT
-int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len) __attribute__((nonnull));
 
 /**
  * Save the common/shared data of the database.
@@ -89,6 +82,9 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
 
 SELVA_EXPORT
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
+
+SELVA_EXPORT
+node_type_t selva_get_max_type(const struct SelvaDb *db) __attribute__((nonnull));
 
 /**
  * Find a type by type id.

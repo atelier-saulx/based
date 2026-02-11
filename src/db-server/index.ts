@@ -1,17 +1,13 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import { start, StartOpts } from './start.js'
+import { realStart, start, StartOpts } from './start.js'
 import { migrate } from './migrate/index.js'
 import { debugServer } from '../utils/debug.js'
 import { DbShared } from '../shared/DbBase.js'
-import {
-  setNativeSchema,
-  setSchemaOnServer,
-  writeSchemaFile,
-} from './schema.js'
+import { writeSchemaFile, } from './schema.js'
 import { save, SaveOpts } from './blocks.js'
 
-import { OpType, OpTypeEnum, OpTypeInverse } from '../zigTsExports.js'
+import { OpType, OpTypeEnum } from '../zigTsExports.js'
 import {
   MAX_ID,
   type SchemaMigrateFns,
@@ -203,7 +199,7 @@ export class DbServer extends DbShared {
     schema: SchemaOut,
     transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']> {
-    if (this.stopped || !this.dbCtxExternal) {
+    if (this.stopped) {
       throw new Error('Db is stopped')
     }
 
@@ -220,8 +216,10 @@ export class DbServer extends DbShared {
       await migrate(this, this.schema, schema, transformFns)
       return this.schema.hash
     }
-    setSchemaOnServer(this, schema)
-    await setNativeSchema(this, schema)
+    if (this.dbCtxExternal) {
+      throw new Error('Db is already running')
+    }
+    realStart(this, schema)
     await writeSchemaFile(this, schema)
 
     process.nextTick(() => {
