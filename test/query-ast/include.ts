@@ -49,7 +49,7 @@ await test('include', async (t) => {
 
   const a = client.create('user', {
     name: 'AAAAAAAAAA',
-    y: 3,
+    y: 4,
     x: true,
     flap: 9999,
     cook: {
@@ -70,24 +70,6 @@ await test('include', async (t) => {
 
   await db.drain()
 
-  // await client.create('user', {
-  //   name: 'CCCCCCCCC',
-  //   cook: {
-  //     cookie: 1234,
-  //   },
-  //   y: 0,
-  //   mrFriend: { id: a, $level: 99 },
-  // })
-
-  // await client.create('user', {
-  //   name: 'DDDDDDDDD',
-  //   cook: {
-  //     cookie: 1234,
-  //   },
-  //   y: 0,
-  //   mrFriend: { id: a, $level: 22 },
-  // })
-
   await db.drain()
 
   const ast: QueryAst = {
@@ -104,11 +86,11 @@ await test('include', async (t) => {
           props: {
             y: { ops: [{ op: '=', val: 3 }] },
           },
-          // or: {
-          //   props: {
-          //     y: { ops: [{ op: '=', val: 4 }] },
-          //   },
-          // },
+          or: {
+            props: {
+              y: { ops: [{ op: '=', val: 4 }] },
+            },
+          },
         },
       },
       or: {

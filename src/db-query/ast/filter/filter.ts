@@ -69,7 +69,7 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   return walkCtx
 }
 
-const MAX_U64 = 213123211231221 - 1e9
+const MAX_INDEX = 11e9 - 1e9
 
 const indexOf = (
   haystack: Uint8Array,
@@ -128,15 +128,18 @@ export const filter = (
     if (ast.or) {
       const { offset, condition } = conditionBuffer(
         {
-          id: 67,
-          // PropType.id,
+          id: PropType.id,
           size: 8,
           start: 0,
         },
         8,
         { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
       )
-      writeUint64(condition, MAX_U64 + Math.floor(Math.random() * 1e9), offset)
+      writeUint64(
+        condition,
+        MAX_INDEX + Math.floor(Math.random() * 1e9),
+        offset,
+      )
       andOrReplace = condition
       filter(
         ast.and,
@@ -166,7 +169,11 @@ export const filter = (
     ctx.query.set(condition, startIndex)
 
     if (prevOr) {
-      ctx.query.set(prevOr, ctx.query.length)
+      if (ast.or.or) {
+      } else {
+        ctx.query.set(prevOr, ctx.query.length)
+        prevOr = undefined
+      }
     }
 
     if (andOrReplace) {
@@ -186,13 +193,13 @@ export const filter = (
         index + FilterConditionAlignOf + 1,
       )
     }
-
     filter(
       ast.or,
       ctx,
       typeDef,
       ctx.query.length - startIndex + filterIndex,
       walkCtx.prop,
+      prevOr,
     )
   }
 
