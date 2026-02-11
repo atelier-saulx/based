@@ -101,10 +101,6 @@ export const filter = (
 ): number => {
   const startIndex = ctx.query.length
 
-  // need to pass the prop
-
-  // or cond needs to be here
-
   const walkCtx = {
     main: [],
     tree: typeDef.tree,
@@ -129,14 +125,6 @@ export const filter = (
   }
 
   if (ast.and) {
-    console.log('========AND========', startIndex)
-    console.dir(ast.and, { depth: 10 })
-    // reserve OR
-    // if (ast.or) {
-    //   ctx.query.reserve(conditionByteSize(8, 8))
-    // }
-    // maybe just add .AND command
-
     if (ast.or) {
       const { offset, condition } = conditionBuffer(
         {
@@ -148,7 +136,6 @@ export const filter = (
         8,
         { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
       )
-      console.log(condition)
       writeUint64(condition, MAX_U64 + Math.floor(Math.random() * 1e9), offset)
       andOrReplace = condition
       filter(
@@ -174,27 +161,15 @@ export const filter = (
       { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
     )
 
-    console.info('NEXT OR INDEX', nextOrIndex)
-    console.log('========OR========')
     console.dir(ast.or, { depth: 10 })
     writeUint64(condition, nextOrIndex, offset)
     ctx.query.set(condition, startIndex)
-    // then add the actual OR cond
-
-    // if FROM OR
-    //
-    //  if (ast.or) {
-    // ctx.query.reserve(conditionByteSize(8, 8))
-    // }
 
     if (prevOr) {
-      console.log('========== PREV OR ==========')
       ctx.query.set(prevOr, ctx.query.length)
     }
 
     if (andOrReplace) {
-      console.log('========== PREV OR REPLACE ==========')
-      console.log(andOrReplace)
       let index = indexOf(
         ctx.query.data,
         andOrReplace,
@@ -202,20 +177,14 @@ export const filter = (
         ctx.query.length,
       )
       if (index === -1) {
-        console.log('derp', index)
-      } else {
-        writeUint64(ctx.query.data, nextOrIndex, offset + index)
-
-        // console.log('derp', index)
-
-        // console.log('----------->', index + offset - 8, offset)
-
-        writeFilterConditionProps.prop(
-          ctx.query.data,
-          walkCtx.prop,
-          index + FilterConditionAlignOf + 1,
-        )
+        throw new Error('Cannot find AND OR REPLACE INDEX')
       }
+      writeUint64(ctx.query.data, nextOrIndex, offset + index)
+      writeFilterConditionProps.prop(
+        ctx.query.data,
+        walkCtx.prop,
+        index + FilterConditionAlignOf + 1,
+      )
     }
 
     filter(
@@ -226,10 +195,6 @@ export const filter = (
       walkCtx.prop,
     )
   }
-
-  // console.log('-------------------------DERP FILTER...')
-  // debugBuffer(ctx.query.data, startIndex, ctx.query.length)
-  // console.log('-------------------------DERP FILTER... DONE')
 
   return ctx.query.length - startIndex
 }
