@@ -1,3 +1,4 @@
+import { deflate } from 'fflate'
 import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import {
@@ -10,6 +11,7 @@ import { writeUint16, writeUint32 } from '../../src/utils/uint8.js'
 import wait from '../../src/utils/wait.js'
 import { perf } from '../shared/perf.js'
 import test from '../shared/test.js'
+import { deflateSync } from 'zlib'
 
 await test('include', async (t) => {
   const db = new BasedDb({ path: t.tmp })
@@ -48,8 +50,16 @@ await test('include', async (t) => {
   })
 
   const a = client.create('user', {
-    name: 'AAAAAAAAAA',
     y: 4,
+    x: true,
+    flap: 9999,
+    cook: {
+      cookie: 1234,
+    },
+  })
+
+  const b = client.create('user', {
+    y: 15,
     x: true,
     flap: 9999,
     cook: {
@@ -97,11 +107,11 @@ await test('include', async (t) => {
         props: {
           y: { ops: [{ op: '=', val: 670 }] },
         },
-        // or: {
-        //   props: {
-        //     y: { ops: [{ op: '=', val: 67 }] },
-        //   },
-        // },
+        or: {
+          props: {
+            y: { ops: [{ op: '=', val: 15 }] },
+          },
+        },
       },
     },
 
@@ -131,6 +141,10 @@ await test('include', async (t) => {
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
   debugBuffer(ctx.query)
+
+  console.log(deflateSync(ctx.query).byteLength)
+
+  debugBuffer(deflateSync(ctx.query))
 
   const result = await db.server.getQueryBuf(ctx.query)
   // const queries: any = []
