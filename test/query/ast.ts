@@ -35,6 +35,12 @@ await test('query types', async (t) => {
             $role: 'string',
           },
         },
+        annoyingThings: {
+          items: {
+            ref: 'soAnnoy',
+            prop: 'users',
+          },
+        },
       },
     },
   })
@@ -60,7 +66,14 @@ await test('query types', async (t) => {
 
   const query = db
     .query2('user')
-    .include('isNice', 'name', 'otherUsers', 'textField', 'friend')
+    .include(
+      'isNice',
+      'name',
+      'otherUsers',
+      'textField',
+      'friend',
+      'friend.$rank',
+    )
 
   const result = await query.get()
 

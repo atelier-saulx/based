@@ -317,9 +317,10 @@ pub const RefOp = enum(u8) {
     end = @intFromEnum(ModOp.end),
     set = 3,
     setEdge = 4,
+
     // setIndex = 4,
     // setTmp = 5,
-    // // setEdge = 6,
+    // setEdge = 6,
 
     // setIndexTmp = 7,
     // setEdgeIndex = 8,
@@ -888,6 +889,7 @@ pub const FilterOpCompare = enum(u8) {
     selectLargeRefsEdge = 207,
 
     nextOrIndex = 253,
+    andOp = 254,
 };
 
 pub const FilterOp = packed struct {

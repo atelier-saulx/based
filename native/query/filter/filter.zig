@@ -38,6 +38,11 @@ pub fn prepare(
             c.offset = utils.alignLeftLen(c.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
 
+            if (c.op.compare == t.FilterOpCompare.nextOrIndex) {
+                // if NEXT END = -1 then its q.len
+                std.debug.print("HELLO ITS OR {any} \n", .{utils.readPtr(u64, q, nextI + @alignOf(u64) - c.offset).*});
+            }
+
             switch (c.op.compare) {
                 .selectLargeRefEdge => {
                     // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
@@ -106,25 +111,33 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
     var pass: bool = true;
     var v: []const u8 = undefined;
     var prop: u8 = 255;
-    var nextOrIndex: usize = q.len;
-    while (i < nextOrIndex) {
+    // var end: usize = q.len;
+    var end: usize = q.len;
+
+    while (i < end) {
         const c = utils.readPtr(t.FilterCondition, q, i + q[i]);
         const index = i + q[i] + utils.sizeOf(t.FilterCondition);
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
 
+        std.debug.print("-> F {any} I {any} S {any} P {any} \n", .{ c.op, i, c.start, c.prop });
+
         if (prop != c.prop) {
             prop = c.prop;
-            if (c.fieldSchema.type == Selva.c.SELVA_FIELD_TYPE_ALIAS) {
-                v = try Fields.getAliasByNode(try Node.getType(ctx.db, node), node, c.fieldSchema.field);
-            } else {
-                v = Fields.getRaw(node, c.fieldSchema);
-            }
+            // if (c.fieldSchema.type == Selva.c.SELVA_FIELD_TYPE_ALIAS) {
+            //     v = try Fields.getAliasByNode(try Node.getType(ctx.db, node), node, c.fieldSchema.field);
+            // } else {
+            v = Fields.getRaw(node, c.fieldSchema);
+            // }
         }
+
+        std.debug.print("-> F OK!!! {any} I {any} S {any} P {any} \n", .{ c.op, i, c.start, c.prop });
 
         pass = switch (c.op.compare) {
             .nextOrIndex => blk: {
-                nextOrIndex = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
-                std.debug.print("hello OR {any} \n", .{nextOrIndex});
+                end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
+                // nextEnd = nextOrIndex;
+                // put second thing PREV OR INDEX here
+                std.debug.print("-> OR {any} \n", .{end});
                 break :blk true;
             },
             .selectRef => blk: {
@@ -150,11 +163,11 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
                 };
             },
         };
+
         if (!pass) {
-            i = nextOrIndex;
-            nextOrIndex = q.len;
+            i = end;
+            end = q.len;
         } else {
-            //
             i = nextIndex;
         }
     }

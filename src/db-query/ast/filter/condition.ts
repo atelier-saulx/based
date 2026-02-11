@@ -37,8 +37,6 @@ export const conditionBuffer = (
       FilterConditionAlignOf + 1,
     ) + prop.size
 
-  console.log('----', prop.size)
-
   return { condition, offset }
 }
 
@@ -145,8 +143,6 @@ export const createCondition = (
     } else {
       write(condition, value[0], offset)
     }
-
-    console.log('derp', condition)
     return condition
   } else if (value.length > vectorLen) {
     // only relevant for eq and neq

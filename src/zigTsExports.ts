@@ -4091,6 +4091,7 @@ export const FilterOpCompare = {
   selectLargeRefEdge: 206,
   selectLargeRefsEdge: 207,
   nextOrIndex: 253,
+  andOp: 254,
 } as const
 
 export const FilterOpCompareInverse = {
@@ -4112,6 +4113,7 @@ export const FilterOpCompareInverse = {
   206: 'selectLargeRefEdge',
   207: 'selectLargeRefsEdge',
   253: 'nextOrIndex',
+  254: 'andOp',
 } as const
 
 /**
@@ -4132,7 +4134,8 @@ export const FilterOpCompareInverse = {
   selectSmallRefs, 
   selectLargeRefEdge, 
   selectLargeRefsEdge, 
-  nextOrIndex 
+  nextOrIndex, 
+  andOp 
  */
 export type FilterOpCompareEnum = (typeof FilterOpCompare)[keyof typeof FilterOpCompare]
 
