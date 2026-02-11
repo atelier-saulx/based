@@ -26,7 +26,6 @@ export * from './db-client/query/BasedQueryResponse.js'
 export * from './db-client/hooks.js'
 export { BasedModify } from './db-client/modify/index.js'
 
-export const SCHEMA_FILE_DEPRECATED = 'schema.json'
 export const SCHEMA_FILE = 'schema.bin'
 export const COMMON_SDB_FILE = 'common.sdb'
 

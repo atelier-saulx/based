@@ -3,6 +3,7 @@ const std = @import("std");
 const napi = @import("../napi.zig");
 const dump = @import("../selva/dump.zig");
 const selva = @import("../selva/selva.zig").c;
+const jemalloc = @import("../jemalloc.zig");
 const dbCtx = @import("ctx.zig");
 
 pub fn start(env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
@@ -20,12 +21,19 @@ pub fn stop(napi_env: napi.Env, info: napi.Info) callconv(.c) napi.Value {
 fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     // does this make double things with valgrind? Ask marco
     dbCtx.init();
-    const args = try napi.getArgs(3, env, info);
+    const args = try napi.getArgs(4, env, info);
     const fsPath = try napi.get([]u8, env, args[1]);
     const nrThreads = try napi.get(u16, env, args[2]);
     const ctx = try dbCtx.createDbCtx(env, args[0], fsPath, nrThreads);
-    ctx.selva = selva.selva_db_create();
+    const selvaSchema = try napi.get([]u8, env, args[3]);
+
+    ctx.selva = selva.selva_db_create(selvaSchema.len, selvaSchema.ptr);
+    if (ctx.selva == null) {
+        return errors.jsThrow(env, "Failed to create a db");
+    }
     _ = selva.selva_db_chdir(ctx.selva, fsPath.ptr, fsPath.len); // TODO Handle error?
+    ctx.ids = jemalloc.alloc(u32, selva.selva_get_max_type(ctx.selva));
+
     var externalNapi: napi.Value = undefined;
     ctx.initialized = true;
     _ = napi.c.napi_create_external(env, ctx, null, null, &externalNapi);

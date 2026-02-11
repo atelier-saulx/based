@@ -59,8 +59,6 @@ export const OpType = {
   loadBlock: 128,
   unloadBlock: 129,
   loadCommon: 130,
-  createType: 131,
-  setSchemaIds: 132,
   emptyMod: 133,
   noOp: 255,
 } as const
@@ -86,8 +84,6 @@ export const OpTypeInverse = {
   128: 'loadBlock',
   129: 'unloadBlock',
   130: 'loadCommon',
-  131: 'createType',
-  132: 'setSchemaIds',
   133: 'emptyMod',
   255: 'noOp',
 } as const
@@ -113,8 +109,6 @@ export const OpTypeInverse = {
   loadBlock, 
   unloadBlock, 
   loadCommon, 
-  createType, 
-  setSchemaIds, 
   emptyMod, 
   noOp 
  */

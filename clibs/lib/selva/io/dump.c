@@ -37,7 +37,6 @@
 /*
  * Pick 32-bit primes for these.
  */
-#define DUMP_MAGIC_SCHEMA       3360690301 /* common.sdb */
 #define DUMP_MAGIC_EXPIRE       2147483647 /* common.sdb */
 #define DUMP_MAGIC_ALIASES      4019181209 /* common.sdb */
 #define DUMP_MAGIC_COMMON_IDS   2974848157 /* common.sdb */
@@ -263,24 +262,6 @@ static void save_node(struct selva_io *io, struct SelvaDb *db, struct SelvaNode 
     save_node_fields(io, schema, node);
 }
 
-static void save_schema(struct selva_io *io, struct SelvaDb *db)
-{
-    const sdb_nr_types_t nr_types = db->types.count;
-    struct SelvaTypeEntry *te;
-
-    write_dump_magic(io, DUMP_MAGIC_SCHEMA);
-    io->sdb_write(&nr_types, sizeof(nr_types), 1, io);
-
-    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
-        node_type_t type = te->type;
-        const sdb_arr_len_t schema_len = te->schema_len;
-
-        io->sdb_write(&type, sizeof(type), 1, io);
-        io->sdb_write(&schema_len, sizeof(schema_len), 1, io);
-        io->sdb_write(te->schema_buf, sizeof(te->schema_buf[0]), te->schema_len, io);
-    }
-}
-
 static void save_expire(struct selva_io *io, struct SelvaDb *db)
 {
 
@@ -386,7 +367,6 @@ int selva_dump_save_common(struct SelvaDb *db, struct selva_dump_common_data *co
     /*
      * Save all the common data here that can't be split up.
      */
-    save_schema(&io, db);
     save_expire(&io, db);
     save_aliases(&io, db);
     save_common_ids(&io, com->ids_data, com->ids_len);
@@ -520,42 +500,6 @@ fail:
         atomic_store(&block->status.atomic, (uint32_t)(SELVA_TYPE_BLOCK_STATUS_FS | SELVA_TYPE_BLOCK_STATUS_INMEM));
     }
     return err;
-}
-
-__attribute__((warn_unused_result))
-static int load_schema(struct selva_io *io, struct SelvaDb *db)
-{
-    sdb_nr_types_t nr_types;
-
-    if (!read_dump_magic(io, DUMP_MAGIC_SCHEMA)) {
-        selva_io_errlog(io, "Invalid schema magic");
-        return SELVA_EINVAL;
-    }
-
-    if (io->sdb_read(&nr_types, sizeof(nr_types), 1, io) != 1) {
-        selva_io_errlog(io, "nr_types schema");
-        return SELVA_EINVAL;
-    }
-
-    for (size_t i = 0; i < nr_types; i++) {
-        node_type_t type;
-        __selva_autofree uint8_t *schema_buf;
-        sdb_arr_len_t schema_len;
-        int err;
-
-        io->sdb_read(&type, sizeof(type), 1, io);
-        io->sdb_read(&schema_len, sizeof(schema_len), 1, io);
-        schema_buf = selva_malloc(schema_len);
-        io->sdb_read(schema_buf, sizeof(schema_buf[0]), schema_len, io);
-
-        err = selva_db_create_type(db, type, schema_buf, schema_len);
-        if (err) {
-            selva_io_errlog(io, "Failed to create a node type entry: %s", selva_strerror(err));
-            return SELVA_EINVAL;
-        }
-    }
-
-    return 0;
 }
 
 __attribute__((warn_unused_result))
@@ -1016,7 +960,6 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
 
     db->sdb_version = io.sdb_version;
 
-    err = load_schema(&io, db);
     err = err ?: load_expire(&io, db);
     err = err ?: load_aliases(&io, db);
     err = err ?: load_common_ids(&io, com);
