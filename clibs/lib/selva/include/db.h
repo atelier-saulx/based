@@ -15,7 +15,6 @@
 
 struct selva_string;
 
-RB_HEAD(SelvaTypeEntryIndex, SelvaTypeEntry);
 RB_HEAD(SelvaNodeIndex, SelvaNode);
 RB_HEAD(SelvaAliasesByName, SelvaAlias);
 RB_HEAD(SelvaAliasesByDest, SelvaAlias);
@@ -75,8 +74,6 @@ struct SelvaTypeBlock {
  */
 struct SelvaTypeEntry {
     node_type_t type;
-
-    RB_ENTRY(SelvaTypeEntry) _entry;
 
     /**
      * Node blocks in this type.
@@ -142,15 +139,6 @@ struct SelvaDbExpireToken {
  */
 struct SelvaDb {
     /**
-     * SelvaTypeEntries.
-     */
-    struct {
-        struct SelvaTypeEntryIndex index;
-        struct mempool pool; /*!< types area allocated from here. */
-        size_t count; /*!< Total count of types. */
-    } types;
-
-    /**
      * Expiring nodes.
      */
     struct SelvaExpire expiring;
@@ -161,9 +149,10 @@ struct SelvaDb {
     int dirfd;
 
     uint32_t sdb_version; /*!< Current SDB version. Set on common load and save. 0 if not saved/loaded. */
+    size_t nr_types;
+    struct SelvaTypeEntry types[] __counted_by(nr_types);
 };
 
-RB_PROTOTYPE(SelvaTypeEntryIndex, SelvaTypeEntry, _entry, SelvaTypeEntry_cmp)
 RB_PROTOTYPE(SelvaNodeIndex, SelvaNode, _index_entry, SelvaNode_cmp)
 RB_PROTOTYPE(SelvaAliasesByName, SelvaAlias, _entryByName, SelvaAlias_cmp_name)
 RB_PROTOTYPE(SelvaAliasesByDest, SelvaAlias, _entryByDest, SelvaAlias_cmp_dest)

@@ -291,11 +291,10 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
 
 static void save_aliases(struct selva_io *io, struct SelvaDb *db)
 {
-    struct SelvaTypeEntry *te;
-
     write_dump_magic(io, DUMP_MAGIC_ALIASES);
 
-    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
+    for (size_t ti = 0; ti < db->nr_types; ti++) {
+        struct SelvaTypeEntry *te = &db->types[ti];
         const size_t nr_fields = te->ns.nr_alias_fields;
 
         for (size_t i = 0; i < nr_fields; i++) {
@@ -847,14 +846,13 @@ static int load_expire(struct selva_io *io, struct SelvaDb *db)
 __attribute__((warn_unused_result))
 static int load_aliases(struct selva_io *io, struct SelvaDb *db)
 {
-    struct SelvaTypeEntry *te;
-
     if (!read_dump_magic(io, DUMP_MAGIC_ALIASES)) {
         selva_io_errlog(io, "Invalid aliases magic");
         return SELVA_EINVAL;
     }
 
-    RB_FOREACH(te, SelvaTypeEntryIndex, &db->types.index) {
+    for (size_t ti = 0; ti < db->nr_types; ti++) {
+        struct SelvaTypeEntry *te = &db->types[ti];
         const size_t nr_fields = te->ns.nr_alias_fields;
 
         for (size_t i = 0; i < nr_fields; i++) {

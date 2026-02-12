@@ -90,13 +90,13 @@ node_type_t selva_get_max_type(const struct SelvaDb *db) __attribute__((nonnull)
  * Find a type by type id.
  */
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_type_t type) __attribute__((nonnull));
+struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type) __attribute__((nonnull));
 
 /**
  * Get the type for node.
  */
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_node(const struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
+struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
 
 SELVA_EXPORT
 inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)

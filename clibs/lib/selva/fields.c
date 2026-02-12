@@ -297,7 +297,8 @@ static const struct SelvaFieldSchema *get_edge_dst_fs(
         return nullptr;
     }
 
-    type_dst = selva_get_type_by_index(db, efc->dst_node_type);
+    /* TODO This could be also handled with a Generic */
+    type_dst = selva_get_type_by_index((typeof_unqual(*db) *)db, efc->dst_node_type);
     assert(type_dst->type == efc->dst_node_type);
 
     return selva_get_fs_by_te_field(type_dst, efc->inverse_field);
