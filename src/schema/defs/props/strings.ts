@@ -116,8 +116,8 @@ export const string = class String extends BasePropDef {
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     const index = pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
-      fixedLen: 0,
-      defaultLen: 0,
+      fixedLenHint: this.schema.maxBytes ?? 0, // Note that selva doesn't do actual validation
+      defaultLen: 0, // TODO also check that defaultLen <= maxBytes
     })
     if (this.schema.default) {
       const start = buf.length

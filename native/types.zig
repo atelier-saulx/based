@@ -932,7 +932,7 @@ pub const SelvaSchemaMicroBuffer = packed struct {
 
 pub const SelvaSchemaString = packed struct {
     type: SelvaFieldType,
-    fixedLen: u8,
+    fixedLenHint: u8,
     defaultLen: u32,
 };
 
