@@ -58,9 +58,9 @@ await test('query types', async (t) => {
     users: [userA],
   })
 
-  // const query = db.query2('user').include('isNice', 'name', '**.id')
+  const query = db.query2('user').include('isNice', 'name', 'friend.**')
 
-  // const result = await query.get()
+  const result = await query.get()
 
   // for (const { name, isNice, otherUsers, friend } of result) {
   //   // const friendName = friend?.name
