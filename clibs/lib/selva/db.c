@@ -447,26 +447,11 @@ void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, 
     }
 }
 
-node_type_t selva_get_max_type(const struct SelvaDb *db)
-{
-    assert(db->types[db->nr_types - 1].type == db->nr_types);
-    return db->nr_types;
-}
+extern inline node_type_t selva_get_max_type(const struct SelvaDb *db);
 
-struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type)
-{
-    if (type == 0) {
-        return nullptr;
-    }
-    assert(type - 1 < db->nr_types);
-    return &db->types[type - 1];
-}
+extern inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type);
 
-struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
-{
-    assert(node->type - 1 < db->nr_types);
-    return &db->types[node->type - 1];
-}
+extern inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
 
 extern inline node_type_t selva_get_type(const struct SelvaTypeEntry *te);
 

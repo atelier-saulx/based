@@ -84,21 +84,52 @@ SELVA_EXPORT
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 SELVA_EXPORT
-node_type_t selva_get_max_type(const struct SelvaDb *db) __attribute__((nonnull));
+[[reproducible]]
+inline node_type_t selva_get_max_type(const struct SelvaDb *db)
+#ifndef __zig
+{
+    assert(db->types[db->nr_types - 1].type == db->nr_types);
+    return db->nr_types;
+}
+#else
+;
+#endif
 
 /**
  * Find a type by type id.
  */
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type) __attribute__((nonnull));
+[[reproducible]]
+inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type)
+#ifndef __zig
+{
+    if (type == 0) {
+        return nullptr;
+    }
+    assert(type - 1 < db->nr_types);
+    return &db->types[type - 1];
+}
+#else
+;
+#endif
 
 /**
  * Get the type for node.
  */
 SELVA_EXPORT
-struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node) __attribute__((nonnull, pure));
+[[reproducible]]
+inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
+#ifndef __zig
+{
+    assert(node->type - 1 < db->nr_types);
+    return &db->types[node->type - 1];
+}
+#else
+;
+#endif
 
 SELVA_EXPORT
+[[reproducible]]
 inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)
 #ifndef __zig
 {
