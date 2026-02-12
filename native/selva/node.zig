@@ -11,15 +11,28 @@ const DbCtx = @import("../db/ctx.zig").DbCtx;
 pub const Type = selva.Type;
 pub const Node = selva.Node;
 
-pub inline fn getType(ctx: *DbCtx, typeId: t.TypeId) !Type {
-    const selvaTypeEntry: ?Type = selva.c.selva_get_type_by_index(
-        ctx.selva.?,
-        typeId,
-    );
-    if (selvaTypeEntry == null) {
-        return errors.SelvaError.SELVA_EINTYPE;
+pub inline fn getType(ctx: *DbCtx, v: anytype) !Type {
+    var selvaTypeEntry: ?Type = undefined;
+
+    if (comptime @TypeOf(v) == t.TypeId) {
+        selvaTypeEntry = selva.c.selva_get_type_by_index(
+            ctx.selva.?,
+            v,
+        );
+    } else if (comptime @TypeOf(v) == selva.Node or
+               @TypeOf(v) == ?selva.Node) {
+        if (comptime @TypeOf(v) == ?selva.Node) {
+            if (v == null) {
+                return errors.SelvaError.SELVA_ENOENT;
+            }
+        }
+        selvaTypeEntry = selva.c.selva_get_type_by_node(ctx.selva.?, v);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(v));
+        @compileError("Invalid type");
     }
-    return selvaTypeEntry.?;
+
+    return if (selvaTypeEntry == null) errors.SelvaError.SELVA_EINTYPE else selvaTypeEntry.?;
 }
 
 pub inline fn getRefDstType(ctx: *DbCtx, sch: anytype) !Type {

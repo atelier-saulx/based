@@ -70,7 +70,7 @@ await test('basic', async (t) => {
 
   await db.drain() // will become async
   deepEqual(
-    (await db.query('user').get()).toObject(),
+    await db.query('user').get(),
     payloads.map((payload, index) => {
       return {
         id: index + 1,
@@ -102,7 +102,7 @@ await test('basic', async (t) => {
     },
   })
 
-  deepEqual((await db.query('user', newThing).get()).toObject(), {
+  deepEqual(await db.query('user', newThing).get(), {
     id: newThing,
     number: 12,
     int8: 12,
@@ -137,7 +137,7 @@ await test('basic', async (t) => {
     },
   })
 
-  deepEqual((await db.query('user', newThing).get()).toObject(), {
+  deepEqual(await db.query('user', newThing).get(), {
     id: newThing,
     number: 13,
     int8: 14,
@@ -154,7 +154,7 @@ await test('basic', async (t) => {
     },
   })
 
-  deepEqual((await db.query('user', newThing).get()).toObject(), {
+  deepEqual(await db.query('user', newThing).get(), {
     id: newThing,
     number: 13,
     int8: 14,
@@ -171,7 +171,7 @@ await test('basic', async (t) => {
     },
   })
 
-  deepEqual((await db.query('user', newThing).get()).toObject(), {
+  deepEqual(await db.query('user', newThing).get(), {
     id: newThing,
     number: 13,
     int8: 14,
@@ -186,7 +186,7 @@ await test('basic', async (t) => {
     uint16: 100,
   })
 
-  deepEqual((await db.query('user', newThing).get()).toObject(), {
+  deepEqual(await db.query('user', newThing).get(), {
     id: newThing,
     number: 13,
     int8: 14,

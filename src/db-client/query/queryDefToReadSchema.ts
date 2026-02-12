@@ -140,6 +140,7 @@ export const convertToReaderSchema = (
       if (q.aggregate.groupBy.display) {
         a.groupBy.display = q.aggregate.groupBy.display
       }
+      // MV: Tto review
       if (q.aggregate.groupBy.enum) {
         a.groupBy.enum = q.aggregate.groupBy.enum
       }

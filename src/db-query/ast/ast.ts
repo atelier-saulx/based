@@ -75,12 +75,13 @@ export type QueryAst = {
   max?: { props: string[] }
   min?: { props: string[] }
   stddev?: { props: string[]; samplingMode?: 'sample' | 'population' }
-  var?: { props: string[]; samplingMode?: 'sample' | 'population' }
+  variance?: { props: string[]; samplingMode?: 'sample' | 'population' }
   groupBy?: {
     prop: string
     step?: number | IntervalString
     timeZone?: string
-    timeFormat?: Intl.DateTimeFormat
+    display?: Intl.DateTimeFormat
+    enum?: string[]
   }
 }
 

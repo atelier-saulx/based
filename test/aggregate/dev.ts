@@ -77,7 +77,8 @@ await test('references', async (t) => {
       },
       trip: {
         props: {
-          distance: 'uint16',
+          distance: 'number',
+          rate: 'uint8',
           driver: {
             ref: 'driver',
             prop: 'trips', // Points back to the list on driver
@@ -93,10 +94,12 @@ await test('references', async (t) => {
   db.drain()
   const t1 = db.create('trip', {
     distance: 523.1, // with uint16 => 523
+    rate: 4,
     driver: d1,
   })
   const t2 = db.create('trip', {
     distance: 1230,
+    rate: 2,
     driver: d1,
   })
 
@@ -110,7 +113,14 @@ await test('references', async (t) => {
 
   const lala = await db
     .query('driver')
-    .include((t) => t('trips').sum('distance').max('distance').avg('distance'))
+    .include((t) =>
+      t('trips')
+        .sum('distance')
+        .avg('distance')
+        .min('rate')
+        .sum('rate')
+        .count(),
+    )
     .get()
 
   // console.log(lala.toObject())

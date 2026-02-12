@@ -12,7 +12,7 @@ const data = {
   car: [81.6, -72.1, 16, -20.2, 102],
 }
 
-async function initDb(t) {
+async function initDb(t: Parameters<Parameters<typeof test>[1]>[0]): Promise<BasedDb> {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -102,7 +102,7 @@ await test('query by vector', async (t) => {
   deepEqual(r2.length, 1)
 })
 
-// this is broken! see https://linear.app/1ce/issue/FDN-1302 needs alignment!
+// FIXME this is broken! see https://linear.app/1ce/issue/FDN-1302 needs alignment!
 await test.skip('vector like', async (t) => {
   const db = await initDb(t)
 

@@ -1,4 +1,4 @@
-import { getTypeDefs } from '../../dist/schema/defs/getTypeDefs.js'
+import { deflate } from 'fflate'
 import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import {
@@ -7,8 +7,11 @@ import {
 } from '../../src/protocol/index.js'
 import { BasedDb, debugBuffer } from '../../src/sdk.js'
 import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
-
+import { writeUint16, writeUint32 } from '../../src/utils/uint8.js'
+import wait from '../../src/utils/wait.js'
+import { perf } from '../shared/perf.js'
 import test from '../shared/test.js'
+import { deflateSync } from 'zlib'
 
 await test('include', async (t) => {
   const db = new BasedDb({ path: t.tmp })
@@ -17,13 +20,13 @@ await test('include', async (t) => {
   const client = await db.setSchema({
     types: {
       friend: {
-        y: 'uint16',
+        y: 'uint32',
       },
       user: {
         name: 'string',
         x: 'boolean',
         flap: 'uint32',
-        y: 'uint16',
+        y: 'uint32',
         cook: {
           type: 'object',
           props: {
@@ -46,11 +49,8 @@ await test('include', async (t) => {
     },
   })
 
-  // console.log(getTypeDefs(client.schema!).get('user')?.main)
-
   const a = client.create('user', {
-    name: 'AAAAAAAAAA',
-    y: 67,
+    y: 4,
     x: true,
     flap: 9999,
     cook: {
@@ -58,158 +58,126 @@ await test('include', async (t) => {
     },
   })
 
-  // const b = client.create('user', {
-  //   name: 'BBBBBBBBB',
-  //   y: 67,
-  //   x: true,
-  //   flap: 9999,
-  //   cook: {
-  //     cookie: 1234,
-  //   },
-  // })
-
-  await client.create('user', {
-    name: 'CCCCCCCCC',
+  const b = client.create('user', {
+    y: 15,
+    x: true,
+    flap: 9999,
     cook: {
       cookie: 1234,
     },
-    y: 0,
-    mrFriend: { id: a, $level: 99 },
-    // friends: [{ id: a, $level: 250 }, b],
   })
+
+  // for (let i = 0; i < 5e6; i++) {
+  //   client.create('user', {
+  //     y: i,
+  //     x: true,
+  //     flap: 9999,
+  //     cook: {
+  //       cookie: 1234,
+  //     },
+  //   })
+  // }
 
   await db.drain()
 
-  console.log('-------')
-
-  // let d = Date.now()
+  await db.drain()
 
   const ast: QueryAst = {
     type: 'user',
     filter: {
       props: {
-        // 1
-        y: { ops: [{ op: '=', val: 0 }] },
-        // add reference
-        // add references
-        // add edges
-      },
-      // add AND
-      or: {
-        // 4
-        props: {
-          y: { ops: [{ op: '=', val: 67 }] },
-        },
+        flap: { ops: [{ op: '=', val: 9999 }] },
       },
       and: {
-        // 2
         props: {
-          y: { ops: [{ op: '=', val: 10 }] },
+          y: { ops: [{ op: '=', val: 100 }] },
         },
         or: {
-          // 3
           props: {
             y: { ops: [{ op: '=', val: 3 }] },
           },
+          or: {
+            props: {
+              y: { ops: [{ op: '=', val: 4 }] },
+            },
+          },
         },
       },
-      // ->4 1 ->3 2 ->4 3
+      or: {
+        props: {
+          y: { ops: [{ op: '=', val: 670 }] },
+        },
+        or: {
+          props: {
+            y: { ops: [{ op: '=', val: 15 }] },
+          },
+        },
+      },
     },
+
+    // (y == 0 && (y == 10 || y == 3 || y == 4)) || y == 67
+
     props: {
-      // name: { include: {} },
       y: { include: {} },
       mrFriend: {
         props: {
           y: { include: {} },
         },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
+        // edges: {
+        //   props: {
+        //     $level: { include: {} },
+        //   },
+        // },
       },
-      //   // EDGE
-
-      //   edges: {
-      //     props: {
-      //       $level: { include: {} },
-      //     },
-      //   },
-      // },
-      // fix friends
-      // friends: {
-      //   props: {
-      //     name: { include: {} },
-      //   },
-      //   edges: {
-      //     props: {
-      //       $level: { include: {} },
-      //     },
-      //   },
-      // },
     },
   }
 
-  // single ref edge filter
-  // sort
-  // variable filters
+  // (1: y == 0 && ( 2: y == 10 || 4: y == 3)) || 3: y == 67
 
-  // in js
-  // meta include, text include (localized: true)
+  // so the thing is we need to keep track of the NEXT or vs query.len
+
+  // ->:3 :1 ->:4 :2 ->:3 :4
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
-  // TODO
+  debugBuffer(ctx.query)
 
-  // const bla = schema({
-  //   email: { type: 'string', format: 'email' },
-  //   subject: { type: 'string', max: 100 },
-  //   body: 'string'
-  // })
+  console.log(deflateSync(ctx.query).byteLength)
 
-  // const sendEmail = (x: bla) => {
-  //   return sendgrid.sendEmail('beerdejim@gmail.com')
-  // }
-
-  // filter
-  // AND + or (x.or.y).or(z)
-  // reference + edge
-  // refernces filters? + select
-  // now parsing in filters
-  // finish all operators (exist ,!nexist) how to handle for fixed?
-  // var filters
-  //  like
-  //  references includes
-  //  includes
-  //. single ref or includes
-  //. eq STRING crc32 this is a seperate op /w branch check /w
-
-  // include
-  // JS
-  // references select
-  // TEXT - make this localized true
-  // meta
-
-  // SORT in js
-
-  // subscriptions MULTI + references
-  // subscriptions in modify
-  // subscription NOW reschedule
-  // now parsingio
-
-  // Based-server / client
-  // ctx .get bug
-
-  // console.dir(ctx, { depth: 10 })
+  debugBuffer(deflateSync(ctx.query))
 
   const result = await db.server.getQueryBuf(ctx.query)
-  debugBuffer(result)
+  // const queries: any = []
+  // for (let i = 0; i < 10; i++) {
+  //   const x = ctx.query.slice(0)
+  //   writeUint32(x, i + 1, 0)
+  //   queries.push(x)
+  // }
+
+  // await perf(
+  //   async () => {
+  //     const q: any = []
+  //     for (let i = 0; i < 10; i++) {
+  //       q.push(db.server.getQueryBuf(queries[i]))
+  //     }
+  //     await Promise.all(q)
+  //   },
+  //   'filter speed',
+  //   {
+  //     repeat: 10,
+  //   },
+  // )
+  // quite large
+
+  // deflate it?
 
   const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
   console.dir(obj, { depth: 10 })
+
+  // RETURN NULL FOR UNDEFINED
 
   console.log(
     JSON.stringify(obj).length,

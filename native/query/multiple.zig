@@ -33,7 +33,7 @@ fn iterator(
         filter = utils.sliceNext(header.filterSize, q, i);
         try Filter.prepare(filter, ctx, typeEntry);
     }
-    utils.debugPrint("i.* .. i.* + header.includeSize: {d} .. {d}\n", .{ i.*, i.* + header.includeSize });
+    // utils.debugPrint("i.* .. i.* + header.includeSize: {d} .. {d} = {d}\n", .{ i.*, i.* + header.includeSize, header.includeSize });
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     while (offset > 0) {
         const node = it.next() orelse return 0;

@@ -52,24 +52,24 @@ pub inline fn aggregateProps(
     var i: usize = 0;
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
-        utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
+        // utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
         utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
         var value: []u8 = undefined;
         if (currentAggDef.aggFunction == t.AggFunction.count) {
             accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
         } else {
             if (currentAggDef.propId != t.MAIN_PROP and currentAggDef.aggFunction != t.AggFunction.cardinality) {
-                i += @sizeOf(t.AggProp);
+                i += utils.sizeOf(t.AggProp);
                 continue;
             }
             const propSchema = Schema.getFieldSchema(typeEntry, currentAggDef.propId) catch {
-                i += @sizeOf(t.AggProp);
+                i += utils.sizeOf(t.AggProp);
                 continue;
             };
             if (currentAggDef.aggFunction == t.AggFunction.cardinality) {
                 const hllValue = Selva.c.selva_fields_get_selva_string(node, propSchema) orelse null;
                 if (hllValue == null) {
-                    i += @sizeOf(t.AggProp);
+                    i += utils.sizeOf(t.AggProp);
                     continue;
                 }
                 if (!hadAccumulated.*) {
@@ -126,13 +126,11 @@ pub inline fn accumulate(
                     writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
                 },
                 .min => {
-                    // utils.debugPrint("hadAccumulated: {any} {d} {d}\n", .{ hadAccumulated.*, accumulatorPos, microbufferToF64(propTypeTag, value, start) });
                     if (!hadAccumulated.*) {
                         writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
                     } else {
                         writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
                     }
-                    // utils.debugPrint("ficou: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .max => {
                     if (!hadAccumulated.*) {

@@ -6,13 +6,24 @@ import {
   AggHeaderByteSize,
   createAggHeader,
   createAggProp,
+  createGroupByKeyProp,
+  GroupByKeyPropByteSize,
   AggPropByteSize,
+  type QueryIteratorTypeEnum,
+  IntervalInverse,
+  PropType,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
-import { aggregateTypeMap } from '../../db-client/query/aggregates/types.js'
+import {
+  aggregateTypeMap,
+  IntervalString,
+  Interval,
+} from '../../db-client/query/aggregates/types.js'
 import { readPropDef } from './readSchema.js'
-import { truncate } from 'node:fs'
+import { getTimeZoneOffsetInMinutes } from '../../db-client/query/aggregates/aggregates.js'
+
+type Sizes = { result: number; accumulator: number }
 
 export const pushAggregatesQuery = (
   ast: QueryAst,
@@ -31,12 +42,12 @@ export const pushAggregatesQuery = (
     filterSize = filter(ast.filter, ctx, typeDef)
   }
 
-  const sizes = {
+  let sizes: Sizes = {
     result: 0,
     accumulator: 0,
   }
 
-  const hasGroupBy = false // TODO : later
+  const hasGroupBy = pushGroupBy(ast, ctx, typeDef, sizes)
 
   pushAggregates(ast, ctx, typeDef, sizes)
 
@@ -58,7 +69,7 @@ const isRootCountOnly = (ast: QueryAst) => {
     !ast.min &&
     !ast.max &&
     !ast.stddev &&
-    !ast.var &&
+    !ast.variance &&
     !ast.harmonicMean &&
     !ast.cardinality
   )
@@ -69,7 +80,7 @@ const buildAggregateHeader = (
   typeDef: TypeDef,
   filterSize: number,
   hasGroupBy: boolean,
-  sizes: { result: number; accumulator: number },
+  sizes: Sizes,
 ) => {
   const rangeStart = ast.range?.start || 0
 
@@ -89,15 +100,16 @@ const buildAggregateHeader = (
 
   // TODO: references
 
+  let iteratorType = QueryIteratorType.aggregate
+  if (hasGroupBy) iteratorType += 2
+  if (filterSize > 0) iteratorType += 1
+
   headerBuffer = createAggHeader({
     ...commonHeader,
     op,
     typeId: typeDef.id,
     limit: (ast.range?.end || 1000) + rangeStart,
-    iteratorType:
-      filterSize === 0
-        ? QueryIteratorType.aggregate
-        : QueryIteratorType.aggregateFilter, // TODO : later
+    iteratorType: iteratorType as QueryIteratorTypeEnum,
   })
   return headerBuffer
 }
@@ -108,24 +120,19 @@ const pushAggregates = (
   typeDef: TypeDef,
   sizes: { result: number; accumulator: number },
 ) => {
-  // this for loop may be temporary
-  // need to support repeated funcs or keep it very strict
-  // adding a validation to force only distinct funcs with props[]
-  const aggs = [
-    { key: 'count', fn: AggFunction.count },
-    { key: 'sum', fn: AggFunction.sum },
-    { key: 'avg', fn: AggFunction.avg },
-    { key: 'min', fn: AggFunction.min },
-    { key: 'max', fn: AggFunction.max },
-    { key: 'cardinality', fn: AggFunction.cardinality },
-    { key: 'stddev', fn: AggFunction.stddev },
-    { key: 'var', fn: AggFunction.variance },
-    { key: 'harmonicMean', fn: AggFunction.hmean },
-  ]
+  ctx.readSchema.aggregate = ctx.readSchema.aggregate || {
+    aggregates: [],
+    totalResultsSize: 0,
+    groupBy: undefined,
+  }
 
-  for (const { key, fn } of aggs) {
+  for (const key in AggFunction) {
+    if (!(key in ast)) continue
+
     const data = ast[key]
     if (!data) continue
+
+    const fn = AggFunction[key]
 
     let props = Array.isArray(data.props)
       ? data.props
@@ -190,6 +197,8 @@ const pushAggregates = (
 
       sizes.result += resSize
       sizes.accumulator += accSize
+
+      ctx.readSchema.aggregate.totalResultsSize += resSize
     }
   }
 }
@@ -203,7 +212,7 @@ export const isAggregateAst = (ast: QueryAst) => {
     ast.min ||
     ast.max ||
     ast.stddev ||
-    ast.var ||
+    ast.variance ||
     ast.harmonicMean ||
     ast.cardinality
   )
@@ -216,4 +225,71 @@ const checkSamplingMode = (ast: QueryAst): boolean => {
   )
     return false
   else return true
+}
+
+const pushGroupBy = (
+  ast: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  sizes: Sizes,
+): boolean => {
+  if (!ast.groupBy) return false
+
+  const { prop: propName, step, timeZone, display } = ast.groupBy
+  const propDef = typeDef.props.get(propName)
+
+  if (!propDef) {
+    throw new Error(`Group By property '${propName}' not found in AST.`)
+    // to put the equivalent to aggregationFieldDoesNotExist to handle the error
+  }
+
+  const { stepType, stepRange } = step
+    ? parseStep(step)
+    : { stepType: 0, stepRange: 0 }
+
+  const timeZoneOffset = timeZone ? getTimeZoneOffsetInMinutes(timeZone) : 0
+
+  const buffer = createGroupByKeyProp({
+    propId: propDef.id,
+    propType: propDef.type || 0,
+    propDefStart: propDef.start || 0,
+    stepType,
+    stepRange,
+    timezone: timeZoneOffset,
+  })
+
+  let enumProxy
+  if (propDef.type === PropType.enum) {
+    // @ts-ignore
+    enumProxy = Object.values(propDef.enum)
+  }
+
+  ctx.query.data.set(buffer, ctx.query.length)
+  ctx.query.length += GroupByKeyPropByteSize
+
+  if (ctx.readSchema.aggregate) {
+    ctx.readSchema.aggregate.groupBy = {
+      typeIndex: propDef.type,
+      stepRange,
+      ...(stepType !== 0 && { stepType: IntervalInverse[stepType] }),
+      ...(display !== undefined && { display }),
+      ...(enumProxy !== undefined && { enum: enumProxy }),
+    }
+  }
+
+  return true
+}
+
+type Step = { stepType: number; stepRange: number }
+const parseStep = (step: number | IntervalString): Step => {
+  let stepRange = 0
+  let stepType = 0
+  if (typeof step === 'string') {
+    const intervalEnumKey = step as IntervalString
+    stepType = Interval[intervalEnumKey]
+  } else {
+    // validateStepRange(def, step) // TODO: see/make the equivalent for def.errors
+    stepRange = step
+  }
+  return { stepType, stepRange } as Step
 }

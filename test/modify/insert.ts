@@ -20,7 +20,7 @@ await test('insert', async (t) => {
     { email: 'youri@saulx.com', isNice: true },
   )
 
-  const res1 = await db.query('user', id1).get()
+  const res1 = await db.query('user', id1).get().toObject()
   deepEqual(res1, {
     id: id1,
     uuid: '9dg786',

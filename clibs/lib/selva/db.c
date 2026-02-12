@@ -165,7 +165,78 @@ static uint32_t te_slab_size(void)
     return slab_size;
 }
 
-struct SelvaDb *selva_db_create(void)
+static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
+{
+    struct SelvaTypeEntry *te;
+
+    te = selva_get_type_by_index(db, type);
+    return (te && te->schema_len == schema_len && !memcmp(te->schema_buf, schema_buf, schema_len));
+}
+
+static void clone_schema_buf(struct SelvaTypeEntry *te, const uint8_t *schema_buf, size_t schema_len)
+{
+    te->schema_buf = selva_malloc(schema_len);
+    memcpy(te->schema_buf, schema_buf, schema_len);
+    te->schema_len = schema_len;
+}
+
+static int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
+{
+    struct schema_info nfo;
+    int err;
+
+    if (eq_type_exists(db, type, schema_buf, schema_len)) {
+        return SELVA_EEXIST;
+    }
+
+    err = schemabuf_get_info(&nfo, schema_buf, schema_len);
+    if (err) {
+        return err;
+    }
+
+    if (nfo.block_capacity == 0) {
+        return SELVA_EINVAL;
+    }
+
+    if (nfo.nr_fields > SELVA_FIELDS_MAX) {
+        /* schema too large. */
+        return SELVA_ENOBUFS;
+    }
+
+    struct SelvaTypeEntry *te = mempool_get(&db->types.pool);
+
+#if 0
+    fprintf(stderr, "schema_buf: [ ");
+    for (size_t i = 0; i < schema_len; i++) {
+        fprintf(stderr, "%x, ", schema_buf[i]);
+    }
+    fprintf(stderr, "]\n");
+#endif
+
+    memset(te, 0, sizeof(*te));
+    te->type = type;
+    err = schemabuf_parse_ns(&te->ns, schema_buf, schema_len, db->sdb_version ?: SELVA_SDB_VERSION);
+    if (err) {
+        mempool_return(&db->types.pool, te);
+        return err;
+    }
+
+    clone_schema_buf(te, schema_buf, schema_len);
+    te->blocks = alloc_blocks(nfo.block_capacity);
+    selva_init_aliases(te);
+    colvec_init_te(te);
+
+    const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
+    mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
+
+    if (RB_INSERT(SelvaTypeEntryIndex, &db->types.index, te)) {
+        db_panic("Schema update not supported");
+    }
+    db->types.count++;
+    return 0;
+}
+
+struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len])
 {
     struct SelvaDb *db = selva_calloc(1, sizeof(*db));
 
@@ -175,7 +246,31 @@ struct SelvaDb *selva_db_create(void)
     db->dirfd = AT_FDCWD;
     selva_expire_init(&db->expiring);
 
+    for (size_t i = 0; i < len;) {
+        struct {
+            node_type_t type;
+            uint32_t len;
+        } __packed desc;
+        int err;
+
+        if (unlikely(len - i < sizeof(desc))) {
+            fprintf(stderr, "%s schema too short\n", __func__);
+            goto fail;
+        }
+        memcpy(&desc, schema + i, sizeof(desc));
+
+        err = selva_db_create_type(db, desc.type, schema + i + sizeof(desc), desc.len);
+        i += sizeof(desc) + desc.len;
+        if (err) {
+            fprintf(stderr, "%s failed to create type %u: %s\n", __func__, desc.type, selva_strerror(err));
+            goto fail;
+        }
+    }
+
     return db;
+fail:
+    selva_db_destroy(db);
+    return nullptr;
 }
 
 int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname_len)
@@ -291,14 +386,6 @@ void selva_db_destroy(struct SelvaDb *db)
     selva_free(db);
 }
 
-static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
-{
-    struct SelvaTypeEntry *te;
-
-    te = selva_get_type_by_index(db, type);
-    return (te && te->schema_len == schema_len && !memcmp(te->schema_buf, schema_buf, schema_len));
-}
-
 /**
  * Alloc .blocks in a type entry.
  */
@@ -353,67 +440,12 @@ void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, 
     }
 }
 
-static void clone_schema_buf(struct SelvaTypeEntry *te, const uint8_t *schema_buf, size_t schema_len)
+node_type_t selva_get_max_type(const struct SelvaDb *db)
 {
-    te->schema_buf = selva_malloc(schema_len);
-    memcpy(te->schema_buf, schema_buf, schema_len);
-    te->schema_len = schema_len;
-}
+    struct SelvaTypeEntry *te;
 
-int selva_db_create_type(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
-{
-    struct schema_info nfo;
-    int err;
-
-    if (eq_type_exists(db, type, schema_buf, schema_len)) {
-        return SELVA_EEXIST;
-    }
-
-    err = schemabuf_get_info(&nfo, schema_buf, schema_len);
-    if (err) {
-        return err;
-    }
-
-    if (nfo.block_capacity == 0) {
-        return SELVA_EINVAL;
-    }
-
-    if (nfo.nr_fields > SELVA_FIELDS_MAX) {
-        /* schema too large. */
-        return SELVA_ENOBUFS;
-    }
-
-    struct SelvaTypeEntry *te = mempool_get(&db->types.pool);
-
-#if 0
-    fprintf(stderr, "schema_buf: [ ");
-    for (size_t i = 0; i < schema_len; i++) {
-        fprintf(stderr, "%x, ", schema_buf[i]);
-    }
-    fprintf(stderr, "]\n");
-#endif
-
-    memset(te, 0, sizeof(*te));
-    te->type = type;
-    err = schemabuf_parse_ns(&te->ns, schema_buf, schema_len, db->sdb_version ?: SELVA_SDB_VERSION);
-    if (err) {
-        mempool_return(&db->types.pool, te);
-        return err;
-    }
-
-    clone_schema_buf(te, schema_buf, schema_len);
-    te->blocks = alloc_blocks(nfo.block_capacity);
-    selva_init_aliases(te);
-    colvec_init_te(te);
-
-    const size_t node_size = sizeof_wflex(struct SelvaNode, fields.fields_map, nfo.nr_fields);
-    mempool_init2(&te->nodepool, NODEPOOL_SLAB_SIZE, node_size, alignof(size_t), MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_HP_SOFT);
-
-    if (RB_INSERT(SelvaTypeEntryIndex, &db->types.index, te)) {
-        db_panic("Schema update not supported");
-    }
-    db->types.count++;
-    return 0;
+    te = RB_MAX(SelvaTypeEntryIndex, (typeof_unqual(db->types.index) *)&db->types.index);
+    return te ? te->type : 0;
 }
 
 struct SelvaTypeEntry *selva_get_type_by_index(const struct SelvaDb *db, node_type_t type)
@@ -805,7 +837,7 @@ extern inline node_type_t selva_get_node_type(const struct SelvaNode *node);
  */
 static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *type, node_id_t dest)
 {
-    for (size_t i = 0; i < type->ns.nr_aliases; i++) {
+    for (size_t i = 0; i < type->ns.nr_alias_fields; i++) {
         struct SelvaAliases *aliases = &type->aliases[i];
         const struct SelvaAlias *alias;
         struct SelvaAlias find = {
@@ -827,7 +859,7 @@ static void hash_col_fields(struct SelvaTypeEntry *type, node_id_t node_id, selv
     /*
      * colvec fields.
      */
-    for (size_t i = 0; i < type->ns.nr_colvecs; i++) {
+    for (size_t i = 0; i < type->ns.nr_colvec_fields; i++) {
         struct SelvaColvec *colvec = &type->col_fields.colvec[i];
 
         colvec_hash_update(type, node_id, colvec, tmp_hash_state);

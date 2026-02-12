@@ -34,9 +34,8 @@ await test('simple', async (t) => {
 
   await db.drain()
 
-  let result = await db.query('dialog').include('id', 'fun').get()
   deepEqual(
-    result.toObject(),
+    await db.query('dialog').include('id', 'fun').get(),
     [
       {
         id: dialogId,
@@ -50,9 +49,8 @@ await test('simple', async (t) => {
     'Initial dialog with fun property',
   )
 
-  result = await db.query('dialog').include('id').get()
   deepEqual(
-    result.toObject(),
+    await db.query('dialog').include('id').get(),
     [
       {
         id: dialogId,
@@ -61,9 +59,8 @@ await test('simple', async (t) => {
     'Dialog with only id included',
   )
 
-  result = await db.query('dialog').locale('it').include('id', 'fun').get()
   deepEqual(
-    result.toObject(),
+    await db.query('dialog').locale('it').include('id', 'fun').get(),
     [
       {
         id: dialogId,
@@ -73,22 +70,23 @@ await test('simple', async (t) => {
     'Dialog with locale set to it',
   )
 
-  result = await db
-    .query('dialog')
-    .locale('it')
-    .include('id', 'fun')
-    .filter('fun', 'includes', 'fliperdieflaperdiefloep', { lowerCase: true })
-    .get()
-  deepEqual(result.toObject(), [], 'Filter fun with non-existent text')
-
-  result = await db
-    .query('dialog')
-    .include('id', 'fun')
-    .filter('fun', 'includes', 'italy', { lowerCase: true })
-    .get()
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('it')
+      .include('id', 'fun')
+      .filter('fun', 'includes', 'fliperdieflaperdiefloep', { lowerCase: true })
+      .get(),
+    [],
+    'Filter fun with non-existent text',
+  )
 
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .filter('fun', 'includes', 'italy', { lowerCase: true })
+      .get(),
     [
       {
         id: dialogId,
@@ -102,14 +100,13 @@ await test('simple', async (t) => {
     'Filter fun with text italy',
   )
 
-  result = await db
-    .query('dialog')
-    .locale('it')
-    .include('id', 'fun')
-    .filter('fun', 'includes', 'italy', { lowerCase: true })
-    .get()
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .locale('it')
+      .include('id', 'fun')
+      .filter('fun', 'includes', 'italy', { lowerCase: true })
+      .get(),
     [
       {
         id: dialogId,
@@ -119,20 +116,22 @@ await test('simple', async (t) => {
     'Filter fun with text italy and locale set to it',
   )
 
-  result = await db
-    .query('dialog')
-    .include('id', 'fun')
-    .filter('fun.en', 'includes', 'italy', { lowerCase: true })
-    .get()
-  deepEqual(result.toObject(), [], 'Filter fun.en with text italy')
-
-  result = await db
-    .query('dialog')
-    .include('id', 'fun')
-    .filter('fun.it', 'includes', 'italy', { lowerCase: true })
-    .get()
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .filter('fun.en', 'includes', 'italy', { lowerCase: true })
+      .get(),
+    [],
+    'Filter fun.en with text italy',
+  )
+
+  deepEqual(
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .filter('fun.it', 'includes', 'italy', { lowerCase: true })
+      .get(),
     [
       {
         id: dialogId,
@@ -146,14 +145,13 @@ await test('simple', async (t) => {
     'Filter fun.it with text italy',
   )
 
-  result = await db
-    .query('dialog')
-    .locale('en')
-    .include('id', 'fun')
-    .filter('fun.it', 'includes', 'italy', { lowerCase: true })
-    .get()
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .locale('en')
+      .include('id', 'fun')
+      .filter('fun.it', 'includes', 'italy', { lowerCase: true })
+      .get(),
     [
       {
         id: 1,
@@ -171,9 +169,8 @@ await test('simple', async (t) => {
     { locale: 'fi' },
   )
 
-  result = await db.query('dialog').include('id', 'fun').locale('fi').get()
   deepEqual(
-    result.toObject(),
+    await db.query('dialog').include('id', 'fun').locale('fi').get(),
     [
       {
         id: dialogId,
@@ -196,9 +193,8 @@ await test('simple', async (t) => {
     { locale: 'fi' },
   )
 
-  result = await db.query('dialog').include('id', 'fun').locale('fi').get()
   deepEqual(
-    result.toObject(),
+    await db.query('dialog').include('id', 'fun').locale('fi').get(),
     [
       {
         id: dialogId,
@@ -214,9 +210,8 @@ await test('simple', async (t) => {
 
   const derpderp = await db.create('dialog', {})
 
-  result = await db.query('dialog', mrSnurfInFinland).get()
   deepEqual(
-    result.toObject(),
+    await db.query('dialog', mrSnurfInFinland).get(),
     {
       id: mrSnurfInFinland,
       fun: {
@@ -228,9 +223,8 @@ await test('simple', async (t) => {
     'Query mr snurf in finland',
   )
 
-  result = await db.query('dialog', derpderp).get()
   deepEqual(
-    result.toObject(),
+    await db.query('dialog', derpderp).get(),
     {
       id: derpderp,
       fun: {
@@ -242,14 +236,13 @@ await test('simple', async (t) => {
     'Query empty dialog',
   )
 
-  result = await db
-    .query('dialog')
-    .locale('fi')
-    .include('id', 'fun')
-    .filter('fun', '=', '3', { lowerCase: true })
-    .get()
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('id', 'fun')
+      .filter('fun', '=', '3', { lowerCase: true })
+      .get(),
     [
       {
         id: dialogId,
@@ -259,14 +252,13 @@ await test('simple', async (t) => {
     'Exact match on fi',
   )
 
-  result = await db
-    .query('dialog')
-    .locale('fi')
-    .include('id', 'fun')
-    .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
-    .get()
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('id', 'fun')
+      .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
+      .get(),
     [
       {
         id: 2,
@@ -280,14 +272,12 @@ await test('simple', async (t) => {
     fun: { en: 'drink some tea!' },
   })
 
-  result = await db
-    .query('dialog')
-    .include('fun.en')
-    .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
-    .get()
-
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .include('fun.en')
+      .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
+      .get(),
     [
       {
         id: 2,
@@ -331,13 +321,12 @@ await test('search', async (t) => {
 
   await db.drain()
 
-  let result = await db
-    .query('dialog')
-    .include('id', 'fun')
-    .search('finland', 'fun')
-    .get()
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .search('finland', 'fun')
+      .get(),
     [
       {
         id: 1,
@@ -351,13 +340,12 @@ await test('search', async (t) => {
     'Search for finland',
   )
 
-  result = await db
-    .query('dialog')
-    .include('id', 'fun')
-    .search('kingdom', 'fun')
-    .get()
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .search('kingdom', 'fun')
+      .get(),
     [
       {
         id: 1,
@@ -371,14 +359,8 @@ await test('search', async (t) => {
     'Search for kingdom',
   )
 
-  result = await db
-    .query('dialog')
-    .include('id', 'fun')
-    .search('snurp', 'fun')
-    .get()
-
   deepEqual(
-    result.toObject(),
+    await db.query('dialog').include('id', 'fun').search('snurp', 'fun').get(),
     [
       {
         id: 2,
@@ -392,14 +374,8 @@ await test('search', async (t) => {
     'Search for snurp',
   )
 
-  result = await db
-    .query('dialog')
-    .include('id', 'fun')
-    .search('derp', 'fun')
-    .get()
-
   deepEqual(
-    result.toObject(),
+    await db.query('dialog').include('id', 'fun').search('derp', 'fun').get(),
     [
       {
         id: 2,
@@ -413,24 +389,24 @@ await test('search', async (t) => {
     'Search for derp',
   )
 
-  result = await db
-    .query('dialog')
-    .locale('fi')
-    .include('id', 'fun')
-    .search('derp', 'fun')
-    .get()
-
-  deepEqual(result.toObject(), [], 'Search for derp with locale set to fi')
-
-  result = await db
-    .query('dialog')
-    .locale('en')
-    .include('id', 'fun')
-    .search('derp', 'fun')
-    .get()
+  deepEqual(
+    await db
+      .query('dialog')
+      .locale('fi')
+      .include('id', 'fun')
+      .search('derp', 'fun')
+      .get(),
+    [],
+    'Search for derp with locale set to fi',
+  )
 
   deepEqual(
-    result.toObject(),
+    await db
+      .query('dialog')
+      .locale('en')
+      .include('id', 'fun')
+      .search('derp', 'fun')
+      .get(),
     [
       {
         id: 2,
@@ -441,14 +417,12 @@ await test('search', async (t) => {
     'Search for derp with locale set to en',
   )
 
-  result = await db
-    .query('dialog')
-    .include('id', 'fun')
-    .search('derp', 'fun.en')
-    .get()
-
   deepEqual(
-    result,
+    await db
+      .query('dialog')
+      .include('id', 'fun')
+      .search('derp', 'fun.en')
+      .get(),
     [
       {
         id: 2,
@@ -494,7 +468,7 @@ await test('reference text', async (t) => {
     country: country1,
   })
 
-  deepEqual(await db.query('country').include('*').get().toObject(), [
+  deepEqual(await db.query('country').include('*').get(), [
     {
       id: 1,
       name: '',
@@ -505,23 +479,20 @@ await test('reference text', async (t) => {
     },
   ])
 
-  deepEqual(
-    await db.query('contestant').include('*', 'country').get().toObject(),
-    [
-      {
+  deepEqual(await db.query('contestant').include('*', 'country').get(), [
+    {
+      id: 1,
+      name: 'New contestant',
+      country: {
         id: 1,
-        name: 'New contestant',
-        country: {
-          id: 1,
-          name: '',
-          votingLegal: {
-            en: '',
-            fr: '',
-          },
+        name: '',
+        votingLegal: {
+          en: '',
+          fr: '',
         },
       },
-    ],
-  )
+    },
+  ])
 })
 
 await test('sort', async (t) => {

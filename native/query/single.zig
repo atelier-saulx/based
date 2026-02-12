@@ -106,6 +106,7 @@ pub fn referenceEdge(
     i: *usize,
 ) !void {
     const header = utils.readNext(t.QueryHeaderSingleReference, q, i);
+
     const fs = try Schema.getFieldSchema(fromType, header.prop);
     if (References.getReference(from, fs)) |ref| {
         const typeEntry = try Node.getType(ctx.db, header.typeId);
@@ -119,9 +120,6 @@ pub fn referenceEdge(
             try ctx.thread.query.append(ref.dst);
             const nestedQuery = q[i.* .. i.* + header.includeSize];
             try Include.include(node, ctx, nestedQuery, typeEntry);
-
-            // handle this case
-            // if ref.edge == 0
 
             const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
             const e = Node.getNode(edgeTypeEntry, ref.edge);
@@ -137,9 +135,12 @@ pub fn referenceEdge(
                     @truncate(ctx.thread.query.index - edgeStartIndex),
                     edgesByteSizeIndex,
                 );
+            } else {
+                std.log.err(
+                    "singe ref edge -> WRONG EDGE NODE HAS TO BE THERE! (even if it does not hold values) \n",
+                    .{},
+                );
             }
-
-            i.* += header.edgeSize + header.includeSize;
 
             ctx.thread.query.writeAs(
                 u32,
@@ -149,5 +150,5 @@ pub fn referenceEdge(
         }
     }
 
-    i.* += header.includeSize;
+    i.* += header.includeSize + header.edgeSize;
 }
