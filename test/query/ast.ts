@@ -3,23 +3,21 @@ import { deepEqual, testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('query ast creation', async (t) => {
-  const schema = {
+  type Schema = {
     locales: {
-      en: true,
-      nl: true,
-    },
+      en: true
+      nl: true
+    }
     types: {
       user: {
-        name: 'string',
-        isNice: 'boolean',
-      },
-    },
-  } as const
-
-  type Schema = typeof schema
+        name: 'string'
+        isNice: 'boolean'
+      }
+    }
+  }
 
   {
-    const q = query<Schema>('user')
+    const q = query('user')
       .filter('isNice', '=', false)
       .and('name', '=', 'youzi')
 

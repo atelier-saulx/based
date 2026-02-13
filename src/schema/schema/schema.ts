@@ -71,6 +71,7 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   : never
 
 // Helper to find Props in other types that reference TName with a specific 'prop' field
+// Helper to find Props in other types that reference TName with a specific 'prop' field
 type GetBackRefs<Types, TName> = UnionToIntersection<
   {
     [K in keyof Types]: (
@@ -111,14 +112,15 @@ export type ResolvedProps<
   TName extends keyof Types,
   Props = NormalizeType<Types[TName]> extends { props: infer P } ? P : {},
   BackRefs = GetBackRefs<Types, TName>,
-> = {
-  [K in keyof (Props &
-    ([BackRefs] extends [never] ? {} : Omit<BackRefs, keyof Props>)) as Extract<
-    K,
-    string
-  >]: (Props &
-    ([BackRefs] extends [never] ? {} : Omit<BackRefs, keyof Props>))[K]
-}
+> = string extends keyof Types
+  ? any
+  : {
+      [K in keyof (Props &
+        ([BackRefs] extends [never]
+          ? {}
+          : Omit<BackRefs, keyof Props>)) as Extract<K, string>]: (Props &
+        ([BackRefs] extends [never] ? {} : Omit<BackRefs, keyof Props>))[K]
+    }
 
 type NormalizeType<T> = T extends { props: infer P }
   ? Omit<T, 'props'> & { props: { [K in keyof P]: NormalizeProp<P[K]> } }

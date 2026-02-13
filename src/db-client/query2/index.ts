@@ -166,13 +166,15 @@ type FilterMethods<T extends { filter: any }> = {
   or: T['filter']
 }
 
+// This overload is for when the user provides NO schema argument, rely on generic default or explicit generic
 export function query<
-  S extends { types: any },
+  S extends { types: any } = { types: any },
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(type: T): QueryBranch<S, T, '*', false>
 
+// This overload is for when the user provides NO schema argument + ID, rely on generic default or explicit generic
 export function query<
-  S extends { types: any },
+  S extends { types: any } = { types: any },
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(
   type: T,
