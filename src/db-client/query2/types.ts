@@ -220,6 +220,19 @@ export type Operator =
 
 type Prev = [never, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
+// Helper to generate paths from edges
+export type EdgePaths<Schema, Prop, Depth extends number> = {
+  [K in keyof FilterEdges<Prop> & string]:
+    | K
+    | (FilterEdges<Prop>[K] extends { ref: infer R extends string }
+        ? `${K}.${Path<Schema, R & keyof Schema, Depth> | 'id' | '*' | '**'}`
+        : FilterEdges<Prop>[K] extends {
+              items: { ref: infer R extends string }
+            }
+          ? `${K}.${Path<Schema, R & keyof Schema, Depth> | 'id' | '*' | '**'}`
+          : never)
+}[keyof FilterEdges<Prop> & string]
+
 export type Path<Schema, T extends keyof Schema, Depth extends number = 5> = [
   Depth,
 ] extends [never]
@@ -230,7 +243,7 @@ export type Path<Schema, T extends keyof Schema, Depth extends number = 5> = [
         | (ResolvedProps<Schema, T>[K] extends { ref: infer R extends string }
             ? `${K}.${
                 | Path<Schema, R & keyof Schema, Prev[Depth]>
-                | (keyof FilterEdges<ResolvedProps<Schema, T>[K]> & string)
+                | EdgePaths<Schema, ResolvedProps<Schema, T>[K], Prev[Depth]>
                 | 'id'
                 | '*'
                 | '**'}`
@@ -239,7 +252,7 @@ export type Path<Schema, T extends keyof Schema, Depth extends number = 5> = [
                 }
               ? `${K}.${
                   | Path<Schema, R & keyof Schema, Prev[Depth]>
-                  | (keyof FilterEdges<Items> & string)
+                  | EdgePaths<Schema, Items, Prev[Depth]>
                   | 'id'
                   | '*'
                   | '**'}`

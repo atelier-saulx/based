@@ -251,7 +251,6 @@ await test('modify references on edge', async (t) => {
             type: 'references',
             items: {
               ref: 'thing',
-              // prop: 'edgeRefsHolders',
             },
           },
         },
@@ -280,7 +279,8 @@ await test('modify references on edge', async (t) => {
       .include('toThing.$edgeRefs.id')
       .get()
 
-    const edge = res?.toThing && !Array.isArray(res.toThing) ? res.toThing : {}
+    const edge: any =
+      res?.toThing && !Array.isArray(res.toThing) ? res.toThing : {}
     const currentIds = edge.$edgeRefs?.map((v: any) => v.id) || []
     currentIds.sort()
     ids.sort()
