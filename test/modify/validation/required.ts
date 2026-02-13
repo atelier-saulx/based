@@ -80,7 +80,7 @@ await test('modify - validation - required', async (t) => {
         // @ts-expect-error
         optionalNested: {}, // reqInOptional missing
       }),
-    /Field optionalNested.reqInOptional is required/,
+    /Field optionalNested\.reqInOptional is required/,
   )
 
   const id1 = await db.create('thing', {

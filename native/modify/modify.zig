@@ -374,16 +374,13 @@ pub fn modify(
                 const typeEntry = try Node.getType(db, delete.type);
                 var id = delete.id;
                 if (delete.isTmp) id = utils.read(u32, items, id * resItemSize);
+                utils.write(result, id, j);
+                utils.write(result, t.ModifyError.null, j + 4);
                 if (Node.getNode(typeEntry, id)) |node| {
                     Node.deleteNode(db, typeEntry, node) catch {
                         // handle errors
                     };
-                    utils.write(result, id, j);
-                    utils.write(result, t.ModifyError.null, j + 4);
                     selva.markDirty(db, delete.type, id);
-                } else {
-                    utils.write(result, id, j);
-                    utils.write(result, t.ModifyError.nx, j + 4);
                 }
             },
         }

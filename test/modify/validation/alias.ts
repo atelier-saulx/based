@@ -17,10 +17,8 @@ await test('modify - validation - alias', async (t) => {
     () => db.create('thing', { myAlias: 123 }),
     'alias fail with number',
   )
-  const id1 = await db.create('thing', { myAlias: 'cool-alias' })
 
   // Extended validation
-  // Checking validation, not collision (collision is a separate constraint)
   await throws(
     () => db.create('thing', { myAlias: '' }),
     'alias fail with empty string',
