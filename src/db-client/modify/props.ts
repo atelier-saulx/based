@@ -5,6 +5,7 @@ import {
 } from '../../schema/defs/index.js'
 import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import {
+  Modify,
   ModifyIncrement,
   pushModifyMainHeader,
   pushModifyPropHeader,
@@ -20,6 +21,16 @@ export const serializeProps = (
   op: ModifyEnum,
   lang: LangCodeEnum,
 ) => {
+  if (op !== Modify.update) {
+    for (const key of tree.required) {
+      if (!(key in data)) {
+        const def = tree.props.get(key)!
+        throw new Error(
+          `Field ${'path' in def ? def.path.join('.') : key} is required`,
+        )
+      }
+    }
+  }
   for (const key in data) {
     const def = tree.props.get(key)
     if (def === undefined) {
@@ -56,15 +67,13 @@ export const serializeProps = (
           writeModifyPropHeaderProps.size(buf.data, buf.length - start, index)
         }
       }
-    } else {
-      if (typeof val === 'object') {
-        if (val === null) {
-          const empty = {}
-          for (const [key] of def.props) empty[key] = null
-          serializeProps(def, empty, buf, op, lang)
-        } else {
-          serializeProps(def, val, buf, op, lang)
-        }
+    } else if (typeof val === 'object') {
+      if (val === null) {
+        const empty = {}
+        for (const [key] of def.props) empty[key] = null
+        serializeProps(def, empty, buf, op, lang)
+      } else {
+        serializeProps(def, val, buf, op, lang)
       }
     }
   }

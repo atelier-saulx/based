@@ -25,40 +25,54 @@ await test('modify - validation - required', async (t) => {
     },
   })
   // 1. Top-level required
-  await throws(
+  const throwsMatch = async (fn: () => Promise<any>, re: RegExp) => {
+    try {
+      await fn()
+    } catch (err: any) {
+      if (re.test(err.message)) return
+      throw new Error(`Error message "${err.message}" does not match ${re}`)
+    }
+    throw new Error('Function should have thrown')
+  }
+
+  // 1. Top-level required
+  await throwsMatch(
     () =>
       // @ts-expect-error
       db.create('thing', {
         description: 'stuff',
         nested: { reqInNested: 'yes' },
       }),
-    'fail missing required top-level',
+    /Field name is required/,
   )
 
   // 2. Required object itself missing
-  await throws(
+  await throwsMatch(
     () =>
       // @ts-expect-error
       db.create('thing', {
         name: 'cool',
         // nested is missing
       }),
-    'fail missing required object',
+    /Field nested is required/,
   )
 
   // 3. Required nested field missing (in required object)
-  await throws(
+  await throwsMatch(
     () =>
       db.create('thing', {
         name: 'cool',
         // @ts-expect-error
         nested: {}, // reqInNested missing
+        optionalNested: {
+          reqInOptional: 'xx',
+        },
       }),
-    'fail missing required nested field',
+    /Field nested\.reqInNested is required/,
   )
 
   // 4. Required nested field missing (in optional object, if object is provided)
-  await throws(
+  await throwsMatch(
     () =>
       db.create('thing', {
         name: 'cool',
@@ -66,17 +80,10 @@ await test('modify - validation - required', async (t) => {
         // @ts-expect-error
         optionalNested: {}, // reqInOptional missing
       }),
-    'fail missing required nested field in optional object',
+    /Field optionalNested.reqInOptional is required/,
   )
 
-  // 5. Success cases
   const id1 = await db.create('thing', {
-    name: 'cool',
-    nested: { reqInNested: 'yes' },
-    // optionalNested is optional, so this is valid
-  })
-
-  const id2 = await db.create('thing', {
     name: 'cool',
     nested: { reqInNested: 'yes' },
     optionalNested: { reqInOptional: 'also yes' },
@@ -88,5 +95,5 @@ await test('modify - validation - required', async (t) => {
 
   // Update nested field without others
   // @ts-ignore
-  await db.update('thing', id2, { nested: { reqInNested: 'updated' } })
+  await db.update('thing', id1, { nested: { reqInNested: 'updated' } })
 })
