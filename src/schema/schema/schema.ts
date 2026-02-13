@@ -13,6 +13,8 @@ import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
 import hash from '../../hash/hash.js'
 import { parseLocales, type SchemaLocales } from './locales.js'
+import { type SchemaHooks } from './hooks.js'
+import type { InferPayload, InferType } from './payload.js'
 export type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 export type SchemaMigrateFn = (
   node: Record<string, any>,
@@ -179,22 +181,20 @@ type ValidateProps<Props, Types, TName extends string> = {
   [K in keyof Props]: ValidateProp<Props[K], Types, TName, K & string>
 }
 
-export type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
+type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
   types: {
     [K in keyof S['types']]: S['types'][K] extends { props: infer P }
-      ? { props: ValidateProps<P, S['types'], K & string> } & Omit<
-          S['types'][K],
-          'props'
-        >
+      ? {
+          props: ValidateProps<P, S['types'], K & string>
+          hooks?: SchemaHooks<InferPayload<S, K>>
+        } & Omit<S['types'][K], 'props' | 'hooks'>
       : {
-          [P in keyof S['types'][K]]: P extends
-            | 'hooks'
-            | 'blockCapacity'
-            | 'insertOnly'
-            | 'capped'
-            | 'partial'
-            ? S['types'][K][P]
-            : ValidateProp<S['types'][K][P], S['types'], K & string, P & string>
+          [P in keyof S['types'][K]]: ValidateProp<
+            S['types'][K][P],
+            S['types'],
+            K & string,
+            P & string
+          >
         }
   }
 }

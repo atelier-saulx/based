@@ -1,13 +1,23 @@
 import { parseSchema } from '../../../src/schema.js'
+import type { InferPayload } from '../../../src/schema/schema/payload.js'
 import { testDb } from '../../shared/index.js'
 
 async function check() {
   const schemaOut = parseSchema({
     types: {
       user: {
-        other: {
-          ref: 'other',
-          prop: 'user',
+        props: {
+          other: {
+            ref: 'other',
+            prop: 'user',
+          },
+        },
+        hooks: {
+          create(userPayload) {
+            const other = userPayload!.other
+            // @ts-expect-error
+            const nothing = userPayload.nothing
+          },
         },
       },
       other: {
@@ -18,6 +28,12 @@ async function check() {
       },
     },
   })
+
+  const userPayload: InferPayload<typeof schemaOut, 'user'> = {
+    other: 1,
+    // @ts-expect-error
+    nothing: 'oops',
+  }
 
   // @ts-expect-error
   schemaOut.types.foo = {}
@@ -39,7 +55,11 @@ async function check() {
     },
   })
 
-  db.create('user', {})
+  db.create('user', {
+    other: 1,
+    // @ts-expect-error
+    nothing: 'oops',
+  })
 }
 
 // import type { InferPayload } from '../../../src/db-client/modify/types.js'

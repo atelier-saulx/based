@@ -10,9 +10,6 @@ import {
   type SchemaMigrateFns,
   type SchemaOut,
   type ResolveSchema,
-  type Schema,
-  type ResolvedProps,
-  type ValidateSchema,
   type StrictSchema,
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'

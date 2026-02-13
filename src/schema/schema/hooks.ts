@@ -3,10 +3,10 @@ import { isFunction, isRecord } from './shared.js'
 type BasedDbQuery = any
 type Operator = any
 
-export type SchemaHooks = {
-  create?: (payload: Record<string, any>) => void | Record<string, any>
-  update?: (payload: Record<string, any>) => void | Record<string, any>
-  read?: (result: Record<string, any>) => void | null | Record<string, any>
+export type SchemaHooks<Payload = Record<string, any>> = {
+  create?: (payload: Payload) => void | Payload
+  update?: (payload: Payload) => void | Payload
+  read?: (result: Payload) => void | null | Payload
   search?: (query: BasedDbQuery, fields: Set<string>) => void
   include?: (
     query: BasedDbQuery,

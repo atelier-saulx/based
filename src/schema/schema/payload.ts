@@ -128,7 +128,7 @@ export type InferType<
 }
 
 export type InferPayload<
-  S extends SchemaOut,
+  S extends { types: any; locales?: any },
   T extends keyof S['types'],
 > = InferType<
   S['types'][T]['props'],

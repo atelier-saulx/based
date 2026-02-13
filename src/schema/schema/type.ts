@@ -12,7 +12,7 @@ import type { SchemaOut } from './schema.js'
 export type SchemaProps<strict = true> = Record<string, SchemaProp<strict>>
 
 type SchemaTypeObj<strict = false> = {
-  hooks?: SchemaHooks
+  hooks?: unknown
   blockCapacity?: number
   insertOnly?: boolean
   capped?: number

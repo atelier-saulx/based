@@ -17,7 +17,6 @@ import {
   parseSchema,
   type SchemaIn,
   type SchemaOut,
-  type ValidateSchema,
   type StrictSchema,
 } from './schema/schema.js'
 
