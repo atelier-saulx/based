@@ -7,6 +7,7 @@ import {
   isString,
   type RequiredIfStrict,
 } from './shared.js'
+import { type LangName, type SchemaLocale } from './locales.js'
 import { parseType, type SchemaType } from './type.js'
 import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
@@ -104,8 +105,6 @@ type GetBackRefs<Types, TName> = UnionToIntersection<
   }[keyof Types]
 >
 
-import type { SchemaProp } from './prop.js'
-
 // ResolvedProps combines explicit props with inferred back-reference props
 export type ResolvedProps<
   Types,
@@ -200,7 +199,7 @@ export type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
   }
 }
 
-import { type LangName, type SchemaLocale } from './locales.js'
+export type StrictSchema<S extends { types: any }> = S & ValidateSchema<S>
 
 type Prettify<T> = {
   [K in keyof T]: T[K]
@@ -282,7 +281,7 @@ const track = <P extends Record<string, unknown>>(input: P): P => {
   This returns a "public" parsed schema, suitable for external users
 */
 export const parseSchema = <const S extends SchemaIn>(
-  input: S,
+  input: StrictSchema<S>,
 ): ResolveSchema<S> => {
   const v: unknown = track(input)
   assert(isRecord(v), 'Schema should be record')

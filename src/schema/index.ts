@@ -13,7 +13,13 @@ import {
   BLOCK_CAPACITY_DEFAULT,
 } from './def/types.js'
 import { propIsNumerical } from './def/utils.js'
-import { parseSchema, type SchemaIn, type SchemaOut } from './schema/schema.js'
+import {
+  parseSchema,
+  type SchemaIn,
+  type SchemaOut,
+  type ValidateSchema,
+  type StrictSchema,
+} from './schema/schema.js'
 
 export * from './schema/alias.js'
 export * from './schema/base.js'
@@ -40,8 +46,11 @@ export * from './serialize.js'
 export * from './infer.js'
 export * as semver from './semver/mod.js'
 
-export const parse = (schema: SchemaIn): { schema: SchemaOut } => ({
-  schema: parseSchema(schema),
+// eslint-disable-next-line
+export const parse = <S extends SchemaIn>(
+  schema: StrictSchema<S>,
+): { schema: SchemaOut } => ({
+  schema: parseSchema(schema as any) as unknown as SchemaOut,
 })
 export const MAX_ID = 4294967295
 export const MIN_ID = 1

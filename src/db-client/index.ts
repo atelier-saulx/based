@@ -12,6 +12,8 @@ import {
   type ResolveSchema,
   type Schema,
   type ResolvedProps,
+  type ValidateSchema,
+  type StrictSchema,
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 import { LangCode, Modify } from '../zigTsExports.js'
@@ -78,10 +80,10 @@ export class DbClient<S extends { types: any } = SchemaOut> extends DbShared {
   }
 
   async setSchema<const T extends SchemaIn>(
-    schema: T,
+    schema: StrictSchema<T>,
     transformFns?: SchemaMigrateFns,
   ): Promise<DbClient<ResolveSchema<T>>> {
-    const strictSchema = parse(schema).schema
+    const strictSchema = parse(schema as any).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
       strictSchema as SchemaOut,
