@@ -250,6 +250,36 @@ void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, con
     } MEMPOOL_FOREACH_SLAB_END();
 }
 
+static void add_new_slab2freelist(struct mempool *mempool, struct mempool_slab *slab)
+{
+    const struct mempool_slab_info info = mempool_slab_info(mempool);
+    typeof(mempool->free_chunks) *free_chunks = &mempool->free_chunks;
+#ifdef MEMPOOL_GROWING_FREE_LIST
+    struct mempool_chunk *prev = nullptr;
+#endif
+
+    slab->nr_free = info.nr_objects;
+
+    /*
+     * Add all new objects to the list of free objects in the pool.
+     */
+    MEMPOOL_FOREACH_CHUNK_BEGIN(info, slab) {
+        chunk->slab = (uintptr_t)slab; /* also marked as free. */
+#ifdef MEMPOOL_GROWING_FREE_LIST
+        if (prev) {
+            LIST_INSERT_AFTER(prev, chunk, next_free);
+        } else {
+#endif
+            LIST_INSERT_HEAD(free_chunks, chunk, next_free);
+#ifdef MEMPOOL_GROWING_FREE_LIST
+        }
+        prev = chunk;
+#endif
+    } MEMPOOL_FOREACH_CHUNK_END();
+
+    SLIST_INSERT_HEAD(&mempool->slabs, slab, next_slab);
+}
+
 /**
  * Allocate a new slab using mmap().
  */
@@ -306,31 +336,71 @@ retry:
     }
 #endif
 
-    const struct mempool_slab_info info = mempool_slab_info(mempool);
+    add_new_slab2freelist(mempool, slab);
+}
 
-    slab->nr_free = info.nr_objects;
+void mempool_prealloc(struct mempool *mempool, size_t nr_objects)
+{
+    struct mempool_slab_info nfo = mempool_slab_info(mempool);
+    const size_t nr_slabs = (nr_objects + nfo.nr_objects - 1) / nfo.nr_objects;
+    const size_t slab_size = nr_slabs * mempool->slab_size_kb * 1024;
+    const size_t bsize = nr_slabs * slab_size;
+#if !defined(__linux__)
+    constexpr
+#endif
+    int mmap_flags = MAP_PRIVATE | MAP_ANONYMOUS;
+    struct mempool_slab *slabs;
 
-    /*
-     * Add all new objects to the list of free objects in the pool.
-     */
-#ifdef MEMPOOL_GROWING_FREE_LIST
-    struct mempool_chunk *prev = nullptr;
+    assert(nr_objects > 0);
+
+    /* TODO Verify that huge pages can be partially unmapped later if necessary. */
+#if 0 && defined(__linux__)
+    if (bsize >= 2048 * 1024 &&
+        (mempool->advice & (MEMPOOL_ADV_HP_SOFT | MEMPOOL_ADV_HP_HARD))) {
+        mmap_flags |= MAP_HUGETLB /* | MAP_HUGE_2MB */;
+    }
 #endif
-    MEMPOOL_FOREACH_CHUNK_BEGIN(info, slab) {
-        chunk->slab = (uintptr_t)slab; /* also marked as free. */
-#ifdef MEMPOOL_GROWING_FREE_LIST
-        if (prev) {
-            LIST_INSERT_AFTER(prev, chunk, next_free);
-        } else {
+
+#if defined(__linux__)
+retry:
 #endif
-            LIST_INSERT_HEAD(&mempool->free_chunks, chunk, next_free);
-#ifdef MEMPOOL_GROWING_FREE_LIST
+    slabs = mmap(0, bsize, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
+    if (slabs == MAP_FAILED) {
+#if defined(__linux__)
+        if ((mmap_flags & MAP_HUGETLB) &&
+            (mempool->advice & MEMPOOL_ADV_HP_SOFT)) {
+            mmap_flags &= ~MAP_HUGETLB;
+            goto retry;
         }
-        prev = chunk;
 #endif
-    } MEMPOOL_FOREACH_CHUNK_END();
+        perror("Failed to allocate a slabs");
+        abort();
+    }
 
-    SLIST_INSERT_HEAD(&mempool->slabs, slab, next_slab);
+#if defined(__linux__) || defined(__MACH__)
+    if (mempool->advice & (MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_SEQUENTIAL)) {
+        switch (mempool->advice & (MEMPOOL_ADV_RANDOM | MEMPOOL_ADV_SEQUENTIAL)) {
+        case MEMPOOL_ADV_RANDOM:
+            madvise(slabs, bsize, MADV_RANDOM);
+            break;
+        case MEMPOOL_ADV_SEQUENTIAL:
+            madvise(slabs, bsize, MADV_SEQUENTIAL);
+            break;
+        default: /* NOP */
+            break;
+        }
+    }
+#endif
+
+#if defined(__linux__)
+    if (bsize >= 2048 * 1024 && (mempool->advice & MEMPOOL_ADV_HP_THP)) {
+        (void)madvise(slabs, bsize, MADV_HUGEPAGE);
+    }
+#endif
+
+    for (size_t i = 0; i < nr_slabs; i++) {
+        add_new_slab2freelist(mempool, (typeof(slabs))((uint8_t *)slabs + i * slab_size));
+    }
 }
 
 void *mempool_get(struct mempool *mempool)
