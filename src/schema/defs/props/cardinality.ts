@@ -45,7 +45,7 @@ export const cardinality = class Cardinality extends BasePropDef {
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
-      fixedLen: 0,
+      fixedLenHint: 0,
       defaultLen: 0,
     })
   }

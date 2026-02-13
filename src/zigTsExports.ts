@@ -4565,7 +4565,7 @@ export const pushSelvaSchemaMicroBuffer = (
 
 export type SelvaSchemaString = {
   type: SelvaFieldType
-  fixedLen: number
+  fixedLenHint: number
   defaultLen: number
 }
 
@@ -4580,7 +4580,7 @@ export const writeSelvaSchemaString = (
 ): number => {
   buf[offset] = Number(header.type)
   offset += 1
-  buf[offset] = Number(header.fixedLen)
+  buf[offset] = Number(header.fixedLenHint)
   offset += 1
   writeUint32(buf, Number(header.defaultLen), offset)
   offset += 4
@@ -4591,7 +4591,7 @@ export const writeSelvaSchemaStringProps = {
   type: (buf: Uint8Array, value: SelvaFieldType, offset: number) => {
     buf[offset] = Number(value)
   },
-  fixedLen: (buf: Uint8Array, value: number, offset: number) => {
+  fixedLenHint: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 1] = Number(value)
   },
   defaultLen: (buf: Uint8Array, value: number, offset: number) => {
@@ -4605,7 +4605,7 @@ export const readSelvaSchemaString = (
 ): SelvaSchemaString => {
   const value: SelvaSchemaString = {
     type: buf[offset],
-    fixedLen: buf[offset + 1],
+    fixedLenHint: buf[offset + 1],
     defaultLen: readUint32(buf, offset + 2),
   }
   return value
@@ -4613,7 +4613,7 @@ export const readSelvaSchemaString = (
 
 export const readSelvaSchemaStringProps = {
     type: (buf: Uint8Array, offset: number) => buf[offset],
-    fixedLen: (buf: Uint8Array, offset: number) => buf[offset + 1],
+    fixedLenHint: (buf: Uint8Array, offset: number) => buf[offset + 1],
     defaultLen: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 2),
 }
 
@@ -4629,7 +4629,7 @@ export const pushSelvaSchemaString = (
 ): number => {
   const index = buf.length
   buf.pushUint8(Number(header.type))
-  buf.pushUint8(Number(header.fixedLen))
+  buf.pushUint8(Number(header.fixedLenHint))
   buf.pushUint32(Number(header.defaultLen))
   return index
 }

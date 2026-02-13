@@ -94,7 +94,7 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
 {
     struct {
         enum SelvaFieldType type;
-        uint8_t fixed_len;
+        uint8_t fixed_len_hint;
         uint32_t default_len;
     } __packed head;
     size_t off = 0;
@@ -115,7 +115,7 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
              * We only allow very short strings to be stored as fixed embedded
              * strings. This is best to be aligned to 64-bit boundaries
              */
-            .fixed_len = head.fixed_len <= 48 ? head.fixed_len : 0,
+            .fixed_len = head.fixed_len_hint <= 48 ? head.fixed_len_hint : 0,
             .default_len = head.default_len,
         },
     };

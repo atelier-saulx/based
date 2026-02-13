@@ -213,7 +213,7 @@ static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldS
     assert(len >= 2 + sizeof(uint32_t));
     assume(len >= 2 + sizeof(uint32_t));
 
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+    if (fs->string.fixed_len > 0 && len > fs->string.fixed_len) {
         return SELVA_ENOBUFS;
     }
 
@@ -927,7 +927,7 @@ static inline int _selva_fields_get_mutable_string(struct SelvaNode *node, const
         return SELVA_EINTYPE;
     }
 
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+    if (fs->string.fixed_len > 0 && len > fs->string.fixed_len) {
         return SELVA_ENOBUFS;
     }
 

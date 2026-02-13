@@ -95,13 +95,8 @@ const test: {
       console.log(styleText('gray', `saved db ${performance.now() - d} ms`))
 
       const size = await dirSize(t.tmp)
-
-      const kbs = ~~(size / 1024)
-      if (kbs < 5000) {
-        console.log(styleText('gray', `backup size ${kbs}kb`))
-      } else {
-        console.log(styleText('gray', `backup size ${~~(kbs / 1024)}mb`))
-      }
+      const strSize = size < 1_048_576 ? `${Math.ceil(size / 1024)} kiB` : `${Math.ceil(size / 1_048_576)} MiB`
+      console.log(styleText('gray', `backup size ${strSize}`))
 
       await db.stop()
 
