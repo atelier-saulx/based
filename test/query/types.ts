@@ -254,6 +254,34 @@ await test('query types', async (t) => {
     //   console.log({ id, myEnum, nonExistent })
     // }
   }
+
+  {
+    // Sum aggregates
+    const query = db.query2('everything').sum('n', 'i8').sum('card')
+    const queryInvalid = db.query2('everything')
+    // @ts-expect-error
+    queryInvalid.sum('s')
+    // @ts-expect-error
+    queryInvalid.sum('b')
+
+    query.avg('n').hmean('n').max('n').min('n').stddev('n').var('n')
+
+    query.cardinality('s')
+    query.groupBy('s')
+
+    // @ts-expect-error
+    queryInvalid.avg('s')
+    // @ts-expect-error
+    queryInvalid.hmean('s')
+    // @ts-expect-error
+    queryInvalid.max('s')
+    // @ts-expect-error
+    queryInvalid.min('s')
+    // @ts-expect-error
+    queryInvalid.stddev('s')
+    // @ts-expect-error
+    queryInvalid.var('s')
+  }
 })
 
 await test('query types', async (t) => {

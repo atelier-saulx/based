@@ -12,6 +12,7 @@ await test('query ast creation', async (t) => {
       user: {
         name: 'string'
         isNice: 'boolean'
+        age: 'number'
       }
     }
   }
@@ -154,6 +155,48 @@ await test('query ast creation', async (t) => {
           },
         },
       },
+    })
+  }
+
+  {
+    const q = query<Schema>('user').sum('age')
+    deepEqual(q.ast, {
+      type: 'user',
+      sum: { props: ['age'] },
+    })
+  }
+
+  {
+    const q = query<Schema>('user')
+      .count()
+      .cardinality('name')
+      .avg('age')
+      .hmean('age')
+      .max('age')
+      .min('age')
+      .stddev('age', { mode: 'population' })
+      .var('age', { mode: 'sample' })
+      .groupBy('name')
+
+    deepEqual(q.ast, {
+      type: 'user',
+      count: {},
+      cardinality: { props: ['name'] },
+      avg: { props: ['age'] },
+      harmonicMean: { props: ['age'] },
+      max: { props: ['age'] },
+      min: { props: ['age'] },
+      stddev: { props: ['age'], samplingMode: 'population' },
+      variance: { props: ['age'], samplingMode: 'sample' },
+      groupBy: { prop: 'name' },
+    })
+  }
+
+  {
+    const q = query<Schema>('user').groupBy('age', 10)
+    deepEqual(q.ast, {
+      type: 'user',
+      groupBy: { prop: 'age', step: 10 },
     })
   }
 })

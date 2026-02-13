@@ -67,6 +67,7 @@ export type QueryAst = {
   sort?: { prop: string; order: 'asc' | 'desc' }
   props?: Record<string, QueryAst>
   edges?: QueryAst
+  // aggregate options
   count?: { props?: string }
   sum?: { props: string[] }
   cardinality?: { props: string[] }

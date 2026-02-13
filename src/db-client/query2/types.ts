@@ -285,3 +285,10 @@ export type InferPathType<
             : never
         : never
       : never
+
+export type NumberPaths<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+> = {
+  [K in Path<S['types'], T>]: InferPathType<S, T, K> extends number ? K : never
+}[Path<S['types'], T>]

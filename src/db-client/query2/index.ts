@@ -9,12 +9,18 @@ import type {
   InferPathType,
   FilterEdges,
   InferSchemaOutput,
+  NumberPaths,
 } from './types.js'
 import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
 import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import type { DbClient } from '../../sdk.js'
 import { proxyResult } from './result.js'
+import type {
+  StepInput,
+  IntervalString,
+  aggFnOptions,
+} from '../query/aggregates/types.js'
 
 class QueryBranch<
   S extends { types: any } = { types: any },
@@ -128,6 +134,85 @@ class QueryBranch<
     this.#filterGroup ??= this.ast.filter ??= {}
     this.#filterGroup = this.#filterGroup.or ??= {}
     return this.#addFilter(prop, op, val, opts, true)
+  }
+
+  sum<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.sum ??= { props: [] }
+    this.ast.sum.props.push(...(props as string[]))
+    return this
+  }
+
+  count(): this {
+    this.ast.count = {}
+    return this
+  }
+
+  cardinality(...props: string[]): this {
+    this.ast.cardinality ??= { props: [] }
+    this.ast.cardinality.props.push(...props)
+    return this
+  }
+
+  avg<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.avg ??= { props: [] }
+    this.ast.avg.props.push(...(props as string[]))
+    return this
+  }
+
+  hmean<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.harmonicMean ??= { props: [] }
+    this.ast.harmonicMean.props.push(...(props as string[]))
+    return this
+  }
+
+  max<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.max ??= { props: [] }
+    this.ast.max.props.push(...(props as string[]))
+    return this
+  }
+
+  min<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.min ??= { props: [] }
+    this.ast.min.props.push(...(props as string[]))
+    return this
+  }
+
+  stddev<P extends NumberPaths<S, T>>(
+    prop: P | P[],
+    opts?: aggFnOptions,
+  ): this {
+    this.ast.stddev ??= { props: [] }
+    const props = Array.isArray(prop) ? prop : [prop]
+    this.ast.stddev.props.push(...(props as string[]))
+    if (opts?.mode) {
+      this.ast.stddev.samplingMode = opts.mode
+    }
+    return this
+  }
+
+  var<P extends NumberPaths<S, T>>(prop: P | P[], opts?: aggFnOptions): this {
+    this.ast.variance ??= { props: [] }
+    const props = Array.isArray(prop) ? prop : [prop]
+    this.ast.variance.props.push(...(props as string[]))
+    if (opts?.mode) {
+      this.ast.variance.samplingMode = opts.mode
+    }
+    return this
+  }
+
+  groupBy(prop: string, step?: StepInput): this {
+    this.ast.groupBy = { prop }
+    if (step) {
+      if (typeof step === 'object') {
+        const s = step as any
+        if (s.step) this.ast.groupBy.step = s.step
+        if (s.timeZone) this.ast.groupBy.timeZone = s.timeZone
+        if (s.display) this.ast.groupBy.display = s.display
+      } else {
+        this.ast.groupBy.step = step
+      }
+    }
+    return this
   }
 
   #filterGroup?: FilterAst
