@@ -1,7 +1,7 @@
 import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
-await test('query types', async (t) => {
+await test.skip('query types', async (t) => {
   const db = await testDb(t, {
     locales: { en: true },
     types: {

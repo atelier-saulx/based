@@ -306,6 +306,25 @@ class QueryBranch<
     return this as any
   }
 
+  range(
+    start: number,
+    end?: number,
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate,
+    GroupedKey
+  > {
+    const limit = end ? end - start : 1000
+    this.ast.range = { start, end: limit }
+    return this as any
+  }
+
   groupBy<P extends string>(
     prop: P,
     step?: StepInput,

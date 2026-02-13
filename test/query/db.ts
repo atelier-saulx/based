@@ -51,6 +51,18 @@ await test('query db', async (t) => {
   }
 
   {
+    const res = await db
+      .query2('user')
+      .include('name')
+      .filter('isNice', '=', true)
+      .or('age', '=', 21)
+      .range(0, 1)
+      .get()
+
+    deepEqual(res, [{ id: 1, name: 'john' }])
+  }
+
+  {
     const res = await db.query2('user').sum('age').get()
     deepEqual(res, { age: { sum: 70 } })
   }
@@ -58,5 +70,15 @@ await test('query db', async (t) => {
   {
     const res = await db.query2('user').sum('age').groupBy('name').get()
     deepEqual(res, { john: { age: { sum: 21 } }, billy: { age: { sum: 49 } } })
+  }
+
+  {
+    const res = await db
+      .query2('user')
+      .filter('isNice', '=', true)
+      .sum('age')
+      .groupBy('name')
+      .get()
+    deepEqual(res, { billy: { age: { sum: 49 } } })
   }
 })
