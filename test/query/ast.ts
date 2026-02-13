@@ -1,91 +1,116 @@
 import { $buffer } from '../../src/db-client/query2/result.js'
-import { testDb } from '../shared/index.js'
+import { deepEqual, testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
-await test('query types', async (t) => {
+await test('query ast creation', async (t) => {
   const db = await testDb(t, {
     locales: {
       en: true,
       nl: true,
     },
     types: {
-      soAnnoy: {
-        title: 'string',
-
-        users: {
-          items: {
-            ref: 'user',
-            prop: 'annoyingThings',
-          },
-        },
-      },
       user: {
         name: 'string',
         isNice: 'boolean',
-        textField: 'text',
-        friend: {
-          ref: 'user',
-          prop: 'friend',
-          $rank: 'number',
-        },
-        otherUsers: {
-          items: {
-            ref: 'user',
-            prop: 'otherUsers',
-            $role: 'string',
-          },
-        },
-        annoyingThings: {
-          items: {
-            ref: 'soAnnoy',
-            prop: 'users',
-          },
-        },
       },
     },
   })
 
-  const userA = db.create('user', {
-    isNice: true,
-    textField: {
-      nl: 'mijn text',
-      en: 'my text',
-    },
-  })
+  {
+    const query = db
+      .query2('user')
+      .filter('isNice', '=', false)
+      .and('name', '=', 'youzi')
 
-  const userB = db.create('user', {
-    isNice: false,
-  })
+    deepEqual(query.ast, {
+      type: 'user',
+      filter: {
+        props: {
+          isNice: { ops: [{ op: '=', val: false }] },
+          name: { ops: [{ op: '=', val: 'youzi' }] },
+        },
+      },
+    })
+  }
 
-  db.create('soAnnoy', {
-    title: 'super annoying',
-    users: [userA],
-  })
+  {
+    const query = db
+      .query2('user')
+      .filter('isNice', '=', false)
+      .and('name', '=', 'youzi')
+      .or('name', '=', 'james')
 
-  const query = db
-    .query2('user')
-    .include(
-      'isNice',
-      'name',
-      'otherUsers',
-      'textField',
-      'friend',
-      'friend.$rank',
-    )
-    .filter('isNice', '=', false)
-    .and('name', '=', 'youzi')
+    deepEqual(query.ast, {
+      type: 'user',
+      filter: {
+        props: {
+          isNice: { ops: [{ op: '=', val: false }] },
+          name: { ops: [{ op: '=', val: 'youzi' }] },
+        },
+        or: {
+          props: {
+            name: { ops: [{ op: '=', val: 'james' }] },
+          },
+        },
+      },
+    })
+  }
 
-  const result = await query.get()
+  {
+    const query = db
+      .query2('user')
+      .filter('isNice', '=', false)
+      .and('name', '=', 'youzi')
+      .or('name', '=', 'james')
+      .and('isNice', '=', false)
 
-  console.log('--->', result)
-  // for (const { name, isNice, otherUsers, friend } of result) {
-  //   // const friendName = friend?.name
-  //   const friendFriend = friend?.isNice
-  //   for (const item of otherUsers) {
-  //     const name: string = item.name
-  //     const isNice: boolean = item.isNice
-  //     const id: number = item.id
-  //     const textField: { nl: string; en: string } = item.textField
-  //   }
-  // }
+    deepEqual(query.ast, {
+      type: 'user',
+      filter: {
+        props: {
+          isNice: { ops: [{ op: '=', val: false }] },
+          name: { ops: [{ op: '=', val: 'youzi' }] },
+        },
+        or: {
+          props: {
+            name: { ops: [{ op: '=', val: 'james' }] },
+            isNice: { ops: [{ op: '=', val: false }] },
+          },
+        },
+      },
+    })
+  }
+
+  {
+    const query = db
+      .query2('user')
+      .filter((filter) => filter('name', '=', 'youzi').or('isNice', '=', true))
+      .or((filter) => filter('name', '=', 'james').or('isNice', '=', false))
+
+    deepEqual(query.ast, {
+      type: 'user',
+      filter: {
+        and: {
+          props: {
+            name: { ops: [{ op: '=', val: 'youzi' }] },
+          },
+          or: {
+            props: {
+              isNice: { ops: [{ op: '=', val: true }] },
+            },
+          },
+        },
+        or: {
+          props: {
+            name: { ops: [{ op: '=', val: 'james' }] },
+          },
+          or: {
+            props: {
+              isNice: { ops: [{ op: '=', val: false }] },
+            },
+          },
+        },
+      },
+    })
+  }
 })

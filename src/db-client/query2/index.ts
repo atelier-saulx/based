@@ -1,4 +1,4 @@
-import type { FilterLeaf, QueryAst } from '../../db-query/ast/ast.js'
+import type { FilterAst, FilterLeaf, QueryAst } from '../../db-query/ast/ast.js'
 import type {
   PickOutput,
   ResolveInclude,
@@ -70,6 +70,11 @@ class QueryBranch<
     return this as any
   }
 
+  filter(
+    fn: (
+      filter: FilterFn<S, T, EdgeProps>,
+    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+  ): FilterBranch<this>
   filter<
     P extends
       | keyof (ResolvedProps<S['types'], T> & EdgeProps)
@@ -79,17 +84,82 @@ class QueryBranch<
     op: Operator,
     val: InferPathType<S, T, P>,
     opts?: FilterOpts,
-  ): this & FilterMethods<this> {
-    const target = traverse((this.ast.filter ??= {}), prop as string)
+  ): FilterBranch<this>
+  filter(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
+    this.#filterGroup ??= this.ast.filter ??= {}
+    return this.#addFilter(prop, op, val, opts, false)
+  }
+
+  and(
+    fn: (
+      filter: FilterFn<S, T, EdgeProps>,
+    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+  ): FilterBranch<this>
+  and<
+    P extends
+      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
+      | Path<S['types'], T>,
+  >(
+    prop: P,
+    op: Operator,
+    val: InferPathType<S, T, P>,
+    opts?: FilterOpts,
+  ): FilterBranch<this>
+  and(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
+    return this.filter(prop, op, val, opts)
+  }
+
+  or(
+    fn: (
+      filter: FilterFn<S, T, EdgeProps>,
+    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+  ): FilterBranch<this>
+  or<
+    P extends
+      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
+      | Path<S['types'], T>,
+  >(
+    prop: P,
+    op: Operator,
+    val: InferPathType<S, T, P>,
+    opts?: FilterOpts,
+  ): FilterBranch<this>
+  or(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
+    this.#filterGroup ??= this.ast.filter ??= {}
+    this.#filterGroup = this.#filterGroup.or ??= {}
+    return this.#addFilter(prop, op, val, opts, true)
+  }
+
+  #filterGroup?: FilterAst
+  #addFilter(
+    prop: any,
+    op: any,
+    val: any,
+    opts: any,
+    isOr: boolean,
+  ): FilterBranch<this> {
+    if (typeof prop === 'function') {
+      prop((...args) => {
+        const target = isOr
+          ? this.#filterGroup!
+          : (this.#filterGroup!.and ??= {})
+        const branch = new QueryBranch(target)
+        branch.#filterGroup = target
+        ;(branch.filter as any)(...args)
+        return branch
+      })
+      return this as any
+    }
+
+    const target = traverse(this.#filterGroup, prop as string)
     target.ops ??= []
     target.ops.push({ op, val })
-    return {
-      ...this,
-      and: this.filter,
-      or: this.filter,
-    }
+    return this as any
   }
 }
+
+type FilterBranch<T extends { filter: any }> = Omit<T, 'and' | 'or'> &
+  FilterMethods<T>
 
 type FilterMethods<T extends { filter: any }> = {
   and: T['filter']
@@ -114,7 +184,8 @@ export class BasedQuery2<
   ) {
     super({})
     this.ast.type = type as string
-    this.ast.target = target
+    if (target) this.ast.target = target
+
     this.db = db
   }
   db: DbClient
@@ -139,6 +210,40 @@ export class BasedQuery2<
     const result = await this.db.hooks.getQueryBuf(ctx.query)
     return proxyResult(result, ctx.readSchema) as any
   }
+}
+
+type FilterFn<
+  S extends { types: any },
+  T extends keyof S['types'],
+  EdgeProps extends Record<string, any>,
+> = FilterSignature<
+  S,
+  T,
+  EdgeProps,
+  FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>
+>
+
+type FilterSignature<
+  S extends { types: any },
+  T extends keyof S['types'],
+  EdgeProps extends Record<string, any>,
+  Result,
+> = {
+  (
+    fn: (
+      filter: FilterFn<S, T, EdgeProps>,
+    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+  ): Result
+  <
+    P extends
+      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
+      | Path<S['types'], T>,
+  >(
+    prop: P,
+    op: Operator,
+    val: InferPathType<S, T, P>,
+    opts?: FilterOpts,
+  ): Result
 }
 
 type SelectFn<S extends { types: any }, T extends keyof S['types']> = <
