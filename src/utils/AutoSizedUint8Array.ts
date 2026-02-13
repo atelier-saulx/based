@@ -54,6 +54,7 @@ export class AutoSizedUint8Array {
     const currentLength = this.data.byteLength
     if (currentLength >= requiredLength) return
     if (requiredLength > this.maxLength) {
+      console.trace({ requiredLength }, this.maxLength)
       throw AutoSizedUint8Array.ERR_OVERFLOW
     }
 

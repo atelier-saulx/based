@@ -57,19 +57,14 @@ await test('undefined numbers', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('vote')
-      .harmonicMean('AU', 'FI')
-      .groupBy('region')
-      .get()
-      .toObject(),
+    await db.query('vote').hmean('AU', 'FI').groupBy('region').get().toObject(),
     {
       EU: {
         AU: { hmean: 13.93939393939394 },
         FI: { hmean: 0 },
       },
     },
-    'harmonic_mean affected by count because number is initialized with zero',
+    'hmean affected by count because number is initialized with zero',
   )
 })
 

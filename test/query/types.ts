@@ -282,6 +282,31 @@ await test('query types', async (t) => {
     // @ts-expect-error
     queryInvalid.var('s')
   }
+
+  {
+    // Aggregate return type check
+    const query = db.query2('everything').sum('n')
+    const res = await query.get()
+
+    if (res) {
+      const n: number = res.n.sum
+      // @ts-expect-error
+      const s = res.s
+    }
+
+    const queryGroup = db.query2('everything').groupBy('s').sum('n')
+    const resGroup = await queryGroup.get()
+
+    // resGroup should be Record<string, { n: number }>
+    if (resGroup) {
+      const group = resGroup['some-group']
+      if (group) {
+        const n: number = group.n.sum
+        // @ts-expect-error
+        const s = group.s
+      }
+    }
+  }
 })
 
 await test('query types', async (t) => {

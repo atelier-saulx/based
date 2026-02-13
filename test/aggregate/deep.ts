@@ -415,12 +415,7 @@ await test('enums', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('beer')
-      .harmonicMean('price')
-      .groupBy('type')
-      .get()
-      .toObject(),
+    await db.query('beer').hmean('price').groupBy('type').get().toObject(),
     {
       Tripel: {
         price: { hmean: 11.839662447257384 },
@@ -429,7 +424,7 @@ await test('enums', async (t) => {
         price: { hmean: 7.199999999999999 }, // 7.2 should be approximated
       },
     },
-    'harmonic_mean by enum in main',
+    'hmean by enum in main',
   )
 })
 

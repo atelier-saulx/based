@@ -183,7 +183,7 @@ await test('query ast creation', async (t) => {
       count: {},
       cardinality: { props: ['name'] },
       avg: { props: ['age'] },
-      harmonicMean: { props: ['age'] },
+      hmean: { props: ['age'] },
       max: { props: ['age'] },
       min: { props: ['age'] },
       stddev: { props: ['age'], samplingMode: 'population' },

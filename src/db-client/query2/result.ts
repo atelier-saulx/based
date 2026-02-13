@@ -67,6 +67,9 @@ const handler: ProxyHandler<any> = {
 }
 
 export const proxyResult = (buffer: Uint8Array, schema: ReaderSchema) => {
+  if ('aggregate' in schema) {
+    return resultToObject(schema, buffer, buffer.byteLength - 4)
+  }
   const single = schema.type === ReaderSchemaEnum.single
   const length = readUint32(buffer, 0)
   if (length === 0) return single ? null : []

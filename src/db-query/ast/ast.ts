@@ -72,7 +72,7 @@ export type QueryAst = {
   sum?: { props: string[] }
   cardinality?: { props: string[] }
   avg?: { props: string[] }
-  harmonicMean?: { props: string[] }
+  hmean?: { props: string[] }
   max?: { props: string[] }
   min?: { props: string[] }
   stddev?: { props: string[]; samplingMode?: 'sample' | 'population' }

@@ -541,7 +541,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('vote')
-      .harmonicMean('NL', 'PT', 'FI')
+      .hmean('NL', 'PT', 'FI')
       .groupBy('region')
       .get()
       .toObject(),
@@ -562,7 +562,7 @@ await test('numeric types', async (t) => {
         FI: { hmean: -50.99900000000001 }, // harmonic mean is not designed for negative numbers but possible
       },
     },
-    'harmonic_mean, main, group by',
+    'hmean, main, group by',
   )
   deepEqual(
     await db
@@ -751,7 +751,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').harmonicMean('NL'))
+      .include((q) => q('votes').hmean('NL'))
       .get()
       .toObject(),
     [
@@ -762,7 +762,7 @@ await test('numeric types', async (t) => {
         },
       },
     ],
-    'harmonic_mean, references, not grouped',
+    'hmean, references, not grouped',
   )
   deepEqual(
     await db
@@ -948,7 +948,7 @@ await test('numeric types', async (t) => {
   deepEqual(
     await db
       .query('sequence')
-      .include((q) => q('votes').groupBy('region').harmonicMean('NL'))
+      .include((q) => q('votes').groupBy('region').hmean('NL'))
       .get()
       .toObject(),
     [
@@ -967,7 +967,7 @@ await test('numeric types', async (t) => {
         },
       },
     ],
-    'harmonic_mean, references, group by',
+    'hmean, references, group by',
   )
 })
 
