@@ -50,6 +50,7 @@ await test('include', async (t) => {
   })
 
   const a = client.create('user', {
+    name: 'mr snurf a',
     y: 4,
     x: true,
     flap: 9999,
@@ -59,6 +60,7 @@ await test('include', async (t) => {
   })
 
   const b = client.create('user', {
+    name: 'mr snurf b',
     y: 15,
     x: true,
     flap: 9999,
@@ -71,6 +73,7 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 5e6; i++) {
     client.create('user', {
+      name: `mr snurf ${i}`,
       y: i,
       x: true,
       flap: 9999,
@@ -88,33 +91,40 @@ await test('include', async (t) => {
     type: 'user',
     filter: {
       props: {
-        flap: { ops: [{ op: '=', val: 9999 }] },
-      },
-      and: {
-        props: {
-          y: { ops: [{ op: '=', val: 100 }] },
-        },
-        or: {
-          props: {
-            y: { ops: [{ op: '=', val: 3 }] },
-          },
-          or: {
-            props: {
-              y: { ops: [{ op: '=', val: 4 }] },
-            },
-          },
+        name: {
+          // ADD LOWER CASE
+          // ops: [{ op: 'includes', val: 'flap', opts: { lowerCase: true } }],
+          ops: [{ op: 'includes', val: 'x' }],
         },
       },
-      or: {
-        props: {
-          y: { ops: [{ op: '=', val: 670 }] },
-        },
-        or: {
-          props: {
-            y: { ops: [{ op: '=', val: 15 }] },
-          },
-        },
-      },
+      // props: {
+      // flap: { ops: [{ op: '=', val: 9999 }] },
+      // },
+      // and: {
+      //   props: {
+      //     y: { ops: [{ op: '=', val: 100 }] },
+      //   },
+      //   or: {
+      //     props: {
+      //       y: { ops: [{ op: '=', val: 3 }] },
+      //     },
+      //     or: {
+      //       props: {
+      //         y: { ops: [{ op: '=', val: 4 }] },
+      //       },
+      //     },
+      //   },
+      // },
+      // or: {
+      //   props: {
+      //     y: { ops: [{ op: '=', val: 670 }] },
+      //   },
+      //   or: {
+      //     props: {
+      //       y: { ops: [{ op: '=', val: 15 }] },
+      //     },
+      //   },
+      // },
     },
 
     // filter('flap', '=', 9999)
@@ -130,6 +140,7 @@ await test('include', async (t) => {
 
     props: {
       y: { include: {} },
+      name: { include: {} },
       mrFriend: {
         props: {
           y: { include: {} },
@@ -175,7 +186,7 @@ await test('include', async (t) => {
     },
     'filter speed',
     {
-      repeat: 100,
+      repeat: 10,
     },
   )
   // quite large
@@ -186,7 +197,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  // console.dir(obj, { depth: 10 })
+  console.dir(obj, { depth: 10 })
 
   // RETURN NULL FOR UNDEFINED
 

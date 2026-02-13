@@ -45,7 +45,8 @@ const getFilterOp = (
   op: FilterOp
   write: ReturnType<typeof getPropWriter>
 } => {
-  if (
+  if (operator === 'includes' || operator === '!includes') {
+  } else if (
     operator === '=' ||
     operator === '<' ||
     operator === '>' ||
