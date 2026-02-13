@@ -752,13 +752,16 @@ static int load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
         return 0;
     }
 
+#if 0
     /*
      * Prealloc slabs before loading.
      * TODO Partials.
      * This is not always optimal with partials because we may already have
      * enough free objects. Perhaps only do this on startup.
+     * TODO This is also problematic for very large allocs.
      */
     mempool_prealloc(&te->nodepool, nr_nodes);
+#endif
 
     for (sdb_nr_nodes_t i = 0; i < nr_nodes; i++) {
         node_id_t node_id;
