@@ -207,6 +207,50 @@ await test('include', async (t) => {
     .include('nr') //  'start', 'end', 'target'
     .filter('target.nr', '>', 1001)
     // .or('nr', '=', 100)
+    // .or('nr', '=', 200)
+    // .or((p) => {
+    //   p.filter('nr', 10).and('nr', 20)
+    // })
+    // .and((p) => {
+    //   p.filter('y', 20)
+    //   p.or('x', 10)
+    // })
+
+    /*
+    {
+      filter: {
+        props: {nr" '>' 10001}
+        and: {
+          props: { y: [10]}
+          or: { props: { x: 10}}
+        }
+      }
+    
+    }
+  
+    {
+      filter: {
+        props: {nr" '>' 10001}
+        or: {
+          props: { nr: [10,20]}
+        }
+      }
+    
+    }
+
+    {
+      filter: {
+        props: {nr" '>' 10001}
+        or: {
+          or: {
+          }
+        }
+      }
+    
+    }
+
+    */
+
     .range(0, 10e6)
     .get()
     .inspect()
@@ -254,7 +298,7 @@ await test.skip('default', async (t) => {
           special: {
             type: 'vector',
             size: 4,
-            baseType: 'number',
+            baseType: 'float64',
             // TODO
             //default: new Uint8Array([0, 0, 0, 0]),
           },
