@@ -14,7 +14,6 @@ import { postParseRefs } from './reference.js'
 import hash from '../../hash/hash.js'
 import { parseLocales, type SchemaLocales } from './locales.js'
 import { type SchemaHooks } from './hooks.js'
-import type { InferPayload, InferType } from './payload.js'
 export type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 export type SchemaMigrateFn = (
   node: Record<string, any>,
@@ -73,7 +72,6 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   ? I
   : never
 
-// Helper to find Props in other types that reference TName with a specific 'prop' field
 // Helper to find Props in other types that reference TName with a specific 'prop' field
 type GetBackRefs<Types, TName> = UnionToIntersection<
   {

@@ -38,6 +38,7 @@ await test('modify - hooks - create', async (t) => {
         hooks: {
           create(payload) {
             const isNice: boolean | null | undefined = payload.isNice
+            return payload
           },
         },
       },
