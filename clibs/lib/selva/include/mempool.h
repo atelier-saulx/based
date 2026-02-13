@@ -105,7 +105,7 @@ void mempool_gc(struct mempool *mempool)
  */
 void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, const void*));
 
-size_t mempool_alloc_slabs(struct mempool *mempool, size_t nr_objects, struct mempool_slab **slabs_out);
+void mempool_prealloc(struct mempool *mempool, size_t nr_objects);
 
 /**
  * Get a new object from the pool.

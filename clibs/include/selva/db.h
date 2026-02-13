@@ -487,7 +487,6 @@ struct SelvaNodeRes selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node
  */
 SELVA_EXPORT
 struct SelvaNodeRes selva_upsert_node(struct SelvaTypeEntry *type, node_id_t node_id) __attribute__((nonnull));
-struct SelvaNodeRes selva_upsert_node2(struct SelvaTypeEntry *type, node_id_t node_id, struct SelvaNode *node) __attribute__((nonnull));
 
 /**
  * **Example**
