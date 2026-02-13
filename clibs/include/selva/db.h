@@ -140,9 +140,6 @@ inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)
 #endif
 
 SELVA_EXPORT
-void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
-
-SELVA_EXPORT
 inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te)
 #ifndef __zig
 {
@@ -208,6 +205,31 @@ inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t b
     node_id_t start = block_i * block_capacity + 1;
     node_id_t end = start + block_capacity - 1;
     return end;
+}
+#else
+;
+#endif
+
+SELVA_EXPORT
+inline void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
+#ifndef __zig
+{
+    for (size_t ti = 0; ti < db->nr_types; ti++) {
+        struct SelvaTypeEntry *te = &db->types[ti];
+        struct SelvaTypeBlocks *blocks = te->blocks;
+
+        for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
+            struct SelvaTypeBlock *block = &blocks->blocks[block_i];
+
+            /*
+             * Note that we call it or_mask because the cb() is called if any
+             * bit of the mask is set in the status.
+             */
+            if (atomic_load_explicit(&block->status.atomic, memory_order_consume) & or_mask) {
+                cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
+            }
+        }
+    }
 }
 #else
 ;
