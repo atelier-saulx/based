@@ -15,7 +15,12 @@ await test('create and access many types', async (t) => {
 
   const rndType = () => `type${prng(1, NR_TYPES)}`
   const client = await db.setSchema({
-    types: Object.fromEntries(Array.from({ length: 16384 }, (_, i) => [ `type${i + 1}`, { bool: 'boolean' } ])),
+    types: Object.fromEntries(
+      Array.from({ length: 16384 }, (_, i) => [
+        `type${i + 1}`,
+        { bool: 'boolean' },
+      ]),
+    ),
   })
 
   await perf(

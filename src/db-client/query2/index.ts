@@ -79,12 +79,21 @@ class QueryBranch<
     op: Operator,
     val: InferPathType<S, T, P>,
     opts?: FilterOpts,
-  ): this {
+  ): this & FilterMethods<this> {
     const target = traverse((this.ast.filter ??= {}), prop as string)
     target.ops ??= []
     target.ops.push({ op, val })
-    return this
+    return {
+      ...this,
+      and: this.filter,
+      or: this.filter,
+    }
   }
+}
+
+type FilterMethods<T extends { filter: any }> = {
+  and: T['filter']
+  or: T['filter']
 }
 
 export class BasedQuery2<

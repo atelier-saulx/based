@@ -51,12 +51,10 @@ await test('query types', async (t) => {
       nl: 'mijn text',
       en: 'my text',
     },
-    annoyingThings: [
-      {
-        id: 2,
-        // $snurk: true,
-      },
-    ],
+  })
+
+  const userB = db.create('user', {
+    isNice: false,
   })
 
   db.create('soAnnoy', {
@@ -74,9 +72,12 @@ await test('query types', async (t) => {
       'friend',
       'friend.$rank',
     )
+    .filter('isNice', '=', false)
+    .and('name', '=', 'youzi')
 
   const result = await query.get()
 
+  console.log('--->', result)
   // for (const { name, isNice, otherUsers, friend } of result) {
   //   // const friendName = friend?.name
   //   const friendFriend = friend?.isNice
