@@ -28,7 +28,7 @@ await test('kev', async (t) => {
   // console.log((await db.query('trip').include('distance').get()).debug())
   //   console.log(
   //     (
-  //       await db.query('trip').harmonicMean('distance').avg('distance').get()
+  //       await db.query('trip').hmean('distance').avg('distance').get()
   //     ).debug(),
   //   )
 

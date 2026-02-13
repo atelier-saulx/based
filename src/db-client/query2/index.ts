@@ -35,6 +35,8 @@ class QueryBranch<
   SourceField extends string | number | symbol | undefined = undefined,
   IsRoot extends boolean = false,
   EdgeProps extends Record<string, any> = {},
+  Aggregate = {},
+  GroupedKey extends string | undefined = undefined,
 > {
   constructor(ast: QueryAst) {
     this.ast = ast
@@ -50,22 +52,17 @@ class QueryBranch<
     )[],
   >(
     ...props: F
-  ): IsRoot extends true
-    ? BasedQuery2<
-        S,
-        T,
-        (K extends '*' ? never : K) | ResolveIncludeArgs<F[number]>,
-        IsSingle
-      >
-    : QueryBranch<
-        S,
-        T,
-        (K extends '*' ? never : K) | ResolveIncludeArgs<F[number]>,
-        IsSingle,
-        SourceField,
-        IsRoot,
-        EdgeProps
-      > {
+  ): NextBranch<
+    S,
+    T,
+    (K extends '*' ? never : K) | ResolveIncludeArgs<F[number]>,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate,
+    GroupedKey
+  > {
     for (const prop of props as (string | Function)[]) {
       if (typeof prop === 'function') {
         prop((prop: string) => new QueryBranch(traverse(this.ast, prop)))
@@ -136,71 +133,212 @@ class QueryBranch<
     return this.#addFilter(prop, op, val, opts, true)
   }
 
-  sum<P extends NumberPaths<S, T>>(...props: P[]): this {
+  sum<P extends NumberPaths<S, T>>(
+    ...props: P[]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & { [Key in P]: { sum: number } },
+    GroupedKey
+  > {
     this.ast.sum ??= { props: [] }
     this.ast.sum.props.push(...(props as string[]))
-    return this
+    return this as any
   }
 
-  count(): this {
+  count(): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & { count: number },
+    GroupedKey
+  > {
     this.ast.count = {}
-    return this
+    return this as any
   }
 
-  cardinality(...props: string[]): this {
+  cardinality<P extends string>(
+    ...props: P[]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & { [Key in P]: { cardinality: number } },
+    GroupedKey
+  > {
     this.ast.cardinality ??= { props: [] }
     this.ast.cardinality.props.push(...props)
-    return this
+    return this as any
   }
 
-  avg<P extends NumberPaths<S, T>>(...props: P[]): this {
+  avg<P extends NumberPaths<S, T>>(
+    ...props: P[]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & { [Key in P]: { avg: number } },
+    GroupedKey
+  > {
     this.ast.avg ??= { props: [] }
     this.ast.avg.props.push(...(props as string[]))
-    return this
+    return this as any
   }
 
-  hmean<P extends NumberPaths<S, T>>(...props: P[]): this {
-    this.ast.harmonicMean ??= { props: [] }
-    this.ast.harmonicMean.props.push(...(props as string[]))
-    return this
+  hmean<P extends NumberPaths<S, T>>(
+    ...props: P[]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & { [Key in P]: { hmean: number } },
+    GroupedKey
+  > {
+    this.ast.hmean ??= { props: [] }
+    this.ast.hmean.props.push(...(props as string[]))
+    return this as any
   }
 
-  max<P extends NumberPaths<S, T>>(...props: P[]): this {
+  max<P extends NumberPaths<S, T>>(
+    ...props: P[]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & { [Key in P]: { max: InferPathType<S, T, Key> } },
+    GroupedKey
+  > {
     this.ast.max ??= { props: [] }
     this.ast.max.props.push(...(props as string[]))
-    return this
+    return this as any
   }
 
-  min<P extends NumberPaths<S, T>>(...props: P[]): this {
+  min<P extends NumberPaths<S, T>>(
+    ...props: P[]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & { [Key in P]: { min: InferPathType<S, T, Key> } },
+    GroupedKey
+  > {
     this.ast.min ??= { props: [] }
     this.ast.min.props.push(...(props as string[]))
-    return this
+    return this as any
   }
 
   stddev<P extends NumberPaths<S, T>>(
     prop: P | P[],
     opts?: aggFnOptions,
-  ): this {
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & {
+      [Key in P extends any[] ? P[number] : P]: { stddev: number }
+    },
+    GroupedKey
+  > {
     this.ast.stddev ??= { props: [] }
     const props = Array.isArray(prop) ? prop : [prop]
     this.ast.stddev.props.push(...(props as string[]))
     if (opts?.mode) {
       this.ast.stddev.samplingMode = opts.mode
     }
-    return this
+    return this as any
   }
 
-  var<P extends NumberPaths<S, T>>(prop: P | P[], opts?: aggFnOptions): this {
+  var<P extends NumberPaths<S, T>>(
+    prop: P | P[],
+    opts?: aggFnOptions,
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & {
+      [Key in P extends any[] ? P[number] : P]: { variance: number }
+    },
+    GroupedKey
+  > {
     this.ast.variance ??= { props: [] }
     const props = Array.isArray(prop) ? prop : [prop]
     this.ast.variance.props.push(...(props as string[]))
     if (opts?.mode) {
       this.ast.variance.samplingMode = opts.mode
     }
-    return this
+    return this as any
   }
 
-  groupBy(prop: string, step?: StepInput): this {
+  range(
+    start: number,
+    end?: number,
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate,
+    GroupedKey
+  > {
+    const limit = end ? end - start : 1000
+    this.ast.range = { start, end: limit }
+    return this as any
+  }
+
+  groupBy<P extends string>(
+    prop: P,
+    step?: StepInput,
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate,
+    P
+  > {
     this.ast.groupBy = { prop }
     if (step) {
       if (typeof step === 'object') {
@@ -212,7 +350,7 @@ class QueryBranch<
         this.ast.groupBy.step = step
       }
     }
-    return this
+    return this as any
   }
 
   #filterGroup?: FilterAst
@@ -288,7 +426,19 @@ export class BasedQuery2<
     | { field: any; select: any }
     | string = '*',
   IsSingle extends boolean = false,
-> extends QueryBranch<S, T, K, IsSingle, undefined, true, {}> {
+  Aggregate = {},
+  GroupedKey extends string | undefined = undefined,
+> extends QueryBranch<
+  S,
+  T,
+  K,
+  IsSingle,
+  undefined,
+  true,
+  {},
+  Aggregate,
+  GroupedKey
+> {
   constructor(
     db: DbClient,
     type: T,
@@ -301,14 +451,32 @@ export class BasedQuery2<
   }
   db: DbClient
   async get(): Promise<
-    IsSingle extends true
-      ? PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>> | null
-      : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
+    [keyof Aggregate] extends [never]
+      ? IsSingle extends true
+        ? PickOutput<
+            S,
+            T,
+            ResolveInclude<ResolvedProps<S['types'], T>, K>
+          > | null
+        : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
+      : GroupedKey extends string
+        ? Record<string, Aggregate>
+        : Aggregate
   > {
-    if (!this.ast.props) {
+    if (
+      !this.ast.props &&
+      !this.ast.sum &&
+      !this.ast.count &&
+      !this.ast.avg &&
+      !this.ast.hmean &&
+      !this.ast.max &&
+      !this.ast.min &&
+      !this.ast.stddev &&
+      !this.ast.variance &&
+      !this.ast.cardinality
+    ) {
       this.include('*')
     }
-
     if (!this.db.schema) {
       await this.db.once('schema')
     }
@@ -316,9 +484,10 @@ export class BasedQuery2<
     const ctx = astToQueryCtx(
       this.db.schema!,
       this.ast,
-      new AutoSizedUint8Array(1000),
+      new AutoSizedUint8Array(),
     )
     const result = await this.db.hooks.getQueryBuf(ctx.query)
+
     return proxyResult(result, ctx.readSchema) as any
   }
 }
@@ -390,12 +559,44 @@ export type ResolveIncludeArgs<T> = T extends (
   infer Single,
   infer SourceField,
   any,
+  any,
+  any,
   any
 >
   ? { field: SourceField; select: K }
   : T extends string
     ? ResolveDotPath<T>
     : T
+
+// Helper type to simplify method return types
+type NextBranch<
+  S extends { types: any },
+  T extends keyof S['types'],
+  K extends
+    | keyof ResolvedProps<S['types'], T>
+    | '*'
+    | '**'
+    | { field: any; select: any }
+    | string,
+  IsSingle extends boolean,
+  SourceField extends string | number | symbol | undefined,
+  IsRoot extends boolean,
+  EdgeProps extends Record<string, any>,
+  Aggregate,
+  GroupedKey extends string | undefined,
+> = IsRoot extends true
+  ? BasedQuery2<S, T, K, IsSingle, Aggregate, GroupedKey>
+  : QueryBranch<
+      S,
+      T,
+      K,
+      IsSingle,
+      SourceField,
+      IsRoot,
+      EdgeProps,
+      Aggregate,
+      GroupedKey
+    >
 
 function traverse(target: any, prop: string) {
   const path = prop.split('.')

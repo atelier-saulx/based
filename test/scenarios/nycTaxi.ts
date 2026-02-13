@@ -683,7 +683,7 @@ await test.skip('taxi', async (t) => {
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
     .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     //.groupBy('pickupDropoffLocs')
-    .harmonicMean('avgSpeed')
+    .hmean('avgSpeed')
     .get()
     .inspect()
 
