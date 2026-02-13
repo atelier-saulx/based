@@ -26,7 +26,7 @@ export const number = class Number extends BasePropDef {
   min = -globalThis.Number.MAX_VALUE
   max = globalThis.Number.MAX_VALUE
   override validate(value: unknown): asserts value is number {
-    if (typeof value !== 'number') {
+    if (typeof value !== 'number' || !globalThis.Number.isFinite(value)) {
       throw new Error(
         `Invalid type for ${this.schema.type} ${this.path.join('.')}`,
       )

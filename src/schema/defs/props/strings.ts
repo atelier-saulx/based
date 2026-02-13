@@ -144,11 +144,19 @@ export const text = class Text extends string {
     lang: LangCodeEnum = LangCode.none,
   ) {
     if (typeof value === 'string') {
+      if (lang === LangCode.none) {
+        throw new Error(
+          `Invalid type, text needs to be an object ${this.path.join('.')}`,
+        )
+      }
       const index = buf.reserveUint32()
       const start = buf.length
       super.pushValue(buf, value, op, lang)
       buf.writeUint32(buf.length - start, index)
     } else if (typeof value === 'object' && value !== null) {
+      if (Array.isArray(value)) {
+        throw new Error('Invalid type for text ' + this.path.join('.'))
+      }
       for (const key in value) {
         if (!(key in LangCode)) {
           throw new Error(

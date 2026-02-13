@@ -11,6 +11,9 @@ export const alias = class Alias extends BasePropDef {
     if (typeof value !== 'string') {
       throw new Error('Invalid type for alias ' + this.path.join('.'))
     }
+    if (!value.trim()) {
+      throw new Error('Invalid alias ' + this.path.join('.'))
+    }
     buf.pushString(value)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
