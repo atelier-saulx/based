@@ -213,7 +213,7 @@ static int set_field_string(struct SelvaFields *fields, const struct SelvaFieldS
     assert(len >= 2 + sizeof(uint32_t));
     assume(len >= 2 + sizeof(uint32_t));
 
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+    if (fs->string.fixed_len > 0 && len > fs->string.fixed_len) {
         return SELVA_ENOBUFS;
     }
 
@@ -297,7 +297,8 @@ static const struct SelvaFieldSchema *get_edge_dst_fs(
         return nullptr;
     }
 
-    type_dst = selva_get_type_by_index(db, efc->dst_node_type);
+    /* TODO This could be also handled with a Generic */
+    type_dst = selva_get_type_by_index((typeof_unqual(*db) *)db, efc->dst_node_type);
     assert(type_dst->type == efc->dst_node_type);
 
     return selva_get_fs_by_te_field(type_dst, efc->inverse_field);
@@ -926,7 +927,7 @@ static inline int _selva_fields_get_mutable_string(struct SelvaNode *node, const
         return SELVA_EINTYPE;
     }
 
-    if (fs->string.fixed_len && len > fs->string.fixed_len) {
+    if (fs->string.fixed_len > 0 && len > fs->string.fixed_len) {
         return SELVA_ENOBUFS;
     }
 

@@ -54,7 +54,7 @@ export const binary = class Binary extends BasePropDef {
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
-      fixedLen: 0,
+      fixedLenHint: this.schema.maxBytes ?? 0,
       defaultLen: 0,
     })
   }

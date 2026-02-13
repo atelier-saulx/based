@@ -45,8 +45,10 @@ export const string = class String extends BasePropDef {
   constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
     super(prop, path, typeDef)
     if (prop.maxBytes && prop.maxBytes < 61) {
+      // TODO explain why 61 bytes (1 byte is for size but why 60 byte and not 47 or 63? */
       this.size = prop.maxBytes + 1
     } else if (prop.max && prop.max < 31) {
+      // TODO Explain why this is here
       this.size = prop.max * 2 + 1
     }
     if (this.size) {
@@ -116,8 +118,8 @@ export const string = class String extends BasePropDef {
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     const index = pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
-      fixedLen: 0,
-      defaultLen: 0,
+      fixedLenHint: this.schema.maxBytes ?? 0, // Note that selva doesn't do actual validation
+      defaultLen: 0, // TODO also check that defaultLen <= maxBytes
     })
     if (this.schema.default) {
       const start = buf.length
