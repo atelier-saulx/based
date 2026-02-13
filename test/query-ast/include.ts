@@ -67,20 +67,22 @@ await test('include', async (t) => {
     },
   })
 
-  // for (let i = 0; i < 5e6; i++) {
-  //   client.create('user', {
-  //     y: i,
-  //     x: true,
-  //     flap: 9999,
-  //     cook: {
-  //       cookie: 1234,
-  //     },
-  //   })
-  // }
+  let d = Date.now()
+
+  for (let i = 0; i < 5e6; i++) {
+    client.create('user', {
+      y: i,
+      x: true,
+      flap: 9999,
+      cook: {
+        cookie: 1234,
+      },
+    })
+  }
 
   await db.drain()
 
-  await db.drain()
+  console.log(Date.now() - d, 'ms')
 
   const ast: QueryAst = {
     type: 'user',
@@ -103,16 +105,16 @@ await test('include', async (t) => {
           },
         },
       },
-      or: {
-        props: {
-          y: { ops: [{ op: '=', val: 670 }] },
-        },
-        or: {
-          props: {
-            y: { ops: [{ op: '=', val: 15 }] },
-          },
-        },
-      },
+      // or: {
+      //   props: {
+      //     y: { ops: [{ op: '=', val: 670 }] },
+      //   },
+      //   or: {
+      //     props: {
+      //       y: { ops: [{ op: '=', val: 15 }] },
+      //     },
+      //   },
+      // },
     },
 
     // (y == 0 && (y == 10 || y == 3 || y == 4)) || y == 67
@@ -144,29 +146,29 @@ await test('include', async (t) => {
 
   console.log(deflateSync(ctx.query).byteLength)
 
-  debugBuffer(deflateSync(ctx.query))
+  debugBuffer(deflateSync(ctx.query).toString('hex'))
 
   const result = await db.server.getQueryBuf(ctx.query)
-  // const queries: any = []
-  // for (let i = 0; i < 10; i++) {
-  //   const x = ctx.query.slice(0)
-  //   writeUint32(x, i + 1, 0)
-  //   queries.push(x)
-  // }
+  const queries: any = []
+  for (let i = 0; i < 10; i++) {
+    const x = ctx.query.slice(0)
+    writeUint32(x, i + 1, 0)
+    queries.push(x)
+  }
 
-  // await perf(
-  //   async () => {
-  //     const q: any = []
-  //     for (let i = 0; i < 10; i++) {
-  //       q.push(db.server.getQueryBuf(queries[i]))
-  //     }
-  //     await Promise.all(q)
-  //   },
-  //   'filter speed',
-  //   {
-  //     repeat: 10,
-  //   },
-  // )
+  await perf(
+    async () => {
+      const q: any = []
+      for (let i = 0; i < 10; i++) {
+        q.push(db.server.getQueryBuf(queries[i]))
+      }
+      await Promise.all(q)
+    },
+    'filter speed',
+    {
+      repeat: 100,
+    },
+  )
   // quite large
 
   // deflate it?
@@ -175,12 +177,12 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  // console.dir(obj, { depth: 10 })
 
   // RETURN NULL FOR UNDEFINED
 
-  console.log(
-    JSON.stringify(obj).length,
-    readSchemaBuf.byteLength + result.byteLength,
-  )
+  // console.log(
+  //   JSON.stringify(obj).length,
+  //   readSchemaBuf.byteLength + result.byteLength,
+  // )
 })

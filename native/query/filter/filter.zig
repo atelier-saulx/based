@@ -38,10 +38,10 @@ pub fn prepare(
             c.offset = utils.alignLeftLen(c.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
 
-            if (c.op.compare == t.FilterOpCompare.nextOrIndex) {
-                // if NEXT END = -1 then its q.len
-                std.debug.print("HELLO ITS OR {any} \n", .{utils.readPtr(u64, q, nextI + @alignOf(u64) - c.offset).*});
-            }
+            // if (c.op.compare == t.FilterOpCompare.nextOrIndex) {
+            // if NEXT END = -1 then its q.len
+            // std.debug.print("HELLO ITS OR {any} \n", .{utils.readPtr(u64, q, nextI + @alignOf(u64) - c.offset).*});
+            // }
 
             switch (c.op.compare) {
                 .selectLargeRefEdge => {
@@ -119,8 +119,6 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
         const index = i + q[i] + utils.sizeOf(t.FilterCondition);
         var nextIndex = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition) + c.size + i;
 
-        std.debug.print("-> F {any} I {any} S {any} P {any} \n", .{ c.op, i, c.start, c.prop });
-
         if (prop != c.prop) {
             prop = c.prop;
             // if (c.fieldSchema.type == Selva.c.SELVA_FIELD_TYPE_ALIAS) {
@@ -130,14 +128,11 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
             // }
         }
 
-        std.debug.print("-> F OK!!! {any} I {any} S {any} P {any} \n", .{ c.op, i, c.start, c.prop });
-
         pass = switch (c.op.compare) {
             .nextOrIndex => blk: {
                 end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 // nextEnd = nextOrIndex;
                 // put second thing PREV OR INDEX here
-                std.debug.print("-> OR {any} \n", .{end});
                 break :blk true;
             },
             .selectRef => blk: {
