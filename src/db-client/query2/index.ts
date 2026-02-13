@@ -166,6 +166,31 @@ type FilterMethods<T extends { filter: any }> = {
   or: T['filter']
 }
 
+export function query<
+  S extends { types: any },
+  T extends keyof S['types'] & string = keyof S['types'] & string,
+>(type: T): QueryBranch<S, T, '*', false>
+
+export function query<
+  S extends { types: any },
+  T extends keyof S['types'] & string = keyof S['types'] & string,
+>(
+  type: T,
+  id: number | Partial<InferSchemaOutput<S, T>>,
+): QueryBranch<S, T, '*', true>
+
+export function query<
+  S extends { types: any },
+  T extends keyof S['types'] & string = keyof S['types'] & string,
+>(
+  type: T,
+  id?: number | Partial<InferSchemaOutput<S, T>>,
+): QueryBranch<S, T, '*', boolean> {
+  const ast: any = { type }
+  if (id) ast.target = id
+  return new QueryBranch<S, T, '*', any>(ast)
+}
+
 export class BasedQuery2<
   S extends { types: any } = { types: any },
   T extends keyof S['types'] = any,
@@ -185,7 +210,6 @@ export class BasedQuery2<
     super({})
     this.ast.type = type as string
     if (target) this.ast.target = target
-
     this.db = db
   }
   db: DbClient
