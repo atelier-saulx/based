@@ -1,3 +1,4 @@
+import native from '../../../native.js'
 import { PropDef } from '../../../schema/defs/index.js'
 import {
   FilterConditionByteSize,
@@ -7,6 +8,7 @@ import {
   writeFilterCondition,
   ModifyEnum,
   LangCodeEnum,
+  PropType,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 
@@ -47,12 +49,16 @@ const opMap: Partial<Record<Operator, keyof typeof FilterOpCompare>> = {
   '<': 'lt',
   '>=': 'ge',
   '<=': 'le',
+  includes: 'inc',
+  '!includes': 'ninc',
 }
+
+// redo this whole thing
 
 const getFilterOp = (
   prop: PropDef,
   operator: Operator,
-  size: number,
+  value: any[],
 ): {
   size: number
   op: FilterOp
@@ -64,19 +70,38 @@ const getFilterOp = (
     throw new Error(`un supported op ${operator}`)
   }
 
-  const write = (buf: Uint8Array, val: any, offset: number) => {
+  let write = (buf: Uint8Array, val: any, offset: number) => {
+    console.log('write', val)
     prop.write(buf, val, offset)
   }
 
-  if ((opName === 'eq' || opName === 'neq') && size > 1) {
-    const vectorLen = 16 / prop.size
-    if (size > vectorLen) {
+  let size = prop.size
+  if (size === 0) {
+    if (prop.type === PropType.string) {
+      if (value.length === 1) {
+        size = native.stringByteLength(value[0])
+
+        console.log('SIZE', size)
+
+        write = (buf: Uint8Array, val: any, offset: number) => {
+          const x = new TextEncoder()
+          x.encodeInto(val, buf.subarray(offset))
+        }
+        // opName has to be eqCrc32 if EQ
+      }
+    }
+  }
+
+  if ((opName === 'eq' || opName === 'neq') && value.length > 1) {
+    // incBatch, incBatchSmall
+    const vectorLen = 16 / size
+    if (value.length > vectorLen) {
       return {
         op: {
           compare: FilterOpCompare[`${opName}Batch`],
           prop: prop.type,
         },
-        size: prop.size,
+        size,
         write,
       }
     } else {
@@ -95,7 +120,7 @@ const getFilterOp = (
         compare: FilterOpCompare.range,
         prop: prop.type,
       },
-      size: prop.size * 2,
+      size: size * 2,
       write: (condition: Uint8Array, v: any, offset: number) => {
         // x >= 3 && x <= 11
         // (x -% 3) <= (11 - 3)
@@ -110,7 +135,7 @@ const getFilterOp = (
         compare: FilterOpCompare[opName],
         prop: prop.type,
       },
-      size: prop.size,
+      size,
       write,
     }
   }
@@ -126,7 +151,7 @@ export const createCondition = (
     value = [value]
   }
 
-  const { op, size, write } = getFilterOp(prop, operator, value.length)
+  const { op, size, write } = getFilterOp(prop, operator, value)
 
   // this is fixed make fixed and variable in a file
 

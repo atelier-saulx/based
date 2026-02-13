@@ -878,6 +878,12 @@ pub const FilterOpCompare = enum(u8) {
     lt = 15,
     ge = 20,
     le = 21,
+    // -----------
+    inc = 22,
+    ninc = 23,
+    incBatch = 24,
+    nincBatch = 25,
+    // ----------
 
     selectLargeRefs = 203,
     selectRef = 204,

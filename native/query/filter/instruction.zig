@@ -18,6 +18,7 @@ fn getFunc(comptime tag: t.FilterOpCompare) Compare.Function {
         .lt => Compare.Function.le,
         .ge => Compare.Function.ge,
         .gt => Compare.Function.gt,
+        .inc, .ninc => Compare.Function.inc,
         else => Compare.Function.eq,
     };
 }

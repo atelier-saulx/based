@@ -15,6 +15,7 @@ pub const Function = enum(u8) {
     range,
     eqBatch,
     eqBatchSmall,
+    inc,
 };
 
 pub fn eqBatch(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) bool {
@@ -84,4 +85,91 @@ pub fn range(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition) b
     // 3,8
     return (utils.readPtr(T, v, c.start).* -% utils.readPtr(T, q, i + @alignOf(T) - c.offset).*) <=
         utils.readPtr(T, q, i + (size * 2) - c.offset).*;
+}
+
+// put this in variableSize
+// this with batching => [a,b,c] quite nice
+const vectorLenU8 = std.simd.suggestVectorLength(u8).?;
+const indexes = std.simd.iota(u8, vectorLenU8);
+const nulls: @Vector(vectorLenU8, u8) = @splat(@as(u8, 255));
+
+pub fn include(q: []u8, v: []const u8, qI: usize, c: *t.FilterCondition) bool {
+    const query: []u8 = q[qI .. c.size + qI];
+    var value: []const u8 = undefined;
+
+    // Make the has seperate we also need to use LIKE
+    // FIX COMPRESS
+    if (v[0] == 1) {
+        // compressed
+        value = v[0..3];
+    } else {
+        value = v[2 .. v.len - 4];
+    }
+
+    var i: usize = 0;
+    const l = value.len;
+    const ql = query.len;
+    if (l < vectorLenU8) {
+        while (i < l) : (i += 1) {
+            if (value[i] == query[0]) {
+                if (i + ql - 1 > l) {
+                    return false;
+                }
+                var j: usize = 1;
+                while (j < ql) : (j += 1) {
+                    if (value[i + j] != query[j]) {
+                        break;
+                    }
+                }
+                if (j == ql) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    const queryVector: @Vector(vectorLenU8, u8) = @splat(query[0]);
+
+    while (i <= (l - vectorLenU8)) : (i += vectorLenU8) {
+        const h: @Vector(vectorLenU8, u8) = value[i..][0..vectorLenU8].*;
+        const matches = h == queryVector;
+        if (@reduce(.Or, matches)) {
+            if (l > 1) {
+                const result = @select(u8, matches, indexes, nulls);
+                const index = @reduce(.Min, result) + i;
+                if (index + ql - 1 > l) {
+                    return false;
+                }
+                var j: usize = 1;
+                while (j < ql) : (j += 1) {
+                    if (value[index + j] != query[j]) {
+                        break;
+                    }
+                }
+                if (j == ql) {
+                    return true;
+                }
+            }
+        }
+    }
+    while (i < l and ql <= l - i) : (i += 1) {
+        const id2 = value[i];
+        if (id2 == query[0]) {
+            if (i + ql - 1 > l) {
+                return false;
+            }
+            var j: usize = 1;
+            while (j < ql) : (j += 1) {
+                if (value[i + j] != query[j]) {
+                    break;
+                }
+            }
+            if (j == ql) {
+                return true;
+            }
+            return true;
+        }
+    }
+    return false;
 }

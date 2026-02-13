@@ -101,6 +101,7 @@ inline fn compare(
         .range => Compare.range(T, q, v, index, c),
         .eqBatch => Compare.eqBatch(T, q, v, index, c),
         .eqBatchSmall => Compare.eqBatchSmall(T, q, v, index, c),
+        .inc => Compare.include(q, v, index, c),
     };
     return if (meta.invert) !res else res;
 }
