@@ -28,6 +28,18 @@ await test('modify - validation - number', async (t) => {
   )
   await db.create('thing', { score: 15 })
 
+  // Range validation
+  await throws(
+    () => db.create('thing', { score: 9 }),
+    'number should fail if below min (10)',
+  )
+  await throws(
+    () => db.create('thing', { score: 21 }),
+    'number should fail if above max (20)',
+  )
+  await db.create('thing', { score: 10 })
+  await db.create('thing', { score: 20 })
+
   // Extended validation
   await throws(
     () => db.create('thing', { score: NaN }),

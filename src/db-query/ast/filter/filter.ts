@@ -30,7 +30,7 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   const { tree, main } = walkCtx
 
   for (const field in ast.props) {
-    const prop = tree.get(field)
+    const prop = tree.props.get(field)
     const astProp = ast.props[field]
     const ops = astProp.ops
 

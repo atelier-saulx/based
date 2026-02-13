@@ -71,7 +71,6 @@ const getFilterOp = (
   }
 
   let write = (buf: Uint8Array, val: any, offset: number) => {
-    console.log('write', val)
     prop.write(buf, val, offset)
   }
 

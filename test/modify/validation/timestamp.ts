@@ -16,6 +16,18 @@ await test('modify - validation - timestamp', async (t) => {
   await throws(() => db.create('thing', { myTs: 3000 }), 'timestamp too large')
   await db.create('thing', { myTs: 1500 })
 
+  // Range validation (min: 1000, max: 2000)
+  await throws(
+    () => db.create('thing', { myTs: 999 }),
+    'timestamp should fail below min',
+  )
+  await throws(
+    () => db.create('thing', { myTs: 2001 }),
+    'timestamp should fail above max',
+  )
+  await db.create('thing', { myTs: 1000 })
+  await db.create('thing', { myTs: 2000 })
+
   // Extended validation
   await throws(
     () => db.create('thing', { myTs: '2022-01-01' }),

@@ -7,17 +7,41 @@ await test('modify - validation - enum', async (t) => {
     types: {
       thing: {
         myEnum: { enum: ['a', 'b'] },
+        numEnum: { enum: [1, 2, 3] },
+        mixedEnum: { enum: ['a', 1] },
       },
     },
   })
 
-  // Enum
+  // Enum (string)
   await throws(
     // @ts-expect-error
     () => db.create('thing', { myEnum: 'c' }),
     'enum should fail with invalid value',
   )
   await db.create('thing', { myEnum: 'b' })
+
+  // Enum (number)
+  await throws(
+    // @ts-expect-error
+    () => db.create('thing', { numEnum: 4 }),
+    'numEnum should fail with invalid value',
+  )
+  await db.create('thing', { numEnum: 2 })
+
+  // Enum (mixed)
+  await throws(
+    // @ts-expect-error
+    () => db.create('thing', { mixedEnum: 'b' }),
+    'mixedEnum should fail with invalid string value',
+  )
+  await throws(
+    // @ts-expect-error
+    () => db.create('thing', { mixedEnum: 2 }),
+    'mixedEnum should fail with invalid number value',
+  )
+  await db.create('thing', { mixedEnum: 'a' })
+  await db.create('thing', { mixedEnum: 1 })
 
   // Extended validation
   await throws(

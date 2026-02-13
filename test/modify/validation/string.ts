@@ -28,6 +28,18 @@ await test('modify - validation - string', async (t) => {
   )
   await db.create('thing', { name: 'abc' })
 
+  // Length validation (min: 2, max: 5)
+  await throws(
+    () => db.create('thing', { name: 'a' }),
+    'string should fail if too short (1 char)',
+  )
+  await throws(
+    () => db.create('thing', { name: 'aaaaaa' }),
+    'string should fail if too long (6 chars)',
+  )
+  await db.create('thing', { name: 'ab' })
+  await db.create('thing', { name: 'abcde' })
+
   // Extended validation
   await throws(
     // @ts-expect-error

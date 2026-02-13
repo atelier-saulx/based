@@ -78,7 +78,7 @@ const getTypeDef = (
     separate: [],
     props: new Map(),
     main: [],
-    tree: new Map(),
+    tree: { props: new Map(), required: [] },
     schema,
     schemaRoot,
   }
@@ -87,21 +87,25 @@ const getTypeDef = (
     props: SchemaProps<true>,
     pPath: string[],
     tree: TypeDef['tree'],
-  ): void => {
+  ): boolean | undefined => {
     for (const key in props) {
       const prop = props[key]
       const path = [...pPath, key]
-
+      let required = prop.required
       if (prop.type === 'object') {
-        const branch = new Map()
-        walk(prop.props, path, branch)
-        tree.set(key, branch)
+        const branch = { props: new Map(), required: [] }
+        if (walk(prop.props, path, branch)) required = true
+        tree.props.set(key, branch)
       } else {
         const def = addPropDef(prop, path, typeDef)
         typeDef.props.set(path.join('.'), def)
-        tree.set(key, def)
+        tree.props.set(key, def)
+      }
+      if (required) {
+        tree.required.push(key)
       }
     }
+    return !!tree.required.length
   }
 
   walk(props, [], typeDef.tree)

@@ -13,7 +13,10 @@ import * as cardinality from './props/cardinality.js'
 import * as strings from './props/strings.js'
 import * as vector from './props/vector.js'
 
-export type PropTree = Map<string, PropDef | PropTree>
+export type PropTree = {
+  props: Map<string, PropDef | PropTree>
+  required: string[]
+}
 
 export type TypeDef = {
   id: number
