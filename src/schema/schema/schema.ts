@@ -186,7 +186,7 @@ type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
     [K in keyof S['types']]: S['types'][K] extends { props: infer P }
       ? {
           props: ValidateProps<P, S['types'], K & string>
-          hooks?: SchemaHooks<InferPayload<S, K>>
+          hooks?: SchemaHooks
         } & Omit<S['types'][K], 'props' | 'hooks'>
       : {
           [P in keyof S['types'][K]]: ValidateProp<

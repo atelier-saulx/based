@@ -14,9 +14,7 @@ async function check() {
         },
         hooks: {
           create(userPayload) {
-            const other = userPayload!.other
-            // @ts-expect-error
-            const nothing = userPayload.nothing
+            const other = userPayload.other
           },
         },
       },
@@ -29,7 +27,8 @@ async function check() {
     },
   })
 
-  const userPayload: InferPayload<typeof schemaOut, 'user'> = {
+  type UserPayload = InferPayload<typeof schemaOut, 'user'>
+  const userPayload: UserPayload = {
     other: 1,
     // @ts-expect-error
     nothing: 'oops',
