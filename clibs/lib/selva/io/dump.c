@@ -715,7 +715,7 @@ static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct Selv
 }
 
 __attribute__((warn_unused_result))
-static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te)
+static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node_buf)
 {
     int err;
 
@@ -727,7 +727,7 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
     node_id_t node_id;
     io->sdb_read(&node_id, sizeof(node_id), 1, io);
 
-    struct SelvaNodeRes res = selva_upsert_node(te, node_id);
+    struct SelvaNodeRes res = selva_upsert_node2(te, node_id, node_buf);
     if (!res.node) {
         return SELVA_ENOENT;
     }
@@ -752,24 +752,44 @@ static int load_nodes(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeE
         return 0;
     }
 
-#if 0
-    /*
-     * Prealloc slabs before loading.
-     * TODO Partials.
-     * This is not always optimal with partials because we may already have
-     * enough free objects. Perhaps only do this on startup.
-     * TODO This is also problematic for very large allocs.
-     */
-    mempool_prealloc(&te->nodepool, nr_nodes);
+    struct mempool_slab *slabs;
+    size_t nr_slabs = mempool_alloc_slabs(&te->nodepool, nr_nodes, &slabs);
+    const struct mempool_slab_info slab_nfo = mempool_slab_info(&te->nodepool);
+    size_t node_i = 0;
+    int err = 0;
+
+    for (size_t i = 0; i < nr_slabs; i++) {
+        struct mempool_slab *slab = (typeof(slabs))((uint8_t *)slabs + i * slab_nfo.slab_size);
+        /* TODO MEMPOOL_GROWING_FREE_LIST not working now */
+#ifdef MEMPOOL_GROWING_FREE_LIST
+    struct mempool_chunk *prev = nullptr;
 #endif
 
-    for (sdb_nr_nodes_t i = 0; i < nr_nodes; i++) {
-        node_id_t node_id;
+        MEMPOOL_FOREACH_CHUNK_BEGIN(slab_nfo, slab) {
+            if (!err && node_i++ < nr_nodes) {
+                node_id_t node_id;
+                struct SelvaNode *node;
 
-        node_id = load_node(io, db, te);
-        if (unlikely(node_id == 0)) {
-            return SELVA_EINVAL;
-        }
+                chunk->slab = (uintptr_t)slab | 1; /* also marked as in use. */
+                node = (struct SelvaNode *)mempool_get_obj(&te->nodepool, chunk);
+                node_id = load_node(io, db, te, node);
+                if (unlikely(node_id == 0)) {
+                    err = SELVA_EINVAL;
+                }
+            } else {
+                chunk->slab = (uintptr_t)slab; /* also marked as free. */
+#ifdef MEMPOOL_GROWING_FREE_LIST
+                if (prev) {
+                    LIST_INSERT_AFTER(prev, chunk, next_free);
+                } else {
+#endif
+                    LIST_INSERT_HEAD(&te->nodepool.free_chunks, chunk, next_free);
+#ifdef MEMPOOL_GROWING_FREE_LIST
+                }
+                prev = chunk;
+#endif
+            }
+        } MEMPOOL_FOREACH_CHUNK_END();
     }
 
     return 0;

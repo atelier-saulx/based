@@ -339,11 +339,11 @@ retry:
     add_new_slab2freelist(mempool, slab);
 }
 
-void mempool_prealloc(struct mempool *mempool, size_t nr_objects)
+size_t mempool_alloc_slabs(struct mempool *mempool, size_t nr_objects, struct mempool_slab **slabs_out)
 {
     struct mempool_slab_info nfo = mempool_slab_info(mempool);
     const size_t nr_slabs = (nr_objects + nfo.nr_objects - 1) / nfo.nr_objects;
-    const size_t slab_size = nr_slabs * mempool->slab_size_kb * 1024;
+    const size_t slab_size = mempool->slab_size_kb * 1024;
     const size_t bsize = nr_slabs * slab_size;
 #if !defined(__linux__)
     constexpr
@@ -398,9 +398,16 @@ retry:
     }
 #endif
 
+    const struct mempool_slab_info info = mempool_slab_info(mempool);
     for (size_t i = 0; i < nr_slabs; i++) {
-        add_new_slab2freelist(mempool, (typeof(slabs))((uint8_t *)slabs + i * slab_size));
+        struct mempool_slab *slab = (typeof(slabs))((uint8_t *)slabs + i * slab_size);
+
+        slab->nr_free = info.nr_objects;
+        SLIST_INSERT_HEAD(&mempool->slabs, slab, next_slab);
     }
+
+    *slabs_out = slabs;
+    return nr_slabs;
 }
 
 void *mempool_get(struct mempool *mempool)
