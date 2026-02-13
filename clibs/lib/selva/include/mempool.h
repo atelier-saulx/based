@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2025 SAULX
+ * Copyright (c) 2020-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -104,6 +104,8 @@ void mempool_gc(struct mempool *mempool)
  * This operation will affect the object pointers.
  */
 void mempool_defrag(struct mempool *mempool, int (*obj_compar)(const void *, const void*));
+
+void mempool_prealloc(struct mempool *mempool, size_t nr_objects);
 
 /**
  * Get a new object from the pool.

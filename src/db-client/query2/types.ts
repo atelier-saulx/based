@@ -231,14 +231,18 @@ export type Path<Schema, T extends keyof Schema, Depth extends number = 5> = [
             ? `${K}.${
                 | Path<Schema, R & keyof Schema, Prev[Depth]>
                 | (keyof FilterEdges<ResolvedProps<Schema, T>[K]> & string)
-                | 'id'}`
+                | 'id'
+                | '*'
+                | '**'}`
             : ResolvedProps<Schema, T>[K] extends {
                   items: { ref: infer R extends string } & infer Items
                 }
               ? `${K}.${
                   | Path<Schema, R & keyof Schema, Prev[Depth]>
                   | (keyof FilterEdges<Items> & string)
-                  | 'id'}`
+                  | 'id'
+                  | '*'
+                  | '**'}`
               : never)
     }[keyof ResolvedProps<Schema, T> & string]
 
@@ -281,3 +285,10 @@ export type InferPathType<
             : never
         : never
       : never
+
+export type NumberPaths<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+> = {
+  [K in Path<S['types'], T>]: InferPathType<S, T, K> extends number ? K : never
+}[Path<S['types'], T>]

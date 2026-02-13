@@ -427,26 +427,6 @@ struct SelvaTypeBlock *selva_get_block(struct SelvaTypeBlocks *blocks, node_id_t
     return &blocks->blocks[block_i];
 }
 
-void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx)
-{
-    for (size_t ti = 0; ti < db->nr_types; ti++) {
-        struct SelvaTypeEntry *te = &db->types[ti];
-        struct SelvaTypeBlocks *blocks = te->blocks;
-
-        for (block_id_t block_i = 0; block_i < blocks->len; block_i++) {
-            struct SelvaTypeBlock *block = &blocks->blocks[block_i];
-
-            /*
-             * Note that we call it or_mask because the cb() is called if any
-             * bit of the mask is set in the status.
-             */
-            if (atomic_load_explicit(&block->status.atomic, memory_order_consume) & or_mask) {
-                cb(ctx, db, te, block_i, selva_block_i2start(te, block_i));
-            }
-        }
-    }
-}
-
 extern inline node_type_t selva_get_max_type(const struct SelvaDb *db);
 
 extern inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type);
@@ -466,6 +446,8 @@ extern inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te,
 extern inline node_id_t selva_block_i2start(const struct SelvaTypeEntry *te, block_id_t block_i);
 
 extern inline node_id_t selva_block_i2end(const struct SelvaTypeEntry *te, block_id_t block_i);
+
+extern inline void selva_foreach_block(struct SelvaDb *db, enum SelvaTypeBlockStatus or_mask, void (*cb)(void *ctx, struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block, node_id_t start), void *ctx);
 
 extern inline enum SelvaTypeBlockStatus selva_block_status_get(const struct SelvaTypeEntry *te, block_id_t block_i);
 

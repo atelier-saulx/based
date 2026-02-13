@@ -1,4 +1,4 @@
-import type { FilterLeaf, QueryAst } from '../../db-query/ast/ast.js'
+import type { FilterAst, FilterLeaf, QueryAst } from '../../db-query/ast/ast.js'
 import type {
   PickOutput,
   ResolveInclude,
@@ -9,12 +9,18 @@ import type {
   InferPathType,
   FilterEdges,
   InferSchemaOutput,
+  NumberPaths,
 } from './types.js'
 import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
 import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import type { DbClient } from '../../sdk.js'
 import { proxyResult } from './result.js'
+import type {
+  StepInput,
+  IntervalString,
+  aggFnOptions,
+} from '../query/aggregates/types.js'
 
 class QueryBranch<
   S extends { types: any } = { types: any },
@@ -70,6 +76,11 @@ class QueryBranch<
     return this as any
   }
 
+  filter(
+    fn: (
+      filter: FilterFn<S, T, EdgeProps>,
+    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+  ): FilterBranch<this>
   filter<
     P extends
       | keyof (ResolvedProps<S['types'], T> & EdgeProps)
@@ -79,12 +90,192 @@ class QueryBranch<
     op: Operator,
     val: InferPathType<S, T, P>,
     opts?: FilterOpts,
-  ): this {
-    const target = traverse((this.ast.filter ??= {}), prop as string)
-    target.ops ??= []
-    target.ops.push({ op, val })
+  ): FilterBranch<this>
+  filter(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
+    this.#filterGroup ??= this.ast.filter ??= {}
+    return this.#addFilter(prop, op, val, opts, false)
+  }
+
+  and(
+    fn: (
+      filter: FilterFn<S, T, EdgeProps>,
+    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+  ): FilterBranch<this>
+  and<
+    P extends
+      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
+      | Path<S['types'], T>,
+  >(
+    prop: P,
+    op: Operator,
+    val: InferPathType<S, T, P>,
+    opts?: FilterOpts,
+  ): FilterBranch<this>
+  and(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
+    return this.filter(prop, op, val, opts)
+  }
+
+  or(
+    fn: (
+      filter: FilterFn<S, T, EdgeProps>,
+    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+  ): FilterBranch<this>
+  or<
+    P extends
+      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
+      | Path<S['types'], T>,
+  >(
+    prop: P,
+    op: Operator,
+    val: InferPathType<S, T, P>,
+    opts?: FilterOpts,
+  ): FilterBranch<this>
+  or(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
+    this.#filterGroup ??= this.ast.filter ??= {}
+    this.#filterGroup = this.#filterGroup.or ??= {}
+    return this.#addFilter(prop, op, val, opts, true)
+  }
+
+  sum<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.sum ??= { props: [] }
+    this.ast.sum.props.push(...(props as string[]))
     return this
   }
+
+  count(): this {
+    this.ast.count = {}
+    return this
+  }
+
+  cardinality(...props: string[]): this {
+    this.ast.cardinality ??= { props: [] }
+    this.ast.cardinality.props.push(...props)
+    return this
+  }
+
+  avg<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.avg ??= { props: [] }
+    this.ast.avg.props.push(...(props as string[]))
+    return this
+  }
+
+  hmean<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.harmonicMean ??= { props: [] }
+    this.ast.harmonicMean.props.push(...(props as string[]))
+    return this
+  }
+
+  max<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.max ??= { props: [] }
+    this.ast.max.props.push(...(props as string[]))
+    return this
+  }
+
+  min<P extends NumberPaths<S, T>>(...props: P[]): this {
+    this.ast.min ??= { props: [] }
+    this.ast.min.props.push(...(props as string[]))
+    return this
+  }
+
+  stddev<P extends NumberPaths<S, T>>(
+    prop: P | P[],
+    opts?: aggFnOptions,
+  ): this {
+    this.ast.stddev ??= { props: [] }
+    const props = Array.isArray(prop) ? prop : [prop]
+    this.ast.stddev.props.push(...(props as string[]))
+    if (opts?.mode) {
+      this.ast.stddev.samplingMode = opts.mode
+    }
+    return this
+  }
+
+  var<P extends NumberPaths<S, T>>(prop: P | P[], opts?: aggFnOptions): this {
+    this.ast.variance ??= { props: [] }
+    const props = Array.isArray(prop) ? prop : [prop]
+    this.ast.variance.props.push(...(props as string[]))
+    if (opts?.mode) {
+      this.ast.variance.samplingMode = opts.mode
+    }
+    return this
+  }
+
+  groupBy(prop: string, step?: StepInput): this {
+    this.ast.groupBy = { prop }
+    if (step) {
+      if (typeof step === 'object') {
+        const s = step as any
+        if (s.step) this.ast.groupBy.step = s.step
+        if (s.timeZone) this.ast.groupBy.timeZone = s.timeZone
+        if (s.display) this.ast.groupBy.display = s.display
+      } else {
+        this.ast.groupBy.step = step
+      }
+    }
+    return this
+  }
+
+  #filterGroup?: FilterAst
+  #addFilter(
+    prop: any,
+    op: any,
+    val: any,
+    opts: any,
+    isOr: boolean,
+  ): FilterBranch<this> {
+    if (typeof prop === 'function') {
+      prop((...args) => {
+        const target = isOr
+          ? this.#filterGroup!
+          : (this.#filterGroup!.and ??= {})
+        const branch = new QueryBranch(target)
+        branch.#filterGroup = target
+        ;(branch.filter as any)(...args)
+        return branch
+      })
+      return this as any
+    }
+
+    const target = traverse(this.#filterGroup, prop as string)
+    target.ops ??= []
+    target.ops.push({ op, val })
+    return this as any
+  }
+}
+
+type FilterBranch<T extends { filter: any }> = Omit<T, 'and' | 'or'> &
+  FilterMethods<T>
+
+type FilterMethods<T extends { filter: any }> = {
+  and: T['filter']
+  or: T['filter']
+}
+
+// This overload is for when the user provides NO schema argument, rely on generic default or explicit generic
+export function query<
+  S extends { types: any } = { types: any },
+  T extends keyof S['types'] & string = keyof S['types'] & string,
+>(type: T): QueryBranch<S, T, '*', false>
+
+// This overload is for when the user provides NO schema argument + ID, rely on generic default or explicit generic
+export function query<
+  S extends { types: any } = { types: any },
+  T extends keyof S['types'] & string = keyof S['types'] & string,
+>(
+  type: T,
+  id: number | Partial<InferSchemaOutput<S, T>>,
+): QueryBranch<S, T, '*', true>
+
+export function query<
+  S extends { types: any },
+  T extends keyof S['types'] & string = keyof S['types'] & string,
+>(
+  type: T,
+  id?: number | Partial<InferSchemaOutput<S, T>>,
+): QueryBranch<S, T, '*', boolean> {
+  const ast: any = { type }
+  if (id) ast.target = id
+  return new QueryBranch<S, T, '*', any>(ast)
 }
 
 export class BasedQuery2<
@@ -105,7 +296,7 @@ export class BasedQuery2<
   ) {
     super({})
     this.ast.type = type as string
-    this.ast.target = target
+    if (target) this.ast.target = target
     this.db = db
   }
   db: DbClient
@@ -130,6 +321,40 @@ export class BasedQuery2<
     const result = await this.db.hooks.getQueryBuf(ctx.query)
     return proxyResult(result, ctx.readSchema) as any
   }
+}
+
+type FilterFn<
+  S extends { types: any },
+  T extends keyof S['types'],
+  EdgeProps extends Record<string, any>,
+> = FilterSignature<
+  S,
+  T,
+  EdgeProps,
+  FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>
+>
+
+type FilterSignature<
+  S extends { types: any },
+  T extends keyof S['types'],
+  EdgeProps extends Record<string, any>,
+  Result,
+> = {
+  (
+    fn: (
+      filter: FilterFn<S, T, EdgeProps>,
+    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+  ): Result
+  <
+    P extends
+      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
+      | Path<S['types'], T>,
+  >(
+    prop: P,
+    op: Operator,
+    val: InferPathType<S, T, P>,
+    opts?: FilterOpts,
+  ): Result
 }
 
 type SelectFn<S extends { types: any }, T extends keyof S['types']> = <
