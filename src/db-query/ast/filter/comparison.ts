@@ -16,7 +16,8 @@ export const conditionByteSize = (propSize: number, size: number) => {
   return size + FilterConditionByteSize + FilterConditionAlignOf + 1 + propSize
 }
 
-// nice to get this from zig
+// Make this configurable in the client
+// has to be send from the server
 const VECTOR_BYTES = 16
 
 export const createCondition = (
