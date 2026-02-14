@@ -12,6 +12,10 @@ await test('query db', async (t) => {
         name: 'string',
         isNice: 'boolean',
         age: 'number',
+        friend: {
+          ref: 'user',
+          prop: 'friend',
+        },
       },
     },
   })
@@ -19,7 +23,7 @@ await test('query db', async (t) => {
   db.create('user', {
     name: 'john',
     isNice: false,
-    age: 21,
+    age: 1,
   })
 
   db.create('user', {
@@ -34,6 +38,7 @@ await test('query db', async (t) => {
       .include('name')
       .filter('isNice', '=', false)
       .get()
+
     deepEqual(res, [{ id: 1, name: 'john' }])
   }
 

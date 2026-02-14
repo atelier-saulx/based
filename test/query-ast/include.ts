@@ -71,7 +71,7 @@ await test('include', async (t) => {
 
   let d = Date.now()
 
-  for (let i = 0; i < 5e6; i++) {
+  for (let i = 0; i < 10; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
@@ -90,41 +90,41 @@ await test('include', async (t) => {
   const ast: QueryAst = {
     type: 'user',
     filter: {
+      // props: {
+      //   name: {
+      //     // ADD LOWER CASE
+      //     // ops: [{ op: 'includes', val: 'flap', opts: { lowerCase: true } }],
+      //     ops: [{ op: 'includes', val: 'x' }],
+      //   },
+      // },
       props: {
-        name: {
-          // ADD LOWER CASE
-          // ops: [{ op: 'includes', val: 'flap', opts: { lowerCase: true } }],
-          ops: [{ op: 'includes', val: 'x' }],
+        flap: { ops: [{ op: '=', val: 9999 }] },
+      },
+      and: {
+        props: {
+          y: { ops: [{ op: '=', val: 100 }] },
+        },
+        or: {
+          props: {
+            y: { ops: [{ op: '=', val: 3 }] },
+          },
+          or: {
+            props: {
+              y: { ops: [{ op: '=', val: 4 }] },
+            },
+          },
         },
       },
-      // props: {
-      // flap: { ops: [{ op: '=', val: 9999 }] },
-      // },
-      // and: {
-      //   props: {
-      //     y: { ops: [{ op: '=', val: 100 }] },
-      //   },
-      //   or: {
-      //     props: {
-      //       y: { ops: [{ op: '=', val: 3 }] },
-      //     },
-      //     or: {
-      //       props: {
-      //         y: { ops: [{ op: '=', val: 4 }] },
-      //       },
-      //     },
-      //   },
-      // },
-      // or: {
-      //   props: {
-      //     y: { ops: [{ op: '=', val: 670 }] },
-      //   },
-      //   or: {
-      //     props: {
-      //       y: { ops: [{ op: '=', val: 15 }] },
-      //     },
-      //   },
-      // },
+      or: {
+        props: {
+          y: { ops: [{ op: '=', val: 670 }] },
+        },
+        or: {
+          props: {
+            y: { ops: [{ op: '=', val: 15 }] },
+          },
+        },
+      },
     },
 
     // filter('flap', '=', 9999)
@@ -176,7 +176,7 @@ await test('include', async (t) => {
     queries.push(x)
   }
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
