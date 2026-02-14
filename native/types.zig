@@ -893,7 +893,6 @@ pub const FilterOpCompare = enum(u8) {
     selectLargeRefsEdge = 207,
 
     nextOrIndex = 253,
-    andOp = 254,
 };
 
 pub const FilterOp = packed struct {

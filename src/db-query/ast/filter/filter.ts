@@ -4,21 +4,15 @@ import {
   PropTree,
   TypeDef,
 } from '../../../schema/defs/index.js'
-import { debugBuffer } from '../../../sdk.js'
-import { concatUint8Arr, writeUint64 } from '../../../utils/uint8.js'
+import { writeUint64 } from '../../../utils/uint8.js'
 import {
   FilterConditionAlignOf,
   FilterOpCompare,
-  ID_PROP,
   PropType,
   writeFilterConditionProps,
 } from '../../../zigTsExports.js'
 import { Ctx, FilterAst, FilterOp } from '../ast.js'
-import {
-  conditionBuffer,
-  conditionByteSize,
-  createCondition,
-} from './condition.js'
+import { comparison, conditionByteSize, createCondition } from './comparison.js'
 
 type WalkCtx = {
   tree: PropTree
@@ -33,13 +27,12 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
     const prop = tree.props.get(field)
     const astProp = ast.props[field]
     const ops = astProp.ops
-
-    // AND & OR
     if (isPropDef(prop)) {
       if (prop.type === PropType.references) {
         // references(astProp, ctx, prop)
       } else if (prop.type === PropType.reference) {
         // this can be added here
+        // need this again...
         // reference(astProp, ctx, prop)
       } else if (ops) {
         if (prop.id === 0) {
@@ -48,7 +41,7 @@ const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
           walkCtx.prop = prop.id
           for (const op of ops) {
             // can prob just push this directly
-            const condition = createCondition(prop, op.op, op.val, op.opts)
+            const condition = comparison(prop, op.op, op.val, op.opts)
             ctx.query.set(condition, ctx.query.length)
           }
         }
@@ -116,24 +109,23 @@ export const filter = (
   const { main } = walk(ast, ctx, typeDef, walkCtx)
 
   for (const { prop, ops } of main) {
-    // better to do main first scince they are usualy lighter filters...
     walkCtx.prop = prop.id
     for (const op of ops) {
-      const condition = createCondition(prop, op.op, op.val, op.opts)
+      const condition = comparison(prop, op.op, op.val, op.opts)
       ctx.query.set(condition, ctx.query.length)
     }
   }
 
   if (ast.and) {
     if (ast.or) {
-      const { offset, condition } = conditionBuffer(
+      const { offset, condition } = createCondition(
         {
           id: PropType.id,
           size: 8,
           start: 0,
+          type: PropType.null,
         },
-        8,
-        { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
+        FilterOpCompare.nextOrIndex,
       )
       writeUint64(
         condition,
@@ -158,13 +150,11 @@ export const filter = (
     const resultSize = ctx.query.length - startIndex
     const nextOrIndex = resultSize + filterIndex
 
-    const { offset, condition } = conditionBuffer(
-      { id: lastProp, size: 8, start: 0 },
-      8,
-      { compare: FilterOpCompare.nextOrIndex, prop: PropType.null },
+    const { offset, condition } = createCondition(
+      { id: lastProp, size: 8, start: 0, type: PropType.null },
+      FilterOpCompare.nextOrIndex,
     )
 
-    console.dir(ast.or, { depth: 10 })
     writeUint64(condition, nextOrIndex, offset)
     ctx.query.set(condition, startIndex)
 
@@ -177,6 +167,7 @@ export const filter = (
     }
 
     if (andOrReplace) {
+      // REMOVE THIS!
       let index = indexOf(
         ctx.query.data,
         andOrReplace,

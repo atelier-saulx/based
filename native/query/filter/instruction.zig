@@ -27,7 +27,7 @@ pub fn parseOp(comptime op: t.FilterOpCompare) OpMeta {
     return .{
         .func = getFunc(op),
         .invert = switch (op) {
-            .neq, .neqBatch, .neqBatchSmall, .nrange => true,
+            .neq, .neqBatch, .neqBatchSmall, .nrange, .ninc => true,
             else => false,
         },
     };

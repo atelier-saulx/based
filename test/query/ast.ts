@@ -10,6 +10,11 @@ await test('query ast creation', async (t) => {
     }
     types: {
       user: {
+        friend: {
+          ref: 'user'
+          prop: 'friend'
+          $rating: 'uint32'
+        }
         name: 'string'
         isNice: 'boolean'
         age: 'number'
@@ -57,10 +62,14 @@ await test('query ast creation', async (t) => {
 
   {
     const q = query<Schema>('user')
-      .filter('isNice', '=', false)
-      .and('name', '=', 'youzi')
-      .or('name', '=', 'james')
-      .and('isNice', '=', false)
+      .include('age')
+      .filter('name', 'includes', 'jim')
+      .and((f) => f('age', '>', 2))
+
+    // .filter('isNice', '=', false)
+    // .and('name', '=', 'youzi')
+    // .or('name', '=', 'james')
+    // .and('isNice', '=', false)
 
     deepEqual(q.ast, {
       type: 'user',
