@@ -80,7 +80,7 @@ const getTypeDef = (
     separate: [],
     props: new Map(),
     main: [],
-    tree: { props: new Map(), required: [] },
+    tree: { path: [], schema, props: new Map(), required: [] },
     schema,
     schemaRoot,
     propHooks: {
@@ -112,7 +112,9 @@ const getTypeDef = (
           props: new Map(),
           required: [],
         }
-        if (walk(prop.props, path, def)) required = true
+        if (walk(prop.props, path, def)) {
+          required = true
+        }
         tree.props.set(key, def)
       } else {
         def = addPropDef(prop, path, typeDef)
