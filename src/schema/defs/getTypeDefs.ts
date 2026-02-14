@@ -1,11 +1,13 @@
 import {
   type SchemaOut,
   type SchemaProp,
+  type SchemaPropHooks,
   type SchemaProps,
   type SchemaType,
 } from '../../schema.js'
+import { getByPath, setByPath } from '../../utils/path.js'
 import { PropType } from '../../zigTsExports.js'
-import { defs, type PropDef, type TypeDef } from './index.js'
+import { defs, type PropDef, type PropTree, type TypeDef } from './index.js'
 
 const mainSorter = (a, b) => {
   if (a.size === 8) return -1
@@ -81,6 +83,16 @@ const getTypeDef = (
     tree: { props: new Map(), required: [] },
     schema,
     schemaRoot,
+    propHooks: {
+      create: [],
+      update: [],
+      read: [],
+      search: [],
+      include: [],
+      filter: [],
+      groupBy: [],
+      aggregate: [],
+    },
   }
 
   const walk = (
@@ -92,17 +104,30 @@ const getTypeDef = (
       const prop = props[key]
       const path = [...pPath, key]
       let required = prop.required
+      let def: PropTree | PropDef
       if (prop.type === 'object') {
-        const branch = { props: new Map(), required: [] }
-        if (walk(prop.props, path, branch)) required = true
-        tree.props.set(key, branch)
+        def = {
+          path,
+          schema: prop,
+          props: new Map(),
+          required: [],
+        }
+        if (walk(prop.props, path, def)) required = true
+        tree.props.set(key, def)
       } else {
-        const def = addPropDef(prop, path, typeDef)
+        def = addPropDef(prop, path, typeDef)
         typeDef.props.set(path.join('.'), def)
         tree.props.set(key, def)
       }
       if (required) {
         tree.required.push(key)
+      }
+      if (prop.hooks) {
+        for (const key in typeDef.propHooks) {
+          if (prop.hooks[key]) {
+            typeDef.propHooks[key].push(def)
+          }
+        }
       }
     }
     return !!tree.required.length

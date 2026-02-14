@@ -6,18 +6,14 @@ import {
   writeModifyUpdateHeaderProps,
   type LangCodeEnum,
 } from '../../zigTsExports.js'
-import { assignTarget, BasedModify, getTypeDef } from './index.js'
+import { assignTarget, BasedModify, execHooks, getTypeDef } from './index.js'
 import { serializeProps } from './props.js'
-import type { InferPayload } from './types.js'
 
-export const serializeUpdate = <
-  S extends SchemaOut = SchemaOut,
-  T extends keyof S['types'] & string = keyof S['types'] & string,
->(
-  schema: S,
-  type: T,
+export const serializeUpdate = (
+  schema: SchemaOut,
+  type: string,
   item: number | BasedModify<any>,
-  payload: InferPayload<S, T>,
+  payload: Record<string, any>,
   buf: AutoSizedUint8Array,
   lang: LangCodeEnum,
 ) => {
@@ -29,6 +25,12 @@ export const serializeUpdate = <
   })
   const index = pushModifyUpdateHeader(buf, header)
   const start = buf.length
-  serializeProps(typeDef.tree, payload, buf, Modify.update, lang)
+  serializeProps(
+    typeDef.tree,
+    execHooks(typeDef, payload, 'update'),
+    buf,
+    Modify.update,
+    lang,
+  )
   writeModifyUpdateHeaderProps.size(buf.data, buf.length - start, index)
 }

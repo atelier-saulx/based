@@ -288,14 +288,12 @@ pub fn modify(
                 const typeEntry = try Node.getType(db, create.type);
                 const data: []u8 = buf[i .. i + create.size];
                 const nextId = db.ids[create.type - 1] % create.maxNodeId + 1;
-
                 var node = Node.getNode(typeEntry, nextId);
                 if (node) |oldNode| {
                     Node.flushNode(db, typeEntry, oldNode);
                 } else {
                     node = try Node.upsertNode(typeEntry, nextId);
                 }
-
                 modifyProps(db, typeEntry, node.?, data, items) catch {
                     // handle errors
                 };
