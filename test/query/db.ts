@@ -55,6 +55,20 @@ await test('query db', async (t) => {
     ])
   }
 
+  // {
+  //   const res = await db
+  //     .query2('user')
+  //     .include('name')
+  //     .filter('isNice', '=', true)
+  //     .or('age', '=', 21)
+  //     .sort('name')
+  //     .get()
+  //   deepEqual(res, [
+  //     { id: 2, name: 'billy' },
+  //     { id: 1, name: 'john' },
+  //   ])
+  // }
+
   {
     const res = await db
       .query2('user')

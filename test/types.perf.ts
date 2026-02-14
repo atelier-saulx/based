@@ -35,3 +35,29 @@ await test('create and access many types', async (t) => {
 
   await db.drain()
 })
+
+await test('create many nodes', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  const client = await db.setSchema({
+    types: {
+      type: { bool: 'boolean' },
+    },
+  })
+
+  await perf(
+    () => {
+      client.create('type', {
+        bool: true,
+      })
+    },
+    'create booleans',
+    { repeat: 10_000_000 },
+  )
+
+  await db.drain()
+})

@@ -7,9 +7,26 @@ import type { serializeCreate } from './create.js'
 import type { serializeUpdate } from './update.js'
 import type { serializeDelete } from './delete.js'
 import type { serializeUpsert } from './upsert.js'
+import type { TypeDef } from '../../schema/defs/index.js'
+import { getByPath, setByPath } from '../../utils/path.js'
 export { getTypeDefs }
 
-export const getTypeDef = (schema: SchemaOut, type: string) => {
+export const execHooks = (
+  typeDef: TypeDef,
+  payload: Record<string, any>,
+  key: 'create' | 'update',
+) => {
+  const typeHook = typeDef.schema.hooks?.[key]
+  if (typeHook) payload = typeHook(payload) ?? payload
+  for (const def of typeDef.propHooks[key]) {
+    const propHook = def.schema.hooks![key]!
+    const res = propHook(getByPath(payload, def.path), payload)
+    if (res !== undefined) setByPath(payload, def.path, res)
+  }
+  return payload
+}
+
+export const getTypeDef = (schema: SchemaOut, type: string): TypeDef => {
   const typeDef = getTypeDefs(schema).get(type)
   if (!typeDef) {
     throw new Error(`Type ${type} not found`)

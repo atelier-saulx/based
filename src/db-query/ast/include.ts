@@ -76,7 +76,7 @@ const walkProp = (
   field: string,
 ) => {
   const { main, tree } = walkCtx
-  const prop = tree.get(field)
+  const prop = tree.props.get(field)
   const include = astProp.include
 
   if (isPropDef(prop)) {
@@ -117,13 +117,13 @@ const walk = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
       continue
     }
     if (field === '*') {
-      for (const [field, prop] of walkCtx.tree) {
+      for (const [field, prop] of walkCtx.tree.props) {
         if (!('ref' in prop)) {
           walkProp(astProp, ctx, typeDef, walkCtx, field)
         }
       }
     } else if (field === '**') {
-      for (const [field, prop] of typeDef.tree) {
+      for (const [field, prop] of typeDef.tree.props) {
         if ('ref' in prop) {
           walkProp(astProp, ctx, typeDef, walkCtx, field)
         }

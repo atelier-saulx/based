@@ -4,6 +4,7 @@ import type {
   ResolveSchema,
   SchemaIn,
   ValidateSchema,
+  StrictSchema,
 } from '../../src/schema.js'
 import { BasedDb, DbServer, type DbClient } from '../../src/sdk.js'
 import test from './test.js'
@@ -39,57 +40,14 @@ export function logMemoryUsage() {
   }
 }
 
-import {
-  BasedCreatePromise,
-  BasedDeletePromise,
-  BasedInsertPromise,
-  BasedUpdatePromise,
-  BasedUpsertPromise,
-  ModifyOpts,
-  InferPayload,
-  InferTarget,
-  BasedModify,
-} from '../../src/sdk.js'
-
-export interface BasedTestDb<S extends SchemaIn>
-  extends DbClient<ResolveSchema<S>> {
-  create<T extends keyof S['types'] & string>(
-    type: T,
-    obj: InferPayload<ResolveSchema<S>, T>,
-    opts?: ModifyOpts,
-  ): BasedCreatePromise
-  update<T extends keyof S['types'] & string>(
-    type: T,
-    target: number | BasedModify,
-    obj: InferPayload<ResolveSchema<S>, T>,
-    opts?: ModifyOpts,
-  ): BasedUpdatePromise
-  upsert<T extends keyof S['types'] & string>(
-    type: T,
-    target: InferTarget<ResolveSchema<S>, T>,
-    obj: InferPayload<ResolveSchema<S>, T>,
-    opts?: ModifyOpts,
-  ): BasedUpsertPromise
-  insert<T extends keyof S['types'] & string>(
-    type: T,
-    target: InferTarget<ResolveSchema<S>, T>,
-    obj: InferPayload<ResolveSchema<S>, T>,
-    opts?: ModifyOpts,
-  ): BasedInsertPromise
-  delete(
-    type: keyof S['types'] & string,
-    target: number | BasedModify,
-  ): BasedDeletePromise
-}
-
 export const testDb = async <const S extends SchemaIn>(
   t: Parameters<Parameters<typeof test>[1]>[0],
-  schema: S & ValidateSchema<S>,
-): Promise<BasedTestDb<S>> => {
+  schema: StrictSchema<S>,
+): Promise<DbClient<ResolveSchema<S>>> => {
   const db = new BasedDb({ path: t.tmp })
   await db.start({ clean: true })
   t.after(() => db.destroy())
-  return db.setSchema(schema) as unknown as BasedTestDb<S>
+  return db.setSchema(schema)
 }
 
 export async function countDirtyBlocks(server: DbServer) {

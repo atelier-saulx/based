@@ -208,4 +208,29 @@ await test('query ast creation', async (t) => {
       groupBy: { prop: 'age', step: 10 },
     })
   }
+  {
+    const q1 = query('user').sort('age')
+    deepEqual(q1.ast, {
+      type: 'user',
+      sort: { prop: 'age', order: 'asc' },
+    })
+
+    const q2 = query('user').sort('age', 'desc')
+    deepEqual(q2.ast, {
+      type: 'user',
+      sort: { prop: 'age', order: 'desc' },
+    })
+
+    const q3 = query('user').order('desc')
+    deepEqual(q3.ast, {
+      type: 'user',
+      sort: { prop: 'id', order: 'desc' },
+    })
+
+    const q4 = query('user').sort('age').order('desc')
+    deepEqual(q4.ast, {
+      type: 'user',
+      sort: { prop: 'age', order: 'desc' },
+    })
+  }
 })

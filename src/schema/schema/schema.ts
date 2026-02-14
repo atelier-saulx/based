@@ -7,11 +7,13 @@ import {
   isString,
   type RequiredIfStrict,
 } from './shared.js'
+import { type LangName, type SchemaLocale } from './locales.js'
 import { parseType, type SchemaType } from './type.js'
 import { inspect } from 'node:util'
 import { postParseRefs } from './reference.js'
 import hash from '../../hash/hash.js'
 import { parseLocales, type SchemaLocales } from './locales.js'
+import { type SchemaHooks } from './hooks.js'
 export type SchemaTypes<strict = false> = Record<string, SchemaType<strict>>
 export type SchemaMigrateFn = (
   node: Record<string, any>,
@@ -71,7 +73,6 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   : never
 
 // Helper to find Props in other types that reference TName with a specific 'prop' field
-// Helper to find Props in other types that reference TName with a specific 'prop' field
 type GetBackRefs<Types, TName> = UnionToIntersection<
   {
     [K in keyof Types]: (
@@ -103,8 +104,6 @@ type GetBackRefs<Types, TName> = UnionToIntersection<
       : never
   }[keyof Types]
 >
-
-import type { SchemaProp } from './prop.js'
 
 // ResolvedProps combines explicit props with inferred back-reference props
 export type ResolvedProps<
@@ -180,27 +179,25 @@ type ValidateProps<Props, Types, TName extends string> = {
   [K in keyof Props]: ValidateProp<Props[K], Types, TName, K & string>
 }
 
-export type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
+type ValidateSchema<S extends { types: any }> = Omit<S, 'types'> & {
   types: {
     [K in keyof S['types']]: S['types'][K] extends { props: infer P }
-      ? { props: ValidateProps<P, S['types'], K & string> } & Omit<
-          S['types'][K],
-          'props'
-        >
+      ? {
+          props: ValidateProps<P, S['types'], K & string>
+          hooks?: SchemaHooks
+        } & Omit<S['types'][K], 'props' | 'hooks'>
       : {
-          [P in keyof S['types'][K]]: P extends
-            | 'hooks'
-            | 'blockCapacity'
-            | 'insertOnly'
-            | 'capped'
-            | 'partial'
-            ? S['types'][K][P]
-            : ValidateProp<S['types'][K][P], S['types'], K & string, P & string>
+          [P in keyof S['types'][K]]: ValidateProp<
+            S['types'][K][P],
+            S['types'],
+            K & string,
+            P & string
+          >
         }
   }
 }
 
-import { type LangName, type SchemaLocale } from './locales.js'
+export type StrictSchema<S extends { types: any }> = S & ValidateSchema<S>
 
 type Prettify<T> = {
   [K in keyof T]: T[K]
@@ -282,7 +279,7 @@ const track = <P extends Record<string, unknown>>(input: P): P => {
   This returns a "public" parsed schema, suitable for external users
 */
 export const parseSchema = <const S extends SchemaIn>(
-  input: S,
+  input: StrictSchema<S>,
 ): ResolveSchema<S> => {
   const v: unknown = track(input)
   assert(isRecord(v), 'Schema should be record')

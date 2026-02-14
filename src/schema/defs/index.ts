@@ -1,4 +1,10 @@
-import type { SchemaOut, SchemaProp, SchemaType } from '../../schema.js'
+import type {
+  SchemaHooks,
+  SchemaObject,
+  SchemaOut,
+  SchemaProp,
+  SchemaType,
+} from '../../schema.js'
 import type {
   LangCodeEnum,
   ModifyEnum,
@@ -13,7 +19,12 @@ import * as cardinality from './props/cardinality.js'
 import * as strings from './props/strings.js'
 import * as vector from './props/vector.js'
 
-export type PropTree = Map<string, PropDef | PropTree>
+export type PropTree = {
+  props: Map<string, PropDef | PropTree>
+  required: string[]
+  path: string[]
+  schema: SchemaObject<true>
+}
 
 export type TypeDef = {
   id: number
@@ -24,6 +35,7 @@ export type TypeDef = {
   tree: PropTree
   schema: SchemaType<true>
   schemaRoot: SchemaOut
+  propHooks: Record<keyof SchemaHooks, (PropDef | PropTree)[]>
 }
 
 export type PropDef = {

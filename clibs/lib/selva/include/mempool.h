@@ -142,7 +142,6 @@ static inline struct mempool_chunk *get_first_chunk(struct mempool_slab * restri
     return (struct mempool_chunk *)p;
 }
 
-
 /**
  * For each slab in the mempool.
  * The current slab will be available as the pointer variable `slab`.

@@ -20,5 +20,10 @@ export const serializeDelete = <
     op: Modify.delete,
     type: typeDef.id,
   })
-  pushModifyDeleteHeader(buf, header)
+  pushModifyDeleteHeader(buf, {
+    op: Modify.delete,
+    isTmp: header.isTmp,
+    id: header.id,
+    type: typeDef.id,
+  })
 }

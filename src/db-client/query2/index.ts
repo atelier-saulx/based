@@ -22,7 +22,7 @@ import type {
   aggFnOptions,
 } from '../query/aggregates/types.js'
 
-class QueryBranch<
+class Query<
   S extends { types: any } = { types: any },
   T extends keyof S['types'] = any,
   K extends
@@ -48,7 +48,7 @@ class QueryBranch<
       | Path<S['types'], T>
       | '*'
       | '**'
-      | ((q: SelectFn<S, T>) => QueryBranch<S, any, any, any, any>)
+      | ((q: SelectFn<S, T>) => Query<S, any, any, any, any>)
     )[],
   >(
     ...props: F
@@ -65,7 +65,7 @@ class QueryBranch<
   > {
     for (const prop of props as (string | Function)[]) {
       if (typeof prop === 'function') {
-        prop((prop: string) => new QueryBranch(traverse(this.ast, prop)))
+        prop((prop: string) => new Query(traverse(this.ast, prop)))
       } else {
         traverse(this.ast, prop).include = {}
       }
@@ -76,7 +76,7 @@ class QueryBranch<
   filter(
     fn: (
       filter: FilterFn<S, T, EdgeProps>,
-    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+    ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
   filter<
     P extends
@@ -96,7 +96,7 @@ class QueryBranch<
   and(
     fn: (
       filter: FilterFn<S, T, EdgeProps>,
-    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+    ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
   and<
     P extends
@@ -115,7 +115,7 @@ class QueryBranch<
   or(
     fn: (
       filter: FilterFn<S, T, EdgeProps>,
-    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+    ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
   or<
     P extends
@@ -306,6 +306,45 @@ class QueryBranch<
     return this as any
   }
 
+  sort<P extends string>(
+    prop: P,
+    order?: 'asc' | 'desc',
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate,
+    GroupedKey
+  > {
+    this.ast.sort = { prop, order: order || 'asc' }
+    return this as any
+  }
+
+  order(
+    order: 'asc' | 'desc',
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate,
+    GroupedKey
+  > {
+    if (this.ast.sort) {
+      this.ast.sort.order = order
+    } else {
+      this.ast.sort = { prop: 'id', order }
+    }
+    return this as any
+  }
+
   range(
     start: number,
     end?: number,
@@ -366,7 +405,7 @@ class QueryBranch<
         const target = isOr
           ? this.#filterGroup!
           : (this.#filterGroup!.and ??= {})
-        const branch = new QueryBranch(target)
+        const branch = new Query(target)
         branch.#filterGroup = target
         ;(branch.filter as any)(...args)
         return branch
@@ -393,7 +432,7 @@ type FilterMethods<T extends { filter: any }> = {
 export function query<
   S extends { types: any } = { types: any },
   T extends keyof S['types'] & string = keyof S['types'] & string,
->(type: T): QueryBranch<S, T, '*', false>
+>(type: T): Query<S, T, '*', false>
 
 // This overload is for when the user provides NO schema argument + ID, rely on generic default or explicit generic
 export function query<
@@ -402,7 +441,7 @@ export function query<
 >(
   type: T,
   id: number | Partial<InferSchemaOutput<S, T>>,
-): QueryBranch<S, T, '*', true>
+): Query<S, T, '*', true>
 
 export function query<
   S extends { types: any },
@@ -410,10 +449,10 @@ export function query<
 >(
   type: T,
   id?: number | Partial<InferSchemaOutput<S, T>>,
-): QueryBranch<S, T, '*', boolean> {
+): Query<S, T, '*', boolean> {
   const ast: any = { type }
   if (id) ast.target = id
-  return new QueryBranch<S, T, '*', any>(ast)
+  return new Query<S, T, '*', any>(ast)
 }
 
 export class BasedQuery2<
@@ -428,17 +467,7 @@ export class BasedQuery2<
   IsSingle extends boolean = false,
   Aggregate = {},
   GroupedKey extends string | undefined = undefined,
-> extends QueryBranch<
-  S,
-  T,
-  K,
-  IsSingle,
-  undefined,
-  true,
-  {},
-  Aggregate,
-  GroupedKey
-> {
+> extends Query<S, T, K, IsSingle, undefined, true, {}, Aggregate, GroupedKey> {
   constructor(
     db: DbClient,
     type: T,
@@ -500,7 +529,7 @@ type FilterFn<
   S,
   T,
   EdgeProps,
-  FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>
+  FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>
 >
 
 type FilterSignature<
@@ -512,7 +541,7 @@ type FilterSignature<
   (
     fn: (
       filter: FilterFn<S, T, EdgeProps>,
-    ) => FilterBranch<QueryBranch<S, T, any, any, any, any, EdgeProps>>,
+    ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): Result
   <
     P extends
@@ -530,7 +559,7 @@ type SelectFn<S extends { types: any }, T extends keyof S['types']> = <
   P extends keyof ResolvedProps<S['types'], T>,
 >(
   field: P,
-) => QueryBranch<
+) => Query<
   S,
   ResolvedProps<S['types'], T>[P] extends { ref: infer R extends string }
     ? R
@@ -549,10 +578,10 @@ type SelectFn<S extends { types: any }, T extends keyof S['types']> = <
       : {})
 >
 
-// ResolveIncludeArgs needs to stay here because it refers to QueryBranch
+// ResolveIncludeArgs needs to stay here because it refers to Query
 export type ResolveIncludeArgs<T> = T extends (
   q: any,
-) => QueryBranch<
+) => Query<
   infer S,
   infer T,
   infer K,
@@ -586,7 +615,7 @@ type NextBranch<
   GroupedKey extends string | undefined,
 > = IsRoot extends true
   ? BasedQuery2<S, T, K, IsSingle, Aggregate, GroupedKey>
-  : QueryBranch<
+  : Query<
       S,
       T,
       K,

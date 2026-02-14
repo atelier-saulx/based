@@ -93,7 +93,7 @@ await test('modify references', async (t) => {
 
   const check = async (ids: number[], msg) => {
     const res = await db.query2('holder', h1).include('dests').get()
-    const currentIds = res.dests?.map((v: any) => v.id) || []
+    const currentIds = res?.dests?.map((v: any) => v.id) || []
     currentIds.sort()
     ids.sort()
     deepEqual(currentIds, ids, msg)
@@ -166,7 +166,7 @@ await test('modify references no await', async (t) => {
     .include('dests.id')
     .get()
 
-  const currentIds = res.dests?.map((v: any) => v.id) || []
+  const currentIds = res?.dests?.map((v: any) => v.id) || []
   currentIds.sort()
   const expected = [id1, id3]
   expected.sort()
@@ -211,8 +211,8 @@ await test('modify single reference on edge', async (t) => {
       .include('toThing.$edgeRef.id')
       .get()
 
-    return res.toThing && !Array.isArray(res.toThing)
-      ? res.toThing.$edgeRef
+    return res?.toThing && !Array.isArray(res?.toThing)
+      ? res?.toThing.$edgeRef
       : undefined
   }
 
@@ -251,7 +251,6 @@ await test('modify references on edge', async (t) => {
             type: 'references',
             items: {
               ref: 'thing',
-              // prop: 'edgeRefsHolders',
             },
           },
         },
@@ -280,7 +279,8 @@ await test('modify references on edge', async (t) => {
       .include('toThing.$edgeRefs.id')
       .get()
 
-    const edge = res.toThing && !Array.isArray(res.toThing) ? res.toThing : {}
+    const edge: any =
+      res?.toThing && !Array.isArray(res.toThing) ? res.toThing : {}
     const currentIds = edge.$edgeRefs?.map((v: any) => v.id) || []
     currentIds.sort()
     ids.sort()

@@ -1,6 +1,11 @@
-import type { PropDef, PropTree } from '../../schema/defs/index.js'
+import {
+  isPropDef,
+  type PropDef,
+  type PropTree,
+} from '../../schema/defs/index.js'
 import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import {
+  Modify,
   ModifyIncrement,
   pushModifyMainHeader,
   pushModifyPropHeader,
@@ -16,23 +21,23 @@ export const serializeProps = (
   op: ModifyEnum,
   lang: LangCodeEnum,
 ) => {
+  if (op !== Modify.update) {
+    for (const key of tree.required) {
+      if (!(key in data)) {
+        const def = tree.props.get(key)!
+        throw new Error(
+          `Field ${'path' in def ? def.path.join('.') : key} is required`,
+        )
+      }
+    }
+  }
   for (const key in data) {
-    const def = tree.get(key)
+    const def = tree.props.get(key)
     if (def === undefined) {
       continue
     }
     const val = data[key]
-    if (def.constructor === Map) {
-      if (typeof val === 'object') {
-        if (val === null) {
-          const empty = {}
-          for (const [key] of def) empty[key] = null
-          serializeProps(def, empty, buf, op, lang)
-        } else {
-          serializeProps(def, val, buf, op, lang)
-        }
-      }
-    } else {
+    if (isPropDef(def)) {
       const prop = def as PropDef
       if (prop.id === 0) {
         // main
@@ -61,6 +66,14 @@ export const serializeProps = (
           prop.pushValue(buf, val, op, lang)
           writeModifyPropHeaderProps.size(buf.data, buf.length - start, index)
         }
+      }
+    } else if (typeof val === 'object') {
+      if (val === null) {
+        const empty = {}
+        for (const [key] of def.props) empty[key] = null
+        serializeProps(def, empty, buf, op, lang)
+      } else {
+        serializeProps(def, val, buf, op, lang)
       }
     }
   }

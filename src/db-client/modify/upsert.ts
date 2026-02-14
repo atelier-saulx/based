@@ -6,7 +6,7 @@ import {
   type LangCodeEnum,
   writeModifyCreateHeaderProps,
 } from '../../zigTsExports.js'
-import { getTypeDef } from './index.js'
+import { getTypeDef, execHooks } from './index.js'
 import { serializeProps } from './props.js'
 import type { InferPayload, InferTarget } from './types.js'
 
@@ -36,6 +36,18 @@ export const serializeUpsert = <
   // serialize payload
   const sizePos = buf.reserveUint32()
   const startPayload = buf.length
-  serializeProps(typeDef.tree, payload, buf, Modify.update, lang)
+  serializeProps(
+    typeDef.tree,
+    serializeProps(
+      typeDef.tree,
+      execHooks(typeDef, payload, 'create'),
+      buf,
+      Modify.create,
+      lang,
+    ),
+    buf,
+    Modify.update,
+    lang,
+  )
   buf.writeUint32(buf.length - startPayload, sizePos)
 }
