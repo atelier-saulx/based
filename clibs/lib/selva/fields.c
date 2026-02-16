@@ -511,7 +511,13 @@ out:
  * A helper for remove_reference().
  * @returns the original value.
  */
-static node_id_t del_single_ref(struct SelvaDb *db, struct SelvaNode *src_node, const struct EdgeFieldConstraint *efc, struct SelvaFields *fields, struct SelvaFieldInfo *nfo, bool ignore_dependent)
+static node_id_t del_single_ref(
+        struct SelvaDb *db,
+        struct SelvaNode *src_node,
+        const struct EdgeFieldConstraint *efc,
+        struct SelvaFields *fields,
+        struct SelvaFieldInfo *nfo,
+        bool ignore_dependent)
 {
     void *vp = nfo2p(fields, nfo);
     struct SelvaNodeLargeReference ref;
@@ -534,7 +540,12 @@ static node_id_t del_single_ref(struct SelvaDb *db, struct SelvaNode *src_node, 
 /**
  * This is only a helper for remove_reference().
  */
-static node_id_t del_multi_ref(struct SelvaDb *db, struct SelvaNode *src_node, const struct EdgeFieldConstraint *efc, struct SelvaNodeReferences *refs, size_t i)
+static node_id_t del_multi_ref(
+        struct SelvaDb *db,
+        struct SelvaNode *src_node,
+        const struct EdgeFieldConstraint *efc,
+        struct SelvaNodeReferences *refs,
+        size_t i)
 {
     node_id_t dst_id;
     size_t id_set_len = refs->nr_refs;
