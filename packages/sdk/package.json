@@ -1,6 +1,6 @@
 {
   "name": "@based/sdk",
-  "version": "1.1.17",
+  "version": "1.1.18",
   "description": "The official SDK for the Based platform, providing a unified entry point for all packages.",
   "author": "Based",
   "license": "MIT",
@@ -159,17 +159,17 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@based/cli": "8.3.16",
-    "@based/client": "8.3.14",
-    "@based/db": "0.2.16",
-    "@based/errors": "1.6.14",
-    "@based/functions": "3.4.15",
+    "@based/cli": "8.3.17",
+    "@based/client": "8.3.15",
+    "@based/db": "0.2.17",
+    "@based/errors": "1.6.15",
+    "@based/functions": "3.4.16",
     "@based/hash": "1.1.1",
     "@based/protocol": "0.1.6",
-    "@based/react": "5.4.14",
+    "@based/react": "5.4.15",
     "@based/schema": "5.1.5",
-    "@based/server": "10.3.15",
-    "@based/type-gen": "0.2.14",
+    "@based/server": "10.3.16",
+    "@based/type-gen": "0.2.15",
     "@based/utils": "1.2.1"
   },
   "devDependencies": {

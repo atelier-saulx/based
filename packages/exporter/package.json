@@ -1,6 +1,6 @@
 {
   "name": "@based/exporter",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "main": "dist/exporter.js",
   "scripts": {
     "clean": "rm -Rf node_modules dist",
