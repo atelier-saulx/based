@@ -56,6 +56,7 @@ const getFromExisting = (
   id: number,
   ctx: Context<WebSocketSession>,
   checksum: number,
+  returnId: number,
 ) => {
   const obs = getObsAndStopRemove(server, id)
 
@@ -64,25 +65,27 @@ const getFromExisting = (
   }
 
   if (obs.error) {
-    sendObsGetError(server, ctx, id, obs.error)
+    sendObsGetError(server, ctx, returnId, obs.error)
     return
   }
   if (obs.cache) {
-    sendGetData(server, id, obs, checksum, ctx)
+    sendGetData(server, returnId, obs, checksum, ctx)
     return
   }
   subscribeNext(obs, (err) => {
     if (err) {
-      sendObsGetError(server, ctx, id, err)
+      sendObsGetError(server, ctx, returnId, err)
     } else {
-      sendGetData(server, id, obs, checksum, ctx)
+      sendGetData(server, returnId, obs, checksum, ctx)
     }
   })
 }
 
 const get: FunctionHandler<WebSocketSession, BasedRoute<'query'>> = (props) => {
+  const returnId = props.attachedCtx ? props.attachedCtx.fromId : props.id
+
   if (hasObs(props.server, props.id)) {
-    getFromExisting(props.server, props.id, props.ctx, props.checksum)
+    getFromExisting(props.server, props.id, props.ctx, props.checksum, returnId)
     return
   }
   const session = props.ctx.session
@@ -90,7 +93,7 @@ const get: FunctionHandler<WebSocketSession, BasedRoute<'query'>> = (props) => {
     return
   }
   if (hasObs(props.server, props.id)) {
-    getFromExisting(props.server, props.id, props.ctx, props.checksum)
+    getFromExisting(props.server, props.id, props.ctx, props.checksum, returnId)
     return
   }
   const obs = createObsNoStart(props)
@@ -100,9 +103,9 @@ const get: FunctionHandler<WebSocketSession, BasedRoute<'query'>> = (props) => {
   if (!session.obs.has(props.id)) {
     subscribeNext(obs, (err) => {
       if (err) {
-        sendObsGetError(props.server, props.ctx, props.id, err)
+        sendObsGetError(props.server, props.ctx, returnId, err)
       } else {
-        sendGetData(props.server, props.id, obs, props.checksum, props.ctx)
+        sendGetData(props.server, returnId, obs, props.checksum, props.ctx)
       }
     })
   }
@@ -183,6 +186,7 @@ export const getMessage: BinaryMessageHandler = (
 
   if (route.ctx) {
     const attachedCtx = attachCtx(server, route, ctx, id)
+    console.log('DERP DERP', id, attachedCtx.id)
     authorize({
       route,
       server,

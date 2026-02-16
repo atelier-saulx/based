@@ -638,3 +638,51 @@ test.serial('ctxBound attachCtx perf', async (t: T) => {
   await client.destroy()
   await server.destroy()
 })
+
+test.serial.only('ctxBound get', async (t: T) => {
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        nest: {
+          type: 'query',
+          ctx: ['authState.token', 'geo.country'],
+          public: true,
+          closeAfterIdleTime: 1,
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload, update, error, ctx) => {
+            let cnt = 0
+            update({ ctx, cnt })
+            const counter = setInterval(() => {
+              update({ ctx, cnt: ++cnt })
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+  await client.once('connect')
+
+  let res = await client.query('nest').get()
+  console.dir(res, { depth: 10 })
+
+  // hangs
+  res = await client.query('nest').get()
+  console.dir(res, { depth: 10 })
+
+  await client.destroy()
+  await server.destroy()
+
+  t.true(true)
+})

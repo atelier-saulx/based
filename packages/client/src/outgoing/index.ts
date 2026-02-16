@@ -241,6 +241,9 @@ export const addObsToQueue = (
   checksum: number = 0,
 ) => {
   const type = client.oQ.get(id)?.[0]
+
+  console.log('outgoing obs', type, id)
+
   if (type === 1) {
     return
   }
@@ -255,6 +258,8 @@ export const addGetToQueue = (
   payload: GenericObject,
   checksum: number = 0,
 ) => {
+  console.log('addGetToQueue', id)
+
   if (client.gQ.has(id)) {
     return
   }

@@ -62,6 +62,9 @@ export const incoming = async (client: BasedClient, data: any) => {
     } else if (type === FunctionClientType.get) {
       // | 4 header | 8 id |
       const id = readUint64(buffer, 4)
+
+      console.log('INCOMING GET', id)
+
       if (client.getState.has(id) && client.cache.has(id)) {
         const get = client.getState.get(id)
         for (const [resolve] of get) {
@@ -139,6 +142,9 @@ export const incoming = async (client: BasedClient, data: any) => {
     } else if (type === FunctionClientType.subscriptionData) {
       // | 4 header | 8 id | 8 checksum | * payload |
       const id = readUint64(buffer, 4)
+
+      console.log('INCOMING subscriptionData', id)
+
       const checksum = readUint64(buffer, 12)
 
       const start = 20
