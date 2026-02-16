@@ -37,19 +37,14 @@ pub fn prepare(
             c.offset = utils.alignLeftLen(c.len, q[nextI .. totalSize + i]);
             const end = totalSize + i;
 
-            // if (c.op.compare == t.FilterOpCompare.nextOrIndex) {
-            // if NEXT END = -1 then its q.len
-            // std.debug.print("HELLO ITS OR {any} \n", .{utils.readPtr(u64, q, nextI + @alignOf(u64) - c.offset).*});
-            // }
-
             switch (c.op.compare) {
                 .selectLargeRefEdge => {
-                    // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
+                    // const select = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - c.offset);
                     // const edgeSelect = utils.readPtr(t.FilterSelect, q, i + q[i] + utils.sizeOf(t.FilterCondition) + @alignOf(t.FilterSelect) - condition.offset);
                     // select.typeEntry = try Node.getType(ctx.db, select.typeId);
                     // try prepare(q[end .. end + select.size], ctx, select.typeEntry);
                     // i = end + select.size;
-                    i = end;
+                    // i = end;
                 },
                 .selectRef => {
                     const select = utils.readPtr(t.FilterSelect, q, nextI + @alignOf(t.FilterSelect) - c.offset);
@@ -131,8 +126,6 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
         pass = switch (c.op.compare) {
             .nextOrIndex => blk: {
                 end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
-                // nextEnd = nextOrIndex;
-                // put second thing PREV OR INDEX here
                 break :blk true;
             },
             .selectRef => blk: {

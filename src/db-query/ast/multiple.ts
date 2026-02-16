@@ -23,6 +23,8 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     return
   }
 
+  // ADD SORT
+
   const headerIndex = pushQueryHeader(ctx.query, {
     op: QueryType.default,
     prop: ID_PROP,

@@ -20,6 +20,8 @@ type WalkCtx = {
   main: { prop: PropDef; ops: FilterOp[] }[]
 }
 
+// Handle EDGES
+
 const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   const { tree, main } = walkCtx
 
@@ -167,7 +169,7 @@ export const filter = (
     }
 
     if (andOrReplace) {
-      // REMOVE THIS!
+      // REMOVE THIS! FIX
       let index = indexOf(
         ctx.query.data,
         andOrReplace,

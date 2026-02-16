@@ -18,6 +18,9 @@ export const defaultSingle = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   let prop = 0
   let aliasProp: PropDef | undefined
   let aliasValue
+
+  // ADD FILTER AND ALIAS
+
   if (typeof ast.target === 'number') {
     id = ast.target
   } else if (typeof ast.target === 'object' && ast.target !== null) {
