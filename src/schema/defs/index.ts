@@ -23,7 +23,7 @@ export type PropTree = {
   props: Map<string, PropDef | PropTree>
   required: string[]
   path: string[]
-  schema: SchemaObject<true>
+  schema: SchemaObject<true> | SchemaType<true>
 }
 
 export type TypeDef = {
