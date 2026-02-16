@@ -307,7 +307,6 @@ pub fn aggregates(
     i += utils.sizeOf(t.AggHeader);
     const typeId = header.typeId;
     const typeEntry = try Node.getType(ctx.db, typeId);
-    const isSamplingSet = header.isSamplingSet;
 
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
@@ -315,31 +314,42 @@ pub fn aggregates(
     const hllAccumulator = Selva.c.selva_string_create(null, Selva.c.HLL_INIT_SIZE, Selva.c.SELVA_STRING_MUTABLE);
     defer Selva.c.selva_string_free(hllAccumulator);
 
+    var aggCtx = Aggregates.AggCtx{
+        .queryCtx = ctx,
+        .typeEntry = typeEntry,
+        .limit = header.limit,
+        .isSamplingSet = header.isSamplingSet,
+        .hllAccumulator = hllAccumulator,
+        .accumulatorSize = header.accumulatorSize,
+        .resultsSize = header.resultsSize,
+        .totalResultsSize = 0,
+    };
+
     var it = Node.iterator(false, typeEntry);
     switch (header.iteratorType) {
         .aggregate => {
-            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, false, undefined, q[i..], accumulatorProp, typeEntry, hllAccumulator);
-            try Aggregates.finalizeResults(ctx, q[i..], accumulatorProp, isSamplingSet, 0);
+            nodeCnt = try Aggregates.iterator(&aggCtx, &it, false, undefined, q[i..], accumulatorProp);
+            try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
         .aggregateFilter => {
             const filter = utils.sliceNext(header.filterSize, q, &i);
             try Filter.prepare(filter, ctx, typeEntry);
-            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, true, filter, q[i..], accumulatorProp, typeEntry, hllAccumulator);
-            try Aggregates.finalizeResults(ctx, q[i..], accumulatorProp, isSamplingSet, 0);
+            nodeCnt = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i..], accumulatorProp);
+            try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
         .groupBy => {
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
-            nodeCnt = @intCast(GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, false, undefined, q[i..], header.accumulatorSize, header.resultsSize, typeEntry, hllAccumulator, undefined));
-            try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, q[i..]);
+            nodeCnt = @intCast(GroupBy.iterator(&aggCtx, &groupByHashMap, &it, false, undefined, q[i..]));
+            try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         .groupByFilter => {
             const filter = utils.sliceNext(header.filterSize, q, &i);
             try Filter.prepare(filter, ctx, typeEntry);
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
-            nodeCnt = @intCast(GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, true, filter, q[i..], header.accumulatorSize, header.resultsSize, typeEntry, hllAccumulator, undefined));
-            try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, q[i..]);
+            nodeCnt = @intCast(GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filter, q[i..]));
+            try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         else => {},
     }
