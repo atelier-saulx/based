@@ -313,46 +313,45 @@ await test('agg on references', async (t) => {
       select('players').groupBy('position').sum('goalsScored', 'gamesPlayed')
     })
     .get()
-  result.inspect()
 
-  // deepEqual(
-  //   result.toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       teamName: 'Grêmio',
-  //       city: 'Porto Alegre',
-  //       players: {
-  //         Forward: { goalsScored: { sum: 22 }, gamesPlayed: { sum: 11 } }, // Martin (10,5) + Pavon (12,6)
-  //         Defender: { goalsScored: { sum: 1 }, gamesPlayed: { sum: 10 } }, // Jemerson (1,10)
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       teamName: 'Ajax',
-  //       city: 'Amsterdam',
-  //       players: {
-  //         Forward: { goalsScored: { sum: 8 }, gamesPlayed: { sum: 7 } }, // Wout (8,7)
-  //         Defender: { goalsScored: { sum: 2 }, gamesPlayed: { sum: 9 } }, // Jorrel (2,9)
-  //       },
-  //     },
-  //     {
-  //       id: 3,
-  //       teamName: 'Boca Juniors',
-  //       city: 'Buenos Aires',
-  //       players: {}, // does anybody wants to play for Boca?
-  //     },
-  //     {
-  //       id: 4,
-  //       teamName: 'Barcelona',
-  //       city: 'Barcelona',
-  //       players: {
-  //         Forward: { goalsScored: { sum: 5 }, gamesPlayed: { sum: 5 } }, // Lewandowski
-  //       },
-  //     },
-  //   ],
-  //   'Include parent props, with referenced items grouped by their own prop, and aggregations',
-  // )
+  deepEqual(
+    result.toObject(),
+    [
+      {
+        id: 1,
+        teamName: 'Boca Juniors',
+        city: 'Buenos Aires',
+        players: {}, // does anybody wants to play for Boca?
+      },
+      {
+        id: 2,
+        teamName: 'Barcelona',
+        city: 'Barcelona',
+        players: {
+          Forward: { goalsScored: { sum: 5 }, gamesPlayed: { sum: 5 } }, // Lewandowski
+        },
+      },
+      {
+        id: 3,
+        teamName: 'Grêmio',
+        city: 'Porto Alegre',
+        players: {
+          Forward: { goalsScored: { sum: 22 }, gamesPlayed: { sum: 11 } }, // Martin (10,5) + Pavon (12,6)
+          Defender: { goalsScored: { sum: 1 }, gamesPlayed: { sum: 10 } }, // Jemerson (1,10)
+        },
+      },
+      {
+        id: 4,
+        teamName: 'Ajax',
+        city: 'Amsterdam',
+        players: {
+          Forward: { goalsScored: { sum: 8 }, gamesPlayed: { sum: 7 } }, // Wout (8,7)
+          Defender: { goalsScored: { sum: 2 }, gamesPlayed: { sum: 9 } }, // Jorrel (2,9)
+        },
+      },
+    ],
+    'Include parent props, with referenced items grouped by their own prop, and aggregations',
+  )
 })
 
 await test('enums', async (t) => {

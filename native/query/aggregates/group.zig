@@ -23,9 +23,11 @@ pub fn iterator(
     filterBuf: []u8,
     aggDefs: []u8,
     accumulatorSize: usize,
+    resultsSize: usize,
     typeEntry: Node.Type,
     hllAccumulator: anytype,
-) !u32 {
+    sumOfDistinctKeyLens: *usize,
+) usize {
     var count: u32 = 0;
     var hadAccumulated: bool = false;
 
@@ -35,11 +37,14 @@ pub fn iterator(
                 continue;
             }
         }
-        try aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, hllAccumulator, &hadAccumulated);
+        sumOfDistinctKeyLens.* += aggregatePropsWithGroupBy(groupByHashMap, node, typeEntry, aggDefs, accumulatorSize, resultsSize, hllAccumulator, &hadAccumulated) catch {
+            return 0;
+        };
         count += 1;
         if (count >= limit) break;
     }
-    return count;
+    // utils.debugPrint("count {d}, resultsSize {d}, sumOfDistinctKeyLens {d}\n", .{ count, resultsSize, sumOfDistinctKeyLens.* });
+    return sumOfDistinctKeyLens.*;
 }
 
 inline fn getGrouByKeyValue(
@@ -76,12 +81,14 @@ inline fn aggregatePropsWithGroupBy(
     typeEntry: Node.Type,
     aggDefs: []u8,
     accumulatorSize: usize,
+    resultsSize: usize,
     hllAccumulator: anytype,
     hadAccumulated: *bool,
-) !void {
-    if (aggDefs.len == 0) return;
+) !usize {
+    if (aggDefs.len == 0) return 0;
     // utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
+    var sumOfDistinctKeyLens: usize = 0;
     var i: usize = 0;
     const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
     // utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
@@ -91,7 +98,7 @@ inline fn aggregatePropsWithGroupBy(
 
     const propSchema = Schema.getFieldSchema(typeEntry, currentKeyPropDef.propId) catch {
         i += utils.sizeOf(t.GroupByKeyProp);
-        return;
+        return 0;
     };
 
     keyValue = Fields.get(
@@ -108,8 +115,13 @@ inline fn aggregatePropsWithGroupBy(
         try groupByHashMap.getOrInsert(key, accumulatorSize);
     const accumulatorProp = hash_map_entry.value;
     hadAccumulated.* = !hash_map_entry.is_new;
+    if (hash_map_entry.is_new) {
+        sumOfDistinctKeyLens += 2 + key.len + resultsSize;
+    }
+    // utils.debugPrint("is_new?: {any}, key: {s} {d}, sumOfDistinctKeyLens: {d}\n", .{ hash_map_entry.is_new, key, key.len, sumOfDistinctKeyLens });
 
     Aggregates.aggregateProps(node, typeEntry, aggDefs[i..], accumulatorProp, hllAccumulator, hadAccumulated);
+    return sumOfDistinctKeyLens;
 }
 
 pub inline fn finalizeGroupResults(
@@ -145,6 +157,7 @@ pub inline fn finalizeRefsGroupResults(
     while (it.next()) |entry| {
         const key = entry.key_ptr.*;
         const keyLen: u16 = @intCast(key.len);
+
         if (key.len > 0) {
             try ctx.thread.query.append(keyLen);
             try ctx.thread.query.append(key);

@@ -330,7 +330,7 @@ pub fn aggregates(
         .groupBy => {
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
-            nodeCnt = try GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, false, undefined, q[i..], header.accumulatorSize, typeEntry, hllAccumulator);
+            nodeCnt = @intCast(GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, false, undefined, q[i..], header.accumulatorSize, header.resultsSize, typeEntry, hllAccumulator, undefined));
             try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, q[i..]);
         },
         .groupByFilter => {
@@ -338,7 +338,7 @@ pub fn aggregates(
             try Filter.prepare(filter, ctx, typeEntry);
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
-            nodeCnt = try GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, true, filter, q[i..], header.accumulatorSize, typeEntry, hllAccumulator);
+            nodeCnt = @intCast(GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, true, filter, q[i..], header.accumulatorSize, header.resultsSize, typeEntry, hllAccumulator, undefined));
             try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, q[i..]);
         },
         else => {},
