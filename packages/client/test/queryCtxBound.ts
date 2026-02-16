@@ -1,8 +1,9 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedClient, encodeAuthState } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { wait } from '@based/utils'
+import { deepCopy, wait } from '@based/utils'
 import getPort from 'get-port'
+import { EventEmitter } from 'node:events'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
 
@@ -12,7 +13,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test('query ctx bound + default verifyAuthState', async (t: T) => {
+test.serial('query ctx bound + default verifyAuthState', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
@@ -141,7 +142,7 @@ test('query ctx bound + default verifyAuthState', async (t: T) => {
   await server.destroy()
 })
 
-test('query ctx bound on authState.token', async (t: T) => {
+test.serial('query ctx bound on authState.token', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
@@ -216,139 +217,145 @@ test('query ctx bound on authState.token', async (t: T) => {
   await server.destroy()
 })
 
-test('query ctx bound on authState.userId require auth', async (t: T) => {
-  const client = new BasedClient()
-  const server = new BasedServer({
-    port: t.context.port,
-    silent: true,
-    auth: {
-      verifyAuthState: async (_based, _ctx, authState) => {
-        if (authState?.token === '🔑') {
-          return { userId: 1, token: '🔑' }
-        }
-        return { token: 'wrong_token' }
+test.serial(
+  'query ctx bound on authState.userId require auth',
+  async (t: T) => {
+    const client = new BasedClient()
+    const server = new BasedServer({
+      port: t.context.port,
+      silent: true,
+      auth: {
+        verifyAuthState: async (_based, _ctx, authState) => {
+          if (authState?.token === '🔑') {
+            return { userId: 1, token: '🔑' }
+          }
+          return { token: 'wrong_token' }
+        },
+        authorize: async (based, ctx, name, payload) => {
+          await based.renewAuthState(ctx)
+          if (ctx.session.authState.token === '🔑') {
+            return true
+          }
+          return false
+        },
       },
-      authorize: async (based, ctx, name, payload) => {
-        await based.renewAuthState(ctx)
-        if (ctx.session.authState.token === '🔑') {
-          return true
-        }
-        return false
-      },
-    },
-    functions: {
-      configs: {
-        counter: {
-          type: 'query',
-          ctx: ['authState.userId'],
-          closeAfterIdleTime: 1,
-          uninstallAfterIdleTime: 1e3,
-          fn: async (based, payload, update, error, ctx) => {
-            if (payload === 'error') {
-              error(new Error('error time!'))
-            }
-            let cnt = 0
-            update({ userId: ctx.authState.userId, cnt })
-            const counter = setInterval(() => {
-              update({ userId: ctx.authState.userId, cnt: ++cnt })
-            }, 100)
-            return () => {
-              clearInterval(counter)
-            }
+      functions: {
+        configs: {
+          counter: {
+            type: 'query',
+            ctx: ['authState.userId'],
+            closeAfterIdleTime: 1,
+            uninstallAfterIdleTime: 1e3,
+            fn: async (based, payload, update, error, ctx) => {
+              if (payload === 'error') {
+                error(new Error('error time!'))
+              }
+              let cnt = 0
+              update({ userId: ctx.authState.userId, cnt })
+              const counter = setInterval(() => {
+                update({ userId: ctx.authState.userId, cnt: ++cnt })
+              }, 100)
+              return () => {
+                clearInterval(counter)
+              }
+            },
           },
         },
       },
-    },
-  })
-  await server.start()
-
-  client.connect({
-    url: async () => {
-      return t.context.ws
-    },
-  })
-
-  await client.once('connect')
-
-  const results = []
-  const errs = []
-
-  let close = client
-    .query('counter', {
-      myQuery: 123,
     })
-    .subscribe(
+    await server.start()
+
+    client.connect({
+      url: async () => {
+        return t.context.ws
+      },
+    })
+
+    await client.once('connect')
+
+    const results = []
+    const errs = []
+
+    let close = client
+      .query('counter', {
+        myQuery: 123,
+      })
+      .subscribe(
+        (d) => {
+          results.push({ ...d })
+        },
+        (err) => {
+          errs.push(err.message)
+        },
+      )
+
+    await wait(290)
+
+    t.deepEqual(
+      errs,
+      ['[counter] Authorize rejected access.'],
+      'Changing auth state err',
+    )
+    t.deepEqual(results, [], '')
+
+    await client.setAuthState({ token: '🔑' })
+
+    await wait(290)
+
+    t.deepEqual(
+      results,
+      [
+        { userId: 1, cnt: 0 },
+        { userId: 1, cnt: 1 },
+        { userId: 1, cnt: 2 },
+      ],
+      'Changing auth state token (valid auth)',
+    )
+
+    close()
+
+    const r2 = []
+    close = client.query('counter', 'error').subscribe(
       (d) => {
-        results.push({ ...d })
+        r2.push({ ...d })
       },
       (err) => {
-        errs.push(err.message)
+        // console.log(err)
       },
     )
 
-  await wait(290)
+    await wait(290)
 
-  t.deepEqual(
-    errs,
-    ['[counter] Authorize rejected access.'],
-    'Changing auth state err',
-  )
-  t.deepEqual(results, [], '')
+    close()
 
-  await client.setAuthState({ token: '🔑' })
+    t.deepEqual(await client.query('counter').get(), { userId: 1, cnt: 0 })
+    t.deepEqual(await client.query('counter', 'bla').get(), {
+      userId: 1,
+      cnt: 0,
+    })
 
-  await wait(290)
+    t.throwsAsync(() => client.query('counter', 'error').get())
 
-  t.deepEqual(
-    results,
-    [
-      { userId: 1, cnt: 0 },
-      { userId: 1, cnt: 1 },
-      { userId: 1, cnt: 2 },
-    ],
-    'Changing auth state token (valid auth)',
-  )
+    await wait(1000)
 
-  close()
+    const f = await fetch(
+      `${t.context.http}/counter?token=${encodeAuthState({
+        token: '🔑',
+      })}`,
+    )
+    const httpGetResult = await f.json()
 
-  const r2 = []
-  close = client.query('counter', 'error').subscribe(
-    (d) => {
-      r2.push({ ...d })
-    },
-    (err) => {
-      // console.log(err)
-    },
-  )
+    t.deepEqual(httpGetResult, { userId: 1, cnt: 0 })
 
-  await wait(290)
+    await wait(1000)
 
-  close()
+    t.is(server.activeObservablesById.size, 0)
+    await client.destroy()
+    await server.destroy()
+  },
+)
 
-  t.deepEqual(await client.query('counter').get(), { userId: 1, cnt: 0 })
-  t.deepEqual(await client.query('counter', 'bla').get(), { userId: 1, cnt: 0 })
-
-  t.throwsAsync(() => client.query('counter', 'error').get())
-
-  await wait(1000)
-
-  const f = await fetch(
-    `${t.context.http}/counter?token=${encodeAuthState({
-      token: '🔑',
-    })}`,
-  )
-  const httpGetResult = await f.json()
-
-  t.deepEqual(httpGetResult, { userId: 1, cnt: 0 })
-
-  await wait(1000)
-
-  t.is(server.activeObservablesById.size, 0)
-  await client.destroy()
-  await server.destroy()
-})
-
-test('query ctx bound on geo', async (t: T) => {
+test.serial('query ctx bound on geo', async (t: T) => {
   let currentGeo = 1
   const server = new BasedServer({
     port: t.context.port,
@@ -438,7 +445,7 @@ test('query ctx bound on geo', async (t: T) => {
   await server.destroy()
 })
 
-test('query ctx bound internal (nested calls)', async (t: T) => {
+test.serial('query ctx bound internal (nested calls)', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     silent: true,
@@ -508,65 +515,68 @@ test('query ctx bound internal (nested calls)', async (t: T) => {
   await server.destroy()
 })
 
-test('query ctx bound internal (nested call from call)', async (t: T) => {
-  const server = new BasedServer({
-    port: t.context.port,
-    silent: true,
-    functions: {
-      configs: {
-        nest: {
-          type: 'query',
-          ctx: ['authState.token'],
-          public: true,
-          closeAfterIdleTime: 1,
-          uninstallAfterIdleTime: 1e3,
-          fn: async (based, payload, update, error, ctx) => {
-            let cnt = 0
-            update({ ctx, cnt })
-            const counter = setInterval(() => {
-              update({ ctx, cnt: ++cnt })
-            }, 100)
-            return () => {
-              clearInterval(counter)
-            }
+test.serial(
+  'query ctx bound internal (nested call from call)',
+  async (t: T) => {
+    const server = new BasedServer({
+      port: t.context.port,
+      silent: true,
+      functions: {
+        configs: {
+          nest: {
+            type: 'query',
+            ctx: ['authState.token'],
+            public: true,
+            closeAfterIdleTime: 1,
+            uninstallAfterIdleTime: 1e3,
+            fn: async (based, payload, update, error, ctx) => {
+              let cnt = 0
+              update({ ctx, cnt })
+              const counter = setInterval(() => {
+                update({ ctx, cnt: ++cnt })
+              }, 100)
+              return () => {
+                clearInterval(counter)
+              }
+            },
           },
-        },
-        hello: {
-          type: 'function',
-          public: true,
-          uninstallAfterIdleTime: 1e3,
-          fn: async (based, payload, ctx) => {
-            return based.query('nest', payload, ctx).get()
+          hello: {
+            type: 'function',
+            public: true,
+            uninstallAfterIdleTime: 1e3,
+            fn: async (based, payload, ctx) => {
+              return based.query('nest', payload, ctx).get()
+            },
           },
         },
       },
-    },
-  })
-  await server.start()
-  const client = new BasedClient()
-  client.connect({
-    url: async () => {
-      return t.context.ws
-    },
-  })
-  await client.once('connect')
-  const results = []
-  results.push(await client.call('hello'))
+    })
+    await server.start()
+    const client = new BasedClient()
+    client.connect({
+      url: async () => {
+        return t.context.ws
+      },
+    })
+    await client.once('connect')
+    const results = []
+    results.push(await client.call('hello'))
 
-  await client.setAuthState({ token: '🔑' })
-  results.push(await client.call('hello'))
+    await client.setAuthState({ token: '🔑' })
+    results.push(await client.call('hello'))
 
-  t.deepEqual(results, [
-    { ctx: { authState: {} }, cnt: 0 },
-    { ctx: { authState: { token: '🔑' } }, cnt: 0 },
-  ])
+    t.deepEqual(results, [
+      { ctx: { authState: {} }, cnt: 0 },
+      { ctx: { authState: { token: '🔑' } }, cnt: 0 },
+    ])
 
-  await wait(1000)
+    await wait(1000)
 
-  t.is(server.activeObservablesById.size, 0)
-  await client.destroy()
-  await server.destroy()
-})
+    t.is(server.activeObservablesById.size, 0)
+    await client.destroy()
+    await server.destroy()
+  },
+)
 
 test.serial('ctxBound attachCtx perf', async (t: T) => {
   let resolve: any
@@ -639,7 +649,7 @@ test.serial('ctxBound attachCtx perf', async (t: T) => {
   await server.destroy()
 })
 
-test.serial.only('ctxBound get', async (t: T) => {
+test.serial('ctxBound get', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     silent: true,
@@ -673,16 +683,166 @@ test.serial.only('ctxBound get', async (t: T) => {
     },
   })
   await client.once('connect')
-
   let res = await client.query('nest').get()
-  console.dir(res, { depth: 10 })
-
-  // hangs
   res = await client.query('nest').get()
-  console.dir(res, { depth: 10 })
+  t.deepEqual(res, {
+    ctx: { authState: {}, geo: { country: 'unknown' } },
+    cnt: 0,
+  })
+  await client.destroy()
+  await server.destroy()
+  t.true(true)
+})
+
+test.serial('ctxBound strange diff mismatch', async (t: T) => {
+  const missions = [
+    {
+      id: 1,
+      notes: 'derp1',
+      plannedStartedAt: 1000,
+    },
+
+    {
+      id: 2,
+      notes: 'derp2',
+      plannedStartedAt: 2000,
+    },
+
+    {
+      id: 3,
+      notes: 'derp3',
+      plannedStartedAt: 3000,
+    },
+  ]
+
+  const emitter = new EventEmitter()
+
+  const findId = (id) => {
+    return (v) => v.id === id
+  }
+
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        list: {
+          type: 'query',
+          ctx: ['authState.token', 'authState.userId'],
+          public: true,
+          fn: async (based, payload, update, error, ctx) => {
+            update(missions)
+            const listener = () => {
+              update(missions)
+            }
+            emitter.on('data', listener)
+            return () => {
+              emitter.off('data', listener)
+            }
+          },
+        },
+        mission: {
+          uninstallAfterIdleTime: 10000,
+          type: 'query',
+          ctx: ['authState.token', 'authState.userId'],
+          public: true,
+          fn: async (based, payload, update, error, ctx) => {
+            update(missions.find(findId(payload.id)))
+            const listener = () => {
+              update(missions.find(findId(payload.id)))
+            }
+            emitter.on('data', listener)
+            return () => {
+              emitter.off('data', listener)
+            }
+          },
+        },
+        update: {
+          type: 'function',
+          public: true,
+          fn: async (based, payload, ctx) => {
+            const mission = missions.find(findId(payload.id))
+            Object.assign(mission, payload)
+            emitter.emit('data')
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+  await client.once('connect')
+
+  await client.setAuthState({
+    userId: 1,
+  })
+
+  const workspaceId = 1
+
+  const listResult = await client
+    .query('list', { workspace: { id: workspaceId } })
+    .get()
+
+  const missionId = listResult?.[0]?.id
+
+  const updates: unknown[] = []
+  const unsubscribe = client
+    .query('mission', { id: missionId })
+    .subscribe((mission) => {
+      updates.push(deepCopy(mission))
+    })
+
+  await wait(1000)
+
+  const newNotes = `Sub test ${Date.now()}`
+  const newPlannedStartedAt = new Date(Date.UTC(2026, 1, 11))
+
+  await client.call('update', {
+    id: missionId,
+    notes: newNotes,
+    plannedStartedAt: newPlannedStartedAt,
+  })
+
+  await wait(1000)
+
+  const firstUpdate = updates[updates.length - 1] as Record<string, unknown>
+
+  const notesOk1 = firstUpdate.notes === newNotes
+  const plannedStartedAtOk1 =
+    new Date(firstUpdate.plannedStartedAt as string | number).getTime() ===
+    newPlannedStartedAt.getTime()
+
+  const newNotes2 = `Sub test 2 ${Date.now()}`
+  const newPlannedStartedAt2 = new Date(
+    newPlannedStartedAt.getTime() + 24 * 60 * 60 * 1000,
+  )
+
+  await client.call('update', {
+    id: missionId,
+    notes: newNotes2,
+    plannedStartedAt: newPlannedStartedAt2,
+  })
+
+  await wait(1000)
+
+  const secondUpdate = updates[updates.length - 1] as Record<string, unknown>
+
+  const notesOk2 = secondUpdate.notes === newNotes2
+  const plannedStartedAtOk2 =
+    new Date(secondUpdate.plannedStartedAt as string | number).getTime() ===
+    newPlannedStartedAt2.getTime()
+
+  const allPassed =
+    notesOk1 && plannedStartedAtOk1 && notesOk2 && plannedStartedAtOk2
+
+  unsubscribe()
 
   await client.destroy()
   await server.destroy()
-
-  t.true(true)
+  t.true(allPassed)
 })

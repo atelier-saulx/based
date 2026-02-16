@@ -1,6 +1,6 @@
 export type ClientAuthState = {
   token?: string
-  userId?: string
+  userId?: string | number
   refreshToken?: string
   error?: string
   persistent?: boolean
