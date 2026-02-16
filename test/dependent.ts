@@ -50,37 +50,37 @@ await test('dependent', async (t) => {
     },
   } as const
 
-  await db.setSchema(schema)
+  const client = await db.setSchema(schema)
 
   const createShowTree = async () => {
-    const showId = await db.create('show', {})
-    const editionId = await db.create('edition', {
+    const showId = await client.create('show', {})
+    const editionId = await client.create('edition', {
       show: showId,
     })
-    const sequenceId = await db.create('sequence', {
+    const sequenceId = await client.create('sequence', {
       edition: editionId,
     })
-    const pageId = await db.create('page', {
+    const pageId = await client.create('page', {
       sequence: sequenceId,
     })
-    await db.create('item', {
+    await client.create('item', {
       page: pageId,
     })
 
-    await db.drain()
+    await client.drain()
 
     for (const type in schema.types) {
-      const len = (await db.query(type).get()).length
+      const len = (await client.query(type).get()).length
       equal(len, 1)
     }
     return showId
   }
 
   const showId = await createShowTree()
-  await db.delete('show', showId)
-  await db.drain()
+  await client.delete('show', showId)
+  await client.drain()
   for (const type in schema.types) {
-    equal((await db.query(type).get()).length, 0)
+    equal((await client.query(type).get()).length, 0)
   }
   await createShowTree()
 })
@@ -132,4 +132,99 @@ await test('del children', async (t) => {
     deepEqual(await client.query('parent').get(), [])
     deepEqual(await client.query('child').get(), [])
   }
+})
+
+await test('circle of friends', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  const client = await db.setSchema({
+    types: {
+      human: {
+        name: { type: 'string', maxBytes: 8 },
+        //friends: { type: 'references', items: { ref: 'human', prop: 'friends' } },
+        friends: { type: 'references', items: { ref: 'human', prop: 'friends', dependent: true } },
+      },
+    },
+  })
+
+  const h1 = client.create('human', { name: 'joe', })
+  const h2 = client.create('human', { name: 'john', })
+  const h3 = client.create('human', { name: 'jack', })
+
+  client.update('human', h2, {
+    friends: [h1, h3]
+  })
+  //client.update('human', h3, {
+  //  friends: [h2, h1],
+  //})
+  client.update('human', h3, {
+    friends: { add: [ h2, h1 ] },
+  })
+
+  deepEqual(await client.query('human').include('**').get(), [
+        {
+       id: 1,
+       friends: [{
+          id: 2,
+          name: "john"
+       },
+       {
+          id: 3,
+          name: "jack"
+       }]
+
+    },
+    {
+       id: 2,
+       friends: [{
+          id: 1,
+          name: "joe"
+       },
+       {
+          id: 3,
+          name: "jack"
+       }]
+
+    },
+    {
+       id: 3,
+       friends: [{
+          id: 2,
+          name: "john"
+       },
+       {
+          id: 1,
+          name: "joe"
+       }]
+
+    },
+  ])
+
+  client.delete('human', 1)
+  deepEqual(await client.query('human').include('**').get(), [
+    {
+       id: 2,
+       friends: [
+       {
+          id: 3,
+          name: "jack"
+       }]
+    },
+    {
+       id: 3,
+       friends: [
+       {
+          id: 2,
+          name: "john"
+       }]
+    },
+  ])
+
+  client.delete('human', 2)
+  deepEqual(await client.query('human').include('**').get(), [])
 })
