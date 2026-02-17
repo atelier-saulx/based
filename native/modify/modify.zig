@@ -385,6 +385,9 @@ pub fn modify(
         j += resItemSize;
     }
 
+    // 1. expire will just be checked on query
+    // 2. subscription will handle timers
+    // 3. keep Node.expire(db) for internal cleanup
     Node.expire(db);
     utils.write(result, j, 0);
     if (j < size) @memset(result[j..size], 0);
