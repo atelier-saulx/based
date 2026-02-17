@@ -327,6 +327,7 @@ await test('cardinality with dates', async (t) => {
   // console.log('Total Eaters by Month: ', eatersByMonth)
   deepEqual(
     eatersByMonth,
+    //@ts-ignore
     [{ Jun: { cardinality: 5 } }, { Jul: { cardinality: 11 } }],
     'Total Eaters by Month',
   )

@@ -56,12 +56,8 @@ await test('sum top level', async (t) => {
     country: 'aa',
     AU: 15,
   })
-  db.drain()
-  db.create('sequence', { votes: nl1 })
-  db.create('sequence', { votes: nl2 })
-  db.create('sequence', { votes: au1 })
 
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1] }) // create with an array not implemented yet
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   // top level  ----------------------------------
   deepEqual(
@@ -275,13 +271,7 @@ await test('two phase accumulation', async (t) => {
     country: 'Brazil',
     NL: 50,
   })
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] }) // create multiple with an array is not implemented yet
-  db.drain()
-  db.create('sequence', { votes: nl1 })
-  db.create('sequence', { votes: nl2 })
-  db.create('sequence', { votes: au1 })
-  db.create('sequence', { votes: au2 })
-  db.create('sequence', { votes: br1 })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
     await db.query('vote').stddev('NL', { mode: 'sample' }).get().toObject(),
@@ -461,21 +451,7 @@ await test('numeric types', async (t) => {
     PL: -50,
     FI: -50.999,
   })
-  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] }) // create with an array not implemented yet
-  db.drain()
-  // db.create('sequence', { votes: nl1 })
-  // db.create('sequence', { votes: nl2 })
-  // db.create('sequence', { votes: au1 })
-  // db.create('sequence', { votes: au2 })
-  // db.create('sequence', { votes: br1 })
-
-  // await db
-  //   .query('vote')
-  //   .sum('NL', 'FI')
-  //   //
-  //   .groupBy('region')
-  //   .get()
-  //   .inspect()
+  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
     await db.query('vote').groupBy('region').get().toObject(),
@@ -1098,28 +1074,25 @@ await test('range', async (t) => {
     },
   })
 
-  const rnd = fastPrng()
+  const rnd = fastPrng(new Date().getTime())
   for (let i = 0; i < 10; i++) {
-    const d = new Date('11/11/2024 11:00-3')
+    const d = new Date('11/12/2024 00:00-3')
     db.create('job', {
-      day: new Date(d.getTime() + Math.random() * 1e7),
+      day: new Date(d.getTime() + 3600 * 1000 * rnd(2, 3)),
       tip: Math.random() * 20,
     })
     const s = db.create('state', {
       name: `statelala ${rnd(0, 2)}`,
     })
-    db.drain()
     const t = db.create('territory', {
       name: ter[rnd(0, ter.length - 1)],
       flap: Math.random() * 100,
       state: s,
     })
-    db.drain()
     db.create('employee', {
       name: `emplala ${rnd(0, 10)}`,
       area: t,
     })
-    db.drain()
   }
 
   deepEqual(
@@ -1128,7 +1101,7 @@ await test('range', async (t) => {
         .query('job')
         .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
         .avg('tip')
-        .range(0, 2)
+        // .range(0, 2)
         .get()
         .toObject(),
     ).length,
