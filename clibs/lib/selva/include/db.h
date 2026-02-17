@@ -150,7 +150,8 @@ struct SelvaDb {
      */
     int dirfd;
 
-    selva_db_dirty_hook_t dirty_hook;
+    selva_db_dirty_hook_t dirty_hook_fun;
+    void *dirty_hook_ctx;
 
     uint32_t sdb_version; /*!< Current SDB version. Set on common load and save. 0 if not saved/loaded. */
     size_t nr_types;

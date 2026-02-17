@@ -266,7 +266,7 @@ struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len])
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
     db->dirfd = AT_FDCWD;
-    db->dirty_hook = noop_dirty_hook;
+    db->dirty_hook_fun = noop_dirty_hook;
     selva_expire_init(&db->expiring);
 
     for (size_t i = 0; i < len;) {
@@ -316,9 +316,10 @@ int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname
     return 0;
 }
 
-void selva_db_set_dirty_hook(struct SelvaDb *db, selva_db_dirty_hook_t dirty_hook)
+void selva_db_set_dirty_hook(struct SelvaDb *db, selva_db_dirty_hook_t dirty_hook, void *ctx)
 {
-    db->dirty_hook = dirty_hook ?: noop_dirty_hook;
+    db->dirty_hook_fun = dirty_hook ?: noop_dirty_hook;
+    db->dirty_hook_ctx = ctx;
 }
 
 /**
@@ -561,7 +562,7 @@ void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id)
         struct SelvaDb *db = containerof(te, typeof(*db), types[te->type - 1]);
 
         selva_block_status_set(te, selva_node_id2block_i2(te, node_id), SELVA_TYPE_BLOCK_STATUS_DIRTY);
-        db->dirty_hook(nullptr, te->type, node_id);
+        db->dirty_hook_fun(db->dirty_hook_ctx, te->type, node_id);
     }
 }
 
