@@ -271,3 +271,26 @@ _Example:_ `npx @based/cli dev [options]`
 | `--cloud` | To connect to Based Cloud instead. |
 | `-f, --function <functions...>` | The function names to be served (variadic). |
 
+### Secrets
+
+Set or get Based Secrets
+
+_Example:_ `npx @based/cli secrets [sub-command][options]`
+
+#### Get
+
+Get a Based Secret.
+
+| Option | Description |
+|--------|-------------|
+| `--key <key>, -k <key>` | Secret key/name |
+
+#### Set
+
+Set a Based Secret.
+
+| Option | Description |
+|--------|-------------|
+| `--key <key>, -k <key>` | Secret key/name |
+| `--value <value>, -v <value>` | Secret value |
+

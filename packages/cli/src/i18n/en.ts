@@ -701,6 +701,46 @@ export default {
         },
       ],
     },
+    secrets: {
+      usage: '[command]',
+      description: 'Set or get Based Secrets',
+      example: 'npx @based/cli secrets [sub-command][options]',
+      subCommands: {
+        get: {
+          description: 'Get a Based Secret.',
+          options: [
+            {
+              parameter: '--key <key>, -k <key>',
+              description: 'Secret key/name',
+            },
+          ],
+          methods: {
+            success:
+              'Secret with key <b>${key}</b> has the value: <b>${value}</b>',
+            not_found: 'Secret with key <b>${key}</b> not found.',
+            not_key: 'Key argument needed.',
+          },
+        },
+        set: {
+          description: 'Set a Based Secret.',
+          options: [
+            {
+              parameter: '--key <key>, -k <key>',
+              description: 'Secret key/name',
+            },
+            {
+              parameter: '--value <value>, -v <value>',
+              description: 'Secret value',
+            },
+          ],
+          methods: {
+            success: 'Secret <b>${key}</b> set successfully!',
+            not_key: 'Key argument needed.',
+            not_value: 'Value argument needed.',
+          },
+        },
+      },
+    },
   },
   errors: {
     401: 'Was not possible to autenticate you. Please check your email and try again. ${error}',

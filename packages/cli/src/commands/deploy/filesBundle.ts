@@ -27,6 +27,7 @@ export const filesBundle = async (
   const [nodeBundles, browserBundles] = await Promise.all([
     await bundle(
       {
+        publicPath: staticURL,
         entryPoints: node,
         sourcemap: 'external',
       },
