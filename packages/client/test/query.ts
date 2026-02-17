@@ -96,7 +96,7 @@ test('query functions', async (t: T) => {
   t.is(Object.keys(server.functions.specs).length, 0)
 })
 
-test.only('Date support', async (t: T) => {
+test('Date support', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
@@ -116,11 +116,7 @@ test.only('Date support', async (t: T) => {
                 x: new Date(cnt),
                 cnt,
               }
-              // @ts-ignore
-              // bla.x = new Date(++cnt)
-              // console.log(bla.x.toJSON())
 
-              // bla.cnt = cnt
               update(x)
             }, 100)
             return () => {
@@ -142,13 +138,19 @@ test.only('Date support', async (t: T) => {
   const updates = []
 
   const close = client.query('counter').subscribe((d) => {
-    console.log('incoming...', d)
     updates.push(deepCopy(d))
   })
 
   await wait(300)
 
-  console.dir(updates, { depth: 10 })
+  t.deepEqual(
+    [
+      { id: 1, x: '1970-01-01T00:00:00.000Z', cnt: 0 },
+      { x: '1970-01-01T00:00:01.000Z', cnt: 1000 },
+      { x: '1970-01-01T00:00:02.000Z', cnt: 2000 },
+    ],
+    updates,
+  )
 
   close()
 
