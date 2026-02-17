@@ -170,12 +170,12 @@ await test('circle of friends', async (t) => {
   client.update('human', h2, {
     friends: [h1, h3],
   })
-  //client.update('human', h3, {
-  //  friends: [h2, h1],
-  //})
   client.update('human', h3, {
-    friends: { add: [h2, h1] },
+    friends: [h2, h1],
   })
+  //client.update('human', h3, {
+  //  friends: { add: [h2, h1] },
+  //})
 
   deepEqual(await client.query('human').include('**').get(), [
     {

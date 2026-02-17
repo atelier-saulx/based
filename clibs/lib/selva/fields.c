@@ -545,7 +545,8 @@ static node_id_t del_multi_ref(
         struct SelvaNode *src_node,
         const struct EdgeFieldConstraint *efc,
         struct SelvaNodeReferences *refs,
-        size_t i)
+        size_t i,
+        bool ignore_src_dependent)
 {
     node_id_t dst_id;
     size_t id_set_len = refs->nr_refs;
@@ -641,7 +642,7 @@ static node_id_t del_multi_ref(
     assert(id_set_len == refs->nr_refs);
     assume(id_set_len == refs->nr_refs);
 
-    if  ((efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT) && refs->nr_refs == 0) {
+    if  (!ignore_src_dependent && (efc->flags & EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT) && refs->nr_refs == 0) {
         selva_expire_node(db, src_node->type, src_node->node_id, 0, SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
     }
 
@@ -698,7 +699,7 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
 
         ssize_t i = refs_find_node_i(refs, src_node_id);
         assert(i >= 0);
-        (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i);
+        (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i, false);
     }
 
     selva_mark_dirty(selva_get_type_by_index(db, fs_dst->edge_constraint.dst_node_type), src_node_id);
@@ -782,7 +783,7 @@ static node_id_t remove_reference(struct SelvaDb *db, struct SelvaNode *src, con
 
             ssize_t i = (idx >= 0) ? idx : refs_find_node_i(refs, orig_dst);
             if (i >= 0 && i < refs->nr_refs) {
-                dst_node_id = del_multi_ref(db, src, &fs_src->edge_constraint, refs, i);
+                dst_node_id = del_multi_ref(db, src, &fs_src->edge_constraint, refs, i, ignore_src_dependent);
             }
         }
     }
@@ -824,7 +825,7 @@ static size_t remove_references_tail(
     return removed;
 }
 
-static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
+static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs, bool ignore_src_dependent)
 {
     struct SelvaTypeEntry *te = selva_get_type_by_index(db, node->type);
     struct SelvaFields *fields = &node->fields;
@@ -864,7 +865,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
             goto out;
         }
 
-        removed_dst = remove_reference(db, node, fs, dst_node_id, i, false);
+        removed_dst = remove_reference(db, node, fs, dst_node_id, i, ignore_src_dependent);
         if (removed_dst != 0) {
             assert(removed_dst == dst_node_id);
         }
@@ -880,7 +881,7 @@ out:
 __attribute__((nonnull(1, 2, 3)))
 static void remove_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
-    struct SelvaNodeReferences *refs = clear_references(db, node, fs);
+    struct SelvaNodeReferences *refs = clear_references(db, node, fs, false);
     if (refs) {
         switch (refs->size) {
         case SELVA_NODE_REFERENCE_SMALL:
@@ -2011,7 +2012,7 @@ int selva_fields_del_ref(struct SelvaDb *db, struct SelvaNode *node, const struc
 void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, const struct SelvaFieldSchema *fs)
 {
     assert(fs->type == SELVA_FIELD_TYPE_REFERENCES);
-    (void)clear_references(db, node, fs);
+    (void)clear_references(db, node, fs, true);
 }
 
 static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFields *fields, const struct SelvaFieldsSchema *schema)
