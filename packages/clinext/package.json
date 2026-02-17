@@ -28,7 +28,7 @@
     "@based/react": "5.4.15",
     "@based/s3": "1.1.16",
     "@based/schema": "5.1.5",
-    "@based/utils": "1.2.1",
+    "@based/utils": "1.3.0",
     "@inkjs/ui": "^2.0.0",
     "@parcel/watcher": "^2.5.1",
     "@saulx/validators": "^1.2.1",

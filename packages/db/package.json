@@ -44,7 +44,7 @@
   "dependencies": {
     "@based/hash": "1.1.1",
     "@based/schema": "5.1.5",
-    "@based/utils": "1.2.1",
+    "@based/utils": "1.3.0",
     "@based/protocol": "0.1.6",
     "exit-hook": "^4.0.0"
   },

@@ -715,6 +715,12 @@ test.serial('ctxBound strange diff mismatch', async (t: T) => {
     },
   ]
 
+  /*
+  2026-02-17T14:41:05.011Z {"id":2,"createdAt":"2026-02-17T14:41:04.964Z","updatedAt":"2026-02-17T14:41:04.964Z","name":"sub-test-1771339264950","manufacturer":"","model":"","firmwareVersion":"","isDecommissioned":false,"notes":"","serialNumber":"","weightInGrams":0,"workspace":{"id":1},"assignedToTeams":[],"customAttributes":null}
+2026-02-17T14:41:05.611Z {"id":2,"createdAt":"2026-02-17T14:41:04.964Z","updatedAt":"2026-02-17T14:41:04.964Z","name":"sub-test-1771339264950","manufacturer":"","model":"","firmwareVersion":"","isDecommissioned":false,"notes":"Sub test 1771339265492","serialNumber":"","weightInGrams":0,"workspace":{"id":1},"assignedToTeams":[],"customAttributes":null,"purchasedAt":"2026-02-11T00:00:00.000Z"}
+2026-02-17T14:41:07.613Z {"id":2,"createdAt":"2026-02-17T14:41:04.964Z","updatedAt":"2026-02-17T14:41:04.964Z","name":"sub-test-1771339264950","manufacturer":"","model":"","firmwareVersion":"","isDecommissioned":false,"notes":"Sub test 2 1771339267530","serialNumber":"","weightInGrams":0,"workspace":{"id":1},"assignedToTeams":[],"customAttributes":null,"purchasedAt":"2026-02-11T00:00:00.000Z"}
+  */
+
   const emitter = new EventEmitter()
 
   const findId = (id) => {
@@ -839,6 +845,8 @@ test.serial('ctxBound strange diff mismatch', async (t: T) => {
 
   const allPassed =
     notesOk1 && plannedStartedAtOk1 && notesOk2 && plannedStartedAtOk2
+
+  console.log({ allPassed, updates })
 
   unsubscribe()
 

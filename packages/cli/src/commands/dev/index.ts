@@ -54,7 +54,7 @@ export const devServer = async ({
 }) => {
   const context: AppContext = AppContext.getInstance()
   await context.getProgram()
-  const basedClient = await context.getBasedClient()
+
   const newPort =
     port && !Number.isNaN(Number.parseInt(port)) ? Number(port) : undefined
 
@@ -68,6 +68,14 @@ export const devServer = async ({
 
   process.env.BASED_DEV_SERVER_LOCAL_URL = `http://localhost:${devPort}`
   process.env.BASED_DEV_SERVER_PUBLIC_URL = `http://${ip}:${devPort}`
+
+  let client: BasedClient
+  const returnedJobFunction = {}
+  if (!cloud) {
+    client = SharedBasedClient.getInstance({ url: wsURL })
+  } else {
+    client = (await context.getBasedClient()).get('project')
+  }
 
   const { entryPoints, mapping } = await getBasedFiles(context)
   const bundledConfigs = await configsBundle(
@@ -102,15 +110,6 @@ export const devServer = async ({
     wsURL,
     cloud,
   )
-
-  let client: BasedClient
-  const returnedJobFunction = {}
-
-  if (!cloud) {
-    client = SharedBasedClient.getInstance({ url: wsURL })
-  } else {
-    client = basedClient.get('project')
-  }
 
   const { clients } = new WebSocketServer({ port: liveReloadPort })
   const basedServer: BasedServer = await context.basedServer(

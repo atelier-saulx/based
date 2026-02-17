@@ -1,7 +1,7 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { wait } from '@based/utils'
+import { deepCopy, wait } from '@based/utils'
 import getPort from 'get-port'
 
 type T = ExecutionContext<{ port: number; ws: string; http: string }>
@@ -12,7 +12,7 @@ test.beforeEach(async (t: T) => {
   t.context.http = `http://localhost:${t.context.port}`
 })
 
-test.only('query functions', async (t: T) => {
+test('query functions', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: t.context.port,
@@ -94,4 +94,65 @@ test.only('query functions', async (t: T) => {
   t.is(server.activeObservablesById.size, 0)
   await wait(6e3)
   t.is(Object.keys(server.functions.specs).length, 0)
+})
+
+test('Date support', async (t: T) => {
+  const client = new BasedClient()
+  const server = new BasedServer({
+    port: t.context.port,
+    silent: true,
+    functions: {
+      configs: {
+        counter: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            let cnt = 0
+            const bla = { id: 1, x: new Date(cnt), cnt }
+            update(bla)
+            const counter = setInterval(() => {
+              cnt += 1000
+              const x = {
+                x: new Date(cnt),
+                cnt,
+              }
+
+              update(x)
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+
+  client.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  const updates = []
+
+  const close = client.query('counter').subscribe((d) => {
+    updates.push(deepCopy(d))
+  })
+
+  await wait(300)
+
+  t.deepEqual(
+    [
+      { id: 1, x: '1970-01-01T00:00:00.000Z', cnt: 0 },
+      { x: '1970-01-01T00:00:01.000Z', cnt: 1000 },
+      { x: '1970-01-01T00:00:02.000Z', cnt: 2000 },
+    ],
+    updates,
+  )
+
+  close()
+
+  t.true(true)
 })

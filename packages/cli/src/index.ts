@@ -8,6 +8,7 @@ import {
   infra,
   logs,
   projectInit,
+  secrets,
   test,
   version,
 } from './commands/index.js'
@@ -32,6 +33,7 @@ export const cli = async () => {
       test(program),
       infra(program),
       projectInit(program),
+      secrets(program),
     ])
 
     const appName = context.get('appName')

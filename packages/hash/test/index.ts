@@ -6,6 +6,28 @@ import {
   hashObjectIgnoreKeyOrder,
 } from '../src/index.js'
 
+test('hash toJSON (top level)', async (t) => {
+  const bla = new Date(100)
+  t.true(hash(bla) > 0)
+  const bla2 = new Date(200)
+  t.not(hash(bla2), hash(bla))
+})
+
+test('hash toJSON', async (t) => {
+  const bla = {
+    x: {
+      bla: new Date(100),
+    },
+  }
+  t.true(hash(bla) > 0)
+  const bla2 = {
+    x: {
+      bla: new Date(200),
+    },
+  }
+  t.not(hash(bla2), hash(bla))
+})
+
 test('hash', async (t) => {
   const a = { x: true }
   t.true(hash(a) > 0)
@@ -15,7 +37,6 @@ test('hash', async (t) => {
     },
   }
   t.true(hash(bla) > 0)
-  t.pass('xx')
 })
 
 test('hash array', async (t) => {

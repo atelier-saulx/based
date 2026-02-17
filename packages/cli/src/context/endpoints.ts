@@ -126,6 +126,16 @@ export const endpoints = {
       'https://codeload.github.com/atelier-saulx/based-boilerplate/zip/refs/heads/main',
     type: 'rest',
   },
+  SECRETS_GET: {
+    client: 'env',
+    endpoint: 'based:get-secret',
+    type: 'call',
+  },
+  SECRETS_SET: {
+    client: 'env',
+    endpoint: 'based:set-secret',
+    type: 'call',
+  },
 } as const satisfies Based.API.Gateway.Endpoints<
   Record<string, Based.API.Gateway.Endpoint>
 >

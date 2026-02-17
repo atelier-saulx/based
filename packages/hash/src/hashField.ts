@@ -62,6 +62,8 @@ export const hashFieldLegacy = (
   } else if (type === 'object') {
     if (field === null) {
       f = i + 'v:' + 'null'
+    } else if ('toJSON' in field && typeof field.toJSON === 'function') {
+      return hashFieldLegacy(hash, hash2, i, field.toJSON(), nest)
     } else {
       const x = nest(field, hash, hash2)
       return [stringHash(i + 'o:', x[0]), stringHash(i + 'o:', x[1])]

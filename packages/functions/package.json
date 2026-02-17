@@ -18,7 +18,7 @@
   "sideEffects": false,
   "dependencies": {
     "@based/db": "0.2.17",
-    "@based/utils": "1.2.1",
+    "@based/utils": "1.3.0",
     "utility-types": "^3.10.0"
   },
   "devDependencies": {
