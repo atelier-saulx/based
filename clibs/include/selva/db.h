@@ -65,6 +65,8 @@ void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
 SELVA_EXPORT
 int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname_len) __attribute__((nonnull));
 
+void selva_db_set_dirty_hook(struct SelvaDb *db, selva_db_dirty_hook_t dirty_hook);
+
 /**
  * Save the common/shared data of the database.
  */

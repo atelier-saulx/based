@@ -248,6 +248,10 @@ static uint32_t te_size(void)
     return slab_size;
 }
 
+static void noop_dirty_hook(void *, node_type_t, node_id_t)
+{
+}
+
 struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len])
 {
     const size_t nr_types = schema_count_types(len, schema);
@@ -262,6 +266,7 @@ struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len])
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
     db->dirfd = AT_FDCWD;
+    db->dirty_hook = noop_dirty_hook;
     selva_expire_init(&db->expiring);
 
     for (size_t i = 0; i < len;) {
@@ -309,6 +314,11 @@ int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname
 
     db->dirfd = fd;
     return 0;
+}
+
+void selva_db_set_dirty_hook(struct SelvaDb *db, selva_db_dirty_hook_t dirty_hook)
+{
+    db->dirty_hook = dirty_hook ?: noop_dirty_hook;
 }
 
 /**
@@ -548,7 +558,10 @@ void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Se
 void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id)
 {
     if (node_id > 0) {
+        struct SelvaDb *db = containerof(te, typeof(*db), types[te->type - 1]);
+
         selva_block_status_set(te, selva_node_id2block_i2(te, node_id), SELVA_TYPE_BLOCK_STATUS_DIRTY);
+        db->dirty_hook(nullptr, te->type, node_id);
     }
 }
 

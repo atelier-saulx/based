@@ -134,6 +134,8 @@ struct SelvaDbExpireToken {
     node_type_t type;
 };
 
+typedef void (*selva_db_dirty_hook_t)(void *ctx, node_type_t type, node_id_t node_id);
+
 /**
  * Database instance.
  */
@@ -147,6 +149,8 @@ struct SelvaDb {
      * Backup directory file descriptor.
      */
     int dirfd;
+
+    selva_db_dirty_hook_t dirty_hook;
 
     uint32_t sdb_version; /*!< Current SDB version. Set on common load and save. 0 if not saved/loaded. */
     size_t nr_types;
