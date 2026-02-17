@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "10.3.15",
+  "version": "10.3.16",
   "license": "MIT",
   "main": "./dist/index.js",
   "type": "module",
@@ -16,9 +16,9 @@
     "clean": "rm -rf ./dist ./node_modules ./tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@based/db": "0.2.16",
-    "@based/errors": "1.6.14",
-    "@based/functions": "3.4.15",
+    "@based/db": "0.2.17",
+    "@based/errors": "1.6.15",
+    "@based/functions": "3.4.16",
     "@based/hash": "1.1.1",
     "@based/protocol": "0.1.6",
     "@based/utils": "1.2.1",

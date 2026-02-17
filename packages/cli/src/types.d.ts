@@ -244,6 +244,7 @@ declare global {
         | 'deploy'
         | 'dev'
         | 'init'
+        | 'secrets'
 
       type SubCommandsList = Record<
         string,
@@ -610,6 +611,19 @@ declare global {
         bundled: string
         checksum: number
         serverFunction?: string
+      }
+    }
+    namespace Secrets {
+      namespace Get {
+        type Command = {
+          key: string
+        }
+      }
+      namespace Set {
+        type Command = {
+          key: string
+          value: string
+        }
       }
     }
   }
