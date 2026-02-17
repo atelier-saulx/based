@@ -461,13 +461,21 @@ await test('numeric types', async (t) => {
     PL: -50,
     FI: -50.999,
   })
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] }) // create with an array not implemented yet
+  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] }) // create with an array not implemented yet
   db.drain()
-  db.create('sequence', { votes: nl1 })
-  db.create('sequence', { votes: nl2 })
-  db.create('sequence', { votes: au1 })
-  db.create('sequence', { votes: au2 })
-  db.create('sequence', { votes: br1 })
+  // db.create('sequence', { votes: nl1 })
+  // db.create('sequence', { votes: nl2 })
+  // db.create('sequence', { votes: au1 })
+  // db.create('sequence', { votes: au2 })
+  // db.create('sequence', { votes: br1 })
+
+  // await db
+  //   .query('vote')
+  //   .sum('NL', 'FI')
+  //   //
+  //   .groupBy('region')
+  //   .get()
+  //   .inspect()
 
   deepEqual(
     await db.query('vote').groupBy('region').get().toObject(),
@@ -497,6 +505,7 @@ await test('numeric types', async (t) => {
     },
     'sum, main, group by',
   )
+
   deepEqual(
     await db.query('vote').count().groupBy('region').get().toObject(),
     {
@@ -512,6 +521,7 @@ await test('numeric types', async (t) => {
     },
     'count, main, group by',
   )
+
   deepEqual(
     await db
       .query('vote')
@@ -538,6 +548,7 @@ await test('numeric types', async (t) => {
     },
     'avg, main, group by',
   )
+
   deepEqual(
     await db
       .query('vote')
@@ -564,6 +575,7 @@ await test('numeric types', async (t) => {
     },
     'hmean, main, group by',
   )
+
   deepEqual(
     await db
       .query('vote')
@@ -587,6 +599,7 @@ await test('numeric types', async (t) => {
     },
     'stddev, main, group by, pop',
   )
+
   deepEqual(
     await db
       .query('vote')
@@ -610,6 +623,7 @@ await test('numeric types', async (t) => {
     },
     'stddev, main, group by, default=sample',
   )
+
   deepEqual(
     await db
       .query('vote')
@@ -647,6 +661,7 @@ await test('numeric types', async (t) => {
     },
     'variance, main, group by, sample',
   )
+
   deepEqual(
     await db.query('vote').var('NL', 'PL').groupBy('region').get().toObject(),
     {
@@ -656,6 +671,7 @@ await test('numeric types', async (t) => {
     },
     'variance, main, group by, default (sample)',
   )
+
   deepEqual(
     await db
       .query('vote')
@@ -685,6 +701,7 @@ await test('numeric types', async (t) => {
     },
     'max, main, group by',
   )
+
   deepEqual(
     await db
       .query('vote')
@@ -764,6 +781,7 @@ await test('numeric types', async (t) => {
     ],
     'hmean, references, not grouped',
   )
+
   deepEqual(
     await db
       .query('sequence')
@@ -807,6 +825,7 @@ await test('numeric types', async (t) => {
     ],
     'count, references, group by',
   )
+
   deepEqual(
     await db
       .query('sequence')
