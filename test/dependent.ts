@@ -96,12 +96,20 @@ await test('del children', async (t) => {
   const client = await db.setSchema({
     types: {
       parent: {
-        children: { type: 'references', items: { ref: 'child', prop: 'parent' } }
+        children: {
+          type: 'references',
+          items: { ref: 'child', prop: 'parent' },
+        },
       },
       child: {
-        parent: { type: 'reference', ref: 'parent', prop: 'children', dependent: true },
+        parent: {
+          type: 'reference',
+          ref: 'parent',
+          prop: 'children',
+          dependent: true,
+        },
       },
-    }
+    },
   })
 
   for (let n = 1; n <= 5; n++) {
@@ -113,7 +121,7 @@ await test('del children', async (t) => {
     }
     deepEqual(await client.query('parent', head).include('**').get(), {
       id: await head,
-      children: (await Promise.all(children)).map((id: number) => ({id})),
+      children: (await Promise.all(children)).map((id: number) => ({ id })),
     })
 
     for (const child of children) {
@@ -147,81 +155,89 @@ await test('circle of friends', async (t) => {
       human: {
         name: { type: 'string', maxBytes: 8 },
         //friends: { type: 'references', items: { ref: 'human', prop: 'friends' } },
-        friends: { type: 'references', items: { ref: 'human', prop: 'friends', dependent: true } },
+        friends: {
+          type: 'references',
+          items: { ref: 'human', prop: 'friends', dependent: true },
+        },
       },
     },
   })
 
-  const h1 = client.create('human', { name: 'joe', })
-  const h2 = client.create('human', { name: 'john', })
-  const h3 = client.create('human', { name: 'jack', })
+  const h1 = client.create('human', { name: 'joe' })
+  const h2 = client.create('human', { name: 'john' })
+  const h3 = client.create('human', { name: 'jack' })
 
   client.update('human', h2, {
-    friends: [h1, h3]
+    friends: [h1, h3],
   })
   //client.update('human', h3, {
   //  friends: [h2, h1],
   //})
   client.update('human', h3, {
-    friends: { add: [ h2, h1 ] },
+    friends: { add: [h2, h1] },
   })
 
   deepEqual(await client.query('human').include('**').get(), [
+    {
+      id: 1,
+      friends: [
         {
-       id: 1,
-       friends: [{
           id: 2,
-          name: "john"
-       },
-       {
+          name: 'john',
+        },
+        {
           id: 3,
-          name: "jack"
-       }]
-
+          name: 'jack',
+        },
+      ],
     },
     {
-       id: 2,
-       friends: [{
+      id: 2,
+      friends: [
+        {
           id: 1,
-          name: "joe"
-       },
-       {
+          name: 'joe',
+        },
+        {
           id: 3,
-          name: "jack"
-       }]
-
+          name: 'jack',
+        },
+      ],
     },
     {
-       id: 3,
-       friends: [{
+      id: 3,
+      friends: [
+        {
           id: 2,
-          name: "john"
-       },
-       {
+          name: 'john',
+        },
+        {
           id: 1,
-          name: "joe"
-       }]
-
+          name: 'joe',
+        },
+      ],
     },
   ])
 
   client.delete('human', 1)
   deepEqual(await client.query('human').include('**').get(), [
     {
-       id: 2,
-       friends: [
-       {
+      id: 2,
+      friends: [
+        {
           id: 3,
-          name: "jack"
-       }]
+          name: 'jack',
+        },
+      ],
     },
     {
-       id: 3,
-       friends: [
-       {
+      id: 3,
+      friends: [
+        {
           id: 2,
-          name: "john"
-       }]
+          name: 'john',
+        },
+      ],
     },
   ])
 
