@@ -10,7 +10,7 @@ await test('insert only => no delete', async (t) => {
   await db.start({ clean: true })
   t.after(async () => t.backup(db))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       audit: {
         insertOnly: true,
@@ -21,10 +21,10 @@ await test('insert only => no delete', async (t) => {
     },
   })
 
-  const a = await db.create('audit', { v: 100 })
-  await db.create('audit', { v: 100 })
-  await throws(() => db.delete('audit', a))
-  deepEqual(await db.query('audit', a).get(), { id: 1, v: 100 })
+  const a = await client.create('audit', { v: 100 })
+  await client.create('audit', { v: 100 })
+  await throws(() => client.delete('audit', a))
+  deepEqual(await client.query('audit', a).get(), { id: 1, v: 100 })
 })
 
 await test('colvec requires insertOnly', async (t) => {

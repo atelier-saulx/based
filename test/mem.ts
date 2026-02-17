@@ -12,7 +12,7 @@ await test('mem', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       data: {
         props: {
@@ -32,7 +32,7 @@ await test('mem', async (t) => {
   const rnd = fastPrng()
   for (let j = 0; j < repeat; j++) {
     // To keep many different blocks
-    await db.create('data', {
+    await client.create('data', {
       age: 666,
       name: 'BASIC ' + j,
     })
@@ -45,7 +45,7 @@ await test('mem', async (t) => {
         cnt++
       }
       ids.push(
-        db.create('data', {
+        client.create('data', {
           age: i,
           name: `Mr FLAP ${i}`,
           a: x ? { id: ids[rnd(0, ids.length - 1)], $derp: i } : null,
@@ -53,15 +53,15 @@ await test('mem', async (t) => {
       )
     }
 
-    await db.drain()
-    await db.create('data', {
+    await client.drain()
+    await client.create('data', {
       age: 667,
       name: 'BASIC2 ' + j,
     })
 
     equal(
       (
-        await db
+        await client
           .query('data')
           .include('b')
           .filter('b', 'exists')
@@ -72,11 +72,11 @@ await test('mem', async (t) => {
     )
 
     for (let i = 0; i < amount; i++) {
-      db.delete('data', ids[i])
+      client.delete('data', ids[i])
     }
 
-    await db.drain()
+    await client.drain()
 
-    equal((await db.query('data').range(0, 10e6).get()).length, (j + 1) * 2)
+    equal((await client.query('data').range(0, 10e6).get()).length, (j + 1) * 2)
   }
 })
