@@ -16,6 +16,10 @@ pub inline fn preallocReferences(ctx: *Modify.ModifyCtx, len: u64) void {
     _ = selva.c.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
 }
 
+pub inline fn preallocReferences2(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, len: u64) void {
+    _ = selva.c.selva_fields_prealloc_refs(db.selva.?, node, fieldSchema, len);
+}
+
 pub inline fn getReference(node: Node.Node, fieldSchema: Schema.FieldSchema) ?ReferenceLarge {
     return selva.c.selva_fields_get_reference(node, fieldSchema);
 }

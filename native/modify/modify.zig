@@ -177,7 +177,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                                 const refTypeEntry = try Node.getType(db, refTypeId);
                                 const count = utils.read(u32, refs, 0);
                                 var x: usize = 4;
-                                _ = selva.c.selva_fields_prealloc_refs(db.selva, node, propSchema, count);
+                                References.preallocReferences2(db, node, propSchema, count);
                                 while (x < refs.len) {
                                     const meta = utils.readNext(t.ModifyReferencesMetaHeader, refs, &x);
                                     var refId = meta.id;
