@@ -56,7 +56,7 @@ export const number = class Number extends BasePropDef {
 }
 
 export const timestamp = class Timestamp extends number {
-  override type = PropType.timestamp
+  override type: PropTypeEnum = PropType.timestamp
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,

@@ -20,7 +20,8 @@ pub inline fn getType(ctx: *DbCtx, v: anytype) !Type {
             v,
         );
     } else if (comptime @TypeOf(v) == selva.Node or
-               @TypeOf(v) == ?selva.Node) {
+        @TypeOf(v) == ?selva.Node)
+    {
         if (comptime @TypeOf(v) == ?selva.Node) {
             if (v == null) {
                 return errors.SelvaError.SELVA_ENOENT;
@@ -186,9 +187,9 @@ pub inline fn flushNode(db: *DbCtx, typeEntry: Type, node: Node) void {
     selva.c.selva_flush_node(db.selva, typeEntry, node);
 }
 
-pub inline fn expireNode(ctx: *Modify.ModifyCtx, typeId: t.TypeId, nodeId: u32, ts: i64) void {
-    selva.c.selva_expire_node(ctx.db.selva, typeId, nodeId, ts, selva.c.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
-    selva.markDirty(ctx, typeId, nodeId);
+pub inline fn expireNode(db: *DbCtx, typeId: t.TypeId, nodeId: u32, ts: i64) void {
+    selva.c.selva_expire_node(db.selva, typeId, nodeId, ts, selva.c.SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD);
+    selva.markDirty(db, typeId, nodeId);
 }
 
 pub inline fn expire(db: *DbCtx) void {

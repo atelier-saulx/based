@@ -4,7 +4,7 @@ import { realStart, start, StartOpts } from './start.js'
 import { migrate } from './migrate/index.js'
 import { debugServer } from '../utils/debug.js'
 import { DbShared } from '../shared/DbBase.js'
-import { writeSchemaFile, } from './schema.js'
+import { writeSchemaFile } from './schema.js'
 import { save, SaveOpts } from './blocks.js'
 
 import { OpType, OpTypeEnum } from '../zigTsExports.js'
@@ -14,6 +14,8 @@ import {
   type SchemaOut,
 } from '../schema/index.js'
 import { readUint32, writeUint32 } from '../utils/uint8.js'
+
+const EXPIRE_BUF = new Uint8Array([0, 0, 0, 0, OpType.expire])
 
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
@@ -148,6 +150,7 @@ export class DbServer extends DbShared {
       if (onceListeners) {
         console.log('💤 Query already staged dont exec again', id)
       } else {
+        native.modify(EXPIRE_BUF, this.dbCtxExternal)
         native.query(buf, this.dbCtxExternal)
       }
     })
@@ -169,6 +172,7 @@ export class DbServer extends DbShared {
     if (qIdListeners) {
       console.log('💤 Subscription already staged dont exec again', id)
     } else {
+      native.modify(EXPIRE_BUF, this.dbCtxExternal)
       native.query(query, this.dbCtxExternal)
     }
 

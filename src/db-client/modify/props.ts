@@ -6,7 +6,6 @@ import {
 import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import {
   Modify,
-  ModifyIncrement,
   pushModifyMainHeader,
   pushModifyPropHeader,
   writeModifyPropHeaderProps,
@@ -47,11 +46,9 @@ export const serializeProps = (
           start: prop.start,
           type: prop.type,
           size: prop.size,
-          increment: increment
-            ? increment < 0
-              ? ModifyIncrement.decrement
-              : ModifyIncrement.increment
-            : ModifyIncrement.none,
+          increment: !!increment,
+          incrementPositive: increment > 0,
+          expire: ('expire' in prop.schema && prop.schema.expire) || false,
         })
         if (val === null) {
           buf.fill(0, buf.length, buf.length + prop.size)
