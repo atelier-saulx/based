@@ -7,6 +7,9 @@ const hash = (val: any, size?: number): number => {
   if (typeof val === 'object') {
     if (val === null) {
       result = 0
+    }
+    if ('toJSON' in val && typeof val.toJSON) {
+      return hash(val.toJSON(), size)
     } else {
       result = hashObject(val)
     }
