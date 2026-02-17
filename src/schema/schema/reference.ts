@@ -16,6 +16,7 @@ type ReferenceProps<strict, nested> = nested extends true
   ? { prop?: never; dependent?: never; [edge: `$${string}`]: never }
   : {
       prop: string
+      /** The node is deleted if this reference(s) prop becomes empty. */
       dependent?: boolean
       [edge: `$${string}`]:
         | Exclude<
