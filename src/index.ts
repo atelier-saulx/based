@@ -31,6 +31,7 @@ export const COMMON_SDB_FILE = 'common.sdb'
 
 export type BasedDbOpts = {
   path: string
+  /** Minimum: 256 */
   maxModifySize?: number
   debug?: boolean | 'server' | 'client'
   saveIntervalInSeconds?: number
