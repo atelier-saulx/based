@@ -79,13 +79,7 @@ await test('multiple functions', async (t) => {
     PL: -50,
     FI: -50.999,
   })
-  // const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
-  db.drain()
-  db.create('sequence', { votes: nl1 })
-  db.create('sequence', { votes: nl2 })
-  db.create('sequence', { votes: au1 })
-  db.create('sequence', { votes: au2 })
-  db.create('sequence', { votes: br1 })
+  const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
     await db.query('vote').sum('NL').sum('NO').max('NL').min('NL').get(),
@@ -110,23 +104,9 @@ await test('multiple functions', async (t) => {
     'multiple func main with groupBy',
   )
 
-  // const j = db.create('vote', {
-  //   region: 'Great',
-  //   judges: ['lala', 'lele', 'lili'],
-  // })
-
-  db.drain()
-  db.create('vote', {
+  const j = db.create('vote', {
     region: 'Great',
-    judges: 'lala',
-  })
-  db.create('vote', {
-    region: 'Great',
-    judges: 'lele',
-  })
-  db.create('vote', {
-    region: 'Great',
-    judges: 'lili',
+    judges: ['lala', 'lele', 'lili'],
   })
 
   const multi = await db
@@ -152,8 +132,7 @@ await test('multiple functions', async (t) => {
         max: 50,
       },
       NO: {
-        // avg: -29.333333333333332, // originally one node because of multiref
-        avg: -22, // 3 nodes temporarely
+        avg: -29.333333333333332,
         sum: -176,
       },
       judges: {
@@ -220,8 +199,7 @@ await test('multiple functions', async (t) => {
           max: 50,
         },
         NO: {
-          // avg: -25, // also one node only originally
-          avg: -12.5,
+          avg: -25,
           sum: -50,
         },
         judges: {
@@ -241,12 +219,12 @@ await test('multiple functions', async (t) => {
       PT: {
         sum: 186,
       },
-      // NO: {
-      //   stddev: 21.518983866964227, // also one node only originally
-      // },
-      // count: 6, // also one node only originally
-      NO: { stddev: 22.696758736499294 }, // std([-10,-23,-43,-50,-50,0,0,0]) ans = 22.697
-      count: 8,
+      NO: {
+        stddev: 21.518983866964227, // also one node only originally
+      },
+      count: 6, // also one node only originally
+      // NO: { stddev: 22.696758736499294 }, // std([-10,-23,-43,-50,-50,0,0,0]) ans = 22.697
+      // count: 8,
     },
     'multiple main + count no groupBy',
   )
@@ -291,12 +269,10 @@ await test('multiple functions', async (t) => {
         PT: {
           sum: 50,
         },
-        // NO: {
-        //   stddev: 35.35533905932738,
-        // },
-        // count: 2,
-        NO: { stddev: 25 },
-        count: 4,
+        NO: {
+          stddev: 35.35533905932738,
+        },
+        count: 2,
       },
     },
     'multiple main + count groupBy',

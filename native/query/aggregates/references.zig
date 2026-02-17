@@ -20,9 +20,6 @@ pub inline fn aggregateRefsProps(
     fromType: Selva.Type,
     i: *usize,
 ) !void {
-    var totalSize: usize = 0;
-    // utils.debugPrint("i: {d}\n", .{i.*});
-
     const header = utils.readNext(t.AggRefsHeader, q, i);
     // utils.debugPrint("aggregateRefsProps header: {any}\n", .{header});
 
@@ -33,21 +30,32 @@ pub inline fn aggregateRefsProps(
     // filter
 
     var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
+
+    var aggCtx = Aggregates.AggCtx{
+        .queryCtx = ctx,
+        .typeEntry = it.dstType,
+        .limit = 1000, // MV: check it
+        .isSamplingSet = header.isSamplingSet,
+        .accumulatorSize = header.accumulatorSize,
+        .resultsSize = header.resultsSize,
+    };
+
     if (header.hasGroupBy) {
         var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
         defer groupByHashMap.deinit();
-        totalSize += GroupBy.iterator(ctx, &groupByHashMap, &it, 1000, false, undefined, q[i.*..], header.accumulatorSize, header.resultsSize, it.dstType, undefined, &totalSize); // TODO: hllAcc
+
+        _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, false, undefined, q[i.*..]); // TODO: hllAcc
 
         try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
         try ctx.thread.query.append(header.targetProp);
-        try ctx.thread.query.append(@as(u32, @intCast(totalSize)));
-        try GroupBy.finalizeRefsGroupResults(ctx, &groupByHashMap, header, q[i.*..]);
+        try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
+        try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.*..]);
     } else {
-        _ = try Aggregates.iterator(ctx, &it, 1000, false, undefined, q[i.*..], accumulatorProp, it.dstType, undefined); // TODO: hllAcc
+        _ = try Aggregates.iterator(&aggCtx, &it, false, undefined, q[i.*..], accumulatorProp); // TODO: hllAcc
 
         try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
         try ctx.thread.query.append(header.targetProp);
         try ctx.thread.query.append(@as(u32, header.resultsSize)); // MV: recheck
-        try Aggregates.finalizeResults(ctx, q[i.*..], accumulatorProp, header.isSamplingSet, 0);
+        try Aggregates.finalizeResults(&aggCtx, q[i.*..], accumulatorProp, 0);
     }
 }

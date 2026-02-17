@@ -231,8 +231,8 @@ await test('yyy', async (t) => {
     })
     .get()
 
-  result.debug()
-  result.inspect()
+  // result.debug()
+  // result.inspect()
 
   deepEqual(
     result.toObject(),

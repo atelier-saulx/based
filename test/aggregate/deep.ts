@@ -60,8 +60,7 @@ await test('sum branched includes', async (t) => {
     country: 'aa',
     AU: 15,
   })
-  db.drain()
-  const s = db.create('sequence', { votes: [nl1, nl2, au1] }) // create multiple with an array is not implemented yet
+  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   deepEqual(
     await db
@@ -160,7 +159,6 @@ await test('count branched includes', async (t) => {
     country: 'aa',
     AU: 15,
   })
-  db.drain()
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   deepEqual(
@@ -681,17 +679,15 @@ await test('group by reference ids', async (t) => {
     model: 'VW Beatle',
     year: 1989,
   })
-  db.drain()
   const t1 = db.create('trip', {
     distance: 523.1,
     vehicle: v2,
   })
-  db.drain()
   const d1 = db.create('driver', {
     name: 'Luc Ferry',
     rank: 5,
     vehicle: v2,
-    trips: t1,
+    trips: [t1],
   })
 
   deepEqual(
