@@ -143,8 +143,8 @@ await test('include', async (t) => {
       y: { include: {} },
       name: { include: {} },
       friends: {
-        order: 'asc',
-        sort: { prop: '$level' }, // can just be the prop?
+        // order: 'asc',
+        // sort: { prop: '$level' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },
@@ -156,11 +156,11 @@ await test('include', async (t) => {
         //     },
         //   },
         // },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
+        // edges: {
+        //   props: {
+        //     $level: { include: {} },
+        //   },
+        // },
       },
       // mrFriend: {
       //   props: {

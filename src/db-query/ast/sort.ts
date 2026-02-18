@@ -20,7 +20,7 @@ export const sort = (
       propType: prop?.type,
       start: prop.start,
       len: prop.size,
-      edgeType: fromProp?.edges?.id, // do in a bit
+      edgeType: fromProp?.edges?.id || 0,
       order: ast.order === 'asc' ? Order.asc : Order.desc,
       lang: LangCode.none,
     }

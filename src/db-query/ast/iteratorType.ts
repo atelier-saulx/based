@@ -1,3 +1,4 @@
+import { PropDef } from '../../schema.js'
 import {
   QUERY_ITERATOR_DEFAULT,
   QUERY_ITERATOR_EDGE,
@@ -24,6 +25,8 @@ export const getIteratorType = (
   const isVector = false
 
   let base = QUERY_ITERATOR_DEFAULT
+
+  console.log('EDGE TIME', edgeInclude, edge)
 
   if (edge && !edgeInclude) {
     base = QUERY_ITERATOR_EDGE

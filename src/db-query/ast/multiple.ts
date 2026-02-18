@@ -76,7 +76,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     filterSize: 0,
     searchSize: 0,
     iteratorType: QueryIteratorType.default,
-    edgeTypeId: 0,
+    edgeTypeId: prop.edges?.id ?? 0,
     edgeSize: 0,
     edgeFilterSize: 0,
     size: 0, // this is only used for [IDS] handle this differently
@@ -108,6 +108,10 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
 
   props.includeSize(ctx.query.data, size, headerIndex)
 
+  // EDGES IN FILTER
+  // needs to use special iterator
+  // we need to put the filter on it
+
   if (ast.edges) {
     const edges = prop.edges
     if (!edges) {
@@ -124,6 +128,8 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       edges,
     )
     props.edgeSize(ctx.query.data, size, headerIndex)
+  } else {
+    console.info('EDGES NO!')
   }
 
   props.iteratorType(

@@ -241,6 +241,7 @@ pub fn references(
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;
+    std.debug.print("-> {any} \n", .{header.iteratorType});
 
     switch (header.iteratorType) {
         .default => {
@@ -287,6 +288,7 @@ pub fn references(
         },
         .edgeIncludeDesc => {
             var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
+
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeIncludeSort => {
