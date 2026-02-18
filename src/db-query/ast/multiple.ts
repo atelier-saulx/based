@@ -87,7 +87,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   }
 
   if (ast.sort) {
-    sort(ast, ctx, prop.ref!)
+    pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!))
   }
 
   if (ast.filter) {

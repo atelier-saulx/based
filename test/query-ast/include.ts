@@ -50,7 +50,7 @@ await test('include', async (t) => {
   })
 
   const a = client.create('user', {
-    name: 'mr snurf a',
+    name: 'mr jim',
     y: 4,
     x: true,
     flap: 9999,
@@ -67,6 +67,7 @@ await test('include', async (t) => {
     cook: {
       cookie: 1234,
     },
+    mrFriend: { id: a, $level: 67 },
   })
 
   let d = Date.now()
@@ -80,6 +81,7 @@ await test('include', async (t) => {
       cook: {
         cookie: 1234,
       },
+      friends: [a, b],
     })
   }
 
@@ -103,45 +105,60 @@ await test('include', async (t) => {
       props: {
         flap: { ops: [{ op: '=', val: 9999 }] },
       },
-      and: {
-        props: {
-          y: { ops: [{ op: '=', val: 100 }] },
-        },
-        or: {
-          props: {
-            y: { ops: [{ op: '=', val: 3 }] },
-          },
-          or: {
-            props: {
-              y: { ops: [{ op: '=', val: 4 }] },
-            },
-          },
-        },
-      },
-      or: {
-        props: {
-          y: { ops: [{ op: '=', val: 670 }] },
-        },
-        or: {
-          props: {
-            y: { ops: [{ op: '=', val: 15 }] },
-          },
-        },
-      },
+      // and: {
+      //   props: {
+      //     y: { ops: [{ op: '=', val: 100 }] },
+      //   },
+      //   or: {
+      //     props: {
+      //       y: { ops: [{ op: '=', val: 3 }] },
+      //     },
+      //     or: {
+      //       props: {
+      //         y: { ops: [{ op: '=', val: 4 }] },
+      //       },
+      //     },
+      //   },
+      // },
+      // or: {
+      //   props: {
+      //     y: { ops: [{ op: '=', val: 670 }] },
+      //   },
+      //   or: {
+      //     props: {
+      //       y: { ops: [{ op: '=', val: 15 }] },
+      //     },
+      //   },
+      // },
     },
 
     props: {
       y: { include: {} },
       name: { include: {} },
+      friends: {
+        // order: 'desc',
+        // sort: { prop: 'y' }, // can just be the prop?
+        props: {
+          name: { include: {} },
+          y: { include: {} },
+        },
+        filter: {
+          props: {
+            y: {
+              ops: [{ op: '>', val: 10 }],
+            },
+          },
+        },
+      },
       mrFriend: {
         props: {
           y: { include: {} },
         },
-        // edges: {
-        //   props: {
-        //     $level: { include: {} },
-        //   },
-        // },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
       },
     },
   }

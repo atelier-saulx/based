@@ -57,7 +57,7 @@ pub fn prepare(
                 },
             }
         } else {
-            c = utils.readPtr(t.FilterCondition, q, q[i] + i + 1);
+            c = utils.readPtr(t.FilterCondition, q, q[i] + i); // + 1
             const totalSize = headerSize + c.size;
             const end = totalSize + i;
             i = end;
