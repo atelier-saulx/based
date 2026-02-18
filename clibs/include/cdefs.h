@@ -216,7 +216,7 @@
 #ifndef __pcounted_by
 #if __has_attribute(__counted_by__) && \
     !defined(__clang__) && \
-    (__GNUC__ >= 14 && __GNUC_MINOR__ > 2)
+    (__GNUC__ > 15 || (__GNUC__ == 14 && __GNUC_MINOR__ > 2))
 /**
  * struct foo {
  *     unsigned int len;
