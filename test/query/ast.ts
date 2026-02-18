@@ -232,4 +232,14 @@ await test('query ast creation', async (t) => {
       sort: { prop: 'age' },
     })
   }
+
+  {
+    const res = query('user').include((select) => select('friend').sum('age'))
+    deepEqual(res.ast, {
+      type: 'user',
+      props: {
+        friend: { sum: { props: ['age'] } },
+      },
+    })
+  }
 })

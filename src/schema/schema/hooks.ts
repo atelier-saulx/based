@@ -1,5 +1,6 @@
 import { isFunction, isRecord } from './shared.js'
 
+// TODO remove these
 type BasedDbQuery = any
 type Operator = any
 

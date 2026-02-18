@@ -51,18 +51,14 @@ class Query<
         | Path<S['types'], T>
         | '*'
         | '**'
-        | ((
-            q: SelectFn<S, T>,
-          ) => Query<S, any, any, any, any, any, any, any, any>)
+        | ((q: SelectFn<S, T>) => AnyQuery<S>)
       ),
       ...(
         | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
         | Path<S['types'], T>
         | '*'
         | '**'
-        | ((
-            q: SelectFn<S, T>,
-          ) => Query<S, any, any, any, any, any, any, any, any>)
+        | ((q: SelectFn<S, T>) => AnyQuery<S>)
       )[],
     ],
   >(
@@ -641,6 +637,19 @@ export type ResolveIncludeArgs<T> = T extends (
   : T extends string
     ? ResolveDotPath<T>
     : T
+
+// Helper type to simplify include signature
+type AnyQuery<S extends { types: any }> = Query<
+  S,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
 
 // Helper type to simplify method return types
 type NextBranch<
