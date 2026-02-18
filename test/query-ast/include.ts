@@ -12,6 +12,7 @@ import wait from '../../src/utils/wait.js'
 import { perf } from '../shared/perf.js'
 import test from '../shared/test.js'
 import { deflateSync } from 'zlib'
+import { fastPrng } from '../../src/utils/fastPrng.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({ path: t.tmp })
@@ -72,6 +73,8 @@ await test('include', async (t) => {
 
   let d = Date.now()
 
+  const rand = fastPrng()
+
   for (let i = 0; i < 10; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
@@ -82,8 +85,8 @@ await test('include', async (t) => {
         cookie: 1234,
       },
       friends: [
-        { id: a, $level: 67 },
-        { id: b, $level: 68 },
+        { id: a, $level: rand(0, 1000) },
+        { id: b, $level: rand(0, 1000) },
       ],
     })
   }
@@ -140,8 +143,8 @@ await test('include', async (t) => {
       y: { include: {} },
       name: { include: {} },
       friends: {
-        order: 'desc',
-        // sort: { prop: 'y' }, // can just be the prop?
+        order: 'asc',
+        sort: { prop: '$level' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },

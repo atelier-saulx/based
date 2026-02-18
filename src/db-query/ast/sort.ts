@@ -8,14 +8,28 @@ export const sort = (
   typeDef: TypeDef,
   fromProp?: PropDef,
 ) => {
-  const prop = typeDef.props.get(ast.sort!.prop)
+  const field = ast.sort!.prop
 
-  // ADD SORT ON EDGE
+  if (field[0] === '$') {
+    const prop = fromProp?.edges?.props.get(field)
+    if (!prop) {
+      throw new Error(`Cannot find edge prop in sort ${ast.sort!.prop}`)
+    }
+    return {
+      prop: prop.id,
+      propType: prop?.type,
+      start: prop.start,
+      len: prop.size,
+      edgeType: fromProp?.edges?.id, // do in a bit
+      order: ast.order === 'asc' ? Order.asc : Order.desc,
+      lang: LangCode.none,
+    }
+  }
 
+  const prop = typeDef.props.get(field)
   if (!prop) {
     throw new Error(`Cannot find prop in sort ${ast.sort!.prop}`)
   }
-
   return {
     prop: prop.id,
     propType: prop?.type,
