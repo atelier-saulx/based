@@ -75,7 +75,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1e5; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
@@ -104,7 +104,8 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    target: b,
+    range: { start: 0, end: 1e5 },
+    // target: b,
     // order: 'desc',
     // sort: { prop: 'y' },
 
@@ -149,18 +150,18 @@ await test('include', async (t) => {
           name: { include: {} },
           y: { include: {} },
         },
-        filter: {
-          props: {
-            y: {
-              ops: [{ op: '>', val: 6 }],
-            },
-          },
-        },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
+        // filter: {
+        //   props: {
+        //     y: {
+        //       ops: [{ op: '>', val: 6 }],
+        //     },
+        //   },
+        // },
+        // edges: {
+        //   props: {
+        //     $level: { include: {} },
+        //   },
+        // },
       },
       // mrFriend: {
       //   props: {
@@ -183,7 +184,6 @@ await test('include', async (t) => {
 
   debugBuffer(deflateSync(ctx.query).toString('hex'))
 
-  const result = await db.server.getQueryBuf(ctx.query)
   const queries: any = []
   for (let i = 0; i < 10; i++) {
     const x = ctx.query.slice(0)
@@ -191,7 +191,7 @@ await test('include', async (t) => {
     queries.push(x)
   }
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
@@ -201,15 +201,19 @@ await test('include', async (t) => {
     },
     'filter speed',
     {
-      repeat: 10,
+      repeat: 100,
     },
   )
 
   // const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
+  // console.log(result.byteLength)
+  const result = await db.server.getQueryBuf(ctx.query)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  // console.dir(obj, { depth: 10 })
+
+  await wait(1000)
 
   // RETURN NULL FOR UNDEFINED
 
