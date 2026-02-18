@@ -306,7 +306,11 @@ int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname
         close(db->dirfd);
     }
 
-    fd = open(buf, O_SEARCH | O_DIRECTORY | O_CLOEXEC);
+    fd = open(buf,
+#ifdef __MACH__
+            O_SEARCH |
+#endif
+            O_DIRECTORY | O_CLOEXEC);
     if (fd == -1) {
         return SELVA_EIO;
     }
