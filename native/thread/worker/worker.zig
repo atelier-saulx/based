@@ -10,6 +10,7 @@ const utils = @import("../../utils.zig");
 const selva = @import("../../selva/selva.zig").c;
 const jemalloc = @import("../../jemalloc.zig");
 const common = @import("../common.zig");
+const Node = @import("../../selva/node.zig");
 const modifyNotPending = @import("modifyNotPending.zig").modifyNotPending;
 
 pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
@@ -109,6 +110,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                         // does nothing but does trigger flush marked subs and maybe more in the future
                     },
                     .modify => try Modify.modify(thread, m, threads.ctx),
+                    .expire => Node.expire(threads.ctx),
                     .loadBlock => try dump.loadBlock(thread, threads.ctx, m, op),
                     .unloadBlock => try dump.unloadBlock(thread, threads.ctx, m, op),
                     .loadCommon => try dump.loadCommon(thread, threads.ctx, m, op),

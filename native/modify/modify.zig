@@ -13,15 +13,16 @@ const subs = @import("subscription.zig");
 
 pub const subscription = subs.suscription;
 const resItemSize = utils.sizeOf(t.ModifyResultItem);
-inline fn applyInc(comptime T: type, current: []u8, value: []u8, start: u16, op: t.ModifyIncrement) void {
+inline fn applyInc(comptime T: type, current: []u8, value: []u8, start: u16, incrementPositive: bool) void {
     const curr = utils.read(T, current, start);
     const inc = utils.read(T, value, 0);
-    const res = switch (op) {
-        .increment => if (@typeInfo(T) == .float) curr + inc else curr +% inc,
-        .decrement => if (@typeInfo(T) == .float) curr - inc else curr -% inc,
-        else => return,
-    };
-    utils.write(value, res, 0);
+    if (incrementPositive) {
+        const res = if (@typeInfo(T) == .float) curr + inc else curr +% inc;
+        utils.write(value, res, 0);
+    } else {
+        const res = if (@typeInfo(T) == .float) curr - inc else curr -% inc;
+        utils.write(value, res, 0);
+    }
 }
 
 inline fn writeResult(res: *t.ModifyResultItem, id: u32, err: t.ModifyError) void {
@@ -59,15 +60,21 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
             const main = utils.readNext(t.ModifyMainHeader, data, &j);
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
             const value = data[j .. j + main.size];
-            if (main.increment != .none) {
+
+            if (main.increment) {
                 switch (main.type) {
-                    .number => applyInc(f64, current, value, main.start, main.increment),
-                    .timestamp => applyInc(i64, current, value, main.start, main.increment),
-                    .int8, .uint8 => applyInc(u8, current, value, main.start, main.increment),
-                    .int16, .uint16 => applyInc(u16, current, value, main.start, main.increment),
-                    .int32, .uint32 => applyInc(u32, current, value, main.start, main.increment),
+                    .number => applyInc(f64, current, value, main.start, main.incrementPositive),
+                    .timestamp => applyInc(i64, current, value, main.start, main.incrementPositive),
+                    .int8, .uint8 => applyInc(u8, current, value, main.start, main.incrementPositive),
+                    .int16, .uint16 => applyInc(u16, current, value, main.start, main.incrementPositive),
+                    .int32, .uint32 => applyInc(u32, current, value, main.start, main.incrementPositive),
                     else => {},
                 }
+            }
+            if (main.expire and main.size == 8) {
+                const typeId = Node.getNodeTypeId(node);
+                const id = Node.getNodeId(node);
+                Node.expireNode(db, typeId, id, @divTrunc(utils.read(i64, value, 0), 1000));
             }
             utils.copy(u8, current, value, main.start);
             j += main.size;

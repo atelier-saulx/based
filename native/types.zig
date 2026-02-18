@@ -39,6 +39,7 @@ pub const OpType = enum(u8) {
     unloadBlock = 129,
     loadCommon = 130,
     emptyMod = 133,
+    expire = 134,
 
     // --------------------
     noOp = 255,
@@ -121,16 +122,13 @@ pub const ModifyCreateRingHeader = packed struct {
     size: u32,
 };
 
-pub const ModifyIncrement = enum(u8) {
-    none = 0,
-    increment = 1,
-    decrement = 2,
-};
-
 pub const ModifyMainHeader = packed struct {
     id: u8,
     type: PropType,
-    increment: ModifyIncrement,
+    increment: bool,
+    incrementPositive: bool,
+    expire: bool,
+    _padding: u5,
     size: u8,
     start: u16,
 };

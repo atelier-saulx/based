@@ -1,4 +1,4 @@
-import { assert, isNumber, isRecord, isString } from './shared.js'
+import { assert, isBoolean, isNumber, isRecord, isString } from './shared.js'
 import { parseBase, type Base } from './base.js'
 import { convertToTimestamp } from '../../utils/index.js'
 
@@ -11,6 +11,7 @@ export type SchemaTimestamp<strict = false> = Base & {
   max?: strict extends true ? number : Timestamp
   default?: strict extends true ? number : Timestamp
   step?: strict extends true ? number : number | string
+  expire?: boolean
 }
 
 export const isTimestamp = (v: unknown): v is Timestamp =>
@@ -37,9 +38,15 @@ export const parseTimestamp = (
     'Invalid default timestamp',
   )
 
+  assert(
+    def.expire === undefined || isBoolean(def.expire),
+    'Invalid expire timestamp',
+  )
+
   return parseBase<SchemaTimestamp<true>>(def, {
     type: 'timestamp',
     on: def.on,
+    expire: def.expire,
     min: convertToTsIfDefined(def.min),
     max: convertToTsIfDefined(def.max),
     step: convertToTsIfDefined(def.step),

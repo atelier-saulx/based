@@ -41,7 +41,9 @@ export type ModifyOpts = {
   locale?: keyof typeof LangCode
 }
 
-export class DbClient<S extends { types: any } = SchemaOut> extends DbShared {
+export class DbClientClass<
+  S extends { types: any } = SchemaOut,
+> extends DbShared {
   constructor({
     hooks,
     maxModifySize = 100 * 1e3 * 1e3,
@@ -79,7 +81,7 @@ export class DbClient<S extends { types: any } = SchemaOut> extends DbShared {
   async setSchema<const T extends SchemaIn>(
     schema: StrictSchema<T>,
     transformFns?: SchemaMigrateFns,
-  ): Promise<DbClient<ResolveSchema<T>>> {
+  ): Promise<DbClientClass<ResolveSchema<T>>> {
     const strictSchema = parse(schema as any).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
@@ -87,13 +89,13 @@ export class DbClient<S extends { types: any } = SchemaOut> extends DbShared {
       transformFns,
     )
     if (this.stopped) {
-      return this as DbClient<ResolveSchema<T>>
+      return this as unknown as DbClientClass<ResolveSchema<T>>
     }
     if (schemaChecksum !== this.schema?.hash) {
       await this.once('schema')
-      return this as DbClient<ResolveSchema<T>>
+      return this as unknown as DbClientClass<ResolveSchema<T>>
     }
-    return this as DbClient<ResolveSchema<T>>
+    return this as unknown as DbClientClass<ResolveSchema<T>>
   }
 
   query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
@@ -247,6 +249,14 @@ export class DbClient<S extends { types: any } = SchemaOut> extends DbShared {
       await lastModify.catch(noop)
     }
   }
+}
+
+export type DbClient<S extends { types: any } = SchemaOut> = DbClientClass<S>
+
+export const DbClient = DbClientClass as {
+  new <const S extends SchemaIn = SchemaOut>(
+    opts: DbClientOpts,
+  ): DbClient<ResolveSchema<S>>
 }
 
 function noop() {}
