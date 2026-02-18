@@ -75,7 +75,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e6; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
@@ -104,7 +104,7 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    range: { start: 0, end: 1e5 },
+    range: { start: 0, end: 1e6 },
     // target: b,
     // order: 'desc',
     // sort: { prop: 'y' },
