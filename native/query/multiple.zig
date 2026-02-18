@@ -164,8 +164,6 @@ pub fn default(
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;
 
-    std.debug.print("DERP? {any} \n", .{header});
-
     switch (header.iteratorType) {
         .default => {
             var it = Node.iterator(false, typeEntry);
@@ -178,17 +176,11 @@ pub fn default(
 
         .sort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-
-            std.debug.print("DERP {any} \n", .{sortHeader});
-
             var it = try Sort.iterator(false, ctx.db, ctx.thread, header.typeId, &sortHeader);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },
         .descSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-
-            std.debug.print("DOINK {any} \n", .{sortHeader});
-
             var it = try Sort.iterator(true, ctx.db, ctx.thread, header.typeId, &sortHeader);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },

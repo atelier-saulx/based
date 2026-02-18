@@ -65,6 +65,8 @@ pub fn SortIterator(
             it: selva.SelvaSortIterator,
 
             pub fn deinit(self: *SortIterator(desc, false)) void {
+                std.debug.print("HELLO {any} \n", .{self.index});
+
                 selva.selva_sort_clear(self.index.?.index);
             }
 
@@ -93,6 +95,7 @@ inline fn createIterator(
     } else {
         selva.selva_sort_foreach_begin(sortIndex.index, &it);
     }
+    std.debug.print("FLAP {any} \n", .{sortIndex});
     return SortIterator(desc, isEdge){
         .it = it,
         .index = sortIndex,
@@ -208,7 +211,7 @@ fn getSortIndex(
     }
 }
 
-pub fn fromIterator(
+pub inline fn fromIterator(
     comptime desc: bool,
     comptime isEdge: bool,
     dbCtx: *DbCtx,

@@ -67,6 +67,7 @@ await test('include', async (t) => {
     cook: {
       cookie: 1234,
     },
+    mrFriend: { id: a, $level: 67 },
   })
 
   let d = Date.now()
@@ -80,6 +81,7 @@ await test('include', async (t) => {
       cook: {
         cookie: 1234,
       },
+      friends: [a, b],
     })
   }
 
@@ -133,15 +135,23 @@ await test('include', async (t) => {
     props: {
       y: { include: {} },
       name: { include: {} },
+      friends: {
+        order: 'desc',
+        sort: { prop: 'y' },
+        props: {
+          name: { include: {} },
+          y: { include: {} },
+        },
+      },
       mrFriend: {
         props: {
           y: { include: {} },
         },
-        // edges: {
-        //   props: {
-        //     $level: { include: {} },
-        //   },
-        // },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
       },
     },
   }
