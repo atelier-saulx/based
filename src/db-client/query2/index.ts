@@ -320,7 +320,8 @@ class Query<
     Aggregate,
     GroupedKey
   > {
-    this.ast.sort = { prop, order: order || 'asc' }
+    this.ast.order = order || 'asc'
+    this.ast.sort = { prop }
     return this as any
   }
 
@@ -337,11 +338,7 @@ class Query<
     Aggregate,
     GroupedKey
   > {
-    if (this.ast.sort) {
-      this.ast.sort.order = order
-    } else {
-      this.ast.sort = { prop: 'id', order }
-    }
+    this.ast.order = order || 'asc'
     return this as any
   }
 

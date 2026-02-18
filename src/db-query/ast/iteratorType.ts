@@ -1,5 +1,4 @@
 import {
-  ID_PROP,
   QUERY_ITERATOR_DEFAULT,
   QUERY_ITERATOR_EDGE,
   QUERY_ITERATOR_EDGE_INCLUDE,
@@ -7,22 +6,22 @@ import {
   QUERY_ITERATOR_SEARCH_VEC,
   QueryIteratorTypeEnum,
   QueryHeader,
+  QueryIteratorType,
+  QueryIteratorTypeInverse,
 } from '../../zigTsExports.js'
-import { QueryDef, QueryDefType } from '../../db-client/query/types.js'
+import { QueryAst } from './ast.js'
 
-export const getIteratorType = (header: QueryHeader): QueryIteratorTypeEnum => {
+export const getIteratorType = (
+  header: QueryHeader,
+  ast: QueryAst,
+): QueryIteratorTypeEnum => {
   const hasFilter: boolean = header.filterSize != 0
   const edge: boolean = header.edgeTypeId != 0
   const edgeInclude: boolean = header.edgeSize != 0
-
-  // const hasFilter = def.filter.size > 0
-  const hasSort = false //
-  const isDesc = false // def.order === Order.desc
-  const hasSearch = false //def.search?.size && def.search.size > 0
-  const isVector = false // hasSearch && def.search!.isVector
-  // def.sort &&
-  // (def.sort.prop !== ID_PROP || def.type === QueryDefType.References)
-  // def.type === QueryDefType.References &&
+  const hasSort = header.sort
+  const isDesc = ast.order === 'desc'
+  const hasSearch = false
+  const isVector = false
 
   let base = QUERY_ITERATOR_DEFAULT
 
@@ -34,43 +33,43 @@ export const getIteratorType = (header: QueryHeader): QueryIteratorTypeEnum => {
     base = QUERY_ITERATOR_EDGE_INCLUDE
   }
 
-  if (hasSearch && !isVector) {
-    base = QUERY_ITERATOR_SEARCH
-  }
+  // if (hasSearch && !isVector) {
+  //   base = QUERY_ITERATOR_SEARCH
+  // }
 
-  if (hasSearch && isVector) {
-    base = QUERY_ITERATOR_SEARCH_VEC
-  }
+  // if (hasSearch && isVector) {
+  //   base = QUERY_ITERATOR_SEARCH_VEC
+  // }
 
-  if (hasSearch) {
+  // if (hasSearch) {
+  //   if (hasFilter) {
+  //     base += 1
+  //   }
+  // }
+
+  if (hasSort) {
     if (hasFilter) {
+      if (isDesc) {
+        base += 7
+      } else {
+        base += 3
+      }
+    } else if (isDesc) {
+      base += 5
+    } else {
       base += 1
     }
   } else {
-    if (hasSort) {
-      if (hasFilter) {
-        if (isDesc) {
-          base += 7
-        } else {
-          base += 3
-        }
-      } else if (isDesc) {
-        base += 5
+    if (hasFilter) {
+      if (isDesc) {
+        base += 6
       } else {
-        base += 1
+        base += 2
       }
+    } else if (isDesc) {
+      base += 4
     } else {
-      if (hasFilter) {
-        if (isDesc) {
-          base += 6
-        } else {
-          base += 2
-        }
-      } else if (isDesc) {
-        base += 4
-      } else {
-        base += 0
-      }
+      base += 0
     }
   }
 

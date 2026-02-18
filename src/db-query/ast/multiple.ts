@@ -7,6 +7,7 @@ import {
   writeQueryHeaderProps as props,
   QueryIteratorType,
   readQueryHeader,
+  pushSortHeader,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
@@ -14,6 +15,7 @@ import { include } from './include.js'
 import { getIteratorType } from './iteratorType.js'
 import { readPropDef, readSchema } from './readSchema.js'
 import { isAggregateAst, pushAggregatesQuery } from './aggregates.js'
+import { sort } from './sort.js'
 
 export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
@@ -23,8 +25,6 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     return
   }
 
-  // ADD SORT
-
   const headerIndex = pushQueryHeader(ctx.query, {
     op: QueryType.default,
     prop: ID_PROP,
@@ -32,9 +32,8 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     typeId: typeDef.id,
     offset: rangeStart,
     limit: (ast.range?.end || 1000) + rangeStart,
-    sort: false,
+    sort: !!ast.sort,
     filterSize: 0,
-
     // Lets remove all this from the header and make specific ones
     searchSize: 0,
     iteratorType: QueryIteratorType.default,
@@ -43,6 +42,10 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     edgeFilterSize: 0,
     size: 0,
   })
+
+  if (ast.sort) {
+    pushSortHeader(ctx.query, sort(ast, ctx, typeDef))
+  }
 
   if (ast.filter) {
     const filterSize = filter(ast.filter, ctx, typeDef)
@@ -53,7 +56,7 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
 
   props.iteratorType(
     ctx.query.data,
-    getIteratorType(readQueryHeader(ctx.query.data, headerIndex)),
+    getIteratorType(readQueryHeader(ctx.query.data, headerIndex), ast),
     headerIndex,
   )
 }
@@ -67,7 +70,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     typeId: prop.ref!.id,
     offset: rangeStart,
     limit: (ast.range?.end || 100) + rangeStart,
-    sort: false,
+    sort: !!ast.sort,
     filterSize: 0,
     searchSize: 0,
     iteratorType: QueryIteratorType.default,
@@ -81,6 +84,15 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   ctx.readSchema.refs[prop.id] = {
     schema,
     prop: readPropDef(prop, ctx.locales, ast.include),
+  }
+
+  if (ast.sort) {
+    sort(ast, ctx, prop.ref!)
+  }
+
+  if (ast.filter) {
+    const filterSize = filter(ast.filter, ctx, prop.ref!)
+    props.filterSize(ctx.query.data, filterSize, headerIndex)
   }
 
   const size = include(
@@ -115,7 +127,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
 
   props.iteratorType(
     ctx.query.data,
-    getIteratorType(readQueryHeader(ctx.query.data, headerIndex)),
+    getIteratorType(readQueryHeader(ctx.query.data, headerIndex), ast),
     headerIndex,
   )
 }
