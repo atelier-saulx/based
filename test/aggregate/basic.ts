@@ -1,8 +1,5 @@
-import { equal } from 'node:assert'
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { throws, deepEqual } from '../shared/assert.js'
-import { fastPrng } from '../../src/utils/index.js'
 import { testDb } from '../shared/index.js'
 
 await test('sum top level', async (t) => {
@@ -66,6 +63,7 @@ await test('sum top level', async (t) => {
   )
 
   throws(async () => {
+    // @ts-expect-error
     await db.query2('vote').sum().get()
   }, 'sum() returning nothing')
 
@@ -75,7 +73,7 @@ await test('sum top level', async (t) => {
     'nested object notation',
   )
 })
-/*
+
 await test('top level count', async (t) => {
   const db = await testDb(t, {
     types: {
@@ -168,7 +166,7 @@ await test('top level count', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').filter('NL', '>', 1e6).count().get(),
+    await db.query2('vote').filter('NL', '>', 255).count().get(),
     { count: 0 },
     'count, with no match filtering, int value',
   )
@@ -322,7 +320,7 @@ await test('two phase accumulation', async (t) => {
     'stddev, branched References, groupBy',
   )
 })
-
+/*
 await test('numeric types', async (t) => {
   const db = await testDb(t, {
     types: {

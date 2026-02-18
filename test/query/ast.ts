@@ -223,7 +223,6 @@ await test('query ast creation', async (t) => {
     deepEqual(q3.ast, {
       type: 'user',
       order: 'desc',
-      sort: { prop: 'id' },
     })
 
     const q4 = query('user').sort('age').order('desc')

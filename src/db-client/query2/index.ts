@@ -10,6 +10,8 @@ import type {
   FilterEdges,
   InferSchemaOutput,
   NumberPaths,
+  ExpandDotPath,
+  UnionToIntersection,
 } from './types.js'
 import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
 import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
@@ -43,13 +45,22 @@ class Query<
   }
   ast: QueryAst
   include<
-    F extends (
-      | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
-      | Path<S['types'], T>
-      | '*'
-      | '**'
-      | ((q: SelectFn<S, T>) => Query<S, any, any, any, any>)
-    )[],
+    F extends [
+      (
+        | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
+        | Path<S['types'], T>
+        | '*'
+        | '**'
+        | ((q: SelectFn<S, T>) => Query<S, any, any, any, any>)
+      ),
+      ...(
+        | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
+        | Path<S['types'], T>
+        | '*'
+        | '**'
+        | ((q: SelectFn<S, T>) => Query<S, any, any, any, any>)
+      )[],
+    ],
   >(
     ...props: F
   ): NextBranch<
@@ -63,6 +74,9 @@ class Query<
     Aggregate,
     GroupedKey
   > {
+    if (props.length === 0) {
+      throw new Error('Query: include expects at least one argument')
+    }
     for (const prop of props as (string | Function)[]) {
       if (typeof prop === 'function') {
         prop((prop: string) => new Query(traverse(this.ast, prop)))
@@ -134,7 +148,7 @@ class Query<
   }
 
   sum<P extends NumberPaths<S, T>>(
-    ...props: P[]
+    ...props: [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -143,11 +157,14 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { sum: number } },
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { sum: number }>>,
     GroupedKey
   > {
+    if (props.length === 0) {
+      throw new Error('Query: sum expects at least one argument')
+    }
     this.ast.sum ??= { props: [] }
-    this.ast.sum.props.push(...(props as string[]))
+    this.ast.sum.props.push(...(props as string[])) // Safe cast as P is string-like key
     return this as any
   }
 
@@ -167,7 +184,7 @@ class Query<
   }
 
   cardinality<P extends string>(
-    ...props: P[]
+    ...props: [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -176,16 +193,19 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { cardinality: number } },
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { cardinality: number }>>,
     GroupedKey
   > {
+    if (props.length === 0) {
+      throw new Error('Query: cardinality expects at least one argument')
+    }
     this.ast.cardinality ??= { props: [] }
     this.ast.cardinality.props.push(...props)
     return this as any
   }
 
   avg<P extends NumberPaths<S, T>>(
-    ...props: P[]
+    ...props: [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -194,16 +214,19 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { avg: number } },
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { avg: number }>>,
     GroupedKey
   > {
+    if (props.length === 0) {
+      throw new Error('Query: avg expects at least one argument')
+    }
     this.ast.avg ??= { props: [] }
     this.ast.avg.props.push(...(props as string[]))
     return this as any
   }
 
   hmean<P extends NumberPaths<S, T>>(
-    ...props: P[]
+    ...props: [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -212,16 +235,19 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { hmean: number } },
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { hmean: number }>>,
     GroupedKey
   > {
+    if (props.length === 0) {
+      throw new Error('Query: hmean expects at least one argument')
+    }
     this.ast.hmean ??= { props: [] }
     this.ast.hmean.props.push(...(props as string[]))
     return this as any
   }
 
   max<P extends NumberPaths<S, T>>(
-    ...props: P[]
+    ...props: [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -230,16 +256,20 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { max: InferPathType<S, T, Key> } },
+    Aggregate &
+      UnionToIntersection<ExpandDotPath<P, { max: InferPathType<S, T, P> }>>,
     GroupedKey
   > {
+    if (props.length === 0) {
+      throw new Error('Query: max expects at least one argument')
+    }
     this.ast.max ??= { props: [] }
     this.ast.max.props.push(...(props as string[]))
     return this as any
   }
 
   min<P extends NumberPaths<S, T>>(
-    ...props: P[]
+    ...props: [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -248,9 +278,13 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { min: InferPathType<S, T, Key> } },
+    Aggregate &
+      UnionToIntersection<ExpandDotPath<P, { min: InferPathType<S, T, P> }>>,
     GroupedKey
   > {
+    if (props.length === 0) {
+      throw new Error('Query: min expects at least one argument')
+    }
     this.ast.min ??= { props: [] }
     this.ast.min.props.push(...(props as string[]))
     return this as any
@@ -267,11 +301,15 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & {
-      [Key in P extends any[] ? P[number] : P]: { stddev: number }
-    },
+    Aggregate &
+      UnionToIntersection<
+        ExpandDotPath<P extends any[] ? P[number] : P, { stddev: number }>
+      >,
     GroupedKey
   > {
+    if (!prop) {
+      throw new Error('Query: stddev expects at least one argument')
+    }
     this.ast.stddev ??= { props: [] }
     const props = Array.isArray(prop) ? prop : [prop]
     this.ast.stddev.props.push(...(props as string[]))
@@ -292,11 +330,15 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & {
-      [Key in P extends any[] ? P[number] : P]: { variance: number }
-    },
+    Aggregate &
+      UnionToIntersection<
+        ExpandDotPath<P extends any[] ? P[number] : P, { variance: number }>
+      >,
     GroupedKey
   > {
+    if (!prop) {
+      throw new Error('Query: var expects at least one argument')
+    }
     this.ast.variance ??= { props: [] }
     const props = Array.isArray(prop) ? prop : [prop]
     this.ast.variance.props.push(...(props as string[]))

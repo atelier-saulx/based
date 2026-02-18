@@ -233,71 +233,86 @@ export type EdgePaths<Schema, Prop, Depth extends number> = {
           : never)
 }[keyof FilterEdges<Prop> & string]
 
-export type Path<Schema, T extends keyof Schema, Depth extends number = 5> = [
-  Depth,
-] extends [never]
+type PropsPath<Schema, Props, Depth extends number> = [Depth] extends [never]
   ? never
   : {
-      [K in keyof ResolvedProps<Schema, T> & string]:
+      [K in keyof Props & string]:
         | K
-        | (ResolvedProps<Schema, T>[K] extends { ref: infer R extends string }
+        | (Props[K] extends { ref: infer R extends string }
             ? `${K}.${
                 | Path<Schema, R & keyof Schema, Prev[Depth]>
-                | EdgePaths<Schema, ResolvedProps<Schema, T>[K], Prev[Depth]>
+                | EdgePaths<Schema, Props[K], Prev[Depth]>
                 | 'id'
                 | '*'
                 | '**'}`
-            : ResolvedProps<Schema, T>[K] extends {
-                  items: { ref: infer R extends string } & infer Items
-                }
-              ? `${K}.${
-                  | Path<Schema, R & keyof Schema, Prev[Depth]>
-                  | EdgePaths<Schema, Items, Prev[Depth]>
-                  | 'id'
-                  | '*'
-                  | '**'}`
-              : never)
-    }[keyof ResolvedProps<Schema, T> & string]
+            : Props[K] extends { props: infer P }
+              ? `${K}.${PropsPath<Schema, P, Prev[Depth]>}`
+              : Props[K] extends {
+                    items: { ref: infer R extends string } & infer Items
+                  }
+                ? `${K}.${
+                    | Path<Schema, R & keyof Schema, Prev[Depth]>
+                    | EdgePaths<Schema, Items, Prev[Depth]>
+                    | 'id'
+                    | '*'
+                    | '**'}`
+                : never)
+    }[keyof Props & string]
+
+export type Path<
+  Schema,
+  T extends keyof Schema,
+  Depth extends number = 5,
+> = PropsPath<Schema, ResolvedProps<Schema, T>, Depth>
 
 export type ResolveDotPath<T extends string> =
   T extends `${infer Head}.${infer Tail}`
     ? { field: Head; select: ResolveDotPath<Tail> }
     : T
 
-export type InferPathType<
+type InferPropsPathType<
   S extends { types: any; locales?: any },
-  T extends keyof S['types'],
+  Props,
   P,
 > = P extends 'id'
   ? number
-  : P extends keyof ResolvedProps<S['types'], T>
-    ? InferProp<ResolvedProps<S['types'], T>[P], S['types']>
+  : P extends keyof Props
+    ? InferProp<
+        Props[P],
+        S['types'],
+        S['locales'] extends Record<string, any> ? S['locales'] : {}
+      >
     : P extends `${infer Head}.${infer Tail}`
-      ? Head extends keyof ResolvedProps<S['types'], T>
-        ? ResolvedProps<S['types'], T>[Head] extends {
-            ref: infer R extends string
-          }
-          ? Tail extends keyof FilterEdges<ResolvedProps<S['types'], T>[Head]>
+      ? Head extends keyof Props
+        ? Props[Head] extends { ref: infer R extends string }
+          ? Tail extends keyof FilterEdges<Props[Head]>
             ? InferProp<
-                ResolvedProps<S['types'], T>[Head][Tail &
-                  keyof ResolvedProps<S['types'], T>[Head]],
+                Props[Head][Tail & keyof Props[Head]],
                 S['types'],
                 S['locales'] extends Record<string, any> ? S['locales'] : {}
               >
             : InferPathType<S, R & keyof S['types'], Tail>
-          : ResolvedProps<S['types'], T>[Head] extends {
-                items: { ref: infer R extends string } & infer Items
-              }
-            ? Tail extends keyof FilterEdges<Items>
-              ? InferProp<
-                  Items[Tail & keyof Items],
-                  S['types'],
-                  S['locales'] extends Record<string, any> ? S['locales'] : {}
-                >
-              : InferPathType<S, R & keyof S['types'], Tail>
-            : never
+          : Props[Head] extends { props: infer NestedProps }
+            ? InferPropsPathType<S, NestedProps, Tail>
+            : Props[Head] extends {
+                  items: { ref: infer R extends string } & infer Items
+                }
+              ? Tail extends keyof FilterEdges<Items>
+                ? InferProp<
+                    Items[Tail & keyof Items],
+                    S['types'],
+                    S['locales'] extends Record<string, any> ? S['locales'] : {}
+                  >
+                : InferPathType<S, R & keyof S['types'], Tail>
+              : never
         : never
       : never
+
+export type InferPathType<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+  P,
+> = InferPropsPathType<S, ResolvedProps<S['types'], T>, P>
 
 export type NumberPaths<
   S extends { types: any; locales?: any },
@@ -305,3 +320,16 @@ export type NumberPaths<
 > = {
   [K in Path<S['types'], T>]: InferPathType<S, T, K> extends number ? K : never
 }[Path<S['types'], T>]
+
+export type ExpandDotPath<
+  T extends string,
+  V,
+> = T extends `${infer Head}.${infer Tail}`
+  ? { [K in Head]: ExpandDotPath<Tail, V> }
+  : { [K in T]: V }
+
+export type UnionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never

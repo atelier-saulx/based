@@ -107,6 +107,20 @@ await test('query db', async (t) => {
   }
 
   {
+    const res = await db.query2('user').sum('friend.age').get()
+    deepEqual(res, { friend: { age: { sum: 70 } } })
+  }
+
+  {
+    const res = await db
+      .query2('user')
+      .include((select) => select('friend').sum('age'))
+      .get()
+
+    deepEqual(res, [{ friend: { age: { sum: 70 } } }])
+  }
+
+  {
     const res = await db.query2('user').sum('age').groupBy('name').get()
     deepEqual(res, { john: { age: { sum: 21 } }, billy: { age: { sum: 49 } } })
   }

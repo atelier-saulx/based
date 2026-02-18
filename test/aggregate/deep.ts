@@ -1,23 +1,12 @@
 /*
  * Deep = Reference(s), Edges and nests
  */
-import { equal } from 'node:assert'
-import { BasedDb } from '../../src/index.js'
-import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
-import { fastPrng } from '../../src/utils/index.js'
+import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 await test('sum branched includes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -64,24 +53,18 @@ await test('sum branched includes', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
+      .query2('sequence')
+      .include((select) => select('votes').sum('NL', 'AU'))
+      .get(),
     [{ id: 1, votes: { NL: { sum: 30 }, AU: { sum: 15 } } }],
     'brached include, sum, references',
   )
 
   deepEqual(
     await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').groupBy('country').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
+      .query2('sequence')
+      .include((select) => select('votes').groupBy('country').sum('NL', 'AU'))
+      .get(),
     [
       {
         id: 1,
@@ -96,27 +79,19 @@ await test('sum branched includes', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query('sequence')
+  //     .query2('sequence')
   //     .include((select) => {
   //       select('votes').filter('country', '=', 'aa').sum('NL', 'AU') // string filter not implemented and also filter in refs group not implemented
   //     })
   //     .get()
-  //     .toObject(),
+  //     ,
   //   [{ id: 1, votes: { NL: { sum: 20 }, AU: { sum: 15 } } }],
   //   'branched include, references, filtered, groupBy',
   // )
 })
 
 await test('count branched includes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -163,24 +138,18 @@ await test('count branched includes', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').count()
-      })
-      .get()
-      .toObject(),
+      .query2('sequence')
+      .include((select) => select('votes').count())
+      .get(),
     [{ id: 1, votes: { count: 3 } }],
     'brached include, count, references',
   )
 
   deepEqual(
     await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').groupBy('country').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
+      .query2('sequence')
+      .include((select) => select('votes').groupBy('country').sum('NL', 'AU'))
+      .get(),
     [
       {
         id: 1,
@@ -195,27 +164,19 @@ await test('count branched includes', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query('sequence')
+  //     .query2('sequence')
   //     .include((select) => {
   //       select('votes').filter('country', '=', 'aa').count() // string filter not implemented and also filter in refs group not implemented
   //     })
   //     .get()
-  //     .toObject(),
+  //     ,
   //   [{ id: 1, votes: { count: 2 } }],
   //   'count, branched include, references, filtered',
   // )
 })
 
 await test('agg on references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       team: {
         props: {
@@ -306,14 +267,14 @@ await test('agg on references', async (t) => {
   })
 
   const result = await db
-    .query('team')
-    .include('teamName', 'city', (select) => {
-      select('players').groupBy('position').sum('goalsScored', 'gamesPlayed')
-    })
+    .query2('team')
+    .include('teamName', 'city', (select) =>
+      select('players').groupBy('position').sum('goalsScored', 'gamesPlayed'),
+    )
     .get()
 
   deepEqual(
-    result.toObject(),
+    result,
     [
       {
         id: 1,
@@ -353,14 +314,8 @@ await test('agg on references', async (t) => {
 })
 
 await test('enums', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
   const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       beer: {
         props: {
@@ -399,7 +354,7 @@ await test('enums', async (t) => {
   })
 
   deepEqual(
-    await db.query('beer').avg('price').groupBy('type').get().toObject(),
+    await db.query2('beer').avg('price').groupBy('type').get(),
     {
       Tripel: {
         price: { avg: 11.85 },
@@ -412,7 +367,7 @@ await test('enums', async (t) => {
   )
 
   deepEqual(
-    await db.query('beer').hmean('price').groupBy('type').get().toObject(),
+    await db.query2('beer').hmean('price').groupBy('type').get(),
     {
       Tripel: {
         price: { hmean: 11.839662447257384 },
@@ -426,13 +381,7 @@ await test('enums', async (t) => {
 })
 
 await test.skip('refs with enums ', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       movie: {
         name: 'string',
@@ -469,10 +418,9 @@ await test.skip('refs with enums ', async (t) => {
 
   deepEqual(
     await db
-      .query('actor')
+      .query2('actor')
       .include((q) => q('movies').groupBy('genre').count())
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -496,13 +444,7 @@ await test.skip('refs with enums ', async (t) => {
 })
 
 await test('cardinality', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       lunch: {
         week: 'string',
@@ -563,13 +505,13 @@ await test('cardinality', async (t) => {
   })
 
   deepEqual(
-    await db.query('lunch').cardinality('Mon').get().toObject(),
+    await db.query2('lunch').cardinality('Mon').get(),
     { Mon: { cardinality: 7 } },
     'main cardinality no group by',
   )
 
   deepEqual(
-    await db.query('lunch').cardinality('Mon').groupBy('week').get().toObject(),
+    await db.query2('lunch').cardinality('Mon').groupBy('week').get(),
     {
       27: {
         Mon: { cardinality: 5 },
@@ -621,9 +563,9 @@ await test('cardinality', async (t) => {
 //     booths: [bg, stp],
 //   })
 
-//   await db.query('fair').include('booths.badgesScanned').get().inspect()
+//   await db.query2('fair').include('booths.badgesScanned').get().inspect()
 //   await db
-//     .query('fair')
+//     .query2('fair')
 //     .cardinality('booths.badgesScanned')
 //     .groupBy('day')
 //     .get()
@@ -631,13 +573,7 @@ await test('cardinality', async (t) => {
 // })
 
 await test('group by reference ids', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       trip: {
         pickup: 'timestamp',
@@ -691,7 +627,7 @@ await test('group by reference ids', async (t) => {
   })
 
   deepEqual(
-    await db.query('driver').sum('rank').groupBy('vehicle').get().toObject(),
+    await db.query2('driver').sum('rank').groupBy('vehicle').get(),
     {
       2: {
         rank: { sum: 5 },
@@ -702,11 +638,10 @@ await test('group by reference ids', async (t) => {
 
   deepEqual(
     await db
-      .query('driver')
+      .query2('driver')
       .include((q) => q('trips').groupBy('vehicle').max('distance'))
       .include('*')
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -724,13 +659,7 @@ await test('group by reference ids', async (t) => {
 })
 
 await test.skip('nested references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -763,10 +692,10 @@ await test.skip('nested references', async (t) => {
     strong: 4,
   })
 
-  // await db.query('user').include('*', '**').get().inspect(10)
+  // await db.query2('user').include('*', '**').get().inspect(10)
 
   deepEqual(
-    await db.query('user').sum('friends.strong').get().toObject(),
+    await db.query2('user').sum('friends.strong').get(),
     {
       strong: {
         sum: 7,
@@ -777,13 +706,7 @@ await test.skip('nested references', async (t) => {
 })
 
 await test.skip('edges aggregation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       movie: {
         name: 'string',
@@ -849,7 +772,7 @@ await test.skip('edges aggregation', async (t) => {
   })
 
   // await db
-  //   .query('movie')
+  //   .query2('movie')
   //   .include('*', '**')
   //   // .include('actors.$rating')
   //   // .include('actors.name')
@@ -864,30 +787,29 @@ await test.skip('edges aggregation', async (t) => {
   // after: NOK: unreacheable
   // console.log(
   //   JSON.stringify(
-  //     await db.query('movie').include('actors.strong').get().toObject(),
+  //     await db.query2('movie').include('actors.strong').get(),
   //   ),
   // )
 
   // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
   // after: NOK: zeroing
-  // await db.query('movie').include('actors.$rating').get().inspect(10)
+  // await db.query2('movie').include('actors.$rating').get().inspect(10)
 
   /*----------------------------*/
   /*       BRANCHED QUERY       */
   /*----------------------------*/
 
   // await db
-  //   .query('movie')
+  //   .query2('movie')
   //   .include((q) => q('actors').max('strong').sum('strong2'))
   //   .get()
   //   .inspect(10)
 
   deepEqual(
     await db
-      .query('movie')
+      .query2('movie')
       .include((q) => q('actors').max('$rating'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -911,10 +833,9 @@ await test.skip('edges aggregation', async (t) => {
 
   deepEqual(
     await db
-      .query('movie')
+      .query2('movie')
       .include((q) => q('actors').max('$rating').sum('$hating'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -944,10 +865,9 @@ await test.skip('edges aggregation', async (t) => {
 
   deepEqual(
     await db
-      .query('movie')
+      .query2('movie')
       .include((q) => q('actors').max('$rating', '$hating'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -980,6 +900,6 @@ await test.skip('edges aggregation', async (t) => {
   /*-----------------------------------*/
   // before: OK: error in js: Cannot read properties of undefined (reading 'edges')
   // after: NOK: feature not implemented
-  // await db.query('actor').max('$rating').get().inspect(10)
-  // await db.query('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
+  // await db.query2('actor').max('$rating').get().inspect(10)
+  // await db.query2('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
 })
