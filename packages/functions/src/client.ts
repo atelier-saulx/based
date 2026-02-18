@@ -9,7 +9,9 @@ import type { DbClient } from '@based/db'
 export abstract class BasedFunctionClient {
   server: any
 
-  db: DbClient
+  db: DbClient & {
+    getDbClient: (name: string) => { dbClient: DbClient; dbServerClient: any }
+  }
   dbs: Record<string, DbClient>
 
   abstract call(name: string, payload?: any, ctx?: Context): Promise<any>

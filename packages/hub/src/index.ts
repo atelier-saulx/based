@@ -9,6 +9,8 @@ import type { S3Client } from '@based/s3'
 import { createStatsDb } from './statsDb.js'
 import { initDynamicFunctionsGlobals } from './functions/globalFn.js'
 import type SMTPConnection from 'nodemailer/lib/smtp-connection/index.js'
+import { DbClient } from '@based/db'
+import { DbServer } from '@based/db'
 
 export type Opts = {
   port: number
@@ -31,7 +33,15 @@ const start = async ({ port, path, s3, buckets, smtp, console }: Opts) => {
   // Register default db client/server
   clients.default = defaultDb.client
   servers.default = defaultDb.server
-  server.client.db = defaultDb.client
+  server.client.db = Object.assign(defaultDb.client, {
+    getDbClient: (name: string) => {
+      const selectedDb = server.client.dbs?.[name] || defaultDb.client
+      return {
+        dbClient: selectedDb,
+        dbServerClient: server.client,
+      }
+    },
+  })
   server.client.dbs = clients
   // Add deprecated things
   Object.defineProperty(server.client.db, 'v2', {
