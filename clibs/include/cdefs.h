@@ -204,7 +204,8 @@
  *     unsigned int len;
  *     char buf[] __counted_by(len);
  * };
- * __builtin_dynamic_object_size(p->buf) == p->len * sizeof(*p->buf)
+ * *__builtin_counted_by_ref(p->puf) = len;
+ * __builtin_dynamic_object_size(p->buf) == p->len * sizeof(*p->buf);
  */
 #define __counted_by(member) __attribute__((__counted_by__(member)))
 #else
@@ -213,13 +214,16 @@
 #endif
 
 #ifndef __pcounted_by
-#if __has_attribute(__counted_by__) && !defined(__clang__)
+#if __has_attribute(__counted_by__) && \
+    !defined(__clang__) && \
+    (__GNUC__ >= 14 && __GNUC_MINOR__ > 2)
 /**
  * struct foo {
  *     unsigned int len;
  *     char *buf __pcounted_by(len);
  * };
- * __builtin_dynamic_object_size(p->buf) == p->len * sizeof(*p->buf)
+ * *__builtin_counted_by_ref(p->puf) = len;
+ * __builtin_dynamic_object_size(p->buf) == p->len * sizeof(*p->buf);
  */
 #define __pcounted_by(member) __attribute__((__counted_by__(member)))
 #else
