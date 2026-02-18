@@ -149,18 +149,18 @@ await test('include', async (t) => {
           name: { include: {} },
           y: { include: {} },
         },
-        // filter: {
-        //   props: {
-        //     y: {
-        //       ops: [{ op: '>', val: 10 }],
-        //     },
-        //   },
-        // },
-        // edges: {
-        //   props: {
-        //     $level: { include: {} },
-        //   },
-        // },
+        filter: {
+          props: {
+            y: {
+              ops: [{ op: '>', val: 6 }],
+            },
+          },
+        },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
       },
       // mrFriend: {
       //   props: {

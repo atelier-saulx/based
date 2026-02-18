@@ -127,6 +127,9 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       },
       edges,
     )
+    // make a iterator type EDGE FILTER OR (means filter fails now also run edge and ignore the failure)
+    // or add comptime thing that just passed HAS_EDGE then pass the edge in the c and have an extra check
+    // may be the easier to do
     props.edgeSize(ctx.query.data, size, headerIndex)
   } else {
     console.info('EDGES NO!')
