@@ -47,6 +47,8 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
 }
 
 pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, items: []u8) !void {
+    selva.markDirty(db, typeEntry, Node.getNodeId(node));
+
     var j: usize = 0;
     while (j < data.len) {
         const propId = data[j];
@@ -100,8 +102,6 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                         // if (ctx.currentSortIndex != null) {
                         //     sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, prev).?);
                         // }
-                        const typeId = Node.getNodeTypeId(node);
-                        selva.markDirty(db, typeId, prev);
                     }
                 },
                 .cardinality => {
@@ -315,7 +315,6 @@ pub fn modify(
                     };
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.null, j + 4);
-                    selva.markDirty(db, update.type, id);
                 } else {
                     utils.write(result, id, j);
                     utils.write(result, t.ModifyError.nx, j + 4);
@@ -341,7 +340,6 @@ pub fn modify(
                 const id = Node.getNodeId(upsertRes.node);
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
-                selva.markDirty(db, upsert.type, id);
                 i += dataSize;
             },
             .insert => {
@@ -360,7 +358,6 @@ pub fn modify(
                     modifyProps(db, typeEntry, upsertRes.node, data, items) catch {
                         // handle errors
                     };
-                    selva.markDirty(db, insert.type, id);
                 }
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
@@ -378,7 +375,6 @@ pub fn modify(
                     Node.deleteNode(db, typeEntry, node) catch {
                         // handle errors
                     };
-                    selva.markDirty(db, delete.type, id);
                 }
             },
         }
