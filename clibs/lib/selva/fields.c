@@ -66,7 +66,7 @@ size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs)
 
 static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
-    auto *data = (char *)fields->data;
+    auto data = (char *)fields->data;
     const size_t off = fields->data_len;
     const size_t field_data_size = selva_fields_get_data_size(fs);
     const size_t new_size = ALIGNED_SIZE(off + field_data_size, SELVA_FIELDS_DATA_ALIGN);
@@ -95,7 +95,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
 #endif
 static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
 {
-    auto *data = (char *)fields->data;
+    auto data = (char *)fields->data;
     void *p = data + (nfo->off << SELVA_FIELDS_OFF);
 
     if (unlikely((char *)p > data + fields->data_len)) {
