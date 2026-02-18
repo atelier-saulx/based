@@ -6,6 +6,10 @@ import {
   hashObjectIgnoreKeyOrder,
 } from '../src/index.js'
 
+test('hash null (top level)', async (t) => {
+  t.is(hash(null), 0)
+})
+
 test('hash toJSON (top level)', async (t) => {
   const bla = new Date(100)
   t.true(hash(bla) > 0)
