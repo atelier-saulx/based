@@ -91,34 +91,22 @@ SELVA_EXPORT
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 SELVA_EXPORT
-#if __has_c_attribute(reproducible) && (defined(__clang__) || __GNUC__ > 15)
-[[reproducible]]
-#endif
-inline node_type_t selva_get_max_type(const struct SelvaDb *db);
+inline node_type_t selva_get_max_type(const struct SelvaDb *db) [[reproducible]];
 
 /**
  * Find a type by type id.
  */
 SELVA_EXPORT
-#if __has_c_attribute(reproducible) && (defined(__clang__) || __GNUC__ > 15)
-[[reproducible]]
-#endif
-inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type);
+inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type) [[reproducible]];
 
 /**
  * Get the type for node.
  */
 SELVA_EXPORT
-#if __has_c_attribute(reproducible) && (defined(__clang__) || __GNUC__ > 15)
-[[reproducible]]
-#endif
-inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
+inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node) [[reproducible]];
 
 SELVA_EXPORT
-#if __has_c_attribute(reproducible) && (defined(__clang__) || __GNUC__ > 15)
-[[reproducible]]
-#endif
-inline node_type_t selva_get_type(const struct SelvaTypeEntry *te);
+inline node_type_t selva_get_type(const struct SelvaTypeEntry *te) [[reproducible]];
 
 SELVA_EXPORT
 inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te);
@@ -217,10 +205,7 @@ __attribute__((nonnull, pure))
 inline const struct SelvaFieldSchema *selva_get_fs_by_node(struct SelvaDb *db, struct SelvaNode *node, field_t field);
 
 SELVA_EXPORT
-#if __has_c_attribute(reproducible) && (defined(__clang__) || __GNUC__ > 15)
-[[reproducible]]
-#endif
-inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs);
+inline enum SelvaFieldType selva_get_fs_type(const struct SelvaFieldSchema *fs) [[reproducible]];
 
 /**
  * Get the EdgeFieldConstraint from a ref field schema.

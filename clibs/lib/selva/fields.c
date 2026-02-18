@@ -90,10 +90,7 @@ static struct SelvaFieldInfo alloc_block(struct SelvaFields *fields, const struc
     };
 }
 
-#if __has_c_attribute(reproducible)
-[[reproducible]]
-#endif
-static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFieldInfo *nfo)
+static inline void *nfo2p(const struct SelvaFields *fields, const struct SelvaFieldInfo *nfo) [[reproducible]]
 {
     auto data = (char *)fields->data;
     void *p = data + (nfo->off << SELVA_FIELDS_OFF);
