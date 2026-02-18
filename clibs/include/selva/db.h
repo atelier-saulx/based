@@ -91,7 +91,9 @@ SELVA_EXPORT
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
 
 SELVA_EXPORT
+#if __has_c_attribute(reproducible)
 [[reproducible]]
+#endif
 inline node_type_t selva_get_max_type(const struct SelvaDb *db)
 #ifndef __zig
 {
@@ -106,7 +108,9 @@ inline node_type_t selva_get_max_type(const struct SelvaDb *db)
  * Find a type by type id.
  */
 SELVA_EXPORT
+#if __has_c_attribute(reproducible)
 [[reproducible]]
+#endif
 inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type)
 #ifndef __zig
 {
@@ -124,7 +128,9 @@ inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_t
  * Get the type for node.
  */
 SELVA_EXPORT
+#if __has_c_attribute(reproducible)
 [[reproducible]]
+#endif
 inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
 #ifndef __zig
 {
@@ -136,7 +142,9 @@ inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct 
 #endif
 
 SELVA_EXPORT
+#if __has_c_attribute(reproducible)
 [[reproducible]]
+#endif
 inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)
 #ifndef __zig
 {
