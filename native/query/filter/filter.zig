@@ -100,6 +100,8 @@ inline fn compare(
     return if (meta.invert) !res else res;
 }
 
+// MAKE EDGE FILTER
+
 // Check if this becomes better
 pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
     var i: usize = 0;

@@ -331,7 +331,10 @@ pub fn references(
             nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-        // 4 more
+        // 12 more edgeIncludeFilterEdge
+        // edgeFilter
+        // filterORedgeFilter
+        // filtertAndedgeFilter
 
         .edgeInclude => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
@@ -369,7 +372,10 @@ pub fn references(
             nodeCnt = try iteratorEdge(.filter, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-        // 4 more
+        // 12 more edgeIncludeFilterEdge
+        // edgeFilter
+        // filterORedgeFilter
+        // filtertAndedgeFilter
 
         else => {
             // not handled
