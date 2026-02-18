@@ -115,10 +115,9 @@ void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t no
 static void expire_cb(struct SelvaExpireToken *tok, void *)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
-    struct SelvaTypeEntry *te;
     struct SelvaNodeRes res;
 
-    te = selva_get_type_by_index(token->db, token->type);
+    auto te = selva_get_type_by_index(token->db, token->type);
     assert(te);
     res = selva_find_node(te, token->node_id);
     if (res.node) {
