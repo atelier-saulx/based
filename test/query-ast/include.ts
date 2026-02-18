@@ -59,7 +59,7 @@ await test('include', async (t) => {
     },
   })
 
-  const b = client.create('user', {
+  const b = await client.create('user', {
     name: 'mr snurf b',
     y: 15,
     x: true,
@@ -81,7 +81,10 @@ await test('include', async (t) => {
       cook: {
         cookie: 1234,
       },
-      friends: [a, b],
+      friends: [
+        { id: a, $level: 67 },
+        { id: b, $level: 68 },
+      ],
     })
   }
 
@@ -98,68 +101,74 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    order: 'desc',
-    sort: { prop: 'y' },
+    target: b,
+    // order: 'desc',
+    // sort: { prop: 'y' },
 
-    filter: {
-      props: {
-        flap: { ops: [{ op: '=', val: 9999 }] },
-      },
-      // and: {
-      //   props: {
-      //     y: { ops: [{ op: '=', val: 100 }] },
-      //   },
-      //   or: {
-      //     props: {
-      //       y: { ops: [{ op: '=', val: 3 }] },
-      //     },
-      //     or: {
-      //       props: {
-      //         y: { ops: [{ op: '=', val: 4 }] },
-      //       },
-      //     },
-      //   },
-      // },
-      // or: {
-      //   props: {
-      //     y: { ops: [{ op: '=', val: 670 }] },
-      //   },
-      //   or: {
-      //     props: {
-      //       y: { ops: [{ op: '=', val: 15 }] },
-      //     },
-      //   },
-      // },
-    },
+    // filter: {
+    //   props: {
+    //     flap: { ops: [{ op: '=', val: 9999 }] },
+    //   },
+    // and: {
+    //   props: {
+    //     y: { ops: [{ op: '=', val: 100 }] },
+    //   },
+    //   or: {
+    //     props: {
+    //       y: { ops: [{ op: '=', val: 3 }] },
+    //     },
+    //     or: {
+    //       props: {
+    //         y: { ops: [{ op: '=', val: 4 }] },
+    //       },
+    //     },
+    //   },
+    // },
+    // or: {
+    //   props: {
+    //     y: { ops: [{ op: '=', val: 670 }] },
+    //   },
+    //   or: {
+    //     props: {
+    //       y: { ops: [{ op: '=', val: 15 }] },
+    //     },
+    //   },
+    // },
+    // },
 
     props: {
       y: { include: {} },
       name: { include: {} },
       friends: {
-        // order: 'desc',
+        order: 'desc',
         // sort: { prop: 'y' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },
         },
-        filter: {
-          props: {
-            y: {
-              ops: [{ op: '>', val: 10 }],
-            },
-          },
-        },
-      },
-      mrFriend: {
-        props: {
-          y: { include: {} },
-        },
+        // filter: {
+        //   props: {
+        //     y: {
+        //       ops: [{ op: '>', val: 10 }],
+        //     },
+        //   },
+        // },
         edges: {
           props: {
             $level: { include: {} },
           },
         },
       },
+      // mrFriend: {
+      //   props: {
+      //     y: { include: {} },
+      //   },
+      //   edges: {
+      //     props: {
+      //       $level: { include: {} },
+      //     },
+      //   },
+      // },
     },
   }
 

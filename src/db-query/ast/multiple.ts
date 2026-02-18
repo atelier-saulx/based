@@ -61,6 +61,8 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   )
 }
 
+// ADD IDS
+
 export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   const rangeStart = ast.range?.start || 0
   const headerIndex = pushQueryHeader(ctx.query, {
@@ -87,7 +89,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   }
 
   if (ast.sort) {
-    pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!))
+    pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))
   }
 
   if (ast.filter) {
@@ -121,7 +123,6 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       },
       edges,
     )
-
     props.edgeSize(ctx.query.data, size, headerIndex)
   }
 

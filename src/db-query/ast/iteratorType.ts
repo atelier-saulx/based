@@ -59,18 +59,16 @@ export const getIteratorType = (
     } else {
       base += 1
     }
-  } else {
-    if (hasFilter) {
-      if (isDesc) {
-        base += 6
-      } else {
-        base += 2
-      }
-    } else if (isDesc) {
-      base += 4
+  } else if (hasFilter) {
+    if (isDesc) {
+      base += 6
     } else {
-      base += 0
+      base += 2
     }
+  } else if (isDesc) {
+    base += 4
+  } else {
+    base += 0
   }
 
   return base as QueryIteratorTypeEnum

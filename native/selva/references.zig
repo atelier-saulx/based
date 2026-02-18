@@ -85,7 +85,7 @@ pub fn ReferencesIteratorEdges(comptime desc: bool) type {
         i: u32 = 0,
         pub fn nextRef(self: *ReferencesIteratorEdges(desc)) ?ReferencesIteratorEdgesResult {
             if (self.i < self.refs.nr_refs) {
-                const index = if (desc) self.refs.nr_refs - self.i else self.i;
+                const index = if (desc) self.refs.nr_refs - self.i - 1 else self.i;
                 const ref = self.refs.unnamed_0.large[index];
                 const node = Node.getNode(self.dstType, ref.dst);
                 const edgeNode = Node.getNode(self.edgeType, ref.edge);
@@ -101,7 +101,7 @@ pub fn ReferencesIteratorEdges(comptime desc: bool) type {
         }
         pub fn next(self: *ReferencesIteratorEdges(desc)) ?Node.Node {
             if (self.i < self.refs.nr_refs) {
-                const index = if (desc) self.refs.nr_refs - self.i else self.i;
+                const index = if (desc) self.refs.nr_refs - self.i - 1 else self.i;
                 const ref = self.refs.unnamed_0.large[index];
                 const node = Node.getNode(self.dstType, ref.dst);
                 self.i = self.i + 1;

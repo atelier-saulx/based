@@ -93,7 +93,6 @@ fn iteratorEdge(
             @truncate(ctx.thread.query.index - edgeStartIndex),
             edgesByteSizeIndex,
         );
-        // try Include.include(ref.edge, ctx, edgeQuery, edgeTypeEntry);
         nodeCnt += 1;
         if (nodeCnt >= header.limit) {
             break;
@@ -327,7 +326,7 @@ pub fn references(
         },
     }
 
-    i.* += header.includeSize;
+    i.* += header.includeSize; //+ header.edgeSize;
     ctx.thread.query.write(nodeCnt, sizeIndex);
 
     ctx.thread.query.writeAs(
