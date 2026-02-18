@@ -50,6 +50,8 @@ endif
 
 ifeq ($(uname_S),Linux)
 	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize -Wstrict-aliasing=3
+	# Mute the gcc bug when `auto` is used to infer the type
+	CFLAGS += -Wno-old-style-declaration
 	#CFLAGS += -opt-info-vec-optimized
 	#CFLAGS += -ftree-vectorizer-verbose=5 -fopt-info-vec-missed
 
