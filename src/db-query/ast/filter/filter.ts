@@ -86,6 +86,8 @@ const indexOf = (
   return -1
 }
 
+// filter + EDGE
+
 export const filter = (
   ast: FilterAst,
   ctx: Ctx,
