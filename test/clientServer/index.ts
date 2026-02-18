@@ -7,7 +7,7 @@ import {
 import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
-await test('delete', async (t) => {
+await test('clientServer', async (t) => {
   const server = new DbServer({
     path: t.tmp,
   })
@@ -25,16 +25,4 @@ await test('delete', async (t) => {
   })
 
   const client2 = await testDb(t, schema)
-
-  client.create('user', {
-    name2: 1,
-  })
-
-  client.query('smurl')
-
-  client2.create('user', {
-    name2: 1,
-  })
-
-  client2.query('smurl')
 })

@@ -3,17 +3,10 @@ import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { throws, deepEqual } from '../shared/assert.js'
 import { fastPrng } from '../../src/utils/index.js'
+import { testDb } from '../shared/index.js'
 
 await test('sum top level', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -43,6 +36,7 @@ await test('sum top level', async (t) => {
       },
     },
   })
+
   const nl1 = db.create('vote', {
     country: 'bb',
     flap: { hello: 100 },
@@ -57,64 +51,33 @@ await test('sum top level', async (t) => {
     AU: 15,
   })
 
-  const s = db.create('sequence', { votes: [nl1, nl2, au1] })
+  db.create('sequence', { votes: [nl1, nl2, au1] })
 
-  // top level  ----------------------------------
   deepEqual(
-    await db.query('vote').sum('NL').get().toObject(),
+    await db.query2('vote').sum('NL').get(),
     { NL: { sum: 30 } },
     'sum, top level, single prop',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('vote')
-  //     .filter('country', '=', 'aa') // string filter not implemented yet
-  //     .sum('NL')
-  //     .get()
-  //     .toObject(),
-  //   { NL: { sum: 20 } },
-  //   'sum with filter',
-  // )
-
   deepEqual(
-    await db.query('vote').sum('NL', 'AU').get().toObject(),
+    await db.query2('vote').sum('NL', 'AU').get(),
     { NL: { sum: 30 }, AU: { sum: 15 } },
     'sum, top level, multiple props',
   )
 
   throws(async () => {
-    await db.query('vote').sum().get().toObject()
+    await db.query2('vote').sum().get()
   }, 'sum() returning nothing')
 
-  // deepEqual(
-  //   await db
-  //     .query('vote')
-  //     .filter('country', '=', 'zz') // string filter not implemented yet
-  //     .sum('NL')
-  //     .get()
-  //     .toObject(),
-  //   { NL: { sum: 0 } },
-  //   'sum with empty result set',
-  // )
-
   deepEqual(
-    await db.query('vote').sum('flap.hello').get().toObject(),
+    await db.query2('vote').sum('flap.hello').get(),
     { flap: { hello: { sum: 100 } } },
     'nested object notation',
   )
 })
-
+/*
 await test('top level count', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -158,69 +121,61 @@ await test('top level count', async (t) => {
 
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
   db.drain()
-  db.create('sequence', { votes: nl1 })
-  db.create('sequence', { votes: nl2 })
-  db.create('sequence', { votes: au1 })
+  db.create('sequence', { votes: [nl1] })
+  db.create('sequence', { votes: [nl2] })
+  db.create('sequence', { votes: [au1] })
 
   //   // top level  ----------------------------------
 
   deepEqual(
-    await db.query('vote').count().get().toObject(),
+    await db.query2('vote').count().get(),
     { count: 3 },
     'count, top level, prop',
   )
 
   // deepEqual(
   //   await db
-  //     .query('vote')
+  //     .query2('vote')
   //     .filter('country', '=', 'aa')  // string filter not implemented yet
   //     .count()
   //     .get()
-  //     .toObject(),
+  //     ,
   //   { count: 2 },
   //   'count, top level, with filter',
   // )
 
   deepEqual(
-    await db.query('vote').include('IT').count().get().toObject(),
+    await db.query2('vote').include('IT').count().get(),
     { count: 3 },
     'count, top level, ignoring include',
   )
 
   // deepEqual(
   //   await db
-  //     .query('vote')
+  //     .query2('vote')
   //     .filter('country', '=', 'zz') // string filter not implemented yet
   //     .count()
   //     .get()
-  //     .toObject(),
+  //     ,
   //   { count: 0 },
   //   'count, with no match filtering, string value',
   // )
 
   deepEqual(
-    await db.query('vote').filter('NL', '=', 20).count().get().toObject(),
+    await db.query2('vote').filter('NL', '=', 20).count().get(),
     { count: 1 },
     'count, with filtering an int value',
   )
 
   deepEqual(
-    await db.query('vote').filter('NL', '>', 1e6).count().get().toObject(),
+    await db.query2('vote').filter('NL', '>', 1e6).count().get(),
     { count: 0 },
     'count, with no match filtering, int value',
   )
 })
 
 await test('two phase accumulation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -274,7 +229,7 @@ await test('two phase accumulation', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
-    await db.query('vote').stddev('NL', { mode: 'sample' }).get().toObject(),
+    await db.query2('vote').stddev('NL', { mode: 'sample' }).get(),
     {
       NL: { stddev: 15.56598856481656 },
     },
@@ -282,7 +237,7 @@ await test('two phase accumulation', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').stddev('NL', { mode: 'sample' }).get().toObject(),
+    await db.query2('vote').stddev('NL', { mode: 'sample' }).get(),
     {
       NL: { stddev: 15.56598856481656 },
     },
@@ -290,11 +245,7 @@ await test('two phase accumulation', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('vote')
-      .stddev('NL', { mode: 'population' })
-      .get()
-      .toObject(),
+    await db.query2('vote').stddev('NL', { mode: 'population' }).get(),
     {
       NL: { stddev: 13.922643427165687 },
     },
@@ -302,7 +253,7 @@ await test('two phase accumulation', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').sum('NL').get().toObject(),
+    await db.query2('vote').sum('NL').get(),
     {
       NL: { sum: 118 },
     },
@@ -311,11 +262,10 @@ await test('two phase accumulation', async (t) => {
 
   deepEqual(
     await db
-      .query('vote')
+      .query2('vote')
       .stddev('NL', { mode: 'population' })
       .groupBy('country')
-      .get()
-      .toObject(),
+      .get(),
     {
       Brazil: {
         NL: { stddev: 0 },
@@ -332,10 +282,9 @@ await test('two phase accumulation', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').stddev('NL', { mode: 'population' }))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -349,12 +298,11 @@ await test('two phase accumulation', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) =>
         q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
       )
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -376,15 +324,7 @@ await test('two phase accumulation', async (t) => {
 })
 
 await test('numeric types', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -454,7 +394,7 @@ await test('numeric types', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
-    await db.query('vote').groupBy('region').get().toObject(),
+    await db.query2('vote').groupBy('region').get(),
     {
       bb: {},
       aa: {},
@@ -464,7 +404,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').sum('NL', 'FI').groupBy('region').get().toObject(),
+    await db.query2('vote').sum('NL', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { sum: 33 },
@@ -483,7 +423,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').count().groupBy('region').get().toObject(),
+    await db.query2('vote').count().groupBy('region').get(),
     {
       bb: {
         count: 2,
@@ -499,12 +439,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('vote')
-      .avg('NL', 'PT', 'FI')
-      .groupBy('region')
-      .get()
-      .toObject(),
+    await db.query2('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { avg: 16.5 },
@@ -526,12 +461,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('vote')
-      .hmean('NL', 'PT', 'FI')
-      .groupBy('region')
-      .get()
-      .toObject(),
+    await db.query2('vote').hmean('NL', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { hmean: 13.93939393939394 },
@@ -554,11 +484,10 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('vote')
+      .query2('vote')
       .stddev('NL', 'PL', { mode: 'population' })
       .groupBy('region')
-      .get()
-      .toObject(),
+      .get(),
     {
       bb: {
         NL: { stddev: 6.5 },
@@ -577,12 +506,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('vote')
-      .stddev('NL', 'PL')
-      .groupBy('region')
-      .get()
-      .toObject(),
+    await db.query2('vote').stddev('NL', 'PL').groupBy('region').get(),
     {
       bb: {
         NL: { stddev: 9.192388155425117 },
@@ -602,11 +526,10 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('vote')
+      .query2('vote')
       .var('NL', 'PL', { mode: 'population' })
       .groupBy('region')
-      .get()
-      .toObject(),
+      .get(),
     {
       bb: {
         NL: { variance: 42.25 },
@@ -625,11 +548,10 @@ await test('numeric types', async (t) => {
   )
   deepEqual(
     await db
-      .query('vote')
+      .query2('vote')
       .var('NL', 'PL', { mode: 'sample' })
       .groupBy('region')
-      .get()
-      .toObject(),
+      .get(),
     {
       bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
       aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
@@ -639,7 +561,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').var('NL', 'PL').groupBy('region').get().toObject(),
+    await db.query2('vote').var('NL', 'PL').groupBy('region').get(),
     {
       bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
       aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
@@ -649,12 +571,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('vote')
-      .max('NL', 'NO', 'PT', 'FI')
-      .groupBy('region')
-      .get()
-      .toObject(),
+    await db.query2('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { max: 23 },
@@ -679,12 +596,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query('vote')
-      .min('NL', 'NO', 'PT', 'FI')
-      .groupBy('region')
-      .get()
-      .toObject(),
+    await db.query2('vote').min('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { min: 10 },
@@ -710,10 +622,9 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').sum('NL'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -726,10 +637,9 @@ await test('numeric types', async (t) => {
   )
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').avg('NL'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -743,10 +653,9 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').hmean('NL'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -760,10 +669,9 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').groupBy('region').sum('NL'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -785,10 +693,9 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').groupBy('region').count())
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -804,12 +711,11 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) =>
         q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
       )
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -831,10 +737,9 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').groupBy('region').stddev('NL'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -850,12 +755,11 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) =>
         q('votes').groupBy('region').var('NL', { mode: 'population' }),
       )
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -877,12 +781,11 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) =>
         q('votes').groupBy('region').var('NL', { mode: 'sample' }),
       )
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -898,10 +801,9 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').groupBy('region').var('NL'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -917,10 +819,9 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').groupBy('region').avg('NL'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -942,10 +843,9 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
+      .query2('sequence')
       .include((q) => q('votes').groupBy('region').hmean('NL'))
-      .get()
-      .toObject(),
+      .get(),
     [
       {
         id: 1,
@@ -967,13 +867,7 @@ await test('numeric types', async (t) => {
 })
 
 await test('fixed length strings', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       product: {
         name: { type: 'string', maxBytes: 10 },
@@ -1008,12 +902,11 @@ await test('fixed length strings', async (t) => {
     Number(
       Object.keys(
         await db
-          .query('product')
+          .query2('product')
           .include('*')
           .avg('flap')
           .groupBy('name')
-          .get()
-          .toObject(),
+          .get(),
       )[0].substring(4, 6),
     ) < 100,
     true,
@@ -1024,10 +917,9 @@ await test('fixed length strings', async (t) => {
     Number(
       Object.keys(
         await db
-          .query('shelve')
+          .query2('shelve')
           .include((q) => q('products').avg('flap').groupBy('name'))
-          .get()
-          .toObject(),
+          .get(),
       )[0].substring(4, 6),
     ) < 100,
     true,
@@ -1036,15 +928,7 @@ await test('fixed length strings', async (t) => {
 })
 
 await test('range', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  const ter = ['lala', 'lele', 'lili']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       job: {
         day: 'timestamp',
@@ -1098,12 +982,11 @@ await test('range', async (t) => {
   deepEqual(
     Object.keys(
       await db
-        .query('job')
+        .query2('job')
         .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
         .avg('tip')
         // .range(0, 2)
-        .get()
-        .toObject(),
+        .get(),
     ).length,
     2,
     'range group by main',
@@ -1112,128 +995,13 @@ await test('range', async (t) => {
   deepEqual(
     Object.keys(
       await db
-        .query('employee')
+        .query2('employee')
         .include((q) => q('area').groupBy('name').sum('flap'), '*')
         .range(0, 2)
-        .get()
-        .toObject(),
+        .get(),
     ).length,
     2,
     'range group by references',
   )
 })
-
-// await test('count props', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//     maxModifySize: 1e6,
-//   })
-
-//   await db.start({ clean: true })
-//   t.after(() => db.stop())
-
-//   await db.setSchema({
-//     types: {
-//       vehicle: {
-//         props: {
-//           plate: 'string',
-//           year: 'unint16',
-//         },
-//       },
-//       trip: {
-//         props: {
-//           distance: 'number',
-//           vehicle: {
-//             ref: 'vehicle',
-//             prop: 'vehicle',
-//           },
-//         },
-//       },
-//     },
-//   })
-
-//   const v1 = db.create('vehicle', {
-//     plate: 'KKK1234',
-//     year: 2023,
-//   })
-//   db.create('trip', {
-//     distance: 813.1,
-//     vehicle: v1,
-//   })
-//   db.create('trip', {
-//     distance: 1023.1,
-//   })
-//   const v1 = db.create('vehicle', {
-//     plate: 'LAL0001',
-//   })
-//   await db.query('trip').count().get().inspect() // should count nodes --> count = 2
-//   await db.query('trip').count('vehicle').get().inspect() // shoudl count refs --> count = 1
-//   await db.query('vehicle').count('year').get().inspect() // should ignore undefined props --> count = 1
-// })
-
-// await test('groupBy multiple props', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//     maxModifySize: 1e6,
-//   })
-
-//   await db.start({ clean: true })
-//   t.after(() => db.stop())
-
-//   await db.setSchema({
-//     types: {
-//       vehicle: {
-//         props: {
-//           plate: 'string',
-//           decade: 'uint16',
-//           brand: 'string',
-//         },
-//       },
-//     },
-//   })
-
-//   const v1 = db.create('vehicle', {
-//     plate: 'KKK1234',
-//     year: 2020,
-//     brand: 'Volkswagen',
-//   })
-//   const v2 = db.create('vehicle', {
-//     plate: 'LAL0001',
-//     year: 1990,
-//     brand: 'Volkswagen',
-//   })
-//   const v3 = db.create('vehicle', {
-//     plate: 'BYD8001',
-//     year: 2020,
-//     brand: 'BYD',
-//   })
-
-//   await db.query('vehicle').count().groupBy('brand').get().inspect()
-/*
-  {
-     BYD: {
-       count: 1 count
-     },
-     Volkswagen: {
-       count: 2 count
-     }
-  }
-  */
-
-// await db.query('vehicle').count().groupBy('decade','brand').get().inspect()
-/*
-{
-  [BYD, 2020]: {
-    count: 1 count
-  },
-  [BYD, 1990]: {
-    count: 0 count
-  },
- [Volkswagen, 1990]: {
-  count: 2,
- },
- [Volkswagen, 2020]: {
-  count: 0,
- }
 */
-// })

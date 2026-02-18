@@ -62,14 +62,10 @@ await test('query ast creation', async (t) => {
 
   {
     const q = query<Schema>('user')
-      .include('age')
-      .filter('name', 'includes', 'jim')
-      .and((f) => f('age', '>', 2))
-
-    // .filter('isNice', '=', false)
-    // .and('name', '=', 'youzi')
-    // .or('name', '=', 'james')
-    // .and('isNice', '=', false)
+      .filter('isNice', '=', false)
+      .and('name', '=', 'youzi')
+      .or('name', '=', 'james')
+      .and('isNice', '=', false)
 
     deepEqual(q.ast, {
       type: 'user',
@@ -212,25 +208,29 @@ await test('query ast creation', async (t) => {
     const q1 = query('user').sort('age')
     deepEqual(q1.ast, {
       type: 'user',
-      sort: { prop: 'age', order: 'asc' },
+      order: 'asc',
+      sort: { prop: 'age' },
     })
 
     const q2 = query('user').sort('age', 'desc')
     deepEqual(q2.ast, {
       type: 'user',
-      sort: { prop: 'age', order: 'desc' },
+      order: 'desc',
+      sort: { prop: 'age' },
     })
 
     const q3 = query('user').order('desc')
     deepEqual(q3.ast, {
       type: 'user',
-      sort: { prop: 'id', order: 'desc' },
+      order: 'desc',
+      sort: { prop: 'id' },
     })
 
     const q4 = query('user').sort('age').order('desc')
     deepEqual(q4.ast, {
       type: 'user',
-      sort: { prop: 'age', order: 'desc' },
+      order: 'desc',
+      sort: { prop: 'age' },
     })
   }
 })

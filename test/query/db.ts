@@ -12,6 +12,11 @@ await test('query db', async (t) => {
         name: 'string',
         isNice: 'boolean',
         age: 'number',
+        address: {
+          props: {
+            street: 'string',
+          },
+        },
         friend: {
           ref: 'user',
           prop: 'friend',
@@ -23,14 +28,29 @@ await test('query db', async (t) => {
   db.create('user', {
     name: 'john',
     isNice: false,
-    age: 1,
+    age: 21,
+    address: {
+      street: 'Cool street',
+    },
   })
 
   db.create('user', {
     name: 'billy',
     isNice: true,
     age: 49,
+    address: {
+      street: 'Mega street',
+    },
   })
+
+  {
+    const res = await db.query2('user').include('address.street').get()
+
+    deepEqual(res, [
+      { id: 1, address: { street: 'Cool street' } },
+      { id: 2, address: { street: 'Mega street' } },
+    ])
+  }
 
   {
     const res = await db
