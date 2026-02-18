@@ -1,6 +1,8 @@
 import { BasedDb, xxHash64 } from '../src/index.js'
+import type { SchemaType } from '@based/schema'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { fastPrng } from '@based/utils'
 
 const ENCODER = new TextEncoder()
 
@@ -439,4 +441,89 @@ await test('defaultPrecision', async (t) => {
   })
 
   // await db.query('stores').include('*', '**').get().inspect()
+})
+
+await test('migrate + modify', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
+
+  const analyticsEdition: SchemaType = {
+    editionId: 'alias',
+    uniqueUsers: 'cardinality',
+  }
+  const analyticsSession: SchemaType = {
+    geo: { type: 'string', maxBytes: 2 },
+    host: 'string',
+  }
+
+  await db.setSchema({
+    types: {
+      analyticsEdition,
+      analyticsSession,
+    },
+  })
+
+  const ed = db.create('analyticsEdition', {
+    editionId: 'lala1',
+    uniqueUsers: ['Mr. Lemonade', 'Ms. Mostard'],
+  })
+  const ss = db.create('analyticsSession', {
+    geo: 'nl',
+    host: 'http://192.168.1.1',
+  })
+
+  deepEqual(
+    await db.query('analyticsEdition').include('uniqueUsers').get(),
+    [{ id: 1, uniqueUsers: 2 }],
+    'cardinality check',
+  )
+
+  // const lala = (
+  //   await db
+  //     .query('analyticsEdition')
+  //     .include('uniqueUsers', { raw: true })
+  //     .get()
+  //     .toObject()
+  // )[0].uniqueUsers
+
+  // console.table(lala)
+  // console.dir(lala, { maxArrayLength: null })
+
+  const newAnalyticsSession: SchemaType = {
+    geo: { type: 'string', maxBytes: 2 },
+    host: 'string',
+    editionId: 'uint32',
+  }
+
+  // await db.setSchema({
+  //   types: {
+  //     analyticsEdition,
+  //     analyticsSession: newAnalyticsSession,
+  //   },
+  // })
+
+  // const lala2 = (
+  //   await db
+  //     .query('analyticsEdition')
+  //     .include('uniqueUsers', { raw: true })
+  //     .get()
+  //     .toObject()
+  // )[0].uniqueUsers
+
+  // // console.table(lala2)
+
+  // This will crash https://linear.app/1ce/issue/FDN-1883
+  db.update('analyticsEdition', ed, {
+    editionId: 'lala1',
+    uniqueUsers: ['Madam Satan'],
+  })
+
+  deepEqual(
+    await db.query('analyticsEdition').include('uniqueUsers').get(),
+    [{ id: 1, uniqueUsers: 3 }],
+    'cardinality check',
+  )
 })
