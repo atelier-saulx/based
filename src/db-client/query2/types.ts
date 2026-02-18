@@ -85,6 +85,18 @@ export type InferProp<
   Types,
   Locales extends Record<string, any> = Record<string, any>,
   Selection = never,
+> =
+  IsSelected<Selection> extends false
+    ? InferPropLogic<Prop, Types, Locales, Selection>
+    : Selection extends { _aggregate: infer Agg }
+      ? Agg
+      : InferPropLogic<Prop, Types, Locales, Selection>
+
+type InferPropLogic<
+  Prop,
+  Types,
+  Locales extends Record<string, any> = Record<string, any>,
+  Selection = never,
 > = Prop extends { type: 'text' }
   ? { [K in keyof Locales]-?: string }
   : Prop extends { type: 'object'; props: infer P }

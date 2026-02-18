@@ -117,7 +117,7 @@ await test('query db', async (t) => {
       .include((select) => select('friend').sum('age'))
       .get()
 
-    deepEqual(res, [{ friend: { age: { sum: 70 } } }])
+    deepEqual(res, [{ id: 1, friend: { age: { sum: 70 } } }])
   }
 
   {

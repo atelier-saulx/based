@@ -51,14 +51,18 @@ class Query<
         | Path<S['types'], T>
         | '*'
         | '**'
-        | ((q: SelectFn<S, T>) => Query<S, any, any, any, any>)
+        | ((
+            q: SelectFn<S, T>,
+          ) => Query<S, any, any, any, any, any, any, any, any>)
       ),
       ...(
         | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
         | Path<S['types'], T>
         | '*'
         | '**'
-        | ((q: SelectFn<S, T>) => Query<S, any, any, any, any>)
+        | ((
+            q: SelectFn<S, T>,
+          ) => Query<S, any, any, any, any, any, any, any, any>)
       )[],
     ],
   >(
@@ -628,10 +632,12 @@ export type ResolveIncludeArgs<T> = T extends (
   infer SourceField,
   any,
   any,
-  any,
+  infer Aggregate,
   any
 >
-  ? { field: SourceField; select: K }
+  ? [keyof Aggregate] extends [never]
+    ? { field: SourceField; select: K }
+    : { field: SourceField; select: { _aggregate: Aggregate } }
   : T extends string
     ? ResolveDotPath<T>
     : T
