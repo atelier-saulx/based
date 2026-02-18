@@ -1,6 +1,6 @@
 {
   "name": "@based/sdk",
-  "version": "1.1.19",
+  "version": "1.1.20",
   "description": "The official SDK for the Based platform, providing a unified entry point for all packages.",
   "author": "Based",
   "license": "MIT",
@@ -159,18 +159,18 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@based/cli": "8.3.18",
-    "@based/client": "8.3.16",
-    "@based/db": "0.2.18",
-    "@based/errors": "1.6.16",
-    "@based/functions": "3.4.17",
-    "@based/hash": "1.1.2",
-    "@based/protocol": "0.1.7",
-    "@based/react": "5.4.16",
-    "@based/schema": "5.1.6",
-    "@based/server": "10.3.17",
-    "@based/type-gen": "0.2.16",
-    "@based/utils": "1.2.2"
+    "@based/cli": "8.3.19",
+    "@based/client": "8.3.17",
+    "@based/db": "0.2.19",
+    "@based/errors": "1.6.17",
+    "@based/functions": "3.4.18",
+    "@based/hash": "1.1.3",
+    "@based/protocol": "0.1.8",
+    "@based/react": "5.4.17",
+    "@based/schema": "5.1.7",
+    "@based/server": "10.3.18",
+    "@based/type-gen": "0.2.17",
+    "@based/utils": "1.2.3"
   },
   "devDependencies": {
     "@saulx/prettier-config": "^2.0.0",

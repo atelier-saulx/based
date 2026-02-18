@@ -1,6 +1,6 @@
 {
   "name": "@based/exporter",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "main": "dist/exporter.js",
   "scripts": {
     "clean": "rm -Rf node_modules dist",
@@ -32,7 +32,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@based/schema": "5.1.6",
+    "@based/schema": "5.1.7",
     "@types/node": "^24.3.0"
   }
 }
