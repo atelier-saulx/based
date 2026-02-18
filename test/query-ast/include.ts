@@ -87,16 +87,19 @@ await test('include', async (t) => {
 
   console.log(Date.now() - d, 'ms')
 
+  // filter: RE-ADD REFERENCE
+  // filter: REFERENCES
+
+  // GET REFERENCEs
+  // SORT REFERENCES
+  // FILTER REFENRRENS
+
   const ast: QueryAst = {
     type: 'user',
+    order: 'desc',
+    sort: { prop: 'y' },
+
     filter: {
-      // props: {
-      //   name: {
-      //     // ADD LOWER CASE
-      //     // ops: [{ op: 'includes', val: 'flap', opts: { lowerCase: true } }],
-      //     ops: [{ op: 'includes', val: 'x' }],
-      //   },
-      // },
       props: {
         flap: { ops: [{ op: '=', val: 9999 }] },
       },
@@ -127,17 +130,6 @@ await test('include', async (t) => {
       },
     },
 
-    // filter('flap', '=', 9999)
-    //   .and(q => {
-    //     q.filter('y', '=', 100)
-    //       .or('y', '=', 3)
-    //       .or('y', '=', 4)
-    //   })
-    //   .or('y','=', 670)
-    //   .or('y', '=', 15)
-
-    // (y == 0 && (y == 10 || y == 3 || y == 4)) || y == 67
-
     props: {
       y: { include: {} },
       name: { include: {} },
@@ -153,12 +145,6 @@ await test('include', async (t) => {
       },
     },
   }
-
-  // (1: y == 0 && ( 2: y == 10 || 4: y == 3)) || 3: y == 67
-
-  // so the thing is we need to keep track of the NEXT or vs query.len
-
-  // ->:3 :1 ->:4 :2 ->:3 :4
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
@@ -189,11 +175,8 @@ await test('include', async (t) => {
       repeat: 10,
     },
   )
-  // quite large
 
-  // deflate it?
-
-  const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
+  // const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 

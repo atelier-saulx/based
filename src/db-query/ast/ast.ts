@@ -64,7 +64,8 @@ export type QueryAst = {
   type?: string
   target?: number | number[] | Record<string, any>
   filter?: FilterAst
-  sort?: { prop: string; order: 'asc' | 'desc' }
+  order?: 'asc' | 'desc'
+  sort?: { prop: string }
   props?: Record<string, QueryAst>
   edges?: QueryAst
   // aggregate options

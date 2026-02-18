@@ -154,7 +154,6 @@ await test('circle of friends', async (t) => {
     types: {
       human: {
         name: { type: 'string', maxBytes: 8 },
-        //friends: { type: 'references', items: { ref: 'human', prop: 'friends' } },
         friends: {
           type: 'references',
           items: { ref: 'human', prop: 'friends', dependent: true },

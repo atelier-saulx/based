@@ -163,29 +163,56 @@ pub fn default(
     const sizeIndex = try ctx.thread.query.reserve(4);
     const typeEntry = try Node.getType(ctx.db, header.typeId);
     var nodeCnt: u32 = 0;
+
+    std.debug.print("DERP? {any} \n", .{header});
+
     switch (header.iteratorType) {
         .default => {
             var it = Node.iterator(false, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },
-        .filter => {
-            var it = Node.iterator(false, typeEntry);
-            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, &i);
-        },
         .desc => {
             var it = Node.iterator(true, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },
+
         .sort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
+
+            std.debug.print("DERP {any} \n", .{sortHeader});
+
             var it = try Sort.iterator(false, ctx.db, ctx.thread, header.typeId, &sortHeader);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },
         .descSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
+
+            std.debug.print("DOINK {any} \n", .{sortHeader});
+
             var it = try Sort.iterator(true, ctx.db, ctx.thread, header.typeId, &sortHeader);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, &i);
         },
+
+        .filter => {
+            var it = Node.iterator(false, typeEntry);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, &i);
+        },
+        .descFilter => {
+            var it = Node.iterator(true, typeEntry);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, &i);
+        },
+
+        .filterSort => {
+            const sortHeader = utils.readNext(t.SortHeader, q, &i);
+            var it = try Sort.iterator(false, ctx.db, ctx.thread, header.typeId, &sortHeader);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, &i);
+        },
+        .descFilterSort => {
+            const sortHeader = utils.readNext(t.SortHeader, q, &i);
+            var it = try Sort.iterator(true, ctx.db, ctx.thread, header.typeId, &sortHeader);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, &i);
+        },
+
         else => {
             // not handled
         },
@@ -226,18 +253,6 @@ pub fn references(
     var nodeCnt: u32 = 0;
 
     switch (header.iteratorType) {
-        .edgeInclude => {
-            var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
-        },
-        .edgeIncludeDesc => {
-            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
-        },
-        .edge => {
-            var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
-        },
         .default => {
             var it = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
@@ -246,19 +261,33 @@ pub fn references(
             var it = try References.iterator(true, false, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
+
         .sort => {
             var it = try referencesSort(false, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-        .edgeDesc => {
-            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
-            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
-        },
         .descSort => {
             var it = try referencesSort(true, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
+        },
+
+        .edge => {
+            var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+        },
+        .edgeDesc => {
+            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
+        },
+        .edgeInclude => {
+            var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
+        },
+        .edgeIncludeDesc => {
+            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
         },
         .edgeSort => {
             var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
@@ -280,6 +309,28 @@ pub fn references(
             nodeCnt = try iteratorEdge(.edgeInclude, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
+
+        .filter => {
+            var it = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
+        },
+        .descFilter => {
+            var it = try References.iterator(true, false, ctx.db, from, header.prop, fromType);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
+        },
+        .filterSort => {
+            var it = try referencesSort(false, false, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
+        .descFilterSort => {
+            var it = try referencesSort(true, false, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
+
+        // filter
+
         else => {
             // not handled
         },
@@ -307,7 +358,6 @@ pub fn aggregates(
     i += utils.sizeOf(t.AggHeader);
     const typeId = header.typeId;
     const typeEntry = try Node.getType(ctx.db, typeId);
-    const isSamplingSet = header.isSamplingSet;
 
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
@@ -315,31 +365,42 @@ pub fn aggregates(
     const hllAccumulator = Selva.c.selva_string_create(null, Selva.c.HLL_INIT_SIZE, Selva.c.SELVA_STRING_MUTABLE);
     defer Selva.c.selva_string_free(hllAccumulator);
 
+    var aggCtx = Aggregates.AggCtx{
+        .queryCtx = ctx,
+        .typeEntry = typeEntry,
+        .limit = header.limit,
+        .isSamplingSet = header.isSamplingSet,
+        .hllAccumulator = hllAccumulator,
+        .accumulatorSize = header.accumulatorSize,
+        .resultsSize = header.resultsSize,
+        .totalResultsSize = 0,
+    };
+
     var it = Node.iterator(false, typeEntry);
     switch (header.iteratorType) {
         .aggregate => {
-            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, false, undefined, q[i..], accumulatorProp, typeEntry, hllAccumulator);
-            try Aggregates.finalizeResults(ctx, q[i..], accumulatorProp, isSamplingSet, 0);
+            nodeCnt = try Aggregates.iterator(&aggCtx, &it, false, undefined, q[i..], accumulatorProp);
+            try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
         .aggregateFilter => {
             const filter = utils.sliceNext(header.filterSize, q, &i);
             try Filter.prepare(filter, ctx, typeEntry);
-            nodeCnt = try Aggregates.iterator(ctx, &it, header.limit, true, filter, q[i..], accumulatorProp, typeEntry, hllAccumulator);
-            try Aggregates.finalizeResults(ctx, q[i..], accumulatorProp, isSamplingSet, 0);
+            nodeCnt = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i..], accumulatorProp);
+            try Aggregates.finalizeResults(&aggCtx, q[i..], accumulatorProp, 0);
         },
         .groupBy => {
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
-            nodeCnt = @intCast(GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, false, undefined, q[i..], header.accumulatorSize, header.resultsSize, typeEntry, hllAccumulator, undefined));
-            try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, q[i..]);
+            nodeCnt = @intCast(GroupBy.iterator(&aggCtx, &groupByHashMap, &it, false, undefined, q[i..]));
+            try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         .groupByFilter => {
             const filter = utils.sliceNext(header.filterSize, q, &i);
             try Filter.prepare(filter, ctx, typeEntry);
             var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
             defer groupByHashMap.deinit();
-            nodeCnt = @intCast(GroupBy.iterator(ctx, &groupByHashMap, &it, header.limit, true, filter, q[i..], header.accumulatorSize, header.resultsSize, typeEntry, hllAccumulator, undefined));
-            try GroupBy.finalizeGroupResults(ctx, &groupByHashMap, header, q[i..]);
+            nodeCnt = @intCast(GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filter, q[i..]));
+            try GroupBy.finalizeGroupResults(&aggCtx, &groupByHashMap, q[i..]);
         },
         else => {},
     }

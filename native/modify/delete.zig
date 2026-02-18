@@ -85,14 +85,6 @@ pub fn deleteField(ctx: *ModifyCtx) !usize {
             if (e != error.SELVA_ENOENT) return e;
         };
     } else {
-        if (ctx.fieldType == t.PropType.reference) {
-            const fs = ctx.fieldSchema.?;
-            const dstType = try Node.getRefDstType(ctx.db, fs);
-            const oldRefDst = Node.getNodeFromReference(dstType, References.getReference(ctx.node.?, fs));
-            if (oldRefDst) |dstNode| {
-                Selva.markDirty(ctx, Node.getNodeTypeId(dstNode), Node.getNodeId(dstNode));
-            }
-        }
         try Fields.deleteField(ctx, ctx.node.?, ctx.fieldSchema.?);
     }
     return 0;
