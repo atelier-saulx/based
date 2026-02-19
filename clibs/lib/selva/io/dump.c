@@ -214,8 +214,8 @@ static void save_node_fields(struct selva_io *io, const struct SelvaFieldsSchema
     io->sdb_write(&((sdb_nr_fields_t){ fields->nr_fields }), sizeof(sdb_nr_fields_t), 1, io);
 
     for (field_t field = 0; field < nr_fields; field++) {
-        const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, field);
-        struct SelvaFieldInfo *nfo = &fields->fields_map[field];
+        auto fs = get_fs_by_fields_schema_field(schema, field);
+        auto nfo = &fields->fields_map[field];
         enum SelvaFieldType type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
 
 #if USE_DUMP_MAGIC_FIELD_BEGIN
@@ -266,7 +266,6 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
 {
 
     struct SVectorIterator it;
-    struct SelvaExpireToken *token;
     const sdb_arr_len_t count = selva_expire_count(&db->expiring);
 
     write_dump_magic(io, DUMP_MAGIC_EXPIRE);
@@ -274,6 +273,8 @@ static void save_expire(struct selva_io *io, struct SelvaDb *db)
 
     SVector_ForeachBegin(&it, &db->expiring.list);
     while (!SVector_Done(&it)) {
+        struct SelvaExpireToken *token;
+
         token = SVector_Foreach(&it);
         do {
             struct SelvaDbExpireToken *dbToken = containerof(token, typeof(*dbToken), token);
@@ -294,11 +295,11 @@ static void save_aliases(struct selva_io *io, struct SelvaDb *db)
     write_dump_magic(io, DUMP_MAGIC_ALIASES);
 
     for (size_t ti = 0; ti < db->nr_types; ti++) {
-        struct SelvaTypeEntry *te = &db->types[ti];
+        auto te = &db->types[ti];
         const size_t nr_fields = te->ns.nr_alias_fields;
 
         for (size_t i = 0; i < nr_fields; i++) {
-            struct SelvaAliases *aliases = &te->aliases[i];
+            auto aliases = &te->aliases[i];
             sdb_nr_aliases_t nr_aliases_by_name = aliases->nr_aliases;
             struct SelvaAlias *alias;
 
@@ -391,7 +392,7 @@ static void selva_dump_save_colvec(struct selva_io *io, struct SelvaDb *, struct
     static_assert(sizeof(block_i) == sizeof(uint32_t));
 
     for (size_t i = 0; i < te->ns.nr_colvec_fields; i++) {
-        struct SelvaColvec *colvec = &te->col_fields.colvec[i];
+        auto colvec = &te->col_fields.colvec[i];
         uint8_t *slab = (uint8_t *)colvec->v[block_i];
         uint8_t slab_present = !!slab;
 
@@ -583,7 +584,7 @@ static int load_field_reference(struct selva_io *io, struct SelvaNode *node, con
 
     io->sdb_read(&nr_refs, sizeof(nr_refs), 1, io);
     if (nr_refs) {
-        struct SelvaNodeLargeReference *ref = selva_fields_ensure_reference(node, fs);
+        auto ref = selva_fields_ensure_reference(node, fs);
 
         io->sdb_read(&ref->dst, sizeof(ref->dst), 1, io);
         io->sdb_read(&ref->edge, sizeof(ref->edge), 1, io);
@@ -604,7 +605,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
     }
 
     (void)selva_fields_prealloc_refs(db, node, fs, nr_refs);
-    struct SelvaNodeReferences *refs = selva_fields_get_references(node, fs);
+    auto refs = selva_fields_get_references(node, fs);
     if (!refs) {
         return SELVA_ENOENT;
     }
@@ -631,7 +632,7 @@ static int load_field_references(struct selva_io *io, struct SelvaDb *db, struct
 __attribute__((warn_unused_result))
 static int load_node_fields(struct selva_io *io, struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node)
 {
-    struct SelvaNodeSchema *ns = &te->ns;
+    auto ns = &te->ns;
     sdb_nr_fields_t nr_fields;
     int err = 0;
 
@@ -732,7 +733,7 @@ static node_id_t load_node(struct selva_io *io, struct SelvaDb *db, struct Selva
         return SELVA_ENOENT;
     }
 
-    struct SelvaNode *node = res.node;
+    auto node = res.node;
     assert(node && node->type == te->type);
     err = load_node_fields(io, db, te, node);
     if (err) {
@@ -784,7 +785,7 @@ static int load_colvec(struct selva_io *io, struct SelvaTypeEntry *te)
             /*
              * Load the whole slab at once.
              */
-            struct SelvaColvec *colvec = &te->col_fields.colvec[i];
+            auto colvec = &te->col_fields.colvec[i];
             void *slab = colvec_init_slab(colvec, block_i);
             if (io->sdb_read(slab, colvec->slab_size, 1, io) != 1) {
                 selva_io_errlog(io, "colvec slab");
@@ -856,7 +857,7 @@ static int load_aliases(struct selva_io *io, struct SelvaDb *db)
     }
 
     for (size_t ti = 0; ti < db->nr_types; ti++) {
-        struct SelvaTypeEntry *te = &db->types[ti];
+        auto te = &db->types[ti];
         const size_t nr_fields = te->ns.nr_alias_fields;
 
         for (size_t i = 0; i < nr_fields; i++) {

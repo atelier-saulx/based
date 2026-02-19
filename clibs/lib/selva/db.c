@@ -142,9 +142,7 @@ void selva_db_expire_tick(struct SelvaDb *db, int64_t now)
 
 static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
 {
-    struct SelvaTypeEntry *te;
-
-    te = selva_get_type_by_index(db, type);
+    auto te = selva_get_type_by_index(db, type);
     return (te && te->schema_len == schema_len && !memcmp(te->schema_buf, schema_buf, schema_len));
 }
 
