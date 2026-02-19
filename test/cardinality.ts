@@ -411,16 +411,13 @@ await test('defaultPrecision', async (t) => {
   t.after(() => db.stop())
 
   await db.setSchema({
-    // props: {
-    //   myRootCount: 'cardinality',
-    // },
     types: {
-      stores: {
+      store: {
         name: 'string',
         customers: {
           items: {
             ref: 'customer',
-            prop: 'customer',
+            prop: 'client',
           },
         },
       },
@@ -435,10 +432,41 @@ await test('defaultPrecision', async (t) => {
     name: 'Alex Atala',
     productsBought: ['fork', 'knife', 'knife', 'frying pan'],
   })
-  const sto = db.create('stores', {
-    name: "Worderland's Kitchen",
+  const sto = db.create('store', {
+    name: 'Worderlands Kitchen',
     customers: [cus],
   })
 
-  // await db.query('stores').include('*', '**').get().inspect()
+  const pb = await db.query('customer').include('productsBought').get()
+  // pb.inspect()
+  deepEqual(
+    pb,
+    [
+      {
+        id: 1,
+        productsBought: 3,
+      },
+    ],
+    'simple cardinality default precision',
+  )
+
+  const pbr = await db.query('store').include('*', '**').get()
+  // pbr.inspect()
+  deepEqual(
+    pbr,
+    [
+      {
+        id: 1,
+        name: 'Worderlands Kitchen',
+        customers: [
+          {
+            id: 1,
+            name: 'Alex Atala',
+            productsBought: 3,
+          },
+        ],
+      },
+    ],
+    'simple cardinality default precision on ref',
+  )
 })
