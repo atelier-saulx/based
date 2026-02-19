@@ -100,13 +100,20 @@ inline fn compare(
     return if (meta.invert) !res else res;
 }
 
+// MAKE EDGE FILTER
+
 // Check if this becomes better
-pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
+pub inline fn filter(
+    node: Node.Node,
+    ctx: *Query.QueryCtx,
+    q: []u8,
+    // comptime hasEdge: bool,
+    // edge: if (hasEdge) Node.Node else void,
+) !bool {
     var i: usize = 0;
     var pass: bool = true;
     var v: []const u8 = undefined;
     var prop: u8 = 255;
-    // var end: usize = q.len;
     var end: usize = q.len;
 
     while (i < end) {
@@ -128,6 +135,9 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
                 end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 break :blk true;
             },
+            // .edge => blk: {
+            //     break :blk true;
+            // },
             .selectRef => blk: {
                 const select = utils.readPtr(t.FilterSelect, q, index + @alignOf(t.FilterSelect) - c.offset);
                 nextIndex += select.size;
@@ -159,5 +169,6 @@ pub inline fn filter(node: Node.Node, ctx: *Query.QueryCtx, q: []u8) !bool {
             i = nextIndex;
         }
     }
+
     return pass;
 }

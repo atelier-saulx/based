@@ -115,10 +115,9 @@ void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t no
 static void expire_cb(struct SelvaExpireToken *tok, void *)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
-    struct SelvaTypeEntry *te;
     struct SelvaNodeRes res;
 
-    te = selva_get_type_by_index(token->db, token->type);
+    auto te = selva_get_type_by_index(token->db, token->type);
     assert(te);
     res = selva_find_node(te, token->node_id);
     if (res.node) {
@@ -307,7 +306,11 @@ int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname
         close(db->dirfd);
     }
 
-    fd = open(buf, O_SEARCH | O_DIRECTORY | O_CLOEXEC);
+    fd = open(buf,
+#ifdef __MACH__
+            O_SEARCH |
+#endif
+            O_DIRECTORY | O_CLOEXEC);
     if (fd == -1) {
         return SELVA_EIO;
     }
@@ -504,8 +507,8 @@ extern inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema
 
 static inline void del_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node, bool unload)
 {
-    struct SelvaTypeBlock *block = selva_get_block(type->blocks, node->node_id);
-    struct SelvaNodeIndex *nodes = &block->nodes;
+    auto block = selva_get_block(type->blocks, node->node_id);
+    auto nodes = &block->nodes;
 
     atomic_fetch_or_explicit(&block->status.atomic, (uint32_t)SELVA_TYPE_BLOCK_STATUS_DIRTY, memory_order_release);
 
@@ -572,7 +575,7 @@ struct SelvaNodeRes selva_find_node(struct SelvaTypeEntry *type, node_id_t node_
         return (struct SelvaNodeRes){};
     }
 
-    struct SelvaTypeBlocks *blocks = type->blocks;
+    auto blocks = type->blocks;
     struct SelvaNodeRes res = {
         .block = selva_node_id2block_i(blocks, node_id),
     };
@@ -583,7 +586,7 @@ struct SelvaNodeRes selva_find_node(struct SelvaTypeEntry *type, node_id_t node_
         goto out;
     }
 
-    struct SelvaNodeIndex *nodes = &block->nodes;
+    auto nodes = &block->nodes;
     struct SelvaNode find = {
         .node_id = node_id,
     };
@@ -595,7 +598,7 @@ out:
 
 struct SelvaNodeRes selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node_id)
 {
-    struct SelvaTypeBlocks *blocks = type->blocks;
+    auto blocks = type->blocks;
     struct SelvaNodeRes res = {
         .block = selva_node_id2block_i(blocks, node_id),
     };
@@ -604,7 +607,7 @@ struct SelvaNodeRes selva_nfind_node(struct SelvaTypeEntry *type, node_id_t node
         goto out;
     }
 
-    struct SelvaTypeBlock *block = &blocks->blocks[res.block];
+    auto block = &blocks->blocks[res.block];
     res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
     if (!(res.block_status & SELVA_TYPE_BLOCK_STATUS_INMEM)) {
         goto out;
@@ -657,9 +660,7 @@ struct SelvaNodeRes selva_upsert_node(struct SelvaTypeEntry *type, node_id_t nod
          */
         RB_INSERT_NEXT(SelvaNodeIndex, &block->nodes, type->max_node, node);
     } else {
-        struct SelvaNode *prev;
-
-        prev = RB_INSERT(SelvaNodeIndex, &block->nodes, node);
+        auto prev = RB_INSERT(SelvaNodeIndex, &block->nodes, node);
         if (prev) {
             mempool_return(&type->nodepool, node);
             res.node = prev;
@@ -723,7 +724,7 @@ struct SelvaNodeRes selva_min_node(struct SelvaTypeEntry *type)
  */
 static struct SelvaNodeRes selva_max_node_from(struct SelvaTypeEntry *type, block_id_t start)
 {
-    struct SelvaTypeBlocks *blocks = type->blocks;
+    auto blocks = type->blocks;
     struct SelvaNodeRes res = {};
 
     for (ssize_t i = start; i >= 0; i--) {
@@ -782,7 +783,7 @@ out:
 
 struct SelvaNodeRes selva_next_node(struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
-    const struct SelvaTypeBlocks *blocks = type->blocks;
+    const auto blocks = type->blocks;
     struct SelvaNodeRes res = {
         .block = selva_node_id2block_i(blocks, node->node_id),
         .block_status = SELVA_TYPE_BLOCK_STATUS_INMEM,
@@ -840,7 +841,7 @@ static void hash_col_fields(struct SelvaTypeEntry *type, node_id_t node_id, selv
      * colvec fields.
      */
     for (size_t i = 0; i < type->ns.nr_colvec_fields; i++) {
-        struct SelvaColvec *colvec = &type->col_fields.colvec[i];
+        auto colvec = &type->col_fields.colvec[i];
 
         colvec_hash_update(type, node_id, colvec, tmp_hash_state);
     }
@@ -891,7 +892,7 @@ void selva_node_block_hash2(struct SelvaDb *db, struct SelvaTypeEntry *type, str
 
 int selva_node_block_hash(struct SelvaDb *db, struct SelvaTypeEntry *type, node_id_t start, selva_hash128_t *hash_out)
 {
-    struct SelvaTypeBlock *block = selva_get_block(type->blocks, start);
+    auto block = selva_get_block(type->blocks, start);
 
     if (!block) {
         return SELVA_ENOENT;

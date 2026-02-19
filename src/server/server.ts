@@ -109,6 +109,7 @@ server.functions.addRoutes({
 await server.start()
 ```
 */
+
 export class BasedServer {
   public console: Console = console
 

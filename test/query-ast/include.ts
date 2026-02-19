@@ -12,6 +12,7 @@ import wait from '../../src/utils/wait.js'
 import { perf } from '../shared/perf.js'
 import test from '../shared/test.js'
 import { deflateSync } from 'zlib'
+import { fastPrng } from '../../src/utils/fastPrng.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({ path: t.tmp })
@@ -59,7 +60,7 @@ await test('include', async (t) => {
     },
   })
 
-  const b = client.create('user', {
+  const b = await client.create('user', {
     name: 'mr snurf b',
     y: 15,
     x: true,
@@ -72,6 +73,8 @@ await test('include', async (t) => {
 
   let d = Date.now()
 
+  const rand = fastPrng()
+
   for (let i = 0; i < 10; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
@@ -81,7 +84,10 @@ await test('include', async (t) => {
       cook: {
         cookie: 1234,
       },
-      friends: [a, b],
+      friends: [
+        { id: a, $level: rand(0, 1000) },
+        { id: b, $level: rand(0, 1000) },
+      ],
     })
   }
 
@@ -98,46 +104,47 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    order: 'desc',
-    sort: { prop: 'y' },
+    target: b,
+    // order: 'desc',
+    // sort: { prop: 'y' },
 
-    filter: {
-      props: {
-        flap: { ops: [{ op: '=', val: 9999 }] },
-      },
-      // and: {
-      //   props: {
-      //     y: { ops: [{ op: '=', val: 100 }] },
-      //   },
-      //   or: {
-      //     props: {
-      //       y: { ops: [{ op: '=', val: 3 }] },
-      //     },
-      //     or: {
-      //       props: {
-      //         y: { ops: [{ op: '=', val: 4 }] },
-      //       },
-      //     },
-      //   },
-      // },
-      // or: {
-      //   props: {
-      //     y: { ops: [{ op: '=', val: 670 }] },
-      //   },
-      //   or: {
-      //     props: {
-      //       y: { ops: [{ op: '=', val: 15 }] },
-      //     },
-      //   },
-      // },
-    },
+    // filter: {
+    //   props: {
+    //     flap: { ops: [{ op: '=', val: 9999 }] },
+    //   },
+    // and: {
+    //   props: {
+    //     y: { ops: [{ op: '=', val: 100 }] },
+    //   },
+    //   or: {
+    //     props: {
+    //       y: { ops: [{ op: '=', val: 3 }] },
+    //     },
+    //     or: {
+    //       props: {
+    //         y: { ops: [{ op: '=', val: 4 }] },
+    //       },
+    //     },
+    //   },
+    // },
+    // or: {
+    //   props: {
+    //     y: { ops: [{ op: '=', val: 670 }] },
+    //   },
+    //   or: {
+    //     props: {
+    //       y: { ops: [{ op: '=', val: 15 }] },
+    //     },
+    //   },
+    // },
+    // },
 
     props: {
       y: { include: {} },
       name: { include: {} },
       friends: {
-        // order: 'desc',
-        // sort: { prop: 'y' }, // can just be the prop?
+        // order: 'asc',
+        // sort: { prop: '$level' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },
@@ -145,14 +152,9 @@ await test('include', async (t) => {
         filter: {
           props: {
             y: {
-              ops: [{ op: '>', val: 10 }],
+              ops: [{ op: '>', val: 6 }],
             },
           },
-        },
-      },
-      mrFriend: {
-        props: {
-          y: { include: {} },
         },
         edges: {
           props: {
@@ -160,6 +162,16 @@ await test('include', async (t) => {
           },
         },
       },
+      // mrFriend: {
+      //   props: {
+      //     y: { include: {} },
+      //   },
+      //   edges: {
+      //     props: {
+      //       $level: { include: {} },
+      //     },
+      //   },
+      // },
     },
   }
 

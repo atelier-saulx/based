@@ -86,17 +86,9 @@ extern const uint8_t selva_fields_text_tl_empty[_selva_lang_last][8];
 
 #define SELVA_FIELDS_TEXT_TL_EMPTY_LEN 6
 
-#if __has_c_attribute(unsequenced)
-[[unsequenced]]
-#else
-__purefn
-#endif
-size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs);
+size_t selva_fields_get_data_size(const struct SelvaFieldSchema *fs) [[unsequenced]];
 
-#if __has_c_attribute(reproducible)
-[[reproducible]]
-#endif
-void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo);
+void *selva_fields_nfo2p(struct SelvaFields *fields, const struct SelvaFieldInfo *nfo) [[reproducible]];
 
 /**
  * Ensure that we have a reference struct.

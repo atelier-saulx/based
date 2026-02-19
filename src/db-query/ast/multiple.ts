@@ -61,6 +61,8 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   )
 }
 
+// ADD IDS
+
 export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   const rangeStart = ast.range?.start || 0
   const headerIndex = pushQueryHeader(ctx.query, {
@@ -74,7 +76,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     filterSize: 0,
     searchSize: 0,
     iteratorType: QueryIteratorType.default,
-    edgeTypeId: 0,
+    edgeTypeId: prop.edges?.id ?? 0,
     edgeSize: 0,
     edgeFilterSize: 0,
     size: 0, // this is only used for [IDS] handle this differently
@@ -87,7 +89,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   }
 
   if (ast.sort) {
-    pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!))
+    pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))
   }
 
   if (ast.filter) {
@@ -106,6 +108,10 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
 
   props.includeSize(ctx.query.data, size, headerIndex)
 
+  // EDGES IN FILTER
+  // needs to use special iterator
+  // we need to put the filter on it
+
   if (ast.edges) {
     const edges = prop.edges
     if (!edges) {
@@ -121,8 +127,12 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       },
       edges,
     )
-
+    // make a iterator type EDGE FILTER OR (means filter fails now also run edge and ignore the failure)
+    // or add comptime thing that just passed HAS_EDGE then pass the edge in the c and have an extra check
+    // may be the easier to do
     props.edgeSize(ctx.query.data, size, headerIndex)
+  } else {
+    console.info('EDGES NO!')
   }
 
   props.iteratorType(

@@ -46,6 +46,9 @@ export type FilterAst = {
   or?: FilterAst
   and?: FilterAst
   edges?: FilterAst
+
+  // this is a bit difficult combining OR filters with edges combined
+  // this would require and extra check for the type of node how to do?
 }
 
 export type Include = {
