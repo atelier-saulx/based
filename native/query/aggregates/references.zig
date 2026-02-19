@@ -12,6 +12,7 @@ const GroupBy = @import("./group.zig");
 const GroupByHashMap = @import("./hashMap.zig").GroupByHashMap;
 const errors = @import("../../errors.zig");
 const accumulate = Aggregates.accumulate;
+const std = @import("std");
 
 pub inline fn aggregateRefsProps(
     ctx: *Query.QueryCtx,
@@ -31,10 +32,14 @@ pub inline fn aggregateRefsProps(
 
     var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
 
+    const hllAccumulator = Selva.c.selva_string_create(null, Selva.c.HLL_INIT_SIZE, Selva.c.SELVA_STRING_MUTABLE);
+    defer Selva.c.selva_string_free(hllAccumulator);
+
     var aggCtx = Aggregates.AggCtx{
         .queryCtx = ctx,
         .typeEntry = it.dstType,
-        .limit = 1000, // MV: check it
+        .limit = std.math.maxInt(u32), // unlimited in branched queries
+        .hllAccumulator = hllAccumulator,
         .isSamplingSet = header.isSamplingSet,
         .accumulatorSize = header.accumulatorSize,
         .resultsSize = header.resultsSize,
