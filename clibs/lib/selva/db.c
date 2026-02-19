@@ -331,7 +331,7 @@ void selva_db_set_dirty_hook(struct SelvaDb *db, selva_db_dirty_hook_t dirty_hoo
  */
 static inline void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, bool unload)
 {
-    struct SelvaNodeIndex *nodes = &te->blocks->blocks[block_i].nodes;
+    auto nodes = &te->blocks->blocks[block_i].nodes;
     struct SelvaNode *node;
     struct SelvaNode *tmp;
 
@@ -690,13 +690,12 @@ out:
  */
 static struct SelvaNodeRes selva_min_node_from(struct SelvaTypeEntry *type, block_id_t start)
 {
-    struct SelvaTypeBlocks *blocks = type->blocks;
+    auto blocks = type->blocks;
     const size_t len = blocks->len;
     struct SelvaNodeRes res = {};
 
     for (size_t i = start; i < len; i++) {
-        struct SelvaTypeBlock *block = &blocks->blocks[i];
-        struct SelvaNode *node;
+        auto block = &blocks->blocks[i];
 
         res.block = i;
         res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
@@ -704,7 +703,7 @@ static struct SelvaNodeRes selva_min_node_from(struct SelvaTypeEntry *type, bloc
             break;
         }
 
-        node = RB_MIN(SelvaNodeIndex, &block->nodes);
+        auto node = RB_MIN(SelvaNodeIndex, &block->nodes);
         if (node) {
             res.node = node;
             break;
@@ -728,8 +727,7 @@ static struct SelvaNodeRes selva_max_node_from(struct SelvaTypeEntry *type, bloc
     struct SelvaNodeRes res = {};
 
     for (ssize_t i = start; i >= 0; i--) {
-        struct SelvaTypeBlock *block = &blocks->blocks[i];
-        struct SelvaNode *node;
+        auto block = &blocks->blocks[i];
 
         res.block = i;
         res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
@@ -737,7 +735,7 @@ static struct SelvaNodeRes selva_max_node_from(struct SelvaTypeEntry *type, bloc
             break;
         }
 
-        node = RB_MAX(SelvaNodeIndex, &block->nodes);
+        auto node = RB_MAX(SelvaNodeIndex, &block->nodes);
         if (node) {
             res.node = node;
             break;
