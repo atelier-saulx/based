@@ -92,7 +92,9 @@ export async function realStart(db: DbServer, schema: SchemaOut) {
     setSchemaOnServer(db, schema)
     await loadCommon(db)
   } catch (e) {
-    console.error(e.message)
+    if (!e.message.includes('ERR_SELVA ENOENT')) {
+      throw e
+    }
   }
 
   if (db.fileSystemPath) {
