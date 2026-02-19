@@ -323,28 +323,14 @@ size_t selva_node_count(const struct SelvaTypeEntry *type) __attribute__((nonnul
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline node_id_t selva_get_node_id(const struct SelvaNode *node)
-#ifndef __zig
-{
-    return node->node_id;
-}
-#else
-;
-#endif
+inline node_id_t selva_get_node_id(const struct SelvaNode *node);
 
 /**
  * Get the type of of node.
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline node_type_t selva_get_node_type(const struct SelvaNode *node)
-#ifndef __zig
-{
-    return node->type;
-}
-#else
-;
-#endif
+inline node_type_t selva_get_node_type(const struct SelvaNode *node);
 
 /**
  * \addtogroup node_hash
@@ -587,5 +573,15 @@ inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct
     struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->edge_node_type);
 
     return (te) ? &selva_get_ns_by_te(te)->fields_schema : nullptr;
+}
+
+inline node_id_t selva_get_node_id(const struct SelvaNode *node)
+{
+    return node->node_id;
+}
+
+inline node_type_t selva_get_node_type(const struct SelvaNode *node)
+{
+    return node->type;
 }
 #endif
