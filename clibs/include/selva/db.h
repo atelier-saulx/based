@@ -114,10 +114,13 @@ inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te);
 SELVA_EXPORT
 inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te);
 
+#define SELVA_NODE_ID2BLOCK_I3(block_capacity, node_id) \
+    (((node_id - 1) - ((node_id - 1) % block_capacity)) / block_capacity)
+
 static inline block_id_t selva_node_id2block_i3(block_id_t block_capacity, node_id_t node_id)
 {
     assert(node_id > 0);
-    return ((node_id - 1) - ((node_id - 1) % block_capacity)) / block_capacity;
+    return SELVA_NODE_ID2BLOCK_I3(block_capacity, node_id);
 }
 
 SELVA_EXPORT
@@ -449,7 +452,7 @@ inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
 
 inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
 {
-    return selva_node_id2block_i3(blocks->block_capacity, node_id);
+    return SELVA_NODE_ID2BLOCK_I3(blocks->block_capacity, node_id);
 }
 
 inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id)
