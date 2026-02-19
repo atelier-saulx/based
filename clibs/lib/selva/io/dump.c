@@ -997,7 +997,8 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
     }
 
     if (io.sdb_version > db->sdb_version) {
-        selva_io_errlog(&io, "SDB version mismatch! common: %"PRIu32" block: %"PRIu32, db->sdb_version, io.sdb_version);
+        selva_io_errlog(&io, "%s: SDB version mismatch! common_version: %"PRIu32" block_version: %"PRIu32,
+                        __func__ , db->sdb_version, io.sdb_version);
         err = SELVA_ENOTSUP;
         goto fail;
     }
@@ -1013,13 +1014,15 @@ int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
     }
 
     if (!read_dump_magic(&io, DUMP_MAGIC_BLOCK_HASH)) {
-        selva_io_errlog(&io, "%s: Invalid block hash magic", __func__);
+        selva_io_errlog(&io, "%s: Invalid block hash magic (block: %u:%u)",
+                        __func__, (unsigned)te->type, (unsigned)block_i);
         err = SELVA_EINVAL;
         goto fail;
     }
 
     if (io.sdb_read(&old_hash, sizeof(old_hash), 1, &io) != 1) {
-        selva_io_errlog(&io, "%s: Failed to read the hash", __func__);
+        selva_io_errlog(&io, "%s: Failed to read the hash (block: %u:%u)",
+                        __func__, (unsigned)te->type, (unsigned)block_i);
         err = SELVA_EINVAL;
         goto fail;
     }
@@ -1041,7 +1044,7 @@ fail:
         selva_block_status_replace(te, block_i, prev_block_status);
     }
     if (old_hash != new_hash) {
-        selva_io_errlog(&io, "%s: Block hash mismatch for %u:%u! %.*s != %.*s",
+        selva_io_errlog(&io, "%s: Block hash mismatch (block: %u:%u)! %.*s != %.*s",
                         __func__,
                         (unsigned)te->type, (unsigned)block_i,
                         SELVA_HASH_HEX_LEN, selva_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, old_hash),
