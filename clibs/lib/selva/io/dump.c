@@ -1041,8 +1041,9 @@ fail:
         selva_block_status_replace(te, block_i, prev_block_status);
     }
     if (old_hash != new_hash) {
-        selva_io_errlog(&io, "%s: Block hash mismatch! %.*s != %.*s",
+        selva_io_errlog(&io, "%s: Block hash mismatch for %u:%u! %.*s != %.*s",
                         __func__,
+                        (unsigned)te->type, (unsigned)block_i,
                         SELVA_HASH_HEX_LEN, selva_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, old_hash),
                         SELVA_HASH_HEX_LEN, selva_hash_to_hex((char [SELVA_HASH_HEX_LEN]){ 0 }, new_hash));
         err = SELVA_EIO;
