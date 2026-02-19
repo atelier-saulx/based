@@ -71,9 +71,9 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_MICRO_BUFFER,
+        .default_off = 0,
         .smb = {
             .len = head.len,
-            .default_off = 0,
         },
     };
 
@@ -83,7 +83,7 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
         }
 
         /* * Default is copied straight from the schema buffer. */
-        fs->smb.default_off = calc_default_off(ctx, off);
+        fs->default_off = calc_default_off(ctx, off);
         off += head.len;
     }
 
@@ -126,7 +126,7 @@ static int type2fs_string(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
         }
 
         /* default is copied straight from the schema buffer. */
-        fs->string.default_off = calc_default_off(ctx, off);
+        fs->default_off = calc_default_off(ctx, off);
         off += head.default_len;
     }
 
@@ -156,7 +156,7 @@ static int type2fs_text(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
     fs->text.nr_defaults = head.nr_defaults;
 
     if (head.nr_defaults > 0) { /* has defaults */
-        fs->text.defaults_off = (uint32_t)((ptrdiff_t)(ctx->buf - ctx->schema_buf) + off);
+        fs->default_off = (uint32_t)((ptrdiff_t)(ctx->buf - ctx->schema_buf) + off);
 
         /*
          * Iterate over the defaults and skip them.
@@ -231,7 +231,9 @@ static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSch
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_ALIAS,
-        .alias_index = ctx->alias_index++,
+        .alias = {
+            .index = ctx->alias_index++,
+        },
     };
 
     return 1;
@@ -256,11 +258,11 @@ static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_COLVEC,
+        .default_off = (spec.has_default) ? calc_default_off(ctx, sizeof(spec)) : 0,
         .colvec = {
             .vec_len = spec.vec_len,
             .comp_size = spec.comp_size,
             .index = ctx->colvec_index++,
-            .default_off = (spec.has_default) ? calc_default_off(ctx, sizeof(spec)) : 0,
         },
     };
 
@@ -378,9 +380,10 @@ static bool has_defaults(struct SelvaFieldsSchema *schema)
     for (size_t i = 0; i < nr_fixed_fields; i++) {
         const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
 
-        if ((fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) ||
-            (fs->type == SELVA_FIELD_TYPE_STRING && fs->string.default_off > 0) ||
-            (fs->type == SELVA_FIELD_TYPE_TEXT && fs->string.default_off > 0)) {
+        if ((fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER ||
+             fs->type == SELVA_FIELD_TYPE_STRING ||
+             fs->type == SELVA_FIELD_TYPE_TEXT) &&
+            fs->default_off > 0) {
             return true;
         }
     }
@@ -404,12 +407,12 @@ static void make_fixed_fields_template(struct SelvaFieldsSchema *schema, const u
             const struct SelvaFieldSchema *fs = get_fs_by_fields_schema_field(schema, i);
             void *field_data = fixed_data_buf + (nfo[i].off << SELVA_FIELDS_OFF);
 
-            if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->smb.default_off > 0) {
-                memcpy(field_data, schema_buf + fs->smb.default_off, fs->smb.len);
-            } else if (fs->type == SELVA_FIELD_TYPE_STRING && fs->string.default_off > 0) {
+            if (fs->type == SELVA_FIELD_TYPE_MICRO_BUFFER && fs->default_off > 0) {
+                memcpy(field_data, schema_buf + fs->default_off, fs->smb.len);
+            } else if (fs->type == SELVA_FIELD_TYPE_STRING && fs->default_off > 0) {
                 if (fs->string.fixed_len > 0) { /* Fixed string needs to be copied here. */
                     struct selva_string *s = (struct selva_string *)field_data;
-                    const void *default_str = schema_buf + fs->string.default_off;
+                    const void *default_str = schema_buf + fs->default_off;
                     size_t default_len = fs->string.default_len;
                     int err;
 
