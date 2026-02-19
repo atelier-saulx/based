@@ -19,7 +19,10 @@ export const filesBundle = async (
   connectToCloud: boolean = false,
 ) => {
   const isProduction: boolean = environment === 'production'
-
+  const basedConfigPlugin = replaceBasedConfigPlugin(context)({
+    cloud: connectToCloud,
+    url: wsURL,
+  })
   context.print
     .line()
     .log(context.i18n('methods.bundling.project'), '<secondary>◆</secondary>')
@@ -30,6 +33,7 @@ export const filesBundle = async (
         publicPath: staticURL,
         entryPoints: node,
         sourcemap: 'external',
+        plugins: [basedConfigPlugin],
       },
       onChange,
     ),
@@ -41,13 +45,7 @@ export const filesBundle = async (
         platform: 'browser',
         minify: isProduction,
         bundle: true,
-        plugins: [
-          replaceBasedConfigPlugin(context)({
-            cloud: connectToCloud,
-            url: wsURL,
-          }),
-          ...plugins,
-        ],
+        plugins: [basedConfigPlugin, ...plugins],
         define: {
           global: 'window',
           'process.env.NODE_ENV': `"${environment}"`,
