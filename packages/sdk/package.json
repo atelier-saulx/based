@@ -1,6 +1,6 @@
 {
   "name": "@based/sdk",
-  "version": "1.1.20",
+  "version": "1.1.21",
   "description": "The official SDK for the Based platform, providing a unified entry point for all packages.",
   "author": "Based",
   "license": "MIT",
@@ -159,7 +159,7 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@based/cli": "8.3.19",
+    "@based/cli": "8.3.20",
     "@based/client": "8.3.17",
     "@based/db": "0.2.19",
     "@based/errors": "1.6.17",
