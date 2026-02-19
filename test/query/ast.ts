@@ -242,4 +242,17 @@ await test('query ast creation', async (t) => {
       },
     })
   }
+
+  {
+    const res = query('user').sum((select) => select('friends').sum('age'))
+    console.dir(res.ast, { depth: null })
+    // deepEqual(res.ast, {
+    //   type: 'user',
+    //   sum: {
+    //     props: {
+    //       friends: { sum: { props: ['age'] } },
+    //     },
+    //   },
+    // })
+  }
 })

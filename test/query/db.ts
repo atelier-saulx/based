@@ -111,7 +111,7 @@ await test('query db', async (t) => {
 
   {
     const res = await db.query2('user').sum('age').get()
-    deepEqual(res, { age: { sum: 70 } })
+    deepEqual(res, { age: { sum: 70 } } as any)
   }
 
   // TODO wait for marco to check these
@@ -128,9 +128,9 @@ await test('query db', async (t) => {
   {
     const res = await db
       .query2('user')
-      .sum((select) => select('friend').sum('age'))
+      .sum((select) => select('friends').sum('age'))
       .get()
-    deepEqual(res, { friend: { age: { sum: 70 } } })
+    deepEqual(res, { friends: { age: { sum: 21 } } } as any)
   }
 
   // {
