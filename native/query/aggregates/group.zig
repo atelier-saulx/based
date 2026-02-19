@@ -18,7 +18,7 @@ pub fn iterator(
     aggCtx: *Aggregates.AggCtx,
     groupByHashMap: *GroupByHashMap,
     it: anytype,
-    comptime hasFilter: bool,
+    hasFilter: bool,
     filterBuf: []u8,
     aggDefs: []u8,
 ) usize {
