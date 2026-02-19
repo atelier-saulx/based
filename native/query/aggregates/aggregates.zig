@@ -73,7 +73,7 @@ pub inline fn aggregateProps(
                 i += utils.sizeOf(t.AggProp);
                 continue;
             };
-            if (currentAggDef.aggFunction == t.AggFunction.cardinality) {
+            if (currentAggDef.aggFunction == .cardinality) {
                 const hllValue = Selva.c.selva_fields_get_selva_string(node, propSchema) orelse null;
                 if (hllValue == null) {
                     i += utils.sizeOf(t.AggProp);

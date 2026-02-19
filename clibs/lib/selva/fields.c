@@ -2017,8 +2017,8 @@ static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFi
     for (size_t i = 0; i < schema->nr_fixed_fields; i++) {
         auto fs = get_fs_by_fields_schema_field(schema, i);
         if (fs->type == SELVA_FIELD_TYPE_STRING) {
-            if (fs->string.default_off > 0) {
-                const void *default_str = schema_buf + fs->string.default_off;
+            if (fs->default_off > 0) {
+                const void *default_str = schema_buf + fs->default_off;
                 size_t default_len = fs->string.default_len;
                 struct SelvaFieldInfo *nfo;
                 int err;
@@ -2032,7 +2032,7 @@ static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFi
             }
         } else if (fs->type == SELVA_FIELD_TYPE_TEXT) {
             const size_t nr_defaults = fs->text.nr_defaults;
-            size_t off = fs->text.defaults_off;
+            size_t off = fs->default_off;
             if (nr_defaults > 0 && off > 0) {
                 struct ensure_text_field tf;
 

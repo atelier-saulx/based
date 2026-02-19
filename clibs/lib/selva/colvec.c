@@ -108,9 +108,9 @@ void colvec_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node)
         assert(fs->type == SELVA_FIELD_TYPE_COLVEC);
 
         void *vec = slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node->node_id);
-        if (fs->colvec.default_off > 0) {
+        if (fs->default_off > 0) {
             const uint8_t *schema_buf = te->schema_buf;
-            const void *default_vec = schema_buf + fs->colvec.default_off;
+            const void *default_vec = schema_buf + fs->default_off;
             memcpy(vec, default_vec, colvec->vec_size);
         } else {
             memset(vec, 0, colvec->vec_size);
