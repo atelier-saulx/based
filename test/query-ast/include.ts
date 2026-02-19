@@ -176,6 +176,8 @@ await test('include', async (t) => {
     },
   }
 
+  console.dir(ast, { depth: 100 })
+
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
   debugBuffer(ctx.query)
@@ -191,7 +193,7 @@ await test('include', async (t) => {
     queries.push(x)
   }
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
@@ -217,8 +219,8 @@ await test('include', async (t) => {
 
   // RETURN NULL FOR UNDEFINED
 
-  // console.log(
-  //   JSON.stringify(obj).length,
-  //   readSchemaBuf.byteLength + result.byteLength,
-  // )
+  console.log(
+    // JSON.stringify(obj).length,
+    result.byteLength,
+  )
 })
