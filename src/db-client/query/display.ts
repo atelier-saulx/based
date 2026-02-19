@@ -125,7 +125,7 @@ export const prettyPrintVal = (v: any, type: PropTypeEnum): string => {
   }
 
   if (type === PropType.cardinality) {
-    return `${styleText('blue', v)} ${styleText('italic', styleText('dim', 'unique'))}`
+    return `${styleText('blue', `${v}`)} ${styleText('italic', styleText('dim', 'unique'))}`
   }
 
   if (type === PropType.timestamp) {
