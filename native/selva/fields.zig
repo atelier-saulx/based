@@ -19,6 +19,17 @@ const emptyArray: []const [16]u8 = emptySlice;
 
 extern "c" const selva_string: opaque {};
 
+inline fn toNodeId(node: anytype) selva.c.node_id_t {
+    if (comptime @TypeOf(node) == selva.c.node_id_t) {
+        return node;
+    } else if (comptime @TypeOf(node) == Node.Node) {
+        return Node.getNodeId(node);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(node));
+        @compileError("Invalid type");
+    }
+}
+
 pub fn ensureCardinality(node: Node.Node, fieldSchema: Schema.FieldSchema, hllPrecision: u8, hllMode: bool) *selva.c.struct_selva_string {
     var data = selva.c.selva_fields_get_selva_string(node, fieldSchema);
     if (data == null) {
@@ -107,16 +118,7 @@ pub inline fn setMicroBuffer(node: Node.Node, fieldSchema: Schema.FieldSchema, v
 }
 
 pub inline fn setColvec(te: Node.Type, node: anytype, fieldSchema: Schema.FieldSchema, vec: []u8) void {
-    var nodeId: selva.c.node_id_t = undefined;
-
-    if (comptime @TypeOf(node) == selva.c.node_id_t) {
-        nodeId = node;
-    } else if (comptime @TypeOf(node) == Node.Node) {
-        nodeId = Node.getNodeId(node);
-    } else {
-        @compileLog("Invalid type: ", @TypeOf(node));
-        @compileError("Invalid type");
-    }
+    const nodeId = toNodeId(node);
 
     selva.c.colvec_set_vec(
         te,
@@ -127,16 +129,7 @@ pub inline fn setColvec(te: Node.Type, node: anytype, fieldSchema: Schema.FieldS
 }
 
 pub inline fn clearColvec(te: Node.Type, node: anytype, fieldSchema: Schema.FieldSchema) void {
-    var nodeId: selva.c.node_id_t = undefined;
-
-    if (comptime @TypeOf(node) == selva.c.node_id_t) {
-        nodeId = node;
-    } else if (comptime @TypeOf(node) == Node.Node) {
-        nodeId = Node.getNodeId(node);
-    } else {
-        @compileLog("Invalid type: ", @TypeOf(node));
-        @compileError("Invalid type");
-    }
+    const nodeId = toNodeId(node);
 
     selva.c.colvec_clear_vec(
         te,
@@ -339,9 +332,10 @@ pub fn getAliasByName(typeEntry: Node.Type, field: u8, aliasName: []u8) ?Node.No
     return res.node;
 }
 
-pub fn getAliasByNode(typeEntry: Node.Type, node: Node.Node, field: u8) ![]const u8 {
+pub fn getAliasByNode(typeEntry: Node.Type, node: anytype, field: u8) ![]const u8 {
     if (selva.c.selva_get_aliases(typeEntry, field)) |aliases| {
-        if (selva.c.selva_get_alias_by_dest(aliases, Node.getNodeId(node))) |alias| {
+        const nodeId = toNodeId(node);
+        if (selva.c.selva_get_alias_by_dest(aliases, nodeId)) |alias| {
             var len: usize = undefined;
             const name = selva.c.selva_get_alias_name(alias, &len);
             return name[0..len];
