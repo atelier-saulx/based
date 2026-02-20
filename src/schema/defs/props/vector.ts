@@ -28,6 +28,17 @@ const t2t = {
   float64: Float64Array,
 }
 
+function validateVector(value: unknown): asserts value is Uint8Array {
+    if (!isTypedArray(value)) {
+      throw new Error('Not a typed array')
+    }
+    // @ts-ignore
+    const t = t2t[this.schema.baseType]
+    if (!(value instanceof t)) {
+      throw new Error(`Not a ${t.name}`)
+    }
+}
+
 export const vector = class Vector extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
     super(schema, path, typeDef)
@@ -37,14 +48,7 @@ export const vector = class Vector extends BasePropDef {
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
   override validate(value: unknown): asserts value is Uint8Array {
-    if (!isTypedArray(value)) {
-      throw new Error('Not a typed array')
-    }
-    // @ts-ignore
-    const t = t2t[this.schema.baseType]
-    if (!(value instanceof t)) {
-      throw new Error(`Not a ${t.name}`)
-    }
+    validateVector.call(this, value)
   }
   override pushValue(
     buf: AutoSizedUint8Array,
@@ -82,9 +86,7 @@ export const colvec = class ColVec extends BasePropDef {
   vecLen: number
   override type = PropType.colVec
   override validate(value: unknown): asserts value is Uint8Array {
-    if (!isTypedArray(value)) {
-      throw new Error('Not a typed array')
-    }
+    validateVector.call(this, value)
   }
   override pushValue(
     buf: AutoSizedUint8Array,

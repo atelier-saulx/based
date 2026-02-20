@@ -87,7 +87,7 @@ export const readProp = (
     const vecSize = prop.len! * VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
     const tmp = result.slice(i, i + vecSize) // maybe align?
     addProp(prop, readVector(prop, tmp), item)
-    i += prop.len!
+    i += vecSize
   }
   return i
 }

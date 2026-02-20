@@ -1,4 +1,4 @@
-import { testDb, throws } from '../../shared/index.js'
+import { deepEqual, testDb, throws } from '../../shared/index.js'
 import test from '../../shared/test.js'
 import assert from 'node:assert'
 
@@ -11,9 +11,11 @@ await test('wrong type', async (t) => {
     },
   })
 
-  throws(() => db.create('thing', {
-    vec: new Float64Array([1.1, 2.2, 3.3]),
-  }))
+  throws(() =>
+    db.create('thing', {
+      vec: new Float64Array([1.1, 2.2, 3.3]),
+    }),
+  )
 })
 
 await test('modify vector', async (t) => {
@@ -42,7 +44,7 @@ await test('modify vector', async (t) => {
   assert(Math.abs(vecArr[1] - v1[1]) < 0.0001)
   assert(Math.abs(vecArr[2] - v1[2]) < 0.0001)
 
-  const v2 = new Float64Array([4.4, 5.5, 6.6])
+  const v2 = new Float32Array([4.4, 5.5, 6.6])
   await db.update('thing', id1, {
     vec: v2,
   })
@@ -58,17 +60,26 @@ await test('modify vector', async (t) => {
   await db.update('thing', id1, {
     vec: null,
   })
-  const res3 = await db.query2('thing', id1).get()
-  assert(res3.vec === undefined)
+  deepEqual(await db.query2('thing', id1).get(), {
+    id: 1,
+    vec: new Float32Array([0, 0, 0]),
+  })
+
+  // Undefined
+  const id3 = await db.create('thing', {})
+  deepEqual(await db.query2('thing', id1).get(), {
+    id: 1,
+    vec: new Float32Array([0, 0, 0]),
+  })
 })
 
-await test.skip('modify colvec', async (t) => {
+await test('modify colvec', async (t) => {
   const db = await testDb(t, {
     types: {
       thing: {
         insertOnly: true,
         props: {
-          vec: { type: 'colvec', size: 3, baseType: 'float32' },
+          vec: { type: 'colvec', size: 3, baseType: 'float64' },
         },
       },
     },
@@ -104,11 +115,10 @@ await test.skip('modify colvec', async (t) => {
   await db.update('thing', id1, {
     vec: null,
   })
-  const res3 = await db.query2('thing', id1).get()
-  assert(res3.vec === undefined)
+  deepEqual(await db.query2('thing', id1).get(), { id: 1, vec: new Float64Array([0, 0, 0]) })
 })
 
-await test.skip('modify vector on edge', async (t) => {
+await test('modify vector on edge', async (t) => {
   const db = await testDb(t, {
     types: {
       thing: {
@@ -124,7 +134,7 @@ await test.skip('modify vector on edge', async (t) => {
     },
   })
 
-  const v1 = new Float64Array([1.1, 2.2, 3.3])
+  const v1 = new Float32Array([1.1, 2.2, 3.3])
   const targetId = await db.create('thing', { vec: v1 })
   const id1 = await db.create('holder', {
     toThing: {
@@ -144,7 +154,7 @@ await test.skip('modify vector on edge', async (t) => {
     assert.fail('toThing not found')
   }
 
-  const v2 = new Float64Array([4.4, 5.5, 6.6])
+  const v2 = new Float32Array([4.4, 5.5, 6.6])
   await db.update('holder', id1, {
     toThing: {
       id: targetId,
