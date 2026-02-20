@@ -26,14 +26,15 @@ await test('default', async (t) => {
           type: 'vector',
           size: 3,
           baseType: 'float32',
-          default: new Float32Array([1, 2, 3])
+          default: new Float32Array([1, 2.5, 3])
         },
       },
     },
   })
+  // TODO Test also wrong size for default
 
   const id1 = await db.create('thing', {})
-  console.log(await db.query('thing', id1).get().inspect())
+  deepEqual(await db.query2('thing', id1).get(), { id: id1, vec: new Float32Array([1, 2.5, 3]) })
 })
 
 await test('modify vector', async (t) => {

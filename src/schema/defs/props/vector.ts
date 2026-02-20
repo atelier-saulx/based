@@ -53,11 +53,16 @@ export const vector = class Vector extends BasePropDef {
     buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    const defaultValue = this.schema['default']
     pushSelvaSchemaMicroBuffer(buf, {
       type: PropTypeSelva.microBuffer,
       len: this.vectorSize,
-      hasDefault: 0, // TODO default
+      hasDefault: ~~!!defaultValue,
     })
+    if (defaultValue) {
+      const v = new Uint8Array(defaultValue.buffer, 0, this.vectorSize)
+      buf.set(v, buf.length)
+    }
   }
 }
 
