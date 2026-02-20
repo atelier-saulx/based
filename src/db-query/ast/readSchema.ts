@@ -6,7 +6,7 @@ import {
 } from '../../protocol/index.js'
 import { SchemaOut } from '../../schema.js'
 import { PropDef } from '../../schema/defs/index.js'
-import { LangCode, PropType } from '../../zigTsExports.js'
+import { LangCode, PropType, VectorBaseType } from '../../zigTsExports.js'
 import { Include } from './ast.js'
 
 export const readSchema = (type?: ReaderSchemaEnum): ReaderSchema => {
@@ -64,10 +64,13 @@ export const readPropDef = (
       {},
     )
   }
-  // if (p.type === PropType.vector || p.type === PropType.colVec) {
-  //   readerPropDef.vectorBaseType = p.vectorBaseType
-  //   readerPropDef.len = p.len
-  // }
+  if (p.type === PropType.vector || p.type === PropType.colVec) {
+    // TODO Do something so that this works without ignore
+    // @ts-ignore
+    readerPropDef.vectorBaseType = VectorBaseType[p.schema.baseType]
+    // @ts-ignore
+    readerPropDef.len = p.schema.size
+  }
   // if (p.type === PropType.cardinality) {
   //   readerPropDef.cardinalityMode = p.cardinalityMode
   //   readerPropDef.cardinalityPrecision = p.cardinalityPrecision

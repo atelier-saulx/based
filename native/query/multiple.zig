@@ -281,7 +281,6 @@ pub fn references(
             var it = try References.iterator(true, false, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
         },
-
         .sort => {
             var it = try referencesSort(false, false, ctx, q, from, fromType, i, &header, typeEntry);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
@@ -292,7 +291,6 @@ pub fn references(
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-
         .filter => {
             var it = try References.iterator(false, false, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
@@ -311,7 +309,6 @@ pub fn references(
             nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
-
         .edge => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);

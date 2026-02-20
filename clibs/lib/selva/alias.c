@@ -20,9 +20,9 @@ void selva_init_aliases(struct SelvaTypeEntry *type)
         const struct SelvaFieldSchema *fs = &fields_schema->field_schemas[i];
 
         if (fs->type == SELVA_FIELD_TYPE_ALIAS) {
-            struct SelvaAliases *field_aliases = &type->aliases[fs->alias_index];
+            struct SelvaAliases *field_aliases = &type->aliases[fs->alias.index];
 
-            assert(fs->alias_index < type->ns.nr_alias_fields);
+            assert(fs->alias.index < type->ns.nr_alias_fields);
             field_aliases->field = fs->field;
             field_aliases->nr_aliases = 0;
             RB_INIT(&field_aliases->alias_by_name);

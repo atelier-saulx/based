@@ -114,10 +114,13 @@ inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te);
 SELVA_EXPORT
 inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te);
 
-inline block_id_t selva_node_id2block_i3(block_id_t block_capacity, node_id_t node_id)
+#define SELVA_NODE_ID2BLOCK_I3(block_capacity, node_id) \
+    (((node_id - 1) - ((node_id - 1) % block_capacity)) / block_capacity)
+
+static inline block_id_t selva_node_id2block_i3(block_id_t block_capacity, node_id_t node_id)
 {
     assert(node_id > 0);
-    return ((node_id - 1) - ((node_id - 1) % block_capacity)) / block_capacity;
+    return SELVA_NODE_ID2BLOCK_I3(block_capacity, node_id);
 }
 
 SELVA_EXPORT
@@ -323,28 +326,14 @@ size_t selva_node_count(const struct SelvaTypeEntry *type) __attribute__((nonnul
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline node_id_t selva_get_node_id(const struct SelvaNode *node)
-#ifndef __zig
-{
-    return node->node_id;
-}
-#else
-;
-#endif
+inline node_id_t selva_get_node_id(const struct SelvaNode *node);
 
 /**
  * Get the type of of node.
  */
 SELVA_EXPORT
 __attribute__((nonnull, pure))
-inline node_type_t selva_get_node_type(const struct SelvaNode *node)
-#ifndef __zig
-{
-    return node->type;
-}
-#else
-;
-#endif
+inline node_type_t selva_get_node_type(const struct SelvaNode *node);
 
 /**
  * \addtogroup node_hash
@@ -463,7 +452,7 @@ inline block_id_t selva_get_block_capacity(const struct SelvaTypeEntry *te)
 
 inline block_id_t selva_node_id2block_i(const struct SelvaTypeBlocks *blocks, node_id_t node_id)
 {
-    return selva_node_id2block_i3(blocks->block_capacity, node_id);
+    return SELVA_NODE_ID2BLOCK_I3(blocks->block_capacity, node_id);
 }
 
 inline block_id_t selva_node_id2block_i2(const struct SelvaTypeEntry *te, node_id_t node_id)
@@ -587,5 +576,15 @@ inline const struct SelvaFieldsSchema *selva_get_edge_field_fields_schema(struct
     struct SelvaTypeEntry *te = selva_get_type_by_index(db, efc->edge_node_type);
 
     return (te) ? &selva_get_ns_by_te(te)->fields_schema : nullptr;
+}
+
+inline node_id_t selva_get_node_id(const struct SelvaNode *node)
+{
+    return node->node_id;
+}
+
+inline node_type_t selva_get_node_type(const struct SelvaNode *node)
+{
+    return node->type;
 }
 #endif

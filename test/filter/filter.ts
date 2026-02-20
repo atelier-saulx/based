@@ -913,3 +913,31 @@ await test.skip('includes', async (t) => {
     ),
   )
 })
+
+await test('lt x leq', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => t.backup(db))
+
+  await db.setSchema({
+    types: {
+      bucket: {
+        red: 'uint8',
+        blue: 'uint8',
+      },
+    },
+  })
+
+  db.create('bucket', {
+    red: 1,
+    blue: 3,
+  })
+  db.create('bucket', {
+    red: 4,
+    blue: 6,
+  })
+  const b = await db.query('bucket').filter('red', '<', 4).get()
+  equal(b.toObject().length, 1, 'lt must be different than leq')
+})

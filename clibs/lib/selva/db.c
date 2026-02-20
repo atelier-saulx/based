@@ -142,9 +142,7 @@ void selva_db_expire_tick(struct SelvaDb *db, int64_t now)
 
 static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
 {
-    struct SelvaTypeEntry *te;
-
-    te = selva_get_type_by_index(db, type);
+    auto te = selva_get_type_by_index(db, type);
     return (te && te->schema_len == schema_len && !memcmp(te->schema_buf, schema_buf, schema_len));
 }
 
@@ -331,7 +329,7 @@ void selva_db_set_dirty_hook(struct SelvaDb *db, selva_db_dirty_hook_t dirty_hoo
  */
 static inline void selva_del_block_unsafe(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, bool unload)
 {
-    struct SelvaNodeIndex *nodes = &te->blocks->blocks[block_i].nodes;
+    auto nodes = &te->blocks->blocks[block_i].nodes;
     struct SelvaNode *node;
     struct SelvaNode *tmp;
 
@@ -690,13 +688,12 @@ out:
  */
 static struct SelvaNodeRes selva_min_node_from(struct SelvaTypeEntry *type, block_id_t start)
 {
-    struct SelvaTypeBlocks *blocks = type->blocks;
+    auto blocks = type->blocks;
     const size_t len = blocks->len;
     struct SelvaNodeRes res = {};
 
     for (size_t i = start; i < len; i++) {
-        struct SelvaTypeBlock *block = &blocks->blocks[i];
-        struct SelvaNode *node;
+        auto block = &blocks->blocks[i];
 
         res.block = i;
         res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
@@ -704,7 +701,7 @@ static struct SelvaNodeRes selva_min_node_from(struct SelvaTypeEntry *type, bloc
             break;
         }
 
-        node = RB_MIN(SelvaNodeIndex, &block->nodes);
+        auto node = RB_MIN(SelvaNodeIndex, &block->nodes);
         if (node) {
             res.node = node;
             break;
@@ -728,8 +725,7 @@ static struct SelvaNodeRes selva_max_node_from(struct SelvaTypeEntry *type, bloc
     struct SelvaNodeRes res = {};
 
     for (ssize_t i = start; i >= 0; i--) {
-        struct SelvaTypeBlock *block = &blocks->blocks[i];
-        struct SelvaNode *node;
+        auto block = &blocks->blocks[i];
 
         res.block = i;
         res.block_status = atomic_load_explicit(&block->status.atomic, memory_order_acquire);
@@ -737,7 +733,7 @@ static struct SelvaNodeRes selva_max_node_from(struct SelvaTypeEntry *type, bloc
             break;
         }
 
-        node = RB_MAX(SelvaNodeIndex, &block->nodes);
+        auto node = RB_MAX(SelvaNodeIndex, &block->nodes);
         if (node) {
             res.node = node;
             break;
@@ -813,28 +809,6 @@ extern inline node_id_t selva_get_node_id(const struct SelvaNode *node);
 
 extern inline node_type_t selva_get_node_type(const struct SelvaNode *node);
 
-/**
- * Hash the aliases pointing to the given node.
- */
-static void hash_aliases(selva_hash_state_t *hash_state, struct SelvaTypeEntry *type, node_id_t dest)
-{
-    for (size_t i = 0; i < type->ns.nr_alias_fields; i++) {
-        struct SelvaAliases *aliases = &type->aliases[i];
-        const struct SelvaAlias *alias;
-        struct SelvaAlias find = {
-            .dest = dest,
-        };
-        field_t f = i;
-
-        alias = RB_FIND(SelvaAliasesByDest, &aliases->alias_by_dest, &find);
-        if (alias) {
-            selva_hash_update(hash_state, &f, sizeof(f));
-            selva_hash_update(hash_state, &dest, sizeof(dest));
-            selva_hash_update(hash_state, alias->name, alias->name_len);
-        }
-    }
-}
-
 static void hash_col_fields(struct SelvaTypeEntry *type, node_id_t node_id, selva_hash_state_t *tmp_hash_state)
 {
     /*
@@ -854,7 +828,6 @@ selva_hash128_t selva_node_hash_update(struct SelvaDb *db, struct SelvaTypeEntry
     selva_hash_reset(tmp_hash_state);
     selva_hash_update(tmp_hash_state, &node->node_id, sizeof(node->node_id));
     selva_fields_hash_update(tmp_hash_state, db, &type->ns.fields_schema, node);
-    hash_aliases(tmp_hash_state, type, node->node_id);
     hash_col_fields(type, node->node_id, tmp_hash_state);
     res = selva_hash_digest(tmp_hash_state);
 

@@ -524,45 +524,46 @@ await test('cardinality', async (t) => {
   )
 })
 
-// await test.skip('cardinality on references', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-//   await db.start({ clean: true })
-//   t.after(() => db.stop())
+await test('cardinality on references', async (t) => {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.stop())
 
-//   await db.setSchema({
-//     types: {
-//       booth: {
-//         company: 'string',
-//         // badgesScanned: 'number',
-//         badgesScanned: 'cardinality',
-//       },
-//       fair: {
-//         day: 'timestamp',
-//         booths: {
-//           items: {
-//             ref: 'booth',
-//             prop: 'booth',
-//           },
-//         },
-//       },
-//     },
-//   })
+  await db.setSchema({
+    types: {
+      booth: {
+        company: 'string',
+        // badgesScanned: 'number',
+        badgesScanned: 'cardinality',
+      },
+      fair: {
+        day: 'timestamp',
+        booths: {
+          items: {
+            ref: 'booth',
+            prop: 'booth',
+          },
+        },
+      },
+    },
+  })
 
-//   const bg = db.create('booth', {
-//     company: 'big one',
-//     badgesScanned: ['engineer 1', 'salesman', 'spy', 'annonymous'],
-//   })
-//   const stp = db.create('booth', {
-//     company: 'just another startup',
-//     badgesScanned: ['nice ceo', 'entusiastic dev'],
-//   })
-//   db.create('fair', {
-//     day: new Date('08/02/2024'),
-//     booths: [bg, stp],
-//   })
+  const bg = db.create('booth', {
+    company: 'big one',
+    badgesScanned: ['engineer 1', 'salesman', 'spy', 'annonymous'],
+  })
+  const stp = db.create('booth', {
+    company: 'just another startup',
+    badgesScanned: ['nice ceo', 'entusiastic dev'],
+  })
+  db.create('fair', {
+    day: new Date('08/02/2024'),
+    booths: [bg, stp],
+  })
 
+<<<<<<< HEAD
 //   await db.query2('fair').include('booths.badgesScanned').get().inspect()
 //   await db
 //     .query2('fair')
@@ -571,6 +572,39 @@ await test('cardinality', async (t) => {
 //     .get()
 //     .inspect()
 // })
+=======
+  deepEqual(
+    await db
+      .query('fair')
+      .include((s) => s('booths').cardinality('badgesScanned'))
+      .get(),
+    [
+      {
+        id: 1,
+        booths: {
+          badgesScanned: {
+            cardinality: 6,
+          },
+        },
+      },
+    ],
+    'branched query with cardinality function',
+  )
+
+  /*
+   *  Nested syntax:
+   */
+
+  // await db.query('fair').include('booths.badgesScanned').get().inspect()
+
+  // await db
+  //   .query('fair')
+  //   .cardinality('booths.badgesScanned')
+  //   .groupBy('day')
+  //   .get()
+  //   .inspect()
+})
+>>>>>>> ede73b52799512041ed5f8ae1d758f1b6cf88037
 
 await test('group by reference ids', async (t) => {
   const db = await testDb(t, {
@@ -805,6 +839,7 @@ await test.skip('edges aggregation', async (t) => {
   //   .get()
   //   .inspect(10)
 
+<<<<<<< HEAD
   deepEqual(
     await db
       .query2('movie')
@@ -894,6 +929,100 @@ await test.skip('edges aggregation', async (t) => {
     ],
     'multiple edges on same agg function, branched query',
   )
+=======
+  // deepEqual(
+  //   await db
+  //     .query('movie')
+  //     .include((q) => q('actors').max('$rating'))
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       actors: {
+  //         $rating: {
+  //           max: 55,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       actors: {
+  //         $rating: {
+  //           max: 77,
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'single edge aggregation, branched query',
+  // )
+
+  // deepEqual(
+  //   await db
+  //     .query('movie')
+  //     .include((q) => q('actors').max('$rating').sum('$hating'))
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       actors: {
+  //         $rating: {
+  //           max: 55,
+  //         },
+  //         $hating: {
+  //           sum: 5,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       actors: {
+  //         $rating: {
+  //           max: 77,
+  //         },
+  //         $hating: {
+  //           sum: 10,
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'multiple edges with multiple agg functions, branched query',
+  // )
+
+  // deepEqual(
+  //   await db
+  //     .query('movie')
+  //     .include((q) => q('actors').max('$rating', '$hating'))
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       actors: {
+  //         $rating: {
+  //           max: 55,
+  //         },
+  //         $hating: {
+  //           max: 5,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       actors: {
+  //         $rating: {
+  //           max: 77,
+  //         },
+  //         $hating: {
+  //           max: 7,
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'multiple edges on same agg function, branched query',
+  // )
+>>>>>>> ede73b52799512041ed5f8ae1d758f1b6cf88037
 
   /*-----------------------------------*/
   /*          STRAIGHT ON TYPE         */

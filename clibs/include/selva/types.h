@@ -58,28 +58,46 @@ struct EdgeFieldConstraint {
 struct SelvaFieldSchema {
     field_t field;
     enum SelvaFieldType type;
+    /**
+     * Offset to the default value in te->schema_buf.
+     * Only valid for field types that can have defaults.
+     */
+    uint32_t default_off;
     union {
+        /**
+         * SELVA_FIELD_TYPE_STRING.
+         */
         struct {
             size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
-            uint32_t default_off; /*!< Offset to the default value in te->schema_buf. */
             uint32_t default_len;
-        } string; /*!< SELVA_FIELD_TYPE_STRING */
+        } string;
         struct {
             uint32_t nr_defaults; /*!< Number of defaults for this text field. */
-            uint32_t defaults_off; /*!< Offset to the default values in te->schema_buf. */
         } text; /*!< SELVA_FIELD_TYPE_TEXT */
-        struct EdgeFieldConstraint edge_constraint; /*!< SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_REFERENCES, SELVA_FIELD_TYPE_WEAK_REFERENCE, and SELVA_FIELD_TYPE_WEAK_REFERENCES. */
+        /**
+         * SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_REFERENCES, SELVA_FIELD_TYPE_WEAK_REFERENCE, and SELVA_FIELD_TYPE_WEAK_REFERENCES.
+         */
+        struct EdgeFieldConstraint edge_constraint;
+        /**
+         * SELVA_FIELD_TYPE_MICRO_BUFFER.
+         */
         struct {
-            uint32_t default_off; /*!< Offset to the default in  the raw schema buffer. */
             uint16_t len; /*!< Size of the smb. */
-        } smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
-        size_t alias_index; /*!< Index in aliases for SELVA_FIELD_TYPE_ALIAS and SELVA_FIELD_TYPE_ALIASES. */
+        } smb;
+        /**
+         * SELVA_FIELD_TYPE_ALIAS.
+         */
+        struct {
+            size_t index; /*!< Index in aliases. */
+        } alias;
+        /**
+         * SELVA_FIELD_TYPE_COLVEC.
+         */
         struct {
             uint16_t vec_len; /*!< Length of a single vector. */
             uint16_t comp_size; /*!< Component size in the vector. */
-            uint32_t default_off; /*!< Offset to the default value in te->schema_buf. */
             field_t index; /*!< Index in te->col_fields.colvec.v. */
-        } colvec; /*!< SELVA_FIELD_TYPE_COLVEC */
+        } colvec;
     };
 } __designated_init;
 

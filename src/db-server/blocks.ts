@@ -66,12 +66,12 @@ export async function loadCommon(
     db.addOpOnceListener(OpType.loadCommon, id, (buf: Uint8Array) => {
       const err = readInt32(buf, 0)
       if (err) {
-        // TODO read errlog
-        const errMsg = `Load failed: ${native.selvaStrerror(err)}`
         const errLog = DECODER.decode(buf.subarray(4))
+        const errMsg = `Load failed: ${native.selvaStrerror(err)}\n${errLog}`
 
-        console.log(errLog)
-        db.emit('error', errMsg)
+        if (!errMsg.includes('ERR_SELVA ENOENT')) {
+          db.emit('error', errMsg)
+        }
         reject(new Error(errMsg))
       } else {
         resolve()
