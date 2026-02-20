@@ -1,8 +1,8 @@
-import { testDb } from '../../shared/index.js'
+import { testDb, throws } from '../../shared/index.js'
 import test from '../../shared/test.js'
 import assert from 'node:assert'
 
-await test.skip('modify vector', async (t) => {
+await test('wrong type', async (t) => {
   const db = await testDb(t, {
     types: {
       thing: {
@@ -11,7 +11,21 @@ await test.skip('modify vector', async (t) => {
     },
   })
 
-  const v1 = new Float64Array([1.1, 2.2, 3.3])
+  throws(() => db.create('thing', {
+    vec: new Float64Array([1.1, 2.2, 3.3]),
+  }))
+})
+
+await test('modify vector', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        vec: { type: 'vector', size: 3, baseType: 'float32' },
+      },
+    },
+  })
+
+  const v1 = new Float32Array([1.1, 2.2, 3.3])
   const id1 = await db.create('thing', {
     vec: v1,
   })

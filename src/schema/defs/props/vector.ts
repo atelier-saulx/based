@@ -14,6 +14,17 @@ import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
 import { isTypedArray } from 'util/types'
 
+const t2t = {
+  'int8': Int8Array,
+  'uint8': Uint8Array,
+  'int16': Int16Array,
+  'uint16': Uint16Array,
+  'int32': Int32Array,
+  'uint32': Uint32Array,
+  'float32': Float32Array,
+  'float64': Float64Array,
+}
+
 export const vector = class Vector extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
     super(schema, path, typeDef)
@@ -24,6 +35,11 @@ export const vector = class Vector extends BasePropDef {
   override validate(value: unknown): asserts value is Uint8Array {
     if (!isTypedArray(value)) {
       throw new Error('Not a typed array')
+    }
+    // @ts-ignore
+    const t = t2t[this.schema.baseType]
+    if (!(value instanceof t)) {
+      throw new Error(`Not a ${t.name}`)
     }
   }
   override pushValue(
