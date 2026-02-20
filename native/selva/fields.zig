@@ -106,12 +106,42 @@ pub inline fn setMicroBuffer(node: Node.Node, fieldSchema: Schema.FieldSchema, v
     ));
 }
 
-pub inline fn setColvec(te: Node.Type, nodeId: selva.c.node_id_t, fieldSchema: Schema.FieldSchema, vec: []u8) void {
+pub inline fn setColvec(te: Node.Type, node: anytype, fieldSchema: Schema.FieldSchema, vec: []u8) void {
+    var nodeId: selva.c.node_id_t = undefined;
+
+    if (comptime @TypeOf(node) == selva.c.node_id_t) {
+        nodeId = node;
+    } else if (comptime @TypeOf(node) == Node.Node) {
+        nodeId = Node.getNodeId(node);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(node));
+        @compileError("Invalid type");
+    }
+
     selva.c.colvec_set_vec(
         te,
         nodeId,
         fieldSchema,
         vec.ptr,
+    );
+}
+
+pub inline fn clearColvec(te: Node.Type, node: anytype, fieldSchema: Schema.FieldSchema) void {
+    var nodeId: selva.c.node_id_t = undefined;
+
+    if (comptime @TypeOf(node) == selva.c.node_id_t) {
+        nodeId = node;
+    } else if (comptime @TypeOf(node) == Node.Node) {
+        nodeId = Node.getNodeId(node);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(node));
+        @compileError("Invalid type");
+    }
+
+    selva.c.colvec_clear_vec(
+        te,
+        nodeId,
+        fieldSchema,
     );
 }
 

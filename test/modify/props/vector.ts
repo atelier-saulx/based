@@ -64,15 +64,22 @@ await test('modify vector', async (t) => {
     id: 1,
     vec: new Float32Array([0, 0, 0]),
   })
+
+  // Undefined
+  const id3 = await db.create('thing', {})
+  deepEqual(await db.query2('thing', id1).get(), {
+    id: 1,
+    vec: new Float32Array([0, 0, 0]),
+  })
 })
 
-await test.skip('modify colvec', async (t) => {
+await test('modify colvec', async (t) => {
   const db = await testDb(t, {
     types: {
       thing: {
         insertOnly: true,
         props: {
-          vec: { type: 'colvec', size: 3, baseType: 'float32' },
+          vec: { type: 'colvec', size: 3, baseType: 'float64' },
         },
       },
     },
@@ -108,8 +115,7 @@ await test.skip('modify colvec', async (t) => {
   await db.update('thing', id1, {
     vec: null,
   })
-  const res3 = await db.query2('thing', id1).get()
-  assert(res3.vec === undefined)
+  deepEqual(await db.query2('thing', id1).get(), { id: 1, vec: new Float64Array([0, 0, 0]) })
 })
 
 await test('modify vector on edge', async (t) => {

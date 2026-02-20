@@ -149,6 +149,17 @@ void colvec_set_vec(struct SelvaTypeEntry *te, node_id_t node_id, const struct S
     memcpy(dst, vec, colvec->vec_size);
 }
 
+void colvec_clear_vec(struct SelvaTypeEntry *te, node_id_t node_id, const struct SelvaFieldSchema *fs)
+{
+    assert(fs->type == SELVA_FIELD_TYPE_COLVEC);
+
+    struct SelvaColvec *colvec = &te->col_fields.colvec[fs->colvec.index];
+    uint8_t *slab = (uint8_t *)colvec->v[selva_node_id2block_i2(te, node_id)];
+    void *dst = slab + colvec_slab_off(selva_get_block_capacity(te), colvec->vec_size, node_id);
+
+    memset(dst, 0, colvec->vec_size);
+}
+
 int colvec_foreach(struct SelvaTypeEntry *te, const struct SelvaFieldSchema *fs, node_id_t start, uint32_t len, void (*cb)(node_id_t node_id, void *vec, void *arg), void *arg)
 {
     struct SelvaColvec *colvec = colvec_get(te, fs);
