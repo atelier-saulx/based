@@ -4,6 +4,7 @@ import { addProp, addLangProp } from './addProps.js'
 import { readString } from './string.js'
 import { readVector } from './vector.js'
 import { PropType } from '../../zigTsExports.js'
+import { VECTOR_BASE_TYPE_SIZE_MAP } from '../../schema.js'
 
 const readStringProp = (
   prop: ReaderPropDef,
@@ -83,9 +84,10 @@ export const readProp = (
     prop.typeIndex === PropType.vector ||
     prop.typeIndex === PropType.colVec
   ) {
-    const tmp = result.slice(i, i + prop.len!) // maybe align?
+    const vecSize = prop.len! * VECTOR_BASE_TYPE_SIZE_MAP[prop.vectorBaseType!]
+    const tmp = result.slice(i, i + vecSize) // maybe align?
     addProp(prop, readVector(prop, tmp), item)
-    i += prop.len!
+    i += vecSize
   }
   return i
 }

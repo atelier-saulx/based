@@ -23,7 +23,7 @@ await test('update with payload.id', async (t) => {
     body: 'xxx',
   })
 
-  deepEqual(await db.query('article').get().toObject(), [
+  deepEqual(await db.query('article').get(), [
     {
       id: 1,
       body: 'xxx',
@@ -82,7 +82,7 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  deepEqual((await db.query('snurp').get()).toObject(), [
+  deepEqual(await db.query('snurp').get(), [
     {
       a: 1,
       b: 2,
@@ -127,7 +127,7 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  deepEqual((await db.query('snurp').get()).toObject(), [
+  deepEqual(await db.query('snurp').get(), [
     {
       a: 1,
       b: 2,
@@ -156,7 +156,7 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  deepEqual((await db.query('snurp', 2).get()).toObject(), {
+  deepEqual(await db.query('snurp', 2).get(), {
     a: 0,
     b: 0,
     c: 0,
@@ -170,7 +170,7 @@ await test('update', async (t) => {
   })
 
   // for individual queries combine them
-  deepEqual((await db.query('snurp', [2, 1]).get()).toObject(), [
+  deepEqual(await db.query('snurp', [2, 1]).get(), [
     {
       a: 1,
       b: 2,
@@ -219,13 +219,11 @@ await test('update', async (t) => {
   equal((await db.query('snurp', ids).range(10, 110).get()).length, 100)
 
   deepEqual(
-    (
-      await db
-        .query('snurp', ids)
-        .range(1e5, 1e5 + 2)
-        .sort('a', 'desc')
-        .get()
-    ).toObject(),
+    await db
+      .query('snurp', ids)
+      .range(1e5, 1e5 + 2)
+      .sort('a', 'desc')
+      .get(),
     [
       {
         id: 900000,

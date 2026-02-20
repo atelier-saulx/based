@@ -30,13 +30,14 @@ import { fillEmptyMain, isZeroes } from './fillEmptyMain.js'
 import type { SchemaType } from '../schema/type.js'
 import { PropType } from '../../zigTsExports.js'
 import type { SchemaLocales } from '../schema/locales.js'
+import { getTypeDefs } from '../defs/getTypeDefs.js'
 
 export const updateTypeDefs = (schema: SchemaOut) => {
   const schemaTypesParsed: { [key: string]: SchemaTypeDef } = {}
   const schemaTypesParsedById: { [id: number]: SchemaTypeDef } = {}
 
   let typeIdCnt = 1
-  for (const typeName in schema.types) {
+  for (const typeName of Object.keys(schema.types).sort()) {
     const type = schema.types[typeName]
     const locales = schema.locales ?? { en: {} }
     const result = createEmptyDef(typeName, type, locales)
@@ -85,11 +86,8 @@ export const updateTypeDefs = (schema: SchemaOut) => {
             if (prop.edges) {
               const edgeTypeName = `_${[`${schemaType.type}_${prop.path.join('_')}`, `${dstType.type}_${dstType.props[prop.inversePropName as string].path.join('_')}`].sort().join(':')}`
 
-              // console.log(edgeTypeName, Object.keys(schemaTypesParsed))
-
               if (!schemaTypesParsed[edgeTypeName]) {
                 // make it
-                // console.log('have to make edge type')
                 //prop.edges, schema.types
 
                 // const type = schema.types[edgeTypeName]
@@ -115,14 +113,27 @@ export const updateTypeDefs = (schema: SchemaOut) => {
               }
 
               const edgeType = schemaTypesParsed[edgeTypeName]
+
               prop.edgeNodeTypeId = edgeType.id
               dstType.props[prop.inversePropName as string].edgeNodeTypeId =
                 edgeType.id
+              // prop.edgeType = edgeType
             } else {
               prop.edgeNodeTypeId = 0
             }
           }
         }
+      }
+    }
+  }
+
+  // A hack to sync the type and prop ids:
+  const newDefs = getTypeDefs(schema)
+  for (const [type, typeDef] of newDefs) {
+    const oldTypeDef = schemaTypesParsed[type]
+    if (oldTypeDef) {
+      for (const path in oldTypeDef.props) {
+        oldTypeDef.props[path].prop = typeDef.props.get(path)!.id
       }
     }
   }
@@ -268,7 +279,7 @@ const createSchemaTypeDef = (
       prop.typeIndex === PropType.colVec
     ) {
       prop.vectorBaseType = schemaVectorBaseTypeToEnum(
-        ('baseType' in schemaProp && schemaProp.baseType) || 'number',
+        ('baseType' in schemaProp && schemaProp.baseType) || 'float64',
       )
     }
 
@@ -281,9 +292,12 @@ const createSchemaTypeDef = (
     }
 
     if (schemaProp.type === 'enum') {
+      // @ts-ignore
       prop.enum = Array.isArray(schemaProp) ? schemaProp : schemaProp.enum
       prop.reverseEnum = {}
+      // @ts-ignore
       for (let i = 0; i < prop.enum.length; i++) {
+        // @ts-ignore
         prop.reverseEnum[prop.enum[i]] = i
       }
     } else if (schemaProp.type === 'references') {

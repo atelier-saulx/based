@@ -1,6 +1,15 @@
 import { IncludeOpts, QueryDef, Target } from './types.js'
-import { LangCode, LangCodeInverse, PropType } from '../../zigTsExports.js'
-import { type PropDef, type PropDefEdge } from '../../schema/index.js'
+import {
+  LangCode,
+  LangCodeInverse,
+  PropType,
+  VectorBaseType,
+} from '../../zigTsExports.js'
+import {
+  SchemaVector,
+  type PropDef,
+  type PropDefEdge,
+} from '../../schema/index.js'
 import {
   ReaderMeta,
   ReaderSchemaEnum,
@@ -34,7 +43,8 @@ const createReaderPropDef = (
     readerPropDef.enum = p.enum
   }
   if (p.typeIndex === PropType.vector || p.typeIndex === PropType.colVec) {
-    readerPropDef.vectorBaseType = p.vectorBaseType
+    readerPropDef.vectorBaseType =
+      VectorBaseType[(p.schema as SchemaVector).baseType]
     readerPropDef.len = p.len
   }
   if (p.typeIndex === PropType.cardinality) {
@@ -130,6 +140,7 @@ export const convertToReaderSchema = (
       if (q.aggregate.groupBy.display) {
         a.groupBy.display = q.aggregate.groupBy.display
       }
+      // MV: Tto review
       if (q.aggregate.groupBy.enum) {
         a.groupBy.enum = q.aggregate.groupBy.enum
       }
@@ -166,6 +177,7 @@ export const convertToReaderSchema = (
     for (const [start, p, opts] of q.include.main.include.values()) {
       readerSchema.main.props[start] = createReaderPropDef(p, locales, opts)
     }
+
     for (const [k, v] of q.references.entries()) {
       const target = v.target as Target
       const propDef = target.propDef!

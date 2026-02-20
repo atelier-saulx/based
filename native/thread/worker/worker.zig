@@ -10,6 +10,7 @@ const utils = @import("../../utils.zig");
 const selva = @import("../../selva/selva.zig").c;
 const jemalloc = @import("../../jemalloc.zig");
 const common = @import("../common.zig");
+const Node = @import("../../selva/node.zig");
 const modifyNotPending = @import("modifyNotPending.zig").modifyNotPending;
 
 pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
@@ -108,37 +109,15 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     .emptyMod => {
                         // does nothing but does trigger flush marked subs and maybe more in the future
                     },
-                    .modify => try Modify.modify(thread, m, threads.ctx, op),
+                    .modify => try Modify.modify(thread, m, threads.ctx),
+                    .expire => Node.expire(threads.ctx),
                     .loadBlock => try dump.loadBlock(thread, threads.ctx, m, op),
                     .unloadBlock => try dump.unloadBlock(thread, threads.ctx, m, op),
                     .loadCommon => try dump.loadCommon(thread, threads.ctx, m, op),
-
-                    .createType => {
-                        const typeCode = utils.read(u32, m, 0);
-                        const resp = try thread.modify.result(4, typeCode, op);
-                        const schema = m[5..m.len];
-                        const err = selva.selva_db_create_type(
-                            threads.ctx.selva,
-                            @truncate(typeCode),
-                            schema.ptr,
-                            schema.len,
-                        );
-                        utils.write(resp, err, 0);
-                    },
                     // .subscribe => {
                     // _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
                     // },
                     // .unsubscribe => try Subscription.unsubscribe(threads.ctx, m, thread),
-                    .setSchemaIds => {
-                        _ = try thread.modify.result(0, utils.read(u32, m, 0), op);
-                        if (threads.ctx.ids.len > 0) {
-                            jemalloc.free(threads.ctx.ids);
-                            threads.ctx.ids = &[_]u32{};
-                        }
-                        threads.ctx.ids = jemalloc.alloc(u32, (m.len - 5) / @sizeOf(u32));
-                        const ids = m[5..m.len];
-                        utils.byteCopy(threads.ctx.ids, ids, 0);
-                    },
                     else => {},
                 }
                 // this is not always nessecary e.g. subscribe does not need this

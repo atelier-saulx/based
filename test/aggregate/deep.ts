@@ -1,23 +1,12 @@
 /*
  * Deep = Reference(s), Edges and nests
  */
-import { equal } from 'node:assert'
-import { BasedDb } from '../../src/index.js'
-import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
-import { fastPrng } from '../../src/utils/index.js'
+import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
-await test.skip('sum branched includes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+await test('sum branched includes', async (t) => {
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -64,24 +53,18 @@ await test.skip('sum branched includes', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
+      .query2('sequence')
+      .include((select) => select('votes').sum('NL', 'AU'))
+      .get(),
     [{ id: 1, votes: { NL: { sum: 30 }, AU: { sum: 15 } } }],
     'brached include, sum, references',
   )
 
   deepEqual(
     await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').groupBy('country').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
+      .query2('sequence')
+      .include((select) => select('votes').groupBy('country').sum('NL', 'AU'))
+      .get(),
     [
       {
         id: 1,
@@ -94,29 +77,21 @@ await test.skip('sum branched includes', async (t) => {
     'branched include, references, groupBy',
   )
 
-  deepEqual(
-    await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').filter('country', '=', 'aa').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
-    [{ id: 1, votes: { NL: { sum: 20 }, AU: { sum: 15 } } }],
-    'branched include, references, filtered, groupBy',
-  )
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((select) => {
+  //       select('votes').filter('country', '=', 'aa').sum('NL', 'AU') // string filter not implemented and also filter in refs group not implemented
+  //     })
+  //     .get()
+  //     ,
+  //   [{ id: 1, votes: { NL: { sum: 20 }, AU: { sum: 15 } } }],
+  //   'branched include, references, filtered, groupBy',
+  // )
 })
 
-await test.skip('count branched includes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+await test('count branched includes', async (t) => {
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -163,24 +138,18 @@ await test.skip('count branched includes', async (t) => {
 
   deepEqual(
     await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').count()
-      })
-      .get()
-      .toObject(),
+      .query2('sequence')
+      .include((select) => select('votes').count())
+      .get(),
     [{ id: 1, votes: { count: 3 } }],
     'brached include, count, references',
   )
 
   deepEqual(
     await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').groupBy('country').sum('NL', 'AU')
-      })
-      .get()
-      .toObject(),
+      .query2('sequence')
+      .include((select) => select('votes').groupBy('country').sum('NL', 'AU'))
+      .get(),
     [
       {
         id: 1,
@@ -193,29 +162,21 @@ await test.skip('count branched includes', async (t) => {
     'branched include, references, groupBy',
   )
 
-  deepEqual(
-    await db
-      .query('sequence')
-      .include((select) => {
-        select('votes').filter('country', '=', 'aa').count()
-      })
-      .get()
-      .toObject(),
-    [{ id: 1, votes: { count: 2 } }],
-    'count, branched include, references, filtered',
-  )
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((select) => {
+  //       select('votes').filter('country', '=', 'aa').count() // string filter not implemented and also filter in refs group not implemented
+  //     })
+  //     .get()
+  //     ,
+  //   [{ id: 1, votes: { count: 2 } }],
+  //   'count, branched include, references, filtered',
+  // )
 })
 
-await test.skip('agg on references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+await test('agg on references', async (t) => {
+  const db = await testDb(t, {
     types: {
       team: {
         props: {
@@ -275,6 +236,8 @@ await test.skip('agg on references', async (t) => {
     gamesPlayed: 9,
   })
 
+  db.drain()
+
   const t1 = db.create('team', {
     teamName: 'Grêmio',
     city: 'Porto Alegre',
@@ -304,17 +267,31 @@ await test.skip('agg on references', async (t) => {
   })
 
   const result = await db
-    .query('team')
-    .include('teamName', 'city', (select) => {
-      select('players').groupBy('position').sum('goalsScored', 'gamesPlayed')
-    })
+    .query2('team')
+    .include('teamName', 'city', (select) =>
+      select('players').groupBy('position').sum('goalsScored', 'gamesPlayed'),
+    )
     .get()
 
   deepEqual(
-    result.toObject(),
+    result,
     [
       {
         id: 1,
+        teamName: 'Boca Juniors',
+        city: 'Buenos Aires',
+        players: {}, // does anybody wants to play for Boca?
+      },
+      {
+        id: 2,
+        teamName: 'Barcelona',
+        city: 'Barcelona',
+        players: {
+          Forward: { goalsScored: { sum: 5 }, gamesPlayed: { sum: 5 } }, // Lewandowski
+        },
+      },
+      {
+        id: 3,
         teamName: 'Grêmio',
         city: 'Porto Alegre',
         players: {
@@ -323,26 +300,12 @@ await test.skip('agg on references', async (t) => {
         },
       },
       {
-        id: 2,
+        id: 4,
         teamName: 'Ajax',
         city: 'Amsterdam',
         players: {
           Forward: { goalsScored: { sum: 8 }, gamesPlayed: { sum: 7 } }, // Wout (8,7)
           Defender: { goalsScored: { sum: 2 }, gamesPlayed: { sum: 9 } }, // Jorrel (2,9)
-        },
-      },
-      {
-        id: 3,
-        teamName: 'Boca Juniors',
-        city: 'Buenos Aires',
-        players: {}, // does anybody wants to play for Boca?
-      },
-      {
-        id: 4,
-        teamName: 'Barcelona',
-        city: 'Barcelona',
-        players: {
-          Forward: { goalsScored: { sum: 5 }, gamesPlayed: { sum: 5 } }, // Lewandowski
         },
       },
     ],
@@ -351,14 +314,8 @@ await test.skip('agg on references', async (t) => {
 })
 
 await test('enums', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
   const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       beer: {
         props: {
@@ -397,7 +354,7 @@ await test('enums', async (t) => {
   })
 
   deepEqual(
-    await db.query('beer').avg('price').groupBy('type').get(),
+    await db.query2('beer').avg('price').groupBy('type').get(),
     {
       Tripel: {
         price: { avg: 11.85 },
@@ -410,7 +367,7 @@ await test('enums', async (t) => {
   )
 
   deepEqual(
-    await db.query('beer').harmonicMean('price').groupBy('type').get(),
+    await db.query2('beer').hmean('price').groupBy('type').get(),
     {
       Tripel: {
         price: { hmean: 11.839662447257384 },
@@ -419,18 +376,12 @@ await test('enums', async (t) => {
         price: { hmean: 7.199999999999999 }, // 7.2 should be approximated
       },
     },
-    'harmonic_mean by enum in main',
+    'hmean by enum in main',
   )
 })
 
 await test.skip('refs with enums ', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       movie: {
         name: 'string',
@@ -467,7 +418,7 @@ await test.skip('refs with enums ', async (t) => {
 
   deepEqual(
     await db
-      .query('actor')
+      .query2('actor')
       .include((q) => q('movies').groupBy('genre').count())
       .get(),
     [
@@ -493,13 +444,7 @@ await test.skip('refs with enums ', async (t) => {
 })
 
 await test('cardinality', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       lunch: {
         week: 'string',
@@ -560,13 +505,13 @@ await test('cardinality', async (t) => {
   })
 
   deepEqual(
-    await db.query('lunch').cardinality('Mon').get(),
+    await db.query2('lunch').cardinality('Mon').get(),
     { Mon: { cardinality: 7 } },
     'main cardinality no group by',
   )
 
   deepEqual(
-    await db.query('lunch').cardinality('Mon').groupBy('week').get(),
+    await db.query2('lunch').cardinality('Mon').groupBy('week').get(),
     {
       27: {
         Mon: { cardinality: 5 },
@@ -579,55 +524,7 @@ await test('cardinality', async (t) => {
   )
 })
 
-// await test.skip('cardinality on references', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-//   await db.start({ clean: true })
-//   t.after(() => db.stop())
-
-//   await db.setSchema({
-//     types: {
-//       booth: {
-//         company: 'string',
-//         // badgesScanned: 'number',
-//         badgesScanned: 'cardinality',
-//       },
-//       fair: {
-//         day: 'timestamp',
-//         booths: {
-//           items: {
-//             ref: 'booth',
-//             prop: 'booth',
-//           },
-//         },
-//       },
-//     },
-//   })
-
-//   const bg = db.create('booth', {
-//     company: 'big one',
-//     badgesScanned: ['engineer 1', 'salesman', 'spy', 'annonymous'],
-//   })
-//   const stp = db.create('booth', {
-//     company: 'just another startup',
-//     badgesScanned: ['nice ceo', 'entusiastic dev'],
-//   })
-//   db.create('fair', {
-//     day: new Date('08/02/2024'),
-//     booths: [bg, stp],
-//   })
-
-//   await db.query('fair').include('booths.badgesScanned').get().inspect()
-//   await db
-//     .query('fair')
-//     .cardinality('booths.badgesScanned')
-//     .groupBy('day')
-//     .get()
-//     .inspect()
-// })
-
-await test('group by reference ids', async (t) => {
+await test('cardinality on references', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
@@ -635,6 +532,82 @@ await test('group by reference ids', async (t) => {
   t.after(() => db.stop())
 
   await db.setSchema({
+    types: {
+      booth: {
+        company: 'string',
+        // badgesScanned: 'number',
+        badgesScanned: 'cardinality',
+      },
+      fair: {
+        day: 'timestamp',
+        booths: {
+          items: {
+            ref: 'booth',
+            prop: 'booth',
+          },
+        },
+      },
+    },
+  })
+
+  const bg = db.create('booth', {
+    company: 'big one',
+    badgesScanned: ['engineer 1', 'salesman', 'spy', 'annonymous'],
+  })
+  const stp = db.create('booth', {
+    company: 'just another startup',
+    badgesScanned: ['nice ceo', 'entusiastic dev'],
+  })
+  db.create('fair', {
+    day: new Date('08/02/2024'),
+    booths: [bg, stp],
+  })
+
+<<<<<<< HEAD
+//   await db.query2('fair').include('booths.badgesScanned').get().inspect()
+//   await db
+//     .query2('fair')
+//     .cardinality('booths.badgesScanned')
+//     .groupBy('day')
+//     .get()
+//     .inspect()
+// })
+=======
+  deepEqual(
+    await db
+      .query('fair')
+      .include((s) => s('booths').cardinality('badgesScanned'))
+      .get(),
+    [
+      {
+        id: 1,
+        booths: {
+          badgesScanned: {
+            cardinality: 6,
+          },
+        },
+      },
+    ],
+    'branched query with cardinality function',
+  )
+
+  /*
+   *  Nested syntax:
+   */
+
+  // await db.query('fair').include('booths.badgesScanned').get().inspect()
+
+  // await db
+  //   .query('fair')
+  //   .cardinality('booths.badgesScanned')
+  //   .groupBy('day')
+  //   .get()
+  //   .inspect()
+})
+>>>>>>> ede73b52799512041ed5f8ae1d758f1b6cf88037
+
+await test('group by reference ids', async (t) => {
+  const db = await testDb(t, {
     types: {
       trip: {
         pickup: 'timestamp',
@@ -680,16 +653,15 @@ await test('group by reference ids', async (t) => {
     distance: 523.1,
     vehicle: v2,
   })
-  db.drain()
   const d1 = db.create('driver', {
     name: 'Luc Ferry',
     rank: 5,
     vehicle: v2,
-    trips: t1,
+    trips: [t1],
   })
 
   deepEqual(
-    await db.query('driver').sum('rank').groupBy('vehicle').get(),
+    await db.query2('driver').sum('rank').groupBy('vehicle').get(),
     {
       2: {
         rank: { sum: 5 },
@@ -698,36 +670,30 @@ await test('group by reference ids', async (t) => {
     'group by reference id',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query('driver')
-  //     .include((q) => q('trips').groupBy('vehicle').max('distance'))
-  //     .include('*')
-  //     .get(),
-  //   [
-  //     {
-  //       id: 1,
-  //       rank: 5,
-  //       name: 'Luc Ferry',
-  //       trips: {
-  //         2: {
-  //           distance: { max: 523.1 },
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'brached query with nested group by reference id',
-  // )
+  deepEqual(
+    await db
+      .query2('driver')
+      .include((q) => q('trips').groupBy('vehicle').max('distance'))
+      .include('*')
+      .get(),
+    [
+      {
+        id: 1,
+        rank: 5,
+        name: 'Luc Ferry',
+        trips: {
+          2: {
+            distance: { max: 523.1 },
+          },
+        },
+      },
+    ],
+    'branched query with nested group by reference id',
+  )
 })
 
 await test.skip('nested references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -760,10 +726,10 @@ await test.skip('nested references', async (t) => {
     strong: 4,
   })
 
-  // await db.query('user').include('*', '**').get().inspect(10)
+  // await db.query2('user').include('*', '**').get().inspect(10)
 
   deepEqual(
-    await db.query('user').sum('friends.strong').get(),
+    await db.query2('user').sum('friends.strong').get(),
     {
       strong: {
         sum: 7,
@@ -774,13 +740,7 @@ await test.skip('nested references', async (t) => {
 })
 
 await test.skip('edges aggregation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       movie: {
         name: 'string',
@@ -846,7 +806,7 @@ await test.skip('edges aggregation', async (t) => {
   })
 
   // await db
-  //   .query('movie')
+  //   .query2('movie')
   //   .include('*', '**')
   //   // .include('actors.$rating')
   //   // .include('actors.name')
@@ -861,27 +821,28 @@ await test.skip('edges aggregation', async (t) => {
   // after: NOK: unreacheable
   // console.log(
   //   JSON.stringify(
-  //     await db.query('movie').include('actors.strong').get().toObject(),
+  //     await db.query2('movie').include('actors.strong').get(),
   //   ),
   // )
 
   // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
   // after: NOK: zeroing
-  // await db.query('movie').include('actors.$rating').get().inspect(10)
+  // await db.query2('movie').include('actors.$rating').get().inspect(10)
 
   /*----------------------------*/
   /*       BRANCHED QUERY       */
   /*----------------------------*/
 
   // await db
-  //   .query('movie')
+  //   .query2('movie')
   //   .include((q) => q('actors').max('strong').sum('strong2'))
   //   .get()
   //   .inspect(10)
 
+<<<<<<< HEAD
   deepEqual(
     await db
-      .query('movie')
+      .query2('movie')
       .include((q) => q('actors').max('$rating'))
       .get(),
     [
@@ -907,7 +868,7 @@ await test.skip('edges aggregation', async (t) => {
 
   deepEqual(
     await db
-      .query('movie')
+      .query2('movie')
       .include((q) => q('actors').max('$rating').sum('$hating'))
       .get(),
     [
@@ -939,7 +900,7 @@ await test.skip('edges aggregation', async (t) => {
 
   deepEqual(
     await db
-      .query('movie')
+      .query2('movie')
       .include((q) => q('actors').max('$rating', '$hating'))
       .get(),
     [
@@ -968,12 +929,106 @@ await test.skip('edges aggregation', async (t) => {
     ],
     'multiple edges on same agg function, branched query',
   )
+=======
+  // deepEqual(
+  //   await db
+  //     .query('movie')
+  //     .include((q) => q('actors').max('$rating'))
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       actors: {
+  //         $rating: {
+  //           max: 55,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       actors: {
+  //         $rating: {
+  //           max: 77,
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'single edge aggregation, branched query',
+  // )
+
+  // deepEqual(
+  //   await db
+  //     .query('movie')
+  //     .include((q) => q('actors').max('$rating').sum('$hating'))
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       actors: {
+  //         $rating: {
+  //           max: 55,
+  //         },
+  //         $hating: {
+  //           sum: 5,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       actors: {
+  //         $rating: {
+  //           max: 77,
+  //         },
+  //         $hating: {
+  //           sum: 10,
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'multiple edges with multiple agg functions, branched query',
+  // )
+
+  // deepEqual(
+  //   await db
+  //     .query('movie')
+  //     .include((q) => q('actors').max('$rating', '$hating'))
+  //     .get()
+  //     .toObject(),
+  //   [
+  //     {
+  //       id: 1,
+  //       actors: {
+  //         $rating: {
+  //           max: 55,
+  //         },
+  //         $hating: {
+  //           max: 5,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       actors: {
+  //         $rating: {
+  //           max: 77,
+  //         },
+  //         $hating: {
+  //           max: 7,
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'multiple edges on same agg function, branched query',
+  // )
+>>>>>>> ede73b52799512041ed5f8ae1d758f1b6cf88037
 
   /*-----------------------------------*/
   /*          STRAIGHT ON TYPE         */
   /*-----------------------------------*/
   // before: OK: error in js: Cannot read properties of undefined (reading 'edges')
   // after: NOK: feature not implemented
-  // await db.query('actor').max('$rating').get().inspect(10)
-  // await db.query('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
+  // await db.query2('actor').max('$rating').get().inspect(10)
+  // await db.query2('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
 })

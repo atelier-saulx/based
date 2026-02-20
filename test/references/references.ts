@@ -62,36 +62,30 @@ await test('references', async (t) => {
 
   await db.drain()
 
-  deepEqual(
-    (await db.query('article').include('contributors.name').get()).toObject(),
-    [
-      {
-        id: await strudelArticle,
-        contributors: [{ id: await mrSnurp, name: 'Mr snurp' }],
-      },
-      {
-        id: await piArticle,
-        contributors: [
-          { id: await mrSnurp, name: 'Mr snurp' },
-          { id: await flippie, name: 'Flippie' },
-        ],
-      },
-    ],
-  )
+  deepEqual(await db.query('article').include('contributors.name').get(), [
+    {
+      id: await strudelArticle,
+      contributors: [{ id: await mrSnurp, name: 'Mr snurp' }],
+    },
+    {
+      id: await piArticle,
+      contributors: [
+        { id: await mrSnurp, name: 'Mr snurp' },
+        { id: await flippie, name: 'Flippie' },
+      ],
+    },
+  ])
 
-  deepEqual(
-    (await db.query('user').include('articles.name').get()).toObject(),
-    [
-      {
-        id: 1,
-        articles: [
-          { id: 1, name: 'The wonders of Strudel' },
-          { id: 2, name: 'Apple Pie is a Lie' },
-        ],
-      },
-      { id: 2, articles: [{ id: 2, name: 'Apple Pie is a Lie' }] },
-    ],
-  )
+  deepEqual(await db.query('user').include('articles.name').get(), [
+    {
+      id: 1,
+      articles: [
+        { id: 1, name: 'The wonders of Strudel' },
+        { id: 2, name: 'Apple Pie is a Lie' },
+      ],
+    },
+    { id: 2, articles: [{ id: 2, name: 'Apple Pie is a Lie' }] },
+  ])
 })
 
 await test('one to many', async (t) => {
@@ -143,7 +137,7 @@ await test('one to many', async (t) => {
   }
   await db.drain()
 
-  deepEqual((await db.query('user').include('resources').get()).toObject(), [
+  deepEqual(await db.query('user').include('resources').get(), [
     {
       id: 1,
       resources: [
@@ -171,32 +165,29 @@ await test('one to many', async (t) => {
     },
   ])
 
-  deepEqual(
-    (await db.query('user').include('resources.name').get()).toObject(),
-    [
-      {
-        id: 1,
-        resources: [
-          {
-            id: 1,
-            name: 'thing 0',
-          },
-          {
-            id: 2,
-            name: 'thing 1',
-          },
-          {
-            id: 3,
-            name: 'thing 2',
-          },
-          {
-            id: 4,
-            name: 'thing 3',
-          },
-        ],
-      },
-    ],
-  )
+  deepEqual(await db.query('user').include('resources.name').get(), [
+    {
+      id: 1,
+      resources: [
+        {
+          id: 1,
+          name: 'thing 0',
+        },
+        {
+          id: 2,
+          name: 'thing 1',
+        },
+        {
+          id: 3,
+          name: 'thing 2',
+        },
+        {
+          id: 4,
+          name: 'thing 3',
+        },
+      ],
+    },
+  ])
 })
 
 await test('one to many really', async (t) => {
@@ -240,166 +231,148 @@ await test('one to many really', async (t) => {
     resources: [cpu, kbd, mouse, fd],
   })
   await db.drain()
-  deepEqual(
-    await db.query('user', user).include('resources').get().toObject(),
-    {
-      id: 1,
-      resources: [
-        {
-          id: 1,
-          name: 'cpu',
-        },
-        {
-          id: 2,
-          name: 'keyboard',
-        },
-        {
-          id: 3,
-          name: 'mouse',
-        },
-        {
-          id: 4,
-          name: 'floppy',
-        },
-      ],
-    },
-  )
+  deepEqual(await db.query('user', user).include('resources').get(), {
+    id: 1,
+    resources: [
+      {
+        id: 1,
+        name: 'cpu',
+      },
+      {
+        id: 2,
+        name: 'keyboard',
+      },
+      {
+        id: 3,
+        name: 'mouse',
+      },
+      {
+        id: 4,
+        name: 'floppy',
+      },
+    ],
+  })
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
-  deepEqual(
-    await db.query('user', user).include('resources').get().toObject(),
-    {
-      id: 1,
-      resources: [
-        {
-          id: 1,
-          name: 'cpu',
-        },
-        {
-          id: 2,
-          name: 'keyboard',
-        },
-        {
-          id: 3,
-          name: 'mouse',
-        },
-      ],
-    },
-  )
+  deepEqual(await db.query('user', user).include('resources').get(), {
+    id: 1,
+    resources: [
+      {
+        id: 1,
+        name: 'cpu',
+      },
+      {
+        id: 2,
+        name: 'keyboard',
+      },
+      {
+        id: 3,
+        name: 'mouse',
+      },
+    ],
+  })
 
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
-  deepEqual(
-    await db.query('user', user).include('resources').get().toObject(),
-    {
-      id: 1,
-      resources: [
-        {
-          id: 1,
-          name: 'cpu',
-        },
-        {
-          id: 2,
-          name: 'keyboard',
-        },
-        {
-          id: 3,
-          name: 'mouse',
-        },
-      ],
-    },
-  )
+  deepEqual(await db.query('user', user).include('resources').get(), {
+    id: 1,
+    resources: [
+      {
+        id: 1,
+        name: 'cpu',
+      },
+      {
+        id: 2,
+        name: 'keyboard',
+      },
+      {
+        id: 3,
+        name: 'mouse',
+      },
+    ],
+  })
 
   await db.update('user', user, {
     resources: [cpu, kbd, mouse, fd],
   })
-  deepEqual(
-    await db.query('user', user).include('resources').get().toObject(),
-    {
-      id: 1,
-      resources: [
-        {
-          id: 1,
-          name: 'cpu',
-        },
-        {
-          id: 2,
-          name: 'keyboard',
-        },
-        {
-          id: 3,
-          name: 'mouse',
-        },
-        {
-          id: 4,
-          name: 'floppy',
-        },
-      ],
-    },
-  )
+  deepEqual(await db.query('user', user).include('resources').get(), {
+    id: 1,
+    resources: [
+      {
+        id: 1,
+        name: 'cpu',
+      },
+      {
+        id: 2,
+        name: 'keyboard',
+      },
+      {
+        id: 3,
+        name: 'mouse',
+      },
+      {
+        id: 4,
+        name: 'floppy',
+      },
+    ],
+  })
 
   await db.update('user', user, {
     resources: [kbd, cpu, fd, mouse],
   })
-  deepEqual(
-    await db.query('user', user).include('resources').get().toObject(),
-    {
-      id: 1,
-      resources: [
-        {
-          id: 2,
-          name: 'keyboard',
-        },
-        {
-          id: 1,
-          name: 'cpu',
-        },
-        {
-          id: 4,
-          name: 'floppy',
-        },
-        {
-          id: 3,
-          name: 'mouse',
-        },
-      ],
-    },
-  )
+  deepEqual(await db.query('user', user).include('resources').get(), {
+    id: 1,
+    resources: [
+      {
+        id: 2,
+        name: 'keyboard',
+      },
+      {
+        id: 1,
+        name: 'cpu',
+      },
+      {
+        id: 4,
+        name: 'floppy',
+      },
+      {
+        id: 3,
+        name: 'mouse',
+      },
+    ],
+  })
 
   const joy = await db.create('resource', { name: 'joystick', owner: user })
   await db.update('resource', joy, { owner: user })
   await db.update('resource', joy, { owner: user })
   await db.update('resource', joy, { owner: user })
-  deepEqual(
-    await db.query('user', user).include('resources').get().toObject(),
-    {
-      id: 1,
-      resources: [
-        {
-          id: 2,
-          name: 'keyboard',
-        },
-        {
-          id: 1,
-          name: 'cpu',
-        },
-        {
-          id: 4,
-          name: 'floppy',
-        },
-        {
-          id: 3,
-          name: 'mouse',
-        },
-        {
-          id: 5,
-          name: 'joystick',
-        },
-      ],
-    },
-  )
+  deepEqual(await db.query('user', user).include('resources').get(), {
+    id: 1,
+    resources: [
+      {
+        id: 2,
+        name: 'keyboard',
+      },
+      {
+        id: 1,
+        name: 'cpu',
+      },
+      {
+        id: 4,
+        name: 'floppy',
+      },
+      {
+        id: 3,
+        name: 'mouse',
+      },
+      {
+        id: 5,
+        name: 'joystick',
+      },
+    ],
+  })
 
   await db.update('user', user, {
     resources: [kbd, cpu, fd, mouse],
@@ -409,68 +382,62 @@ await test('one to many really', async (t) => {
       update: [joy],
     },
   })
-  deepEqual(
-    await db.query('user', user).include('resources').get().toObject(),
-    {
-      id: 1,
-      resources: [
-        {
-          id: 2,
-          name: 'keyboard',
-        },
-        {
-          id: 1,
-          name: 'cpu',
-        },
-        {
-          id: 4,
-          name: 'floppy',
-        },
-        {
-          id: 3,
-          name: 'mouse',
-        },
-        {
-          id: 5,
-          name: 'joystick',
-        },
-      ],
-    },
-  )
+  deepEqual(await db.query('user', user).include('resources').get(), {
+    id: 1,
+    resources: [
+      {
+        id: 2,
+        name: 'keyboard',
+      },
+      {
+        id: 1,
+        name: 'cpu',
+      },
+      {
+        id: 4,
+        name: 'floppy',
+      },
+      {
+        id: 3,
+        name: 'mouse',
+      },
+      {
+        id: 5,
+        name: 'joystick',
+      },
+    ],
+  })
 
   await db.update('user', user, {
     resources: {
       update: [joy, kbd, cpu, fd, mouse],
     },
   })
-  deepEqual(
-    await db.query('user', user).include('resources').get().toObject(),
-    {
-      id: 1,
-      resources: [
-        {
-          id: 2,
-          name: 'keyboard',
-        },
-        {
-          id: 1,
-          name: 'cpu',
-        },
-        {
-          id: 4,
-          name: 'floppy',
-        },
-        {
-          id: 3,
-          name: 'mouse',
-        },
-        {
-          id: 5,
-          name: 'joystick',
-        },
-      ],
-    },
-  )
+  deepEqual(await db.query('user', user).include('resources').get(), {
+    id: 1,
+    resources: [
+      {
+        id: 2,
+        name: 'keyboard',
+      },
+      {
+        id: 1,
+        name: 'cpu',
+      },
+      {
+        id: 4,
+        name: 'floppy',
+      },
+      {
+        id: 3,
+        name: 'mouse',
+      },
+      {
+        id: 5,
+        name: 'joystick',
+      },
+    ],
+  })
 })
 
 await test('update', async (t) => {
@@ -529,20 +496,17 @@ await test('update', async (t) => {
     contributors: [flippie],
   })
   await db.drain()
-  deepEqual(
-    (await db.query('article').include('contributors.name').get()).toObject(),
-    [
-      {
-        id: 1,
-        contributors: [
-          {
-            name: 'Flippie',
-            id: await flippie,
-          },
-        ],
-      },
-    ],
-  )
+  deepEqual(await db.query('article').include('contributors.name').get(), [
+    {
+      id: 1,
+      contributors: [
+        {
+          name: 'Flippie',
+          id: await flippie,
+        },
+      ],
+    },
+  ])
   await wait(1000)
 })
 
@@ -611,9 +575,7 @@ await test('filter', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
-      await db.query('article', strudelArticle).include('contributors').get()
-    ).toObject(),
+    await db.query('article', strudelArticle).include('contributors').get(),
     {
       id: 1,
       contributors: [
@@ -627,14 +589,10 @@ await test('filter', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('article', strudelArticle)
-        .include((q) =>
-          q('contributors').include('name').filter('flap', '>', 25),
-        )
-        .get()
-    ).toObject(),
+    await db
+      .query('article', strudelArticle)
+      .include((q) => q('contributors').include('name').filter('flap', '>', 25))
+      .get(),
     {
       id: 1,
       contributors: [
@@ -646,17 +604,15 @@ await test('filter', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('article', strudelArticle)
-        .include((q) => {
-          q('contributors').include('flap')
-          q('contributors').include('name')
-          q('contributors').filter('flap', '>', 25)
-          q('contributors').filter('flap', '<', 35)
-        })
-        .get()
-    ).toObject(),
+    await db
+      .query('article', strudelArticle)
+      .include((q) => {
+        q('contributors').include('flap')
+        q('contributors').include('name')
+        q('contributors').filter('flap', '>', 25)
+        q('contributors').filter('flap', '<', 35)
+      })
+      .get(),
     {
       id: 1,
       contributors: [{ id: 3, name: 'Derpie', flap: 30 }],
@@ -665,18 +621,16 @@ await test('filter', async (t) => {
   )
 
   deepEqual(
-    (
-      await db
-        .query('article', strudelArticle)
-        .include((select) => {
-          select('contributors')
-            .include('name')
-            .include('flap')
-            .filter('flap', '>', 25)
-            .sort('flap', 'desc')
-        })
-        .get()
-    ).toObject(),
+    await db
+      .query('article', strudelArticle)
+      .include((select) => {
+        select('contributors')
+          .include('name')
+          .include('flap')
+          .filter('flap', '>', 25)
+          .sort('flap', 'desc')
+      })
+      .get(),
     {
       id: 1,
       contributors: [
@@ -875,7 +829,7 @@ await test('single ref save and load', async (t) => {
   const users = [{ email: '1@saulx.com' }, { email: '2@saulx.com' }]
 
   for (const user of users) {
-    await db.upsert('user', user)
+    await db.upsert('user', { email: user.email }, {})
   }
 
   await db.stop()
@@ -890,18 +844,15 @@ await test('single ref save and load', async (t) => {
     invitedBy: 2,
   })
 
-  deepEqual(
-    await db.query('user').include('email', 'invitedBy').get().toObject(),
-    [
-      { id: 1, email: '1@saulx.com', invitedBy: null },
-      { id: 2, email: '2@saulx.com', invitedBy: null },
-      {
-        id: 3,
-        email: '3@saulx.com',
-        invitedBy: { id: 2, email: '2@saulx.com', name: '' },
-      },
-    ],
-  )
+  deepEqual(await db.query('user').include('email', 'invitedBy').get(), [
+    { id: 1, email: '1@saulx.com', invitedBy: null },
+    { id: 2, email: '2@saulx.com', invitedBy: null },
+    {
+      id: 3,
+      email: '3@saulx.com',
+      invitedBy: { id: 2, email: '2@saulx.com', name: '' },
+    },
+  ])
 
   await db.stop()
 })
@@ -964,8 +915,8 @@ await test('single2many - update refs', async (t) => {
     reviews: [review1, review2, review3],
   })
 
-  const products = await db.query('product').include('*', '**').get().toObject()
-  const reviews = await db.query('review').include('*', '**').get().toObject()
+  const products = await db.query('product').include('*', '**').get()
+  const reviews = await db.query('review').include('*', '**').get()
 
   deepEqual(products, [
     { id: 1, reviews: [] },
@@ -1026,7 +977,7 @@ await test('reference to a non-existing node', async (t) => {
     articles: [],
   })
 
-  const article = await db.create('article')
+  const article = await db.create('article', {})
   deepEqual(article, 1)
 
   deepEqual(await db.query('user', mrSnurp).include('**').get(), {

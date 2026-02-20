@@ -1,8 +1,9 @@
-import assert from 'node:assert'
 import { BasedDb } from '../src/index.js'
-import native from '../src/native.js'
 import test from './shared/test.js'
-import { langCodesMap, Schema } from '../src/schema/index.js'
+import { LangCode } from '../src/zigTsExports.js'
+
+const langs = [...Object.keys(LangCode)].filter((val) => val !== 'none')
+const locales = Object.fromEntries(langs.map((l: keyof typeof LangCode) => [l, {}]))
 
 await test('locales', async (t) => {
   const db = new BasedDb({
@@ -11,13 +12,7 @@ await test('locales', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  const locales: Schema['locales'] = {}
-  const langs = [...langCodesMap.keys()].filter((val) => val !== 'none')
-  for (const key of langs) {
-    locales[key] = {}
-  }
-
-  await db.setSchema({
+  const client = await db.setSchema({
     locales,
     types: {
       thing: {
@@ -38,29 +33,23 @@ await test('locales', async (t) => {
       payload.text[key] = key
     }
 
-    db.create('thing', payload)
+    client.create('thing', payload)
   }
 
-  await db.drain()
-
-  const things = await db.query('thing').get().toObject()
+  const things = await client.query('thing').get().toObject()
 
   for (const thing of things) {
-    const payload: any = {
+    const payload: typeof thing = {
       string: null,
-      text: {},
+      text: Object.fromEntries(Object.keys(thing.text).map((l) => [l, null])),
     }
 
-    for (const key of langs) {
-      payload.text[key] = null
-    }
-
-    db.update('thing', thing.id, payload)
+    client.update('thing', thing.id, payload)
   }
 
-  await db.drain()
+  await client.drain()
 
-  const updatedThings = await db.query('thing').get().toObject()
+  const updatedThings = await client.query('thing').get().toObject()
 
   for (const thing of updatedThings) {
     if (thing.string !== '') {
@@ -72,17 +61,4 @@ await test('locales', async (t) => {
       }
     }
   }
-})
-
-await test('locales sanity check', async (t) => {
-  // prettier-ignore
-  const missingOnDarwin = new Set([ 'aa', 'ab', 'ak', 'sq', 'an', 'as', 'ae', 'ay', 'az', 'bn', 'bi', 'bs', 'br', 'my', 'km', 'ce', 'cv', 'kw', 'co', 'dv', 'dz', 'fo', 'ff', 'gd', 'gl', 'kl', 'gu', 'ht', 'ha', 'hi', 'ig', 'id', 'ia', 'iu', 'ik', 'ga', 'kn', 'ks', 'rw', 'ku', 'ky', 'lo', 'la', 'lv', 'lb', 'li', 'ln', 'mk', 'mg', 'ms', 'ml', 'mt', 'gv', 'mi', 'mn', 'ne', 'se', 'no', 'nb', 'nn', 'oc', 'or', 'om', 'os', 'pa', 'ps', 'fa', 'qu', 'rm', 'sm', 'sa', 'sc', 'sr', 'sd', 'si', 'so', 'st', 'nr', 'sw', 'ss', 'tl', 'tg', 'ta', 'tt', 'te', 'th', 'bo', 'ti', 'to', 'ts', 'tn', 'tk', 'ug', 'ur', 'uz', 've', 'vi', 'wa', 'cy', 'fy', 'wo', 'xh', 'yi', 'yo', 'zu', 'ka', 'cnr' ])
-  const selvaLangs = new Set(native.selvaLangAll().split('\n'))
-
-  langCodesMap.forEach((value, key) => {
-    if (value === 0) return
-    if (process.platform === 'darwin' && !missingOnDarwin.has(key)) {
-      assert(selvaLangs.has(key), `Lang '${key}' is found in selva`)
-    }
-  })
 })

@@ -9,7 +9,7 @@ await test('enum', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       user: {
         props: {
@@ -23,21 +23,21 @@ await test('enum', async (t) => {
     },
   })
 
-  const user1 = await db.create('user', {
+  const user1 = await client.create('user', {
     fancyness: 'mid',
   })
 
-  const user2 = db.create('user', {
+  const user2 = client.create('user', {
     fancyness: 'fire',
   })
 
-  db.create('user', {
+  client.create('user', {
     fancyness: 'beta',
   })
 
-  db.create('user', {})
+  client.create('user', {})
 
-  deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
+  deepEqual(await client.query('user').include('fancyness').get(), [
     { id: 1, fancyness: 'mid' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
@@ -45,46 +45,44 @@ await test('enum', async (t) => {
   ])
 
   deepEqual(
-    (
-      await db
-        .query('user')
-        .include('fancyness')
-        .filter('fancyness', '=', 'fire')
-        .get()
-    ).toObject(),
+    await client
+      .query('user')
+      .include('fancyness')
+      .filter('fancyness', '=', 'fire')
+      .get(),
     [
       { id: 2, fancyness: 'fire' },
       { id: 4, fancyness: 'fire' },
     ],
   )
 
-  db.update('user', user1, {
+  client.update('user', user1, {
     fancyness: 'beta',
   })
 
-  deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
+  deepEqual(await client.query('user').include('fancyness').get(), [
     { id: 1, fancyness: 'beta' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
     { id: 4, fancyness: 'fire' },
   ])
 
-  await db.update('user', user1, {
+  await client.update('user', user1, {
     fancyness: null,
   })
 
   throws(() =>
-    db.update('user', user2, {
+    client.update('user', user2, {
       fancyness: 3,
     }),
   )
   throws(() =>
-    db.update('user', user2, {
+    client.update('user', user2, {
       fancyness: 'fond',
     }),
   )
 
-  deepEqual((await db.query('user').include('fancyness').get()).toObject(), [
+  deepEqual(await client.query('user').include('fancyness').get(), [
     { id: 1, fancyness: 'fire' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
@@ -99,7 +97,7 @@ await test('emoji enum', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       review: {
         props: {
@@ -113,10 +111,10 @@ await test('emoji enum', async (t) => {
     },
   })
 
-  db.create('review', {})
-  db.create('review', { score: '🙂' })
+  client.create('review', {})
+  client.create('review', { score: '🙂' })
 
-  deepEqual(await db.query('review').include('score').get(), [
+  deepEqual(await client.query('review').include('score').get(), [
     {
       id: 1,
       score: '😐',
@@ -127,10 +125,10 @@ await test('emoji enum', async (t) => {
     },
   ])
 
-  db.create('review', { score: '☹️' })
-  db.create('review', { score: '😐' })
+  client.create('review', { score: '☹️' })
+  client.create('review', { score: '😐' })
   deepEqual(
-    await db.query('review').include('score').sort('score', 'desc').get(),
+    await client.query('review').include('score').sort('score', 'desc').get(),
     [
       { id: 2, score: '🙂' },
       { id: 1, score: '😐' },

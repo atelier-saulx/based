@@ -20,6 +20,7 @@ const readMainValue = (
   item: Item,
 ) => {
   const typeIndex = prop.typeIndex
+
   if (typeIndex === PropType.timestamp) {
     addProp(prop, readInt64(result, i), item)
   } else if (typeIndex === PropType.number) {
@@ -34,7 +35,10 @@ const readMainValue = (
     } else {
       addProp(prop, prop.enum![result[i] - 1], item)
     }
-  } else if (typeIndex === PropType.string) {
+  } else if (
+    typeIndex === PropType.string ||
+    typeIndex === PropType.stringFixed
+  ) {
     const len = result[i]
     i++
     const value = len === 0 ? '' : readUtf8(result, i, len)
@@ -48,12 +52,15 @@ const readMainValue = (
     } else {
       addProp(prop, value, item)
     }
-  } else if (typeIndex === PropType.json) {
+  } else if (typeIndex === PropType.json || typeIndex === PropType.jsonFixed) {
     const len = result[i]
     i++
     const value = len === 0 ? null : global.JSON.parse(readUtf8(result, i, len))
     addProp(prop, value, item)
-  } else if (typeIndex === PropType.binary) {
+  } else if (
+    typeIndex === PropType.binary ||
+    typeIndex === PropType.binaryFixed
+  ) {
     const len = result[i]
     i++
     const value = len === 0 ? new Uint8Array(0) : result.subarray(i, i + len)

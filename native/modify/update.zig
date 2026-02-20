@@ -83,11 +83,7 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
             const hllPrecision = data[1];
             const offset = 2;
             const len = read(u32, data, offset);
-            var currentData = selva.c.selva_fields_get_selva_string(ctx.node.?, ctx.fieldSchema.?);
-            if (currentData == null) {
-                currentData = try Fields.ensurePropTypeString(ctx, ctx.fieldSchema.?);
-                selva.c.hll_init(currentData, hllPrecision, hllMode);
-            }
+            const currentData = Fields.ensureCardinality(ctx.node.?, ctx.fieldSchema.?, hllPrecision, hllMode);
             var i: usize = 4 + offset;
             const currentCount = if (ctx.currentSortIndex != null) selva.c.hll_count(currentData) else undefined;
             while (i < (len * 8) + offset) {

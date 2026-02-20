@@ -1,4 +1,4 @@
-import { BasedDb } from '../src/index.js'
+import { BasedDb, DbClient } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { equals } from '../src/utils/index.js'
@@ -12,14 +12,14 @@ const data = {
   car: [81.6, -72.1, 16, -20.2, 102],
 }
 
-async function initDb(t) {
+async function initDb(t: Parameters<Parameters<typeof test>[1]>[0]): Promise<DbClient> {
   const db = new BasedDb({
     path: t.tmp,
   })
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       data: {
         props: {
@@ -37,19 +37,20 @@ async function initDb(t) {
   })
 
   for (const name in data) {
-    db.create('data', {
+    client.create('data', {
       a: new Float32Array(data[name]),
       name: name,
     })
   }
-  await db.drain()
+  await client.drain()
 
-  return db
+  return client
 }
 
 await test('vector set/get', async (t) => {
   const db = await initDb(t)
-  const res = (await db.query('data').get()).toObject()
+
+  const res = (await db.query('data').include('name', 'a').get()).toObject()
   for (const r of res) {
     const a = new Uint8Array(r.a.buffer, 0, r.a.byteLength)
     const b = new Uint8Array(new Float32Array(data[r.name]).buffer)
@@ -101,7 +102,7 @@ await test('query by vector', async (t) => {
   deepEqual(r2.length, 1)
 })
 
-// this is broken! see https://linear.app/1ce/issue/FDN-1302 needs alignment!
+// FIXME this is broken! see https://linear.app/1ce/issue/FDN-1302 needs alignment!
 await test.skip('vector like', async (t) => {
   const db = await initDb(t)
 

@@ -5,7 +5,6 @@ import native from '../../native.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
 import {
-  setNativeSchema,
   setSchemaOnServer,
   writeSchemaFile,
 } from '../schema.js'
@@ -123,7 +122,7 @@ export const migrate = async (
   }
 
   setSchemaOnServer(tmpDb.server, toSchema)
-  await setNativeSchema(tmpDb.server, toSchema)
+  //await setNativeSchema(tmpDb.server, toSchema)
 
   if (abort()) {
     await tmpDb.destroy()

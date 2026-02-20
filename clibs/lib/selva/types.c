@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 SAULX
+ * Copyright (c) 2024-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 
@@ -15,7 +15,6 @@ bool selva_is_valid_field_type(enum SelvaFieldType ftype)
     case SELVA_FIELD_TYPE_REFERENCES:
     case SELVA_FIELD_TYPE_MICRO_BUFFER:
     case SELVA_FIELD_TYPE_ALIAS:
-    case SELVA_FIELD_TYPE_ALIASES:
     case SELVA_FIELD_TYPE_COLVEC:
         return true;
     }
@@ -40,8 +39,6 @@ const char *selva_str_field_type(enum SelvaFieldType ftype)
         return (const char *)"micro buffer";
     case SELVA_FIELD_TYPE_ALIAS:
         return (const char *)"alias";
-    case SELVA_FIELD_TYPE_ALIASES:
-        return (const char *)"aliases";
     case SELVA_FIELD_TYPE_COLVEC:
         return (const char *)"columnar vector";
     }

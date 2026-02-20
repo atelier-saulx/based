@@ -1,12 +1,21 @@
-import { stringCompress } from './db-client/string.js'
+// import { stringCompress } from './db-client/string.js'
 import { DbServer } from './db-server/index.js'
 import { DbClient } from './db-client/index.js'
 import { debugMode, debugServer } from './utils/debug.js'
 import { getDefaultHooks } from './db-client/hooks.js'
 import { Emitter } from './shared/Emitter.js'
 import wait from './utils/wait.js'
-export { stringCompress }
+// export { stringCompress }
 export { DbClient, DbServer }
+export type {
+  BasedCreatePromise,
+  BasedUpdatePromise,
+  BasedDeletePromise,
+  BasedUpsertPromise,
+  BasedInsertPromise,
+  ModifyOpts,
+} from './db-client/index.js'
+export type { InferPayload, InferTarget } from './db-client/modify/types.js'
 export { xxHash64 } from './db-client/xxHash64.js'
 export { crc32 } from './db-client/crc32.js'
 export { default as createHash } from './db-server/dbHash.js'
@@ -15,13 +24,14 @@ export * from './db-client/query/query.js'
 export * from './db-client/query/BasedDbQuery.js'
 export * from './db-client/query/BasedQueryResponse.js'
 export * from './db-client/hooks.js'
+export { BasedModify } from './db-client/modify/index.js'
 
-export const SCHEMA_FILE_DEPRECATED = 'schema.json'
 export const SCHEMA_FILE = 'schema.bin'
 export const COMMON_SDB_FILE = 'common.sdb'
 
 export type BasedDbOpts = {
   path: string
+  /** Minimum: 256 */
   maxModifySize?: number
   debug?: boolean | 'server' | 'client'
   saveIntervalInSeconds?: number
@@ -64,9 +74,9 @@ export class BasedDb extends Emitter {
     return this.client.create.apply(this.client, arguments)
   }
 
-  copy: DbClient['copy'] = function (this: BasedDb) {
-    return this.client.copy.apply(this.client, arguments)
-  }
+  // copy: DbClient['copy'] = function (this: BasedDb) {
+  //   return this.client.copy.apply(this.client, arguments)
+  // }
 
   update: DbClient['update'] = function (this: BasedDb) {
     return this.client.update.apply(this.client, arguments)
@@ -84,9 +94,9 @@ export class BasedDb extends Emitter {
     return this.client.delete.apply(this.client, arguments)
   }
 
-  expire: DbClient['expire'] = function (this: BasedDb) {
-    return this.client.expire.apply(this.client, arguments)
-  }
+  // expire: DbClient['expire'] = function (this: BasedDb) {
+  //   return this.client.expire.apply(this.client, arguments)
+  // }
 
   query: DbClient['query'] = function (this: BasedDb) {
     return this.client.query.apply(this.client, arguments)
@@ -135,7 +145,7 @@ export class BasedDb extends Emitter {
     await this.isModified()
     // Tmp fix: Gives node time to GC existing buffers else it can incorrectly re-asign to mem
     // Todo: clear all active queries, queues ETC
-    await wait(Math.max(this.client.flushTime + 10, 10))
+    await wait(Math.max(this.client.modifyCtx.flushTime + 10, 10))
     this.client.destroy()
     await this.server.destroy()
   }

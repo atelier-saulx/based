@@ -83,16 +83,16 @@ pub inline fn writeNext(comptime T: type, buffer: []u8, value: T, offset: *usize
 }
 
 pub inline fn toSlice(comptime T: type, value: []u8) []T {
-    const x: []T = @as([*]T, @ptrCast(@alignCast(value.ptr)))[0..@divFloor(value.len, @sizeOf(T))];
+    const x: []T = @as([*]T, @ptrCast(@alignCast(value.ptr)))[0..@divFloor(value.len, sizeOf(T))];
     return x;
 }
 
 pub inline fn readPtr(
     comptime T: type,
-    buffer: []u8,
+    buffer: []const u8,
     offset: usize,
 ) *T {
-    return @as(*T, @ptrCast(@alignCast(buffer.ptr + offset)));
+    return @as(*T, @constCast(@ptrCast(@alignCast(buffer.ptr + offset))));
 }
 
 pub inline fn read(
@@ -127,7 +127,7 @@ pub inline fn read(
 pub fn ReadIterator(comptime T: type) type {
     return struct {
         offset: *usize,
-        buffer: []u8,
+        buffer: []const u8,
         len: usize,
         pub fn next(self: *ReadIterator(T)) ?T {
             if (self.offset.* < self.len) {
@@ -140,7 +140,7 @@ pub fn ReadIterator(comptime T: type) type {
     };
 }
 
-pub inline fn readIterator(T: type, buffer: []u8, amount: usize, offset: *usize) ReadIterator(T) {
+pub inline fn readIterator(T: type, buffer: []const u8, amount: usize, offset: *usize) ReadIterator(T) {
     return ReadIterator(T){
         .buffer = buffer,
         .len = amount * sizeOf(T) + offset.*,
@@ -148,7 +148,7 @@ pub inline fn readIterator(T: type, buffer: []u8, amount: usize, offset: *usize)
     };
 }
 
-pub inline fn readNext(T: type, buffer: []u8, offset: *usize) T {
+pub inline fn readNext(T: type, buffer: []const u8, offset: *usize) T {
     const val = read(T, buffer, offset.*);
     offset.* = offset.* + @bitSizeOf(T) / 8;
     return val;
@@ -257,14 +257,15 @@ pub inline fn alignLeft(comptime T: type, data: []u8) u8 {
     if (offset != 0) move(aligned, unAligned);
     return offset;
 }
-
-pub inline fn alignLeftLen(alignment: u8, data: []u8) u8 {
-    // (i + 7) & ~@as(usize, 7); more efficient
-    const unAligned = data[alignment..data.len];
-    const address = @intFromPtr(unAligned.ptr);
-    const offset: u8 = @truncate(address % alignment);
-    const aligned = data[alignment - offset .. data.len - offset];
-    if (offset != 0) move(aligned, unAligned);
+pub fn alignLeftLen(alignment: u8, data: []u8) u8 {
+    const addr = @intFromPtr(data.ptr);
+    const offset = @as(u8, @truncate(addr & (alignment - 1)));
+    if (offset == 0) return 0;
+    const start = alignment - offset;
+    const len = data.len - alignment;
+    const src = data[alignment .. alignment + len];
+    const dst = data[start .. start + len];
+    move(dst, src);
     return offset;
 }
 

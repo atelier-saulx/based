@@ -46,7 +46,6 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     accumulatorSize: def.aggregate.totalAccumulatorSize,
     isSamplingSet: (def.aggregate?.option?.mode || 'sample') === 'sample',
   }
-
   let headerBuffer: Uint8Array
 
   if (def.type == QueryDefType.References) {

@@ -30,9 +30,11 @@ pub const c = @cImport({
     @cInclude("selva/membar.h");
     @cInclude("selva/mblen.h");
 });
+const t = @import("../types.zig");
 
 const std = @import("std");
 const Modify = @import("../modify/common.zig");
+const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const Node = *c.SelvaNode;
 pub const Aliases = *c.SelvaAliases;
@@ -54,8 +56,15 @@ pub fn selvaStringDestroy(str: ?c.selva_string) void {
 }
 
 // TODO Accept also Type as an arg
-pub inline fn markDirty(ctx: *Modify.ModifyCtx, typeId: u16, nodeId: u32) void {
-    c.selva_mark_dirty(c.selva_get_type_by_index(ctx.db.selva, typeId), nodeId);
+pub inline fn markDirty(db: *DbCtx, nodeType: anytype, nodeId: u32) void {
+    if (comptime @TypeOf(nodeType) == t.TypeId) {
+        c.selva_mark_dirty(c.selva_get_type_by_index(db.selva, nodeType), nodeId);
+    } else if (comptime @TypeOf(nodeType) == Type) {
+        c.selva_mark_dirty(nodeType, nodeId);
+    } else {
+        @compileLog("Invalid type: ", @TypeOf(nodeType));
+        @compileError("Invalid type");
+    }
 }
 
 pub fn markReferencesDirty(ctx: *Modify.ModifyCtx, dstTypeId: u16, refs: []u32) void {

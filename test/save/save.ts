@@ -1,4 +1,4 @@
-import { BasedDb, filter } from '../../src/index.js'
+import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
 import { deepEqual, equal } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { setTimeout } from 'node:timers/promises'
@@ -10,22 +10,22 @@ await test('simple', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  await db.setSchema({
+  const schema = {
     locales: {
-      en: { required: true },
-      fr: { required: true },
-      nl: { required: true },
-      el: { required: true },
-      he: { required: true },
-      it: { required: true },
-      lv: { required: true },
-      lb: { required: true },
-      ro: { required: true },
-      sl: { required: true },
-      es: { required: true },
-      de: { required: true },
-      cs: { required: true },
-      et: { required: true },
+      en: {},
+      fr: {},
+      nl: {},
+      el: {},
+      he: {},
+      it: {},
+      lv: {},
+      lb: {},
+      ro: {},
+      sl: {},
+      es: {},
+      de: {},
+      cs: {},
+      et: {},
     },
     types: {
       user: {
@@ -63,21 +63,22 @@ await test('simple', async (t) => {
         },
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
-  db.create('user', {
+  client.create('user', {
     name: 'youzi',
     email: 'youzi@yazi.yo',
     alias: 'best',
   })
-  db.create('user', {
+  client.create('user', {
     name: 'youri',
     email: 'youri@yari.yo',
     alias: 'alsobest',
   })
-  db.create('typeTest', {})
+  client.create('typeTest', {})
 
-  await db.drain()
+  await client.drain()
   await db.save()
 
   const db2 = new BasedDb({
@@ -85,24 +86,25 @@ await test('simple', async (t) => {
   })
   await db2.start()
   t.after(() => db2.destroy())
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
-  const a = await db.query('user').get().toObject()
-  const b = await db2.query('user').get().toObject()
+  const a = await client.query('user').get().toObject()
+  const b = await client2.query('user').get().toObject()
   deepEqual(b, a)
 
-  const c = await db.create('user', { name: 'jerp' })
-  const d = await db2.create('user', { name: 'jerp' })
+  const c = await client.create('user', { name: 'jerp' })
+  const d = await client2.create('user', { name: 'jerp' })
   equal(c, 3)
   equal(d, 3)
 
   await db2.save()
 
-  const user1 = await db2.create('user', { name: 'jerp' })
-
+  await client2.create('user', { name: 'jerp' })
   await db2.save()
 
-  const user2 = await db2.create('user', { name: 'jerp' })
-
+  await client2.create('user', { name: 'jerp' })
   await db2.save()
 })
 
@@ -237,7 +239,7 @@ await test('text', async (t) => {
   await db.setSchema({
     locales: {
       en: {},
-      fi: { fallback: 'en' },
+      fi: { fallback: ['en'] },
     },
     types: {
       article: {
@@ -352,8 +354,8 @@ await test.skip('db is drained before save', async (t) => {
   await db2.start()
 
   deepEqual(
-    await db2.query('person').include('name', 'books').get().toObject(),
-    await db.query('person').include('name', 'books').get().toObject(),
+    await db2.query('person').include('name', 'books').get(),
+    await db.query('person').include('name', 'books').get(),
   )
 })
 
@@ -406,10 +408,7 @@ await test('create', async (t) => {
   await db2.start()
   t.after(() => db2.destroy())
 
-  deepEqual(
-    await db2.query('person').get().toObject(),
-    await db.query('person').get().toObject(),
-  )
+  deepEqual(await db2.query('person').get(), await db.query('person').get())
 })
 
 await test('upsert', async (t) => {
@@ -419,7 +418,7 @@ await test('upsert', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  await db.setSchema({
+  const schema = {
     types: {
       person: {
         props: {
@@ -429,19 +428,17 @@ await test('upsert', async (t) => {
         },
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
-  const joe = db.create('person', {
+  client.create('person', {
     name: 'Joe',
     alias: 'boss',
   })
-  await db.drain()
+  await client.drain()
   await db.save()
-  await db.upsert('person', {
-    alias: 'boss',
-    age: 42,
-  })
-  await db.drain()
+  await client.upsert('person', { alias: 'boss' }, { age: 42 })
+  await client.drain()
   await db.save()
 
   // load the same db into a new instance
@@ -450,11 +447,14 @@ await test('upsert', async (t) => {
   })
   await db2.start()
   t.after(() => db2.destroy())
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
-  deepEqual(await db.query('person').get(), [
+  deepEqual(await client.query('person').get(), [
     { id: 1, name: 'Joe', age: 42, alias: 'boss' },
   ])
-  deepEqual(await db2.query('person').get(), [
+  deepEqual(await client2.query('person').get(), [
     { id: 1, name: 'Joe', age: 42, alias: 'boss' },
   ])
 })
@@ -466,7 +466,7 @@ await test('alias blocks', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  await db.setSchema({
+  const schema = {
     types: {
       person: {
         props: {
@@ -475,26 +475,27 @@ await test('alias blocks', async (t) => {
         },
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
   for (let i = 0; i < 100_000; i++) {
-    db.create('person', {
+    client.create('person', {
       name: 'Joe',
     })
   }
-  await db.drain()
+  await client.drain()
   await db.save()
-  const john = await db.create('person', {
+  const john = await client.create('person', {
     name: 'John',
     alias: 'bf',
   })
-  await db.drain()
+  await client.drain()
   await db.save()
-  db.update('person', 1, { alias: 'bf' })
+  client.update('person', 1, { alias: 'bf' })
   for (let id = 2; id < john; id++) {
-    db.delete('person', id)
+    client.delete('person', id)
   }
-  await db.drain()
+  await client.drain()
   await db.save()
 
   // load the same db into a new instance
@@ -503,10 +504,13 @@ await test('alias blocks', async (t) => {
   })
   await db2.start()
   t.after(() => db2.destroy())
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
   deepEqual(
-    await db2.query('person').get().toObject(),
-    await db.query('person').get().toObject(),
+    await client2.query('person').get(),
+    await client.query('person').get(),
   )
 })
 
@@ -517,7 +521,7 @@ await test('simulated periodic save', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  await db.setSchema({
+  const schema = {
     types: {
       book: {
         props: {
@@ -536,80 +540,78 @@ await test('simulated periodic save', async (t) => {
         },
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
   // create some people
   const people = await Promise.all([
-    db.create('person', {
+    client.create('person', {
       name: 'Slim',
       alias: 'slim',
     }),
-    db.create('person', {
+    client.create('person', {
       name: 'Slick',
       alias: 'slick',
     }),
-    db.create('person', {
+    client.create('person', {
       name: 'Joe',
       alias: 'joe',
     }),
-    db.create('person', {
+    client.create('person', {
       name: 'Ben',
       alias: 'boss',
     }),
-    db.create('person', {
+    client.create('person', {
       name: 'Steve',
     }),
   ])
 
-  db.update('person', people[1], {
+  client.update('person', people[1], {
     bf: people[2],
   })
 
   // create some books
   for (let i = 0; i < 1000; i++) {
-    db.create('book', {
+    client.create('book', {
       name: `book ${i}`,
       isbn: '9789295055025',
       owner: people[i % people.length],
     })
   }
-  await db.drain()
+  await client.drain()
   await db.save()
 
   // more books
   for (let i = 0; i < 1000; i++) {
-    db.create('book', {
+    client.create('book', {
       name: `book ${1000 + i}`,
       isbn: '9789295055025',
       owner: people[i % people.length],
     })
   }
-  await db.drain()
+  await client.drain()
   await db.save()
 
   // change a node using an alias
-  db.upsert('person', {
-    alias: 'slim',
-    name: 'Shady',
-  })
-  await db.drain()
+  client.upsert('person', { alias: 'slim' }, { name: 'Shady' })
+  await client.drain()
 
   await db.save()
 
   // replace alias
-  db.create('person', {
+  client.create('person', {
     name: 'Slide',
     alias: 'slick',
   })
-  await db.drain()
+  await client.drain()
   await db.save()
 
   // move alias
-  await db.update('person', people[4], {
+  await client.update('person', people[4], {
     alias: 'boss',
   })
 
-  await db.drain()
+  await client.drain()
   await db.save()
 
   // load the same db into a new instance
@@ -618,75 +620,68 @@ await test('simulated periodic save', async (t) => {
   })
   await db2.start()
   t.after(() => db2.destroy())
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db.server),
+  })
 
   // Change node using alias saved
   deepEqual(
-    await db
+    await client
       .query('person')
       .filter('alias', 'includes', 'slim')
       .include('alias', 'name')
-      .get()
-      .toObject(),
+      .get(),
     [{ id: 1, alias: 'slim', name: 'Shady' }],
   )
   deepEqual(
-    await db2
+    await client2
       .query('person')
       .filter('alias', 'includes', 'slim')
       .include('alias', 'name')
-      .get()
-      .toObject(),
+      .get(),
     [{ id: 1, alias: 'slim', name: 'Shady' }],
   )
 
   // Replace alias saved
   deepEqual(
-    await db
+    await client
       .query('person')
       .filter('alias', 'includes', 'slick')
       .include('alias', 'name')
-      .get()
-      .toObject(),
+      .get(),
     [{ id: 6, alias: 'slick', name: 'Slide' }],
   )
   deepEqual(
-    await db2
+    await client2
       .query('person')
       .filter('alias', 'includes', 'slick')
       .include('alias', 'name')
-      .get()
-      .toObject(),
+      .get(),
     [{ id: 6, alias: 'slick', name: 'Slide' }],
   )
 
   // Move alias saved
   deepEqual(
-    await db
+    await client
       .query('person')
       .filter('alias', 'includes', 'boss')
       .include('alias', 'name')
-      .get()
-      .toObject(),
+      .get(),
     [{ id: 5, name: 'Steve', alias: 'boss' }],
   )
   deepEqual(
-    await db2
+    await client2
       .query('person')
       .filter('alias', 'includes', 'boss')
       .include('alias', 'name')
-      .get()
-      .toObject(),
+      .get(),
     [{ id: 5, name: 'Steve', alias: 'boss' }],
   )
 
   // All have the same books
   deepEqual(
-    await db2
-      .query('person')
-      .include('name', 'alias', 'books')
-      .get()
-      .toObject(),
-    await db.query('person').include('name', 'alias', 'books').get().toObject(),
+    await client2.query('person').include('name', 'alias', 'books').get(),
+    await client.query('person').include('name', 'alias', 'books').get(),
   )
 })
 
@@ -697,7 +692,7 @@ await test('edge val', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       round: {
         name: 'alias',
@@ -727,11 +722,11 @@ await test('edge val', async (t) => {
     },
   })
 
-  const sequence1 = await db.create('sequence', {})
-  const sequence2 = await db.create('sequence', {})
-  const scenario1 = await db.create('scenario', {})
-  const scenario2 = await db.create('scenario', {})
-  const phase = await db.create('phase', {
+  const sequence1 = await client.create('sequence', {})
+  const sequence2 = await client.create('sequence', {})
+  const scenario1 = await client.create('scenario', {})
+  const scenario2 = await client.create('scenario', {})
+  const phase = await client.create('phase', {
     scenarios: [
       {
         id: scenario1,
@@ -740,7 +735,7 @@ await test('edge val', async (t) => {
     ],
   })
   await db.save()
-  db.update('phase', phase, {
+  client.update('phase', phase, {
     scenarios: {
       add: [
         {
@@ -750,15 +745,15 @@ await test('edge val', async (t) => {
       ],
     },
   })
-  //await db.query('phase').include('scenarios.$sequence').get().inspect()
+  //await client.query('phase').include('scenarios.$sequence').get().inspect()
   await db.save()
 
-  await db.update('phase', phase, {
+  await client.update('phase', phase, {
     scenarios: {
       delete: [scenario1],
     },
   })
-  //await db.query('phase').include('scenarios.$sequence').get().inspect()
+  //await client.query('phase').include('scenarios.$sequence').get().inspect()
 })
 
 await test('no mismatch', async (t) => {
@@ -768,7 +763,7 @@ await test('no mismatch', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.stop(true))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       user: {
         props: {
@@ -778,7 +773,7 @@ await test('no mismatch', async (t) => {
     },
   })
 
-  await db.create('user', {
+  await client.create('user', {
     name: 'xxx',
   })
 

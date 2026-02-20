@@ -208,7 +208,7 @@ fn getSortIndex(
     }
 }
 
-pub fn fromIterator(
+pub inline fn fromIterator(
     comptime desc: bool,
     comptime isEdge: bool,
     dbCtx: *DbCtx,

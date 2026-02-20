@@ -264,6 +264,7 @@ export class QueryBranch<T> {
 
   groupBy(field: string, step?: StepInput): T {
     if (this.queryCommands) {
+      // query def
       this.queryCommands.push({
         method: 'groupBy',
         args: [field, step],
@@ -398,14 +399,14 @@ export class QueryBranch<T> {
     return this
   }
 
-  harmonicMean(...fields: string[]): T {
+  hmean(...fields: string[]): T {
     if (fields.length === 0) {
       throw new Error('Empty harmonic mean function called')
     }
 
     if (this.queryCommands) {
       this.queryCommands.push({
-        method: 'harmonicMean',
+        method: 'hmean',
         args: fields,
       })
     } else {
@@ -554,7 +555,7 @@ class GetPromise extends Promise<BasedQueryResponse> {
 export class BasedDbQuery extends QueryBranch<BasedDbQuery> {
   skipValidation?: boolean = false
   target: QueryTarget
-  readSchema: ReaderSchema
+  readSchema!: ReaderSchema
   constructor(
     db: DbClient,
     type: string,

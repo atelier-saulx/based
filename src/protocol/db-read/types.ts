@@ -77,14 +77,12 @@ export type ReaderGroupBy = {
   typeIndex: PropTypeEnum
   stepRange?: number
   stepType?: boolean
-  display?: Intl.DateTimeFormat // find a way for this -- shitty
+  display?: Intl.DateTimeFormat
   enum?: any[]
 }
 
-// Move these types to seperate pkg including query def agg
 export type ReaderSchema = {
   readId: number
-  // maybe current read id that you add
   props: { [prop: string]: ReaderPropDef }
   main: { props: { [start: string]: ReaderPropDef }; len: number }
   type: ReaderSchemaEnum

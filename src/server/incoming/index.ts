@@ -142,6 +142,8 @@ export default (
     app.options('/*', (res, req) => httpHandler(server, req, res))
     app.head('/*', (res, req) => httpHandler(server, req, res))
     app.trace('/*', (res, req) => httpHandler(server, req, res))
+
+    // app.ad
   }
 
   server.uwsApp = app

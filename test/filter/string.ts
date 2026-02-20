@@ -1,10 +1,28 @@
-import { BasedDb, stringCompress as compress } from '../../src/index.js'
+import { BasedDb } from '../../src/index.js'
 import { ENCODER } from '../../src/utils/uint8.js'
 import test from '../shared/test.js'
 import { equal, deepEqual } from '../shared/assert.js'
 import { italy, sentence, readBible } from '../shared/examples.js'
 import { decompress } from '../../src/protocol/index.js'
+import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
+import { defs } from '../../src/schema/defs/index.js'
+import { Modify } from '../../src/zigTsExports.js'
 
+const buf = new AutoSizedUint8Array()
+const s = new defs.string({ type: 'string' }, [], {
+  id: 0,
+  name: '',
+  main: [],
+  separate: [],
+  props: new Map(),
+  tree: new Map(),
+  schema: { props: {} },
+})
+const compress = (str: string) => {
+  buf.length = 0
+  s.pushValue(buf, str, Modify.create)
+  return buf.view.slice()
+}
 const bible = readBible()
 
 const capitals =
@@ -43,7 +61,6 @@ await test('variable size (string/binary)', async (t) => {
   equal(decompress(compressedSentence), sentence, 'compress / decompress api')
   const compressedItaly = compress(italy)
   equal(decompress(compressedItaly), italy, 'compress / decompress api (large)')
-
   for (let i = 0; i < 1000; i++) {
     const str = 'en'
     db.create('article', {
@@ -59,14 +76,12 @@ await test('variable size (string/binary)', async (t) => {
   await db.drain()
 
   deepEqual(
-    (
       await db
         .query('article')
         .filter('stuff', '=', ENCODER.encode('#' + 2))
         .include('name', 'stuff', 'derp', 'type')
         .range(0, 10)
-        .get()
-    ).toObject(),
+        .get(),
     [
       {
         id: 3,
@@ -279,8 +294,7 @@ await test('has uncompressed', async (t) => {
       .filter('headline', 'includes', 'pager')
       .include('id', 'headline')
       .range(0, 1e3)
-      .get()
-      .then((v) => v.toObject()),
+      .get(),
     [
       {
         id: 501,
@@ -299,8 +313,7 @@ await test('has uncompressed', async (t) => {
       .filter('headline', 'includes', 'Pager', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
-      .get()
-      .then((v) => v.toObject()),
+      .get(),
     [
       {
         id: 501,
@@ -319,8 +332,7 @@ await test('has uncompressed', async (t) => {
       .filter('headline', 'includes', 'refugee', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
-      .get()
-      .then((v) => v.toObject()),
+      .get(),
     [],
   )
 
@@ -330,8 +342,7 @@ await test('has uncompressed', async (t) => {
       .filter('headline', 'includes', 'gaza', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
-      .get()
-      .then((v) => v.toObject()),
+      .get(),
     [
       {
         id: 801,
@@ -368,18 +379,16 @@ await test('main has (string/binary)', async (t) => {
     stuff,
     derp: new Uint8Array([1, 2, 3, 4]),
   }
-  deepEqual((await db.query('article').get()).toObject(), [derpResult])
+  deepEqual(await db.query('article').get(), [derpResult])
   deepEqual(
-    (await db.query('article').filter('stuff', '=', stuff).get()).toObject(),
+    await db.query('article').filter('stuff', '=', stuff).get(),
     [derpResult],
   )
   deepEqual(
-    (
       await db
         .query('article')
         .filter('derp', 'includes', new Uint8Array([4]))
-        .get()
-    ).toObject(),
+        .get(),
     [derpResult],
   )
 })
@@ -510,8 +519,7 @@ await test('has OR uncompressed', async (t) => {
       .filter('title', 'includes', ['gaza', 'tubbies'], { lowerCase: true })
       .include('id', 'title')
       .range(0, 1e3)
-      .get()
-      .then((v) => v.toObject()),
+      .get(),
     [
       {
         id: 501,
@@ -527,8 +535,7 @@ await test('has OR uncompressed', async (t) => {
       .filter('title', 'includes', ['crisis', 'refugee'], { lowerCase: true })
       .include('id', 'title')
       .range(0, 1e3)
-      .get()
-      .then((v) => v.toObject()),
+      .get(),
     [],
   )
 })

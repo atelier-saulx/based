@@ -1,45 +1,29 @@
-import { BasedDb } from '../src/index.js'
-import { equal } from './shared/assert.js'
-import test from './shared/test.js'
+// @ts-nocheck
 
-await test('reffies', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
+// query('user').include('name', 'id', 'body')
 
-  await db.start({ clean: true })
+// import test from "./shared/test.js";
+// // import client from './client'
+// const b: any = {}
+// const useQuery: any = {}
 
-  t.after(() => t.backup(db))
+// await test('browser things', async t => {
+//   const { data } = useQuery('cms', () => b.query('user').include('name'), [])
+// })
 
-  await db.setSchema({
-    types: {
-      user: {
-        name: 'string',
-        others: {
-          items: {
-            ref: 'user',
-            prop: 'others',
-            // $rating: 'number',
-          },
-        },
-      },
-    },
-  })
+// // a.tsx
+// import { getTypedClient, Provider } from 'myCoolLib'
+// const myFullyTypedClient = getTypedClient(myCustomSchema)
 
-  const userId = await db.create('user', { name: 'a' })
+// const App = () => {
+//   return <Provider client={myFullyTypedClient}>
+//     <Page/>
+//   </Provider>
+// }
 
-  await db.create('user', {
-    // others: [
-    //   {
-    //     id: userId,
-    //     // $rating: 1,
-    //   },
-    // ],
-    others: [userId],
-    name: 'bxxxxxxxx',
-  })
-
-  const res = await db.query('user').include('*', '**').get().toObject()
-
-  console.dir(res, { depth: null })
-})
+// // b.tsx
+// import { useClient } from 'myCoolLib'
+// const Page = () => {
+//   const myFullyTypedClient = useClient()
+//   return ...
+// }

@@ -5,14 +5,15 @@ import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { loadCommon, } from './blocks.js'
 import { readUint32, wait } from '../utils/index.js'
-import { setSchemaOnServer } from './schema.js'
+import { setSchemaOnServer, makeNativeSchema } from './schema.js'
 import {
   OpTypeEnum,
   BridgeResponseEnum,
   BridgeResponse,
 } from '../zigTsExports.js'
 import { deSerialize } from '../schema/serialize.js'
-import { SCHEMA_FILE, SCHEMA_FILE_DEPRECATED } from '../index.js'
+import { SCHEMA_FILE } from '../index.js'
+import { SchemaOut } from '../schema.js'
 
 export type StartOpts = {
   clean?: boolean
@@ -71,16 +72,7 @@ const handleModifyResponse = (db: DbServer, arr: ArrayBuffer) => {
   }
 }
 
-export async function start(db: DbServer, opts?: StartOpts) {
-  const path = db.fileSystemPath
-  const noop = () => {}
-
-  if (opts?.clean) {
-    await rm(path, { recursive: true, force: true }).catch(noop)
-  }
-
-  await mkdir(path, { recursive: true }).catch(noop)
-
+export async function realStart(db: DbServer, schema: SchemaOut) {
   let nrThreads: number
   nrThreads =
     ((nrThreads = availableParallelism()), nrThreads < 2 ? 2 : nrThreads - 1)
@@ -94,36 +86,50 @@ export async function start(db: DbServer, opts?: StartOpts) {
     } else if (id === BridgeResponse.flushModify) {
       handleModifyResponse(db, buffer)
     }
-  }, db.fileSystemPath, nrThreads)
+  }, db.fileSystemPath, nrThreads, makeNativeSchema(schema))
 
-  // Load the common dump
   try {
+    setSchemaOnServer(db, schema)
     await loadCommon(db)
-
-    // Load schema
-    const schema = await readFile(join(path, SCHEMA_FILE)).catch(noop)
-    if (schema) {
-      const s = deSerialize(schema)
-      setSchemaOnServer(db, s)
-    } else {
-      const schemaJson = await readFile(join(path, SCHEMA_FILE_DEPRECATED))
-      if (schemaJson) {
-        setSchemaOnServer(db, JSON.parse(schemaJson.toString()))
-      }
-    }
   } catch (e) {
-    console.error(e.message)
+    if (!e.message.includes('ERR_SELVA ENOENT')) {
+      throw e
+    }
   }
 
-  // use timeout
-  if (db.saveIntervalInSeconds && db.saveIntervalInSeconds > 0) {
-    db.saveInterval ??= setInterval(() => {
-      db.save()
-    }, db.saveIntervalInSeconds * 1e3)
+  if (db.fileSystemPath) {
+    db.save({ skipDirtyCheck: true }).catch(console.error)
+
+    // use timeout
+    if (db.saveIntervalInSeconds && db.saveIntervalInSeconds > 0) {
+      db.saveInterval ??= setInterval(() => {
+        db.save()
+      }, db.saveIntervalInSeconds * 1e3)
+    }
   }
 
   if (db.schema) {
     db.emit('schema', db.schema)
+  }
+}
+
+export async function start(db: DbServer, opts?: StartOpts) {
+  const path = db.fileSystemPath
+  const noop = () => {}
+
+  if (opts?.clean) {
+    await rm(path, { recursive: true, force: true }).catch(noop)
+  }
+
+  await mkdir(path, { recursive: true }).catch(noop)
+
+  try {
+    const schema = await readFile(join(path, SCHEMA_FILE))
+    realStart(db, deSerialize(schema))
+  } catch (e) {
+    if (e.code !== 'ENOENT') {
+      throw new Error('Schema read failed', { cause: e })
+    }
   }
 
   if (opts?.delayInMs) {

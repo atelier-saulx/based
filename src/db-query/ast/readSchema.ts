@@ -1,0 +1,104 @@
+import {
+  ReaderLocales,
+  ReaderPropDef,
+  ReaderSchema,
+  ReaderSchemaEnum,
+} from '../../protocol/index.js'
+import { SchemaOut } from '../../schema.js'
+import { PropDef } from '../../schema/defs/index.js'
+import { LangCode, PropType, VectorBaseType } from '../../zigTsExports.js'
+import { Include } from './ast.js'
+
+export const readSchema = (type?: ReaderSchemaEnum): ReaderSchema => {
+  return {
+    readId: 0,
+    props: {},
+    search: false,
+    main: { len: 0, props: {} },
+    refs: {},
+    type: type ?? ReaderSchemaEnum.default,
+  }
+}
+
+export const getReaderLocales = (schema: SchemaOut): ReaderLocales => {
+  const locales: ReaderLocales = {}
+  for (const lang in schema.locales) {
+    locales[LangCode[lang]] = lang
+  }
+  return locales
+}
+
+export const readPropDef = (
+  p: PropDef,
+  locales: ReaderLocales, //add in ctx
+  include?: Include,
+): ReaderPropDef => {
+  const readerPropDef: ReaderPropDef = {
+    path: p.isEdge ? p.path.slice(1) : p.path,
+    typeIndex: include?.raw ? PropType.binary : p.type,
+    readBy: 0,
+  }
+  // if (opts?.meta) {
+  //   if (opts?.codes?.size === 1 && opts.codes.has(opts.localeFromDef!)) {
+  //     readerPropDef.meta =
+  //       opts?.meta === 'only'
+  //         ? ReaderMeta.onlyFallback
+  //         : ReaderMeta.combinedFallback
+  //   } else {
+  //     readerPropDef.meta =
+  //       opts?.meta === 'only' ? ReaderMeta.only : ReaderMeta.combined
+  //   }
+  // }
+  if ('vals' in p) {
+    // @ts-ignore TODO make this nice
+    readerPropDef.enum = Array.from(p.vals.keys())
+  }
+
+  if (p.type === PropType.text) {
+    // @ts-ignore TODO make this nice
+    readerPropDef.locales = Object.keys(p.typeDef.schemaRoot.locales).reduce(
+      (map, lang: string) => {
+        map[LangCode[lang]] = lang
+        return map
+      },
+      {},
+    )
+  }
+  if (p.type === PropType.vector || p.type === PropType.colVec) {
+    // TODO Do something so that this works without ignore
+    // @ts-ignore
+    readerPropDef.vectorBaseType = VectorBaseType[p.schema.baseType]
+    // @ts-ignore
+    readerPropDef.len = p.schema.size
+  }
+  // if (p.type === PropType.cardinality) {
+  //   readerPropDef.cardinalityMode = p.cardinalityMode
+  //   readerPropDef.cardinalityPrecision = p.cardinalityPrecision
+  // }
+  // if (p.type === PropType.text && opts?.codes) {
+  //   if (opts.codes.has(0)) {
+  //     readerPropDef.locales = locales
+  //   } else {
+  //     if (opts.codes.size === 1 && opts.codes.has(opts.localeFromDef!)) {
+  //       if (readerPropDef.meta) {
+  //         readerPropDef.locales = {}
+  //         for (const code of opts.codes) {
+  //           readerPropDef.locales[code] = LangCodeInverse[code]
+  //         }
+  //         if (opts.fallBacks) {
+  //           for (const code of opts.fallBacks) {
+  //             readerPropDef.locales[code] = LangCodeInverse[code]
+  //           }
+  //         }
+  //       }
+  //       // dont add locales - interpets it as a normal prop
+  //     } else {
+  //       readerPropDef.locales = {}
+  //       for (const code of opts.codes) {
+  //         readerPropDef.locales[code] = LangCodeInverse[code]
+  //       }
+  //     }
+  //   }
+  // }
+  return readerPropDef
+}

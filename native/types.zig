@@ -2,6 +2,8 @@ const Schema = @import("selva/schema.zig");
 const Node = @import("selva/node.zig");
 
 pub const TypeId = u16;
+pub const SelvaFieldType = u8;
+pub const SelvaField = u8;
 
 pub const BridgeResponse = enum(u32) {
     query = 1,
@@ -36,9 +38,8 @@ pub const OpType = enum(u8) {
     loadBlock = 128,
     unloadBlock = 129,
     loadCommon = 130,
-    createType = 131,
-    setSchemaIds = 132,
     emptyMod = 133,
+    expire = 134,
 
     // --------------------
     noOp = 255,
@@ -70,8 +71,126 @@ pub const ModOp = enum(u8) {
     deleteTextField = 16,
     upsert = 17,
     insert = 18,
+    end = 254,
     // TODO remove when modify is not used for response
     padding = 255,
+};
+
+pub const Modify = enum(u8) {
+    create = 0,
+    createRing = 1,
+    update = 2,
+    delete = 3,
+    upsert = 4,
+    insert = 5,
+};
+
+pub const ModifyHeader = packed struct {
+    opId: u32,
+    opType: OpType,
+    schema: u64,
+    count: u32,
+};
+
+pub const ModifyUpdateHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    isTmp: bool,
+    _padding: u7,
+    id: u32,
+    size: u32,
+};
+
+pub const ModifyDeleteHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    isTmp: bool,
+    _padding: u7,
+    id: u32,
+};
+
+pub const ModifyCreateHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    size: u32,
+};
+
+pub const ModifyCreateRingHeader = packed struct {
+    op: Modify,
+    type: TypeId,
+    maxNodeId: u32,
+    size: u32,
+};
+
+pub const ModifyMainHeader = packed struct {
+    id: u8,
+    type: PropType,
+    increment: bool,
+    incrementPositive: bool,
+    expire: bool,
+    _padding: u5,
+    size: u8,
+    start: u16,
+};
+
+pub const ModifyPropHeader = packed struct {
+    id: u8,
+    type: PropType,
+    size: u32,
+};
+
+pub const ModifyReferences = enum(u8) {
+    clear = 0,
+    ids = 1,
+    idsWithMeta = 2,
+    tmpIds = 3,
+    delIds = 4,
+    delTmpIds = 5,
+};
+
+pub const ModifyReferencesHeader = packed struct {
+    op: ModifyReferences,
+    size: u32,
+};
+
+// pub const ModifyReferencesMeta = enum(u8) {
+//     noTmpNoIndex = 0,
+//     tmpNoIndex = 1,
+//     tmpIndex = 2,
+//     noTmpIndex = 4,
+// };
+
+pub const ModifyReferencesMetaHeader = packed struct {
+    id: u32,
+    isTmp: bool,
+    withIndex: bool,
+    _padding: u6,
+    index: i32,
+    size: u32,
+};
+
+pub const ModifyReferenceMetaHeader = packed struct {
+    id: u32,
+    isTmp: bool,
+    _padding: u7,
+    size: u32,
+};
+
+pub const ModifyCardinalityHeader = packed struct {
+    sparse: bool,
+    _padding: u7,
+    precision: u8,
+};
+
+pub const ModifyResultItem = packed struct {
+    id: u32,
+    err: ModifyError,
+};
+
+pub const ModifyError = enum(u8) {
+    null = 0,
+    nx = 1,
+    unknown = 2,
 };
 
 pub const PropType = enum(u8) {
@@ -157,8 +276,6 @@ pub const PropType = enum(u8) {
     pub fn size(self: PropType) u8 {
         switch (self) {
             .timestamp,
-            // .created,
-            // .updated,
             .number,
             => return 8,
             .int8,
@@ -178,20 +295,33 @@ pub const PropType = enum(u8) {
     }
 };
 
+pub const PropTypeSelva = enum(u8) {
+    null = 0,
+    microBuffer = 1,
+    string = 2,
+    text = 3,
+    reference = 4,
+    references = 5,
+    alias = 8,
+    aliases = 9,
+    colVec = 10,
+};
+
 pub const RefOp = enum(u8) {
     clear = 0,
     del = 1,
-    end = 2,
-
+    end = @intFromEnum(ModOp.end),
     set = 3,
-    setIndex = 4,
-    setTmp = 5,
-    setEdge = 6,
+    setEdge = 4,
 
-    setIndexTmp = 7,
-    setEdgeIndex = 8,
-    setEdgeIndexTmp = 9,
-    setEdgeTmp = 10,
+    // setIndex = 4,
+    // setTmp = 5,
+    // setEdge = 6,
+
+    // setIndexTmp = 7,
+    // setEdgeIndex = 8,
+    // setEdgeIndexTmp = 9,
+    // setEdgeTmp = 10,
 
     // overwrite = 0,
     // add = 1,
@@ -519,6 +649,10 @@ pub const QueryIteratorType = enum(u8) {
     edgeIncludeDescSort = 35,
     edgeIncludeDescFilter = 36,
     edgeIncludeDescFilterSort = 37,
+
+    edgeIncludeFilterOnEdge = 38,
+    edgeFilterOnEdge = 39,
+
     // default search
     search = 120,
     searchFilter = 121,
@@ -620,6 +754,27 @@ pub const SubscriptionHeader = packed struct {
     fieldsLen: u8,
     partialLen: u8,
 };
+
+// lets measure
+// pub const QueryHeader = packed struct {
+//     op: QueryType,
+//     prop: u8, // this is for ref
+//     typeId: TypeId,
+//     edgeTypeId: TypeId,
+//     offset: u32,
+//     limit: u32,
+//     filterSize: u16,
+//     searchSize: u16,
+//     edgeSize: u16,
+//     edgeFilterSize: u16,
+//     includeSize: u16, // cannot be more then 16kb? might be good enough
+//     size: u16,
+//     sort: bool,
+//     filter: bool,
+//     hasEdge: bool,
+//     edgeInclude: bool,
+//     _padding: u4,
+// };
 
 pub const QueryHeader = packed struct {
     op: QueryType,
@@ -744,25 +899,15 @@ pub const FilterOpCompare = enum(u8) {
     // -----------
     gt = 14,
     lt = 15,
-    gtBatch = 16,
-    ltBatch = 17,
-    gtBatchSmall = 18,
-    ltBatchSmall = 19,
-    // -----------
     ge = 20,
     le = 21,
-    geBatch = 22,
-    leBatch = 23,
-    geBatchSmall = 24,
-    leBatchSmall = 25,
     // -----------
-    // eq = 12,
-    // will become quite a lot :L > , < <=, >=
-    // maybe format a bit easier
+    inc = 22,
+    ninc = 23,
+    incBatch = 24,
+    nincBatch = 25,
+    // ----------
 
-    // var is a lot less
-
-    // selectLargeRef = 202,
     selectLargeRefs = 203,
     selectRef = 204,
     selectSmallRefs = 205,
@@ -797,4 +942,45 @@ pub const FilterSelect = packed struct {
     // this is basicly another condition seperate from the ref thing itself
     // edgeTypeId: TypeId,
     // you want EDGE INDEX as well
+};
+
+pub const SelvaSchemaHeader = packed struct {
+    blockCapacity: u32,
+    nrFields: u8,
+    nrFixedFields: u8,
+    nrVirtualFields: u8,
+    sdbVersion: u8,
+};
+
+pub const SelvaSchemaMicroBuffer = packed struct {
+    type: SelvaFieldType,
+    len: u16,
+    hasDefault: u8,
+};
+
+pub const SelvaSchemaString = packed struct {
+    type: SelvaFieldType,
+    fixedLenHint: u8,
+    defaultLen: u32,
+};
+
+pub const SelvaSchemaText = packed struct {
+    type: SelvaFieldType,
+    nrDefaults: u8,
+};
+
+pub const SelvaSchemaRef = packed struct {
+    type: SelvaFieldType,
+    flags: u8,
+    dstNodeType: TypeId,
+    inverseField: SelvaField,
+    edgeNodeType: TypeId,
+    capped: u32,
+};
+
+pub const SelvaSchemaColvec = packed struct {
+    type: SelvaFieldType,
+    vecLen: u16,
+    compSize: u16,
+    hasDefault: u8,
 };

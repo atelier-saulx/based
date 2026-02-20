@@ -41,7 +41,7 @@ enum SelvaFieldType {
     SELVA_FIELD_TYPE_WEAK_REFERENCE __attribute__((deprecated)) = 6,
     SELVA_FIELD_TYPE_WEAK_REFERENCES __attribute__((deprecated)) = 7,
     SELVA_FIELD_TYPE_ALIAS = 8,
-    SELVA_FIELD_TYPE_ALIASES = 9,
+    SELVA_FIELD_TYPE_ALIASES __attribute__((deprecated)) = 9,
     SELVA_FIELD_TYPE_COLVEC = 10,
 } __packed;
 
@@ -58,28 +58,46 @@ struct EdgeFieldConstraint {
 struct SelvaFieldSchema {
     field_t field;
     enum SelvaFieldType type;
+    /**
+     * Offset to the default value in te->schema_buf.
+     * Only valid for field types that can have defaults.
+     */
+    uint32_t default_off;
     union {
+        /**
+         * SELVA_FIELD_TYPE_STRING.
+         */
         struct {
             size_t fixed_len; /*!< Greater than zero if the string has a fixed maximum length. */
-            uint32_t default_off; /*!< Offset to the default value in te->schema_buf. */
             uint32_t default_len;
-        } string; /*!< SELVA_FIELD_TYPE_STRING */
+        } string;
         struct {
             uint32_t nr_defaults; /*!< Number of defaults for this text field. */
-            uint32_t defaults_off; /*!< Offset to the default values in te->schema_buf. */
         } text; /*!< SELVA_FIELD_TYPE_TEXT */
-        struct EdgeFieldConstraint edge_constraint; /*!< SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_REFERENCES, SELVA_FIELD_TYPE_WEAK_REFERENCE, and SELVA_FIELD_TYPE_WEAK_REFERENCES. */
+        /**
+         * SELVA_FIELD_TYPE_REFERENCE, SELVA_FIELD_TYPE_REFERENCES, SELVA_FIELD_TYPE_WEAK_REFERENCE, and SELVA_FIELD_TYPE_WEAK_REFERENCES.
+         */
+        struct EdgeFieldConstraint edge_constraint;
+        /**
+         * SELVA_FIELD_TYPE_MICRO_BUFFER.
+         */
         struct {
-            uint32_t default_off; /*!< Offset to the default in  the raw schema buffer. */
             uint16_t len; /*!< Size of the smb. */
-        } smb; /*!< SELVA_FIELD_TYPE_MICRO_BUFFER */
-        size_t alias_index; /*!< Index in aliases for SELVA_FIELD_TYPE_ALIAS and SELVA_FIELD_TYPE_ALIASES. */
+        } smb;
+        /**
+         * SELVA_FIELD_TYPE_ALIAS.
+         */
+        struct {
+            size_t index; /*!< Index in aliases. */
+        } alias;
+        /**
+         * SELVA_FIELD_TYPE_COLVEC.
+         */
         struct {
             uint16_t vec_len; /*!< Length of a single vector. */
             uint16_t comp_size; /*!< Component size in the vector. */
-            uint32_t default_off; /*!< Offset to the default value in te->schema_buf. */
             field_t index; /*!< Index in te->col_fields.colvec.v. */
-        } colvec; /*!< SELVA_FIELD_TYPE_COLVEC */
+        } colvec;
     };
 } __designated_init;
 
@@ -100,8 +118,8 @@ struct SelvaFieldsSchema {
 };
 
 struct SelvaNodeSchema {
-    size_t nr_aliases; /*!< Number of alias fields in this type. */
-    size_t nr_colvecs; /*!< Number of columnar vector fields. */
+    size_t nr_alias_fields; /*!< Number of alias fields in this type. */
+    size_t nr_colvec_fields; /*!< Number of columnar vector fields. */
     struct SelvaFieldsSchema fields_schema;
     /* Nothing must be put after this line. */
 };
@@ -134,6 +152,8 @@ struct SelvaNodeRes {
     block_id_t block;
     enum SelvaTypeBlockStatus block_status;
 } __designated_init;
+
+typedef void (*selva_db_dirty_hook_t)(void *ctx, node_type_t type, node_id_t node_id);
 
 SELVA_EXPORT
 bool selva_is_valid_field_type(enum SelvaFieldType ftype);

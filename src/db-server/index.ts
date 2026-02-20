@@ -1,17 +1,13 @@
 import native from '../native.js'
 import { rm } from 'node:fs/promises'
-import { start, StartOpts } from './start.js'
+import { realStart, start, StartOpts } from './start.js'
 import { migrate } from './migrate/index.js'
 import { debugServer } from '../utils/debug.js'
 import { DbShared } from '../shared/DbBase.js'
-import {
-  setNativeSchema,
-  setSchemaOnServer,
-  writeSchemaFile,
-} from './schema.js'
+import { writeSchemaFile } from './schema.js'
 import { save, SaveOpts } from './blocks.js'
 
-import { OpType, OpTypeEnum, OpTypeInverse } from '../zigTsExports.js'
+import { OpType, OpTypeEnum } from '../zigTsExports.js'
 import {
   MAX_ID,
   type SchemaMigrateFns,
@@ -19,16 +15,18 @@ import {
 } from '../schema/index.js'
 import { readUint32, writeUint32 } from '../utils/uint8.js'
 
+const EXPIRE_BUF = new Uint8Array([0, 0, 0, 0, OpType.expire])
+
 export class DbServer extends DbShared {
   dbCtxExternal: any // pointer to zig dbCtx
 
-  migrating: number
+  migrating!: number
   saveInProgress: boolean = false
   fileSystemPath: string
   activeReaders = 0 // processing queries or other DB reads
   modifyQueue: Map<Function, Uint8Array> = new Map()
   queryQueue: Map<Function, Uint8Array> = new Map()
-  stopped: boolean // = true does not work
+  stopped!: boolean // = true does not work
   saveIntervalInSeconds?: number
   saveInterval?: NodeJS.Timeout
   delayInMs?: number
@@ -152,6 +150,7 @@ export class DbServer extends DbShared {
       if (onceListeners) {
         console.log('💤 Query already staged dont exec again', id)
       } else {
+        native.modify(EXPIRE_BUF, this.dbCtxExternal)
         native.query(buf, this.dbCtxExternal)
       }
     })
@@ -173,6 +172,7 @@ export class DbServer extends DbShared {
     if (qIdListeners) {
       console.log('💤 Subscription already staged dont exec again', id)
     } else {
+      native.modify(EXPIRE_BUF, this.dbCtxExternal)
       native.query(query, this.dbCtxExternal)
     }
 
@@ -182,18 +182,19 @@ export class DbServer extends DbShared {
   // allow 10 ids for special listeners on mod thread
   modifyCnt = 10
 
-  modify(payload: Uint8Array): Promise<Uint8Array | null> {
+  modify(payload: Uint8Array): Promise<Uint8Array> {
     this.modifyCnt++
     if (this.modifyCnt > MAX_ID) {
       this.modifyCnt = 10
     }
     const id = this.modifyCnt++
     writeUint32(payload, id, 0)
+    payload[4] = OpType.modify
     return new Promise((resolve) => {
       native.modify(payload, this.dbCtxExternal)
       this.addOpOnceListener(OpType.modify, id, (v) => {
-        const resultLen = readUint32(v, 0)
-        resolve(v.subarray(4, resultLen))
+        const end = readUint32(v, 0)
+        resolve(v.subarray(4, end))
       })
     })
   }
@@ -202,7 +203,7 @@ export class DbServer extends DbShared {
     schema: SchemaOut,
     transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']> {
-    if (this.stopped || !this.dbCtxExternal) {
+    if (this.stopped) {
       throw new Error('Db is stopped')
     }
 
@@ -219,9 +220,10 @@ export class DbServer extends DbShared {
       await migrate(this, this.schema, schema, transformFns)
       return this.schema.hash
     }
-
-    setSchemaOnServer(this, schema)
-    await setNativeSchema(this, schema)
+    if (this.dbCtxExternal) {
+      throw new Error('Db is already running')
+    }
+    realStart(this, schema)
     await writeSchemaFile(this, schema)
 
     process.nextTick(() => {

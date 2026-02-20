@@ -5,8 +5,8 @@ import { registerSubscription } from './toByteCode.js'
 import { OnData, OnError, OnClose } from './types.js'
 
 export class SubStore {
-  listeners: Map<OnData, OnError>
-  onClose: OnClose
+  listeners!: Map<OnData, OnError>
+  onClose!: OnClose
   response?: BasedQueryResponse
   checksum?: number
   len?: number

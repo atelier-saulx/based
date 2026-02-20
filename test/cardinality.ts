@@ -2,6 +2,7 @@ import { BasedDb, xxHash64 } from '../src/index.js'
 import { ENCODER } from '../src/utils/uint8.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
+import { getTypeDefs } from '../src/db-client/modify/index.js'
 
 await test('hll', async (t) => {
   const db = new BasedDb({
@@ -43,6 +44,7 @@ await test('hll', async (t) => {
     myUniqueValuesCount: 'myCoolValue',
   })
 
+  console.log('a')
   deepEqual(
     (
       await db
@@ -58,6 +60,7 @@ await test('hll', async (t) => {
       },
     ],
   )
+  console.log('b')
 
   deepEqual(
     (
@@ -365,7 +368,7 @@ await test('switches', async (t) => {
 
   const visits = ['Clint', 'Lee', 'Clint', 'Aldo', 'Lee']
 
-  const store1 = db.create('store', {
+  const store1 = await db.create('store', {
     name: 'Handsome Sportsman',
     visitors: visits,
     visits: visits.length,
@@ -408,16 +411,13 @@ await test('defaultPrecision', async (t) => {
   t.after(() => db.stop())
 
   await db.setSchema({
-    // props: {
-    //   myRootCount: 'cardinality',
-    // },
     types: {
-      stores: {
+      store: {
         name: 'string',
         customers: {
           items: {
             ref: 'customer',
-            prop: 'customer',
+            prop: 'client',
           },
         },
       },
@@ -432,10 +432,41 @@ await test('defaultPrecision', async (t) => {
     name: 'Alex Atala',
     productsBought: ['fork', 'knife', 'knife', 'frying pan'],
   })
-  const sto = db.create('stores', {
-    name: "Worderland's Kitchen",
+  const sto = db.create('store', {
+    name: 'Worderlands Kitchen',
     customers: [cus],
   })
 
-  // await db.query('stores').include('*', '**').get().inspect()
+  const pb = await db.query('customer').include('productsBought').get()
+  // pb.inspect()
+  deepEqual(
+    pb,
+    [
+      {
+        id: 1,
+        productsBought: 3,
+      },
+    ],
+    'simple cardinality default precision',
+  )
+
+  const pbr = await db.query('store').include('*', '**').get()
+  // pbr.inspect()
+  deepEqual(
+    pbr,
+    [
+      {
+        id: 1,
+        name: 'Worderlands Kitchen',
+        customers: [
+          {
+            id: 1,
+            name: 'Alex Atala',
+            productsBought: 3,
+          },
+        ],
+      },
+    ],
+    'simple cardinality default precision on ref',
+  )
 })

@@ -12,94 +12,100 @@ const t = @import("../../types.zig");
 const resultHeaderOffset = @import("../../thread/results.zig").resultHeaderOffset;
 const filter = @import("../filter/filter.zig").filter;
 
+pub const AggCtx = struct {
+    queryCtx: *Query.QueryCtx,
+    typeEntry: Node.Type,
+    limit: u32 = 0,
+    isSamplingSet: bool = false,
+    hllAccumulator: ?*Selva.c.struct_selva_string = null,
+    accumulatorSize: usize = 0,
+    resultsSize: usize = 0,
+    hadAccumulated: bool = false,
+    totalResultsSize: usize = 0,
+};
+
 pub fn iterator(
-    ctx: *Query.QueryCtx,
+    aggCtx: *AggCtx,
     it: anytype,
-    limit: u32,
     comptime hasFilter: bool,
     filterBuf: []u8,
     aggDefs: []u8,
     accumulatorProp: []u8,
-    typeEntry: Node.Type,
-    hllAccumulator: anytype,
 ) !u32 {
     var count: u32 = 0;
-    var hadAccumulated: bool = false;
+    aggCtx.hadAccumulated = false;
 
     while (it.next()) |node| {
         if (hasFilter) {
-            if (!try filter(node, ctx, filterBuf)) {
+            if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
                 continue;
             }
         }
-        aggregateProps(node, typeEntry, aggDefs, accumulatorProp, hllAccumulator, &hadAccumulated);
+        aggregateProps(node, aggDefs, accumulatorProp, aggCtx);
         count += 1;
-        if (count >= limit) break;
+        if (count >= aggCtx.limit) break;
     }
     return count;
 }
 
 pub inline fn aggregateProps(
     node: Node.Node,
-    typeEntry: Node.Type,
     aggDefs: []u8,
     accumulatorProp: []u8,
-    hllAccumulator: anytype,
-    hadAccumulated: *bool,
+    aggCtx: *AggCtx,
 ) void {
     if (aggDefs.len == 0) return;
 
     var i: usize = 0;
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
-        utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
-        utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
+        // utils.debugPrint("currentAggDef: {any}\n", .{currentAggDef});
+        // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentAggDef.propId, Node.getNodeId(node) });
         var value: []u8 = undefined;
         if (currentAggDef.aggFunction == t.AggFunction.count) {
-            accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
+            accumulate(currentAggDef, accumulatorProp, value, aggCtx, null);
         } else {
             if (currentAggDef.propId != t.MAIN_PROP and currentAggDef.aggFunction != t.AggFunction.cardinality) {
-                i += @sizeOf(t.AggProp);
+                i += utils.sizeOf(t.AggProp);
                 continue;
             }
-            const propSchema = Schema.getFieldSchema(typeEntry, currentAggDef.propId) catch {
-                i += @sizeOf(t.AggProp);
+            const propSchema = Schema.getFieldSchema(aggCtx.typeEntry, currentAggDef.propId) catch {
+                i += utils.sizeOf(t.AggProp);
                 continue;
             };
-            if (currentAggDef.aggFunction == t.AggFunction.cardinality) {
+            if (currentAggDef.aggFunction == .cardinality) {
                 const hllValue = Selva.c.selva_fields_get_selva_string(node, propSchema) orelse null;
                 if (hllValue == null) {
-                    i += @sizeOf(t.AggProp);
+                    i += utils.sizeOf(t.AggProp);
                     continue;
                 }
-                if (!hadAccumulated.*) {
-                    _ = Selva.c.selva_string_replace(hllAccumulator, null, Selva.c.HLL_INIT_SIZE);
-                    Selva.c.hll_init_like(hllAccumulator, hllValue);
+                if (!aggCtx.hadAccumulated) {
+                    _ = Selva.c.selva_string_replace(aggCtx.hllAccumulator, null, Selva.c.HLL_INIT_SIZE);
+                    Selva.c.hll_init_like(aggCtx.hllAccumulator, hllValue);
                 }
-                accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, hllAccumulator, hllValue);
+                accumulate(currentAggDef, accumulatorProp, value, aggCtx, hllValue);
             } else {
                 value = Fields.get(
-                    typeEntry,
+                    aggCtx.typeEntry,
                     node,
                     propSchema,
                     currentAggDef.propType,
                 );
 
                 if (value.len > 0) {
-                    accumulate(currentAggDef, accumulatorProp, value, hadAccumulated, null, null);
+                    accumulate(currentAggDef, accumulatorProp, value, aggCtx, null);
                 }
             }
         }
     }
-    hadAccumulated.* = true;
+    aggCtx.hadAccumulated = true;
 }
 
 pub inline fn accumulate(
     currentAggDef: t.AggProp,
     accumulatorProp: []u8,
     value: []u8,
-    hadAccumulated: *bool,
-    hllAccumulator: anytype,
+    aggCtx: *AggCtx,
     hllValue: anytype,
 ) void {
     const propType = currentAggDef.propType;
@@ -112,7 +118,7 @@ pub inline fn accumulate(
             switch (aggFunction) {
                 .sum => {
                     writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propTypeTag, value, start), accumulatorPos);
-                    utils.debugPrint("❤️ v: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
+                    // utils.debugPrint("❤️ v: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .avg => {
                     const val = microbufferToF64(propTypeTag, value, start);
@@ -126,16 +132,14 @@ pub inline fn accumulate(
                     writeAs(f64, accumulatorProp, sum, accumulatorPos + 8);
                 },
                 .min => {
-                    // utils.debugPrint("hadAccumulated: {any} {d} {d}\n", .{ hadAccumulated.*, accumulatorPos, microbufferToF64(propTypeTag, value, start) });
-                    if (!hadAccumulated.*) {
+                    if (!aggCtx.hadAccumulated) {
                         writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
                     } else {
                         writeAs(f64, accumulatorProp, @min(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
                     }
-                    // utils.debugPrint("ficou: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .max => {
-                    if (!hadAccumulated.*) {
+                    if (!aggCtx.hadAccumulated) {
                         writeAs(f64, accumulatorProp, microbufferToF64(propTypeTag, value, start), accumulatorPos);
                     } else {
                         writeAs(f64, accumulatorProp, @max(read(f64, accumulatorProp, accumulatorPos), microbufferToF64(propTypeTag, value, start)), accumulatorPos);
@@ -189,8 +193,8 @@ pub inline fn accumulate(
                     writeAs(u32, accumulatorProp, read(u32, accumulatorProp, accumulatorPos) + 1, accumulatorPos);
                 },
                 .cardinality => {
-                    Selva.c.hll_union(hllAccumulator, hllValue);
-                    writeAs(u32, accumulatorProp, read(u32, Selva.c.hll_count(hllAccumulator)[0..4], 0), accumulatorPos);
+                    Selva.c.hll_union(aggCtx.hllAccumulator, hllValue);
+                    writeAs(u32, accumulatorProp, read(u32, Selva.c.hll_count(aggCtx.hllAccumulator)[0..4], 0), accumulatorPos);
                 },
                 else => {},
             }
@@ -199,15 +203,14 @@ pub inline fn accumulate(
 }
 
 pub inline fn finalizeResults(
-    ctx: *Query.QueryCtx,
+    aggCtx: *AggCtx,
     aggDefs: []u8,
     accumulatorProp: []u8,
-    isSamplingSet: bool,
     initialAggDefOffset: usize,
 ) !void {
     var i: usize = initialAggDefOffset;
 
-    const initialResultOffset = ctx.thread.query.index;
+    const initialResultOffset = aggCtx.queryCtx.thread.query.index;
     while (i < aggDefs.len) {
         const currentAggDef = utils.readNext(t.AggProp, aggDefs, &i);
         const aggFunction = currentAggDef.aggFunction;
@@ -216,28 +219,28 @@ pub inline fn finalizeResults(
 
         switch (aggFunction) {
             .sum => {
-                ctx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
+                aggCtx.queryCtx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
             },
             .max => {
-                ctx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
+                aggCtx.queryCtx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
             },
             .min => {
-                ctx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
+                aggCtx.queryCtx.thread.query.reserveAndWrite(read(f64, accumulatorProp, accumulatorPos), resultPos);
             },
             .avg => {
                 const count = read(u64, accumulatorProp, accumulatorPos);
                 const sum = read(f64, accumulatorProp, accumulatorPos + 8);
                 const mean = sum / @as(f64, @floatFromInt(count));
-                ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(mean)), resultPos);
+                aggCtx.queryCtx.thread.query.reserveAndWrite(@as(f64, @floatCast(mean)), resultPos);
             },
             .hmean => {
                 const count = read(u64, accumulatorProp, accumulatorPos);
                 if (count != 0) {
                     const isum = read(f64, accumulatorProp, accumulatorPos + 8);
                     const mean = @as(f64, @floatFromInt(count)) / isum;
-                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(mean)), resultPos);
+                    aggCtx.queryCtx.thread.query.reserveAndWrite(@as(f64, @floatCast(mean)), resultPos);
                 } else {
-                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
+                    aggCtx.queryCtx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
                 }
             },
             .stddev => {
@@ -248,14 +251,14 @@ pub inline fn finalizeResults(
                     const mean = sum / @as(f64, @floatFromInt(count));
                     const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
                     const denominator = @as(f64, @floatFromInt(count)) - 1.0;
-                    const variance = if (isSamplingSet)
+                    const variance = if (aggCtx.isSamplingSet)
                         numerator / denominator
                     else
                         (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
                     const stddev = if (variance < 0) 0 else @sqrt(variance);
-                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(stddev)), resultPos);
+                    aggCtx.queryCtx.thread.query.reserveAndWrite(@as(f64, @floatCast(stddev)), resultPos);
                 } else {
-                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
+                    aggCtx.queryCtx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
                 }
             },
             .variance => {
@@ -266,25 +269,25 @@ pub inline fn finalizeResults(
                     const mean = sum / @as(f64, @floatFromInt(count));
                     const numerator = sum_sq - (sum * sum) / @as(f64, @floatFromInt(count));
                     const denominator = @as(f64, @floatFromInt(count)) - 1.0;
-                    var variance = if (isSamplingSet)
+                    var variance = if (aggCtx.isSamplingSet)
                         numerator / denominator
                     else
                         (sum_sq / @as(f64, @floatFromInt(count))) - (mean * mean);
                     if (variance < 0) variance = 0;
-                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(variance)), resultPos);
+                    aggCtx.queryCtx.thread.query.reserveAndWrite(@as(f64, @floatCast(variance)), resultPos);
                 } else {
-                    ctx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
+                    aggCtx.queryCtx.thread.query.reserveAndWrite(@as(f64, @floatCast(0.0)), resultPos);
                 }
             },
             .count => {
                 const count = read(u32, accumulatorProp, accumulatorPos);
-                ctx.thread.query.reserveAndWrite(count, resultPos);
+                aggCtx.queryCtx.thread.query.reserveAndWrite(count, resultPos);
             },
             .cardinality => {
-                ctx.thread.query.reserveAndWrite(read(u32, accumulatorProp, accumulatorPos), resultPos);
+                aggCtx.queryCtx.thread.query.reserveAndWrite(read(u32, accumulatorProp, accumulatorPos), resultPos);
             },
             else => {
-                ctx.thread.query.reserveAndWrite(0.0, resultPos);
+                aggCtx.queryCtx.thread.query.reserveAndWrite(0.0, resultPos);
             },
         }
     }

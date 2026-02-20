@@ -8,8 +8,11 @@ const utils = @import("../../utils.zig");
 const t = @import("../../types.zig");
 const Aggregates = @import("./aggregates.zig");
 const References = @import("../../selva/references.zig");
+const GroupBy = @import("./group.zig");
+const GroupByHashMap = @import("./hashMap.zig").GroupByHashMap;
 const errors = @import("../../errors.zig");
 const accumulate = Aggregates.accumulate;
+const std = @import("std");
 
 pub inline fn aggregateRefsProps(
     ctx: *Query.QueryCtx,
@@ -18,21 +21,46 @@ pub inline fn aggregateRefsProps(
     fromType: Selva.Type,
     i: *usize,
 ) !void {
-    utils.debugPrint("i: {d}\n", .{i.*});
     const header = utils.readNext(t.AggRefsHeader, q, i);
-    // i.* += utils.sizeOf(t.AggRefsHeader);
-    utils.debugPrint("aggregateRefsProps header: {any}\n", .{header});
+    // utils.debugPrint("aggregateRefsProps header: {any}\n", .{header});
 
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
     defer ctx.db.allocator.free(accumulatorProp);
 
-    var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
-    _ = try Aggregates.iterator(ctx, &it, 1000, false, undefined, q[i.*..], accumulatorProp, it.dstType, undefined); // TODO: hllAcc
-    // should be wrong because changes with each aggFunc and targetProp
-    try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
-    try ctx.thread.query.append(header.targetProp);
-    try ctx.thread.query.append(@as(u32, @sizeOf(f64))); // falty count and cardinalty  is u32
+    // filter
 
-    try Aggregates.finalizeResults(ctx, q[i.*..], accumulatorProp, header.isSamplingSet, 0);
+    var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
+
+    const hllAccumulator = Selva.c.selva_string_create(null, Selva.c.HLL_INIT_SIZE, Selva.c.SELVA_STRING_MUTABLE);
+    defer Selva.c.selva_string_free(hllAccumulator);
+
+    var aggCtx = Aggregates.AggCtx{
+        .queryCtx = ctx,
+        .typeEntry = it.dstType,
+        .limit = std.math.maxInt(u32), // unlimited in branched queries
+        .hllAccumulator = hllAccumulator,
+        .isSamplingSet = header.isSamplingSet,
+        .accumulatorSize = header.accumulatorSize,
+        .resultsSize = header.resultsSize,
+    };
+
+    if (header.hasGroupBy) {
+        var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
+        defer groupByHashMap.deinit();
+
+        _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, false, undefined, q[i.*..]); // TODO: hllAcc
+
+        try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
+        try ctx.thread.query.append(header.targetProp);
+        try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
+        try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.*..]);
+    } else {
+        _ = try Aggregates.iterator(&aggCtx, &it, false, undefined, q[i.*..], accumulatorProp); // TODO: hllAcc
+
+        try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
+        try ctx.thread.query.append(header.targetProp);
+        try ctx.thread.query.append(@as(u32, header.resultsSize)); // MV: recheck
+        try Aggregates.finalizeResults(&aggCtx, q[i.*..], accumulatorProp, 0);
+    }
 }

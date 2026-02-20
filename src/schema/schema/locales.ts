@@ -1,6 +1,6 @@
 import { LangCode } from '../../zigTsExports.js'
 import { assert, isBoolean, isRecord, type RequiredIfStrict } from './shared.js'
-type LangName = keyof typeof LangCode
+export type LangName = keyof typeof LangCode
 
 export type SchemaLocale<strict = false> = RequiredIfStrict<
   {

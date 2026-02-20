@@ -18,7 +18,7 @@ await test('include', async (t) => {
 
   // single ref + edge
 
-  await db.setSchema({
+  const client = await db.setSchema({
     locales: {
       en: true,
       de: { fallback: ['en'] },
@@ -46,28 +46,28 @@ await test('include', async (t) => {
   let d = Date.now()
 
   for (let i = 0; i < 5e6; i++) {
-    db.create('simple', {
+    client.create('simple', {
       nr: 67,
       // name: i % 2 ? 'b' : 'a',
       // nr: rand(0, 10),
     })
   }
 
-  await db.drain()
+  await client.drain()
 
   let time = Date.now() - d
   console.log('create 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
 
   d = Date.now()
   for (let i = 0; i < 5e6; i++) {
-    db.update('simple', i + 1, {
+    client.update('simple', i + 1, {
       nr: 67,
       // name: i % 2 ? 'b' : 'a',
       // nr: rand(0, 10),
     })
   }
 
-  await db.drain()
+  await client.drain()
 
   time = Date.now() - d
 
@@ -75,7 +75,7 @@ await test('include', async (t) => {
 
   let q: any = []
 
-  const x = db.query('simple', 1)
+  const x = client.query('simple', 1)
 
   registerQuery(x)
 
@@ -95,7 +95,7 @@ await test('include', async (t) => {
   for (let i = 0; i < 9; i++) {
     //.range(0, 1)
     q.push(
-      db
+      client
         .query('simple')
         .range(0, 5e6 + i)
         // .include('id')
@@ -117,27 +117,27 @@ await test('include', async (t) => {
 
   d = Date.now()
   for (let i = 0; i < 5e6; i++) {
-    db.delete('simple', i + 1)
+    client.delete('simple', i + 1)
   }
 
-  await db.drain()
+  await client.drain()
 
   time = Date.now() - d
 
   console.log('DEL 5M', time, 'ms', (1000 / time) * 5e6, 'OPS per second')
 
-  const simple = await db.create('simple', {
+  const simple = await client.create('simple', {
     nr: 1001,
   })
 
-  const simple2 = await db.create('simple', {
+  const simple2 = await client.create('simple', {
     nr: 1002,
   })
 
   d = Date.now()
 
   for (let i = 0; i < 10e6; i++) {
-    db.create('simple', {
+    client.create('simple', {
       nr: 67,
       start: d + i * 1e3,
       end: d + i * 1e3 + 10e3,
@@ -163,7 +163,26 @@ await test('include', async (t) => {
       const q: any[] = []
       for (let i = 0; i < 5; i++) {
         q.push(
-          db
+          client
+            .query('simple')
+            .include('id', 'nr')
+            // .range(0, 10e6 + i)
+            .filter('nr', '=', 100 + i)
+            .get(),
+        )
+      }
+      await Promise.all(q)
+    },
+    '1M Nodes include',
+    { repeat: 100 },
+  )
+
+  await perf(
+    async () => {
+      const q: any[] = []
+      for (let i = 0; i < 5; i++) {
+        q.push(
+          client
             .query('simple')
             .include('id', 'nr')
             // .range(0, 10e6 + i)
@@ -177,17 +196,61 @@ await test('include', async (t) => {
     { repeat: 100 },
   )
 
-  db.create('simple', {
+  client.create('simple', {
     nr: 100,
     // name: i % 2 ? 'b' : 'a',
     // nr: rand(0, 10),
   })
 
-  await db
+  await client
     .query('simple')
     .include('nr') //  'start', 'end', 'target'
     .filter('target.nr', '>', 1001)
     // .or('nr', '=', 100)
+    // .or('nr', '=', 200)
+    // .or((p) => {
+    //   p.filter('nr', 10).and('nr', 20)
+    // })
+    // .and((p) => {
+    //   p.filter('y', 20)
+    //   p.or('x', 10)
+    // })
+
+    /*
+    {
+      filter: {
+        props: {nr" '>' 10001}
+        and: {
+          props: { y: [10]}
+          or: { props: { x: 10}}
+        }
+      }
+    
+    }
+  
+    {
+      filter: {
+        props: {nr" '>' 10001}
+        or: {
+          props: { nr: [10,20]}
+        }
+      }
+    
+    }
+
+    {
+      filter: {
+        props: {nr" '>' 10001}
+        or: {
+          or: {
+          }
+        }
+      }
+    
+    }
+
+    */
+
     .range(0, 10e6)
     .get()
     .inspect()
@@ -235,7 +298,7 @@ await test.skip('default', async (t) => {
           special: {
             type: 'vector',
             size: 4,
-            baseType: 'number',
+            baseType: 'float64',
             // TODO
             //default: new Uint8Array([0, 0, 0, 0]),
           },

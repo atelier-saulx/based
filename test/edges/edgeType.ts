@@ -1,6 +1,7 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from '../shared/assert.js'
+import { countDirtyBlocks } from '../shared/index.js'
 
 await test('single reference', async (t) => {
   const db = new BasedDb({
@@ -49,6 +50,8 @@ await test('single reference', async (t) => {
       $note: 'funny',
     },
   })
+
+  deepEqual(await countDirtyBlocks(db.server), 3)
 })
 
 await test('json type edge', async (t) => {

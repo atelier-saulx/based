@@ -15,14 +15,18 @@ import type { SchemaLocales } from '../schema/locales.js'
 export type PropDef = {
   __isPropDef: true
   schema: SchemaProp<true>
-  prop: number // (0-250)
+  /** 0-250 */
+  prop: number
   typeIndex: PropTypeEnum
   separate: boolean
   path: string[]
   start: number
-  len: number // bytes or count
-  compression?: 0 | 1 // 0 == none , 1 == standard deflate
+  /** bytes or count */
+  len: number
+  /** 0 == none , 1 == standard deflate */
+  compression?: 0 | 1
   enum?: any[]
+  /** The node is deleted if this reference(s) prop becomes empty. */
   dependent?: boolean
   // default here?
   validation: Validation
@@ -45,6 +49,7 @@ export type PropDef = {
   hasDefaultEdges?: boolean
   reverseEnum?: { [key: string]: number }
   edgesSeperateCnt?: number
+  edgeType?: SchemaTypeDef
   edges?: {
     [key: string]: PropDefEdge
   }
