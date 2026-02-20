@@ -1,4 +1,7 @@
-import { VECTOR_BASE_TYPE_SIZE_MAP, type SchemaVector } from '../../../schema.js'
+import {
+  VECTOR_BASE_TYPE_SIZE_MAP,
+  type SchemaVector,
+} from '../../../schema.js'
 import {
   PropType,
   type LangCodeEnum,
@@ -15,20 +18,21 @@ import type { TypeDef } from '../index.js'
 import { isTypedArray } from 'util/types'
 
 const t2t = {
-  'int8': Int8Array,
-  'uint8': Uint8Array,
-  'int16': Int16Array,
-  'uint16': Uint16Array,
-  'int32': Int32Array,
-  'uint32': Uint32Array,
-  'float32': Float32Array,
-  'float64': Float64Array,
+  int8: Int8Array,
+  uint8: Uint8Array,
+  int16: Int16Array,
+  uint16: Uint16Array,
+  int32: Int32Array,
+  uint32: Uint32Array,
+  float32: Float32Array,
+  float64: Float64Array,
 }
 
 export const vector = class Vector extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
     super(schema, path, typeDef)
-    this.vectorSize = schema.size * VECTOR_BASE_TYPE_SIZE_MAP[VectorBaseType[schema.baseType]]
+    this.vectorSize =
+      schema.size * VECTOR_BASE_TYPE_SIZE_MAP[VectorBaseType[schema.baseType]]
   }
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
