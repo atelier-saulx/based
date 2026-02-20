@@ -136,7 +136,12 @@ pub fn include(
                     .microBuffer, .vector, .colVec => {
                         // Fixed size
                         try ctx.thread.query.append(header.prop);
-                        try ctx.thread.query.append(value);
+                        if (value.len == 0) {
+                            const fs = try Schema.getFieldSchema(typeEntry, header.prop);
+                            _  = try ctx.thread.query.reserve(fs.unnamed_0.smb.len);
+                        } else {
+                            try ctx.thread.query.append(value);
+                        }
                     },
                     else => {
                         try append.default(ctx.thread, header.prop, value);
