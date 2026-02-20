@@ -20,7 +20,7 @@ const baseTypeSize: { [K in SchemaVector['baseType']]: number } = {
   uint16: 2,
   int32: 4,
   uint32: 4,
-  float32: 8,
+  float32: 4,
   float64: 8,
 }
 
