@@ -18,6 +18,24 @@ await test('wrong type', async (t) => {
   )
 })
 
+await test('default', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        vec: {
+          type: 'vector',
+          size: 3,
+          baseType: 'float32',
+          default: new Float32Array([1, 2, 3])
+        },
+      },
+    },
+  })
+
+  const id1 = await db.create('thing', {})
+  console.log(await db.query('thing', id1).get().inspect())
+})
+
 await test('modify vector', async (t) => {
   const db = await testDb(t, {
     types: {

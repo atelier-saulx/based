@@ -2,6 +2,7 @@ import {
   VECTOR_BASE_TYPE_SIZE_MAP,
   type SchemaVector,
 } from '../../../schema.js'
+import { vectorBaseType2TypedArray } from '../../../schema/schema/vector.js'
 import {
   PropType,
   type LangCodeEnum,
@@ -17,23 +18,11 @@ import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
 import { isTypedArray } from 'util/types'
 
-const t2t = {
-  int8: Int8Array,
-  uint8: Uint8Array,
-  int16: Int16Array,
-  uint16: Uint16Array,
-  int32: Int32Array,
-  uint32: Uint32Array,
-  float32: Float32Array,
-  float64: Float64Array,
-}
-
 function validateVector(value: unknown): asserts value is Uint8Array {
     if (!isTypedArray(value)) {
       throw new Error('Not a typed array')
     }
-    // @ts-ignore
-    const t = t2t[this.schema.baseType]
+    const t = vectorBaseType2TypedArray[this.schema.baseType]
     if (!(value instanceof t)) {
       throw new Error(`Not a ${t.name}`)
     }
@@ -106,7 +95,8 @@ export const colvec = class ColVec extends BasePropDef {
       type: PropTypeSelva.colVec,
       vecLen: this.vecLen,
       compSize: this.compSize,
-      hasDefault: 0, // TODO default
+      hasDefault: 0,
+      //hasDefault: this.schema.default, // TODO default
     })
   }
 }

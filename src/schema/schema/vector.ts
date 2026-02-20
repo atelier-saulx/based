@@ -12,8 +12,21 @@ const vectorBaseTypes = [
   'float32',
   'float64',
 ] as const
+type VectorBaseType = (typeof vectorBaseTypes)[number]
+export const vectorBaseType2TypedArray = {
+  int8: Int8Array,
+  uint8: Uint8Array,
+  int16: Int16Array,
+  uint16: Uint16Array,
+  int32: Int32Array,
+  uint32: Uint32Array,
+  float32: Float32Array,
+  float64: Float64Array,
+}
+export type VectorBaseType2TypedArray = typeof vectorBaseType2TypedArray
 
-export type SchemaVector = Base & {
+
+export type SchemaVector<T extends VectorBaseType = VectorBaseType> = Base & {
   type: 'vector' | 'colvec'
   /**
    * Number of elements in the vector.
@@ -23,7 +36,11 @@ export type SchemaVector = Base & {
    * Base type of the vector.
    * float64 == number
    */
-  baseType: (typeof vectorBaseTypes)[number]
+  baseType: T
+ /**
+  * Default vector.
+  */
+  default?: InstanceType<VectorBaseType2TypedArray[T]>
 }
 
 export const parseVector = (def: Record<string, unknown>): SchemaVector => {
