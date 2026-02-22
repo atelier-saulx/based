@@ -163,7 +163,7 @@ await test('same id over different types', async (t) => {
     .query('user', id)
     .include('name')
     .subscribe((d) => {
-      // console.log(d)
+      // console.log('user:', d)
       cnt1++
     })
 
@@ -171,15 +171,13 @@ await test('same id over different types', async (t) => {
     .query('flap', flapId)
     .include('name')
     .subscribe((d) => {
-      // console.log(d)
+      // console.log('flap:', d)
       cnt2++
     })
 
   await wait(100)
-  clients[0].update('user', id, {
-    name: 'SnurtMcGurt!!!',
-  })
 
+  // only update the second sub
   clients[0].update('flap', id, {
     name: 'SnurtMcGurt!!!',
   })
@@ -188,7 +186,7 @@ await test('same id over different types', async (t) => {
   close()
   close2()
   await wait(1)
-  equal(cnt1, 2)
+  equal(cnt1, 1)
   equal(cnt2, 2)
   equal(server.subscriptions.active, 0, 'remove all subs')
 })
