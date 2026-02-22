@@ -163,7 +163,6 @@ await test('same id over different types', async (t) => {
     .query('user', id)
     .include('name')
     .subscribe((d) => {
-      // console.log(d)
       cnt1++
     })
 
@@ -171,7 +170,6 @@ await test('same id over different types', async (t) => {
     .query('flap', flapId)
     .include('name')
     .subscribe((d) => {
-      // console.log(d)
       cnt2++
     })
 
