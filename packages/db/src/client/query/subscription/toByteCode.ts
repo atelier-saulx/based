@@ -1,4 +1,4 @@
-import { writeInt64, writeUint16, writeUint32 } from '@based/utils'
+import { readUint32, writeInt64, writeUint16, writeUint32 } from '@based/utils'
 import native from '../../../native.js'
 import { BasedDbQuery } from '../BasedDbQuery.js'
 import { ID } from '../toByteCode/offsets.js'
@@ -115,12 +115,12 @@ export const registerSubscription = (query: BasedDbQuery) => {
     //   filter: 9,
     // }
 
-    // const queryId = readUint32(query.buffer, ID.id)
-    // writeUint32(query.buffer, 0, ID.id)
-    // const subId = native.crc32(
-    //   query.buffer.subarray(0, query.buffer.byteLength - 4),
-    // )
-    // writeUint32(query.buffer, queryId, ID.id)
+    const queryId = readUint32(query.buffer, ID.id)
+    writeUint32(query.buffer, 0, ID.id)
+    const subId = native.crc32(
+      query.buffer.subarray(0, query.buffer.byteLength - 4),
+    )
+    writeUint32(query.buffer, queryId, ID.id)
 
     // console.log(
     //   'FLAP',
@@ -132,10 +132,10 @@ export const registerSubscription = (query: BasedDbQuery) => {
     //   subId,
     // )
 
-    // this works
-    const subId = native.crc32(
-      query.buffer.subarray(ID.id + 4, query.buffer.byteLength - 4),
-    )
+    // const subId = native.crc32(
+    //   query.buffer.subarray(ID.id + 4, query.buffer.byteLength - 4),
+    // )
+
     const headerLen = 18
     const types = collectTypes(query.def)
     const nowQueries = collectFilters(query.def.filter, fields)
