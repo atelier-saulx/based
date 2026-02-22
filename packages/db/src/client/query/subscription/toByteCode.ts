@@ -104,6 +104,35 @@ export const registerSubscription = (query: BasedDbQuery) => {
     const id = query.def.target.id
     const fields = collectFields(query.def)
     const typeId = query.def.schema.id
+
+    // TMP
+    //     export const ID = {
+    //   baseSize: 9, // queryType(1) + type(2) + id(4) + filterSize(2)
+    //   queryType: 0,
+    //   type: 1,
+    //   id: 3,
+    //   filterSize: 7,
+    //   filter: 9,
+    // }
+
+    // const queryId = readUint32(query.buffer, ID.id)
+    // writeUint32(query.buffer, 0, ID.id)
+    // const subId = native.crc32(
+    //   query.buffer.subarray(0, query.buffer.byteLength - 4),
+    // )
+    // writeUint32(query.buffer, queryId, ID.id)
+
+    // console.log(
+    //   'FLAP',
+    //   queryId,
+    //   'typeId',
+    //   query.def.type,
+    //   // @ts-ignore
+    //   query.def.target.id,
+    //   subId,
+    // )
+
+    // this works
     const subId = native.crc32(
       query.buffer.subarray(ID.id + 4, query.buffer.byteLength - 4),
     )
