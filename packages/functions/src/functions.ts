@@ -329,6 +329,14 @@ export type BasedStreamFunctionConfig = {
   fn: BasedStreamFunction
 }
 
+export type BasedLoadTestFunctionConfig = {
+  /** Function type `load` */
+  type: 'loadtest'
+  fn: BasedStreamFunction
+  concurrency?: number
+  ramp?: number
+}
+
 export type BasedAppFunctionConfig = {
   /** Function type `app, http, channel, function, query, stream, authorize, job` */
   type: 'app'
@@ -359,16 +367,18 @@ export type BasedFunctionConfig<
           ? BasedJobFunctionConfig & FunctionConfigShared
           : T extends 'app'
             ? BasedAppFunctionConfig & FunctionConfigShared
-            : T extends 'http'
-              ? BasedHttpFunctionConfig & FunctionConfigShared
-              :
-                  | (BasedChannelFunctionConfig & FunctionConfigShared)
-                  | (BasedCallFunctionConfig & FunctionConfigShared)
-                  | (BasedQueryFunctionConfig & FunctionConfigShared)
-                  | (BasedStreamFunctionConfig & FunctionConfigShared)
-                  | (BasedJobFunctionConfig & FunctionConfigShared)
-                  | (BasedAppFunctionConfig & FunctionConfigShared)
-                  | (BasedHttpFunctionConfig & FunctionConfigShared)
+            : T extends 'loadtest'
+              ? BasedLoadTestFunctionConfig & FunctionConfigShared
+              : T extends 'http'
+                ? BasedHttpFunctionConfig & FunctionConfigShared
+                :
+                    | (BasedChannelFunctionConfig & FunctionConfigShared)
+                    | (BasedCallFunctionConfig & FunctionConfigShared)
+                    | (BasedQueryFunctionConfig & FunctionConfigShared)
+                    | (BasedStreamFunctionConfig & FunctionConfigShared)
+                    | (BasedJobFunctionConfig & FunctionConfigShared)
+                    | (BasedAppFunctionConfig & FunctionConfigShared)
+                    | (BasedHttpFunctionConfig & FunctionConfigShared)
 
 export type BasedFunctionConfigComplete<
   T extends BasedFunctionTypes = BasedFunctionTypes,
@@ -384,16 +394,19 @@ export type BasedFunctionConfigComplete<
           ? BasedJobFunctionConfig & FunctionConfigSharedComplete
           : T extends 'app'
             ? BasedAppFunctionConfig & FunctionConfigSharedComplete
-            : T extends 'http'
-              ? BasedHttpFunctionConfig & FunctionConfigSharedComplete
-              :
-                  | (BasedChannelFunctionConfig & FunctionConfigSharedComplete)
-                  | (BasedCallFunctionConfig & FunctionConfigSharedComplete)
-                  | (BasedQueryFunctionConfig & FunctionConfigSharedComplete)
-                  | (BasedStreamFunctionConfig & FunctionConfigSharedComplete)
-                  | (BasedJobFunctionConfig & FunctionConfigSharedComplete)
-                  | (BasedAppFunctionConfig & FunctionConfigSharedComplete)
-                  | (BasedHttpFunctionConfig & FunctionConfigSharedComplete)
+            : T extends 'loadtest'
+              ? BasedLoadTestFunctionConfig & FunctionConfigSharedComplete
+              : T extends 'http'
+                ? BasedHttpFunctionConfig & FunctionConfigSharedComplete
+                :
+                    | (BasedChannelFunctionConfig &
+                        FunctionConfigSharedComplete)
+                    | (BasedCallFunctionConfig & FunctionConfigSharedComplete)
+                    | (BasedQueryFunctionConfig & FunctionConfigSharedComplete)
+                    | (BasedStreamFunctionConfig & FunctionConfigSharedComplete)
+                    | (BasedJobFunctionConfig & FunctionConfigSharedComplete)
+                    | (BasedAppFunctionConfig & FunctionConfigSharedComplete)
+                    | (BasedHttpFunctionConfig & FunctionConfigSharedComplete)
 
 export type BasedAuthorizeFunctionConfig = {
   /** Function type `app, http, channel, function, query, stream, authorize, job` */
