@@ -1,6 +1,6 @@
 {
   "name": "@based/functions",
-  "version": "3.4.18",
+  "version": "3.4.19",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -17,8 +17,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@based/db": "0.2.19",
-    "@based/utils": "1.2.3",
+    "@based/db": "0.2.20",
+    "@based/utils": "1.2.4",
     "utility-types": "^3.10.0"
   },
   "devDependencies": {
