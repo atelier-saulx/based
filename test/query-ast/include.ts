@@ -75,7 +75,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e4; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
@@ -101,6 +101,8 @@ await test('include', async (t) => {
   // GET REFERENCEs
   // SORT REFERENCES
   // FILTER REFENRRENS
+  // FILTER REFS BY EDGE
+  // ALIAS
 
   const ast: QueryAst = {
     type: 'user',
@@ -150,18 +152,25 @@ await test('include', async (t) => {
           name: { include: {} },
           y: { include: {} },
         },
-        // filter: {
-        //   props: {
-        //     y: {
-        //       ops: [{ op: '>', val: 6 }],
-        //     },
-        //   },
-        // },
-        // edges: {
-        //   props: {
-        //     $level: { include: {} },
-        //   },
-        // },
+        filter: {
+          // props: {
+          //   y: {
+          //     ops: [{ op: '>', val: 6 }],
+          //   },
+          // },
+          edges: {
+            props: {
+              $level: {
+                ops: [{ op: '>', val: 100 }],
+              },
+            },
+          },
+        },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
       },
       // mrFriend: {
       //   props: {
@@ -176,7 +185,7 @@ await test('include', async (t) => {
     },
   }
 
-  console.dir(ast, { depth: 100 })
+  console.dir(ast, { depth: 10 })
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 

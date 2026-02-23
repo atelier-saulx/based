@@ -20,8 +20,17 @@ type WalkCtx = {
   main: { prop: PropDef; ops: FilterOp[] }[]
 }
 
+export const EdgeStrategy = {
+  noEdge: 0,
+  edgeOnly: 1,
+  mixed: 2,
+} as const
+
+export type EdgeStrategyEnum = (typeof EdgeStrategy)[keyof typeof EdgeStrategy]
+
 // Handle EDGES
 
+// EDGE ONLY?
 const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
   const { tree, main } = walkCtx
 
@@ -88,8 +97,10 @@ const indexOf = (
 
 // filter + EDGE
 
+// EDGE ONLY?
 export const filter = (
   ast: FilterAst,
+  edgeStrategy: EdgeStrategyEnum, // fix this
   ctx: Ctx,
   typeDef: TypeDef,
   filterIndex: number = 0,
