@@ -21,12 +21,13 @@
 #include "io.h"
 #include "schema.h"
 
-#define SCHEMA_MIN_SIZE                 8
-#define SCHEMA_OFF_BLOCK_CAPACITY       0 /*!< u32 */
-#define SCHEMA_OFF_NR_FIELDS            4 /*!< u8 */
-#define SCHEMA_OFF_NR_FIXED_FIELDS      5 /*!< u8 */
-#define SCHEMA_OFF_NR_VIRTUAL_FIELDS    6 /*!< u8 */
-#define SCHEMA_OFF_VERSION              7 /*!< u8 */
+struct SelvaSchemaHeader {
+    uint32_t block_capacity;
+    uint8_t nr_fields;
+    uint8_t nr_fixed_fields;
+    uint8_t nr_virtual_fields;
+    uint8_t sdb_version;
+} __packed;
 
 struct schemabuf_parser_ctx {
     struct SelvaTypeEntry *te;
@@ -323,19 +324,18 @@ static struct schemabuf_parser {
 
 int schemabuf_get_info(struct schema_info *nfo, const uint8_t *buf, size_t len)
 {
-    uint32_t block_capacity;
+    struct SelvaSchemaHeader head;
 
-    if (len < SCHEMA_MIN_SIZE) {
+    if (len < sizeof(struct SelvaSchemaHeader)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&block_capacity, buf + SCHEMA_OFF_BLOCK_CAPACITY, sizeof(block_capacity));
-
+    memcpy(&head, buf, sizeof(head));
     *nfo = (struct schema_info){
-        .block_capacity = block_capacity,
-        .nr_fields = buf[SCHEMA_OFF_NR_FIELDS],
-        .nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS],
-        .nr_virtual_fields = buf[SCHEMA_OFF_NR_VIRTUAL_FIELDS],
+        .block_capacity = head.block_capacity,
+        .nr_fields = head.nr_fields,
+        .nr_fixed_fields = head.nr_fixed_fields,
+        .nr_virtual_fields = head.nr_virtual_fields,
     };
 
     if (nfo->nr_fixed_fields > nfo->nr_fields ||
@@ -482,7 +482,7 @@ static int parse2(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *fi
     }
 
     make_field_map_template(fields_schema);
-    make_fixed_fields_template(fields_schema, buf - SCHEMA_MIN_SIZE);
+    make_fixed_fields_template(fields_schema, buf - sizeof(struct SelvaSchemaHeader));
 
     return 0;
 }
@@ -501,21 +501,21 @@ int schemabuf_parse_ns(struct SelvaNodeSchema *ns, const uint8_t *buf, size_t le
         .alias_index = 0,
     };
 
-    if (len < SCHEMA_MIN_SIZE) {
+    if (len < sizeof(struct SelvaSchemaHeader)) {
         return SELVA_EINVAL;
     }
 
     /* We just assume that fields_schema is allocated properly. */
-    ctx.version = buf[SCHEMA_OFF_VERSION];
-    fields_schema->nr_fields = buf[SCHEMA_OFF_NR_FIELDS];
-    fields_schema->nr_fixed_fields = buf[SCHEMA_OFF_NR_FIXED_FIELDS];
+    ctx.version = buf[offsetof(struct SelvaSchemaHeader, sdb_version)];
+    fields_schema->nr_fields = buf[offsetof(struct SelvaSchemaHeader, nr_fields)];
+    fields_schema->nr_fixed_fields = buf[offsetof(struct SelvaSchemaHeader, nr_fixed_fields)];
 
     if (ctx.version > max_version) {
         /* Can't load a schema created with a newer version. */
         return SELVA_ENOTSUP;
     }
 
-    int err = parse2(&ctx, fields_schema, buf + SCHEMA_MIN_SIZE, len - SCHEMA_MIN_SIZE);
+    int err = parse2(&ctx, fields_schema, buf + sizeof(struct SelvaSchemaHeader), len - sizeof(struct SelvaSchemaHeader));
     ns->nr_alias_fields = ctx.alias_index;
     ns->nr_colvec_fields = ctx.colvec_index;
 
