@@ -19,7 +19,7 @@ await test('incorrect values', async (t) => {
 
   throws(() =>
     db.create('thing', {
-      vec: new Float32Array([1.1, 2.2, 3.3, 4,2]),
+      vec: new Float32Array([1.1, 2.2, 3.3, 4, 2]),
     }),
   )
 })
@@ -32,14 +32,17 @@ await test('default', async (t) => {
           type: 'vector',
           size: 3,
           baseType: 'float32',
-          default: new Float32Array([1, 2.5, 3])
+          default: new Float32Array([1, 2.5, 3]),
         },
       },
     },
   })
 
   const id1 = await db.create('thing', {})
-  deepEqual(await db.query2('thing', id1).get(), { id: id1, vec: new Float32Array([1, 2.5, 3]) })
+  deepEqual(await db.query2('thing', id1).get(), {
+    id: id1,
+    vec: new Float32Array([1, 2.5, 3]),
+  })
 })
 
 await test('default colvec', async (t) => {
@@ -52,30 +55,35 @@ await test('default colvec', async (t) => {
             type: 'colvec',
             size: 3,
             baseType: 'float32',
-            default: new Float32Array([1, 2.5, 3])
+            default: new Float32Array([1, 2.5, 3]),
           },
-        }
+        },
       },
     },
   })
 
   const id1 = await db.create('thing', {})
-  deepEqual(await db.query2('thing', id1).get(), { id: id1, vec: new Float32Array([1, 2.5, 3]) })
+  deepEqual(await db.query2('thing', id1).get(), {
+    id: id1,
+    vec: new Float32Array([1, 2.5, 3]),
+  })
 })
 
 await test.skip('incorrect default', async (t) => {
-  throws(() => testDb(t, {
-    types: {
-      thing: {
-        vec: {
-          type: 'vector',
-          size: 3,
-          baseType: 'float32',
-          default: new Float32Array([1, 2.5, 3, 4.3])
+  throws(() =>
+    testDb(t, {
+      types: {
+        thing: {
+          vec: {
+            type: 'vector',
+            size: 3,
+            baseType: 'float32',
+            default: new Float32Array([1, 2.5, 3, 4.3]),
+          },
         },
       },
-    },
-  }))
+    }),
+  )
 })
 
 await test('modify vector', async (t) => {
@@ -175,7 +183,10 @@ await test('modify colvec', async (t) => {
   await db.update('thing', id1, {
     vec: null,
   })
-  deepEqual(await db.query2('thing', id1).get(), { id: 1, vec: new Float64Array([0, 0, 0]) })
+  deepEqual(await db.query2('thing', id1).get(), {
+    id: 1,
+    vec: new Float64Array([0, 0, 0]),
+  })
 })
 
 await test('modify vector on edge', async (t) => {
