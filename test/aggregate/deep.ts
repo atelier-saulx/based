@@ -525,13 +525,7 @@ await test('cardinality', async (t) => {
 })
 
 await test('cardinality on references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       booth: {
         company: 'string',
@@ -563,19 +557,17 @@ await test('cardinality on references', async (t) => {
     booths: [bg, stp],
   })
 
-<<<<<<< HEAD
-//   await db.query2('fair').include('booths.badgesScanned').get().inspect()
-//   await db
-//     .query2('fair')
-//     .cardinality('booths.badgesScanned')
-//     .groupBy('day')
-//     .get()
-//     .inspect()
-// })
-=======
+  //   await db.query2('fair').include('booths.badgesScanned').get().inspect()
+  //   await db
+  //     .query2('fair')
+  //     .cardinality('booths.badgesScanned')
+  //     .groupBy('day')
+  //     .get()
+  //     .inspect()
+  // })
   deepEqual(
     await db
-      .query('fair')
+      .query2('fair')
       .include((s) => s('booths').cardinality('badgesScanned'))
       .get(),
     [
@@ -595,16 +587,15 @@ await test('cardinality on references', async (t) => {
    *  Nested syntax:
    */
 
-  // await db.query('fair').include('booths.badgesScanned').get().inspect()
+  // await db.query2('fair').include('booths.badgesScanned').get().inspect()
 
   // await db
-  //   .query('fair')
+  //   .query2('fair')
   //   .cardinality('booths.badgesScanned')
   //   .groupBy('day')
   //   .get()
   //   .inspect()
 })
->>>>>>> ede73b52799512041ed5f8ae1d758f1b6cf88037
 
 await test('group by reference ids', async (t) => {
   const db = await testDb(t, {
@@ -731,8 +722,10 @@ await test.skip('nested references', async (t) => {
   deepEqual(
     await db.query2('user').sum('friends.strong').get(),
     {
-      strong: {
-        sum: 7,
+      friends: {
+        strong: {
+          sum: 7,
+        },
       },
     },
     'nested references access with dot sintax',
@@ -839,100 +832,9 @@ await test.skip('edges aggregation', async (t) => {
   //   .get()
   //   .inspect(10)
 
-<<<<<<< HEAD
-  deepEqual(
-    await db
-      .query2('movie')
-      .include((q) => q('actors').max('$rating'))
-      .get(),
-    [
-      {
-        id: 1,
-        actors: {
-          $rating: {
-            max: 55,
-          },
-        },
-      },
-      {
-        id: 2,
-        actors: {
-          $rating: {
-            max: 77,
-          },
-        },
-      },
-    ],
-    'single edge aggregation, branched query',
-  )
-
-  deepEqual(
-    await db
-      .query2('movie')
-      .include((q) => q('actors').max('$rating').sum('$hating'))
-      .get(),
-    [
-      {
-        id: 1,
-        actors: {
-          $rating: {
-            max: 55,
-          },
-          $hating: {
-            sum: 5,
-          },
-        },
-      },
-      {
-        id: 2,
-        actors: {
-          $rating: {
-            max: 77,
-          },
-          $hating: {
-            sum: 10,
-          },
-        },
-      },
-    ],
-    'multiple edges with multiple agg functions, branched query',
-  )
-
-  deepEqual(
-    await db
-      .query2('movie')
-      .include((q) => q('actors').max('$rating', '$hating'))
-      .get(),
-    [
-      {
-        id: 1,
-        actors: {
-          $rating: {
-            max: 55,
-          },
-          $hating: {
-            max: 5,
-          },
-        },
-      },
-      {
-        id: 2,
-        actors: {
-          $rating: {
-            max: 77,
-          },
-          $hating: {
-            max: 7,
-          },
-        },
-      },
-    ],
-    'multiple edges on same agg function, branched query',
-  )
-=======
   // deepEqual(
   //   await db
-  //     .query('movie')
+  //     .query2('movie')
   //     .include((q) => q('actors').max('$rating'))
   //     .get()
   //     .toObject(),
@@ -959,7 +861,7 @@ await test.skip('edges aggregation', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query('movie')
+  //     .query2('movie')
   //     .include((q) => q('actors').max('$rating').sum('$hating'))
   //     .get()
   //     .toObject(),
@@ -992,7 +894,7 @@ await test.skip('edges aggregation', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query('movie')
+  //     .query2('movie')
   //     .include((q) => q('actors').max('$rating', '$hating'))
   //     .get()
   //     .toObject(),
@@ -1022,7 +924,6 @@ await test.skip('edges aggregation', async (t) => {
   //   ],
   //   'multiple edges on same agg function, branched query',
   // )
->>>>>>> ede73b52799512041ed5f8ae1d758f1b6cf88037
 
   /*-----------------------------------*/
   /*          STRAIGHT ON TYPE         */
