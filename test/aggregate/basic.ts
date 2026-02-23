@@ -388,136 +388,136 @@ await test('numeric types', async (t) => {
   })
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
-  // deepEqual(
-  //   await db.query2('vote').groupBy('region').get(),
-  //   {
-  //     bb: {},
-  //     aa: {},
-  //     Great: {},
-  //   },
-  //   'empty aggregation function, group by',
-  // )
+  deepEqual(
+    await db.query2('vote').groupBy('region').get(),
+    {
+      bb: {},
+      aa: {},
+      Great: {},
+    },
+    'empty aggregation function, group by',
+  )
 
-  // deepEqual(
-  //   await db.query2('vote').sum('NL', 'FI').groupBy('region').get(),
-  //   {
-  //     bb: {
-  //       NL: { sum: 33 },
-  //       FI: { sum: -1000000.3 },
-  //     },
-  //     aa: {
-  //       NL: { sum: 93 },
-  //       FI: { sum: 0 },
-  //     },
-  //     Great: {
-  //       NL: { sum: 50 },
-  //       FI: { sum: -50.999 },
-  //     },
-  //   },
-  //   'sum, main, group by',
-  // )
+  deepEqual(
+    await db.query2('vote').sum('NL', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: { sum: 33 },
+        FI: { sum: -1000000.3 },
+      },
+      aa: {
+        NL: { sum: 93 },
+        FI: { sum: 0 },
+      },
+      Great: {
+        NL: { sum: 50 },
+        FI: { sum: -50.999 },
+      },
+    },
+    'sum, main, group by',
+  )
 
-  // deepEqual(
-  //   await db.query2('vote').count().groupBy('region').get(),
-  //   {
-  //     bb: {
-  //       count: 2,
-  //     },
-  //     aa: {
-  //       count: 2,
-  //     },
-  //     Great: {
-  //       count: 1,
-  //     },
-  //   },
-  //   'count, main, group by',
-  // )
+  deepEqual(
+    await db.query2('vote').count().groupBy('region').get(),
+    {
+      bb: {
+        count: 2,
+      },
+      aa: {
+        count: 2,
+      },
+      Great: {
+        count: 1,
+      },
+    },
+    'count, main, group by',
+  )
 
-  // deepEqual(
-  //   await db.query2('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
-  //   {
-  //     bb: {
-  //       NL: { avg: 16.5 },
-  //       PT: { avg: 21.5 },
-  //       FI: { avg: -500000.15 },
-  //     },
-  //     aa: {
-  //       NL: { avg: 46.5 },
-  //       PT: { avg: 46.5 },
-  //       FI: { avg: 0 },
-  //     },
-  //     Great: {
-  //       NL: { avg: 50 },
-  //       PT: { avg: 50 },
-  //       FI: { avg: -50.999 },
-  //     },
-  //   },
-  //   'avg, main, group by',
-  // )
+  deepEqual(
+    await db.query2('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: { avg: 16.5 },
+        PT: { avg: 21.5 },
+        FI: { avg: -500000.15 },
+      },
+      aa: {
+        NL: { avg: 46.5 },
+        PT: { avg: 46.5 },
+        FI: { avg: 0 },
+      },
+      Great: {
+        NL: { avg: 50 },
+        PT: { avg: 50 },
+        FI: { avg: -50.999 },
+      },
+    },
+    'avg, main, group by',
+  )
 
-  // deepEqual(
-  //   await db.query2('vote').hmean('NL', 'PT', 'FI').groupBy('region').get(),
-  //   {
-  //     bb: {
-  //       NL: { hmean: 13.93939393939394 },
-  //       PT: { hmean: 15.348837209302324 },
-  //       FI: { hmean: 0 }, // harmonic mean when any of the values is 0 is 0 by definition
-  //     },
-  //     aa: {
-  //       NL: { hmean: 46.236559139784944 },
-  //       PT: { hmean: 46.236559139784944 },
-  //       FI: { hmean: 0 }, // harmonic mean when any of the values is 0 is 0 by definition
-  //     },
-  //     Great: {
-  //       NL: { hmean: 50 },
-  //       PT: { hmean: 50 },
-  //       FI: { hmean: -50.99900000000001 }, // harmonic mean is not designed for negative numbers but possible
-  //     },
-  //   },
-  //   'hmean, main, group by',
-  // )
+  deepEqual(
+    await db.query2('vote').hmean('NL', 'PT', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: { hmean: 13.93939393939394 },
+        PT: { hmean: 15.348837209302324 },
+        FI: { hmean: 0 }, // harmonic mean when any of the values is 0 is 0 by definition
+      },
+      aa: {
+        NL: { hmean: 46.236559139784944 },
+        PT: { hmean: 46.236559139784944 },
+        FI: { hmean: 0 }, // harmonic mean when any of the values is 0 is 0 by definition
+      },
+      Great: {
+        NL: { hmean: 50 },
+        PT: { hmean: 50 },
+        FI: { hmean: -50.99900000000001 }, // harmonic mean is not designed for negative numbers but possible
+      },
+    },
+    'hmean, main, group by',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query2('vote')
-  //     .stddev('NL', 'PL', { mode: 'population' })
-  //     .groupBy('region')
-  //     .get(),
-  //   {
-  //     bb: {
-  //       NL: { stddev: 6.5 },
-  //       PL: { stddev: 11.5 },
-  //     },
-  //     aa: {
-  //       NL: { stddev: 3.5 },
-  //       PL: { stddev: 11.5 },
-  //     },
-  //     Great: {
-  //       NL: { stddev: 0 },
-  //       PL: { stddev: 0 },
-  //     },
-  //   },
-  //   'stddev, main, group by, pop',
-  // )
+  deepEqual(
+    await db
+      .query2('vote')
+      .stddev('NL', 'PL', { mode: 'population' })
+      .groupBy('region')
+      .get(),
+    {
+      bb: {
+        NL: { stddev: 6.5 },
+        PL: { stddev: 11.5 },
+      },
+      aa: {
+        NL: { stddev: 3.5 },
+        PL: { stddev: 11.5 },
+      },
+      Great: {
+        NL: { stddev: 0 },
+        PL: { stddev: 0 },
+      },
+    },
+    'stddev, main, group by, pop',
+  )
 
-  // deepEqual(
-  //   await db.query2('vote').stddev('NL', 'PL').groupBy('region').get(),
-  //   {
-  //     bb: {
-  //       NL: { stddev: 9.192388155425117 },
-  //       PL: { stddev: 16.263455967290593 },
-  //     },
-  //     aa: {
-  //       NL: { stddev: 4.949747468305833 },
-  //       PL: { stddev: 16.263455967290593 },
-  //     },
-  //     Great: {
-  //       NL: { stddev: 0 },
-  //       PL: { stddev: 0 },
-  //     },
-  //   },
-  //   'stddev, main, group by, default=sample',
-  // )
+  deepEqual(
+    await db.query2('vote').stddev('NL', 'PL').groupBy('region').get(),
+    {
+      bb: {
+        NL: { stddev: 9.192388155425117 },
+        PL: { stddev: 16.263455967290593 },
+      },
+      aa: {
+        NL: { stddev: 4.949747468305833 },
+        PL: { stddev: 16.263455967290593 },
+      },
+      Great: {
+        NL: { stddev: 0 },
+        PL: { stddev: 0 },
+      },
+    },
+    'stddev, main, group by, default=sample',
+  )
 
   deepEqual(
     await db
@@ -542,386 +542,406 @@ await test('numeric types', async (t) => {
     'variance, main, group by, population',
   )
 
-  //   deepEqual(
-  //     await db
-  //       .query2('vote')
-  //       .var('NL', 'PL', { mode: 'sample' })
-  //       .groupBy('region')
-  //       .get(),
+  deepEqual(
+    await db
+      .query2('vote')
+      .var('NL', 'PL', { mode: 'sample' })
+      .groupBy('region')
+      .get(),
+    {
+      bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
+      aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
+      Great: { NL: { variance: 0 }, PL: { variance: 0 } },
+    },
+    'variance, main, group by, sample',
+  )
+
+  deepEqual(
+    await db.query2('vote').var('NL', 'PL').groupBy('region').get(),
+    {
+      bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
+      aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
+      Great: { NL: { variance: 0 }, PL: { variance: 0 } },
+    },
+    'variance, main, group by, default (sample)',
+  )
+
+  deepEqual(
+    await db.query2('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: { max: 23 },
+        NO: { max: -10 },
+        PT: { max: 33 },
+        FI: { max: 0 },
+      },
+      aa: {
+        NL: { max: 50 },
+        NO: { max: -43 },
+        PT: { max: 50 },
+        FI: { max: 0 },
+      },
+      Great: {
+        NL: { max: 50 },
+        NO: { max: -50 },
+        PT: { max: 50 },
+        FI: { max: -50.999 },
+      },
+    },
+    'max, main, group by',
+  )
+
+  deepEqual(
+    await db.query2('vote').min('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+    {
+      bb: {
+        NL: { min: 10 },
+        NO: { min: -23 },
+        PT: { min: 10 },
+        FI: { min: -1000000.3 },
+      },
+      aa: {
+        NL: { min: 43 },
+        NO: { min: -50 },
+        PT: { min: 43 },
+        FI: { min: 0 },
+      },
+      Great: {
+        NL: { min: 50 },
+        NO: { min: -50 },
+        PT: { min: 50 },
+        FI: { min: -50.999 },
+      },
+    },
+    'min, main, group by',
+  )
+
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').sum('NL'))
+  //     .get(),
+  //   [
   //     {
-  //       bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
-  //       aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
-  //       Great: { NL: { variance: 0 }, PL: { variance: 0 } },
+  //       id: 1,
+  //       votes: {
+  //         NL: { sum: 176 },
+  //       },
   //     },
-  //     'variance, main, group by, sample',
-  //   )
+  //   ],
+  //   'references, not grouped',
+  // )
 
-  //   deepEqual(
-  //     await db.query2('vote').var('NL', 'PL').groupBy('region').get(),
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').avg('NL'))
+  //     .get(),
+  //   [
   //     {
-  //       bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
-  //       aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
-  //       Great: { NL: { variance: 0 }, PL: { variance: 0 } },
+  //       id: 1,
+  //       votes: {
+  //         NL: { avg: 35.2 },
+  //       },
   //     },
-  //     'variance, main, group by, default (sample)',
-  //   )
+  //   ],
+  //   'avg, references, not grouped',
+  // )
 
-  //   deepEqual(
-  //     await db.query2('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').hmean('NL'))
+  //     .get(),
+  //   [
   //     {
-  //       bb: {
-  //         NL: { max: 23 },
-  //         NO: { max: -10 },
-  //         PT: { max: 33 },
-  //         FI: { max: 0 },
-  //       },
-  //       aa: {
-  //         NL: { max: 50 },
-  //         NO: { max: -43 },
-  //         PT: { max: 50 },
-  //         FI: { max: 0 },
-  //       },
-  //       Great: {
-  //         NL: { max: 50 },
-  //         NO: { max: -50 },
-  //         PT: { max: 50 },
-  //         FI: { max: -50.999 },
+  //       id: 1,
+  //       votes: {
+  //         NL: { hmean: 24.18565978675536 },
   //       },
   //     },
-  //     'max, main, group by',
-  //   )
+  //   ],
+  //   'hmean, references, not grouped',
+  // )
 
-  //   deepEqual(
-  //     await db.query2('vote').min('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').sum('NL'))
+  //     .get(),
+  //   [
   //     {
-  //       bb: {
-  //         NL: { min: 10 },
-  //         NO: { min: -23 },
-  //         PT: { min: 10 },
-  //         FI: { min: -1000000.3 },
-  //       },
-  //       aa: {
-  //         NL: { min: 43 },
-  //         NO: { min: -50 },
-  //         PT: { min: 43 },
-  //         FI: { min: 0 },
-  //       },
-  //       Great: {
-  //         NL: { min: 50 },
-  //         NO: { min: -50 },
-  //         PT: { min: 50 },
-  //         FI: { min: -50.999 },
-  //       },
-  //     },
-  //     'min, main, group by',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').sum('NL'))
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           NL: { sum: 176 },
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { sum: 33 },
   //         },
-  //       },
-  //     ],
-  //     'references, not grouped',
-  //   )
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').avg('NL'))
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           NL: { avg: 35.2 },
+  //         aa: {
+  //           NL: { sum: 93 },
   //         },
-  //       },
-  //     ],
-  //     'avg, references, not grouped',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').hmean('NL'))
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           NL: { hmean: 24.18565978675536 },
-  //         },
-  //       },
-  //     ],
-  //     'hmean, references, not grouped',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').groupBy('region').sum('NL'))
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: {
-  //             NL: { sum: 33 },
-  //           },
-  //           aa: {
-  //             NL: { sum: 93 },
-  //           },
-  //           Great: {
-  //             NL: { sum: 50 },
-  //           },
-  //         },
-  //       },
-  //     ],
-  //     'sum, references, group by',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').groupBy('region').count())
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: { count: 2 },
-  //           aa: { count: 2 },
-  //           Great: { count: 1 },
-  //         },
-  //       },
-  //     ],
-  //     'count, references, group by',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) =>
-  //         q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
-  //       )
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: {
-  //             NL: { stddev: 6.5 },
-  //           },
-  //           aa: {
-  //             NL: { stddev: 3.5 },
-  //           },
-  //           Great: {
-  //             NL: { stddev: 0 },
-  //           },
-  //         },
-  //       },
-  //     ],
-  //     'stddev, references, group by',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').groupBy('region').stddev('NL'))
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: { NL: { stddev: 9.192388155425117 } },
-  //           aa: { NL: { stddev: 4.949747468305833 } },
-  //           Great: { NL: { stddev: 0 } },
-  //         },
-  //       },
-  //     ],
-  //     'stddev, references, group by',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) =>
-  //         q('votes').groupBy('region').var('NL', { mode: 'population' }),
-  //       )
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: {
-  //             NL: { variance: 42.25 },
-  //           },
-  //           aa: {
-  //             NL: { variance: 12.25 },
-  //           },
-  //           Great: {
-  //             NL: { variance: 0 },
-  //           },
-  //         },
-  //       },
-  //     ],
-  //     'variance, references, group by, pop',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) =>
-  //         q('votes').groupBy('region').var('NL', { mode: 'sample' }),
-  //       )
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: { NL: { variance: 84.5 } },
-  //           aa: { NL: { variance: 24.5 } },
-  //           Great: { NL: { variance: 0 } },
-  //         },
-  //       },
-  //     ],
-  //     'variance, references, group by, sample',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').groupBy('region').var('NL'))
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: { NL: { variance: 84.5 } },
-  //           aa: { NL: { variance: 24.5 } },
-  //           Great: { NL: { variance: 0 } },
-  //         },
-  //       },
-  //     ],
-  //     'variance, references, group by, defaul (sample)',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').groupBy('region').avg('NL'))
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: {
-  //             NL: { avg: 16.5 },
-  //           },
-  //           aa: {
-  //             NL: { avg: 46.5 },
-  //           },
-  //           Great: {
-  //             NL: { avg: 50 },
-  //           },
-  //         },
-  //       },
-  //     ],
-  //     'avg, references, group by',
-  //   )
-
-  //   deepEqual(
-  //     await db
-  //       .query2('sequence')
-  //       .include((q) => q('votes').groupBy('region').hmean('NL'))
-  //       .get(),
-  //     [
-  //       {
-  //         id: 1,
-  //         votes: {
-  //           bb: {
-  //             NL: { hmean: 13.93939393939394 },
-  //           },
-  //           aa: {
-  //             NL: { hmean: 46.236559139784944 },
-  //           },
-  //           Great: {
-  //             NL: { hmean: 50 },
-  //           },
-  //         },
-  //       },
-  //     ],
-  //     'hmean, references, group by',
-  //   )
-  // })
-
-  // await test('fixed length strings', async (t) => {
-  //   const db = await testDb(t, {
-  //     types: {
-  //       product: {
-  //         name: { type: 'string', maxBytes: 10 },
-  //         flap: 'number',
-  //       },
-  //       shelve: {
-  //         code: { type: 'string', maxBytes: 4 },
-  //         products: {
-  //           items: {
-  //             ref: 'product',
-  //             prop: 'product',
-  //           },
+  //         Great: {
+  //           NL: { sum: 50 },
   //         },
   //       },
   //     },
-  //   })
+  //   ],
+  //   'sum, references, group by',
+  // )
 
-  //   const rnd = fastPrng()
-  //   for (let i = 0; i < 100; i++) {
-  //     let p = db.create('product', {
-  //       name: `lala ${rnd(0, 10)}`,
-  //       flap: Math.random() * 100,
-  //     })
-  //     db.drain()
-  //     db.create('shelve', {
-  //       code: `S${rnd(0, 10)}`,
-  //       products: [p],
-  //     })
-  //   }
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').count())
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: { count: 2 },
+  //         aa: { count: 2 },
+  //         Great: { count: 1 },
+  //       },
+  //     },
+  //   ],
+  //   'count, references, group by',
+  // )
 
-  //   equal(
-  //     Number(
-  //       Object.keys(
-  //         await db
-  //           .query2('product')
-  //           .include('*')
-  //           .avg('flap')
-  //           .groupBy('name')
-  //           .get(),
-  //       )[0].substring(4, 6),
-  //     ) < 100,
-  //     true,
-  //     'fixed length strings on main',
-  //   )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) =>
+  //       q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
+  //     )
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { stddev: 6.5 },
+  //         },
+  //         aa: {
+  //           NL: { stddev: 3.5 },
+  //         },
+  //         Great: {
+  //           NL: { stddev: 0 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'stddev, references, group by',
+  // )
 
-  //   equal(
-  //     Number(
-  //       Object.keys(
-  //         await db
-  //           .query2('shelve')
-  //           .include((q) => q('products').avg('flap').groupBy('name'))
-  //           .get(),
-  //       )[0].substring(4, 6),
-  //     ) < 100,
-  //     true,
-  //     'fixed length strings on references',
-  //   )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').stddev('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: { NL: { stddev: 9.192388155425117 } },
+  //         aa: { NL: { stddev: 4.949747468305833 } },
+  //         Great: { NL: { stddev: 0 } },
+  //       },
+  //     },
+  //   ],
+  //   'stddev, references, group by',
+  // )
+
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) =>
+  //       q('votes').groupBy('region').var('NL', { mode: 'population' }),
+  //     )
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { variance: 42.25 },
+  //         },
+  //         aa: {
+  //           NL: { variance: 12.25 },
+  //         },
+  //         Great: {
+  //           NL: { variance: 0 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'variance, references, group by, pop',
+  // )
+
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) =>
+  //       q('votes').groupBy('region').var('NL', { mode: 'sample' }),
+  //     )
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: { NL: { variance: 84.5 } },
+  //         aa: { NL: { variance: 24.5 } },
+  //         Great: { NL: { variance: 0 } },
+  //       },
+  //     },
+  //   ],
+  //   'variance, references, group by, sample',
+  // )
+
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').var('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: { NL: { variance: 84.5 } },
+  //         aa: { NL: { variance: 24.5 } },
+  //         Great: { NL: { variance: 0 } },
+  //       },
+  //     },
+  //   ],
+  //   'variance, references, group by, defaul (sample)',
+  // )
+
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').avg('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { avg: 16.5 },
+  //         },
+  //         aa: {
+  //           NL: { avg: 46.5 },
+  //         },
+  //         Great: {
+  //           NL: { avg: 50 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'avg, references, group by',
+  // )
+
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').hmean('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { hmean: 13.93939393939394 },
+  //         },
+  //         aa: {
+  //           NL: { hmean: 46.236559139784944 },
+  //         },
+  //         Great: {
+  //           NL: { hmean: 50 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'hmean, references, group by',
+  // )
 })
+
+await test('fixed length strings', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      product: {
+        name: { type: 'string', maxBytes: 10 },
+        flap: 'number',
+      },
+      shelve: {
+        code: { type: 'string', maxBytes: 4 },
+        products: {
+          items: {
+            ref: 'product',
+            prop: 'product',
+          },
+        },
+      },
+    },
+  })
+
+  const rnd = fastPrng()
+  for (let i = 0; i < 100; i++) {
+    let p = db.create('product', {
+      name: `lala ${rnd(0, 10)}`,
+      flap: Math.random() * 100,
+    })
+    db.drain()
+    db.create('shelve', {
+      code: `S${rnd(0, 10)}`,
+      products: [p],
+    })
+  }
+
+  console.dir(
+    await db.query2('product').include('*').avg('flap').groupBy('name').get(),
+    { maxDepth: null },
+  )
+
+  equal(
+    Number(
+      Object.keys(
+        await db
+          .query2('product')
+          .include('*')
+          .avg('flap')
+          .groupBy('name')
+          .get(),
+      )[0].substring(4, 6),
+    ) < 100,
+    true,
+    'fixed length strings on main',
+  )
+
+  // Branched queries not implemented yet in AST
+  // equal(
+  //   Number(
+  //     Object.keys(
+  //       await db
+  //         .query2('shelve')
+  //         .include((q) => q('products').avg('flap').groupBy('name'))
+  //         .get(),
+  //     )[0].substring(4, 6),
+  //   ) < 100,
+  //   true,
+  //   'fixed length strings on references',
+  // )
+})
+
 /*
 await test('range', async (t) => {
   const db = await testDb(t, {
