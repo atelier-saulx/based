@@ -763,7 +763,7 @@ await test('no mismatch', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.stop(true))
 
-  const client = await db.setSchema({
+  const schema = {
     types: {
       user: {
         props: {
@@ -771,7 +771,8 @@ await test('no mismatch', async (t) => {
         },
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
   await client.create('user', {
     name: 'xxx',
@@ -782,15 +783,17 @@ await test('no mismatch', async (t) => {
   const db2 = new BasedDb({
     path: t.tmp,
   })
-
   t.after(() => t.backup(db2))
-
   await db2.start()
-  await db2.create('user', {
-    name: 'xxx',
+
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
   })
 
-  await db2.create('user', {
+  await client2.create('user', {
+    name: 'xxx',
+  })
+  await client2.create('user', {
     name: 'xxx2',
   })
 
