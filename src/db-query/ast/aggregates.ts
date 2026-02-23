@@ -223,7 +223,7 @@ export const isAggregateAst = (ast: QueryAst) => {
 const checkSamplingMode = (ast: QueryAst): boolean => {
   if (
     ast['stddev']?.samplingMode === 'population' ||
-    ast['var']?.samplingMode === 'population'
+    ast['variance']?.samplingMode === 'population'
   )
     return false
   else return true
