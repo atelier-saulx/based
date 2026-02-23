@@ -17,8 +17,9 @@ import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
 import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import type { DbClient } from '../../sdk.js'
-import { proxyResult } from './result.js'
+import { $buffer, proxyResult } from './result.js'
 import type { StepInput, aggFnOptions } from '../query/aggregates/types.js'
+import { readUint32 } from '../../utils/uint8.js'
 
 class Query<
   S extends { types: any } = { types: any },
@@ -43,6 +44,7 @@ class Query<
   include<
     F extends [
       (
+        | 'id'
         | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
         | Path<S['types'], T>
         | '*'
@@ -50,6 +52,7 @@ class Query<
         | ((q: SelectFn<S, T>) => AnyQuery<S>)
       ),
       ...(
+        | 'id'
         | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
         | Path<S['types'], T>
         | '*'
@@ -890,4 +893,9 @@ function traverse(target: any, prop: string) {
     }
   }
   return target
+}
+
+export const checksum = (res: any): number => {
+  const buf = res?.[$buffer]
+  return buf ? readUint32(buf, buf.byteLength - 4) : 0
 }
