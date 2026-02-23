@@ -8,6 +8,7 @@ const Query = @import("../common.zig");
 const Iterate = @import("./iterate.zig");
 const std = @import("std");
 
+// Has to be inlined to force stack allocation
 inline fn referencesSort(
     comptime desc: bool,
     comptime edge: bool,

@@ -22,7 +22,7 @@ pub fn node(
     ctx: *Query.QueryCtx,
     q: []u8,
     it: anytype,
-    header: *const t.QueryHeader, // make this type
+    header: *const t.QueryHeader,
     typeEntry: Node.Type,
     i: *usize,
 ) !u32 {
