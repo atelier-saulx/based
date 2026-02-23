@@ -9,7 +9,7 @@ await test('save edge', async (t) => {
   await db.start({ clean: true })
   t.after(() => t.backup(db))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       user: {
         props: {
@@ -23,8 +23,8 @@ await test('save edge', async (t) => {
     },
   })
 
-  const user1 = await db.create('user', {})
-  const user2 = await db.create('user', {
+  const user1 = await client.create('user', {})
+  const user2 = await client.create('user', {
     bestFriend: {
       id: user1,
       $uint8: 21,
@@ -33,14 +33,14 @@ await test('save edge', async (t) => {
 
   await db.save()
 
-  await db.update('user', user2, {
+  await client.update('user', user2, {
     bestFriend: {
       id: user1,
       $uint8: 42,
     },
   })
 
-  deepEqual(await db.query('user', user2).include('**').get(), {
+  deepEqual(await client.query('user', user2).include('**').get(), {
     id: 2,
     bestFriend: {
       id: 1,
