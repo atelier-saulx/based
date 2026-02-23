@@ -187,31 +187,31 @@ static int type2fs_refs(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSche
         field_t inverse_field;
         node_type_t edge_node_type;
         uint32_t capped;
-    } __packed spec;
+    } __packed head;
 
-    static_assert(sizeof(spec) == 11);
+    static_assert(sizeof(head) == 11);
 
-    if (ctx->len < sizeof(spec)) {
+    if (ctx->len < sizeof(head)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&spec, buf, sizeof(spec));
+    memcpy(&head, buf, sizeof(head));
 
-    enum EdgeFieldConstraintFlag flags = spec.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT);
+    enum EdgeFieldConstraintFlag flags = head.flags & (EDGE_FIELD_CONSTRAINT_FLAG_DEPENDENT);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = type,
         .edge_constraint = {
             .flags = flags,
-            .inverse_field = spec.inverse_field,
-            .dst_node_type = spec.dst_node_type,
-            .edge_node_type = spec.edge_node_type,
-            .limit = spec.capped,
+            .inverse_field = head.inverse_field,
+            .dst_node_type = head.dst_node_type,
+            .edge_node_type = head.edge_node_type,
+            .limit = head.capped,
         },
     };
 
-    return sizeof(spec);
+    return sizeof(head);
 }
 
 static int type2fs_reference(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
@@ -247,29 +247,29 @@ static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
         uint16_t vec_len; /*!< Length of a single vector. */
         uint16_t comp_size; /*!< Component size in the vector. */
         schema_bool_t has_default;
-    } __packed spec;
+    } __packed head;
     size_t off = 0;
 
-    if (ctx->len < sizeof(spec)) {
+    if (ctx->len < sizeof(head)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&spec, ctx->buf + off, sizeof(spec));
-    off += sizeof(spec);
+    memcpy(&head, ctx->buf + off, sizeof(head));
+    off += sizeof(head);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_COLVEC,
         .default_off = 0,
         .colvec = {
-            .vec_len = spec.vec_len,
-            .comp_size = spec.comp_size,
+            .vec_len = head.vec_len,
+            .comp_size = head.comp_size,
             .index = ctx->colvec_index++,
         },
     };
 
-    if (spec.has_default) {
-        size_t vec_size = spec.vec_len * spec.comp_size;
+    if (head.has_default) {
+        size_t vec_size = head.vec_len * head.comp_size;
 
         if (ctx->len < off + vec_size) {
             return SELVA_EINVAL;
