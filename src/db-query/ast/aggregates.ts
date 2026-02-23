@@ -71,7 +71,9 @@ const isRootCountOnly = (ast: QueryAst) => {
     !ast.stddev &&
     !ast.variance &&
     !ast.hmean &&
-    !ast.cardinality
+    !ast.cardinality &&
+    !ast.filter &&
+    !ast.groupBy
   )
 }
 
