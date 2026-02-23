@@ -660,6 +660,16 @@ pub const QueryIteratorType = enum(u8) {
     edgeFilterOnEdgeSort = 62,
     edgeFilterOnEdgeSortDesc = 63,
 
+    edgeIncludeFilterAndFilterOnEdge = 70,
+    edgeIncludeFilterAndFilterOnEdgeDesc = 71,
+    edgeIncludeFilterAndFilterOnEdgeSort = 72,
+    edgeIncludeFilterAndFilterOnEdgeSortDesc = 73,
+
+    edgeFilterAndFilterOnEdge = 80,
+    edgeFilterAndFilterOnEdgeDesc = 81,
+    edgeFilterAndFilterOnEdgeSort = 82,
+    edgeFilterAndFilterOnEdgeSortDesc = 83,
+
     // default search
     search = 120,
     searchFilter = 121,

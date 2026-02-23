@@ -43,6 +43,7 @@ export const EdgeStrategy = {
   noEdge: 0,
   edgeOnly: 1,
   mixed: 2,
+  edgeAndProps: 3,
 } as const
 
 export type EdgeStrategyEnum = (typeof EdgeStrategy)[keyof typeof EdgeStrategy]

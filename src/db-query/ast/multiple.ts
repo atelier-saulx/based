@@ -92,15 +92,19 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))
   }
 
-  if (ast.filter && ast.filter.edgeStrategy == EdgeStrategy.noEdge) {
-    // step 1
+  if (
+    ast.filter &&
+    (ast.filter.edgeStrategy == EdgeStrategy.noEdge ||
+      ast.filter.edgeStrategy == EdgeStrategy.edgeAndProps)
+  ) {
     const filterSize = filter(ast.filter, ctx, prop.ref!)
     props.filterSize(ctx.query.data, filterSize, headerIndex)
   }
 
   if (
     ast.filter &&
-    ast.filter.edgeStrategy == EdgeStrategy.edgeOnly &&
+    (ast.filter.edgeStrategy == EdgeStrategy.edgeOnly ||
+      ast.filter.edgeStrategy == EdgeStrategy.edgeAndProps) &&
     ast.filter.edges
   ) {
     const edges = prop.edges
@@ -109,8 +113,6 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     }
     props.edgeTypeId(ctx.query.data, edges.id, headerIndex)
     const filterSize = filter(ast.filter.edges, ctx, prop.edges!)
-
-    console.log('EDGE FILTER SIZE', filterSize)
     props.edgeFilterSize(ctx.query.data, filterSize, headerIndex)
   }
 

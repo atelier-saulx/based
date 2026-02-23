@@ -75,7 +75,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 10; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
@@ -146,8 +146,8 @@ await test('include', async (t) => {
       y: { include: {} },
       name: { include: {} },
       friends: {
-        // order: 'asc',
-        // sort: { prop: '$level' }, // can just be the prop?
+        order: 'desc',
+        sort: { prop: '$level' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },
@@ -158,12 +158,12 @@ await test('include', async (t) => {
           },
         },
         filter: {
-          // props: {
-          //   y: {
-          //     ops: [{ op: '>', val: 6 }],
-          //   },
-          // },
-          edgeStrategy: EdgeStrategy.edgeOnly,
+          edgeStrategy: EdgeStrategy.edgeAndProps,
+          props: {
+            y: {
+              ops: [{ op: '>', val: 5 }],
+            },
+          },
           edges: {
             props: {
               $level: {
@@ -197,7 +197,7 @@ await test('include', async (t) => {
   debugBuffer(deflateSync(ctx.query).toString('hex'))
 
   const queries: any = []
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1; i++) {
     const x = ctx.query.slice(0)
     writeUint32(x, i + 1, 0)
     queries.push(x)

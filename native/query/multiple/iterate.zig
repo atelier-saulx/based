@@ -76,13 +76,18 @@ pub fn edge(
     var filter: []u8 = undefined;
     var edgeFilter: []u8 = undefined;
 
-    if (It == t.QueryIteratorType.filter) {
+    if (It == t.QueryIteratorType.filter or
+        It == t.QueryIteratorType.edgeFilterAndFilterOnEdge or
+        It == t.QueryIteratorType.edgeIncludeFilterAndFilterOnEdge)
+    {
         filter = utils.sliceNext(header.filterSize, q, i);
         try Filter.prepare(filter, ctx, typeEntry);
     }
 
     if (It == t.QueryIteratorType.edgeIncludeFilterOnEdge or
-        It == t.QueryIteratorType.edgeFilterOnEdge)
+        It == t.QueryIteratorType.edgeFilterOnEdge or
+        It == t.QueryIteratorType.edgeFilterAndFilterOnEdge or
+        It == t.QueryIteratorType.edgeIncludeFilterAndFilterOnEdge)
     {
         edgeFilter = utils.sliceNext(header.edgeFilterSize, q, i);
         try Filter.prepare(edgeFilter, ctx, typeEntry);
@@ -98,14 +103,18 @@ pub fn edge(
     }
 
     while (it.nextRef()) |ref| {
-        if (It == t.QueryIteratorType.filter) {
+        if (It == t.QueryIteratorType.filter or
+            It == t.QueryIteratorType.edgeFilterAndFilterOnEdge or
+            It == t.QueryIteratorType.edgeIncludeFilterAndFilterOnEdge)
+        {
             if (!try Filter.filter(ref.node, ctx, filter)) {
                 continue;
             }
         }
 
         if (It == t.QueryIteratorType.edgeIncludeFilterOnEdge or
-            It == t.QueryIteratorType.edgeFilterOnEdge)
+            It == t.QueryIteratorType.edgeFilterOnEdge or
+            It == t.QueryIteratorType.edgeFilterAndFilterOnEdge)
         {
             if (!try Filter.filter(ref.edge, ctx, edgeFilter)) {
                 continue;

@@ -10,7 +10,7 @@ import {
   QueryIteratorType,
   QueryIteratorTypeInverse,
 } from '../../zigTsExports.js'
-import { QueryAst } from './ast.js'
+import { EdgeStrategy, QueryAst } from './ast.js'
 
 export const getIteratorType = (
   header: QueryHeader,
@@ -80,17 +80,58 @@ export const getIteratorType = (
     QueryIteratorType.edgeFilterOnEdge,
   )
 
-  if (header.edgeFilterSize > 0 && header.filterSize === 0) {
-    if (header.edgeSize === 0) {
-      if (base === QueryIteratorType.edge) {
-        base = QueryIteratorType.edgeFilterOnEdge
+  if (
+    ast.filter?.edgeStrategy === EdgeStrategy.edgeOnly ||
+    ast.filter?.edgeStrategy === EdgeStrategy.edgeAndProps
+  ) {
+    if (ast.filter?.edgeStrategy === EdgeStrategy.edgeAndProps) {
+      if (header.edgeSize === 0) {
+        if (base === QueryIteratorType.edgeFilter) {
+          base = QueryIteratorType.edgeFilterAndFilterOnEdge
+        } else if (base === QueryIteratorType.edgeDescFilter) {
+          base = QueryIteratorType.edgeFilterAndFilterOnEdgeDesc
+        } else if (base === QueryIteratorType.edgeFilterSort) {
+          base = QueryIteratorType.edgeFilterAndFilterOnEdgeSort
+        } else if (base === QueryIteratorType.edgeDescFilterSort) {
+          base = QueryIteratorType.edgeFilterAndFilterOnEdgeSortDesc
+        }
+      } else {
+        if (base === QueryIteratorType.edgeIncludeFilter) {
+          base = QueryIteratorType.edgeIncludeFilterAndFilterOnEdge
+        } else if (base === QueryIteratorType.edgeIncludeDescFilter) {
+          base = QueryIteratorType.edgeIncludeFilterAndFilterOnEdgeDesc
+        } else if (base === QueryIteratorType.edgeIncludeFilterSort) {
+          base = QueryIteratorType.edgeIncludeFilterAndFilterOnEdgeSort
+        } else if (base === QueryIteratorType.edgeIncludeDescFilterSort) {
+          base = QueryIteratorType.edgeIncludeFilterAndFilterOnEdgeSortDesc
+        }
       }
     } else {
-      if (base === QueryIteratorType.edgeInclude) {
-        base = QueryIteratorType.edgeIncludeFilterOnEdge
+      if (header.edgeSize === 0) {
+        if (base === QueryIteratorType.edge) {
+          base = QueryIteratorType.edgeFilterOnEdge
+        } else if (base === QueryIteratorType.edgeDesc) {
+          base = QueryIteratorType.edgeFilterOnEdgeDesc
+        } else if (base === QueryIteratorType.edgeSort) {
+          base = QueryIteratorType.edgeFilterOnEdgeSort
+        } else if (base === QueryIteratorType.edgeDescSort) {
+          base = QueryIteratorType.edgeFilterOnEdgeSortDesc
+        }
+      } else {
+        if (base === QueryIteratorType.edgeInclude) {
+          base = QueryIteratorType.edgeIncludeFilterOnEdge
+        } else if (base === QueryIteratorType.edgeIncludeDesc) {
+          base = QueryIteratorType.edgeIncludeFilterOnEdgeDesc
+        } else if (base === QueryIteratorType.edgeIncludeSort) {
+          base = QueryIteratorType.edgeIncludeFilterOnEdgeSort
+        } else if (base === QueryIteratorType.edgeIncludeDescSort) {
+          base = QueryIteratorType.edgeIncludeFilterOnEdgeSortDesc
+        }
       }
     }
   }
+
+  console.log('----->', QueryIteratorTypeInverse[base])
 
   return base as QueryIteratorTypeEnum
 }
