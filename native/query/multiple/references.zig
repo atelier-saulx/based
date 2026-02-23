@@ -121,7 +121,20 @@ pub fn references(
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try Iterate.edge(.edgeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
         },
-        // add filter, sort, desc etc
+        .edgeFilterOnEdgeDesc => {
+            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
+            nodeCnt = try Iterate.edge(.edgeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
+        },
+        .edgeFilterOnEdgeSort => {
+            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.node(.edgeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
+        .edgeFilterOnEdgeSortDesc => {
+            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.node(.edgeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
         // --------------------
 
         // split up this file
@@ -164,10 +177,26 @@ pub fn references(
             it.deinit();
         },
 
+        // --------------------
         .edgeIncludeFilterOnEdge => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try Iterate.edge(.edgeIncludeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
         },
+        .edgeIncludeFilterOnEdgeDesc => {
+            var it = try References.iterator(true, true, ctx.db, from, header.prop, fromType);
+            nodeCnt = try Iterate.edge(.edgeIncludeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
+        },
+        .edgeIncludeFilterOnEdgeSort => {
+            var it = try referencesSort(false, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.node(.edgeIncludeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
+        .edgeIncludeFilterOnEdgeSortDesc => {
+            var it = try referencesSort(true, true, ctx, q, from, fromType, i, &header, typeEntry);
+            nodeCnt = try Iterate.node(.edgeIncludeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
+            it.deinit();
+        },
+        // --------------------
 
         else => {},
     }
