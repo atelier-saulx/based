@@ -16,17 +16,7 @@ import {
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
-import { isTypedArray } from 'util/types'
-
-function validateVector(value: unknown): asserts value is Uint8Array {
-    if (!isTypedArray(value)) {
-      throw new Error('Not a typed array')
-    }
-    const t = vectorBaseType2TypedArray[this.schema.baseType]
-    if (!(value instanceof t)) {
-      throw new Error(`Not a ${t.name}`)
-    }
-}
+import { TypedArray } from '../../../protocol/index.js'
 
 export const vector = class Vector extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
@@ -36,8 +26,14 @@ export const vector = class Vector extends BasePropDef {
   }
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
-  override validate(value: unknown): asserts value is Uint8Array {
-    validateVector.call(this, value)
+  override validate(value: unknown): asserts value is TypedArray {
+    const t = vectorBaseType2TypedArray[this.schema['baseType']]
+    if (!(value instanceof t)) {
+      throw new Error(`Not a ${t.name}`)
+    }
+    if ((value as TypedArray).byteLength > this.vectorSize) {
+      throw new Error('Vector too long')
+    }
   }
   override pushValue(
     buf: AutoSizedUint8Array,
@@ -80,7 +76,13 @@ export const colvec = class ColVec extends BasePropDef {
   vecLen: number
   override type = PropType.colVec
   override validate(value: unknown): asserts value is Uint8Array {
-    validateVector.call(this, value)
+    const t = vectorBaseType2TypedArray[this.schema['baseType']]
+    if (!(value instanceof t)) {
+      throw new Error(`Not a ${t.name}`)
+    }
+    if ((value as TypedArray).byteLength > this.vecLen * this.compSize) {
+      throw new Error('Vector too long')
+    }
   }
   override pushValue(
     buf: AutoSizedUint8Array,
@@ -96,12 +98,16 @@ export const colvec = class ColVec extends BasePropDef {
     buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    const defaultValue = this.schema['default']
     pushSelvaSchemaColvec(buf, {
       type: PropTypeSelva.colVec,
       vecLen: this.vecLen,
       compSize: this.compSize,
-      hasDefault: 0,
-      //hasDefault: this.schema.default, // TODO default
+      hasDefault: ~~!!defaultValue,
     })
+    if (defaultValue) {
+      const v = new Uint8Array(defaultValue.buffer, 0, this.vecLen * this.compSize)
+      buf.set(v, buf.length)
+    }
   }
 }
