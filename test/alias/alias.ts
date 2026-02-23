@@ -1,5 +1,4 @@
 import { notEqual } from 'assert'
-import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { testDb } from '../shared/index.js'
@@ -35,7 +34,7 @@ await test('simple', async (t) => {
     'One alias',
   )
 
-  deepEqual(await db.query2('user', user2).get(), {
+  deepEqual(await db.query2('user', await user2).get(), {
     id: 2,
     externalId: 'cool2',
     potato: '',
@@ -79,6 +78,7 @@ await test('simple', async (t) => {
     externalId: 'potato',
     potato: 'success',
   })
+
   const res2 = await db.upsert(
     'user',
     {
@@ -88,11 +88,13 @@ await test('simple', async (t) => {
       potato: 'wrong',
     },
   )
+
   deepEqual(await db.query2('user', res2).get(), {
     id: 3,
     externalId: 'potato',
     potato: 'wrong',
   })
+
   deepEqual(
     await db.query2('user', { externalId: 'i-dont-exists-haha!' }).get(),
     null,
