@@ -1,6 +1,7 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 // await test('kev', async (t) => {
 //   const db = new BasedDb({
@@ -25,26 +26,26 @@ import { deepEqual } from '../shared/assert.js'
 //   db.create('trip', { driver: 'lala', distance: 20, rate: 10 })
 //   db.create('trip', { driver: 'lele', distance: 40, rate: 10 })
 
-//   // console.log((await db.query('trip').include('distance').get()).debug())
+//   // console.log((await db.query2('trip').include('distance').get()).debug())
 //   //   console.log(
 //   //     (
-//   //       await db.query('trip').harmonicMean('distance').avg('distance').get()
+//   //       await db.query2('trip').harmonicMean('distance').avg('distance').get()
 //   //     ).debug(),
 //   //   )
 
-//   //   console.log((await db.query('trip').sum('distance', 'rate').get()).debug())
+//   //   console.log((await db.query2('trip').sum('distance', 'rate').get()).debug())
 //   console.log(
-//     (await db.query('trip').filter('distance', '>', 10).get()).debug(),
+//     (await db.query2('trip').filter('distance', '>', 10).get()).debug(),
 //   )
 //   console.log(
 //     (
-//       await db.query('trip').sum('distance').filter('distance', '>', 10).get()
+//       await db.query2('trip').sum('distance').filter('distance', '>', 10).get()
 //     ).debug(),
 //   )
 //   console.log(
 //     (
 //       await db
-//         .query('trip')
+//         .query2('trip')
 //         .sum('distance')
 //         .filter('rate', '>', 8)
 //         .groupBy('driver')
@@ -103,16 +104,16 @@ import { deepEqual } from '../shared/assert.js'
 //     driver: d1,
 //   })
 
-//   //   await db.query('trip').include('*', '**').get().inspect(10)
+//   //   await db.query2('trip').include('*', '**').get().inspect(10)
 
 //   // await db
-//   //   .query('driver')
+//   //   .query2('driver')
 //   //   .include((t) => t('trips').include('distance'))
 //   //   .get()
 //   //   .inspect(10)
 
 //   const lala = await db
-//     .query('driver')
+//     .query2('driver')
 //     .include((t) =>
 //       t('trips')
 //         .sum('distance')
@@ -128,15 +129,7 @@ import { deepEqual } from '../shared/assert.js'
 // })
 
 await test('yyy', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       team: {
         props: {
@@ -225,13 +218,13 @@ await test('yyy', async (t) => {
   })
 
   const result = await db
-    .query('team')
-    .include('teamName', 'city', (select) => {
+    .query2('team')
+    .include('teamName', 'city', (select) =>
       select('players')
         .sum('goalsScored', 'gamesPlayed')
         .groupBy('position')
-        .range(0, 10)
-    })
+        .range(0, 10),
+    )
     .get()
 
   // result.debug()
