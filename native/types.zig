@@ -650,8 +650,25 @@ pub const QueryIteratorType = enum(u8) {
     edgeIncludeDescFilter = 36,
     edgeIncludeDescFilterSort = 37,
 
-    edgeIncludeFilterOnEdge = 38,
-    edgeFilterOnEdge = 39,
+    edgeIncludeFilterOnEdge = 40,
+    edgeIncludeFilterOnEdgeDesc = 41,
+    edgeIncludeFilterOnEdgeSort = 42,
+    edgeIncludeFilterOnEdgeSortDesc = 43,
+
+    edgeFilterOnEdge = 60,
+    edgeFilterOnEdgeDesc = 61,
+    edgeFilterOnEdgeSort = 62,
+    edgeFilterOnEdgeSortDesc = 63,
+
+    edgeIncludeFilterAndFilterOnEdge = 70,
+    edgeIncludeFilterAndFilterOnEdgeDesc = 71,
+    edgeIncludeFilterAndFilterOnEdgeSort = 72,
+    edgeIncludeFilterAndFilterOnEdgeSortDesc = 73,
+
+    edgeFilterAndFilterOnEdge = 80,
+    edgeFilterAndFilterOnEdgeDesc = 81,
+    edgeFilterAndFilterOnEdgeSort = 82,
+    edgeFilterAndFilterOnEdgeSortDesc = 83,
 
     // default search
     search = 120,
@@ -754,27 +771,6 @@ pub const SubscriptionHeader = packed struct {
     fieldsLen: u8,
     partialLen: u8,
 };
-
-// lets measure
-// pub const QueryHeader = packed struct {
-//     op: QueryType,
-//     prop: u8, // this is for ref
-//     typeId: TypeId,
-//     edgeTypeId: TypeId,
-//     offset: u32,
-//     limit: u32,
-//     filterSize: u16,
-//     searchSize: u16,
-//     edgeSize: u16,
-//     edgeFilterSize: u16,
-//     includeSize: u16, // cannot be more then 16kb? might be good enough
-//     size: u16,
-//     sort: bool,
-//     filter: bool,
-//     hasEdge: bool,
-//     edgeInclude: bool,
-//     _padding: u4,
-// };
 
 pub const QueryHeader = packed struct {
     op: QueryType,

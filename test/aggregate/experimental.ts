@@ -1,15 +1,10 @@
 import { BasedDb, groupBy } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 await test('dev', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       lunch: {
         week: 'string',
@@ -65,7 +60,7 @@ await test('dev', async (t) => {
   }
   await db.create('lunch', week27)
 
-  // const eaters = await db.query('lunch').get()
+  // const eaters = await db.query2('lunch').get()
   // eaters.inspect()
 
   // // knwon from raw data:
@@ -89,10 +84,10 @@ await test('dev', async (t) => {
     lala: 10,
   })
 
-  // console.log(await db.query('lunch').include('Mon').get())
+  // console.log(await db.query2('lunch').include('Mon').get())
 
   deepEqual(
-    await db.query('lunch').cardinality('Mon').get(),
+    await db.query2('lunch').cardinality('Mon').get(),
     {
       Mon: { cardinality: 7 },
     },
@@ -100,7 +95,7 @@ await test('dev', async (t) => {
   )
 
   deepEqual(
-    await db.query('lunch').cardinality('Mon').groupBy('week').get(),
+    await db.query2('lunch').cardinality('Mon').groupBy('week').get(),
     {
       27: {
         Mon: { cardinality: 5 },
@@ -111,11 +106,11 @@ await test('dev', async (t) => {
     },
     'cardinality main groupBy',
   )
-  // await db.query('lunch').sum('lala').groupBy('week').get().inspect()
+  // await db.query2('lunch').sum('lala').groupBy('week').get().inspect()
   // await db.create('lunch', {
   //   week: 0,
   //   lala: 10,
   //   lele: 11,
   // })
-  // await db.query('lunch').sum('lala', 'lele').get().inspect()
+  // await db.query2('lunch').sum('lala', 'lele').get().inspect()
 })

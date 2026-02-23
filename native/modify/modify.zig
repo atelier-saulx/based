@@ -223,6 +223,13 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                         k += references.size;
                     }
                 },
+                .colVec => {
+                    if (prop.size == 0) {
+                        Fields.clearColvec(typeEntry, node, propSchema);
+                        continue;
+                    }
+                    Fields.setColvec(typeEntry, node, propSchema, value);
+                },
                 else => {
                     if (prop.size == 0) {
                         try Fields.deleteField(db, node, propSchema);

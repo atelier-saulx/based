@@ -1,7 +1,7 @@
 import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '../../src/utils/index.js'
 import fs from 'node:fs/promises'
@@ -72,17 +72,19 @@ const test: {
         return
       }
 
-      const fields = ['*', '**']
-      const make = async (db) => {
+      const make = async (db: BasedDb) => {
+        const client = new DbClient({
+          hooks: getDefaultHooks(db.server),
+        })
         const checksums: any[] = []
         const data: any[] = []
         const counts: any[] = []
 
         for (const type in db.server.schema?.types) {
-          let x = await db.query(type).include(fields).get()
-          checksums.push(x.checksum)
-          data.push(x.toObject())
-          counts.push(await db.query(type).count().get().toObject().count)
+          let x = await client.query2(type).include('*', '**').get()
+          checksums.push(x['checksum'])
+          data.push(x)
+          counts.push((await client.query2(type).count().get()).count)
         }
 
         return [checksums, data, counts]

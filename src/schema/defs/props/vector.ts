@@ -1,4 +1,8 @@
-import type { SchemaVector } from '../../../schema.js'
+import {
+  VECTOR_BASE_TYPE_SIZE_MAP,
+  type SchemaVector,
+} from '../../../schema.js'
+import { vectorBaseType2TypedArray } from '../../../schema/schema/vector.js'
 import {
   PropType,
   type LangCodeEnum,
@@ -7,33 +11,28 @@ import {
   PropTypeSelva,
   pushSelvaSchemaColvec,
   pushSelvaSchemaMicroBuffer,
+  VectorBaseType,
 } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
-import { isTypedArray } from 'util/types'
-
-const baseTypeSize: { [K in SchemaVector['baseType']]: number } = {
-  int8: 1,
-  uint8: 1,
-  int16: 2,
-  uint16: 2,
-  int32: 4,
-  uint32: 4,
-  float32: 8,
-  float64: 8,
-}
+import { TypedArray } from '../../../protocol/index.js'
 
 export const vector = class Vector extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
     super(schema, path, typeDef)
-    this.vectorSize = schema.size * baseTypeSize[schema.baseType]
+    this.vectorSize =
+      schema.size * VECTOR_BASE_TYPE_SIZE_MAP[VectorBaseType[schema.baseType]]
   }
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
-  override validate(value: unknown): asserts value is Uint8Array {
-    if (!isTypedArray(value)) {
-      throw new Error('Not a typed array')
+  override validate(value: unknown): asserts value is TypedArray {
+    const t = vectorBaseType2TypedArray[this.schema['baseType']]
+    if (!(value instanceof t)) {
+      throw new Error(`Not a ${t.name}`)
+    }
+    if ((value as TypedArray).byteLength > this.vectorSize) {
+      throw new Error('Vector too long')
     }
   }
   override pushValue(
@@ -50,11 +49,16 @@ export const vector = class Vector extends BasePropDef {
     buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    const defaultValue = this.schema['default']
     pushSelvaSchemaMicroBuffer(buf, {
       type: PropTypeSelva.microBuffer,
       len: this.vectorSize,
-      hasDefault: 0, // TODO default
+      hasDefault: ~~!!defaultValue,
     })
+    if (defaultValue) {
+      const v = new Uint8Array(defaultValue.buffer, 0, this.vectorSize)
+      buf.set(v, buf.length)
+    }
   }
 }
 
@@ -65,15 +69,19 @@ export const vector = class Vector extends BasePropDef {
 export const colvec = class ColVec extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
     super(schema, path, typeDef)
-    this.compSize = baseTypeSize[schema.baseType]
-    this.vecLen = schema.size * this.compSize
+    this.compSize = VECTOR_BASE_TYPE_SIZE_MAP[VectorBaseType[schema.baseType]]
+    this.vecLen = schema.size
   }
   compSize: number
   vecLen: number
   override type = PropType.colVec
   override validate(value: unknown): asserts value is Uint8Array {
-    if (!isTypedArray(value)) {
-      throw new Error('Not a typed array')
+    const t = vectorBaseType2TypedArray[this.schema['baseType']]
+    if (!(value instanceof t)) {
+      throw new Error(`Not a ${t.name}`)
+    }
+    if ((value as TypedArray).byteLength > this.vecLen * this.compSize) {
+      throw new Error('Vector too long')
     }
   }
   override pushValue(
@@ -85,16 +93,21 @@ export const colvec = class ColVec extends BasePropDef {
     this.validate(value)
     const v = new Uint8Array(value.buffer).subarray(
       0,
-      Math.min(value.byteLength, this.vecLen),
+      Math.min(value.byteLength, this.vecLen * this.compSize),
     )
     buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
+    const defaultValue = this.schema['default']
     pushSelvaSchemaColvec(buf, {
       type: PropTypeSelva.colVec,
       vecLen: this.vecLen,
       compSize: this.compSize,
-      hasDefault: 0, // TODO default
+      hasDefault: ~~!!defaultValue,
     })
+    if (defaultValue) {
+      const v = new Uint8Array(defaultValue.buffer, 0, this.vecLen * this.compSize)
+      buf.set(v, buf.length)
+    }
   }
 }

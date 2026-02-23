@@ -1,5 +1,5 @@
 import { deflate } from 'fflate'
-import { QueryAst } from '../../src/db-query/ast/ast.js'
+import { EdgeStrategy, QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import {
   resultToObject,
@@ -85,8 +85,8 @@ await test('include', async (t) => {
         cookie: 1234,
       },
       friends: [
-        { id: a, $level: rand(0, 1000) },
-        { id: b, $level: rand(0, 1000) },
+        { id: a, $level: rand(0, 200) },
+        { id: b, $level: rand(0, 200) },
       ],
     })
   }
@@ -101,6 +101,8 @@ await test('include', async (t) => {
   // GET REFERENCEs
   // SORT REFERENCES
   // FILTER REFENRRENS
+  // FILTER REFS BY EDGE
+  // ALIAS
 
   const ast: QueryAst = {
     type: 'user',
@@ -144,24 +146,33 @@ await test('include', async (t) => {
       y: { include: {} },
       name: { include: {} },
       friends: {
-        // order: 'asc',
+        // order: 'desc',
         // sort: { prop: '$level' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },
         },
-        // filter: {
-        //   props: {
-        //     y: {
-        //       ops: [{ op: '>', val: 6 }],
-        //     },
-        //   },
-        // },
         // edges: {
         //   props: {
         //     $level: { include: {} },
         //   },
         // },
+        filter: {
+          // wrong include (if no edges provided)
+          edgeStrategy: EdgeStrategy.edgeAndProps,
+          props: {
+            y: {
+              ops: [{ op: '>', val: 5 }],
+            },
+          },
+          edges: {
+            props: {
+              $level: {
+                ops: [{ op: '>', val: 100 }],
+              },
+            },
+          },
+        },
       },
       // mrFriend: {
       //   props: {
@@ -176,7 +187,7 @@ await test('include', async (t) => {
     },
   }
 
-  console.dir(ast, { depth: 100 })
+  console.dir(ast, { depth: 10 })
 
   const ctx = astToQueryCtx(client.schema!, ast, new AutoSizedUint8Array(1000))
 
@@ -193,17 +204,18 @@ await test('include', async (t) => {
     queries.push(x)
   }
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
         q.push(db.server.getQueryBuf(queries[i]))
       }
-      await Promise.all(q)
+      const x = await Promise.all(q)
+      // console.log(x)
     },
     'filter speed',
     {
-      repeat: 100,
+      repeat: 10,
     },
   )
 

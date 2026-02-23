@@ -1,16 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('aliasFilter', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       plot: {
         props: {
@@ -31,10 +24,12 @@ await test('aliasFilter', async (t) => {
     age: 20,
   })
 
-  const a = await db.query('plot', { slug: 'kavel-omval-naast-de-poort' }).get()
+  const a = await db
+    .query2('plot', { slug: 'kavel-omval-naast-de-poort' })
+    .get()
 
   const b = await db
-    .query('plot', { slug: 'kavel-omval-naast-de-poort' })
+    .query2('plot', { slug: 'kavel-omval-naast-de-poort' })
     .filter('age', '>', 10)
     .get()
 

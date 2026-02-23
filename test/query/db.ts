@@ -12,25 +12,53 @@ await test('query db', async (t) => {
         name: 'string',
         isNice: 'boolean',
         age: 'number',
+        address: {
+          props: {
+            street: 'string',
+          },
+        },
         friend: {
           ref: 'user',
           prop: 'friend',
+        },
+        friends: {
+          items: {
+            ref: 'user',
+            prop: 'friends',
+          },
         },
       },
     },
   })
 
-  db.create('user', {
+  const john = db.create('user', {
     name: 'john',
     isNice: false,
-    age: 1,
+    age: 21,
+    address: {
+      street: 'Cool street',
+    },
   })
 
   db.create('user', {
     name: 'billy',
     isNice: true,
     age: 49,
+    friend: john,
+    friends: [john],
+    address: {
+      street: 'Mega street',
+    },
   })
+
+  {
+    const res = await db.query2('user').include('address.street').get()
+
+    deepEqual(res, [
+      { id: 1, address: { street: 'Cool street' } },
+      { id: 2, address: { street: 'Mega street' } },
+    ])
+  }
 
   {
     const res = await db
@@ -83,8 +111,36 @@ await test('query db', async (t) => {
 
   {
     const res = await db.query2('user').sum('age').get()
-    deepEqual(res, { age: { sum: 70 } })
+    deepEqual(res, { age: { sum: 70 } } as any)
   }
+
+  // TODO wait for marco to check these
+  // {
+  //   const res = await db.query2('user').sum('friend.age').get()
+  //   deepEqual(res, { friend: { age: { sum: 70 } } })
+  // }
+
+  // {
+  //   const res = await db.query2('user').sum('friends.age').get()
+  //   deepEqual(res, { friends: { age: { sum: 70 } } })
+  // }
+
+  {
+    const res = await db
+      .query2('user')
+      .sum((select) => select('friends').sum('age'))
+      .get()
+    deepEqual(res, { friends: { age: { sum: 21 } } } as any)
+  }
+
+  // {
+  //   const res = await db
+  //     .query2('user')
+  //     .include((select) => select('friend').sum('age'))
+  //     .get()
+
+  //   deepEqual(res, [{ id: 1, friend: { age: { sum: 70 } } }])
+  // }
 
   {
     const res = await db.query2('user').sum('age').groupBy('name').get()

@@ -57,7 +57,7 @@ await test('basic', async (t) => {
   const result = await db.server.getQueryBuf(ctx.query)
   // debugBuffer(result)
 
-  const readSchemaBuf = await serializeReaderSchema(ctx.readSchema)
+  const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
   // console.dir(obj, { depth: 10 })

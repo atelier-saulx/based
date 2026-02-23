@@ -21,7 +21,7 @@ await test('isomorphic types have equal hashes', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  await db.setSchema({
+  const schema = {
     types: {
       article: {
         title: 'string',
@@ -32,23 +32,24 @@ await test('isomorphic types have equal hashes', async (t) => {
         body: 'string',
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
   for (let i = 0; i < 200_000; i++) {
-    db.create('article', {
+    client.create('article', {
       title: 'party in the house',
       body: 'there was',
     })
-    db.create('story', {
+    client.create('story', {
       title: 'party in the house',
       body: 'there was',
     })
   }
-  await db.drain()
+  await client.drain()
 
   deepEqual(
-    (await db.query('article').get()).checksum,
-    (await db.query('story').get()).checksum,
+    (await client.query('article').get()).checksum,
+    (await client.query('story').get()).checksum,
   )
   assert(
     native.equals(

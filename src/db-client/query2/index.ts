@@ -10,17 +10,16 @@ import type {
   FilterEdges,
   InferSchemaOutput,
   NumberPaths,
+  ExpandDotPath,
+  UnionToIntersection,
 } from './types.js'
 import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
 import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import type { DbClient } from '../../sdk.js'
-import { proxyResult } from './result.js'
-import type {
-  StepInput,
-  IntervalString,
-  aggFnOptions,
-} from '../query/aggregates/types.js'
+import { $buffer, proxyResult } from './result.js'
+import type { StepInput, aggFnOptions } from '../query/aggregates/types.js'
+import { readUint32 } from '../../utils/uint8.js'
 
 class Query<
   S extends { types: any } = { types: any },
@@ -43,13 +42,24 @@ class Query<
   }
   ast: QueryAst
   include<
-    F extends (
-      | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
-      | Path<S['types'], T>
-      | '*'
-      | '**'
-      | ((q: SelectFn<S, T>) => Query<S, any, any, any, any>)
-    )[],
+    F extends [
+      (
+        | 'id'
+        | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
+        | Path<S['types'], T>
+        | '*'
+        | '**'
+        | ((q: SelectFn<S, T>) => AnyQuery<S>)
+      ),
+      ...(
+        | 'id'
+        | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
+        | Path<S['types'], T>
+        | '*'
+        | '**'
+        | ((q: SelectFn<S, T>) => AnyQuery<S>)
+      )[],
+    ],
   >(
     ...props: F
   ): NextBranch<
@@ -63,6 +73,9 @@ class Query<
     Aggregate,
     GroupedKey
   > {
+    if (props.length === 0) {
+      throw new Error('Query: include expects at least one argument')
+    }
     for (const prop of props as (string | Function)[]) {
       if (typeof prop === 'function') {
         prop((prop: string) => new Query(traverse(this.ast, prop)))
@@ -133,8 +146,8 @@ class Query<
     return this.#addFilter(prop, op, val, opts, true)
   }
 
-  sum<P extends NumberPaths<S, T>>(
-    ...props: P[]
+  sum<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
+    fn: F,
   ): NextBranch<
     S,
     T,
@@ -143,11 +156,35 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { sum: number } },
+    Aggregate & ResolveAggregate<F>,
     GroupedKey
-  > {
+  >
+  sum<P extends NumberPaths<S, T>>(
+    ...props: [P, ...P[]]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { sum: number }>>,
+    GroupedKey
+  >
+  sum(
+    ...props: any[]
+  ): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof props[0] === 'function') {
+      const fn = props[0]
+      fn((prop: string) => new Query(traverse(this.ast, prop)))
+      return this as any
+    }
+    if (props.length === 0) {
+      throw new Error('Query: sum expects at least one argument')
+    }
     this.ast.sum ??= { props: [] }
-    this.ast.sum.props.push(...(props as string[]))
+    this.ast.sum.props.push(...(props as string[])) // Safe cast as P is string-like key
     return this as any
   }
 
@@ -166,8 +203,8 @@ class Query<
     return this as any
   }
 
-  cardinality<P extends string>(
-    ...props: P[]
+  cardinality<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
+    fn: F,
   ): NextBranch<
     S,
     T,
@@ -176,16 +213,40 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { cardinality: number } },
+    Aggregate & ResolveAggregate<F>,
     GroupedKey
-  > {
+  >
+  cardinality<P extends string>(
+    ...props: [P, ...P[]]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { cardinality: number }>>,
+    GroupedKey
+  >
+  cardinality(
+    ...props: any[]
+  ): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof props[0] === 'function') {
+      const fn = props[0]
+      fn((prop: string) => new Query(traverse(this.ast, prop)))
+      return this as any
+    }
+    if (props.length === 0) {
+      throw new Error('Query: cardinality expects at least one argument')
+    }
     this.ast.cardinality ??= { props: [] }
     this.ast.cardinality.props.push(...props)
     return this as any
   }
 
-  avg<P extends NumberPaths<S, T>>(
-    ...props: P[]
+  avg<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
+    fn: F,
   ): NextBranch<
     S,
     T,
@@ -194,16 +255,40 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { avg: number } },
+    Aggregate & ResolveAggregate<F>,
     GroupedKey
-  > {
+  >
+  avg<P extends NumberPaths<S, T>>(
+    ...props: [P, ...P[]]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { avg: number }>>,
+    GroupedKey
+  >
+  avg(
+    ...props: any[]
+  ): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof props[0] === 'function') {
+      const fn = props[0]
+      fn((prop: string) => new Query(traverse(this.ast, prop)))
+      return this as any
+    }
+    if (props.length === 0) {
+      throw new Error('Query: avg expects at least one argument')
+    }
     this.ast.avg ??= { props: [] }
     this.ast.avg.props.push(...(props as string[]))
     return this as any
   }
 
-  hmean<P extends NumberPaths<S, T>>(
-    ...props: P[]
+  hmean<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
+    fn: F,
   ): NextBranch<
     S,
     T,
@@ -212,16 +297,40 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { hmean: number } },
+    Aggregate & ResolveAggregate<F>,
     GroupedKey
-  > {
+  >
+  hmean<P extends NumberPaths<S, T>>(
+    ...props: [P, ...P[]]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { hmean: number }>>,
+    GroupedKey
+  >
+  hmean(
+    ...props: any[]
+  ): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof props[0] === 'function') {
+      const fn = props[0]
+      fn((prop: string) => new Query(traverse(this.ast, prop)))
+      return this as any
+    }
+    if (props.length === 0) {
+      throw new Error('Query: hmean expects at least one argument')
+    }
     this.ast.hmean ??= { props: [] }
     this.ast.hmean.props.push(...(props as string[]))
     return this as any
   }
 
-  max<P extends NumberPaths<S, T>>(
-    ...props: P[]
+  max<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
+    fn: F,
   ): NextBranch<
     S,
     T,
@@ -230,16 +339,41 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { max: InferPathType<S, T, Key> } },
+    Aggregate & ResolveAggregate<F>,
     GroupedKey
-  > {
+  >
+  max<P extends NumberPaths<S, T>>(
+    ...props: [P, ...P[]]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate &
+      UnionToIntersection<ExpandDotPath<P, { max: InferPathType<S, T, P> }>>,
+    GroupedKey
+  >
+  max(
+    ...props: any[]
+  ): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof props[0] === 'function') {
+      const fn = props[0]
+      fn((prop: string) => new Query(traverse(this.ast, prop)))
+      return this as any
+    }
+    if (props.length === 0) {
+      throw new Error('Query: max expects at least one argument')
+    }
     this.ast.max ??= { props: [] }
     this.ast.max.props.push(...(props as string[]))
     return this as any
   }
 
-  min<P extends NumberPaths<S, T>>(
-    ...props: P[]
+  min<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
+    fn: F,
   ): NextBranch<
     S,
     T,
@@ -248,16 +382,41 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & { [Key in P]: { min: InferPathType<S, T, Key> } },
+    Aggregate & ResolveAggregate<F>,
     GroupedKey
-  > {
+  >
+  min<P extends NumberPaths<S, T>>(
+    ...props: [P, ...P[]]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate &
+      UnionToIntersection<ExpandDotPath<P, { min: InferPathType<S, T, P> }>>,
+    GroupedKey
+  >
+  min(
+    ...props: any[]
+  ): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof props[0] === 'function') {
+      const fn = props[0]
+      fn((prop: string) => new Query(traverse(this.ast, prop)))
+      return this as any
+    }
+    if (props.length === 0) {
+      throw new Error('Query: min expects at least one argument')
+    }
     this.ast.min ??= { props: [] }
     this.ast.min.props.push(...(props as string[]))
     return this as any
   }
 
-  stddev<P extends NumberPaths<S, T>>(
-    prop: P | P[],
+  stddev<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
+    fn: F,
     opts?: aggFnOptions,
   ): NextBranch<
     S,
@@ -267,22 +426,57 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & {
-      [Key in P extends any[] ? P[number] : P]: { stddev: number }
-    },
+    Aggregate & ResolveAggregate<F>,
     GroupedKey
-  > {
+  >
+  stddev<P extends NumberPaths<S, T>>(
+    ...args: [...P[], aggFnOptions] | [P, ...P[]]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { stddev: number }>>,
+    GroupedKey
+  >
+  stddev(
+    ...args: any[]
+  ): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof args[0] === 'function') {
+      const fn = args[0]
+      fn((prop: string) => new Query(traverse(this.ast, prop)))
+      return this as any
+    }
+    if (args.length === 0) {
+      throw new Error('Query: stddev expects at least one argument')
+    }
     this.ast.stddev ??= { props: [] }
-    const props = Array.isArray(prop) ? prop : [prop]
-    this.ast.stddev.props.push(...(props as string[]))
+    let opts: any
+    let props: string[]
+    if (
+      typeof args[args.length - 1] === 'object' &&
+      !Array.isArray(args[args.length - 1])
+    ) {
+      opts = args[args.length - 1]
+      props = args.slice(0, -1)
+    } else if (Array.isArray(args[0])) {
+      props = args[0]
+      opts = args[1]
+    } else {
+      props = args
+    }
+    this.ast.stddev.props.push(...props)
     if (opts?.mode) {
       this.ast.stddev.samplingMode = opts.mode
     }
     return this as any
   }
 
-  var<P extends NumberPaths<S, T>>(
-    prop: P | P[],
+  var<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
+    fn: F,
     opts?: aggFnOptions,
   ): NextBranch<
     S,
@@ -292,14 +486,47 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate & {
-      [Key in P extends any[] ? P[number] : P]: { variance: number }
-    },
+    Aggregate & ResolveAggregate<F>,
     GroupedKey
-  > {
+  >
+  var<P extends NumberPaths<S, T>>(
+    ...args: [...P[], aggFnOptions] | [P, ...P[]]
+  ): NextBranch<
+    S,
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { variance: number }>>,
+    GroupedKey
+  >
+  var(...args: any[]): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof args[0] === 'function') {
+      const fn = args[0]
+      fn((prop: string) => new Query(traverse(this.ast, prop)))
+      return this as any
+    }
+    if (args.length === 0) {
+      throw new Error('Query: var expects at least one argument')
+    }
     this.ast.variance ??= { props: [] }
-    const props = Array.isArray(prop) ? prop : [prop]
-    this.ast.variance.props.push(...(props as string[]))
+    let opts: any
+    let props: string[]
+    if (
+      typeof args[args.length - 1] === 'object' &&
+      !Array.isArray(args[args.length - 1])
+    ) {
+      opts = args[args.length - 1]
+      props = args.slice(0, -1)
+    } else if (Array.isArray(args[0])) {
+      props = args[0]
+      opts = args[1]
+    } else {
+      props = args
+    }
+    this.ast.variance.props.push(...props)
     if (opts?.mode) {
       this.ast.variance.samplingMode = opts.mode
     }
@@ -477,16 +704,16 @@ export class BasedQuery2<
   }
   db: DbClient
   async get(): Promise<
-    [keyof Aggregate] extends [never]
-      ? IsSingle extends true
-        ? PickOutput<
-            S,
-            T,
-            ResolveInclude<ResolvedProps<S['types'], T>, K>
-          > | null
-        : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
-      : GroupedKey extends string
-        ? Record<string, Aggregate>
+    [GroupedKey] extends [string]
+      ? Record<string, Aggregate>
+      : [keyof Aggregate] extends [never]
+        ? IsSingle extends true
+          ? PickOutput<
+              S,
+              T,
+              ResolveInclude<ResolvedProps<S['types'], T>, K>
+            > | null
+          : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
         : Aggregate
   > {
     if (
@@ -586,13 +813,42 @@ export type ResolveIncludeArgs<T> = T extends (
   infer SourceField,
   any,
   any,
-  any,
-  any
+  infer Aggregate,
+  infer GroupedKey
 >
-  ? { field: SourceField; select: K }
+  ? [GroupedKey] extends [string]
+    ? {
+        field: SourceField
+        select: { _aggregate: Record<string, Aggregate> }
+      }
+    : [keyof Aggregate] extends [never]
+      ? { field: SourceField; select: K }
+      : { field: SourceField; select: { _aggregate: Aggregate } }
   : T extends string
     ? ResolveDotPath<T>
     : T
+
+// ResolveAggregate extracts the aggregate structure from a callback function
+type ResolveAggregate<T> =
+  ResolveIncludeArgs<T> extends {
+    field: infer F extends string | number | symbol
+    select: { _aggregate: infer A }
+  }
+    ? { [K in F]: A }
+    : never
+
+// Helper type to simplify include signature
+type AnyQuery<S extends { types: any }> = Query<
+  S,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>
 
 // Helper type to simplify method return types
 type NextBranch<
@@ -637,4 +893,9 @@ function traverse(target: any, prop: string) {
     }
   }
   return target
+}
+
+export const checksum = (res: any): number => {
+  const buf = res?.[$buffer]
+  return buf ? readUint32(buf, buf.byteLength - 4) : 0
 }

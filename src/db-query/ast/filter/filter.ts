@@ -20,9 +20,13 @@ type WalkCtx = {
   main: { prop: PropDef; ops: FilterOp[] }[]
 }
 
-// Handle EDGES
-
-const walk = (ast: FilterAst, ctx: Ctx, typeDef: TypeDef, walkCtx: WalkCtx) => {
+const walk = (
+  ast: FilterAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  walkCtx: WalkCtx,
+  edgeType?: TypeDef,
+) => {
   const { tree, main } = walkCtx
 
   for (const field in ast.props) {
@@ -88,12 +92,14 @@ const indexOf = (
 
 // filter + EDGE
 
+// EDGE ONLY?
 export const filter = (
   ast: FilterAst,
   ctx: Ctx,
   typeDef: TypeDef,
   filterIndex: number = 0,
   lastProp: number = PropType.id,
+  edgeType?: TypeDef,
   prevOr?: Uint8Array,
 ): number => {
   const startIndex = ctx.query.length
@@ -143,6 +149,7 @@ export const filter = (
         typeDef,
         ctx.query.length - startIndex,
         walkCtx.prop,
+        edgeType,
         andOrReplace,
       )
     } else {
@@ -194,6 +201,7 @@ export const filter = (
       typeDef,
       ctx.query.length - startIndex + filterIndex,
       walkCtx.prop,
+      edgeType,
       prevOr,
     )
   }

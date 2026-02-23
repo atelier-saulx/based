@@ -1,5 +1,5 @@
 import { setTimeout } from 'node:timers/promises'
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 
@@ -11,7 +11,7 @@ await test('saveInterval', async (t) => {
   await db.start({ clean: true })
   t.after(() => db.destroy())
 
-  await db.setSchema({
+  const schema = {
     types: {
       user: {
         props: {
@@ -20,23 +20,23 @@ await test('saveInterval', async (t) => {
         },
       },
     },
-  })
+  } as const
+  const client = await db.setSchema(schema)
 
-  db.create('user', {
+  client.create('user', {
     externalId: 'cool',
     potato: 'fries',
   })
 
-  db.create('user', {
+  client.create('user', {
     externalId: 'cool2',
     potato: 'wedge',
   })
 
-  await db.drain()
-
+  await client.drain()
   await setTimeout(1e3)
 
-  const res1 = await db.query('user').get().toObject()
+  const res1 = await client.query('user').get().toObject()
 
   await db.stop(true)
 
@@ -45,9 +45,12 @@ await test('saveInterval', async (t) => {
   })
   await db2.start()
   t.after(() => db2.destroy())
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
   await db2.schemaIsSet()
-  const res2 = await db2.query('user').get().toObject()
+  const res2 = await client2.query('user').get().toObject()
 
   deepEqual(res1, res2)
 })

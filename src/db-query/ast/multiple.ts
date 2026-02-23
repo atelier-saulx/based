@@ -9,7 +9,7 @@ import {
   readQueryHeader,
   pushSortHeader,
 } from '../../zigTsExports.js'
-import { Ctx, QueryAst } from './ast.js'
+import { Ctx, EdgeStrategy, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
 import { include } from './include.js'
 import { getIteratorType } from './iteratorType.js'
@@ -92,9 +92,28 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))
   }
 
-  if (ast.filter) {
+  if (
+    ast.filter &&
+    (ast.filter.edgeStrategy == EdgeStrategy.noEdge ||
+      ast.filter.edgeStrategy == EdgeStrategy.edgeAndProps)
+  ) {
     const filterSize = filter(ast.filter, ctx, prop.ref!)
     props.filterSize(ctx.query.data, filterSize, headerIndex)
+  }
+
+  if (
+    ast.filter &&
+    (ast.filter.edgeStrategy == EdgeStrategy.edgeOnly ||
+      ast.filter.edgeStrategy == EdgeStrategy.edgeAndProps) &&
+    ast.filter.edges
+  ) {
+    const edges = prop.edges
+    if (!edges) {
+      throw new Error('Ref does not have edges (for filter)')
+    }
+    props.edgeTypeId(ctx.query.data, edges.id, headerIndex)
+    const filterSize = filter(ast.filter.edges, ctx, prop.edges!)
+    props.edgeFilterSize(ctx.query.data, filterSize, headerIndex)
   }
 
   const size = include(
@@ -107,10 +126,6 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
   )
 
   props.includeSize(ctx.query.data, size, headerIndex)
-
-  // EDGES IN FILTER
-  // needs to use special iterator
-  // we need to put the filter on it
 
   if (ast.edges) {
     const edges = prop.edges
@@ -127,12 +142,7 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
       },
       edges,
     )
-    // make a iterator type EDGE FILTER OR (means filter fails now also run edge and ignore the failure)
-    // or add comptime thing that just passed HAS_EDGE then pass the edge in the c and have an extra check
-    // may be the easier to do
     props.edgeSize(ctx.query.data, size, headerIndex)
-  } else {
-    console.info('EDGES NO!')
   }
 
   props.iteratorType(

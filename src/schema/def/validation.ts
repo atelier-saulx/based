@@ -5,6 +5,7 @@ import type { SchemaTimestamp } from '../schema/timestamp.js'
 import type { SchemaNumber } from '../schema/number.js'
 import type { SchemaEnum } from '../schema/enum.js'
 import {
+  isVector,
   MAX_ID,
   MIN_ID,
   type SchemaObject,
@@ -361,11 +362,7 @@ export const VALIDATION_MAP: Record<PropTypeEnum, Validation> = {
     return true
   },
   [PropType.vector]: (value) => {
-    // Array should be supported
-    if (!(value instanceof Float32Array)) {
-      return false
-    }
-    return true
+    return isVector(value)
   },
   // @ts-ignore
   [PropType.text]: null,
