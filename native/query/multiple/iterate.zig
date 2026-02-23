@@ -125,7 +125,9 @@ pub fn edge(
         try ctx.thread.query.append(Node.getNodeId(ref.node));
         try Include.include(ref.node, ctx, nestedQuery, typeEntry);
 
-        if (It != t.QueryIteratorType.edgeFilterOnEdge) {
+        if (It != t.QueryIteratorType.edgeFilterOnEdge and
+            It != t.QueryIteratorType.edgeFilterAndFilterOnEdge)
+        {
             try ctx.thread.query.append(t.ReadOp.edge);
             const edgesByteSizeIndex = try ctx.thread.query.reserve(4);
             const edgeStartIndex = ctx.thread.query.index;

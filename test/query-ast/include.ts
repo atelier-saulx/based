@@ -75,7 +75,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1e6; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
@@ -106,7 +106,7 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    range: { start: 0, end: 5 },
+    range: { start: 0, end: 1e6 },
     // target: b,
     // order: 'desc',
     // sort: { prop: 'y' },
@@ -146,18 +146,19 @@ await test('include', async (t) => {
       y: { include: {} },
       name: { include: {} },
       friends: {
-        order: 'desc',
-        sort: { prop: '$level' }, // can just be the prop?
+        // order: 'desc',
+        // sort: { prop: '$level' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },
         },
-        edges: {
-          props: {
-            $level: { include: {} },
-          },
-        },
+        // edges: {
+        //   props: {
+        //     $level: { include: {} },
+        //   },
+        // },
         filter: {
+          // wrong include (if no edges provided)
           edgeStrategy: EdgeStrategy.edgeAndProps,
           props: {
             y: {
@@ -209,11 +210,12 @@ await test('include', async (t) => {
       for (let i = 0; i < 10; i++) {
         q.push(db.server.getQueryBuf(queries[i]))
       }
-      await Promise.all(q)
+      const x = await Promise.all(q)
+      // console.log(x)
     },
     'filter speed',
     {
-      repeat: 100,
+      repeat: 10,
     },
   )
 
@@ -223,7 +225,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  // console.dir(obj, { depth: 10 })
 
   await wait(1000)
 
