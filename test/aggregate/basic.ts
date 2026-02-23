@@ -1,6 +1,7 @@
 import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
+import { throws, deepEqual, equal } from '../shared/assert.js'
 import { testDb } from '../shared/index.js'
+import { fastPrng } from '../../src/utils/fastPrng.js'
 
 await test('sum top level', async (t) => {
   const db = await testDb(t, {
@@ -868,7 +869,7 @@ await test('numeric types', async (t) => {
     'hmean, references, group by',
   )
 })
-/*
+
 await test('fixed length strings', async (t) => {
   const db = await testDb(t, {
     types: {
@@ -897,7 +898,7 @@ await test('fixed length strings', async (t) => {
     db.drain()
     db.create('shelve', {
       code: `S${rnd(0, 10)}`,
-      products: p,
+      products: [p],
     })
   }
 
@@ -929,7 +930,7 @@ await test('fixed length strings', async (t) => {
     'fixed length strings on references',
   )
 })
-
+/*
 await test('range', async (t) => {
   const db = await testDb(t, {
     types: {
