@@ -21,12 +21,10 @@ export const getIteratorType = (
   const edgeInclude: boolean = header.edgeSize != 0
   const hasSort = header.sort
   const isDesc = ast.order === 'desc'
-  const hasSearch = false
-  const isVector = false
+  // const hasSearch = false
+  // const isVector = false
 
   let base = QUERY_ITERATOR_DEFAULT
-
-  console.log('EDGE TIME', edgeInclude, edge)
 
   if (edge && !edgeInclude) {
     base = QUERY_ITERATOR_EDGE
@@ -35,6 +33,8 @@ export const getIteratorType = (
   if (edgeInclude) {
     base = QUERY_ITERATOR_EDGE_INCLUDE
   }
+
+  // console.log('EDGE TIME', edgeInclude, edge)
 
   // if (hasSearch && !isVector) {
   //   base = QUERY_ITERATOR_SEARCH
@@ -72,6 +72,24 @@ export const getIteratorType = (
     base += 4
   } else {
     base += 0
+  }
+
+  console.log(
+    QueryIteratorTypeInverse[base],
+    base,
+    QueryIteratorType.edgeFilterOnEdge,
+  )
+
+  if (header.edgeFilterSize > 0 && header.filterSize === 0) {
+    if (header.edgeSize === 0) {
+      if (base === QueryIteratorType.edge) {
+        base = QueryIteratorType.edgeFilterOnEdge
+      }
+    } else {
+      if (base === QueryIteratorType.edgeInclude) {
+        base = QueryIteratorType.edgeIncludeFilterOnEdge
+      }
+    }
   }
 
   return base as QueryIteratorTypeEnum

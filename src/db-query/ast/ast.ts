@@ -39,6 +39,14 @@ export type FilterLeaf = FilterAst & {
   select?: { start: number; end: number }
 }
 
+export const EdgeStrategy = {
+  noEdge: 0,
+  edgeOnly: 1,
+  mixed: 2,
+} as const
+
+export type EdgeStrategyEnum = (typeof EdgeStrategy)[keyof typeof EdgeStrategy]
+
 export type FilterAst = {
   props?: {
     [key: string]: FilterLeaf
@@ -46,6 +54,7 @@ export type FilterAst = {
   or?: FilterAst
   and?: FilterAst
   edges?: FilterAst
+  edgeStrategy?: EdgeStrategyEnum
 
   // this is a bit difficult combining OR filters with edges combined
   // this would require and extra check for the type of node how to do?

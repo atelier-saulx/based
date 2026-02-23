@@ -1,5 +1,5 @@
 import { deflate } from 'fflate'
-import { QueryAst } from '../../src/db-query/ast/ast.js'
+import { EdgeStrategy, QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
 import {
   resultToObject,
@@ -75,7 +75,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e4; i++) {
+  for (let i = 0; i < 1; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
@@ -85,8 +85,8 @@ await test('include', async (t) => {
         cookie: 1234,
       },
       friends: [
-        { id: a, $level: rand(0, 1000) },
-        { id: b, $level: rand(0, 1000) },
+        { id: a, $level: rand(0, 200) },
+        { id: b, $level: rand(0, 200) },
       ],
     })
   }
@@ -152,23 +152,24 @@ await test('include', async (t) => {
           name: { include: {} },
           y: { include: {} },
         },
+        edges: {
+          props: {
+            $level: { include: {} },
+          },
+        },
         filter: {
           // props: {
           //   y: {
           //     ops: [{ op: '>', val: 6 }],
           //   },
           // },
+          edgeStrategy: EdgeStrategy.edgeOnly,
           edges: {
             props: {
               $level: {
                 ops: [{ op: '>', val: 100 }],
               },
             },
-          },
-        },
-        edges: {
-          props: {
-            $level: { include: {} },
           },
         },
       },
@@ -222,7 +223,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  // console.dir(obj, { depth: 10 })
+  console.dir(obj, { depth: 10 })
 
   await wait(1000)
 

@@ -81,14 +81,17 @@ fn iteratorEdge(
         try Filter.prepare(filter, ctx, typeEntry);
     }
 
-    if (It == t.QueryIteratorType.edgeIncludeFilterOnEdge or It == t.QueryIteratorType.edgeFilterOnEdge) {
+    if (It == t.QueryIteratorType.edgeIncludeFilterOnEdge or
+        It == t.QueryIteratorType.edgeFilterOnEdge)
+    {
         edgeFilter = utils.sliceNext(header.edgeFilterSize, q, i);
-        try Filter.prepare(filter, ctx, typeEntry);
+        try Filter.prepare(edgeFilter, ctx, typeEntry);
     }
 
     const nestedQuery = q[i.* .. i.* + header.includeSize];
     const edgeTypeEntry = try Node.getType(ctx.db, header.edgeTypeId);
     const edgeQuery = q[i.* + header.includeSize .. i.* + header.includeSize + header.edgeSize];
+
     while (offset > 0) {
         _ = it.next() orelse return 0;
         offset -= 1;
@@ -101,8 +104,10 @@ fn iteratorEdge(
             }
         }
 
-        if (It == t.QueryIteratorType.edgeFilterOnEdge) {
-            if (!try Filter.filter(ref.node, ctx, edgeFilter)) {
+        if (It == t.QueryIteratorType.edgeIncludeFilterOnEdge or
+            It == t.QueryIteratorType.edgeFilterOnEdge)
+        {
+            if (!try Filter.filter(ref.edge, ctx, edgeFilter)) {
                 continue;
             }
         }
@@ -309,6 +314,8 @@ pub fn references(
             nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
+
+        // name this large / hasEdge
         .edge => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iterator(.default, ctx, q, &it, &header, typeEntry, i);
@@ -346,11 +353,17 @@ pub fn references(
             nodeCnt = try iterator(.filter, ctx, q, &it, &header, typeEntry, i);
             it.deinit();
         },
+
+        // --------------------
         .edgeFilterOnEdge => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iteratorEdge(.edgeFilterOnEdge, ctx, q, &it, &header, typeEntry, i);
         },
+        // add filter, sort, desc etc
+        // --------------------
 
+        // split up this file
+        // then we can name this edgeInclude
         .edgeInclude => {
             var it = try References.iterator(false, true, ctx.db, from, header.prop, fromType);
             nodeCnt = try iteratorEdge(.default, ctx, q, &it, &header, typeEntry, i);
