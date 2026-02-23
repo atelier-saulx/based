@@ -106,7 +106,7 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    range: { start: 0, end: 1e6 },
+    range: { start: 0, end: 5 },
     // target: b,
     // order: 'desc',
     // sort: { prop: 'y' },
@@ -197,13 +197,13 @@ await test('include', async (t) => {
   debugBuffer(deflateSync(ctx.query).toString('hex'))
 
   const queries: any = []
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 10; i++) {
     const x = ctx.query.slice(0)
     writeUint32(x, i + 1, 0)
     queries.push(x)
   }
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
