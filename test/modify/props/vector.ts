@@ -2,7 +2,7 @@ import { deepEqual, testDb, throws } from '../../shared/index.js'
 import test from '../../shared/test.js'
 import assert from 'node:assert'
 
-await test('wrong type', async (t) => {
+await test('incorrect values', async (t) => {
   const db = await testDb(t, {
     types: {
       thing: {
@@ -14,6 +14,12 @@ await test('wrong type', async (t) => {
   throws(() =>
     db.create('thing', {
       vec: new Float64Array([1.1, 2.2, 3.3]),
+    }),
+  )
+
+  throws(() =>
+    db.create('thing', {
+      vec: new Float32Array([1.1, 2.2, 3.3, 4,2]),
     }),
   )
 })
@@ -31,10 +37,45 @@ await test('default', async (t) => {
       },
     },
   })
-  // TODO Test also wrong size for default
 
   const id1 = await db.create('thing', {})
   deepEqual(await db.query2('thing', id1).get(), { id: id1, vec: new Float32Array([1, 2.5, 3]) })
+})
+
+await test('default colvec', async (t) => {
+  const db = await testDb(t, {
+    types: {
+      thing: {
+        insertOnly: true,
+        props: {
+          vec: {
+            type: 'colvec',
+            size: 3,
+            baseType: 'float32',
+            default: new Float32Array([1, 2.5, 3])
+          },
+        }
+      },
+    },
+  })
+
+  const id1 = await db.create('thing', {})
+  deepEqual(await db.query2('thing', id1).get(), { id: id1, vec: new Float32Array([1, 2.5, 3]) })
+})
+
+await test.skip('incorrect default', async (t) => {
+  throws(() => testDb(t, {
+    types: {
+      thing: {
+        vec: {
+          type: 'vector',
+          size: 3,
+          baseType: 'float32',
+          default: new Float32Array([1, 2.5, 3, 4.3])
+        },
+      },
+    },
+  }))
 })
 
 await test('modify vector', async (t) => {

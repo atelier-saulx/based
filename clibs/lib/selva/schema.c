@@ -82,7 +82,7 @@ static int type2fs_micro_buffer(struct schemabuf_parser_ctx *ctx, struct SelvaFi
             return SELVA_EINVAL;
         }
 
-        /* * Default is copied straight from the schema buffer. */
+        /* Default is copied straight from the schema buffer. */
         fs->default_off = calc_default_off(ctx, off);
         off += head.len;
     }
@@ -248,17 +248,19 @@ static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
         uint16_t comp_size; /*!< Component size in the vector. */
         schema_bool_t has_default;
     } __packed spec;
+    size_t off = 0;
 
     if (ctx->len < sizeof(spec)) {
         return SELVA_EINVAL;
     }
 
-    memcpy(&spec, ctx->buf, sizeof(spec));
+    memcpy(&spec, ctx->buf + off, sizeof(spec));
+    off += sizeof(spec);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_COLVEC,
-        .default_off = (spec.has_default) ? calc_default_off(ctx, sizeof(spec)) : 0,
+        .default_off = 0,
         .colvec = {
             .vec_len = spec.vec_len,
             .comp_size = spec.comp_size,
@@ -266,7 +268,19 @@ static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSc
         },
     };
 
-    return sizeof(spec);
+    if (spec.has_default) {
+        size_t vec_size = spec.vec_len * spec.comp_size;
+
+        if (ctx->len < off + vec_size) {
+            return SELVA_EINVAL;
+        }
+
+        /* Default is copied straight from the schema buffer. */
+        fs->default_off = calc_default_off(ctx, off);
+        off += vec_size;
+    }
+
+    return off;
 }
 
 static struct schemabuf_parser {
