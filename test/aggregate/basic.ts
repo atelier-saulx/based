@@ -123,7 +123,7 @@ await test('top level count', async (t) => {
   db.create('sequence', { votes: [nl2] })
   db.create('sequence', { votes: [au1] })
 
-  //   // top level  ----------------------------------
+  // top level  ----------------------------------
 
   deepEqual(
     await db.query2('vote').count().get(),
@@ -158,6 +158,11 @@ await test('top level count', async (t) => {
   //   { count: 0 },
   //   'count, with no match filtering, string value',
   // )
+
+  console.log(await db.query2('vote').filter('NL', '=', 20).get()) // correct (1 item)
+  console.dir(await db.query2('vote').filter('NL', '=', 20).count().ast, {
+    depth: null,
+  }) // not correct (count: 3)
 
   deepEqual(
     await db.query2('vote').filter('NL', '=', 20).count().get(),
@@ -320,7 +325,7 @@ await test('two phase accumulation', async (t) => {
     'stddev, branched References, groupBy',
   )
 })
-/*
+
 await test('numeric types', async (t) => {
   const db = await testDb(t, {
     types: {
@@ -863,7 +868,7 @@ await test('numeric types', async (t) => {
     'hmean, references, group by',
   )
 })
-
+/*
 await test('fixed length strings', async (t) => {
   const db = await testDb(t, {
     types: {

@@ -427,8 +427,7 @@ class Query<
     GroupedKey
   >
   stddev<P extends NumberPaths<S, T>>(
-    prop: P | P[],
-    opts?: aggFnOptions,
+    ...args: [...P[], aggFnOptions] | [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -437,27 +436,36 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate &
-      UnionToIntersection<
-        ExpandDotPath<P extends any[] ? P[number] : P, { stddev: number }>
-      >,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { stddev: number }>>,
     GroupedKey
   >
   stddev(
-    prop: any,
-    opts?: any,
+    ...args: any[]
   ): NextBranch<any, any, any, any, any, any, any, any, any> {
-    if (typeof prop === 'function') {
-      const fn = prop
+    if (typeof args[0] === 'function') {
+      const fn = args[0]
       fn((prop: string) => new Query(traverse(this.ast, prop)))
       return this as any
     }
-    if (!prop) {
+    if (args.length === 0) {
       throw new Error('Query: stddev expects at least one argument')
     }
     this.ast.stddev ??= { props: [] }
-    const props = Array.isArray(prop) ? prop : [prop]
-    this.ast.stddev.props.push(...(props as string[]))
+    let opts: any
+    let props: string[]
+    if (
+      typeof args[args.length - 1] === 'object' &&
+      !Array.isArray(args[args.length - 1])
+    ) {
+      opts = args[args.length - 1]
+      props = args.slice(0, -1)
+    } else if (Array.isArray(args[0])) {
+      props = args[0]
+      opts = args[1]
+    } else {
+      props = args
+    }
+    this.ast.stddev.props.push(...props)
     if (opts?.mode) {
       this.ast.stddev.samplingMode = opts.mode
     }
@@ -479,8 +487,7 @@ class Query<
     GroupedKey
   >
   var<P extends NumberPaths<S, T>>(
-    prop: P | P[],
-    opts?: aggFnOptions,
+    ...args: [...P[], aggFnOptions] | [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -489,27 +496,34 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate &
-      UnionToIntersection<
-        ExpandDotPath<P extends any[] ? P[number] : P, { variance: number }>
-      >,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { variance: number }>>,
     GroupedKey
   >
-  var(
-    prop: any,
-    opts?: any,
-  ): NextBranch<any, any, any, any, any, any, any, any, any> {
-    if (typeof prop === 'function') {
-      const fn = prop
+  var(...args: any[]): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof args[0] === 'function') {
+      const fn = args[0]
       fn((prop: string) => new Query(traverse(this.ast, prop)))
       return this as any
     }
-    if (!prop) {
+    if (args.length === 0) {
       throw new Error('Query: var expects at least one argument')
     }
     this.ast.variance ??= { props: [] }
-    const props = Array.isArray(prop) ? prop : [prop]
-    this.ast.variance.props.push(...(props as string[]))
+    let opts: any
+    let props: string[]
+    if (
+      typeof args[args.length - 1] === 'object' &&
+      !Array.isArray(args[args.length - 1])
+    ) {
+      opts = args[args.length - 1]
+      props = args.slice(0, -1)
+    } else if (Array.isArray(args[0])) {
+      props = args[0]
+      opts = args[1]
+    } else {
+      props = args
+    }
+    this.ast.variance.props.push(...props)
     if (opts?.mode) {
       this.ast.variance.samplingMode = opts.mode
     }
@@ -687,16 +701,16 @@ export class BasedQuery2<
   }
   db: DbClient
   async get(): Promise<
-    [keyof Aggregate] extends [never]
-      ? IsSingle extends true
-        ? PickOutput<
-            S,
-            T,
-            ResolveInclude<ResolvedProps<S['types'], T>, K>
-          > | null
-        : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
-      : GroupedKey extends string
-        ? Record<string, Aggregate>
+    [GroupedKey] extends [string]
+      ? Record<string, Aggregate>
+      : [keyof Aggregate] extends [never]
+        ? IsSingle extends true
+          ? PickOutput<
+              S,
+              T,
+              ResolveInclude<ResolvedProps<S['types'], T>, K>
+            > | null
+          : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
         : Aggregate
   > {
     if (
@@ -797,11 +811,16 @@ export type ResolveIncludeArgs<T> = T extends (
   any,
   any,
   infer Aggregate,
-  any
+  infer GroupedKey
 >
-  ? [keyof Aggregate] extends [never]
-    ? { field: SourceField; select: K }
-    : { field: SourceField; select: { _aggregate: Aggregate } }
+  ? [GroupedKey] extends [string]
+    ? {
+        field: SourceField
+        select: { _aggregate: Record<string, Aggregate> }
+      }
+    : [keyof Aggregate] extends [never]
+      ? { field: SourceField; select: K }
+      : { field: SourceField; select: { _aggregate: Aggregate } }
   : T extends string
     ? ResolveDotPath<T>
     : T
