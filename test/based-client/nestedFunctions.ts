@@ -30,7 +30,7 @@ const testShared = async (
 
   let cnt = 0
 
-  const closeX = coreClient.query('counter').subscribe(() => {
+  const closeX = coreClient.query2('counter').subscribe(() => {
     cnt++
   })
 
@@ -42,18 +42,18 @@ const testShared = async (
 
   let incomingCntNoJson = 0
 
-  const close = coreClient.query('obsWithNested').subscribe(() => {
+  const close = coreClient.query2('obsWithNested').subscribe(() => {
     incomingCntNoJson++
   })
 
   let incomingCnt = 0
-  const close2 = coreClient.query('obsWithNested', 'json').subscribe(() => {
+  const close2 = coreClient.query2('obsWithNested', 'json').subscribe(() => {
     incomingCnt++
   })
 
   await wait(1e3)
 
-  const bla = await coreClient.query('obsWithNested', 'json').get()
+  const bla = await coreClient.query2('obsWithNested', 'json').get()
 
   t.is(bla.bla.length, 1e4)
 
@@ -64,12 +64,12 @@ const testShared = async (
   close2()
 
   const close3 = coreClient
-    .query('obsWithNestedLvl2', 'glurk')
+    .query2('obsWithNestedLvl2', 'glurk')
     .subscribe(() => {
       incomingCnt2++
     })
 
-  const bla2 = await coreClient.query('obsWithNestedLvl2', 'glakkel').get()
+  const bla2 = await coreClient.query2('obsWithNestedLvl2', 'glakkel').get()
 
   t.is(bla2.bla.length, 1e4)
 
@@ -106,7 +106,7 @@ test.serial('nested functions (raw api)', async (t: T) => {
           closeAfterIdleTime: 1e3,
           uninstallAfterIdleTime: 1e3,
           fn: (based, _, update) => {
-            return based.query('obsWithNested', 'json').subscribe(update)
+            return based.query2('obsWithNested', 'json').subscribe(update)
           },
         },
         obsWithNested: {
@@ -115,7 +115,7 @@ test.serial('nested functions (raw api)', async (t: T) => {
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update) => {
             return based
-              .query(payload === 'json' ? 'objectCounter' : 'counter', payload)
+              .query2(payload === 'json' ? 'objectCounter' : 'counter', payload)
               .subscribe(update)
           },
         },
@@ -164,7 +164,7 @@ test.serial('nested functions (raw api)', async (t: T) => {
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, context) => {
             const x = await based.call('hello', payload, context)
-            await based.query('obsWithNested', 'json', context).get()
+            await based.query2('obsWithNested', 'json', context).get()
             return x
           },
         },
@@ -199,7 +199,7 @@ test.serial('nested functions (fancy api)', async (t: T) => {
           uninstallAfterIdleTime: 1e3,
           type: 'query',
           fn: (based, _, update) => {
-            return based.query('obsWithNested', 'json').subscribe(update)
+            return based.query2('obsWithNested', 'json').subscribe(update)
           },
         },
         obsWithNested: {
@@ -208,7 +208,7 @@ test.serial('nested functions (fancy api)', async (t: T) => {
           type: 'query',
           fn: async (based, payload, update) => {
             return based
-              .query(payload === 'json' ? 'objectCounter' : 'counter', payload)
+              .query2(payload === 'json' ? 'objectCounter' : 'counter', payload)
               .subscribe(update)
           },
         },
@@ -257,7 +257,7 @@ test.serial('nested functions (fancy api)', async (t: T) => {
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, context) => {
             const x = await based.call('hello', payload, context)
-            await based.query('obsWithNested', 'json').get()
+            await based.query2('obsWithNested', 'json').get()
             return x
           },
         },

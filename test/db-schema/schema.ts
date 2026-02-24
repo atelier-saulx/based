@@ -1,10 +1,5 @@
 import test from '../shared/test.js'
-import {
-  BasedDb,
-  DbClient,
-  DbServer,
-  getDefaultHooks,
-} from '../../src/index.js'
+import { DbClient, DbServer, getDefaultHooks } from '../../src/index.js'
 import { setTimeout } from 'node:timers/promises'
 import { deepEqual, throws } from '../shared/assert.js'
 import { testDb, testDbClient, testDbServer } from '../shared/index.js'
@@ -69,6 +64,7 @@ await test('dont accept modify with mismatch schema', async (t) => {
       },
     },
   })
+
   await client.create('flurp', {
     name: 'xxx',
   })
@@ -85,6 +81,7 @@ await test('dont accept modify with mismatch schema', async (t) => {
   client.create('flurp', {
     name: 'yyy',
   })
+
   await setSchemaPromise
 
   throws(() => {
@@ -92,7 +89,8 @@ await test('dont accept modify with mismatch schema', async (t) => {
       name: 'zzz',
     })
   })
-  const res = await client.query2('flurp').get()
+
+  const res = (await client.query2('flurp').get()) as any
 
   deepEqual(res, [
     { id: 1, title: '' },

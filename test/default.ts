@@ -3,22 +3,6 @@ import { deepEqual } from './shared/assert.js'
 import { convertToTimestamp } from '../src/utils/index.js'
 import { testDb } from './shared/index.js'
 
-const derp = new Set([
-  '$nice',
-  '$role',
-  '$count',
-  '$score',
-  '$flag',
-  '$amount',
-  '$big',
-  '$huge',
-  '$max',
-  '$label',
-  '$bin',
-  '$timestamp',
-  '$enum',
-])
-
 const defaultTimestamp = '2023-03-15T12:00:00.000Z'
 const defaultJson = { enabled: true, value: 10 }
 const defaultBinary = new Uint8Array([1, 2, 3])
@@ -248,6 +232,7 @@ await test('default values for all props in user type', async (t) => {
             default: defaultTimestamp,
           },
           level: {
+            type: 'enum',
             enum: ['low', 'medium', 'high'],
             default: 'medium',
           },
@@ -276,6 +261,7 @@ await test('default values for all props in user type', async (t) => {
             // default: [], // something in there
           },
           meta: {
+            type: 'object',
             props: {
               rating: {
                 type: 'uint8',
@@ -344,7 +330,7 @@ await test('default values for all props in user type', async (t) => {
 })
 
 await test('negative default values for numeric types', async (t) => {
-  const db =await testDb(t, {
+  const db = await testDb(t, {
     types: {
       user: {
         props: {

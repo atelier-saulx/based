@@ -122,7 +122,7 @@ test('Relay', async (t: T) => {
     },
   })
 
-  const x = await client.query('counter').get()
+  const x = await client.query2('counter').get()
   t.is(x, 1)
   const hello = await client.call('hello', { snap: 'je' })
   t.is(hello, 'from hello je')
@@ -139,7 +139,7 @@ test('Relay', async (t: T) => {
 
   t.deepEqual(msges, ['bla'])
 
-  const count = await client.query('flap').get()
+  const count = await client.query2('flap').get()
 
   t.true(count > 0)
 

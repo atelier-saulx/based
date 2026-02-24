@@ -54,7 +54,7 @@ test('addSpecs', async (t: T) => {
   let errCnt = 0
   // let msgCnt = 0
 
-  client.query('cookie').subscribe(
+  client.query2('cookie').subscribe(
     () => {},
     () => {
       errCnt++

@@ -41,14 +41,14 @@ await test('binary sort', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query('binary').include('name', 'data').get(), [
+  deepEqual(await db.query2('binary').include('name', 'data').get(), [
     { id: 1, name: 'first', data: buffer1 },
     { id: 2, name: 'second', data: buffer2 },
     { id: 3, name: 'third', data: buffer3 },
   ])
 
   deepEqual(
-    await db.query('binary').sort('data').include('name', 'data').get(),
+    await db.query2('binary').sort('data').include('name', 'data').get(),
     [
       { id: 3, name: 'third', data: buffer3 },
       { id: 1, name: 'first', data: buffer1 },
@@ -58,7 +58,11 @@ await test('binary sort', async (t) => {
   )
 
   deepEqual(
-    await db.query('binary').sort('data', 'desc').include('name', 'data').get(),
+    await db
+      .query2('binary')
+      .sort('data', 'desc')
+      .include('name', 'data')
+      .get(),
     [
       { id: 2, name: 'second', data: buffer2 },
       { id: 1, name: 'first', data: buffer1 },

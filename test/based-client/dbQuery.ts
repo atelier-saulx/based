@@ -29,13 +29,13 @@ test('db query', async (t: T) => {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
-            return db.query('user').subscribe(update)
+            return db.query2('user').subscribe(update)
           },
         },
         getUser: {
           type: 'function',
           async fn() {
-            return db.query('user').get()
+            return db.query2('user').get()
           },
         },
       },
@@ -70,8 +70,8 @@ test('db query', async (t: T) => {
   const res = await client.call('getUser')
   const resOld = await clientOld.call('getUser')
 
-  client.query('users').subscribe((res) => nextResolve?.(res))
-  clientOld.query('users').subscribe((res) => nextResolveOld?.(res))
+  client.query2('users').subscribe((res) => nextResolve?.(res))
+  clientOld.query2('users').subscribe((res) => nextResolveOld?.(res))
   const [resQuery, resQueryOld] = await Promise.all([
     new Promise((r) => (nextResolve = r)),
     new Promise((r) => (nextResolveOld = r)),

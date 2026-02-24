@@ -25,13 +25,13 @@ await test('schema problems', async (t) => {
   const q: any[] = []
   q.push(
     clientWorker(t, db, async (c) => {
-      await c.query('flap').get().inspect()
+      await c.query2('flap').get().inspect()
     }),
   )
 
   q.push(
     clientWorker(t, db, async (c) => {
-      // c.query('flap')
+      // c.query2('flap')
       //   .count()
       //   .subscribe(
       //     (d) => {
@@ -42,7 +42,7 @@ await test('schema problems', async (t) => {
       //     },
       //   )
 
-      c.query('seq')
+      c.query2('seq')
         .include('flap')
         .subscribe(
           (d) => {
@@ -53,7 +53,7 @@ await test('schema problems', async (t) => {
           },
         )
 
-      c.query('flap').subscribe(
+      c.query2('flap').subscribe(
         (d) => {
           // console.log('sub2', d)
         },
@@ -67,7 +67,7 @@ await test('schema problems', async (t) => {
 
   q.push(
     clientWorker(t, db, async (c) => {
-      c.query('flap')
+      c.query2('flap')
         .include('flap')
         .subscribe(
           (d) => {
@@ -213,21 +213,17 @@ await test('schema problems', async (t) => {
 
   await Promise.all(q)
 
-  equal(
-    (await db.query('flap').count().get().inspect().toObject()).count,
-    1_100_001,
-  )
-  equal((await db.query('seq').count().get().inspect().toObject()).count, 1)
+  equal((await db.query2('flap').count().get().inspect()).count, 1_100_001)
+  equal((await db.query2('seq').count().get().inspect()).count, 1)
 
   // to Object on nested refs does not work if combin count + sum
   equal(
     (
       await db
-        .query('seq')
+        .query2('seq')
         .include((s) => s('flap').count())
         .get()
         .inspect()
-        .toObject()
     )[0].flap.count,
     1_100_000,
   )

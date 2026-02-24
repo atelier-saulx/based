@@ -3,7 +3,9 @@ import test from './shared/test.js'
 import { LangCode } from '../src/zigTsExports.js'
 
 const langs = [...Object.keys(LangCode)].filter((val) => val !== 'none')
-const locales = Object.fromEntries(langs.map((l: keyof typeof LangCode) => [l, {}]))
+const locales = Object.fromEntries(
+  langs.map((l: keyof typeof LangCode) => [l, {}]),
+)
 
 await test('locales', async (t) => {
   const db = new BasedDb({
@@ -36,7 +38,7 @@ await test('locales', async (t) => {
     client.create('thing', payload)
   }
 
-  const things = await client.query('thing').get().toObject()
+  const things = await client.query2('thing').get()
 
   for (const thing of things) {
     const payload: typeof thing = {
@@ -49,7 +51,7 @@ await test('locales', async (t) => {
 
   await client.drain()
 
-  const updatedThings = await client.query('thing').get().toObject()
+  const updatedThings = await client.query2('thing').get()
 
   for (const thing of updatedThings) {
     if (thing.string !== '') {

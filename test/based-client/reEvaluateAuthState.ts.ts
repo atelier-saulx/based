@@ -80,7 +80,7 @@ test('re-evaluate authState', async (t: T) => {
   let counter = 0
   await t.notThrowsAsync(
     new Promise((resolve) => {
-      client.query('counter').subscribe(
+      client.query2('counter').subscribe(
         () => {
           counter++
         },

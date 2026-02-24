@@ -73,7 +73,7 @@ await test('dev', async (t) => {
 
   // console.log(
   //   'Total meals from query: ',
-  //   Object.entries(eaters.toObject()[0])
+  //   Object.entries(eaters[0])
   //     .filter(([key]) => days.includes(key))
   //     .reduce((sum, el: [string, number]) => sum + el[1], 0),
   // )

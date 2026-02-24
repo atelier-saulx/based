@@ -23,7 +23,7 @@ await test('client server basic', async (t) => {
     name: 'jamez',
   })
 
-  deepEqual(await client1.query('user').get(), [
+  deepEqual(await client1.query2('user').get(), [
     { id: 1, name: 'youzi' },
     { id: 2, name: 'jamez' },
   ])
@@ -36,7 +36,7 @@ await test('client server basic', async (t) => {
     },
   })
 
-  deepEqual(await client1.query('user').get(), [
+  deepEqual(await client1.query2('user').get(), [
     { id: 1, age: 0 },
     { id: 2, age: 0 },
   ])
@@ -77,7 +77,7 @@ await test('client server basic', async (t) => {
   })
 
   deepEqual(
-    await client1.query('user', res).include('*', '**').get(),
+    await client1.query2('user', res).include('*', '**').get(),
     {
       id: 1,
       age: 0,

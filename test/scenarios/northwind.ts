@@ -1,4 +1,3 @@
-import { BasedDb } from '../../src/index.js'
 // import { mermaid } from '@based/schema-diagram'
 import { deepCopy } from '../../src/utils/index.js'
 import test from '../shared/test.js'
@@ -7,15 +6,10 @@ import { deepEqual } from '../shared/assert.js'
 import type { SchemaIn } from '../../src/schema/index.js'
 
 await test('Basic SQL', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // 1. Retrieve all columns in the Region table.
-  const r1 = await db.query('region').include('*').get()
+  const r1 = await db.query2('region').include('*').get()
   deepEqual(r1, [
     {
       id: 1,
@@ -36,7 +30,7 @@ await test('Basic SQL', async (t) => {
   ])
 
   // 2. Select the FirstName and LastName columns from the Employees table.
-  const r2 = await db.query('employees').include('firstName', 'lastName').get()
+  const r2 = await db.query2('employees').include('firstName', 'lastName').get()
   deepEqual(r2, [
     { id: 1, lastName: 'Davolio', firstName: 'Nancy' },
     { id: 2, lastName: 'Fuller', firstName: 'Andrew' },
@@ -52,7 +46,7 @@ await test('Basic SQL', async (t) => {
   // 3. Select the FirstName and LastName columns from the Employees table.
   // Sort by LastName.
   const r3 = await db
-    .query('employees')
+    .query2('employees')
     .include('firstName', 'lastName')
     .sort('lastName')
     .get()
@@ -72,7 +66,7 @@ await test('Basic SQL', async (t) => {
   // expensive to cheapest.
   // Show OrderId, OrderDate, ShippedDate, CustomerId, and Freight.
   const r4 = await db
-    .query('orders')
+    .query2('orders')
     .include('orderDate', 'shippedDate', 'customer.id', 'freight')
     .sort('freight', 'desc')
     .range(0, 3)
@@ -103,7 +97,7 @@ await test('Basic SQL', async (t) => {
 
   // 5. Create a report showing the title and the first and last name of all sales representatives.
   const r5 = await db
-    .query('employees')
+    .query2('employees')
     .include('title', 'firstName', 'lastName')
     .filter('title', '=', 'Sales Representative')
     .get()
@@ -152,7 +146,7 @@ await test('Basic SQL', async (t) => {
 
   // 6a. Create a report showing the first and last names of all employees who have a region specified.
   const r6a = await db
-    .query('employees')
+    .query2('employees')
     .include('firstName', 'lastName', 'region')
     .filter('region', '!=', '')
     .get()
@@ -170,7 +164,7 @@ await test('Basic SQL', async (t) => {
 
   // 6b. Create a report showing the first and last names of all employees who don't have a region specified.
   const r6b = await db
-    .query('employees')
+    .query2('employees')
     .include('firstName', 'lastName', 'region')
     .filter('region', '=', '')
     .get()
@@ -189,7 +183,7 @@ await test('Basic SQL', async (t) => {
   // with a letter in the last half of the alphabet.
   // Sort by LastName in descending order.
   // TODO
-  // const r7 = await db.query('employees').include('firstName', 'lastName').filter('lastName', 'startsWith', ??
+  // const r7 = await db.query2('employees').include('firstName', 'lastName').filter('lastName', 'startsWith', ??
 
   // 8. Create a report showing the title of courtesy and the first and last name of all employees
   // whose title of courtesy begins with "M".
@@ -199,7 +193,7 @@ await test('Basic SQL', async (t) => {
   // Seattle or Redmond.
   // TODO Impossible to OR
   const r9 = await db
-    .query('employees')
+    .query2('employees')
     .include('firstName', 'lastName', 'title', 'city', 'region')
     .filter('title', 'includes', 'Sales')
     .filter('region', '!=', '')
@@ -240,7 +234,7 @@ await test('Basic SQL', async (t) => {
   // customers in Mexico or in any city in Spain except Madrid.
   // TODO Impossible
   const r10 = await db
-    .query('customers')
+    .query2('customers')
     .include('companyName', 'contactTitle', 'city', 'country')
     //.filter('country', 'includes', ['Mexico', 'Spain'])
     .filter('country', 'includes', ['Mexico', 'Spain'])
@@ -309,7 +303,7 @@ await test('Basic SQL', async (t) => {
 
   // 12. Find the Total Number of Units Ordered of Product ID 3
   const r12 = await db
-    .query('orderDetails')
+    .query2('orderDetails')
     .filter('product', '=', 3)
     .count()
     .get()
@@ -320,7 +314,7 @@ await test('Basic SQL', async (t) => {
   )
 
   // 13. Retrieve the number of employees in each city
-  const r13 = await db.query('employees').groupBy('city').count().get()
+  const r13 = await db.query2('employees').groupBy('city').count().get()
   deepEqual(
     r13,
     {
@@ -339,7 +333,7 @@ await test('Basic SQL', async (t) => {
 
   // 15. Find the Companies (the CompanyName) that placed orders in 1997
   const r15 = await db
-    .query('orders')
+    .query2('orders')
     .include('orderDate', 'customer.companyName')
     .filter('orderDate', '..', [
       new Date('1997'),
@@ -379,7 +373,7 @@ await test('Basic SQL', async (t) => {
   // Sort by Company Name.
   // TODO filter by field?
   const r17 = await db
-    .query('orders')
+    .query2('orders')
     .include(
       'customer.companyName',
       'employee.firstName',
@@ -430,7 +424,10 @@ await test('Basic SQL', async (t) => {
 
   // SELECT * FROM Customers
   // WHERE country='Mexico';
-  const r19 = await db.query('customers').filter('country', '=', 'Mexico').get()
+  const r19 = await db
+    .query2('customers')
+    .filter('country', '=', 'Mexico')
+    .get()
   deepEqual(
     r19,
     [
@@ -510,7 +507,7 @@ await test('Basic SQL', async (t) => {
 
   // SELECT * FROM products ORDER BY price;
   const r20 = await db
-    .query('products')
+    .query2('products')
     .sort('unitPrice', 'desc')
     .range(0, 4)
     .get()
@@ -563,7 +560,7 @@ await test('Basic SQL', async (t) => {
 
   // SELECT * FROM products ORDER BY price;
   const r21 = await db
-    .query('products')
+    .query2('products')
     .sort('unitPrice', 'desc')
     .range(0, 3)
     .get()
@@ -606,7 +603,7 @@ await test('Basic SQL', async (t) => {
 
   // SELECT * FROM customers WHERE country IN ('Germany', 'France', 'UK');
   const r22 = await db
-    .query('customers')
+    .query2('customers')
     .filter('country', '=', ['Germany', 'France', 'UK'])
     .range(0, 3)
     .get()
@@ -661,7 +658,7 @@ await test('Basic SQL', async (t) => {
 
   // SELECT * FROM products WHERE unitPrice BETWEEN 10 AND 20 ORDER BY price;
   const r23 = await db
-    .query('products')
+    .query2('products')
     .filter('unitPrice', '..', [10, 20])
     .sort('unitPrice', 'desc')
     .get()
@@ -923,9 +920,9 @@ await test('Basic SQL', async (t) => {
   )
 
   // SELECT customer_id AS ID, company_name AS customer FROM customers;
-  const r24 = (
-    await db.query('customers').include('companyName').get().toObject()
-  ).map((r) => ({ id: r.id, customer: r.companyName }))
+  const r24 = (await db.query2('customers').include('companyName').get()).map(
+    (r) => ({ id: r.id, customer: r.companyName }),
+  )
   deepEqual(
     r24,
     [
@@ -1031,17 +1028,17 @@ await test('Basic SQL', async (t) => {
   // SELECT 'supplier', contact_name, city, country
   // FROM Suppliers
   const r25unionA = await db
-    .query('customers')
+    .query2('customers')
     .include('contactName', 'city', 'country')
     .range(0, 2)
     .get()
-    .toObject()
+
   const r25unionB = await db
-    .query('suppliers')
+    .query2('suppliers')
     .include('contactName', 'city', 'country')
     .range(0, 2)
     .get()
-    .toObject()
+
   const r25union = [
     ...r25unionA.map((r) => ({ type: 'customer', ...r })),
     ...r25unionB.map((r) => ({ type: 'supplier', ...r })),
@@ -1089,17 +1086,17 @@ await test('Basic SQL', async (t) => {
   // WHERE Country='Germany'
   // ORDER BY City;
   const r26unionAllA = await db
-    .query('customers')
+    .query2('customers')
     .include('city', 'country')
     .range(0, 3)
     .get()
-    .toObject()
+
   const r26unionAllB = await db
-    .query('suppliers')
+    .query2('suppliers')
     .include('city', 'country')
     .range(0, 3)
     .get()
-    .toObject()
+
   const r26unionAll = [
     ...r26unionAllA.map(({ city, country }) => ({ city, country })),
     ...r26unionAllB.map(({ city, country }) => ({ city, country })),
@@ -1119,12 +1116,7 @@ await test('Basic SQL', async (t) => {
 })
 
 await test('insert and update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db =await createNorthwindDb(t)
 
   // INSERT INTO customers (company_name, contact_name, address, city, postal_code, country)
   // VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
@@ -1139,7 +1131,7 @@ await test('insert and update', async (t) => {
 
   deepEqual(
     await db
-      .query('customers')
+      .query2('customers')
       .include('*')
       .filter('companyName', '=', 'Cardinal')
       .get(),
@@ -1170,7 +1162,7 @@ await test('insert and update', async (t) => {
 
   deepEqual(
     await db
-      .query('customers')
+      .query2('customers')
       .include('*')
       .filter('companyName', '=', 'Cardinal')
       .get(),
@@ -1197,17 +1189,16 @@ await test('insert and update', async (t) => {
     'customers',
     (
       await db
-        .query('customers')
+        .query2('customers')
         .include('id')
         .filter('companyName', '=', 'Cardinal')
         .get()
-        .toObject()
     )[0].id,
   )
 
   deepEqual(
     await db
-      .query('customers')
+      .query2('customers')
       .include('*')
       .filter('companyName', '=', 'Cardinal')
       .get(),
@@ -1216,19 +1207,14 @@ await test('insert and update', async (t) => {
 })
 
 await test('inner join', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // SELECT orders.order_id, customers.company_name, orders.order_date
   // FROM orders
   // INNER JOIN customers ON orders.customer_id = customers.customer_id;
   deepEqual(
     await db
-      .query('orders')
+      .query2('orders')
       .include('customer.companyName', 'orderDate')
       .range(0, 10)
       .get(),
@@ -1288,22 +1274,17 @@ await test('inner join', async (t) => {
 })
 
 await test('left join', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // SELECT customers.company_name, orders.order_id
   // FROM customers
   // LEFT JOIN orders
   // ON customers.customer_id = orders.customer_id
   // ORDER BY customers.company_name;
-  //console.log(await db.query('customers').include('companyName', (q) => q('orders').filter('customerId' '=' ??)
+  //console.log(await db.query2('customers').include('companyName', (q) => q('orders').filter('customerId' '=' ??)
   deepEqual(
     await db
-      .query('customers')
+      .query2('customers')
       .include('companyName', (q) => q('orders').include('id'))
       .sort('companyName')
       .range(0, 5)
@@ -1388,22 +1369,17 @@ await test.skip('right join', async (t) => {
 })
 
 await test('full join', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   db.delete(
     'customers',
-    (await db.query('customers', { customerId: 'WELLI' }).get()).id!,
+    (await db.query2('customers', { customerId: 'WELLI' }).get()).id!,
   )
 
   // Delete orders by WANDK
-  const wandk = await db.query('customers', { customerId: 'WANDK' }).get()
+  const wandk = await db.query2('customers', { customerId: 'WANDK' }).get()
   const wandkOrders = await db
-    .query('orders')
+    .query2('orders')
     .filter('customer', '=', wandk)
     .get()
   for (const order of wandkOrders) {
@@ -1415,12 +1391,9 @@ await test('full join', async (t) => {
   // FULL OUTER JOIN orders ON customers.customer_id=orders.customer_id
   // ORDER BY customers.company_name;
 
-  const customers = await db.query('customers').get().toObject()
-  const orders = await db
-    .query('orders')
-    .include('customer.id')
-    .get()
-    .toObject()
+  const customers = await db.query2('customers').get()
+  const orders = await db.query2('orders').include('customer.id').get()
+
   const result: any[] = []
 
   // LEFT JOIN: Customers with Orders
@@ -1470,12 +1443,7 @@ await test('full join', async (t) => {
 })
 
 await test('self join', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // SELECT A.company_name AS CustomerName1, B.company_name AS CustomerName2, A.City
   // FROM customers A, customers B
@@ -1485,10 +1453,9 @@ await test('self join', async (t) => {
   const result: any[] = []
   ;(
     (await db
-      .query('customers')
+      .query2('customers')
       .include('customerId', 'companyName', 'city')
-      .get()
-      .toObject()) as {
+      .get()) as {
       id: number
       customerId: string
       city: string
@@ -1512,17 +1479,12 @@ await test('self join', async (t) => {
 })
 
 await test('aggregates', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // min
   // SELECT MIN(unit_price)
   // FROM products;
-  deepEqual(await db.query('products').min('unitPrice').get(), {
+  deepEqual(await db.query2('products').min('unitPrice').get(), {
     unitPrice: { min: 2.5 },
   })
 
@@ -1531,7 +1493,7 @@ await test('aggregates', async (t) => {
   // FROM products
   // GROUP BY category_id;
   deepEqual(
-    await db.query('products').min('unitPrice').groupBy('category').get(),
+    await db.query2('products').min('unitPrice').groupBy('category').get(),
     {
       '1': { unitPrice: { min: 4.5 } },
       '2': { unitPrice: { min: 10 } },
@@ -1547,20 +1509,20 @@ await test('aggregates', async (t) => {
   // max
   // SELECT MAX(unit_price)
   // FROM products;
-  deepEqual(await db.query('products').max('unitPrice').get(), {
+  deepEqual(await db.query2('products').max('unitPrice').get(), {
     unitPrice: { max: 263.5 },
   })
 
   // count
   // SELECT COUNT(*)
   // FROM products;
-  deepEqual(await db.query('products').count().get(), { count: 77 })
+  deepEqual(await db.query2('products').count().get(), { count: 77 })
 
   // count group by
   // SELECT COUNT(*) AS [number of products], category_id
   // FROM products
   // GROUP BY category_id;
-  deepEqual(await db.query('products').count().groupBy('category').get(), {
+  deepEqual(await db.query2('products').count().groupBy('category').get(), {
     '1': { count: 12 },
     '2': { count: 12 },
     '3': { count: 13 },
@@ -1574,7 +1536,7 @@ await test('aggregates', async (t) => {
   // sum
   // SELECT SUM(quantity)
   // FROM order_details;
-  deepEqual(await db.query('orderDetails').sum('quantity').get(), {
+  deepEqual(await db.query2('orderDetails').sum('quantity').get(), {
     quantity: { sum: 51317 },
   })
 
@@ -1584,7 +1546,7 @@ await test('aggregates', async (t) => {
   // WHERE product_id = 11;
   deepEqual(
     await db
-      .query('orderDetails')
+      .query2('orderDetails')
       .sum('quantity')
       .filter('product.id', '=', 11)
       .get(),
@@ -1597,7 +1559,7 @@ await test('aggregates', async (t) => {
   // GROUP BY order_id;
   deepEqual(
     await db
-      .query('orderDetails')
+      .query2('orderDetails')
       .sum('quantity')
       .groupBy('order')
       .range(0, 10)
@@ -1619,7 +1581,7 @@ await test('aggregates', async (t) => {
   // avg
   // SELECT AVG(unit_price)
   // FROM products;
-  deepEqual(await db.query('products').avg('unitPrice').get(), {
+  deepEqual(await db.query2('products').avg('unitPrice').get(), {
     unitPrice: { average: 28.833896103896105 },
   })
 
@@ -1629,7 +1591,7 @@ await test('aggregates', async (t) => {
   // WHERE category_id = 1;
   deepEqual(
     await db
-      .query('products')
+      .query2('products')
       .avg('unitPrice')
       .filter('category.id', '=', 1)
       .get(),
@@ -1641,7 +1603,7 @@ await test('aggregates', async (t) => {
   // FROM products
   // GROUP BY category_id;
   deepEqual(
-    await db.query('products').avg('unitPrice').groupBy('category').get(),
+    await db.query2('products').avg('unitPrice').groupBy('category').get(),
     {
       '1': { unitPrice: { average: 37.979166666666664 } },
       '2': { unitPrice: { average: 22.854166666666668 } },
@@ -1656,12 +1618,6 @@ await test('aggregates', async (t) => {
 })
 
 await test('hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const schema = deepCopy(defaultSchema)
   schema.types.orderDetails.props['discountAmount'] = 'number'
   schema.types.orderDetails['hooks'] = {
@@ -1676,10 +1632,10 @@ await test('hooks', async (t) => {
       }
     },
   }
-  await createNorthwindDb(db, schema as SchemaIn)
+  const db = await createNorthwindDb(t, schema as SchemaIn)
 
   // SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
-  deepEqual(await db.query('orderDetails').avg('discountAmount').get(), {
+  deepEqual(await db.query2('orderDetails').avg('discountAmount').get(), {
     discountAmount: { average: 1.4448364269141538 },
   })
 })

@@ -1,18 +1,11 @@
-import { BasedDb } from '../src/index.js'
+import assert from 'node:assert'
 import test from './shared/test.js'
 import { perf } from './shared/assert.js'
-import assert from 'node:assert'
+import { testDb } from './shared/index.js'
 
 await test('await updates', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const status = ['a', 'b', 'c', 'd', 'e', 'f']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {

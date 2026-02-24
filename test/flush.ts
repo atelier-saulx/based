@@ -22,7 +22,9 @@ await test('too large payload should throw, correct size should not', async (t) 
   let error: Error | null = null
   try {
     client.create('user', {
-      name: 'cool string but too long for the max size unfortunately wow what the hell'.repeat(4),
+      name: 'cool string but too long for the max size unfortunately wow what the hell'.repeat(
+        4,
+      ),
     })
   } catch (e) {
     error = e

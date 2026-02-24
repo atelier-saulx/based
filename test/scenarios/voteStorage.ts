@@ -188,8 +188,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
     })
 
     deepEqual(
-      (await db.query('round', final).include('votes').get().toObject()).votes
-        .length,
+      (await db.query2('round', final).include('votes').get()).votes.length,
       0,
       'clear refs',
     )
@@ -198,18 +197,14 @@ const testVotes = (opts: { votes: any; amount: number }) => {
     for (let i = 0; i < len; i++) {
       const randomId = amount === 1 ? 1 : Math.ceil(Math.random() * amount)
       deepEqual(
-        await db.query('vote', randomId).include('round').get(),
+        await db.query2('vote', randomId).include('round').get(),
         { id: randomId, round: null },
         `clears refs on the other side ${randomId}`,
       )
     }
 
-    const votes = await db
-      .query('vote')
-      .range(0, 1e6)
-      .include('id')
-      .get()
-      .toObject()
+    const votes = await db.query2('vote').range(0, 1e6).include('id').get()
+
     let i = votes.length - 1
     for (i = 0; i < votes.length; i++) {
       db.delete('vote', votes[i].id)

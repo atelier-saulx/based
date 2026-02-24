@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
-import {italy} from './shared/examples.js'
+import { italy } from './shared/examples.js'
 import test from './shared/test.js'
 
 await test.skip('cardinality', async (t) => {
@@ -23,16 +23,15 @@ await test.skip('cardinality', async (t) => {
     uniqueSkills: ['juggling', 'cabaret'],
   })
   const { uniqueSkills } = await db
-    .query('user', one)
+    .query2('user', one)
     .include('uniqueSkills', { raw: true })
     .get()
-    .toObject()
 
   await db.create('user', {
     uniqueSkills,
   })
 
-  const [a, b] = await db.query('user').get().toObject()
+  const [a, b] = await db.query2('user').get()
   deepEqual(a.uniqueSkills, b.uniqueSkills)
 })
 
@@ -60,10 +59,9 @@ await test('string', async (t) => {
     resume: italy,
   })
   const { name, role, resume } = await db
-    .query('user', one)
+    .query2('user', one)
     .include(['name', 'role', 'resume'], { raw: true })
     .get()
-    .toObject()
 
   await db.create('user', {
     name,
@@ -71,7 +69,7 @@ await test('string', async (t) => {
     resume,
   })
 
-  const [a, b] = await db.query('user').get().toObject()
+  const [a, b] = await db.query2('user').get()
   deepEqual(a.name, b.name)
   deepEqual(a.role, b.role)
   deepEqual(a.resume, b.resume)

@@ -42,12 +42,12 @@ await test('ids', async (t) => {
 
   await db.drain()
   const ids: number[] = await Promise.all(res)
-  isSorted(await db.query('user', ids).sort('age').get(), 'age')
-  isSorted(await db.query('user', ids).sort('name').get(), 'name')
-  isSorted(await db.query('user', ids).sort('flap').get(), 'flap')
-  isSorted(await db.query('user', ids).sort('blurf').get(), 'blurf')
-  isSorted(await db.query('user', ids).sort('bla').get(), 'bla')
-  isSorted(await db.query('user', ids).sort('mep').get(), 'mep')
+  isSorted(await db.query2('user', ids).sort('age').get(), 'age')
+  isSorted(await db.query2('user', ids).sort('name').get(), 'name')
+  isSorted(await db.query2('user', ids).sort('flap').get(), 'flap')
+  isSorted(await db.query2('user', ids).sort('blurf').get(), 'blurf')
+  isSorted(await db.query2('user', ids).sort('bla').get(), 'bla')
+  isSorted(await db.query2('user', ids).sort('mep').get(), 'mep')
 })
 
 await test('references', async (t) => {
@@ -104,7 +104,7 @@ await test('references', async (t) => {
   isSorted(
     (
       await db
-        .query('article', id)
+        .query2('article', id)
         .include((s) => s('contributors').sort('flap'))
         .get()
     ).node().contributors,

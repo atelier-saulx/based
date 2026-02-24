@@ -1,16 +1,15 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from '../shared/assert.js'
-import { countDirtyBlocks } from '../shared/index.js'
+import {
+  countDirtyBlocks,
+  testDbServer,
+  testDbClient,
+  testDb,
+} from '../shared/index.js'
 
 await test('single reference', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await db.setSchema({
+  const server = await testDbServer(t)
+  const db = await testDbClient(server, {
     types: {
       user: {
         props: {
@@ -51,18 +50,12 @@ await test('single reference', async (t) => {
     },
   })
 
-  deepEqual(await countDirtyBlocks(db.server), 3)
+  deepEqual(await countDirtyBlocks(server), 3)
 })
 
 await test('json type edge', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const server = await testDbServer(t, { noBackup: true })
+  const db = await testDbClient(server, {
     types: {
       workspace: {
         name: 'string',
@@ -96,7 +89,7 @@ await test('json type edge', async (t) => {
     ],
   })
   const retrieved = await db
-    .query('serviceAccount', serviceAccountId)
+    .query2('serviceAccount', serviceAccountId)
     .include(
       'id',
       'workspaces.id',
@@ -104,7 +97,6 @@ await test('json type edge', async (t) => {
       'workspaces.$permissionsJson',
     )
     .get()
-    .toObject()
 
   equal(retrieved?.workspaces.length, 1, 'Expected to have length 1')
   deepEqual(

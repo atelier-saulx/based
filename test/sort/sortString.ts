@@ -76,23 +76,23 @@ await test('compression / large strings', async (t) => {
     )
     deepEqual(
       await db
-        .query('article')
+        .query2('article')
         .include('name', 'article', 'nr')
         .sort('article')
         .range(0, len)
         .get()
-        .then((v) => v.toObject().map((v) => v.nr)),
+        .then((v) => v.map((v) => v.nr)),
       results.sort((a, b) => a.nr - b.nr).map((v) => v.nr),
       name,
     )
     deepEqual(
       await db
-        .query('article')
+        .query2('article')
         .include('name', 'article', 'nr')
         .sort('article', 'desc')
         .range(0, len)
         .get()
-        .then((v) => v.toObject().map((v) => v.nr)),
+        .then((v) => v.map((v) => v.nr)),
       results.sort((b, a) => a.nr - b.nr).map((v) => v.nr),
       name + ' desc',
     )
@@ -148,7 +148,7 @@ await test('fixed len strings', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query('article').include('name', 'nr').sort('name', 'desc').get(),
+    await db.query2('article').include('name', 'nr').sort('name', 'desc').get(),
     'name',
     'desc',
   )
