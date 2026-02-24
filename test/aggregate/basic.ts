@@ -995,23 +995,13 @@ await test('range', async (t) => {
     })
   }
 
-  console.dir(
-    await db
-      .query2('job')
-      .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
-      .avg('tip')
-      .range(1, 2)
-      .get(),
-    { maxdepth: null },
-  )
-
   deepEqual(
     Object.keys(
       await db
         .query2('job')
         .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
         .avg('tip')
-        .range(1, 2)
+        .range(0, 2)
         .get(),
     ).length,
     2,
