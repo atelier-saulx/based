@@ -1,5 +1,8 @@
-import { Schema, type SchemaIn } from '../../src/schema/index.js'
-import { BasedDb } from '../../src/index.js'
+import {ResolveSchema} from '../../dist/schema.js'
+import { type SchemaIn } from '../../src/schema/index.js'
+import { DbClient } from '../../src/sdk.js'
+import { testDb } from './index.js'
+import test from './test.js'
 
 const schCompanyName = { type: 'string', maxBytes: 40 } as const
 const schContactName = { type: 'string', maxBytes: 30 } as const
@@ -302,10 +305,10 @@ export const defaultSchema = Object.freeze({
 })
 
 export default async function createNorthwindDb(
-  db: BasedDb,
+  t: Parameters<Parameters<typeof test>[1]>[0],
   schema: SchemaIn = defaultSchema as SchemaIn,
-) {
-  await db.setSchema(schema)
+): Promise<DbClient<ResolveSchema<typeof schema>>> {
+  const db = await testDb(t, schema)
 
   // categories
   ;[
@@ -3924,4 +3927,6 @@ export default async function createNorthwindDb(
       { unsafe: true },
     ),
   )
+
+  return db
 }

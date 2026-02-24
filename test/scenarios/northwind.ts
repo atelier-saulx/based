@@ -1,4 +1,3 @@
-import { BasedDb } from '../../src/index.js'
 // import { mermaid } from '@based/schema-diagram'
 import { deepCopy } from '../../src/utils/index.js'
 import test from '../shared/test.js'
@@ -7,12 +6,7 @@ import { deepEqual } from '../shared/assert.js'
 import type { SchemaIn } from '../../src/schema/index.js'
 
 await test('Basic SQL', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // 1. Retrieve all columns in the Region table.
   const r1 = await db.query('region').include('*').get()
@@ -1119,12 +1113,7 @@ await test('Basic SQL', async (t) => {
 })
 
 await test('insert and update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db =await createNorthwindDb(t)
 
   // INSERT INTO customers (company_name, contact_name, address, city, postal_code, country)
   // VALUES ('Cardinal', 'Tom B. Erichsen', 'Skagen 21', 'Stavanger', '4006', 'Norway');
@@ -1216,12 +1205,7 @@ await test('insert and update', async (t) => {
 })
 
 await test('inner join', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // SELECT orders.order_id, customers.company_name, orders.order_date
   // FROM orders
@@ -1288,12 +1272,7 @@ await test('inner join', async (t) => {
 })
 
 await test('left join', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // SELECT customers.company_name, orders.order_id
   // FROM customers
@@ -1388,12 +1367,7 @@ await test.skip('right join', async (t) => {
 })
 
 await test('full join', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   db.delete(
     'customers',
@@ -1470,12 +1444,7 @@ await test('full join', async (t) => {
 })
 
 await test('self join', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // SELECT A.company_name AS CustomerName1, B.company_name AS CustomerName2, A.City
   // FROM customers A, customers B
@@ -1512,12 +1481,7 @@ await test('self join', async (t) => {
 })
 
 await test('aggregates', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await createNorthwindDb(db)
+  const db = await createNorthwindDb(t)
 
   // min
   // SELECT MIN(unit_price)
@@ -1656,12 +1620,6 @@ await test('aggregates', async (t) => {
 })
 
 await test('hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const schema = deepCopy(defaultSchema)
   schema.types.orderDetails.props['discountAmount'] = 'number'
   schema.types.orderDetails['hooks'] = {
@@ -1676,7 +1634,7 @@ await test('hooks', async (t) => {
       }
     },
   }
-  await createNorthwindDb(db, schema as SchemaIn)
+  const db = await createNorthwindDb(t, schema as SchemaIn)
 
   // SELECT Avg(unit_price * discount) AS [Average discount] FROM [order_details];
   deepEqual(await db.query('orderDetails').avg('discountAmount').get(), {
