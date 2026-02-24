@@ -1,16 +1,10 @@
 import { BasedDb } from '../src/index.js'
 import { deepEqual, throws } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 import test from './shared/test.js'
 
 await test('insert only => no delete', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(async () => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       audit: {
         insertOnly: true,
