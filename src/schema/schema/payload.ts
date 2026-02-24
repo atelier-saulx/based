@@ -1,14 +1,6 @@
-type BasedModify<T> = any // Mock BasedModify to avoid circular dependency
+import type { TypedArray } from '../index.js'
 
-type TypedArray =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
+type BasedModify<T> = any // Mock BasedModify to avoid circular dependency
 
 type NumInc = number | { increment: number }
 

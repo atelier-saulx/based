@@ -45,6 +45,16 @@ export * from './serialize.js'
 export * from './infer.js'
 export * as semver from './semver/mod.js'
 
+export type TypedArray =
+  | Int8Array
+  | Uint8Array
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Float32Array
+  | Float64Array
+
 // eslint-disable-next-line
 export const parse = <S extends SchemaIn>(
   schema: StrictSchema<S>,
