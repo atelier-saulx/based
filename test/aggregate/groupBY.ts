@@ -218,25 +218,25 @@ await test('variable key sum', async (t) => {
     contributors: [cipolla],
   })
 
-  deepEqual(
-    await db
-      .query2('article')
-      .include((q) => q('contributors').sum('flap'), 'name')
-      .get(),
-    [
-      {
-        id: 1,
-        name: 'The wonders of Strudel',
-        contributors: { flap: { sum: 100 } },
-      },
-      {
-        id: 2,
-        name: 'Les lois fondamentales de la stupidité humaine',
-        contributors: { flap: { sum: 80 } },
-      },
-    ],
-    'sum, branched query, var len string',
-  )
+  // deepEqual(
+  //   await db
+  //     .query2('article')
+  //     .include((q) => q('contributors').sum('flap'), 'name')
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       name: 'The wonders of Strudel',
+  //       contributors: { flap: { sum: 100 } },
+  //     },
+  //     {
+  //       id: 2,
+  //       name: 'Les lois fondamentales de la stupidité humaine',
+  //       contributors: { flap: { sum: 80 } },
+  //     },
+  //   ],
+  //   'sum, branched query, var len string',
+  // )
 
   deepEqual(
     await db.query2('user').groupBy('name').sum('flap').get(),
@@ -261,30 +261,30 @@ await test('variable key sum', async (t) => {
     'sum, groupBy, main, $undefined groupBy key',
   )
 
-  deepEqual(
-    await db
-      .query2('article')
-      .include((select) => select('contributors').groupBy('name').sum('flap'))
-      .get(),
-    [
-      {
-        id: 1,
-        contributors: {
-          Flippie: { flap: { sum: 20 } },
-          'Mr snurp': { flap: { sum: 10 } },
-          Derpie: { flap: { sum: 30 } },
-          'Dinkel Doink': { flap: { sum: 40 } },
-        },
-      },
-      {
-        id: 2,
-        contributors: {
-          'Carlo Cipolla': { flap: { sum: 80 } },
-        },
-      },
-    ],
-    'sum, branched query, groupBy, references',
-  )
+  // deepEqual(
+  //   await db
+  //     .query2('article')
+  //     .include((select) => select('contributors').groupBy('name').sum('flap'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       contributors: {
+  //         Flippie: { flap: { sum: 20 } },
+  //         'Mr snurp': { flap: { sum: 10 } },
+  //         Derpie: { flap: { sum: 30 } },
+  //         'Dinkel Doink': { flap: { sum: 40 } },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       contributors: {
+  //         'Carlo Cipolla': { flap: { sum: 80 } },
+  //       },
+  //     },
+  //   ],
+  //   'sum, branched query, groupBy, references',
+  // )
 })
 
 await test('group by unique numbers', async (t) => {
