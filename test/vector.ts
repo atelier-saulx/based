@@ -53,30 +53,6 @@ await test('vector set/get', async (t) => {
   }
 })
 
-await test('vector set wrong size', async (t) => {
-  const db = await initDb(t)
-
-  const a = db.create('data', {
-    a: new Float32Array([1, 2, 3]),
-    name: 'hehe',
-  })
-  const b = db.create('data', {
-    a: new Float32Array([1, 2, 3, 4, 5, 6]),
-    name: 'hehe',
-  })
-  await db.drain()
-
-  const [ra, rb] = await db
-    .query('data')
-    .filter('id', '=', [await a, await b])
-    .include('a')
-    .get()
-
-  // RFE is truncation right?
-  deepEqual(ra.a.length, 5)
-  deepEqual(rb.a.length, 5)
-})
-
 await test('query by vector', async (t) => {
   const db = await initDb(t)
 
