@@ -190,6 +190,9 @@ await test('query db', async (t) => {
               name: 'john',
               isNice: false,
               age: 21,
+              address: {
+                street: 'Cool street',
+              },
             },
           },
         ],
@@ -204,6 +207,9 @@ await test('query db', async (t) => {
               name: 'john',
               isNice: false,
               age: 21,
+              address: {
+                street: 'Cool street',
+              },
             },
           },
         ],

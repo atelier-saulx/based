@@ -52,9 +52,12 @@ export type PickOutputFromProps<
       ? number
       : P extends keyof Props
         ? IsRefProp<Props[P]> extends true
-          ? Props[P] extends { items: any }
-            ? { id: number }[]
-            : { id: number }
+          ? InferProp<
+              Props[P],
+              S['types'],
+              S['locales'] extends Record<string, any> ? S['locales'] : {},
+              '*'
+            >
           : InferProp<
               Props[P],
               S['types'],
