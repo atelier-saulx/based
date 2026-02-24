@@ -100,6 +100,7 @@ export class DbClientClass<
 
   query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
+    id?: number[],
   ): BasedQuery2<S, T, '*', false>
 
   query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
@@ -112,6 +113,7 @@ export class DbClientClass<
     type: T,
     id?:
       | number
+      | number[]
       | (Partial<InferSchemaOutput<S, T>> & { [Symbol.toStringTag]?: never }),
   ): BasedQuery2<S, T, '*', boolean> {
     return new BasedQuery2<S, T, '*', any>(this, type, id)

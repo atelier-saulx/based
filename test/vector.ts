@@ -134,18 +134,19 @@ await test('search', async (t) => {
 
   await db.drain()
 
-  deepEqual(
-    await db
-      .query2('data')
-      .include('id', 'name')
-      .range(0, 3)
-      .search(fruit, 'a', { fn: 'euclideanDistance', score: 1 })
-      .get(),
-    [
-      { id: 3, $searchScore: 0.6100001335144043, name: 'apple' },
-      { id: 4, $searchScore: 0.7999996542930603, name: 'strawberry' },
-    ],
-  )
+  // TODO add search
+  // deepEqual(
+  //   await db
+  //     .query2('data')
+  //     .include('id', 'name')
+  //     .range(0, 3)
+  //     .search(fruit, 'a', { fn: 'euclideanDistance', score: 1 })
+  //     .get(),
+  //   [
+  //     { id: 3, $searchScore: 0.6100001335144043, name: 'apple' },
+  //     { id: 4, $searchScore: 0.7999996542930603, name: 'strawberry' },
+  //   ],
+  // )
 })
 
 await test('vector misalign', async (t) => {

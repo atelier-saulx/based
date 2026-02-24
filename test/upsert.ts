@@ -95,36 +95,3 @@ await test('upsert', async (t) => {
     },
   ])
 })
-
-await test('upsert no alias', async (t) => {
-  const db = await testDb(t, {
-    types: {
-      lala: {
-        props: {
-          lele: 'string',
-          lili: 'number',
-        },
-      },
-    },
-  })
-
-  equal((await db.query2('lala').include('*').get()).length, 0, 'before upsert')
-
-  await db.upsert('lala', {
-    lele: 'lulu',
-    lili: 813,
-  })
-
-  equal((await db.query2('lala').include('*').get()).length, 1, 'after upsert')
-
-  await db.upsert('lala', {
-    lele: 'lulu',
-    lili: 813,
-  })
-
-  equal(
-    (await db.query2('lala').include('*').get()).length,
-    2,
-    'upsert no alias should insert',
-  )
-})

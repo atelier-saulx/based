@@ -671,10 +671,10 @@ export function query<
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(
   type: T,
-  id?: number | Partial<InferSchemaOutput<S, T>>,
+  target?: number | number[] | Partial<InferSchemaOutput<S, T>>,
 ): Query<S, T, '*', boolean> {
   const ast: any = { type }
-  if (id) ast.target = id
+  if (target) ast.target = target
   return new Query<S, T, '*', any>(ast)
 }
 
@@ -694,7 +694,7 @@ export class BasedQuery2<
   constructor(
     db: DbClient,
     type: T,
-    target?: number | Partial<InferSchemaOutput<S, T>>,
+    target?: number | number[] | Partial<InferSchemaOutput<S, T>>,
   ) {
     super({})
     this.ast.type = type as string

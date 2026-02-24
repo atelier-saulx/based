@@ -184,7 +184,7 @@ await test('update', async (t) => {
     },
   ])
 
-  const ids: any[] = []
+  const ids: number[] = []
   let snurpId = 1
   for (; snurpId <= 1e6; snurpId++) {
     ids.push(snurpId)
