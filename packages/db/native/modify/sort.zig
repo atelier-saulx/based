@@ -40,6 +40,9 @@ pub fn addEmptyTextToSortIndex(ctx: *ModifyCtx, data: []u8) !usize {
         i += 1;
         const langs = data[i] + i + 1;
         i += 1;
+
+        std.debug.print("bla {any} {any} \n", .{ langs, field });
+
         while (i < langs) {
             const lang: types.LangCode = @enumFromInt(data[i]);
             const sI = sort.getSortIndex(
