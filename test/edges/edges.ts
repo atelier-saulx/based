@@ -115,7 +115,7 @@ await test('multiple references', async (t) => {
     [
       {
         id: artStrudel,
-        contributors: [{ id: 1, $role: 'writer' }],
+        contributors: [{ id: 1, $role: 'writer', $bigString: '' }],
       },
       {
         id: artItaly,
@@ -142,7 +142,7 @@ await test('multiple references', async (t) => {
     },
     {
       id: 2,
-      contributors: [{ id: 1 }],
+      contributors: [{ id: 1, $lang: '' }],
     },
   ])
 
@@ -166,7 +166,7 @@ await test('multiple references', async (t) => {
       },
       {
         id: 2,
-        contributors: [{ id: 1 }],
+        contributors: [{ id: 1, $file: new Uint8Array() }],
       },
     ],
     'Buffer edge value',
@@ -247,7 +247,11 @@ await test('multiple references', async (t) => {
       .get(),
     {
       id: 5,
-      contributors: [{ id: 2, $rating: 2 }, { id: 3 }, { id: 1 }],
+      contributors: [
+        { id: 2, $rating: 2 },
+        { id: 3, $rating: 0 },
+        { id: 1, $rating: 0 },
+      ],
     },
   )
 
@@ -363,11 +367,21 @@ await test('single reference', async (t) => {
   })
 
   deepEqual(await db.query2('article').include('author.$msg', '*').get(), [
-    { id: 1, name: 'This is a nice article', author: { id: 1 } },
+    {
+      id: 1,
+      name: 'This is a nice article',
+      author: {
+        id: 1,
+        $msg: '',
+      },
+    },
     {
       id: 2,
       name: 'This is a nice article with mr drol as writer',
-      author: { id: 1 },
+      author: {
+        id: 1,
+        $msg: '',
+      },
     },
     {
       id: 3,
@@ -445,6 +459,7 @@ await test('preserve fields', async (t) => {
   await db.update('user', user3, {
     friends: { update: [{ id: user2, $index: 0 }] },
   })
+
   deepEqual(await db.query2('user', user3).include('**').get(), {
     id: user3,
     bestFriend: { id: user2, $x: 0 },

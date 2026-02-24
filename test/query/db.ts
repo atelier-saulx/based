@@ -27,6 +27,9 @@ await test('query db', async (t) => {
             prop: 'friends',
             $rating: 'uint32',
             $rank: 'number',
+            $friendRef: {
+              ref: 'user',
+            },
           },
         },
       },
@@ -47,7 +50,12 @@ await test('query db', async (t) => {
     isNice: true,
     age: 49,
     friend: john,
-    friends: [john],
+    friends: [
+      {
+        id: john,
+        $friendRef: john,
+      },
+    ],
     address: {
       street: 'Mega street',
     },
@@ -165,6 +173,41 @@ await test('query db', async (t) => {
     deepEqual(res, [
       { id: 1, friends: [{ id: 2, $rank: 0, $rating: 0 }] },
       { id: 2, friends: [{ id: 1, $rank: 0, $rating: 0 }] },
+    ])
+  }
+
+  {
+    const q = db.query2('user').include('friends.$friendRef')
+    const res = await q.get()
+    deepEqual(res, [
+      {
+        id: 1,
+        friends: [
+          {
+            id: 2,
+            $friendRef: {
+              id: 1,
+              name: 'john',
+              isNice: false,
+              age: 21,
+            },
+          },
+        ],
+      },
+      {
+        id: 2,
+        friends: [
+          {
+            id: 1,
+            $friendRef: {
+              id: 1,
+              name: 'john',
+              isNice: false,
+              age: 21,
+            },
+          },
+        ],
+      },
     ])
   }
 })

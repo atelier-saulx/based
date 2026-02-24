@@ -6,17 +6,15 @@ import { testDb, testDbClient, testDbServer } from '../shared/index.js'
 
 await test('client server schema updates', async (t) => {
   const server = await testDbServer(t, { noBackup: true })
-
-  const client1 = await testDbClient(server)
-  const client2 = await testDbClient(server)
-
-  await client1.setSchema({
+  const schema = {
     types: {
       user: {
         name: 'string',
       },
     },
-  })
+  } as const
+  const client1 = await testDbClient(server, schema)
+  const client2 = await testDbClient<typeof schema>(server)
 
   await client1.create('user', {
     name: 'youzi',
@@ -31,7 +29,7 @@ await test('client server schema updates', async (t) => {
     { id: 2, name: 'jamez' },
   ])
 
-  await client1.setSchema({
+  const client1Updated = await client1.setSchema({
     types: {
       user: {
         age: 'number',
@@ -39,7 +37,7 @@ await test('client server schema updates', async (t) => {
     },
   })
 
-  deepEqual(await client1.query2('user').get(), [
+  deepEqual(await client1Updated.query2('user').get(), [
     { id: 1, age: 0 },
     { id: 2, age: 0 },
   ])
@@ -139,17 +137,15 @@ await test('rapid schema updates', async (t) => {
 
 await test('rapid modifies during schema update', async (t) => {
   const server = await testDbServer(t, { noBackup: true })
-
-  const client1 = await testDbClient(server)
-  const client2 = await testDbClient(server)
-  // console.log('set schema 1')
-  await client1.setSchema({
+  const schema = {
     types: {
       user: {
         name: 'string',
       },
     },
-  })
+  } as const
+  const client1 = await testDbClient(server, schema)
+  const client2 = await testDbClient<typeof schema>(server)
 
   const youzies = 500_000
 

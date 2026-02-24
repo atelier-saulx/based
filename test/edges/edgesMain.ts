@@ -154,7 +154,14 @@ await test('multiple', async (t) => {
       {
         id: 2,
         name: 'Typical Thursday',
-        contributors: [{ id: 1, $rating: 1, $rdy: false }],
+        contributors: [
+          {
+            id: 1,
+            $rating: 1,
+            $rdy: false,
+            $derp: '',
+          },
+        ],
       },
     ],
   )
@@ -190,7 +197,14 @@ await test('multiple', async (t) => {
       {
         id: 2,
         name: 'Typical Thursday',
-        contributors: [{ id: 1, $rating: 1, $rdy: false }],
+        contributors: [
+          {
+            id: 1,
+            $rating: 1,
+            $rdy: false,
+            $derp: '',
+          },
+        ],
       },
     ],
   )
@@ -258,18 +272,15 @@ await test('single', async (t) => {
     ],
   )
 
-  deepEqual(
-    await db.query2('article').include('contributor.$rdy').get(),
-    [
-      {
+  deepEqual(await db.query2('article').include('contributor.$rdy').get(), [
+    {
+      id: 1,
+      contributor: {
         id: 1,
-        contributor: {
-          id: 1,
-          $rdy: true,
-        },
+        $rdy: true,
       },
-    ],
-  )
+    },
+  ])
 })
 
 await test('multi references update', async (t) => {
