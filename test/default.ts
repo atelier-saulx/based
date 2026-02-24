@@ -232,6 +232,7 @@ await test('default values for all props in user type', async (t) => {
             default: defaultTimestamp,
           },
           level: {
+            type: 'enum',
             enum: ['low', 'medium', 'high'],
             default: 'medium',
           },
@@ -260,6 +261,7 @@ await test('default values for all props in user type', async (t) => {
             // default: [], // something in there
           },
           meta: {
+            type: 'object',
             props: {
               rating: {
                 type: 'uint8',
