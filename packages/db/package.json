@@ -1,6 +1,6 @@
 {
   "name": "@based/db",
-  "version": "0.2.21",
+  "version": "0.2.22",
   "type": "module",
   "main": "./dist/src/index.js",
   "scripts": {
@@ -42,10 +42,10 @@
     "basedDbNative.cjs"
   ],
   "dependencies": {
-    "@based/hash": "1.1.4",
-    "@based/schema": "5.1.8",
-    "@based/utils": "1.2.4",
-    "@based/protocol": "0.1.9",
+    "@based/hash": "1.1.5",
+    "@based/schema": "5.1.9",
+    "@based/utils": "1.2.5",
+    "@based/protocol": "0.1.10",
     "exit-hook": "^4.0.0"
   },
   "optionalDependencies": {
