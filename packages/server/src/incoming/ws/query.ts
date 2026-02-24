@@ -48,7 +48,6 @@ export const queryIsNotAuthorized: FunctionErrorHandler<
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
   }
-  // session.obs.delete(props.id)
   session.unauthorizedObs.add({
     id: props.attachedCtx ? props.attachedCtx.fromId : props.id,
     checksum: props.checksum,
@@ -56,8 +55,6 @@ export const queryIsNotAuthorized: FunctionErrorHandler<
     payload: props.payload,
   })
 }
-
-export const subscribeQuery: FunctionHandler = () => {}
 
 export const subscribeMessage: BinaryMessageHandler = (
   arr,
@@ -126,6 +123,7 @@ export const subscribeMessage: BinaryMessageHandler = (
 
   if (route.ctx) {
     const attachedCtx = attachCtx(server, route, ctx, id)
+
     if (ctx.session.obs.has(attachedCtx.id)) {
       return true
     }

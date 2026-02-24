@@ -77,6 +77,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       const cachedData = client.cache.get(id)
 
       if (!cachedData) {
+        console.log('???????? ------>', id)
         requestFullData(client, id)
         return
       }

@@ -32,7 +32,10 @@ export const subscribeWs = (
       session.attachedCtxObs = new Set()
     }
     session.attachedCtxObs.add(id)
-    id = obs.attachedCtx.fromId
+
+    // console.log('hello', id, 'vs', obs.attachedCtx.fromId)
+
+    // id = obs.attachedCtx.fromId
   }
 
   if (ctx.session.v < 2) {

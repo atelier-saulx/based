@@ -27,7 +27,9 @@ export const updateListener = (
     return
   }
 
-  const id = obs.attachedCtx ? obs.attachedCtx.fromId : obs.id
+  const clientId = obs.attachedCtx.fromId ?? obs.id
+  // obs.attachedCtx ? obs.attachedCtx.fromId :
+  const id = obs.id
 
   if (checksum === undefined) {
     if (data === undefined) {
@@ -93,12 +95,16 @@ export const updateListener = (
       }
 
       // TODO: Keep track globally of total mem usage
-      ;[encodedData, isDeflate] = encodeObservableResponse(id, checksum, buff)
+      ;[encodedData, isDeflate] = encodeObservableResponse(
+        clientId,
+        checksum,
+        buff,
+      )
 
       if (diff) {
         const diffBuff = valueToBuffer(diff, true)
         const encodedDiffData = encodeObservableDiffResponse(
-          id,
+          clientId,
           checksum,
           obs.previousChecksum,
           diffBuff,
@@ -117,12 +123,13 @@ export const updateListener = (
     if (obs.clients.size) {
       if (obs.diffCache) {
         if (obs.reusedCache) {
-          prevDiffId = updateId(obs.diffCache, id)
+          prevDiffId = updateId(obs.diffCache, clientId)
         }
+
         server.uwsApp.publish(String(id), obs.diffCache, true, false)
       } else {
         if (obs.reusedCache) {
-          prevId = updateId(encodedData, id)
+          prevId = updateId(encodedData, clientId)
         }
         server.uwsApp.publish(String(id), encodedData, true, false)
       }
@@ -131,7 +138,7 @@ export const updateListener = (
     if (obs.oldClients?.size) {
       if (obs.diffCache) {
         if (obs.reusedCache) {
-          prevDiffId = updateId(obs.diffCache, id)
+          prevDiffId = updateId(obs.diffCache, clientId)
         }
         server.uwsApp.publish(
           String(id) + '-v1',
@@ -141,7 +148,7 @@ export const updateListener = (
         )
       } else {
         if (obs.reusedCache) {
-          prevId = updateId(encodedData, id)
+          prevId = updateId(encodedData, clientId)
         }
         server.uwsApp.publish(
           String(id) + '-v1',

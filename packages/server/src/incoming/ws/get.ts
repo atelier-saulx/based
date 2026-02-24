@@ -14,7 +14,6 @@ import {
   sendObsWs,
   ActiveObservable,
   sendObsGetError,
-  AttachedCtx,
   createObsNoStart,
 } from '../../query/index.js'
 import { WebSocketSession, Context, BasedRoute } from '@based/functions'
@@ -75,6 +74,7 @@ const getFromExisting = (
     sendGetData(server, id, obs, checksum, ctx)
     return
   }
+
   subscribeNext(obs, (err) => {
     if (err) {
       sendObsGetError(server, ctx, id, err)

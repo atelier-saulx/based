@@ -429,10 +429,10 @@ test.serial('query ctx bound on geo', async (t: T) => {
   t.deepEqual(results, [
     { geo: { country: 'NL' }, cnt: 0 },
     { geo: { country: 'DE' }, cnt: 0 },
-    { geo: { country: 'NL' }, cnt: 1 },
     { geo: { country: 'DE' }, cnt: 1 },
-    { geo: { country: 'NL' }, cnt: 2 },
+    { geo: { country: 'NL' }, cnt: 1 },
     { geo: { country: 'DE' }, cnt: 2 },
+    { geo: { country: 'NL' }, cnt: 2 },
   ])
 
   close()
@@ -854,3 +854,124 @@ test.serial('ctxBound strange diff mismatch', async (t: T) => {
   await server.destroy()
   t.true(allPassed)
 })
+
+test.serial(
+  '2 clients ctx bound interference with data change',
+  async (t: T) => {
+    const emitter = new EventEmitter()
+    const sharedData: Record<string, { value: number }> = {
+      user1: { value: 0 },
+      user2: { value: 0 },
+    }
+
+    const server = new BasedServer({
+      port: t.context.port,
+      silent: true,
+      functions: {
+        configs: {
+          counter: {
+            type: 'query',
+            ctx: ['authState.token'],
+            public: true,
+            closeAfterIdleTime: 10,
+            uninstallAfterIdleTime: 1e3,
+            fn: async (based, payload, update, error, ctx) => {
+              const token = ctx.authState.token || ''
+              update({ token, data: sharedData[token] })
+              const listener = (targetToken: string) => {
+                if (targetToken === token) {
+                  update({ token, data: sharedData[token] })
+                }
+              }
+              emitter.on('data', listener)
+              return () => {
+                emitter.off('data', listener)
+              }
+            },
+          },
+          updateData: {
+            type: 'function',
+            public: true,
+            fn: async (based, payload: { targetToken: string }, ctx) => {
+              if (sharedData[payload.targetToken]) {
+                sharedData[payload.targetToken].value += 1
+              } else {
+                sharedData[payload.targetToken] = { value: 1 }
+              }
+              emitter.emit('data', payload.targetToken)
+            },
+          },
+        },
+      },
+    })
+    await server.start()
+
+    const client1 = new BasedClient()
+    const client2 = new BasedClient()
+
+    client1.connect({
+      url: async () => {
+        return t.context.ws
+      },
+    })
+    client2.connect({
+      url: async () => {
+        return t.context.ws
+      },
+    })
+
+    await Promise.all([client1.once('connect'), client2.once('connect')])
+
+    await client1.setAuthState({ token: 'user1' })
+    await client2.setAuthState({ token: 'user2' })
+
+    const results1: any[] = []
+    const results2: any[] = []
+
+    const close1 = client1.query('counter').subscribe((d) => {
+      results1.push({ ...d })
+    })
+
+    const close2 = client2.query('counter').subscribe((d) => {
+      results2.push({ ...d })
+    })
+
+    await wait(250)
+
+    t.is(server.activeObservablesById.size, 2)
+
+    // Trigger an update targeted only at client1's context
+    await client1.call('updateData', { targetToken: 'user1' })
+
+    await wait(250)
+
+    close1()
+    close2()
+
+    await wait(100)
+
+    t.true(results1.length > 1, 'Client 1 should receive the update')
+    t.is(results2.length, 1, 'Client 2 should NOT receive an update') // only the initial state should be present for client 2
+
+    t.true(results1.every((r) => r.token === 'user1'))
+    t.true(results2.every((r) => r.token === 'user2'))
+
+    const lastResult1 = results1[results1.length - 1]
+    const lastResult2 = results2[results2.length - 1]
+
+    t.is(lastResult1.data.value, 1)
+    t.is(lastResult2.data.value, 0)
+
+    // Ensure the size didn't incorrectly drop/merge
+    t.is(server.activeObservablesById.size, 2)
+
+    await wait(1000)
+    t.is(server.activeObservablesById.size, 0)
+
+    await client1.destroy()
+    await client2.destroy()
+    await server.destroy()
+  },
+)
+
+// add test here
