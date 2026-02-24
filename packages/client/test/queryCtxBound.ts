@@ -846,7 +846,7 @@ test.serial('ctxBound strange diff mismatch', async (t: T) => {
   const allPassed =
     notesOk1 && plannedStartedAtOk1 && notesOk2 && plannedStartedAtOk2
 
-  console.log({ allPassed, updates })
+  // console.log({ allPassed, updates })
 
   unsubscribe()
 
