@@ -1,6 +1,6 @@
 {
   "name": "@based/react",
-  "version": "5.4.18",
+  "version": "5.4.19",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -18,11 +18,11 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@based/errors": "1.6.18",
+    "@based/errors": "1.6.19",
     "@based/hash": "1.1.4"
   },
   "devDependencies": {
-    "@based/client": "8.3.18",
+    "@based/client": "8.3.19",
     "@saulx/tsconfig": "^1.1.0",
     "@types/react": "^18.0.29",
     "esbuild": "^0.25.9",
