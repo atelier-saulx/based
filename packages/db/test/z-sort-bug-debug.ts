@@ -18,6 +18,11 @@ await test('youzi', async (t) => {
         vision: 'text',
         updatedAt: 'timestamp',
       },
+      flap: {
+        description: 'string',
+        vision: 'string',
+        updatedAt: 'timestamp',
+      },
     },
   })
 
@@ -42,5 +47,14 @@ await test('youzi', async (t) => {
 
   // await db.query('test').sort('updatedAt').get().inspect()
 
-  console.dir(d, { depth: 10 })
+  db.query('flap').sort('timestamp')
+
+  await db.create('flap')
+  await wait(300)
+
+  deepEqual(await db.query('flap').sort('description').get().toObject(), [
+    { id: 1, updatedAt: 0, description: '', vision: '' },
+  ])
+
+  await wait(300)
 })
