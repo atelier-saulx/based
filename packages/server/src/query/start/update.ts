@@ -27,7 +27,7 @@ export const updateListener = (
     return
   }
 
-  const clientId = obs.attachedCtx.fromId ?? obs.id
+  const clientId = obs.attachedCtx?.fromId ?? obs.id
   // obs.attachedCtx ? obs.attachedCtx.fromId :
   const id = obs.id
 
