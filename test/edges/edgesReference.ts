@@ -1,15 +1,9 @@
-import { BasedDb } from '../../src/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('multi reference', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -62,7 +56,7 @@ await test('multi reference', async (t) => {
   })
 
   deepEqual(
-    await db.query('article').include('contributor.$friend').get().toObject(),
+    await db.query2('article').include('contributor.$friend').get(),
     [
       {
         id: 1,
@@ -73,14 +67,7 @@ await test('multi reference', async (t) => {
 })
 
 await test('multiple references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       country: {
         props: {
@@ -162,10 +149,10 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query('article')
+      .query2('article')
       .include('name', 'contributor.$countries')
       .get()
-      .then((v) => v.toObject()),
+      .then((v) => v),
     [
       {
         id: 1,
@@ -206,10 +193,10 @@ await test('multiple references', async (t) => {
   await db.drain()
   const articles = (
     await db
-      .query('article')
+      .query2('article')
       .include('name', 'contributor.$countries')
       .get()
-      .toObject()
+      
   ).slice(-10)
 
   for (const article of articles) {

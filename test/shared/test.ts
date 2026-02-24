@@ -1,9 +1,14 @@
 import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb, DbClient, DbServer, getDefaultHooks } from '../../src/index.js'
+import {
+  BasedDb,
+  DbClient,
+  DbServer,
+  getDefaultHooks,
+} from '../../src/index.js'
 import { deepEqual } from './assert.js'
-import { wait, bufToHex } from '../../src/utils/index.js'
+import { wait } from '../../src/utils/index.js'
 import fs from 'node:fs/promises'
 
 export const counts = {
@@ -97,7 +102,10 @@ const test: {
       console.log(styleText('gray', `saved db ${performance.now() - d} ms`))
 
       const size = await dirSize(t.tmp)
-      const strSize = size < 1_048_576 ? `${Math.ceil(size / 1024)} kiB` : `${Math.ceil(size / 1_048_576)} MiB`
+      const strSize =
+        size < 1_048_576
+          ? `${Math.ceil(size / 1024)} kiB`
+          : `${Math.ceil(size / 1_048_576)} MiB`
       console.log(styleText('gray', `backup size ${strSize}`))
 
       await db.stop()

@@ -414,7 +414,7 @@ await test('aggregate hooks', async (t) => {
     age: 100,
   })
 
-  equal((await db.query('user').sum('age').get().toObject()).age.sum, 21)
+  equal((await db.query('user').sum('age').get()).age.sum, 21)
 })
 
 await test('search hooks', async (t) => {
@@ -464,7 +464,7 @@ await test('search hooks', async (t) => {
     age: 100,
   })
 
-  equal((await db.query('user').search('youzi').get().toObject()).length, 1)
+  equal((await db.query('user').search('youzi').get()).length, 1)
 })
 
 await test('groupBy hooks', async (t) => {
@@ -514,7 +514,7 @@ await test('groupBy hooks', async (t) => {
     age: 100,
   })
 
-  equal(await db.query('user').groupBy('name').sum('age').get().toObject(), {
+  equal(await db.query('user').groupBy('name').sum('age').get(), {
     youzi: { age: { sum: 21 } },
   })
 })
@@ -570,7 +570,7 @@ await test('filter hooks', async (t) => {
     age: 100,
   })
 
-  equal(await db.query('user').filter('name', '=', 'youzi').get().toObject(), [
+  equal(await db.query('user').filter('name', '=', 'youzi').get(), [
     { id: 1, age: 21, name: 'youzi' },
   ])
 })
@@ -622,7 +622,7 @@ await test('include hooks', async (t) => {
     age: 100,
   })
 
-  equal(await db.query('user').include('name', 'age').get().toObject(), [
+  equal(await db.query('user').include('name', 'age').get(), [
     { id: 1, age: 21, name: 'youzi' },
   ])
 })
@@ -662,7 +662,7 @@ await test('upsert calls create and/or update hooks', async (t) => {
     age: 21,
   })
 
-  const results1 = await db.query('user').get().toObject()
+  const results1 = await db.query('user').get()
 
   equal(results1.length, 1)
 
@@ -675,7 +675,7 @@ await test('upsert calls create and/or update hooks', async (t) => {
     age: 45,
   })
 
-  const results2 = await db.query('user').get().toObject()
+  const results2 = await db.query('user').get()
   equal(results2.length, 1)
   equal(results2[0].createdString != 0, true)
   equal(results2[0].updatedString != 0, true)

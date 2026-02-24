@@ -188,7 +188,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
     })
 
     deepEqual(
-      (await db.query('round', final).include('votes').get().toObject()).votes
+      (await db.query('round', final).include('votes').get()).votes
         .length,
       0,
       'clear refs',
@@ -209,7 +209,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
       .range(0, 1e6)
       .include('id')
       .get()
-      .toObject()
+      
     let i = votes.length - 1
     for (i = 0; i < votes.length; i++) {
       db.delete('vote', votes[i].id)

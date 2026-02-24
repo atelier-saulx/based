@@ -54,8 +54,8 @@ await test('big nodes', async (t) => {
   })
   await db.drain()
 
-  const mega = (await db.query('mega').get()).toObject()
-  const giga = (await db.query('giga').get()).toObject()
+  const mega = (await db.query('mega').get())
+  const giga = (await db.query('giga').get())
   deepEqual(mega[1].f4092, 1337)
   deepEqual(giga[1].f100, 1337)
 
@@ -65,8 +65,8 @@ await test('big nodes', async (t) => {
 
   const megaRefQ = await db.query('mega').include('ref').get()
 
-  const megaRef = megaRefQ.toObject()
-  const gigaRef = (await db.query('giga').include('ref').get()).toObject()
+  const megaRef = megaRefQ
+  const gigaRef = (await db.query('giga').include('ref').get())
 
   deepEqual(gigaRef[0].ref.id, 2)
   deepEqual(megaRef[1].ref.id, 1)

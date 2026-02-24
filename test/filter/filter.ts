@@ -47,7 +47,7 @@ await test('single', async (t) => {
 
   const x = [10, 20]
 
-  deepEqual((await db.query('org').filter('x', '=', x).get()).toObject(), [
+  deepEqual((await db.query('org').filter('x', '=', x).get()), [
     {
       id: 1,
       status: 'ok',
@@ -56,7 +56,7 @@ await test('single', async (t) => {
     },
   ])
   deepEqual(
-    (await db.query('org').filter('orgs', '=', [org, org2]).get()).toObject(),
+    (await db.query('org').filter('orgs', '=', [org, org2]).get()),
     [
       {
         id: 3,
@@ -67,11 +67,11 @@ await test('single', async (t) => {
     ],
   )
   deepEqual(
-    (await db.query('org').filter('status', '=', 'error').get()).toObject(),
+    (await db.query('org').filter('status', '=', 'error').get()),
     [],
   )
   deepEqual(
-    (await db.query('org').filter('status', '=', 'ok').get()).toObject(),
+    (await db.query('org').filter('status', '=', 'ok').get()),
     [
       {
         id: 1,
@@ -88,13 +88,13 @@ await test('single', async (t) => {
     ],
   )
   deepEqual(
-    (await db.query('org').filter('name', 'includes', '0').get()).toObject(),
+    (await db.query('org').filter('name', 'includes', '0').get()),
     [],
   )
   deepEqual(
     (
       await db.query('org').filter('name', 'includes', 'hello').get()
-    ).toObject(),
+    ),
     [
       {
         id: 1,
@@ -245,7 +245,7 @@ await test('simple', async (t) => {
   )
 
   for (const envs of res) {
-    mi += envs.toObject().length
+    mi += envs.length
     measure += envs.execTime
   }
 
@@ -268,7 +268,7 @@ await test('simple', async (t) => {
         .include('*')
         .filter('machines', 'includes', rand)
         .get()
-      mi += envs.toObject().length
+      mi += envs.length
       measure += envs.execTime
     }),
   )
@@ -287,7 +287,7 @@ await test('simple', async (t) => {
         .include('*')
         .filter('scheduled', '>', 'now + 694d + 10h')
         .get()
-    ).toObject().length,
+    ).length,
     1,
   )
 
@@ -298,7 +298,7 @@ await test('simple', async (t) => {
         .include('*')
         .filter('scheduled', '<', 'now-694d-10h-15m') // Date,
         .get()
-    ).toObject().length,
+    ).length,
     1,
   )
 
@@ -309,7 +309,7 @@ await test('simple', async (t) => {
         .include('*')
         .filter('scheduled', '<', '10/24/2000') // Date,
         .get()
-    ).toObject().length,
+    ).length,
     0,
     'parse date string',
   )
@@ -321,7 +321,7 @@ await test('simple', async (t) => {
         .include('*')
         .filter('requestsServed', '<', 1)
         .get()
-    ).toObject().length,
+    ).length,
     1,
   )
 
@@ -332,7 +332,7 @@ await test('simple', async (t) => {
         .include('*')
         .filter('requestsServed', '<=', 1)
         .get()
-    ).toObject().length,
+    ).length,
     2,
   )
 
@@ -344,7 +344,7 @@ await test('simple', async (t) => {
         .filter('derp', '<=', 0)
         .filter('derp', '>', -5)
         .get()
-    ).toObject().length,
+    ).length,
     5,
     'Negative range',
   )
@@ -357,7 +357,7 @@ await test('simple', async (t) => {
         .filter('temperature', '<=', 0)
         .filter('temperature', '>', -0.1)
         .get()
-    ).toObject().length < 500,
+    ).length < 500,
     true,
     'Negative temperature (result amount)',
   )
@@ -370,7 +370,7 @@ await test('simple', async (t) => {
         .filter('temperature', '<=', 0)
         .filter('temperature', '>', -0.1)
         .get()
-    ).toObject()[0].temperature < 0,
+    )[0].temperature < 0,
     true,
     'Negative temperature (check value)',
   )
@@ -383,7 +383,7 @@ await test('simple', async (t) => {
         .filter('env', '=', env)
         .range(0, 10)
         .get()
-    ).toObject(),
+    ),
     [
       { id: 2 },
       { id: 4 },
@@ -408,7 +408,7 @@ await test('simple', async (t) => {
         .filter('env', '=', [emptyEnv, env])
         .range(0, 10)
         .get()
-    ).toObject(),
+    ),
     [{ id: 100000 }],
     'Filter by reference (multiple)',
   )
@@ -478,7 +478,7 @@ await test('simple', async (t) => {
         .include('env', '*')
         .filter('env.status', '=', 5)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: 100001,
@@ -527,7 +527,7 @@ await test('simple', async (t) => {
         .filter('status', '=', '🦄')
         .include('status')
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: unicornMachine,
@@ -536,13 +536,13 @@ await test('simple', async (t) => {
     ],
   )
 
-  deepEqual((await db.query('env').filter('standby').get()).toObject(), [])
+  deepEqual((await db.query('env').filter('standby').get()), [])
 
   await db.update('env', derpEnv, {
     standby: true,
   })
 
-  deepEqual((await db.query('env').filter('standby').get()).toObject(), [
+  deepEqual((await db.query('env').filter('standby').get()), [
     { id: 3, standby: true, status: 5, name: 'derp env' },
   ])
 
@@ -636,7 +636,7 @@ await test('or', async (t) => {
         .filter('scheduled', '>', '01/01/2100')
         .or('lastPing', '>', 1e6 - 2)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: 999999,
@@ -659,7 +659,7 @@ await test('or', async (t) => {
           f.filter('lastPing', '>', 1e6 - 2)
         })
         .get()
-    ).toObject(),
+    ),
     (
       await db
         .query('machine')
@@ -667,7 +667,7 @@ await test('or', async (t) => {
         .filter('scheduled', '>', '01/01/2100')
         .or('lastPing', '>', 1e6 - 2)
         .get()
-    ).toObject(),
+    ),
   )
 
   equal(
@@ -681,7 +681,7 @@ await test('or', async (t) => {
           f.or('temperature', '<', -30)
         })
         .get()
-    ).toObject().length > 10,
+    ).length > 10,
     true,
     'Branch or',
   )
@@ -699,7 +699,7 @@ await test('or', async (t) => {
           })
         })
         .get()
-    ).toObject(),
+    ),
     (
       await db
         .query('machine')
@@ -710,7 +710,7 @@ await test('or', async (t) => {
           f.or('temperature', '<', -30)
         })
         .get()
-    ).toObject(),
+    ),
   )
 
   const r = (
@@ -721,7 +721,7 @@ await test('or', async (t) => {
       .filter('temperature', '>', 0)
       .or('temperature', '<', -0.1)
       .get()
-  ).toObject()
+  )
 
   equal(
     r
@@ -768,7 +768,7 @@ await test('or numerical', async (t) => {
       .filter('temperature', '>', 150)
       .or('temperature', '<', 50)
       .get()
-  ).toObject()
+  )
 
   equal(
     r
@@ -803,7 +803,7 @@ await test('or numerical', async (t) => {
           f.or('temperature', '<', 10)
         })
         .get()
-    ).toObject().length > 10,
+    ).length > 10,
     true,
     'Branch or',
   )
@@ -908,7 +908,7 @@ await test.skip('includes', async (t) => {
             '*',
           )
           .get()
-          .toObject()
+          
       ).filter((u) => u.buddies.length > 0),
     ),
   )
@@ -939,5 +939,5 @@ await test('lt x leq', async (t) => {
     blue: 6,
   })
   const b = await db.query('bucket').filter('red', '<', 4).get()
-  equal(b.toObject().length, 1, 'lt must be different than leq')
+  equal(b.length, 1, 'lt must be different than leq')
 })

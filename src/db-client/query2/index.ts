@@ -1,4 +1,4 @@
-import type { FilterAst, FilterLeaf, QueryAst } from '../../db-query/ast/ast.js'
+import type { FilterAst, QueryAst } from '../../db-query/ast/ast.js'
 import type {
   PickOutput,
   ResolveInclude,
@@ -13,7 +13,7 @@ import type {
   ExpandDotPath,
   UnionToIntersection,
 } from './types.js'
-import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
+import type { ResolvedProps } from '../../schema/index.js'
 import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import type { DbClient } from '../../sdk.js'
@@ -98,7 +98,7 @@ class Query<
   >(
     prop: P,
     op: Operator,
-    val: InferPathType<S, T, P>,
+    val: InferPathType<S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   filter(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -118,7 +118,7 @@ class Query<
   >(
     prop: P,
     op: Operator,
-    val: InferPathType<S, T, P>,
+    val: InferPathType<S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   and(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -137,7 +137,7 @@ class Query<
   >(
     prop: P,
     op: Operator,
-    val: InferPathType<S, T, P>,
+    val: InferPathType<S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   or(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -644,8 +644,7 @@ class Query<
   }
 }
 
-type FilterBranch<T extends { filter: any }> = Omit<T, 'and' | 'or'> &
-  FilterMethods<T>
+type FilterBranch<T extends { filter: any }> = T
 
 type FilterMethods<T extends { filter: any }> = {
   and: T['filter']
@@ -774,7 +773,7 @@ type FilterSignature<
   >(
     prop: P,
     op: Operator,
-    val: InferPathType<S, T, P>,
+    val: InferPathType<S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): Result
 }

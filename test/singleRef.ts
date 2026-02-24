@@ -208,7 +208,7 @@ await test('simple nested', async (t) => {
 
   await db.drain()
 
-  deepEqual((await db.query('blup').include('flap').get()).toObject(), [
+  deepEqual((await db.query('blup').include('flap').get()), [
     {
       id: 1,
       flap: 'B',
@@ -227,7 +227,7 @@ await test('simple nested', async (t) => {
     equal(r.user.myBlup.flap, 'B')
   }
 
-  deepEqual((await db.query('user').include('simple').get()).toObject(), [
+  deepEqual((await db.query('user').include('simple').get()), [
     {
       id: 1,
       simple: { id: 1 },
@@ -240,14 +240,14 @@ await test('simple nested', async (t) => {
 
   await db.drain()
 
-  deepEqual((await db.query('simple').include('user').get()).toObject(), [
+  deepEqual((await db.query('simple').include('user').get()), [
     {
       id: 1,
       user: null,
     },
   ])
 
-  deepEqual((await db.query('user').include('simple').get()).toObject(), [
+  deepEqual((await db.query('user').include('simple').get()), [
     {
       id: 1,
       simple: null,
@@ -321,7 +321,7 @@ await test('single reference object', async (t) => {
 
   await db.drain()
 
-  deepEqual((await db.query('simple').include('admin.user').get()).toObject(), [
+  deepEqual((await db.query('simple').include('admin.user').get()), [
     {
       id: 1,
       admin: {
@@ -430,12 +430,12 @@ await test('nested', async (t) => {
   await db.drain()
 
   deepEqual(
-    (await db.query('simple').include('id').range(0, 1).get()).toObject(),
+    (await db.query('simple').include('id').range(0, 1).get()),
     [{ id: 1 }],
   )
 
   deepEqual(
-    (await db.query('simple').include('user').range(0, 1).get()).toObject(),
+    (await db.query('simple').include('user').range(0, 1).get()),
     [
       {
         id: 1,
@@ -448,7 +448,7 @@ await test('nested', async (t) => {
   deepEqual(
     (
       await db.query('simple', lastRes).include('user.location').get()
-    ).toObject(),
+    ),
     {
       id: await lastRes,
       user: {
@@ -460,7 +460,7 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    (await db.query('simple', lastRes).include('user').get()).toObject(),
+    (await db.query('simple', lastRes).include('user').get()),
     {
       id: await lastRes,
       user: {
@@ -484,7 +484,7 @@ await test('nested', async (t) => {
         .include('user.myBlup')
         .range((await lastRes!) - 1, await lastRes)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: await lastRes,
@@ -495,7 +495,7 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    (await db.query('simple', lastRes).include('user.myBlup').get()).toObject(),
+    (await db.query('simple', lastRes).include('user.myBlup').get()),
     {
       id: await lastRes,
       user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
@@ -506,7 +506,7 @@ await test('nested', async (t) => {
   deepEqual(
     (
       await db.query('simple', lastRes).include('user.myBlup', 'lilBlup').get()
-    ).toObject(),
+    ),
     {
       id: await lastRes,
       user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
@@ -529,7 +529,7 @@ await test('nested', async (t) => {
         .include('user.myBlup', 'lilBlup', 'user.name')
         .range((await lastRes!) - 1, await lastRes)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: await lastRes,
@@ -547,14 +547,14 @@ await test('nested', async (t) => {
   deepEqual(
     (
       await db.query('simple', lastRes).include('user.location.label').get()
-    ).toObject(),
+    ),
     { id: await lastRes, user: { id: 1, location: { label: 'BLA BLA' } } },
   )
 
   deepEqual(
     (
       await db.query('simple', lastRes).include('user.location').get()
-    ).toObject(),
+    ),
     {
       id: await lastRes,
       user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } },
@@ -568,7 +568,7 @@ await test('nested', async (t) => {
         .include('user.myBlup', 'lilBlup')
         .range((await lastRes!) - 1, await lastRes)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: await lastRes,
@@ -596,7 +596,7 @@ await test('nested', async (t) => {
         .include('user', 'user.myBlup')
         .range((await lastRes!) - 1, await lastRes)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: await lastRes,
@@ -622,7 +622,7 @@ await test('nested', async (t) => {
         .query('simple', lastRes)
         .include('user', 'user.myBlup', 'lilBlup')
         .get()
-    ).toObject(),
+    ),
     {
       id: await lastRes,
       user: {
@@ -728,7 +728,7 @@ await test('single reference multi refs strings', async (t) => {
     .include('user', 'user.myBlup', 'lilBlup')
     .get()
 
-  deepEqual(result2.toObject(), [
+  deepEqual(result2, [
     {
       id: 2,
       user: null,

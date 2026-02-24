@@ -32,7 +32,7 @@ await test('isModified', async (t) => {
   const r = await Promise.all(q)
 
   for (const result of r) {
-    deepEqual(result.toObject(), [
+    deepEqual(result, [
       { id: 1, nr: 0 },
       { id: 2, nr: 1 },
       { id: 3, nr: 2 },

@@ -38,9 +38,9 @@ await test('expire', async (t) => {
 
   db.expire('token', token1, 1)
   await db.drain()
-  equal((await db.query('token').get().toObject()).length, 1)
+  equal((await db.query('token').get()).length, 1)
   await setTimeout(2e3)
-  equal((await db.query('token').get().toObject()).length, 0)
+  equal((await db.query('token').get()).length, 0)
 
   const token2 = await db.create('token', {
     name: 'my new token',
@@ -50,7 +50,7 @@ await test('expire', async (t) => {
   await db.drain()
   await db.save()
   equal(
-    (await db.query('token').get().toObject()).length,
+    (await db.query('token').get()).length,
     1,
     '1 token before save',
   )
@@ -61,13 +61,13 @@ await test('expire', async (t) => {
   await db2.start()
 
   equal(
-    (await db2.query('token').get().toObject()).length,
+    (await db2.query('token').get()).length,
     1,
     '1 token after load',
   )
   await setTimeout(3e3)
   equal(
-    (await db2.query('token').get().toObject()).length,
+    (await db2.query('token').get()).length,
     0,
     '0 tokens after expiry',
   )

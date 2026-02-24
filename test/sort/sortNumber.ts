@@ -80,7 +80,7 @@ await test('numbers', async (t) => {
       .sort('enum')
       .include('enum')
       .get()
-      .then((v) => v.toObject().map((v) => v.enum)),
+      .then((v) => v.map((v) => v.enum)),
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
   db.delete('example', 1)
@@ -90,5 +90,5 @@ await test('numbers', async (t) => {
     .query('example')
     .include('enum')
     .get()
-    .then((v) => v.toObject().map((v) => v.enum))
+    .then((v) => v.map((v) => v.enum))
 })

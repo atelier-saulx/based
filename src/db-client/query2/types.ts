@@ -62,12 +62,12 @@ export type PickOutputFromProps<
             >
         : never
   } & {
-    [Item in Extract<K, { field: any; select: any }> as Item['field'] &
+    [Field in Extract<K, { field: any; select: any }>['field'] &
       keyof Props]: InferProp<
-      Props[Item['field'] & keyof Props],
+      Props[Field],
       S['types'],
       S['locales'] extends Record<string, any> ? S['locales'] : {},
-      Item['select']
+      Extract<K, { field: Field; select: any }>['select']
     >
   }
 >
@@ -80,7 +80,7 @@ export type InferProp<
 > =
   IsSelected<Selection> extends false
     ? InferPropLogic<Prop, Types, Locales, Selection>
-    : Selection extends { _aggregate: infer Agg }
+    : [Selection] extends [{ _aggregate: infer Agg }]
       ? Agg
       : InferPropLogic<Prop, Types, Locales, Selection>
 
@@ -136,11 +136,11 @@ type InferType<
 }
 
 // Helpers for include
-type IsRefProp<P> = P extends { type: 'reference' } | { type: 'references' }
+type IsRefProp<P> = [P] extends [{ type: 'reference' } | { type: 'references' }]
   ? true
-  : P extends { ref: any }
+  : [P] extends [{ ref: any }]
     ? true
-    : P extends { items: { ref: any } }
+    : [P] extends [{ items: { ref: any } }]
       ? true
       : false
 
@@ -185,13 +185,12 @@ export type PickOutput<
         : InferSchemaOutput<S, T>[P]
       : InferSchemaOutput<S, T>[P]
   } & {
-    [Item in Extract<K, { field: any; select: any }> as Item['field'] &
+    [Field in Extract<K, { field: any; select: any }>['field'] &
       keyof ResolvedProps<S['types'], T>]: InferProp<
-      ResolvedProps<S['types'], T>[Item['field'] &
-        keyof ResolvedProps<S['types'], T>],
+      ResolvedProps<S['types'], T>[Field],
       S['types'],
       S['locales'] extends Record<string, any> ? S['locales'] : {},
-      Item['select']
+      Extract<K, { field: Field; select: any }>['select']
     >
   }
 >
@@ -316,7 +315,8 @@ export type InferPathType<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
   P,
-> = InferPropsPathType<S, ResolvedProps<S['types'], T>, P>
+  EdgeProps extends Record<string, any> = {},
+> = InferPropsPathType<S, ResolvedProps<S['types'], T> & EdgeProps, P>
 
 export type NumberPaths<
   S extends { types: any; locales?: any },

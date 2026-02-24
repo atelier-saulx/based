@@ -31,7 +31,7 @@ await test('idOffset', async (t) => {
   }
 
   await db.drain()
-  const allUsers1 = await db.query('user').get().toObject()
+  const allUsers1 = await db.query('user').get()
   let id = 0
 
   console.log(allUsers1.length)

@@ -94,7 +94,7 @@ await test('copy', async (t) => {
     .query('edition')
     .include('*', 'versionOf', 'versions', 'sequences', 'sequences.pages')
     .get()
-    .toObject()
+    
 
   deepEqual(res, [
     {

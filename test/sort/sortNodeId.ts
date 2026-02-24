@@ -34,7 +34,7 @@ await test.skip('basic sort by id', async (t) => {
       .sort('id', 'desc')
       .range(0, 5)
       .get()
-      .toObject(),
+      ,
     [
       {
         id: 99,

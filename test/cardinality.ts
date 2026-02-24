@@ -51,7 +51,7 @@ await test('hll', async (t) => {
         .query('article')
         .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: 1,
@@ -69,7 +69,7 @@ await test('hll', async (t) => {
         .include('myUniqueValuesCount')
         .filter('myUniqueValuesCount', '!=', 0)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: 1,
@@ -106,7 +106,7 @@ await test('hll', async (t) => {
         .query('article')
         .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
         .get()
-    ).toObject(),
+    ),
     [
       { id: 1, myUniqueValuesCount: 1, myUniqueValuesCountFromArray: 0 },
       { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
@@ -120,7 +120,7 @@ await test('hll', async (t) => {
         .include('myUniqueValuesCountFromArray')
         .filter('myUniqueValuesCountFromArray', '=', 7)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: 2,
@@ -136,7 +136,7 @@ await test('hll', async (t) => {
         .include('myUniqueValuesCount')
         .filter('myUniqueValuesCount', '>', 1)
         .get()
-    ).toObject(),
+    ),
     [],
   )
 
@@ -169,7 +169,7 @@ await test('hll', async (t) => {
         .query('article')
         .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
         .get()
-    ).toObject(),
+    ),
     [
       { id: 1, myUniqueValuesCount: 7, myUniqueValuesCountFromArray: 0 },
       { id: 2, myUniqueValuesCountFromArray: 7, myUniqueValuesCount: 0 },
@@ -202,7 +202,7 @@ await test('hll', async (t) => {
         .filter('myUniqueValuesCount', '=', 11)
         .or('myUniqueValuesCountFromArray', '>', 6)
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: 1,
@@ -280,7 +280,7 @@ await test('hll', async (t) => {
         .filter('id', '>=', 3)
         .include('contributors.$tokens')
         .get()
-    ).toObject(),
+    ),
     [
       {
         id: 3,
@@ -301,7 +301,7 @@ await test('hll', async (t) => {
       .filter('id', '>=', 3)
       .include('contributors.$undeftokens')
       .get()
-      .toObject(),
+      ,
     [
       {
         id: 3,
@@ -330,7 +330,7 @@ await test('hll', async (t) => {
       .filter('id', '>=', 3)
       .include('contributors.$undeftokens')
       .get()
-      .toObject(),
+      ,
     [
       {
         id: 3,

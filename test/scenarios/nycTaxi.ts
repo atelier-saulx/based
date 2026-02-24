@@ -480,22 +480,22 @@ await test.skip('taxi', async (t) => {
       .query('vendor', { vendorId: trip.VendorID })
       .include('id')
       .get()
-      .toObject()
+      
     const { id: rate = null } = await db
       .query('rate', { rateCodeId: trip.RatecodeID ?? '99' })
       .include('id')
       .get()
-      .toObject()
+      
     const { id: pickupLoc = null } = await db
       .query('zone', { locationId: trip.PULocationID ?? '264' })
       .include('id')
       .get()
-      .toObject()
+      
     const { id: dropoffLoc = null } = await db
       .query('zone', { locationId: trip.DOLocationID ?? '264' })
       .include('id')
       .get()
-      .toObject()
+      
 
     const pickup = new Date(trip.tpep_pickup_datetime)
     const dropoff = new Date(trip.tpep_dropoff_datetime)
@@ -596,7 +596,7 @@ await test.skip('taxi', async (t) => {
   //       .get(),
   //   ),
   // )
-  //   res.map((r) => r.toObject())
+  //   res.map((r) => r)
 
   // Yearly/Monthly/Daily revenue
   console.log('Yearly/Monthly/Daily revenue')
@@ -647,13 +647,13 @@ await test.skip('taxi', async (t) => {
     .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     .count()
     .get()
-    .toObject()
+    
   const rh2 = await db
     .query('trip')
     .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     .count()
     .get()
-    .toObject()
+    
   console.log(
     Object.keys(day2enum).reduce(
       (prev, key) => (

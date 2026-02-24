@@ -41,7 +41,7 @@ await test('references modify', async (t) => {
   await db.drain()
 
   deepEqual(
-    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    (await db.query('user', john).include('*', 'friends').get()),
     {
       id: 3,
       name: 'john',
@@ -75,7 +75,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    (await db.query('user', john).include('*', 'friends').get()),
     {
       id: 3,
       name: 'john',
@@ -102,7 +102,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    (await db.query('user', john).include('*', 'friends').get()),
     {
       id: 3,
       name: 'john',
@@ -130,7 +130,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    (await db.query('user', john).include('*', 'friends').get()),
     {
       id: 3,
       name: 'john',
@@ -155,7 +155,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    (await db.query('user', john).include('*', 'friends').get()),
     {
       id: 3,
       name: 'john',
@@ -175,7 +175,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    (await db.query('user', john).include('*', 'friends').get()),
     {
       id: 3,
       name: 'john',
@@ -191,7 +191,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    (await db.query('user', john).include('*', 'friends').get()),
     {
       id: 3,
       name: 'john',
@@ -250,7 +250,7 @@ await test('index>len', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user', john).include('*', 'friends').get()).toObject(),
+    (await db.query('user', john).include('*', 'friends').get()),
     {
       id: 3,
       name: 'john',

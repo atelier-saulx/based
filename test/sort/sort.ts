@@ -523,7 +523,7 @@ await test('unset value on create', async (t) => {
     },
   })
 
-  await db.query('dialog').sort('fun', 'desc').get().toObject()
+  await db.query('dialog').sort('fun', 'desc').get()
 
   const id1 = await db.create('dialog', {
     fun: '1',

@@ -90,8 +90,8 @@ await test('simple', async (t) => {
     hooks: getDefaultHooks(db2.server),
   })
 
-  const a = await client.query('user').get().toObject()
-  const b = await client2.query('user').get().toObject()
+  const a = await client.query('user').get()
+  const b = await client2.query('user').get()
   deepEqual(b, a)
 
   const c = await client.create('user', { name: 'jerp' })
@@ -189,8 +189,8 @@ await test('refs', async (t) => {
   t.after(() => db2.destroy())
   await db2.start()
 
-  const users1 = await db.query('user').include('group').get().toObject()
-  const users2 = await db2.query('user').include('group').get().toObject()
+  const users1 = await db.query('user').include('group').get()
+  const users2 = await db2.query('user').include('group').get()
 
   deepEqual(users1, users2)
 })
@@ -282,8 +282,8 @@ await test('text', async (t) => {
   t.after(() => db2.destroy())
   await db2.start()
 
-  const articles1 = await db.query('article').get().toObject()
-  const articles2 = await db2.query('article').get().toObject()
+  const articles1 = await db.query('article').get()
+  const articles2 = await db2.query('article').get()
   deepEqual(articles1, articles2)
 })
 

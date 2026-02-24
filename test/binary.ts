@@ -54,7 +54,7 @@ await test('simple', async (t) => {
   })
 
   equal(
-    (await db.query('user', id2).get()).toObject().file.length,
+    (await db.query('user', id2).get()).file.length,
     italyBytes.byteLength,
   )
 })

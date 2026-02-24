@@ -54,7 +54,7 @@ await test('subscription schema changes', async (t) => {
       s('friends').include('*')
     })
     .filter('lang', '=', 'de')
-  const result1 = q.get().toObject()
+  const result1 = q.get()
   await clients[0].setSchema({
     types: {
       user: {
@@ -76,7 +76,7 @@ await test('subscription schema changes', async (t) => {
   deepEqual(result1, q.get(), 'first schema change results are correct')
   const subResults: any[] = []
   const close = q.subscribe((q) => {
-    subResults.push(q.toObject())
+    subResults.push(q)
     cnt++
   })
   t.after(() => {
@@ -134,7 +134,7 @@ await test('better subscription schema changes', async (t) => {
 
   const results: any[] = []
   db.query('user').subscribe((res) => {
-    const obj = res.toObject()
+    const obj = res
     results.push(obj)
   })
 

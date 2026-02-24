@@ -295,5 +295,5 @@ await test('group by', async (t) => {
   //   .get()
 
   // r.debug()
-  // console.dir(r.toObject(), { depth: 10 })
+  // console.dir(r, { depth: 10 })
 })

@@ -160,7 +160,7 @@ await test('schema with many uint8 fields', async (t) => {
           t.include(['status'])
         })
         .get()
-      const r = rdyForConfirmationToken.toObject().payments
+      const r = rdyForConfirmationToken.payments
       for (const payment of r) {
         db.update('payment', payment.id, {
           status: 'ReadyForConfirmationToken',
@@ -180,7 +180,7 @@ await test('schema with many uint8 fields', async (t) => {
         })
         .get()
 
-      const r = rdyForPaymentIntent.toObject().payments
+      const r = rdyForPaymentIntent.payments
       for (const payment of r) {
         db.update('payment', payment.id, {
           status: 'ReadyForPaymentIntent',

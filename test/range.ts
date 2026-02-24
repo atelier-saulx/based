@@ -97,6 +97,6 @@ await test('default range: 1000', async (t) => {
     })
   }
   await db.drain()
-  const res = await db.query('user').get().toObject()
+  const res = await db.query('user').get()
   equal(res.length, 1_000)
 })

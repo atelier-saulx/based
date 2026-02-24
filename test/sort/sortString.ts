@@ -81,7 +81,7 @@ await test('compression / large strings', async (t) => {
         .sort('article')
         .range(0, len)
         .get()
-        .then((v) => v.toObject().map((v) => v.nr)),
+        .then((v) => v.map((v) => v.nr)),
       results.sort((a, b) => a.nr - b.nr).map((v) => v.nr),
       name,
     )
@@ -92,7 +92,7 @@ await test('compression / large strings', async (t) => {
         .sort('article', 'desc')
         .range(0, len)
         .get()
-        .then((v) => v.toObject().map((v) => v.nr)),
+        .then((v) => v.map((v) => v.nr)),
       results.sort((b, a) => a.nr - b.nr).map((v) => v.nr),
       name + ' desc',
     )

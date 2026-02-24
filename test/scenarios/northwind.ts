@@ -924,7 +924,7 @@ await test('Basic SQL', async (t) => {
 
   // SELECT customer_id AS ID, company_name AS customer FROM customers;
   const r24 = (
-    await db.query('customers').include('companyName').get().toObject()
+    await db.query('customers').include('companyName').get()
   ).map((r) => ({ id: r.id, customer: r.companyName }))
   deepEqual(
     r24,
@@ -1035,13 +1035,13 @@ await test('Basic SQL', async (t) => {
     .include('contactName', 'city', 'country')
     .range(0, 2)
     .get()
-    .toObject()
+    
   const r25unionB = await db
     .query('suppliers')
     .include('contactName', 'city', 'country')
     .range(0, 2)
     .get()
-    .toObject()
+    
   const r25union = [
     ...r25unionA.map((r) => ({ type: 'customer', ...r })),
     ...r25unionB.map((r) => ({ type: 'supplier', ...r })),
@@ -1093,13 +1093,13 @@ await test('Basic SQL', async (t) => {
     .include('city', 'country')
     .range(0, 3)
     .get()
-    .toObject()
+    
   const r26unionAllB = await db
     .query('suppliers')
     .include('city', 'country')
     .range(0, 3)
     .get()
-    .toObject()
+    
   const r26unionAll = [
     ...r26unionAllA.map(({ city, country }) => ({ city, country })),
     ...r26unionAllB.map(({ city, country }) => ({ city, country })),
@@ -1201,7 +1201,7 @@ await test('insert and update', async (t) => {
         .include('id')
         .filter('companyName', '=', 'Cardinal')
         .get()
-        .toObject()
+        
     )[0].id,
   )
 
@@ -1415,12 +1415,12 @@ await test('full join', async (t) => {
   // FULL OUTER JOIN orders ON customers.customer_id=orders.customer_id
   // ORDER BY customers.company_name;
 
-  const customers = await db.query('customers').get().toObject()
+  const customers = await db.query('customers').get()
   const orders = await db
     .query('orders')
     .include('customer.id')
     .get()
-    .toObject()
+    
   const result: any[] = []
 
   // LEFT JOIN: Customers with Orders
@@ -1488,7 +1488,7 @@ await test('self join', async (t) => {
       .query('customers')
       .include('customerId', 'companyName', 'city')
       .get()
-      .toObject()) as {
+      ) as {
       id: number
       customerId: string
       city: string

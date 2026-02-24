@@ -738,7 +738,7 @@ await test('filter', async (t) => {
 //   })
 
 //   console.dir(
-//     await db.query('contestant').include('*', '**').get().toObject(),
+//     await db.query('contestant').include('*', '**').get(),
 //     {
 //       depth: null,
 //     },
@@ -747,7 +747,7 @@ await test('filter', async (t) => {
 //   const contestant1 = await db.create('contestant')
 
 //   console.dir(
-//     await db.query('contestant').include('*', '**').get().toObject(),
+//     await db.query('contestant').include('*', '**').get(),
 //     {
 //       depth: null,
 //     },
@@ -756,7 +756,7 @@ await test('filter', async (t) => {
 //   const country1 = await db.create('country', { name: 'xxx' })
 
 //   console.dir(
-//     await db.query('contestant').include('*', '**').get().toObject(),
+//     await db.query('contestant').include('*', '**').get(),
 //     {
 //       depth: null,
 //     },
@@ -768,7 +768,7 @@ await test('filter', async (t) => {
 //       .query('contestant', contestant1)
 //       .include('*', '**')
 //       .get()
-//       .toObject(),
+//       ,
 //   )
 
 //   await db.update('contestant', contestant1, {
@@ -778,11 +778,11 @@ await test('filter', async (t) => {
 
 //   console.log(
 //     '--->',
-//     await db.query('country', country1).include('*', '**').get().toObject(),
+//     await db.query('country', country1).include('*', '**').get(),
 //   )
 
 //   console.dir(
-//     await db.query('contestant').include('*', '**').get().toObject(),
+//     await db.query('contestant').include('*', '**').get(),
 //     {
 //       depth: null,
 //     },
@@ -803,7 +803,7 @@ await test('filter', async (t) => {
 //       })
 //       .include('*', '**')
 //       .get()
-//       .toObject(),
+//       ,
 //   )
 // })
 

@@ -1,16 +1,10 @@
-import { BasedDb } from '../../src/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 import { italy, sentence } from '../shared/examples.js'
 
 await test('multiple references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -107,7 +101,7 @@ await test('multiple references', async (t) => {
   // console.log(
   //   'derp',
   //   await db
-  //     .query('article')
+  //     .query2('article')
   //     .include('contributors.$role')
   //     // .include('contributors.$role', 'contributors.$bigString')
   //     .get(),
@@ -115,7 +109,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query('article')
+      .query2('article')
       .include('contributors.$role', 'contributors.$bigString')
       .get(),
     [
@@ -130,7 +124,7 @@ await test('multiple references', async (t) => {
     ],
   )
 
-  deepEqual(await db.query('article').include('contributors.$rating').get(), [
+  deepEqual(await db.query2('article').include('contributors.$rating').get(), [
     {
       id: artStrudel,
       contributors: [{ id: 1, $rating: 5 }],
@@ -141,7 +135,7 @@ await test('multiple references', async (t) => {
     },
   ])
 
-  deepEqual(await db.query('article').include('contributors.$lang').get(), [
+  deepEqual(await db.query2('article').include('contributors.$lang').get(), [
     {
       id: 1,
       contributors: [{ id: 1, $lang: 'en' }],
@@ -152,7 +146,7 @@ await test('multiple references', async (t) => {
     },
   ])
 
-  deepEqual(await db.query('article').include('contributors.$on').get(), [
+  deepEqual(await db.query2('article').include('contributors.$on').get(), [
     {
       id: 1,
       contributors: [{ id: 1, $on: true }],
@@ -164,7 +158,7 @@ await test('multiple references', async (t) => {
   ])
 
   deepEqual(
-    await db.query('article').include('contributors.$file').get(),
+    await db.query2('article').include('contributors.$file').get(),
     [
       {
         id: 1,
@@ -192,7 +186,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query('article')
+      .query2('article')
       .include((s) =>
         s('contributors').filter('$role', '=', 'writer').include('$role'),
       )
@@ -216,7 +210,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query('article')
+      .query2('article')
       .include((s) =>
         s('contributors')
           .filter('$bigString', '=', italy)
@@ -248,7 +242,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query('article', lastArticle)
+      .query2('article', lastArticle)
       .include('contributors.$rating')
       .get(),
     {
@@ -258,7 +252,7 @@ await test('multiple references', async (t) => {
   )
 
   deepEqual(
-    await db.query('article', 3).include('contributors.$countries.id').get(),
+    await db.query2('article', 3).include('contributors.$countries.id').get(),
     {
       id: 3,
       contributors: [
@@ -277,7 +271,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query('article')
+      .query2('article')
       .include('contributors')
       .range(lastArticle - 3, 1000)
       .get(),
@@ -290,13 +284,7 @@ await test('multiple references', async (t) => {
 })
 
 await test('single reference', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -335,7 +323,7 @@ await test('single reference', async (t) => {
     author: { id: mrDrol, $role: 'boss' },
   })
 
-  deepEqual(await db.query('article').include('author.$role', '*').get(), [
+  deepEqual(await db.query2('article').include('author.$role', '*').get(), [
     {
       id: 1,
       name: 'This is a nice article',
@@ -353,7 +341,7 @@ await test('single reference', async (t) => {
 
   deepEqual(
     await db
-      .query('article')
+      .query2('article')
       .include('author.$role', '*')
       .filter('author.$role', '=', 'boss')
       .get(),
@@ -374,7 +362,7 @@ await test('single reference', async (t) => {
     author: { id: mrDrol, $msg: sentence },
   })
 
-  deepEqual(await db.query('article').include('author.$msg', '*').get(), [
+  deepEqual(await db.query2('article').include('author.$msg', '*').get(), [
     { id: 1, name: 'This is a nice article', author: { id: 1 } },
     {
       id: 2,
@@ -393,13 +381,7 @@ await test('single reference', async (t) => {
 })
 
 await test('preserve fields', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -427,7 +409,7 @@ await test('preserve fields', async (t) => {
       $x: 42,
     },
   })
-  deepEqual(await db.query('user', user2).include('**').get(), {
+  deepEqual(await db.query2('user', user2).include('**').get(), {
     id: user2,
     bestFriend: {
       id: user1,
@@ -443,12 +425,12 @@ await test('preserve fields', async (t) => {
       { id: user2, $x: 20 },
     ],
   })
-  deepEqual(await db.query('user', user1).include('**').get(), {
+  deepEqual(await db.query2('user', user1).include('**').get(), {
     id: user1,
     bestFriend: null,
     friends: [{ id: user3, $x: 10 }],
   })
-  deepEqual(await db.query('user', user3).include('**').get(), {
+  deepEqual(await db.query2('user', user3).include('**').get(), {
     id: user3,
     bestFriend: {
       id: user2,
@@ -463,7 +445,7 @@ await test('preserve fields', async (t) => {
   await db.update('user', user3, {
     friends: { update: [{ id: user2, $index: 0 }] },
   })
-  deepEqual(await db.query('user', user3).include('**').get(), {
+  deepEqual(await db.query2('user', user3).include('**').get(), {
     id: user3,
     bestFriend: { id: user2, $x: 0 },
     friends: [

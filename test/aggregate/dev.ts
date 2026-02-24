@@ -124,7 +124,7 @@ import { testDb } from '../shared/index.js'
 //     )
 //     .get()
 
-//   // console.log(lala.toObject())
+//   // console.log(lala)
 //   lala.inspect(10)
 // })
 
@@ -231,7 +231,7 @@ await test('yyy', async (t) => {
   // result.inspect()
 
   // deepEqual(
-  //   result.toObject(),
+  //   result,
   //   [
   //     {
   //       id: 1,

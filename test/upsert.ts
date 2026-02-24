@@ -105,7 +105,7 @@ await test('upsert no alias', async (t) => {
   // await db.drain()
 
   equal(
-    (await db.query('lala').include('*').get().toObject()).length,
+    (await db.query('lala').include('*').get()).length,
     0,
     'before upsert',
   )
@@ -116,7 +116,7 @@ await test('upsert no alias', async (t) => {
   })
 
   equal(
-    (await db.query('lala').include('*').get().toObject()).length,
+    (await db.query('lala').include('*').get()).length,
     1,
     'after upsert',
   )
@@ -127,7 +127,7 @@ await test('upsert no alias', async (t) => {
   })
 
   equal(
-    (await db.query('lala').include('*').get().toObject()).length,
+    (await db.query('lala').include('*').get()).length,
     2,
     'upsert no alias should insert',
   )

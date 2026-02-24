@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { getBlockHash, getBlockStatuses } from '../../src/db-server/blocks.js'
 import type { ResolveSchema, SchemaIn, StrictSchema } from '../../src/schema.js'
-import { BasedDb, DbClient, DbServer, getDefaultHooks } from '../../src/sdk.js'
+import { DbClient, DbServer, getDefaultHooks } from '../../src/sdk.js'
 import test from './test.js'
 export * from './assert.js'
 export * from './examples.js'

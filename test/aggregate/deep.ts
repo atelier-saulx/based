@@ -837,7 +837,7 @@ await test.skip('edges aggregation', async (t) => {
   //     .query2('movie')
   //     .include((q) => q('actors').max('$rating'))
   //     .get()
-  //     .toObject(),
+  //     ,
   //   [
   //     {
   //       id: 1,
@@ -864,7 +864,7 @@ await test.skip('edges aggregation', async (t) => {
   //     .query2('movie')
   //     .include((q) => q('actors').max('$rating').sum('$hating'))
   //     .get()
-  //     .toObject(),
+  //     ,
   //   [
   //     {
   //       id: 1,
@@ -897,7 +897,7 @@ await test.skip('edges aggregation', async (t) => {
   //     .query2('movie')
   //     .include((q) => q('actors').max('$rating', '$hating'))
   //     .get()
-  //     .toObject(),
+  //     ,
   //   [
   //     {
   //       id: 1,

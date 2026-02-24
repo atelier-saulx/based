@@ -51,7 +51,7 @@ await test('references modify', async (t) => {
   await db.drain()
 
   deepEqual(
-    (await db.query('user').include('*', 'friends').get()).toObject(),
+    (await db.query('user').include('*', 'friends').get()),
     [
       { id: 1, name: 'bob', friends: [] },
       { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
@@ -69,7 +69,7 @@ await test('references modify', async (t) => {
   await db.drain()
 
   deepEqual(
-    (await db.query('user').include('*', 'friends').get()).toObject(),
+    (await db.query('user').include('*', 'friends').get()),
     [
       { id: 1, name: 'bob', friends: [{ id: 3, name: 'john' }] },
       { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
@@ -90,7 +90,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    (await db.query('user').include('*', 'friends').get()).toObject(),
+    (await db.query('user').include('*', 'friends').get()),
     [
       { id: 1, name: 'bob', friends: [] },
       { id: 2, name: 'marie', friends: [] },
@@ -201,7 +201,7 @@ await test('reference move', async (t) => {
   })
 
   deepEqual(
-    (await db.query('a').include('bees').get()).toObject()[0].bees[0].id,
+    (await db.query('a').include('bees').get())[0].bees[0].id,
     2,
   )
 
@@ -209,11 +209,11 @@ await test('reference move', async (t) => {
     bees: [b2, b2],
   })
   deepEqual(
-    (await db.query('a').include('bees').get()).toObject()[0].bees.length,
+    (await db.query('a').include('bees').get())[0].bees.length,
     1,
   )
   deepEqual(
-    (await db.query('a').include('bees').get()).toObject()[0].bees[0].id,
+    (await db.query('a').include('bees').get())[0].bees[0].id,
     2,
   )
 })

@@ -204,7 +204,7 @@ await test.skip('dev', async (t) => {
 //   //     .query('article')
 //   //     .include((q) => q('contributors').sum('flap'), 'name')
 //   //     .get()
-//   //     .toObject(),
+//   //     ,
 //   //   [
 //   //     { id: 1, name: 'The wonders of Strudel', contributors: { flap: 100 } },
 //   //     {

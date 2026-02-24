@@ -55,7 +55,7 @@ await test('client server rapid fire', async (t) => {
     .query('user')
     .range(0, 100_000)
     .get()
-    .toObject()
+    
 
   let id = 0
   for (const user of allUsers1) {

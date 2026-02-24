@@ -119,7 +119,7 @@ await test('simple', async (t) => {
   })
 
   equal(
-    await db.query('transaction').include('id', 'myHash').get().toObject(),
+    await db.query('transaction').include('id', 'myHash').get(),
     [
       {
         id: 1,
@@ -133,7 +133,7 @@ await test('simple', async (t) => {
       .query('transactionN')
       .include('id', 'myNativeMadeHash')
       .get()
-      .toObject(),
+      ,
     [
       {
         id: 1,
