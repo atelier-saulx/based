@@ -1,15 +1,9 @@
 import test from './shared/test.js'
-import { BasedDb } from '../src/index.js'
 import { deepEqual, perf } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 
 await test.skip('basic', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       row: {
         props: {
@@ -26,7 +20,7 @@ await test.skip('basic', async (t) => {
     },
   })
 
-  deepEqual(db.server.schemaTypesParsed.col.blockCapacity, 10_000)
+  deepEqual(client.schemaTypesParsed.col.blockCapacity, 10_000)
 
   let seed = 100
   const next = () => (seed = (214013 * seed + 2531011) % 10e3)
@@ -75,13 +69,7 @@ await test.skip('basic', async (t) => {
 })
 
 await test('int8 vector', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       col: {
         blockCapacity: 10_000,
@@ -110,13 +98,7 @@ await test('int8 vector', async (t) => {
 })
 
 await test('float32 vector', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       col: {
         blockCapacity: 10_000,
