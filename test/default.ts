@@ -330,7 +330,7 @@ await test('default values for all props in user type', async (t) => {
 })
 
 await test('negative default values for numeric types', async (t) => {
-  const db =await testDb(t, {
+  const db = await testDb(t, {
     types: {
       user: {
         props: {

@@ -1,6 +1,6 @@
 import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
-import {italy} from './shared/examples.js'
+import { italy } from './shared/examples.js'
 import test from './shared/test.js'
 
 await test.skip('cardinality', async (t) => {

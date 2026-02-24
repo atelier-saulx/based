@@ -50,11 +50,7 @@ await test('expire', async (t) => {
   await client.expire('token', token2, 1)
   await client.drain()
   await db.save()
-  equal(
-    (await client.query2('token').get()).length,
-    1,
-    '1 token before save',
-  )
+  equal((await client.query2('token').get()).length, 1, '1 token before save')
   const db2 = new BasedDb({
     path: t.tmp,
   })
@@ -64,11 +60,7 @@ await test('expire', async (t) => {
     hooks: getDefaultHooks(db2.server),
   })
 
-  equal(
-    (await client2.query2('token').get()).length,
-    1,
-    '1 token after load',
-  )
+  equal((await client2.query2('token').get()).length, 1, '1 token after load')
   await setTimeout(3e3)
   equal(
     (await client2.query2('token').get()).length,

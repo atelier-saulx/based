@@ -2,7 +2,7 @@ import { DbClient } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { equals } from '../src/utils/index.js'
-import {testDb} from './shared/index.js'
+import { testDb } from './shared/index.js'
 
 const data = {
   cat: [1.5, -0.4, 7.2, 19.6, 20.2],
@@ -13,7 +13,9 @@ const data = {
   car: [81.6, -72.1, 16, -20.2, 102],
 }
 
-async function initDb(t: Parameters<Parameters<typeof test>[1]>[0]): Promise<DbClient> {
+async function initDb(
+  t: Parameters<Parameters<typeof test>[1]>[0],
+): Promise<DbClient> {
   const client = await testDb(t, {
     types: {
       data: {
