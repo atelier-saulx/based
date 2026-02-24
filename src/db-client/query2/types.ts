@@ -1,13 +1,14 @@
+import type { ResolvedProps } from '../../schema/index.js'
+
 type TypedArray =
-  | Uint8Array
-  | Float32Array
   | Int8Array
+  | Uint8Array
   | Int16Array
   | Uint16Array
   | Int32Array
   | Uint32Array
+  | Float32Array
   | Float64Array
-import type { ResolvedProps } from '../../schema/index.js'
 
 export type InferSchemaOutput<
   S extends { types: any; locales?: any },

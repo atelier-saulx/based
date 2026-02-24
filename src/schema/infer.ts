@@ -1,8 +1,7 @@
 import type { Schema } from './schema/schema.js'
 
 type TypedArray =
-  | Uint8Array
-  | Float32Array
+  | Int8Array
   | Uint8Array
   | Int16Array
   | Uint16Array

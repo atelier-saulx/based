@@ -3,8 +3,7 @@ import { type SchemaTypes } from '../../schema.js'
 import type { BasedModify } from './index.js'
 
 type TypedArray =
-  | Uint8Array
-  | Float32Array
+  | Int8Array
   | Uint8Array
   | Int16Array
   | Uint16Array

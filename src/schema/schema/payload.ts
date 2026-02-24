@@ -4,8 +4,7 @@ import type { SchemaOut } from './schema.js'
 type BasedModify<T> = any // Mock BasedModify to avoid circular dependency
 
 type TypedArray =
-  | Uint8Array
-  | Float32Array
+  | Int8Array
   | Uint8Array
   | Int16Array
   | Uint16Array
