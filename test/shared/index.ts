@@ -43,14 +43,17 @@ export const testDb = async <const S extends SchemaIn>(
   return testDbClient(server, schema)
 }
 
-export const testDbClient = <const S extends SchemaIn>(
+export const testDbClient = async <const S extends SchemaIn>(
   server: DbServer,
-  schema: StrictSchema<S>,
+  schema?: StrictSchema<S>,
 ): Promise<DbClient<ResolveSchema<S>>> => {
   const client = new DbClient({
     hooks: getDefaultHooks(server),
   })
-  return client.setSchema(schema)
+  if (schema) {
+    await client.setSchema(schema)
+  }
+  return client as unknown as DbClient<ResolveSchema<S>>
 }
 
 export const testDbServer = async <const S extends SchemaIn>(
