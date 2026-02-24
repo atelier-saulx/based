@@ -973,3 +973,92 @@ test.serial(
     await server.destroy()
   },
 )
+
+test.serial(
+  'Cross-client subscription isolation for parameter-less queries',
+  async (t: T) => {
+    const SETTLE_MS = 300 * 3
+    const emitter = new EventEmitter()
+
+    const server = new BasedServer({
+      port: t.context.port,
+      silent: true,
+      functions: {
+        configs: {
+          'workspaces-list': {
+            type: 'query',
+            ctx: ['authState.token'],
+            public: true,
+            closeAfterIdleTime: 10, // Small for fast teardown
+            uninstallAfterIdleTime: 1e3,
+            fn: async (based, payload, update, error, ctx) => {
+              const token = ctx.authState.token || ''
+              update({ token, data: `workspace-for-${token}` })
+
+              const listener = () => {
+                update({ token, data: `workspace-for-${token}` })
+              }
+              emitter.on('data', listener)
+              return () => {
+                emitter.off('data', listener)
+              }
+            },
+          },
+        },
+      },
+    })
+    await server.start()
+
+    let clientA = new BasedClient()
+    let clientB = new BasedClient()
+
+    clientA.connect({ url: async () => t.context.ws })
+    clientB.connect({ url: async () => t.context.ws })
+
+    await Promise.all([clientA.once('connect'), clientB.once('connect')])
+
+    await clientA.setAuthState({ token: 'cross-client-leak-a' })
+    await clientB.setAuthState({ token: 'cross-client-leak-b' })
+
+    const updatesB: unknown[] = []
+
+    const unsubA = clientA.query('workspaces-list', {}).subscribe(
+      () => {},
+      () => {},
+    )
+    const unsubB = clientB.query('workspaces-list', {}).subscribe(
+      (data) => updatesB.push(deepCopy(data)),
+      () => {},
+    )
+
+    await wait(SETTLE_MS)
+    const initialCount = updatesB.length
+    t.true(initialCount >= 1)
+
+    unsubA()
+    await wait(200) // wait for obs to be destroyed
+
+    const unsubA2 = clientA.query('workspaces-list', {}).subscribe(
+      () => {},
+      () => {},
+    )
+
+    await wait(SETTLE_MS)
+
+    // Trigger an update to test if it bleeds
+    emitter.emit('data')
+
+    await wait(SETTLE_MS)
+
+    unsubA2()
+    unsubB()
+
+    // B should only receive its own data. It received one on connect, and one when we emitted 'data'.
+    // However, it should NEVER receive 'cross-client-leak-a'.
+    t.true(updatesB.every((u: any) => u.token === 'cross-client-leak-b'))
+
+    await clientA.destroy()
+    await clientB.destroy()
+    await server.destroy()
+  },
+)
