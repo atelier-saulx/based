@@ -1,6 +1,3 @@
-import type { SchemaOut } from './schema.js'
-
-// import type { BasedModify } from '../../db-client/modify/index.js'
 type BasedModify<T> = any // Mock BasedModify to avoid circular dependency
 
 type TypedArray =

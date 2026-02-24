@@ -1,5 +1,3 @@
-import { type SchemaTypes } from '../../schema.js'
-
 import type { BasedModify } from './index.js'
 
 type TypedArray =
