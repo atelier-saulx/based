@@ -1,7 +1,7 @@
 import { styleText } from 'node:util'
 import { fileURLToPath } from 'url'
 import { join, dirname, resolve } from 'path'
-import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
+import { BasedDb, DbClient, DbServer, getDefaultHooks } from '../../src/index.js'
 import { deepEqual } from './assert.js'
 import { wait, bufToHex } from '../../src/utils/index.js'
 import fs from 'node:fs/promises'
@@ -29,7 +29,7 @@ const errors = new Set<string>()
 
 export type T = {
   after: (fn: () => Promise<void> | void, push?: boolean) => void
-  backup: (db: BasedDb) => Promise<void>
+  backup: (db: DbServer) => Promise<void>
   tmp: string
 }
 
@@ -61,7 +61,7 @@ const test: {
         afters.unshift(fn)
       }
     },
-    backup: async (db: BasedDb) => {
+    backup: async (db: DbServer) => {
       afters.push(async () => {
         try {
           await db.destroy()
@@ -72,15 +72,15 @@ const test: {
         return
       }
 
-      const make = async (db: BasedDb) => {
+      const make = async (db: DbServer) => {
         const client = new DbClient({
-          hooks: getDefaultHooks(db.server),
+          hooks: getDefaultHooks(db),
         })
         const checksums: any[] = []
         const data: any[] = []
         const counts: any[] = []
 
-        for (const type in db.server.schema?.types) {
+        for (const type in db.schema?.types) {
           let x = await client.query2(type).include('*', '**').get()
           checksums.push(x['checksum'])
           data.push(x)
