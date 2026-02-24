@@ -1,6 +1,6 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { fastPrng } from '../../src/utils/fastPrng.js'
+import { testDb } from '../shared/index.js'
 
 const N_PROPS = 248
 
@@ -53,13 +53,7 @@ function setTextProps(): {
 }
 
 await test('Many text props', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: makeMaxSchema(),
     types: {
       dialog: {
