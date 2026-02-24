@@ -1,15 +1,8 @@
 import { deepEqual, equal } from './shared/assert.js'
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 
 await test('dependent', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const schema = {
     types: {
       show: {
@@ -50,7 +43,7 @@ await test('dependent', async (t) => {
     },
   } as const
 
-  const client = await db.setSchema(schema)
+  const client = await testDb(t, schema)
 
   const createShowTree = async () => {
     const showId = await client.create('show', {})
@@ -70,7 +63,7 @@ await test('dependent', async (t) => {
     await client.drain()
 
     for (const type in schema.types) {
-      const len = (await client.query(type).get()).length
+      const len = (await client.query2(type).get()).length
       equal(len, 1)
     }
     return showId
@@ -80,20 +73,13 @@ await test('dependent', async (t) => {
   await client.delete('show', showId)
   await client.drain()
   for (const type in schema.types) {
-    equal((await client.query(type).get()).length, 0)
+    equal((await client.query2(type).get()).length, 0)
   }
   await createShowTree()
 })
 
 await test('del children', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       parent: {
         children: {
@@ -119,7 +105,7 @@ await test('del children', async (t) => {
     for (let i = 0; i < n; i++) {
       children.push(client.create('child', { parent: head }))
     }
-    deepEqual(await client.query('parent', head).include('**').get(), {
+    deepEqual(await client.query2('parent', head).include('**').get(), {
       id: await head,
       children: (await Promise.all(children)).map((id: number) => ({ id })),
     })
@@ -128,7 +114,7 @@ await test('del children', async (t) => {
       client.delete('child', child)
     }
     await client.drain()
-    deepEqual(await client.query('parent', head).include('**').get(), {
+    deepEqual(await client.query2('parent', head).include('**').get(), {
       id: await head,
       children: [],
     })
@@ -137,20 +123,13 @@ await test('del children', async (t) => {
       children.push(client.create('child', { parent: head }))
     }
     await client.delete('parent', head)
-    deepEqual(await client.query('parent').get(), [])
-    deepEqual(await client.query('child').get(), [])
+    deepEqual(await client.query2('parent').get(), [])
+    deepEqual(await client.query2('child').get(), [])
   }
 })
 
 await test('circle of friends', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       human: {
         name: { type: 'string', maxBytes: 8 },
@@ -176,7 +155,7 @@ await test('circle of friends', async (t) => {
   //  friends: { add: [h2, h1] },
   //})
 
-  deepEqual(await client.query('human').include('**').get(), [
+  deepEqual(await client.query2('human').include('**').get(), [
     {
       id: 1,
       friends: [
@@ -219,7 +198,7 @@ await test('circle of friends', async (t) => {
   ])
 
   client.delete('human', 1)
-  deepEqual(await client.query('human').include('**').get(), [
+  deepEqual(await client.query2('human').include('**').get(), [
     {
       id: 2,
       friends: [
@@ -241,5 +220,5 @@ await test('circle of friends', async (t) => {
   ])
 
   client.delete('human', 2)
-  deepEqual(await client.query('human').include('**').get(), [])
+  deepEqual(await client.query2('human').include('**').get(), [])
 })

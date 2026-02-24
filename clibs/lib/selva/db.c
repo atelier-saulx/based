@@ -355,10 +355,14 @@ void selva_del_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t b
 static void del_all_nodes(struct SelvaDb *db, struct SelvaTypeEntry *te)
 {
     struct SelvaTypeBlocks *blocks = te->blocks;
-    block_id_t blocks_len = blocks->len;
 
-    for (block_id_t block_i = 0; block_i < blocks_len; block_i++) {
-        selva_del_block_unsafe(db, te, block_i, false);
+    /* blocks could be uninitialized on early startup fail. */
+    if (blocks) {
+        block_id_t blocks_len = blocks->len;
+
+        for (block_id_t block_i = 0; block_i < blocks_len; block_i++) {
+            selva_del_block_unsafe(db, te, block_i, false);
+        }
     }
 }
 

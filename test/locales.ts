@@ -3,7 +3,9 @@ import test from './shared/test.js'
 import { LangCode } from '../src/zigTsExports.js'
 
 const langs = [...Object.keys(LangCode)].filter((val) => val !== 'none')
-const locales = Object.fromEntries(langs.map((l: keyof typeof LangCode) => [l, {}]))
+const locales = Object.fromEntries(
+  langs.map((l: keyof typeof LangCode) => [l, {}]),
+)
 
 await test('locales', async (t) => {
   const db = new BasedDb({

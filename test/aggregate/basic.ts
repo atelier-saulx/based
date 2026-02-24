@@ -907,11 +907,6 @@ await test('fixed length strings', async (t) => {
     })
   }
 
-  console.dir(
-    await db.query2('product').include('*').avg('flap').groupBy('name').get(),
-    { maxDepth: null },
-  )
-
   equal(
     Number(
       Object.keys(
