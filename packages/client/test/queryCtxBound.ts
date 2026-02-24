@@ -973,5 +973,3 @@ test.serial(
     await server.destroy()
   },
 )
-
-// add test here
