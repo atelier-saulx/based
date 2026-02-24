@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { getBlockHash, getBlockStatuses } from '../../src/db-server/blocks.js'
 import type { ResolveSchema, SchemaIn, StrictSchema } from '../../src/schema.js'
-import { BasedDb, DbServer, type DbClient } from '../../src/sdk.js'
+import { BasedDb, DbClient, DbServer, getDefaultHooks } from '../../src/sdk.js'
 import test from './test.js'
 export * from './assert.js'
 export * from './examples.js'
@@ -39,10 +39,27 @@ export const testDb = async <const S extends SchemaIn>(
   t: Parameters<Parameters<typeof test>[1]>[0],
   schema: StrictSchema<S>,
 ): Promise<DbClient<ResolveSchema<S>>> => {
-  const db = new BasedDb({ path: t.tmp })
+  const server = await testDbServer(t)
+  return testDbClient(server, schema)
+}
+
+export const testDbClient = <const S extends SchemaIn>(
+  server: DbServer,
+  schema: StrictSchema<S>,
+): Promise<DbClient<ResolveSchema<S>>> => {
+  const client = new DbClient({
+    hooks: getDefaultHooks(server),
+  })
+  return client.setSchema(schema)
+}
+
+export const testDbServer = async <const S extends SchemaIn>(
+  t: Parameters<Parameters<typeof test>[1]>[0],
+): Promise<DbServer> => {
+  const db = new DbServer({ path: t.tmp })
   await db.start({ clean: true })
   t.after(() => db.destroy())
-  return db.setSchema(schema)
+  return db
 }
 
 export async function countDirtyBlocks(server: DbServer) {

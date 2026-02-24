@@ -1,9 +1,4 @@
-import {
-  BasedDb,
-  DbClient,
-  DbServer,
-  getDefaultHooks,
-} from '../../src/index.js'
+import { DbClient, DbServer, getDefaultHooks } from '../../src/index.js'
 import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 

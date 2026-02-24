@@ -131,7 +131,5 @@ export const getIteratorType = (
     }
   }
 
-  console.log('----->', QueryIteratorTypeInverse[base])
-
   return base as QueryIteratorTypeEnum
 }
