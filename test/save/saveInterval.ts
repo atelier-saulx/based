@@ -36,7 +36,7 @@ await test('saveInterval', async (t) => {
   await client.drain()
   await setTimeout(1e3)
 
-  const res1 = await client.query('user').get()
+  const res1 = await client.query2('user').get()
 
   await db.stop(true)
 
@@ -50,7 +50,7 @@ await test('saveInterval', async (t) => {
   })
 
   await db2.schemaIsSet()
-  const res2 = await client2.query('user').get()
+  const res2 = await client2.query2('user').get()
 
   deepEqual(res1, res2)
 })

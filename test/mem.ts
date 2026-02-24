@@ -62,7 +62,7 @@ await test('mem', async (t) => {
     equal(
       (
         await client
-          .query('data')
+          .query2('data')
           .include('b')
           .filter('b', 'exists')
           .range(0, amount)
@@ -77,6 +77,9 @@ await test('mem', async (t) => {
 
     await client.drain()
 
-    equal((await client.query('data').range(0, 10e6).get()).length, (j + 1) * 2)
+    equal(
+      (await client.query2('data').range(0, 10e6).get()).length,
+      (j + 1) * 2,
+    )
   }
 })

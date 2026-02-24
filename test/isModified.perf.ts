@@ -26,7 +26,7 @@ await test('isModified', async (t) => {
   const q: any = []
 
   for (let i = 0; i < 10; i++) {
-    q.push(db.query('user').range(0, 5).get())
+    q.push(db.query2('user').range(0, 5).get())
   }
 
   const r = await Promise.all(q)

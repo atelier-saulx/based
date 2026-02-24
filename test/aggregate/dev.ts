@@ -309,7 +309,7 @@ await test('yyy', async (t) => {
   }
 
   await db
-    .query('product')
+    .query2('product')
     // .include('*')
     .avg('flap')
     .groupBy('name')
@@ -320,7 +320,7 @@ await test('yyy', async (t) => {
   //   Number(
   //     Object.keys(
   //       await db
-  //         .query('product')
+  //         .query2('product')
   //         .include('*')
   //         .avg('flap')
   //         .groupBy('name')
@@ -336,7 +336,7 @@ await test('yyy', async (t) => {
   //   Number(
   //     Object.keys(
   //       await db
-  //         .query('shelve')
+  //         .query2('shelve')
   //         .include((q) => q('products').avg('flap').groupBy('name'))
   //         .get()
   //         .toObject(),

@@ -118,22 +118,15 @@ await test('simple', async (t) => {
     myNativeMadeHash: nativeCrc32(ENCODER.encode('oid123')),
   })
 
-  equal(
-    await db.query('transaction').include('id', 'myHash').get(),
-    [
-      {
-        id: 1,
-        myHash: 2628032717,
-      },
-    ],
-  )
+  equal(await db.query2('transaction').include('id', 'myHash').get(), [
+    {
+      id: 1,
+      myHash: 2628032717,
+    },
+  ])
 
   equal(
-    await db
-      .query('transactionN')
-      .include('id', 'myNativeMadeHash')
-      .get()
-      ,
+    await db.query2('transactionN').include('id', 'myNativeMadeHash').get(),
     [
       {
         id: 1,

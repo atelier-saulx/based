@@ -38,7 +38,7 @@ await test('locales', async (t) => {
     client.create('thing', payload)
   }
 
-  const things = await client.query('thing').get()
+  const things = await client.query2('thing').get()
 
   for (const thing of things) {
     const payload: typeof thing = {
@@ -51,7 +51,7 @@ await test('locales', async (t) => {
 
   await client.drain()
 
-  const updatedThings = await client.query('thing').get()
+  const updatedThings = await client.query2('thing').get()
 
   for (const thing of updatedThings) {
     if (thing.string !== '') {

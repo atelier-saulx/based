@@ -48,7 +48,7 @@ test.only('query functions', async (t: T) => {
   const obs2Results: any[] = []
 
   const close = client
-    .query('counter', {
+    .query2('counter', {
       myQuery: 123,
     })
     .subscribe((d) => {
@@ -56,7 +56,7 @@ test.only('query functions', async (t: T) => {
     })
 
   const close2 = client
-    .query('counter', {
+    .query2('counter', {
       myQuery: 123,
     })
     .subscribe((d) => {

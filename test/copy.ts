@@ -91,10 +91,9 @@ await test('copy', async (t) => {
   })
 
   const res = await db
-    .query('edition')
+    .query2('edition')
     .include('*', 'versionOf', 'versions', 'sequences', 'sequences.pages')
     .get()
-    
 
   deepEqual(res, [
     {

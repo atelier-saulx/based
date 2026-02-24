@@ -87,7 +87,7 @@ await test('schema debug', async (t) => {
 
   let i = 1
   while (i--) {
-    const contestants = await client.query('contestant').get()
+    const contestants = await client.query2('contestant').get()
 
     await client.setSchema(
       deepMerge(schema, {

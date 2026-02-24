@@ -242,74 +242,74 @@ test.serial('fallback to old protocol - incoming', async (t: T) => {
   const bufResults: any[] = []
 
   const closers = [
-    client.query('errorQuery').subscribe((d, err) => {
+    client.query2('errorQuery').subscribe((d, err) => {
       obs1Results.push(d || err)
     }),
-    clientOld.query('errorQuery').subscribe((d, err) => {
+    clientOld.query2('errorQuery').subscribe((d, err) => {
       obs2Results.push(d || err)
     }),
-    client.query('nullQuery').subscribe((d) => {
+    client.query2('nullQuery').subscribe((d) => {
       obs1Results.push(d === null ? undefined : d)
     }),
-    clientOld.query('nullQuery').subscribe((d) => {
+    clientOld.query2('nullQuery').subscribe((d) => {
       obs2Results.push(d)
     }),
-    client.query('undefinedQuery').subscribe((d) => {
+    client.query2('undefinedQuery').subscribe((d) => {
       obs1Results.push(d)
     }),
-    clientOld.query('undefinedQuery').subscribe((d) => {
+    clientOld.query2('undefinedQuery').subscribe((d) => {
       obs2Results.push(d)
     }),
-    client.query('numberQuery').subscribe((d) => {
+    client.query2('numberQuery').subscribe((d) => {
       obs1Results.push(d)
     }),
-    clientOld.query('numberQuery').subscribe((d) => {
+    clientOld.query2('numberQuery').subscribe((d) => {
       obs2Results.push(d)
     }),
     client
-      .query('stringQuery', {
+      .query2('stringQuery', {
         myQuery: 123,
       })
       .subscribe((d) => {
         obs1Results.push(d)
       }),
     clientOld
-      .query('stringQuery', {
+      .query2('stringQuery', {
         myQuery: 123,
       })
       .subscribe((d) => {
         obs2Results.push(d)
       }),
     client
-      .query('bigStringQuery', {
+      .query2('bigStringQuery', {
         myQuery: 123,
       })
       .subscribe((d) => {
         obs1Results.push(d)
       }),
     clientOld
-      .query('bigStringQuery', {
+      .query2('bigStringQuery', {
         myQuery: 123,
       })
       .subscribe((d) => {
         obs2Results.push(d)
       }),
     client
-      .query('flap', {
+      .query2('flap', {
         myQuery: 123,
       })
       .subscribe((d) => {
         obs1Results.push(d)
       }),
     clientOld
-      .query('flap', {
+      .query2('flap', {
         myQuery: 123,
       })
       .subscribe((d) => {
         obs2Results.push(d)
       }),
     client
-      .query('counter', {
+      .query2('counter', {
         myQuery: 123,
       })
       .subscribe((d) => {

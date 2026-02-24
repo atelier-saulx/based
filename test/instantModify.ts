@@ -109,12 +109,12 @@ await test.skip('instantModify', async (t) => {
   let j = 1000
   await db2.start()
   while (j--) {
-    // db2.query('country').get()
+    // db2.query2('country').get()
     for (const update of updates) {
       db2.server.modify(update)
     }
   }
 
-  // console.log('AFTER:', await db2.query('country').get())
+  // console.log('AFTER:', await db2.query2('country').get())
   await db2.destroy()
 })

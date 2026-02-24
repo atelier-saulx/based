@@ -136,7 +136,7 @@ test('authorize observe', async (t: T) => {
 
   await new Promise((resolve) => {
     client
-      .query('counter', {
+      .query2('counter', {
         myQuery: 123,
       })
       .subscribe(
@@ -153,7 +153,7 @@ test('authorize observe', async (t: T) => {
 
   await new Promise((resolve) => {
     client
-      .query('counter', {
+      .query2('counter', {
         myQuery: 123,
       })
       .subscribe(
@@ -194,7 +194,7 @@ test('authorize after observe', async (t: T) => {
   let receiveCnt = 0
 
   client
-    .query('counter', {
+    .query2('counter', {
       myQuery: 123,
     })
     .subscribe(
@@ -239,7 +239,7 @@ test('authorize from server after observe', async (t: T) => {
   let receiveCnt = 0
 
   client
-    .query('counter', {
+    .query2('counter', {
       myQuery: 123,
     })
     .subscribe(

@@ -90,8 +90,8 @@ await test('simple', async (t) => {
     hooks: getDefaultHooks(db2.server),
   })
 
-  const a = await client.query('user').get()
-  const b = await client2.query('user').get()
+  const a = await client.query2('user').get()
+  const b = await client2.query2('user').get()
   deepEqual(b, a)
 
   const c = await client.create('user', { name: 'jerp' })
@@ -189,8 +189,8 @@ await test('refs', async (t) => {
   t.after(() => db2.destroy())
   await db2.start()
 
-  const users1 = await db.query('user').include('group').get()
-  const users2 = await db2.query('user').include('group').get()
+  const users1 = await db.query2('user').include('group').get()
+  const users2 = await db2.query2('user').include('group').get()
 
   deepEqual(users1, users2)
 })
@@ -282,8 +282,8 @@ await test('text', async (t) => {
   t.after(() => db2.destroy())
   await db2.start()
 
-  const articles1 = await db.query('article').get()
-  const articles2 = await db2.query('article').get()
+  const articles1 = await db.query2('article').get()
+  const articles2 = await db2.query2('article').get()
   deepEqual(articles1, articles2)
 })
 
@@ -354,8 +354,8 @@ await test.skip('db is drained before save', async (t) => {
   await db2.start()
 
   deepEqual(
-    await db2.query('person').include('name', 'books').get(),
-    await db.query('person').include('name', 'books').get(),
+    await db2.query2('person').include('name', 'books').get(),
+    await db.query2('person').include('name', 'books').get(),
   )
 })
 
@@ -408,7 +408,7 @@ await test('create', async (t) => {
   await db2.start()
   t.after(() => db2.destroy())
 
-  deepEqual(await db2.query('person').get(), await db.query('person').get())
+  deepEqual(await db2.query2('person').get(), await db.query2('person').get())
 })
 
 await test('upsert', async (t) => {
@@ -451,10 +451,10 @@ await test('upsert', async (t) => {
     hooks: getDefaultHooks(db2.server),
   })
 
-  deepEqual(await client.query('person').get(), [
+  deepEqual(await client.query2('person').get(), [
     { id: 1, name: 'Joe', age: 42, alias: 'boss' },
   ])
-  deepEqual(await client2.query('person').get(), [
+  deepEqual(await client2.query2('person').get(), [
     { id: 1, name: 'Joe', age: 42, alias: 'boss' },
   ])
 })
@@ -509,8 +509,8 @@ await test('alias blocks', async (t) => {
   })
 
   deepEqual(
-    await client2.query('person').get(),
-    await client.query('person').get(),
+    await client2.query2('person').get(),
+    await client.query2('person').get(),
   )
 })
 
@@ -627,7 +627,7 @@ await test('simulated periodic save', async (t) => {
   // Change node using alias saved
   deepEqual(
     await client
-      .query('person')
+      .query2('person')
       .filter('alias', 'includes', 'slim')
       .include('alias', 'name')
       .get(),
@@ -635,7 +635,7 @@ await test('simulated periodic save', async (t) => {
   )
   deepEqual(
     await client2
-      .query('person')
+      .query2('person')
       .filter('alias', 'includes', 'slim')
       .include('alias', 'name')
       .get(),
@@ -645,7 +645,7 @@ await test('simulated periodic save', async (t) => {
   // Replace alias saved
   deepEqual(
     await client
-      .query('person')
+      .query2('person')
       .filter('alias', 'includes', 'slick')
       .include('alias', 'name')
       .get(),
@@ -653,7 +653,7 @@ await test('simulated periodic save', async (t) => {
   )
   deepEqual(
     await client2
-      .query('person')
+      .query2('person')
       .filter('alias', 'includes', 'slick')
       .include('alias', 'name')
       .get(),
@@ -663,7 +663,7 @@ await test('simulated periodic save', async (t) => {
   // Move alias saved
   deepEqual(
     await client
-      .query('person')
+      .query2('person')
       .filter('alias', 'includes', 'boss')
       .include('alias', 'name')
       .get(),
@@ -671,7 +671,7 @@ await test('simulated periodic save', async (t) => {
   )
   deepEqual(
     await client2
-      .query('person')
+      .query2('person')
       .filter('alias', 'includes', 'boss')
       .include('alias', 'name')
       .get(),
@@ -680,8 +680,8 @@ await test('simulated periodic save', async (t) => {
 
   // All have the same books
   deepEqual(
-    await client2.query('person').include('name', 'alias', 'books').get(),
-    await client.query('person').include('name', 'alias', 'books').get(),
+    await client2.query2('person').include('name', 'alias', 'books').get(),
+    await client.query2('person').include('name', 'alias', 'books').get(),
   )
 })
 
@@ -745,7 +745,7 @@ await test('edge val', async (t) => {
       ],
     },
   })
-  //await client.query('phase').include('scenarios.$sequence').get().inspect()
+  //await client.query2('phase').include('scenarios.$sequence').get().inspect()
   await db.save()
 
   await client.update('phase', phase, {
@@ -753,7 +753,7 @@ await test('edge val', async (t) => {
       delete: [scenario1],
     },
   })
-  //await client.query('phase').include('scenarios.$sequence').get().inspect()
+  //await client.query2('phase').include('scenarios.$sequence').get().inspect()
 })
 
 await test('no mismatch', async (t) => {

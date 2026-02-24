@@ -448,7 +448,7 @@ await test.skip('taxi', async (t) => {
       name: rates[i + 1],
     })
   }
-  //await db.query('rate').include('*').get().inspect()
+  //await db.query2('rate').include('*').get().inspect()
 
   db.create('vendor', {
     vendorId: '1',
@@ -477,25 +477,24 @@ await test.skip('taxi', async (t) => {
   const createTrip = async (trip: any) => {
     // TODO toObject() shouldn't be needed
     const { id: vendor = null } = await db
-      .query('vendor', { vendorId: trip.VendorID })
+      .query2('vendor', { vendorId: trip.VendorID })
       .include('id')
       .get()
-      
+
     const { id: rate = null } = await db
-      .query('rate', { rateCodeId: trip.RatecodeID ?? '99' })
+      .query2('rate', { rateCodeId: trip.RatecodeID ?? '99' })
       .include('id')
       .get()
-      
+
     const { id: pickupLoc = null } = await db
-      .query('zone', { locationId: trip.PULocationID ?? '264' })
+      .query2('zone', { locationId: trip.PULocationID ?? '264' })
       .include('id')
       .get()
-      
+
     const { id: dropoffLoc = null } = await db
-      .query('zone', { locationId: trip.DOLocationID ?? '264' })
+      .query2('zone', { locationId: trip.DOLocationID ?? '264' })
       .include('id')
       .get()
-      
 
     const pickup = new Date(trip.tpep_pickup_datetime)
     const dropoff = new Date(trip.tpep_dropoff_datetime)
@@ -549,16 +548,16 @@ await test.skip('taxi', async (t) => {
   process.stderr.write('\n')
   await db.drain()
 
-  await db.query('zone').include('borough').get().inspect()
-  // await db.query('zone').include('*').get().inspect()
-  // await db.query('vendor').include('trips').get().inspect()
+  await db.query2('zone').include('borough').get().inspect()
+  // await db.query2('zone').include('*').get().inspect()
+  // await db.query2('vendor').include('trips').get().inspect()
   // await db
-  //   .query('trip')
+  //   .query2('trip')
   //   .include('pickupLoc', 'dropoffLoc', 'paymentType')
   //   .get()
   //   .inspect()
   await db
-    .query('trip')
+    .query2('trip')
     .include(
       'pickup',
       'tripDistance',
@@ -567,12 +566,12 @@ await test.skip('taxi', async (t) => {
     )
     .get()
     .inspect()
-  // await db.query('trip').count().groupBy('dropoffLoc.borough').get().inspect() // TBD: nested prop in groupBy
-  await db.query('trip').count().groupBy('dropoffLoc').get().inspect()
-  await db.query('trip').count().groupBy('paymentType').get().inspect()
+  // await db.query2('trip').count().groupBy('dropoffLoc.borough').get().inspect() // TBD: nested prop in groupBy
+  await db.query2('trip').count().groupBy('dropoffLoc').get().inspect()
+  await db.query2('trip').count().groupBy('paymentType').get().inspect()
   console.log('trip count')
-  await db.query('trip').count().get().inspect()
-  // await db.query('vendor').sum('trips').get().inspect() BUG: requires validation or // TBD: group by all
+  await db.query2('trip').count().get().inspect()
+  // await db.query2('vendor').sum('trips').get().inspect() BUG: requires validation or // TBD: group by all
 
   // const makeDays = (startYear: number, endYear: number) => {
   //   const days: Date[] = []
@@ -587,7 +586,7 @@ await test.skip('taxi', async (t) => {
   // const res = await Promise.all(
   //   days.map((day) =>
   //     db
-  //       .query('trip')
+  //       .query2('trip')
   //       .filter('pickup', '>=', day)
   //       .filter('dropoff', '<=', new Date(day).setUTCHours(23, 59, 59, 0))
   //       //.count()
@@ -601,7 +600,7 @@ await test.skip('taxi', async (t) => {
   // Yearly/Monthly/Daily revenue
   console.log('Yearly/Monthly/Daily revenue')
   await db
-    .query('trip')
+    .query2('trip')
     //.filter('pickupYear', '>=', new Date('2022-01-01'))
     //.filter('pickupYear', '<=', new Date('2024-05-31'))
     .filter('pickupYear', '>=', 2022)
@@ -614,7 +613,7 @@ await test.skip('taxi', async (t) => {
   // Revenue Breakdown by Vendor
   console.log('Revenue Breakdown by Vendor')
   await db
-    .query('vendor')
+    .query2('vendor')
     .include('name', (select) => {
       select('trips')
         .groupBy('pickup', { step: 'year', timeZone: 'America/New_York' })
@@ -627,7 +626,7 @@ await test.skip('taxi', async (t) => {
   // Find the top 10 trips per day with the highest tip per mile. // TBD: need callback to combine functions tipAmount/tripDistance
   console.log('Top tippers')
   await db
-    .query('trip')
+    .query2('trip')
     // .include('pickup', 'fees.tipAmount', 'tripDistance')
     .groupBy('pickup', { step: 'day', timeZone: 'America/New_York' })
     .max('fees.tipAmount')
@@ -640,20 +639,20 @@ await test.skip('taxi', async (t) => {
   // Rush hour utilization
   console.log('Rush hour utilization')
   const rh1 = await db
-    .query('trip')
+    .query2('trip')
     .filter('pickupHour', '>=', 7)
     .filter('pickupHour', '<=', 10)
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))
     .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     .count()
     .get()
-    
+
   const rh2 = await db
-    .query('trip')
+    .query2('trip')
     .groupBy('pickup', { step: 'dow', timeZone: 'America/New_York' })
     .count()
     .get()
-    
+
   console.log(
     Object.keys(day2enum).reduce(
       (prev, key) => (
@@ -666,7 +665,7 @@ await test.skip('taxi', async (t) => {
 
   // Most popular routes
   await db
-    .query('trip')
+    .query2('trip')
     .groupBy('pickupDropoffLocs')
     .count()
     .sort('pickupDropoffLocs') // TBD: has no effect yethas no effect yet
@@ -677,7 +676,7 @@ await test.skip('taxi', async (t) => {
   // Avg rush hour speed between zones
   console.log('Avg rush hour speed between zones')
   await db
-    .query('trip')
+    .query2('trip')
     .filter('pickupHour', '>=', 7)
     .filter('pickupHour', '<=', 10)
     .or((t) => t.filter('pickupHour', '>=', 16).filter('pickupHour', '<=', 19))

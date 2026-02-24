@@ -42,7 +42,7 @@ await test('meta for selva string', async (t) => {
     },
   })
 
-  deepEqual(await db.query('item').include('name', { meta: true }).get(), [
+  deepEqual(await db.query2('item').include('name', { meta: true }).get(), [
     {
       id: 1,
       name: {
@@ -57,7 +57,7 @@ await test('meta for selva string', async (t) => {
 
   await db.create('item', {})
 
-  deepEqual(await db.query('item').include('name', { meta: true }).get(), [
+  deepEqual(await db.query2('item').include('name', { meta: true }).get(), [
     {
       id: 1,
       name: {
@@ -74,7 +74,7 @@ await test('meta for selva string', async (t) => {
     },
   ])
 
-  deepEqual(await db.query('item').include('name', { meta: 'only' }).get(), [
+  deepEqual(await db.query2('item').include('name', { meta: 'only' }).get(), [
     {
       id: 1,
       name: {
@@ -100,7 +100,7 @@ await test('meta for selva string', async (t) => {
   })
 
   deepEqual(
-    await db.query('item').include('items.$edgeName', { meta: 'only' }).get(),
+    await db.query2('item').include('items.$edgeName', { meta: 'only' }).get(),
     [
       {
         id: 1,
@@ -134,7 +134,7 @@ await test('meta for selva string', async (t) => {
     'Edge meta',
   )
 
-  deepEqual(await db.query('item').include('email', { meta: 'only' }).get(), [
+  deepEqual(await db.query2('item').include('email', { meta: 'only' }).get(), [
     {
       id: 1,
       email: {
@@ -150,7 +150,7 @@ await test('meta for selva string', async (t) => {
     },
   ])
 
-  deepEqual(await db.query('item').include('email', { meta: true }).get(), [
+  deepEqual(await db.query2('item').include('email', { meta: true }).get(), [
     {
       id: 1,
       email: {
@@ -169,7 +169,7 @@ await test('meta for selva string', async (t) => {
 
   await db.update('item', 1, { name: italy })
 
-  deepEqual(await db.query('item').include('name', { meta: true }).get(), [
+  deepEqual(await db.query2('item').include('name', { meta: true }).get(), [
     {
       id: 1,
       name: {
@@ -186,7 +186,7 @@ await test('meta for selva string', async (t) => {
     },
   ])
 
-  deepEqual(await db.query('item').include('body', { meta: true }).get(), [
+  deepEqual(await db.query2('item').include('body', { meta: true }).get(), [
     {
       id: 1,
       body: {
@@ -222,7 +222,7 @@ await test('meta for selva string', async (t) => {
   })
 
   deepEqual(
-    await db.query('item').include('body', { meta: true }).get(),
+    await db.query2('item').include('body', { meta: true }).get(),
     [
       {
         id: 1,
@@ -261,7 +261,7 @@ await test('meta for selva string', async (t) => {
   )
 
   deepEqual(
-    await db.query('item').include('body', { meta: 'only' }).get(),
+    await db.query2('item').include('body', { meta: 'only' }).get(),
     [
       {
         id: 1,
@@ -297,7 +297,11 @@ await test('meta for selva string', async (t) => {
   )
 
   deepEqual(
-    await db.query('item').include('body', { meta: 'only' }).locale('it').get(),
+    await db
+      .query2('item')
+      .include('body', { meta: 'only' })
+      .locale('it')
+      .get(),
     [
       {
         id: 1,
@@ -316,7 +320,11 @@ await test('meta for selva string', async (t) => {
   )
 
   deepEqual(
-    await db.query('item').include('body', { meta: 'only' }).locale('en').get(),
+    await db
+      .query2('item')
+      .include('body', { meta: 'only' })
+      .locale('en')
+      .get(),
     [
       {
         id: 1,

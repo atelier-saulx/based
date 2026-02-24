@@ -110,7 +110,7 @@ const test: {
 
       await db.stop()
 
-      const newDb = new BasedDb({
+      const newDb = new DbServer({
         path: t.tmp,
       })
 
@@ -140,7 +140,7 @@ const test: {
           deepEqual(
             b[di],
             a[di],
-            `Mismatch after backup (len:${b.length}) ${Object.keys(db.server.schema!.types)[di]}`,
+            `Mismatch after backup (len:${b.length}) ${Object.keys(db.schema!.types)[di]}`,
           )
         }
         const ci = findFirstDiffPos(counts, c)
@@ -148,7 +148,7 @@ const test: {
           deepEqual(
             c[ci],
             counts[ci],
-            `Mismatching count after backup (len:${b.length}) ${Object.keys(db.server.schema!.types)[ci]}`,
+            `Mismatching count after backup (len:${b.length}) ${Object.keys(db.schema!.types)[ci]}`,
           )
         }
       }

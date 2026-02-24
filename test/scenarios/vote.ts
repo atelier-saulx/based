@@ -152,7 +152,7 @@ await test('schema with many uint8 fields', async (t) => {
   const queueJob = async () => {
     const confirmation = async () => {
       const rdyForConfirmationToken = await db
-        .query('round', final)
+        .query2('round', final)
         .include((select) => {
           const t = select('payments')
           t.filter('status', '=', ['Requested'])
@@ -171,7 +171,7 @@ await test('schema with many uint8 fields', async (t) => {
 
     const paymentIntent = async () => {
       const rdyForPaymentIntent = await db
-        .query('round', final)
+        .query2('round', final)
         .include((select) => {
           const t = select('payments')
           t.filter('status', '=', ['RequestedIntent'])
@@ -300,7 +300,7 @@ await test('schema with many uint8 fields', async (t) => {
 
       const realIds = [...ids.keys()]
       const myThings = await db
-        .query('payment', realIds)
+        .query2('payment', realIds)
         .filter('status', '=', [
           'ReadyForConfirmationToken',
           'ReadyForPaymentIntent',
@@ -389,7 +389,7 @@ await test('schema with many uint8 fields', async (t) => {
 
   console.log(
     'handled votes #',
-    (await db.query('vote').range(0, 1e6).get()).length,
+    (await db.query2('vote').range(0, 1e6).get()).length,
   )
 
   await wait(100)

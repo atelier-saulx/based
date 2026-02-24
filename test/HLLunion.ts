@@ -83,7 +83,7 @@ await test.skip('dev', async (t) => {
   // OK
   await db
     // dont break line
-    .query('user')
+    .query2('user')
     .include('**')
     .groupBy('country')
     .sum('name')
@@ -93,7 +93,7 @@ await test.skip('dev', async (t) => {
   // OK
   // await db
   //   // dont break line
-  //   .query('user')
+  //   .query2('user')
   //   .groupBy('name')
   //   .sum('flap')
   //   .get()
@@ -101,7 +101,7 @@ await test.skip('dev', async (t) => {
   // TODO: display is tagging "sum" when count with alias
   // TODO: also there os a misplaced comma in inspect
   // await db
-  //   .query('article')
+  //   .query2('article')
   //   .include((q) => q('contributors').count('votes'), 'name')
   //   .get()
   //   .inspect()
@@ -194,14 +194,14 @@ await test.skip('dev', async (t) => {
 //   // TODO: display is tagging "sum" when count with alias
 //   // TODO: also there os a misplaced comma in inspect
 //   // await db
-//   //   .query('article')
+//   //   .query2('article')
 //   //   .include((q) => q('contributors').count('votes'), 'name')
 //   //   .get()
 //   //   .inspect()
 
 //   // deepEqual(
 //   //   await db
-//   //     .query('article')
+//   //     .query2('article')
 //   //     .include((q) => q('contributors').sum('flap'), 'name')
 //   //     .get()
 //   //     ,
@@ -218,7 +218,7 @@ await test.skip('dev', async (t) => {
 
 //   await db
 //     // dont break line
-//     .query('user')
+//     .query2('user')
 //     .groupBy('country')
 //     .cardinality('myUniqueValuesCount')
 //     .get()
@@ -228,14 +228,14 @@ await test.skip('dev', async (t) => {
 
 //   // const q = await db
 //   //   // dont break line
-//   //   .query('users')
+//   //   .query2('users')
 //   //   .get()
 
 //   // q.inspect()
 
 //   // await db
 //   //   // dont break line
-//   //   .query('user')
+//   //   .query2('user')
 //   //   .groupBy('name')
 //   //   .sum('flap')
 //   //   .get()

@@ -76,7 +76,7 @@ await test('compression / large strings', async (t) => {
     )
     deepEqual(
       await db
-        .query('article')
+        .query2('article')
         .include('name', 'article', 'nr')
         .sort('article')
         .range(0, len)
@@ -87,7 +87,7 @@ await test('compression / large strings', async (t) => {
     )
     deepEqual(
       await db
-        .query('article')
+        .query2('article')
         .include('name', 'article', 'nr')
         .sort('article', 'desc')
         .range(0, len)
@@ -148,7 +148,7 @@ await test('fixed len strings', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query('article').include('name', 'nr').sort('name', 'desc').get(),
+    await db.query2('article').include('name', 'nr').sort('name', 'desc').get(),
     'name',
     'desc',
   )

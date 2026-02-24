@@ -44,13 +44,13 @@ await test('sort by id', async (t) => {
   const dbTime = await db.drain()
 
   isSorted(
-    await db.query('user').include('name').sort('id', 'asc').get(),
+    await db.query2('user').include('name').sort('id', 'asc').get(),
     'id',
     'asc',
   )
 
   isSorted(
-    await db.query('user').include('name').sort('id', 'desc').get(),
+    await db.query2('user').include('name').sort('id', 'desc').get(),
     'id',
     'desc',
   )
@@ -62,7 +62,7 @@ await test('sort by id', async (t) => {
   }
 
   isSorted(
-    await db.query('user').include('name', 'friends.name').range(0, 1).get(),
+    await db.query2('user').include('name', 'friends.name').range(0, 1).get(),
     'id',
     'asc',
   )

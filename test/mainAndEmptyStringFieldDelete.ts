@@ -26,7 +26,7 @@ await test('main + empty', async (t) => {
     location: '',
   })
 
-  deepEqual(await db.query('user').get(), [
+  deepEqual(await db.query2('user').get(), [
     { id: 1, role: 'translator', location: '' },
   ])
 })

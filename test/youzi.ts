@@ -8,7 +8,7 @@
 // const useQuery: any = {}
 
 // await test('browser things', async t => {
-//   const { data } = useQuery('cms', () => b.query('user').include('name'), [])
+//   const { data } = useQuery('cms', () => b.query2('user').include('name'), [])
 // })
 
 // // a.tsx

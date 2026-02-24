@@ -48,7 +48,7 @@ await test('subscription schema changes', async (t) => {
   })
   let cnt = 0
   const q = clients[1]
-    .query('user')
+    .query2('user')
     .include('derp', 'lang')
     .include((s) => {
       s('friends').include('*')
@@ -133,7 +133,7 @@ await test('better subscription schema changes', async (t) => {
   })
 
   const results: any[] = []
-  db.query('user').subscribe((res) => {
+  db.query2('user').subscribe((res) => {
     const obj = res
     results.push(obj)
   })

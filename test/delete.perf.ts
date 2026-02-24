@@ -55,7 +55,7 @@ await test('delete performance', async (t) => {
   }, 'delete 1M users')
   assert(t0 < 400, 'delete 1M users')
 
-  deepEqual(await db.query('user').get(), [])
+  deepEqual(await db.query2('user').get(), [])
 
   const amountArticles = 1e6
   const articles: any[] = []
@@ -76,7 +76,7 @@ await test('delete performance', async (t) => {
   }, 'delete 1M articles')
   assert(t2 < 400, 'delete 1M users')
 
-  deepEqual(await db.query('article').get(), [])
+  deepEqual(await db.query2('article').get(), [])
 
   const articles2: any[] = []
 
@@ -111,5 +111,5 @@ await test('delete performance', async (t) => {
     }
     await db.drain()
   }, 'delete 1M articles - again') //  < 400
-  deepEqual(await db.query('article').get(), [])
+  deepEqual(await db.query2('article').get(), [])
 })
