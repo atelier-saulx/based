@@ -937,8 +937,9 @@ await test('fixed length strings', async (t) => {
   // )
 })
 
-/*
 await test('range', async (t) => {
+  const ter = ['lala', 'lele', 'lili']
+
   const db = await testDb(t, {
     types: {
       job: {
@@ -972,13 +973,16 @@ await test('range', async (t) => {
   const rnd = fastPrng(new Date().getTime())
   for (let i = 0; i < 10; i++) {
     const d = new Date('11/12/2024 00:00-3')
+    //@ts-ignore
     db.create('job', {
-      day: new Date(d.getTime() + 3600 * 1000 * rnd(2, 3)),
+      day: new Date(d.getTime() + 3600 * 1000 * rnd(2, 4)), // 11 Dec 24 2:00, 3:00 and 4:00h
       tip: Math.random() * 20,
     })
+    //@ts-ignore
     const s = db.create('state', {
       name: `statelala ${rnd(0, 2)}`,
     })
+    //@ts-ignore
     const t = db.create('territory', {
       name: ter[rnd(0, ter.length - 1)],
       flap: Math.random() * 100,
@@ -986,9 +990,20 @@ await test('range', async (t) => {
     })
     db.create('employee', {
       name: `emplala ${rnd(0, 10)}`,
+      //@ts-ignore
       area: t,
     })
   }
+
+  console.dir(
+    await db
+      .query2('job')
+      .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
+      .avg('tip')
+      .range(1, 2)
+      .get(),
+    { maxdepth: null },
+  )
 
   deepEqual(
     Object.keys(
@@ -996,23 +1011,22 @@ await test('range', async (t) => {
         .query2('job')
         .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
         .avg('tip')
-        // .range(0, 2)
+        .range(1, 2)
         .get(),
     ).length,
     2,
     'range group by main',
   )
 
-  deepEqual(
-    Object.keys(
-      await db
-        .query2('employee')
-        .include((q) => q('area').groupBy('name').sum('flap'), '*')
-        .range(0, 2)
-        .get(),
-    ).length,
-    2,
-    'range group by references',
-  )
+  // deepEqual(
+  //   Object.keys(
+  //     await db
+  //       .query2('employee')
+  //       .include((q) => q('area').groupBy('name').sum('flap'), '*')
+  //       .range(0, 2)
+  //       .get(),
+  //   ).length,
+  //   2,
+  //   'range group by references',
+  // )
 })
-*/
