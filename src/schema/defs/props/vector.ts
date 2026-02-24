@@ -16,7 +16,7 @@ import {
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
-import { TypedArray } from '../../../protocol/index.js'
+import { TypedArray } from '../../../schema/index.js'
 
 export const vector = class Vector extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
