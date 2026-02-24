@@ -3,22 +3,6 @@ import { deepEqual } from './shared/assert.js'
 import { convertToTimestamp } from '../src/utils/index.js'
 import { testDb } from './shared/index.js'
 
-const derp = new Set([
-  '$nice',
-  '$role',
-  '$count',
-  '$score',
-  '$flag',
-  '$amount',
-  '$big',
-  '$huge',
-  '$max',
-  '$label',
-  '$bin',
-  '$timestamp',
-  '$enum',
-])
-
 const defaultTimestamp = '2023-03-15T12:00:00.000Z'
 const defaultJson = { enabled: true, value: 10 }
 const defaultBinary = new Uint8Array([1, 2, 3])
