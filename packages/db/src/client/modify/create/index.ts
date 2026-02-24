@@ -101,8 +101,8 @@ const writeSortableText = (ctx: Ctx) => {
     ctx.index += 4
     const start = ctx.index
     const amount = ctx.schema.localeSize + 1
-    const len = amount * ctx.schema.separateTextSort.props.length
     const buf = ctx.schema.separateTextSort.bufferTmp
+
     for (const def of ctx.schema.separateTextSort.props) {
       const index = def.prop * amount
       if (buf[index] === 0) {
@@ -111,7 +111,7 @@ const writeSortableText = (ctx: Ctx) => {
       reserve(ctx, 2)
       writeU8(ctx, def.prop)
       writeU8(ctx, buf[index])
-      for (let i = index + 1; i < len + index; i++) {
+      for (let i = index + 1; i < amount + index; i++) {
         const lang = buf[i]
         if (lang === 0) {
           continue
