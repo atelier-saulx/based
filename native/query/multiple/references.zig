@@ -22,7 +22,17 @@ inline fn referencesSort(
 ) !Sort.SortIterator(desc, edge) {
     const sortHeader = utils.readNext(t.SortHeader, q, i);
     var refs = try References.iterator(desc, edge, ctx.db, from, header.prop, fromType);
-    return try Sort.fromIterator(desc, edge, ctx.db, ctx.thread, typeEntry, &sortHeader, &refs);
+    return try Sort.fromIterator(
+        desc,
+        edge,
+        ctx.db,
+        ctx.thread,
+        typeEntry,
+        &sortHeader,
+        &refs,
+        // .default,
+        // undefined,
+    );
 }
 
 pub fn references(

@@ -39,13 +39,33 @@ pub fn ids(
         },
         .sort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            var itSort = try Sort.fromIterator(false, false, ctx.db, ctx.thread, typeEntry, &sortHeader, &it);
+            var itSort = try Sort.fromIterator(
+                false,
+                false,
+                ctx.db,
+                ctx.thread,
+                typeEntry,
+                &sortHeader,
+                &it,
+                // .default,
+                // undefined,
+            );
             nodeCnt = try Iterate.node(.default, ctx, q, &itSort, &header, typeEntry, &i);
             itSort.deinit();
         },
         .descSort => {
             const sortHeader = utils.readNext(t.SortHeader, q, &i);
-            var itSort = try Sort.fromIterator(true, false, ctx.db, ctx.thread, typeEntry, &sortHeader, &it);
+            var itSort = try Sort.fromIterator(
+                true,
+                false,
+                ctx.db,
+                ctx.thread,
+                typeEntry,
+                &sortHeader,
+                &it,
+                // .default,
+                // undefined,
+            );
             nodeCnt = try Iterate.node(.default, ctx, q, &itSort, &header, typeEntry, &i);
             itSort.deinit();
         },

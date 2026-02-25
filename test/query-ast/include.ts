@@ -91,6 +91,8 @@ await test('include', async (t) => {
     })
   }
 
+  // for sort 1M we can prob do better with either INDEX (scince it will refire)
+
   await db.drain()
 
   console.log(Date.now() - d, 'ms')
@@ -106,7 +108,7 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    range: { start: 0, end: 1e6 },
+    range: { start: 100, end: 1e6 },
     // target: b,
     // order: 'desc',
     // sort: { prop: 'y' },
@@ -158,7 +160,6 @@ await test('include', async (t) => {
         //   },
         // },
         filter: {
-          // wrong include (if no edges provided)
           edgeStrategy: EdgeStrategy.edgeAndProps,
           props: {
             y: {
