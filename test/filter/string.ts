@@ -565,7 +565,7 @@ await test('OR equal', async (t) => {
 })
 
 await test('OR equal main', async (t) => {
-  const  db = await testDb(t, {
+  const db = await testDb(t, {
     types: {
       italy: {
         props: {

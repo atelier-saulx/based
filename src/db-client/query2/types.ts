@@ -56,7 +56,7 @@ export type PickOutputFromProps<
               Props[P],
               S['types'],
               S['locales'] extends Record<string, any> ? S['locales'] : {},
-              '*'
+              '-*'
             >
           : InferProp<
               Props[P],
@@ -155,12 +155,22 @@ export type RefKeys<Props> = {
   [K in keyof Props]: IsRefProp<Props[K]> extends true ? K : never
 }[keyof Props]
 
+export type NonRefNonEdgeKeys<Props> = {
+  [K in keyof Props]: IsRefProp<Props[K]> extends true
+    ? never
+    : K extends `$${string}`
+      ? never
+      : K
+}[keyof Props]
+
 export type ResolveInclude<Props, K> = K extends any
   ? K extends '*'
     ? NonRefKeys<Props>
-    : K extends '**'
-      ? RefKeys<Props>
-      : K
+    : K extends '-*'
+      ? NonRefNonEdgeKeys<Props>
+      : K extends '**'
+        ? RefKeys<Props>
+        : K
   : never
 
 export type IncludeSelection<
@@ -183,7 +193,7 @@ export type PickOutput<
             ResolvedProps<S['types'], T>[P],
             S['types'],
             S['locales'] extends Record<string, any> ? S['locales'] : {},
-            '*'
+            '-*'
           >
         : InferSchemaOutput<S, T>[P]
       : InferSchemaOutput<S, T>[P]

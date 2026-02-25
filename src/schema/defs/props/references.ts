@@ -137,6 +137,9 @@ const setReferences = (
   op: ModifyEnum,
   lang: LangCodeEnum,
 ) => {
+  if (!Array.isArray(value)) {
+    throw new Error('References value must be an array')
+  }
   let offset = 0
   const len = value.length
   while (offset < len) {
@@ -176,6 +179,9 @@ const setReferences = (
 }
 
 const deleteReferences = (buf: AutoSizedUint8Array, value: any[]) => {
+  if (!Array.isArray(value)) {
+    throw new Error('References value must be an array')
+  }
   let offset = 0
   while (offset < value.length) {
     const item = value[offset]
