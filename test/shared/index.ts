@@ -38,7 +38,7 @@ export function logMemoryUsage() {
 export const testDb = async <const S extends SchemaIn>(
   t: Parameters<Parameters<typeof test>[1]>[0],
   schema: StrictSchema<S>,
-  opts: { noBackup?: boolean, noClean?: boolean } = {},
+  opts: { noBackup?: boolean, noClean?: boolean, path?: string } = {},
 ): Promise<DbClient<ResolveSchema<S>>> => {
   const server = await testDbServer(t, opts)
   return testDbClient(server, schema)
@@ -59,9 +59,9 @@ export const testDbClient = async <const S extends SchemaIn>(
 
 export const testDbServer = async <const S extends SchemaIn>(
   t: Parameters<Parameters<typeof test>[1]>[0],
-  opts: { noBackup?: boolean, noClean?: boolean } = {},
+  opts: { noBackup?: boolean, noClean?: boolean, path?: string } = {},
 ): Promise<DbServer> => {
-  const db = new DbServer({ path: t.tmp })
+  const db = new DbServer({ path: opts.path ?? t.tmp })
   await db.start({ clean: !opts.noClean })
   if (opts.noBackup) {
     t.after(() => db.destroy())
