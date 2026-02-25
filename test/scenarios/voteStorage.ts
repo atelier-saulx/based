@@ -3,6 +3,7 @@ import test from '../shared/test.js'
 import { SchemaProp, SchemaType } from '../../src/schema/index.js'
 import { deepEqual } from '../shared/assert.js'
 import { inspect } from 'util'
+import {testDb} from '../shared/index.js'
 
 const countrySchema: SchemaType = {
   props: {
@@ -55,7 +56,7 @@ await test('vote including round', async (t) => {
 
   const voteCountrySchema: any = countrySchema
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       payment: {
         fingerprint: 'alias',
@@ -125,32 +126,26 @@ await test('vote including round', async (t) => {
       },
     },
   })
-  const final = await db.create('round', {})
+  const final = await client.create('round', {})
   for (let i = 0; i < 3e5; i++) {
-    const payment = db.create('payment', {
+    const payment = client.create('payment', {
       fingerprint: `blablabla-${i}`,
       status: 'WebhookSuccess',
       round: final,
     })
-    const vote = db.create('vote', {
+    const vote = client.create('vote', {
       fingerprint: `blablabla-vote-${i}`,
       payment,
       round: final,
     })
   }
   await db.save()
-  console.log('set all items', await db.drain())
+  console.log('set all items', await client.drain())
 })
 
 const testVotes = (opts: { votes: any; amount: number }) => {
   return test(`vote single ref test remove ${inspect(opts)}`, async (t) => {
-    const db = new BasedDb({
-      path: t.tmp,
-    })
-    await db.start({ clean: true })
-    t.after(() => t.backup(db.server))
-
-    await db.setSchema({
+    const client = await testDb(t, {
       types: {
         round: {
           votes: {
@@ -172,23 +167,23 @@ const testVotes = (opts: { votes: any; amount: number }) => {
 
     let amount = opts.amount
 
-    const final = await db.create('round')
+    const final = await client.create('round', {})
 
     for (let i = 0; i < amount; i++) {
-      db.create('vote', {
+      client.create('vote', {
         round: final,
       })
     }
 
-    console.log(`Creating votes (${amount})ms`, await db.drain())
+    console.log(`Creating votes (${amount})ms`, await client.drain())
 
     console.log('Remove votes from final')
-    await db.update('round', final, {
+    await client.update('round', final, {
       votes: opts.votes,
     })
 
     deepEqual(
-      (await db.query2('round', final).include('votes').get()).votes.length,
+      (await client.query2('round', final).include('votes').get()).votes.length,
       0,
       'clear refs',
     )
@@ -197,22 +192,22 @@ const testVotes = (opts: { votes: any; amount: number }) => {
     for (let i = 0; i < len; i++) {
       const randomId = amount === 1 ? 1 : Math.ceil(Math.random() * amount)
       deepEqual(
-        await db.query2('vote', randomId).include('round').get(),
+        await client.query2('vote', randomId).include('round').get(),
         { id: randomId, round: null },
         `clears refs on the other side ${randomId}`,
       )
     }
 
-    const votes = await db.query2('vote').range(0, 1e6).include('id').get()
+    const votes = await client.query2('vote').range(0, 1e6).include('id').get()
 
     let i = votes.length - 1
     for (i = 0; i < votes.length; i++) {
-      db.delete('vote', votes[i].id)
+      client.delete('vote', votes[i].id)
     }
 
     console.log(
       'Total db time removing all votes (refs in round)',
-      await db.drain(),
+      await client.drain(),
     )
   })
 }
