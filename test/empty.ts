@@ -6,7 +6,7 @@ await test('empty db and no schema', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
   await db.save()
 })
 
@@ -15,7 +15,7 @@ await test('empty db and no nodes', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   await db.setSchema({
     types: {
@@ -34,7 +34,7 @@ await test('empty db and deleted nodes', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   await db.setSchema({
     types: {

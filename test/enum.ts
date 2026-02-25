@@ -1,15 +1,9 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, throws } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 
 await test('enum', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       user: {
         props: {
@@ -91,13 +85,7 @@ await test('enum', async (t) => {
 })
 
 await test('emoji enum', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       review: {
         props: {
