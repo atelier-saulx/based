@@ -1,8 +1,9 @@
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, getDefaultHooks } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 import { wait } from '../../src/utils/index.js'
 import {testDb} from '../shared/index.js'
+import {DbClientClass} from '../../src/db-client/index.js'
 
 await test('references', async (t) => {
   const db = await testDb(t, {
@@ -787,12 +788,12 @@ await test('single ref save and load', async (t) => {
     },
   } as const
 
-  await db.setSchema(schema)
+  let client = await db.setSchema(schema)
 
   const users = [{ email: '1@saulx.com' }, { email: '2@saulx.com' }]
 
   for (const user of users) {
-    await db.upsert('user', { email: user.email }, {})
+    await client.upsert('user', { email: user.email }, {})
   }
 
   await db.stop()
@@ -800,14 +801,17 @@ await test('single ref save and load', async (t) => {
   db = new BasedDb({
     path: t.tmp,
   })
-
   await db.start()
-  await db.create('user', {
+  client = new DbClientClass<typeof schema>({
+    hooks: getDefaultHooks(db.server),
+  })
+
+  await client.create('user', {
     email: '3@saulx.com',
     invitedBy: 2,
   })
 
-  deepEqual(await db.query2('user').include('email', 'invitedBy').get(), [
+  deepEqual(await client.query2('user').include('email', 'invitedBy').get(), [
     { id: 1, email: '1@saulx.com', invitedBy: null },
     { id: 2, email: '2@saulx.com', invitedBy: null },
     {
