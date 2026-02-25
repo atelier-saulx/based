@@ -1,4 +1,3 @@
-import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { testDb } from '../shared/index.js'
@@ -199,7 +198,7 @@ await test('index>len', async (t) => {
     name: 'marie',
   })
 
-  const john = db.create('user', {
+  const john = await db.create('user', {
     name: 'john',
     friends: [bob, marie],
   })
