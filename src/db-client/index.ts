@@ -121,7 +121,7 @@ export class DbClientClass<
 
   create<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
-    obj: InferPayload<S, T>,
+    obj?: InferPayload<S, T>,
     opts?: ModifyOpts,
   ): BasedCreatePromise {
     return new BasedModify(
@@ -129,7 +129,7 @@ export class DbClientClass<
       serializeCreate,
       this.schema!,
       type,
-      obj,
+      obj ?? {},
       this.modifyCtx.buf,
       opts?.locale ? LangCode[opts.locale] : LangCode.none,
     )

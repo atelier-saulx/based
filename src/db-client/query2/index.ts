@@ -22,7 +22,7 @@ import type { StepInput, aggFnOptions } from '../query/aggregates/types.js'
 import { readUint32 } from '../../utils/uint8.js'
 
 class Query<
-  S extends { types: any } = { types: any },
+  S extends { types: any; locales?: any } = { types: any },
   T extends keyof S['types'] = any,
   K extends
     | keyof ResolvedProps<S['types'], T>
@@ -41,12 +41,32 @@ class Query<
     this.ast = ast
   }
   ast: QueryAst
+
+  locale<
+    L extends string &
+      (S['locales'] extends Record<string, any> ? keyof S['locales'] : string),
+  >(
+    locale: L,
+  ): NextBranch<
+    { types: S['types']; locales: L },
+    T,
+    K,
+    IsSingle,
+    SourceField,
+    IsRoot,
+    EdgeProps,
+    Aggregate,
+    GroupedKey
+  > {
+    this.ast.locale = locale
+    return this as any
+  }
   include<
     F extends [
       (
         | 'id'
         | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
-        | Path<S['types'], T>
+        | Path<S, T>
         | '*'
         | '**'
         | ((q: SelectFn<S, T>) => AnyQuery<S>)
@@ -54,7 +74,7 @@ class Query<
       ...(
         | 'id'
         | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
-        | Path<S['types'], T>
+        | Path<S, T>
         | '*'
         | '**'
         | ((q: SelectFn<S, T>) => AnyQuery<S>)
@@ -92,9 +112,7 @@ class Query<
     ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
   filter<
-    P extends
-      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
-      | Path<S['types'], T>,
+    P extends keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T>,
   >(
     prop: P,
     op: Operator,
@@ -111,11 +129,7 @@ class Query<
       filter: FilterFn<S, T, EdgeProps>,
     ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
-  and<
-    P extends
-      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
-      | Path<S['types'], T>,
-  >(
+  and<P extends keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T>>(
     prop: P,
     op: Operator,
     val: InferPathType<S, T, P, EdgeProps>,
@@ -130,11 +144,7 @@ class Query<
       filter: FilterFn<S, T, EdgeProps>,
     ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
-  or<
-    P extends
-      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
-      | Path<S['types'], T>,
-  >(
+  or<P extends keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T>>(
     prop: P,
     op: Operator,
     val: InferPathType<S, T, P, EdgeProps>,
@@ -653,13 +663,13 @@ type FilterMethods<T extends { filter: any }> = {
 
 // This overload is for when the user provides NO schema argument, rely on generic default or explicit generic
 export function query<
-  S extends { types: any } = { types: any },
+  S extends { types: any; locales?: any } = { types: any },
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(type: T): Query<S, T, '*', false>
 
 // This overload is for when the user provides NO schema argument + ID, rely on generic default or explicit generic
 export function query<
-  S extends { types: any } = { types: any },
+  S extends { types: any; locales?: any } = { types: any },
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(
   type: T,
@@ -667,7 +677,7 @@ export function query<
 ): Query<S, T, '*', true>
 
 export function query<
-  S extends { types: any },
+  S extends { types: any; locales?: any },
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(
   type: T,
@@ -679,7 +689,7 @@ export function query<
 }
 
 export class BasedQuery2<
-  S extends { types: any } = { types: any },
+  S extends { types: any; locales?: any } = { types: any },
   T extends keyof S['types'] = any,
   K extends
     | keyof ResolvedProps<S['types'], T>
@@ -701,6 +711,20 @@ export class BasedQuery2<
     if (target) this.ast.target = target
     this.db = db
   }
+
+  testGroupedKey(): GroupedKey {
+    return null as any
+  }
+  testAggregate(): Aggregate {
+    return null as any
+  }
+  testIsSingle(): IsSingle {
+    return null as any
+  }
+  testK(): K {
+    return null as any
+  }
+
   db: DbClient
   async get(): Promise<
     [GroupedKey] extends [string]
@@ -745,7 +769,7 @@ export class BasedQuery2<
 }
 
 type FilterFn<
-  S extends { types: any },
+  S extends { types: any; locales?: any },
   T extends keyof S['types'],
   EdgeProps extends Record<string, any>,
 > = FilterSignature<
@@ -756,7 +780,7 @@ type FilterFn<
 >
 
 type FilterSignature<
-  S extends { types: any },
+  S extends { types: any; locales?: any },
   T extends keyof S['types'],
   EdgeProps extends Record<string, any>,
   Result,
@@ -766,11 +790,7 @@ type FilterSignature<
       filter: FilterFn<S, T, EdgeProps>,
     ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): Result
-  <
-    P extends
-      | keyof (ResolvedProps<S['types'], T> & EdgeProps)
-      | Path<S['types'], T>,
-  >(
+  <P extends keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T>>(
     prop: P,
     op: Operator,
     val: InferPathType<S, T, P, EdgeProps>,
@@ -778,9 +798,10 @@ type FilterSignature<
   ): Result
 }
 
-type SelectFn<S extends { types: any }, T extends keyof S['types']> = <
-  P extends keyof ResolvedProps<S['types'], T>,
->(
+type SelectFn<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+> = <P extends keyof ResolvedProps<S['types'], T>>(
   field: P,
 ) => Query<
   S,
@@ -837,7 +858,7 @@ type ResolveAggregate<T> =
     : never
 
 // Helper type to simplify include signature
-type AnyQuery<S extends { types: any }> = Query<
+type AnyQuery<S extends { types: any; locales?: any }> = Query<
   S,
   any,
   any,
@@ -851,7 +872,7 @@ type AnyQuery<S extends { types: any }> = Query<
 
 // Helper type to simplify method return types
 type NextBranch<
-  S extends { types: any },
+  S extends { types: any; locales?: any },
   T extends keyof S['types'],
   K extends
     | keyof ResolvedProps<S['types'], T>

@@ -6,7 +6,9 @@ import { deepEqual } from '../shared/assert.js'
 await test('textFilter', async (t) => {
   const db = await testDb(t, {
     locales: {
-      en: { /* required: true */ },
+      en: {
+        /* required: true */
+      },
       nl: {},
     },
     types: {
@@ -23,25 +25,31 @@ await test('textFilter', async (t) => {
       },
     },
   })
-  const dbx = testDb(t, {
-    locales: {
-      en: { /* required: true */ },
-      nl: {},
-    },
-    types: {
-      project: {
-        props: {
-          createdAt: {
-            type: 'timestamp',
-            on: 'create',
+  const dbx = testDb(
+    t,
+    {
+      locales: {
+        en: {
+          /* required: true */
+        },
+        nl: {},
+      },
+      types: {
+        project: {
+          props: {
+            createdAt: {
+              type: 'timestamp',
+              on: 'create',
+            },
+            title: { type: 'text' },
+            description: { type: 'text' },
+            abstract: { type: 'string' },
           },
-          title: { type: 'text' },
-          description: { type: 'text' },
-          abstract: { type: 'string' },
         },
       },
     },
-  }, { noBackup: true, path: join(t.tmp, 'x') })
+    { noBackup: true, path: join(t.tmp, 'x') },
+  )
 
   await db.create(
     'project',
