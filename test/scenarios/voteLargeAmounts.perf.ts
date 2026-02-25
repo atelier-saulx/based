@@ -58,7 +58,7 @@ await test('schema with many uint8 fields', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const voteCountrySchema: any = countrySchema
 

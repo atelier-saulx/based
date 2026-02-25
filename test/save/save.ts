@@ -133,13 +133,7 @@ await test('empty root', async (t) => {
 })
 
 await test('refs', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const schema = {
     types: {
       group: {
         props: {
@@ -163,24 +157,32 @@ await test('refs', async (t) => {
         },
       },
     },
-  })
+  } as const
 
-  const grp = db.create('group', {
+  const db = new BasedDb({
+    path: t.tmp,
+  })
+  await db.start({ clean: true })
+  t.after(() => db.destroy())
+
+  const client = await db.setSchema(schema)
+
+  const grp = client.create('group', {
     name: 'best',
   })
-  db.create('user', {
+  client.create('user', {
     name: 'youzi',
     email: 'youzi@yazi.yo',
     group: grp,
   })
 
-  db.create('user', {
+  client.create('user', {
     name: 'youri',
     email: 'youri@yari.yo',
     group: grp,
   })
 
-  await db.drain()
+  await client.drain()
   await db.save()
 
   const db2 = new BasedDb({
@@ -188,9 +190,12 @@ await test('refs', async (t) => {
   })
   t.after(() => db2.destroy())
   await db2.start()
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
-  const users1 = await db.query2('user').include('group').get()
-  const users2 = await db2.query2('user').include('group').get()
+  const users1 = await client.query2('user').include('group').get()
+  const users2 = await client2.query2('user').include('group').get()
 
   deepEqual(users1, users2)
 })
@@ -230,13 +235,7 @@ await test('auto save', async (t) => {
 })
 
 await test('text', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const schema = {
     locales: {
       en: {},
       fi: { fallback: ['en'] },
@@ -249,10 +248,17 @@ await test('text', async (t) => {
         },
       },
     },
+  } as const
+  const db = new BasedDb({
+    path: t.tmp,
   })
+  await db.start({ clean: true })
+  t.after(() => db.destroy())
+
+  const client = await db.setSchema(schema)
 
   // Text: Wikipedia CC BY-SA 4.0
-  db.create('article', {
+  client.create('article', {
     title: {
       en: 'Galileo Galilei',
       fi: 'Galileo Galilei',
@@ -262,7 +268,7 @@ await test('text', async (t) => {
       fi: 'Galileo Galilei (15. helmikuuta 1564 Pisa, Firenzen herttuakunta – 8. tammikuuta 1642 Arcetri, Toscanan suurherttuakunta) oli italialainen tähtitieteilijä, filosofi ja fyysikko. Hänen merkittävimmät saavutuksensa liittyvät tieteellisen menetelmän kehitykseen aristoteelisesta nykyiseen muotoonsa. Häntä on kutsuttu tieteen, klassisen fysiikan ja tähtitieteen isäksi.',
     },
   })
-  db.create('article', {
+  client.create('article', {
     title: {
       en: 'Pope Urban VIII',
       fi: 'Urbanus VIII',
@@ -273,7 +279,7 @@ await test('text', async (t) => {
     },
   })
 
-  await db.drain()
+  await client.drain()
   await db.save()
 
   const db2 = new BasedDb({
@@ -281,9 +287,12 @@ await test('text', async (t) => {
   })
   t.after(() => db2.destroy())
   await db2.start()
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
-  const articles1 = await db.query2('article').get()
-  const articles2 = await db2.query2('article').get()
+  const articles1 = await client.query2('article').get()
+  const articles2 = await client2.query2('article').get()
   deepEqual(articles1, articles2)
 })
 
@@ -360,12 +369,7 @@ await test.skip('db is drained before save', async (t) => {
 })
 
 await test('create', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  await db.setSchema({
+  const schema = {
     types: {
       person: {
         props: {
@@ -374,31 +378,37 @@ await test('create', async (t) => {
         },
       },
     },
+  } as const
+  const db = new BasedDb({
+    path: t.tmp,
   })
+
+  await db.start({ clean: true })
+  const client = await db.setSchema(schema)
 
   t.after(() => db.destroy())
 
-  db.create('person', {
+  client.create('person', {
     name: 'Joe',
   })
-  await db.drain()
+  await client.drain()
   await db.save()
-  db.create('person', {
+  client.create('person', {
     name: 'John',
   })
-  await db.drain()
+  await client.drain()
   await db.save()
-  db.create('person', {
+  client.create('person', {
     name: 'Neo',
     alias: 'haxor',
   })
-  await db.drain()
+  await client.drain()
   await db.save()
-  db.create('person', {
+  client.create('person', {
     name: 'trinity',
     alias: 'haxor',
   })
-  await db.drain()
+  await client.drain()
   await db.save()
 
   // load the same db into a new instance
@@ -407,8 +417,11 @@ await test('create', async (t) => {
   })
   await db2.start()
   t.after(() => db2.destroy())
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
-  deepEqual(await db2.query2('person').get(), await db.query2('person').get())
+  deepEqual(await client2.query2('person').get(), await client.query2('person').get())
 })
 
 await test('upsert', async (t) => {
@@ -690,7 +703,7 @@ await test('edge val', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const client = await db.setSchema({
     types: {

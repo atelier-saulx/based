@@ -1,16 +1,11 @@
-import { BasedDb, xxHash64 } from '../../src/index.js'
+import { xxHash64 } from '../../src/index.js'
 import { ENCODER } from '../../src/utils/uint8.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 import { deepEqual, equal } from 'node:assert'
 
 await test('sortCardinality', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         derp: 'number',

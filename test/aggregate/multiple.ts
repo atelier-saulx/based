@@ -212,11 +212,9 @@ await test('multiple functions', async (t) => {
         sum: 186,
       },
       NO: {
-        stddev: 21.518983866964227, // also one node only originally
+        stddev: 21.518983866964227,
       },
-      count: 6, // also one node only originally
-      // NO: { stddev: 22.696758736499294 }, // std([-10,-23,-43,-50,-50,0,0,0]) ans = 22.697
-      // count: 8,
+      count: 6,
     },
     'multiple main + count no groupBy',
   )

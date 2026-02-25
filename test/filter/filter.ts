@@ -1,17 +1,11 @@
 import { BasedDb } from '../../src/index.js'
-import test from '../shared/test.js'
 import { equal, deepEqual } from '../shared/assert.js'
+import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 
 await test('single', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const status = ['error', 'danger', 'ok', '🦄']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       org: {
         props: {
@@ -96,15 +90,8 @@ await test('single', async (t) => {
 })
 
 await test('simple', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const status = ['error', 'danger', 'ok', '🦄']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       org: {
         props: {
@@ -564,15 +551,8 @@ await test('simple', async (t) => {
 })
 
 await test('or', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const status = ['error', 'danger', 'ok', '🦄']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       machine: {
         props: {
@@ -700,13 +680,7 @@ await test('or', async (t) => {
 })
 
 await test('or numerical', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       machine: {
         props: {
@@ -797,13 +771,7 @@ await test('or numerical', async (t) => {
 })
 
 await test.skip('includes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -875,13 +843,7 @@ await test.skip('includes', async (t) => {
 })
 
 await test('lt x leq', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       bucket: {
         red: 'uint8',

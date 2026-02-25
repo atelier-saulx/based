@@ -51,7 +51,7 @@ await test('vote including round', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const voteCountrySchema: any = countrySchema
 
@@ -148,7 +148,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
       path: t.tmp,
     })
     await db.start({ clean: true })
-    t.after(() => t.backup(db))
+    t.after(() => t.backup(db.server))
 
     await db.setSchema({
       types: {

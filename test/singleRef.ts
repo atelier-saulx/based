@@ -2,18 +2,10 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { setTimeout } from 'timers/promises'
-import { wait } from '../src/utils/index.js'
+import { testDb } from './shared/index.js'
 
 await test('single special cases', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -68,9 +60,9 @@ await test('single simple', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
-  await db.setSchema({
+  const client = await db.setSchema({
     types: {
       user: {
         props: {
@@ -99,13 +91,13 @@ await test('single simple', async (t) => {
     },
   })
 
-  db.create('simple', {
-    user: db.create('user', {
+  client.create('simple', {
+    user: client.create('user', {
       name: 'Mr snurp',
     }),
   })
 
-  deepEqual(await db.query2('simple').include('user.name').get(), [
+  deepEqual(await client.query2('simple').include('user.name').get(), [
     {
       id: 1,
       user: {
@@ -115,56 +107,50 @@ await test('single simple', async (t) => {
     },
   ])
 
-  db.update('simple', 1, {
+  client.update('simple', 1, {
     user: null,
   })
 
-  deepEqual(await db.query2('simple').include('user.name').get(), [
+  deepEqual(await client.query2('simple').include('user.name').get(), [
     {
       id: 1,
       user: null,
     },
   ])
 
-  const x = db.create('user', {
+  const x = client.create('user', {
     name: 'Mr snurp',
   })
 
-  const blax = await db.create('simple', {
+  const blax = await client.create('simple', {
     user: x,
   })
 
   const ids: any[] = []
   for (let i = 0; i < 1e5; i++) {
-    ids.push(db.create('simple', {}))
+    ids.push(client.create('simple', {}))
   }
 
-  const bla2 = await db.create('simple', {
+  await client.create('simple', {
     user: x,
     mySelf: blax,
   })
 
-  await db.isModified()
+  await client.isModified()
 
   for (let i = 0; i < 1e5; i++) {
-    ids.push(db.delete('simple', ids[i]))
+    ids.push(client.delete('simple', ids[i]))
   }
 
   await db.save()
 
-  db.update('simple', blax, {
+  client.update('simple', blax, {
     mySelf: null,
   })
 })
 
 await test('simple nested', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -256,13 +242,7 @@ await test('simple nested', async (t) => {
 })
 
 await test('single reference object', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -334,13 +314,7 @@ await test('single reference object', async (t) => {
 })
 
 await test('nested', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -620,13 +594,7 @@ await test('nested', async (t) => {
 })
 
 await test('single reference multi refs strings', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -716,16 +684,10 @@ await test('single reference multi refs strings', async (t) => {
 })
 
 await test('update same value', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
-      en: { required: true },
-      fr: { required: true },
+      en: {},
+      fr: {},
     },
     types: {
       country: {
@@ -746,15 +708,11 @@ await test('update same value', async (t) => {
     name: 'Country X',
   })
 
-  await db.update('contestant', {
-    id,
+  await db.update('contestant', id, {
     country: countryId,
   })
 
-  await db.update('contestant', {
-    id,
+  await db.update('contestant', id, {
     country: countryId,
   })
-
-  await wait(1e3)
 })

@@ -2,15 +2,10 @@ import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 import { wait } from '../../src/utils/index.js'
+import {testDb} from '../shared/index.js'
 
 await test('references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  t.after(() => t.backup(db))
-  await db.start({ clean: true })
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -89,13 +84,7 @@ await test('references', async (t) => {
 })
 
 await test('one to many', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -191,13 +180,7 @@ await test('one to many', async (t) => {
 })
 
 await test('one to many really', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -441,13 +424,7 @@ await test('one to many really', async (t) => {
 })
 
 await test('update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -511,13 +488,7 @@ await test('update', async (t) => {
 })
 
 await test('filter', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -643,15 +614,7 @@ await test('filter', async (t) => {
 })
 
 // await test('cross reference', async (t) => {
-//   const db = new BasedDb({
-//     path: t.tmp,
-//   })
-
-//   await db.start({ clean: true })
-
-//   t.after(() =>db.destroy())
-
-//   await db.setSchema({
+//   const db = await testDb(t, {
 //     locales: {
 //       en: { required: true },
 //       fr: { required: true },
@@ -858,15 +821,7 @@ await test('single ref save and load', async (t) => {
 })
 
 await test('single2many - update refs', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       product: {
         props: {
@@ -937,13 +892,7 @@ await test('single2many - update refs', async (t) => {
 })
 
 await test('reference to a non-existing node', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  t.after(() => t.backup(db))
-  await db.start({ clean: true })
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {

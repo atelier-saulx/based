@@ -1,15 +1,10 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('references modify', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db= await testDb(t, {
     types: {
       user: {
         props: {
@@ -101,13 +96,7 @@ await test('references modify', async (t) => {
 })
 
 await test('references modify 2', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       a: {
         name: 'string',
@@ -148,13 +137,7 @@ await test('references modify 2', async (t) => {
 })
 
 await test('reference move', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       a: {
         name: 'string',
@@ -212,14 +195,7 @@ await test('reference move', async (t) => {
 // https://linear.app/1ce/issue/FDN-1735
 
 await test('try to modify undefined refs', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       movie: {
         name: 'string',
@@ -252,7 +228,7 @@ await test('try to modify undefined refs', async (t) => {
     genre: 'Crime',
   })
   const a1 = db.create('actor', { name: 'Uma Thurman', movies: [m1, m2] })
-  const a2 = db.create('actor', { name: 'Jonh Travolta', movies: [m2] })
+  db.create('actor', { name: 'John Travolta', movies: [m2] })
 
   //await db.query2('movie').include('*', '**').get().inspect()
 

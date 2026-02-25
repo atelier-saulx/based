@@ -348,7 +348,7 @@ await test.skip('taxi', async (t) => {
 
   await db.start({ clean: true })
   // FIXME
-  //t.after(() => t.backup(db))
+  //t.after(() => t.backup(db.server))
   t.after(() => db.stop())
 
   await db.setSchema({

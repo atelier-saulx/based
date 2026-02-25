@@ -1,17 +1,10 @@
 import { BasedDb } from '../../src/index.js'
 import { deepEqual, throws } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('update', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: { en: {}, de: {} },
     types: {
       user: {
@@ -469,17 +462,8 @@ await test('update', async (t) => {
 })
 
 await test('query', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
   const drip = ['dope', 'cringe', 'meh']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
       it: { fallback: ['en'] },
@@ -814,13 +798,13 @@ await test('query', async (t) => {
   }, false)
 })
 
-await test('query - no schema', async (t) => {
+// TODO This is pointless with the new initialization
+await test.skip('query - no schema', async (t) => {
   const db = new BasedDb({
     path: t.tmp,
   })
 
   await db.start({ clean: true })
-
   t.after(() => db.destroy())
 
   setTimeout(async () => {
@@ -844,15 +828,7 @@ await test('query - no schema', async (t) => {
 })
 
 await test('minmax', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -879,13 +855,7 @@ await test('minmax', async (t) => {
 })
 
 await test('set text without locale', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db)) // commenting this out fixes the crash part
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
       it: {},
@@ -918,14 +888,7 @@ await test('set text without locale', async (t) => {
 })
 
 await test('range validation', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -1054,11 +1017,7 @@ await test('range validation', async (t) => {
 })
 
 await test('binary validation', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t , {
     types: {
       user: {
         props: {

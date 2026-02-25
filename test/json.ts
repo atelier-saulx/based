@@ -1,16 +1,10 @@
 import { notEqual } from 'node:assert'
-import { BasedDb } from '../src/index.js'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 
 await test('json', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       jsonDerulo: {
         name: 'string',
@@ -56,8 +50,7 @@ await test('json', async (t) => {
     'after empty object',
   )
 
-  await db.update('jsonDerulo', {
-    id: jay,
+  await db.update('jsonDerulo', jay, {
     myJson: null,
   })
 
@@ -72,13 +65,7 @@ await test('json', async (t) => {
 })
 
 await test('json and crc32', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         article: {
