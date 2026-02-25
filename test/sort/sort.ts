@@ -1,4 +1,4 @@
-import { BasedDb } from '../../src/index.js'
+import { BasedDb, DbClient, getDefaultHooks } from '../../src/index.js'
 import test from '../shared/test.js'
 import { testDb } from '../shared/index.js'
 import { deepEqual, equal } from '../shared/assert.js'
@@ -401,15 +401,7 @@ await test('basic', async (t) => {
 })
 
 await test('sort - from start (1M items)', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  // db.blockSize = 1e5
-
-  await db.setSchema({
+  const schema = {
     types: {
       user: {
         props: {
@@ -420,31 +412,36 @@ await test('sort - from start (1M items)', async (t) => {
         },
       },
     },
+  } as const
+  const db = new BasedDb({
+    path: t.tmp,
   })
+  await db.start({ clean: true })
+  const client = await db.setSchema(schema)
 
-  db.create('user', {
+  client.create('user', {
     name: 'mr blap',
     age: 100,
     email: 'blap@blap.blap.blap',
   })
 
-  db.create('user', {
+  client.create('user', {
     name: 'mr flap',
     age: 50,
     email: 'flap@flap.flap.flap',
   })
 
   for (let i = 0; i < 1000e3; i++) {
-    db.create('user', {
+    client.create('user', {
       name: 'mr ' + i,
       age: i + 101,
     })
   }
 
-  await db.drain()
+  await client.drain()
 
   deepEqual(
-    await db.query2('user').include('name').sort('age').range(0, 2).get(),
+    await client.query2('user').include('name').sort('age').range(0, 2).get(),
     [
       { id: 2, name: 'mr flap' },
       { id: 1, name: 'mr blap' },
@@ -452,7 +449,7 @@ await test('sort - from start (1M items)', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').include('name').sort('age').range(0, 2).get(),
+    await client.query2('user').include('name').sort('age').range(0, 2).get(),
     [
       { id: 2, name: 'mr flap' },
       { id: 1, name: 'mr blap' },
@@ -460,7 +457,7 @@ await test('sort - from start (1M items)', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').include('name').sort('name').range(0, 2).get(),
+    await client.query2('user').include('name').sort('name').range(0, 2).get(),
     [
       {
         id: 3,
@@ -475,16 +472,17 @@ await test('sort - from start (1M items)', async (t) => {
 
   await db.stop()
 
-  const newDb = new BasedDb({
+  const db2 = new BasedDb({
     path: t.tmp,
   })
-
-  await newDb.start()
-
-  t.after(() => newDb.destroy())
+  await db2.start()
+  t.after(() => db2.destroy())
+  const client2 = new DbClient<typeof schema>({
+    hooks: getDefaultHooks(db2.server),
+  })
 
   deepEqual(
-    await newDb.query2('user').include('name').sort('name').range(0, 2).get(),
+    await client2.query2('user').include('name').sort('name').range(0, 2).get(),
     [
       {
         id: 3,
@@ -496,8 +494,6 @@ await test('sort - from start (1M items)', async (t) => {
       },
     ],
   )
-
-  // newDb.server.destroySortIndex('user', 'age')
 })
 
 await test('unset value on create', async (t) => {
