@@ -1,11 +1,10 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { join } from 'path'
 import { readdir, readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { gunzip as _gunzip } from 'zlib'
 import { Sema } from 'async-sema'
-import { logMemoryUsage } from '../shared/index.js'
+import { logMemoryUsage, testDb } from '../shared/index.js'
 
 const gunzip = promisify(_gunzip)
 
@@ -342,16 +341,7 @@ class Loading {
 }
 
 await test.skip('taxi', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  // FIXME
-  //t.after(() => t.backup(db.server))
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       zone: {
         props: {
@@ -431,7 +421,7 @@ await test.skip('taxi', async (t) => {
         },
       },
     },
-  })
+  }, { noBackup: true })
 
   for (let i = 0; i < taxiZoneLookup.length; i += 4) {
     db.create('zone', {
