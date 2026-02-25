@@ -1,4 +1,4 @@
-import assert, { equal, notEqual } from 'node:assert'
+import assert, { equal } from 'node:assert'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
@@ -8,7 +8,6 @@ import native from '../../src/native.js'
 import { deepEqual } from '../shared/assert.js'
 import { getBlockHash } from '../../src/db-server/blocks.js'
 
-const f = (v) => v.map((r) => r.hash)
 const sha1 = async (path: string) =>
   createHash('sha1')
     .update(await fs.readFile(path))
