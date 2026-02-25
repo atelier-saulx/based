@@ -13,7 +13,7 @@ await test('schema problems modify', async (t) => {
 
   t.after(() => {
     clearInterval(int)
-    return t.backup(db)
+    return t.backup(db.server)
   })
 
   await db.start({ clean: true })

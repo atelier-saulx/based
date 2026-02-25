@@ -34,7 +34,7 @@ await test('E-commerce Simulation', async (t) => {
     clearInterval(intervalId)
   })
 
-  t.after(async () => t.backup(db))
+  t.after(async () => t.backup(db.server)
 
   await db.setSchema({
     locales: { en: {}, de: {} }, // Add locales for text fields

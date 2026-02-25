@@ -1,18 +1,11 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual, equal, notEqual, throws } from './shared/assert.js'
 import { wait } from '../src/utils/index.js'
 
 await test('hooks - undefined values', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -120,15 +113,7 @@ await test('hooks - undefined values', async (t) => {
 })
 
 await test('hooks - private nodes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -198,15 +183,7 @@ await test('hooks - private nodes', async (t) => {
 })
 
 await test('hooks - as SQL CHECK constraints', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -237,15 +214,7 @@ await test('hooks - as SQL CHECK constraints', async (t) => {
 })
 
 await test('property modify hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -309,15 +278,7 @@ await test('property modify hooks', async (t) => {
 })
 
 await test('property read hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -368,15 +329,7 @@ await test('property read hooks', async (t) => {
 })
 
 await test('aggregate hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -418,15 +371,7 @@ await test('aggregate hooks', async (t) => {
 })
 
 await test('search hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -468,15 +413,7 @@ await test('search hooks', async (t) => {
 })
 
 await test('groupBy hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -520,15 +457,7 @@ await test('groupBy hooks', async (t) => {
 })
 
 await test('filter hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb({
     types: {
       user: {
         hooks: {
@@ -576,15 +505,7 @@ await test('filter hooks', async (t) => {
 })
 
 await test('include hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -628,15 +549,7 @@ await test('include hooks', async (t) => {
 })
 
 await test('upsert calls create and/or update hooks', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         hooks: {
@@ -657,10 +570,13 @@ await test('upsert calls create and/or update hooks', async (t) => {
     },
   })
 
-  await db.upsert('user', {
-    name: 'youzi',
-    age: 21,
-  })
+  await db.upsert(
+    'user',
+    { name: 'youzi' },
+    {
+      age: 21,
+    },
+  )
 
   const results1 = await db.query2('user').get()
 
@@ -670,10 +586,13 @@ await test('upsert calls create and/or update hooks', async (t) => {
   equal(results1[0].updatedString != 0, true)
 
   await wait(1)
-  await db.upsert('user', {
-    name: 'youzi',
-    age: 45,
-  })
+  await db.upsert(
+    'user',
+    { name: 'youzi' },
+    {
+      age: 45,
+    },
+  )
 
   const results2 = await db.query2('user').get()
   equal(results2.length, 1)

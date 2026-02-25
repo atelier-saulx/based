@@ -1,18 +1,10 @@
 import { fastPrng } from '../src/utils/index.js'
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { equal } from './shared/assert.js'
 
 await test('mem', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    // low amount to force many flushes
-    maxModifySize: 10000,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     types: {
       data: {
         props: {
@@ -27,7 +19,6 @@ await test('mem', async (t) => {
 
   const amount = 1e3
   const repeat = 1e3
-  // 2M inserts rmeoves
 
   const rnd = fastPrng()
   for (let j = 0; j < repeat; j++) {

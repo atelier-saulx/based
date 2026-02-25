@@ -686,8 +686,8 @@ await test('single reference multi refs strings', async (t) => {
 await test('update same value', async (t) => {
   const db = await testDb(t, {
     locales: {
-      en: { },
-      fr: { },
+      en: {},
+      fr: {},
     },
     types: {
       country: {

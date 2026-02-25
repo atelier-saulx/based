@@ -12,7 +12,7 @@ await test('subscription perf', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   await db.setSchema({
     types: {
@@ -76,7 +76,7 @@ await test('native single id perf', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   await db.setSchema({
     types: {

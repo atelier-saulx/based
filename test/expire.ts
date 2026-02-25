@@ -9,7 +9,7 @@ await test('expire', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const schema = {
     types: {
@@ -74,7 +74,7 @@ await test('refresh', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const client = await db.setSchema({
     types: {

@@ -11,7 +11,7 @@ await test('schema problems', async (t) => {
   await db.start({ clean: true })
 
   t.after(() => {
-    return t.backup(db)
+    return t.backup(db.server)
   })
 
   const int = setInterval(async () => {

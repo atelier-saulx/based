@@ -13,7 +13,6 @@ await test('include', async (t) => {
     console.log('STOP SERVER')
     await db.stop(true)
   })
-  //t.after(() => t.backup(db))
   t.after(() => db.stop(true))
 
   // single ref + edge
@@ -225,9 +224,9 @@ await test('include', async (t) => {
           or: { props: { x: 10}}
         }
       }
-    
+
     }
-  
+
     {
       filter: {
         props: {nr" '>' 10001}
@@ -235,7 +234,7 @@ await test('include', async (t) => {
           props: { nr: [10,20]}
         }
       }
-    
+
     }
 
     {
@@ -246,7 +245,7 @@ await test('include', async (t) => {
           }
         }
       }
-    
+
     }
 
     */
