@@ -46,7 +46,7 @@ export const equal = deepEqual
 const SORT_ERR_MSG = 'Incorrect sort oder'
 
 export const isSorted = (
-  a: BasedQueryResponse,
+  a: Record<string, any>[],
   field: string,
   order: 'asc' | 'desc' = 'asc',
   msg?: string,
@@ -55,11 +55,11 @@ export const isSorted = (
   let i = 0
   var s = new Set()
   let fieldType = ''
-  const propDef = a.def?.schema?.props?.[field]
+  // const propDef = a.def?.schema?.props?.[field]
 
-  if (propDef) {
-    fieldType = ' ' + PropTypeInverse[propDef.typeIndex]
-  }
+  // if (propDef) {
+  //   fieldType = ' ' + PropTypeInverse[propDef.typeIndex]
+  // }
 
   for (const result of a) {
     i++
