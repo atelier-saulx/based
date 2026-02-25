@@ -42,7 +42,7 @@ await test('subscription', async (t) => {
   let cnt = 0
 
   const close = clients[1]
-    .query('user')
+    .query2('user')
     .include('derp')
     .subscribe((q) => {
       cnt++
@@ -77,7 +77,7 @@ await test('subscription', async (t) => {
   })
 
   const close2 = clients[1]
-    .query('user', l)
+    .query2('user', l)
     .include('lang')
     .subscribe((q) => {
       cnt++
@@ -110,7 +110,7 @@ await test('subscription', async (t) => {
   }, 200)
 
   const close3 = clients[1]
-    .query('user', l)
+    .query2('user', l)
     .include('location')
     .subscribe((q) => {
       equal(lastSet, q.node(0).location, 'equals to last set')
@@ -145,7 +145,7 @@ await test('subscription error', async (t) => {
   })
 
   const close = clients[1]
-    .query('user')
+    .query2('user')
     .include('derp')
     .subscribe(
       (q) => {
@@ -190,11 +190,11 @@ await test('subscribe to refs', async (t) => {
   let updatesReceived = 0
   let size = 0
   const close = clients[1]
-    .query('queue', queueId)
+    .query2('queue', queueId)
     .include('items')
     .subscribe((q) => {
       updatesReceived++
-      const res = q.toObject()
+      const res = q
       size = res.items.length
       const n = performance.now()
       console.log(updatesReceived, 'update received after', n - d)

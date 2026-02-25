@@ -2,19 +2,15 @@ import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { perf } from './shared/assert.js'
 import { fastPrng } from '../src/utils/fastPrng.js'
+import { testDb } from './shared/index.js'
 
 const NR_TYPES = 16384
 
 await test('create and access many types', async (t) => {
   const prng = fastPrng()
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const rndType = () => `type${prng(1, NR_TYPES)}`
-  const client = await db.setSchema({
+
+  const db = await testDb(t, {
     types: Object.fromEntries(
       Array.from({ length: 16384 }, (_, i) => [
         `type${i + 1}`,
@@ -25,7 +21,7 @@ await test('create and access many types', async (t) => {
 
   await perf(
     () => {
-      client.create(rndType(), {
+      db.create(rndType(), {
         bool: true,
       })
     },
@@ -37,13 +33,7 @@ await test('create and access many types', async (t) => {
 })
 
 await test('create many nodes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const db = await testDb(t, {
     types: {
       type: { bool: 'boolean' },
     },
@@ -51,7 +41,7 @@ await test('create many nodes', async (t) => {
 
   await perf(
     () => {
-      client.create('type', {
+      db.create('type', {
         bool: true,
       })
     },

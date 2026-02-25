@@ -11,10 +11,10 @@ export const deepEqual = <A>(
   msg?: string,
 ) => {
   if (a instanceof BasedQueryResponse) {
-    a = a.toObject()
+    a = a
   }
   if (b instanceof BasedQueryResponse) {
-    b = b.toObject()
+    b = b
   }
   if (!uDeepEqual(a, b)) {
     const m = `${msg || ``}

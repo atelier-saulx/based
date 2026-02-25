@@ -45,7 +45,7 @@ await test('filter', async (t) => {
   var idFieldCounter = 0
 
   const close = clients[0]
-    .query('user', id)
+    .query2('user', id)
     .filter('x', '>', 5)
     .include('name')
     .subscribe((d) => {
@@ -94,12 +94,12 @@ await test('partial update', async (t) => {
   var idCounter = 0
   var idFieldCounter = 0
 
-  const close = clients[0].query('user', id).subscribe((d) => {
+  const close = clients[0].query2('user', id).subscribe((d) => {
     idCounter++
   })
 
   const close2 = clients[0]
-    .query('user', id)
+    .query2('user', id)
     .include('x', 'gurk', 'rurp', 'flap')
     .subscribe((d) => {
       idFieldCounter++

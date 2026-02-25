@@ -27,7 +27,7 @@ pub const AggCtx = struct {
 pub fn iterator(
     aggCtx: *AggCtx,
     it: anytype,
-    comptime hasFilter: bool,
+    hasFilter: bool,
     filterBuf: []u8,
     aggDefs: []u8,
     accumulatorProp: []u8,

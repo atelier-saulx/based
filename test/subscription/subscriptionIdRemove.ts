@@ -68,7 +68,7 @@ await test('subscriptionIdRemove', async (t) => {
       })
 
       // Subscribe to the user
-      const subscription = clients[0].query('user', id).subscribe(() => {
+      const subscription = clients[0].query2('user', id).subscribe(() => {
         const user = users.get(userId)
         if (user && user.active) {
           user.updateCount++

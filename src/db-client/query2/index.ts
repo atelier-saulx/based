@@ -1,4 +1,4 @@
-import type { FilterAst, FilterLeaf, QueryAst } from '../../db-query/ast/ast.js'
+import type { FilterAst, QueryAst } from '../../db-query/ast/ast.js'
 import type {
   PickOutput,
   ResolveInclude,
@@ -13,12 +13,13 @@ import type {
   ExpandDotPath,
   UnionToIntersection,
 } from './types.js'
-import type { ResolvedProps, SchemaOut } from '../../schema/index.js'
+import type { ResolvedProps } from '../../schema/index.js'
 import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import type { DbClient } from '../../sdk.js'
-import { proxyResult } from './result.js'
+import { $buffer, proxyResult } from './result.js'
 import type { StepInput, aggFnOptions } from '../query/aggregates/types.js'
+import { readUint32 } from '../../utils/uint8.js'
 
 class Query<
   S extends { types: any } = { types: any },
@@ -43,6 +44,7 @@ class Query<
   include<
     F extends [
       (
+        | 'id'
         | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
         | Path<S['types'], T>
         | '*'
@@ -50,6 +52,7 @@ class Query<
         | ((q: SelectFn<S, T>) => AnyQuery<S>)
       ),
       ...(
+        | 'id'
         | (keyof (ResolvedProps<S['types'], T> & EdgeProps) & string)
         | Path<S['types'], T>
         | '*'
@@ -95,7 +98,7 @@ class Query<
   >(
     prop: P,
     op: Operator,
-    val: InferPathType<S, T, P>,
+    val: InferPathType<S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   filter(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -115,7 +118,7 @@ class Query<
   >(
     prop: P,
     op: Operator,
-    val: InferPathType<S, T, P>,
+    val: InferPathType<S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   and(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -134,7 +137,7 @@ class Query<
   >(
     prop: P,
     op: Operator,
-    val: InferPathType<S, T, P>,
+    val: InferPathType<S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   or(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -427,8 +430,7 @@ class Query<
     GroupedKey
   >
   stddev<P extends NumberPaths<S, T>>(
-    prop: P | P[],
-    opts?: aggFnOptions,
+    ...args: [...P[], aggFnOptions] | [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -437,27 +439,36 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate &
-      UnionToIntersection<
-        ExpandDotPath<P extends any[] ? P[number] : P, { stddev: number }>
-      >,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { stddev: number }>>,
     GroupedKey
   >
   stddev(
-    prop: any,
-    opts?: any,
+    ...args: any[]
   ): NextBranch<any, any, any, any, any, any, any, any, any> {
-    if (typeof prop === 'function') {
-      const fn = prop
+    if (typeof args[0] === 'function') {
+      const fn = args[0]
       fn((prop: string) => new Query(traverse(this.ast, prop)))
       return this as any
     }
-    if (!prop) {
+    if (args.length === 0) {
       throw new Error('Query: stddev expects at least one argument')
     }
     this.ast.stddev ??= { props: [] }
-    const props = Array.isArray(prop) ? prop : [prop]
-    this.ast.stddev.props.push(...(props as string[]))
+    let opts: any
+    let props: string[]
+    if (
+      typeof args[args.length - 1] === 'object' &&
+      !Array.isArray(args[args.length - 1])
+    ) {
+      opts = args[args.length - 1]
+      props = args.slice(0, -1)
+    } else if (Array.isArray(args[0])) {
+      props = args[0]
+      opts = args[1]
+    } else {
+      props = args
+    }
+    this.ast.stddev.props.push(...props)
     if (opts?.mode) {
       this.ast.stddev.samplingMode = opts.mode
     }
@@ -479,8 +490,7 @@ class Query<
     GroupedKey
   >
   var<P extends NumberPaths<S, T>>(
-    prop: P | P[],
-    opts?: aggFnOptions,
+    ...args: [...P[], aggFnOptions] | [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -489,27 +499,34 @@ class Query<
     SourceField,
     IsRoot,
     EdgeProps,
-    Aggregate &
-      UnionToIntersection<
-        ExpandDotPath<P extends any[] ? P[number] : P, { variance: number }>
-      >,
+    Aggregate & UnionToIntersection<ExpandDotPath<P, { variance: number }>>,
     GroupedKey
   >
-  var(
-    prop: any,
-    opts?: any,
-  ): NextBranch<any, any, any, any, any, any, any, any, any> {
-    if (typeof prop === 'function') {
-      const fn = prop
+  var(...args: any[]): NextBranch<any, any, any, any, any, any, any, any, any> {
+    if (typeof args[0] === 'function') {
+      const fn = args[0]
       fn((prop: string) => new Query(traverse(this.ast, prop)))
       return this as any
     }
-    if (!prop) {
+    if (args.length === 0) {
       throw new Error('Query: var expects at least one argument')
     }
     this.ast.variance ??= { props: [] }
-    const props = Array.isArray(prop) ? prop : [prop]
-    this.ast.variance.props.push(...(props as string[]))
+    let opts: any
+    let props: string[]
+    if (
+      typeof args[args.length - 1] === 'object' &&
+      !Array.isArray(args[args.length - 1])
+    ) {
+      opts = args[args.length - 1]
+      props = args.slice(0, -1)
+    } else if (Array.isArray(args[0])) {
+      props = args[0]
+      opts = args[1]
+    } else {
+      props = args
+    }
+    this.ast.variance.props.push(...props)
     if (opts?.mode) {
       this.ast.variance.samplingMode = opts.mode
     }
@@ -627,8 +644,7 @@ class Query<
   }
 }
 
-type FilterBranch<T extends { filter: any }> = Omit<T, 'and' | 'or'> &
-  FilterMethods<T>
+type FilterBranch<T extends { filter: any }> = T
 
 type FilterMethods<T extends { filter: any }> = {
   and: T['filter']
@@ -655,10 +671,10 @@ export function query<
   T extends keyof S['types'] & string = keyof S['types'] & string,
 >(
   type: T,
-  id?: number | Partial<InferSchemaOutput<S, T>>,
+  target?: number | number[] | Partial<InferSchemaOutput<S, T>>,
 ): Query<S, T, '*', boolean> {
   const ast: any = { type }
-  if (id) ast.target = id
+  if (target) ast.target = target
   return new Query<S, T, '*', any>(ast)
 }
 
@@ -678,7 +694,7 @@ export class BasedQuery2<
   constructor(
     db: DbClient,
     type: T,
-    target?: number | Partial<InferSchemaOutput<S, T>>,
+    target?: number | number[] | Partial<InferSchemaOutput<S, T>>,
   ) {
     super({})
     this.ast.type = type as string
@@ -687,16 +703,16 @@ export class BasedQuery2<
   }
   db: DbClient
   async get(): Promise<
-    [keyof Aggregate] extends [never]
-      ? IsSingle extends true
-        ? PickOutput<
-            S,
-            T,
-            ResolveInclude<ResolvedProps<S['types'], T>, K>
-          > | null
-        : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
-      : GroupedKey extends string
-        ? Record<string, Aggregate>
+    [GroupedKey] extends [string]
+      ? Record<string, Aggregate>
+      : [keyof Aggregate] extends [never]
+        ? IsSingle extends true
+          ? PickOutput<
+              S,
+              T,
+              ResolveInclude<ResolvedProps<S['types'], T>, K>
+            > | null
+          : PickOutput<S, T, ResolveInclude<ResolvedProps<S['types'], T>, K>>[]
         : Aggregate
   > {
     if (
@@ -757,7 +773,7 @@ type FilterSignature<
   >(
     prop: P,
     op: Operator,
-    val: InferPathType<S, T, P>,
+    val: InferPathType<S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): Result
 }
@@ -797,11 +813,16 @@ export type ResolveIncludeArgs<T> = T extends (
   any,
   any,
   infer Aggregate,
-  any
+  infer GroupedKey
 >
-  ? [keyof Aggregate] extends [never]
-    ? { field: SourceField; select: K }
-    : { field: SourceField; select: { _aggregate: Aggregate } }
+  ? [GroupedKey] extends [string]
+    ? {
+        field: SourceField
+        select: { _aggregate: Record<string, Aggregate> }
+      }
+    : [keyof Aggregate] extends [never]
+      ? { field: SourceField; select: K }
+      : { field: SourceField; select: { _aggregate: Aggregate } }
   : T extends string
     ? ResolveDotPath<T>
     : T
@@ -871,4 +892,9 @@ function traverse(target: any, prop: string) {
     }
   }
   return target
+}
+
+export const checksum = (res: any): number => {
+  const buf = res?.[$buffer]
+  return buf ? readUint32(buf, buf.byteLength - 4) : 0
 }

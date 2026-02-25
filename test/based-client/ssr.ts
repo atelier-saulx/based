@@ -48,8 +48,8 @@ test('query cache', async (t: T) => {
     },
   })
 
-  await client.query('counter').get()
-  await client.query('counter', { bla: true }).get()
+  await client.query2('counter').get()
+  await client.query2('counter', { bla: true }).get()
 
   const script = createInlineFromCurrentCache(client, [{ endpoint: 'counter' }])
 
@@ -68,7 +68,7 @@ test('query cache', async (t: T) => {
   client.cache.clear()
 
   const selectiveGet = await createInlineCache(client, [
-    client.query('counter'),
+    client.query2('counter'),
   ])
 
   t.deepEqual(

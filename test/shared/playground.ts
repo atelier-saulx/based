@@ -35,6 +35,6 @@
 
 // console.log('set', await db.drain(), 'ms')
 
-// await db.query('thing').range(0, 1e6).filter('isNice', false).get().inspect()
+// await db.query2('thing').range(0, 1e6).filter('isNice', false).get().inspect()
 
 // await db.destroy()

@@ -39,22 +39,16 @@ await test('query', async (t) => {
 
   await db.drain()
 
-  deepEqual(
-    (await db.query('user').include('id').get()).toObject(),
-    [{ id: 1 }],
-    'Id only',
-  )
+  deepEqual(await db.query2('user').include('id').get(), [{ id: 1 }], 'Id only')
 
   deepEqual(
-    (
-      await db.query('user').filter('age', '<', 20).include('id', 'age').get()
-    ).toObject(),
+    await db.query2('user').filter('age', '<', 20).include('id', 'age').get(),
     [],
   )
 
   deepEqual(
-    (await db.query('user').include('*').get()).toObject(),
-    (await db.query('user').get()).toObject(),
+    await db.query2('user').include('*').get(),
+    await db.query2('user').get(),
     'include * works as "get all fields"',
   )
 })

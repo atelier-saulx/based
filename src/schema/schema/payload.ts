@@ -1,18 +1,6 @@
-import type { SchemaOut } from './schema.js'
+import type { TypedArray } from '../index.js'
 
-// import type { BasedModify } from '../../db-client/modify/index.js'
 type BasedModify<T> = any // Mock BasedModify to avoid circular dependency
-
-type TypedArray =
-  | Uint8Array
-  | Float32Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
 
 type NumInc = number | { increment: number }
 

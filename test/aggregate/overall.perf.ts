@@ -5,16 +5,11 @@ import { deepEqual } from '../shared/assert.js'
 import { fastPrng } from '../../src/utils/index.js'
 import { equal } from 'node:assert'
 import { SchemaType } from '../../src/schema/index.js'
+import { testDb } from '../shared/index.js'
 
-await test.skip('overall performance', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
+test.skip('overall performance', async (t) => {
   const types = ['IPA', 'Lager', 'Ale', 'Stout', 'Wit', 'Dunkel', 'Tripel']
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       beer: {
         props: {
@@ -43,32 +38,24 @@ await test.skip('overall performance', async (t) => {
   await db.drain()
 
   await perf(async () => {
-    await db.query('beer').sum('price').get()
+    await db.query2('beer').sum('price').get()
   }, 'main agg')
 
   await perf(async () => {
-    await db.query('beer').groupBy('year').get()
+    await db.query2('beer').groupBy('year').get()
   }, 'group by year')
 
   await perf(async () => {
-    await db.query('beer').groupBy('type').get()
+    await db.query2('beer').groupBy('type').get()
   }, 'group by enum main')
 
   await perf(async () => {
-    await db.query('beer').max('price').groupBy('type').get()
+    await db.query2('beer').max('price').groupBy('type').get()
   }, 'agg + enum main group by')
 })
 
 await test.skip('count top level bignumber', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         bla: 'uint32',
@@ -82,17 +69,11 @@ await test.skip('count top level bignumber', async (t) => {
 
   await db.drain()
 
-  const q = await db.query('sequence').count().get()
-  equal(q.toObject().count, 1e6)
+  const q = await db.query2('sequence').count().get()
+  equal(q.count, 1e6)
 })
 
 await test('many countries', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
   const countrySchema: SchemaType = {
     props: {
       AF: 'uint8',
@@ -291,13 +272,13 @@ await test('many countries', async (t) => {
     },
   }
 
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       audience: countrySchema,
     },
   })
 
-  const countries = Object.keys(countrySchema.props)
+  const countries = Object.keys(countrySchema.props) as [any, ...any[]]
 
   // for (let i = 0; i < 1e8; i++) {
   //   db.create(
@@ -310,7 +291,7 @@ await test('many countries', async (t) => {
   // }
   // await perf(async () => {
   //   await db
-  //     .query('audience')
+  //     .query2('audience')
   //     .avg(...countries)
   //     .get()
   // }, 'averaging 193 props x 100_000_000 nodes')
@@ -331,7 +312,7 @@ await test('many countries', async (t) => {
   }
   await perf(async () => {
     await db
-      .query('audience')
+      .query2('audience')
       .avg(...countries)
       .get()
   }, 'averaging 193 props x 10_000_000 nodes')
@@ -352,7 +333,7 @@ await test('many countries', async (t) => {
   }
   await perf(async () => {
     await db
-      .query('audience')
+      .query2('audience')
       .avg(...countries)
       .get()
   }, 'averaging 193 props x 1_000_000 nodes')
@@ -364,7 +345,7 @@ await test('many countries', async (t) => {
 
   await perf(async () => {
     await db
-      .query('audience')
+      .query2('audience')
       .avg(...countries)
       .get()
   }, 'averaging 193 props x 100_000 nodes')
@@ -376,7 +357,7 @@ await test('many countries', async (t) => {
 
   await perf(async () => {
     await db
-      .query('audience')
+      .query2('audience')
       .avg(...countries)
       .get()
   }, 'averaging 193 props x 10_000 nodes')
@@ -388,7 +369,7 @@ await test('many countries', async (t) => {
 
   await perf(async () => {
     await db
-      .query('audience')
+      .query2('audience')
       .avg(...countries)
       .get()
   }, 'averaging 193 props x 1_000 nodes')

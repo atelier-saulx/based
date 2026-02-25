@@ -1,17 +1,11 @@
 import { notEqual } from 'assert'
-import { BasedDb } from '../../src/index.js'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
+import { checksum } from '../../src/db-client/query2/index.js'
 
 await test('simple', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -31,7 +25,7 @@ await test('simple', async (t) => {
   })
 
   deepEqual(
-    await db.query('user', await user1).get(),
+    await db.query2('user', await user1).get(),
     {
       id: 1,
       externalId: 'cool',
@@ -40,13 +34,13 @@ await test('simple', async (t) => {
     'One alias',
   )
 
-  deepEqual(await db.query('user', user2).get(), {
+  deepEqual(await db.query2('user', await user2).get(), {
     id: 2,
     externalId: 'cool2',
     potato: '',
   })
 
-  deepEqual(await db.query('user').filter('externalId', '=', 'cool').get(), [
+  deepEqual(await db.query2('user').filter('externalId', '=', 'cool').get(), [
     {
       id: 1,
       externalId: 'cool',
@@ -55,7 +49,7 @@ await test('simple', async (t) => {
   ])
 
   deepEqual(
-    await db.query('user').filter('externalId', 'includes', 'cool').get(),
+    await db.query2('user').filter('externalId', 'includes', 'cool').get(),
     [
       {
         id: 1,
@@ -69,39 +63,52 @@ await test('simple', async (t) => {
       },
     ],
   )
-  const res1 = await db.upsert('user', {
+  const res1 = await db.upsert(
+    'user',
+    {
+      externalId: 'potato',
+    },
+    {
+      potato: 'success',
+    },
+  )
+
+  deepEqual(await db.query2('user', res1).get(), {
+    id: 3,
     externalId: 'potato',
     potato: 'success',
   })
 
-  deepEqual(await db.query('user', res1).get(), {
+  const res2 = await db.upsert(
+    'user',
+    {
+      externalId: 'potato',
+    },
+    {
+      potato: 'wrong',
+    },
+  )
+
+  deepEqual(await db.query2('user', res2).get(), {
     id: 3,
-    externalId: 'potato',
-    potato: 'success',
-  })
-  const res2 = await db.upsert('user', {
     externalId: 'potato',
     potato: 'wrong',
   })
-  deepEqual(await db.query('user', res2).get(), {
-    id: 3,
-    externalId: 'potato',
-    potato: 'wrong',
-  })
+
   deepEqual(
-    await db.query('user', { externalId: 'i-dont-exists-haha!' }).get(),
+    await db.query2('user', { externalId: 'i-dont-exists-haha!' }).get(),
     null,
     'Get non existing alias',
   )
 
-  deepEqual(await db.query('user', 123).get(), null, 'Get non existing id')
+  deepEqual(await db.query2('user', 123).get(), null, 'Get non existing id')
 
   await db.create('user', {
     potato: 'power',
     externalId: 'cool',
   })
 
-  deepEqual(await db.query('user').get(), [
+  deepEqual(await db.query2('user').get(), [
     { id: 1, externalId: '', potato: '' },
     { id: 2, externalId: 'cool2', potato: '' },
     { id: 3, externalId: 'potato', potato: 'wrong' },
@@ -110,14 +117,7 @@ await test('simple', async (t) => {
 })
 
 await test('alias - references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -138,17 +138,22 @@ await test('alias - references', async (t) => {
     },
   })
 
-  await db.upsert('user', {
-    name: '2',
-    email: '2@saulx.com',
-    bestFriend: db.upsert('user', { email: 'jim@saulx.com' }),
-    friends: {
-      add: [db.upsert('user', { email: 'jim@saulx.com' })],
+  await db.upsert(
+    'user',
+    {
+      email: '2@saulx.com',
     },
-  })
+    {
+      name: '2',
+      bestFriend: db.upsert('user', { email: 'jim@saulx.com' }, {}),
+      friends: {
+        add: [db.upsert('user', { email: 'jim@saulx.com' }, {})],
+      },
+    },
+  )
 
   deepEqual(
-    await db.query('user').include('email', 'friends').get(),
+    await db.query2('user').include('email', 'friends').get(),
     [
       {
         id: 1,
@@ -164,17 +169,26 @@ await test('alias - references', async (t) => {
     'simple',
   )
 
-  await db.upsert('user', {
-    name: '2',
-    email: '2@saulx.com',
-    bestFriend: db.upsert('user', { email: 'jim@saulx.com', name: 'jim' }),
-    friends: {
-      add: [db.upsert('user', { email: 'jim@saulx.com', name: 'jim' })],
+  await db.upsert(
+    'user',
+    {
+      email: '2@saulx.com',
     },
-  })
+    {
+      name: '2',
+      bestFriend: db.upsert(
+        'user',
+        { email: 'jim@saulx.com' },
+        { name: 'jim' },
+      ),
+      friends: {
+        add: [db.upsert('user', { email: 'jim@saulx.com' }, { name: 'jim' })],
+      },
+    },
+  )
 
   deepEqual(
-    await db.query('user').include('friends', 'email').get(),
+    await db.query2('user').include('friends', 'email').get(),
     [
       {
         id: 1,
@@ -192,7 +206,7 @@ await test('alias - references', async (t) => {
 
   deepEqual(
     await db
-      .query('user')
+      .query2('user')
       .filter('email', 'includes', '2', { lowerCase: true })
       .get(),
     [{ id: 2, name: '2', email: '2@saulx.com' }],
@@ -201,14 +215,7 @@ await test('alias - references', async (t) => {
 })
 
 await test('Get single node by alias', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -219,14 +226,19 @@ await test('Get single node by alias', async (t) => {
     },
   })
 
-  await db.upsert('user', {
-    name: '2',
-    email: '2@saulx.com',
-  })
+  await db.upsert(
+    'user',
+    {
+      email: '2@saulx.com',
+    },
+    {
+      name: '2',
+    },
+  )
 
   deepEqual(
     await db
-      .query('user', {
+      .query2('user', {
         email: '2@saulx.com',
       })
       .get(),
@@ -239,14 +251,7 @@ await test('Get single node by alias', async (t) => {
 })
 
 await test('Update existing alias field', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -260,25 +265,30 @@ await test('Update existing alias field', async (t) => {
   })
 
   const email = 'nuno@saulx.com'
-  await db.upsert('user', {
-    name: 'nuno',
-    email,
-    currentToken:
-      // INFO: Works if this field is undefined or an empty string
-      'aff1ffc48253ffe063005ecce308996da1ab01c864276faaa88bd94fab4a092d604bbd916470ff1def223bc9e8b662b7',
-  })
+  await db.upsert(
+    'user',
+    {
+      email,
+      currentToken:
+        // INFO: Works if this field is undefined or an empty string
+        'aff1ffc48253ffe063005ecce308996da1ab01c864276faaa88bd94fab4a092d604bbd916470ff1def223bc9e8b662b7',
+    },
+    {
+      name: 'nuno',
+    },
+  )
 
-  const existingUser = await db.query('user', { email }).get().toObject()
+  const existingUser = await db.query2('user', { email }).get()
 
   let newToken =
     'e2d88cf5d303972f2eb0c381e093afb8728eaebc8114a322418403eeaf30eb767d3d7dfaef784e9c2059d6cfa78cea87'
-  await db.update('user', existingUser.id, {
+  await db.update('user', existingUser!.id, {
     currentToken: newToken,
     status: 'login',
   })
   await db.drain()
 
-  deepEqual(await db.query('user', { email }).get(), {
+  deepEqual(await db.query2('user', { email }).get(), {
     id: 1,
     name: 'nuno',
     email: 'nuno@saulx.com',
@@ -288,7 +298,7 @@ await test('Update existing alias field', async (t) => {
 
   newToken =
     '6093127416cbc7ff8126cda605a2239a2e061a5c65a77cc38b23034441832d2c40afdaa91f83285c52edccc5dd8d18d5'
-  await db.update('user', existingUser.id, {
+  await db.update('user', existingUser!.id, {
     currentToken: newToken,
     status: 'login',
   })
@@ -296,7 +306,7 @@ await test('Update existing alias field', async (t) => {
 
   deepEqual(
     await db
-      .query('user', {
+      .query2('user', {
         email,
       })
       .get(),
@@ -309,7 +319,7 @@ await test('Update existing alias field', async (t) => {
     },
   )
 
-  await db.update('user', existingUser.id, {
+  await db.update('user', existingUser!.id, {
     currentToken: null,
     status: 'clear',
   })
@@ -318,7 +328,7 @@ await test('Update existing alias field', async (t) => {
 
   deepEqual(
     await db
-      .query('user', {
+      .query2('user', {
         email,
       })
       .get(),
@@ -333,7 +343,7 @@ await test('Update existing alias field', async (t) => {
 
   newToken =
     '1e6d1b9baf291d0d3f581ca147eda5a62feba5f2e84039322d9b8e0999e5d9a8c9feae5c7707d63be670615675ad2381'
-  await db.update('user', existingUser.id, {
+  await db.update('user', existingUser!.id, {
     currentToken: newToken,
     status: 'login',
   })
@@ -341,7 +351,7 @@ await test('Update existing alias field', async (t) => {
 
   deepEqual(
     await db
-      .query('user', {
+      .query2('user', {
         email,
       })
       .get(),
@@ -356,14 +366,7 @@ await test('Update existing alias field', async (t) => {
 })
 
 await test('same-name-alias', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -387,18 +390,18 @@ await test('same-name-alias', async (t) => {
   const rounds = [{ name: 'semi1' }, { name: 'semi2' }, { name: 'final' }]
 
   for (const sequence of sequences) {
-    db.upsert('sequence', sequence)
+    db.upsert('sequence', sequence, {})
   }
 
   await db.drain()
 
   for (const round of rounds) {
-    await db.upsert('round', round)
+    await db.upsert('round', round, {})
   }
 
   await db.drain()
 
-  deepEqual(await db.query('round').get(), [
+  deepEqual(await db.query2('round').get(), [
     { id: 1, name: 'semi1' },
     { id: 2, name: 'semi2' },
     { id: 3, name: 'final' },
@@ -406,15 +409,7 @@ await test('same-name-alias', async (t) => {
 })
 
 await test('nested alias', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       thing: {
         obj: {
@@ -427,32 +422,34 @@ await test('nested alias', async (t) => {
     },
   })
 
-  await db.upsert('thing', {
-    obj: {
-      a: 'jibber',
+  await db.upsert(
+    'thing',
+    {
+      obj: {
+        a: 'jibber',
+      },
     },
-  })
+    {},
+  )
 
-  await db.upsert('thing', {
-    obj: {
-      b: 'flurp',
+  await db.upsert(
+    'thing',
+    {
+      obj: {
+        b: 'flurp',
+      },
     },
-  })
+    {},
+  )
 
-  deepEqual(await db.query('thing').get(), [
+  deepEqual(await db.query2('thing').get(), [
     { id: 1, obj: { a: 'jibber', b: '' } },
     { id: 2, obj: { b: 'flurp', a: '' } },
   ])
 })
 
 await test('json and crc32', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         article: {
@@ -466,26 +463,19 @@ await test('json and crc32', async (t) => {
     article: 'a',
   })
 
-  const checksum = (await db.query('user', user1).get()).checksum
+  const checksum1 = checksum(await db.query2('user', user1).get())
 
   await db.update('user', user1, {
     article: 'b',
   })
 
-  const checksum2 = (await db.query('user', user1).get()).checksum
+  const checksum2 = checksum(await db.query2('user', user1).get())
 
-  notEqual(checksum, checksum2, 'Checksum is not the same')
+  notEqual(checksum1, checksum2, 'Checksum is not the same')
 })
 
 await test('Get single node by alias', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -496,14 +486,17 @@ await test('Get single node by alias', async (t) => {
     },
   })
 
-  await db.upsert('user', {
-    name: '2',
-    email: '2@saulx.com',
-  })
+  await db.upsert(
+    'user',
+    {
+      email: '2@saulx.com',
+    },
+    { name: '2' },
+  )
 
   deepEqual(
     await db
-      .query('user', {
+      .query2('user', {
         email: '2@saulx.com',
       })
       .get(),
@@ -515,186 +508,8 @@ await test('Get single node by alias', async (t) => {
   )
 })
 
-await test('Update existing alias field', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
-    types: {
-      user: {
-        props: {
-          name: 'string',
-          email: 'alias',
-          status: ['login', 'clear'],
-          currentToken: 'alias',
-        },
-      },
-    },
-  })
-
-  const email = 'nuno@saulx.com'
-  await db.upsert('user', {
-    name: 'nuno',
-    email,
-    currentToken:
-      // INFO: Works if this field is undefined or an empty string
-      'aff1ffc48253ffe063005ecce308996da1ab01c864276faaa88bd94fab4a092d604bbd916470ff1def223bc9e8b662b7',
-  })
-
-  const existingUser = await db.query('user', { email }).get().toObject()
-
-  let newToken =
-    'e2d88cf5d303972f2eb0c381e093afb8728eaebc8114a322418403eeaf30eb767d3d7dfaef784e9c2059d6cfa78cea87'
-  await db.update('user', existingUser.id, {
-    currentToken: newToken,
-    status: 'login',
-  })
-  await db.drain()
-
-  deepEqual(
-    await db
-      .query('user', {
-        email,
-      })
-      .get(),
-    {
-      id: 1,
-      name: 'nuno',
-      email: 'nuno@saulx.com',
-      status: 'login',
-      currentToken: newToken,
-    },
-  )
-
-  newToken =
-    '6093127416cbc7ff8126cda605a2239a2e061a5c65a77cc38b23034441832d2c40afdaa91f83285c52edccc5dd8d18d5'
-  await db.update('user', existingUser.id, {
-    currentToken: newToken,
-    status: 'login',
-  })
-  await db.drain()
-
-  deepEqual(
-    await db
-      .query('user', {
-        email,
-      })
-      .get(),
-    {
-      id: 1,
-      name: 'nuno',
-      email: 'nuno@saulx.com',
-      status: 'login',
-      currentToken: newToken,
-    },
-  )
-
-  await db.update('user', existingUser.id, {
-    currentToken: null,
-    status: 'clear',
-  })
-
-  await db.drain()
-
-  deepEqual(
-    await db
-      .query('user', {
-        email,
-      })
-      .get(),
-    {
-      id: 1,
-      name: 'nuno',
-      email: 'nuno@saulx.com',
-      status: 'clear',
-      currentToken: '',
-    },
-  )
-
-  newToken =
-    '1e6d1b9baf291d0d3f581ca147eda5a62feba5f2e84039322d9b8e0999e5d9a8c9feae5c7707d63be670615675ad2381'
-  await db.update('user', existingUser.id, {
-    currentToken: newToken,
-    status: 'login',
-  })
-  await db.drain()
-
-  deepEqual(
-    await db
-      .query('user', {
-        email,
-      })
-      .get(),
-    {
-      id: 1,
-      name: 'nuno',
-      email: 'nuno@saulx.com',
-      status: 'login',
-      currentToken: newToken,
-    },
-  )
-})
-
-await test('same-name-alias', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
-    types: {
-      sequence: {
-        props: {
-          name: 'alias',
-        },
-      },
-      round: {
-        props: {
-          name: 'alias',
-        },
-      },
-    },
-  })
-
-  const sequences = [
-    { name: 'semi1' },
-    { name: 'semi1-othershit' },
-    { name: 'semi2' },
-    { name: 'semi2-othershit' },
-  ]
-  const rounds = [{ name: 'semi1' }, { name: 'semi2' }, { name: 'final' }]
-
-  for (const sequence of sequences) {
-    db.upsert('sequence', sequence)
-  }
-  for (const round of rounds) {
-    await db.upsert('round', round)
-  }
-
-  await db.drain()
-
-  deepEqual(await db.query('round').get(), [
-    { id: 1, name: 'semi1' },
-    { id: 2, name: 'semi2' },
-    { id: 3, name: 'final' },
-  ])
-})
-
 await test('alias and ref', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -722,12 +537,12 @@ await test('alias and ref', async (t) => {
 
   const user1 = await db.create('user', { name: 'Mario' })
   //await db.update('user', user, { role: { alias: 'admin' }})
-  await db.upsert('role', { alias: 'admin', users: { add: [user1] } })
+  await db.upsert('role', { alias: 'admin' }, { users: { add: [user1] } })
 
   const user2 = await db.create('user', { name: 'Luigi' })
-  await db.upsert('role', { alias: 'admin', users: { add: [user2] } })
+  await db.upsert('role', { alias: 'admin' }, { users: { add: [user2] } })
 
-  deepEqual(await db.query('role', adminRole).include('name', 'users').get(), {
+  deepEqual(await db.query2('role', adminRole).include('name', 'users').get(), {
     id: 1,
     name: 'Admin Role',
     users: [
@@ -744,14 +559,7 @@ await test('alias and ref', async (t) => {
 })
 
 await test('alias and edge ref', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.destroy())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -793,18 +601,17 @@ await test('alias and edge ref', async (t) => {
   const user2 = await db.create('user', { name: 'Luigi' })
 
   const adminRole = await db
-    .query('role', { alias: 'admin' })
+    .query2('role', { alias: 'admin' })
     .include('id')
     .get()
-    .toObject()
 
   await db.update('project', prj, {
-    users: { add: [{ id: user1, $role: adminRole }] },
+    users: { add: [{ id: user1, $role: adminRole!.id }] },
   })
 
   deepEqual(
     await db
-      .query('project', prj)
+      .query2('project', prj)
       .include('name', 'users', 'users.$role')
       .get(),
     {

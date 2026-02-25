@@ -56,39 +56,39 @@ await test('numbers', async (t) => {
     u32: { increment: 100 },
   })
 
-  isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
+  isSorted(await db.query2('example').sort('u32').include('u32').get(), 'u32')
   isSorted(
-    await db.query('example').sort('boolean').include('boolean').get(),
+    await db.query2('example').sort('boolean').include('boolean').get(),
     'boolean',
   )
-  isSorted(await db.query('example').sort('u8').include('u8').get(), 'u8')
-  isSorted(await db.query('example').sort('i8').include('i8').get(), 'i8')
-  isSorted(await db.query('example').sort('i16').include('i16').get(), 'i16')
-  isSorted(await db.query('example').sort('i32').include('i32').get(), 'i32')
+  isSorted(await db.query2('example').sort('u8').include('u8').get(), 'u8')
+  isSorted(await db.query2('example').sort('i8').include('i8').get(), 'i8')
+  isSorted(await db.query2('example').sort('i16').include('i16').get(), 'i16')
+  isSorted(await db.query2('example').sort('i32').include('i32').get(), 'i32')
   isSorted(
-    await db.query('example').sort('number').include('number').get(),
+    await db.query2('example').sort('number').include('number').get(),
     'number',
   )
   isSorted(
-    await db.query('example').sort('timestamp').include('timestamp').get(),
+    await db.query2('example').sort('timestamp').include('timestamp').get(),
     'timestamp',
   )
 
   deepEqual(
     await db
-      .query('example')
+      .query2('example')
       .sort('enum')
       .include('enum')
       .get()
-      .then((v) => v.toObject().map((v) => v.enum)),
+      .then((v) => v.map((v) => v.enum)),
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
   db.delete('example', 1)
-  isSorted(await db.query('example').sort('u32').include('u32').get(), 'u32')
+  isSorted(await db.query2('example').sort('u32').include('u32').get(), 'u32')
 
   await db
-    .query('example')
+    .query2('example')
     .include('enum')
     .get()
-    .then((v) => v.toObject().map((v) => v.enum))
+    .then((v) => v.map((v) => v.enum))
 })

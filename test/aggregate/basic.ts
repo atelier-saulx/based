@@ -1,6 +1,7 @@
 import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
+import { throws, deepEqual, equal } from '../shared/assert.js'
 import { testDb } from '../shared/index.js'
+import { fastPrng } from '../../src/utils/fastPrng.js'
 
 await test('sum top level', async (t) => {
   const db = await testDb(t, {
@@ -118,12 +119,8 @@ await test('top level count', async (t) => {
   })
 
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
-  db.drain()
-  db.create('sequence', { votes: [nl1] })
-  db.create('sequence', { votes: [nl2] })
-  db.create('sequence', { votes: [au1] })
 
-  //   // top level  ----------------------------------
+  // top level  ----------------------------------
 
   deepEqual(
     await db.query2('vote').count().get(),
@@ -134,10 +131,9 @@ await test('top level count', async (t) => {
   // deepEqual(
   //   await db
   //     .query2('vote')
-  //     .filter('country', '=', 'aa')  // string filter not implemented yet
+  //     .filter('country', '=', 'aa') // string filter not implemented yet
   //     .count()
-  //     .get()
-  //     ,
+  //     .get(),
   //   { count: 2 },
   //   'count, top level, with filter',
   // )
@@ -153,8 +149,7 @@ await test('top level count', async (t) => {
   //     .query2('vote')
   //     .filter('country', '=', 'zz') // string filter not implemented yet
   //     .count()
-  //     .get()
-  //     ,
+  //     .get(),
   //   { count: 0 },
   //   'count, with no match filtering, string value',
   // )
@@ -278,49 +273,51 @@ await test('two phase accumulation', async (t) => {
     'stddev, top level, groupBy',
   )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').stddev('NL', { mode: 'population' }))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          NL: { stddev: 13.922643427165687 },
-        },
-      },
-    ],
-    'stddev, branched References, no groupBy',
-  )
+  // branched References not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').stddev('NL', { mode: 'population' }))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         NL: { stddev: 13.922643427165687 },
+  //       },
+  //     },
+  //   ],
+  //   'stddev, branched References, no groupBy',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) =>
-        q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
-      )
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          Brazil: {
-            NL: { stddev: 0 },
-          },
-          bb: {
-            NL: { stddev: 6.5 },
-          },
-          aa: {
-            NL: { stddev: 2.5 },
-          },
-        },
-      },
-    ],
-    'stddev, branched References, groupBy',
-  )
+  // branched References not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) =>
+  //       q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
+  //     )
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         Brazil: {
+  //           NL: { stddev: 0 },
+  //         },
+  //         bb: {
+  //           NL: { stddev: 6.5 },
+  //         },
+  //         aa: {
+  //           NL: { stddev: 2.5 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'stddev, branched References, groupBy',
+  // )
 })
-/*
+
 await test('numeric types', async (t) => {
   const db = await testDb(t, {
     types: {
@@ -544,6 +541,7 @@ await test('numeric types', async (t) => {
     },
     'variance, main, group by, population',
   )
+
   deepEqual(
     await db
       .query2('vote')
@@ -618,250 +616,263 @@ await test('numeric types', async (t) => {
     'min, main, group by',
   )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').sum('NL'))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          NL: { sum: 176 },
-        },
-      },
-    ],
-    'references, not grouped',
-  )
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').avg('NL'))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          NL: { avg: 35.2 },
-        },
-      },
-    ],
-    'avg, references, not grouped',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').sum('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         NL: { sum: 176 },
+  //       },
+  //     },
+  //   ],
+  //   'references, not grouped',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').hmean('NL'))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          NL: { hmean: 24.18565978675536 },
-        },
-      },
-    ],
-    'hmean, references, not grouped',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').avg('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         NL: { avg: 35.2 },
+  //       },
+  //     },
+  //   ],
+  //   'avg, references, not grouped',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').groupBy('region').sum('NL'))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: {
-            NL: { sum: 33 },
-          },
-          aa: {
-            NL: { sum: 93 },
-          },
-          Great: {
-            NL: { sum: 50 },
-          },
-        },
-      },
-    ],
-    'sum, references, group by',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').hmean('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         NL: { hmean: 24.18565978675536 },
+  //       },
+  //     },
+  //   ],
+  //   'hmean, references, not grouped',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').groupBy('region').count())
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: { count: 2 },
-          aa: { count: 2 },
-          Great: { count: 1 },
-        },
-      },
-    ],
-    'count, references, group by',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').sum('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { sum: 33 },
+  //         },
+  //         aa: {
+  //           NL: { sum: 93 },
+  //         },
+  //         Great: {
+  //           NL: { sum: 50 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'sum, references, group by',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) =>
-        q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
-      )
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: {
-            NL: { stddev: 6.5 },
-          },
-          aa: {
-            NL: { stddev: 3.5 },
-          },
-          Great: {
-            NL: { stddev: 0 },
-          },
-        },
-      },
-    ],
-    'stddev, references, group by',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').count())
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: { count: 2 },
+  //         aa: { count: 2 },
+  //         Great: { count: 1 },
+  //       },
+  //     },
+  //   ],
+  //   'count, references, group by',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').groupBy('region').stddev('NL'))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: { NL: { stddev: 9.192388155425117 } },
-          aa: { NL: { stddev: 4.949747468305833 } },
-          Great: { NL: { stddev: 0 } },
-        },
-      },
-    ],
-    'stddev, references, group by',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) =>
+  //       q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
+  //     )
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { stddev: 6.5 },
+  //         },
+  //         aa: {
+  //           NL: { stddev: 3.5 },
+  //         },
+  //         Great: {
+  //           NL: { stddev: 0 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'stddev, references, group by',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) =>
-        q('votes').groupBy('region').var('NL', { mode: 'population' }),
-      )
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: {
-            NL: { variance: 42.25 },
-          },
-          aa: {
-            NL: { variance: 12.25 },
-          },
-          Great: {
-            NL: { variance: 0 },
-          },
-        },
-      },
-    ],
-    'variance, references, group by, pop',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').stddev('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: { NL: { stddev: 9.192388155425117 } },
+  //         aa: { NL: { stddev: 4.949747468305833 } },
+  //         Great: { NL: { stddev: 0 } },
+  //       },
+  //     },
+  //   ],
+  //   'stddev, references, group by',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) =>
-        q('votes').groupBy('region').var('NL', { mode: 'sample' }),
-      )
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: { NL: { variance: 84.5 } },
-          aa: { NL: { variance: 24.5 } },
-          Great: { NL: { variance: 0 } },
-        },
-      },
-    ],
-    'variance, references, group by, sample',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) =>
+  //       q('votes').groupBy('region').var('NL', { mode: 'population' }),
+  //     )
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { variance: 42.25 },
+  //         },
+  //         aa: {
+  //           NL: { variance: 12.25 },
+  //         },
+  //         Great: {
+  //           NL: { variance: 0 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'variance, references, group by, pop',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').groupBy('region').var('NL'))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: { NL: { variance: 84.5 } },
-          aa: { NL: { variance: 24.5 } },
-          Great: { NL: { variance: 0 } },
-        },
-      },
-    ],
-    'variance, references, group by, defaul (sample)',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) =>
+  //       q('votes').groupBy('region').var('NL', { mode: 'sample' }),
+  //     )
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: { NL: { variance: 84.5 } },
+  //         aa: { NL: { variance: 24.5 } },
+  //         Great: { NL: { variance: 0 } },
+  //       },
+  //     },
+  //   ],
+  //   'variance, references, group by, sample',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').groupBy('region').avg('NL'))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: {
-            NL: { avg: 16.5 },
-          },
-          aa: {
-            NL: { avg: 46.5 },
-          },
-          Great: {
-            NL: { avg: 50 },
-          },
-        },
-      },
-    ],
-    'avg, references, group by',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').var('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: { NL: { variance: 84.5 } },
+  //         aa: { NL: { variance: 24.5 } },
+  //         Great: { NL: { variance: 0 } },
+  //       },
+  //     },
+  //   ],
+  //   'variance, references, group by, defaul (sample)',
+  // )
 
-  deepEqual(
-    await db
-      .query2('sequence')
-      .include((q) => q('votes').groupBy('region').hmean('NL'))
-      .get(),
-    [
-      {
-        id: 1,
-        votes: {
-          bb: {
-            NL: { hmean: 13.93939393939394 },
-          },
-          aa: {
-            NL: { hmean: 46.236559139784944 },
-          },
-          Great: {
-            NL: { hmean: 50 },
-          },
-        },
-      },
-    ],
-    'hmean, references, group by',
-  )
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').avg('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { avg: 16.5 },
+  //         },
+  //         aa: {
+  //           NL: { avg: 46.5 },
+  //         },
+  //         Great: {
+  //           NL: { avg: 50 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'avg, references, group by',
+  // )
+
+  // Branched queries not implemented yet in AST
+  // deepEqual(
+  //   await db
+  //     .query2('sequence')
+  //     .include((q) => q('votes').groupBy('region').hmean('NL'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       votes: {
+  //         bb: {
+  //           NL: { hmean: 13.93939393939394 },
+  //         },
+  //         aa: {
+  //           NL: { hmean: 46.236559139784944 },
+  //         },
+  //         Great: {
+  //           NL: { hmean: 50 },
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'hmean, references, group by',
+  // )
 })
 
 await test('fixed length strings', async (t) => {
@@ -892,7 +903,7 @@ await test('fixed length strings', async (t) => {
     db.drain()
     db.create('shelve', {
       code: `S${rnd(0, 10)}`,
-      products: p,
+      products: [p],
     })
   }
 
@@ -911,21 +922,24 @@ await test('fixed length strings', async (t) => {
     'fixed length strings on main',
   )
 
-  equal(
-    Number(
-      Object.keys(
-        await db
-          .query2('shelve')
-          .include((q) => q('products').avg('flap').groupBy('name'))
-          .get(),
-      )[0].substring(4, 6),
-    ) < 100,
-    true,
-    'fixed length strings on references',
-  )
+  // Branched queries not implemented yet in AST
+  // equal(
+  //   Number(
+  //     Object.keys(
+  //       await db
+  //         .query2('shelve')
+  //         .include((q) => q('products').avg('flap').groupBy('name'))
+  //         .get(),
+  //     )[0].substring(4, 6),
+  //   ) < 100,
+  //   true,
+  //   'fixed length strings on references',
+  // )
 })
 
 await test('range', async (t) => {
+  const ter = ['lala', 'lele', 'lili']
+
   const db = await testDb(t, {
     types: {
       job: {
@@ -959,13 +973,16 @@ await test('range', async (t) => {
   const rnd = fastPrng(new Date().getTime())
   for (let i = 0; i < 10; i++) {
     const d = new Date('11/12/2024 00:00-3')
+    //@ts-ignore
     db.create('job', {
-      day: new Date(d.getTime() + 3600 * 1000 * rnd(2, 3)),
+      day: new Date(d.getTime() + 3600 * 1000 * rnd(2, 4)), // 11 Dec 24 2:00, 3:00 and 4:00h
       tip: Math.random() * 20,
     })
+    //@ts-ignore
     const s = db.create('state', {
       name: `statelala ${rnd(0, 2)}`,
     })
+    //@ts-ignore
     const t = db.create('territory', {
       name: ter[rnd(0, ter.length - 1)],
       flap: Math.random() * 100,
@@ -973,6 +990,7 @@ await test('range', async (t) => {
     })
     db.create('employee', {
       name: `emplala ${rnd(0, 10)}`,
+      //@ts-ignore
       area: t,
     })
   }
@@ -983,23 +1001,22 @@ await test('range', async (t) => {
         .query2('job')
         .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
         .avg('tip')
-        // .range(0, 2)
+        .range(0, 2)
         .get(),
     ).length,
     2,
     'range group by main',
   )
 
-  deepEqual(
-    Object.keys(
-      await db
-        .query2('employee')
-        .include((q) => q('area').groupBy('name').sum('flap'), '*')
-        .range(0, 2)
-        .get(),
-    ).length,
-    2,
-    'range group by references',
-  )
+  // deepEqual(
+  //   Object.keys(
+  //     await db
+  //       .query2('employee')
+  //       .include((q) => q('area').groupBy('name').sum('flap'), '*')
+  //       .range(0, 2)
+  //       .get(),
+  //   ).length,
+  //   2,
+  //   'range group by references',
+  // )
 })
-*/

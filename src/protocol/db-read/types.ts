@@ -1,5 +1,6 @@
 import type { SchemaHooks } from '../../schema/index.js'
 import type { PropTypeEnum, VectorBaseTypeEnum } from '../../zigTsExports.js'
+import type { TypedArray } from '../../schema.js'
 
 export type Item = {
   id: number
@@ -16,16 +17,6 @@ export type Meta = {
 }
 
 export type AggItem = Partial<Item>
-
-export type TypedArray =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
 
 export enum ReaderSchemaEnum {
   edge = 1,

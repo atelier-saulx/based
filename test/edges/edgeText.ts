@@ -1,16 +1,10 @@
-import { BasedDb } from '../../src/index.js'
+import { testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 
 // Text is currently not supported in edge props: FDN-1713 FDN-730
 await test.skip('text in an edge prop', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
       it: { fallback: ['en'] },
@@ -42,7 +36,7 @@ await test.skip('text in an edge prop', async (t) => {
       $x: { en: 'hello' },
     },
   })
-  deepEqual(await db.query('user', user2).include('**').get(), {
+  deepEqual(await db.query2('user', user2).include('**').get(), {
     id: user2,
     bestFriend: {
       id: user1,
@@ -58,12 +52,12 @@ await test.skip('text in an edge prop', async (t) => {
       { id: user2, $x: { en: 'hello' } },
     ],
   })
-  deepEqual(await db.query('user', user1).include('**').get(), {
+  deepEqual(await db.query2('user', user1).include('**').get(), {
     id: user1,
     bestFriend: null,
     friends: [{ id: user3, $x: { en: 'hello' } }],
   })
-  deepEqual(await db.query('user', user3).include('**').get(), {
+  deepEqual(await db.query2('user', user3).include('**').get(), {
     id: user3,
     bestFriend: {
       id: user2,
@@ -78,7 +72,7 @@ await test.skip('text in an edge prop', async (t) => {
   await db.update('user', user3, {
     friends: { update: [{ id: user2, $index: 0 }] },
   })
-  deepEqual(await db.query('user', user3).include('**').get(), {
+  deepEqual(await db.query2('user', user3).include('**').get(), {
     id: user3,
     bestFriend: { id: user2, $x: 0 },
     friends: [

@@ -26,13 +26,13 @@ await test('isModified', async (t) => {
   const q: any = []
 
   for (let i = 0; i < 10; i++) {
-    q.push(db.query('user').range(0, 5).get())
+    q.push(db.query2('user').range(0, 5).get())
   }
 
   const r = await Promise.all(q)
 
   for (const result of r) {
-    deepEqual(result.toObject(), [
+    deepEqual(result, [
       { id: 1, nr: 0 },
       { id: 2, nr: 1 },
       { id: 3, nr: 2 },

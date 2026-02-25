@@ -1,18 +1,10 @@
-import { equal } from 'node:assert'
 import { BasedDb } from '../../src/index.js'
-import { allCountryCodes } from '../shared/examples.js'
 import test from '../shared/test.js'
 import { throws, deepEqual } from '../shared/assert.js'
-import { fastPrng } from '../../src/utils/index.js'
+import { testDb } from '../shared/index.js'
 
 await test('group by datetime intervals', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       trip: {
         pickup: 'timestamp',
@@ -37,7 +29,7 @@ await test('group by datetime intervals', async (t) => {
   })
 
   deepEqual(
-    await db.query('trip').sum('distance').groupBy('pickup', 'day').get(),
+    await db.query2('trip').sum('distance').groupBy('pickup', 'day').get(),
     {
       11: {
         distance: { sum: 1026.88 },
@@ -47,7 +39,7 @@ await test('group by datetime intervals', async (t) => {
   )
   deepEqual(
     await db
-      .query('trip')
+      .query2('trip')
       .sum('distance')
       .groupBy('pickup', { step: 'day' })
       .get(),
@@ -59,7 +51,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by day, without shorthand',
   )
   deepEqual(
-    await db.query('trip').sum('distance').groupBy('pickup', 'hour').get(),
+    await db.query2('trip').sum('distance').groupBy('pickup', 'hour').get(),
     {
       11: {
         distance: { sum: 1026.88 },
@@ -68,7 +60,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by hour',
   )
   deepEqual(
-    await db.query('trip').sum('distance').groupBy('pickup', 'dow').get(),
+    await db.query2('trip').sum('distance').groupBy('pickup', 'dow').get(),
     {
       3: {
         distance: { sum: 1026.88 },
@@ -77,7 +69,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by day of week',
   )
   deepEqual(
-    await db.query('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
+    await db.query2('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
     {
       3: {
         distance: { sum: 1026.88 },
@@ -86,7 +78,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by hour',
   )
   deepEqual(
-    await db.query('trip').sum('distance').groupBy('pickup', 'doy').get(),
+    await db.query2('trip').sum('distance').groupBy('pickup', 'doy').get(),
     {
       345: {
         distance: { sum: 1026.88 },
@@ -95,7 +87,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by hour',
   )
   deepEqual(
-    await db.query('trip').sum('distance').groupBy('pickup', 'month').get(),
+    await db.query2('trip').sum('distance').groupBy('pickup', 'month').get(),
     {
       11: {
         distance: { sum: 1026.88 },
@@ -104,7 +96,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by month[0-11]',
   )
   deepEqual(
-    await db.query('trip').sum('distance').groupBy('pickup', 'year').get(),
+    await db.query2('trip').sum('distance').groupBy('pickup', 'year').get(),
     {
       2024: {
         distance: { sum: 1026.88 },
@@ -115,13 +107,7 @@ await test('group by datetime intervals', async (t) => {
 })
 
 await test('group by datetime ranges', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       trip: {
         pickup: 'timestamp',
@@ -154,11 +140,10 @@ await test('group by datetime ranges', async (t) => {
 
   let interval = 40 * 60 // 40 minutes
   let r = await db
-    .query('trip')
+    .query2('trip')
     .sum('distance')
     .groupBy('pickup', interval)
     .get()
-    .toObject()
 
   let epoch = Number(Object.keys(r)[0])
   let startDate = dtFormat.format(epoch)
@@ -190,11 +175,10 @@ await test('group by datetime ranges', async (t) => {
 
   let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
   let r2 = await db
-    .query('trip')
+    .query2('trip')
     .sum('distance')
     .groupBy('pickup', interval2)
     .get()
-    .toObject()
 
   let epoch2 = Number(Object.keys(r2)[0])
   let startDate2 = dtFormat.format(epoch2)
@@ -209,29 +193,23 @@ await test('group by datetime ranges', async (t) => {
     'another range interval as index',
   )
 
+  // validation habling not implemented yet
   // ranges are limited to u32 max value seconds => (group by ~136 years intervals)
-  await throws(
-    async () => {
-      await db
-        .query('trip')
-        .sum('distance')
-        .groupBy('pickup', 2 ** 32 + 1)
-        .get()
-        .inspect()
-    },
-    false,
-    `throw invalid step range error on validation`,
-  )
+  // await throws(
+  //   async () => {
+  //     await db
+  //       .query2('trip')
+  //       .sum('distance')
+  //       .groupBy('pickup', 2 ** 32 + 1)
+  //       .get()
+  //   },
+  //   false,
+  //   `throw invalid step range error on validation`,
+  // )
 })
 
 await test('cardinality with dates', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       lunch: {
         day: 'timestamp',
@@ -279,17 +257,16 @@ await test('cardinality with dates', async (t) => {
     ],
   })
 
-  const total = await db.query('lunch').cardinality('eaters').get().toObject()
+  const total = await db.query2('lunch').cardinality('eaters').get()
 
   // console.log('Total Eaters: ', total.eaters)
   deepEqual(total.eaters.cardinality, 11, 'Total Eaters')
 
   const groupByDay = await db
-    .query('lunch')
+    .query2('lunch')
     .cardinality('eaters')
     .groupBy('day')
     .get()
-    .toObject()
 
   const meals = Object.entries(groupByDay) //@ts-ignore
     .map((m) => m[1].eaters.cardinality)
@@ -314,11 +291,10 @@ await test('cardinality with dates', async (t) => {
   }
 
   const groupByMonth = await db
-    .query('lunch')
+    .query2('lunch')
     .cardinality('eaters')
     .groupBy('day', 'month')
     .get()
-    .toObject()
 
   const eatersByMonth = Object.entries(groupByMonth).map((e) => {
     //@ts-ignore
@@ -334,13 +310,7 @@ await test('cardinality with dates', async (t) => {
 })
 
 await test('formating timestamp', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       trip: {
         pickup: 'timestamp',
@@ -372,7 +342,7 @@ await test('formating timestamp', async (t) => {
   })
 
   deepEqual(
-    await db.query('trip').sum('distance').groupBy('pickup').get(),
+    await db.query2('trip').sum('distance').groupBy('pickup').get(),
     {
       1733916600000: {
         distance: { sum: 513.44 },
@@ -386,7 +356,7 @@ await test('formating timestamp', async (t) => {
 
   deepEqual(
     await db
-      .query('trip')
+      .query2('trip')
       .sum('distance')
       .groupBy('pickup', { step: 40 * 60, display: dtFormat })
       .get(),
@@ -400,7 +370,7 @@ await test('formating timestamp', async (t) => {
 
   deepEqual(
     await db
-      .query('trip')
+      .query2('trip')
       .sum('distance')
       .groupBy('pickup', { display: dtFormat })
       .get(),
@@ -413,13 +383,7 @@ await test('formating timestamp', async (t) => {
 })
 
 await test('timezone offsets', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       trip: {
         pickup: 'timestamp',
@@ -452,7 +416,7 @@ await test('timezone offsets', async (t) => {
 
   deepEqual(
     await db
-      .query('trip')
+      .query2('trip')
       .sum('distance')
       .groupBy('pickup', { step: 'day', timeZone: 'America/Sao_Paulo' })
       .get(),
@@ -469,7 +433,7 @@ await test('timezone offsets', async (t) => {
   )
   deepEqual(
     await db
-      .query('trip')
+      .query2('trip')
       .sum('distance')
       .groupBy('pickup', { step: 'hour', timeZone: 'America/Sao_Paulo' })
       .get(),
@@ -485,7 +449,7 @@ await test('timezone offsets', async (t) => {
   )
   deepEqual(
     await db
-      .query('trip')
+      .query2('trip')
       .sum('distance')
       .groupBy('dropoff', { step: 'month', timeZone: 'America/Sao_Paulo' })
       .get(),

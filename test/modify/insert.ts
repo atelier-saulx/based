@@ -20,7 +20,7 @@ await test('insert', async (t) => {
     { email: 'youri@saulx.com', isNice: true },
   )
 
-  const res1 = await db.query('user', id1).get().toObject()
+  const res1 = await db.query2('user', id1).get()
   deepEqual(res1, {
     id: id1,
     uuid: '9dg786',
@@ -33,7 +33,7 @@ await test('insert', async (t) => {
 
   deepEqual(id1, id2, 'Ids should be the same')
 
-  const res2 = await db.query('user', id1).get()
+  const res2 = await db.query2('user', id1).get()
   deepEqual(res2, {
     id: id1,
     uuid: '9dg786',
@@ -48,7 +48,7 @@ await test('insert', async (t) => {
     { uuid: 'unique-id-2', isNice: true },
   )
 
-  const res3 = await db.query('user', id3).get()
+  const res3 = await db.query2('user', id3).get()
   deepEqual(res3, {
     id: id3,
     uuid: 'unique-id-2',
@@ -65,7 +65,7 @@ await test('insert', async (t) => {
 
   deepEqual(id3, id4, 'Ids should be the same 2')
 
-  const res4 = await db.query('user', id3).get()
+  const res4 = await db.query2('user', id3).get()
   deepEqual(res4, {
     id: id3,
     uuid: 'unique-id-2',

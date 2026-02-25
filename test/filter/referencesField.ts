@@ -34,7 +34,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query('user')
+      .query2('user')
       .include('name', 'age', 'friends')
       .filter('friends.age', '<', 40)
       .get(),
@@ -51,7 +51,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query('user')
+      .query2('user')
       .include('name', 'age', 'friends')
       .filter('friends.age', '>', 40)
       .get(),
@@ -68,7 +68,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query('user')
+      .query2('user')
       .include('name', 'age', 'friends')
       .filter('friends[*].age', '>', 40)
       .get(),
@@ -85,7 +85,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query('user')
+      .query2('user')
       .include('name', 'age', 'friends')
       .filter('friends[0].age', '>', 40)
       .get(),
@@ -106,7 +106,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query('user', mrA)
+      .query2('user', mrA)
       .include('name', 'age', 'friends')
       .filter('friends[-1].age', '>', 100)
       .get(),
@@ -133,7 +133,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query('user', mrA)
+      .query2('user', mrA)
       .include('name', 'age', 'friends')
       .filter('friends[2].age', '=', 93)
       .get(),

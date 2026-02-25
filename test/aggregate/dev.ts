@@ -1,6 +1,8 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { deepEqual } from '../shared/assert.js'
+import { deepEqual, equal } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
+import { fastPrng } from '../../src/utils/fastPrng.js'
 
 // await test('kev', async (t) => {
 //   const db = new BasedDb({
@@ -25,26 +27,26 @@ import { deepEqual } from '../shared/assert.js'
 //   db.create('trip', { driver: 'lala', distance: 20, rate: 10 })
 //   db.create('trip', { driver: 'lele', distance: 40, rate: 10 })
 
-//   // console.log((await db.query('trip').include('distance').get()).debug())
+//   // console.log((await db.query2('trip').include('distance').get()).debug())
 //   //   console.log(
 //   //     (
-//   //       await db.query('trip').harmonicMean('distance').avg('distance').get()
+//   //       await db.query2('trip').harmonicMean('distance').avg('distance').get()
 //   //     ).debug(),
 //   //   )
 
-//   //   console.log((await db.query('trip').sum('distance', 'rate').get()).debug())
+//   //   console.log((await db.query2('trip').sum('distance', 'rate').get()).debug())
 //   console.log(
-//     (await db.query('trip').filter('distance', '>', 10).get()).debug(),
+//     (await db.query2('trip').filter('distance', '>', 10).get()).debug(),
 //   )
 //   console.log(
 //     (
-//       await db.query('trip').sum('distance').filter('distance', '>', 10).get()
+//       await db.query2('trip').sum('distance').filter('distance', '>', 10).get()
 //     ).debug(),
 //   )
 //   console.log(
 //     (
 //       await db
-//         .query('trip')
+//         .query2('trip')
 //         .sum('distance')
 //         .filter('rate', '>', 8)
 //         .groupBy('driver')
@@ -103,16 +105,16 @@ import { deepEqual } from '../shared/assert.js'
 //     driver: d1,
 //   })
 
-//   //   await db.query('trip').include('*', '**').get().inspect(10)
+//   //   await db.query2('trip').include('*', '**').get().inspect(10)
 
 //   // await db
-//   //   .query('driver')
+//   //   .query2('driver')
 //   //   .include((t) => t('trips').include('distance'))
 //   //   .get()
 //   //   .inspect(10)
 
 //   const lala = await db
-//     .query('driver')
+//     .query2('driver')
 //     .include((t) =>
 //       t('trips')
 //         .sum('distance')
@@ -127,152 +129,144 @@ import { deepEqual } from '../shared/assert.js'
 //   lala.inspect(10)
 // })
 
-await test('yyy', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
+// await test('yyy', async (t) => {
+//   const db = await testDb(t, {
+//     types: {
+//       team: {
+//         props: {
+//           teamName: { type: 'string' },
+//           city: { type: 'string' },
+//           players: {
+//             items: {
+//               ref: 'player',
+//               prop: 'team',
+//             },
+//           },
+//         },
+//       },
+//       player: {
+//         props: {
+//           playerName: { type: 'string' },
+//           position: { type: 'string' },
+//           goalsScored: 'uint16',
+//           gamesPlayed: 'uint16',
+//           team: {
+//             ref: 'team',
+//             prop: 'players',
+//           },
+//         },
+//       },
+//     },
+//   })
 
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
+//   const p1 = db.create('player', {
+//     playerName: 'Martin',
+//     position: 'Forward',
+//     goalsScored: 10,
+//     gamesPlayed: 5,
+//   })
+//   const p2 = db.create('player', {
+//     playerName: 'Jemerson',
+//     position: 'Defender',
+//     goalsScored: 1,
+//     gamesPlayed: 10,
+//   })
+//   const p3 = db.create('player', {
+//     playerName: 'Pavon',
+//     position: 'Forward',
+//     goalsScored: 12,
+//     gamesPlayed: 6,
+//   })
+//   const p4 = db.create('player', {
+//     playerName: 'Wout',
+//     position: 'Forward',
+//     goalsScored: 8,
+//     gamesPlayed: 7,
+//   })
+//   const p5 = db.create('player', {
+//     playerName: 'Jorrel',
+//     position: 'Defender',
+//     goalsScored: 2,
+//     gamesPlayed: 9,
+//   })
 
-  await db.setSchema({
-    types: {
-      team: {
-        props: {
-          teamName: { type: 'string' },
-          city: { type: 'string' },
-          players: {
-            items: {
-              ref: 'player',
-              prop: 'team',
-            },
-          },
-        },
-      },
-      player: {
-        props: {
-          playerName: { type: 'string' },
-          position: { type: 'string' },
-          goalsScored: 'uint16',
-          gamesPlayed: 'uint16',
-          team: {
-            ref: 'team',
-            prop: 'players',
-          },
-        },
-      },
-    },
-  })
+//   const t1 = db.create('team', {
+//     teamName: 'Grêmio',
+//     city: 'Porto Alegre',
+//     players: [p1, p2, p3],
+//   })
+//   const t2 = db.create('team', {
+//     teamName: 'Ajax',
+//     city: 'Amsterdam',
+//     players: [p4, p5],
+//   })
+//   const t3 = db.create('team', {
+//     teamName: 'Boca Juniors',
+//     city: 'Buenos Aires',
+//     players: [],
+//   })
+//   const t4 = db.create('team', {
+//     teamName: 'Barcelona',
+//     city: 'Barcelona',
+//     players: [
+//       db.create('player', {
+//         playerName: 'Lewandowski',
+//         position: 'Forward',
+//         goalsScored: 5,
+//         gamesPlayed: 5,
+//       }),
+//     ],
+//   })
 
-  const p1 = db.create('player', {
-    playerName: 'Martin',
-    position: 'Forward',
-    goalsScored: 10,
-    gamesPlayed: 5,
-  })
-  const p2 = db.create('player', {
-    playerName: 'Jemerson',
-    position: 'Defender',
-    goalsScored: 1,
-    gamesPlayed: 10,
-  })
-  const p3 = db.create('player', {
-    playerName: 'Pavon',
-    position: 'Forward',
-    goalsScored: 12,
-    gamesPlayed: 6,
-  })
-  const p4 = db.create('player', {
-    playerName: 'Wout',
-    position: 'Forward',
-    goalsScored: 8,
-    gamesPlayed: 7,
-  })
-  const p5 = db.create('player', {
-    playerName: 'Jorrel',
-    position: 'Defender',
-    goalsScored: 2,
-    gamesPlayed: 9,
-  })
+//   const result = await db
+//     .query2('team')
+//     .include('teamName', 'city', (select) =>
+//       select('players')
+//         .sum('goalsScored', 'gamesPlayed')
+//         .groupBy('position')
+//         .range(0, 10),
+//     )
+//     .get()
 
-  const t1 = db.create('team', {
-    teamName: 'Grêmio',
-    city: 'Porto Alegre',
-    players: [p1, p2, p3],
-  })
-  const t2 = db.create('team', {
-    teamName: 'Ajax',
-    city: 'Amsterdam',
-    players: [p4, p5],
-  })
-  const t3 = db.create('team', {
-    teamName: 'Boca Juniors',
-    city: 'Buenos Aires',
-    players: [],
-  })
-  const t4 = db.create('team', {
-    teamName: 'Barcelona',
-    city: 'Barcelona',
-    players: [
-      db.create('player', {
-        playerName: 'Lewandowski',
-        position: 'Forward',
-        goalsScored: 5,
-        gamesPlayed: 5,
-      }),
-    ],
-  })
+// result.debug()
+// result.inspect()
 
-  const result = await db
-    .query('team')
-    .include('teamName', 'city', (select) => {
-      select('players')
-        .sum('goalsScored', 'gamesPlayed')
-        .groupBy('position')
-        .range(0, 10)
-    })
-    .get()
-
-  // result.debug()
-  // result.inspect()
-
-  // deepEqual(
-  //   result.toObject(),
-  //   [
-  //     {
-  //       id: 1,
-  //       teamName: 'Grêmio',
-  //       city: 'Porto Alegre',
-  //       players: {
-  //         Forward: { goalsScored: { sum: 22 }, gamesPlayed: { sum: 11 } }, // Martin (10,5) + Pavon (12,6)
-  //         Defender: { goalsScored: { sum: 1 }, gamesPlayed: { sum: 10 } }, // Jemerson (1,10)
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       teamName: 'Ajax',
-  //       city: 'Amsterdam',
-  //       players: {
-  //         Forward: { goalsScored: { sum: 8 }, gamesPlayed: { sum: 7 } }, // Wout (8,7)
-  //         Defender: { goalsScored: { sum: 2 }, gamesPlayed: { sum: 9 } }, // Jorrel (2,9)
-  //       },
-  //     },
-  //     {
-  //       id: 3,
-  //       teamName: 'Boca Juniors',
-  //       city: 'Buenos Aires',
-  //       players: {}, // does anybody wants to play for Boca?
-  //     },
-  //     {
-  //       id: 4,
-  //       teamName: 'Barcelona',
-  //       city: 'Barcelona',
-  //       players: {
-  //         Forward: { goalsScored: { sum: 5 }, gamesPlayed: { sum: 5 } }, // Lewandowski
-  //       },
-  //     },
-  //   ],
-  //   'Include parent props, with referenced items grouped by their own prop, and aggregations',
-  // )
-})
+// deepEqual(
+//   result.toObject(),
+//   [
+//     {
+//       id: 1,
+//       teamName: 'Grêmio',
+//       city: 'Porto Alegre',
+//       players: {
+//         Forward: { goalsScored: { sum: 22 }, gamesPlayed: { sum: 11 } }, // Martin (10,5) + Pavon (12,6)
+//         Defender: { goalsScored: { sum: 1 }, gamesPlayed: { sum: 10 } }, // Jemerson (1,10)
+//       },
+//     },
+//     {
+//       id: 2,
+//       teamName: 'Ajax',
+//       city: 'Amsterdam',
+//       players: {
+//         Forward: { goalsScored: { sum: 8 }, gamesPlayed: { sum: 7 } }, // Wout (8,7)
+//         Defender: { goalsScored: { sum: 2 }, gamesPlayed: { sum: 9 } }, // Jorrel (2,9)
+//       },
+//     },
+//     {
+//       id: 3,
+//       teamName: 'Boca Juniors',
+//       city: 'Buenos Aires',
+//       players: {}, // does anybody wants to play for Boca?
+//     },
+//     {
+//       id: 4,
+//       teamName: 'Barcelona',
+//       city: 'Barcelona',
+//       players: {
+//         Forward: { goalsScored: { sum: 5 }, gamesPlayed: { sum: 5 } }, // Lewandowski
+//       },
+//     },
+//   ],
+//   'Include parent props, with referenced items grouped by their own prop, and aggregations',
+// )
+// })

@@ -288,12 +288,12 @@ await test('group by', async (t) => {
   // console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
 
   // const r = await db
-  //   .query('trip')
+  //   .query2('trip')
   //   // .count()
   //   .sum('distance')
   //   .groupBy('class', {})
   //   .get()
 
   // r.debug()
-  // console.dir(r.toObject(), { depth: 10 })
+  // console.dir(r, { depth: 10 })
 })

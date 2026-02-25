@@ -1,17 +1,9 @@
-import { BasedDb, groupBy } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
+import { testDb } from '../shared/index.js'
 
 await test('multiple functions', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       sequence: {
         props: {
@@ -82,14 +74,14 @@ await test('multiple functions', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
-    await db.query('vote').sum('NL').sum('NO').max('NL').min('NL').get(),
+    await db.query2('vote').sum('NL').sum('NO').max('NL').min('NL').get(),
     { NL: { sum: 176, max: 50, min: 10 }, NO: { sum: -176 } },
     'multiple func main no groupBy',
   )
 
   deepEqual(
     await db
-      .query('vote')
+      .query2('vote')
       .sum('NL')
       .sum('NO')
       .max('NL')
@@ -110,7 +102,7 @@ await test('multiple functions', async (t) => {
   })
 
   const multi = await db
-    .query('vote')
+    .query2('vote')
     .sum('NL')
     .max('PT')
     .cardinality('judges')
@@ -143,7 +135,7 @@ await test('multiple functions', async (t) => {
   )
 
   const multi2 = await db
-    .query('vote')
+    .query2('vote')
     .sum('NL')
     .max('PT')
     .cardinality('judges')
@@ -211,7 +203,7 @@ await test('multiple functions', async (t) => {
   )
 
   deepEqual(
-    await db.query('vote').sum('NL').count().sum('PT').stddev('NO').get(),
+    await db.query2('vote').sum('NL').count().sum('PT').stddev('NO').get(),
     {
       NL: {
         sum: 176,
@@ -220,17 +212,15 @@ await test('multiple functions', async (t) => {
         sum: 186,
       },
       NO: {
-        stddev: 21.518983866964227, // also one node only originally
+        stddev: 21.518983866964227,
       },
-      count: 6, // also one node only originally
-      // NO: { stddev: 22.696758736499294 }, // std([-10,-23,-43,-50,-50,0,0,0]) ans = 22.697
-      // count: 8,
+      count: 6,
     },
     'multiple main + count no groupBy',
   )
   deepEqual(
     await db
-      .query('vote')
+      .query2('vote')
       .sum('NL')
       .count()
       .sum('PT')
@@ -279,7 +269,7 @@ await test('multiple functions', async (t) => {
   )
 
   // const multiref = await db
-  //   .query('sequence')
+  //   .query2('sequence')
   //   .include((q) => q('votes').sum('NL').count().cardinality('judges'))
   //   .get()
 
@@ -306,7 +296,7 @@ await test('multiple functions', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query('sequence')
+  //     .query2('sequence')
   //     .include((q) => q('votes').sum('NL').count().cardinality('judges'))
   //     .get(),
   //   [
@@ -324,7 +314,7 @@ await test('multiple functions', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query('sequence')
+  //     .query2('sequence')
   //     .include((q) => q('votes').count().sum('NL').cardinality('judges'))
   //     .get(),
   //   [

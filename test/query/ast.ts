@@ -1,5 +1,5 @@
 import { query } from '../../src/db-client/query2/index.js'
-import { deepEqual, testDb } from '../shared/index.js'
+import { deepEqual } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('query ast creation', async (t) => {
@@ -15,6 +15,13 @@ await test('query ast creation', async (t) => {
           prop: 'friend'
           $rating: 'uint32'
         }
+        friends: {
+          items: {
+            ref: 'user'
+            prop: 'friend'
+            $rating: 'uint32'
+          }
+        }
         name: 'string'
         isNice: 'boolean'
         age: 'number'
@@ -23,7 +30,7 @@ await test('query ast creation', async (t) => {
   }
 
   {
-    const q = query('user')
+    const q = query<Schema>('user')
       .filter('isNice', '=', false)
       .and('name', '=', 'youzi')
 
@@ -205,27 +212,27 @@ await test('query ast creation', async (t) => {
     })
   }
   {
-    const q1 = query('user').sort('age')
+    const q1 = query<Schema>('user').sort('age')
     deepEqual(q1.ast, {
       type: 'user',
       order: 'asc',
       sort: { prop: 'age' },
     })
 
-    const q2 = query('user').sort('age', 'desc')
+    const q2 = query<Schema>('user').sort('age', 'desc')
     deepEqual(q2.ast, {
       type: 'user',
       order: 'desc',
       sort: { prop: 'age' },
     })
 
-    const q3 = query('user').order('desc')
+    const q3 = query<Schema>('user').order('desc')
     deepEqual(q3.ast, {
       type: 'user',
       order: 'desc',
     })
 
-    const q4 = query('user').sort('age').order('desc')
+    const q4 = query<Schema>('user').sort('age').order('desc')
     deepEqual(q4.ast, {
       type: 'user',
       order: 'desc',
@@ -234,7 +241,9 @@ await test('query ast creation', async (t) => {
   }
 
   {
-    const res = query('user').include((select) => select('friend').sum('age'))
+    const res = query<Schema>('user').include((select) =>
+      select('friend').sum('age'),
+    )
     deepEqual(res.ast, {
       type: 'user',
       props: {
@@ -244,7 +253,9 @@ await test('query ast creation', async (t) => {
   }
 
   {
-    const res = query('user').sum((select) => select('friends').sum('age'))
+    const res = query<Schema>('user').sum((select) =>
+      select('friends').sum('age'),
+    )
     console.dir(res.ast, { depth: null })
     // deepEqual(res.ast, {
     //   type: 'user',
@@ -254,5 +265,65 @@ await test('query ast creation', async (t) => {
     //     },
     //   },
     // })
+  }
+
+  {
+    const res = query<Schema>('user')
+      .include('friends.$rating')
+      .filter('friends.$rating', '>', 5)
+    deepEqual(res.ast, {
+      type: 'user',
+      props: {
+        friends: {
+          edges: { props: { $rating: { include: {} } } },
+        },
+      },
+      filter: {
+        props: {
+          friends: {
+            edges: {
+              props: {
+                $rating: { ops: [{ op: '>', val: 5 }] },
+              },
+            },
+          },
+        },
+      },
+    })
+  }
+
+  {
+    const res = query<Schema>('user').include((select) =>
+      select('friends').include('$rating'),
+    )
+    deepEqual(res.ast, {
+      type: 'user',
+      props: {
+        friends: {
+          edges: { props: { $rating: { include: {} } } },
+        },
+      },
+    })
+  }
+
+  {
+    const res = query<Schema>('user').include((select) =>
+      select('friends').include('$rating').filter('$rating', '>', 5),
+    )
+    deepEqual(res.ast, {
+      type: 'user',
+      props: {
+        friends: {
+          edges: { props: { $rating: { include: {} } } },
+          filter: {
+            edges: {
+              props: {
+                $rating: { ops: [{ op: '>', val: 5 }] },
+              },
+            },
+          },
+        },
+      },
+    })
   }
 })

@@ -25,7 +25,7 @@ await test('correct version', async (t) => {
     status: 'a',
   })
 
-  const response = await db.query('user', user1).get()
+  const response = await db.query2('user', user1).get()
 
   equal(
     extractNumber(response.version),
@@ -37,7 +37,7 @@ await test('correct version', async (t) => {
     status: 'b',
   })
 
-  const response2 = await db.query('user', user1).get()
+  const response2 = await db.query2('user', user1).get()
 
   notEqual(response.version, response2.version)
 })

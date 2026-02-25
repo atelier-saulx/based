@@ -332,7 +332,7 @@ await test('E-commerce Simulation', async (t) => {
       const queryType = Math.random()
       if (queryType < 0.1) {
         isSorted(
-          await db.query('user').sort('lastLogin', 'asc').get(),
+          await db.query2('user').sort('lastLogin', 'asc').get(),
           'lastLogin',
           'asc',
         )
@@ -341,7 +341,7 @@ await test('E-commerce Simulation', async (t) => {
         const categoryId = getRandom(categoryIds)
         if (categoryId) {
           await db
-            .query('product')
+            .query2('product')
             .filter('category', '=', categoryId)
             .sort('price', Math.random() > 0.5 ? 'asc' : 'desc')
             .include('name', 'price', 'stock')
@@ -354,7 +354,7 @@ await test('E-commerce Simulation', async (t) => {
         if (userId) {
           // console.log({ userId })
           await db
-            .query('user', userId)
+            .query2('user', userId)
             .include(
               'name',
               'viewedProducts.name',
@@ -368,7 +368,7 @@ await test('E-commerce Simulation', async (t) => {
         const productId = getRandom(productIds)
         if (productId) {
           await db
-            .query('review')
+            .query2('review')
             .filter('product', '=', productId)
             .sort('rating', 'desc')
             .include('rating', 'comment', 'user.name')
@@ -390,7 +390,7 @@ await test('E-commerce Simulation', async (t) => {
         }
         if (searchTerm) {
           await db
-            .query('product')
+            .query2('product')
             .search(searchTerm, 'name', 'description')
             .include('name', 'price')
             .range(0, 5)
@@ -400,7 +400,7 @@ await test('E-commerce Simulation', async (t) => {
         // Get user by email (alias)
         const email = `user${getRandom(userIds)}@example.com`
         if (email) {
-          await db.query('user', { email }).get()
+          await db.query2('user', { email }).get()
         }
       }
     }
@@ -484,7 +484,7 @@ await test('E-commerce Simulation', async (t) => {
   await wait(500)
 
   const finalProductCount = (
-    await db.query('product').range(0, 10_000_000).get()
+    await db.query2('product').range(0, 10_000_000).get()
   ).length
 
   equal(

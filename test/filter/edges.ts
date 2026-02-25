@@ -56,7 +56,7 @@ await test('filter edges', async (t) => {
 
   deepEqual(
     await db
-      .query('team', 1)
+      .query2('team', 1)
       .include((q) =>
         q('files').filter('fileType', '=', 'document').include('id'),
       )
@@ -74,7 +74,7 @@ await test('filter edges', async (t) => {
 
   deepEqual(
     await db
-      .query('team')
+      .query2('team')
       .filter('files', 'exists')
       .include((s) =>
         s('files').filter('fileType', '=', 'document').include('id'),
@@ -145,11 +145,11 @@ await test('filter references', async (t) => {
     fileType: 'document',
     teams: [t3],
   })
-  //   await db.query('team').include('*', '**').get().inspect(100)
-  //   await db.query('libraryFile').include('*', '**').get().inspect(100)
+  //   await db.query2('team').include('*', '**').get().inspect(100)
+  //   await db.query2('libraryFile').include('*', '**').get().inspect(100)
 
   //await db
-  //  .query('team')
+  //  .query2('team')
   //  .include('files')
   //  // need to make this
   //  // still missing

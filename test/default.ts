@@ -1,23 +1,7 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { convertToTimestamp } from '../src/utils/index.js'
-
-const derp = new Set([
-  '$nice',
-  '$role',
-  '$count',
-  '$score',
-  '$flag',
-  '$amount',
-  '$big',
-  '$huge',
-  '$max',
-  '$label',
-  '$bin',
-  '$timestamp',
-  '$enum',
-])
+import { testDb } from './shared/index.js'
 
 const defaultTimestamp = '2023-03-15T12:00:00.000Z'
 const defaultJson = { enabled: true, value: 10 }
@@ -25,14 +9,8 @@ const defaultBinary = new Uint8Array([1, 2, 3])
 const defaultText = { en: 'Default Label' }
 
 await test('edges', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   // Add all supported data types as edge properties (no date/text)
-  await db.setSchema({
+  const client = await testDb(t, {
     types: {
       user: {
         props: {
@@ -61,11 +39,11 @@ await test('edges', async (t) => {
     },
   })
 
-  const userId = await db.create('user', {
-    friends: [db.create('user')],
+  const userId = await client.create('user', {
+    friends: [client.create('user', {})],
   })
 
-  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query2('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -92,13 +70,13 @@ await test('edges', async (t) => {
     ],
   })
 
-  await db.update('user', userId, {
+  await client.update('user', userId, {
     friends: {
       update: [{ id: 1, $role: 'derp' }],
     },
   })
 
-  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query2('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -125,13 +103,13 @@ await test('edges', async (t) => {
     ],
   })
 
-  await db.update('user', userId, {
+  await clint.update('user', userId, {
     friends: {
       update: [{ id: 1, $nice: false }],
     },
   })
 
-  deepEqual(await db.query('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query2('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -160,13 +138,7 @@ await test('edges', async (t) => {
 })
 
 await test('separate', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
       fi: {},
@@ -199,7 +171,7 @@ await test('separate', async (t) => {
   const userId = await db.create('user', {})
 
   deepEqual(
-    await db.query('user', userId).include('*', '**').get(),
+    await db.query2('user', userId).include('*', '**').get(),
     {
       id: userId,
       flap: {
@@ -220,7 +192,7 @@ await test('separate', async (t) => {
   })
 
   deepEqual(
-    await db.query('user', userId2).include('*', '**').get(),
+    await db.query2('user', userId2).include('*', '**').get(),
     {
       id: userId2,
       flap: {
@@ -236,13 +208,7 @@ await test('separate', async (t) => {
 })
 
 await test('default values for all props in user type', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: {},
     },
@@ -266,6 +232,7 @@ await test('default values for all props in user type', async (t) => {
             default: defaultTimestamp,
           },
           level: {
+            type: 'enum',
             enum: ['low', 'medium', 'high'],
             default: 'medium',
           },
@@ -294,6 +261,7 @@ await test('default values for all props in user type', async (t) => {
             // default: [], // something in there
           },
           meta: {
+            type: 'object',
             props: {
               rating: {
                 type: 'uint8',
@@ -313,7 +281,7 @@ await test('default values for all props in user type', async (t) => {
   const userId = await db.create('user', {})
 
   deepEqual(
-    await db.query('user', userId).include('*', '**').get(),
+    await db.query2('user', userId).include('*', '**').get(),
     {
       id: userId,
       isNice: true,
@@ -343,7 +311,7 @@ await test('default values for all props in user type', async (t) => {
   })
 
   deepEqual(
-    await db.query('user', userNullId).get(),
+    await db.query2('user', userNullId).get(),
     {
       id: 2,
       label: { en: 'Default Label' },
@@ -362,13 +330,7 @@ await test('default values for all props in user type', async (t) => {
 })
 
 await test('negative default values for numeric types', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -394,7 +356,7 @@ await test('negative default values for numeric types', async (t) => {
   const userId = await db.create('user', {})
 
   deepEqual(
-    await db.query('user', userId).get(),
+    await db.query2('user', userId).get(),
     {
       id: userId,
       negativeNumber: -42,
@@ -411,7 +373,7 @@ await test('negative default values for numeric types', async (t) => {
   })
 
   deepEqual(
-    await db.query('user', userOverrideId).get(),
+    await db.query2('user', userOverrideId).get(),
     {
       id: 2,
       negativeNumber: -100,
@@ -423,13 +385,7 @@ await test('negative default values for numeric types', async (t) => {
 })
 
 await test('object', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       snurp: {
         preferences: {
@@ -448,7 +404,7 @@ await test('object', async (t) => {
   const snurpId = await db.create('snurp', {})
 
   deepEqual(
-    await db.query('snurp', snurpId).get(),
+    await db.query2('snurp', snurpId).get(),
     {
       id: snurpId,
       preferences: {
@@ -470,7 +426,7 @@ await test('object', async (t) => {
     },
   })
 
-  deepEqual(await db.query('snurp', snurpCustomId).get(), {
+  deepEqual(await db.query2('snurp', snurpCustomId).get(), {
     id: 2,
     preferences: {
       units: 'imperial',

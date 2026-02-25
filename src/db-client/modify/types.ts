@@ -1,17 +1,5 @@
-import { type SchemaTypes } from '../../schema.js'
-
 import type { BasedModify } from './index.js'
-
-type TypedArray =
-  | Uint8Array
-  | Float32Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
+import type { TypedArray } from '../../schema/index.js'
 
 type NumInc = number | { increment: number }
 

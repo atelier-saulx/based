@@ -1,15 +1,9 @@
-import { BasedDb } from '../src/index.js'
+import { testDb } from './shared/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 
 await test('basic', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -70,7 +64,7 @@ await test('basic', async (t) => {
 
   await db.drain() // will become async
   deepEqual(
-    await db.query('user').get(),
+    await db.query2('user').get(),
     payloads.map((payload, index) => {
       return {
         id: index + 1,
@@ -102,7 +96,7 @@ await test('basic', async (t) => {
     },
   })
 
-  deepEqual(await db.query('user', newThing).get(), {
+  deepEqual(await db.query2('user', newThing).get(), {
     id: newThing,
     number: 12,
     int8: 12,
@@ -137,7 +131,7 @@ await test('basic', async (t) => {
     },
   })
 
-  deepEqual(await db.query('user', newThing).get(), {
+  deepEqual(await db.query2('user', newThing).get(), {
     id: newThing,
     number: 13,
     int8: 14,
@@ -154,7 +148,7 @@ await test('basic', async (t) => {
     },
   })
 
-  deepEqual(await db.query('user', newThing).get(), {
+  deepEqual(await db.query2('user', newThing).get(), {
     id: newThing,
     number: 13,
     int8: 14,
@@ -171,7 +165,7 @@ await test('basic', async (t) => {
     },
   })
 
-  deepEqual(await db.query('user', newThing).get(), {
+  deepEqual(await db.query2('user', newThing).get(), {
     id: newThing,
     number: 13,
     int8: 14,
@@ -186,7 +180,7 @@ await test('basic', async (t) => {
     uint16: 100,
   })
 
-  deepEqual(await db.query('user', newThing).get(), {
+  deepEqual(await db.query2('user', newThing).get(), {
     id: newThing,
     number: 13,
     int8: 14,

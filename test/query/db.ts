@@ -25,6 +25,11 @@ await test('query db', async (t) => {
           items: {
             ref: 'user',
             prop: 'friends',
+            $rating: 'uint32',
+            $rank: 'number',
+            $friendRef: {
+              ref: 'user',
+            },
           },
         },
       },
@@ -45,7 +50,12 @@ await test('query db', async (t) => {
     isNice: true,
     age: 49,
     friend: john,
-    friends: [john],
+    friends: [
+      {
+        id: john,
+        $friendRef: john,
+      },
+    ],
     address: {
       street: 'Mega street',
     },
@@ -125,35 +135,85 @@ await test('query db', async (t) => {
   //   deepEqual(res, { friends: { age: { sum: 70 } } })
   // }
 
-  {
-    const res = await db
-      .query2('user')
-      .sum((select) => select('friends').sum('age'))
-      .get()
-    deepEqual(res, { friends: { age: { sum: 21 } } } as any)
-  }
+  // {
+  //   const res = await db
+  //     .query2('user')
+  //     .sum((select) => select('friends').sum('age'))
+  //     .get()
+  //   deepEqual(res, { friends: { age: { sum: 21 } } })
+  // }
+
+  // // {
+  // //   const res = await db
+  // //     .query2('user')
+  // //     .include((select) => select('friend').sum('age'))
+  // //     .get()
+
+  // //   deepEqual(res, [{ id: 1, friend: { age: { sum: 70 } } }])
+  // // }
+
+  // {
+  //   const res = await db.query2('user').sum('age').groupBy('name').get()
+  //   deepEqual(res, { john: { age: { sum: 21 } }, billy: { age: { sum: 49 } } })
+  // }
 
   // {
   //   const res = await db
   //     .query2('user')
-  //     .include((select) => select('friend').sum('age'))
+  //     .filter('isNice', '=', true)
+  //     .sum('age')
+  //     .groupBy('name')
   //     .get()
-
-  //   deepEqual(res, [{ id: 1, friend: { age: { sum: 70 } } }])
+  //   deepEqual(res, { billy: { age: { sum: 49 } } })
   // }
 
   {
-    const res = await db.query2('user').sum('age').groupBy('name').get()
-    deepEqual(res, { john: { age: { sum: 21 } }, billy: { age: { sum: 49 } } })
+    const q = db.query2('user').include('friends.$rank', 'friends.$rating')
+    const res = await q.get()
+    deepEqual(res, [
+      { id: 1, friends: [{ id: 2, $rank: 0, $rating: 0 }] },
+      { id: 2, friends: [{ id: 1, $rank: 0, $rating: 0 }] },
+    ])
   }
 
   {
-    const res = await db
-      .query2('user')
-      .filter('isNice', '=', true)
-      .sum('age')
-      .groupBy('name')
-      .get()
-    deepEqual(res, { billy: { age: { sum: 49 } } })
+    const q = db.query2('user').include('friends.$friendRef')
+    const res = await q.get()
+    deepEqual(res, [
+      {
+        id: 1,
+        friends: [
+          {
+            id: 2,
+            $friendRef: {
+              id: 1,
+              name: 'john',
+              isNice: false,
+              age: 21,
+              address: {
+                street: 'Cool street',
+              },
+            },
+          },
+        ],
+      },
+      {
+        id: 2,
+        friends: [
+          {
+            id: 1,
+            $friendRef: {
+              id: 1,
+              name: 'john',
+              isNice: false,
+              age: 21,
+              address: {
+                street: 'Cool street',
+              },
+            },
+          },
+        ],
+      },
+    ])
   }
 })

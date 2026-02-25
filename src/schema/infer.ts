@@ -1,15 +1,5 @@
+import type { TypedArray } from './index.js'
 import type { Schema } from './schema/schema.js'
-
-type TypedArray =
-  | Uint8Array
-  | Float32Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Float32Array
-  | Float64Array
 
 // Map schema types to TypeScript types
 type TypeMap = {

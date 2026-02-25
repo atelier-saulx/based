@@ -35,7 +35,7 @@ await test('filter api: object', async (t) => {
 
   deepEqual(
     await db
-      .query('user')
+      .query2('user')
       .include('friends')
       .filter('friends', 'includes', { id: 2 })
       .get(),
@@ -48,7 +48,7 @@ await test('filter api: object', async (t) => {
 
   deepEqual(
     await db
-      .query('user')
+      .query2('user')
       .include('friends')
       .filter('friends', 'includes', [{ id: 2 }, { id: 1 }])
       .get(),
@@ -61,7 +61,7 @@ await test('filter api: object', async (t) => {
   )
 
   deepEqual(
-    await db.query('user').filter('bestFriend', '=', { id: 9 }).get(),
+    await db.query2('user').filter('bestFriend', '=', { id: 9 }).get(),
     [
       {
         id: 10,
@@ -72,7 +72,7 @@ await test('filter api: object', async (t) => {
 
   deepEqual(
     await db
-      .query('user')
+      .query2('user')
       .filter('bestFriend', '=', [{ id: 9 }, { id: 10 }])
       .get(),
     [
