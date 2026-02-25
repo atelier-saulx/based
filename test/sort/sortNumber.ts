@@ -1,17 +1,10 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual, isSorted } from '../shared/assert.js'
 
 await test('numbers', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const animals = ['pony', 'whale', 'dolphin', 'dog']
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       example: {
         props: {
