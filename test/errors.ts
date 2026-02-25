@@ -1,16 +1,9 @@
-import { BasedDb } from '../src/index.js'
 import { equal, throws } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 import test from './shared/test.js'
 
 await test('handle errors - references', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         friends: {
@@ -36,14 +29,7 @@ await test('handle errors - references', async (t) => {
 })
 
 await test('handle errors - single ref', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         friend: {
@@ -67,14 +53,7 @@ await test('handle errors - single ref', async (t) => {
 })
 
 await test('handle errors - non existent id', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         name: 'string',

@@ -1,5 +1,6 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { join } from 'path'
 import { deepEqual } from '../shared/assert.js'
 
@@ -16,7 +17,7 @@ await test('textFilter', async (t) => {
   })
   await dbX.start({ clean: true })
 
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
   t.after(() => dbX.destroy())
 
   await db.setSchema({
@@ -117,14 +118,7 @@ await test('textFilter', async (t) => {
 })
 
 await test('compressionFilter', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e3 * 1e3,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       function: {
         name: 'alias',

@@ -1,17 +1,11 @@
-import { BasedDb, xxHash64 } from '../src/index.js'
+import { xxHash64 } from '../src/index.js'
 import { ENCODER } from '../src/utils/uint8.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual } from './shared/assert.js'
-import { getTypeDefs } from '../src/db-client/modify/index.js'
 
 await test('hll', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         derp: 'number',
@@ -328,13 +322,7 @@ await test('hll', async (t) => {
 })
 
 await test('switches', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       store: {
         name: 'string',
@@ -386,13 +374,7 @@ await test('switches', async (t) => {
 })
 
 await test('defaultPrecision', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       store: {
         name: 'string',

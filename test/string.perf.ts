@@ -1,15 +1,10 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { perf } from './shared/assert.js'
+import { testDb } from './shared/index.js'
 
 await test('create 1m 2char strings', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       test: {
         string: 'string',
@@ -29,13 +24,7 @@ await test('create 1m 2char strings', async (t) => {
 })
 
 await test('create 1m 1000char strings', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       test: {
         string: 'string',

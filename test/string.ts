@@ -1,18 +1,11 @@
 import { ENCODER, fastPrng } from '../src/utils/index.js'
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { euobserver } from './shared/examples.js'
 
 await test('simple', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e4,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -163,13 +156,7 @@ await test('simple', async (t) => {
 })
 
 await test('string + refs', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -315,13 +302,7 @@ await test('string + refs', async (t) => {
 })
 
 await test('Big string disable compression', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       file: {
         props: {
@@ -396,13 +377,7 @@ await test('Big string disable compression', async (t) => {
 })
 
 await test('Big string', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       file: {
         props: {
@@ -451,13 +426,7 @@ await test('Big string', async (t) => {
 })
 
 await test('schema compression prop', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       file: {
         props: {
@@ -498,16 +467,7 @@ await test('schema compression prop', async (t) => {
 
 await test('string compression - max buf size', async (t) => {
   const contents = 'a'.repeat(201) // min size for compression
-  const db = new BasedDb({
-    maxModifySize: Buffer.byteLength(contents) * 2 + 100,
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       file: {
         props: {

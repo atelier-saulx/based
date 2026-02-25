@@ -1,15 +1,10 @@
 import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual, equal } from '../shared/assert.js'
 
 await test('basic', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -506,13 +501,7 @@ await test('sort - from start (1M items)', async (t) => {
 })
 
 await test('unset value on create', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       dialog: {
         props: {
@@ -526,19 +515,19 @@ await test('unset value on create', async (t) => {
 
   await db.query2('dialog').sort('fun', 'desc').get()
 
-  const id1 = await db.create('dialog', {
+  await db.create('dialog', {
     fun: '1',
   })
 
-  const id2 = await db.create('dialog', {
+  await db.create('dialog', {
     fun: '2',
   })
 
-  const id3 = await db.create('dialog', {
+  await db.create('dialog', {
     fun: '3',
   })
 
-  const id4 = await db.create('dialog', {})
+  await db.create('dialog', {})
 
   const id5 = await db.create('dialog', {})
 

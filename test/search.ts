@@ -1,16 +1,10 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { italy } from './shared/examples.js'
 
 await test('like filter', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {
@@ -105,13 +99,7 @@ await test('like filter', async (t) => {
 })
 
 await test('compressed', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {
@@ -302,13 +290,7 @@ await test('compressed', async (t) => {
   )
 })
 await test('simple', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {
@@ -354,13 +336,7 @@ await test('simple', async (t) => {
 })
 
 await test('search ids', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {
@@ -419,13 +395,7 @@ await test('search ids', async (t) => {
 })
 
 await test('like filter mbs', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {
@@ -468,13 +438,7 @@ await test('like filter mbs', async (t) => {
 })
 
 await test('giraffe first', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {
@@ -505,13 +469,7 @@ await test('giraffe first', async (t) => {
 })
 
 await test('first letter', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       article: {
         props: {

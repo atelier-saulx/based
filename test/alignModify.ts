@@ -8,7 +8,7 @@ await test('alignModify - putrefs', async (t) => {
   })
 
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const flushModify = db.client.hooks.flushModify
 
