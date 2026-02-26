@@ -2085,6 +2085,15 @@ void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, b
     if (te->ns.nr_colvec_fields > 0) {
         colvec_init_node(te, node);
     }
+    for (size_t i = 0; i < te->ns.nr_alias_fields; i++) {
+        auto aliases = &te->aliases[i];
+        const auto *fs = get_fs_by_fields_schema_field(&te->ns.fields_schema, aliases->field);
+
+        if (fs->alias.default_len > 0) {
+            const char *default_str = (char *)te->schema_buf + fs->default_off;
+            (void)selva_set_alias(aliases, node->node_id, default_str, fs->alias.default_len);
+        }
+    }
 }
 
 void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node)

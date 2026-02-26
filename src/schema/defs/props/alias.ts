@@ -1,9 +1,11 @@
-import { PropType, PropTypeSelva } from '../../../zigTsExports.js'
+import { PropType, PropTypeSelva, pushSelvaSchemaAlias, writeSelvaSchemaAliasProps } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
+import { SchemaAlias } from '../../schema/alias.js'
 
 export const alias = class Alias extends BasePropDef {
   override type = PropType.alias
+  declare schema: SchemaAlias
   override pushValue(
     buf: AutoSizedUint8Array,
     value: unknown,
@@ -17,6 +19,18 @@ export const alias = class Alias extends BasePropDef {
     buf.pushString(value)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    buf.pushUint8(PropTypeSelva.alias)
+    const index = pushSelvaSchemaAlias(buf, {
+      type: PropTypeSelva.alias,
+      defaultLen: 0,
+    })
+    if (this.schema.default) {
+      const start = buf.length
+      this.pushValue(buf, this.schema.default)
+      writeSelvaSchemaAliasProps.defaultLen(
+        buf.data,
+        buf.length - start,
+        index,
+      )
+    }
   }
 }

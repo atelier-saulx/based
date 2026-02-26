@@ -41,6 +41,8 @@
  * - Remove support for earlier SDB versions
  * - Moved aliases saving from each node to saving all aliases at once
  * - Removed schema from common.sdb
+ * - Fix colvec default
+ * - Remove support for SELVA_FIELD_TYPE_ALIASES
  */
 #define SELVA_SDB_VERSION 8
 

@@ -1,14 +1,17 @@
-import { assert } from './shared.js'
+import { assert, isString } from './shared.js'
 import { parseString, type SchemaString } from './string.js'
 
 export type SchemaAlias = Omit<SchemaString, 'type' | 'default'> & {
   type: 'alias'
-  default?: never
+  default?: string
 }
 
 export const parseAlias = (def: Record<string, unknown>): SchemaAlias => {
   def.type = 'string'
-  assert(def.default === undefined, 'Default alias not allowed')
+  assert(
+    def.default === undefined || isString(def.default),
+    'Default should be string',
+  )
   const { type, ...rest } = parseString(def)
   return { type: 'alias', ...rest } as SchemaAlias
 }

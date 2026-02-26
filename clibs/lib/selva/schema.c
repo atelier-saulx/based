@@ -228,16 +228,40 @@ static int type2fs_references(struct schemabuf_parser_ctx *ctx, struct SelvaFiel
 static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
 {
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
+    struct {
+        enum SelvaFieldType type;
+        uint32_t default_len;
+    } __packed head;
+    size_t off = 0;
+
+    if (ctx->len < sizeof(head)) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(&head, ctx->buf + off, sizeof(head));
+    off += sizeof(head);
 
     *fs = (struct SelvaFieldSchema){
         .field = field,
         .type = SELVA_FIELD_TYPE_ALIAS,
+        .default_off = 0,
         .alias = {
             .index = ctx->alias_index++,
+            .default_len = head.default_len,
         },
     };
 
-    return 1;
+    if (head.default_len > 0) { /* has default */
+        if (ctx->len < off + head.default_len) {
+            return SELVA_EINVAL;
+        }
+
+        /* Default is copied straight from the schema buffer. */
+        fs->default_off = calc_default_off(ctx, off);
+        off += head.default_len;
+    }
+
+    return off;
 }
 
 static int type2fs_colvec(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSchema *schema, field_t field)
