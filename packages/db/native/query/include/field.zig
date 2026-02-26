@@ -159,7 +159,6 @@ pub inline fn selvaString(
     if (hasOpts) {
         r.*.value = try o.parseOptsString(ctx, r.value, opts);
     } else {
-        utils.debugPrint("r.*.value: {any}\n", .{r.value[0..r.value.len]});
         r.*.value = r.value[0 .. r.value.len - 4];
     }
     return r.value.len + (if (isEdge) 6 else 5);
