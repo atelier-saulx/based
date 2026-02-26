@@ -1,6 +1,7 @@
 import test from '../shared/test.js'
 import { testDb } from '../shared/index.js'
 import { deepEqual, equal } from '../shared/assert.js'
+import { checksum } from '../../src/db-client/query2/index.js'
 
 await test('include ', async (t) => {
   const db = await testDb(t, {
@@ -40,7 +41,7 @@ await test('include ', async (t) => {
 
   equal((await db.query2('user', 1).get()).id, 1)
   //equal((await db.query2('user', 1).get()).queryId, 3978712180)
-  equal((await db.query2('user').get()).checksum, 2149520223)
+  equal(checksum(await db.query2('user').get()), 2149520223)
   equal((await db.query2('user').get()).version, 4507870634704934)
 })
 

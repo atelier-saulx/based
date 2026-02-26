@@ -2,6 +2,7 @@ import test from '../shared/test.js'
 import { italy } from '../shared/examples.js'
 import { deepEqual } from '../shared/assert.js'
 import { notEqual } from 'node:assert'
+import { checksum as q2checksum } from '../../src/db-client/query2/index.js'
 import { testDb } from '../shared/index.js'
 
 await test('simple', async (t) => {
@@ -929,7 +930,7 @@ await test('text and crc32', async (t) => {
     },
   })
 
-  const checksum = (await db.query2('user', user1).get()).checksum
+  const checksum = q2checksum(await db.query2('user', user1).get())
 
   await db.update('user', user1, {
     article: {
@@ -938,7 +939,7 @@ await test('text and crc32', async (t) => {
     },
   })
 
-  const checksum2 = (await db.query2('user', user1).get()).checksum
+  const checksum2 = q2checksum(await db.query2('user', user1).get())
 
   notEqual(checksum, checksum2, 'Checksum is not the same')
 })
