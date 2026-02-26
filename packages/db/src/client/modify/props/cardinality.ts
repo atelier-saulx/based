@@ -1,4 +1,4 @@
-import { PropDef, PropDefEdge } from '@based/schema/def'
+import { PropDef, PropDefEdge, CARDINALITY_RAW } from '@based/schema/def'
 import { Ctx } from '../Ctx.js'
 import { deleteProp } from './delete.js'
 import { writeU32, writeU8, writeU8Array } from '../uint.js'
@@ -8,7 +8,7 @@ import { ENCODER } from '@based/utils'
 import { reserve } from '../resize.js'
 import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { CREATE } from '../types.js'
-import { writeBinary } from './binary.js'
+import { writeBinary, writeBinaryRaw } from './binary.js'
 
 // MV: must processes cardinaltyRaw PropType differently because these functions are designed to
 // convert hash64 to []u8 and and strings to hash64 to []u8
@@ -44,7 +44,16 @@ export const writeCardinality = (ctx: Ctx, def: PropDef, val: any) => {
   }
 
   if (val instanceof Uint8Array && val.byteLength !== 8) {
-    writeBinary(ctx, def, val, true)
+    if (ctx.unsafe) {
+      const size = val.byteLength
+      reserve(ctx, PROP_CURSOR_SIZE + size + 5)
+      writePropCursor(ctx, def, CARDINALITY_RAW)
+      writeU8(ctx, ctx.operation)
+      writeU8(ctx, size)
+      writeU8Array(ctx, val)
+    } else {
+      writeBinary(ctx, def, val, true)
+    }
     return
   }
 
