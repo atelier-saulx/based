@@ -530,8 +530,8 @@ await test('migrate + modify', async (t) => {
   deepEqual(
     await db.query('analyticsEdition').include('uniqueUsers').get(),
     [
-      { id: 1, uniqueUsers: 2 },
-      { id: 2, uniqueUsers: 1 },
+      { id: 1, uniqueUsers: 2 }, // migrated
+      { id: 2, uniqueUsers: 1 }, // new
     ],
     'migrated cardinality check',
   )
