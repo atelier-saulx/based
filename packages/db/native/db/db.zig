@@ -153,6 +153,14 @@ pub fn getField(
         return @as([*]u8, @constCast(res))[0..len];
     } else if (fieldType == types.Prop.CARDINALITY) {
         return getCardinalityField(node, fieldSchema) orelse emptySlice;
+    } else if (fieldType == types.Prop.CARDINALITY_RAW) {
+        if (selva.selva_fields_get_selva_string(node, fieldSchema)) |stored| {
+            var len: usize = 0;
+            const str = selva.selva_string_to_buf(stored, &len);
+            return @as([*]u8, @constCast(str))[0..len];
+        } else {
+            return emptySlice;
+        }
     } else if (fieldType == types.Prop.COLVEC) {
         const nodeId = getNodeId(node);
         const vec = selva.colvec_get_vec(typeEntry, nodeId, fieldSchema);
@@ -188,7 +196,7 @@ pub inline fn getNodeFromReference(dstType: Type, ref: anytype) ?Node {
 
 pub inline fn getReferenceNodeId(ref: ?ReferenceLarge) []u8 {
     if (ref) |r| {
-        const id: *u32 = @alignCast(@ptrCast(&r.*.dst));
+        const id: *u32 = @ptrCast(@alignCast(&r.*.dst));
         return std.mem.asBytes(id)[0..4];
     }
     return &[_]u8{};
@@ -240,6 +248,17 @@ pub fn writeField(node: Node, fieldSchema: FieldSchema, data: []u8) !void {
         selva.SELVA_FIELD_TYPE_TEXT => selva.selva_fields_set_text(node, fieldSchema, data.ptr, data.len),
         else => selva.SELVA_EINTYPE,
     });
+}
+
+pub fn writeRawString(node: Node, fieldSchema: FieldSchema, data: []u8) !void {
+    if (selva.selva_fields_ensure_string(node, fieldSchema, data.len)) |str_ptr| {
+        var str_len: usize = 0;
+        const mstr = selva.selva_string_to_mstr(str_ptr, &str_len);
+        utils.copy(mstr[0..data.len], data);
+        try errors.selva(selva.selva_string_truncate(str_ptr, data.len));
+    } else {
+        return errors.SelvaError.SELVA_ENOMEM;
+    }
 }
 
 pub fn setText(node: Node, fieldSchema: FieldSchema, str: []u8) !void {

@@ -82,6 +82,8 @@ pub fn createField(ctx: *ModifyCtx, data: []u8) !usize {
                         Modify.markDirtyRange(ctx, ctx.typeId, old);
                     }
                 }
+            } else if (ctx.fieldType == types.Prop.CARDINALITY_RAW) {
+                try db.writeRawString(ctx.node.?, ctx.fieldSchema.?, slice);
             } else {
                 try db.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
             }

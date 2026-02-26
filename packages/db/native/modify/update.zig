@@ -145,6 +145,8 @@ pub fn updateField(ctx: *ModifyCtx, data: []u8) !usize {
                         if (e != error.SELVA_ENOENT) return e;
                     };
                 }
+            } else if (ctx.fieldType == types.Prop.CARDINALITY_RAW) {
+                try db.writeRawString(ctx.node.?, ctx.fieldSchema.?, slice);
             } else {
                 try db.writeField(ctx.node.?, ctx.fieldSchema.?, slice);
             }
