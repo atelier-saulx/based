@@ -481,17 +481,6 @@ await test('migrate + modify', async (t) => {
     'cardinality check',
   )
 
-  // const lala = (
-  //   await db
-  //     .query('analyticsEdition')
-  //     .include('uniqueUsers', { raw: true })
-  //     .get()
-  //     .toObject()
-  // )[0].uniqueUsers
-
-  // console.table(lala)
-  // console.dir(lala, { maxArrayLength: null })
-
   const newAnalyticsSession: SchemaType = {
     geo: { type: 'string', maxBytes: 2 },
     host: 'string',
@@ -504,23 +493,6 @@ await test('migrate + modify', async (t) => {
       analyticsSession: newAnalyticsSession,
     },
   })
-
-  // const lala2 = (
-  //   await db
-  //     .query('analyticsEdition')
-  //     .include('uniqueUsers', { raw: true })
-  //     .get()
-  //     .toObject()
-  // )[0].uniqueUsers
-
-  // console.dir(lala2, { maxArrayLength: null })
-
-  // This crashed before  https://linear.app/1ce/issue/FDN-1883 because uniqueUser was a corrupted cardinailty filed after migration
-  // now it is not crashing but values was not migrated
-  // db.update('analyticsEdition', ed, {
-  //   editionId: 'lala1',
-  //   // uniqueUsers: ['Madam Satan'],
-  // })
 
   const ed2 = db.create('analyticsEdition', {
     editionId: 'lala2',
