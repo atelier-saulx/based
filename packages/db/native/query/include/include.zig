@@ -194,7 +194,6 @@ pub fn getFields(
                         else => {
                             if (optsSize == 0) {
                                 size += try f.default(isEdge, r, false, undefined);
-                                utils.debugPrint("hll: {any}\n", .{r});
                             } else {
                                 size += try f.default(isEdge, r, true, o.getOpts(include, &i));
                                 i += optsSize;

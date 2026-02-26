@@ -10,10 +10,6 @@ import { PROP_CURSOR_SIZE, writePropCursor } from '../cursor.js'
 import { CREATE } from '../types.js'
 import { writeBinary, writeBinaryRaw } from './binary.js'
 
-// MV: must processes cardinaltyRaw PropType differently because these functions are designed to
-// convert hash64 to []u8 and and strings to hash64 to []u8
-// not to receive an hll encoded in selvaString encoded in []u8.
-
 export const writeCardinalityRaw = (
   ctx: Ctx,
   def: PropDef | PropDefEdge,
