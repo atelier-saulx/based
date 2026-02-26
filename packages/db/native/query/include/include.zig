@@ -138,13 +138,22 @@ pub fn getFields(
                         t.Prop.BINARY,
                         t.Prop.STRING,
                         t.Prop.JSON,
-                        t.Prop.CARDINALITY_RAW, // MV: cardinality_raw will receive proper treatment later
                         => {
                             if (optsSize != 0) {
                                 size += try f.selvaString(ctx, isEdge, r, true, o.getOpts(include, &i));
                                 i += optsSize;
                             } else {
                                 size += try f.selvaString(ctx, isEdge, r, false, undefined);
+                            }
+                            size += try f.add(ctx, id, score, idIsSet, r);
+                            idIsSet = true;
+                        },
+                        t.Prop.CARDINALITY_RAW => {
+                            if (optsSize != 0) {
+                                size += try f.default(isEdge, r, true, o.getOpts(include, &i));
+                                i += optsSize;
+                            } else {
+                                size += try f.default(isEdge, r, false, undefined);
                             }
                             size += try f.add(ctx, id, score, idIsSet, r);
                             idIsSet = true;
