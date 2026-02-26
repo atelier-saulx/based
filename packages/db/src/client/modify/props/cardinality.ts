@@ -49,7 +49,7 @@ export const writeCardinality = (ctx: Ctx, def: PropDef, val: any) => {
       reserve(ctx, PROP_CURSOR_SIZE + size + 5)
       writePropCursor(ctx, def, CARDINALITY_RAW)
       writeU8(ctx, ctx.operation)
-      writeU8(ctx, size)
+      writeU32(ctx, size)
       writeU8Array(ctx, val)
     } else {
       writeBinary(ctx, def, val, true)
