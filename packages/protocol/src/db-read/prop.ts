@@ -34,6 +34,9 @@ const readStringProp = (
   if (prop.typeIndex === BINARY) {
     return buf.subarray(offset + 2, size + offset)
   }
+  if (prop.typeIndex === CARDINALITY_RAW) {
+    return buf.subarray(offset, size + offset)
+  }
 }
 
 export const readProp = (
