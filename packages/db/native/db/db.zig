@@ -251,14 +251,7 @@ pub fn writeField(node: Node, fieldSchema: FieldSchema, data: []u8) !void {
 }
 
 pub fn writeRawString(node: Node, fieldSchema: FieldSchema, data: []u8) !void {
-    if (selva.selva_fields_ensure_string(node, fieldSchema, data.len)) |str_ptr| {
-        var str_len: usize = 0;
-        const mstr = selva.selva_string_to_mstr(str_ptr, &str_len);
-        utils.copy(mstr[0..data.len], data);
-        try errors.selva(selva.selva_string_truncate(str_ptr, data.len));
-    } else {
-        return errors.SelvaError.SELVA_ENOMEM;
-    }
+    try errors.selva(selva.selva_fields_set_string(node, fieldSchema, data.ptr, data.len));
 }
 
 pub fn setText(node: Node, fieldSchema: FieldSchema, str: []u8) !void {
