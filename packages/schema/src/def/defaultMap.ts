@@ -25,6 +25,7 @@ import {
   COLVEC,
   NULL,
   OBJECT,
+  CARDINALITY_RAW,
 } from './types.js'
 
 export const DEFAULT_MAP: Record<TypeIndex, any> = {
@@ -53,4 +54,5 @@ export const DEFAULT_MAP: Record<TypeIndex, any> = {
   [TEXT]: {},
   [VECTOR]: undefined, // maybe not can set a vec with 0
   [COLVEC]: undefined, // maybe not can set a vec with 0
+  [CARDINALITY_RAW]: undefined,
 }

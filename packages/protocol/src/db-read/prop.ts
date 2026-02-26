@@ -5,6 +5,7 @@ import {
   ALIAS,
   BINARY,
   CARDINALITY,
+  CARDINALITY_RAW,
   COLVEC,
   JSON,
   STRING,
@@ -54,6 +55,10 @@ export const readProp = (
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
   } else if (prop.typeIndex === BINARY) {
+    const size = readUint32(result, i)
+    addProp(prop, readStringProp(prop, result, i + 4, size), item)
+    i += size + 4
+  } else if (prop.typeIndex === CARDINALITY_RAW) {
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4

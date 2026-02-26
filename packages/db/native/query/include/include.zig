@@ -1,7 +1,8 @@
 const QueryCtx = @import("../types.zig").QueryCtx;
 const getSingleRefFields = @import("./reference.zig").getSingleRefFields;
 const addIdOnly = @import("./addIdOnly.zig").addIdOnly;
-const read = @import("../../utils.zig").read;
+const utils = @import("../../utils.zig");
+const read = utils.read;
 const db = @import("../../db//db.zig");
 const getRefsFields = @import("./references/references.zig").getRefsFields;
 const aggregateRefsFields = @import("../aggregate/references.zig").aggregateRefsFields;
@@ -103,7 +104,7 @@ pub fn getFields(
                 result = try f.get(ctx, node, field, prop, typeEntry, edgeRef, isEdge, f.ResultType.meta);
                 if (result) |r| {
                     switch (prop) {
-                        t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON, t.Prop.ALIAS => {
+                        t.Prop.BINARY, t.Prop.STRING, t.Prop.JSON, t.Prop.ALIAS, t.Prop.CARDINALITY_RAW => {
                             if (isEdge) {
                                 size += 1;
                             }
@@ -137,6 +138,7 @@ pub fn getFields(
                         t.Prop.BINARY,
                         t.Prop.STRING,
                         t.Prop.JSON,
+                        t.Prop.CARDINALITY_RAW, // MV: cardinality_raw will receive proper treatment later
                         => {
                             if (optsSize != 0) {
                                 size += try f.selvaString(ctx, isEdge, r, true, o.getOpts(include, &i));
@@ -183,6 +185,7 @@ pub fn getFields(
                         else => {
                             if (optsSize == 0) {
                                 size += try f.default(isEdge, r, false, undefined);
+                                utils.debugPrint("hll: {any}\n", .{r});
                             } else {
                                 size += try f.default(isEdge, r, true, o.getOpts(include, &i));
                                 i += optsSize;

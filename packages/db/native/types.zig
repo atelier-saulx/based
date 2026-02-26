@@ -28,11 +28,13 @@ pub const Prop = enum(u8) {
     VECTOR = 27,
     JSON = 28,
     COLVEC = 30,
+    CARDINALITY_RAW = 31,
     pub fn isBuffer(self: Prop) bool {
         return switch (self) {
             Prop.BINARY,
             Prop.ALIAS,
             Prop.STRING,
+            Prop.CARDINALITY_RAW,
             => true,
             else => false,
         };

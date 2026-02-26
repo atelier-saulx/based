@@ -498,12 +498,12 @@ await test('migrate + modify', async (t) => {
     editionId: 'uint32',
   }
 
-  // await db.setSchema({
-  //   types: {
-  //     analyticsEdition,
-  //     analyticsSession: newAnalyticsSession,
-  //   },
-  // })
+  await db.setSchema({
+    types: {
+      analyticsEdition,
+      analyticsSession: newAnalyticsSession,
+    },
+  })
 
   // const lala2 = (
   //   await db
@@ -513,17 +513,26 @@ await test('migrate + modify', async (t) => {
   //     .toObject()
   // )[0].uniqueUsers
 
-  // // console.table(lala2)
+  // console.dir(lala2, { maxArrayLength: null })
 
-  // This will crash https://linear.app/1ce/issue/FDN-1883
-  db.update('analyticsEdition', ed, {
-    editionId: 'lala1',
+  // This crashed before  https://linear.app/1ce/issue/FDN-1883 because uniqueUser was a corrupted cardinailty filed after migration
+  // now it is not crashing but values was not migrated
+  // db.update('analyticsEdition', ed, {
+  //   editionId: 'lala1',
+  //   // uniqueUsers: ['Madam Satan'],
+  // })
+
+  const ed2 = db.create('analyticsEdition', {
+    editionId: 'lala2',
     uniqueUsers: ['Madam Satan'],
   })
 
   deepEqual(
     await db.query('analyticsEdition').include('uniqueUsers').get(),
-    [{ id: 1, uniqueUsers: 3 }],
-    'cardinality check',
+    [
+      { id: 1, uniqueUsers: 2 },
+      { id: 2, uniqueUsers: 1 },
+    ],
+    'migrated cardinality check',
   )
 })

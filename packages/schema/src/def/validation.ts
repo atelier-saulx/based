@@ -29,6 +29,7 @@ import {
   TYPE_INDEX_MAP,
   PropDef,
   PropDefEdge,
+  CARDINALITY_RAW,
 } from './types.js'
 import {
   MAX_ID,
@@ -151,6 +152,12 @@ export const VALIDATION_MAP: Record<TypeIndex, Validation> = {
       typeof val === 'string' ||
       (val instanceof Uint8Array && val.byteLength === 8)
     )
+  },
+  [CARDINALITY_RAW]: (value) => {
+    if (value instanceof Uint8Array) {
+      return true
+    }
+    return false
   },
   [TIMESTAMP]: (value, t: SchemaTimestamp<true>) => {
     if (

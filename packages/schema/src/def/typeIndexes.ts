@@ -24,12 +24,14 @@ export const VECTOR = 27
 export const JSON = 28
 export const OBJECT = 29
 export const COLVEC = 30
+export const CARDINALITY_RAW = 31
 
 export type TypeIndex =
   | typeof NULL
   | typeof TIMESTAMP
   | typeof NUMBER
   | typeof CARDINALITY
+  | typeof CARDINALITY_RAW
   | typeof INT8
   | typeof UINT8
   | typeof INT16

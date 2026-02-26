@@ -9,6 +9,7 @@ import {
   VECTOR,
   BINARY,
   CARDINALITY,
+  CARDINALITY_RAW,
 } from '@based/schema/def'
 import {
   ReaderLocales,
@@ -26,7 +27,11 @@ const createReaderPropDef = (
 ): ReaderPropDef => {
   const readerPropDef: ReaderPropDef = {
     path: p.__isEdge ? p.path.slice(1) : p.path,
-    typeIndex: opts?.raw ? BINARY : p.typeIndex,
+    typeIndex: opts?.raw
+      ? p.typeIndex == CARDINALITY
+        ? CARDINALITY_RAW
+        : BINARY
+      : p.typeIndex,
     readBy: 0,
   }
   if (opts?.meta) {

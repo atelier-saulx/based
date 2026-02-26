@@ -12,6 +12,7 @@ import {
   BINARY,
   BOOLEAN,
   CARDINALITY,
+  CARDINALITY_RAW,
   COLVEC,
   ENUM,
   INT16,
@@ -60,6 +61,7 @@ export const TYPE_INDEX_MAP: Record<string, TypeIndex> = {
   binary: BINARY,
   vector: VECTOR,
   cardinality: CARDINALITY,
+  cardinalityRAW: CARDINALITY_RAW,
   json: JSON,
   object: OBJECT,
   colvec: COLVEC,
@@ -246,6 +248,7 @@ export const SIZE_MAP: Record<InternalSchemaProp, number> = {
   json: 0,
   object: 0,
   colvec: 0, // separate
+  cardinalityRaw: 0, // separate
 }
 
 const reverseMap: any = {}

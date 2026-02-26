@@ -1,4 +1,12 @@
-import { MICRO_BUFFER, STRING, TEXT, JSON, BINARY } from '@based/schema/def'
+import {
+  MICRO_BUFFER,
+  STRING,
+  TEXT,
+  JSON,
+  BINARY,
+  CARDINALITY,
+  CARDINALITY_RAW,
+} from '@based/schema/def'
 import { DbClient } from '../../index.js'
 import {
   IntermediateByteCode,
@@ -89,7 +97,11 @@ export const includeToBuffer = (
 
   if (propSize) {
     for (const [prop, propDef] of def.include.props.entries()) {
-      const typeIndex = propDef.opts?.raw ? BINARY : propDef.def.typeIndex
+      const typeIndex = propDef.opts?.raw
+        ? propDef.def.typeIndex === CARDINALITY
+          ? CARDINALITY_RAW
+          : BINARY
+        : propDef.def.typeIndex
       if (propDef.opts?.meta) {
         if (propDef.opts.codes) {
           if (propDef.opts.codes.has(0)) {
