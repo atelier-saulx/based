@@ -4869,6 +4869,71 @@ export const pushSelvaSchemaRef = (
   return index
 }
 
+export type SelvaSchemaAlias = {
+  type: SelvaFieldType
+}
+
+export const SelvaSchemaAliasByteSize = 1
+
+export const SelvaSchemaAliasAlignOf = 1
+
+export const packSelvaSchemaAlias = (obj: SelvaSchemaAlias): number => {
+  let val = 0
+  val |= (Number(obj.type) & 255) << 0
+  return val
+}
+
+export const unpackSelvaSchemaAlias = (val: number): SelvaSchemaAlias => {
+  return {
+    type: Number((val >>> 0) & 255),
+  }
+}
+
+export const writeSelvaSchemaAlias = (
+  buf: Uint8Array,
+  header: SelvaSchemaAlias,
+  offset: number,
+): number => {
+  buf[offset] = Number(header.type)
+  offset += 1
+  return offset
+}
+
+export const writeSelvaSchemaAliasProps = {
+  type: (buf: Uint8Array, value: SelvaFieldType, offset: number) => {
+    buf[offset] = Number(value)
+  },
+}
+
+export const readSelvaSchemaAlias = (
+  buf: Uint8Array,
+  offset: number,
+): SelvaSchemaAlias => {
+  const value: SelvaSchemaAlias = {
+    type: buf[offset],
+  }
+  return value
+}
+
+export const readSelvaSchemaAliasProps = {
+    type: (buf: Uint8Array, offset: number) => buf[offset],
+}
+
+export const createSelvaSchemaAlias = (header: SelvaSchemaAlias): Uint8Array => {
+  const buffer = new Uint8Array(SelvaSchemaAliasByteSize)
+  writeSelvaSchemaAlias(buffer, header, 0)
+  return buffer
+}
+
+export const pushSelvaSchemaAlias = (
+  buf: AutoSizedUint8Array,
+  header: SelvaSchemaAlias,
+): number => {
+  const index = buf.length
+  buf.pushUint8(Number(header.type))
+  return index
+}
+
 export type SelvaSchemaColvec = {
   type: SelvaFieldType
   vecLen: number

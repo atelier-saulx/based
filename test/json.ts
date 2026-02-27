@@ -2,6 +2,7 @@ import { notEqual } from 'node:assert'
 import { deepEqual } from './shared/assert.js'
 import test from './shared/test.js'
 import { testDb } from './shared/index.js'
+import { checksum as q2checksum } from '../../src/db-client/query2/index.js'
 
 await test('json', async (t) => {
   const db = await testDb(t, {
@@ -79,13 +80,13 @@ await test('json and crc32', async (t) => {
     article: 'a',
   })
 
-  const checksum = (await db.query2('user', user1).get()).checksum
+  const checksum = q2checksum(await db.query2('user', user1).get())
 
   await db.update('user', user1, {
     article: 'b',
   })
 
-  const checksum2 = (await db.query2('user', user1).get()).checksum
+  const checksum2 = q2checksum(await db.query2('user', user1).get())
 
   notEqual(checksum, checksum2, 'Checksum is not the same')
 })

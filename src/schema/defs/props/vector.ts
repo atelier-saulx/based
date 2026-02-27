@@ -24,6 +24,7 @@ export const vector = class Vector extends BasePropDef {
     this.vectorSize =
       schema.size * VECTOR_BASE_TYPE_SIZE_MAP[VectorBaseType[schema.baseType]]
   }
+  declare schema: SchemaVector
   vectorSize: number
   override type: PropTypeEnum = PropType.vector
   override validate(value: unknown): asserts value is TypedArray {
@@ -49,7 +50,7 @@ export const vector = class Vector extends BasePropDef {
     buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    const defaultValue = this.schema['default']
+    const defaultValue = this.schema.default
     pushSelvaSchemaMicroBuffer(buf, {
       type: PropTypeSelva.microBuffer,
       len: this.vectorSize,
@@ -72,11 +73,12 @@ export const colvec = class ColVec extends BasePropDef {
     this.compSize = VECTOR_BASE_TYPE_SIZE_MAP[VectorBaseType[schema.baseType]]
     this.vecLen = schema.size
   }
+  declare schema: SchemaVector
   compSize: number
   vecLen: number
   override type = PropType.colVec
   override validate(value: unknown): asserts value is Uint8Array {
-    const t = vectorBaseType2TypedArray[this.schema['baseType']]
+    const t = vectorBaseType2TypedArray[this.schema.baseType]
     if (!(value instanceof t)) {
       throw new Error(`Not a ${t.name}`)
     }
@@ -98,7 +100,7 @@ export const colvec = class ColVec extends BasePropDef {
     buf.set(v, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    const defaultValue = this.schema['default']
+    const defaultValue = this.schema.default
     pushSelvaSchemaColvec(buf, {
       type: PropTypeSelva.colVec,
       vecLen: this.vecLen,

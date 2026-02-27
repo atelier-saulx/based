@@ -974,6 +974,10 @@ pub const SelvaSchemaRef = packed struct {
     capped: u32,
 };
 
+pub const SelvaSchemaAlias = packed struct {
+    type: SelvaFieldType,
+};
+
 pub const SelvaSchemaColvec = packed struct {
     type: SelvaFieldType,
     vecLen: u16,

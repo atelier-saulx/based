@@ -100,7 +100,7 @@ const serializeIdsAndMeta = (
       id: id,
       isTmp: !realId,
       withIndex: '$index' in item,
-      index: item.$index,
+      index: item.$index ?? -1,
       size: 0,
     })
 

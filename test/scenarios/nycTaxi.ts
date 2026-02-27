@@ -465,7 +465,6 @@ await test.skip('taxi', async (t) => {
     clamp(Math.round(isNaN(x) ? 0 : x), -2147483648, 2147483647)
 
   const createTrip = async (trip: any) => {
-    // TODO toObject() shouldn't be needed
     const { id: vendor = null } = await db
       .query2('vendor', { vendorId: trip.VendorID })
       .include('id')

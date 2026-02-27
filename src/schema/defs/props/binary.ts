@@ -7,6 +7,7 @@ import {
   PropTypeSelva,
   pushSelvaSchemaString,
   LangCode,
+  writeSelvaSchemaStringProps,
 } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
@@ -52,10 +53,19 @@ export const binary = class Binary extends BasePropDef {
     buf.set(value, buf.length)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    pushSelvaSchemaString(buf, {
+    const index = pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
       fixedLenHint: this.schema.maxBytes ?? 0,
       defaultLen: 0,
     })
+    if (this.schema.default) {
+      const start = buf.length
+      this.pushValue(buf, this.schema.default)
+      writeSelvaSchemaStringProps.defaultLen(
+        buf.data,
+        buf.length - start,
+        index,
+      )
+    }
   }
 }
