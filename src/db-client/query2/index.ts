@@ -249,7 +249,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: cardinality expects at least one argument')
     }
-    parseAggregateProps(this.ast, 'cardinality', props as string[])
+    parseAggregateProps(this.ast, 'cardinality', props)
     return this as any
   }
 
