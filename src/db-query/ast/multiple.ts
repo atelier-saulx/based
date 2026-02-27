@@ -64,6 +64,17 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
 // ADD IDS
 
 export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
+  const schema = readSchema()
+  ctx.readSchema.refs[prop.id] = {
+    schema,
+    prop: readPropDef(prop, ctx.locales, ast.include),
+  }
+
+  if (isAggregateAst(ast)) {
+    pushAggregatesQuery(ast, { ...ctx, readSchema: schema }, prop.ref!, prop)
+    return
+  }
+
   const rangeStart = ast.range?.start || 0
   const headerIndex = pushQueryHeader(ctx.query, {
     op: QueryType.references,
@@ -81,17 +92,6 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     edgeFilterSize: 0,
     size: 0, // this is only used for [IDS] handle this differently
   })
-
-  const schema = readSchema()
-  ctx.readSchema.refs[prop.id] = {
-    schema,
-    prop: readPropDef(prop, ctx.locales, ast.include),
-  }
-
-  if (isAggregateAst(ast)) {
-    pushAggregatesQuery(ast, { ...ctx, readSchema: schema }, prop.ref!, prop)
-    return
-  }
 
   if (ast.sort) {
     pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))
