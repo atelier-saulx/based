@@ -193,8 +193,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: sum expects at least one argument')
     }
-    this.ast.sum ??= { props: [] }
-    this.ast.sum.props.push(...(props as string[])) // Safe cast as P is string-like key
+    parseAggregateProps(this.ast, 'sum', props as string[])
     return this as any
   }
 
@@ -913,6 +912,28 @@ function traverse(target: any, prop: string) {
     }
   }
   return target
+}
+
+function parseAggregateProps(
+  ast: any,
+  aggName: string,
+  props: string[],
+  opts?: any,
+) {
+  for (const prop of props) {
+    const parts = prop.split('.')
+    let target = ast
+    let field = prop
+    if (parts.length > 1) {
+      field = parts.pop()!
+      target = traverse(ast, parts.join('.'))
+    }
+    target[aggName] ??= { props: [] }
+    if (opts?.mode) {
+      target[aggName].samplingMode = opts.mode
+    }
+    target[aggName].props.push(field)
+  }
 }
 
 export const checksum = (res: any): number => {
