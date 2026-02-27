@@ -39,7 +39,7 @@
  * - Save block hash at the end of each block dump
  * - Save block writelog in common.sdb
  * - Remove support for earlier SDB versions
- * - Moved aliases saving from each node to saving all aliases at once
+ * - Move aliases saving from each node to saving all aliases at once
  * - Removed schema from common.sdb
  * - Fix colvec default
  * - Remove support for SELVA_FIELD_TYPE_ALIASES
