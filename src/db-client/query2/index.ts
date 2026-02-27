@@ -457,7 +457,6 @@ class Query<
     if (args.length === 0) {
       throw new Error('Query: stddev expects at least one argument')
     }
-    this.ast.stddev ??= { props: [] }
     let opts: any
     let props: string[]
     if (
@@ -472,10 +471,7 @@ class Query<
     } else {
       props = args
     }
-    this.ast.stddev.props.push(...props)
-    if (opts?.mode) {
-      this.ast.stddev.samplingMode = opts.mode
-    }
+    parseAggregateProps(this.ast, 'stddev', props as string[])
     return this as any
   }
 
@@ -515,7 +511,6 @@ class Query<
     if (args.length === 0) {
       throw new Error('Query: var expects at least one argument')
     }
-    this.ast.variance ??= { props: [] }
     let opts: any
     let props: string[]
     if (
@@ -530,10 +525,7 @@ class Query<
     } else {
       props = args
     }
-    this.ast.variance.props.push(...props)
-    if (opts?.mode) {
-      this.ast.variance.samplingMode = opts.mode
-    }
+    parseAggregateProps(this.ast, 'var', props as string[])
     return this as any
   }
 
