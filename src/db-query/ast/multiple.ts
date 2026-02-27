@@ -88,6 +88,11 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     prop: readPropDef(prop, ctx.locales, ast.include),
   }
 
+  if (isAggregateAst(ast)) {
+    pushAggregatesQuery(ast, { ...ctx, readSchema: schema }, prop.ref!, prop)
+    return
+  }
+
   if (ast.sort) {
     pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))
   }
