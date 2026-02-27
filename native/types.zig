@@ -976,7 +976,6 @@ pub const SelvaSchemaRef = packed struct {
 
 pub const SelvaSchemaAlias = packed struct {
     type: SelvaFieldType,
-    defaultLen: u32,
 };
 
 pub const SelvaSchemaColvec = packed struct {

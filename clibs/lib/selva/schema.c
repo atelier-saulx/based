@@ -230,7 +230,6 @@ static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSch
     struct SelvaFieldSchema *fs = &schema->field_schemas[field];
     struct {
         enum SelvaFieldType type;
-        uint32_t default_len;
     } __packed head;
     size_t off = 0;
 
@@ -247,19 +246,8 @@ static int type2fs_alias(struct schemabuf_parser_ctx *ctx, struct SelvaFieldsSch
         .default_off = 0,
         .alias = {
             .index = ctx->alias_index++,
-            .default_len = head.default_len,
         },
     };
-
-    if (head.default_len > 0) { /* has default */
-        if (ctx->len < off + head.default_len) {
-            return SELVA_EINVAL;
-        }
-
-        /* Default is copied straight from the schema buffer. */
-        fs->default_off = calc_default_off(ctx, off);
-        off += head.default_len;
-    }
 
     return off;
 }

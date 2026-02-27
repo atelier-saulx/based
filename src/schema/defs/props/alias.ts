@@ -19,18 +19,8 @@ export const alias = class Alias extends BasePropDef {
     buf.pushString(value)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
-    const index = pushSelvaSchemaAlias(buf, {
+    pushSelvaSchemaAlias(buf, {
       type: PropTypeSelva.alias,
-      defaultLen: 0,
     })
-    if (this.schema.default) {
-      const start = buf.length
-      this.pushValue(buf, this.schema.default)
-      writeSelvaSchemaAliasProps.defaultLen(
-        buf.data,
-        buf.length - start,
-        index,
-      )
-    }
   }
 }

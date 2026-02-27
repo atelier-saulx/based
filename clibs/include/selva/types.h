@@ -89,7 +89,6 @@ struct SelvaFieldSchema {
          */
         struct {
             size_t index; /*!< Index in aliases. */
-            uint32_t default_len;
         } alias;
         /**
          * SELVA_FIELD_TYPE_COLVEC.
