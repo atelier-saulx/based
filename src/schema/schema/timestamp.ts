@@ -1,4 +1,4 @@
-import { assert, isBoolean, isNumber, isRecord, isString } from './shared.js'
+import { assert, isBoolean, isNumber, isString } from './shared.js'
 import { parseBase, type Base } from './base.js'
 import { convertToTimestamp } from '../../utils/index.js'
 
