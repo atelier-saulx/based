@@ -841,6 +841,7 @@ pub const AggRefsHeader = packed struct {
     filterSize: u16,
     resultsSize: u16,
     accumulatorSize: u16,
+    aggDefsSize: u16,
     hasGroupBy: bool,
     isSamplingSet: bool,
     _padding: u6,

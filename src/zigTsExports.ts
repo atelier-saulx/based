@@ -3680,11 +3680,12 @@ export type AggRefsHeader = {
   filterSize: number
   resultsSize: number
   accumulatorSize: number
+  aggDefsSize: number
   hasGroupBy: boolean
   isSamplingSet: boolean
 }
 
-export const AggRefsHeaderByteSize = 13
+export const AggRefsHeaderByteSize = 15
 
 export const AggRefsHeaderAlignOf = 16
 
@@ -3704,6 +3705,8 @@ export const writeAggRefsHeader = (
   writeUint16(buf, Number(header.resultsSize), offset)
   offset += 2
   writeUint16(buf, Number(header.accumulatorSize), offset)
+  offset += 2
+  writeUint16(buf, Number(header.aggDefsSize), offset)
   offset += 2
   buf[offset] = 0
   buf[offset] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
@@ -3732,11 +3735,14 @@ export const writeAggRefsHeaderProps = {
   accumulatorSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 10)
   },
+  aggDefsSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, Number(value), offset + 12)
+  },
   hasGroupBy: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 12] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+    buf[offset + 14] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
   isSamplingSet: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 12] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    buf[offset + 14] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
 }
 
@@ -3751,8 +3757,9 @@ export const readAggRefsHeader = (
     filterSize: readUint16(buf, offset + 6),
     resultsSize: readUint16(buf, offset + 8),
     accumulatorSize: readUint16(buf, offset + 10),
-    hasGroupBy: (((buf[offset + 12] >>> 0) & 1)) === 1,
-    isSamplingSet: (((buf[offset + 12] >>> 1) & 1)) === 1,
+    aggDefsSize: readUint16(buf, offset + 12),
+    hasGroupBy: (((buf[offset + 14] >>> 0) & 1)) === 1,
+    isSamplingSet: (((buf[offset + 14] >>> 1) & 1)) === 1,
   }
   return value
 }
@@ -3764,8 +3771,9 @@ export const readAggRefsHeaderProps = {
     filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 6),
     resultsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
     accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 10),
-    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 12] >>> 0) & 1)) === 1,
-    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 12] >>> 1) & 1)) === 1,
+    aggDefsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 12),
+    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 14] >>> 0) & 1)) === 1,
+    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 14] >>> 1) & 1)) === 1,
 }
 
 export const createAggRefsHeader = (header: AggRefsHeader): Uint8Array => {
@@ -3785,6 +3793,7 @@ export const pushAggRefsHeader = (
   buf.pushUint16(Number(header.filterSize))
   buf.pushUint16(Number(header.resultsSize))
   buf.pushUint16(Number(header.accumulatorSize))
+  buf.pushUint16(Number(header.aggDefsSize))
   buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
