@@ -249,8 +249,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: cardinality expects at least one argument')
     }
-    this.ast.cardinality ??= { props: [] }
-    this.ast.cardinality.props.push(...props)
+    parseAggregateProps(this.ast, 'cardinality', props as string[])
     return this as any
   }
 
@@ -291,8 +290,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: avg expects at least one argument')
     }
-    this.ast.avg ??= { props: [] }
-    this.ast.avg.props.push(...(props as string[]))
+    parseAggregateProps(this.ast, 'avg', props as string[])
     return this as any
   }
 
@@ -333,8 +331,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: hmean expects at least one argument')
     }
-    this.ast.hmean ??= { props: [] }
-    this.ast.hmean.props.push(...(props as string[]))
+    parseAggregateProps(this.ast, 'hmean', props as string[])
     return this as any
   }
 
@@ -376,8 +373,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: max expects at least one argument')
     }
-    this.ast.max ??= { props: [] }
-    this.ast.max.props.push(...(props as string[]))
+    parseAggregateProps(this.ast, 'max', props as string[])
     return this as any
   }
 
@@ -419,8 +415,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: min expects at least one argument')
     }
-    this.ast.min ??= { props: [] }
-    this.ast.min.props.push(...(props as string[]))
+    parseAggregateProps(this.ast, 'min', props as string[])
     return this as any
   }
 
