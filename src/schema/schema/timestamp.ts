@@ -51,5 +51,5 @@ export const parseTimestamp = (
     max: convertToTsIfDefined(def.max),
     step: convertToTsIfDefined(def.step),
     default: convertToTsIfDefined(def.default),
-  })
+  }, true)
 }
