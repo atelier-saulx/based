@@ -471,7 +471,7 @@ class Query<
     } else {
       props = args
     }
-    parseAggregateProps(this.ast, 'stddev', props as string[])
+    parseAggregateProps(this.ast, 'stddev', props, opts)
     return this as any
   }
 
@@ -525,7 +525,7 @@ class Query<
     } else {
       props = args
     }
-    parseAggregateProps(this.ast, 'var', props as string[])
+    parseAggregateProps(this.ast, 'var', props, opts)
     return this as any
   }
 
@@ -598,15 +598,22 @@ class Query<
     Aggregate,
     P
   > {
-    this.ast.groupBy = { prop }
+    const parts = prop.split('.')
+    let target = this.ast
+    let field: string = prop
+    if (parts.length > 1) {
+      field = parts.pop()!
+      target = traverse(this.ast, parts.join('.'))
+    }
+    target.groupBy = { prop: field as any }
     if (step) {
       if (typeof step === 'object') {
         const s = step as any
-        if (s.step) this.ast.groupBy.step = s.step
-        if (s.timeZone) this.ast.groupBy.timeZone = s.timeZone
-        if (s.display) this.ast.groupBy.display = s.display
+        if (s.step) target.groupBy.step = s.step
+        if (s.timeZone) target.groupBy.timeZone = s.timeZone
+        if (s.display) target.groupBy.display = s.display
       } else {
-        this.ast.groupBy.step = step
+        target.groupBy.step = step
       }
     }
     return this as any
