@@ -12,6 +12,9 @@ import {
   type QueryIteratorTypeEnum,
   IntervalInverse,
   PropType,
+  AggRefsHeaderByteSize,
+  createAggRefsHeader,
+  IncludeOp,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
@@ -29,9 +32,12 @@ export const pushAggregatesQuery = (
   ast: QueryAst,
   ctx: Ctx,
   typeDef: TypeDef,
+  asReference?: PropDef,
 ) => {
   const headerStartPos = ctx.query.length
-  ctx.query.length += AggHeaderByteSize
+  const headerByteSize = asReference ? AggRefsHeaderByteSize : AggHeaderByteSize
+
+  ctx.query.length += headerByteSize
   ctx.readSchema.aggregate = {
     aggregates: [],
     totalResultsSize: 0,
@@ -51,12 +57,17 @@ export const pushAggregatesQuery = (
 
   pushAggregates(ast, ctx, typeDef, sizes)
 
+  const aggDefsSize =
+    ctx.query.length - (headerStartPos + headerByteSize) - filterSize
+
   const headerBuffer = buildAggregateHeader(
     ast,
     typeDef,
     filterSize,
     hasGroupBy,
     sizes,
+    asReference,
+    aggDefsSize,
   )
   ctx.query.data.set(headerBuffer, headerStartPos)
 }
@@ -83,6 +94,8 @@ const buildAggregateHeader = (
   filterSize: number,
   hasGroupBy: boolean,
   sizes: Sizes,
+  asReference?: PropDef,
+  aggDefsSize: number = 0,
 ) => {
   const rangeStart = ast.range?.start || 0
 
@@ -93,6 +106,15 @@ const buildAggregateHeader = (
     resultsSize: sizes.result,
     accumulatorSize: sizes.accumulator,
     isSamplingSet: checkSamplingMode(ast),
+  }
+
+  if (asReference) {
+    return createAggRefsHeader({
+      ...commonHeader,
+      op: IncludeOp.referencesAggregation,
+      targetProp: asReference.id,
+      aggDefsSize,
+    })
   }
 
   const isCountOnly = isRootCountOnly(ast)

@@ -56,18 +56,18 @@ pub inline fn aggregateRefsProps(
         var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
         defer groupByHashMap.deinit();
 
-        _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, hasFilter, filter, q[i.*..]);
+        _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, hasFilter, filter, q[i.* .. i.* + header.aggDefsSize]);
 
         try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
         try ctx.thread.query.append(header.targetProp);
         try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
-        try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.*..]);
+        try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
     } else {
-        _ = try Aggregates.iterator(&aggCtx, &it, hasFilter, filter, q[i.*..], accumulatorProp);
+        _ = try Aggregates.iterator(&aggCtx, &it, hasFilter, filter, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
 
         try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
         try ctx.thread.query.append(header.targetProp);
         try ctx.thread.query.append(@as(u32, header.resultsSize));
-        try Aggregates.finalizeResults(&aggCtx, q[i.*..], accumulatorProp, 0);
+        try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
     }
 }
