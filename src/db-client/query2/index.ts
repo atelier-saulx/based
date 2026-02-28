@@ -525,7 +525,7 @@ class Query<
     } else {
       props = args
     }
-    parseAggregateProps(this.ast, 'var', props, opts)
+    parseAggregateProps(this.ast, 'variance', props, opts)
     return this as any
   }
 
