@@ -158,7 +158,7 @@ pub fn include(
             },
             .referencesAggregation => {
                 try aggregateRefs.aggregateRefsProps(ctx, q, node, typeEntry, &i);
-                i += q.len - i;
+                // i += q.len - i;
             },
         }
     }

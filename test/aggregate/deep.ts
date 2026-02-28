@@ -683,7 +683,7 @@ await test('group by reference ids', async (t) => {
   )
 })
 
-await test.skip('nested references', async (t) => {
+await test('nested references', async (t) => {
   const db = await testDb(t, {
     types: {
       user: {
@@ -721,18 +721,17 @@ await test.skip('nested references', async (t) => {
 
   deepEqual(
     await db.query2('user').sum('friends.strong').get(),
-    {
-      friends: {
-        strong: {
-          sum: 7,
-        },
-      },
-    },
+    // @ts-ignore
+    [
+      { id: 1, friends: { strong: { sum: 4 } } },
+      { id: 2, friends: { strong: { sum: 4 } } },
+      { id: 3, friends: { strong: { sum: 3 } } },
+    ],
     'nested references access with dot sintax',
   )
 })
 
-await test.skip('edges aggregation', async (t) => {
+await test('edges aggregation', async (t) => {
   const db = await testDb(t, {
     types: {
       movie: {

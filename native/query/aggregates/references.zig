@@ -62,6 +62,7 @@ pub inline fn aggregateRefsProps(
         try ctx.thread.query.append(header.targetProp);
         try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
         try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
+        i.* += header.aggDefsSize;
     } else {
         _ = try Aggregates.iterator(&aggCtx, &it, hasFilter, filter, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
 
@@ -69,5 +70,6 @@ pub inline fn aggregateRefsProps(
         try ctx.thread.query.append(header.targetProp);
         try ctx.thread.query.append(@as(u32, header.resultsSize));
         try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
+        i.* += header.aggDefsSize;
     }
 }
