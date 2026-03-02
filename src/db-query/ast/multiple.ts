@@ -20,7 +20,7 @@ import { sort } from './sort.js'
 export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
 
-  if (isAggregateAst(ast)) {
+  if (isAggregateAst(ast, typeDef)) {
     pushAggregatesQuery(ast, ctx, typeDef)
     return
   }
@@ -70,9 +70,10 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     prop: readPropDef(prop, ctx.locales, ast.include),
   }
 
-  if (isAggregateAst(ast)) {
+  if (isAggregateAst(ast, prop.ref)) {
+    const prevLength = ctx.query.length
     pushAggregatesQuery(ast, { ...ctx, readSchema: schema }, prop.ref!, prop)
-    return
+    return ctx.query.length - prevLength
   }
 
   const rangeStart = ast.range?.start || 0
