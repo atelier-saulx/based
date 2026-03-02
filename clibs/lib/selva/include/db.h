@@ -163,13 +163,21 @@ int SelvaNode_cmp(const struct SelvaNode *a, const struct SelvaNode *b);
 int SelvaAlias_cmp_name(const struct SelvaAlias *a, const struct SelvaAlias *b);
 int SelvaAlias_cmp_dest(const struct SelvaAlias *a, const struct SelvaAlias *b);
 
+/**
+ * Call subscriptions hook.
+ * This hook function should be called whenever the observable state of the
+ * database is changed in Selva, especially when the change can't be detected
+ * or known in zig.
+ */
+void selva_subs(struct SelvaTypeEntry *type, node_id_t node_id);
+
 void selva_init_aliases(struct SelvaTypeEntry *type);
 
 /**
  * Free type->aliases.
  * All the aliases must be freed before calling this function.
  */
-void selva_destroy_aliases(struct SelvaTypeEntry *type);
+void selva_destroy_aliases(struct SelvaTypeEntry *te);
 
 /**
  * Set new alias.

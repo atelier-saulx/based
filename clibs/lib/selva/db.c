@@ -559,6 +559,7 @@ static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, stru
 void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     selva_mark_dirty(type, node->node_id);
+    selva_subs(type, node->node_id);
     selva_remove_all_aliases(type, node->node_id);
     selva_fields_flush(db, node);
 }
@@ -568,6 +569,12 @@ void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id)
     if (node_id > 0) {
         selva_block_status_set(te, selva_node_id2block_i2(te, node_id), SELVA_TYPE_BLOCK_STATUS_DIRTY);
     }
+}
+
+void selva_subs(struct SelvaTypeEntry *te, node_id_t node_id)
+{
+    struct SelvaDb *db = selva_get_db_by_te(te);
+    db->subs_hook_fun(db->subs_hook_ctx, te->type, node_id);
 }
 
 struct SelvaNodeRes selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)

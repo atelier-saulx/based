@@ -696,8 +696,11 @@ static void clear_ref_dst(struct SelvaDb *db, const struct SelvaFieldSchema *fs_
         (void)del_multi_ref(db, dst, &fs_dst->edge_constraint, refs, i, false);
     }
 
-    selva_mark_dirty(selva_get_type_by_index(db, fs_dst->edge_constraint.dst_node_type), src_node_id);
+    auto src_type = selva_get_type_by_index(db, fs_dst->edge_constraint.dst_node_type);
+    selva_mark_dirty(src_type, src_node_id);
     selva_mark_dirty(dst_type, dst_node_id);
+    selva_subs(src_type, src_node_id);
+    selva_subs(dst_type, dst_node_id);
 }
 
 /*
@@ -835,6 +838,7 @@ static struct SelvaNodeReferences *clear_references(struct SelvaDb *db, struct S
 #endif
 
     selva_mark_dirty(te, node->node_id);
+    selva_subs(te, node->node_id);
 
     auto dst_type = selva_get_type_by_index(db, fs->edge_constraint.dst_node_type);
     assert(dst_type);
@@ -1398,6 +1402,7 @@ int selva_fields_reference_set(
 
     (void)remove_reference(db, src, fs_src, 0, -1, true);
     selva_mark_dirty(te_dst, dst->node_id);
+    selva_subs(te_dst, dst->node_id);
 
     if (fs_dst->type == SELVA_FIELD_TYPE_REFERENCE) {
         /* The new destination may have a ref to somewhere. */
@@ -1951,6 +1956,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct S
     case SELVA_FIELD_TYPE_STRING:
         del_field_string(fields, nfo);
         selva_mark_dirty(selva_get_type_by_index(db, node->type), node->node_id);
+        selva_subs(selva_get_type_by_index(db, node->type), node->node_id);
         return 0; /* Don't clear it. */
     case SELVA_FIELD_TYPE_TEXT:
         del_field_text(fields, nfo);
@@ -1974,6 +1980,7 @@ static int fields_del(struct SelvaDb *db, struct SelvaNode *node, const struct S
 
     memset(nfo2p(fields, nfo), 0, selva_fields_get_data_size(fs));
     selva_mark_dirty(selva_get_type_by_index(db, node->type), node->node_id);
+    selva_subs(selva_get_type_by_index(db, node->type), node->node_id);
 
     return 0;
 }
