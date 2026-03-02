@@ -66,17 +66,14 @@ pub inline fn aggregateProps(
             accumulate(currentAggDef, accumulatorProp, value, aggCtx, null);
         } else {
             if (currentAggDef.propId != t.MAIN_PROP and currentAggDef.aggFunction != t.AggFunction.cardinality) {
-                i += utils.sizeOf(t.AggProp);
                 continue;
             }
             const propSchema = Schema.getFieldSchema(aggCtx.typeEntry, currentAggDef.propId) catch {
-                i += utils.sizeOf(t.AggProp);
                 continue;
             };
             if (currentAggDef.aggFunction == .cardinality) {
                 const hllValue = Selva.c.selva_fields_get_selva_string(node, propSchema) orelse null;
                 if (hllValue == null) {
-                    i += utils.sizeOf(t.AggProp);
                     continue;
                 }
                 if (!aggCtx.hadAccumulated) {
