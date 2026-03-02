@@ -1,5 +1,5 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { LangCode } from '../src/zigTsExports.js'
 
 const langs = [...Object.keys(LangCode)].filter((val) => val !== 'none')
@@ -8,13 +8,7 @@ const locales = Object.fromEntries(
 )
 
 await test('locales', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  const client = await db.setSchema({
+  const client = await testDb(t, {
     locales,
     types: {
       thing: {

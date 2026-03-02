@@ -182,6 +182,7 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                             .idsWithMeta => {
                                 const refTypeId = Schema.getRefTypeIdFromFieldSchema(propSchema);
                                 const refTypeEntry = try Node.getType(db, refTypeId);
+                                const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
                                 const count = utils.read(u32, refs, 0);
                                 var x: usize = 4;
                                 References.preallocReferences2(db, node, propSchema, count);
@@ -193,7 +194,6 @@ pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8
                                         const ref = try References.insertReference(db, node, propSchema, dst, meta.index, meta.withIndex);
                                         if (meta.size != 0) {
                                             const edgeProps = refs[x .. x + meta.size];
-                                            const edgeConstraint = Schema.getEdgeFieldConstraint(propSchema);
                                             if (Node.getEdgeNode(db, edgeConstraint, ref.p.large)) |edgeNode| {
                                                 const edgeType = try Node.getType(db, edgeConstraint.edge_node_type);
                                                 try modifyProps(db, edgeType, edgeNode, edgeProps, items);

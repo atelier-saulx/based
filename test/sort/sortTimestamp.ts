@@ -1,13 +1,9 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
+import { testDb } from '../shared/index.js'
 import { isSorted } from '../shared/assert.js'
 
 await test('sort timestamp', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  t.after(() => t.backup(db))
-  await db.start({ clean: true })
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       event: {
         props: {
@@ -128,11 +124,7 @@ await test('sort timestamp', async (t) => {
 })
 
 await test('sort multicore', async (t) => {
-  const db = new BasedDb({ path: t.tmp })
-  t.after(() => t.backup(db))
-  await db.start({ clean: true })
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       event: {
         props: {

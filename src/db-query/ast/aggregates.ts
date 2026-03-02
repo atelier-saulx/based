@@ -12,6 +12,9 @@ import {
   type QueryIteratorTypeEnum,
   IntervalInverse,
   PropType,
+  AggRefsHeaderByteSize,
+  createAggRefsHeader,
+  IncludeOp,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
@@ -29,9 +32,12 @@ export const pushAggregatesQuery = (
   ast: QueryAst,
   ctx: Ctx,
   typeDef: TypeDef,
+  asReference?: PropDef,
 ) => {
   const headerStartPos = ctx.query.length
-  ctx.query.length += AggHeaderByteSize
+  const headerByteSize = asReference ? AggRefsHeaderByteSize : AggHeaderByteSize
+
+  ctx.query.length += headerByteSize
   ctx.readSchema.aggregate = {
     aggregates: [],
     totalResultsSize: 0,
@@ -51,12 +57,17 @@ export const pushAggregatesQuery = (
 
   pushAggregates(ast, ctx, typeDef, sizes)
 
+  const aggDefsSize =
+    ctx.query.length - (headerStartPos + headerByteSize) - filterSize
+
   const headerBuffer = buildAggregateHeader(
     ast,
     typeDef,
     filterSize,
     hasGroupBy,
     sizes,
+    asReference,
+    aggDefsSize,
   )
   ctx.query.data.set(headerBuffer, headerStartPos)
 }
@@ -83,6 +94,8 @@ const buildAggregateHeader = (
   filterSize: number,
   hasGroupBy: boolean,
   sizes: Sizes,
+  asReference?: PropDef,
+  aggDefsSize: number = 0,
 ) => {
   const rangeStart = ast.range?.start || 0
 
@@ -93,6 +106,15 @@ const buildAggregateHeader = (
     resultsSize: sizes.result,
     accumulatorSize: sizes.accumulator,
     isSamplingSet: checkSamplingMode(ast),
+  }
+
+  if (asReference) {
+    return createAggRefsHeader({
+      ...commonHeader,
+      op: IncludeOp.referencesAggregation,
+      targetProp: asReference.id,
+      aggDefsSize,
+    })
   }
 
   const isCountOnly = isRootCountOnly(ast)
@@ -116,22 +138,21 @@ const buildAggregateHeader = (
   return headerBuffer
 }
 
-const pushAggregates = (
-  ast: QueryAst,
+type SizesType = { result: number; accumulator: number }
+
+const walkProps = (
   ctx: Ctx,
+  sizes: SizesType,
   typeDef: TypeDef,
-  sizes: { result: number; accumulator: number },
+  targetAst: QueryAst,
+  currentPath: string[] = [],
 ) => {
-  ctx.readSchema.aggregate = ctx.readSchema.aggregate || {
-    aggregates: [],
-    totalResultsSize: 0,
-    groupBy: undefined,
-  }
+  var i = 0
 
   for (const key in AggFunction) {
-    if (!(key in ast)) continue
+    if (!(key in targetAst)) continue
 
-    const data = ast[key]
+    const data = targetAst[key]
     if (!data) continue
 
     const fn = AggFunction[key]
@@ -142,7 +163,6 @@ const pushAggregates = (
         ? [data.props]
         : []
 
-    let i = 0
     if (key === 'count' && props.length === 0) {
       ctx.readSchema.aggregate?.aggregates.push({
         path: ['count'],
@@ -153,7 +173,13 @@ const pushAggregates = (
     }
 
     for (const propName of props) {
-      let propDef: PropDef | any = typeDef.props.get(propName)
+      const fullParts = [...currentPath]
+      if (propName !== 'count' || fn !== AggFunction.count) {
+        fullParts.push(propName)
+      }
+      const fullPropName = fullParts.join('.')
+
+      let propDef: PropDef | any = typeDef.props.get(fullPropName)
       if (propName === 'count' && fn === AggFunction.count) {
         propDef = {
           id: 255,
@@ -163,7 +189,7 @@ const pushAggregates = (
         }
       }
       if (!propDef) {
-        throw new Error(`Aggregate property '${propName}' not found`)
+        throw new Error(`Aggregate property '${fullPropName}' not found`)
       }
 
       let resSize = 0
@@ -190,6 +216,7 @@ const pushAggregates = (
         type: fn,
         resultPos: sizes.result,
       })
+
       ctx.readSchema.main.props[i] = readPropDef(propDef, ctx.locales)
       ctx.readSchema.main.len += propDef.size
       i += propDef.size
@@ -200,13 +227,57 @@ const pushAggregates = (
       sizes.result += resSize
       sizes.accumulator += accSize
 
-      ctx.readSchema.aggregate.totalResultsSize += resSize
+      ctx.readSchema.aggregate!.totalResultsSize += resSize
+    }
+  }
+
+  if (targetAst.props) {
+    for (const key in targetAst.props) {
+      const childPath = [...currentPath, key].join('.')
+      const childPropDef = typeDef.props.get(childPath)
+
+      if (
+        childPropDef &&
+        (childPropDef.type === PropType.reference ||
+          childPropDef.type === PropType.references ||
+          childPropDef.isEdge)
+      ) {
+        continue
+      }
+
+      if (
+        isAggregateAst(targetAst.props[key], typeDef, [...currentPath, key])
+      ) {
+        walkProps(ctx, sizes, typeDef, targetAst.props[key], [
+          ...currentPath,
+          key,
+        ])
+      }
     }
   }
 }
 
-export const isAggregateAst = (ast: QueryAst) => {
-  return !!(
+const pushAggregates = (
+  ast: QueryAst,
+  ctx: Ctx,
+  typeDef: TypeDef,
+  sizes: SizesType,
+) => {
+  ctx.readSchema.aggregate = ctx.readSchema.aggregate || {
+    aggregates: [],
+    totalResultsSize: 0,
+    groupBy: undefined,
+  }
+
+  walkProps(ctx, sizes, typeDef, ast)
+}
+
+export const isAggregateAst = (
+  ast: QueryAst,
+  typeDef?: TypeDef,
+  currentPath: string[] = [],
+): boolean => {
+  if (
     ast.groupBy ||
     ast.count ||
     ast.sum ||
@@ -217,7 +288,30 @@ export const isAggregateAst = (ast: QueryAst) => {
     ast.variance ||
     ast.hmean ||
     ast.cardinality
-  )
+  ) {
+    return true
+  }
+  if (ast.props && typeDef) {
+    for (const key in ast.props) {
+      const childPath = [...currentPath, key].join('.')
+      const childPropDef = typeDef.props.get(childPath)
+
+      if (
+        childPropDef &&
+        (childPropDef.type === PropType.reference ||
+          childPropDef.type === PropType.references ||
+          childPropDef.isEdge)
+      ) {
+        continue
+      }
+
+      if (isAggregateAst(ast.props[key], typeDef, [...currentPath, key])) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
 
 const checkSamplingMode = (ast: QueryAst): boolean => {

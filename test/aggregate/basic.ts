@@ -68,6 +68,10 @@ await test('sum top level', async (t) => {
     await db.query2('vote').sum().get()
   }, 'sum() returning nothing')
 
+  console.dir(await db.query2('vote').sum('flap.hello').get(), {
+    maxdepth: null,
+  })
+
   deepEqual(
     await db.query2('vote').sum('flap.hello').get(),
     { flap: { hello: { sum: 100 } } },

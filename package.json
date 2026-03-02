@@ -23,6 +23,7 @@
     "watch-zig:linux-arm64": "zig build -Dtarget=aarch64-linux-gnu --watch",
     "watch-zig:linux-x64": "zig build -Dtarget=x86_64-linux-gnu --watch",
     "watch-ts": "tsc -p tsconfig.build.json --watch",
+    "watch-ts-test": "tsc -p tsconfig.test.json --watch",
     "watch-native": "npm run build-c && npm run watch-zig",
     "watch-exports": "tsx --watch-path=./native/types.zig scripts/zigTsExports.ts ",
     "watch": "npm run concurrently npm:watch-native npm:watch-ts npm:watch-exports",

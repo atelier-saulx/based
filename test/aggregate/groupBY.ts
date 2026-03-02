@@ -1,6 +1,5 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
-import { throws, deepEqual } from '../shared/assert.js'
+import { deepEqual } from '../shared/assert.js'
 import { testDb } from '../shared/index.js'
 
 await test('sum group by', async (t) => {
@@ -384,13 +383,7 @@ await test('group by unique numbers', async (t) => {
 })
 
 await test.skip('groupBy ranges in numeric properties', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => db.stop())
-
-  await db.setSchema({
+  const db = await db.setSchema({
     types: {
       trip: {
         tripId: 'number',
@@ -399,7 +392,7 @@ await test.skip('groupBy ranges in numeric properties', async (t) => {
         distance: 'number',
       },
     },
-  })
+  }, { noBackup: true })
 
   for (let i = 0; i < 10; i++) {
     db.create('trip', {

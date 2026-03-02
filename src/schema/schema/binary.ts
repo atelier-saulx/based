@@ -28,5 +28,5 @@ export const parseBinary = (def: Record<string, unknown>): SchemaBinary => {
     maxBytes: def.maxBytes,
     mime: def.mime,
     format: def.format,
-  })
+  }, true)
 }

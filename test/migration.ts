@@ -10,7 +10,7 @@ await test('migration', async (t) => {
 
   await db.start({ clean: true })
 
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   await db.setSchema({
     version: '1.0.0',

@@ -682,8 +682,7 @@ export default async function createNorthwindDb(
     [9, '48304'],
     [9, '55113'],
     [9, '55439'],
-  ].forEach((row) => db.upsert('territories', {
-    territoryId: row[1],
+  ].forEach((row) => db.upsert('territories', { territoryId: `${row[1]}` }, {
     employees: {
         add: [ row[0] ],
     },
@@ -1540,7 +1539,7 @@ export default async function createNorthwindDb(
     [11077, 'RATTC', 1, '1998-05-06', '1998-06-03', '', 2, 8.53, 'Rattlesnake Canyon Grocery', '2817 Milton Dr.', 'Albuquerque', 'NM', '87110', 'USA'],
   ].map(async (row) => db.create('orders', {
     id: row[0],
-    customer: await db.upsert('customers', { customerId: row[1] }),
+    customer: await db.upsert('customers', { customerId: `${row[1]}` }, {}),
     employee: row[2],
     orderStatus: (row[5] === '') ? 'created' : 'shipped',
     orderDate: row[3] && new Date(row[3]),

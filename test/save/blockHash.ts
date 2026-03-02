@@ -1,4 +1,4 @@
-import assert, { equal, notEqual } from 'node:assert'
+import assert, { equal } from 'node:assert'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
@@ -7,8 +7,8 @@ import test from '../shared/test.js'
 import native from '../../src/native.js'
 import { deepEqual } from '../shared/assert.js'
 import { getBlockHash } from '../../src/db-server/blocks.js'
+import { checksum } from '../../src/db-client/query2/index.js'
 
-const f = (v) => v.map((r) => r.hash)
 const sha1 = async (path: string) =>
   createHash('sha1')
     .update(await fs.readFile(path))
@@ -48,8 +48,8 @@ await test('isomorphic types have equal hashes', async (t) => {
   await client.drain()
 
   deepEqual(
-    (await client.query2('article').get()).checksum,
-    (await client.query2('story').get()).checksum,
+    checksum(await client.query2('article').get()),
+    checksum(await client.query2('story').get()),
   )
   assert(
     native.equals(

@@ -17,6 +17,7 @@ await test('query db', async (t) => {
             street: 'string',
           },
         },
+        story: 'text',
         friend: {
           ref: 'user',
           prop: 'friend',
@@ -193,6 +194,10 @@ await test('query db', async (t) => {
               address: {
                 street: 'Cool street',
               },
+              story: {
+                en: '',
+                nl: '',
+              },
             },
           },
         ],
@@ -209,6 +214,10 @@ await test('query db', async (t) => {
               age: 21,
               address: {
                 street: 'Cool street',
+              },
+              story: {
+                en: '',
+                nl: '',
               },
             },
           },

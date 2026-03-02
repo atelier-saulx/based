@@ -1,4 +1,4 @@
-import { assert } from './shared.js'
+import { assert, isString } from './shared.js'
 import { parseString, type SchemaString } from './string.js'
 
 export type SchemaAlias = Omit<SchemaString, 'type' | 'default'> & {

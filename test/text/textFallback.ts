@@ -1,16 +1,8 @@
-import { BasedDb } from '../../src/index.js'
-import { deepEqual } from '../shared/index.js'
+import { deepEqual, testDb } from '../shared/index.js'
 import test from '../shared/test.js'
 
 await test('textFallback', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-    maxModifySize: 1e6,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     locales: {
       en: true,
       nl: { fallback: ['en'] },

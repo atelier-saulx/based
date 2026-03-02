@@ -42,6 +42,7 @@ const includeMainProps = (
 
   let i = 0
   for (const { include, prop } of props) {
+    if (prop.size === 0) continue
     ctx.readSchema.main.props[i] = readPropDef(prop, ctx.locales, include)
     ctx.readSchema.main.len += prop.size
     i += prop.size

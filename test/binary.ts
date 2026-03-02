@@ -1,18 +1,13 @@
-import { BasedDb } from '../src/index.js'
 import { ENCODER } from '../src/utils/uint8.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual, equal } from './shared/assert.js'
 import { italy } from './shared/examples.js'
 import { notEqual } from 'node:assert'
+import { checksum as q2checksum } from '../src/db-client/query2/index.js'
 
 await test('simple', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -57,13 +52,7 @@ await test('simple', async (t) => {
 })
 
 await test('binary and crc32', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         article: {
@@ -77,13 +66,13 @@ await test('binary and crc32', async (t) => {
     article: new Uint8Array([1]),
   })
 
-  const checksum = (await db.query2('user', user1).get()).checksum
+  const checksum = q2checksum(await db.query2('user', user1).get())
 
   await db.update('user', user1, {
     article: new Uint8Array([2]),
   })
 
-  const checksum2 = (await db.query2('user', user1).get()).checksum
+  const checksum2 = q2checksum(await db.query2('user', user1).get())
 
   notEqual(checksum, checksum2, 'Checksum is not the same')
 })

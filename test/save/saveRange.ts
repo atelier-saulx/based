@@ -164,7 +164,7 @@ await test('reference changes', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const client = await db.setSchema({
     types: {
@@ -253,7 +253,7 @@ await test('ref block moves', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const client = await db.setSchema({
     types: {
@@ -296,7 +296,7 @@ await test('ref removal', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const client = await db.setSchema({
     types: {
@@ -332,7 +332,7 @@ await test('refs removal with delete', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const client = await db.setSchema({
     types: {
@@ -364,7 +364,7 @@ await test('large block gap', async (t) => {
     path: t.tmp,
   })
   await db.start({ clean: true })
-  t.after(() => t.backup(db))
+  t.after(() => t.backup(db.server))
 
   const client = await db.setSchema({
     types: {

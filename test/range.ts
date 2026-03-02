@@ -1,16 +1,10 @@
 import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
+import { testDb } from './shared/index.js'
 import { deepEqual, equal } from './shared/assert.js'
 
 await test('range', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  // schema
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -72,15 +66,7 @@ await test('range', async (t) => {
 })
 
 await test('default range: 1000', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
-  // schema
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       user: {
         props: {

@@ -1,16 +1,10 @@
-import { BasedDb } from '../src/index.js'
 import test from './shared/test.js'
 import { deepEqual } from './shared/assert.js'
 import { SchemaProps, serialize } from '../src/schema/index.js'
 import { deSerializeSchema, resultToObject } from '../src/protocol/index.js'
+import { testDb } from './shared/index.js'
 
 await test('big nodes', async (t) => {
-  const db = new BasedDb({
-    path: t.tmp,
-  })
-  await db.start({ clean: true })
-  t.after(() => t.backup(db))
-
   const makeALot = (n: number) => {
     const props: SchemaProps = {}
     for (let i = 0; i < n; i++) {
@@ -19,7 +13,7 @@ await test('big nodes', async (t) => {
     return props
   }
 
-  await db.setSchema({
+  const db = await testDb(t, {
     types: {
       mega: {
         props: {

@@ -4,7 +4,6 @@ import {
   countDirtyBlocks,
   testDbServer,
   testDbClient,
-  testDb,
 } from '../shared/index.js'
 
 await test('single reference', async (t) => {

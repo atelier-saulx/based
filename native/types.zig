@@ -841,6 +841,7 @@ pub const AggRefsHeader = packed struct {
     filterSize: u16,
     resultsSize: u16,
     accumulatorSize: u16,
+    aggDefsSize: u16,
     hasGroupBy: bool,
     isSamplingSet: bool,
     _padding: u6,
@@ -972,6 +973,10 @@ pub const SelvaSchemaRef = packed struct {
     inverseField: SelvaField,
     edgeNodeType: TypeId,
     capped: u32,
+};
+
+pub const SelvaSchemaAlias = packed struct {
+    type: SelvaFieldType,
 };
 
 pub const SelvaSchemaColvec = packed struct {
