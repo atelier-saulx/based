@@ -74,11 +74,11 @@ export const getIteratorType = (
     base += 0
   }
 
-  console.log(
-    QueryIteratorTypeInverse[base],
-    base,
-    QueryIteratorType.edgeFilterOnEdge,
-  )
+  //console.log(
+  //  QueryIteratorTypeInverse[base],
+  //  base,
+  //  QueryIteratorType.edgeFilterOnEdge,
+  //)
 
   if (
     ast.filter?.edgeStrategy === EdgeStrategy.edgeOnly ||
