@@ -245,6 +245,10 @@ static uint32_t te_size(void)
     return slab_size;
 }
 
+static void noop_subs_hook(void *, node_type_t, node_id_t)
+{
+}
+
 struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len])
 {
     const size_t nr_types = schema_count_types(len, schema);
@@ -259,6 +263,7 @@ struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len])
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
     db->dirfd = AT_FDCWD;
+    db->subs_hook_fun = noop_subs_hook;
     selva_expire_init(&db->expiring);
 
     for (size_t i = 0; i < len;) {
@@ -310,6 +315,12 @@ int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname
 
     db->dirfd = fd;
     return 0;
+}
+
+void selva_db_set_subs_hook(struct SelvaDb *db, selva_db_subs_hook_t hook, void *ctx)
+{
+    db->subs_hook_fun = hook ?: noop_subs_hook;
+    db->subs_hook_ctx = ctx;
 }
 
 /**
@@ -437,6 +448,8 @@ extern inline node_type_t selva_get_max_type(const struct SelvaDb *db);
 extern inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type);
 
 extern inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
+
+extern inline struct SelvaDb *selva_get_db_by_te(struct SelvaTypeEntry *te);
 
 extern inline node_type_t selva_get_type(const struct SelvaTypeEntry *te);
 
