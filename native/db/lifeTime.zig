@@ -24,15 +24,14 @@ fn startInternal(env: napi.Env, info: napi.Info) !napi.Value {
     const args = try napi.getArgs(4, env, info);
     const fsPath = try napi.get([]u8, env, args[1]);
     const nrThreads = try napi.get(u16, env, args[2]);
-    const ctx = try dbCtx.createDbCtx(env, args[0], fsPath, nrThreads);
     const selvaSchema = try napi.get([]u8, env, args[3]);
 
-    ctx.selva = selva.selva_db_create(selvaSchema.len, selvaSchema.ptr);
-    if (ctx.selva == null) {
+    const selvaDb = selva.selva_db_create(selvaSchema.len, selvaSchema.ptr);
+    if (selvaDb == null) {
         return errors.jsThrow(env, "Failed to create a db");
     }
-    _ = selva.selva_db_chdir(ctx.selva, fsPath.ptr, fsPath.len); // TODO Handle error?
-    ctx.ids = jemalloc.alloc(u32, selva.selva_get_max_type(ctx.selva));
+    _ = selva.selva_db_chdir(selvaDb, fsPath.ptr, fsPath.len); // TODO Handle error?
+    const ctx = try dbCtx.createDbCtx(env, args[0], fsPath, nrThreads, selvaDb.?);
 
     var externalNapi: napi.Value = undefined;
     ctx.initialized = true;

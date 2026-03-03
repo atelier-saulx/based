@@ -18,7 +18,7 @@ pub const DbCtx = struct {
     allocator: std.mem.Allocator,
     arena: *std.heap.ArenaAllocator,
     sortIndexes: sort.TypeSortIndexes,
-    selva: ?*selva.SelvaDb,
+    selva: *selva.SelvaDb,
     ids: []u32,
     jsBridge: *jsBridge.Callback,
     fsPath: []u8,
@@ -50,6 +50,7 @@ pub fn createDbCtx(
     bridge: napi.Value,
     fsPath: []u8,
     nrThreads: u16,
+    selvaDb: *selva.struct_SelvaDb,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
@@ -68,8 +69,8 @@ pub fn createDbCtx(
         .allocator = allocator,
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
-        .selva = null,
-        .ids = &[_]u32{},
+        .selva = selvaDb,
+        .ids = jemalloc.alloc(u32, selva.selva_get_max_type(selvaDb)),
         .jsBridge = try jsBridge.Callback.init(env, dbCtxPointer, bridge),
         .decompressor = deflate.createDecompressor(),
         .libdeflateBlockState = deflate.initBlockState(305000),
@@ -94,6 +95,5 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     deflate.deinitBlockState(&ctx.libdeflateBlockState);
 
     selva.selva_db_destroy(ctx.selva);
-    ctx.selva = null;
     ctx.arena.deinit();
 }
