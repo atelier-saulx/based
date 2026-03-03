@@ -106,7 +106,7 @@ inline fn aggregatePropsWithGroupBy(
     }
     // utils.debugPrint("is_new?: {any}, key: {s} {d}, sumOfDistinctKeyLens: {d}\n", .{ hash_map_entry.is_new, key, key.len, sumOfDistinctKeyLens });
 
-    Aggregates.aggregateProps(node, aggDefs[i..], accumulatorProp, aggCtx);
+    Aggregates.aggregateProps(node, null, aggDefs[i..], accumulatorProp, aggCtx);
 }
 
 pub inline fn finalizeGroupResults(
