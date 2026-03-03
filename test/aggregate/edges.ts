@@ -230,4 +230,6 @@ await test('edges aggregation', async (t) => {
   // after: NOK: feature not implemented
   // await db.query2('actor').max('$rating').get().inspect(10)
   // await db.query2('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
+
+  // group BY EDGE!!!
 })
