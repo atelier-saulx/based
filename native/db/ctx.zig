@@ -83,17 +83,7 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     ctx.jsBridge.deinit();
     ctx.threads.deinit();
 
-    var it = ctx.sortIndexes.iterator();
-    while (it.next()) |index| {
-        var mainIt = index.value_ptr.*.main.iterator();
-        while (mainIt.next()) |main| {
-            selva.selva_sort_destroy(main.value_ptr.*.index);
-        }
-        var fieldIt = index.value_ptr.*.field.iterator();
-        while (fieldIt.next()) |field| {
-            selva.selva_sort_destroy(field.value_ptr.*.index);
-        }
-    }
+    sort.deinit(&ctx.sortIndexes);
 
     if (ctx.ids.len > 0) {
         jemalloc.free(ctx.ids);

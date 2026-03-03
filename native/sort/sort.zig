@@ -1,4 +1,5 @@
 const deflate = @import("../deflate.zig");
+const jemalloc = @import("../jemalloc.zig");
 const selva = @import("../selva/selva.zig").c;
 const Node = @import("../selva/node.zig");
 const References = @import("../selva/references.zig");
@@ -68,17 +69,51 @@ fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
     }
 }
 
-pub fn createSortIndexMeta(
+pub fn deinit(sortIndexes: *TypeSortIndexes) void {
+    var it = sortIndexes.iterator();
+    while (it.next()) |index| {
+        const typeIndex = index.value_ptr.*;
+
+        var textIt = typeIndex.text.iterator();
+        while (textIt.next()) |kv| {
+            const sortIndex = kv.value_ptr.*;
+            selva.selva_sort_destroy(sortIndex.index);
+            jemalloc.free(sortIndex);
+        }
+
+        var fieldIt = typeIndex.field.iterator();
+        while (fieldIt.next()) |kv| {
+            const sortIndex = kv.value_ptr.*;
+            selva.selva_sort_destroy(sortIndex.index);
+            jemalloc.free(sortIndex);
+        }
+
+        var mainIt = typeIndex.main.iterator();
+        while (mainIt.next()) |kv| {
+            const sortIndex = kv.value_ptr.*;
+            selva.selva_sort_destroy(sortIndex.index);
+            jemalloc.free(sortIndex);
+        }
+
+        jemalloc.free(typeIndex);
+    }
+
+    sortIndexes.deinit();
+}
+
+fn createSortIndexMeta(
     header: *const t.SortHeader,
     size: usize,
     comptime isEdge: bool,
-) !SortIndexMeta {
+) !*SortIndexMeta {
+    const s = jemalloc.create(SortIndexMeta);
     const sortFlag = try getSortFlag(header.propType);
     const sortCtx: *selva.SelvaSortCtx = selva.selva_sort_init3(sortFlag, size, if (isEdge)
         @sizeOf(References.ReferencesIteratorEdgesResult)
     else
         0).?;
-    const s: SortIndexMeta = .{
+
+    s.* = .{
         .len = header.len,
         .start = header.start,
         .index = sortCtx,
@@ -87,6 +122,7 @@ pub fn createSortIndexMeta(
         .field = header.prop,
         .isCreated = false,
     };
+
     return s;
 }
 
@@ -98,7 +134,7 @@ pub fn getOrCreateFromCtx(
     var sortIndex: ?*SortIndexMeta = undefined;
     var typeIndexes: ?*TypeIndex = dbCtx.sortIndexes.get(typeId);
     if (typeIndexes == null) {
-        typeIndexes = try dbCtx.allocator.create(TypeIndex);
+        typeIndexes = jemalloc.create(TypeIndex);
         typeIndexes.?.* = .{
             .field = FieldSortIndexes.init(dbCtx.allocator),
             .main = MainSortIndexes.init(dbCtx.allocator),
@@ -109,8 +145,7 @@ pub fn getOrCreateFromCtx(
     const tI: *TypeIndex = typeIndexes.?;
     sortIndex = getSortIndex(typeIndexes, sortHeader.prop, sortHeader.start, sortHeader.lang);
     if (sortIndex == null) {
-        sortIndex = try dbCtx.allocator.create(SortIndexMeta);
-        sortIndex.?.* = try createSortIndexMeta(sortHeader, 0, false);
+        sortIndex = try createSortIndexMeta(sortHeader, 0, false);
         if (sortHeader.prop == 0) {
             try tI.main.put(sortHeader.start, sortIndex.?);
         } else if (sortHeader.propType == t.PropType.text) {
@@ -129,20 +164,16 @@ pub fn destroySortIndex(
     start: u16,
     lang: t.LangCode,
 ) void {
-    const typeIndexes = dbCtx.sortIndexes.get(typeId);
-    if (typeIndexes == null) {
-        return;
-    }
-    const sortIndex = getSortIndex(typeIndexes, field, start, lang);
-    if (sortIndex) |index| {
-        const tI: *TypeIndex = typeIndexes.?;
-        if (field == 0) {
-            _ = tI.main.remove(start);
-        } else {
-            _ = tI.field.remove(field);
+    if (dbCtx.sortIndexes.get(typeId)) |typeIndexes| {
+        if (getSortIndex(typeIndexes, field, start, lang)) |index| {
+            if (field == 0) {
+                _ = typeIndexes.main.remove(start);
+            } else {
+                _ = typeIndexes.field.remove(field);
+            }
+            selva.selva_sort_destroy(index.index);
+            jemalloc.free(index);
         }
-        selva.selva_sort_destroy(index.index);
-        dbCtx.allocator.destroy(index);
     }
 }
 
