@@ -118,13 +118,14 @@ pub fn loadCommon(
         }
     }
 
-    if (com.blocks) |blocks| {
-        jemalloc.free(blocks[0..com.blocks_len]);
-    }
-
     if (com.ids_data != null) {
+        if (dbCtx.ids.len > 0) {
+            selva.selva_dump_free_ids(dbCtx.ids.ptr);
+        }
         dbCtx.ids = com.ids_data[0..com.ids_len];
     }
+
+    selva.selva_dump_deinit_common(&com);
 
     utils.write(resp, err, 0);
 }

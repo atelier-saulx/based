@@ -882,6 +882,17 @@ static int load_aliases(struct selva_io *io, struct SelvaDb *db)
     return 0;
 }
 
+void selva_dump_free_ids(node_id_t *ids)
+{
+    selva_free(ids);
+}
+
+node_id_t *selva_dump_alloc_ids(struct SelvaDb *db, size_t *len_out)
+{
+    *len_out = selva_get_max_type(db);
+    return selva_calloc(*len_out, sizeof(node_id_t));
+}
+
 __attribute__((warn_unused_result))
 static int load_common_ids(struct selva_io *io, struct selva_dump_common_data *com)
 {
@@ -970,6 +981,11 @@ int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *co
     selva_io_end(&io, nullptr);
 
     return err;
+}
+
+void selva_dump_deinit_common(struct selva_dump_common_data *com)
+{
+    selva_free(com->blocks);
 }
 
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size)

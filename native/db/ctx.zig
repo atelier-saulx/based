@@ -56,9 +56,12 @@ pub fn createDbCtx(
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const dbCtxPointer = try allocator.create(DbCtx);
+    var idsLen: usize = undefined;
+    const ids = selva.selva_dump_alloc_ids(selvaDb, &idsLen);
 
     errdefer {
         arena.deinit();
+        selva.selva_dump_free_ids(ids);
     }
 
     dbCtxPointer.* = .{
@@ -70,7 +73,7 @@ pub fn createDbCtx(
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
         .selva = selvaDb,
-        .ids = jemalloc.alloc(u32, selva.selva_get_max_type(selvaDb)),
+        .ids = ids[0..idsLen],
         .jsBridge = try jsBridge.Callback.init(env, dbCtxPointer, bridge),
         .decompressor = deflate.createDecompressor(),
         .libdeflateBlockState = deflate.initBlockState(305000),
@@ -87,7 +90,7 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     sort.deinit(&ctx.sortIndexes);
 
     if (ctx.ids.len > 0) {
-        jemalloc.free(ctx.ids);
+        selva.selva_dump_free_ids(ctx.ids.ptr);
         ctx.ids = &[_]u32{};
     }
 
