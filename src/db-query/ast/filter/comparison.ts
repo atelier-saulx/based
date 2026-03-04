@@ -114,20 +114,13 @@ export const variableComparison = (
     op === FilterOpCompare.eqVar ||
     FilterOpCompare.neqVar
   ) {
-    if (val.length === 1) {
-      const size = native.stringByteLength(val[0])
-      // console.log({ size })
-      const { condition, offset } = createCondition(prop, op, size, 0)
-      ENCODER.encodeInto(val[0], condition.subarray(offset))
-      console.log('yo yo yo', val[0], condition, condition.subarray(offset))
-      return condition
-    } else {
-      // fix this
-    }
+    const size = native.stringByteLength(val[0])
+    const { condition, offset } = createCondition(prop, op, size, 0)
+    ENCODER.encodeInto(val[0], condition.subarray(offset))
+    return condition
   }
 
-  // else if (op === FilterOpCompare.eqVar || FilterOpCompare.neqVar) {
-  // }
+  // BATCH STUFF
 
   throw new Error(
     `Filter comparison not supported "${operator}" ${prop.path.join('.')}`,
