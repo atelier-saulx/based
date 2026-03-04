@@ -49,33 +49,6 @@ pub const OpType = enum(u8) {
     }
 };
 
-pub const ModOp = enum(u8) {
-    switchProp = 0,
-    switchIdUpdate = 1,
-    switchType = 2,
-    createProp = 3,
-    deleteSortIndex = 4,
-    updatePartial = 5,
-    updateProp = 6,
-    addEmptySort = 7,
-    switchIdCreateUnsafe = 8,
-    switchIdCreate = 9,
-    switchIdCreateRing = 19,
-    // switchEdgeId = 20,
-    deleteNode = 10,
-    delete = 11,
-    increment = 12,
-    decrement = 13,
-    expire = 14,
-    addEmptySortText = 15,
-    deleteTextField = 16,
-    upsert = 17,
-    insert = 18,
-    end = 254,
-    // TODO remove when modify is not used for response
-    padding = 255,
-};
-
 pub const Modify = enum(u8) {
     create = 0,
     createRing = 1,
@@ -307,29 +280,6 @@ pub const PropTypeSelva = enum(u8) {
     colVec = 10,
 };
 
-pub const RefOp = enum(u8) {
-    clear = 0,
-    del = 1,
-    end = @intFromEnum(ModOp.end),
-    set = 3,
-    setEdge = 4,
-
-    // setIndex = 4,
-    // setTmp = 5,
-    // setEdge = 6,
-
-    // setIndexTmp = 7,
-    // setEdgeIndex = 8,
-    // setEdgeIndexTmp = 9,
-    // setEdgeTmp = 10,
-
-    // overwrite = 0,
-    // add = 1,
-    // delete = 2,
-    // putOverwrite = 3,
-    // putAdd = 4,
-    // _,
-};
 
 pub const ReadOp = enum(u8) {
     none = 0,

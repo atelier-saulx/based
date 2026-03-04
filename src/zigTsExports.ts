@@ -117,82 +117,6 @@ export const OpTypeInverse = {
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
 
-export const ModOp = {
-  switchProp: 0,
-  switchIdUpdate: 1,
-  switchType: 2,
-  createProp: 3,
-  deleteSortIndex: 4,
-  updatePartial: 5,
-  updateProp: 6,
-  addEmptySort: 7,
-  switchIdCreateUnsafe: 8,
-  switchIdCreate: 9,
-  switchIdCreateRing: 19,
-  deleteNode: 10,
-  delete: 11,
-  increment: 12,
-  decrement: 13,
-  expire: 14,
-  addEmptySortText: 15,
-  deleteTextField: 16,
-  upsert: 17,
-  insert: 18,
-  end: 254,
-  padding: 255,
-} as const
-
-export const ModOpInverse = {
-  0: 'switchProp',
-  1: 'switchIdUpdate',
-  2: 'switchType',
-  3: 'createProp',
-  4: 'deleteSortIndex',
-  5: 'updatePartial',
-  6: 'updateProp',
-  7: 'addEmptySort',
-  8: 'switchIdCreateUnsafe',
-  9: 'switchIdCreate',
-  19: 'switchIdCreateRing',
-  10: 'deleteNode',
-  11: 'delete',
-  12: 'increment',
-  13: 'decrement',
-  14: 'expire',
-  15: 'addEmptySortText',
-  16: 'deleteTextField',
-  17: 'upsert',
-  18: 'insert',
-  254: 'end',
-  255: 'padding',
-} as const
-
-/**
-  switchProp, 
-  switchIdUpdate, 
-  switchType, 
-  createProp, 
-  deleteSortIndex, 
-  updatePartial, 
-  updateProp, 
-  addEmptySort, 
-  switchIdCreateUnsafe, 
-  switchIdCreate, 
-  switchIdCreateRing, 
-  deleteNode, 
-  delete, 
-  increment, 
-  decrement, 
-  expire, 
-  addEmptySortText, 
-  deleteTextField, 
-  upsert, 
-  insert, 
-  end, 
-  padding 
- */
-export type ModOpEnum = (typeof ModOp)[keyof typeof ModOp]
-
 export const Modify = {
   create: 0,
   createRing: 1,
@@ -1357,31 +1281,6 @@ export const PropTypeSelvaInverse = {
   colVec 
  */
 export type PropTypeSelvaEnum = (typeof PropTypeSelva)[keyof typeof PropTypeSelva]
-
-export const RefOp = {
-  clear: 0,
-  del: 1,
-  end: ModOp.end,
-  set: 3,
-  setEdge: 4,
-} as const
-
-export const RefOpInverse = {
-  0: 'clear',
-  1: 'del',
-  [ModOp.end]: 'end',
-  3: 'set',
-  4: 'setEdge',
-} as const
-
-/**
-  clear, 
-  del, 
-  end, 
-  set, 
-  setEdge 
- */
-export type RefOpEnum = (typeof RefOp)[keyof typeof RefOp]
 
 export const ReadOp = {
   none: 0,
