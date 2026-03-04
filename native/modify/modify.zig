@@ -47,7 +47,7 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     try dbCtx.threads.modify(batch);
 }
 
-pub fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, items: []u8) !void {
+fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, items: []u8) !void {
     selva.markDirty(db, typeEntry, Node.getNodeId(node));
 
     var j: usize = 0;
