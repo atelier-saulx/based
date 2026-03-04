@@ -3,15 +3,11 @@ import { byteSize } from '../toByteCode/utils.js'
 import { isRootCountOnly } from './aggregates.js'
 import {
   QueryType,
-  AggHeader,
-  AggRefsHeader,
   createAggHeader,
   createAggRefsHeader,
   createAggProp,
   createGroupByKeyProp,
   GroupByKeyPropByteSize,
-  AggHeaderByteSize,
-  AggRefsHeaderByteSize,
   AggPropByteSize,
   IncludeOp,
 } from '../../../zigTsExports.js'
