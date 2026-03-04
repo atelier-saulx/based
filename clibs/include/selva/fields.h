@@ -304,6 +304,19 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
 void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, bool set_defaults)
     __attribute__((nonnull));
 
+/**
+ * Set default value to a field.
+ * Variadic args depend on fs.
+ * - `SELVA_FIELD_TYPE_MICRO_BUFFER`
+ *   1. offset to start from
+ *   2. length to copy (`0 < len <= smb.len`)
+ * - `SELVA_FIELD_TYPE_TEXT`
+ *   1. number of lang codes to follow (reset all = `1`)
+ *   2. lang code(s) (`selva_lang_none` = `0` = reset all)
+ *
+ */
+void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...);
+
 void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node);
 
 /**
