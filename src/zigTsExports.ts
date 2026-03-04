@@ -12,6 +12,8 @@ import { AutoSizedUint8Array } from './utils/AutoSizedUint8Array.js'
 
 export type TypeId = number
 
+export type NodeId = number
+
 export type SelvaFieldType = number
 
 export type SelvaField = number
@@ -229,7 +231,7 @@ export type ModifyUpdateHeader = {
   op: ModifyEnum
   type: TypeId
   isTmp: boolean
-  id: number
+  id: NodeId
   size: number
 }
 
@@ -267,7 +269,7 @@ export const writeModifyUpdateHeaderProps = {
   isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  id: (buf: Uint8Array, value: number, offset: number) => {
+  id: (buf: Uint8Array, value: NodeId, offset: number) => {
     writeUint32(buf, Number(value), offset + 4)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
@@ -322,7 +324,7 @@ export type ModifyDeleteHeader = {
   op: ModifyEnum
   type: TypeId
   isTmp: boolean
-  id: number
+  id: NodeId
 }
 
 export const ModifyDeleteHeaderByteSize = 8
@@ -357,7 +359,7 @@ export const writeModifyDeleteHeaderProps = {
   isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  id: (buf: Uint8Array, value: number, offset: number) => {
+  id: (buf: Uint8Array, value: NodeId, offset: number) => {
     writeUint32(buf, Number(value), offset + 4)
   },
 }

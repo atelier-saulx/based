@@ -2,6 +2,7 @@ const Schema = @import("selva/schema.zig");
 const Node = @import("selva/node.zig");
 
 pub const TypeId = u16;
+pub const NodeId = u32;
 pub const SelvaFieldType = u8;
 pub const SelvaField = u8;
 
@@ -70,7 +71,7 @@ pub const ModifyUpdateHeader = packed struct {
     type: TypeId,
     isTmp: bool,
     _padding: u7,
-    id: u32,
+    id: NodeId,
     size: u32,
 };
 
@@ -79,7 +80,7 @@ pub const ModifyDeleteHeader = packed struct {
     type: TypeId,
     isTmp: bool,
     _padding: u7,
-    id: u32,
+    id: NodeId,
 };
 
 pub const ModifyCreateHeader = packed struct {
