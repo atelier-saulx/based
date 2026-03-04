@@ -68,57 +68,41 @@ await test('edges aggregation', async (t) => {
     ],
   })
 
-  const e1 = await db
-    .query2('movie')
-    .include('actors.$rating')
-    // .include('actors.name')
-    .get()
+  // const e1 = await db
+  //   .query2('movie')
+  //   .include('actors.$rating')
+  //   // .include('actors.name')
+  //   .get()
 
-  console.dir(e1, { depth: null, maxArrayLength: null })
+  // console.dir(e1, { depth: null, maxArrayLength: null })
 
-  const g1 = await db.query2('movie').sum('actors.$rating').get()
+  // const g1 = await db.query2('movie').sum('actors.$rating').get()
 
-  console.dir(g1, { depth: null, maxArrayLength: null })
+  // console.dir(g1, { depth: null, maxArrayLength: null })
 
   /*---------------------------*/
   /*       NESTED SINTAX       */
   /*---------------------------*/
 
-  // deepEqual(
-  //   await db.query2('movie').sum('actors.strong').get(),
-  //   //@ts-ignore
-  //   [
-  //     { id: 1, actors: { strong: { sum: 10 } } },
-  //     { id: 2, actors: { strong: { sum: 15 } } },
-  //   ],
-  //   'nested sintax with references',
-  // )
+  deepEqual(
+    await db.query2('movie').sum('actors.strong').get(),
+    //@ts-ignore
+    [
+      { id: 1, actors: { strong: { sum: 10 } } },
+      { id: 2, actors: { strong: { sum: 15 } } },
+    ],
+    'nested sintax with references',
+  )
 
-  // deepEqual(
-  //   await db.query2('movie').max('actors.$rating').sum('actors.$hating').get(),
-  //   //@ts-ignore
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //           sum: 5,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //           sum: 10,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'nested sintax with edges',
-  // )
+  deepEqual(
+    await db.query2('movie').max('actors.$rating').sum('actors.$hating').get(),
+    //@ts-ignore
+    [
+      { id: 1, actors: { $rating: { max: 55 }, $hating: { sum: 5 } } },
+      { id: 2, actors: { $rating: { max: 77 }, $hating: { sum: 10 } } },
+    ],
+    'nested sintax with edges',
+  )
   // console.dir(await db.query2('movie').include('actors.$rating').get(), { depth: null, maxArrayLength: null })
 
   /*----------------------------*/
@@ -130,98 +114,100 @@ await test('edges aggregation', async (t) => {
   // .include((q) => q('actors').max('strong').sum('strong2'))
   // .get()
 
-  // deepEqual(
-  //   await db
-  //     .query2('movie')
-  //     // @ts-ignore
-  //     .include((q) => q('actors').max('$rating'))
-  //     .get(),
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'single edge aggregation, branched query',
-  // )
+  deepEqual(
+    await db
+      .query2('movie')
+      // @ts-ignore
+      .include((q) => q('actors').max('$rating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+        },
+      },
+    ],
+    'single edge aggregation, branched query',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query2('movie')
-  //     .include((q) => q('actors').max('$rating').sum('$hating'))
-  //     .get()
-  //     ,
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //         },
-  //         $hating: {
-  //           sum: 5,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //         },
-  //         $hating: {
-  //           sum: 10,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'multiple edges with multiple agg functions, branched query',
-  // )
+  deepEqual(
+    await db
+      .query2('movie')
+      //@ts-ignore
+      .include((q) => q('actors').max('$rating').sum('$hating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+          $hating: {
+            sum: 5,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+          $hating: {
+            sum: 10,
+          },
+        },
+      },
+    ],
+    'multiple edges with multiple agg functions, branched query',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query2('movie')
-  //     .include((q) => q('actors').max('$rating', '$hating'))
-  //     .get()
-  //     ,
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //         },
-  //         $hating: {
-  //           max: 5,
-  //         },s
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //         },
-  //         $hating: {
-  //           max: 7,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'multiple edges on same agg function, branched query',
-  // )
+  deepEqual(
+    await db
+      .query2('movie')
+      //@ts-ignore
+      .include((q) => q('actors').max('$rating', '$hating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          //@ts-ignore
+          $rating: {
+            max: 55,
+          },
+          $hating: {
+            max: 5,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          //@ts-ignore
+          $rating: {
+            max: 77,
+          },
+          $hating: {
+            max: 7,
+          },
+        },
+      },
+    ],
+    'multiple edges on same agg function, branched query',
+  )
 
   /*-----------------------------------*/
   /*          STRAIGHT ON TYPE         */
