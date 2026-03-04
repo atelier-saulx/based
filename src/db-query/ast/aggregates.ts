@@ -55,7 +55,7 @@ export const pushAggregatesQuery = (
 
   const hasGroupBy = pushGroupBy(ast, ctx, typeDef, sizes)
 
-  pushAggregates(ast, ctx, typeDef, sizes, asReference)
+  const hasEdges = pushAggregates(ast, ctx, typeDef, sizes, asReference)
 
   const aggDefsSize =
     ctx.query.length - (headerStartPos + headerByteSize) - filterSize
@@ -65,6 +65,7 @@ export const pushAggregatesQuery = (
     typeDef,
     filterSize,
     hasGroupBy,
+    hasEdges,
     sizes,
     asReference,
     aggDefsSize,
@@ -93,6 +94,7 @@ const buildAggregateHeader = (
   typeDef: TypeDef,
   filterSize: number,
   hasGroupBy: boolean,
+  hasEdges: boolean,
   sizes: Sizes,
   asReference?: PropDef,
   aggDefsSize: number = 0,
@@ -109,10 +111,16 @@ const buildAggregateHeader = (
   }
 
   if (asReference) {
+    let iteratorType = QueryIteratorType.aggregate
+    if (hasEdges) iteratorType += 4
+    if (hasGroupBy) iteratorType += 2
+    if (filterSize > 0) iteratorType += 1
+
     return createAggRefsHeader({
       ...commonHeader,
       op: IncludeOp.referencesAggregation,
       targetProp: asReference.id,
+      iteratorType: iteratorType as QueryIteratorTypeEnum,
       aggDefsSize,
     })
   }
@@ -123,7 +131,7 @@ const buildAggregateHeader = (
   let headerBuffer: Uint8Array
 
   let iteratorType = QueryIteratorType.aggregate
-  // if (hasEdges) iteratorType += 4
+  if (hasEdges) iteratorType += 4
   if (hasGroupBy) iteratorType += 2
   if (filterSize > 0) iteratorType += 1
 
@@ -146,8 +154,9 @@ const walkProps = (
   targetAst: QueryAst,
   currentPath: string[],
   asReference?: PropDef,
-) => {
-  var i = 0
+): boolean => {
+  let hasEdges = false
+  let i = 0
 
   for (const key in AggFunction) {
     if (!(key in targetAst)) continue
@@ -186,6 +195,7 @@ const walkProps = (
         propDef = asReference.edges.props.get(fullPropName)
         if (propDef) {
           isEdge = true
+          hasEdges = true
         }
       }
       if (propName === 'count' && fn === AggFunction.count) {
@@ -257,17 +267,56 @@ const walkProps = (
       if (
         isAggregateAst(targetAst.props[key], typeDef, [...currentPath, key])
       ) {
-        walkProps(
-          ctx,
-          sizes,
-          typeDef,
-          targetAst.props[key],
-          [...currentPath, key],
-          asReference,
-        )
+        if (
+          walkProps(
+            ctx,
+            sizes,
+            typeDef,
+            targetAst.props[key],
+            [...currentPath, key],
+            asReference,
+          )
+        ) {
+          hasEdges = true
+        }
       }
     }
   }
+
+  if (targetAst.edges) {
+    for (const key in targetAst.edges) {
+      const childPath = [...currentPath, key].join('.')
+      const childPropDef = asReference?.edges?.props.get(childPath)
+
+      if (
+        childPropDef &&
+        (childPropDef.type === PropType.reference ||
+          childPropDef.type === PropType.references ||
+          childPropDef.isEdge)
+      ) {
+        continue
+      }
+
+      if (
+        isAggregateAst(targetAst.edges[key], typeDef, [...currentPath, key])
+      ) {
+        if (
+          walkProps(
+            ctx,
+            sizes,
+            typeDef,
+            targetAst.edges[key],
+            [...currentPath, key],
+            asReference,
+          )
+        ) {
+          hasEdges = true
+        }
+      }
+    }
+  }
+
+  return hasEdges
 }
 
 const pushAggregates = (
@@ -276,14 +325,14 @@ const pushAggregates = (
   typeDef: TypeDef,
   sizes: SizesType,
   asReference?: PropDef,
-) => {
+): boolean => {
   ctx.readSchema.aggregate = ctx.readSchema.aggregate || {
     aggregates: [],
     totalResultsSize: 0,
     groupBy: undefined,
   }
 
-  walkProps(ctx, sizes, typeDef, ast, [], asReference)
+  return walkProps(ctx, sizes, typeDef, ast, [], asReference)
 }
 
 export const isAggregateAst = (
