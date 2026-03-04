@@ -25,28 +25,21 @@ pub inline fn aggregateRefsProps(
     var filter: []u8 = undefined;
 
     const header = utils.readNext(t.AggRefsHeader, q, i);
-    // utils.debugPrint("aggregateRefsProps header: {any}\n", .{header});
 
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
     defer ctx.db.allocator.free(accumulatorProp);
 
-    // var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
-
-    const hasFilter = header.filterSize > 0;
-    if (hasFilter) {
-        filter = utils.sliceNext(header.filterSize, q, i);
-        // try Filter.prepare(filter, ctx, it.dstType);
-    }
-
     const hllAccumulator = Selva.c.selva_string_create(null, Selva.c.HLL_INIT_SIZE, Selva.c.SELVA_STRING_MUTABLE);
     defer Selva.c.selva_string_free(hllAccumulator);
 
+    const hasFilter = header.filterSize > 0;
     const isEdge = header.iteratorType == .aggregateEdge or header.iteratorType == .aggregateEdgeFilter or header.iteratorType == .groupByEdge or header.iteratorType == .groupByEdgeFilter;
 
     if (isEdge) {
         var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
         if (hasFilter) {
+            filter = utils.sliceNext(header.filterSize, q, i);
             try Filter.prepare(filter, ctx, it.dstType);
         }
         var aggCtx = Aggregates.AggCtx{
@@ -64,6 +57,7 @@ pub inline fn aggregateRefsProps(
     } else {
         var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
         if (hasFilter) {
+            filter = utils.sliceNext(header.filterSize, q, i);
             try Filter.prepare(filter, ctx, it.dstType);
         }
         var aggCtx = Aggregates.AggCtx{
