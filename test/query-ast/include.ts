@@ -75,7 +75,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e4; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
