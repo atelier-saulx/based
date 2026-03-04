@@ -68,18 +68,6 @@ await test('edges aggregation', async (t) => {
     ],
   })
 
-  // const e1 = await db
-  //   .query2('movie')
-  //   .include('actors.$rating')
-  //   // .include('actors.name')
-  //   .get()
-
-  // console.dir(e1, { depth: null, maxArrayLength: null })
-
-  // const g1 = await db.query2('movie').sum('actors.$rating').get()
-
-  // console.dir(g1, { depth: null, maxArrayLength: null })
-
   /*---------------------------*/
   /*       NESTED SINTAX       */
   /*---------------------------*/
@@ -103,16 +91,10 @@ await test('edges aggregation', async (t) => {
     ],
     'nested sintax with edges',
   )
-  // console.dir(await db.query2('movie').include('actors.$rating').get(), { depth: null, maxArrayLength: null })
 
   /*----------------------------*/
   /*       BRANCHED QUERY       */
   /*----------------------------*/
-
-  // await db
-  // .query2('movie')
-  // .include((q) => q('actors').max('strong').sum('strong2'))
-  // .get()
 
   deepEqual(
     await db
@@ -208,14 +190,8 @@ await test('edges aggregation', async (t) => {
     ],
     'multiple edges on same agg function, branched query',
   )
-
-  /*-----------------------------------*/
-  /*          STRAIGHT ON TYPE         */
-  /*-----------------------------------*/
-  // before: OK: error in js: Cannot read properties of undefined (reading 'edges')
-  // after: NOK: feature not implemented
-  // await db.query2('actor').max('$rating').get().inspect(10)
-  // await db.query2('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
-
-  // group BY EDGE!!!
 })
+
+/*-----------------------------------*/
+/*          GROUP BY EDGE TEST       */
+/*-----------------------------------*/
