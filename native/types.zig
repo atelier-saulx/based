@@ -291,7 +291,6 @@ pub const PropTypeSelva = enum(u8) {
     colVec = 10,
 };
 
-
 pub const ReadOp = enum(u8) {
     none = 0,
     id = 255,
@@ -807,6 +806,7 @@ pub const AggRefsHeader = packed struct {
     resultsSize: u16,
     accumulatorSize: u16,
     aggDefsSize: u16,
+    iteratorType: QueryIteratorType,
     hasGroupBy: bool,
     isSamplingSet: bool,
     _padding: u6,
