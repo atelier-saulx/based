@@ -1916,7 +1916,12 @@ struct SelvaFieldsPointer selva_fields_get_raw(struct SelvaNode *node, const str
     const struct SelvaFieldInfo *nfo;
     enum SelvaFieldType type;
 
-    assert(fs->field < fields->nr_fields);
+    if (unlikely(fs->field >= fields->nr_fields)) {
+        db_panic("%s:%d: %s Assert %u:%u fs->field < fields->nr_fields = %zu < %zu",
+                 __FILE__, __LINE__, __func__,
+                 (unsigned)node->type, (unsigned)node->node_id,
+                 (size_t)fs->field, (size_t)fields->nr_fields);
+    }
     nfo = &fields->fields_map[fs->field];
     type = nfo->in_use ? fs->type : SELVA_FIELD_TYPE_NULL;
 
