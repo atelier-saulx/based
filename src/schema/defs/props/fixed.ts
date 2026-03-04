@@ -193,6 +193,9 @@ export const enum_ = class Enum extends BasePropDef {
   enum: Record<number, EnumItem> = {}
   vals = new Map<EnumItem, number>()
   override validate(value: unknown): asserts value is EnumItem {
+    if (value === null) {
+      return
+    }
     if (typeof value !== 'string' && typeof value !== 'number') {
       throw new Error('Invalid type for enum ' + this.path.join('.'))
     }
