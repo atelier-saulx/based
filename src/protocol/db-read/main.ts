@@ -31,7 +31,7 @@ const readMainValue = (
     addProp(prop, Boolean(result[i]), item)
   } else if (typeIndex === PropType.enum) {
     if (result[i] === 0) {
-      addProp(prop, undefined, item)
+      addProp(prop, null, item)
     } else {
       addProp(prop, prop.enum![result[i] - 1], item)
     }

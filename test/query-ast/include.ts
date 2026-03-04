@@ -27,6 +27,7 @@ await test('include', async (t) => {
         name: 'string',
         x: 'boolean',
         flap: 'uint32',
+        enum: ['ok', 'bad', 'great'],
         y: 'uint32',
         cook: {
           type: 'object',
@@ -52,8 +53,9 @@ await test('include', async (t) => {
 
   const a = client.create('user', {
     name: 'mr jim',
+    enum: 'ok',
     y: 4,
-    x: true,
+    x: false,
     flap: 9999,
     cook: {
       cookie: 1234,
@@ -75,11 +77,12 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 5; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
       y: i,
-      x: true,
+      x: !!(i % 2),
+      enum: i % 2 ? 'great' : null,
       flap: 9999,
       cook: {
         cookie: 1234,
@@ -108,10 +111,14 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    range: { start: 100, end: 1e6 },
-    // target: b,
-    // order: 'desc',
-    // sort: { prop: 'y' },
+    range: { start: 0, end: 1e6 },
+    filter: {
+      props: {
+        // wrong
+        // enum: { ops: [{ op: '=', val: ['ok', undefined] }] },
+        enum: { ops: [{ op: '=', val: ['ok', 'great', null] }] },
+      },
+    },
 
     // filter: {
     //   props: {
@@ -147,33 +154,40 @@ await test('include', async (t) => {
     props: {
       y: { include: {} },
       name: { include: {} },
+      x: { include: {} },
+      enum: { include: {} },
       friends: {
         // order: 'desc',
         // sort: { prop: '$level' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },
+          x: { include: {} },
         },
         // edges: {
         //   props: {
         //     $level: { include: {} },
         //   },
         // },
-        filter: {
-          edgeStrategy: EdgeStrategy.edgeAndProps,
-          props: {
-            y: {
-              ops: [{ op: '>', val: 5 }],
-            },
-          },
-          edges: {
-            props: {
-              $level: {
-                ops: [{ op: '>', val: 100 }],
-              },
-            },
-          },
-        },
+        // filter: {
+        //   edgeStrategy: EdgeStrategy.noEdge,
+        //   props: {
+        //     enum: { ops: [{ op: '=', val: 'ok' }] },
+        //     x: {
+        //       ops: [{ op: '=', val: false }],
+        //     },
+        //     // y: {
+        //     //   ops: [{ op: '>', val: 5 }],
+        //     // },
+        //   },
+        //   // edges: {
+        //   //   props: {
+        //   //     $level: {
+        //   //       ops: [{ op: '>', val: 100 }],
+        //   //     },
+        //   //   },
+        //   // },
+        // },
       },
       // mrFriend: {
       //   props: {
@@ -226,7 +240,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  // console.dir(obj, { depth: 10 })
+  console.dir(obj, { depth: 10 })
 
   await wait(1000)
 

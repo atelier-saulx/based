@@ -2011,9 +2011,78 @@ void selva_fields_clear_references(struct SelvaDb *db, struct SelvaNode *node, c
     (void)clear_references(db, node, fs, true);
 }
 
-static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFields *fields, const struct SelvaFieldsSchema *schema)
+static void set_string_default(struct SelvaTypeEntry *te, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
 {
     const uint8_t *schema_buf = te->schema_buf;
+
+    if (fs->default_off > 0) {
+        const void *default_str = schema_buf + fs->default_off;
+        size_t default_len = fs->string.default_len;
+        struct SelvaFieldInfo *nfo;
+        int err;
+
+        nfo = ensure_field(fields, fs);
+        err = set_field_string(fields, fs, nfo, default_str, default_len);
+        if (unlikely(err)) {
+            /* TODO panic is not nice here. */
+            db_panic("Failed to set string default");
+        }
+    }
+}
+
+static void set_text_default(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, enum selva_lang_code lang)
+{
+    const uint8_t *schema_buf = te->schema_buf;
+    const size_t nr_defaults = fs->text.nr_defaults;
+    size_t off = fs->default_off;
+
+    for (size_t j = 0; j < nr_defaults; j++) {
+        struct {
+            uint32_t len;
+            char lang;
+        } __packed h;
+
+        assume(h.len >= 2 + sizeof(uint32_t));
+
+        memcpy(&h, schema_buf + off, sizeof(h));
+        off += sizeof_field(typeof(h), len);
+
+        if (h.lang == lang) {
+            (void)selva_fields_set_text(node, fs, (const char *)(schema_buf + off), h.len);
+            break;
+        }
+        off += h.len;
+    }
+}
+
+static void set_text_defaults(struct SelvaTypeEntry *te, struct SelvaFields *fields, const struct SelvaFieldSchema *fs)
+{
+    const uint8_t *schema_buf = te->schema_buf;
+    const size_t nr_defaults = fs->text.nr_defaults;
+    size_t off = fs->default_off;
+
+    if (nr_defaults > 0 && off > 0) {
+        struct ensure_text_field tf;
+
+        tf = ensure_text_field(fields, fs, selva_lang_none);
+        tf.text->tl = selva_malloc(nr_defaults * sizeof(*tf.text->tl));
+        tf.text->len = nr_defaults;
+
+        for (size_t i = 0; i < nr_defaults; i++) {
+            uint32_t len;
+            uint32_t crc;
+
+            memcpy(&len, schema_buf + off, sizeof(len));
+            off += sizeof(len);
+            memcpy(&crc, schema_buf + off + len - sizeof(crc), sizeof(crc));
+            init_tl(&tf.text->tl[i], (const char *)(schema_buf + off), len - sizeof(crc), crc);
+            off += len;
+        }
+    }
+}
+
+static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFields *fields, const struct SelvaFieldsSchema *schema)
+{
     size_t data_len = schema->template.fixed_data_len;
 
     memcpy(fields->data, schema->template.fixed_data_buf, data_len);
@@ -2024,42 +2093,73 @@ static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFi
     for (size_t i = 0; i < schema->nr_fixed_fields; i++) {
         auto fs = get_fs_by_fields_schema_field(schema, i);
         if (fs->type == SELVA_FIELD_TYPE_STRING) {
-            if (fs->default_off > 0) {
-                const void *default_str = schema_buf + fs->default_off;
-                size_t default_len = fs->string.default_len;
-                struct SelvaFieldInfo *nfo;
-                int err;
-
-                nfo = ensure_field(fields, fs);
-                err = set_field_string(fields, fs, nfo, default_str, default_len);
-                if (unlikely(err)) {
-                    /* TODO panic is not nice here. */
-                    db_panic("Failed to set string default");
-                }
-            }
+            set_string_default(te, fields, fs);
         } else if (fs->type == SELVA_FIELD_TYPE_TEXT) {
-            const size_t nr_defaults = fs->text.nr_defaults;
-            size_t off = fs->default_off;
-            if (nr_defaults > 0 && off > 0) {
-                struct ensure_text_field tf;
-
-                tf = ensure_text_field(fields, fs, selva_lang_none);
-                tf.text->tl = selva_malloc(nr_defaults * sizeof(*tf.text->tl));
-                tf.text->len = nr_defaults;
-
-                for (size_t i = 0; i < nr_defaults; i++) {
-                    uint32_t len;
-                    uint32_t crc;
-
-                    memcpy(&len, te->schema_buf + off, sizeof(len));
-                    off += sizeof(len);
-                    memcpy(&crc, schema_buf + off + len - sizeof(crc), sizeof(crc));
-                    init_tl(&tf.text->tl[i], (const char *)(schema_buf + off), len - sizeof(crc), crc);
-                    off += len;
-                }
-            }
+            set_text_defaults(te, fields, fs);
         }
         /* SELVA_FIELD_TYPE_COLVEC handled in colvec_init_node() */
+    }
+}
+
+void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...)
+{
+    va_list args;
+
+    if (fs->default_off == 0) {
+        return;
+    }
+
+    switch (fs->type) {
+    case SELVA_FIELD_TYPE_NULL:
+        break;
+    case SELVA_FIELD_TYPE_MICRO_BUFFER:
+        {
+            va_start(args, fs);
+            const size_t offset = va_arg(args, typeof(offset));
+            const size_t len = va_arg(args, typeof(len));
+            uint8_t *p = selva_fields_ensure_micro_buffer(node, fs);
+            const uint8_t *schema_buf = te->schema_buf;
+
+            if (likely(offset < fs->smb.len)) {
+                memcpy(p + offset,
+                       schema_buf + fs->default_off + offset,
+                       min(fs->smb.len - offset, len));
+            }
+
+            va_end(args);
+        }
+        break;
+    case SELVA_FIELD_TYPE_COLVEC:
+        colvec_set_vec(te, node->node_id, fs, (const uint8_t *)(te->schema_buf) + fs->default_off);
+        break;
+    case SELVA_FIELD_TYPE_STRING:
+        set_string_default(te, &node->fields, fs);
+        break;
+    case SELVA_FIELD_TYPE_TEXT:
+        {
+            va_start(args, fs);
+            const size_t len = va_arg(args, typeof(len));
+
+            for (size_t i = 0; i < len; i++) {
+                enum selva_lang_code lang = va_arg(args, int);
+                if (lang == selva_lang_none) {
+                    assume(len == 1);
+                    set_text_defaults(te, &node->fields, fs);
+                    break;
+                } else {
+                    /* TODO Handle per lang */
+                    set_text_default(te, node, fs, lang);
+                }
+            }
+
+            va_end(args);
+        }
+        break;
+    case SELVA_FIELD_TYPE_ALIAS:
+    case SELVA_FIELD_TYPE_REFERENCE:
+    case SELVA_FIELD_TYPE_REFERENCES:
+        /* Not supported */
+        break;
     }
 }
 

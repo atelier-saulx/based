@@ -3,15 +3,11 @@ import { byteSize } from '../toByteCode/utils.js'
 import { isRootCountOnly } from './aggregates.js'
 import {
   QueryType,
-  AggHeader,
-  AggRefsHeader,
   createAggHeader,
   createAggRefsHeader,
   createAggProp,
   createGroupByKeyProp,
   GroupByKeyPropByteSize,
-  AggHeaderByteSize,
-  AggRefsHeaderByteSize,
   AggPropByteSize,
   IncludeOp,
 } from '../../../zigTsExports.js'
@@ -108,6 +104,7 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
     for (const aggProp of aggPropArray) {
       const aggPropBuff = createAggProp({
         propId,
+        isEdge: false,
         propType: aggProp.propDef.typeIndex,
         propDefStart: aggProp.propDef.start || 0,
         aggFunction: aggProp.type,

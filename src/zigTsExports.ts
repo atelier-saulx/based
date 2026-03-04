@@ -12,6 +12,8 @@ import { AutoSizedUint8Array } from './utils/AutoSizedUint8Array.js'
 
 export type TypeId = number
 
+export type NodeId = number
+
 export type SelvaFieldType = number
 
 export type SelvaField = number
@@ -117,82 +119,6 @@ export const OpTypeInverse = {
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
 
-export const ModOp = {
-  switchProp: 0,
-  switchIdUpdate: 1,
-  switchType: 2,
-  createProp: 3,
-  deleteSortIndex: 4,
-  updatePartial: 5,
-  updateProp: 6,
-  addEmptySort: 7,
-  switchIdCreateUnsafe: 8,
-  switchIdCreate: 9,
-  switchIdCreateRing: 19,
-  deleteNode: 10,
-  delete: 11,
-  increment: 12,
-  decrement: 13,
-  expire: 14,
-  addEmptySortText: 15,
-  deleteTextField: 16,
-  upsert: 17,
-  insert: 18,
-  end: 254,
-  padding: 255,
-} as const
-
-export const ModOpInverse = {
-  0: 'switchProp',
-  1: 'switchIdUpdate',
-  2: 'switchType',
-  3: 'createProp',
-  4: 'deleteSortIndex',
-  5: 'updatePartial',
-  6: 'updateProp',
-  7: 'addEmptySort',
-  8: 'switchIdCreateUnsafe',
-  9: 'switchIdCreate',
-  19: 'switchIdCreateRing',
-  10: 'deleteNode',
-  11: 'delete',
-  12: 'increment',
-  13: 'decrement',
-  14: 'expire',
-  15: 'addEmptySortText',
-  16: 'deleteTextField',
-  17: 'upsert',
-  18: 'insert',
-  254: 'end',
-  255: 'padding',
-} as const
-
-/**
-  switchProp, 
-  switchIdUpdate, 
-  switchType, 
-  createProp, 
-  deleteSortIndex, 
-  updatePartial, 
-  updateProp, 
-  addEmptySort, 
-  switchIdCreateUnsafe, 
-  switchIdCreate, 
-  switchIdCreateRing, 
-  deleteNode, 
-  delete, 
-  increment, 
-  decrement, 
-  expire, 
-  addEmptySortText, 
-  deleteTextField, 
-  upsert, 
-  insert, 
-  end, 
-  padding 
- */
-export type ModOpEnum = (typeof ModOp)[keyof typeof ModOp]
-
 export const Modify = {
   create: 0,
   createRing: 1,
@@ -200,6 +126,7 @@ export const Modify = {
   delete: 3,
   upsert: 4,
   insert: 5,
+  default: 6,
 } as const
 
 export const ModifyInverse = {
@@ -209,6 +136,7 @@ export const ModifyInverse = {
   3: 'delete',
   4: 'upsert',
   5: 'insert',
+  6: 'default',
 } as const
 
 /**
@@ -217,7 +145,8 @@ export const ModifyInverse = {
   update, 
   delete, 
   upsert, 
-  insert 
+  insert, 
+  default 
  */
 export type ModifyEnum = (typeof Modify)[keyof typeof Modify]
 
@@ -305,7 +234,7 @@ export type ModifyUpdateHeader = {
   op: ModifyEnum
   type: TypeId
   isTmp: boolean
-  id: number
+  id: NodeId
   size: number
 }
 
@@ -343,7 +272,7 @@ export const writeModifyUpdateHeaderProps = {
   isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  id: (buf: Uint8Array, value: number, offset: number) => {
+  id: (buf: Uint8Array, value: NodeId, offset: number) => {
     writeUint32(buf, Number(value), offset + 4)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
@@ -398,7 +327,7 @@ export type ModifyDeleteHeader = {
   op: ModifyEnum
   type: TypeId
   isTmp: boolean
-  id: number
+  id: NodeId
 }
 
 export const ModifyDeleteHeaderByteSize = 8
@@ -433,7 +362,7 @@ export const writeModifyDeleteHeaderProps = {
   isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  id: (buf: Uint8Array, value: number, offset: number) => {
+  id: (buf: Uint8Array, value: NodeId, offset: number) => {
     writeUint32(buf, Number(value), offset + 4)
   },
 }
@@ -625,6 +554,99 @@ export const pushModifyCreateRingHeader = (
   buf.pushUint8(Number(header.op))
   buf.pushUint16(Number(header.type))
   buf.pushUint32(Number(header.maxNodeId))
+  buf.pushUint32(Number(header.size))
+  return index
+}
+
+export type ModifyDefaultHeader = {
+  op: ModifyEnum
+  type: TypeId
+  isTmp: boolean
+  id: NodeId
+  size: number
+}
+
+export const ModifyDefaultHeaderByteSize = 12
+
+export const ModifyDefaultHeaderAlignOf = 16
+
+export const writeModifyDefaultHeader = (
+  buf: Uint8Array,
+  header: ModifyDefaultHeader,
+  offset: number,
+): number => {
+  buf[offset] = Number(header.op)
+  offset += 1
+  writeUint16(buf, Number(header.type), offset)
+  offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
+  writeUint32(buf, Number(header.id), offset)
+  offset += 4
+  writeUint32(buf, Number(header.size), offset)
+  offset += 4
+  return offset
+}
+
+export const writeModifyDefaultHeaderProps = {
+  op: (buf: Uint8Array, value: ModifyEnum, offset: number) => {
+    buf[offset] = Number(value)
+  },
+  type: (buf: Uint8Array, value: TypeId, offset: number) => {
+    writeUint16(buf, Number(value), offset + 1)
+  },
+  isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
+  id: (buf: Uint8Array, value: NodeId, offset: number) => {
+    writeUint32(buf, Number(value), offset + 4)
+  },
+  size: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint32(buf, Number(value), offset + 8)
+  },
+}
+
+export const readModifyDefaultHeader = (
+  buf: Uint8Array,
+  offset: number,
+): ModifyDefaultHeader => {
+  const value: ModifyDefaultHeader = {
+    op: (buf[offset]) as ModifyEnum,
+    type: (readUint16(buf, offset + 1)) as TypeId,
+    isTmp: (((buf[offset + 3] >>> 0) & 1)) === 1,
+    id: readUint32(buf, offset + 4),
+    size: readUint32(buf, offset + 8),
+  }
+  return value
+}
+
+export const readModifyDefaultHeaderProps = {
+    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
+    type: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 1)) as TypeId,
+    isTmp: (buf: Uint8Array, offset: number) => (((buf[offset + 3] >>> 0) & 1)) === 1,
+    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 4),
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 8),
+}
+
+export const createModifyDefaultHeader = (header: ModifyDefaultHeader): Uint8Array => {
+  const buffer = new Uint8Array(ModifyDefaultHeaderByteSize)
+  writeModifyDefaultHeader(buffer, header, 0)
+  return buffer
+}
+
+export const pushModifyDefaultHeader = (
+  buf: AutoSizedUint8Array,
+  header: ModifyDefaultHeader,
+): number => {
+  const index = buf.length
+  buf.pushUint8(Number(header.op))
+  buf.pushUint16(Number(header.type))
+  buf.pushUint8(0)
+  buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
+  buf.pushUint32(Number(header.id))
   buf.pushUint32(Number(header.size))
   return index
 }
@@ -1357,31 +1379,6 @@ export const PropTypeSelvaInverse = {
   colVec 
  */
 export type PropTypeSelvaEnum = (typeof PropTypeSelva)[keyof typeof PropTypeSelva]
-
-export const RefOp = {
-  clear: 0,
-  del: 1,
-  end: ModOp.end,
-  set: 3,
-  setEdge: 4,
-} as const
-
-export const RefOpInverse = {
-  0: 'clear',
-  1: 'del',
-  [ModOp.end]: 'end',
-  3: 'set',
-  4: 'setEdge',
-} as const
-
-/**
-  clear, 
-  del, 
-  end, 
-  set, 
-  setEdge 
- */
-export type RefOpEnum = (typeof RefOp)[keyof typeof RefOp]
 
 export const ReadOp = {
   none: 0,
