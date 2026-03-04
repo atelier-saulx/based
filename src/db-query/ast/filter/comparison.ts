@@ -8,9 +8,10 @@ import {
   PropTypeEnum,
   FilterOpCompareEnum,
   FilterOpCompare,
+  PropType,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
-import { operatorToEnum } from './operatorToEnum.js'
+import { isFixedLenString, operatorToEnum } from './operatorToEnum.js'
 
 export const conditionByteSize = (propSize: number, size: number) => {
   return size + FilterConditionByteSize + FilterConditionAlignOf + 1 + propSize
@@ -24,8 +25,9 @@ export const createCondition = (
   prop: { start: number; id: number; size: number; type: PropTypeEnum },
   op: FilterOpCompareEnum,
   size: number = prop.size,
+  propSize: number = prop.size,
 ) => {
-  const conditionBuffer = new Uint8Array(conditionByteSize(prop.size, size))
+  const conditionBuffer = new Uint8Array(conditionByteSize(propSize, size))
   conditionBuffer[0] = 255 // Means condition header is not aligned
   const offset =
     writeFilterCondition(
@@ -38,12 +40,12 @@ export const createCondition = (
         start: prop.start || 0,
         prop: prop.id,
         fieldSchema: 0,
-        len: prop.size,
+        len: propSize,
         offset: 255, // Means value is not aligned
-        size: size + prop.size,
+        size: size + propSize,
       },
       FilterConditionAlignOf + 1,
-    ) + prop.size
+    ) + propSize
   return { condition: conditionBuffer, offset }
 }
 
@@ -106,14 +108,26 @@ export const variableComparison = (
 ) => {
   const op = operatorToEnum(operator, val, prop)
 
-  if (op === FilterOpCompare.inc || op === FilterOpCompare.ninc) {
+  if (
+    op === FilterOpCompare.inc ||
+    op === FilterOpCompare.ninc ||
+    op === FilterOpCompare.eqVar ||
+    FilterOpCompare.neqVar
+  ) {
     if (val.length === 1) {
       const size = native.stringByteLength(val[0])
-      const { condition, offset } = createCondition(prop, op, size)
+      // console.log({ size })
+      const { condition, offset } = createCondition(prop, op, size, 0)
       ENCODER.encodeInto(val[0], condition.subarray(offset))
+      console.log('yo yo yo', val[0], condition, condition.subarray(offset))
       return condition
+    } else {
+      // fix this
     }
   }
+
+  // else if (op === FilterOpCompare.eqVar || FilterOpCompare.neqVar) {
+  // }
 
   throw new Error(
     `Filter comparison not supported "${operator}" ${prop.path.join('.')}`,
@@ -129,7 +143,7 @@ export const comparison = (
   if (!Array.isArray(val)) {
     val = [val]
   }
-  if (prop.size > 0) {
+  if (prop.size > 0 && !isFixedLenString(prop)) {
     return fixedComparison(prop, op, val, opts)
   }
   return variableComparison(prop, op, val, opts)

@@ -16,6 +16,7 @@ pub fn prepare(
     typeEntry: Node.Type,
 ) !void {
     var i: usize = 0;
+
     while (i < q.len) {
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
         var c: *t.FilterCondition = undefined;
@@ -35,6 +36,7 @@ pub fn prepare(
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
 
             c.offset = utils.alignLeftLen(c.len, q[nextI .. totalSize + i]);
+
             const end = totalSize + i;
 
             switch (c.op.compare) {
@@ -85,6 +87,7 @@ inline fn compare(
     v: []const u8,
     index: usize,
     c: *t.FilterCondition,
+    comptime fixedLen: bool,
 ) bool {
     const res = switch (meta.func) {
         .eq => Compare.eq(T, q, v, index, c),
@@ -95,7 +98,8 @@ inline fn compare(
         .range => Compare.range(T, q, v, index, c),
         .eqBatch => Compare.eqBatch(T, q, v, index, c),
         .eqBatchSmall => Compare.eqBatchSmall(T, q, v, index, c),
-        .inc => Compare.include(q, v, index, c),
+        .inc => Compare.include(q, v, index, c, fixedLen),
+        .eqVar => Compare.eqVar(q, v, index, c, fixedLen),
     };
     return if (meta.invert) !res else res;
 }
@@ -153,11 +157,15 @@ pub inline fn filter(
             inline else => |op| blk: {
                 const meta = comptime Instruction.parseOp(op);
                 break :blk switch (c.op.prop) {
-                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c),
-                    .uint16, .int16 => compare(u16, meta, q, v, index, c),
-                    .number => compare(f64, meta, q, v, index, c),
-                    .timestamp => compare(u64, meta, q, v, index, c),
-                    else => compare(u8, meta, q, v, index, c),
+                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c, false),
+                    .uint16, .int16 => compare(u16, meta, q, v, index, c, false),
+                    .number => compare(f64, meta, q, v, index, c, false),
+                    .timestamp => compare(u64, meta, q, v, index, c, false),
+                    // ------- later
+                    .string, .json, .binary => compare(u8, meta, q, v, index, c, false),
+                    .stringFixed, .jsonFixed, .binaryFixed => compare(u8, meta, q, v, index, c, true),
+                    // -------
+                    else => compare(u8, meta, q, v, index, c, false),
                 };
             },
         };

@@ -19,6 +19,7 @@ fn getFunc(comptime tag: t.FilterOpCompare) Compare.Function {
         .ge => Compare.Function.ge,
         .gt => Compare.Function.gt,
         .inc, .ninc => Compare.Function.inc,
+        .eqVar, .neqVar => Compare.Function.eqVar,
         else => Compare.Function.eq,
     };
 }
@@ -27,7 +28,7 @@ pub fn parseOp(comptime op: t.FilterOpCompare) OpMeta {
     return .{
         .func = getFunc(op),
         .invert = switch (op) {
-            .neq, .neqBatch, .neqBatchSmall, .nrange, .ninc => true,
+            .neq, .neqBatch, .neqBatchSmall, .nrange, .ninc, .neqVar => true,
             else => false,
         },
     };
