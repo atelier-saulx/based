@@ -434,11 +434,7 @@ inline node_type_t selva_get_max_type(const struct SelvaDb *db)
 
 inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_type_t type)
 {
-    if (type == 0) {
-        return nullptr;
-    }
-    assert((size_t)type - 1 < db->nr_types);
-    return &db->types[type - 1];
+    return (type == 0 || (size_t)type - 1 >= db->nr_types) ? nullptr : &db->types[type - 1];
 }
 
 inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node)
