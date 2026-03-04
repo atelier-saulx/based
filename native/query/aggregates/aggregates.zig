@@ -15,6 +15,7 @@ const filter = @import("../filter/filter.zig").filter;
 pub const AggCtx = struct {
     queryCtx: *Query.QueryCtx,
     typeEntry: Node.Type,
+    edgeTypeEntry: ?Node.Type = null,
     limit: u32 = 0,
     isSamplingSet: bool = false,
     hllAccumulator: ?*Selva.c.struct_selva_string = null,
@@ -35,21 +36,37 @@ pub fn iterator(
     var count: u32 = 0;
     aggCtx.hadAccumulated = false;
 
-    while (it.next()) |node| {
-        if (hasFilter) {
-            if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
-                continue;
+    // to beautify later, Can use different iterator labes instead of duck typing
+    if (@hasDecl(@TypeOf(it.*), "nextRef")) {
+        while (it.nextRef()) |ref| {
+            if (hasFilter) {
+                if (!try filter(ref.node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
             }
+            aggregateProps(ref.node, ref.edge, aggDefs, accumulatorProp, aggCtx);
+            count += 1;
+            if (count >= aggCtx.limit) break;
         }
-        aggregateProps(node, aggDefs, accumulatorProp, aggCtx);
-        count += 1;
-        if (count >= aggCtx.limit) break;
+    } else {
+        while (it.next()) |node| {
+            if (hasFilter) {
+                if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
+            }
+            aggregateProps(node, null, aggDefs, accumulatorProp, aggCtx);
+            count += 1;
+            if (count >= aggCtx.limit) break;
+        }
     }
+
     return count;
 }
 
 pub inline fn aggregateProps(
     node: Node.Node,
+    edgeNode: ?Node.Node,
     aggDefs: []u8,
     accumulatorProp: []u8,
     aggCtx: *AggCtx,
@@ -66,17 +83,30 @@ pub inline fn aggregateProps(
             accumulate(currentAggDef, accumulatorProp, value, aggCtx, null);
         } else {
             if (currentAggDef.propId != t.MAIN_PROP and currentAggDef.aggFunction != t.AggFunction.cardinality) {
-                i += utils.sizeOf(t.AggProp);
                 continue;
             }
-            const propSchema = Schema.getFieldSchema(aggCtx.typeEntry, currentAggDef.propId) catch {
-                i += utils.sizeOf(t.AggProp);
+
+            var targetNode = node;
+            var targetTypeEntry = aggCtx.typeEntry;
+
+            if (currentAggDef.isEdge) {
+                if (edgeNode) |en| {
+                    targetNode = en;
+                    if (aggCtx.edgeTypeEntry) |ete| {
+                        targetTypeEntry = ete;
+                    }
+                } else {
+                    continue;
+                }
+            }
+
+            const propSchema = Schema.getFieldSchema(targetTypeEntry, currentAggDef.propId) catch {
                 continue;
             };
+
             if (currentAggDef.aggFunction == .cardinality) {
-                const hllValue = Selva.c.selva_fields_get_selva_string(node, propSchema) orelse null;
+                const hllValue = Selva.c.selva_fields_get_selva_string(targetNode, propSchema) orelse null;
                 if (hllValue == null) {
-                    i += utils.sizeOf(t.AggProp);
                     continue;
                 }
                 if (!aggCtx.hadAccumulated) {
@@ -86,8 +116,8 @@ pub inline fn aggregateProps(
                 accumulate(currentAggDef, accumulatorProp, value, aggCtx, hllValue);
             } else {
                 value = Fields.get(
-                    aggCtx.typeEntry,
-                    node,
+                    targetTypeEntry,
+                    targetNode,
                     propSchema,
                     currentAggDef.propType,
                 );

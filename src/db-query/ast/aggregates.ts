@@ -55,7 +55,7 @@ export const pushAggregatesQuery = (
 
   const hasGroupBy = pushGroupBy(ast, ctx, typeDef, sizes)
 
-  pushAggregates(ast, ctx, typeDef, sizes)
+  pushAggregates(ast, ctx, typeDef, sizes, asReference)
 
   const aggDefsSize =
     ctx.query.length - (headerStartPos + headerByteSize) - filterSize
@@ -145,7 +145,8 @@ const walkProps = (
   sizes: SizesType,
   typeDef: TypeDef,
   targetAst: QueryAst,
-  currentPath: string[] = [],
+  currentPath: string[],
+  asReference?: PropDef,
 ) => {
   var i = 0
 
@@ -180,6 +181,14 @@ const walkProps = (
       const fullPropName = fullParts.join('.')
 
       let propDef: PropDef | any = typeDef.props.get(fullPropName)
+      let isEdge = false
+
+      if (!propDef && asReference?.edges) {
+        propDef = asReference.edges.props.get(fullPropName)
+        if (propDef) {
+          isEdge = true
+        }
+      }
       if (propName === 'count' && fn === AggFunction.count) {
         propDef = {
           id: 255,
@@ -210,6 +219,7 @@ const walkProps = (
         aggFunction: fn,
         resultPos: sizes.result,
         accumulatorPos: sizes.accumulator,
+        isEdge,
       })
       ctx.readSchema.aggregate?.aggregates.push({
         path: propDef.path!,
@@ -248,10 +258,14 @@ const walkProps = (
       if (
         isAggregateAst(targetAst.props[key], typeDef, [...currentPath, key])
       ) {
-        walkProps(ctx, sizes, typeDef, targetAst.props[key], [
-          ...currentPath,
-          key,
-        ])
+        walkProps(
+          ctx,
+          sizes,
+          typeDef,
+          targetAst.props[key],
+          [...currentPath, key],
+          asReference,
+        )
       }
     }
   }
@@ -262,6 +276,7 @@ const pushAggregates = (
   ctx: Ctx,
   typeDef: TypeDef,
   sizes: SizesType,
+  asReference?: PropDef,
 ) => {
   ctx.readSchema.aggregate = ctx.readSchema.aggregate || {
     aggregates: [],
@@ -269,7 +284,7 @@ const pushAggregates = (
     groupBy: undefined,
   }
 
-  walkProps(ctx, sizes, typeDef, ast)
+  walkProps(ctx, sizes, typeDef, ast, [], asReference)
 }
 
 export const isAggregateAst = (
@@ -336,7 +351,6 @@ const pushGroupBy = (
 
   if (!propDef) {
     throw new Error(`Group By property '${propName}' not found in AST.`)
-    // to put the equivalent to aggregationFieldDoesNotExist to handle the error
   }
 
   const { stepType, stepRange } = step

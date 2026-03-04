@@ -862,6 +862,8 @@ pub const AggProp = packed struct {
     aggFunction: AggFunction,
     resultPos: u16,
     accumulatorPos: u16,
+    isEdge: bool,
+    _padding: u7,
 };
 
 pub const GroupByKeyProp = packed struct {

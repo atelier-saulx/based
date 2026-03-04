@@ -31,7 +31,7 @@ pub inline fn aggregateRefsProps(
     @memset(accumulatorProp, 0);
     defer ctx.db.allocator.free(accumulatorProp);
 
-    var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
+    var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
 
     const hasFilter = header.filterSize > 0;
     if (hasFilter) {
@@ -45,6 +45,7 @@ pub inline fn aggregateRefsProps(
     var aggCtx = Aggregates.AggCtx{
         .queryCtx = ctx,
         .typeEntry = it.dstType,
+        .edgeTypeEntry = it.edgeType,
         .limit = std.math.maxInt(u32), // unlimited in branched queries
         .hllAccumulator = hllAccumulator,
         .isSamplingSet = header.isSamplingSet,

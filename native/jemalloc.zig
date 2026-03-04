@@ -29,6 +29,14 @@ fn valgrindMalloc(ptr: *anyopaque, len: usize) void {
     }
 }
 
+fn valgrindCalloc(ptr: *anyopaque, len: usize) void {
+    if (config.enable_debug and std.valgrind.runningOnValgrind() > 0) {
+        const buf = slicify(u8, ptr, len);
+        _ = std.valgrind.memcheck.createBlock(buf, "Zig alloc");
+        _ = std.valgrind.memcheck.makeMemDefined(buf);
+    }
+}
+
 fn valgrindFree(ptr: *anyopaque, len: usize) void {
     if (config.enable_debug and std.valgrind.runningOnValgrind() > 0) {
         const buf = slicify(u8, ptr, len);
@@ -51,7 +59,8 @@ pub fn alloc(comptime T: type, n: usize) []T {
 
     if (config.enable_debug) {
         const buf = slicify(u8, ptr, n * @sizeOf(T));
-        valgrindMalloc(buf.ptr, buf.len);
+        valgrindCalloc(buf.ptr, buf.len);
+
     }
 
     return slicify(T, ptr, n);

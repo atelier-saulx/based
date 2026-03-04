@@ -3938,9 +3938,10 @@ export type AggProp = {
   aggFunction: AggFunctionEnum
   resultPos: number
   accumulatorPos: number
+  isEdge: boolean
 }
 
-export const AggPropByteSize = 9
+export const AggPropByteSize = 10
 
 export const AggPropAlignOf = 16
 
@@ -3961,6 +3962,10 @@ export const writeAggProp = (
   offset += 2
   writeUint16(buf, Number(header.accumulatorPos), offset)
   offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
   return offset
 }
 
@@ -3983,6 +3988,9 @@ export const writeAggPropProps = {
   accumulatorPos: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 7)
   },
+  isEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 9] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
 }
 
 export const readAggProp = (
@@ -3996,6 +4004,7 @@ export const readAggProp = (
     aggFunction: (buf[offset + 4]) as AggFunctionEnum,
     resultPos: readUint16(buf, offset + 5),
     accumulatorPos: readUint16(buf, offset + 7),
+    isEdge: (((buf[offset + 9] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -4007,6 +4016,7 @@ export const readAggPropProps = {
     aggFunction: (buf: Uint8Array, offset: number) => (buf[offset + 4]) as AggFunctionEnum,
     resultPos: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 5),
     accumulatorPos: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 7),
+    isEdge: (buf: Uint8Array, offset: number) => (((buf[offset + 9] >>> 0) & 1)) === 1,
 }
 
 export const createAggProp = (header: AggProp): Uint8Array => {
@@ -4026,6 +4036,9 @@ export const pushAggProp = (
   buf.pushUint8(Number(header.aggFunction))
   buf.pushUint16(Number(header.resultPos))
   buf.pushUint16(Number(header.accumulatorPos))
+  buf.pushUint8(0)
+  buf.view[buf.length - 1] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
   return index
 }
 

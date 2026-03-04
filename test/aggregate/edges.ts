@@ -2,7 +2,7 @@ import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 import { testDb } from '../shared/index.js'
 
-await test.skip('edges aggregation', async (t) => {
+await test('edges aggregation', async (t) => {
   const db = await testDb(t, {
     types: {
       movie: {
@@ -68,13 +68,17 @@ await test.skip('edges aggregation', async (t) => {
     ],
   })
 
-  // await db
-  //   .query2('movie')
-  //   .include('*', '**')
-  //   // .include('actors.$rating')
-  //   // .include('actors.name')
-  //   .get()
-  //   .inspect(10, true)
+  const e1 = await db
+    .query2('movie')
+    .include('actors.$rating')
+    // .include('actors.name')
+    .get()
+
+  console.dir(e1, { depth: null, maxArrayLength: null })
+
+  const g1 = await db.query2('movie').sum('actors.$rating').get()
+
+  console.dir(g1, { depth: null, maxArrayLength: null })
 
   /*---------------------------*/
   /*       NESTED SINTAX       */
@@ -226,4 +230,6 @@ await test.skip('edges aggregation', async (t) => {
   // after: NOK: feature not implemented
   // await db.query2('actor').max('$rating').get().inspect(10)
   // await db.query2('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
+
+  // group BY EDGE!!!
 })
