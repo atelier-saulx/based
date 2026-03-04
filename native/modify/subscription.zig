@@ -11,6 +11,33 @@ const t = @import("../types.zig");
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const vectorLenU16 = std.simd.suggestVectorLength(u16).?;
 
+pub const ModOp = enum(u8) {
+    switchProp = 0,
+    switchIdUpdate = 1,
+    switchType = 2,
+    createProp = 3,
+    deleteSortIndex = 4,
+    updatePartial = 5,
+    updateProp = 6,
+    addEmptySort = 7,
+    switchIdCreateUnsafe = 8,
+    switchIdCreate = 9,
+    switchIdCreateRing = 19,
+    // switchEdgeId = 20,
+    deleteNode = 10,
+    delete = 11,
+    increment = 12,
+    decrement = 13,
+    expire = 14,
+    addEmptySortText = 15,
+    deleteTextField = 16,
+    upsert = 17,
+    insert = 18,
+    end = 254,
+    // TODO remove when modify is not used for response
+    padding = 255,
+};
+
 pub const Op = enum(u8) {
     update = 0,
     create = 1,
@@ -128,7 +155,7 @@ pub fn suscription(thread: *Thread.Thread, batch: []u8) !void {
 
     var i: usize = 0;
     while (i < buf.len) {
-        const op: t.ModOp = @enumFromInt(buf[i]);
+        const op: ModOp = @enumFromInt(buf[i]);
         const data: []u8 = buf[i + 1 ..];
         switch (op) {
             .padding => {

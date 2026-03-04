@@ -16,7 +16,7 @@ await test('save edge', async (t) => {
           bestFriend: {
             ref: 'user',
             prop: 'bestFriend',
-            $uint8: 'uint8',
+            $bond: 'uint8',
           },
         },
       },
@@ -27,7 +27,7 @@ await test('save edge', async (t) => {
   const user2 = await client.create('user', {
     bestFriend: {
       id: user1,
-      $uint8: 21,
+      $bond: 21,
     },
   })
 
@@ -36,15 +36,15 @@ await test('save edge', async (t) => {
   await client.update('user', user2, {
     bestFriend: {
       id: user1,
-      $uint8: 42,
+      $bond: 42,
     },
   })
 
-  deepEqual(await client.query2('user', user2).include('**').get(), {
+  deepEqual(await client.query2('user', user2).include('**', 'bestFriend.$bond').get(), {
     id: 2,
     bestFriend: {
       id: 1,
-      $uint8: 42,
+      $bond: 42,
     },
   })
 })

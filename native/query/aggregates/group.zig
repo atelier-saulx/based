@@ -25,19 +25,34 @@ pub fn iterator(
     var count: u32 = 0;
     aggCtx.hadAccumulated = false;
 
-    while (it.next()) |node| {
-        if (hasFilter) {
-            if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
-                continue;
+    if (@hasDecl(@TypeOf(it.*), "nextRef")) {
+        while (it.nextRef()) |ref| {
+            if (hasFilter) {
+                if (!try filter(ref.node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
             }
+            aggregatePropsWithGroupBy(groupByHashMap, ref.node, ref.edge, aggDefs, aggCtx) catch {
+                return 0;
+            };
+            count += 1;
+            if (count >= aggCtx.limit) break;
         }
-        aggregatePropsWithGroupBy(groupByHashMap, node, aggDefs, aggCtx) catch {
-            return 0;
-        };
-        count += 1;
-        if (count >= aggCtx.limit) break;
+    } else {
+        while (it.next()) |node| {
+            if (hasFilter) {
+                if (!try filter(node, aggCtx.queryCtx, filterBuf)) {
+                    continue;
+                }
+            }
+            aggregatePropsWithGroupBy(groupByHashMap, node, null, aggDefs, aggCtx) catch {
+                return 0;
+            };
+            count += 1;
+            if (count >= aggCtx.limit) break;
+        }
     }
-    // utils.debugPrint("count {d}, resultsSize {d}, sumOfDistinctKeyLens {d}\n", .{ count, resultsSize, sumOfDistinctKeyLens.* });
+
     return count;
 }
 
@@ -68,6 +83,7 @@ inline fn getGrouByKeyValue(
 inline fn aggregatePropsWithGroupBy(
     groupByHashMap: *GroupByHashMap,
     node: Node.Node,
+    edgeNode: ?Node.Node,
     aggDefs: []u8,
     aggCtx: *Aggregates.AggCtx,
 ) !void {
@@ -106,7 +122,7 @@ inline fn aggregatePropsWithGroupBy(
     }
     // utils.debugPrint("is_new?: {any}, key: {s} {d}, sumOfDistinctKeyLens: {d}\n", .{ hash_map_entry.is_new, key, key.len, sumOfDistinctKeyLens });
 
-    Aggregates.aggregateProps(node, aggDefs[i..], accumulatorProp, aggCtx);
+    Aggregates.aggregateProps(node, edgeNode, aggDefs[i..], accumulatorProp, aggCtx);
 }
 
 pub inline fn finalizeGroupResults(

@@ -20,7 +20,7 @@ import { sort } from './sort.js'
 export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   const rangeStart = ast.range?.start || 0
 
-  if (isAggregateAst(ast)) {
+  if (isAggregateAst(ast, typeDef)) {
     pushAggregatesQuery(ast, ctx, typeDef)
     return
   }
@@ -64,6 +64,18 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
 // ADD IDS
 
 export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
+  const schema = readSchema()
+  ctx.readSchema.refs[prop.id] = {
+    schema,
+    prop: readPropDef(prop, ctx.locales, ast.include),
+  }
+
+  if (isAggregateAst(ast, prop.ref)) {
+    const prevLength = ctx.query.length
+    pushAggregatesQuery(ast, { ...ctx, readSchema: schema }, prop.ref!, prop)
+    return ctx.query.length - prevLength
+  }
+
   const rangeStart = ast.range?.start || 0
   const headerIndex = pushQueryHeader(ctx.query, {
     op: QueryType.references,
@@ -81,12 +93,6 @@ export const references = (ast: QueryAst, ctx: Ctx, prop: PropDef) => {
     edgeFilterSize: 0,
     size: 0, // this is only used for [IDS] handle this differently
   })
-
-  const schema = readSchema()
-  ctx.readSchema.refs[prop.id] = {
-    schema,
-    prop: readPropDef(prop, ctx.locales, ast.include),
-  }
 
   if (ast.sort) {
     pushSortHeader(ctx.query, sort(ast, ctx, prop.ref!, prop))

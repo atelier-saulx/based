@@ -145,6 +145,7 @@ fn fillSortIndex(
             }
         }
     } else {
+        // lets do this first with filter
         if (header.propType == .id) {
             while (it.next()) |node| {
                 Sort.insert(
@@ -216,9 +217,12 @@ pub inline fn fromIterator(
     typeEntry: Node.Type,
     header: *const t.SortHeader,
     it: anytype,
+    // add this latwr
+    // filter: t.QueryIteratorType,
+    // _: if (filter == .edgeFilter or filter == t.QueryIteratorType.) []u8 else void,
 ) !SortIterator(desc, isEdge) {
+    // maybe pass this outside
     var sortIndex: SortIndexMeta = .{
-        // can just store the header maybe?
         .len = header.len,
         .start = header.start,
         .index = try getSortIndex(isEdge, thread, header.propType),

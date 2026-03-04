@@ -1,6 +1,3 @@
-/*
- * Deep = Reference(s), Edges and nests
- */
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 import { testDb } from '../shared/index.js'
@@ -552,19 +549,12 @@ await test('cardinality on references', async (t) => {
     company: 'just another startup',
     badgesScanned: ['nice ceo', 'entusiastic dev'],
   })
+  const fairDate = new Date('08/02/2024').getTime()
   db.create('fair', {
-    day: new Date('08/02/2024'),
+    day: fairDate,
     booths: [bg, stp],
   })
 
-  //   await db.query2('fair').include('booths.badgesScanned').get().inspect()
-  //   await db
-  //     .query2('fair')
-  //     .cardinality('booths.badgesScanned')
-  //     .groupBy('day')
-  //     .get()
-  //     .inspect()
-  // })
   deepEqual(
     await db
       .query2('fair')
@@ -587,14 +577,31 @@ await test('cardinality on references', async (t) => {
    *  Nested syntax:
    */
 
-  // await db.query2('fair').include('booths.badgesScanned').get().inspect()
+  deepEqual(
+    await db.query2('fair').cardinality('booths.badgesScanned').get(),
+    //@ts-ignore
+    [
+      {
+        id: 1,
+        booths: {
+          badgesScanned: {
+            cardinality: 6,
+          },
+        },
+      },
+    ],
+    'nested syntax with cardinality function',
+  )
 
-  // await db
-  //   .query2('fair')
-  //   .cardinality('booths.badgesScanned')
-  //   .groupBy('day')
-  //   .get()
-  //   .inspect()
+  deepEqual(
+    await db.query2('fair').count().groupBy('day').get(),
+    {
+      [String(fairDate)]: {
+        count: 1,
+      },
+    },
+    'count function with group by',
+  )
 })
 
 await test('group by reference ids', async (t) => {
@@ -683,7 +690,7 @@ await test('group by reference ids', async (t) => {
   )
 })
 
-await test.skip('nested references', async (t) => {
+await test('nested references', async (t) => {
   const db = await testDb(t, {
     types: {
       user: {
@@ -721,215 +728,12 @@ await test.skip('nested references', async (t) => {
 
   deepEqual(
     await db.query2('user').sum('friends.strong').get(),
-    {
-      friends: {
-        strong: {
-          sum: 7,
-        },
-      },
-    },
+    // @ts-ignore
+    [
+      { id: 1, friends: { strong: { sum: 4 } } },
+      { id: 2, friends: { strong: { sum: 4 } } },
+      { id: 3, friends: { strong: { sum: 3 } } },
+    ],
     'nested references access with dot sintax',
   )
-})
-
-await test.skip('edges aggregation', async (t) => {
-  const db = await testDb(t, {
-    types: {
-      movie: {
-        name: 'string',
-        genre: ['Comedy', 'Thriller', 'Drama', 'Crime'],
-        actors: {
-          items: {
-            ref: 'actor',
-            prop: 'movies',
-            $rating: 'uint16',
-            $hating: 'uint16',
-          },
-        },
-      },
-      actor: {
-        name: 'string',
-        strong: 'uint16',
-        strong2: 'uint16',
-        movies: {
-          items: {
-            ref: 'movie',
-            prop: 'actors',
-          },
-        },
-      },
-    },
-  })
-
-  const a1 = db.create('actor', {
-    name: 'Uma Thurman',
-    strong: 10,
-    strong2: 80,
-  })
-  const a2 = db.create('actor', {
-    name: 'Jonh Travolta',
-    strong: 5,
-    strong2: 40,
-  })
-
-  const m1 = await db.create('movie', {
-    name: 'Kill Bill',
-    actors: [
-      {
-        id: a1,
-        $rating: 55,
-        $hating: 5,
-      },
-    ],
-  })
-  const m2 = await db.create('movie', {
-    name: 'Pulp Fiction',
-    actors: [
-      {
-        id: a1,
-        $rating: 63,
-        $hating: 7,
-      },
-      {
-        id: a2,
-        $rating: 77,
-        $hating: 3,
-      },
-    ],
-  })
-
-  // await db
-  //   .query2('movie')
-  //   .include('*', '**')
-  //   // .include('actors.$rating')
-  //   // .include('actors.name')
-  //   .get()
-  //   .inspect(10, true)
-
-  /*---------------------------*/
-  /*       NESTED SINTAX       */
-  /*---------------------------*/
-
-  // before: NOK: crash
-  // after: NOK: unreacheable
-  // console.log(
-  //   JSON.stringify(
-  //     await db.query2('movie').include('actors.strong').get(),
-  //   ),
-  // )
-
-  // before: NOK: error in js: Cannot read properties of undefined (reading 'edges')
-  // after: NOK: zeroing
-  // await db.query2('movie').include('actors.$rating').get().inspect(10)
-
-  /*----------------------------*/
-  /*       BRANCHED QUERY       */
-  /*----------------------------*/
-
-  // await db
-  //   .query2('movie')
-  //   .include((q) => q('actors').max('strong').sum('strong2'))
-  //   .get()
-  //   .inspect(10)
-
-  // deepEqual(
-  //   await db
-  //     .query2('movie')
-  //     .include((q) => q('actors').max('$rating'))
-  //     .get()
-  //     ,
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'single edge aggregation, branched query',
-  // )
-
-  // deepEqual(
-  //   await db
-  //     .query2('movie')
-  //     .include((q) => q('actors').max('$rating').sum('$hating'))
-  //     .get()
-  //     ,
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //         },
-  //         $hating: {
-  //           sum: 5,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //         },
-  //         $hating: {
-  //           sum: 10,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'multiple edges with multiple agg functions, branched query',
-  // )
-
-  // deepEqual(
-  //   await db
-  //     .query2('movie')
-  //     .include((q) => q('actors').max('$rating', '$hating'))
-  //     .get()
-  //     ,
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //         },
-  //         $hating: {
-  //           max: 5,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //         },
-  //         $hating: {
-  //           max: 7,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'multiple edges on same agg function, branched query',
-  // )
-
-  /*-----------------------------------*/
-  /*          STRAIGHT ON TYPE         */
-  /*-----------------------------------*/
-  // before: OK: error in js: Cannot read properties of undefined (reading 'edges')
-  // after: NOK: feature not implemented
-  // await db.query2('actor').max('$rating').get().inspect(10)
-  // await db.query2('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
 })

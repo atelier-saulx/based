@@ -193,8 +193,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: sum expects at least one argument')
     }
-    this.ast.sum ??= { props: [] }
-    this.ast.sum.props.push(...(props as string[])) // Safe cast as P is string-like key
+    parseAggregateProps(this.ast, 'sum', props as string[])
     return this as any
   }
 
@@ -250,8 +249,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: cardinality expects at least one argument')
     }
-    this.ast.cardinality ??= { props: [] }
-    this.ast.cardinality.props.push(...props)
+    parseAggregateProps(this.ast, 'cardinality', props)
     return this as any
   }
 
@@ -292,8 +290,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: avg expects at least one argument')
     }
-    this.ast.avg ??= { props: [] }
-    this.ast.avg.props.push(...(props as string[]))
+    parseAggregateProps(this.ast, 'avg', props as string[])
     return this as any
   }
 
@@ -334,8 +331,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: hmean expects at least one argument')
     }
-    this.ast.hmean ??= { props: [] }
-    this.ast.hmean.props.push(...(props as string[]))
+    parseAggregateProps(this.ast, 'hmean', props as string[])
     return this as any
   }
 
@@ -377,8 +373,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: max expects at least one argument')
     }
-    this.ast.max ??= { props: [] }
-    this.ast.max.props.push(...(props as string[]))
+    parseAggregateProps(this.ast, 'max', props as string[])
     return this as any
   }
 
@@ -420,8 +415,7 @@ class Query<
     if (props.length === 0) {
       throw new Error('Query: min expects at least one argument')
     }
-    this.ast.min ??= { props: [] }
-    this.ast.min.props.push(...(props as string[]))
+    parseAggregateProps(this.ast, 'min', props as string[])
     return this as any
   }
 
@@ -463,7 +457,6 @@ class Query<
     if (args.length === 0) {
       throw new Error('Query: stddev expects at least one argument')
     }
-    this.ast.stddev ??= { props: [] }
     let opts: any
     let props: string[]
     if (
@@ -478,10 +471,7 @@ class Query<
     } else {
       props = args
     }
-    this.ast.stddev.props.push(...props)
-    if (opts?.mode) {
-      this.ast.stddev.samplingMode = opts.mode
-    }
+    parseAggregateProps(this.ast, 'stddev', props, opts)
     return this as any
   }
 
@@ -521,7 +511,6 @@ class Query<
     if (args.length === 0) {
       throw new Error('Query: var expects at least one argument')
     }
-    this.ast.variance ??= { props: [] }
     let opts: any
     let props: string[]
     if (
@@ -536,10 +525,7 @@ class Query<
     } else {
       props = args
     }
-    this.ast.variance.props.push(...props)
-    if (opts?.mode) {
-      this.ast.variance.samplingMode = opts.mode
-    }
+    parseAggregateProps(this.ast, 'variance', props, opts)
     return this as any
   }
 
@@ -612,15 +598,22 @@ class Query<
     Aggregate,
     P
   > {
-    this.ast.groupBy = { prop }
+    const parts = prop.split('.')
+    let target = this.ast
+    let field: string = prop
+    if (parts.length > 1) {
+      field = parts.pop()!
+      target = traverse(this.ast, parts.join('.'))
+    }
+    target.groupBy = { prop: field as any }
     if (step) {
       if (typeof step === 'object') {
         const s = step as any
-        if (s.step) this.ast.groupBy.step = s.step
-        if (s.timeZone) this.ast.groupBy.timeZone = s.timeZone
-        if (s.display) this.ast.groupBy.display = s.display
+        if (s.step) target.groupBy.step = s.step
+        if (s.timeZone) target.groupBy.timeZone = s.timeZone
+        if (s.display) target.groupBy.display = s.display
       } else {
-        this.ast.groupBy.step = step
+        target.groupBy.step = step
       }
     }
     return this as any
@@ -913,6 +906,28 @@ function traverse(target: any, prop: string) {
     }
   }
   return target
+}
+
+function parseAggregateProps(
+  ast: any,
+  aggName: string,
+  props: string[],
+  opts?: any,
+) {
+  for (const prop of props) {
+    const parts = prop.split('.')
+    let target = ast
+    let field = prop
+    if (parts.length > 1) {
+      field = parts.pop()!
+      target = traverse(ast, parts.join('.'))
+    }
+    target[aggName] ??= { props: [] }
+    if (opts?.mode) {
+      target[aggName].samplingMode = opts.mode
+    }
+    target[aggName].props.push(field)
+  }
 }
 
 export const checksum = (res: any): number => {

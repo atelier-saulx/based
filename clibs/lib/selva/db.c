@@ -245,7 +245,7 @@ static uint32_t te_size(void)
     return slab_size;
 }
 
-static void noop_dirty_hook(void *, node_type_t, node_id_t)
+static void noop_subs_hook(void *, node_type_t, node_id_t)
 {
 }
 
@@ -263,7 +263,7 @@ struct SelvaDb *selva_db_create(size_t len, uint8_t schema[len])
     db->expiring.expire_cb = expire_cb;
     db->expiring.cancel_cb = cancel_cb;
     db->dirfd = AT_FDCWD;
-    db->dirty_hook_fun = noop_dirty_hook;
+    db->subs_hook_fun = noop_subs_hook;
     selva_expire_init(&db->expiring);
 
     for (size_t i = 0; i < len;) {
@@ -317,10 +317,10 @@ int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname
     return 0;
 }
 
-void selva_db_set_dirty_hook(struct SelvaDb *db, selva_db_dirty_hook_t dirty_hook, void *ctx)
+void selva_db_set_subs_hook(struct SelvaDb *db, selva_db_subs_hook_t hook, void *ctx)
 {
-    db->dirty_hook_fun = dirty_hook ?: noop_dirty_hook;
-    db->dirty_hook_ctx = ctx;
+    db->subs_hook_fun = hook ?: noop_subs_hook;
+    db->subs_hook_ctx = ctx;
 }
 
 /**
@@ -449,6 +449,8 @@ extern inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db,
 
 extern inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node);
 
+extern inline struct SelvaDb *selva_get_db_by_te(struct SelvaTypeEntry *te);
+
 extern inline node_type_t selva_get_type(const struct SelvaTypeEntry *te);
 
 extern inline block_id_t selva_get_nr_blocks(const struct SelvaTypeEntry *te);
@@ -557,6 +559,7 @@ static void selva_unl_node(struct SelvaDb *db, struct SelvaTypeEntry *type, stru
 void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct SelvaNode *node)
 {
     selva_mark_dirty(type, node->node_id);
+    selva_subs(type, node->node_id);
     selva_remove_all_aliases(type, node->node_id);
     selva_fields_flush(db, node);
 }
@@ -564,11 +567,14 @@ void selva_flush_node(struct SelvaDb *db, struct SelvaTypeEntry *type, struct Se
 void selva_mark_dirty(struct SelvaTypeEntry *te, node_id_t node_id)
 {
     if (node_id > 0) {
-        struct SelvaDb *db = containerof(te, typeof(*db), types[te->type - 1]);
-
         selva_block_status_set(te, selva_node_id2block_i2(te, node_id), SELVA_TYPE_BLOCK_STATUS_DIRTY);
-        db->dirty_hook_fun(db->dirty_hook_ctx, te->type, node_id);
     }
+}
+
+void selva_subs(struct SelvaTypeEntry *te, node_id_t node_id)
+{
+    struct SelvaDb *db = selva_get_db_by_te(te);
+    db->subs_hook_fun(db->subs_hook_ctx, te->type, node_id);
 }
 
 struct SelvaNodeRes selva_find_node(struct SelvaTypeEntry *type, node_id_t node_id)

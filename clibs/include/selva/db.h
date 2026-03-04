@@ -65,12 +65,18 @@ void selva_db_destroy(struct SelvaDb *db) __attribute__((nonnull));
 SELVA_EXPORT
 int selva_db_chdir(struct SelvaDb *db, const char *pathname_str, size_t pathname_len) __attribute__((nonnull));
 
-/**
- * Set a hook to the dirty marking system.
- * The hook function will be called every time a node is marked dirty.
- */
 SELVA_EXPORT
-void selva_db_set_dirty_hook(struct SelvaDb *db, selva_db_dirty_hook_t dirty_hook, void *ctx);
+void selva_db_set_subs_hook(struct SelvaDb *db, selva_db_subs_hook_t hook, void *ctx);
+
+SELVA_EXPORT
+void selva_dump_free_ids(node_id_t *ids);
+
+SELVA_EXPORT
+#if defined(__GNUC__) && !defined(__clang__)
+__attribute__((access(write_only, 2)))
+__attribute__((malloc, malloc(selva_dump_free_ids, 1)))
+#endif
+node_id_t *selva_dump_alloc_ids(struct SelvaDb *db, size_t *len_out);
 
 /**
  * Save the common/shared data of the database.
@@ -86,6 +92,9 @@ int selva_dump_save_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_i
 
 SELVA_EXPORT
 int selva_dump_load_common(struct SelvaDb *db, struct selva_dump_common_data *com) __attribute__((nonnull));
+
+SELVA_EXPORT
+void selva_dump_deinit_common(struct selva_dump_common_data *com);
 
 SELVA_EXPORT
 int selva_dump_load_block(struct SelvaDb *db, struct SelvaTypeEntry *te, block_id_t block_i, char *errlog_buf, size_t errlog_size) __attribute__((nonnull));
@@ -104,6 +113,9 @@ inline struct SelvaTypeEntry *selva_get_type_by_index(struct SelvaDb *db, node_t
  */
 SELVA_EXPORT
 inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct SelvaNode *node) [[reproducible]];
+
+SELVA_EXPORT
+inline struct SelvaDb *selva_get_db_by_te(struct SelvaTypeEntry *te);
 
 SELVA_EXPORT
 inline node_type_t selva_get_type(const struct SelvaTypeEntry *te) [[reproducible]];
@@ -433,6 +445,11 @@ inline struct SelvaTypeEntry *selva_get_type_by_node(struct SelvaDb *db, struct 
 {
     assert((size_t)node->type - 1 < db->nr_types);
     return &db->types[node->type - 1];
+}
+
+inline struct SelvaDb *selva_get_db_by_te(struct SelvaTypeEntry *te)
+{
+    return containerof(te, struct SelvaDb, types[te->type - 1]);
 }
 
 inline node_type_t selva_get_type(const struct SelvaTypeEntry *te)

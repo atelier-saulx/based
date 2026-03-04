@@ -25,7 +25,7 @@ const walk = (
   ctx: Ctx,
   typeDef: TypeDef,
   walkCtx: WalkCtx,
-  edgeType?: TypeDef,
+  // edgeType?: TypeDef,
 ) => {
   const { tree, main } = walkCtx
 

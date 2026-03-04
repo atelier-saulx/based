@@ -124,7 +124,7 @@ export async function start(db: DbServer, opts?: StartOpts) {
   await mkdir(path, { recursive: true }).catch(noop)
 
   try {
-    const schema = await readFile(join(path, SCHEMA_FILE))
+    const schema = new Uint8Array((await readFile(join(path, SCHEMA_FILE))).buffer)
     realStart(db, deSerialize(schema))
   } catch (e) {
     if (e.code !== 'ENOENT') {

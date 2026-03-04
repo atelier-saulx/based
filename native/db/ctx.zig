@@ -18,7 +18,7 @@ pub const DbCtx = struct {
     allocator: std.mem.Allocator,
     arena: *std.heap.ArenaAllocator,
     sortIndexes: sort.TypeSortIndexes,
-    selva: ?*selva.SelvaDb,
+    selva: *selva.SelvaDb,
     ids: []u32,
     jsBridge: *jsBridge.Callback,
     fsPath: []u8,
@@ -50,14 +50,18 @@ pub fn createDbCtx(
     bridge: napi.Value,
     fsPath: []u8,
     nrThreads: u16,
+    selvaDb: *selva.struct_SelvaDb,
 ) !*DbCtx {
     var arena = try db_backing_allocator.create(std.heap.ArenaAllocator);
     arena.* = std.heap.ArenaAllocator.init(db_backing_allocator);
     const allocator = arena.allocator();
     const dbCtxPointer = try allocator.create(DbCtx);
+    var idsLen: usize = undefined;
+    const ids = selva.selva_dump_alloc_ids(selvaDb, &idsLen);
 
     errdefer {
         arena.deinit();
+        selva.selva_dump_free_ids(ids);
     }
 
     dbCtxPointer.* = .{
@@ -68,8 +72,8 @@ pub fn createDbCtx(
         .allocator = allocator,
         .sortIndexes = sort.TypeSortIndexes.init(allocator),
         .initialized = false,
-        .selva = null,
-        .ids = &[_]u32{},
+        .selva = selvaDb,
+        .ids = ids[0..idsLen],
         .jsBridge = try jsBridge.Callback.init(env, dbCtxPointer, bridge),
         .decompressor = deflate.createDecompressor(),
         .libdeflateBlockState = deflate.initBlockState(305000),
@@ -83,20 +87,10 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     ctx.jsBridge.deinit();
     ctx.threads.deinit();
 
-    var it = ctx.sortIndexes.iterator();
-    while (it.next()) |index| {
-        var mainIt = index.value_ptr.*.main.iterator();
-        while (mainIt.next()) |main| {
-            selva.selva_sort_destroy(main.value_ptr.*.index);
-        }
-        var fieldIt = index.value_ptr.*.field.iterator();
-        while (fieldIt.next()) |field| {
-            selva.selva_sort_destroy(field.value_ptr.*.index);
-        }
-    }
+    sort.deinit(&ctx.sortIndexes);
 
     if (ctx.ids.len > 0) {
-        jemalloc.free(ctx.ids);
+        selva.selva_dump_free_ids(ctx.ids.ptr);
         ctx.ids = &[_]u32{};
     }
 
@@ -104,6 +98,5 @@ pub fn destroyDbCtx(ctx: *DbCtx) void {
     deflate.deinitBlockState(&ctx.libdeflateBlockState);
 
     selva.selva_db_destroy(ctx.selva);
-    ctx.selva = null;
     ctx.arena.deinit();
 }

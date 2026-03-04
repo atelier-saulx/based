@@ -16,7 +16,7 @@ pub inline fn getType(ctx: *DbCtx, v: anytype) !Type {
 
     if (comptime @TypeOf(v) == t.TypeId) {
         selvaTypeEntry = selva.c.selva_get_type_by_index(
-            ctx.selva.?,
+            ctx.selva,
             v,
         );
     } else if (comptime @TypeOf(v) == selva.Node or

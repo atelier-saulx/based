@@ -36,6 +36,7 @@
     "test-zig-debug": "npm run build-zig-debug && npm run test --",
     "install-esbuild": "./scripts/install-esbuild",
     "linux-arm64": "./scripts/linux-arm64 npm run",
+    "linux-arm64-debug": "./scripts/linux-arm64-debug npm run",
     "linux-x64": "./scripts/linux-x64 npm run",
     "repl": "LOCPATH=dist/locale node --import=tsx  ./scripts/repl.ts",
     "// todo:cleanup": "",

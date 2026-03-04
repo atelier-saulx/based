@@ -12,6 +12,8 @@ import { AutoSizedUint8Array } from './utils/AutoSizedUint8Array.js'
 
 export type TypeId = number
 
+export type NodeId = number
+
 export type SelvaFieldType = number
 
 export type SelvaField = number
@@ -116,82 +118,6 @@ export const OpTypeInverse = {
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
-
-export const ModOp = {
-  switchProp: 0,
-  switchIdUpdate: 1,
-  switchType: 2,
-  createProp: 3,
-  deleteSortIndex: 4,
-  updatePartial: 5,
-  updateProp: 6,
-  addEmptySort: 7,
-  switchIdCreateUnsafe: 8,
-  switchIdCreate: 9,
-  switchIdCreateRing: 19,
-  deleteNode: 10,
-  delete: 11,
-  increment: 12,
-  decrement: 13,
-  expire: 14,
-  addEmptySortText: 15,
-  deleteTextField: 16,
-  upsert: 17,
-  insert: 18,
-  end: 254,
-  padding: 255,
-} as const
-
-export const ModOpInverse = {
-  0: 'switchProp',
-  1: 'switchIdUpdate',
-  2: 'switchType',
-  3: 'createProp',
-  4: 'deleteSortIndex',
-  5: 'updatePartial',
-  6: 'updateProp',
-  7: 'addEmptySort',
-  8: 'switchIdCreateUnsafe',
-  9: 'switchIdCreate',
-  19: 'switchIdCreateRing',
-  10: 'deleteNode',
-  11: 'delete',
-  12: 'increment',
-  13: 'decrement',
-  14: 'expire',
-  15: 'addEmptySortText',
-  16: 'deleteTextField',
-  17: 'upsert',
-  18: 'insert',
-  254: 'end',
-  255: 'padding',
-} as const
-
-/**
-  switchProp, 
-  switchIdUpdate, 
-  switchType, 
-  createProp, 
-  deleteSortIndex, 
-  updatePartial, 
-  updateProp, 
-  addEmptySort, 
-  switchIdCreateUnsafe, 
-  switchIdCreate, 
-  switchIdCreateRing, 
-  deleteNode, 
-  delete, 
-  increment, 
-  decrement, 
-  expire, 
-  addEmptySortText, 
-  deleteTextField, 
-  upsert, 
-  insert, 
-  end, 
-  padding 
- */
-export type ModOpEnum = (typeof ModOp)[keyof typeof ModOp]
 
 export const Modify = {
   create: 0,
@@ -305,7 +231,7 @@ export type ModifyUpdateHeader = {
   op: ModifyEnum
   type: TypeId
   isTmp: boolean
-  id: number
+  id: NodeId
   size: number
 }
 
@@ -343,7 +269,7 @@ export const writeModifyUpdateHeaderProps = {
   isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  id: (buf: Uint8Array, value: number, offset: number) => {
+  id: (buf: Uint8Array, value: NodeId, offset: number) => {
     writeUint32(buf, Number(value), offset + 4)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
@@ -398,7 +324,7 @@ export type ModifyDeleteHeader = {
   op: ModifyEnum
   type: TypeId
   isTmp: boolean
-  id: number
+  id: NodeId
 }
 
 export const ModifyDeleteHeaderByteSize = 8
@@ -433,7 +359,7 @@ export const writeModifyDeleteHeaderProps = {
   isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  id: (buf: Uint8Array, value: number, offset: number) => {
+  id: (buf: Uint8Array, value: NodeId, offset: number) => {
     writeUint32(buf, Number(value), offset + 4)
   },
 }
@@ -1357,31 +1283,6 @@ export const PropTypeSelvaInverse = {
   colVec 
  */
 export type PropTypeSelvaEnum = (typeof PropTypeSelva)[keyof typeof PropTypeSelva]
-
-export const RefOp = {
-  clear: 0,
-  del: 1,
-  end: ModOp.end,
-  set: 3,
-  setEdge: 4,
-} as const
-
-export const RefOpInverse = {
-  0: 'clear',
-  1: 'del',
-  [ModOp.end]: 'end',
-  3: 'set',
-  4: 'setEdge',
-} as const
-
-/**
-  clear, 
-  del, 
-  end, 
-  set, 
-  setEdge 
- */
-export type RefOpEnum = (typeof RefOp)[keyof typeof RefOp]
 
 export const ReadOp = {
   none: 0,
@@ -3680,11 +3581,12 @@ export type AggRefsHeader = {
   filterSize: number
   resultsSize: number
   accumulatorSize: number
+  aggDefsSize: number
   hasGroupBy: boolean
   isSamplingSet: boolean
 }
 
-export const AggRefsHeaderByteSize = 13
+export const AggRefsHeaderByteSize = 15
 
 export const AggRefsHeaderAlignOf = 16
 
@@ -3704,6 +3606,8 @@ export const writeAggRefsHeader = (
   writeUint16(buf, Number(header.resultsSize), offset)
   offset += 2
   writeUint16(buf, Number(header.accumulatorSize), offset)
+  offset += 2
+  writeUint16(buf, Number(header.aggDefsSize), offset)
   offset += 2
   buf[offset] = 0
   buf[offset] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
@@ -3732,11 +3636,14 @@ export const writeAggRefsHeaderProps = {
   accumulatorSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 10)
   },
+  aggDefsSize: (buf: Uint8Array, value: number, offset: number) => {
+    writeUint16(buf, Number(value), offset + 12)
+  },
   hasGroupBy: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 12] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+    buf[offset + 14] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
   isSamplingSet: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 12] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    buf[offset + 14] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
 }
 
@@ -3751,8 +3658,9 @@ export const readAggRefsHeader = (
     filterSize: readUint16(buf, offset + 6),
     resultsSize: readUint16(buf, offset + 8),
     accumulatorSize: readUint16(buf, offset + 10),
-    hasGroupBy: (((buf[offset + 12] >>> 0) & 1)) === 1,
-    isSamplingSet: (((buf[offset + 12] >>> 1) & 1)) === 1,
+    aggDefsSize: readUint16(buf, offset + 12),
+    hasGroupBy: (((buf[offset + 14] >>> 0) & 1)) === 1,
+    isSamplingSet: (((buf[offset + 14] >>> 1) & 1)) === 1,
   }
   return value
 }
@@ -3764,8 +3672,9 @@ export const readAggRefsHeaderProps = {
     filterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 6),
     resultsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
     accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 10),
-    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 12] >>> 0) & 1)) === 1,
-    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 12] >>> 1) & 1)) === 1,
+    aggDefsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 12),
+    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 14] >>> 0) & 1)) === 1,
+    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 14] >>> 1) & 1)) === 1,
 }
 
 export const createAggRefsHeader = (header: AggRefsHeader): Uint8Array => {
@@ -3785,6 +3694,7 @@ export const pushAggRefsHeader = (
   buf.pushUint16(Number(header.filterSize))
   buf.pushUint16(Number(header.resultsSize))
   buf.pushUint16(Number(header.accumulatorSize))
+  buf.pushUint16(Number(header.aggDefsSize))
   buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
@@ -3929,9 +3839,10 @@ export type AggProp = {
   aggFunction: AggFunctionEnum
   resultPos: number
   accumulatorPos: number
+  isEdge: boolean
 }
 
-export const AggPropByteSize = 9
+export const AggPropByteSize = 10
 
 export const AggPropAlignOf = 16
 
@@ -3952,6 +3863,10 @@ export const writeAggProp = (
   offset += 2
   writeUint16(buf, Number(header.accumulatorPos), offset)
   offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
   return offset
 }
 
@@ -3974,6 +3889,9 @@ export const writeAggPropProps = {
   accumulatorPos: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 7)
   },
+  isEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 9] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
 }
 
 export const readAggProp = (
@@ -3987,6 +3905,7 @@ export const readAggProp = (
     aggFunction: (buf[offset + 4]) as AggFunctionEnum,
     resultPos: readUint16(buf, offset + 5),
     accumulatorPos: readUint16(buf, offset + 7),
+    isEdge: (((buf[offset + 9] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -3998,6 +3917,7 @@ export const readAggPropProps = {
     aggFunction: (buf: Uint8Array, offset: number) => (buf[offset + 4]) as AggFunctionEnum,
     resultPos: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 5),
     accumulatorPos: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 7),
+    isEdge: (buf: Uint8Array, offset: number) => (((buf[offset + 9] >>> 0) & 1)) === 1,
 }
 
 export const createAggProp = (header: AggProp): Uint8Array => {
@@ -4017,6 +3937,9 @@ export const pushAggProp = (
   buf.pushUint8(Number(header.aggFunction))
   buf.pushUint16(Number(header.resultPos))
   buf.pushUint16(Number(header.accumulatorPos))
+  buf.pushUint8(0)
+  buf.view[buf.length - 1] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
   return index
 }
 

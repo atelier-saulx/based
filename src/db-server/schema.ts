@@ -76,11 +76,11 @@ export const makeNativeSchema = (schema: SchemaOut): Uint8Array => {
       hasDefault: 1,
     })
 
+    const mainStart = buf.reserve(mainLen)
+    const mainBuf = buf.subarray(mainStart, mainStart + mainLen)
     for (const prop of typeDef.main) {
       if ('default' in prop.schema && prop.schema.default) {
-        prop.pushValue(buf, prop.schema.default, Modify.create, LangCode.none)
-      } else {
-        buf.fill(0, buf.length, buf.length + prop.size)
+        prop.write(mainBuf, prop.schema.default, prop.start)
       }
     }
 

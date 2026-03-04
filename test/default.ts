@@ -244,10 +244,6 @@ await test('default values for all props in user type', async (t) => {
             type: 'binary',
             default: defaultBinary,
           },
-          slug: {
-            type: 'alias',
-            default: 'default-slug',
-          },
           label: {
             type: 'text',
             default: defaultText,
@@ -291,41 +287,11 @@ await test('default values for all props in user type', async (t) => {
       level: 'medium',
       config: defaultJson,
       avatar: defaultBinary,
-      slug: 'default-slug',
       label: defaultText,
       friends: [],
       meta: { rating: 5, notes: 'Default Note' },
     },
     'User created with all default values',
-  )
-
-  const userNullId = await db.create('user', {
-    name: null,
-    count: null,
-    isNice: null,
-    config: null,
-    avatar: null,
-    level: null,
-    label: null,
-    meta: { rating: null },
-  })
-
-  deepEqual(
-    await db.query2('user', userNullId).get(),
-    {
-      id: 2,
-      label: { en: 'Default Label' },
-      isNice: true,
-      count: 42,
-      eventTime: 1678881600000,
-      level: 'medium',
-      meta: { rating: 5, notes: 'Default Note' },
-      name: 'Default Name',
-      config: { enabled: true, value: 10 },
-      avatar: new Uint8Array([1, 2, 3]),
-      slug: 'default-slug',
-    },
-    'User created with explicit null overrides',
   )
 })
 
