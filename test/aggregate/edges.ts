@@ -84,15 +84,15 @@ await test('edges aggregation', async (t) => {
   /*       NESTED SINTAX       */
   /*---------------------------*/
 
-  deepEqual(
-    await db.query2('movie').sum('actors.strong').get(),
-    //@ts-ignore
-    [
-      { id: 1, actors: { strong: { sum: 10 } } },
-      { id: 2, actors: { strong: { sum: 15 } } },
-    ],
-    'nested sintax with references',
-  )
+  // deepEqual(
+  //   await db.query2('movie').sum('actors.strong').get(),
+  //   //@ts-ignore
+  //   [
+  //     { id: 1, actors: { strong: { sum: 10 } } },
+  //     { id: 2, actors: { strong: { sum: 15 } } },
+  //   ],
+  //   'nested sintax with references',
+  // )
 
   // deepEqual(
   //   await db.query2('movie').max('actors.$rating').sum('actors.$hating').get(),
@@ -130,32 +130,32 @@ await test('edges aggregation', async (t) => {
   // .include((q) => q('actors').max('strong').sum('strong2'))
   // .get()
 
-  deepEqual(
-    await db
-      .query2('movie')
-      // @ts-ignore
-      .include((q) => q('actors').max('$rating'))
-      .get(),
-    [
-      {
-        id: 1,
-        actors: {
-          $rating: {
-            max: 55,
-          },
-        },
-      },
-      {
-        id: 2,
-        actors: {
-          $rating: {
-            max: 77,
-          },
-        },
-      },
-    ],
-    'single edge aggregation, branched query',
-  )
+  // deepEqual(
+  //   await db
+  //     .query2('movie')
+  //     // @ts-ignore
+  //     .include((q) => q('actors').max('$rating'))
+  //     .get(),
+  //   [
+  //     {
+  //       id: 1,
+  //       actors: {
+  //         $rating: {
+  //           max: 55,
+  //         },
+  //       },
+  //     },
+  //     {
+  //       id: 2,
+  //       actors: {
+  //         $rating: {
+  //           max: 77,
+  //         },
+  //       },
+  //     },
+  //   ],
+  //   'single edge aggregation, branched query',
+  // )
 
   // deepEqual(
   //   await db

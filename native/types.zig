@@ -682,6 +682,10 @@ pub const QueryIteratorType = enum(u8) {
     aggregateFilter = 141,
     groupBy = 142,
     groupByFilter = 143,
+    aggregateEdge = 144,
+    aggregateEdgeFilter = 145,
+    groupByEdge = 146,
+    groupByEdgeFilter = 147,
 };
 
 // include op needs overlap with this

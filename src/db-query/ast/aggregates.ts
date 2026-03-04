@@ -122,9 +122,8 @@ const buildAggregateHeader = (
 
   let headerBuffer: Uint8Array
 
-  // TODO: references
-
   let iteratorType = QueryIteratorType.aggregate
+  // if (hasEdges) iteratorType += 4
   if (hasGroupBy) iteratorType += 2
   if (filterSize > 0) iteratorType += 1
 

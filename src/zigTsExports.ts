@@ -2266,6 +2266,10 @@ export const QueryIteratorType = {
   aggregateFilter: 141,
   groupBy: 142,
   groupByFilter: 143,
+  aggregateEdge: 144,
+  aggregateEdgeFilter: 145,
+  groupByEdge: 146,
+  groupByEdgeFilter: 147,
 } as const
 
 export const QueryIteratorTypeInverse = {
@@ -2317,6 +2321,10 @@ export const QueryIteratorTypeInverse = {
   141: 'aggregateFilter',
   142: 'groupBy',
   143: 'groupByFilter',
+  144: 'aggregateEdge',
+  145: 'aggregateEdgeFilter',
+  146: 'groupByEdge',
+  147: 'groupByEdgeFilter',
 } as const
 
 /**
@@ -2367,7 +2375,11 @@ export const QueryIteratorTypeInverse = {
   aggregate, 
   aggregateFilter, 
   groupBy, 
-  groupByFilter 
+  groupByFilter, 
+  aggregateEdge, 
+  aggregateEdgeFilter, 
+  groupByEdge, 
+  groupByEdgeFilter 
  */
 export type QueryIteratorTypeEnum = (typeof QueryIteratorType)[keyof typeof QueryIteratorType]
 
