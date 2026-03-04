@@ -2101,7 +2101,7 @@ static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFi
     }
 }
 
-void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node, struct SelvaFieldSchema *fs, ...)
+void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...)
 {
     va_list args;
 
