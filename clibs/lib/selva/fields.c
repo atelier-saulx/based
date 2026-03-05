@@ -2147,12 +2147,13 @@ void selva_fields_set_default(struct SelvaDb *db, struct SelvaTypeEntry *te, str
         {
             va_start(args, fs);
             const size_t len = va_arg(args, typeof(len));
+            enum selva_lang_code *langs = va_arg(args, typeof(langs));
 
             if (fs->default_off == 0) {
                 (void)selva_fields_del(db, node, fs);
             } else {
                 for (size_t i = 0; i < len; i++) {
-                    enum selva_lang_code lang = va_arg(args, int);
+                    enum selva_lang_code lang = langs[i];
                     if (lang == selva_lang_none) {
                         assume(len == 1);
                         set_text_defaults(te, &node->fields, fs);

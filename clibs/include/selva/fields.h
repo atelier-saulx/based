@@ -312,7 +312,7 @@ void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, b
  *   2. length to copy (`0 < len <= smb.len`)
  * - `SELVA_FIELD_TYPE_TEXT`
  *   1. number of lang codes to follow (reset all = `1`)
- *   2. lang code(s) (`selva_lang_none` = `0` = reset all)
+ *   2. lang code(s) in an uint8_t array (`selva_lang_none` = `0` = reset all)
  *
  */
 SELVA_EXPORT
