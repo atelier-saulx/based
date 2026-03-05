@@ -43,7 +43,7 @@ ${util.inspect(b, { depth: 10, maxStringLength: 60 })}
 
 export const equal = deepEqual
 
-const SORT_ERR_MSG = 'Incorrect sort oder'
+const SORT_ERR_MSG = 'Incorrect sort order'
 
 export const isSorted = (
   a: Record<string, any>[],
