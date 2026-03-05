@@ -23,7 +23,8 @@ pub fn parseValue(
         value = v[1 + c.start .. v[c.start] + 1 + c.start];
     } else if (v.len == 0) {
         return false;
-    } else if (v[0] == 1) {
+    } else if (v[1] == 1) {
+        std.debug.print("bla bla \n", .{});
         return deflate.decompress(
             thread,
             void,
@@ -52,48 +53,18 @@ const indexBitMask: @Vector(vectorLenU8, MaskInt) = blk: {
     break :blk weights;
 };
 
-pub fn include(
+inline fn includeVector(
+    comptime useTwoChars: bool,
     query: []const u8,
     value: []const u8,
 ) bool {
-    const l = value.len;
-    const ql = query.len;
-
-    // do we want to support ql 0 ?
-    if (ql == 0) return true;
-    if (l < ql) return false;
-
-    const maxStart = l - ql;
-
-    const useTwoChars = ql >= 2 and switch (query[0]) {
-        'a', 'e', 'i', 'o', 'u', 's', 't', 'n', 'r', 'l', 'c', 'd', 'm', 'h', ' ' => true,
-        // 'A', 'E', 'I', 'O', 'U', 'S', 'T', 'N', 'R', 'L', 'C', 'D', 'M', 'H' => true,
-        else => false,
-    };
-
-    const vecLen: usize = if (useTwoChars) vectorLenU8 + 1 else vectorLenU8;
-
+    const vecLen = if (useTwoChars) vectorLenU8 + 1 else vectorLenU8;
+    const maxStart = value.len - query.len;
     var i: usize = 0;
-
-    if (l < vecLen) {
-        while (i <= maxStart) : (i += 1) {
-            if (value[i] == query[0]) {
-                var j: usize = 1;
-                while (j < ql) : (j += 1) {
-                    if (value[i + j] != query[j]) break;
-                }
-                if (j == ql) return true;
-            }
-        }
-        return false;
-    }
-
     const queryVector: @Vector(vectorLenU8, u8) = @splat(query[0]);
     const queryVector1: @Vector(vectorLenU8, u8) = @splat(if (useTwoChars) query[1] else 0);
-
     const startIdx: usize = if (useTwoChars) 2 else 1;
-    const lastVector = l - vecLen;
-
+    const lastVector = value.len - vecLen;
     while (i <= lastVector) : (i += vectorLenU8) {
         const h: @Vector(vectorLenU8, u8) = value[i..][0..vectorLenU8].*;
         var matches = h == queryVector;
@@ -134,7 +105,7 @@ pub fn include(
         }
     }
     if (i <= maxStart) {
-        const offset = l - vecLen;
+        const offset = value.len - vecLen;
         const h: @Vector(vectorLenU8, u8) = value[offset..][0..vectorLenU8].*;
         var matches = h == queryVector;
         if (useTwoChars) {
@@ -176,6 +147,45 @@ pub fn include(
         }
     }
     return false;
+}
+
+pub fn include(
+    query: []const u8,
+    value: []const u8,
+) bool {
+    // do we want to support ql 0 ?
+    if (query.len == 0) return true;
+    if (value.len < query.len) return false;
+
+    const useTwoChars = query.len >= 2 and switch (query[0]) {
+        'a', 'e', 'i', 'o', 'u', 's', 't', 'n', 'r', 'l', 'c', 'd', 'm', 'h', ' ' => true,
+        // 'A', 'E', 'I', 'O', 'U', 'S', 'T', 'N', 'R', 'L', 'C', 'D', 'M', 'H' => true,
+        else => false,
+    };
+
+    const vecLen: usize = if (useTwoChars) vectorLenU8 + 1 else vectorLenU8;
+
+    if (value.len < vecLen) {
+        var i: usize = 0;
+        const maxStart = value.len - query.len;
+        while (i <= maxStart) : (i += 1) {
+            if (value[i] == query[0]) {
+                var j: usize = 1;
+                while (j < query.len) : (j += 1) {
+                    if (value[i + j] != query[j]) break;
+                }
+                if (j == query.len) return true;
+            }
+        }
+        return false;
+    }
+
+    if (useTwoChars) {
+        // lower case make it enum
+        return includeVector(true, query, value);
+    }
+
+    return includeVector(false, query, value);
 }
 
 pub fn eqVar(

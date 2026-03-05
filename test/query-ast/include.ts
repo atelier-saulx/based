@@ -91,7 +91,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 1e3; i++) {
     client.create('user', {
       big: syntheticData,
       name: `mr snurf ${i}`,
@@ -130,7 +130,7 @@ await test('include', async (t) => {
     range: { start: 0, end: 3 },
     filter: {
       props: {
-        big: { ops: [{ op: 'includes', val: 'mr jim' }] },
+        big: { ops: [{ op: 'includes', val: 'acac' }] },
       },
     },
     props: {
@@ -183,8 +183,8 @@ await test('include', async (t) => {
   )
 
   // const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
-  // console.log(result.byteLength)
   const result = await db.server.getQueryBuf(ctx.query)
+  console.log(result.byteLength)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
