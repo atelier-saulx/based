@@ -172,7 +172,7 @@ pub inline fn setDefault(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema
     selva.c.selva_fields_set_default(db.selva, te, node, fieldSchema);
 }
 
-pub inline fn setDefaultMain(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema, start: usize, len: usize) void {
+pub inline fn setDefaultSmb(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema, start: usize, len: usize) void {
     selva.c.selva_fields_set_default(db.selva, te, node, fieldSchema, start, len);
 }
 

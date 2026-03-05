@@ -94,7 +94,7 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                 }
             }
             if (main.resetDefault) {
-                Fields.setDefaultMain(db, typeEntry, node, propSchema, main.start, main.size);
+                Fields.setDefaultSmb(db, typeEntry, node, propSchema, main.start, main.size);
                 // TODO Shouldn't maybe modify the data?
             } else {
                 utils.copy(u8, current, value, main.start);
@@ -284,7 +284,7 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                     if (prop.size == 0) {
                         if (propSchema.type == selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER) {
                             // TODO Should we get the proper size from somewhere?
-                            Fields.setDefaultMain(db, typeEntry, node, propSchema, 0, 1048576);
+                            Fields.setDefaultSmb(db, typeEntry, node, propSchema, 0, 1048576);
                         } else {
                             Fields.setDefault(db, typeEntry, node, propSchema);
                         }
