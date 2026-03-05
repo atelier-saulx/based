@@ -63,11 +63,6 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
             j += main.size;
 
             //std.log.err("main prop {any} {any} {any}", .{main.start, main.size, main.resetDefault});
-            if (main.resetDefault) {
-                Fields.setDefaultMain(db, typeEntry, node, propSchema, main.start, main.size);
-                // TODO Shouldn't maybe modify the data?
-                utils.copy(u8, value, current, main.start);
-            }
             if (main.increment) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.incrementPositive),
@@ -98,7 +93,12 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                     }
                 }
             }
-            utils.copy(u8, current, value, main.start);
+            if (main.resetDefault) {
+                Fields.setDefaultMain(db, typeEntry, node, propSchema, main.start, main.size);
+                // TODO Shouldn't maybe modify the data?
+            } else {
+                utils.copy(u8, current, value, main.start);
+            }
         } else {
             // separate handling
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
