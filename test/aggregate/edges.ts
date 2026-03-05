@@ -1,7 +1,6 @@
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 import { testDb } from '../shared/index.js'
-import { uint16 } from '../../src/schema/defs/props/fixed.js'
 
 await test('edges aggregation', async (t) => {
   const db = await testDb(t, {
@@ -17,8 +16,8 @@ await test('edges aggregation', async (t) => {
             $hating: 'uint16',
             $role: 'string',
             $roleType: ['Lead', 'Supporting', 'Cameo', 'Extra', 'Voiceover'],
-            $year: 'uint16',
-            $watched: 'timestamp',
+            $salary: 'uint16',
+            $hired: 'timestamp',
           },
         },
       },
@@ -56,8 +55,8 @@ await test('edges aggregation', async (t) => {
         $hating: 5,
         $role: 'Supporting',
         $roleType: 'Lead',
-        $year: 2003,
-        $watched: new Date('2025-01-01'),
+        $salary: 12000,
+        $hired: new Date('2025-01-01'),
       },
     ],
   })
@@ -70,8 +69,8 @@ await test('edges aggregation', async (t) => {
         $hating: 7,
         $role: 'Mia Wallace',
         $roleType: 'Lead',
-        $year: 1994,
-        $watched: new Date('1994-12-11'),
+        $salary: 300,
+        $hired: new Date('1994-12-11'),
       },
       {
         id: a2,
@@ -79,8 +78,8 @@ await test('edges aggregation', async (t) => {
         $hating: 3,
         $role: 'Vincent Vega',
         $roleType: 'Lead',
-        $year: 1994,
-        $watched: new Date('1994-12-11'),
+        $salary: 300,
+        $hired: new Date('1994-12-11'),
       },
     ],
   })
@@ -219,8 +218,6 @@ await test('edges aggregation', async (t) => {
     .groupBy('actors.$role')
     .get()
 
-  console.dir(strEdg, { depth: null })
-
   deepEqual(
     strEdg,
     [
@@ -245,8 +242,6 @@ await test('edges aggregation', async (t) => {
     .sum('actors.$rating')
     .groupBy('actors.$roleType')
     .get()
-
-  console.dir(enumEdg, { depth: null })
 
   deepEqual(
     enumEdg,
@@ -273,18 +268,16 @@ await test('edges aggregation', async (t) => {
   const numEdg = await db
     .query2('movie')
     .sum('actors.strong')
-    .groupBy('actors.$year')
+    .groupBy('actors.$salary')
     .get()
-
-  console.dir(numEdg, { depth: null })
 
   deepEqual(
     numEdg,
     [
       //@ts-ignore
-      { id: 1, actors: { 2003: { strong: { sum: 10 } } } },
+      { id: 1, actors: { 12000: { strong: { sum: 10 } } } },
       //@ts-ignore
-      { id: 2, actors: { 1994: { strong: { sum: 15 } } } },
+      { id: 2, actors: { 300: { strong: { sum: 15 } } } },
     ],
     'numeric edge',
   )
@@ -293,10 +286,8 @@ await test('edges aggregation', async (t) => {
   const tempIntEdg = await db
     .query2('movie')
     .sum('actors.strong')
-    .groupBy('actors.$watched', { step: 'year' })
+    .groupBy('actors.$hired', { step: 'year' })
     .get()
-
-  console.dir(tempIntEdg, { depth: null })
 
   deepEqual(
     tempIntEdg,
@@ -309,14 +300,11 @@ await test('edges aggregation', async (t) => {
     'temporal interval edge',
   )
 
-  // numeric interval edge - is this implemented?
   const numIntEdg = await db
     .query2('movie')
     .sum('actors.strong')
     .groupBy('actors.$hating', { step: 2 })
     .get()
-
-  console.dir(numIntEdg, { depth: null })
 
   deepEqual(
     numIntEdg,
@@ -330,15 +318,5 @@ await test('edges aggregation', async (t) => {
       },
     ],
     'numeric interval edge',
-  )
-
-  // numeric interval edge - is this implemented?
-  console.dir(
-    await db
-      .query2('movie')
-      .sum('actors.strong')
-      .groupBy('actors.$hating', { step: 2 })
-      .get(),
-    { depth: null },
   )
 })
