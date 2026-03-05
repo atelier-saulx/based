@@ -371,6 +371,10 @@ await test('negative default values for numeric types', async (t) => {
             type: 'number',
             default: -42,
           },
+          negativeInt8: {
+            type: 'int8',
+            default: -127,
+          },
           negativeInt16: {
             type: 'int16',
             default: -1234,
@@ -379,7 +383,6 @@ await test('negative default values for numeric types', async (t) => {
             type: 'int32',
             default: -123456,
           },
-          // int8 already tested with negative value in edges test
           // uint types shouldn't have negative defaults
         },
       },
@@ -393,6 +396,7 @@ await test('negative default values for numeric types', async (t) => {
     {
       id: userId,
       negativeNumber: -42,
+      negativeInt8: -127,
       negativeInt16: -1234,
       negativeInt32: -123456,
     },
@@ -401,6 +405,7 @@ await test('negative default values for numeric types', async (t) => {
 
   const userOverrideId = await db.create('user', {
     negativeNumber: -100,
+    negativeInt8: -50,
     negativeInt16: -2000,
     negativeInt32: -500000,
   })
@@ -409,6 +414,7 @@ await test('negative default values for numeric types', async (t) => {
     await db.query2('user', userOverrideId).get(),
     {
       id: 2,
+      negativeInt8: -50,
       negativeNumber: -100,
       negativeInt16: -2000,
       negativeInt32: -500000,
