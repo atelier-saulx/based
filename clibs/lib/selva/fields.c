@@ -2101,13 +2101,9 @@ static void selva_fields_init_defaults(struct SelvaTypeEntry *te, struct SelvaFi
     }
 }
 
-void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...)
+void selva_fields_set_default(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...)
 {
     va_list args;
-
-    if (fs->default_off == 0) {
-        return;
-    }
 
     switch (fs->type) {
     case SELVA_FIELD_TYPE_NULL:
@@ -2120,7 +2116,11 @@ void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node,
             uint8_t *p = selva_fields_ensure_micro_buffer(node, fs);
             const uint8_t *schema_buf = te->schema_buf;
 
-            if (likely(offset < fs->smb.len)) {
+            if (fs->default_off == 0) {
+                memset(p + offset,
+                       0,
+                       min(fs->smb.len - offset, len));
+            } else if (likely(offset < fs->smb.len)) {
                 memcpy(p + offset,
                        schema_buf + fs->default_off + offset,
                        min(fs->smb.len - offset, len));
@@ -2130,25 +2130,37 @@ void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node,
         }
         break;
     case SELVA_FIELD_TYPE_COLVEC:
-        colvec_set_vec(te, node->node_id, fs, (const uint8_t *)(te->schema_buf) + fs->default_off);
+        if (fs->default_off == 0) {
+            colvec_clear_vec(te, node->node_id, fs);
+        } else {
+            colvec_set_vec(te, node->node_id, fs, (const uint8_t *)(te->schema_buf) + fs->default_off);
+        }
         break;
     case SELVA_FIELD_TYPE_STRING:
-        set_string_default(te, &node->fields, fs);
+        if (fs->default_off == 0) {
+            (void)selva_fields_del(db, node, fs);
+        } else {
+            set_string_default(te, &node->fields, fs);
+        }
         break;
     case SELVA_FIELD_TYPE_TEXT:
         {
             va_start(args, fs);
             const size_t len = va_arg(args, typeof(len));
 
-            for (size_t i = 0; i < len; i++) {
-                enum selva_lang_code lang = va_arg(args, int);
-                if (lang == selva_lang_none) {
-                    assume(len == 1);
-                    set_text_defaults(te, &node->fields, fs);
-                    break;
-                } else {
-                    /* TODO Handle per lang */
-                    set_text_default(te, node, fs, lang);
+            if (fs->default_off == 0) {
+                (void)selva_fields_del(db, node, fs);
+            } else {
+                for (size_t i = 0; i < len; i++) {
+                    enum selva_lang_code lang = va_arg(args, int);
+                    if (lang == selva_lang_none) {
+                        assume(len == 1);
+                        set_text_defaults(te, &node->fields, fs);
+                        break;
+                    } else {
+                        /* TODO Handle per lang */
+                        set_text_default(te, node, fs, lang);
+                    }
                 }
             }
 
@@ -2158,7 +2170,8 @@ void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node,
     case SELVA_FIELD_TYPE_ALIAS:
     case SELVA_FIELD_TYPE_REFERENCE:
     case SELVA_FIELD_TYPE_REFERENCES:
-        /* Not supported */
+        /* Default value not supported */
+        (void)selva_fields_del(db, node, fs);
         break;
     }
 }

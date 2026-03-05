@@ -316,7 +316,7 @@ void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, b
  *
  */
 SELVA_EXPORT
-void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...);
+void selva_fields_set_default(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...);
 
 void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node);
 
