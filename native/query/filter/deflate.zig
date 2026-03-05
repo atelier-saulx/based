@@ -1,5 +1,6 @@
 const deflate = @import("../../deflate.zig");
 const Thread = @import("../../thread/thread.zig");
+const std = @import("std");
 
 fn Ctx(dataType: type) type {
     return struct {
@@ -39,16 +40,17 @@ fn comptimeCb(
             } else {
                 value = buf[dictSize .. dictSize + dataSize];
             }
+
             var found: bool = undefined;
             if (DataType == void) {
                 found = compare(
-                    value,
                     ctx.query,
+                    value,
                 );
             } else {
                 found = compare(
-                    value,
                     ctx.query,
+                    value,
                     ctx.data,
                 );
             }
@@ -88,15 +90,17 @@ pub inline fn decompress(
     var ctx: Ctx(DataType) = createCtx(DataType, query, data);
     var loop: bool = true;
     var hasMatch: c_int = 0;
+
     while (loop) {
         const result = deflate.decompressStream(
             thread.decompressor,
             &thread.libdeflateBlockState,
-            value[6 .. value.len - 10], // value.len - 10,
+            value[6 .. value.len - 4], //[6..value.len], // value.len - 10,
             comptimeCb(DataType, compare).func,
             @ptrCast(&ctx),
             &hasMatch,
         );
+
         loop = result == .insufficientSpace and
             deflate.blockStateGrowbuf(&thread.libdeflateBlockState);
     }

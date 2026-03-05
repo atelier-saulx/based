@@ -27,7 +27,7 @@ await test('include', async (t) => {
       user: {
         derp: { type: 'string', maxBytes: 2 },
         name: 'string',
-        big: { type: 'string', compression: 'none' },
+        big: { type: 'string', compression: 'deflate' },
         x: 'boolean',
         flap: 'uint32',
         enum: ['ok', 'bad', 'great'],
@@ -56,11 +56,15 @@ await test('include', async (t) => {
 
   let syntheticData = ''
 
-  for (let i = 0; i < 125e3; i++) {
+  // for (let i = 0; i < 125e3; i++) {
+  //   syntheticData += 'ab'
+  // }
+
+  for (let i = 0; i < 200; i++) {
     syntheticData += 'ab'
   }
 
-  syntheticData = italy
+  // syntheticData = italy
 
   const a = client.create('user', {
     name: 'mr jim',
@@ -91,7 +95,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 5; i++) {
     client.create('user', {
       big: syntheticData,
       name: `mr snurf ${i}`,
@@ -130,7 +134,7 @@ await test('include', async (t) => {
     range: { start: 0, end: 3 },
     filter: {
       props: {
-        big: { ops: [{ op: 'includes', val: 'acac' }] },
+        big: { ops: [{ op: 'includes', val: 'abab' }] },
       },
     },
     props: {

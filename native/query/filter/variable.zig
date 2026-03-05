@@ -24,15 +24,7 @@ pub fn parseValue(
     } else if (v.len == 0) {
         return false;
     } else if (v[1] == 1) {
-        std.debug.print("bla bla \n", .{});
-        return deflate.decompress(
-            thread,
-            void,
-            compare,
-            query,
-            value,
-            undefined,
-        );
+        return deflate.decompress(thread, void, compare, query, v, undefined);
     } else {
         value = v[2 .. v.len - 4];
     }
