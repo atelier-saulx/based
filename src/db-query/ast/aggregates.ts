@@ -181,6 +181,15 @@ export const resolveProp = (
     }
   }
 
+  if (isCount) {
+    propDef = {
+      id: 255,
+      path: ['count'],
+      start: 0,
+      type: 1,
+    }
+  }
+
   if (!propDef) {
     throw new Error(`Property '${propFullName}' not found`)
   }
@@ -278,7 +287,7 @@ const walkProps = (
 
     for (const propName of props) {
       const fullParts = [...currentPath]
-      const isCount = propName !== 'count' || fn !== AggFunction.count
+      const isCount = propName === 'count' && fn === AggFunction.count
       if (!isCount) {
         fullParts.push(propName)
       }
