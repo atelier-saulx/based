@@ -308,7 +308,7 @@ await test('default values for all props in user type', async (t) => {
   deepEqual(
     await db.query2('user', userNullId).get(),
     {
-      id: 2,
+      id: userNullId,
       label: { en: 'Default Label' },
       isNice: true,
       count: 42,
@@ -347,7 +347,7 @@ await test('default values for all props in user type', async (t) => {
   deepEqual(
     await db.query2('user', userNullId2).get(),
     {
-      id: 2,
+      id: userNullId2,
       label: { en: 'Default Label' },
       isNice: true,
       count: 42,
