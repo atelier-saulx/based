@@ -464,6 +464,7 @@ const pushGroupBy = (
     stepType,
     stepRange,
     timezone: timeZoneOffset,
+    isEdge,
   })
 
   let enumProxy

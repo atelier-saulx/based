@@ -88,23 +88,32 @@ inline fn aggregatePropsWithGroupBy(
     aggCtx: *Aggregates.AggCtx,
 ) !void {
     if (aggDefs.len == 0) return;
-    // utils.debugPrint("\n\naggDefs: {any}\n", .{aggDefs});
 
     var i: usize = 0;
     const currentKeyPropDef = utils.readNext(t.GroupByKeyProp, aggDefs, &i);
-    // utils.debugPrint("currentKeyPropDef: {any}\n", .{currentKeyPropDef});
-    // utils.debugPrint("😸 propId: {d}, node {d}\n", .{ currentKeyPropDef.propId, Node.getNodeId(node) });
 
     var keyValue: []u8 = undefined;
 
-    const propSchema = Schema.getFieldSchema(aggCtx.typeEntry, currentKeyPropDef.propId) catch {
+    var keyNode = node;
+    var keyTypeEntry = aggCtx.typeEntry;
+    if (currentKeyPropDef.isEdge) {
+        if (edgeNode) |en| {
+            keyNode = en;
+            if (aggCtx.edgeTypeEntry) |ete| {
+                keyTypeEntry = ete;
+            }
+        } else {
+            return;
+        }
+    }
+    const propSchema = Schema.getFieldSchema(keyTypeEntry, currentKeyPropDef.propId) catch {
         i += utils.sizeOf(t.GroupByKeyProp);
         return;
     };
 
     keyValue = Fields.get(
-        aggCtx.typeEntry,
-        node,
+        keyTypeEntry,
+        keyNode,
         propSchema,
         currentKeyPropDef.propType,
     );
@@ -120,7 +129,6 @@ inline fn aggregatePropsWithGroupBy(
     if (hash_map_entry.is_new) {
         aggCtx.totalResultsSize += 2 + key.len + aggCtx.resultsSize;
     }
-    // utils.debugPrint("is_new?: {any}, key: {s} {d}, sumOfDistinctKeyLens: {d}\n", .{ hash_map_entry.is_new, key, key.len, sumOfDistinctKeyLens });
 
     Aggregates.aggregateProps(node, edgeNode, aggDefs[i..], accumulatorProp, aggCtx);
 }
