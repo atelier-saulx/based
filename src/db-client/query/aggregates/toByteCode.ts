@@ -49,7 +49,8 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
       ...commonHeader,
       op: IncludeOp.referencesAggregation,
       targetProp: def.target.propDef?.prop || 0,
-      aggDefsSize: 0, // FIXME
+      aggDefsSize: 0,
+      iteratorType: getIteratorType(def, hasFilter),
     })
   } else {
     const queryType = isRootCountOnly(def, filterSize)
