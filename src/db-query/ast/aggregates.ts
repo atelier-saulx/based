@@ -164,18 +164,19 @@ export const resolveProp = (
   let isEdge = false
 
   if (!propDef && asReference?.edges) {
-    propDef = asReference.edges.props.get(propFullName)
+    let edgePropName = propFullName
+    const refPathPrefix = asReference.path
+      ? asReference.path.join('.') + '.'
+      : ''
+    if (refPathPrefix && edgePropName.startsWith(refPathPrefix)) {
+      edgePropName = edgePropName.slice(refPathPrefix.length)
+    } else if (edgePropName.startsWith('$')) {
+      edgePropName = edgePropName
+    }
+
+    propDef = asReference.edges.props.get(edgePropName)
     if (propDef) {
       isEdge = true
-    }
-  }
-
-  if (isCount) {
-    propDef = {
-      id: 255,
-      path: ['count'],
-      start: 0,
-      type: 1,
     }
   }
 
