@@ -59,6 +59,7 @@ export const pushAggregatesQuery = (
     ctx,
     typeDef,
     sizes,
+    asReference,
   )
 
   const hasEdges =
