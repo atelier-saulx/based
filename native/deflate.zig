@@ -105,7 +105,14 @@ pub fn stream_cb(
     return 1;
 }
 
-pub fn decompressStream(d: *Decompressor, state: *BlockState, in: []u8, cb: c.libdeflate_decompress_stream_cb_t, ctx: ?*anyopaque, result: *c_int) Result {
+pub fn decompressStream(
+    d: *Decompressor,
+    state: *BlockState,
+    in: []const u8,
+    cb: c.libdeflate_decompress_stream_cb_t,
+    ctx: ?*anyopaque,
+    result: *c_int,
+) Result {
     return @enumFromInt(c.libdeflate_decompress_stream(d, state, in.ptr, in.len, cb, ctx, result));
 }
 

@@ -5,12 +5,11 @@ const Node = @import("../../selva/node.zig");
 const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
-
-const vectorLenU8 = std.simd.suggestVectorLength(u8).?;
-const indexes = std.simd.iota(u8, vectorLenU8);
-const nulls: @Vector(vectorLenU8, u8) = @splat(@as(u8, 255));
+const deflate = @import("./deflate.zig");
+const Thread = @import("../../thread/thread.zig");
 
 pub fn parseValue(
+    thread: *Thread.Thread,
     q: []u8,
     v: []const u8,
     qI: usize,
@@ -19,84 +18,160 @@ pub fn parseValue(
     compare: anytype,
 ) bool {
     const query: []u8 = q[qI .. c.size + qI];
-    // make fn
     var value: []const u8 = undefined;
     if (fixedLen) {
         value = v[1 + c.start .. v[c.start] + 1 + c.start];
+    } else if (v.len == 0) {
+        return false;
     } else if (v[0] == 1) {
-        // compressed different pathway
+        return deflate.decompress(
+            thread,
+            void,
+            compare,
+            query,
+            value,
+            undefined,
+        );
     } else {
         value = v[2 .. v.len - 4];
     }
     return compare(query, value);
 }
+const vectorLenU8 = std.simd.suggestVectorLength(u8) orelse 16;
+const indexes = std.simd.iota(u8, vectorLenU8);
+const nulls: @Vector(vectorLenU8, u8) = @splat(@as(u8, 255));
+const ones: @Vector(vectorLenU8, u8) = @splat(1);
+const zeros: @Vector(vectorLenU8, u8) = @splat(0);
+const falses: @Vector(vectorLenU8, bool) = @splat(false); // Helper for Vector AND
+const MaskInt = std.meta.Int(.unsigned, vectorLenU8);
+const zeroesMask: @Vector(vectorLenU8, MaskInt) = @splat(0);
+const indexBitMask: @Vector(vectorLenU8, MaskInt) = blk: {
+    var weights: [vectorLenU8]MaskInt = undefined;
+    for (&weights, 0..) |*w, idx| w.* = @as(MaskInt, 1) << @intCast(idx);
+    break :blk weights;
+};
 
 pub fn include(
-    query: []u8,
+    query: []const u8,
     value: []const u8,
 ) bool {
-    // this is a seperate inline fn
-    var i: usize = 0;
     const l = value.len;
     const ql = query.len;
-    if (l < vectorLenU8) {
-        while (i < l) : (i += 1) {
+
+    // do we want to support ql 0 ?
+    if (ql == 0) return true;
+    if (l < ql) return false;
+
+    const maxStart = l - ql;
+
+    const useTwoChars = ql >= 2 and switch (query[0]) {
+        'a', 'e', 'i', 'o', 'u', 's', 't', 'n', 'r', 'l', 'c', 'd', 'm', 'h', ' ' => true,
+        'A', 'E', 'I', 'O', 'U', 'S', 'T', 'N', 'R', 'L', 'C', 'D', 'M', 'H' => true,
+        else => false,
+    };
+
+    const vecLen: usize = if (useTwoChars) vectorLenU8 + 1 else vectorLenU8;
+
+    var i: usize = 0;
+
+    if (l < vecLen) {
+        while (i <= maxStart) : (i += 1) {
             if (value[i] == query[0]) {
-                if (i + ql - 1 > l) {
-                    return false;
-                }
                 var j: usize = 1;
                 while (j < ql) : (j += 1) {
-                    if (value[i + j] != query[j]) {
-                        break;
-                    }
+                    if (value[i + j] != query[j]) break;
                 }
-                if (j == ql) {
-                    return true;
-                }
+                if (j == ql) return true;
             }
         }
         return false;
     }
+
     const queryVector: @Vector(vectorLenU8, u8) = @splat(query[0]);
-    while (i <= (l - vectorLenU8)) : (i += vectorLenU8) {
+    const queryVector1: @Vector(vectorLenU8, u8) = @splat(if (useTwoChars) query[1] else 0);
+
+    const startIdx: usize = if (useTwoChars) 2 else 1;
+    const lastVector = l - vecLen;
+
+    while (i <= lastVector) : (i += vectorLenU8) {
         const h: @Vector(vectorLenU8, u8) = value[i..][0..vectorLenU8].*;
-        const matches = h == queryVector;
+        var matches = h == queryVector;
+        if (useTwoChars) {
+            const h1: @Vector(vectorLenU8, u8) = value[i + 1 ..][0..vectorLenU8].*;
+            matches = @select(bool, matches, h1 == queryVector1, falses);
+        }
         if (@reduce(.Or, matches)) {
-            if (l > 1) {
+            if (@reduce(.Add, @select(u8, matches, ones, zeros)) == 1) {
                 const result = @select(u8, matches, indexes, nulls);
                 const index = @reduce(.Min, result) + i;
-                if (index + ql - 1 > l) {
-                    return false;
-                }
-                var j: usize = 1;
-                while (j < ql) : (j += 1) {
-                    if (value[index + j] != query[j]) {
-                        break;
+                if (index > maxStart) return false;
+                if (index >= 0) {
+                    var j: usize = startIdx;
+                    while (j < query.len) : (j += 1) {
+                        if (value[index + j] != query[j]) break;
                     }
+                    if (j == query.len) return true;
                 }
-                if (j == ql) {
-                    return true;
+            } else {
+                const masked = @select(MaskInt, matches, indexBitMask, zeroesMask);
+                var mask = @reduce(.Add, masked);
+                while (mask != 0) {
+                    const k = @ctz(mask);
+                    const start = i + k;
+                    if (start <= maxStart) {
+                        var j: usize = startIdx;
+                        while (j < query.len) : (j += 1) {
+                            if (value[start + j] != query[j]) break;
+                        }
+                        if (j == query.len) return true;
+                    } else {
+                        return false;
+                    }
+                    mask &= (mask - 1);
                 }
             }
         }
     }
-    while (i < l and ql <= l - i) : (i += 1) {
-        const id2 = value[i];
-        if (id2 == query[0]) {
-            if (i + ql - 1 > l) {
-                return false;
-            }
-            var j: usize = 1;
-            while (j < ql) : (j += 1) {
-                if (value[i + j] != query[j]) {
-                    break;
+    if (i <= maxStart) {
+        const offset = l - vecLen;
+        const h: @Vector(vectorLenU8, u8) = value[offset..][0..vectorLenU8].*;
+        var matches = h == queryVector;
+        if (useTwoChars) {
+            const h1: @Vector(vectorLenU8, u8) = value[offset + 1 ..][0..vectorLenU8].*;
+            matches = @select(bool, matches, h1 == queryVector1, falses);
+        }
+        if (@reduce(.Or, matches)) {
+            if (@reduce(.Add, @select(u8, matches, ones, zeros)) == 1) {
+                const result = @select(u8, matches, indexes, nulls);
+                const index = @reduce(.Min, result) + offset;
+                if (index > maxStart) return false;
+                if (index >= i) {
+                    var j: usize = startIdx;
+                    while (j < query.len) : (j += 1) {
+                        if (value[index + j] != query[j]) break;
+                    }
+                    if (j == query.len) return true;
+                }
+            } else {
+                const masked = @select(MaskInt, matches, indexBitMask, zeroesMask);
+                var mask = @reduce(.Add, masked);
+                while (mask != 0) {
+                    const k = @ctz(mask);
+                    const start = offset + k;
+                    if (start <= maxStart) {
+                        if (start >= i) {
+                            var j: usize = startIdx;
+                            while (j < query.len) : (j += 1) {
+                                if (value[start + j] != query[j]) break;
+                            }
+                            if (j == query.len) return true;
+                        }
+                    } else {
+                        return false;
+                    }
+                    mask &= (mask - 1);
                 }
             }
-            if (j == ql) {
-                return true;
-            }
-            return true;
         }
     }
     return false;

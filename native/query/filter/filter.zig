@@ -8,6 +8,7 @@ const Selva = @import("../../selva/selva.zig");
 const t = @import("../../types.zig");
 const Fixed = @import("fixed.zig");
 const Variable = @import("variable.zig");
+const Thread = @import("../../thread/thread.zig");
 
 const Instruction = @import("instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
@@ -90,6 +91,7 @@ inline fn compare(
     index: usize,
     c: *t.FilterCondition,
     comptime fixedLen: bool,
+    thread: *Thread.Thread,
 ) bool {
     const res = switch (meta.func) {
         .eq => Fixed.eq(T, q, v, index, c),
@@ -101,8 +103,8 @@ inline fn compare(
         .eqBatch => Fixed.eqBatch(T, q, v, index, c),
         .eqBatchSmall => Fixed.eqBatchSmall(T, q, v, index, c),
         .eqCrc32 => Variable.eqCrc32(q, v, index, c),
-        .inc => Variable.parseValue(q, v, index, c, fixedLen, Variable.include),
-        .eqVar => Variable.parseValue(q, v, index, c, fixedLen, Variable.eqVar),
+        .inc => Variable.parseValue(thread, q, v, index, c, fixedLen, Variable.include),
+        .eqVar => Variable.parseValue(thread, q, v, index, c, fixedLen, Variable.eqVar),
     };
     return if (meta.invert) !res else res;
 }
@@ -142,9 +144,6 @@ pub inline fn filter(
                 end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 break :blk true;
             },
-            // .edge => blk: {
-            //     break :blk true;
-            // },
             .selectRef => blk: {
                 const select = utils.readPtr(t.FilterSelect, q, index + @alignOf(t.FilterSelect) - c.offset);
                 nextIndex += select.size;
@@ -160,15 +159,13 @@ pub inline fn filter(
             inline else => |op| blk: {
                 const meta = comptime Instruction.parseOp(op);
                 break :blk switch (c.op.prop) {
-                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c, false),
-                    .uint16, .int16 => compare(u16, meta, q, v, index, c, false),
-                    .number => compare(f64, meta, q, v, index, c, false),
-                    .timestamp => compare(u64, meta, q, v, index, c, false),
-                    // ------- later
-                    .string, .json, .binary => compare(u8, meta, q, v, index, c, false),
-                    .stringFixed, .jsonFixed, .binaryFixed => compare(u8, meta, q, v, index, c, true),
-                    // -------
-                    else => compare(u8, meta, q, v, index, c, false),
+                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c, false, ctx.thread),
+                    .uint16, .int16 => compare(u16, meta, q, v, index, c, false, ctx.thread),
+                    .number => compare(f64, meta, q, v, index, c, false, ctx.thread),
+                    .timestamp => compare(u64, meta, q, v, index, c, false, ctx.thread),
+                    .string, .json, .binary => compare(u8, meta, q, v, index, c, false, ctx.thread),
+                    .stringFixed, .jsonFixed, .binaryFixed => compare(u8, meta, q, v, index, c, true, ctx.thread),
+                    else => compare(u8, meta, q, v, index, c, false, ctx.thread),
                 };
             },
         };
