@@ -6,7 +6,6 @@ const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const t = @import("../../types.zig");
 
-// put this in file variableSize
 const vectorLenU8 = std.simd.suggestVectorLength(u8).?;
 const indexes = std.simd.iota(u8, vectorLenU8);
 const nulls: @Vector(vectorLenU8, u8) = @splat(@as(u8, 255));
