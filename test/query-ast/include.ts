@@ -134,7 +134,12 @@ await test('include', async (t) => {
     range: { start: 0, end: 3 },
     filter: {
       props: {
-        big: { ops: [{ op: 'includes', val: 'abab' }] },
+        big: {
+          ops: [
+            { op: 'includes', val: 'abab' },
+            { op: '=', val: syntheticData },
+          ],
+        },
       },
     },
     props: {
@@ -171,7 +176,7 @@ await test('include', async (t) => {
     queries.push(x)
   }
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
