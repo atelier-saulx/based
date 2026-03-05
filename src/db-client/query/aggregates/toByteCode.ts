@@ -97,6 +97,7 @@ export const aggregateToBuffer = (def: QueryDef): IntermediateByteCode => {
       stepType: gp.stepType || 0,
       stepRange: gp.stepRange || 0,
       timezone: gp.tz || 0,
+      isEdge: false,
     })
     buffer.set(groupByKeyPropDef, pos)
     pos += GroupByKeyPropByteSize

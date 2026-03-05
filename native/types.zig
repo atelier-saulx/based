@@ -838,6 +838,8 @@ pub const GroupByKeyProp = packed struct {
     stepType: u8,
     stepRange: u32,
     timezone: i16,
+    isEdge: bool,
+    _padding: u7,
 };
 
 // pub const AggGroupByKey = packed struct {

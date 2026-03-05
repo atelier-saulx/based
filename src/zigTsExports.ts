@@ -4067,9 +4067,10 @@ export type GroupByKeyProp = {
   stepType: number
   stepRange: number
   timezone: number
+  isEdge: boolean
 }
 
-export const GroupByKeyPropByteSize = 11
+export const GroupByKeyPropByteSize = 12
 
 export const GroupByKeyPropAlignOf = 16
 
@@ -4090,6 +4091,10 @@ export const writeGroupByKeyProp = (
   offset += 4
   writeUint16(buf, Number(header.timezone), offset)
   offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
   return offset
 }
 
@@ -4112,6 +4117,9 @@ export const writeGroupByKeyPropProps = {
   timezone: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 9)
   },
+  isEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 11] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
 }
 
 export const readGroupByKeyProp = (
@@ -4125,6 +4133,7 @@ export const readGroupByKeyProp = (
     stepType: buf[offset + 4],
     stepRange: readUint32(buf, offset + 5),
     timezone: readUint16(buf, offset + 9),
+    isEdge: (((buf[offset + 11] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -4136,6 +4145,7 @@ export const readGroupByKeyPropProps = {
     stepType: (buf: Uint8Array, offset: number) => buf[offset + 4],
     stepRange: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
     timezone: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 9),
+    isEdge: (buf: Uint8Array, offset: number) => (((buf[offset + 11] >>> 0) & 1)) === 1,
 }
 
 export const createGroupByKeyProp = (header: GroupByKeyProp): Uint8Array => {
@@ -4155,6 +4165,9 @@ export const pushGroupByKeyProp = (
   buf.pushUint8(Number(header.stepType))
   buf.pushUint32(Number(header.stepRange))
   buf.pushUint16(Number(header.timezone))
+  buf.pushUint8(0)
+  buf.view[buf.length - 1] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
   return index
 }
 
