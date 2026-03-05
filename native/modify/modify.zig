@@ -62,8 +62,9 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
             const value = data[j .. j + main.size];
             j += main.size;
 
+            //std.log.err("main prop {any} {any} {any}", .{main.start, main.size, main.resetDefault});
             if (main.resetDefault) {
-                selva.c.selva_fields_set_default(typeEntry, node, propSchema, main.start, main.size);
+                Fields.setDefaultMain(db, typeEntry, node, propSchema, main.start, main.size);
                 // TODO Shouldn't maybe modify the data?
                 utils.copy(u8, value, current, main.start);
             }
@@ -106,7 +107,9 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
             switch (prop.type) {
                 .text => {
                     if (prop.size == 0) {
-                        try Fields.deleteField(db, node, propSchema);
+                        // TODO Set defaults per translation
+                        const langs: [1]u8 = .{ 0 };
+                        Fields.setDefaultText(db, typeEntry, node, propSchema, &langs);
                         continue;
                     }
                     var k: usize = 0;
@@ -279,7 +282,12 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                 },
                 else => {
                     if (prop.size == 0) {
-                        try Fields.deleteField(db, node, propSchema);
+                        if (propSchema.type == selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER) {
+                            // TODO Should we get the proper size from somewhere?
+                            Fields.setDefaultMain(db, typeEntry, node, propSchema, 0, 1048576);
+                        } else {
+                            Fields.setDefault(db, typeEntry, node, propSchema);
+                        }
                         continue;
                     }
 
@@ -295,28 +303,6 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                     try Fields.set(node, propSchema, value);
                 },
             }
-        }
-    }
-}
-
-fn setDefaultProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8) !void {
-    selva.markDirty(db, typeEntry, Node.getNodeId(node));
-
-    var j: usize = 0;
-    while (j < data.len) {
-        const propId = data[j];
-        const fs = try Schema.getFieldSchema(typeEntry, propId);
-
-        if (fs.type == selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER) {
-            const offset = utils.readNext(u32, data, &j);
-            const len = utils.readNext(u32, data, &j);
-            selva.c.selva_fields_set_default(typeEntry, node, fs, offset, len);
-        } else if (fs.type == selva.c.SELVA_FIELD_TYPE_TEXT) {
-            const len = utils.readNext(u32, data, &j);
-            j += len;
-            selva.c.selva_fields_set_default(typeEntry, node, fs, len, data[j..len].ptr);
-        } else {
-            selva.c.selva_fields_set_default(typeEntry, node, fs);
         }
     }
 }
@@ -459,24 +445,6 @@ pub fn modify(
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
                 i += dataSize;
-            },
-            // TODO check with olli what this is
-            .default => {
-                const setDefault = utils.read(t.ModifyDefaultHeader, buf, i);
-                i += utils.sizeOf(t.ModifyDefaultHeader);
-                const typeEntry = try Node.getType(db, setDefault.type);
-                var id = setDefault.id;
-                if (setDefault.isTmp) id = utils.read(u32, items, id * resItemSize);
-                if (Node.getNode(typeEntry, id)) |node| {
-                    const data: []u8 = buf[i .. i + setDefault.size];
-                    try setDefaultProps(db, typeEntry, node, data);
-                    utils.write(result, id, j);
-                    utils.write(result, t.ModifyError.null, j + 4);
-                } else {
-                    utils.write(result, id, j);
-                    utils.write(result, t.ModifyError.nx, j + 4);
-                }
-                i += setDefault.size;
             },
             .delete => {
                 const delete = utils.read(t.ModifyDeleteHeader, buf, i);

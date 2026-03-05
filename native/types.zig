@@ -57,7 +57,6 @@ pub const Modify = enum(u8) {
     delete = 3,
     upsert = 4,
     insert = 5,
-    default = 6,
 };
 
 pub const ModifyHeader = packed struct {
@@ -94,15 +93,6 @@ pub const ModifyCreateRingHeader = packed struct {
     op: Modify,
     type: TypeId,
     maxNodeId: u32,
-    size: u32,
-};
-
-pub const ModifyDefaultHeader = packed struct {
-    op: Modify,
-    type: TypeId,
-    isTmp: bool,
-    _padding: u7,
-    id: NodeId,
     size: u32,
 };
 
