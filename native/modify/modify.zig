@@ -276,15 +276,17 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                         try Fields.deleteField(db, node, propSchema);
                         continue;
                     }
-                    try Fields.set(node, propSchema, value);
+
                     // TODO optimize with inline function, so we don't check this every time
-                    // if (typeSort) |ts| {
-                    //     if (sort.getSortIndex(ts, prop.id, 0, t.LangCode.none)) |propSort| {
-                    //         sort.remove(db.decompressor, propSort, count, node);
-                    //         sort.insert(db.decompressor, propSort, newCount, node);
-                    //         continue;
-                    //     }
-                    // }
+                    if (typeSort) |ts| {
+                        if (sort.getSortIndex(ts, prop.id, 0, t.LangCode.none)) |propSort| {
+                            const current = Fields.get(typeEntry, node, propSchema, prop.type);
+                            sort.remove(db.decompressor, propSort, current, node);
+                            sort.insert(db.decompressor, propSort, value, node);
+                        }
+                    }
+
+                    try Fields.set(node, propSchema, value);
                 },
             }
         }
@@ -482,9 +484,15 @@ pub fn modify(
                     if (sort.getTypeSortIndexes(db, delete.type)) |typeSort| {
                         const mainSchema = try Schema.getFieldSchema(typeEntry, 0);
                         const mainBuffer = Fields.get(typeEntry, node, mainSchema, t.PropType.microBuffer);
-                        var it = typeSort.main.valueIterator();
-                        while (it.next()) |sortIndex| {
+                        var main = typeSort.main.valueIterator();
+                        while (main.next()) |sortIndex| {
                             sort.remove(db.decompressor, sortIndex.*, mainBuffer, node);
+                        }
+                        var prop = typeSort.field.valueIterator();
+                        while (prop.next()) |sortIndex| {
+                            const propSchema = try Schema.getFieldSchema(typeEntry, sortIndex.*.field);
+                            const current = Fields.get(typeEntry, node, propSchema, sortIndex.*.prop);
+                            sort.remove(db.decompressor, sortIndex.*, current, node);
                         }
                     }
                     Node.deleteNode(db, typeEntry, node) catch {

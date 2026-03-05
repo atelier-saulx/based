@@ -79,7 +79,7 @@ export const string = class String extends BasePropDef {
         const sizePos = buf.reserveUint32()
         const stringPos = buf.length
         const written = buf.pushString(normalized)
-        const crc = native.crc32(buf.subarray(buf.length - written))
+        const crc = native.crc32(buf.subarray(stringPos))
         buf.ensure(buf.length + written)
         buf.data.copyWithin(buf.length, buf.length - written, buf.length)
         const size = native.compress(buf.data, stringPos, written)
@@ -87,10 +87,10 @@ export const string = class String extends BasePropDef {
           buf.writeUint32(written, sizePos)
           buf.length = stringPos + size
           validateMaxBytes(size, this.schema, this.path)
-          // const crc = native.crc32(buf.subarray(stringPos))
           buf.pushUint32(crc)
           return
         }
+        // can optimize for this case (no need to pushString again, could copy it to right loc)
         buf.length = sizePos - 1
       }
       buf.pushUint8(NOT_COMPRESSED)

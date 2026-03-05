@@ -99,10 +99,24 @@ await test('compression / large strings', async (t) => {
       nr: 5,
     })
 
-    isSorted(
-      await db.query2('article').include('article').sort('article').get(),
-      'article',
-    )
+    const items = await db
+      .query2('article')
+      .include('article')
+      .sort('article')
+      .get()
+
+    isSorted(items, 'article')
+
+    await db.delete('article', 5)
+
+    const items2 = await db
+      .query2('article')
+      .include('article')
+      .sort('article')
+      .get()
+
+    equal(items2.length, items.length - 1)
+    isSorted(items2, 'article')
 
     await server.destroy()
     db.destroy()
