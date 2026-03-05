@@ -57,7 +57,6 @@ pub const Modify = enum(u8) {
     delete = 3,
     upsert = 4,
     insert = 5,
-    default = 6,
 };
 
 pub const ModifyHeader = packed struct {
@@ -97,22 +96,14 @@ pub const ModifyCreateRingHeader = packed struct {
     size: u32,
 };
 
-pub const ModifyDefaultHeader = packed struct {
-    op: Modify,
-    type: TypeId,
-    isTmp: bool,
-    _padding: u7,
-    id: NodeId,
-    size: u32,
-};
-
 pub const ModifyMainHeader = packed struct {
     id: u8,
     type: PropType,
+    resetDefault: bool,
     increment: bool,
     incrementPositive: bool,
     expire: bool,
-    _padding: u5,
+    _padding: u4,
     size: u8,
     start: u16,
 };
@@ -873,15 +864,20 @@ pub const FilterOpCompare = enum(u8) {
     incBatch = 24,
     nincBatch = 25,
     // ----------
-    eqVar = 26,
-    neqVar = 27,
-    eqVarBatch = 28,
-    neqVarBatch = 29,
+    incLowerCase = 26,
+    nincLowerCase = 27,
+    incBatchLowerCase = 28,
+    nincBatchLowerCase = 29,
     // ----------
-    eqCrc32 = 30,
-    neqCrc32 = 31,
-    eqCrc32Batch = 32,
-    neqCrc32Batch = 33,
+    eqVar = 30,
+    neqVar = 31,
+    eqVarBatch = 32,
+    neqVarBatch = 33,
+    // ----------
+    eqCrc32 = 34,
+    neqCrc32 = 35,
+    eqCrc32Batch = 36,
+    neqCrc32Batch = 37,
     // ----------
 
     selectLargeRefs = 203,

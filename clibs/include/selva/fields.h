@@ -312,17 +312,17 @@ void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, b
  *   2. length to copy (`0 < len <= smb.len`)
  * - `SELVA_FIELD_TYPE_TEXT`
  *   1. number of lang codes to follow (reset all = `1`)
- *   2. lang code(s) (`selva_lang_none` = `0` = reset all)
+ *   2. lang code(s) in an uint8_t array (`selva_lang_none` = `0` = reset all)
  *
  */
-void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...);
+SELVA_EXPORT
+void selva_fields_set_default(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...);
 
 void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node);
 
 /**
  * Destroy all fields of a node.
  */
-SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node)
     __attribute__((nonnull(1, 2)));
 

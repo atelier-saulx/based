@@ -43,13 +43,18 @@ await test('numbers', async (t) => {
     animalsResult.push(animal)
   }
 
-  await db.drain()
-
   await db.update('example', 1, {
     u32: { increment: 100 },
   })
 
   isSorted(await db.query2('example').sort('u32').include('u32').get(), 'u32')
+
+  await db.update('example', 5, {
+    u32: { increment: 100 },
+  })
+
+  isSorted(await db.query2('example').sort('u32').include('u32').get(), 'u32')
+
   isSorted(
     await db.query2('example').sort('boolean').include('boolean').get(),
     'boolean',
@@ -62,6 +67,7 @@ await test('numbers', async (t) => {
     await db.query2('example').sort('number').include('number').get(),
     'number',
   )
+
   isSorted(
     await db.query2('example').sort('timestamp').include('timestamp').get(),
     'timestamp',
@@ -76,7 +82,9 @@ await test('numbers', async (t) => {
       .then((v) => v.map((v) => v.enum)),
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
-  db.delete('example', 1)
+
+  await db.delete('example', 1)
+
   isSorted(await db.query2('example').sort('u32').include('u32').get(), 'u32')
 
   await db
