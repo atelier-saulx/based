@@ -13,6 +13,7 @@ import { perf } from '../shared/perf.js'
 import test from '../shared/test.js'
 import { deflateSync } from 'zlib'
 import { fastPrng } from '../../src/utils/fastPrng.js'
+import { italy } from '../shared/examples.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({ path: t.tmp })
@@ -26,6 +27,7 @@ await test('include', async (t) => {
       user: {
         derp: { type: 'string', maxBytes: 2 },
         name: 'string',
+        big: { type: 'string', compression: 'deflate' },
         x: 'boolean',
         flap: 'uint32',
         enum: ['ok', 'bad', 'great'],
@@ -52,8 +54,21 @@ await test('include', async (t) => {
     },
   })
 
+  let syntheticData = ''
+
+  // for (let i = 0; i < 125e3; i++) {
+  //   syntheticData += 'ab'
+  // }
+
+  for (let i = 0; i < 200; i++) {
+    syntheticData += 'ab'
+  }
+
+  // syntheticData = italy
+
   const a = client.create('user', {
     name: 'mr jim',
+    big: syntheticData,
     enum: 'ok',
     derp: 'aa',
     y: 4,
@@ -82,6 +97,7 @@ await test('include', async (t) => {
 
   for (let i = 0; i < 5; i++) {
     client.create('user', {
+      big: syntheticData,
       name: `mr snurf ${i}`,
       derp: 'cc',
       y: i,
@@ -118,10 +134,16 @@ await test('include', async (t) => {
     range: { start: 0, end: 3 },
     filter: {
       props: {
-        name: { ops: [{ op: '=', val: 'mr jim' }] },
+        big: {
+          ops: [
+            { op: 'includes', val: 'abab' },
+            { op: '=', val: syntheticData },
+          ],
+        },
       },
     },
     props: {
+      big: { include: {} },
       y: { include: {} },
       name: { include: {} },
       derp: { include: {} },
@@ -170,12 +192,12 @@ await test('include', async (t) => {
   )
 
   // const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
-  // console.log(result.byteLength)
   const result = await db.server.getQueryBuf(ctx.query)
+  console.log(result.byteLength)
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  // console.dir(obj, { depth: 10 })
 
   await wait(1000)
 
