@@ -136,8 +136,8 @@ await test('include', async (t) => {
       props: {
         big: {
           ops: [
-            { op: 'includes', val: 'abab', opts: { lowerCase: true } },
-            // { op: '=', val: syntheticData },
+            // { op: 'includes', val: 'abab', opts: { lowerCase: true } },
+            { op: '=', val: syntheticData },
           ],
         },
       },
