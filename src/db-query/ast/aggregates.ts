@@ -3,6 +3,7 @@ import {
   QueryType,
   QueryIteratorType,
   AggFunction,
+  AggFunctionEnum,
   AggHeaderByteSize,
   createAggHeader,
   createAggProp,
@@ -53,9 +54,15 @@ export const pushAggregatesQuery = (
     accumulator: 0,
   }
 
-  const hasGroupBy = pushGroupBy(ast, ctx, typeDef, sizes)
+  const { hasGroupBy, isEdge: groupByHasEdges } = pushGroupBy(
+    ast,
+    ctx,
+    typeDef,
+    sizes,
+  )
 
-  const hasEdges = pushAggregates(ast, ctx, typeDef, sizes, asReference)
+  const hasEdges =
+    pushAggregates(ast, ctx, typeDef, sizes, asReference) || groupByHasEdges
 
   const aggDefsSize =
     ctx.query.length - (headerStartPos + headerByteSize) - filterSize
@@ -147,6 +154,92 @@ const buildAggregateHeader = (
 
 type SizesType = { result: number; accumulator: number }
 
+export const resolveProp = (
+  typeDef: TypeDef,
+  propFullName: string,
+  asReference?: PropDef,
+  isCount?: boolean,
+): { isEdge: boolean; propDef: PropDef } => {
+  let propDef: PropDef | any = typeDef.props.get(propFullName)
+  let isEdge = false
+
+  if (!propDef && asReference?.edges) {
+    propDef = asReference.edges.props.get(propFullName)
+    if (propDef) {
+      isEdge = true
+    }
+  }
+
+  if (isCount) {
+    propDef = {
+      id: 255,
+      path: ['count'],
+      start: 0,
+      type: 1,
+    }
+  }
+
+  if (!propDef) {
+    throw new Error(`Property '${propFullName}' not found`)
+  }
+
+  return { isEdge, propDef }
+}
+
+const walkProp = (
+  ctx: Ctx,
+  sizes: SizesType,
+  typeDef: TypeDef,
+  propFullName: string,
+  fn: AggFunctionEnum,
+  asReference?: PropDef,
+  isCount?: boolean,
+): { isEdge: boolean; propDef: PropDef } => {
+  const { isEdge, propDef } = resolveProp(
+    typeDef,
+    propFullName,
+    asReference,
+    isCount,
+  )
+
+  let resSize = 0
+  let accSize = 0
+  const specificSizes = aggregateTypeMap.get(fn)
+  if (specificSizes) {
+    resSize += specificSizes.resultsSize
+    accSize += specificSizes.accumulatorSize
+  } else {
+    resSize += 8
+    accSize += 8
+  }
+
+  const buffer = createAggProp({
+    propId: propDef.id,
+    propType: propDef.type || 0,
+    propDefStart: propDef.start || 0,
+    aggFunction: fn,
+    resultPos: sizes.result,
+    accumulatorPos: sizes.accumulator,
+    isEdge,
+  })
+
+  ctx.readSchema.aggregate?.aggregates.push({
+    path: propDef.path!,
+    type: fn,
+    resultPos: sizes.result,
+  })
+
+  ctx.query.data.set(buffer, ctx.query.length)
+  ctx.query.length += AggPropByteSize
+
+  sizes.result += resSize
+  sizes.accumulator += accSize
+
+  ctx.readSchema.aggregate!.totalResultsSize += resSize
+
+  return { isEdge, propDef }
+}
+
 const walkProps = (
   ctx: Ctx,
   sizes: SizesType,
@@ -183,70 +276,26 @@ const walkProps = (
 
     for (const propName of props) {
       const fullParts = [...currentPath]
-      if (propName !== 'count' || fn !== AggFunction.count) {
+      const isCount = propName !== 'count' || fn !== AggFunction.count
+      if (!isCount) {
         fullParts.push(propName)
       }
       const fullPropName = fullParts.join('.')
 
-      let propDef: PropDef | any = typeDef.props.get(fullPropName)
-      let isEdge = false
-
-      if (!propDef && asReference?.edges) {
-        propDef = asReference.edges.props.get(fullPropName)
-        if (propDef) {
-          isEdge = true
-          hasEdges = true
-        }
-      }
-      if (propName === 'count' && fn === AggFunction.count) {
-        propDef = {
-          id: 255,
-          path: [propName],
-          start: 0,
-          type: 1,
-        }
-      }
-      if (!propDef) {
-        throw new Error(`Aggregate property '${fullPropName}' not found`)
-      }
-
-      let resSize = 0
-      let accSize = 0
-      const specificSizes = aggregateTypeMap.get(fn)
-      if (specificSizes) {
-        resSize += specificSizes.resultsSize
-        accSize += specificSizes.accumulatorSize
-      } else {
-        resSize += 8
-        accSize += 8
-      }
-
-      const buffer = createAggProp({
-        propId: propDef.id,
-        propType: propDef.type || 0,
-        propDefStart: propDef.start || 0,
-        aggFunction: fn,
-        resultPos: sizes.result,
-        accumulatorPos: sizes.accumulator,
-        isEdge,
-      })
-      ctx.readSchema.aggregate?.aggregates.push({
-        path: propDef.path!,
-        type: fn,
-        resultPos: sizes.result,
-      })
+      const { isEdge, propDef } = walkProp(
+        ctx,
+        sizes,
+        typeDef,
+        fullPropName,
+        fn,
+        asReference,
+        isCount,
+      )
+      if (isEdge) hasEdges = true
 
       ctx.readSchema.main.props[i] = readPropDef(propDef, ctx.locales)
       ctx.readSchema.main.len += propDef.size
       i += propDef.size
-
-      ctx.query.data.set(buffer, ctx.query.length)
-      ctx.query.length += AggPropByteSize
-
-      sizes.result += resSize
-      sizes.accumulator += accSize
-
-      ctx.readSchema.aggregate!.totalResultsSize += resSize
     }
   }
 
@@ -391,11 +440,12 @@ const pushGroupBy = (
   ctx: Ctx,
   typeDef: TypeDef,
   sizes: Sizes,
-): boolean => {
-  if (!ast.groupBy) return false
+  asReference?: PropDef,
+): { hasGroupBy: boolean; isEdge: boolean } => {
+  if (!ast.groupBy) return { hasGroupBy: false, isEdge: false }
 
   const { prop: propName, step, timeZone, display } = ast.groupBy
-  const propDef = typeDef.props.get(propName)
+  const { propDef, isEdge } = resolveProp(typeDef, propName, asReference)
 
   if (!propDef) {
     throw new Error(`Group By property '${propName}' not found in AST.`)
@@ -435,7 +485,7 @@ const pushGroupBy = (
     }
   }
 
-  return true
+  return { hasGroupBy: true, isEdge }
 }
 
 type Step = { stepType: number; stepRange: number }
