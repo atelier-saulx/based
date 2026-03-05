@@ -37,6 +37,7 @@ pub fn parseValue(
     }
     return compare(query, value);
 }
+
 const vectorLenU8 = std.simd.suggestVectorLength(u8) orelse 16;
 const indexes = std.simd.iota(u8, vectorLenU8);
 const nulls: @Vector(vectorLenU8, u8) = @splat(@as(u8, 255));
@@ -66,7 +67,7 @@ pub fn include(
 
     const useTwoChars = ql >= 2 and switch (query[0]) {
         'a', 'e', 'i', 'o', 'u', 's', 't', 'n', 'r', 'l', 'c', 'd', 'm', 'h', ' ' => true,
-        'A', 'E', 'I', 'O', 'U', 'S', 'T', 'N', 'R', 'L', 'C', 'D', 'M', 'H' => true,
+        // 'A', 'E', 'I', 'O', 'U', 'S', 'T', 'N', 'R', 'L', 'C', 'D', 'M', 'H' => true,
         else => false,
     };
 
