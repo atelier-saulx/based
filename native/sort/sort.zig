@@ -45,22 +45,22 @@ inline fn getTextKey(
 
 fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
     switch (sortFieldType) {
-        t.PropType.int8,
-        t.PropType.uint8,
-        t.PropType.int16,
-        t.PropType.uint16,
-        t.PropType.int32,
-        t.PropType.uint32,
-        t.PropType.boolean,
-        t.PropType.@"enum",
-        t.PropType.cardinality,
+        .int8,
+        .uint8,
+        .int16,
+        .uint16,
+        .int32,
+        .uint32,
+        .boolean,
+        .@"enum",
+        .cardinality,
         => {
             return selva.SELVA_SORT_ORDER_I64_ASC;
         },
-        t.PropType.number, t.PropType.timestamp => {
+        .number, .timestamp => {
             return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
         },
-        t.PropType.string, t.PropType.text, t.PropType.alias, t.PropType.binary => {
+        .stringFixed, .binaryFixed, .jsonFixed, .string, .text, .alias, .binary => {
             return selva.SELVA_SORT_ORDER_BUFFER_ASC;
         },
         else => {
@@ -221,7 +221,7 @@ inline fn parseString(decompressor: *deflate.Decompressor, data: []u8, out: []u8
     }
 }
 
-inline fn parseAlias(
+inline fn parseSimpleString(
     data: []u8,
 ) [*]u8 {
     if (data.len < SIZE + 2) {
@@ -254,21 +254,12 @@ pub fn remove(
         .@"enum", .uint8, .int8, .boolean => {
             selva.selva_sort_remove_i64(index, data[start], node);
         },
-        .alias => {
-            selva.selva_sort_remove_buf(index, parseAlias(data), SIZE, node);
+        .alias, .stringFixed, .binaryFixed => {
+            selva.selva_sort_remove_buf(index, parseSimpleString(data[start .. start + sortIndex.len]), sortIndex.len, node);
         },
         .string, .text, .binary => {
-            if (sortIndex.len > 0) {
-                selva.selva_sort_remove_buf(
-                    index,
-                    data[start + 1 .. start + 1 + sortIndex.len].ptr,
-                    sortIndex.len - 1,
-                    node,
-                );
-            } else {
-                var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
-                selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
-            }
+            var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
+            selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
         },
         .number, .timestamp => {
             selva.selva_sort_remove_double(index, @floatFromInt(read(u64, data, start)), node);
@@ -306,21 +297,15 @@ pub fn insert(
             selva.selva_sort_insert_i64(index, data[start], value);
         },
         .alias => {
-            selva.selva_sort_insert_buf(index, parseAlias(data), SIZE, value);
+            selva.selva_sort_insert_buf(index, parseSimpleString(data), SIZE, value);
+        },
+        .stringFixed, .binaryFixed => {
+            selva.selva_sort_insert_buf(index, parseSimpleString(data[start .. start + sortIndex.len]), sortIndex.len, value);
         },
         .string, .text, .binary => {
-            if (sortIndex.len > 0) {
-                selva.selva_sort_insert_buf(
-                    index,
-                    data[start + 1 .. start + sortIndex.len].ptr,
-                    sortIndex.len - 1,
-                    value,
-                );
-            } else {
-                var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
-                const str = parseString(decompressor, data, &buf);
-                selva.selva_sort_insert_buf(index, str, SIZE, value);
-            }
+            var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
+            const str = parseString(decompressor, data, &buf);
+            selva.selva_sort_insert_buf(index, str, SIZE, value);
         },
         .number, .timestamp => {
             selva.selva_sort_insert_double(index, @floatFromInt(read(u64, data, start)), value);

@@ -200,7 +200,7 @@ fn getSortIndex(
         .number, .timestamp => {
             return if (isEdge) thread.tmpSortDoubleEdge else thread.tmpSortDouble;
         },
-        .string, .text, .alias, .binary => {
+        .stringFixed, .binaryFixed, .jsonFixed, .string, .text, .alias, .binary => {
             return if (isEdge) thread.tmpSortBinaryEdge else thread.tmpSortBinary;
         },
         else => {
