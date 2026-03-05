@@ -251,13 +251,13 @@ pub fn remove(
     const start = sortIndex.start;
     const index = sortIndex.index;
     return switch (prop) {
-        t.PropType.@"enum", t.PropType.uint8, t.PropType.int8, t.PropType.boolean => {
+        .@"enum", .uint8, .int8, .boolean => {
             selva.selva_sort_remove_i64(index, data[start], node);
         },
-        t.PropType.alias => {
+        .alias => {
             selva.selva_sort_remove_buf(index, parseAlias(data), SIZE, node);
         },
-        t.PropType.string, t.PropType.text, t.PropType.binary => {
+        .string, .text, .binary => {
             if (sortIndex.len > 0) {
                 selva.selva_sort_remove_buf(
                     index,
@@ -270,20 +270,20 @@ pub fn remove(
                 selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
             }
         },
-        t.PropType.number, t.PropType.timestamp => {
+        .number, .timestamp => {
             selva.selva_sort_remove_double(index, @floatFromInt(read(u64, data, start)), node);
         },
-        t.PropType.cardinality => {
+        .cardinality => {
             if (data.len > 0) {
                 removeFromIntIndex(u32, data, sortIndex, node);
             } else {
                 removeFromIntIndex(u32, EMPTY_CHAR_SLICE, sortIndex, node);
             }
         },
-        t.PropType.int32 => removeFromIntIndex(i32, data, sortIndex, node),
-        t.PropType.int16 => removeFromIntIndex(i16, data, sortIndex, node),
-        t.PropType.uint32 => removeFromIntIndex(u32, data, sortIndex, node),
-        t.PropType.uint16 => removeFromIntIndex(u16, data, sortIndex, node),
+        .int32 => removeFromIntIndex(i32, data, sortIndex, node),
+        .uint32 => removeFromIntIndex(u32, data, sortIndex, node),
+        .int16 => removeFromIntIndex(i16, data, sortIndex, node),
+        .uint16 => removeFromIntIndex(u16, data, sortIndex, node),
         else => {},
     };
 }
@@ -333,8 +333,8 @@ pub fn insert(
             }
         },
         .int32 => insertIntIndex(i32, data, sortIndex, value),
-        .int16 => insertIntIndex(i16, data, sortIndex, value),
         .uint32, .id => insertIntIndex(u32, data, sortIndex, value),
+        .int16 => insertIntIndex(i16, data, sortIndex, value),
         .uint16 => insertIntIndex(u16, data, sortIndex, value),
         else => {},
     };

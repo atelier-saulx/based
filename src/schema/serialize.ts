@@ -205,14 +205,11 @@ const encodeKey = (key: string, schemaBuffer: SchemaBuffer) => {
     schemaBuffer.dictMap[key] = dictKey
   } else {
     ensureCapacity(4)
-
     // updated address? maybe
     const dictMapUsed: DictMapUsed = { address: schemaBuffer.len, key: dictKey }
     schemaBuffer.dictMapUsed.push(dictMapUsed)
     // used can be handled differently - also pass to
     // dictKey.used.push(dictMapUsed)
-    // console.log('USE KEY!', key)
-    // have to check this to correct - correctly
     if (dictKey.address > 65025) {
       schemaBuffer.buf[schemaBuffer.len] = KEY_ADDRESS_3_BYTES
       schemaBuffer.len += 1
@@ -245,16 +242,14 @@ const walk = (
   schemaBuffer: SchemaBuffer,
 ) => {
   let start = schemaBuffer.len
-
   const isArray = Array.isArray(obj)
   const isFromObj = prev2?.type === 'object' || fromObject === false
-  const isSchemaProp =
-    ('enum' in obj || ('type' in obj && PropType[obj.type])) && isFromObj
+  const isSchemaProp = 'type' in obj && PropType[obj.type] && isFromObj
 
   ensureCapacity(1 + 5) // Type byte + size
   if (isSchemaProp) {
     schemaBuffer.buf[schemaBuffer.len++] = SCHEMA_PROP
-    const typeIndex = PropType['enum' in obj ? 'enum' : obj.type]
+    const typeIndex = PropType[obj.type]
     schemaBuffer.buf[schemaBuffer.len++] = typeIndex
   } else {
     schemaBuffer.buf[schemaBuffer.len++] = isArray ? ARRAY : OBJECT
@@ -595,7 +590,7 @@ export const deSerializeInner = (
       const fieldSize = deSerializeInner(buf, nest, i, false)
       i += fieldSize
     } else if (buf[i] === ARRAY) {
-      const len = readUint16(buf, i + 3)
+      const len = readUint16(buf, i + 2)
       const nest = (obj[key] = new Array(len))
       const fieldSize = deSerializeInner(buf, nest, i, true)
       i += fieldSize

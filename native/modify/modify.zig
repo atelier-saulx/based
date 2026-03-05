@@ -60,7 +60,7 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
             const main = utils.readNext(t.ModifyMainHeader, data, &j);
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
             const value = data[j .. j + main.size];
-
+            j += main.size;
             if (main.increment) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.incrementPositive),
@@ -79,25 +79,23 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
 
             // TODO optimize with inline function, so we don't check this every time
             if (typeSort) |ts| {
-                const mainSort = ts.main.get(main.start);
-                if (mainSort) |ms| {
+                if (ts.main.get(main.start)) |ms| {
                     const currentValue = current[main.start .. main.start + main.size];
                     const same = std.mem.eql(u8, currentValue, value);
-                    std.debug.print("sort it {any} {any} {any}\n", .{ currentValue, value, same });
                     if (same == false) {
-                        std.debug.print("GO sort it {any} {any}\n", .{ currentValue, value });
-                        sort.remove(db.decompressor, ms, currentValue, node);
-                        // sort.insert(db.decompressor, ms, value, node);
+                        sort.remove(db.decompressor, ms, current, node);
+                        utils.copy(u8, current, value, main.start);
+                        sort.insert(db.decompressor, ms, current, node);
+                        continue;
                     }
                 }
             }
-
             utils.copy(u8, current, value, main.start);
-            j += main.size;
         } else {
             // separate handling
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
             const value = data[j .. j + prop.size];
+            j += prop.size;
             switch (prop.type) {
                 .text => {
                     if (prop.size == 0) {
@@ -280,8 +278,6 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                     try Fields.set(node, propSchema, value);
                 },
             }
-
-            j += prop.size;
         }
     }
 }
@@ -353,7 +349,6 @@ pub fn modify(
                 const id = db.ids[create.type - 1] + 1;
                 const node = try Node.upsertNode(typeEntry, id);
                 const typeSort = sort.getTypeSortIndexes(db, create.type);
-                std.debug.print("create\n", .{});
                 modifyProps(db, typeEntry, node, data, items, typeSort) catch {
                     // handle errors
                 };
@@ -475,6 +470,14 @@ pub fn modify(
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
                 if (Node.getNode(typeEntry, id)) |node| {
+                    if (sort.getTypeSortIndexes(db, delete.type)) |typeSort| {
+                        const mainSchema = try Schema.getFieldSchema(typeEntry, 0);
+                        const mainBuffer = Fields.get(typeEntry, node, mainSchema, t.PropType.microBuffer);
+                        var it = typeSort.main.valueIterator();
+                        while (it.next()) |sortIndex| {
+                            sort.remove(db.decompressor, sortIndex.*, mainBuffer, node);
+                        }
+                    }
                     Node.deleteNode(db, typeEntry, node) catch {
                         // handle errors
                     };

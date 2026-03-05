@@ -23,8 +23,6 @@ await test('numbers', async (t) => {
     },
   })
 
-  console.log('-a')
-
   const len = 10
   const now = Date.now()
   const animalsResult: string[] = []
@@ -45,26 +43,15 @@ await test('numbers', async (t) => {
     animalsResult.push(animal)
   }
 
-  console.log('-b')
-
   await db.update('example', 1, {
     u32: { increment: 100 },
   })
 
-  console.log('-c')
-
   isSorted(await db.query2('example').sort('u32').include('u32').get(), 'u32')
-
-  console.log('-d', await db.query2('example').sort('u32').include('u32').get())
 
   await db.update('example', 5, {
     u32: { increment: 100 },
   })
-
-  console.log(
-    '-d2',
-    await db.query2('example').sort('u32').include('u32').get(),
-  )
 
   isSorted(await db.query2('example').sort('u32').include('u32').get(), 'u32')
 
@@ -96,15 +83,10 @@ await test('numbers', async (t) => {
     animalsResult.sort((a, b) => animals.indexOf(a) - animals.indexOf(b)),
   )
 
-  console.log('-e')
-
   await db.delete('example', 1)
-
-  console.log('-f')
 
   isSorted(await db.query2('example').sort('u32').include('u32').get(), 'u32')
 
-  console.log('-g')
   await db
     .query2('example')
     .include('enum')
