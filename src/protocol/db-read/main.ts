@@ -35,10 +35,7 @@ const readMainValue = (
     } else {
       addProp(prop, prop.enum![result[i] - 1], item)
     }
-  } else if (
-    typeIndex === PropType.string ||
-    typeIndex === PropType.stringFixed
-  ) {
+  } else if (typeIndex === PropType.stringFixed) {
     const len = result[i]
     i++
     const value = len === 0 ? '' : readUtf8(result, i, len)

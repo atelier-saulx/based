@@ -6,7 +6,9 @@ const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const Selva = @import("../../selva/selva.zig");
 const t = @import("../../types.zig");
-const Compare = @import("compare.zig");
+const Fixed = @import("fixed.zig");
+const Variable = @import("variable.zig");
+
 const Instruction = @import("instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
@@ -16,6 +18,7 @@ pub fn prepare(
     typeEntry: Node.Type,
 ) !void {
     var i: usize = 0;
+
     while (i < q.len) {
         const headerSize = COND_ALIGN_BYTES + 1 + utils.sizeOf(t.FilterCondition);
         var c: *t.FilterCondition = undefined;
@@ -35,6 +38,7 @@ pub fn prepare(
             const nextI = q[i] + i + utils.sizeOf(t.FilterCondition);
 
             c.offset = utils.alignLeftLen(c.len, q[nextI .. totalSize + i]);
+
             const end = totalSize + i;
 
             switch (c.op.compare) {
@@ -85,17 +89,20 @@ inline fn compare(
     v: []const u8,
     index: usize,
     c: *t.FilterCondition,
+    comptime fixedLen: bool,
 ) bool {
     const res = switch (meta.func) {
-        .eq => Compare.eq(T, q, v, index, c),
-        .le => Compare.le(T, q, v, index, c),
-        .lt => Compare.lt(T, q, v, index, c),
-        .ge => Compare.ge(T, q, v, index, c),
-        .gt => Compare.gt(T, q, v, index, c),
-        .range => Compare.range(T, q, v, index, c),
-        .eqBatch => Compare.eqBatch(T, q, v, index, c),
-        .eqBatchSmall => Compare.eqBatchSmall(T, q, v, index, c),
-        .inc => Compare.include(q, v, index, c),
+        .eq => Fixed.eq(T, q, v, index, c),
+        .le => Fixed.le(T, q, v, index, c),
+        .lt => Fixed.lt(T, q, v, index, c),
+        .ge => Fixed.ge(T, q, v, index, c),
+        .gt => Fixed.gt(T, q, v, index, c),
+        .range => Fixed.range(T, q, v, index, c),
+        .eqBatch => Fixed.eqBatch(T, q, v, index, c),
+        .eqBatchSmall => Fixed.eqBatchSmall(T, q, v, index, c),
+        .eqCrc32 => Variable.eqCrc32(q, v, index, c),
+        .inc => Variable.parseValue(q, v, index, c, fixedLen, Variable.include),
+        .eqVar => Variable.parseValue(q, v, index, c, fixedLen, Variable.eqVar),
     };
     return if (meta.invert) !res else res;
 }
@@ -153,11 +160,15 @@ pub inline fn filter(
             inline else => |op| blk: {
                 const meta = comptime Instruction.parseOp(op);
                 break :blk switch (c.op.prop) {
-                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c),
-                    .uint16, .int16 => compare(u16, meta, q, v, index, c),
-                    .number => compare(f64, meta, q, v, index, c),
-                    .timestamp => compare(u64, meta, q, v, index, c),
-                    else => compare(u8, meta, q, v, index, c),
+                    .id, .uint32, .int32 => compare(u32, meta, q, v, index, c, false),
+                    .uint16, .int16 => compare(u16, meta, q, v, index, c, false),
+                    .number => compare(f64, meta, q, v, index, c, false),
+                    .timestamp => compare(u64, meta, q, v, index, c, false),
+                    // ------- later
+                    .string, .json, .binary => compare(u8, meta, q, v, index, c, false),
+                    .stringFixed, .jsonFixed, .binaryFixed => compare(u8, meta, q, v, index, c, true),
+                    // -------
+                    else => compare(u8, meta, q, v, index, c, false),
                 };
             },
         };

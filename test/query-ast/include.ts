@@ -24,6 +24,7 @@ await test('include', async (t) => {
         y: 'uint32',
       },
       user: {
+        derp: { type: 'string', maxBytes: 2 },
         name: 'string',
         x: 'boolean',
         flap: 'uint32',
@@ -54,6 +55,7 @@ await test('include', async (t) => {
   const a = client.create('user', {
     name: 'mr jim',
     enum: 'ok',
+    derp: 'aa',
     y: 4,
     x: false,
     flap: 9999,
@@ -64,6 +66,7 @@ await test('include', async (t) => {
 
   const b = await client.create('user', {
     name: 'mr snurf b',
+    derp: 'bb',
     y: 15,
     x: true,
     flap: 9999,
@@ -80,6 +83,7 @@ await test('include', async (t) => {
   for (let i = 0; i < 5; i++) {
     client.create('user', {
       name: `mr snurf ${i}`,
+      derp: 'cc',
       y: i,
       x: !!(i % 2),
       enum: i % 2 ? 'great' : null,
@@ -111,94 +115,25 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    range: { start: 0, end: 1e6 },
+    range: { start: 0, end: 3 },
     filter: {
       props: {
-        // wrong
-        // enum: { ops: [{ op: '=', val: ['ok', undefined] }] },
-        enum: { ops: [{ op: '=', val: ['ok', 'great', null] }] },
+        name: { ops: [{ op: '=', val: 'mr jim' }] },
       },
     },
-
-    // filter: {
-    //   props: {
-    //     flap: { ops: [{ op: '=', val: 9999 }] },
-    //   },
-    // and: {
-    //   props: {
-    //     y: { ops: [{ op: '=', val: 100 }] },
-    //   },
-    //   or: {
-    //     props: {
-    //       y: { ops: [{ op: '=', val: 3 }] },
-    //     },
-    //     or: {
-    //       props: {
-    //         y: { ops: [{ op: '=', val: 4 }] },
-    //       },
-    //     },
-    //   },
-    // },
-    // or: {
-    //   props: {
-    //     y: { ops: [{ op: '=', val: 670 }] },
-    //   },
-    //   or: {
-    //     props: {
-    //       y: { ops: [{ op: '=', val: 15 }] },
-    //     },
-    //   },
-    // },
-    // },
-
     props: {
       y: { include: {} },
       name: { include: {} },
+      derp: { include: {} },
       x: { include: {} },
       enum: { include: {} },
       friends: {
-        // order: 'desc',
-        // sort: { prop: '$level' }, // can just be the prop?
         props: {
           name: { include: {} },
           y: { include: {} },
           x: { include: {} },
         },
-        // edges: {
-        //   props: {
-        //     $level: { include: {} },
-        //   },
-        // },
-        // filter: {
-        //   edgeStrategy: EdgeStrategy.noEdge,
-        //   props: {
-        //     enum: { ops: [{ op: '=', val: 'ok' }] },
-        //     x: {
-        //       ops: [{ op: '=', val: false }],
-        //     },
-        //     // y: {
-        //     //   ops: [{ op: '>', val: 5 }],
-        //     // },
-        //   },
-        //   // edges: {
-        //   //   props: {
-        //   //     $level: {
-        //   //       ops: [{ op: '>', val: 100 }],
-        //   //     },
-        //   //   },
-        //   // },
-        // },
       },
-      // mrFriend: {
-      //   props: {
-      //     y: { include: {} },
-      //   },
-      //   edges: {
-      //     props: {
-      //       $level: { include: {} },
-      //     },
-      //   },
-      // },
     },
   }
 
@@ -219,7 +154,7 @@ await test('include', async (t) => {
     queries.push(x)
   }
 
-  await perf(
+  await perf.skip(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
@@ -251,3 +186,59 @@ await test('include', async (t) => {
     result.byteLength,
   )
 })
+
+// filter: {
+//   props: {
+//     flap: { ops: [{ op: '=', val: 9999 }] },
+//   },
+// and: {
+//   props: {
+//     y: { ops: [{ op: '=', val: 100 }] },
+//   },
+//   or: {
+//     props: {
+//       y: { ops: [{ op: '=', val: 3 }] },
+//     },
+//     or: {
+//       props: {
+//         y: { ops: [{ op: '=', val: 4 }] },
+//       },
+//     },
+//   },
+// },
+// or: {
+//   props: {
+//     y: { ops: [{ op: '=', val: 670 }] },
+//   },
+//   or: {
+//     props: {
+//       y: { ops: [{ op: '=', val: 15 }] },
+//     },
+//   },
+// },
+// },
+
+// edges: {
+//   props: {
+//     $level: { include: {} },
+//   },
+// },
+// filter: {
+//   edgeStrategy: EdgeStrategy.noEdge,
+//   props: {
+//     enum: { ops: [{ op: '=', val: 'ok' }] },
+//     x: {
+//       ops: [{ op: '=', val: false }],
+//     },
+//     // y: {
+//     //   ops: [{ op: '>', val: 5 }],
+//     // },
+//   },
+//   // edges: {
+//   //   props: {
+//   //     $level: {
+//   //       ops: [{ op: '>', val: 100 }],
+//   //     },
+//   //   },
+//   // },
+// },
