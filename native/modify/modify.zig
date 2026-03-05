@@ -71,6 +71,7 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                     else => {},
                 }
             }
+
             if (main.expire and main.size == 8) {
                 const typeId = Node.getNodeTypeId(node);
                 const id = Node.getNodeId(node);
@@ -276,6 +277,14 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                         continue;
                     }
                     try Fields.set(node, propSchema, value);
+                    // TODO optimize with inline function, so we don't check this every time
+                    // if (typeSort) |ts| {
+                    //     if (sort.getSortIndex(ts, prop.id, 0, t.LangCode.none)) |propSort| {
+                    //         sort.remove(db.decompressor, propSort, count, node);
+                    //         sort.insert(db.decompressor, propSort, newCount, node);
+                    //         continue;
+                    //     }
+                    // }
                 },
             }
         }
