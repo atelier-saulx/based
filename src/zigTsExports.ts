@@ -126,7 +126,6 @@ export const Modify = {
   delete: 3,
   upsert: 4,
   insert: 5,
-  default: 6,
 } as const
 
 export const ModifyInverse = {
@@ -136,7 +135,6 @@ export const ModifyInverse = {
   3: 'delete',
   4: 'upsert',
   5: 'insert',
-  6: 'default',
 } as const
 
 /**
@@ -145,8 +143,7 @@ export const ModifyInverse = {
   update, 
   delete, 
   upsert, 
-  insert, 
-  default 
+  insert 
  */
 export type ModifyEnum = (typeof Modify)[keyof typeof Modify]
 
@@ -558,102 +555,10 @@ export const pushModifyCreateRingHeader = (
   return index
 }
 
-export type ModifyDefaultHeader = {
-  op: ModifyEnum
-  type: TypeId
-  isTmp: boolean
-  id: NodeId
-  size: number
-}
-
-export const ModifyDefaultHeaderByteSize = 12
-
-export const ModifyDefaultHeaderAlignOf = 16
-
-export const writeModifyDefaultHeader = (
-  buf: Uint8Array,
-  header: ModifyDefaultHeader,
-  offset: number,
-): number => {
-  buf[offset] = Number(header.op)
-  offset += 1
-  writeUint16(buf, Number(header.type), offset)
-  offset += 2
-  buf[offset] = 0
-  buf[offset] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= ((0 >>> 0) & 127) << 1
-  offset += 1
-  writeUint32(buf, Number(header.id), offset)
-  offset += 4
-  writeUint32(buf, Number(header.size), offset)
-  offset += 4
-  return offset
-}
-
-export const writeModifyDefaultHeaderProps = {
-  op: (buf: Uint8Array, value: ModifyEnum, offset: number) => {
-    buf[offset] = Number(value)
-  },
-  type: (buf: Uint8Array, value: TypeId, offset: number) => {
-    writeUint16(buf, Number(value), offset + 1)
-  },
-  isTmp: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 3] |= (((value ? 1 : 0) >>> 0) & 1) << 0
-  },
-  id: (buf: Uint8Array, value: NodeId, offset: number) => {
-    writeUint32(buf, Number(value), offset + 4)
-  },
-  size: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint32(buf, Number(value), offset + 8)
-  },
-}
-
-export const readModifyDefaultHeader = (
-  buf: Uint8Array,
-  offset: number,
-): ModifyDefaultHeader => {
-  const value: ModifyDefaultHeader = {
-    op: (buf[offset]) as ModifyEnum,
-    type: (readUint16(buf, offset + 1)) as TypeId,
-    isTmp: (((buf[offset + 3] >>> 0) & 1)) === 1,
-    id: readUint32(buf, offset + 4),
-    size: readUint32(buf, offset + 8),
-  }
-  return value
-}
-
-export const readModifyDefaultHeaderProps = {
-    op: (buf: Uint8Array, offset: number) => (buf[offset]) as ModifyEnum,
-    type: (buf: Uint8Array, offset: number) => (readUint16(buf, offset + 1)) as TypeId,
-    isTmp: (buf: Uint8Array, offset: number) => (((buf[offset + 3] >>> 0) & 1)) === 1,
-    id: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 4),
-    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 8),
-}
-
-export const createModifyDefaultHeader = (header: ModifyDefaultHeader): Uint8Array => {
-  const buffer = new Uint8Array(ModifyDefaultHeaderByteSize)
-  writeModifyDefaultHeader(buffer, header, 0)
-  return buffer
-}
-
-export const pushModifyDefaultHeader = (
-  buf: AutoSizedUint8Array,
-  header: ModifyDefaultHeader,
-): number => {
-  const index = buf.length
-  buf.pushUint8(Number(header.op))
-  buf.pushUint16(Number(header.type))
-  buf.pushUint8(0)
-  buf.view[buf.length - 1] |= (((header.isTmp ? 1 : 0) >>> 0) & 1) << 0
-  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
-  buf.pushUint32(Number(header.id))
-  buf.pushUint32(Number(header.size))
-  return index
-}
-
 export type ModifyMainHeader = {
   id: number
   type: PropTypeEnum
+  resetDefault: boolean
   increment: boolean
   incrementPositive: boolean
   expire: boolean
@@ -675,10 +580,11 @@ export const writeModifyMainHeader = (
   buf[offset] = Number(header.type)
   offset += 1
   buf[offset] = 0
-  buf[offset] |= (((header.increment ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.incrementPositive ? 1 : 0) >>> 0) & 1) << 1
-  buf[offset] |= (((header.expire ? 1 : 0) >>> 0) & 1) << 2
-  buf[offset] |= ((0 >>> 0) & 31) << 3
+  buf[offset] |= (((header.resetDefault ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.increment ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= (((header.incrementPositive ? 1 : 0) >>> 0) & 1) << 2
+  buf[offset] |= (((header.expire ? 1 : 0) >>> 0) & 1) << 3
+  buf[offset] |= ((0 >>> 0) & 15) << 4
   offset += 1
   buf[offset] = Number(header.size)
   offset += 1
@@ -694,14 +600,17 @@ export const writeModifyMainHeaderProps = {
   type: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset + 1] = Number(value)
   },
-  increment: (buf: Uint8Array, value: boolean, offset: number) => {
+  resetDefault: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  incrementPositive: (buf: Uint8Array, value: boolean, offset: number) => {
+  increment: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
-  expire: (buf: Uint8Array, value: boolean, offset: number) => {
+  incrementPositive: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 2
+  },
+  expire: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 3
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 3] = Number(value)
@@ -718,9 +627,10 @@ export const readModifyMainHeader = (
   const value: ModifyMainHeader = {
     id: buf[offset],
     type: (buf[offset + 1]) as PropTypeEnum,
-    increment: (((buf[offset + 2] >>> 0) & 1)) === 1,
-    incrementPositive: (((buf[offset + 2] >>> 1) & 1)) === 1,
-    expire: (((buf[offset + 2] >>> 2) & 1)) === 1,
+    resetDefault: (((buf[offset + 2] >>> 0) & 1)) === 1,
+    increment: (((buf[offset + 2] >>> 1) & 1)) === 1,
+    incrementPositive: (((buf[offset + 2] >>> 2) & 1)) === 1,
+    expire: (((buf[offset + 2] >>> 3) & 1)) === 1,
     size: buf[offset + 3],
     start: readUint16(buf, offset + 4),
   }
@@ -730,9 +640,10 @@ export const readModifyMainHeader = (
 export const readModifyMainHeaderProps = {
     id: (buf: Uint8Array, offset: number) => buf[offset],
     type: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as PropTypeEnum,
-    increment: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 0) & 1)) === 1,
-    incrementPositive: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 1) & 1)) === 1,
-    expire: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 2) & 1)) === 1,
+    resetDefault: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 0) & 1)) === 1,
+    increment: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 1) & 1)) === 1,
+    incrementPositive: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 2) & 1)) === 1,
+    expire: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 3) & 1)) === 1,
     size: (buf: Uint8Array, offset: number) => buf[offset + 3],
     start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 4),
 }
@@ -751,10 +662,11 @@ export const pushModifyMainHeader = (
   buf.pushUint8(Number(header.id))
   buf.pushUint8(Number(header.type))
   buf.pushUint8(0)
-  buf.view[buf.length - 1] |= (((header.increment ? 1 : 0) >>> 0) & 1) << 0
-  buf.view[buf.length - 1] |= (((header.incrementPositive ? 1 : 0) >>> 0) & 1) << 1
-  buf.view[buf.length - 1] |= (((header.expire ? 1 : 0) >>> 0) & 1) << 2
-  buf.view[buf.length - 1] |= ((0 >>> 0) & 31) << 3
+  buf.view[buf.length - 1] |= (((header.resetDefault ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= (((header.increment ? 1 : 0) >>> 0) & 1) << 1
+  buf.view[buf.length - 1] |= (((header.incrementPositive ? 1 : 0) >>> 0) & 1) << 2
+  buf.view[buf.length - 1] |= (((header.expire ? 1 : 0) >>> 0) & 1) << 3
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 15) << 4
   buf.pushUint8(Number(header.size))
   buf.pushUint16(Number(header.start))
   return index
@@ -4067,9 +3979,10 @@ export type GroupByKeyProp = {
   stepType: number
   stepRange: number
   timezone: number
+  isEdge: boolean
 }
 
-export const GroupByKeyPropByteSize = 11
+export const GroupByKeyPropByteSize = 12
 
 export const GroupByKeyPropAlignOf = 16
 
@@ -4090,6 +4003,10 @@ export const writeGroupByKeyProp = (
   offset += 4
   writeUint16(buf, Number(header.timezone), offset)
   offset += 2
+  buf[offset] = 0
+  buf[offset] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= ((0 >>> 0) & 127) << 1
+  offset += 1
   return offset
 }
 
@@ -4112,6 +4029,9 @@ export const writeGroupByKeyPropProps = {
   timezone: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 9)
   },
+  isEdge: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 11] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+  },
 }
 
 export const readGroupByKeyProp = (
@@ -4125,6 +4045,7 @@ export const readGroupByKeyProp = (
     stepType: buf[offset + 4],
     stepRange: readUint32(buf, offset + 5),
     timezone: readUint16(buf, offset + 9),
+    isEdge: (((buf[offset + 11] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -4136,6 +4057,7 @@ export const readGroupByKeyPropProps = {
     stepType: (buf: Uint8Array, offset: number) => buf[offset + 4],
     stepRange: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 5),
     timezone: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 9),
+    isEdge: (buf: Uint8Array, offset: number) => (((buf[offset + 11] >>> 0) & 1)) === 1,
 }
 
 export const createGroupByKeyProp = (header: GroupByKeyProp): Uint8Array => {
@@ -4155,6 +4077,9 @@ export const pushGroupByKeyProp = (
   buf.pushUint8(Number(header.stepType))
   buf.pushUint32(Number(header.stepRange))
   buf.pushUint16(Number(header.timezone))
+  buf.pushUint8(0)
+  buf.view[buf.length - 1] |= (((header.isEdge ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1
   return index
 }
 

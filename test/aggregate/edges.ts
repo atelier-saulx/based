@@ -14,6 +14,10 @@ await test('edges aggregation', async (t) => {
             prop: 'movies',
             $rating: 'uint16',
             $hating: 'uint16',
+            $role: 'string',
+            $roleType: ['Lead', 'Supporting', 'Cameo', 'Extra', 'Voiceover'],
+            $salary: 'uint16',
+            $hired: 'timestamp',
           },
         },
       },
@@ -49,6 +53,10 @@ await test('edges aggregation', async (t) => {
         id: a1,
         $rating: 55,
         $hating: 5,
+        $role: 'Supporting',
+        $roleType: 'Lead',
+        $salary: 12000,
+        $hired: new Date('2025-01-01'),
       },
     ],
   })
@@ -59,11 +67,19 @@ await test('edges aggregation', async (t) => {
         id: a1,
         $rating: 63,
         $hating: 7,
+        $role: 'Mia Wallace',
+        $roleType: 'Lead',
+        $salary: 300,
+        $hired: new Date('1994-12-11'),
       },
       {
         id: a2,
         $rating: 77,
         $hating: 3,
+        $role: 'Vincent Vega',
+        $roleType: 'Lead',
+        $salary: 300,
+        $hired: new Date('1994-12-11'),
       },
     ],
   })
@@ -190,8 +206,117 @@ await test('edges aggregation', async (t) => {
     ],
     'multiple edges on same agg function, branched query',
   )
-})
 
-/*-----------------------------------*/
-/*          GROUP BY EDGE TEST       */
-/*-----------------------------------*/
+  /*-----------------------------------*/
+  /*          GROUP BY EDGE.           */
+  /*-----------------------------------*/
+
+  // string edge
+  const strEdg = await db
+    .query2('movie')
+    .sum('actors.strong')
+    .groupBy('actors.$role')
+    .get()
+
+  deepEqual(
+    strEdg,
+    [
+      //@ts-ignore
+      { id: 1, actors: { Supporting: { strong: { sum: 10 } } } },
+      //@ts-ignore
+      {
+        id: 2,
+        actors: {
+          //@ts-ignore
+          'Mia Wallace': { strong: { sum: 10 } },
+          'Vincent Vega': { strong: { sum: 5 } },
+        },
+      },
+    ],
+    'string edge',
+  )
+
+  // enum edge
+  const enumEdg = await db
+    .query2('movie')
+    .sum('actors.$rating')
+    .groupBy('actors.$roleType')
+    .get()
+
+  deepEqual(
+    enumEdg,
+    [
+      {
+        id: 1,
+        actors: {
+          //@ts-ignore
+          Lead: { $rating: { sum: 55 } },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          //@ts-ignore
+          Lead: { $rating: { sum: 140 } },
+        },
+      },
+    ],
+    'enum edge',
+  )
+
+  // numeric edge
+  const numEdg = await db
+    .query2('movie')
+    .sum('actors.strong')
+    .groupBy('actors.$salary')
+    .get()
+
+  deepEqual(
+    numEdg,
+    [
+      //@ts-ignore
+      { id: 1, actors: { 12000: { strong: { sum: 10 } } } },
+      //@ts-ignore
+      { id: 2, actors: { 300: { strong: { sum: 15 } } } },
+    ],
+    'numeric edge',
+  )
+
+  // temporal interval edge
+  const tempIntEdg = await db
+    .query2('movie')
+    .sum('actors.strong')
+    .groupBy('actors.$hired', { step: 'year' })
+    .get()
+
+  deepEqual(
+    tempIntEdg,
+    [
+      //@ts-ignore
+      { id: 1, actors: { 2025: { strong: { sum: 10 } } } },
+      //@ts-ignore
+      { id: 2, actors: { 1994: { strong: { sum: 15 } } } },
+    ],
+    'temporal interval edge',
+  )
+
+  const numIntEdg = await db
+    .query2('movie')
+    .sum('actors.strong')
+    .groupBy('actors.$hating', { step: 2 })
+    .get()
+
+  deepEqual(
+    numIntEdg,
+    [
+      //@ts-ignore
+      { id: 1, actors: { 5: { strong: { sum: 10 } } } },
+      {
+        id: 2,
+        //@ts-ignore
+        actors: { 3: { strong: { sum: 5 } }, 7: { strong: { sum: 10 } } },
+      },
+    ],
+    'numeric interval edge',
+  )
+})

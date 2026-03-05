@@ -57,7 +57,6 @@ pub const Modify = enum(u8) {
     delete = 3,
     upsert = 4,
     insert = 5,
-    default = 6,
 };
 
 pub const ModifyHeader = packed struct {
@@ -97,22 +96,14 @@ pub const ModifyCreateRingHeader = packed struct {
     size: u32,
 };
 
-pub const ModifyDefaultHeader = packed struct {
-    op: Modify,
-    type: TypeId,
-    isTmp: bool,
-    _padding: u7,
-    id: NodeId,
-    size: u32,
-};
-
 pub const ModifyMainHeader = packed struct {
     id: u8,
     type: PropType,
+    resetDefault: bool,
     increment: bool,
     incrementPositive: bool,
     expire: bool,
-    _padding: u5,
+    _padding: u4,
     size: u8,
     start: u16,
 };
@@ -838,6 +829,8 @@ pub const GroupByKeyProp = packed struct {
     stepType: u8,
     stepRange: u32,
     timezone: i16,
+    isEdge: bool,
+    _padding: u7,
 };
 
 // pub const AggGroupByKey = packed struct {

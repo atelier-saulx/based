@@ -61,6 +61,8 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
             const value = data[j .. j + main.size];
             j += main.size;
+
+            //std.log.err("main prop {any} {any} {any}", .{main.start, main.size, main.resetDefault});
             if (main.increment) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.incrementPositive),
@@ -91,7 +93,12 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                     }
                 }
             }
-            utils.copy(u8, current, value, main.start);
+            if (main.resetDefault) {
+                Fields.setDefaultSmb(db, typeEntry, node, propSchema, main.start, main.size);
+                // TODO Shouldn't maybe modify the data?
+            } else {
+                utils.copy(u8, current, value, main.start);
+            }
         } else {
             // separate handling
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
@@ -100,7 +107,9 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
             switch (prop.type) {
                 .text => {
                     if (prop.size == 0) {
-                        try Fields.deleteField(db, node, propSchema);
+                        // TODO Set defaults per translation
+                        const langs: [1]u8 = .{ 0 };
+                        Fields.setDefaultText(db, typeEntry, node, propSchema, &langs);
                         continue;
                     }
                     var k: usize = 0;
@@ -273,42 +282,27 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                 },
                 else => {
                     if (prop.size == 0) {
-                        try Fields.deleteField(db, node, propSchema);
+                        if (propSchema.type == selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER) {
+                            // TODO Should we get the proper size from somewhere?
+                            Fields.setDefaultSmb(db, typeEntry, node, propSchema, 0, 1048576);
+                        } else {
+                            Fields.setDefault(db, typeEntry, node, propSchema);
+                        }
                         continue;
                     }
-                    try Fields.set(node, propSchema, value);
+
                     // TODO optimize with inline function, so we don't check this every time
-                    // if (typeSort) |ts| {
-                    //     if (sort.getSortIndex(ts, prop.id, 0, t.LangCode.none)) |propSort| {
-                    //         sort.remove(db.decompressor, propSort, count, node);
-                    //         sort.insert(db.decompressor, propSort, newCount, node);
-                    //         continue;
-                    //     }
-                    // }
+                    if (typeSort) |ts| {
+                        if (sort.getSortIndex(ts, prop.id, 0, t.LangCode.none)) |propSort| {
+                            const current = Fields.get(typeEntry, node, propSchema, prop.type);
+                            sort.remove(db.decompressor, propSort, current, node);
+                            sort.insert(db.decompressor, propSort, value, node);
+                        }
+                    }
+
+                    try Fields.set(node, propSchema, value);
                 },
             }
-        }
-    }
-}
-
-fn setDefaultProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8) !void {
-    selva.markDirty(db, typeEntry, Node.getNodeId(node));
-
-    var j: usize = 0;
-    while (j < data.len) {
-        const propId = data[j];
-        const fs = try Schema.getFieldSchema(typeEntry, propId);
-
-        if (fs.type == selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER) {
-            const offset = utils.readNext(u32, data, &j);
-            const len = utils.readNext(u32, data, &j);
-            selva.c.selva_fields_set_default(typeEntry, node, fs, offset, len);
-        } else if (fs.type == selva.c.SELVA_FIELD_TYPE_TEXT) {
-            const len = utils.readNext(u32, data, &j);
-            j += len;
-            selva.c.selva_fields_set_default(typeEntry, node, fs, len, data[j..len].ptr);
-        } else {
-            selva.c.selva_fields_set_default(typeEntry, node, fs);
         }
     }
 }
@@ -452,24 +446,6 @@ pub fn modify(
                 utils.write(result, t.ModifyError.null, j + 4);
                 i += dataSize;
             },
-            // TODO check with olli what this is
-            .default => {
-                const setDefault = utils.read(t.ModifyDefaultHeader, buf, i);
-                i += utils.sizeOf(t.ModifyDefaultHeader);
-                const typeEntry = try Node.getType(db, setDefault.type);
-                var id = setDefault.id;
-                if (setDefault.isTmp) id = utils.read(u32, items, id * resItemSize);
-                if (Node.getNode(typeEntry, id)) |node| {
-                    const data: []u8 = buf[i .. i + setDefault.size];
-                    try setDefaultProps(db, typeEntry, node, data);
-                    utils.write(result, id, j);
-                    utils.write(result, t.ModifyError.null, j + 4);
-                } else {
-                    utils.write(result, id, j);
-                    utils.write(result, t.ModifyError.nx, j + 4);
-                }
-                i += setDefault.size;
-            },
             .delete => {
                 const delete = utils.read(t.ModifyDeleteHeader, buf, i);
                 i += utils.sizeOf(t.ModifyDeleteHeader);
@@ -482,9 +458,15 @@ pub fn modify(
                     if (sort.getTypeSortIndexes(db, delete.type)) |typeSort| {
                         const mainSchema = try Schema.getFieldSchema(typeEntry, 0);
                         const mainBuffer = Fields.get(typeEntry, node, mainSchema, t.PropType.microBuffer);
-                        var it = typeSort.main.valueIterator();
-                        while (it.next()) |sortIndex| {
+                        var main = typeSort.main.valueIterator();
+                        while (main.next()) |sortIndex| {
                             sort.remove(db.decompressor, sortIndex.*, mainBuffer, node);
+                        }
+                        var prop = typeSort.field.valueIterator();
+                        while (prop.next()) |sortIndex| {
+                            const propSchema = try Schema.getFieldSchema(typeEntry, sortIndex.*.field);
+                            const current = Fields.get(typeEntry, node, propSchema, sortIndex.*.prop);
+                            sort.remove(db.decompressor, sortIndex.*, current, node);
                         }
                     }
                     Node.deleteNode(db, typeEntry, node) catch {
