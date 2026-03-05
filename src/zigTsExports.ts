@@ -2263,6 +2263,10 @@ export const QueryIteratorType = {
   aggregateFilter: 141,
   groupBy: 142,
   groupByFilter: 143,
+  aggregateEdge: 144,
+  aggregateEdgeFilter: 145,
+  groupByEdge: 146,
+  groupByEdgeFilter: 147,
 } as const
 
 export const QueryIteratorTypeInverse = {
@@ -2314,6 +2318,10 @@ export const QueryIteratorTypeInverse = {
   141: 'aggregateFilter',
   142: 'groupBy',
   143: 'groupByFilter',
+  144: 'aggregateEdge',
+  145: 'aggregateEdgeFilter',
+  146: 'groupByEdge',
+  147: 'groupByEdgeFilter',
 } as const
 
 /**
@@ -2364,7 +2372,11 @@ export const QueryIteratorTypeInverse = {
   aggregate, 
   aggregateFilter, 
   groupBy, 
-  groupByFilter 
+  groupByFilter, 
+  aggregateEdge, 
+  aggregateEdgeFilter, 
+  groupByEdge, 
+  groupByEdgeFilter 
  */
 export type QueryIteratorTypeEnum = (typeof QueryIteratorType)[keyof typeof QueryIteratorType]
 
@@ -3678,11 +3690,12 @@ export type AggRefsHeader = {
   resultsSize: number
   accumulatorSize: number
   aggDefsSize: number
+  iteratorType: QueryIteratorTypeEnum
   hasGroupBy: boolean
   isSamplingSet: boolean
 }
 
-export const AggRefsHeaderByteSize = 15
+export const AggRefsHeaderByteSize = 16
 
 export const AggRefsHeaderAlignOf = 16
 
@@ -3705,6 +3718,8 @@ export const writeAggRefsHeader = (
   offset += 2
   writeUint16(buf, Number(header.aggDefsSize), offset)
   offset += 2
+  buf[offset] = Number(header.iteratorType)
+  offset += 1
   buf[offset] = 0
   buf[offset] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
   buf[offset] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
@@ -3735,11 +3750,14 @@ export const writeAggRefsHeaderProps = {
   aggDefsSize: (buf: Uint8Array, value: number, offset: number) => {
     writeUint16(buf, Number(value), offset + 12)
   },
+  iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
+    buf[offset + 14] = Number(value)
+  },
   hasGroupBy: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 14] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+    buf[offset + 15] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
   isSamplingSet: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 14] |= (((value ? 1 : 0) >>> 0) & 1) << 1
+    buf[offset + 15] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
 }
 
@@ -3755,8 +3773,9 @@ export const readAggRefsHeader = (
     resultsSize: readUint16(buf, offset + 8),
     accumulatorSize: readUint16(buf, offset + 10),
     aggDefsSize: readUint16(buf, offset + 12),
-    hasGroupBy: (((buf[offset + 14] >>> 0) & 1)) === 1,
-    isSamplingSet: (((buf[offset + 14] >>> 1) & 1)) === 1,
+    iteratorType: (buf[offset + 14]) as QueryIteratorTypeEnum,
+    hasGroupBy: (((buf[offset + 15] >>> 0) & 1)) === 1,
+    isSamplingSet: (((buf[offset + 15] >>> 1) & 1)) === 1,
   }
   return value
 }
@@ -3769,8 +3788,9 @@ export const readAggRefsHeaderProps = {
     resultsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 8),
     accumulatorSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 10),
     aggDefsSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 12),
-    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 14] >>> 0) & 1)) === 1,
-    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 14] >>> 1) & 1)) === 1,
+    iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 14]) as QueryIteratorTypeEnum,
+    hasGroupBy: (buf: Uint8Array, offset: number) => (((buf[offset + 15] >>> 0) & 1)) === 1,
+    isSamplingSet: (buf: Uint8Array, offset: number) => (((buf[offset + 15] >>> 1) & 1)) === 1,
 }
 
 export const createAggRefsHeader = (header: AggRefsHeader): Uint8Array => {
@@ -3791,6 +3811,7 @@ export const pushAggRefsHeader = (
   buf.pushUint16(Number(header.resultsSize))
   buf.pushUint16(Number(header.accumulatorSize))
   buf.pushUint16(Number(header.aggDefsSize))
+  buf.pushUint8(Number(header.iteratorType))
   buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.hasGroupBy ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= (((header.isSamplingSet ? 1 : 0) >>> 0) & 1) << 1
@@ -4154,6 +4175,14 @@ export const FilterOpCompare = {
   ninc: 23,
   incBatch: 24,
   nincBatch: 25,
+  eqVar: 26,
+  neqVar: 27,
+  eqVarBatch: 28,
+  neqVarBatch: 29,
+  eqCrc32: 30,
+  neqCrc32: 31,
+  eqCrc32Batch: 32,
+  neqCrc32Batch: 33,
   selectLargeRefs: 203,
   selectRef: 204,
   selectSmallRefs: 205,
@@ -4179,6 +4208,14 @@ export const FilterOpCompareInverse = {
   23: 'ninc',
   24: 'incBatch',
   25: 'nincBatch',
+  26: 'eqVar',
+  27: 'neqVar',
+  28: 'eqVarBatch',
+  29: 'neqVarBatch',
+  30: 'eqCrc32',
+  31: 'neqCrc32',
+  32: 'eqCrc32Batch',
+  33: 'neqCrc32Batch',
   203: 'selectLargeRefs',
   204: 'selectRef',
   205: 'selectSmallRefs',
@@ -4204,6 +4241,14 @@ export const FilterOpCompareInverse = {
   ninc, 
   incBatch, 
   nincBatch, 
+  eqVar, 
+  neqVar, 
+  eqVarBatch, 
+  neqVarBatch, 
+  eqCrc32, 
+  neqCrc32, 
+  eqCrc32Batch, 
+  neqCrc32Batch, 
   selectLargeRefs, 
   selectRef, 
   selectSmallRefs, 

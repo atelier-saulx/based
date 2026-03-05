@@ -291,7 +291,6 @@ pub const PropTypeSelva = enum(u8) {
     colVec = 10,
 };
 
-
 pub const ReadOp = enum(u8) {
     none = 0,
     id = 255,
@@ -643,6 +642,10 @@ pub const QueryIteratorType = enum(u8) {
     aggregateFilter = 141,
     groupBy = 142,
     groupByFilter = 143,
+    aggregateEdge = 144,
+    aggregateEdgeFilter = 145,
+    groupByEdge = 146,
+    groupByEdgeFilter = 147,
 };
 
 // include op needs overlap with this
@@ -803,6 +806,7 @@ pub const AggRefsHeader = packed struct {
     resultsSize: u16,
     accumulatorSize: u16,
     aggDefsSize: u16,
+    iteratorType: QueryIteratorType,
     hasGroupBy: bool,
     isSamplingSet: bool,
     _padding: u6,
@@ -866,6 +870,16 @@ pub const FilterOpCompare = enum(u8) {
     ninc = 23,
     incBatch = 24,
     nincBatch = 25,
+    // ----------
+    eqVar = 26,
+    neqVar = 27,
+    eqVarBatch = 28,
+    neqVarBatch = 29,
+    // ----------
+    eqCrc32 = 30,
+    neqCrc32 = 31,
+    eqCrc32Batch = 32,
+    neqCrc32Batch = 33,
     // ----------
 
     selectLargeRefs = 203,

@@ -1,6 +1,6 @@
 import native from '../../../native.js'
 import { PropDef } from '../../../schema/defs/index.js'
-import { ENCODER } from '../../../utils/uint8.js'
+import { ENCODER, writeUint32 } from '../../../utils/uint8.js'
 import {
   FilterConditionByteSize,
   FilterConditionAlignOf,
@@ -8,9 +8,11 @@ import {
   PropTypeEnum,
   FilterOpCompareEnum,
   FilterOpCompare,
+  PropType,
+  FilterOpCompareInverse,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
-import { operatorToEnum } from './operatorToEnum.js'
+import { isFixedLenString, operatorToEnum } from './operatorToEnum.js'
 
 export const conditionByteSize = (propSize: number, size: number) => {
   return size + FilterConditionByteSize + FilterConditionAlignOf + 1 + propSize
@@ -24,8 +26,9 @@ export const createCondition = (
   prop: { start: number; id: number; size: number; type: PropTypeEnum },
   op: FilterOpCompareEnum,
   size: number = prop.size,
+  propSize: number = prop.size,
 ) => {
-  const conditionBuffer = new Uint8Array(conditionByteSize(prop.size, size))
+  const conditionBuffer = new Uint8Array(conditionByteSize(propSize, size))
   conditionBuffer[0] = 255 // Means condition header is not aligned
   const offset =
     writeFilterCondition(
@@ -38,12 +41,12 @@ export const createCondition = (
         start: prop.start || 0,
         prop: prop.id,
         fieldSchema: 0,
-        len: prop.size,
+        len: propSize,
         offset: 255, // Means value is not aligned
-        size: size + prop.size,
+        size: size + propSize,
       },
       FilterConditionAlignOf + 1,
-    ) + prop.size
+    ) + propSize
   return { condition: conditionBuffer, offset }
 }
 
@@ -106,13 +109,28 @@ export const variableComparison = (
 ) => {
   const op = operatorToEnum(operator, val, prop)
 
-  if (op === FilterOpCompare.inc || op === FilterOpCompare.ninc) {
-    if (val.length === 1) {
-      const size = native.stringByteLength(val[0])
-      const { condition, offset } = createCondition(prop, op, size)
-      ENCODER.encodeInto(val[0], condition.subarray(offset))
-      return condition
-    }
+  if (
+    op === FilterOpCompare.inc ||
+    op === FilterOpCompare.ninc ||
+    op === FilterOpCompare.eqVar ||
+    op === FilterOpCompare.neqVar
+  ) {
+    const size = native.stringByteLength(val[0])
+    const { condition, offset } = createCondition(prop, op, size, 0)
+    ENCODER.encodeInto(val[0], condition.subarray(offset))
+    return condition
+  } else if (
+    op === FilterOpCompare.eqCrc32 ||
+    op === FilterOpCompare.neqCrc32
+  ) {
+    const { condition, offset } = createCondition(prop, op, 8, 4)
+    const buf = ENCODER.encode(val[0])
+    writeUint32(condition, native.crc32(buf), offset)
+    writeUint32(condition, buf.byteLength, offset + 4)
+
+    console.log('YO YO YO', native.crc32(buf))
+
+    return condition
   }
 
   throw new Error(
@@ -129,7 +147,7 @@ export const comparison = (
   if (!Array.isArray(val)) {
     val = [val]
   }
-  if (prop.size > 0) {
+  if (prop.size > 0 && !isFixedLenString(prop)) {
     return fixedComparison(prop, op, val, opts)
   }
   return variableComparison(prop, op, val, opts)

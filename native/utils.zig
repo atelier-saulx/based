@@ -92,7 +92,7 @@ pub inline fn readPtr(
     buffer: []const u8,
     offset: usize,
 ) *T {
-    return @as(*T, @constCast(@ptrCast(@alignCast(buffer.ptr + offset))));
+    return @as(*T, @ptrCast(@alignCast(@constCast(buffer.ptr + offset))));
 }
 
 pub inline fn read(
@@ -258,6 +258,8 @@ pub inline fn alignLeft(comptime T: type, data: []u8) u8 {
     return offset;
 }
 pub fn alignLeftLen(alignment: u8, data: []u8) u8 {
+    // fix
+    if (alignment == 0) return 0;
     const addr = @intFromPtr(data.ptr);
     const offset = @as(u8, @truncate(addr & (alignment - 1)));
     if (offset == 0) return 0;

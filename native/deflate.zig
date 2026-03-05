@@ -57,7 +57,7 @@ pub fn destroyCompressor(compressor: *Compressor) void {
 }
 
 pub fn compress(compressor: *Compressor, in: []u8, out: []u8) usize {
-  return c.libdeflate_compress(compressor, in.ptr, in.len, out.ptr, out.len);
+    return c.libdeflate_compress(compressor, in.ptr, in.len, out.ptr, out.len);
 }
 
 pub fn createDecompressor() *Decompressor {
@@ -105,16 +105,12 @@ pub fn stream_cb(
     return 1;
 }
 
-pub fn decompressStream(
-    d: *Decompressor,
-    state: *BlockState,
-    in: []u8,
-    cb: c.libdeflate_decompress_stream_cb_t,
-    ctx: ?*anyopaque,
-    result: *c_int) Result {
+pub fn decompressStream(d: *Decompressor, state: *BlockState, in: []u8, cb: c.libdeflate_decompress_stream_cb_t, ctx: ?*anyopaque, result: *c_int) Result {
     return @enumFromInt(c.libdeflate_decompress_stream(d, state, in.ptr, in.len, cb, ctx, result));
 }
 
 pub fn blockStateGrowbuf(bs: *BlockState) bool {
     return c.libdeflate_block_state_growbuf(bs);
 }
+
+// decompress helper
