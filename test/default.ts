@@ -293,6 +293,73 @@ await test('default values for all props in user type', async (t) => {
     },
     'User created with all default values',
   )
+
+  const userNullId = await db.create('user', {
+    name: null,
+    count: null,
+    isNice: null,
+    config: null,
+    avatar: null,
+    level: null,
+    label: null,
+    meta: { rating: null },
+  })
+
+  deepEqual(
+    await db.query2('user', userNullId).get(),
+    {
+      id: 2,
+      label: { en: 'Default Label' },
+      isNice: true,
+      count: 42,
+      eventTime: 1678881600000,
+      level: 'medium',
+      meta: { rating: 5, notes: 'Default Note' },
+      name: 'Default Name',
+      config: { enabled: true, value: 10 },
+      avatar: new Uint8Array([1, 2, 3]),
+    },
+    'User created with explicit null overrides',
+  )
+
+  const userNullId2 = await db.create('user', {
+    name: 'ha',
+    count: 1,
+    isNice: false,
+    config: { enabled: false, value: 1 },
+    avatar: new Uint8Array([5]),
+    level: 'low',
+    label: { en: 'wow' },
+    meta: { rating: 1, notes: 'haha' },
+    eventTime: 0,
+  })
+  await db.update('user', userNullId2, {
+    name: null,
+    count: null,
+    isNice: null,
+    config: null,
+    avatar: null,
+    level: null,
+    label: null,
+    meta: { rating: null },
+  })
+
+  deepEqual(
+    await db.query2('user', userNullId2).get(),
+    {
+      id: 2,
+      label: { en: 'Default Label' },
+      isNice: true,
+      count: 42,
+      eventTime: 1678881600000,
+      level: 'medium',
+      meta: { rating: 5, notes: 'Default Note' },
+      name: 'Default Name',
+      config: { enabled: true, value: 10 },
+      avatar: new Uint8Array([1, 2, 3]),
+    },
+    'User created with explicit null overrides',
+  )
 })
 
 await test('negative default values for numeric types', async (t) => {
