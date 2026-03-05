@@ -11,6 +11,7 @@ pub const Function = enum(u8) {
     eqBatch,
     eqBatchSmall,
     inc,
+    incLowerCase,
     eqVar,
     eqCrc32,
 };
@@ -32,6 +33,7 @@ fn getFunc(comptime tag: t.FilterOpCompare) Function {
         .ge => Function.ge,
         .gt => Function.gt,
         .inc, .ninc => Function.inc,
+        .incLowerCase, .nincLowerCase => Function.incLowerCase,
         .eqVar, .neqVar => Function.eqVar,
         .eqCrc32, .neqCrc32 => Function.eqCrc32,
         else => Function.eq,
@@ -47,6 +49,7 @@ pub fn parseOp(comptime op: t.FilterOpCompare) OpMeta {
             .neqBatchSmall,
             .nrange,
             .ninc,
+            .nincLowerCase,
             .neqVar,
             .neqCrc32,
             .neqCrc32Batch,

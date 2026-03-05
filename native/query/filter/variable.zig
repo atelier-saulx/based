@@ -47,6 +47,7 @@ const indexBitMask: @Vector(vectorLenU8, MaskInt) = blk: {
 
 inline fn includeVector(
     comptime useTwoChars: bool,
+    comptime _: bool,
     query: []const u8,
     value: []const u8,
 ) bool {
@@ -141,22 +142,19 @@ inline fn includeVector(
     return false;
 }
 
-pub fn include(
+inline fn includeInner(
+    comptime lowerCase: bool,
     query: []const u8,
     value: []const u8,
 ) bool {
-    // do we want to support ql 0 ?
     if (query.len == 0) return true;
     if (value.len < query.len) return false;
-
     const useTwoChars = query.len >= 2 and switch (query[0]) {
         'a', 'e', 'i', 'o', 'u', 's', 't', 'n', 'r', 'l', 'c', 'd', 'm', 'h', ' ' => true,
         // 'A', 'E', 'I', 'O', 'U', 'S', 'T', 'N', 'R', 'L', 'C', 'D', 'M', 'H' => true,
         else => false,
     };
-
     const vecLen: usize = if (useTwoChars) vectorLenU8 + 1 else vectorLenU8;
-
     if (value.len < vecLen) {
         var i: usize = 0;
         const maxStart = value.len - query.len;
@@ -171,13 +169,18 @@ pub fn include(
         }
         return false;
     }
-
     if (useTwoChars) {
-        // lower case make it enum
-        return includeVector(true, query, value);
+        return includeVector(true, lowerCase, query, value);
     }
+    return includeVector(false, lowerCase, query, value);
+}
 
-    return includeVector(false, query, value);
+pub fn include(query: []const u8, value: []const u8) bool {
+    return includeInner(false, query, value);
+}
+
+pub fn includeLowerCase(query: []const u8, value: []const u8) bool {
+    return includeInner(true, query, value);
 }
 
 pub fn eqVar(

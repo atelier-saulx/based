@@ -104,6 +104,7 @@ inline fn compare(
         .eqBatchSmall => Fixed.eqBatchSmall(T, q, v, index, c),
         .eqCrc32 => Variable.eqCrc32(q, v, index, c),
         .inc => Variable.parseValue(thread, q, v, index, c, fixedLen, Variable.include),
+        .incLowerCase => Variable.parseValue(thread, q, v, index, c, fixedLen, Variable.includeLowerCase),
         .eqVar => Variable.parseValue(thread, q, v, index, c, fixedLen, Variable.eqVar),
     };
     return if (meta.invert) !res else res;
