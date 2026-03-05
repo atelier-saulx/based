@@ -28,7 +28,7 @@ pub const AggCtx = struct {
 pub fn iterator(
     aggCtx: *AggCtx,
     it: anytype,
-    hasFilter: bool,
+    comptime hasFilter: bool,
     filterBuf: []u8,
     aggDefs: []u8,
     accumulatorProp: []u8,
@@ -36,7 +36,6 @@ pub fn iterator(
     var count: u32 = 0;
     aggCtx.hadAccumulated = false;
 
-    // to beautify later, Can use different iterator labes instead of duck typing
     if (@hasDecl(@TypeOf(it.*), "nextRef")) {
         while (it.nextRef()) |ref| {
             if (hasFilter) {
