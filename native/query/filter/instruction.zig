@@ -1,26 +1,40 @@
 const std = @import("std");
 const t = @import("../../types.zig");
-const Compare = @import("compare.zig");
 
-pub const OpMeta = struct { invert: bool = false, func: Compare.Function };
+pub const Function = enum(u8) {
+    eq,
+    lt,
+    gt,
+    le,
+    ge,
+    range,
+    eqBatch,
+    eqBatchSmall,
+    inc,
+    eqVar,
+    eqCrc32,
+};
 
-fn getFunc(comptime tag: t.FilterOpCompare) Compare.Function {
+pub const OpMeta = struct { invert: bool = false, func: Function };
+
+fn getFunc(comptime tag: t.FilterOpCompare) Function {
     return switch (tag) {
-        .range, .nrange => Compare.Function.range,
+        .range, .nrange => Function.range,
         .eqBatch,
         .neqBatch,
-        => Compare.Function.eqBatch,
+        => Function.eqBatch,
         .eqBatchSmall,
         .neqBatchSmall,
-        => Compare.Function.eqBatchSmall,
-        .eq, .neq => Compare.Function.eq,
-        .le => Compare.Function.le,
-        .lt => Compare.Function.le,
-        .ge => Compare.Function.ge,
-        .gt => Compare.Function.gt,
-        .inc, .ninc => Compare.Function.inc,
-        .eqVar, .neqVar => Compare.Function.eqVar,
-        else => Compare.Function.eq,
+        => Function.eqBatchSmall,
+        .eq, .neq => Function.eq,
+        .le => Function.le,
+        .lt => Function.le,
+        .ge => Function.ge,
+        .gt => Function.gt,
+        .inc, .ninc => Function.inc,
+        .eqVar, .neqVar => Function.eqVar,
+        .eqCrc32, .neqCrc32 => Function.eqCrc32,
+        else => Function.eq,
     };
 }
 
@@ -28,7 +42,16 @@ pub fn parseOp(comptime op: t.FilterOpCompare) OpMeta {
     return .{
         .func = getFunc(op),
         .invert = switch (op) {
-            .neq, .neqBatch, .neqBatchSmall, .nrange, .ninc, .neqVar => true,
+            .neq,
+            .neqBatch,
+            .neqBatchSmall,
+            .nrange,
+            .ninc,
+            .neqVar,
+            .neqCrc32,
+            .neqCrc32Batch,
+            .neqVarBatch,
+            => true,
             else => false,
         },
     };

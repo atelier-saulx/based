@@ -6,7 +6,9 @@ const Schema = @import("../../selva/schema.zig");
 const Fields = @import("../../selva/fields.zig");
 const Selva = @import("../../selva/selva.zig");
 const t = @import("../../types.zig");
-const Compare = @import("compare.zig");
+const Fixed = @import("fixed.zig");
+const Variable = @import("variable.zig");
+
 const Instruction = @import("instruction.zig");
 const COND_ALIGN_BYTES = @alignOf(t.FilterCondition);
 
@@ -90,16 +92,17 @@ inline fn compare(
     comptime fixedLen: bool,
 ) bool {
     const res = switch (meta.func) {
-        .eq => Compare.eq(T, q, v, index, c),
-        .le => Compare.le(T, q, v, index, c),
-        .lt => Compare.lt(T, q, v, index, c),
-        .ge => Compare.ge(T, q, v, index, c),
-        .gt => Compare.gt(T, q, v, index, c),
-        .range => Compare.range(T, q, v, index, c),
-        .eqBatch => Compare.eqBatch(T, q, v, index, c),
-        .eqBatchSmall => Compare.eqBatchSmall(T, q, v, index, c),
-        .inc => Compare.include(q, v, index, c, fixedLen),
-        .eqVar => Compare.eqVar(q, v, index, c, fixedLen),
+        .eq => Fixed.eq(T, q, v, index, c),
+        .le => Fixed.le(T, q, v, index, c),
+        .lt => Fixed.lt(T, q, v, index, c),
+        .ge => Fixed.ge(T, q, v, index, c),
+        .gt => Fixed.gt(T, q, v, index, c),
+        .range => Fixed.range(T, q, v, index, c),
+        .eqBatch => Fixed.eqBatch(T, q, v, index, c),
+        .eqBatchSmall => Fixed.eqBatchSmall(T, q, v, index, c),
+        .eqCrc32 => Variable.eqCrc32(q, v, index, c),
+        .inc => Variable.parseValue(q, v, index, c, fixedLen, Variable.include),
+        .eqVar => Variable.parseValue(q, v, index, c, fixedLen, Variable.eqVar),
     };
     return if (meta.invert) !res else res;
 }

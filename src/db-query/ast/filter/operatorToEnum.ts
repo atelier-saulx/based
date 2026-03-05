@@ -18,7 +18,7 @@ export const operatorToEnum = (
     if (isFixedLenString(prop)) {
       return FilterOpCompare.eqVar
     } else if (prop.size === 0) {
-      // EQ CRC32 + LEN
+      return FilterOpCompare.eqCrc32
     }
     return FilterOpCompare.eq
   }
@@ -37,7 +37,7 @@ export const operatorToEnum = (
     if (isFixedLenString(prop)) {
       return FilterOpCompare.neqVar
     } else if (prop.size === 0) {
-      // EQ CRC32 + LEN
+      return FilterOpCompare.neqCrc32
     }
     // else if string,
     return FilterOpCompare.neq

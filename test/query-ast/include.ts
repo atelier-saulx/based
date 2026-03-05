@@ -118,7 +118,7 @@ await test('include', async (t) => {
     range: { start: 0, end: 3 },
     filter: {
       props: {
-        derp: { ops: [{ op: 'includes', val: 'aa' }] },
+        name: { ops: [{ op: '=', val: 'mr jim' }] },
       },
     },
     props: {

@@ -291,7 +291,6 @@ pub const PropTypeSelva = enum(u8) {
     colVec = 10,
 };
 
-
 pub const ReadOp = enum(u8) {
     none = 0,
     id = 255,
@@ -869,6 +868,13 @@ pub const FilterOpCompare = enum(u8) {
     // ----------
     eqVar = 26,
     neqVar = 27,
+    eqVarBatch = 28,
+    neqVarBatch = 29,
+    // ----------
+    eqCrc32 = 30,
+    neqCrc32 = 31,
+    eqCrc32Batch = 32,
+    neqCrc32Batch = 33,
     // ----------
 
     selectLargeRefs = 203,

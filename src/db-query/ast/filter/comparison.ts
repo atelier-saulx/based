@@ -1,6 +1,6 @@
 import native from '../../../native.js'
 import { PropDef } from '../../../schema/defs/index.js'
-import { ENCODER } from '../../../utils/uint8.js'
+import { ENCODER, writeUint32 } from '../../../utils/uint8.js'
 import {
   FilterConditionByteSize,
   FilterConditionAlignOf,
@@ -9,6 +9,7 @@ import {
   FilterOpCompareEnum,
   FilterOpCompare,
   PropType,
+  FilterOpCompareInverse,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 import { isFixedLenString, operatorToEnum } from './operatorToEnum.js'
@@ -112,15 +113,25 @@ export const variableComparison = (
     op === FilterOpCompare.inc ||
     op === FilterOpCompare.ninc ||
     op === FilterOpCompare.eqVar ||
-    FilterOpCompare.neqVar
+    op === FilterOpCompare.neqVar
   ) {
     const size = native.stringByteLength(val[0])
     const { condition, offset } = createCondition(prop, op, size, 0)
     ENCODER.encodeInto(val[0], condition.subarray(offset))
     return condition
-  }
+  } else if (
+    op === FilterOpCompare.eqCrc32 ||
+    op === FilterOpCompare.neqCrc32
+  ) {
+    const { condition, offset } = createCondition(prop, op, 8, 4)
+    const buf = ENCODER.encode(val[0])
+    writeUint32(condition, native.crc32(buf), offset)
+    writeUint32(condition, buf.byteLength, offset + 4)
 
-  // BATCH STUFF
+    console.log('YO YO YO', native.crc32(buf))
+
+    return condition
+  }
 
   throw new Error(
     `Filter comparison not supported "${operator}" ${prop.path.join('.')}`,
