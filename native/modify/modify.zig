@@ -61,6 +61,12 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
             const value = data[j .. j + main.size];
             j += main.size;
+
+            if (main.resetDefault) {
+                selva.c.selva_fields_set_default(typeEntry, node, propSchema, main.start, main.size);
+                // TODO Shouldn't maybe modify the data?
+                utils.copy(u8, value, current, main.start);
+            }
             if (main.increment) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.incrementPositive),

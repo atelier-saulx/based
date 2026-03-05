@@ -654,6 +654,7 @@ export const pushModifyDefaultHeader = (
 export type ModifyMainHeader = {
   id: number
   type: PropTypeEnum
+  resetDefault: boolean
   increment: boolean
   incrementPositive: boolean
   expire: boolean
@@ -675,10 +676,11 @@ export const writeModifyMainHeader = (
   buf[offset] = Number(header.type)
   offset += 1
   buf[offset] = 0
-  buf[offset] |= (((header.increment ? 1 : 0) >>> 0) & 1) << 0
-  buf[offset] |= (((header.incrementPositive ? 1 : 0) >>> 0) & 1) << 1
-  buf[offset] |= (((header.expire ? 1 : 0) >>> 0) & 1) << 2
-  buf[offset] |= ((0 >>> 0) & 31) << 3
+  buf[offset] |= (((header.resetDefault ? 1 : 0) >>> 0) & 1) << 0
+  buf[offset] |= (((header.increment ? 1 : 0) >>> 0) & 1) << 1
+  buf[offset] |= (((header.incrementPositive ? 1 : 0) >>> 0) & 1) << 2
+  buf[offset] |= (((header.expire ? 1 : 0) >>> 0) & 1) << 3
+  buf[offset] |= ((0 >>> 0) & 15) << 4
   offset += 1
   buf[offset] = Number(header.size)
   offset += 1
@@ -694,14 +696,17 @@ export const writeModifyMainHeaderProps = {
   type: (buf: Uint8Array, value: PropTypeEnum, offset: number) => {
     buf[offset + 1] = Number(value)
   },
-  increment: (buf: Uint8Array, value: boolean, offset: number) => {
+  resetDefault: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
-  incrementPositive: (buf: Uint8Array, value: boolean, offset: number) => {
+  increment: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 1
   },
-  expire: (buf: Uint8Array, value: boolean, offset: number) => {
+  incrementPositive: (buf: Uint8Array, value: boolean, offset: number) => {
     buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 2
+  },
+  expire: (buf: Uint8Array, value: boolean, offset: number) => {
+    buf[offset + 2] |= (((value ? 1 : 0) >>> 0) & 1) << 3
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
     buf[offset + 3] = Number(value)
@@ -718,9 +723,10 @@ export const readModifyMainHeader = (
   const value: ModifyMainHeader = {
     id: buf[offset],
     type: (buf[offset + 1]) as PropTypeEnum,
-    increment: (((buf[offset + 2] >>> 0) & 1)) === 1,
-    incrementPositive: (((buf[offset + 2] >>> 1) & 1)) === 1,
-    expire: (((buf[offset + 2] >>> 2) & 1)) === 1,
+    resetDefault: (((buf[offset + 2] >>> 0) & 1)) === 1,
+    increment: (((buf[offset + 2] >>> 1) & 1)) === 1,
+    incrementPositive: (((buf[offset + 2] >>> 2) & 1)) === 1,
+    expire: (((buf[offset + 2] >>> 3) & 1)) === 1,
     size: buf[offset + 3],
     start: readUint16(buf, offset + 4),
   }
@@ -730,9 +736,10 @@ export const readModifyMainHeader = (
 export const readModifyMainHeaderProps = {
     id: (buf: Uint8Array, offset: number) => buf[offset],
     type: (buf: Uint8Array, offset: number) => (buf[offset + 1]) as PropTypeEnum,
-    increment: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 0) & 1)) === 1,
-    incrementPositive: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 1) & 1)) === 1,
-    expire: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 2) & 1)) === 1,
+    resetDefault: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 0) & 1)) === 1,
+    increment: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 1) & 1)) === 1,
+    incrementPositive: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 2) & 1)) === 1,
+    expire: (buf: Uint8Array, offset: number) => (((buf[offset + 2] >>> 3) & 1)) === 1,
     size: (buf: Uint8Array, offset: number) => buf[offset + 3],
     start: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 4),
 }
@@ -751,10 +758,11 @@ export const pushModifyMainHeader = (
   buf.pushUint8(Number(header.id))
   buf.pushUint8(Number(header.type))
   buf.pushUint8(0)
-  buf.view[buf.length - 1] |= (((header.increment ? 1 : 0) >>> 0) & 1) << 0
-  buf.view[buf.length - 1] |= (((header.incrementPositive ? 1 : 0) >>> 0) & 1) << 1
-  buf.view[buf.length - 1] |= (((header.expire ? 1 : 0) >>> 0) & 1) << 2
-  buf.view[buf.length - 1] |= ((0 >>> 0) & 31) << 3
+  buf.view[buf.length - 1] |= (((header.resetDefault ? 1 : 0) >>> 0) & 1) << 0
+  buf.view[buf.length - 1] |= (((header.increment ? 1 : 0) >>> 0) & 1) << 1
+  buf.view[buf.length - 1] |= (((header.incrementPositive ? 1 : 0) >>> 0) & 1) << 2
+  buf.view[buf.length - 1] |= (((header.expire ? 1 : 0) >>> 0) & 1) << 3
+  buf.view[buf.length - 1] |= ((0 >>> 0) & 15) << 4
   buf.pushUint8(Number(header.size))
   buf.pushUint16(Number(header.start))
   return index

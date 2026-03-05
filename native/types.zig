@@ -109,10 +109,11 @@ pub const ModifyDefaultHeader = packed struct {
 pub const ModifyMainHeader = packed struct {
     id: u8,
     type: PropType,
+    resetDefault: bool,
     increment: bool,
     incrementPositive: bool,
     expire: bool,
-    _padding: u5,
+    _padding: u4,
     size: u8,
     start: u16,
 };

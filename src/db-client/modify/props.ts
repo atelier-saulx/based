@@ -46,6 +46,7 @@ export const serializeProps = (
           start: prop.start,
           type: prop.type,
           size: prop.size,
+          resetDefault: val === null,
           increment: !!increment,
           incrementPositive: increment > 0,
           expire: ('expire' in prop.schema && prop.schema.expire) || false,

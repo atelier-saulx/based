@@ -315,6 +315,7 @@ void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, b
  *   2. lang code(s) (`selva_lang_none` = `0` = reset all)
  *
  */
+SELVA_EXPORT
 void selva_fields_set_default(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...);
 
 void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node);
@@ -322,7 +323,6 @@ void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node);
 /**
  * Destroy all fields of a node.
  */
-SELVA_EXPORT
 void selva_fields_destroy(struct SelvaDb *db, struct SelvaNode *node)
     __attribute__((nonnull(1, 2)));
 
