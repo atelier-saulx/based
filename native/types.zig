@@ -642,6 +642,10 @@ pub const QueryIteratorType = enum(u8) {
     aggregateFilter = 141,
     groupBy = 142,
     groupByFilter = 143,
+    aggregateEdge = 144,
+    aggregateEdgeFilter = 145,
+    groupByEdge = 146,
+    groupByEdgeFilter = 147,
 };
 
 // include op needs overlap with this
@@ -802,6 +806,7 @@ pub const AggRefsHeader = packed struct {
     resultsSize: u16,
     accumulatorSize: u16,
     aggDefsSize: u16,
+    iteratorType: QueryIteratorType,
     hasGroupBy: bool,
     isSamplingSet: bool,
     _padding: u6,

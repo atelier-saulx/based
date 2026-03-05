@@ -68,18 +68,6 @@ await test('edges aggregation', async (t) => {
     ],
   })
 
-  const e1 = await db
-    .query2('movie')
-    .include('actors.$rating')
-    // .include('actors.name')
-    .get()
-
-  console.dir(e1, { depth: null, maxArrayLength: null })
-
-  const g1 = await db.query2('movie').sum('actors.$rating').get()
-
-  console.dir(g1, { depth: null, maxArrayLength: null })
-
   /*---------------------------*/
   /*       NESTED SINTAX       */
   /*---------------------------*/
@@ -94,41 +82,19 @@ await test('edges aggregation', async (t) => {
     'nested sintax with references',
   )
 
-  // deepEqual(
-  //   await db.query2('movie').max('actors.$rating').sum('actors.$hating').get(),
-  //   //@ts-ignore
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //           sum: 5,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //           sum: 10,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'nested sintax with edges',
-  // )
-  // console.dir(await db.query2('movie').include('actors.$rating').get(), { depth: null, maxArrayLength: null })
+  deepEqual(
+    await db.query2('movie').max('actors.$rating').sum('actors.$hating').get(),
+    //@ts-ignore
+    [
+      { id: 1, actors: { $rating: { max: 55 }, $hating: { sum: 5 } } },
+      { id: 2, actors: { $rating: { max: 77 }, $hating: { sum: 10 } } },
+    ],
+    'nested sintax with edges',
+  )
 
   /*----------------------------*/
   /*       BRANCHED QUERY       */
   /*----------------------------*/
-
-  // await db
-  // .query2('movie')
-  // .include((q) => q('actors').max('strong').sum('strong2'))
-  // .get()
 
   deepEqual(
     await db
@@ -157,79 +123,75 @@ await test('edges aggregation', async (t) => {
     'single edge aggregation, branched query',
   )
 
-  // deepEqual(
-  //   await db
-  //     .query2('movie')
-  //     .include((q) => q('actors').max('$rating').sum('$hating'))
-  //     .get()
-  //     ,
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //         },
-  //         $hating: {
-  //           sum: 5,
-  //         },
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //         },
-  //         $hating: {
-  //           sum: 10,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'multiple edges with multiple agg functions, branched query',
-  // )
+  deepEqual(
+    await db
+      .query2('movie')
+      //@ts-ignore
+      .include((q) => q('actors').max('$rating').sum('$hating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          $rating: {
+            max: 55,
+          },
+          $hating: {
+            sum: 5,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          $rating: {
+            max: 77,
+          },
+          $hating: {
+            sum: 10,
+          },
+        },
+      },
+    ],
+    'multiple edges with multiple agg functions, branched query',
+  )
 
-  // deepEqual(
-  //   await db
-  //     .query2('movie')
-  //     .include((q) => q('actors').max('$rating', '$hating'))
-  //     .get()
-  //     ,
-  //   [
-  //     {
-  //       id: 1,
-  //       actors: {
-  //         $rating: {
-  //           max: 55,
-  //         },
-  //         $hating: {
-  //           max: 5,
-  //         },s
-  //       },
-  //     },
-  //     {
-  //       id: 2,
-  //       actors: {
-  //         $rating: {
-  //           max: 77,
-  //         },
-  //         $hating: {
-  //           max: 7,
-  //         },
-  //       },
-  //     },
-  //   ],
-  //   'multiple edges on same agg function, branched query',
-  // )
-
-  /*-----------------------------------*/
-  /*          STRAIGHT ON TYPE         */
-  /*-----------------------------------*/
-  // before: OK: error in js: Cannot read properties of undefined (reading 'edges')
-  // after: NOK: feature not implemented
-  // await db.query2('actor').max('$rating').get().inspect(10)
-  // await db.query2('actor').sum('strong').get().inspect(10) // this is OK, summing all strong props in the type actor
-
-  // group BY EDGE!!!
+  deepEqual(
+    await db
+      .query2('movie')
+      //@ts-ignore
+      .include((q) => q('actors').max('$rating', '$hating'))
+      .get(),
+    [
+      {
+        id: 1,
+        actors: {
+          //@ts-ignore
+          $rating: {
+            max: 55,
+          },
+          $hating: {
+            max: 5,
+          },
+        },
+      },
+      {
+        id: 2,
+        actors: {
+          //@ts-ignore
+          $rating: {
+            max: 77,
+          },
+          $hating: {
+            max: 7,
+          },
+        },
+      },
+    ],
+    'multiple edges on same agg function, branched query',
+  )
 })
+
+/*-----------------------------------*/
+/*          GROUP BY EDGE TEST       */
+/*-----------------------------------*/

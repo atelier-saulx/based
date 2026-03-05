@@ -25,27 +25,21 @@ pub inline fn aggregateRefsProps(
     var filter: []u8 = undefined;
 
     const header = utils.readNext(t.AggRefsHeader, q, i);
-    // utils.debugPrint("aggregateRefsProps header: {any}\n", .{header});
 
     const accumulatorProp = try ctx.db.allocator.alloc(u8, header.accumulatorSize);
     @memset(accumulatorProp, 0);
     defer ctx.db.allocator.free(accumulatorProp);
 
-    var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
-
-    const hasFilter = header.filterSize > 0;
-    if (hasFilter) {
-        filter = utils.sliceNext(header.filterSize, q, i);
-        try Filter.prepare(filter, ctx, it.dstType);
-    }
-
     const hllAccumulator = Selva.c.selva_string_create(null, Selva.c.HLL_INIT_SIZE, Selva.c.SELVA_STRING_MUTABLE);
     defer Selva.c.selva_string_free(hllAccumulator);
 
+    var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
+    defer groupByHashMap.deinit();
+
     var aggCtx = Aggregates.AggCtx{
         .queryCtx = ctx,
-        .typeEntry = it.dstType,
-        .edgeTypeEntry = it.edgeType,
+        .typeEntry = undefined,
+        .edgeTypeEntry = null,
         .limit = std.math.maxInt(u32), // unlimited in branched queries
         .hllAccumulator = hllAccumulator,
         .isSamplingSet = header.isSamplingSet,
@@ -53,24 +47,92 @@ pub inline fn aggregateRefsProps(
         .resultsSize = header.resultsSize,
     };
 
-    if (header.hasGroupBy) {
-        var groupByHashMap = GroupByHashMap.init(ctx.db.allocator);
-        defer groupByHashMap.deinit();
+    try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
+    try ctx.thread.query.append(header.targetProp);
+    switch (header.iteratorType) {
+        .aggregate => {
+            var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
 
-        _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, hasFilter, filter, q[i.* .. i.* + header.aggDefsSize]);
+            aggCtx.typeEntry = it.dstType;
+            _ = try Aggregates.iterator(&aggCtx, &it, false, undefined, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
+            try ctx.thread.query.append(@as(u32, header.resultsSize));
+            try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
+        },
+        .aggregateFilter => {
+            var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
 
-        try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
-        try ctx.thread.query.append(header.targetProp);
-        try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
-        try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
-        i.* += header.aggDefsSize;
-    } else {
-        _ = try Aggregates.iterator(&aggCtx, &it, hasFilter, filter, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
+            filter = utils.sliceNext(header.filterSize, q, i);
+            try Filter.prepare(filter, ctx, it.dstType);
 
-        try ctx.thread.query.append(@intFromEnum(t.ReadOp.aggregation));
-        try ctx.thread.query.append(header.targetProp);
-        try ctx.thread.query.append(@as(u32, header.resultsSize));
-        try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
-        i.* += header.aggDefsSize;
+            aggCtx.typeEntry = it.dstType;
+            _ = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
+            try ctx.thread.query.append(@as(u32, header.resultsSize));
+            try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
+        },
+        .aggregateEdge => {
+            var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
+
+            aggCtx.typeEntry = it.dstType;
+            aggCtx.edgeTypeEntry = it.edgeType;
+            _ = try Aggregates.iterator(&aggCtx, &it, false, undefined, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
+            try ctx.thread.query.append(@as(u32, header.resultsSize));
+            try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
+        },
+        .aggregateEdgeFilter => {
+            var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
+
+            filter = utils.sliceNext(header.filterSize, q, i);
+            try Filter.prepare(filter, ctx, it.dstType);
+
+            aggCtx.typeEntry = it.dstType;
+            aggCtx.edgeTypeEntry = it.edgeType;
+            _ = try Aggregates.iterator(&aggCtx, &it, true, filter, q[i.* .. i.* + header.aggDefsSize], accumulatorProp);
+            try ctx.thread.query.append(@as(u32, header.resultsSize));
+            try Aggregates.finalizeResults(&aggCtx, q[i.* .. i.* + header.aggDefsSize], accumulatorProp, 0);
+        },
+        .groupBy => {
+            var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
+
+            aggCtx.typeEntry = it.dstType;
+            _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, false, undefined, q[i.* .. i.* + header.aggDefsSize]);
+            try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
+            try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
+        },
+        .groupByFilter => {
+            var it = try References.iterator(false, false, ctx.db, from, header.targetProp, fromType);
+
+            filter = utils.sliceNext(header.filterSize, q, i);
+            try Filter.prepare(filter, ctx, it.dstType);
+
+            aggCtx.typeEntry = it.dstType;
+            _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filter, q[i.* .. i.* + header.aggDefsSize]);
+            try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
+            try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
+        },
+        .groupByEdge => {
+            var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
+
+            aggCtx.typeEntry = it.dstType;
+            aggCtx.edgeTypeEntry = it.edgeType;
+            _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, false, undefined, q[i.* .. i.* + header.aggDefsSize]);
+            try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
+            try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
+        },
+        .groupByEdgeFilter => {
+            var it = try References.iterator(false, true, ctx.db, from, header.targetProp, fromType);
+
+            filter = utils.sliceNext(header.filterSize, q, i);
+            try Filter.prepare(filter, ctx, it.dstType);
+
+            aggCtx.typeEntry = it.dstType;
+            aggCtx.edgeTypeEntry = it.edgeType;
+            _ = GroupBy.iterator(&aggCtx, &groupByHashMap, &it, true, filter, q[i.* .. i.* + header.aggDefsSize]);
+            try ctx.thread.query.append(@as(u32, @intCast(aggCtx.totalResultsSize)));
+            try GroupBy.finalizeRefsGroupResults(&aggCtx, &groupByHashMap, q[i.* .. i.* + header.aggDefsSize]);
+        },
+        else => {
+            // throw?
+        },
     }
+    i.* += header.aggDefsSize;
 }
