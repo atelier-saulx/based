@@ -105,7 +105,7 @@ type InferPropLogic<
     : Prop extends { type: infer T extends keyof TypeMap }
       ? TypeMap[T]
       : Prop extends { enum: infer E extends readonly any[] }
-        ? E[number] | undefined
+        ? E[number] | null
         : Prop extends { ref: infer R extends string }
           ? IsSelected<Selection> extends true
             ? R extends keyof Types
