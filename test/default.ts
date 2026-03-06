@@ -448,8 +448,8 @@ await test('object', async (t) => {
     {
       id: snurpId,
       preferences: {
-        units: undefined,
-        theme: undefined,
+        units: null,
+        theme: null,
         toursEnabled: true,
         analyticsEnabled: false,
       },
