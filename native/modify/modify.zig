@@ -94,7 +94,7 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
                     const currentValue = current[main.start .. main.start + main.size];
                     const same = std.mem.eql(u8, currentValue, value);
                     if (same == false) {
-                        Sort.remove(db.decompressor, ms, current, node);
+                        Sort.remove(db.decompressor, ms, currentValue, node);
                         utils.copy(u8, current, value, main.start);
                         Sort.insert(db.decompressor, ms, current, node);
                         continue;
@@ -196,15 +196,13 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
 
                     if (updateSort) {
                         if (Sort.getSortIndex(typeSort, prop.id, 0, t.LangCode.none)) |propSort| {
-                            const count = selva.c.hll_count(hll)[0..4];
+                            Sort.remove(db.decompressor, propSort, selva.c.hll_count(hll)[0..4], node);
                             while (k < value.len) {
                                 const hash = utils.read(u64, value, k);
                                 selva.c.hll_add(hll, hash);
                                 k += 8;
                             }
-                            const newCount = selva.c.hll_count(hll)[0..4];
-                            Sort.remove(db.decompressor, propSort, count, node);
-                            Sort.insert(db.decompressor, propSort, newCount, node);
+                            Sort.insert(db.decompressor, propSort, selva.c.hll_count(hll)[0..4], node);
                             continue;
                         }
                     }
@@ -515,6 +513,7 @@ pub fn modify(
         j += resItemSize;
     }
 
+    // TODO remove this (after we verify how dependent is handled)
     expire(db) catch {};
     utils.write(result, j, 0);
     if (j < size) @memset(result[j..size], 0);

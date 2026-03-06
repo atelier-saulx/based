@@ -62,7 +62,6 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   }
 
   props.includeSize(ctx.query.data, include(ast, ctx, typeDef), headerIndex)
-
   props.iteratorType(
     ctx.query.data,
     getIteratorType(readQueryHeader(ctx.query.data, headerIndex), ast),
