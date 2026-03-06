@@ -64,7 +64,9 @@ await test('include', async (t) => {
   //   syntheticData += 'ab'
   // }
 
-  syntheticData = italy
+  // syntheticData = italy
+
+  syntheticData = 'my snurfelbag'
 
   const a = client.create('user', {
     name: 'mr jim',
@@ -95,7 +97,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 1e6; i++) {
     client.create('user', {
       big: syntheticData,
       name: `mr snurf ${i}`,
@@ -132,30 +134,30 @@ await test('include', async (t) => {
   const ast: QueryAst = {
     type: 'user',
     range: { start: 0, end: 3 },
-    // filter: {
-    //   props: {
-    //     big: {
-    //       ops: [
-    //         { op: 'includes', val: 'abab' },
-    //         // { op: '=', val: syntheticData },
-    //       ],
-    //     },
-    //   },
-    // },
+    filter: {
+      props: {
+        big: {
+          ops: [
+            { op: 'includes', val: 'abab' },
+            // { op: '=', val: syntheticData },
+          ],
+        },
+      },
+    },
     props: {
-      // big: { include: {} },
-      // y: { include: {} },
+      big: { include: {} },
+      y: { include: {} },
       name: { include: {} },
-      // derp: { include: {} },
-      // x: { include: {} },
-      // enum: { include: {} },
-      // friends: {
-      //   props: {
-      //     name: { include: {} },
-      //     y: { include: {} },
-      //     x: { include: {} },
-      //   },
-      // },
+      derp: { include: {} },
+      x: { include: {} },
+      enum: { include: {} },
+      friends: {
+        props: {
+          name: { include: {} },
+          y: { include: {} },
+          x: { include: {} },
+        },
+      },
     },
   }
 

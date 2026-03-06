@@ -2,6 +2,8 @@ const t = @import("../../../types.zig");
 const utils = @import("../../../utils.zig");
 const std = @import("std");
 
+const CAPITAL = 32;
+
 const vectorLenU8 = std.simd.suggestVectorLength(u8) orelse 16;
 const indexes = std.simd.iota(u8, vectorLenU8);
 const nulls: @Vector(vectorLenU8, u8) = @splat(@as(u8, 255));
@@ -26,7 +28,10 @@ inline fn includeVector(
     const maxStart = value.len - query.len;
     var i: usize = 0;
     const queryVector: @Vector(vectorLenU8, u8) = @splat(query[0]);
-    const queryVector1: @Vector(vectorLenU8, u8) = @splat(if (useTwoChars) query[1] else 0);
+
+    const queryVector1: if (useTwoChars) @Vector(vectorLenU8, u8) else void =
+        if (useTwoChars) @splat(query[1]) else undefined;
+
     const startIdx: usize = if (useTwoChars) 2 else 1;
     const lastVector = value.len - vecLen;
     while (i <= lastVector) : (i += vectorLenU8) {
@@ -113,7 +118,7 @@ inline fn includeVector(
     return false;
 }
 
-pub inline fn includeInner(
+pub fn includeInner(
     comptime lowerCase: bool,
     query: []const u8,
     value: []const u8,
@@ -125,19 +130,40 @@ pub inline fn includeInner(
         // 'A', 'E', 'I', 'O', 'U', 'S', 'T', 'N', 'R', 'L', 'C', 'D', 'M', 'H' => true,
         else => false,
     };
+
     const vecLen: usize = if (useTwoChars) vectorLenU8 + 1 else vectorLenU8;
+
     if (value.len < vecLen) {
         var i: usize = 0;
         const maxStart = value.len - query.len;
+        // if (lowerCase) {
+        //     const firstCharCapital = query[0] - CAPITAL;
+        //     while (i <= maxStart) : (i += 1) {
+        //         if (value[i] == query[0] or value[i] == firstCharCapital) {
+        //             var j: usize = 1;
+        //             while (j < query.len) : (j += 1) {
+        //                 if (value[i + j] != query[j] or
+        //                     value[i + j] != query[j] - CAPITAL)
+        //                 {
+        //                     break;
+        //                 }
+        //             }
+        //             if (j == query.len) return true;
+        //         }
+        //     }
+        // } else {
         while (i <= maxStart) : (i += 1) {
             if (value[i] == query[0]) {
                 var j: usize = 1;
                 while (j < query.len) : (j += 1) {
-                    if (value[i + j] != query[j]) break;
+                    if (value[i + j] != query[j]) {
+                        break;
+                    }
                 }
                 if (j == query.len) return true;
             }
         }
+        // }
         return false;
     }
     if (useTwoChars) {
