@@ -1,33 +1,60 @@
 const std = @import("std");
 const includes = @import("includes.zig");
+// const includes2 = @import("includesLcase.zig");
 
-test "includeInner benchmark and isolation" {
-    const testing = std.testing;
-
-    const value = "this is a very long string that we are searching in, hoping to find a small substring hidden somewhere deep inside";
-    const query1 = "hidden";
-    const query2 = "notfound";
-    const query3 = "t";
-
-    // 1. Basic isolation assertions
-    try testing.expect(includes.includeInner(false, query1, value) == true);
-    try testing.expect(includes.includeInner(false, query2, value) == false);
-    try testing.expect(includes.includeInner(false, query3, value) == true);
-
-    // 2. Perform a small benchmark
-    var timer = try std.time.Timer.start();
+inline fn runBench(comptime lowerCase: bool, query: []const u8, value: []const u8, name: []const u8) void {
+    const repeat: comptime_int = 10;
+    const itAmount = 1_000;
     var count: usize = 0;
 
-    var i: usize = 0;
-    while (i < 1_000_000) : (i += 1) {
-        if (includes.includeInner(false, query1, value)) count += 1;
-        if (includes.includeInner(false, query2, value)) count += 1;
-        if (includes.includeInner(false, query3, value)) count += 1;
+    std.mem.doNotOptimizeAway(query);
+    std.mem.doNotOptimizeAway(value);
+
+    // flush L1 and L2 cache (approximate with a large enough array read/write)
+    var cache_flush: [1024 * 1024]u8 = undefined; // 1MB should flush L2 cache
+    var flush_idx: usize = 0;
+    var flush_sum: usize = 0;
+    while (flush_idx < cache_flush.len) : (flush_idx += 1) {
+        cache_flush[flush_idx] = @intCast(flush_idx % 256);
+        flush_sum +%= cache_flush[flush_idx];
+    }
+    std.mem.doNotOptimizeAway(flush_sum);
+
+    var j: usize = 0;
+    var totalTime: i128 = 0;
+
+    while (j < repeat) : (j += 1) {
+        var time = std.time.nanoTimestamp();
+        var i: usize = 0;
+        while (i < itAmount) : (i += 1) {
+            if (includes.includeInner(lowerCase, query, value)) count += 1;
+
+            // if (includes2.loose(lowerCase, query, value)) count += 1;
+
+            std.mem.doNotOptimizeAway(&count);
+        }
+        time = std.time.nanoTimestamp() - time;
+        totalTime += time;
     }
 
-    const time_taken = timer.read();
-    std.debug.print("\nincludeInner (bench): {any}\n", .{std.fmt.fmtDuration(time_taken)});
+    const d: comptime_int = 1000;
+    std.debug.print("{s} {s}: {any} micro seconds matched: {any} \n", .{
+        name,
+        if (lowerCase) "lcase" else "     ",
+        @divExact(@divExact(totalTime, repeat), d),
+        count,
+    });
+}
 
-    // prevent compiler optimization from removing the bit
-    try testing.expect(count == 2_000_000);
+test "compare benchmark" {
+    // const shortValue = "mrflApperdE@co";
+    // const medium = " find mrflApperdE@co a small substring ";
+
+    const value = "this is a very long string {\"flap\": 100} that we are searching in, hoping to find a small substring hidden somewhere deep inside" ** 2245;
+    const query1 = "dededede";
+
+    runBench(false, query1, value, "medium");
+    runBench(true, query1, value, "medium");
+    // runBench(false, query1, shortValue, "short");
+    // runBench(true, query1, shortValue, "short");
 }
