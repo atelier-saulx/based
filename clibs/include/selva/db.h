@@ -255,6 +255,11 @@ enum selva_expire_node_strategy {
     SELVA_EXPIRE_NODE_STRATEGY_CANCEL_OLD = 2,
 };
 
+struct SelvaExpireRes {
+    size_t n;
+    struct SelvaNode *nodes[256];
+};
+
 SELVA_EXPORT
 void selva_expire_node(struct SelvaDb *db, node_type_t type, node_id_t node_id, int64_t ts, enum selva_expire_node_strategy stg);
 
@@ -262,7 +267,7 @@ SELVA_EXPORT
 void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t node_id);
 
 SELVA_EXPORT
-void selva_db_expire_tick(struct SelvaDb *db, int64_t now);
+void selva_db_expire_tick(struct SelvaDb *db, int64_t now, struct SelvaExpireRes *res);
 
 /**
  * Delete a node.

@@ -112,17 +112,17 @@ void selva_expire_node_cancel(struct SelvaDb *db, node_type_t type, node_id_t no
     selva_expire_remove(&db->expiring, node_expire_cmp, (uint64_t)node_id | ((uint64_t)type << 32));
 }
 
-static void expire_cb(struct SelvaExpireToken *tok, void *)
+static void expire_cb(struct SelvaExpireToken *tok, void *ctx)
 {
     struct SelvaDbExpireToken *token = containerof(tok, typeof(*token), token);
+    auto eres = (struct SelvaExpireRes *)ctx;
     struct SelvaNodeRes res;
 
     auto te = selva_get_type_by_index(token->db, token->type);
     assert(te);
     res = selva_find_node(te, token->node_id);
     if (res.node) {
-        /* TODO What if the node is on FS but it's expiring */
-        selva_del_node(token->db, te, res.node);
+        eres->nodes[eres->n++] = res.node;
     }
 
     selva_free(token);
@@ -135,9 +135,9 @@ static void cancel_cb(struct SelvaExpireToken *tok)
     selva_free(token);
 }
 
-void selva_db_expire_tick(struct SelvaDb *db, int64_t now)
+void selva_db_expire_tick(struct SelvaDb *db, int64_t now, struct SelvaExpireRes *res)
 {
-    selva_expire_tick(&db->expiring, nullptr, now);
+    selva_expire_tick(&db->expiring, res, now);
 }
 
 static bool eq_type_exists(struct SelvaDb *db, node_type_t type, const uint8_t *schema_buf, size_t schema_len)
