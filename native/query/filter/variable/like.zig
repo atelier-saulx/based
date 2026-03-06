@@ -166,6 +166,7 @@ pub fn like(
                 return d;
             }
         }
+
         matches = h == queryVectorCapital;
 
         if (@reduce(.Or, matches)) {
