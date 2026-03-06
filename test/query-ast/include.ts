@@ -1,13 +1,9 @@
-import { deflate } from 'fflate'
-import { EdgeStrategy, QueryAst } from '../../src/db-query/ast/ast.js'
+import { QueryAst } from '../../src/db-query/ast/ast.js'
 import { astToQueryCtx } from '../../src/db-query/ast/toCtx.js'
-import {
-  resultToObject,
-  serializeReaderSchema,
-} from '../../src/protocol/index.js'
+import { resultToObject } from '../../src/protocol/index.js'
 import { BasedDb, debugBuffer } from '../../src/sdk.js'
 import { AutoSizedUint8Array } from '../../src/utils/AutoSizedUint8Array.js'
-import { writeUint16, writeUint32 } from '../../src/utils/uint8.js'
+import { writeUint32 } from '../../src/utils/uint8.js'
 import wait from '../../src/utils/wait.js'
 import { perf } from '../shared/perf.js'
 import test from '../shared/test.js'
@@ -64,9 +60,9 @@ await test('include', async (t) => {
   //   syntheticData += 'ab'
   // }
 
-  // syntheticData = italy
+  syntheticData = italy
 
-  syntheticData = 'my snurfelbag'
+  // syntheticData = 'my snurfelbag my snurfelBag my snurfelbag my snurfelbag'
 
   const a = client.create('user', {
     name: 'mr jim',
@@ -97,7 +93,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e3; i++) {
     client.create('user', {
       big: syntheticData,
       name: `mr snurf ${i}`,
@@ -138,8 +134,16 @@ await test('include', async (t) => {
       props: {
         big: {
           ops: [
-            { op: 'includes', val: 'abab' },
-            // { op: '=', val: syntheticData },
+            // { op: '=', val: ['ok', 'bad', 'great'] },
+            { op: 'includes', val: 'xblapx' },
+            // { op: 'like', val: 'xblapx' },
+
+            // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
+            // {
+            //   op: 'includes',
+            //   val: 'a{"name":true}',
+            //   opts: { lowerCase: true },
+            // },
           ],
         },
       },

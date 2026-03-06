@@ -1,82 +1,79 @@
 import {
-  FilterOpCompareEnum,
-  FilterOpCompare,
+  FilterOpCompareEnum as OpEnum,
+  FilterOpCompare as Op,
   PropType,
 } from '../../../zigTsExports.js'
 import { Operator } from '../ast.js'
 import { PropDef } from '../../../schema/defs/index.js'
+import { canBitwiseLowerCase } from '../../../utils/canBitwiseLowerCase.js'
 
 export const operatorToEnum = (
   op: Operator,
   val: any[],
   prop: PropDef,
-): FilterOpCompareEnum => {
+): OpEnum => {
   const size = prop.size
   const vectorLen = 16 / size
 
   if (op === '=' && val.length === 1) {
-    if (isFixedLenString(prop)) {
-      return FilterOpCompare.eqVar
-    } else if (prop.size === 0) {
-      return FilterOpCompare.eqCrc32
-    }
-    return FilterOpCompare.eq
+    return Op.eq
   }
 
+  // dont do bath here just OP (base op)
   if (op === '=' && val.length > vectorLen) {
     // var batch
-    return FilterOpCompare.eqBatch
+    return Op.eqBatch
   }
 
   if (op === '=' && val.length <= vectorLen) {
     // var batch
-    return FilterOpCompare.eqBatchSmall
+    return Op.eqBatchSmall
   }
 
   if (op === '!=' && val.length === 1) {
-    if (isFixedLenString(prop)) {
-      return FilterOpCompare.neqVar
-    } else if (prop.size === 0) {
-      return FilterOpCompare.neqCrc32
-    }
-    // else if string,
-    return FilterOpCompare.neq
+    return Op.neq
   }
 
   if (op === '!=' && val.length > vectorLen) {
     // var batch
-    return FilterOpCompare.neqBatch
+    return Op.neqBatch
   }
 
   if (op === '!=' && val.length <= vectorLen) {
     // var batch
-    return FilterOpCompare.neqBatchSmall
+    return Op.neqBatchSmall
   }
 
   if (op === '>') {
-    return FilterOpCompare.gt
+    return Op.gt
   }
 
   if (op === '>=') {
-    return FilterOpCompare.ge
+    return Op.ge
   }
 
   if (op === '<') {
-    return FilterOpCompare.lt
+    return Op.lt
   }
 
   if (op === '<=') {
-    return FilterOpCompare.le
+    return Op.le
   }
 
   if (op === 'includes') {
-    // var batch
-    return FilterOpCompare.inc
+    return Op.inc
   }
 
   if (op === '!includes') {
-    // var batch
-    return FilterOpCompare.ninc
+    return Op.ninc
+  }
+
+  if (op === 'like') {
+    return Op.like
+  }
+
+  if (op === '!like') {
+    return Op.nlike
   }
 
   throw new Error(`Unsupported compare operator ${op}`)

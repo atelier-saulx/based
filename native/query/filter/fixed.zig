@@ -26,7 +26,7 @@ pub fn eqBatchSmall(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondi
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
-    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + @alignOf(T) - c.offset]);
+    const values = utils.toSlice(T, q[i + size - c.offset .. i + c.size + @alignOf(T) - c.offset]);
     const vec: @Vector(vectorLen, T) = values[0..][0..vectorLen].*;
     return (std.simd.countElementsWithValue(vec, value) != 0);
 }
