@@ -111,7 +111,14 @@ export const variableComparison = (
       op = op === Op.neq ? Op.neqCrc32 : Op.eqCrc32
     }
   }
-  if (op === Op.inc || op === Op.ninc) {
+
+  if (op === Op.like || op === Op.nlike) {
+    const value = val[0].normalize('NFKD')
+    const size = native.stringByteLength(value)
+    const { condition, offset } = createCondition(prop, op, size, 0)
+    ENCODER.encodeInto(value, condition.subarray(offset))
+    return condition
+  } else if (op === Op.inc || op === Op.ninc) {
     let value: string
     if (opts?.lowerCase) {
       value = val[0].toLowerCase().normalize('NFKD')

@@ -8,7 +8,8 @@ const t = @import("../../../types.zig");
 const Thread = @import("../../../thread/thread.zig");
 
 const deflate = @import("./deflate.zig");
-const includeInner = @import("./includes.zig").includeInner;
+const includeInner = @import("./includes.zig").include;
+const likeInner = @import("./like.zig").like;
 
 pub fn parse(
     thread: *Thread.Thread,
@@ -43,6 +44,10 @@ pub fn incLcaseFast(query: []const u8, value: []const u8) bool {
 
 pub fn inc(query: []const u8, value: []const u8) bool {
     return includeInner(.default, query, value);
+}
+
+pub fn like(query: []const u8, value: []const u8) bool {
+    return likeInner(query, value) < 2; // make this config first number in query
 }
 
 pub const eqCrc32 = @import("./eqCrc32.zig").eqCrc32;

@@ -1,5 +1,7 @@
 const std = @import("std");
 const includes = @import("includes.zig");
+const like = @import("like.zig");
+
 // const includes2 = @import("includesLcase.zig");
 
 inline fn runBench(comptime case: includes.Case, query: []const u8, value: []const u8, name: []const u8) void {

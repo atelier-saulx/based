@@ -2,28 +2,28 @@ const std = @import("std");
 
 const TO_CAPITAL = 32;
 
-const vectorLenU8 = std.simd.suggestVectorLength(u8) orelse 16;
-const indexes = std.simd.iota(u8, vectorLenU8);
-const nulls: @Vector(vectorLenU8, u8) = @splat(@as(u8, 255));
-const ones: @Vector(vectorLenU8, u8) = @splat(1);
-const zeroes: @Vector(vectorLenU8, u8) = @splat(0);
-const falses: @Vector(vectorLenU8, bool) = @splat(false); // Helper for Vector AND
-const MaskInt = std.meta.Int(.unsigned, vectorLenU8);
-const zeroesMask: @Vector(vectorLenU8, MaskInt) = @splat(0);
-const indexBitMask: @Vector(vectorLenU8, MaskInt) = blk: {
-    var weights: [vectorLenU8]MaskInt = undefined;
+const vectorLen = std.simd.suggestVectorLength(u8) orelse 16;
+const indexes = std.simd.iota(u8, vectorLen);
+const nulls: @Vector(vectorLen, u8) = @splat(@as(u8, 255));
+const ones: @Vector(vectorLen, u8) = @splat(1);
+const zeroes: @Vector(vectorLen, u8) = @splat(0);
+const falses: @Vector(vectorLen, bool) = @splat(false); // Helper for Vector AND
+const MaskInt = std.meta.Int(.unsigned, vectorLen);
+const zeroesMask: @Vector(vectorLen, MaskInt) = @splat(0);
+const indexBitMask: @Vector(vectorLen, MaskInt) = blk: {
+    var weights: [vectorLen]MaskInt = undefined;
     for (&weights, 0..) |*w, idx| w.* = @as(MaskInt, 1) << @intCast(idx);
     break :blk weights;
 };
-const vecA: @Vector(vectorLenU8, u8) = @splat('A');
-const vecZ: @Vector(vectorLenU8, u8) = @splat('Z');
-const vecZMinA: @Vector(vectorLenU8, u8) = @splat('Z' - 'A');
-const captialMask: @Vector(vectorLenU8, u8) = @splat(TO_CAPITAL);
+const vecA: @Vector(vectorLen, u8) = @splat('A');
+const vecZ: @Vector(vectorLen, u8) = @splat('Z');
+const vecZMinA: @Vector(vectorLen, u8) = @splat('Z' - 'A');
+const captialMask: @Vector(vectorLen, u8) = @splat(TO_CAPITAL);
 
 inline fn safeToLowerVec(
     comptime case: Case,
-    vec: @Vector(vectorLenU8, u8),
-) @Vector(vectorLenU8, u8) {
+    vec: @Vector(vectorLen, u8),
+) @Vector(vectorLen, u8) {
     return switch (case) {
         .default => vec,
         .lowerFast => vec | captialMask,
@@ -47,15 +47,16 @@ inline fn includeBody(
     query: []const u8,
     value: []const u8,
     i: usize,
-    qVec: @Vector(vectorLenU8, u8),
-    qVecFirstTwo: if (useTwoChars) @Vector(vectorLenU8, u8) else void,
+    qVec: @Vector(vectorLen, u8),
+    qVecFirstTwo: if (useTwoChars) @Vector(vectorLen, u8) else void,
     maxStart: usize,
 ) ?bool {
+    // batch requires re-use of the qVec
     const startIdx: comptime_int = if (useTwoChars) 2 else 1;
-    const h = safeToLowerVec(case, value[i..][0..vectorLenU8].*);
+    const h = safeToLowerVec(case, value[i..][0..vectorLen].*);
     var matches = h == qVec;
     if (useTwoChars) {
-        const h1: @Vector(vectorLenU8, u8) = safeToLowerVec(case, value[i + 1 ..][0..vectorLenU8].*);
+        const h1: @Vector(vectorLen, u8) = safeToLowerVec(case, value[i + 1 ..][0..vectorLen].*);
         matches = @select(bool, matches, h1 == qVecFirstTwo, falses);
     }
     if (@reduce(.Or, matches)) {
@@ -104,16 +105,16 @@ inline fn includeVector(
     query: []const u8,
     value: []const u8,
 ) bool {
-    const vecLen = if (useTwoChars) vectorLenU8 + 1 else vectorLenU8;
+    const vecLen = if (useTwoChars) vectorLen + 1 else vectorLen;
     const maxStart = value.len - query.len;
     const lastVector = value.len - vecLen;
     var i: usize = 0;
 
-    const q: @Vector(vectorLenU8, u8) = @splat(query[0]);
-    const qFirstTwo: if (useTwoChars) @Vector(vectorLenU8, u8) else void =
+    const q: @Vector(vectorLen, u8) = @splat(query[0]);
+    const qFirstTwo: if (useTwoChars) @Vector(vectorLen, u8) else void =
         if (useTwoChars) @splat(query[1]) else undefined;
 
-    while (i <= lastVector) : (i += vectorLenU8) {
+    while (i <= lastVector) : (i += vectorLen) {
         if (includeBody(useTwoChars, case, query, value, i, q, qFirstTwo, maxStart)) |pass| {
             return pass;
         }
@@ -129,7 +130,13 @@ inline fn includeVector(
     return false;
 }
 
-pub fn includeInner(
+// will add another which is BATCH
+
+// for batch have to prep the queries in a vector in the actualy query we loaded
+// this means we need to allocated 16bytes extra in the query ... not great
+// other option is to make some shared mem that we use for this
+
+pub fn include(
     comptime case: Case,
     query: []const u8,
     value: []const u8,
@@ -143,7 +150,7 @@ pub fn includeInner(
         else => false,
     };
 
-    const vecLen: usize = if (useTwoChars) vectorLenU8 + 1 else vectorLenU8;
+    const vecLen: usize = if (useTwoChars) vectorLen + 1 else vectorLen;
 
     if (value.len < vecLen) {
         var i: usize = 0;

@@ -15,6 +15,7 @@ pub const Function = enum(u8) {
     incLcaseFast,
     eqVar,
     eqCrc32,
+    like,
 };
 
 pub const OpMeta = struct { invert: bool = false, func: Function };
@@ -38,6 +39,7 @@ fn getFunc(comptime tag: t.FilterOpCompare) Function {
         .incLcaseFast, .nincLcaseFast => Function.incLcaseFast,
         .eqVar, .neqVar => Function.eqVar,
         .eqCrc32, .neqCrc32 => Function.eqCrc32,
+        .like, .nlike => Function.like,
         else => Function.eq,
     };
 }
@@ -57,6 +59,7 @@ pub fn parseOp(comptime op: t.FilterOpCompare) OpMeta {
             .neqCrc32,
             .neqCrc32Batch,
             .neqVarBatch,
+            .nlike,
             => true,
             else => false,
         },

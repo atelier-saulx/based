@@ -19,6 +19,7 @@ export const operatorToEnum = (
     return Op.eq
   }
 
+  // dont do bath here just OP (base op)
   if (op === '=' && val.length > vectorLen) {
     // var batch
     return Op.eqBatch
@@ -64,8 +65,15 @@ export const operatorToEnum = (
   }
 
   if (op === '!includes') {
-    // var batch
     return Op.ninc
+  }
+
+  if (op === 'like') {
+    return Op.like
+  }
+
+  if (op === '!like') {
+    return Op.nlike
   }
 
   throw new Error(`Unsupported compare operator ${op}`)

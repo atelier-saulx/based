@@ -57,6 +57,8 @@ pub fn prepare(
                     try prepare(q[end .. end + select.size], ctx, select.typeEntry);
                     i = end + select.size;
                 },
+                // .nincLcase => {}
+                // can check it here...
                 else => {
                     i = end;
                 },
@@ -107,6 +109,7 @@ inline fn compare(
         .incLcase => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcase),
         .incLcaseFast => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcaseFast),
         .eqVar => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eq),
+        .like => Variable.parse(thread, q, v, index, c, fixedLen, Variable.like),
     };
     return if (meta.invert) !res else res;
 }
@@ -138,6 +141,8 @@ pub inline fn filter(
         }
 
         pass = switch (c.op.compare) {
+            // select Id
+            // select Alias
             .nextOrIndex => blk: {
                 end = utils.readPtr(u64, q, index + @alignOf(u64) - c.offset).*;
                 break :blk true;

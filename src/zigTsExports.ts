@@ -62,6 +62,7 @@ export const OpType = {
   unloadBlock: 129,
   loadCommon: 130,
   emptyMod: 133,
+  expire: 134,
   noOp: 255,
 } as const
 
@@ -87,6 +88,7 @@ export const OpTypeInverse = {
   129: 'unloadBlock',
   130: 'loadCommon',
   133: 'emptyMod',
+  134: 'expire',
   255: 'noOp',
 } as const
 
@@ -112,6 +114,7 @@ export const OpTypeInverse = {
   unloadBlock, 
   loadCommon, 
   emptyMod, 
+  expire, 
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
@@ -4113,6 +4116,8 @@ export const FilterOpCompare = {
   nincLcaseFast: 39,
   incBatchLcaseFast: 40,
   nincBatchLcaseFast: 41,
+  like: 42,
+  nlike: 43,
   selectLargeRefs: 203,
   selectRef: 204,
   selectSmallRefs: 205,
@@ -4154,6 +4159,8 @@ export const FilterOpCompareInverse = {
   39: 'nincLcaseFast',
   40: 'incBatchLcaseFast',
   41: 'nincBatchLcaseFast',
+  42: 'like',
+  43: 'nlike',
   203: 'selectLargeRefs',
   204: 'selectRef',
   205: 'selectSmallRefs',
@@ -4195,6 +4202,8 @@ export const FilterOpCompareInverse = {
   nincLcaseFast, 
   incBatchLcaseFast, 
   nincBatchLcaseFast, 
+  like, 
+  nlike, 
   selectLargeRefs, 
   selectRef, 
   selectSmallRefs, 
