@@ -17,6 +17,7 @@ fn handleExpired(threads: *Thread.Threads) void {
             .type = Node.getNodeTypeId(node.?),
             .id = Node.getNodeId(node.?),
             .isTmp = false,
+            ._padding = 0,
         };
 
         threads.modifyLocked(@ptrCast(&msg)) catch |e| {
