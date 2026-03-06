@@ -7,7 +7,7 @@ const Fields = @import("../../selva/fields.zig");
 const Selva = @import("../../selva/selva.zig");
 const t = @import("../../types.zig");
 const Fixed = @import("fixed.zig");
-const Variable = @import("variable.zig");
+const Variable = @import("./variable/variable.zig");
 const Thread = @import("../../thread/thread.zig");
 
 const Instruction = @import("instruction.zig");
@@ -103,22 +103,17 @@ inline fn compare(
         .eqBatch => Fixed.eqBatch(T, q, v, index, c),
         .eqBatchSmall => Fixed.eqBatchSmall(T, q, v, index, c),
         .eqCrc32 => Variable.eqCrc32(q, v, index, c),
-        .inc => Variable.parseValue(thread, q, v, index, c, fixedLen, Variable.include),
-        .incLowerCase => Variable.parseValue(thread, q, v, index, c, fixedLen, Variable.includeLowerCase),
-        .eqVar => Variable.parseValue(thread, q, v, index, c, fixedLen, Variable.eqVar),
+        .inc => Variable.parse(thread, q, v, index, c, fixedLen, Variable.inc),
+        .incLcase => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcase),
+        .eqVar => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eq),
     };
     return if (meta.invert) !res else res;
 }
 
-// MAKE EDGE FILTER
-
-// Check if this becomes better
 pub inline fn filter(
     node: Node.Node,
     ctx: *Query.QueryCtx,
     q: []u8,
-    // comptime hasEdge: bool,
-    // edge: if (hasEdge) Node.Node else void,
 ) !bool {
     var i: usize = 0;
     var pass: bool = true;
@@ -133,6 +128,7 @@ pub inline fn filter(
 
         if (prop != c.prop) {
             prop = c.prop;
+            // handle alias seperate;ly (seperate command)
             // if (c.fieldSchema.type == Selva.c.SELVA_FIELD_TYPE_ALIAS) {
             //     v = try Fields.getAliasByNode(try Node.getType(ctx.db, node), node, c.fieldSchema.field);
             // } else {

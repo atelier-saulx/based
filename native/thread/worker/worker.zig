@@ -120,8 +120,14 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     // .unsubscribe => try Subscription.unsubscribe(threads.ctx, m, thread),
                     else => {},
                 }
+
+                std.debug.print("TILL HERE. {any} MOD..\n", .{op});
+
                 // this is not always nessecary e.g. subscribe does not need this
                 thread.modify.commit();
+
+                std.debug.print("2 TILL HERE. MOD..\n", .{});
+
                 threads.mutex.lock();
                 threads.pendingModifies -= 1;
                 thread.pendingModifies -= 1;

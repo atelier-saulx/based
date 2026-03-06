@@ -864,10 +864,10 @@ pub const FilterOpCompare = enum(u8) {
     incBatch = 24,
     nincBatch = 25,
     // ----------
-    incLowerCase = 26,
-    nincLowerCase = 27,
-    incBatchLowerCase = 28,
-    nincBatchLowerCase = 29,
+    incLcase = 26,
+    nincLcase = 27,
+    incBatchLcase = 28,
+    nincBatchLcase = 29,
     // ----------
     eqVar = 30,
     neqVar = 31,

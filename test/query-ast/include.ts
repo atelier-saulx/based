@@ -27,7 +27,7 @@ await test('include', async (t) => {
       user: {
         derp: { type: 'string', maxBytes: 2 },
         name: 'string',
-        big: { type: 'string', compression: 'deflate' },
+        big: { type: 'string', compression: 'none' },
         x: 'boolean',
         flap: 'uint32',
         enum: ['ok', 'bad', 'great'],
@@ -60,11 +60,11 @@ await test('include', async (t) => {
   //   syntheticData += 'ab'
   // }
 
-  for (let i = 0; i < 200; i++) {
-    syntheticData += 'ab'
-  }
+  // for (let i = 0; i < 200; i++) {
+  //   syntheticData += 'ab'
+  // }
 
-  // syntheticData = italy
+  syntheticData = italy
 
   const a = client.create('user', {
     name: 'mr jim',
@@ -95,7 +95,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 1000; i++) {
     client.create('user', {
       big: syntheticData,
       name: `mr snurf ${i}`,
@@ -118,7 +118,7 @@ await test('include', async (t) => {
 
   await db.drain()
 
-  console.log(Date.now() - d, 'ms')
+  console.log('mod create done', Date.now() - d, 'ms')
 
   // filter: RE-ADD REFERENCE
   // filter: REFERENCES
@@ -132,30 +132,30 @@ await test('include', async (t) => {
   const ast: QueryAst = {
     type: 'user',
     range: { start: 0, end: 3 },
-    filter: {
-      props: {
-        big: {
-          ops: [
-            // { op: 'includes', val: 'abab', opts: { lowerCase: true } },
-            { op: '=', val: syntheticData },
-          ],
-        },
-      },
-    },
+    // filter: {
+    //   props: {
+    //     big: {
+    //       ops: [
+    //         { op: 'includes', val: 'abab' },
+    //         // { op: '=', val: syntheticData },
+    //       ],
+    //     },
+    //   },
+    // },
     props: {
-      big: { include: {} },
-      y: { include: {} },
+      // big: { include: {} },
+      // y: { include: {} },
       name: { include: {} },
-      derp: { include: {} },
-      x: { include: {} },
-      enum: { include: {} },
-      friends: {
-        props: {
-          name: { include: {} },
-          y: { include: {} },
-          x: { include: {} },
-        },
-      },
+      // derp: { include: {} },
+      // x: { include: {} },
+      // enum: { include: {} },
+      // friends: {
+      //   props: {
+      //     name: { include: {} },
+      //     y: { include: {} },
+      //     x: { include: {} },
+      //   },
+      // },
     },
   }
 
@@ -176,7 +176,9 @@ await test('include', async (t) => {
     queries.push(x)
   }
 
-  await perf.skip(
+  console.log('START PERF', Date.now() - d, 'ms')
+
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
@@ -191,6 +193,8 @@ await test('include', async (t) => {
     },
   )
 
+  console.log(' PERF DONE', Date.now() - d, 'ms')
+
   // const readSchemaBuf = serializeReaderSchema(ctx.readSchema)
   const result = await db.server.getQueryBuf(ctx.query)
   console.log(result.byteLength)
@@ -204,6 +208,7 @@ await test('include', async (t) => {
   // RETURN NULL FOR UNDEFINED
 
   console.log(
+    'REACHED TILL END!',
     // JSON.stringify(obj).length,
     result.byteLength,
   )
