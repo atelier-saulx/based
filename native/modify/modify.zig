@@ -203,11 +203,8 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
                                 k += 8;
                             }
                             const newCount = selva.c.hll_count(hll)[0..4];
-                            // TODO verify if it's aligned
-                            if (utils.readPtr(u32, count, 0).* != utils.readPtr(u32, newCount, 0).*) {
-                                Sort.remove(db.decompressor, propSort, count, node);
-                                Sort.insert(db.decompressor, propSort, newCount, node);
-                            }
+                            Sort.remove(db.decompressor, propSort, count, node);
+                            Sort.insert(db.decompressor, propSort, newCount, node);
                             continue;
                         }
                     }
@@ -518,6 +515,19 @@ pub fn modify(
         j += resItemSize;
     }
 
+    expire(db) catch {};
     utils.write(result, j, 0);
     if (j < size) @memset(result[j..size], 0);
+}
+
+pub inline fn expire(db: *DbCtx) !void {
+    // TODO partials
+    while (true) {
+        const res = Node.expirePop(db);
+        if (res.id == 0) break;
+        const typeEntry = try Node.getType(db, res.type);
+        if (Node.getNode(typeEntry, res.id)) |node| {
+            Node.deleteNode(db, typeEntry, node) catch {};
+        }
+    }
 }

@@ -8,7 +8,8 @@ const t = @import("../../../types.zig");
 const Thread = @import("../../../thread/thread.zig");
 
 const deflate = @import("./deflate.zig");
-const includeInner = @import("./includes.zig").includeInner;
+const includeInner = @import("./includes.zig").include;
+const likeInner = @import("./like.zig").like;
 
 pub fn parse(
     thread: *Thread.Thread,
@@ -33,14 +34,23 @@ pub fn parse(
     return compare(query, value);
 }
 
-const includeInner2 = @import("./includesLcase.zig").loose;
-
 pub fn incLcase(query: []const u8, value: []const u8) bool {
-    return includeInner(true, query, value);
+    return includeInner(.lower, query, value);
+}
+
+pub fn incLcaseFast(query: []const u8, value: []const u8) bool {
+    return includeInner(.lowerFast, query, value);
 }
 
 pub fn inc(query: []const u8, value: []const u8) bool {
-    return includeInner(false, query, value);
+    return includeInner(.default, query, value);
+}
+
+pub fn like(query: []const u8, value: []const u8) bool {
+    // for search it passes a number might add a comptime var
+    const bla = likeInner(3, query, value);
+    // std.debug.print("bla {any} \n", .{bla});
+    return bla < 4; // make this config first number in query
 }
 
 pub const eqCrc32 = @import("./eqCrc32.zig").eqCrc32;
