@@ -53,7 +53,7 @@ inline fn includeBody(
 ) ?bool {
     // batch requires re-use of the qVec
     const startIdx: comptime_int = if (useTwoChars) 2 else 1;
-    const h = safeToLowerVec(case, value[i..][0..vectorLen].*);
+    const h = value[i..][0..vectorLen].*; // safeToLowerVec(case, value[i..][0..vectorLen].*);
     var matches = h == qVec;
     if (useTwoChars) {
         const h1: @Vector(vectorLen, u8) = safeToLowerVec(case, value[i + 1 ..][0..vectorLen].*);

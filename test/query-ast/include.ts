@@ -134,9 +134,9 @@ await test('include', async (t) => {
       props: {
         big: {
           ops: [
-            { op: 'includes', val: 'xaderp' },
+            { op: 'like', val: 'itoly' },
 
-            // { op: 'includes', val: 'xaderp', opts: { lowerCase: true } },
+            // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
             // {
             //   op: 'includes',
             //   val: 'a{"name":true}',

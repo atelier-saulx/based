@@ -12,7 +12,7 @@ const nulls: @Vector(vectorLen, u8) = @splat(255);
 const indexes = std.simd.iota(u8, vectorLen);
 const capitals: @Vector(vectorLen, u8) = @splat(TO_CAPITAL);
 const seperatorChars: @Vector(8, u8) = .{ '\n', ' ', '"', '\'', '-', '.', ':', ';' };
-const minDist = 2; // 0,1 is fine
+// const minDist = 2; // 0,1 is fine
 
 inline fn isSeparator(ch: u8) bool {
     return simd.countElementsWithValue(seperatorChars, ch) > 0;
@@ -76,6 +76,7 @@ fn hamming(
 }
 
 fn resultMatcher(
+    minDist: u8,
     dx: u8,
     matches: @Vector(vectorLen, bool),
     i: usize,
@@ -120,6 +121,7 @@ fn resultMatcher(
 }
 
 pub fn like(
+    minDist: u8,
     query: []const u8,
     value: []const u8,
 ) u8 {
@@ -159,7 +161,7 @@ pub fn like(
         // also use std.ascitoLower
 
         if (@reduce(.Or, matches)) {
-            d = resultMatcher(d, matches, i, value, query);
+            d = resultMatcher(minDist, d, matches, i, value, query);
             if (d < minDist) {
                 return d;
             }
@@ -167,7 +169,7 @@ pub fn like(
         matches = h == queryVectorCapital;
 
         if (@reduce(.Or, matches)) {
-            d = resultMatcher(d, matches, i, value, query);
+            d = resultMatcher(minDist, d, matches, i, value, query);
             if (d < minDist) {
                 return d;
             }

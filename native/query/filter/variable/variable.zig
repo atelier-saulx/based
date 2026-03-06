@@ -47,7 +47,10 @@ pub fn inc(query: []const u8, value: []const u8) bool {
 }
 
 pub fn like(query: []const u8, value: []const u8) bool {
-    return likeInner(query, value) < 2; // make this config first number in query
+    // for search it passes a number might add a comptime var
+    const bla = likeInner(3, query, value);
+    // std.debug.print("bla {any} \n", .{bla});
+    return bla < 4; // make this config first number in query
 }
 
 pub const eqCrc32 = @import("./eqCrc32.zig").eqCrc32;
