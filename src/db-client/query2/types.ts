@@ -371,8 +371,9 @@ export type NumberPaths<
 export type SortablePaths<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
+  EdgeProps extends Record<string, any> = {},
 > = {
-  [K in Path<S, T>]: InferPathType<S, T, K> extends
+  [K in Path<S, T>]: InferPathType<S, T, K, EdgeProps> extends
     | string
     | number
     | Uint8Array

@@ -528,7 +528,7 @@ class Query<
     return this as any
   }
 
-  sort<P extends SortablePaths<S, T>>(
+  sort<P extends SortablePaths<S, T, EdgeProps>>(
     prop: P,
   ): NextBranch<
     S,
