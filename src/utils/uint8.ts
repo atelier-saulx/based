@@ -250,7 +250,7 @@ export const readInt64 = (src: Uint8Array, offset: number): number => {
   // Check the sign bit first without doing full arithmetic
   if (src[offset + 7] & 0x80) {
     // Use DataView for negative values to ensure precision
-    const view = new DataView(src.buffer, offset, 8)
+    const view = new DataView(src.buffer, src.byteOffset + offset, 8)
     const result = view.getBigInt64(0, true) // true for little-endian
     return Number(result)
   }

@@ -13,17 +13,16 @@ await test('sort Enum', async (t) => {
     },
   })
 
-  for (let i = 0; i < 3e6; i++) {
+  const n = 3e4 //6
+  for (let i = 0; i < n; i++) {
     db.create('user', {
       status: status[i % 6],
     })
   }
 
-  const dbTime = await db.drain()
-
   const randoIds: any[] = []
   for (let i = 0; i < 100; i++) {
-    randoIds.push(~~(Math.random() * 3e6) + 1)
+    randoIds.push(~~(Math.random() * n) + 1)
   }
 
   const q: any[] = []

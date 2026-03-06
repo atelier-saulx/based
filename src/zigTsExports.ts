@@ -62,6 +62,7 @@ export const OpType = {
   unloadBlock: 129,
   loadCommon: 130,
   emptyMod: 133,
+  expire: 134,
   noOp: 255,
 } as const
 
@@ -87,6 +88,7 @@ export const OpTypeInverse = {
   129: 'unloadBlock',
   130: 'loadCommon',
   133: 'emptyMod',
+  134: 'expire',
   255: 'noOp',
 } as const
 
@@ -112,6 +114,7 @@ export const OpTypeInverse = {
   unloadBlock, 
   loadCommon, 
   emptyMod, 
+  expire, 
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]
@@ -3058,7 +3061,7 @@ export type QueryHeader = {
   sort: boolean
 }
 
-export const QueryHeaderByteSize = 28
+export const QueryHeaderByteSize = 32
 
 export const QueryHeaderAlignOf = 16
 
@@ -3087,12 +3090,12 @@ export const writeQueryHeader = (
   offset += 2
   writeUint16(buf, Number(header.edgeFilterSize), offset)
   offset += 2
-  writeUint16(buf, Number(header.includeSize), offset)
-  offset += 2
+  writeUint32(buf, Number(header.includeSize), offset)
+  offset += 4
   buf[offset] = Number(header.iteratorType)
   offset += 1
-  writeUint16(buf, Number(header.size), offset)
-  offset += 2
+  writeUint32(buf, Number(header.size), offset)
+  offset += 4
   buf[offset] = 0
   buf[offset] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 0
   buf[offset] |= ((0 >>> 0) & 127) << 1
@@ -3132,16 +3135,16 @@ export const writeQueryHeaderProps = {
     writeUint16(buf, Number(value), offset + 20)
   },
   includeSize: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, Number(value), offset + 22)
+    writeUint32(buf, Number(value), offset + 22)
   },
   iteratorType: (buf: Uint8Array, value: QueryIteratorTypeEnum, offset: number) => {
-    buf[offset + 24] = Number(value)
+    buf[offset + 26] = Number(value)
   },
   size: (buf: Uint8Array, value: number, offset: number) => {
-    writeUint16(buf, Number(value), offset + 25)
+    writeUint32(buf, Number(value), offset + 27)
   },
   sort: (buf: Uint8Array, value: boolean, offset: number) => {
-    buf[offset + 27] |= (((value ? 1 : 0) >>> 0) & 1) << 0
+    buf[offset + 31] |= (((value ? 1 : 0) >>> 0) & 1) << 0
   },
 }
 
@@ -3160,10 +3163,10 @@ export const readQueryHeader = (
     searchSize: readUint16(buf, offset + 16),
     edgeSize: readUint16(buf, offset + 18),
     edgeFilterSize: readUint16(buf, offset + 20),
-    includeSize: readUint16(buf, offset + 22),
-    iteratorType: (buf[offset + 24]) as QueryIteratorTypeEnum,
-    size: readUint16(buf, offset + 25),
-    sort: (((buf[offset + 27] >>> 0) & 1)) === 1,
+    includeSize: readUint32(buf, offset + 22),
+    iteratorType: (buf[offset + 26]) as QueryIteratorTypeEnum,
+    size: readUint32(buf, offset + 27),
+    sort: (((buf[offset + 31] >>> 0) & 1)) === 1,
   }
   return value
 }
@@ -3179,10 +3182,10 @@ export const readQueryHeaderProps = {
     searchSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 16),
     edgeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 18),
     edgeFilterSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 20),
-    includeSize: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 22),
-    iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 24]) as QueryIteratorTypeEnum,
-    size: (buf: Uint8Array, offset: number) => readUint16(buf, offset + 25),
-    sort: (buf: Uint8Array, offset: number) => (((buf[offset + 27] >>> 0) & 1)) === 1,
+    includeSize: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 22),
+    iteratorType: (buf: Uint8Array, offset: number) => (buf[offset + 26]) as QueryIteratorTypeEnum,
+    size: (buf: Uint8Array, offset: number) => readUint32(buf, offset + 27),
+    sort: (buf: Uint8Array, offset: number) => (((buf[offset + 31] >>> 0) & 1)) === 1,
 }
 
 export const createQueryHeader = (header: QueryHeader): Uint8Array => {
@@ -3206,9 +3209,9 @@ export const pushQueryHeader = (
   buf.pushUint16(Number(header.searchSize))
   buf.pushUint16(Number(header.edgeSize))
   buf.pushUint16(Number(header.edgeFilterSize))
-  buf.pushUint16(Number(header.includeSize))
+  buf.pushUint32(Number(header.includeSize))
   buf.pushUint8(Number(header.iteratorType))
-  buf.pushUint16(Number(header.size))
+  buf.pushUint32(Number(header.size))
   buf.pushUint8(0)
   buf.view[buf.length - 1] |= (((header.sort ? 1 : 0) >>> 0) & 1) << 0
   buf.view[buf.length - 1] |= ((0 >>> 0) & 127) << 1

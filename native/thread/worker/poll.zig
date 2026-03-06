@@ -36,7 +36,7 @@ fn handleExpired(threads: *Thread.Threads, msg: []u8) void {
             .count = count,
         }, 0);
         threads.modifyLocked(msg[0..(utils.sizeOf(t.ModifyHeader) + count * utils.sizeOf(t.ModifyDeleteHeader))]) catch |e| {
-            std.log.err("Dispatching expire delete(s) failed: {any}", .{ e });
+            std.log.err("Dispatching expire delete(s) failed: {any}", .{e});
         };
     }
 }
