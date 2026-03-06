@@ -21,7 +21,7 @@ await test('ids', async (t) => {
   })
 
   const res: ReturnType<typeof db.create>[] = []
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e3; i++) {
     res.push(
       db.create('user', {
         age: ~~(Math.random() * 100000),

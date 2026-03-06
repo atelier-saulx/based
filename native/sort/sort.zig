@@ -258,7 +258,8 @@ pub fn remove(
             selva.selva_sort_remove_buf(index, parseSimpleString(data), SIZE, node);
         },
         .stringFixed, .binaryFixed => {
-            selva.selva_sort_remove_buf(index, parseSimpleString(data[start .. start + sortIndex.len]), sortIndex.len, node);
+            const size = data[start];
+            selva.selva_sort_remove_buf(index, parseSimpleString(data[start + 1 .. start + 1 + size]), size, node);
         },
         .string, .text, .binary => {
             var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
@@ -295,6 +296,7 @@ pub fn insert(
     const prop = sortIndex.prop;
     const start = sortIndex.start;
     const index = sortIndex.index;
+
     return switch (prop) {
         .@"enum", .uint8, .int8, .boolean => {
             selva.selva_sort_insert_i64(index, data[start], value);
@@ -303,7 +305,8 @@ pub fn insert(
             selva.selva_sort_insert_buf(index, parseSimpleString(data), SIZE, value);
         },
         .stringFixed, .binaryFixed => {
-            selva.selva_sort_insert_buf(index, parseSimpleString(data[start .. start + sortIndex.len]), sortIndex.len, value);
+            const size = data[start];
+            selva.selva_sort_insert_buf(index, parseSimpleString(data[start + 1 .. start + 1 + size]), size, value);
         },
         .string, .text, .binary => {
             var buf: [SIZE]u8 = [_]u8{0} ** SIZE;

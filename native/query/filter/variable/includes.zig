@@ -38,7 +38,7 @@ inline fn safeToLowerVec(
 pub const Case = enum {
     default, // exact
     lowerFast, // `| 32` mask (for a-z 0-9 queries)
-    lower, // if special chars e.g. { , ], @
+    lower, // if special chars e.g. { , ], @.
 };
 
 inline fn includeBody(
@@ -74,26 +74,26 @@ inline fn includeBody(
             }
             if (j == query.len) return true;
         } else {
-            // const masked = @select(MaskInt, matches, indexBitMask, zeroesMask);
-            // var mask = @reduce(.Add, masked);
-            // while (mask != 0) {
-            //     const k = @ctz(mask);
-            //     const start = i + k;
-            //     if (start <= maxStart) {
-            //         var j: usize = startIdx;
-            //         while (j < query.len) : (j += 1) {
-            //             if (case == .default) {
-            //                 if (value[start + j] != query[j]) break;
-            //             } else {
-            //                 if (std.ascii.toLower(value[start + j]) != query[j]) break;
-            //             }
-            //         }
-            //         if (j == query.len) return true;
-            //     } else {
-            //         return false;
-            //     }
-            //     mask &= (mask - 1);
-            // }
+            const masked = @select(MaskInt, matches, indexBitMask, zeroesMask);
+            var mask = @reduce(.Add, masked);
+            while (mask != 0) {
+                const k = @ctz(mask);
+                const start = i + k;
+                if (start <= maxStart) {
+                    var j: usize = startIdx;
+                    while (j < query.len) : (j += 1) {
+                        if (case == .default) {
+                            if (value[start + j] != query[j]) break;
+                        } else {
+                            if (std.ascii.toLower(value[start + j]) != query[j]) break;
+                        }
+                    }
+                    if (j == query.len) return true;
+                } else {
+                    return false;
+                }
+                mask &= (mask - 1);
+            }
         }
     }
     return null;

@@ -84,11 +84,10 @@ await test('sortCardinality', async (t) => {
     ],
     'sort a not included cardinality field',
   )
-  console.log('--- a')
+
   await db.update('article', c2, {
     count: 'lala',
   })
-  console.log('--- b')
 
   await db.drain()
 

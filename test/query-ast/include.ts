@@ -93,7 +93,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e3; i++) {
+  for (let i = 0; i < 1e4; i++) {
     client.create('user', {
       big: syntheticData,
       name: `mr snurf ${i}`,
@@ -135,7 +135,9 @@ await test('include', async (t) => {
         big: {
           ops: [
             // { op: '=', val: ['ok', 'bad', 'great'] },
-            { op: 'includes', val: 'scrxll' },
+            { op: 'includes', val: 'xbl@apx', opts: { lowerCase: true } },
+            // { op: 'like', val: 'xblapx' },
+
             // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
             // {
             //   op: 'includes',
