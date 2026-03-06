@@ -305,18 +305,25 @@ void selva_fields_init_node(struct SelvaTypeEntry *te, struct SelvaNode *node, b
     __attribute__((nonnull));
 
 /**
- * Set default value to a field.
- * Variadic args depend on fs.
- * - `SELVA_FIELD_TYPE_MICRO_BUFFER`
- *   1. offset to start from
- *   2. length to copy (`0 < len <= smb.len`)
- * - `SELVA_FIELD_TYPE_TEXT`
- *   1. number of lang codes to follow (reset all = `1`)
- *   2. lang code(s) in an uint8_t array (`selva_lang_none` = `0` = reset all)
- *
+ * Reset a field to the default value.
  */
 SELVA_EXPORT
-void selva_fields_set_default(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, ...);
+void selva_fields_reset(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs);
+
+/**
+ * Reset a micro buffer partially to the default value.
+ */
+SELVA_EXPORT
+void selva_fields_reset_smb(struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t offset, size_t len);
+
+/**
+ * Reset text to default.
+ * To reset all.
+ *   1. number of lang codes to follow (reset all = `1`)
+ *   2. lang code(s) in an uint8_t array (`selva_lang_none` = `0` = reset all)
+ */
+SELVA_EXPORT
+void selva_fields_reset_text(struct SelvaDb *db, struct SelvaTypeEntry *te, struct SelvaNode *node, const struct SelvaFieldSchema *fs, size_t len, const enum selva_lang_code *langs);
 
 void selva_fields_flush(struct SelvaDb *db, struct SelvaNode *node);
 

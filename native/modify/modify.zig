@@ -94,7 +94,7 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                 }
             }
             if (main.resetDefault) {
-                Fields.setDefaultSmb(db, typeEntry, node, propSchema, main.start, main.size);
+                Fields.resetSmb(typeEntry, node, propSchema, main.start, main.size);
                 // TODO Shouldn't maybe modify the data?
             } else {
                 utils.copy(u8, current, value, main.start);
@@ -109,7 +109,7 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                     if (prop.size == 0) {
                         // TODO Set defaults per translation
                         const langs: [1]u8 = .{ 0 };
-                        Fields.setDefaultText(db, typeEntry, node, propSchema, &langs);
+                        Fields.resetText(db, typeEntry, node, propSchema, &langs);
                         continue;
                     }
                     var k: usize = 0;
@@ -282,12 +282,7 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                 },
                 else => {
                     if (prop.size == 0) {
-                        if (propSchema.type == selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER) {
-                            // TODO Should we get the proper size from somewhere?
-                            Fields.setDefaultSmb(db, typeEntry, node, propSchema, 0, 1048576);
-                        } else {
-                            Fields.setDefault(db, typeEntry, node, propSchema);
-                        }
+                        Fields.reset(db, typeEntry, node, propSchema);
                         continue;
                     }
 

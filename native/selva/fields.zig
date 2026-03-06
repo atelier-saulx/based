@@ -167,17 +167,16 @@ pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Sc
     return errors.selva(selva.c.selva_fields_set_text(ctx.node, fieldSchema, &selva.c.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.c.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
 }
 
-pub inline fn setDefault(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema) void {
-    std.debug.assert(fieldSchema.type != selva.c.SELVA_FIELD_TYPE_MICRO_BUFFER and fieldSchema.type != selva.c.SELVA_FIELD_TYPE_TEXT);
-    selva.c.selva_fields_set_default(db.selva, te, node, fieldSchema);
+pub inline fn reset(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema) void {
+    selva.c.selva_fields_reset(db.selva, te, node, fieldSchema);
 }
 
-pub inline fn setDefaultSmb(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema, start: usize, len: usize) void {
-    selva.c.selva_fields_set_default(db.selva, te, node, fieldSchema, start, len);
+pub inline fn resetSmb(te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema, start: usize, len: usize) void {
+    selva.c.selva_fields_reset_smb(te, node, fieldSchema, start, len);
 }
 
-pub inline fn setDefaultText(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema, langs: []const u8) void {
-    selva.c.selva_fields_set_default(db.selva, te, node, fieldSchema, langs.len, langs.ptr);
+pub inline fn resetText(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema, langs: []const u8) void {
+    selva.c.selva_fields_reset_text(db.selva, te, node, fieldSchema, langs.len, langs.ptr);
 }
 
 pub inline fn textFromValueFallback(
