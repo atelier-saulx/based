@@ -10,7 +10,7 @@ const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const Type = selva.Type;
 pub const Node = selva.Node;
-pub const ExpireRes = selva.c.struct_SelvaExpireRes;
+pub const ExpireRes = selva.c.struct_SelvaExpireNodeRes;
 
 pub inline fn getType(ctx: *DbCtx, v: anytype) !Type {
     var selvaTypeEntry: ?Type = undefined;
@@ -193,10 +193,8 @@ pub inline fn expireNode(db: *DbCtx, typeId: t.TypeId, nodeId: u32, ts: i64) voi
     selva.markDirty(db, typeId, nodeId);
 }
 
-pub inline fn expireTick(db: *DbCtx) ExpireRes {
-    var res = ExpireRes{ .n = 0, };
-    selva.c.selva_db_expire_tick(db.selva, std.time.timestamp(), &res);
-    return res;
+pub inline fn expirePop(db: *DbCtx) ExpireRes {
+    return selva.c.selva_db_expire_pop(db.selva, std.time.timestamp());
 }
 
 pub inline fn getNodeBlockHash(db: *DbCtx, typeEntry: Type, start: u32, hashOut: *SelvaHash128) c_int {

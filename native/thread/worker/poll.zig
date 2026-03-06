@@ -7,35 +7,44 @@ const Node = @import("../../selva/node.zig");
 const Subscription = @import("../../subscription/subscription.zig");
 const t = @import("../../types.zig");
 
-fn handleExpired(threads: *Thread.Threads) void {
-    const res = Node.expireTick(threads.ctx);
-    const expired = res.nodes[0..res.n];
+const expireMax = 256;
 
-    for (expired) |node| {
+fn handleExpired(threads: *Thread.Threads, msg: []u8) void {
+    var count: u32 = 0;
 
-        const msg = jemalloc.alloc(u8, utils.sizeOf(t.ModifyHeader) + utils.sizeOf(t.ModifyDeleteHeader));
+    while (count < expireMax) {
+        const res = Node.expirePop(threads.ctx);
+        if (res.id == 0) {
+            break;
+        }
+
+        utils.write(msg, t.ModifyDeleteHeader{
+            .op = t.Modify.delete,
+            .type = res.type,
+            .id = res.id,
+            .isTmp = false,
+            ._padding = 0,
+        }, utils.sizeOf(t.ModifyHeader) + count * utils.sizeOf(t.ModifyDeleteHeader));
+        count += 1;
+    }
+
+    if (count > 0) {
         utils.write(msg, t.ModifyHeader{
             .opId = 0,
             .opType = t.OpType.modify,
             .schema = 0,
-            .count = 1,
+            .count = count,
         }, 0);
-        utils.write(msg, t.ModifyDeleteHeader{
-            .op = t.Modify.delete,
-            .type = Node.getNodeTypeId(node.?),
-            .id = Node.getNodeId(node.?),
-            .isTmp = false,
-            ._padding = 0,
-        }, utils.sizeOf(t.ModifyHeader));
-
-        threads.modifyLocked(msg) catch |e| {
-            std.log.err("Dispatching expire delete failed: {any}", .{ e });
+        threads.modifyLocked(msg[0..(utils.sizeOf(t.ModifyHeader) + count * utils.sizeOf(t.ModifyDeleteHeader))]) catch |e| {
+            std.log.err("Dispatching expire delete(s) failed: {any}", .{ e });
         };
-        // TODO Lol we just leaked that buffer
     }
 }
 
 pub fn poll(threads: *Thread.Threads) !void {
+    const delMsg = jemalloc.alloc(u8, utils.sizeOf(t.ModifyHeader) + expireMax * utils.sizeOf(t.ModifyDeleteHeader));
+    defer jemalloc.free(delMsg);
+
     while (true) {
         std.Thread.sleep(common.SUB_EXEC_INTERVAL);
         const now: u64 = @truncate(@as(u128, @intCast(std.time.nanoTimestamp())));
@@ -47,14 +56,16 @@ pub fn poll(threads: *Thread.Threads) !void {
             return;
         }
 
-        handleExpired(threads);
+        handleExpired(threads, delMsg);
 
         for (threads.threads) |thread| {
             const elapsed = now - thread.lastModifyTime;
             if (elapsed > common.SUB_EXEC_INTERVAL) {
                 thread.lastModifyTime = now;
-                // TODO If this throws the mutex is never released
-                try Subscription.fireIdSubscription(threads, thread);
+                Subscription.fireIdSubscription(threads, thread) catch |e| {
+                    threads.mutex.unlock();
+                    return e;
+                };
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 SAULX
+ * Copyright (c) 2025-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -17,7 +17,6 @@ void selva_expire_init(struct SelvaExpire *ex)
 {
     SVector_Init(&ex->list, 1, compar_expire);
     ex->next = SELVA_EXPIRE_NEVER;
-    assert(ex->expire_cb);
     assert(ex->cancel_cb);
 }
 
@@ -43,28 +42,37 @@ void selva_expire_deinit(struct SelvaExpire *ex)
     ex->next = SELVA_EXPIRE_NEVER;
 }
 
-void selva_expire_tick(struct SelvaExpire *ex, void *ctx, int64_t now)
+struct SelvaExpireToken *selva_expire_pop(struct SelvaExpire *ex, int64_t now)
 {
+    struct SelvaExpireToken *last;
+
     if (ex->next > now) {
-        return;
+        return nullptr;
     }
 
-    struct SelvaExpireToken *next;
-    while ((next = SVector_Peek(&ex->list))) {
-        if (next->expire > now) {
-            break;
-        }
+    // TODO update ex->next
+    last = SVector_Peek(&ex->list);
+    if (!last || last->expire > now) {
+        return nullptr;
+    }
+
+    if (!last->next) {
+        /* This is the last item */
         (void)SVector_Shift(&ex->list);
-
-        struct SelvaExpireToken *np;
-        do {
-            np = next->next;
-            ex->expire_cb(next, ctx);
-            /* `next` should be freed by expire_cb(). */
-        } while ((next = np));
+    } else {
+        struct SelvaExpireToken *prev;
+        while (last->next) {
+            prev = last;
+            last = last->next;
+        }
+        /*
+         * Found the last item in the chain.
+         */
+        prev->next = nullptr;
     }
-}
 
+    return last;
+}
 
 void selva_expire_insert(struct SelvaExpire *ex, struct SelvaExpireToken *token)
 {
