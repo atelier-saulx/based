@@ -15,9 +15,12 @@ pub const IdsIterator = struct {
         if (self.i == self.ids.len) {
             return null;
         }
-        const node = Node.getNode(self.typeEntry, self.ids[self.i]);
+        if (Node.getNode(self.typeEntry, self.ids[self.i])) |node| {
+            self.i += 1;
+            return node;
+        }
         self.i += 1;
-        return node;
+        return self.next();
     }
 };
 

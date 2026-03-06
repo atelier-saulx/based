@@ -213,7 +213,7 @@ await test('basic', async (t) => {
   }
 
   await db.drain()
-  console.log('--->', ids)
+
   deepEqual(
     await db.query2('user', ids).include('name', 'age').sort('age').get(),
     [
@@ -286,7 +286,6 @@ await test('basic', async (t) => {
   db.delete('user', mrX)
 
   await db.drain()
-
   deepEqual(
     await db
       .query2('user', ids2)
