@@ -1,5 +1,3 @@
-const t = @import("../../../types.zig");
-const utils = @import("../../../utils.zig");
 const std = @import("std");
 
 const CAPITAL = 32;

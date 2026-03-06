@@ -1,6 +1,5 @@
 const std = @import("std");
 const simd = std.simd;
-const read = @import("../../../utils.zig").read;
 
 const vectorLen = std.simd.suggestVectorLength(u8).?;
 const capitals: @Vector(vectorLen, u8) = @splat(32);
