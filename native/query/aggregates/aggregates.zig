@@ -147,7 +147,6 @@ pub inline fn accumulate(
             switch (aggFunction) {
                 .sum => {
                     writeAs(f64, accumulatorProp, read(f64, accumulatorProp, accumulatorPos) + microbufferToF64(propTypeTag, value, start), accumulatorPos);
-                    // utils.debugPrint("❤️ v: {d}\n", .{read(f64, accumulatorProp, accumulatorPos)});
                 },
                 .avg => {
                     const val = microbufferToF64(propTypeTag, value, start);
@@ -220,6 +219,7 @@ pub inline fn accumulate(
                 },
                 .count => {
                     writeAs(u32, accumulatorProp, read(u32, accumulatorProp, accumulatorPos) + 1, accumulatorPos);
+                    // utils.debugPrint("❤️ v: {d}\n", .{read(u32, accumulatorProp, accumulatorPos)});
                 },
                 .cardinality => {
                     Selva.c.hll_union(aggCtx.hllAccumulator, hllValue);
