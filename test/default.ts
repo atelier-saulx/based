@@ -341,7 +341,8 @@ await test('default values for all props in user type', async (t) => {
     avatar: null,
     level: null,
     label: null,
-    meta: { rating: null },
+    eventTime: null,
+    meta: { rating: null, notes: null },
   })
 
   deepEqual(
