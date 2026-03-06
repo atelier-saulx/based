@@ -177,8 +177,7 @@ pub fn like(
         }
     }
 
-    // use trailing vec here (similair with offset)
-
+    // Use trailing vec here (similair with offset)
     while (i < l - 1) : (i += 1) {
         if ((value[i + 1] == q1 or value[i + 1] == q2) and isSeparator(value[i])) {
             if (i + ql - 1 > l) {

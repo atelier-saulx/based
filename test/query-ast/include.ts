@@ -135,7 +135,9 @@ await test('include', async (t) => {
         big: {
           ops: [
             // { op: '=', val: ['ok', 'bad', 'great'] },
-            { op: 'includes', val: 'scrxll' },
+            { op: 'includes', val: 'xblapx' },
+            // { op: 'like', val: 'xblapx' },
+
             // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
             // {
             //   op: 'includes',
