@@ -43,7 +43,7 @@ await test('1M', async (t) => {
     .get()
 
   deepEqual(
-    r.node(0),
+    r[0],
     {
       id: 900001,
       age: 900001,

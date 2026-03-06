@@ -27,8 +27,6 @@ await test('sort by id', async (t) => {
     })
   }
 
-  const dbTime = await db.drain()
-
   isSorted(
     await db.query2('user').include('name').sort('id', 'asc').get(),
     'id',

@@ -41,7 +41,7 @@ export const astToQueryCtx = (
     locales: getReaderLocales(schema),
   }
 
-  if (ast.target) {
+  if (ast.target && !Array.isArray(ast.target)) {
     defaultSingle(ast, ctx, typeDef)
     ctx.readSchema.type = ReaderSchemaEnum.single
   } else {

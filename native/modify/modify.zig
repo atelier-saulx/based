@@ -108,7 +108,7 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                 .text => {
                     if (prop.size == 0) {
                         // TODO Set defaults per translation
-                        const langs: [1]u8 = .{ 0 };
+                        const langs: [1]u8 = .{0};
                         Fields.resetText(db, typeEntry, node, propSchema, &langs);
                         continue;
                     }
@@ -466,6 +466,7 @@ pub fn modify(
                     }
                     Node.deleteNode(db, typeEntry, node) catch {
                         // handle errors
+                        std.debug.print("wooot!!", .{});
                     };
                 }
             },

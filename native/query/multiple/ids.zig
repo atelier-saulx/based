@@ -5,6 +5,8 @@ const Node = @import("../../selva/node.zig");
 const Iterate = @import("./iterate.zig");
 const Sort = @import("../../sort/sort.zig");
 
+const std = @import("std");
+
 pub const IdsIterator = struct {
     ids: []u32,
     i: u32,
@@ -13,9 +15,12 @@ pub const IdsIterator = struct {
         if (self.i == self.ids.len) {
             return null;
         }
-        const node = Node.getNode(self.typeEntry, self.ids[self.i]);
+        if (Node.getNode(self.typeEntry, self.ids[self.i])) |node| {
+            self.i += 1;
+            return node;
+        }
         self.i += 1;
-        return node;
+        return self.next();
     }
 };
 
@@ -28,8 +33,9 @@ pub fn ids(
     const sizeIndex = try ctx.thread.query.reserve(4);
     const size = header.size;
     const typeEntry = try Node.getType(ctx.db, header.typeId);
-    var it = IdsIterator{ .i = 0, .ids = utils.read([]u32, q, size + 4), .typeEntry = typeEntry };
+    var it = IdsIterator{ .i = 0, .ids = utils.read([]u32, q[i .. i + size], 0), .typeEntry = typeEntry };
     var nodeCnt: u32 = 0;
+    i += size;
     switch (header.iteratorType) {
         .default => {
             nodeCnt = try Iterate.node(.default, ctx, q, &it, &header, typeEntry, &i);
@@ -71,5 +77,6 @@ pub fn ids(
         },
         else => {},
     }
+
     ctx.thread.query.write(nodeCnt, sizeIndex);
 }

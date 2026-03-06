@@ -244,9 +244,11 @@ export class DbClientClass<
   }
 
   // For more advanced / internal usage - use isModified instead for most cases
-  drain() {
+  async drain(): Promise<number> {
+    const start = Date.now()
     flush(this.modifyCtx)
-    return this.isModified()
+    await this.isModified()
+    return Date.now() - start
   }
 
   async isModified() {

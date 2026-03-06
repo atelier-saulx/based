@@ -111,12 +111,10 @@ class Query<
       filter: FilterFn<S, T, EdgeProps>,
     ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
-  filter<
-    P extends keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T>,
-  >(
+  filter<P extends FilterProp<S, T, EdgeProps>, O extends Operator = Operator>(
     prop: P,
-    op: Operator,
-    val: InferPathType<S, T, P, EdgeProps>,
+    op: O,
+    val: FilterValue<O, S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   filter(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -129,10 +127,10 @@ class Query<
       filter: FilterFn<S, T, EdgeProps>,
     ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
-  and<P extends keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T>>(
+  and<P extends FilterProp<S, T, EdgeProps>, O extends Operator = Operator>(
     prop: P,
-    op: Operator,
-    val: InferPathType<S, T, P, EdgeProps>,
+    op: O,
+    val: FilterValue<O, S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   and(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -144,10 +142,10 @@ class Query<
       filter: FilterFn<S, T, EdgeProps>,
     ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): FilterBranch<this>
-  or<P extends keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T>>(
+  or<P extends FilterProp<S, T, EdgeProps>, O extends Operator = Operator>(
     prop: P,
-    op: Operator,
-    val: InferPathType<S, T, P, EdgeProps>,
+    op: O,
+    val: FilterValue<O, S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): FilterBranch<this>
   or(prop: any, op?: any, val?: any, opts?: any): FilterBranch<this> {
@@ -649,11 +647,6 @@ class Query<
 
 type FilterBranch<T extends { filter: any }> = T
 
-type FilterMethods<T extends { filter: any }> = {
-  and: T['filter']
-  or: T['filter']
-}
-
 // This overload is for when the user provides NO schema argument, rely on generic default or explicit generic
 export function query<
   S extends { types: any; locales?: any } = { types: any },
@@ -703,19 +696,6 @@ export class BasedQuery2<
     this.ast.type = type as string
     if (target) this.ast.target = target
     this.db = db
-  }
-
-  testGroupedKey(): GroupedKey {
-    return null as any
-  }
-  testAggregate(): Aggregate {
-    return null as any
-  }
-  testIsSingle(): IsSingle {
-    return null as any
-  }
-  testK(): K {
-    return null as any
   }
 
   db: DbClient
@@ -772,6 +752,22 @@ type FilterFn<
   FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>
 >
 
+type FilterProp<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+  EdgeProps extends Record<string, any>,
+> = keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T> | 'id'
+
+type FilterValue<
+  O extends Operator,
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+  P,
+  EdgeProps extends Record<string, any> = {},
+> = O extends '=' | '!='
+  ? InferPathType<S, T, P, EdgeProps> | InferPathType<S, T, P, EdgeProps>[]
+  : InferPathType<S, T, P, EdgeProps>
+
 type FilterSignature<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
@@ -783,10 +779,10 @@ type FilterSignature<
       filter: FilterFn<S, T, EdgeProps>,
     ) => FilterBranch<Query<S, T, any, any, any, any, EdgeProps>>,
   ): Result
-  <P extends keyof (ResolvedProps<S['types'], T> & EdgeProps) | Path<S, T>>(
+  <P extends FilterProp<S, T, EdgeProps>, O extends Operator = Operator>(
     prop: P,
-    op: Operator,
-    val: InferPathType<S, T, P, EdgeProps>,
+    op: O,
+    val: FilterValue<O, S, T, P, EdgeProps>,
     opts?: FilterOpts,
   ): Result
 }
@@ -819,10 +815,10 @@ type SelectFn<
 export type ResolveIncludeArgs<T> = T extends (
   q: any,
 ) => Query<
-  infer S,
-  infer T,
+  any,
+  any,
   infer K,
-  infer Single,
+  any,
   infer SourceField,
   any,
   any,
