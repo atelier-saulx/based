@@ -72,7 +72,7 @@ inline fn getGrouByKeyValue(
     const key = switch (propType) {
         .string => if (propId == 0) keyValue.ptr[start + 1 .. start + 1 + keyValue[start]] else keyValue.ptr[2 + start .. start + keyValue.len - propType.crcLen()],
         .stringFixed => if (propId == 0) keyValue.ptr[start + 1 .. start + 1 + keyValue[start]] else keyValue.ptr[2 + start .. start + keyValue.len - propType.crcLen()],
-        .timestamp => @constCast(utils.datePart(keyValue.ptr[start .. start + keyValue.len], @enumFromInt(stepType), timezone)),
+        .timestamp => @constCast(utils.datePart(keyValue.ptr[start .. start + propType.size()], @enumFromInt(stepType), timezone)),
         .reference => Node.getReferenceNodeId(@ptrCast(@alignCast(keyValue.ptr))),
         else => keyValue.ptr[start .. start + propType.size()],
     };
