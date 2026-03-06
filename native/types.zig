@@ -40,6 +40,7 @@ pub const OpType = enum(u8) {
     unloadBlock = 129,
     loadCommon = 130,
     emptyMod = 133,
+    expire = 134,
 
     // --------------------
     noOp = 255,
