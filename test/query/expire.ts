@@ -30,6 +30,6 @@ await test('query db', async (t) => {
     name: 'john',
     expiresAt,
   })
-  await wait(1e3)
+  await wait(2e3)
   deepEqual(await db.query2('user', john).get(), null)
 })

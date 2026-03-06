@@ -254,7 +254,10 @@ pub fn remove(
         .@"enum", .uint8, .int8, .boolean => {
             selva.selva_sort_remove_i64(index, data[start], node);
         },
-        .alias, .stringFixed, .binaryFixed => {
+        .alias => {
+            selva.selva_sort_remove_buf(index, parseSimpleString(data), SIZE, node);
+        },
+        .stringFixed, .binaryFixed => {
             selva.selva_sort_remove_buf(index, parseSimpleString(data[start .. start + sortIndex.len]), sortIndex.len, node);
         },
         .string, .text, .binary => {

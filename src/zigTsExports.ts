@@ -62,7 +62,6 @@ export const OpType = {
   unloadBlock: 129,
   loadCommon: 130,
   emptyMod: 133,
-  expire: 134,
   noOp: 255,
 } as const
 
@@ -88,7 +87,6 @@ export const OpTypeInverse = {
   129: 'unloadBlock',
   130: 'loadCommon',
   133: 'emptyMod',
-  134: 'expire',
   255: 'noOp',
 } as const
 
@@ -114,7 +112,6 @@ export const OpTypeInverse = {
   unloadBlock, 
   loadCommon, 
   emptyMod, 
-  expire, 
   noOp 
  */
 export type OpTypeEnum = (typeof OpType)[keyof typeof OpType]

@@ -51,12 +51,10 @@ pub const Threads = struct {
         }
     }
 
-    pub fn modify(
+    pub fn modifyLocked(
         self: *Threads,
         modifyBuffer: []u8,
     ) !void {
-        self.mutex.lock();
-        defer self.mutex.unlock();
         if (self.pendingQueries > 0) {
             try self.nextModifyQueue.append(modifyBuffer);
         } else {
@@ -67,6 +65,15 @@ pub const Threads = struct {
             }
             self.wakeup.broadcast();
         }
+    }
+
+    pub fn modify(
+        self: *Threads,
+        modifyBuffer: []u8,
+    ) !void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        try modifyLocked(self, modifyBuffer);
     }
 
     pub fn init(

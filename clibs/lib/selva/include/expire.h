@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 SAULX
+ * Copyright (c) 2025-2026 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -25,11 +25,6 @@ struct SelvaExpire {
     int64_t next;
 
     /**
-     * Expire callback.
-     * This should also free the token.
-     */
-    void (*expire_cb)(struct SelvaExpireToken *token, void *ctx);
-    /**
      * Cancel expiration callback.
      * This should also free the token.
      */
@@ -47,7 +42,7 @@ typedef union {
  */
 void selva_expire_init(struct SelvaExpire *ex);
 void selva_expire_deinit(struct SelvaExpire *ex);
-void selva_expire_tick(struct SelvaExpire *ex, void *ctx, int64_t now);
+struct SelvaExpireToken *selva_expire_pop(struct SelvaExpire *ex, int64_t now);
 
 /**
  * Insert an expire token.

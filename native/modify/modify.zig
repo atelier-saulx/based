@@ -10,7 +10,8 @@ const Thread = @import("../thread/thread.zig");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 const subs = @import("subscription.zig");
-const sort = @import("../sort/sort.zig");
+const Sort = @import("../sort/sort.zig");
+const sort = @import("./sort.zig");
 
 pub const subscription = subs.suscription;
 const resItemSize = utils.sizeOf(t.ModifyResultItem);
@@ -48,7 +49,15 @@ fn modifyInternalThread(env: napi.Env, info: napi.Info) !void {
     try dbCtx.threads.modify(batch);
 }
 
-fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, items: []u8, typeSort: ?*sort.TypeIndex) !void {
+fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, items: []u8, typeSort: ?*Sort.TypeIndex) anyerror!void {
+    if (typeSort) |ts| {
+        try modifyPropsInner(true, db, typeEntry, node, data, items, ts);
+    } else {
+        try modifyPropsInner(false, db, typeEntry, node, data, items, undefined);
+    }
+}
+
+inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, items: []u8, typeSort: *Sort.TypeIndex) anyerror!void {
     selva.markDirty(db, typeEntry, Node.getNodeId(node));
 
     var j: usize = 0;
@@ -80,15 +89,14 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                 Node.expireNode(db, typeId, id, @divTrunc(utils.read(i64, value, 0), 1000));
             }
 
-            // TODO optimize with inline function, so we don't check this every time
-            if (typeSort) |ts| {
-                if (ts.main.get(main.start)) |ms| {
+            if (updateSort) {
+                if (typeSort.main.get(main.start)) |ms| {
                     const currentValue = current[main.start .. main.start + main.size];
                     const same = std.mem.eql(u8, currentValue, value);
                     if (same == false) {
-                        sort.remove(db.decompressor, ms, current, node);
+                        Sort.remove(db.decompressor, ms, current, node);
                         utils.copy(u8, current, value, main.start);
-                        sort.insert(db.decompressor, ms, current, node);
+                        Sort.insert(db.decompressor, ms, current, node);
                         continue;
                     }
                 }
@@ -124,19 +132,57 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                 .alias => {
                     const id = Node.getNodeId(node);
                     if (prop.size == 0) {
+                        if (updateSort) {
+                            if (Sort.getSortIndex(typeSort, prop.id, 0, t.LangCode.none)) |propSort| {
+                                const current = Fields.get(typeEntry, node, propSchema, prop.type);
+                                Sort.remove(db.decompressor, propSort, current, node);
+                                Sort.insert(db.decompressor, propSort, value, node);
+                            }
+                        }
                         try Fields.delAlias(typeEntry, id, prop.id);
                         continue;
                     }
-                    const prev = try Fields.setAlias(typeEntry, id, prop.id, value);
-                    if (prev > 0) {
-                        // TODO sort for everything
-                        // if (ctx.currentSortIndex != null) {
-                        //     sort.remove(ctx.thread.decompressor, ctx.currentSortIndex.?, slice, Node.getNode(ctx.typeEntry.?, prev).?);
-                        // }
+
+                    if (updateSort) {
+                        if (Sort.getSortIndex(typeSort, prop.id, 0, t.LangCode.none)) |propSort| {
+                            const current = Fields.get(typeEntry, node, propSchema, prop.type);
+                            Sort.remove(db.decompressor, propSort, current, node);
+                            Sort.insert(db.decompressor, propSort, value, node);
+                            const prevAliasedId = try Fields.setAlias(typeEntry, id, prop.id, value);
+                            if (prevAliasedId > 0) {
+                                if (Node.getNode(typeEntry, prevAliasedId)) |prevAliasedNode| {
+                                    Sort.remove(db.decompressor, propSort, value, prevAliasedNode);
+                                    Sort.insert(db.decompressor, propSort, Sort.EMPTY_SLICE, prevAliasedNode);
+                                }
+                            }
+                            continue;
+                        }
+                    }
+                    const prevAliasedId = try Fields.setAlias(typeEntry, id, prop.id, value);
+                    if (prevAliasedId > 0) {
+                        // TODO we can remove this when we have selva_sort_replace_buf
+                        const typeId = selva.c.selva_get_type(typeEntry);
+                        if (Sort.getTypeSortIndexes(db, typeId)) |ts| {
+                            if (Sort.getSortIndex(ts, prop.id, 0, t.LangCode.none)) |propSort| {
+                                if (Node.getNode(typeEntry, prevAliasedId)) |prevAliasedNode| {
+                                    Sort.remove(db.decompressor, propSort, value, prevAliasedNode);
+                                    Sort.insert(db.decompressor, propSort, Sort.EMPTY_SLICE, prevAliasedNode);
+                                }
+                            }
+                        }
                     }
                 },
                 .cardinality => {
                     if (prop.size == 0) {
+                        if (updateSort) {
+                            if (Sort.getSortIndex(typeSort, prop.id, 0, t.LangCode.none)) |propSort| {
+                                if (selva.c.selva_fields_get_selva_string(node, propSchema)) |hll| {
+                                    const count = selva.c.hll_count(hll)[0..4];
+                                    Sort.remove(db.decompressor, propSort, count, node);
+                                    Sort.insert(db.decompressor, propSort, Sort.EMPTY_SLICE, node);
+                                }
+                            }
+                        }
                         try Fields.deleteField(db, node, propSchema);
                         continue;
                     }
@@ -148,10 +194,8 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                         selva.c.hll_init(hll, cardinality.precision, cardinality.sparse);
                     }
 
-                    // TODO optimize with inline function, so we don't check this every time
-                    if (typeSort) |ts| {
-                        const propSort = sort.getSortIndex(ts, prop.id, 0, t.LangCode.none);
-                        if (propSort) |ms| {
+                    if (updateSort) {
+                        if (Sort.getSortIndex(typeSort, prop.id, 0, t.LangCode.none)) |propSort| {
                             const count = selva.c.hll_count(hll)[0..4];
                             while (k < value.len) {
                                 const hash = utils.read(u64, value, k);
@@ -159,11 +203,8 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                                 k += 8;
                             }
                             const newCount = selva.c.hll_count(hll)[0..4];
-                            // TODO verify if it's aligned
-                            if (utils.readPtr(u32, count, 0).* != utils.readPtr(u32, newCount, 0).*) {
-                                sort.remove(db.decompressor, ms, count, node);
-                                sort.insert(db.decompressor, ms, newCount, node);
-                            }
+                            Sort.remove(db.decompressor, propSort, count, node);
+                            Sort.insert(db.decompressor, propSort, newCount, node);
                             continue;
                         }
                     }
@@ -173,11 +214,6 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                         selva.c.hll_add(hll, hash);
                         k += 8;
                     }
-                    // if (ctx.currentSortIndex != null) {
-                    //     const newCount = selva.hll_count(currentData);
-                    //     sort.remove(ctx.db, ctx.currentSortIndex.?, currentCount[0..4], ctx.node.?);
-                    //     sort.insert(ctx.db, ctx.currentSortIndex.?, newCount[0..4], ctx.node.?);
-                    // }
                 },
                 .reference => {
                     if (prop.size == 0) {
@@ -281,21 +317,19 @@ fn modifyProps(db: *DbCtx, typeEntry: Node.Type, node: Node.Node, data: []u8, it
                     Fields.setColvec(typeEntry, node, propSchema, value);
                 },
                 else => {
-                    if (prop.size == 0) {
-                        Fields.reset(db, typeEntry, node, propSchema);
-                        continue;
-                    }
-
-                    // TODO optimize with inline function, so we don't check this every time
-                    if (typeSort) |ts| {
-                        if (sort.getSortIndex(ts, prop.id, 0, t.LangCode.none)) |propSort| {
+                    if (updateSort) {
+                        if (Sort.getSortIndex(typeSort, prop.id, 0, t.LangCode.none)) |propSort| {
                             const current = Fields.get(typeEntry, node, propSchema, prop.type);
-                            sort.remove(db.decompressor, propSort, current, node);
-                            sort.insert(db.decompressor, propSort, value, node);
+                            Sort.remove(db.decompressor, propSort, current, node);
+                            Sort.insert(db.decompressor, propSort, value, node);
                         }
                     }
 
-                    try Fields.set(node, propSchema, value);
+                    if (prop.size == 0) {
+                        Fields.reset(db, typeEntry, node, propSchema);
+                    } else {
+                        try Fields.set(node, propSchema, value);
+                    }
                 },
             }
         }
@@ -346,9 +380,11 @@ pub fn modify(
                 const data: []u8 = buf[i .. i + create.size];
                 const id = db.ids[create.type - 1] + 1;
                 const node = try Node.upsertNode(typeEntry, id);
-                const typeSort = sort.getTypeSortIndexes(db, create.type);
-                modifyProps(db, typeEntry, node, data, items, typeSort) catch {
+                modifyProps(db, typeEntry, node, data, items, null) catch {
                     // handle errors
+                };
+                sort.createSort(db, create.type, typeEntry, node) catch {
+                    // handle sort errors
                 };
                 db.ids[create.type - 1] = id;
                 utils.write(result, id, j);
@@ -361,16 +397,20 @@ pub fn modify(
                 const typeEntry = try Node.getType(db, create.type);
                 const data: []u8 = buf[i .. i + create.size];
                 const nextId = db.ids[create.type - 1] % create.maxNodeId + 1;
-                const typeSort = sort.getTypeSortIndexes(db, create.type);
                 var node = Node.getNode(typeEntry, nextId);
                 if (node) |oldNode| {
-                    // TODO remove from sort
+                    sort.deleteSort(db, create.type, typeEntry, oldNode) catch {
+                        // handle sort errors
+                    };
                     Node.flushNode(db, typeEntry, oldNode);
                 } else {
                     node = try Node.upsertNode(typeEntry, nextId);
                 }
-                modifyProps(db, typeEntry, node.?, data, items, typeSort) catch {
+                modifyProps(db, typeEntry, node.?, data, items, null) catch {
                     // handle errors
+                };
+                sort.createSort(db, create.type, typeEntry, node.?) catch {
+                    // handle sort errors
                 };
                 db.ids[create.type - 1] = nextId;
                 utils.write(result, nextId, j);
@@ -384,7 +424,7 @@ pub fn modify(
                 var id = update.id;
                 if (update.isTmp) id = utils.read(u32, items, id * resItemSize);
                 if (Node.getNode(typeEntry, id)) |node| {
-                    const typeSort = sort.getTypeSortIndexes(db, update.type);
+                    const typeSort = Sort.getTypeSortIndexes(db, update.type);
                     const data: []u8 = buf[i .. i + update.size];
                     modifyProps(db, typeEntry, node, data, items, typeSort) catch {
                         // handle errors
@@ -404,16 +444,26 @@ pub fn modify(
                 i += upsert.size;
                 const typeEntry = try Node.getType(db, upsert.type);
                 const upsertRes = try upsertTarget(db, upsert.type, typeEntry, target);
-                const typeSort = sort.getTypeSortIndexes(db, upsert.type);
-                if (upsertRes.created) {
-                    try modifyProps(db, typeEntry, upsertRes.node, target, items, typeSort);
-                }
+
                 const dataSize = utils.read(u32, buf, i);
                 i += 4;
                 const data = buf[i .. i + dataSize];
-                modifyProps(db, typeEntry, upsertRes.node, data, items, typeSort) catch {
-                    // handle errors
-                };
+                if (upsertRes.created) {
+                    modifyProps(db, typeEntry, upsertRes.node, target, items, null) catch {
+                        // handle errors
+                    };
+                    modifyProps(db, typeEntry, upsertRes.node, data, items, null) catch {
+                        // handle errors
+                    };
+                    sort.createSort(db, upsert.type, typeEntry, upsertRes.node) catch {
+                        // handle sort errors
+                    };
+                } else {
+                    const typeSort = Sort.getTypeSortIndexes(db, upsert.type);
+                    modifyProps(db, typeEntry, upsertRes.node, data, items, typeSort) catch {
+                        // handle errors
+                    };
+                }
                 const id = Node.getNodeId(upsertRes.node);
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
@@ -430,11 +480,14 @@ pub fn modify(
                 const id = Node.getNodeId(upsertRes.node);
                 i += 4;
                 if (upsertRes.created) {
-                    const typeSort = sort.getTypeSortIndexes(db, insert.type);
-                    try modifyProps(db, typeEntry, upsertRes.node, target, items, typeSort);
-                    const data = buf[i .. i + dataSize];
-                    modifyProps(db, typeEntry, upsertRes.node, data, items, typeSort) catch {
+                    modifyProps(db, typeEntry, upsertRes.node, target, items, null) catch {
                         // handle errors
+                    };
+                    modifyProps(db, typeEntry, upsertRes.node, buf[i .. i + dataSize], items, null) catch {
+                        // handle errors
+                    };
+                    sort.createSort(db, insert.type, typeEntry, upsertRes.node) catch {
+                        // handle sort errors
                     };
                 }
                 utils.write(result, id, j);
@@ -450,23 +503,11 @@ pub fn modify(
                 utils.write(result, id, j);
                 utils.write(result, t.ModifyError.null, j + 4);
                 if (Node.getNode(typeEntry, id)) |node| {
-                    if (sort.getTypeSortIndexes(db, delete.type)) |typeSort| {
-                        const mainSchema = try Schema.getFieldSchema(typeEntry, 0);
-                        const mainBuffer = Fields.get(typeEntry, node, mainSchema, t.PropType.microBuffer);
-                        var main = typeSort.main.valueIterator();
-                        while (main.next()) |sortIndex| {
-                            sort.remove(db.decompressor, sortIndex.*, mainBuffer, node);
-                        }
-                        var prop = typeSort.field.valueIterator();
-                        while (prop.next()) |sortIndex| {
-                            const propSchema = try Schema.getFieldSchema(typeEntry, sortIndex.*.field);
-                            const current = Fields.get(typeEntry, node, propSchema, sortIndex.*.prop);
-                            sort.remove(db.decompressor, sortIndex.*, current, node);
-                        }
-                    }
+                    sort.deleteSort(db, delete.type, typeEntry, node) catch {
+                        // handle sort errors
+                    };
                     Node.deleteNode(db, typeEntry, node) catch {
                         // handle errors
-                        std.debug.print("wooot!!", .{});
                     };
                 }
             },
@@ -474,10 +515,19 @@ pub fn modify(
         j += resItemSize;
     }
 
-    // 1. expire will just be checked on query
-    // 2. subscription will handle timers
-    // 3. keep Node.expire(db) for internal cleanup
-    Node.expire(db);
+    expire(db) catch {};
     utils.write(result, j, 0);
     if (j < size) @memset(result[j..size], 0);
+}
+
+pub inline fn expire(db: *DbCtx) !void {
+    // TODO partials
+    while (true) {
+        const res = Node.expirePop(db);
+        if (res.id == 0) break;
+        const typeEntry = try Node.getType(db, res.type);
+        if (Node.getNode(typeEntry, res.id)) |node| {
+            Node.deleteNode(db, typeEntry, node) catch {};
+        }
+    }
 }

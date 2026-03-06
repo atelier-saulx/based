@@ -110,7 +110,7 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                         // does nothing but does trigger flush marked subs and maybe more in the future
                     },
                     .modify => try Modify.modify(thread, m, threads.ctx),
-                    .expire => Node.expire(threads.ctx),
+                    .expire => try Modify.expire(threads.ctx),
                     .loadBlock => try dump.loadBlock(thread, threads.ctx, m, op),
                     .unloadBlock => try dump.unloadBlock(thread, threads.ctx, m, op),
                     .loadCommon => try dump.loadCommon(thread, threads.ctx, m, op),

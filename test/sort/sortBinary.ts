@@ -54,7 +54,8 @@ await test('binary sort', async (t) => {
   deepEqual(
     await db
       .query2('binary')
-      .sort('data', 'desc')
+      .sort('data')
+      .order('desc')
       .include('name', 'data')
       .get(),
     [

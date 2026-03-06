@@ -22,12 +22,7 @@ await test.skip('basic sort by id', async (t) => {
   }
 
   deepEqual(
-    await db
-      .query2('person')
-      .include('name')
-      .sort('id', 'desc')
-      .range(0, 5)
-      .get(),
+    await db.query2('person').include('name').order('desc').range(0, 5).get(),
     [
       {
         id: 99,
