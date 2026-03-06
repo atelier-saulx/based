@@ -43,6 +43,15 @@ export const defaultMultiple = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
     size: 0,
   })
 
+  if (Array.isArray(ast.target)) {
+    props.op(ctx.query.data, QueryType.ids, headerIndex)
+    const start = ctx.query.length
+    for (const id of ast.target) {
+      ctx.query.pushUint32(id)
+    }
+    props.size(ctx.query.data, ctx.query.length - start, headerIndex)
+  }
+
   if (ast.sort) {
     pushSortHeader(ctx.query, sort(ast, ctx, typeDef))
   }

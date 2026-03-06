@@ -20,13 +20,13 @@ export const defaultSingle = (ast: QueryAst, ctx: Ctx, typeDef: TypeDef) => {
   let aliasValue
 
   // ADD FILTER AND ALIAS
-
   if (typeof ast.target === 'number') {
     id = ast.target
   } else if (typeof ast.target === 'object' && ast.target !== null) {
     for (const key in ast.target) {
       aliasProp = typeDef.props.get(key)
       if (aliasProp?.type !== PropType.alias) {
+        console.error(key, aliasProp)
         throw new Error('invalid alias target')
       }
       prop = aliasProp.id

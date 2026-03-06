@@ -326,4 +326,18 @@ await test('query ast creation', async (t) => {
       },
     })
   }
+
+  {
+    const res = query<Schema>('user').filter('name', '=', ['youzi', 'jim'])
+    deepEqual(res.ast, {
+      type: 'user',
+      filter: {
+        props: {
+          name: {
+            ops: [{ op: '=', val: ['youzi', 'jim'] }],
+          },
+        },
+      },
+    })
+  }
 })

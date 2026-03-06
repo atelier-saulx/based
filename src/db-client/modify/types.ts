@@ -20,7 +20,7 @@ type TypeMap = {
   alias: string
   vector: TypedArray
   colvec: TypedArray
-  cardinality: string | string[]
+  cardinality: string | string[] | Uint8Array | Uint8Array[]
 }
 
 type EdgeKeys<T> = keyof T extends infer K
