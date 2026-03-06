@@ -120,8 +120,10 @@ pub fn worker(threads: *Thread.Threads, thread: *common.Thread) !void {
                     // .unsubscribe => try Subscription.unsubscribe(threads.ctx, m, thread),
                     else => {},
                 }
+
                 // this is not always nessecary e.g. subscribe does not need this
                 thread.modify.commit();
+
                 threads.mutex.lock();
                 threads.pendingModifies -= 1;
                 thread.pendingModifies -= 1;

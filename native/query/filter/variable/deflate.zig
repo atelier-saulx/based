@@ -1,5 +1,5 @@
-const deflate = @import("../../deflate.zig");
-const Thread = @import("../../thread/thread.zig");
+const deflate = @import("../../../deflate.zig");
+const Thread = @import("../../../thread/thread.zig");
 const std = @import("std");
 
 fn Ctx(dataType: type) type {

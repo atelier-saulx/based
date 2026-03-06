@@ -1,35 +1,8 @@
+const t = @import("../../../types.zig");
+const utils = @import("../../../utils.zig");
 const std = @import("std");
-const Query = @import("../common.zig");
-const utils = @import("../../utils.zig");
-const Node = @import("../../selva/node.zig");
-const Schema = @import("../../selva/schema.zig");
-const Fields = @import("../../selva/fields.zig");
-const t = @import("../../types.zig");
-const deflate = @import("./deflate.zig");
-const Thread = @import("../../thread/thread.zig");
 
-pub fn parseValue(
-    thread: *Thread.Thread,
-    q: []u8,
-    v: []const u8,
-    qI: usize,
-    c: *t.FilterCondition,
-    comptime fixedLen: bool,
-    compare: anytype,
-) bool {
-    const query: []u8 = q[qI .. c.size + qI];
-    var value: []const u8 = undefined;
-    if (fixedLen) {
-        value = v[1 + c.start .. v[c.start] + 1 + c.start];
-    } else if (v.len == 0) {
-        return false;
-    } else if (v[1] == 1) {
-        return deflate.decompress(thread, void, compare, query, v, undefined);
-    } else {
-        value = v[2 .. v.len - 4];
-    }
-    return compare(query, value);
-}
+const CAPITAL = 32;
 
 const vectorLenU8 = std.simd.suggestVectorLength(u8) orelse 16;
 const indexes = std.simd.iota(u8, vectorLenU8);
@@ -47,6 +20,7 @@ const indexBitMask: @Vector(vectorLenU8, MaskInt) = blk: {
 
 inline fn includeVector(
     comptime useTwoChars: bool,
+    comptime _: bool,
     query: []const u8,
     value: []const u8,
 ) bool {
@@ -54,7 +28,10 @@ inline fn includeVector(
     const maxStart = value.len - query.len;
     var i: usize = 0;
     const queryVector: @Vector(vectorLenU8, u8) = @splat(query[0]);
-    const queryVector1: @Vector(vectorLenU8, u8) = @splat(if (useTwoChars) query[1] else 0);
+
+    const queryVector1: if (useTwoChars) @Vector(vectorLenU8, u8) else void =
+        if (useTwoChars) @splat(query[1]) else undefined;
+
     const startIdx: usize = if (useTwoChars) 2 else 1;
     const lastVector = value.len - vecLen;
     while (i <= lastVector) : (i += vectorLenU8) {
@@ -141,14 +118,13 @@ inline fn includeVector(
     return false;
 }
 
-pub fn include(
+pub fn includeInner(
+    comptime lowerCase: bool,
     query: []const u8,
     value: []const u8,
 ) bool {
-    // do we want to support ql 0 ?
     if (query.len == 0) return true;
     if (value.len < query.len) return false;
-
     const useTwoChars = query.len >= 2 and switch (query[0]) {
         'a', 'e', 'i', 'o', 'u', 's', 't', 'n', 'r', 'l', 'c', 'd', 'm', 'h', ' ' => true,
         // 'A', 'E', 'I', 'O', 'U', 'S', 'T', 'N', 'R', 'L', 'C', 'D', 'M', 'H' => true,
@@ -160,82 +136,38 @@ pub fn include(
     if (value.len < vecLen) {
         var i: usize = 0;
         const maxStart = value.len - query.len;
+        // if (lowerCase) {
+        //     const firstCharCapital = query[0] - CAPITAL;
+        //     while (i <= maxStart) : (i += 1) {
+        //         if (value[i] == query[0] or value[i] == firstCharCapital) {
+        //             var j: usize = 1;
+        //             while (j < query.len) : (j += 1) {
+        //                 if (value[i + j] != query[j] or
+        //                     value[i + j] != query[j] - CAPITAL)
+        //                 {
+        //                     break;
+        //                 }
+        //             }
+        //             if (j == query.len) return true;
+        //         }
+        //     }
+        // } else {
         while (i <= maxStart) : (i += 1) {
             if (value[i] == query[0]) {
                 var j: usize = 1;
                 while (j < query.len) : (j += 1) {
-                    if (value[i + j] != query[j]) break;
+                    if (value[i + j] != query[j]) {
+                        break;
+                    }
                 }
                 if (j == query.len) return true;
             }
         }
+        // }
         return false;
     }
-
     if (useTwoChars) {
-        // lower case make it enum
-        return includeVector(true, query, value);
+        return includeVector(true, lowerCase, query, value);
     }
-
-    return includeVector(false, query, value);
-}
-
-pub fn eqVar(
-    query: []u8,
-    value: []const u8,
-) bool {
-    var i: usize = 0;
-    const l = value.len;
-    const ql = query.len;
-    if (l != ql) {
-        return false;
-    }
-    if (l < vectorLenU8) {
-        while (i < l) : (i += 1) {
-            if (value[i] != query[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-    while (i + vectorLenU8 <= l) : (i += vectorLenU8) {
-        const v: @Vector(vectorLenU8, u8) = value[i..][0..vectorLenU8].*;
-        const q: @Vector(vectorLenU8, u8) = query[i..][0..vectorLenU8].*;
-        if (!@reduce(.And, v == q)) {
-            return false;
-        }
-    }
-    if (i < l) {
-        const offset = l - vectorLenU8;
-        const v: @Vector(vectorLenU8, u8) = value[offset..][0..vectorLenU8].*;
-        const q: @Vector(vectorLenU8, u8) = query[offset..][0..vectorLenU8].*;
-        if (!@reduce(.And, v == q)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-pub fn eqCrc32(
-    q: []u8,
-    v: []const u8,
-    i: usize,
-    c: *t.FilterCondition,
-) bool {
-    if (v.len == 0) {
-        return false;
-    }
-    if (v[1] == 1) {
-        if (utils.readPtr(u32, q, i + 4 + @alignOf(u32) - c.offset).* != utils.read(u32, v, 2)) {
-            return false;
-        }
-    } else {
-        if (utils.readPtr(u32, q, i + 4 + @alignOf(u32) - c.offset).* != v.len - 6) {
-            return false;
-        }
-    }
-    if (utils.read(u32, v, v.len - 4) != utils.readPtr(u32, q, i + @alignOf(u32) - c.offset).*) {
-        return false;
-    }
-    return true;
+    return includeVector(false, lowerCase, query, value);
 }
