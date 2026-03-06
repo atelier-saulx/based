@@ -64,9 +64,9 @@ await test('include', async (t) => {
   //   syntheticData += 'ab'
   // }
 
-  // syntheticData = italy
+  syntheticData = italy
 
-  syntheticData = 'my snurfelbag'
+  // syntheticData = 'my snurfelbag my snurfelBag my snurfelbag my snurfelbag'
 
   const a = client.create('user', {
     name: 'mr jim',
@@ -97,7 +97,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e3; i++) {
     client.create('user', {
       big: syntheticData,
       name: `mr snurf ${i}`,
@@ -138,8 +138,12 @@ await test('include', async (t) => {
       props: {
         big: {
           ops: [
-            { op: 'includes', val: 'abab' },
-            // { op: '=', val: syntheticData },
+            // { op: 'includes', val: 'axderp', opts: { lowerCase: true } },
+            {
+              op: 'includes',
+              val: 'a{"name":true}',
+              opts: { lowerCase: true },
+            },
           ],
         },
       },

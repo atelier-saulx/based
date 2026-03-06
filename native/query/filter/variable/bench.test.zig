@@ -2,7 +2,7 @@ const std = @import("std");
 const includes = @import("includes.zig");
 // const includes2 = @import("includesLcase.zig");
 
-inline fn runBench(comptime lowerCase: bool, query: []const u8, value: []const u8, name: []const u8) void {
+inline fn runBench(comptime case: includes.Case, query: []const u8, value: []const u8, name: []const u8) void {
     const repeat: comptime_int = 10;
     const itAmount = 1_000;
     var count: usize = 0;
@@ -27,10 +27,7 @@ inline fn runBench(comptime lowerCase: bool, query: []const u8, value: []const u
         var time = std.time.nanoTimestamp();
         var i: usize = 0;
         while (i < itAmount) : (i += 1) {
-            if (includes.includeInner(lowerCase, query, value)) count += 1;
-
-            // if (includes2.loose(lowerCase, query, value)) count += 1;
-
+            if (includes.includeInner(case, query, value)) count += 1;
             std.mem.doNotOptimizeAway(&count);
         }
         time = std.time.nanoTimestamp() - time;
@@ -40,7 +37,7 @@ inline fn runBench(comptime lowerCase: bool, query: []const u8, value: []const u
     const d: comptime_int = 1000;
     std.debug.print("{s} {s}: {any} micro seconds matched: {any} \n", .{
         name,
-        if (lowerCase) "lcase" else "     ",
+        if (case != .default) "lcase" else "     ",
         @divExact(@divExact(totalTime, repeat), d),
         count,
     });
@@ -48,13 +45,13 @@ inline fn runBench(comptime lowerCase: bool, query: []const u8, value: []const u
 
 test "compare benchmark" {
     // const shortValue = "mrflApperdE@co";
-    // const medium = " find mrflApperdE@co a small substring ";
+    // const medium = " find mrflApperdE@co a small substring derp derp";
 
     const value = "this is a very long string {\"flap\": 100} that we are searching in, hoping to find a small substring hidden somewhere deep inside" ** 2245;
-    const query1 = "dededede";
+    const query1 = "de@dec";
 
-    runBench(false, query1, value, "medium");
-    runBench(true, query1, value, "medium");
+    runBench(.default, query1, value, "medium");
+    runBench(.lowerFast, query1, value, "medium");
     // runBench(false, query1, shortValue, "short");
     // runBench(true, query1, shortValue, "short");
 }

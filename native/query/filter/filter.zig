@@ -105,6 +105,7 @@ inline fn compare(
         .eqCrc32 => Variable.eqCrc32(q, v, index, c),
         .inc => Variable.parse(thread, q, v, index, c, fixedLen, Variable.inc),
         .incLcase => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcase),
+        .incLcaseFast => Variable.parse(thread, q, v, index, c, fixedLen, Variable.incLcaseFast),
         .eqVar => Variable.parse(thread, q, v, index, c, fixedLen, Variable.eq),
     };
     return if (meta.invert) !res else res;

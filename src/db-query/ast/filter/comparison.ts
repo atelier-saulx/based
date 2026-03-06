@@ -1,15 +1,14 @@
 import native from '../../../native.js'
 import { PropDef } from '../../../schema/defs/index.js'
+import { canBitwiseLowerCase } from '../../../utils/canBitwiseLowerCase.js'
 import { ENCODER, writeUint32 } from '../../../utils/uint8.js'
 import {
   FilterConditionByteSize,
   FilterConditionAlignOf,
   writeFilterCondition,
   PropTypeEnum,
-  FilterOpCompareEnum,
-  FilterOpCompare,
-  PropType,
-  FilterOpCompareInverse,
+  FilterOpCompareEnum as OpEnum,
+  FilterOpCompare as Op,
 } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 import { isFixedLenString, operatorToEnum } from './operatorToEnum.js'
@@ -24,7 +23,7 @@ const VECTOR_BYTES = 16
 
 export const createCondition = (
   prop: { start: number; id: number; size: number; type: PropTypeEnum },
-  op: FilterOpCompareEnum,
+  op: OpEnum,
   size: number = prop.size,
   propSize: number = prop.size,
 ) => {
@@ -58,7 +57,7 @@ export const fixedComparison = (
 ) => {
   const op = operatorToEnum(operator, val, prop)
 
-  if (op === FilterOpCompare.eqBatch || op === FilterOpCompare.neqBatch) {
+  if (op === Op.eqBatch || op === Op.neqBatch) {
     const size = val.length * prop.size
     const empty = VECTOR_BYTES - (size % VECTOR_BYTES)
     const rest = empty / prop.size
@@ -75,10 +74,7 @@ export const fixedComparison = (
     return condition
   }
 
-  if (
-    op === FilterOpCompare.eqBatchSmall ||
-    op === FilterOpCompare.neqBatchSmall
-  ) {
+  if (op === Op.eqBatchSmall || op === Op.neqBatchSmall) {
     const vectorLen = VECTOR_BYTES / prop.size
     const { condition, offset } = createCondition(prop, op, VECTOR_BYTES)
     let i = offset
@@ -89,7 +85,7 @@ export const fixedComparison = (
     return condition
   }
 
-  if (op === FilterOpCompare.range || op === FilterOpCompare.nrange) {
+  if (op === Op.range || op === Op.nrange) {
     const { condition, offset } = createCondition(prop, op, prop.size * 2)
     prop.write(condition, val[0], offset)
     prop.write(condition, val[1] - val[0], offset + prop.size)
@@ -107,29 +103,41 @@ export const variableComparison = (
   val: any[],
   opts?: FilterOpts,
 ) => {
-  const op = operatorToEnum(operator, val, prop)
-
-  if (
-    op === FilterOpCompare.inc ||
-    op === FilterOpCompare.ninc ||
-    op === FilterOpCompare.eqVar ||
-    op === FilterOpCompare.neqVar
-  ) {
-    const size = native.stringByteLength(val[0])
+  let op = operatorToEnum(operator, val, prop)
+  if (op === Op.eq || op === Op.neq) {
+    if (isFixedLenString(prop)) {
+      op = op === Op.neq ? Op.neqVar : Op.eqVar
+    } else if (prop.size === 0) {
+      op = op === Op.neq ? Op.neqCrc32 : Op.eqCrc32
+    }
+  }
+  if (op === Op.inc || op === Op.ninc) {
+    let value: string
+    if (opts?.lowerCase) {
+      value = val[0].toLowerCase().normalize('NFKD')
+      if (canBitwiseLowerCase(value)) {
+        op = Op.inc ? Op.incLcaseFast : Op.nincLcaseFast
+      } else {
+        op = Op.ninc ? Op.incLcase : Op.nincLcase
+      }
+    } else {
+      value = val[0].normalize('NFKD')
+    }
+    const size = native.stringByteLength(value)
     const { condition, offset } = createCondition(prop, op, size, 0)
-    ENCODER.encodeInto(val[0], condition.subarray(offset))
+    ENCODER.encodeInto(value, condition.subarray(offset))
     return condition
-  } else if (
-    op === FilterOpCompare.eqCrc32 ||
-    op === FilterOpCompare.neqCrc32
-  ) {
+  } else if (op === Op.eqVar || op === Op.neqVar) {
+    const value = val[0].normalize('NFKD')
+    const size = native.stringByteLength(value)
+    const { condition, offset } = createCondition(prop, op, size, 0)
+    ENCODER.encodeInto(value, condition.subarray(offset))
+    return condition
+  } else if (op === Op.eqCrc32 || op === Op.neqCrc32) {
     const { condition, offset } = createCondition(prop, op, 8, 4)
-    const buf = ENCODER.encode(val[0])
+    const buf = ENCODER.encode(val[0].normalize('NFKD'))
     writeUint32(condition, native.crc32(buf), offset)
     writeUint32(condition, buf.byteLength, offset + 4)
-
-    console.log('YO YO YO', native.crc32(buf))
-
     return condition
   }
 

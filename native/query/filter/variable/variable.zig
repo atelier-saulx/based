@@ -33,14 +33,16 @@ pub fn parse(
     return compare(query, value);
 }
 
-const includeInner2 = @import("./includesLcase.zig").loose;
-
 pub fn incLcase(query: []const u8, value: []const u8) bool {
-    return includeInner(true, query, value);
+    return includeInner(.lower, query, value);
+}
+
+pub fn incLcaseFast(query: []const u8, value: []const u8) bool {
+    return includeInner(.lowerFast, query, value);
 }
 
 pub fn inc(query: []const u8, value: []const u8) bool {
-    return includeInner(false, query, value);
+    return includeInner(.default, query, value);
 }
 
 pub const eqCrc32 = @import("./eqCrc32.zig").eqCrc32;

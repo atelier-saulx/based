@@ -879,6 +879,11 @@ pub const FilterOpCompare = enum(u8) {
     eqCrc32Batch = 36,
     neqCrc32Batch = 37,
     // ----------
+    incLcaseFast = 38,
+    nincLcaseFast = 39,
+    incBatchLcaseFast = 40,
+    nincBatchLcaseFast = 41,
+    // ----------
 
     selectLargeRefs = 203,
     selectRef = 204,
