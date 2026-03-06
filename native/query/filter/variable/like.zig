@@ -101,8 +101,8 @@ fn resultMatcher(
             d = nd;
         }
     }
-    // count trues
-    if (simd.countElementsWithValue(matches, true) != 1) {
+
+    if (simd.countTrues(matches) != 1) {
         var p: usize = index - i + 1;
         while (p < vectorLen) : (p += 1) {
             if (matches[p]) {

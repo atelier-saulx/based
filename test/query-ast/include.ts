@@ -132,10 +132,10 @@ await test('include', async (t) => {
     range: { start: 0, end: 3 },
     filter: {
       props: {
-        big: {
+        enum: {
           ops: [
-            { op: 'like', val: 'itoly' },
-
+            { op: '=', val: ['ok', 'bad', 'great'] },
+            // { op: 'includes', val: 'scrxll' },
             // { op: 'includes', val: ' xaderp', opts: { lowerCase: true } },
             // {
             //   op: 'includes',
