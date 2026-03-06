@@ -38,7 +38,7 @@ inline fn safeToLowerVec(
 pub const Case = enum {
     default, // exact
     lowerFast, // `| 32` mask (for a-z 0-9 queries)
-    lower, // if special chars e.g. { , ], @
+    lower, // if special chars e.g. { , ], @.
 };
 
 inline fn includeBody(
