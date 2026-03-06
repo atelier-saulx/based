@@ -53,7 +53,12 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('user').sort('age', 'desc').include('email', 'age').get(),
+    await db
+      .query2('user')
+      .sort('age')
+      .order('desc')
+      .include('email', 'age')
+      .get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 4, email: 'nurp@nurp.nurp.nurp', age: 200 },
@@ -65,7 +70,12 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').sort('age', 'asc').include('email', 'age').get(),
+    await db
+      .query2('user')
+      .sort('age')
+      .order('asc')
+      .include('email', 'age')
+      .get(),
     [
       { id: 5, email: 'z@z.z', age: 1 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -79,7 +89,12 @@ await test('basic', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('user').sort('email', 'asc').include('email', 'age').get(),
+    await db
+      .query2('user')
+      .sort('email')
+      .order('asc')
+      .include('email', 'age')
+      .get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -91,7 +106,12 @@ await test('basic', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').sort('email', 'desc').include('email', 'age').get(),
+    await db
+      .query2('user')
+      .sort('email')
+      .order('desc')
+      .include('email', 'age')
+      .get(),
     [
       { id: 1, email: 'blap@blap.blap.blap', age: 201 },
       { id: 2, email: 'flap@flap.flap.flap', age: 50 },
@@ -235,7 +255,8 @@ await test('basic', async (t) => {
     await db
       .query2('user', ids)
       .include('name', 'age')
-      .sort('age', 'desc')
+      .sort('age')
+      .order('desc')
       .get(),
     [
       { id: 10, name: 'mr 3', age: 303 },
@@ -261,7 +282,8 @@ await test('basic', async (t) => {
     await db
       .query2('user', ids2)
       .include('name', 'age')
-      .sort('age', 'asc')
+      .sort('age')
+      .order('asc')
       .get(),
     [
       { id: 6, name: 'mr x', age: 0 },
@@ -290,7 +312,8 @@ await test('basic', async (t) => {
     await db
       .query2('user', ids2)
       .include('name', 'age')
-      .sort('age', 'asc')
+      .sort('age')
+      .order('asc')
       .get(),
     [
       { id: 5, name: 'mr z', age: 1 },
@@ -508,8 +531,7 @@ await test('unset value on create', async (t) => {
     },
   })
 
-  await db.query2('dialog').sort('fun', 'desc').get()
-  await db.create('dialog', {})
+  await db.query2('dialog').sort('fun').order('desc').get()
   await db.query2('dialog').include('fun').get()
   await db.create('dialog', {
     fun: '1',
@@ -524,7 +546,7 @@ await test('unset value on create', async (t) => {
   const id5 = await db.create('dialog', {})
 
   deepEqual(
-    await db.query2('dialog').sort('fun', 'desc').get(),
+    await db.query2('dialog').sort('fun').order('desc').get(),
     [
       {
         id: 3,
@@ -550,7 +572,7 @@ await test('unset value on create', async (t) => {
     'first',
   )
 
-  deepEqual(await db.query2('dialog').sort('fun', 'desc').get(), [
+  deepEqual(await db.query2('dialog').sort('fun').order('desc').get(), [
     { id: 3, fun: '3' },
     { id: 2, fun: '2' },
     { id: 1, fun: '1' },
@@ -562,7 +584,7 @@ await test('unset value on create', async (t) => {
     fun: '0',
   })
 
-  deepEqual(await db.query2('dialog').sort('fun', 'desc').get(), [
+  deepEqual(await db.query2('dialog').sort('fun').order('desc').get(), [
     {
       id: 3,
       fun: '3',
@@ -588,7 +610,7 @@ await test('unset value on create', async (t) => {
   db.delete('dialog', id5)
   await db.drain()
 
-  deepEqual(await db.query2('dialog').sort('fun', 'desc').get(), [
+  deepEqual(await db.query2('dialog').sort('fun').order('desc').get(), [
     {
       id: 3,
       fun: '3',

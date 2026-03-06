@@ -59,7 +59,6 @@ pub fn get(
         const target = Node.getNodeId(node);
         const typeAliases = selva.c.selva_get_aliases(typeEntry, fieldSchema.field);
         if (typeAliases == null) {
-            std.log.err("not an alias prop {any}", .{fieldSchema});
             return @as([*]u8, undefined)[0..0];
         }
         const alias = selva.c.selva_get_alias_by_dest(typeAliases, target);

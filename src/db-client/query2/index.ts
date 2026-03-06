@@ -10,6 +10,7 @@ import type {
   FilterEdges,
   InferSchemaOutput,
   NumberPaths,
+  SortablePaths,
   ExpandDotPath,
   UnionToIntersection,
 } from './types.js'
@@ -527,9 +528,8 @@ class Query<
     return this as any
   }
 
-  sort<P extends string>(
+  sort<P extends SortablePaths<S, T>>(
     prop: P,
-    order?: 'asc' | 'desc',
   ): NextBranch<
     S,
     T,
@@ -541,8 +541,7 @@ class Query<
     Aggregate,
     GroupedKey
   > {
-    this.ast.order = order || 'asc'
-    this.ast.sort = { prop }
+    this.ast.sort = { prop: prop as string }
     return this as any
   }
 

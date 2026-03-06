@@ -1,4 +1,3 @@
-import { BasedDb } from '../../src/index.js'
 import test from '../shared/test.js'
 import { isSorted } from '../shared/assert.js'
 import { testDb } from '../shared/index.js'

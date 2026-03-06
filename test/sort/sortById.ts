@@ -28,13 +28,13 @@ await test('sort by id', async (t) => {
   }
 
   isSorted(
-    await db.query2('user').include('name').sort('id', 'asc').get(),
+    await db.query2('user').include('name').order('asc').get(),
     'id',
     'asc',
   )
 
   isSorted(
-    await db.query2('user').include('name').sort('id', 'desc').get(),
+    await db.query2('user').include('name').order('desc').get(),
     'id',
     'desc',
   )

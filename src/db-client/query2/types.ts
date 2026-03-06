@@ -368,6 +368,20 @@ export type NumberPaths<
   [K in Path<S, T>]: InferPathType<S, T, K> extends number ? K : never
 }[Path<S, T>]
 
+export type SortablePaths<
+  S extends { types: any; locales?: any },
+  T extends keyof S['types'],
+> = {
+  [K in Path<S, T>]: InferPathType<S, T, K> extends
+    | string
+    | number
+    | Uint8Array
+    | boolean
+    | null
+    ? K
+    : never
+}[Path<S, T>]
+
 export type ExpandDotPath<
   T extends string,
   V,

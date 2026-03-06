@@ -40,7 +40,8 @@ await test('sort timestamp', async (t) => {
 
   let ascResult = await db
     .query2('event')
-    .sort('startTime', 'asc')
+    .sort('startTime')
+    .order('asc')
     .include('startTime', 'name')
     .get()
 
@@ -53,7 +54,8 @@ await test('sort timestamp', async (t) => {
 
   let descResult = await db
     .query2('event')
-    .sort('startTime', 'asc')
+    .sort('startTime')
+    .order('asc')
     .include('startTime', 'name')
     .get()
 
@@ -69,7 +71,8 @@ await test('sort timestamp', async (t) => {
 
   ascResult = await db
     .query2('event')
-    .sort('startTime', 'asc')
+    .sort('startTime')
+    .order('asc')
     .include('startTime', 'name')
     .get()
 
@@ -82,7 +85,8 @@ await test('sort timestamp', async (t) => {
 
   descResult = await db
     .query2('event')
-    .sort('startTime', 'desc')
+    .sort('startTime')
+    .order('desc')
     .include('startTime', 'name')
     .get()
 
@@ -98,7 +102,8 @@ await test('sort timestamp', async (t) => {
 
   ascResult = await db
     .query2('event')
-    .sort('startTime', 'asc')
+    .sort('startTime')
+    .order('asc')
     .include('startTime', 'name')
     .get()
 
@@ -111,7 +116,8 @@ await test('sort timestamp', async (t) => {
 
   descResult = await db
     .query2('event')
-    .sort('startTime', 'desc')
+    .sort('startTime')
+    .order('desc')
     .include('startTime', 'name')
     .get()
 
@@ -149,7 +155,7 @@ await test('sort multicore', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query2('event').sort('startTime', 'asc').get(),
+    await db.query2('event').sort('startTime').order('asc').get(),
     'startTime',
     'asc',
   )
@@ -159,7 +165,7 @@ await test('sort multicore', async (t) => {
     q.push(
       (async () => {
         isSorted(
-          await db.query2('event').sort('startTime', 'asc').get(),
+          await db.query2('event').sort('startTime').order('asc').get(),
           'startTime',
           'asc',
         )
