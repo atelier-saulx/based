@@ -70,7 +70,7 @@ pub const ModifyUpdateHeader = packed struct {
     op: Modify,
     type: TypeId,
     isTmp: bool,
-    _padding: u7,
+    _padding: u7 = undefined,
     id: NodeId,
     size: u32,
 };
@@ -79,7 +79,7 @@ pub const ModifyDeleteHeader = packed struct {
     op: Modify,
     type: TypeId,
     isTmp: bool,
-    _padding: u7,
+    _padding: u7 = undefined,
     id: NodeId,
 };
 
@@ -103,7 +103,7 @@ pub const ModifyMainHeader = packed struct {
     increment: bool,
     incrementPositive: bool,
     expire: bool,
-    _padding: u4,
+    _padding: u4 = undefined,
     size: u8,
     start: u16,
 };
@@ -139,7 +139,7 @@ pub const ModifyReferencesMetaHeader = packed struct {
     id: u32,
     isTmp: bool,
     withIndex: bool,
-    _padding: u6,
+    _padding: u6 = undefined,
     index: i32,
     size: u32,
 };
@@ -147,13 +147,13 @@ pub const ModifyReferencesMetaHeader = packed struct {
 pub const ModifyReferenceMetaHeader = packed struct {
     id: u32,
     isTmp: bool,
-    _padding: u7,
+    _padding: u7 = undefined,
     size: u32,
 };
 
 pub const ModifyCardinalityHeader = packed struct {
     sparse: bool,
-    _padding: u7,
+    _padding: u7 = undefined,
     precision: u8,
 };
 
@@ -700,7 +700,7 @@ pub const IncludeOpts = packed struct {
     end: u32,
     isChars: bool,
     hasOpts: bool,
-    _padding: u6,
+    _padding: u6 = undefined,
     langFallbackSize: u8,
     lang: LangCode,
 };
@@ -715,7 +715,7 @@ pub const IncludeResponseMeta = packed struct {
     prop: u8,
     lang: LangCode,
     compressed: bool,
-    _padding: u7,
+    _padding: u7 = undefined,
     crc32: u32,
     size: u32,
 };
@@ -742,7 +742,7 @@ pub const QueryHeader = packed struct {
     iteratorType: QueryIteratorType,
     size: u16,
     sort: bool,
-    _padding: u7,
+    _padding: u7 = undefined,
 };
 
 pub const QueryHeaderSingle = packed struct {
@@ -786,7 +786,7 @@ pub const AggHeader = packed struct {
     accumulatorSize: u16,
     hasGroupBy: bool,
     isSamplingSet: bool,
-    _padding: u6,
+    _padding: u6 = undefined,
 };
 
 pub const AggRefsHeader = packed struct {
@@ -800,7 +800,7 @@ pub const AggRefsHeader = packed struct {
     iteratorType: QueryIteratorType,
     hasGroupBy: bool,
     isSamplingSet: bool,
-    _padding: u6,
+    _padding: u6 = undefined,
 };
 
 pub const addMultiSubscriptionHeader = packed struct {
@@ -819,7 +819,7 @@ pub const AggProp = packed struct {
     resultPos: u16,
     accumulatorPos: u16,
     isEdge: bool,
-    _padding: u7,
+    _padding: u7 = undefined,
 };
 
 pub const GroupByKeyProp = packed struct {
@@ -830,7 +830,7 @@ pub const GroupByKeyProp = packed struct {
     stepRange: u32,
     timezone: i16,
     isEdge: bool,
-    _padding: u7,
+    _padding: u7 = undefined,
 };
 
 // pub const AggGroupByKey = packed struct {
