@@ -127,10 +127,10 @@ await test('include', async (t) => {
   // FILTER REFS BY EDGE
   // ALIAS
 
-  const bigArray: string[] = []
-  for (let i = 0; i < 1e3; i++) {
-    bigArray.push(i % 2 ? 'xy' : 'xx')
-  }
+  // const bigArray: string[] = []
+  // for (let i = 0; i < 1e3; i++) {
+  //   bigArray.push(i % 2 ? 'xy' : 'xx')
+  // }
 
   const ast: QueryAst = {
     type: 'user',
@@ -139,7 +139,7 @@ await test('include', async (t) => {
       props: {
         derp: {
           ops: [
-            { op: '=', val: bigArray },
+            { op: '=', val: ['flap', 'xx', 'aa', 'zz'] },
             // bigArray
 
             // { op: '=', val: ['ok', 'bad', 'great'] },
