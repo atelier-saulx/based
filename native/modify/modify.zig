@@ -94,7 +94,7 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
                     const currentValue = current[main.start .. main.start + main.size];
                     const same = std.mem.eql(u8, currentValue, value);
                     if (same == false) {
-                        Sort.remove(db.decompressor, ms, currentValue, node);
+                        Sort.remove(db.decompressor, ms, current, node);
                         utils.copy(u8, current, value, main.start);
                         Sort.insert(db.decompressor, ms, current, node);
                         continue;
