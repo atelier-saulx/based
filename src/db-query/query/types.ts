@@ -42,7 +42,7 @@ type Prettify<T> = {
   [K in keyof T]: T[K]
 } & {}
 
-export type PickOutputFromProps<
+type PickOutputFromProps<
   S extends { types: any; locales?: any },
   Props,
   K,
@@ -179,12 +179,6 @@ export type ResolveInclude<Props, K> = K extends any
         : K
   : never
 
-export type IncludeSelection<
-  S extends { types: any; locales?: any },
-  T extends keyof S['types'],
-  K,
-> = ResolveInclude<ResolvedProps<S['types'], T>, K>
-
 export type PickOutput<
   S extends { types: any; locales?: any },
   T extends keyof S['types'],
@@ -245,7 +239,7 @@ export type Operator =
 type Prev = [never, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 // Helper to generate paths from edges
-export type EdgePaths<
+type EdgePaths<
   S extends { types: any; locales?: any },
   Prop,
   Depth extends number,

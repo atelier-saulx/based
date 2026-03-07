@@ -27,7 +27,7 @@ const undefinedValue = (prop: ReaderPropDef) => {
   if (typeIndex === PropType.vector) {
     return readVector(prop, new Uint8Array())
   }
-  if (typeIndex === PropType.text) {
+  if (typeIndex === PropType.stringLocalized) {
     if (prop.locales) {
       const codes = {}
       for (const code in prop.locales) {
@@ -47,7 +47,7 @@ export const undefinedProps = (q: ReaderSchema, item: Item) => {
     if (p.readBy !== q.readId) {
       p.readBy = q.readId
       if (p.meta) {
-        if (p.typeIndex === PropType.text && p.locales) {
+        if (p.typeIndex === PropType.stringLocalized && p.locales) {
           for (const code in p.locales) {
             const meta = emptyMeta()
             if (p.meta === ReaderMeta.combined) {

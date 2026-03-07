@@ -33,7 +33,7 @@ await test('modify enum', async (t) => {
   await db.update('thing', id1, {
     option: null,
   })
-  deepEqual((await db.query('thing', id1).get())?.option, undefined)
+  deepEqual((await db.query('thing', id1).get())?.option, null)
 })
 
 await test('modify enum on edge', async (t) => {

@@ -136,7 +136,7 @@ export const string = class String extends BasePropDef {
 }
 
 export const text = class Text extends string {
-  override type = PropType.text
+  override type = PropType.stringLocalized
   // @ts-ignore
   declare schema: SchemaText
   override pushValue(

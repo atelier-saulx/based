@@ -27,7 +27,8 @@ export type PropTree = {
 }
 
 export class TypeDef {
-  constructor(schema: SchemaType<true>, schemaRoot: SchemaOut) {
+  constructor(name: string, schema: SchemaType<true>, schemaRoot: SchemaOut) {
+    this.name = name
     this.schemaRoot = schemaRoot
     this.schema = schema
     this.tree = {
@@ -38,7 +39,7 @@ export class TypeDef {
     }
   }
   id: number = 0
-  name: string = ''
+  name: string
   main: PropDef[] = []
   separate: PropDef[] = []
   props: Map<string, PropDef> = new Map()

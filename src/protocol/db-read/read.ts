@@ -57,7 +57,11 @@ const meta: ReadInstruction = (q, result, i, item) => {
     i += 4
   }
 
-  if (propType === PropType.text && propDef.locales && propDef.meta! < 3) {
+  if (
+    propType === PropType.stringLocalized &&
+    propDef.locales &&
+    propDef.meta! < 3
+  ) {
     addLangMetaProp(propDef, meta, item, lang)
   } else {
     addMetaProp(propDef, meta, item)

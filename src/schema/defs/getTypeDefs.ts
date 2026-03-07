@@ -5,7 +5,7 @@ import {
   type SchemaType,
 } from '../../schema/index.js'
 import { PropType } from '../../zigTsExports.js'
-import { defs, type PropDef, type PropTree, type TypeDef } from './index.js'
+import { defs, TypeDef, type PropDef, type PropTree } from './index.js'
 
 const mainSorter = (a, b) => {
   if (a.size === 8) return -1
@@ -28,7 +28,7 @@ export const propIndexOffset = (prop: PropDef): number => {
       // then strings
       return 'default' in prop.schema ? -500 : 0
     // then text
-    case PropType.text:
+    case PropType.stringLocalized:
       return 'default' in prop.schema ? -400 : 0
     // References go behind the defaults
     case PropType.references:
@@ -72,26 +72,7 @@ const getTypeDef = (
   schemaRoot: SchemaOut,
 ): TypeDef => {
   const { props } = schema
-  const typeDef: TypeDef = {
-    id: 0,
-    name,
-    separate: [],
-    props: new Map(),
-    main: [],
-    tree: { path: [], schema, props: new Map(), required: [] },
-    schema,
-    schemaRoot,
-    propHooks: {
-      create: [],
-      update: [],
-      read: [],
-      search: [],
-      include: [],
-      filter: [],
-      groupBy: [],
-      aggregate: [],
-    },
-  }
+  const typeDef: TypeDef = new TypeDef(name, schema, schemaRoot)
 
   const walk = (
     props: SchemaProps<true>,

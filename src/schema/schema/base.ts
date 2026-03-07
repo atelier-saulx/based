@@ -60,7 +60,7 @@ export const parseBase = <T extends SchemaProp<true>>(
     const spec = new PropDef(
       result,
       [],
-      new TypeDef({ props: {} }, { hash: 0, types: {} }),
+      new TypeDef('', { props: {} }, { hash: 0, types: {} }),
     )
     spec.validate(def.default)
     result.default = def.default

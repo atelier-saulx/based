@@ -110,7 +110,7 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
             const value = data[j .. j + prop.size];
             j += prop.size;
             switch (prop.type) {
-                .text => {
+                .stringLocalized => {
                     if (prop.size == 0) {
                         // TODO Set defaults per translation
                         const langs: [1]u8 = .{0};

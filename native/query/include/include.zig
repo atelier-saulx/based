@@ -77,7 +77,7 @@ pub fn include(
                     t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
                         try append.meta(ctx.thread, header.prop, value);
                     },
-                    t.PropType.text => {
+                    t.PropType.stringLocalized => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
                             try append.meta(ctx.thread, header.prop, textValue);
@@ -92,7 +92,7 @@ pub fn include(
                 var header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
-                    t.PropType.text => {
+                    t.PropType.stringLocalized => {
                         // can be optmized... read next is quite slow because pointer
                         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
@@ -108,7 +108,7 @@ pub fn include(
                     t.PropType.binary, t.PropType.string, t.PropType.json => {
                         try opts.string(ctx.thread, header.prop, value, &optsHeader);
                     },
-                    t.PropType.text,
+                    t.PropType.stringLocalized,
                     => {
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
                     },
@@ -122,7 +122,7 @@ pub fn include(
                 const value = try get(typeEntry, node, &header);
                 // std.debug.print("??? value {any} - {any}\n", .{ value, header });
                 switch (header.propType) {
-                    .text,
+                    .stringLocalized,
                     => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
