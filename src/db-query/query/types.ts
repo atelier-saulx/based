@@ -20,7 +20,6 @@ type TypeMap = {
   int32: number
   uint32: number
   boolean: boolean
-  text: string
   json: any
   timestamp: number
   binary: Uint8Array
@@ -29,6 +28,8 @@ type TypeMap = {
   colvec: TypedArray
   cardinality: number
 }
+
+type LocalizedString = { type: 'string'; localized: true }
 
 // Helper to check if Selection is provided (not never/any/unknown default behavior)
 type IsSelected<T> = [T] extends [never] ? false : true
@@ -96,7 +97,7 @@ type InferPropLogic<
   Types,
   Locales extends string | Record<string, any> = Record<string, any>,
   Selection = never,
-> = Prop extends { type: 'text' }
+> = Prop extends LocalizedString
   ? Locales extends string
     ? string
     : { [K in Exclude<keyof Locales, symbol | number>]-?: string }
@@ -273,7 +274,7 @@ type PropsPath<
                 | '**'}`
             : Props[K] extends { props: infer P }
               ? `${K}.${PropsPath<S, P, Prev[Depth]>}`
-              : Props[K] extends { type: 'text' }
+              : Props[K] extends LocalizedString
                 ? S['locales'] extends string
                   ? never
                   : `${K}.${keyof (S['locales'] extends Record<string, any> ? S['locales'] : Record<string, any>) & string}`
@@ -324,7 +325,7 @@ type InferPropsPathType<
             : InferPathType<S, R & keyof S['types'], Tail>
           : Props[Head] extends { props: infer NestedProps }
             ? InferPropsPathType<S, NestedProps, Tail>
-            : Props[Head] extends { type: 'text' }
+            : Props[Head] extends LocalizedString
               ? S['locales'] extends string
                 ? never
                 : Tail extends keyof (S['locales'] extends Record<string, any>

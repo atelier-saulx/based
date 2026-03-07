@@ -48,6 +48,7 @@ export class BasePropDef implements PropDef {
     this.pushValue(writeBuf, value, op, lang)
   }
   validate(value: unknown, lang: LangCodeEnum = LangCode.none) {
+    // Default validate, can be overwritten by subclasses
     validateBuf ??= new AutoSizedUint8Array()
     validateBuf.length = 0
     this.pushValue(validateBuf, value, Modify.create, lang)

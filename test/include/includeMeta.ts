@@ -13,7 +13,7 @@ await test('meta for selva string', async (t) => {
       item: {
         props: {
           name: 'string',
-          body: 'text',
+          body: { type: 'string', localized: true },
           email: { maxBytes: 20, type: 'string' }, // fix main prop
           items: {
             items: {

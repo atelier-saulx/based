@@ -12,7 +12,10 @@ await test('locales', async (t) => {
     locales,
     types: {
       thing: {
-        text: 'text',
+        text: {
+          type: 'string',
+          localized: true,
+        },
         string: 'string',
       },
     },

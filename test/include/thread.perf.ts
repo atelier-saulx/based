@@ -293,7 +293,11 @@ await test.skip('default', async (t) => {
             default: 'hack',
           },
           nr: { type: 'uint32', default: 95 },
-          body: { type: 'text', default: { en: 'ding', de: 'dong' } }, // compression: 'none'
+          body: {
+            type: 'string',
+            localized: true,
+            default: { en: 'ding', de: 'dong' },
+          }, // compression: 'none'
           special: {
             type: 'vector',
             size: 4,
@@ -302,7 +306,8 @@ await test.skip('default', async (t) => {
             //default: new Uint8Array([0, 0, 0, 0]),
           },
           book: {
-            type: 'text',
+            type: 'string',
+            localized: true,
             default: {
               en: 'haha',
               de: 'hahaha',
@@ -324,7 +329,6 @@ await test.skip('default', async (t) => {
         .query('user')
         .include('name', 'bio', 'hack', 'hack2', 'book')
         .get()
-        .inspect()
     },
     'Dun',
     { repeat: 1 },

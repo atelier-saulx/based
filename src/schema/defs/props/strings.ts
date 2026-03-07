@@ -1,6 +1,6 @@
 import native from '../../../native.js'
 import { COMPRESSED, NOT_COMPRESSED } from '../../../protocol/index.js'
-import type { SchemaString, SchemaText } from '../../../schema/index.js'
+import type { SchemaString } from '../../../schema/index.js'
 import {
   PropType,
   type LangCodeEnum,
@@ -44,7 +44,10 @@ function validateString(
 export const string = class String extends BasePropDef {
   constructor(prop: SchemaString, path: string[], typeDef: TypeDef) {
     super(prop, path, typeDef)
-    if (prop.maxBytes && prop.maxBytes <= 64) {
+    if (prop.localized) {
+      this.pushValue = this.pushLocalizedValue
+      this.pushSelvaSchema = this.pushSelvaSchemaLocalized
+    } else if (prop.maxBytes && prop.maxBytes <= 64) {
       // 64 bytes fit in 1 cpu instruction to read */
       this.size = prop.maxBytes + 1
     } else if (prop.max && prop.max <= 32) {
@@ -117,6 +120,42 @@ export const string = class String extends BasePropDef {
     }
   }
 
+  pushLocalizedValue(
+    buf: AutoSizedUint8Array,
+    value: unknown,
+    op?: ModifyEnum,
+    lang: LangCodeEnum = LangCode.none,
+  ) {
+    if (typeof value === 'string') {
+      if (lang === LangCode.none) {
+        throw new Error(
+          `Invalid type, text needs to be an object ${this.path.join('.')}`,
+        )
+      }
+      const index = buf.reserveUint32()
+      const start = buf.length
+      this.pushValue(buf, value, op, lang)
+      buf.writeUint32(buf.length - start, index)
+    } else if (typeof value === 'object' && value !== null) {
+      if (Array.isArray(value)) {
+        throw new Error('Invalid type for text ' + this.path.join('.'))
+      }
+      for (const key in value) {
+        if (!(key in LangCode)) {
+          throw new Error(
+            `Invalid locale ${key} for text ${this.path.join('.')}`,
+          )
+        }
+        const index = buf.reserveUint32()
+        const start = buf.length
+        this.pushValue(buf, value[key], op, LangCode[key])
+        buf.writeUint32(buf.length - start, index)
+      }
+    } else {
+      throw new Error('Invalid type for text ' + this.path.join('.'))
+    }
+  }
+
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     const index = pushSelvaSchemaString(buf, {
       type: PropTypeSelva.string,
@@ -133,48 +172,8 @@ export const string = class String extends BasePropDef {
       )
     }
   }
-}
 
-export const text = class Text extends string {
-  override type = PropType.stringLocalized
-  // @ts-ignore
-  declare schema: SchemaText
-  override pushValue(
-    buf: AutoSizedUint8Array,
-    value: unknown,
-    op?: ModifyEnum,
-    lang: LangCodeEnum = LangCode.none,
-  ) {
-    if (typeof value === 'string') {
-      if (lang === LangCode.none) {
-        throw new Error(
-          `Invalid type, text needs to be an object ${this.path.join('.')}`,
-        )
-      }
-      const index = buf.reserveUint32()
-      const start = buf.length
-      super.pushValue(buf, value, op, lang)
-      buf.writeUint32(buf.length - start, index)
-    } else if (typeof value === 'object' && value !== null) {
-      if (Array.isArray(value)) {
-        throw new Error('Invalid type for text ' + this.path.join('.'))
-      }
-      for (const key in value) {
-        if (!(key in LangCode)) {
-          throw new Error(
-            `Invalid locale ${key} for text ${this.path.join('.')}`,
-          )
-        }
-        const index = buf.reserveUint32()
-        const start = buf.length
-        super.pushValue(buf, value[key], op, LangCode[key])
-        buf.writeUint32(buf.length - start, index)
-      }
-    } else {
-      throw new Error('Invalid type for text ' + this.path.join('.'))
-    }
-  }
-  override pushSelvaSchema(buf: AutoSizedUint8Array) {
+  pushSelvaSchemaLocalized(buf: AutoSizedUint8Array) {
     if (this.schema.default) {
       pushSelvaSchemaText(buf, {
         type: PropTypeSelva.text,

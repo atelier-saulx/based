@@ -15,13 +15,19 @@ await test.skip('text in an edge prop', async (t) => {
           bestFriend: {
             ref: 'user',
             prop: 'bestFriend',
-            $x: 'text',
+            $x: {
+              type: 'string',
+              localized: true,
+            },
           },
           friends: {
             items: {
               ref: 'user',
               prop: 'friends',
-              $x: 'text',
+              $x: {
+                type: 'string',
+                localized: true,
+              },
             },
           },
         },
@@ -40,7 +46,7 @@ await test.skip('text in an edge prop', async (t) => {
     id: user2,
     bestFriend: {
       id: user1,
-      $x: { en: 'hello' },
+      $x: { en: 'hello', it: '' },
     },
     friends: [],
   })

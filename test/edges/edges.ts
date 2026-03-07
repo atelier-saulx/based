@@ -423,6 +423,9 @@ await test('preserve fields', async (t) => {
       $x: 42,
     },
   })
+
+  console.log(await db.query('user', user2).include('**').get())
+
   deepEqual(await db.query('user', user2).include('**').get(), {
     id: user2,
     bestFriend: {

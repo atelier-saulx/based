@@ -12,7 +12,6 @@ type TypeMap = {
   int32: number
   uint32: number
   boolean: boolean
-  text: string
   json: any
   // return type is different
   timestamp: number | string | Date
