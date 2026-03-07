@@ -885,7 +885,8 @@ pub const FilterOpCompare = enum(u8) {
     // ----------
     like = 42,
     nlike = 43,
-    // batch later... important for search
+    likeBatch = 44,
+    nlikeBatch = 45,
     // ----------
 
     selectLargeRefs = 203,

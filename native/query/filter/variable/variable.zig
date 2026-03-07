@@ -8,9 +8,8 @@ const t = @import("../../../types.zig");
 const Thread = @import("../../../thread/thread.zig");
 
 const deflate = @import("./deflate.zig");
-const includeInner = @import("./includes.zig").include;
+const include = @import("./includes.zig");
 const likeInner = @import("./like.zig").like;
-const MAX_FIXED_LEN = 64;
 
 pub fn parse(
     thread: *Thread.Thread,
@@ -36,28 +35,70 @@ pub fn parse(
     return compare(query, value);
 }
 
-pub fn incLcase(query: []const u8, value: []const u8) bool {
-    return includeInner(.lower, query, value);
-}
-
-pub fn incLcaseFast(query: []const u8, value: []const u8) bool {
-    return includeInner(.lowerFast, query, value);
+// ---- Includes --------
+inline fn iterateInc(comptime case: include.Case, query: []const u8, value: []const u8) bool {
+    var i: usize = 0;
+    while (i < query.len) {
+        const size = utils.read(u32, query, i);
+        if (include.include(case, query[i + 4 .. i + 4 + size], value)) {
+            return true;
+        }
+        i += size + 4;
+    }
+    return false;
 }
 
 pub fn inc(query: []const u8, value: []const u8) bool {
-    return includeInner(.default, query, value);
+    return include.include(.default, query, value);
 }
 
-pub fn like(query: []const u8, value: []const u8) bool {
-    // for search it passes a number might add a comptime var
-    const bla = likeInner(3, query, value);
-    // std.debug.print("bla {any} \n", .{bla});
-    return bla < 4; // make this config first number in query
+pub fn incLcase(query: []const u8, value: []const u8) bool {
+    return include.include(.lower, query, value);
 }
+
+pub fn incLcaseFast(query: []const u8, value: []const u8) bool {
+    return include.include(.lowerFast, query, value);
+}
+
+pub fn incBatch(query: []const u8, value: []const u8) bool {
+    return iterateInc(.default, query, value);
+}
+
+pub fn incBatchLcase(query: []const u8, value: []const u8) bool {
+    return iterateInc(.lower, query, value);
+}
+
+pub fn incBatchLcaseFast(query: []const u8, value: []const u8) bool {
+    return iterateInc(.lowerFast, query, value);
+}
+
+// ---- Like --------
+
+pub fn like(query: []const u8, value: []const u8) bool {
+    const minScore = query[0];
+    return likeInner(minScore, query, value) <= minScore;
+}
+
+pub fn likeBatch(query: []const u8, value: []const u8) bool {
+    const minScore = query[0];
+    var i: usize = 1;
+    while (i < query.len) {
+        const size = utils.read(u32, query, i);
+        if (likeInner(minScore, query[i + 4 .. i + 4 + size], value) <= minScore) {
+            return true;
+        }
+        i += size + 4;
+    }
+    return false;
+}
+
+// ---- EqCrc --------
 
 pub const eqCrc32 = @import("./eqCrc32.zig").eqCrc32;
 
 pub const eqCrc32Batch = @import("./eqCrc32.zig").eqCrc32Batch;
+
+// ---- Eq --------
 
 pub const eq = @import("./eq.zig").eq;
 

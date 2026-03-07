@@ -66,9 +66,9 @@ await test('include', async (t) => {
 
   const a = client.create('user', {
     name: 'mr jim',
-    big: syntheticData,
     enum: 'ok',
     derp: 'aa',
+    big: 'mr jim',
     y: 4,
     x: false,
     flap: 9999,
@@ -82,6 +82,7 @@ await test('include', async (t) => {
     derp: 'bb',
     y: 15,
     x: true,
+    big: 'mr giraffe man',
     flap: 9999,
     cook: {
       cookie: 1234,
@@ -93,9 +94,9 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 10; i++) {
     client.create('user', {
-      // big: syntheticData,
+      big: syntheticData,
       name: `mr snurf ${i}`,
       derp: 'cc',
       y: i,
@@ -134,14 +135,15 @@ await test('include', async (t) => {
 
   const ast: QueryAst = {
     type: 'user',
-    range: { start: 0, end: 3 },
+    range: { start: 0, end: 1e6 },
     filter: {
       props: {
-        y: {
+        big: {
           ops: [
-            { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
+            // { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
+            // { op: 'includes', val: 'giraffe' },
 
-            // { op: '=', val: ['flap', 'xx', 'aa', 'zz', 'mr jim'] },
+            { op: 'like', val: ['giraffe', 'mr jim'] },
             // bigArray
 
             // { op: '=', val: ['ok', 'bad', 'great'] },
@@ -158,7 +160,7 @@ await test('include', async (t) => {
       },
     },
     props: {
-      // big: { include: {} },
+      big: { include: {} },
       y: { include: {} },
       name: { include: {} },
       derp: { include: {} },
@@ -193,7 +195,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
