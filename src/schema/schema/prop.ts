@@ -40,7 +40,6 @@ export type SchemaPropShorthand =
   | 'boolean'
   | 'string'
   | 'alias'
-  | 'text'
   | 'json'
   | 'cardinality'
   | NumberType

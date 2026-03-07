@@ -74,10 +74,10 @@ pub fn include(
                 const header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
-                    t.PropType.binary, t.PropType.string, t.PropType.json, t.PropType.alias => {
+                    .binary, .string, .json, .alias => {
                         try append.meta(ctx.thread, header.prop, value);
                     },
-                    t.PropType.stringLocalized => {
+                    .stringLocalized, .jsonLocalized => {
                         var iter = Fields.textIterator(value);
                         while (iter.next()) |textValue| {
                             try append.meta(ctx.thread, header.prop, textValue);
@@ -92,7 +92,7 @@ pub fn include(
                 var header = utils.readNext(t.IncludeMetaHeader, q, &i);
                 const value = try get(typeEntry, node, &header);
                 switch (header.propType) {
-                    t.PropType.stringLocalized => {
+                    .stringLocalized, .jsonLocalized => {
                         // can be optmized... read next is quite slow because pointer
                         var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.meta);
@@ -105,11 +105,10 @@ pub fn include(
                 const value = try get(typeEntry, node, &header);
                 var optsHeader = utils.readNext(t.IncludeOpts, q, &i);
                 switch (header.propType) {
-                    t.PropType.binary, t.PropType.string, t.PropType.json => {
+                    .binary, .string, .json => {
                         try opts.string(ctx.thread, header.prop, value, &optsHeader);
                     },
-                    t.PropType.stringLocalized,
-                    => {
+                    .stringLocalized, .jsonLocalized => {
                         try opts.text(ctx.thread, header.prop, value, q, &i, &optsHeader, opts.string);
                     },
                     else => {

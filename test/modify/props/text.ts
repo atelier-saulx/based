@@ -11,7 +11,10 @@ await test('modify text', async (t) => {
     },
     types: {
       thing: {
-        content: 'text',
+        content: {
+          type: 'string',
+          localized: true,
+        },
       },
     },
   })
@@ -68,7 +71,7 @@ await test('modify text', async (t) => {
   await db.update('thing', id1, {
     content: null,
   })
-  deepEqual((await db.query('thing', id1).get()).content, {
+  deepEqual((await db.query('thing', id1).get())!.content, {
     nl: '',
     en: '',
     de: '',
@@ -82,13 +85,13 @@ await test('modify text on edge', async (t) => {
     },
     types: {
       thing: {
-        content: 'text',
+        content: { type: 'string', localized: true },
       },
       holder: {
         toThing: {
           ref: 'thing',
           prop: 'holders',
-          $edgeText: 'text',
+          $edgeText: { type: 'string', localized: true },
         },
       },
     },
@@ -104,7 +107,7 @@ await test('modify text on edge', async (t) => {
 
   const res1 = await db.query('holder', id1).include('toThing.$edgeText').get()
 
-  deepEqual(res1.toThing?.$edgeText, { en: 'edge hello' })
+  deepEqual(res1!.toThing?.$edgeText, { en: 'edge hello' })
 
   await db.update('holder', id1, {
     toThing: {
@@ -115,5 +118,5 @@ await test('modify text on edge', async (t) => {
 
   const res2 = await db.query('holder', id1).include('toThing.$edgeText').get()
 
-  deepEqual(res2.toThing?.$edgeText, { en: 'edge hi' })
+  deepEqual(res2!.toThing?.$edgeText, { en: 'edge hi' })
 })

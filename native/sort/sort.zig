@@ -60,7 +60,7 @@ fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
         .number, .timestamp => {
             return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
         },
-        .stringFixed, .binaryFixed, .jsonFixed, .string, .stringLocalized, .alias, .binary => {
+        .stringFixed, .binaryFixed, .jsonFixed, .jsonLocalized, .json, .string, .stringLocalized, .alias, .binary => {
             return selva.SELVA_SORT_ORDER_BUFFER_ASC;
         },
         else => {
@@ -261,7 +261,7 @@ pub fn remove(
             const size = data[start];
             selva.selva_sort_remove_buf(index, parseSimpleString(data[start + 1 .. start + 1 + size]), size, node);
         },
-        .string, .stringLocalized, .binary => {
+        .string, .stringLocalized, .json, .jsonLocalized, .binary => {
             var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
             selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
         },
@@ -308,7 +308,7 @@ pub fn insert(
             const size = data[start];
             selva.selva_sort_insert_buf(index, parseSimpleString(data[start + 1 .. start + 1 + size]), size, value);
         },
-        .string, .stringLocalized, .binary => {
+        .string, .stringLocalized, .json, .jsonLocalized, .binary => {
             var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
             const str = parseString(decompressor, data, &buf);
             selva.selva_sort_insert_buf(index, str, SIZE, value);

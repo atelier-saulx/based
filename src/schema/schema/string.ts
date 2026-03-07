@@ -132,8 +132,12 @@ export type SchemaString = Base & {
       }
   )
 
-const isLocalized = (val: unknown): val is Record<string, string> =>
-  isRecord(val) && Object.values(val).every(isString)
+const isLocalized = (
+  val: unknown,
+  locales: SchemaOut['locales'] = {},
+): val is Record<string, string> =>
+  isRecord(val) &&
+  Object.entries(val).every(([key, val]) => key in locales && isString(val))
 
 export const parseString = (
   def: Record<string, unknown>,
@@ -168,7 +172,7 @@ export const parseString = (
       'Locales should be defined',
     )
     assert(
-      def.default === undefined || isLocalized(def.default),
+      def.default === undefined || isLocalized(def.default, locales),
       'Default should be record of strings',
     )
     return parseBase<SchemaString>(def, {

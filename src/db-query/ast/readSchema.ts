@@ -54,7 +54,10 @@ export const readPropDef = (
     readerPropDef.enum = Array.from(p.vals.keys())
   }
 
-  if (p.type === PropType.stringLocalized) {
+  if (
+    p.type === PropType.stringLocalized ||
+    p.type === PropType.jsonLocalized
+  ) {
     // @ts-ignore TODO make this nice
     readerPropDef.locales = Object.keys(p.typeDef.schemaRoot.locales).reduce(
       (map, lang: string) => {
