@@ -4,7 +4,6 @@ const selva = @import("selva.zig");
 const Schema = @import("schema.zig");
 const errors = @import("../errors.zig");
 const utils = @import("../utils.zig");
-const Modify = @import("../modify/common.zig");
 const t = @import("../types.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 

@@ -33,7 +33,6 @@ pub const c = @cImport({
 const t = @import("../types.zig");
 
 const std = @import("std");
-const Modify = @import("../modify/common.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const Node = *c.SelvaNode;
@@ -64,12 +63,5 @@ pub inline fn markDirty(db: *DbCtx, nodeType: anytype, nodeId: u32) void {
     } else {
         @compileLog("Invalid type: ", @TypeOf(nodeType));
         @compileError("Invalid type");
-    }
-}
-
-pub fn markReferencesDirty(ctx: *Modify.ModifyCtx, dstTypeId: u16, refs: []u32) void {
-    const te = c.selva_get_type_by_index(ctx.db.selva, dstTypeId);
-    for (refs) |nodeId| {
-        c.selva_mark_dirty(te, nodeId);
     }
 }

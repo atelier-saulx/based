@@ -65,13 +65,11 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
         const propId = data[j];
         const propSchema = try Schema.getFieldSchema(typeEntry, propId);
         if (propId == 0) {
-            // main handling
             const main = utils.readNext(t.ModifyMainHeader, data, &j);
             const current = Fields.get(typeEntry, node, propSchema, t.PropType.microBuffer);
             const value = data[j .. j + main.size];
             j += main.size;
 
-            //std.log.err("main prop {any} {any} {any}", .{main.start, main.size, main.resetDefault});
             if (main.increment) {
                 switch (main.type) {
                     .number => applyInc(f64, current, value, main.start, main.incrementPositive),
@@ -108,7 +106,6 @@ inline fn modifyPropsInner(comptime updateSort: bool, db: *DbCtx, typeEntry: Nod
                 utils.copy(u8, current, value, main.start);
             }
         } else {
-            // separate handling
             const prop = utils.readNext(t.ModifyPropHeader, data, &j);
             const value = data[j .. j + prop.size];
             j += prop.size;

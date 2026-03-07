@@ -1,5 +1,3 @@
-const Modify = @import("common.zig");
-const ModifyCtx = Modify.ModifyCtx;
 const std = @import("std");
 const selva = @import("../selva/selva.zig");
 const utils = @import("../utils.zig");

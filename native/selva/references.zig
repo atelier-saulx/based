@@ -4,17 +4,12 @@ const selva = @import("selva.zig");
 const t = @import("../types.zig");
 const Node = @import("node.zig");
 const Schema = @import("schema.zig");
-const Modify = @import("../modify/common.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const ReferenceSmall = selva.ReferenceSmall;
 pub const ReferenceLarge = selva.ReferenceLarge;
 pub const ReferenceAny = selva.ReferenceAny;
 pub const References = selva.References;
-
-pub inline fn preallocReferences(ctx: *Modify.ModifyCtx, len: u64) void {
-    _ = selva.c.selva_fields_prealloc_refs(ctx.db.selva.?, ctx.node.?, ctx.fieldSchema.?, len);
-}
 
 pub inline fn preallocReferences2(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema, len: u64) void {
     _ = selva.c.selva_fields_prealloc_refs(db.selva, node, fieldSchema, len);

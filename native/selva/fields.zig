@@ -9,7 +9,6 @@ const valgrind = @import("../valgrind.zig");
 const config = @import("config");
 const Node = @import("node.zig");
 const References = @import("references.zig");
-const Modify = @import("../modify/common.zig");
 const DbCtx = @import("../db/ctx.zig").DbCtx;
 
 pub const Aliases = selva.Aliases;
@@ -148,26 +147,13 @@ pub fn ensurePropTypeString(
     return selva.c.selva_fields_ensure_string(node, fieldSchema, selva.c.HLL_INIT_SIZE) orelse errors.SelvaError.SELVA_EINTYPE;
 }
 
-pub fn ensureEdgePropTypeString(
-    ctx: *Modify.ModifyCtx,
-    efc: Schema.EdgeFieldConstraint,
-    ref: References.ReferenceLarge,
-    fieldSchema: Schema.FieldSchema,
-) !*selva.c.selva_string {
-    if (Node.getEdgeNode(ctx.db, efc, ref)) |edgeNode| {
-        return selva.c.selva_fields_ensure_string(edgeNode, fieldSchema, selva.c.HLL_INIT_SIZE) orelse return errors.SelvaError.SELVA_EINTYPE;
-    } else {
-        return errors.SelvaError.SELVA_ENOENT;
-    }
-}
-
 pub inline fn deleteField(db: *DbCtx, node: Node.Node, fieldSchema: Schema.FieldSchema) !void {
     try errors.selva(selva.c.selva_fields_del(db.selva, node, fieldSchema));
 }
 
-pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {
-    return errors.selva(selva.c.selva_fields_set_text(ctx.node, fieldSchema, &selva.c.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.c.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
-}
+// pub inline fn deleteTextFieldTranslation(ctx: *Modify.ModifyCtx, fieldSchema: Schema.FieldSchema, lang: t.LangCode) !void {
+//     return errors.selva(selva.c.selva_fields_set_text(ctx.node, fieldSchema, &selva.c.selva_fields_text_tl_empty[@intFromEnum(lang)], selva.c.SELVA_FIELDS_TEXT_TL_EMPTY_LEN));
+// }
 
 pub inline fn reset(db: *DbCtx, te: Node.Type, node: Node.Node, fieldSchema: Schema.FieldSchema) void {
     selva.c.selva_fields_reset(db.selva, te, node, fieldSchema);
