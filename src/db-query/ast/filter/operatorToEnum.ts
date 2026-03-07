@@ -5,43 +5,14 @@ import {
 } from '../../../zigTsExports.js'
 import { Operator } from '../ast.js'
 import { PropDef } from '../../../schema/defs/index.js'
-import { canBitwiseLowerCase } from '../../../utils/canBitwiseLowerCase.js'
 
-export const operatorToEnum = (
-  op: Operator,
-  val: any[],
-  prop: PropDef,
-): OpEnum => {
-  const size = prop.size
-  const vectorLen = 16 / size
-
-  if (op === '=' && val.length === 1) {
+export const operatorToEnum = (op: Operator): OpEnum => {
+  if (op === '=') {
     return Op.eq
   }
 
-  // dont do bath here just OP (base op)
-  if (op === '=' && val.length > vectorLen) {
-    // var batch
-    return Op.eqBatch
-  }
-
-  if (op === '=' && val.length <= vectorLen) {
-    // var batch
-    return Op.eqBatchSmall
-  }
-
-  if (op === '!=' && val.length === 1) {
+  if (op === '!=') {
     return Op.neq
-  }
-
-  if (op === '!=' && val.length > vectorLen) {
-    // var batch
-    return Op.neqBatch
-  }
-
-  if (op === '!=' && val.length <= vectorLen) {
-    // var batch
-    return Op.neqBatchSmall
   }
 
   if (op === '>') {
