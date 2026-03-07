@@ -1,6 +1,6 @@
 import native from '../../../native.js'
 import { COMPRESSED, NOT_COMPRESSED } from '../../../protocol/index.js'
-import type { SchemaString, SchemaText } from '../../../schema.js'
+import type { SchemaString, SchemaText } from '../../../schema/index.js'
 import {
   PropType,
   type LangCodeEnum,

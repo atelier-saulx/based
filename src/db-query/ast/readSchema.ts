@@ -4,7 +4,7 @@ import {
   ReaderSchema,
   ReaderSchemaEnum,
 } from '../../protocol/index.js'
-import { SchemaOut } from '../../schema.js'
+import { SchemaOut } from '../../schema/index.js'
 import { PropDef } from '../../schema/defs/index.js'
 import { LangCode, PropType, VectorBaseType } from '../../zigTsExports.js'
 import { Include } from './ast.js'

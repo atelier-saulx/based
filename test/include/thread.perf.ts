@@ -2,7 +2,7 @@ import { fastPrng, wait } from '../../src/utils/index.js'
 import test from '../shared/test.js'
 import { perf } from '../shared/assert.js'
 import { BasedDb } from '../../src/index.js'
-import { registerQuery } from '../../src/db-client/query/registerQuery.js'
+import { registerQuery } from '../../src/db-client/_query/registerQuery.js'
 
 await test('include', async (t) => {
   const db = new BasedDb({

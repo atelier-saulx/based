@@ -1,4 +1,4 @@
-import { SchemaOut } from '../../schema.js'
+import { SchemaOut } from '../../schema/index.js'
 import { pushModifyHeader, writeModifyHeaderProps } from '../../zigTsExports.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import { getTypeDefs } from '../../schema/defs/getTypeDefs.js'

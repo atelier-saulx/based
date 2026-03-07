@@ -1,6 +1,6 @@
 import type { SchemaHooks } from '../../schema/index.js'
 import type { PropTypeEnum, VectorBaseTypeEnum } from '../../zigTsExports.js'
-import type { TypedArray } from '../../schema.js'
+import type { TypedArray } from '../../schema/index.js'
 
 export type Item = {
   id: number

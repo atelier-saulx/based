@@ -7,9 +7,49 @@ import {
   PropType,
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
-import { aggregateTypeMap } from '../../db-client/query/aggregates/types.js'
 import { readPropDef } from './readSchema.js'
 import { SizesType, isAggregateAst } from './aggregates.js'
+
+const enum AccumulatorSize {
+  // comptime
+  sum = 8,
+  count = 4,
+  cardinality = 4,
+  stddev = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
+  avg = 16, // count (u64) + sum (f64) = 16
+  variance = 24, // count (u64) + sum (f64) + sum_sq (f64) = 8 + 8 + 8 = 24
+  max = 8,
+  min = 8,
+  hmean = 16,
+}
+
+const aggregateTypeMap = new Map<
+  AggFunctionEnum,
+  { resultsSize: number; accumulatorSize: number }
+>([
+  [
+    AggFunction.cardinality,
+    { resultsSize: 4, accumulatorSize: AccumulatorSize.cardinality },
+  ],
+  [
+    AggFunction.count,
+    { resultsSize: 4, accumulatorSize: AccumulatorSize.count },
+  ],
+  [
+    AggFunction.stddev,
+    { resultsSize: 8, accumulatorSize: AccumulatorSize.stddev },
+  ],
+  [AggFunction.avg, { resultsSize: 8, accumulatorSize: AccumulatorSize.avg }],
+  [
+    AggFunction.hmean,
+    { resultsSize: 8, accumulatorSize: AccumulatorSize.hmean },
+  ],
+  [
+    AggFunction.variance,
+    { resultsSize: 8, accumulatorSize: AccumulatorSize.variance },
+  ],
+  // Othe types like MAX, MIN, SUM fall in the else case in aggregation.ts 8/8
+])
 
 export const resolveProp = (
   typeDef: TypeDef,

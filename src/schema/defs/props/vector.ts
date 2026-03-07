@@ -1,7 +1,4 @@
-import {
-  VECTOR_BASE_TYPE_SIZE_MAP,
-  type SchemaVector,
-} from '../../../schema.js'
+import { type SchemaVector } from '../../../schema/index.js'
 import { vectorBaseType2TypedArray } from '../../../schema/schema/vector.js'
 import {
   PropType,
@@ -12,11 +9,23 @@ import {
   pushSelvaSchemaColvec,
   pushSelvaSchemaMicroBuffer,
   VectorBaseType,
+  type VectorBaseTypeEnum,
 } from '../../../zigTsExports.js'
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
 import { TypedArray } from '../../../schema/index.js'
+
+export const VECTOR_BASE_TYPE_SIZE_MAP: Record<VectorBaseTypeEnum, number> = {
+  [VectorBaseType.int8]: 1,
+  [VectorBaseType.uint8]: 1,
+  [VectorBaseType.int16]: 2,
+  [VectorBaseType.uint16]: 2,
+  [VectorBaseType.int32]: 4,
+  [VectorBaseType.uint32]: 4,
+  [VectorBaseType.float32]: 4,
+  [VectorBaseType.float64]: 8,
+}
 
 export const vector = class Vector extends BasePropDef {
   constructor(schema: SchemaVector, path: string[], typeDef: TypeDef) {
@@ -108,7 +117,11 @@ export const colvec = class ColVec extends BasePropDef {
       hasDefault: ~~!!defaultValue,
     })
     if (defaultValue) {
-      const v = new Uint8Array(defaultValue.buffer, 0, this.vecLen * this.compSize)
+      const v = new Uint8Array(
+        defaultValue.buffer,
+        0,
+        this.vecLen * this.compSize,
+      )
       buf.set(v, buf.length)
     }
   }

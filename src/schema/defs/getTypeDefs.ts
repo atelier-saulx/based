@@ -1,11 +1,9 @@
 import {
   type SchemaOut,
   type SchemaProp,
-  type SchemaPropHooks,
   type SchemaProps,
   type SchemaType,
-} from '../../schema.js'
-import { getByPath, setByPath } from '../../utils/path.js'
+} from '../../schema/index.js'
 import { PropType } from '../../zigTsExports.js'
 import { defs, type PropDef, type PropTree, type TypeDef } from './index.js'
 

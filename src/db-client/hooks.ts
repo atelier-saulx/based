@@ -1,35 +1,42 @@
-import { OnClose, OnData, OnError } from './query/subscription/types.js'
 import { DbServer } from '../db-server/index.js'
-import type { BasedDbQuery } from './query/BasedDbQuery.js'
-import type { SchemaMigrateFns, SchemaOut } from '../schema/index.js'
+import type {
+  // SchemaMigrateFns,
+  SchemaOut,
+} from '../schema/index.js'
 
 export type DbClientHooks = {
   setSchema(
     schema: SchemaOut,
-    transformFns?: SchemaMigrateFns,
+    // transformFns?: SchemaMigrateFns,
   ): Promise<SchemaOut['hash']>
   flushModify(buf: Uint8Array): Promise<Uint8Array>
   getQueryBuf(buf: Uint8Array): ReturnType<DbServer['getQueryBuf']>
-  subscribe(
-    q: BasedDbQuery,
-    onData: (buf: Uint8Array) => ReturnType<OnData>,
-    onError: OnError,
-  ): OnClose
+  // subscribe(
+  //   q: BasedDbQuery,
+  //   onData: (buf: Uint8Array) => ReturnType<OnData>,
+  //   onError: OnError,
+  // ): OnClose
   subscribeSchema(cb: (schema: SchemaOut) => void): void
 }
 
 export const getDefaultHooks = (server: DbServer): DbClientHooks => {
   return {
-    subscribe(
-      q: BasedDbQuery,
-      onData: (res: Uint8Array) => void,
-      onError: OnError,
+    // subscribe(
+    //   q: BasedDbQuery,
+    //   onData: (res: Uint8Array) => void,
+    //   onError: OnError,
+    // ) {
+    //   server.subscribe(q.subscriptionBuffer!, onData)
+    //   return () => {}
+    // },
+    setSchema(
+      schema: SchemaOut,
+      // transformFns
     ) {
-      server.subscribe(q.subscriptionBuffer!, onData)
-      return () => {}
-    },
-    setSchema(schema: SchemaOut, transformFns) {
-      return server.setSchema(schema, transformFns)
+      return server.setSchema(
+        schema,
+        // , transformFns
+      )
     },
     subscribeSchema(setSchema) {
       if (server.schema) {

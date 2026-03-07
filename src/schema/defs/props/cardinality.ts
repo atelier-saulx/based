@@ -1,4 +1,4 @@
-import type { SchemaCardinality } from '../../../schema.js'
+import type { SchemaCardinality } from '../../../schema/index.js'
 import { ENCODER } from '../../../utils/uint8.js'
 import {
   pushModifyCardinalityHeader,

@@ -1,4 +1,3 @@
-import { PropDef } from '../../schema.js'
 import {
   QUERY_ITERATOR_DEFAULT,
   QUERY_ITERATOR_EDGE,

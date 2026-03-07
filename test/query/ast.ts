@@ -1,4 +1,4 @@
-import { query } from '../../src/db-client/query2/index.js'
+import { query } from '../../src/db-query/query/index.js'
 import { deepEqual } from '../shared/index.js'
 import test from '../shared/test.js'
 

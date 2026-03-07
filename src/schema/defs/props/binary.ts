@@ -1,6 +1,6 @@
 import native from '../../../native.js'
 import { NOT_COMPRESSED } from '../../../protocol/index.js'
-import type { SchemaBinary, SchemaString } from '../../../schema.js'
+import type { SchemaBinary, SchemaString } from '../../../schema/index.js'
 import {
   PropType,
   type PropTypeEnum,
@@ -51,6 +51,8 @@ export const binary = class Binary extends BasePropDef {
     this.validate(value)
     buf.pushUint8(value.byteLength)
     buf.set(value, buf.length)
+    const remainder = this.size - value.byteLength - 1
+    if (remainder) buf.fill(0, buf.length, buf.length + remainder)
   }
   override pushSelvaSchema(buf: AutoSizedUint8Array) {
     const index = pushSelvaSchemaString(buf, {

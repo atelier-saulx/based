@@ -4,10 +4,7 @@ import { Worker, MessageChannel } from 'node:worker_threads'
 import native from '../../native.js'
 import { DbServer } from '../index.js'
 import { fileURLToPath } from 'url'
-import {
-  setSchemaOnServer,
-  writeSchemaFile,
-} from '../schema.js'
+import { setSchemaOnServer, writeSchemaFile } from '../schema.js'
 import { setToAwake, waitUntilSleeping } from './utils.js'
 import {
   semver,

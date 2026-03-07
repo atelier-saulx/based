@@ -15,15 +15,73 @@ import {
 } from '../../zigTsExports.js'
 import { Ctx, QueryAst } from './ast.js'
 import { filter } from './filter/filter.js'
-import {
-  IntervalString,
-  Interval,
-} from '../../db-client/query/aggregates/types.js'
-import { getTimeZoneOffsetInMinutes } from '../../db-client/query/aggregates/aggregates.js'
 import { walkProps, resolveProp } from './aggPropWalker.js'
 
 type Sizes = { result: number; accumulator: number }
+enum Interval {
+  none = 0,
+  epoch = 1,
+  hour = 2,
+  // minute = 3,
+  // second = 4,
+  // microseconds = 5,
+  day = 6, // The day of the month (1–31); for interval values, the number of days
+  doy = 7, // The day of the year (0–365)
+  dow = 8, // The day of the week as Sunday (0) to Saturday (6)
+  isoDOW = 9, // The day of the week as Monday (1) to Sunday (7). This matches the ISO 8601 day of the week numbering.
+  // week = 10, // The number of the ISO 8601 week-numbering week of the year
+  month = 11, // The number of the month within the year (0–11);
+  // isoMonth = 12, // The number of the month within the year (1–12);
+  // quarter = 13, // The quarter of the year (1–4) that the date is in
+  year = 14,
+  // timeZone = 15, // ? seconds? or string?
+}
 
+export type IntervalString = keyof typeof Interval
+
+export type StepObject = {
+  step?: number | IntervalString
+  timeZone?: string
+  display?: Intl.DateTimeFormat
+}
+
+export type StepShorthand = number | IntervalString
+export type StepInput = StepObject | StepShorthand
+
+const getTimeZoneOffsetInMinutes = (
+  timeZone: string,
+  date: Date = new Date(),
+): number => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  })
+
+  const parts = formatter.formatToParts(date)
+  const getPart = (partName: string) =>
+    parseInt(parts.find((p) => p.type === partName)?.value || '0', 10)
+
+  const targetTimeAsUTC = Date.UTC(
+    getPart('year'),
+    getPart('month') - 1,
+    getPart('day'),
+    getPart('hour'),
+    getPart('minute'),
+    getPart('second'),
+  )
+
+  const originalUTCTime = date.getTime()
+  const offsetInMilliseconds = targetTimeAsUTC - originalUTCTime
+  const offsetInMinutes = offsetInMilliseconds / (1000 * 60)
+
+  return Math.round(offsetInMinutes)
+}
 export const pushAggregatesQuery = (
   ast: QueryAst,
   ctx: Ctx,

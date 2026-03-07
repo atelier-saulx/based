@@ -1,7 +1,7 @@
 import test from '../shared/test.js'
 import { testDb } from '../shared/index.js'
 import { deepEqual, equal } from '../shared/assert.js'
-import { checksum } from '../../src/db-client/query2/index.js'
+import { checksum } from '../../src/db-query/query/index.js'
 
 await test('include ', async (t) => {
   const db = await testDb(t, {

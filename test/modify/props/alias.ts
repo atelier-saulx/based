@@ -1,4 +1,4 @@
-import { parseSchema } from '../../../src/schema.js'
+import { parseSchema } from '../../../src/schema/index.js'
 import { deepEqual, throws } from '../../shared/assert.js'
 import { testDb } from '../../shared/index.js'
 import test from '../../shared/test.js'
