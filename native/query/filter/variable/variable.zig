@@ -57,6 +57,8 @@ pub fn like(query: []const u8, value: []const u8) bool {
 
 pub const eqCrc32 = @import("./eqCrc32.zig").eqCrc32;
 
+pub const eqCrc32Batch = @import("./eqCrc32.zig").eqCrc32Batch;
+
 pub const eq = @import("./eq.zig").eq;
 
 pub const eqBatch = @import("./eq.zig").eqBatch;
