@@ -82,7 +82,7 @@ test.serial('query perf', async (t: T) => {
   })
 
   let close = client
-    .query2('counter', {
+    .query('counter', {
       myQuery: 1,
     })
     .subscribe(() => {
@@ -107,7 +107,7 @@ test.serial('query perf', async (t: T) => {
   })
 
   close = client
-    .query2('counterUint8', {
+    .query('counterUint8', {
       myQuery: 1,
     })
     .subscribe(() => {

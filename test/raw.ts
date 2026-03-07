@@ -17,7 +17,7 @@ await test.skip('cardinality', async (t) => {
     uniqueSkills: ['juggling', 'cabaret'],
   })
   const { uniqueSkills } = await db
-    .query2('user', one)
+    .query('user', one)
     .include('uniqueSkills', { raw: true })
     .get()
 
@@ -25,7 +25,7 @@ await test.skip('cardinality', async (t) => {
     uniqueSkills,
   })
 
-  const [a, b] = await db.query2('user').get()
+  const [a, b] = await db.query('user').get()
   deepEqual(a.uniqueSkills, b.uniqueSkills)
 })
 
@@ -46,7 +46,7 @@ await test('string', async (t) => {
     resume: italy,
   })
   const { name, role, resume } = await db
-    .query2('user', one)
+    .query('user', one)
     .include(['name', 'role', 'resume'], { raw: true })
     .get()
 
@@ -56,7 +56,7 @@ await test('string', async (t) => {
     resume,
   })
 
-  const [a, b] = await db.query2('user').get()
+  const [a, b] = await db.query('user').get()
   deepEqual(a.name, b.name)
   deepEqual(a.role, b.role)
   deepEqual(a.resume, b.resume)

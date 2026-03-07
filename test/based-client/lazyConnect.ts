@@ -70,7 +70,7 @@ test('lazyConnect', async (t: T) => {
   await wait(2e3)
   // let msgCnt = 0
 
-  const close = client.query2('cookie').subscribe(
+  const close = client.query('cookie').subscribe(
     () => {},
     () => {
       errCnt++

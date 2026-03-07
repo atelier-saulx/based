@@ -288,7 +288,7 @@ await test('group by', async (t) => {
   // console.log('🙈🙈🙈 ------------------------------- 🙈🙈🙈')
 
   // const r = await db
-  //   .query2('trip')
+  //   .query('trip')
   //   // .count()
   //   .sum('distance')
   //   .groupBy('class', {})

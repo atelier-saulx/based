@@ -56,7 +56,7 @@ await test('multiple', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.$rdy')
       .include('contributors.$rating')
       .include('contributors.$derp')
@@ -96,7 +96,7 @@ await test('multiple', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('name')
       .include('contributors.$rdy')
       .include('contributors.$rating')
@@ -136,7 +136,7 @@ await test('multiple', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('name')
       .include('contributors.$rdy')
       .include('contributors.$rating')
@@ -179,7 +179,7 @@ await test('multiple', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('name')
       .include('contributors.$rdy')
       .include('contributors.$rating')
@@ -254,7 +254,7 @@ await test('single', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributor.$rdy')
       .include('contributor.$rating')
       .include('contributor.$derp')
@@ -272,7 +272,7 @@ await test('single', async (t) => {
     ],
   )
 
-  deepEqual(await db.query2('article').include('contributor.$rdy').get(), [
+  deepEqual(await db.query('article').include('contributor.$rdy').get(), [
     {
       id: 1,
       contributor: {
@@ -335,7 +335,7 @@ await test('multi references update', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.$age')
       .get()
       .then((v) => v),
@@ -357,7 +357,7 @@ await test('multi references update', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.$age')
       .get()
       .then((v) => v),
@@ -367,7 +367,7 @@ await test('multi references update', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.$plonki')
       .get()
       .then((v) => v),
@@ -406,7 +406,7 @@ await test('single ref update', async (t) => {
   })
 
   deepEqual(
-    await db.query2('article').include('writer.$age').get(),
+    await db.query('article').include('writer.$age').get(),
     [{ id: 1, writer: { id: 1, $age: 66 } }],
     'age 66',
   )
@@ -420,13 +420,13 @@ await test('single ref update', async (t) => {
   })
 
   deepEqual(
-    await db.query2('article').include('writer.$age').get(),
+    await db.query('article').include('writer.$age').get(),
     [{ id: 1, writer: { id: 1, $age: 202 } }],
     'age 202',
   )
 
   deepEqual(
-    await db.query2('article').include('writer.$plonki').get(),
+    await db.query('article').include('writer.$plonki').get(),
     [{ id: 1, writer: { id: 1, $plonki: 100 } }],
     'plonki 100',
   )

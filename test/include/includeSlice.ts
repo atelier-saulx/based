@@ -54,12 +54,12 @@ await test('slice string / text', async (t) => {
     },
   })
 
-  const q = await db.query2('item', 1).get()
+  const q = await db.query('item', 1).get()
   equal(q.id, 1)
 
   deepEqual(
     await db
-      .query2('item', id1)
+      .query('item', id1)
       .include('name', {
         end: 1,
         meta: true,
@@ -118,14 +118,14 @@ await test('slice string / text', async (t) => {
   )
 
   deepEqual(
-    await db.query2('item', id1).include('body', { end: 3 }).get(),
+    await db.query('item', id1).include('body', { end: 3 }).get(),
     { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'fin', it: 'abc' } },
     'Text all + chars',
   )
 
   deepEqual(
     await db
-      .query2('item', id1)
+      .query('item', id1)
       .include('body.fi', { end: 3 }, 'body.en', { end: 3 })
       .get(),
     { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'fin' } },
@@ -133,14 +133,14 @@ await test('slice string / text', async (t) => {
   )
 
   deepEqual(
-    await db.query2('item', id1).include('body', { end: 3 }).locale('en').get(),
+    await db.query('item', id1).include('body', { end: 3 }).locale('en').get(),
     { id: 1, body: '🤪🇺🇸🇿🇼' },
     'Text specific locale',
   )
 
   deepEqual(
     await db
-      .query2('item', id1)
+      .query('item', id1)
       .include('body', { end: 4, bytes: true })
       .locale('en')
       .get(),
@@ -149,10 +149,7 @@ await test('slice string / text', async (t) => {
   )
 
   deepEqual(
-    await db
-      .query2('item', id1)
-      .include('body.en', { end: 3 }, 'body.fi')
-      .get(),
+    await db.query('item', id1).include('body.en', { end: 3 }, 'body.fi').get(),
     { id: 1, body: { en: '🤪🇺🇸🇿🇼', fi: 'finland 🇫🇮! this is finland!' } },
     'Different ends per language',
   )

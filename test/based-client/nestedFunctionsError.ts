@@ -90,7 +90,7 @@ test('nested query functions fn does not exist error', async (t: T) => {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
           fn: async (based, _, update) => {
-            return based.query2('blabla').subscribe(update)
+            return based.query('blabla').subscribe(update)
           },
         },
       },
@@ -105,7 +105,7 @@ test('nested query functions fn does not exist error', async (t: T) => {
   const errors: any[] = []
   let r = 0
 
-  client.query2('hello').subscribe(
+  client.query('hello').subscribe(
     () => {
       r++
     },

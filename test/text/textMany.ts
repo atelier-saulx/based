@@ -67,5 +67,5 @@ await test('Many text props', async (t) => {
   //console.log(JSON.stringify(db.server.schemaTypesParsed, null, 2))
 
   await db.create('dialog', setTextProps())
-  //console.log(await db.query2('dialog').include('*').get())
+  //console.log(await db.query('dialog').include('*').get())
 })

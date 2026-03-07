@@ -31,7 +31,7 @@ await test('enum', async (t) => {
 
   client.create('user', {})
 
-  deepEqual(await client.query2('user').include('fancyness').get(), [
+  deepEqual(await client.query('user').include('fancyness').get(), [
     { id: 1, fancyness: 'mid' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
@@ -40,7 +40,7 @@ await test('enum', async (t) => {
 
   deepEqual(
     await client
-      .query2('user')
+      .query('user')
       .include('fancyness')
       .filter('fancyness', '=', 'fire')
       .get(),
@@ -54,7 +54,7 @@ await test('enum', async (t) => {
     fancyness: 'beta',
   })
 
-  deepEqual(await client.query2('user').include('fancyness').get(), [
+  deepEqual(await client.query('user').include('fancyness').get(), [
     { id: 1, fancyness: 'beta' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
@@ -76,7 +76,7 @@ await test('enum', async (t) => {
     }),
   )
 
-  deepEqual(await client.query2('user').include('fancyness').get(), [
+  deepEqual(await client.query('user').include('fancyness').get(), [
     { id: 1, fancyness: 'fire' },
     { id: 2, fancyness: 'fire' },
     { id: 3, fancyness: 'beta' },
@@ -102,7 +102,7 @@ await test('emoji enum', async (t) => {
   client.create('review', {})
   client.create('review', { score: '🙂' })
 
-  deepEqual(await client.query2('review').include('score').get(), [
+  deepEqual(await client.query('review').include('score').get(), [
     {
       id: 1,
       score: '😐',
@@ -116,7 +116,7 @@ await test('emoji enum', async (t) => {
   client.create('review', { score: '☹️' })
   client.create('review', { score: '😐' })
   deepEqual(
-    await client.query2('review').include('score').sort('score', 'desc').get(),
+    await client.query('review').include('score').sort('score', 'desc').get(),
     [
       { id: 2, score: '🙂' },
       { id: 1, score: '😐' },

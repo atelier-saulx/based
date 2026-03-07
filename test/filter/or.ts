@@ -18,7 +18,7 @@ await test('filter or', async (t) => {
   }
 
   deepEqual(
-    await db.query2('user').filter('nr', '>', 8).or('nr', '<', 1).get(),
+    await db.query('user').filter('nr', '>', 8).or('nr', '<', 1).get(),
     [
       {
         id: 1,
@@ -34,7 +34,7 @@ await test('filter or', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .filter('nr', '>', 8)
       .or((t) => {
         t.filter('nr', '<', 1).or('nr', '=', 5)
@@ -59,7 +59,7 @@ await test('filter or', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .filter('nr', '>', 8)
       .or('nr', '<', 1)
       .or('nr', '=', 5)
@@ -83,7 +83,7 @@ await test('filter or', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .filter('nr', '>', 8)
       .or(() => {})
       .get(),

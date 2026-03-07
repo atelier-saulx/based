@@ -3,7 +3,7 @@ import test from '../shared/test.js'
 import { SchemaProp, SchemaType } from '../../src/schema/index.js'
 import { deepEqual } from '../shared/assert.js'
 import { inspect } from 'util'
-import {testDb} from '../shared/index.js'
+import { testDb } from '../shared/index.js'
 
 const countrySchema: SchemaType = {
   props: {
@@ -183,7 +183,7 @@ const testVotes = (opts: { votes: any; amount: number }) => {
     })
 
     deepEqual(
-      (await client.query2('round', final).include('votes').get()).votes.length,
+      (await client.query('round', final).include('votes').get()).votes.length,
       0,
       'clear refs',
     )
@@ -192,13 +192,13 @@ const testVotes = (opts: { votes: any; amount: number }) => {
     for (let i = 0; i < len; i++) {
       const randomId = amount === 1 ? 1 : Math.ceil(Math.random() * amount)
       deepEqual(
-        await client.query2('vote', randomId).include('round').get(),
+        await client.query('vote', randomId).include('round').get(),
         { id: randomId, round: null },
         `clears refs on the other side ${randomId}`,
       )
     }
 
-    const votes = await client.query2('vote').range(0, 1e6).include('id').get()
+    const votes = await client.query('vote').range(0, 1e6).include('id').get()
 
     let i = votes.length - 1
     for (i = 0; i < votes.length; i++) {

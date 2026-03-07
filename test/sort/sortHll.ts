@@ -50,7 +50,7 @@ await test('sortCardinality', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .sort('brazilians')
       .order('desc')
       .include('count', 'brazilians')
@@ -71,7 +71,7 @@ await test('sortCardinality', async (t) => {
   )
 
   deepEqual(
-    await db.query2('article').sort('count').include('derp').get(),
+    await db.query('article').sort('count').include('derp').get(),
     [
       {
         id: 2,
@@ -93,7 +93,7 @@ await test('sortCardinality', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .sort('count')
       .include('count', 'brazilians')
       .get(),
@@ -139,7 +139,7 @@ await test('sortCardinality', async (t) => {
       brazilians: brazos,
     })
 
-    const result = await db.query2('article', testRecordId).get()
+    const result = await db.query('article', testRecordId).get()
 
     const count = Math.abs(result!.brazilians)
     const countError = count - num_brazos
@@ -165,7 +165,7 @@ await test('sortCardinality', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .sort('count')
       .order('desc')
       .include('count')
@@ -189,7 +189,7 @@ await test('sortCardinality', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .sort('brazilians')
       .order('desc')
       .include('derp', 'count')
@@ -228,7 +228,7 @@ await test('sortCardinality', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .sort('count')
       .order('desc')
       .include('count')

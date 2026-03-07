@@ -66,7 +66,7 @@ await test('simple', async (t) => {
   var totalLen = 0
 
   const close = clients[0]
-    .query2('user', id)
+    .query('user', id)
     .filter('date', '<', 'now - 2s')
     .subscribe((d) => {
       totalLen += d.length
@@ -74,7 +74,7 @@ await test('simple', async (t) => {
     })
 
   const close2 = clients[0]
-    .query2('user')
+    .query('user')
     .filter('date', '<', 'now - 2s')
     .subscribe((d) => {
       totalLen += d.length
@@ -113,7 +113,7 @@ await test('multiFilter', async (t) => {
   var total = 0
 
   const close = clients[0]
-    .query2('sequence')
+    .query('sequence')
     .locale('en')
     .filter('edition', '=', edition)
     .filter('startTime', '!=', 0)

@@ -22,7 +22,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query2('article').sort('email').order('desc').get(),
+    await db.query('article').sort('email').order('desc').get(),
     'email',
     'desc',
     'After create',
@@ -38,7 +38,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query2('article').sort('email').order('desc').get(),
+    await db.query('article').sort('email').order('desc').get(),
     'email',
     'desc',
     'After update',
@@ -51,7 +51,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query2('article').sort('email').order('desc').get(),
+    await db.query('article').sort('email').order('desc').get(),
     'email',
     'desc',
     'After delete',
@@ -67,7 +67,7 @@ await test('alias', async (t) => {
   await db.drain()
 
   isSorted(
-    await db.query2('article').sort('email').order('desc').get(),
+    await db.query('article').sort('email').order('desc').get(),
     'email',
     'desc',
     'After create (same values)',

@@ -70,7 +70,7 @@ await test('variable size (string/binary)', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .filter('stuff', '=', ENCODER.encode('#' + 2))
       .include('name', 'stuff', 'derp', 'type')
       .range(0, 10)
@@ -89,7 +89,7 @@ await test('variable size (string/binary)', async (t) => {
 
   const len = (
     await db
-      .query2('article')
+      .query('article')
       .filter('stuff', 'includes', new Uint8Array([55, 57]))
       .range(0, 100)
       .get()
@@ -120,7 +120,7 @@ await test('variable size (string/binary)', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('derp', 'includes', ENCODER.encode('vitorio'))
         .include('id')
         .get()
@@ -132,7 +132,7 @@ await test('variable size (string/binary)', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('derp', 'includes', ENCODER.encode('xx'))
         .include('id')
         .get()
@@ -144,7 +144,7 @@ await test('variable size (string/binary)', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('derp', 'includes', q)
         .include('id')
         .get()
@@ -156,7 +156,7 @@ await test('variable size (string/binary)', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('derp', '=', largeDerp)
         .include('id')
         .range(0, 1e3)
@@ -169,7 +169,7 @@ await test('variable size (string/binary)', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', '=', italy)
         .include('id')
         .range(0, 1e3)
@@ -204,7 +204,7 @@ await test('has compressed', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', 'includes', n)
         .include('id')
         .range(0, 1e3)
@@ -247,7 +247,7 @@ await test('has uncompressed', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', 'includes', 'derp derp derp', { lowerCase: true })
         .include('id')
         .range(0, 1e3)
@@ -259,7 +259,7 @@ await test('has uncompressed', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', 'includes', 'derp derp derp')
         .include('id')
         .range(0, 1e3)
@@ -270,7 +270,7 @@ await test('has uncompressed', async (t) => {
 
   deepEqual(
     await db
-      .query2('italy')
+      .query('italy')
       .filter('headline', 'includes', 'pager')
       .include('id', 'headline')
       .range(0, 1e3)
@@ -289,7 +289,7 @@ await test('has uncompressed', async (t) => {
 
   deepEqual(
     await db
-      .query2('italy')
+      .query('italy')
       .filter('headline', 'includes', 'Pager', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
@@ -308,7 +308,7 @@ await test('has uncompressed', async (t) => {
 
   deepEqual(
     await db
-      .query2('italy')
+      .query('italy')
       .filter('headline', 'includes', 'refugee', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
@@ -318,7 +318,7 @@ await test('has uncompressed', async (t) => {
 
   deepEqual(
     await db
-      .query2('italy')
+      .query('italy')
       .filter('headline', 'includes', 'gaza', { lowerCase: true })
       .include('id', 'headline')
       .range(0, 1e3)
@@ -354,13 +354,13 @@ await test('main has (string/binary)', async (t) => {
     stuff,
     derp: new Uint8Array([1, 2, 3, 4]),
   }
-  deepEqual(await db.query2('article').get(), [derpResult])
-  deepEqual(await db.query2('article').filter('stuff', '=', stuff).get(), [
+  deepEqual(await db.query('article').get(), [derpResult])
+  deepEqual(await db.query('article').filter('stuff', '=', stuff).get(), [
     derpResult,
   ])
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .filter('derp', 'includes', new Uint8Array([4]))
       .get(),
     [derpResult],
@@ -389,7 +389,7 @@ await test('has normalized uncompressed', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', 'includes', 'aaaaaa', { lowerCase: true })
         .include('id')
         .range(0, 1e5)
@@ -419,7 +419,7 @@ await test('has normalized compressed', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', 'includes', 'aaaaa', { lowerCase: true })
         .include('id', 'body')
         .range(0, 1e3)
@@ -456,7 +456,7 @@ await test('has OR uncompressed', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', 'includes', ['aaaaaaaaaaa', 'bbbbbb'], {
           lowerCase: true,
         }) //  ['aaa', 'bbb', 'ccc', 'eee']
@@ -469,7 +469,7 @@ await test('has OR uncompressed', async (t) => {
 
   deepEqual(
     await db
-      .query2('italy')
+      .query('italy')
       .filter('title', 'includes', ['gaza', 'tubbies'], { lowerCase: true })
       .include('id', 'title')
       .range(0, 1e3)
@@ -485,7 +485,7 @@ await test('has OR uncompressed', async (t) => {
 
   deepEqual(
     await db
-      .query2('italy')
+      .query('italy')
       .filter('title', 'includes', ['crisis', 'refugee'], { lowerCase: true })
       .include('id', 'title')
       .range(0, 1e3)
@@ -518,7 +518,7 @@ await test('has OR compressed', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', 'includes', ['aaaaaaaaaaa', 'bbbbbbbb'], {
           lowerCase: true,
         }) //  ['aaa', 'bbb', 'ccc', 'eee']
@@ -555,7 +555,7 @@ await test('OR equal', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', '=', [derpItaly, 'derp', italy])
         .range(0, 1e3)
         .get()
@@ -584,7 +584,7 @@ await test('OR equal main', async (t) => {
   equal(
     (
       await db
-        .query2('italy')
+        .query('italy')
         .filter('body', '=', ['xx', 'bb'])
         .range(0, 1e3)
         .get()
@@ -636,7 +636,7 @@ await test('includes and neq', async (t) => {
 
   deepEqual(
     await db
-      .query2('ent')
+      .query('ent')
       .filter('country', 'includes', ['Italy', 'Germany'])
       .filter('city', '!=', 'Berlin')
       .get(),
@@ -663,7 +663,7 @@ await test('empty string', async (t) => {
   const user2 = await db.create('user', {})
   const user3 = await db.create('user', { potato: '' })
   deepEqual(
-    await db.query2('user').filter('potato', '=', '').get(),
+    await db.query('user').filter('potato', '=', '').get(),
     [
       {
         id: user2,
@@ -697,7 +697,7 @@ await test('empty string fixed', async (t) => {
   const user2 = await db.create('user', { region: 'XX', city: 'Amsterdam' })
   const user3 = await db.create('user', { potato: 'flap', city: 'Rome' })
   deepEqual(
-    await db.query2('user').filter('potato', '!=', '').get(),
+    await db.query('user').filter('potato', '!=', '').get(),
     [
       { id: user1, region: 'AA', potato: 'cool', city: '' },
       { id: user3, region: '', potato: 'flap', city: 'Rome' },
@@ -707,7 +707,7 @@ await test('empty string fixed', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .filter('potato', '!=', '')
       .filter('region', '!=', '')
       .get(),
@@ -718,7 +718,7 @@ await test('empty string fixed', async (t) => {
   db.create('user', { region: 'YY', city: 'Denver' })
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .filter('potato', '=', '')
       .filter('region', '!=', '')
       .filter('city', '=', 'Amsterdam')

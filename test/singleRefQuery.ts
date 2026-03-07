@@ -104,7 +104,7 @@ await test('single reference query', async (t) => {
   await db.drain()
 
   const result2 = await db
-    .query2('simple')
+    .query('simple')
     .filter('user.myBlup.age', '=', 10)
     .get()
 
@@ -119,7 +119,7 @@ await test('single reference query', async (t) => {
   ])
 
   const result = await db
-    .query2('simple')
+    .query('simple')
     .filter('lilBlup.age', '=', 20)
     .filter('flap.power', '=', 10)
     .include('lilBlup', 'flap')

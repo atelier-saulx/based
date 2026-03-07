@@ -73,7 +73,7 @@ test('query functions perf (100k query fn instances)', async (t: T) => {
   for (let i = 0; i < 1e5; i++) {
     closers.push(
       client
-        .query2('counter', {
+        .query('counter', {
           myQuery: i,
         })
         .subscribe(() => {

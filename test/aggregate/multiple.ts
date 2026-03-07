@@ -74,14 +74,14 @@ await test('multiple functions', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
-    await db.query2('vote').sum('NL').sum('NO').max('NL').min('NL').get(),
+    await db.query('vote').sum('NL').sum('NO').max('NL').min('NL').get(),
     { NL: { sum: 176, max: 50, min: 10 }, NO: { sum: -176 } },
     'multiple func main no groupBy',
   )
 
   deepEqual(
     await db
-      .query2('vote')
+      .query('vote')
       .sum('NL')
       .sum('NO')
       .max('NL')
@@ -102,7 +102,7 @@ await test('multiple functions', async (t) => {
   })
 
   const multi = await db
-    .query2('vote')
+    .query('vote')
     .sum('NL')
     .max('PT')
     .cardinality('judges')
@@ -135,7 +135,7 @@ await test('multiple functions', async (t) => {
   )
 
   const multi2 = await db
-    .query2('vote')
+    .query('vote')
     .sum('NL')
     .max('PT')
     .cardinality('judges')
@@ -203,7 +203,7 @@ await test('multiple functions', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').sum('NL').count().sum('PT').stddev('NO').get(),
+    await db.query('vote').sum('NL').count().sum('PT').stddev('NO').get(),
     {
       NL: {
         sum: 176,
@@ -220,7 +220,7 @@ await test('multiple functions', async (t) => {
   )
   deepEqual(
     await db
-      .query2('vote')
+      .query('vote')
       .sum('NL')
       .count()
       .sum('PT')
@@ -269,7 +269,7 @@ await test('multiple functions', async (t) => {
   )
 
   const multiref = await db
-    .query2('sequence')
+    .query('sequence')
     .include((q) => q('votes').sum('NL').count().cardinality('judges'))
     .get()
 
@@ -296,7 +296,7 @@ await test('multiple functions', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').sum('NL').count().cardinality('judges'))
       .get(),
     [
@@ -314,7 +314,7 @@ await test('multiple functions', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').count().sum('NL').cardinality('judges'))
       .get(),
     [

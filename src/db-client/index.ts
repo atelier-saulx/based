@@ -98,18 +98,18 @@ export class DbClientClass<
     return this as unknown as DbClientClass<ResolveSchema<T>>
   }
 
-  query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
+  query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id?: number[],
   ): BasedQuery2<S, T, '*', false>
 
-  query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
+  query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id:
       | number
       | (Partial<InferSchemaOutput<S, T>> & { [Symbol.toStringTag]?: never }),
   ): BasedQuery2<S, T, '*', true>
-  query2<T extends keyof S['types'] & string = keyof S['types'] & string>(
+  query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id?:
       | number
@@ -203,30 +203,6 @@ export class DbClientClass<
       target,
       this.modifyCtx.buf,
     )
-  }
-
-  query(
-    type: string,
-    id?:
-      | number
-      | Promise<number>
-      | (number | Promise<number>)[]
-      | QueryByAliasObj
-      | QueryByAliasObj[]
-      | Uint32Array,
-  ): BasedDbQuery
-
-  query(
-    type: string,
-    id?:
-      | number
-      | number[]
-      | QueryByAliasObj
-      | QueryByAliasObj[]
-      | Uint32Array
-      | { [alias: string]: string }, // alias
-  ): BasedDbQuery {
-    return new BasedDbQuery(this, type, id as number | number[] | Uint32Array)
   }
 
   destroy() {

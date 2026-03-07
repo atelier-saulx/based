@@ -30,7 +30,7 @@ await test('simple', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('dialog').include('id', 'fun').get(),
+    await db.query('dialog').include('id', 'fun').get(),
     [
       {
         id: dialogId,
@@ -45,7 +45,7 @@ await test('simple', async (t) => {
   )
 
   deepEqual(
-    await db.query2('dialog').include('id').get(),
+    await db.query('dialog').include('id').get(),
     [
       {
         id: dialogId,
@@ -55,7 +55,7 @@ await test('simple', async (t) => {
   )
 
   deepEqual(
-    await db.query2('dialog').locale('it').include('id', 'fun').get(),
+    await db.query('dialog').locale('it').include('id', 'fun').get(),
     [
       {
         id: dialogId,
@@ -67,7 +67,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('it')
       .include('id', 'fun')
       .filter('fun', 'includes', 'fliperdieflaperdiefloep', { lowerCase: true })
@@ -78,7 +78,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .include('id', 'fun')
       .filter('fun', 'includes', 'italy', { lowerCase: true })
       .get(),
@@ -97,7 +97,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('it')
       .include('id', 'fun')
       .filter('fun', 'includes', 'italy', { lowerCase: true })
@@ -113,7 +113,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .include('id', 'fun')
       .filter('fun.en', 'includes', 'italy', { lowerCase: true })
       .get(),
@@ -123,7 +123,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .include('id', 'fun')
       .filter('fun.it', 'includes', 'italy', { lowerCase: true })
       .get(),
@@ -142,7 +142,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('en')
       .include('id', 'fun')
       .filter('fun.it', 'includes', 'italy', { lowerCase: true })
@@ -165,7 +165,7 @@ await test('simple', async (t) => {
   )
 
   deepEqual(
-    await db.query2('dialog').include('id', 'fun').locale('fi').get(),
+    await db.query('dialog').include('id', 'fun').locale('fi').get(),
     [
       {
         id: dialogId,
@@ -189,7 +189,7 @@ await test('simple', async (t) => {
   )
 
   deepEqual(
-    await db.query2('dialog').include('id', 'fun').locale('fi').get(),
+    await db.query('dialog').include('id', 'fun').locale('fi').get(),
     [
       {
         id: dialogId,
@@ -206,7 +206,7 @@ await test('simple', async (t) => {
   const derpderp = await db.create('dialog', {})
 
   deepEqual(
-    await db.query2('dialog', mrSnurfInFinland).get(),
+    await db.query('dialog', mrSnurfInFinland).get(),
     {
       id: mrSnurfInFinland,
       fun: {
@@ -219,7 +219,7 @@ await test('simple', async (t) => {
   )
 
   deepEqual(
-    await db.query2('dialog', derpderp).get(),
+    await db.query('dialog', derpderp).get(),
     {
       id: derpderp,
       fun: {
@@ -233,7 +233,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('fi')
       .include('id', 'fun')
       .filter('fun', '=', '3', { lowerCase: true })
@@ -249,7 +249,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('fi')
       .include('id', 'fun')
       .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
@@ -269,7 +269,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .include('fun.en')
       .filter('fun', '=', 'mr snurf in finland!', { lowerCase: true })
       .get(),
@@ -312,7 +312,7 @@ await test('search', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .include('id', 'fun')
       .search('finland', 'fun')
       .get(),
@@ -331,7 +331,7 @@ await test('search', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .include('id', 'fun')
       .search('kingdom', 'fun')
       .get(),
@@ -349,7 +349,7 @@ await test('search', async (t) => {
   )
 
   deepEqual(
-    await db.query2('dialog').include('id', 'fun').search('snurp', 'fun').get(),
+    await db.query('dialog').include('id', 'fun').search('snurp', 'fun').get(),
     [
       {
         id: 2,
@@ -364,7 +364,7 @@ await test('search', async (t) => {
   )
 
   deepEqual(
-    await db.query2('dialog').include('id', 'fun').search('derp', 'fun').get(),
+    await db.query('dialog').include('id', 'fun').search('derp', 'fun').get(),
     [
       {
         id: 2,
@@ -380,7 +380,7 @@ await test('search', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('fi')
       .include('id', 'fun')
       .search('derp', 'fun')
@@ -391,7 +391,7 @@ await test('search', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('en')
       .include('id', 'fun')
       .search('derp', 'fun')
@@ -408,7 +408,7 @@ await test('search', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .include('id', 'fun')
       .search('derp', 'fun.en')
       .get(),
@@ -451,7 +451,7 @@ await test('reference text', async (t) => {
     country: country1,
   })
 
-  deepEqual(await db.query2('country').include('*').get(), [
+  deepEqual(await db.query('country').include('*').get(), [
     {
       id: 1,
       name: '',
@@ -462,7 +462,7 @@ await test('reference text', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('contestant').include('*', 'country').get(), [
+  deepEqual(await db.query('contestant').include('*', 'country').get(), [
     {
       id: 1,
       name: 'New contestant',
@@ -495,7 +495,7 @@ await test('sort', async (t) => {
     },
   })
 
-  await db.query2('dialog').locale('fi').sort('fun', 'desc').get()
+  await db.query('dialog').locale('fi').sort('fun', 'desc').get()
 
   const id1 = await db.create('dialog', {
     fun: { en: '3 en', fi: '1' },
@@ -521,7 +521,7 @@ await test('sort', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .include('fun')
       .locale('fi')
       .sort('fun', 'desc')
@@ -552,7 +552,7 @@ await test('sort', async (t) => {
   )
 
   deepEqual(
-    await db.query2('dialog').include('fun').sort('fun.fi', 'desc').get(),
+    await db.query('dialog').include('fun').sort('fun.fi', 'desc').get(),
     [
       { id: 3, fun: { en: '1 en', fi: '3', it: '' } },
       { id: 2, fun: { en: '2 en', fi: '2', it: '' } },
@@ -564,7 +564,7 @@ await test('sort', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('en')
       .include('fun')
       .sort('fun', 'desc')
@@ -584,7 +584,7 @@ await test('sort', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('fi')
       .include('fun')
       .sort('fun', 'desc')
@@ -617,7 +617,7 @@ await test('sort', async (t) => {
 
   deepEqual(
     await db
-      .query2('dialog')
+      .query('dialog')
       .locale('fi')
       .include('fun')
       .sort('fun', 'desc')
@@ -642,7 +642,7 @@ await test('sort', async (t) => {
     ],
   )
 
-  deepEqual(await db.query2('dialog').locale('fi').sort('snurf', 'desc').get(), [
+  deepEqual(await db.query('dialog').locale('fi').sort('snurf', 'desc').get(), [
     { id: 3, fun: '3', snurf: '3' },
     { id: 2, fun: '2', snurf: '2' },
     { id: 1, fun: '1', snurf: '1' },
@@ -661,14 +661,14 @@ await test('sort', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('dialog').locale('fi').sort('snurf', 'desc').get(), [
+  deepEqual(await db.query('dialog').locale('fi').sort('snurf', 'desc').get(), [
     { id: 3, fun: '3', snurf: '3' },
     { id: 2, fun: '2', snurf: '2' },
     { id: 1, fun: '', snurf: '' },
     { id: 4, snurf: '', fun: '' },
   ])
 
-  deepEqual(await db.query2('dialog').locale('fi').sort('fun').get(), [
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
     { id: 4, snurf: '', fun: '' },
     { id: 1, fun: '', snurf: '' },
     { id: 2, fun: '2', snurf: '2' },
@@ -681,7 +681,7 @@ await test('sort', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('dialog').locale('fi').sort('fun').get(), [
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
     { id: 4, snurf: '', fun: '' },
     { id: 3, snurf: '3', fun: '' },
     { id: 1, snurf: '', fun: '' },
@@ -698,7 +698,7 @@ await test('sort', async (t) => {
   )
   await db.drain()
 
-  deepEqual(await db.query2('dialog').locale('fi').sort('fun').get(), [
+  deepEqual(await db.query('dialog').locale('fi').sort('fun').get(), [
     { id: 4, snurf: '', fun: '' },
     { id: 1, snurf: '', fun: '' },
     { id: 3, snurf: '3', fun: '0' },
@@ -716,7 +716,7 @@ await test('sort', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('dialog').locale('fi').sort('fun').get(),
+    await db.query('dialog').locale('fi').sort('fun').get(),
     [
       { id: 4, snurf: '', fun: '' },
       { id: 3, snurf: '3', fun: '' },
@@ -734,7 +734,7 @@ await test('sort', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('dialog').locale('fi').sort('fun').get(),
+    await db.query('dialog').locale('fi').sort('fun').get(),
     [
       { id: 4, snurf: '', fun: '' },
       { id: 1, snurf: '', fun: '' },
@@ -759,7 +759,7 @@ await test('sort', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('dialog').locale('fi').sort('fun').get(),
+    await db.query('dialog').locale('fi').sort('fun').get(),
     [
       { id: 4, snurf: '', fun: '' },
       { id: 3, snurf: '3', fun: '' },
@@ -796,7 +796,7 @@ await test('in object only', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', user1).get(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     dict: { nice: { en: 'a', it: '' } },
   })
@@ -829,7 +829,7 @@ await test('correct return from obj', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', user1).get(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     dict: { nice: { en: 'cool guy', it: '' } },
     name: { en: '', it: '' },
@@ -853,7 +853,7 @@ await test('clear field', async (t) => {
     name: { en: 'coolnameEN', it: 'coolnameIT' },
   })
 
-  deepEqual(await db.query2('user', user1).get(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     name: { en: 'coolnameEN', it: 'coolnameIT' },
   })
@@ -867,7 +867,7 @@ await test('clear field', async (t) => {
     { locale: 'en' },
   )
 
-  deepEqual(await db.query2('user', user1).get(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     name: { en: '', it: 'coolnameIT' },
   })
@@ -890,7 +890,7 @@ await test('text and compression', async (t) => {
     article: { en: italy, it: 'cool' },
   })
 
-  deepEqual(await db.query2('user', user1).get(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     article: { en: italy, it: 'cool' },
   })
@@ -904,7 +904,7 @@ await test('text and compression', async (t) => {
     { locale: 'en' },
   )
 
-  deepEqual(await db.query2('user', user1).get(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     article: { en: '', it: 'cool' },
   })
@@ -930,7 +930,7 @@ await test('text and crc32', async (t) => {
     },
   })
 
-  const checksum = q2checksum(await db.query2('user', user1).get())
+  const checksum = q2checksum(await db.query('user', user1).get())
 
   await db.update('user', user1, {
     article: {
@@ -939,7 +939,7 @@ await test('text and crc32', async (t) => {
     },
   })
 
-  const checksum2 = q2checksum(await db.query2('user', user1).get())
+  const checksum2 = q2checksum(await db.query('user', user1).get())
 
   notEqual(checksum, checksum2, 'Checksum is not the same')
 })

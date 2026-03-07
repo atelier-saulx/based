@@ -63,7 +63,7 @@ await test('query db', async (t) => {
   })
 
   {
-    const res = await db.query2('user').include('address.street').get()
+    const res = await db.query('user').include('address.street').get()
 
     deepEqual(res, [
       { id: 1, address: { street: 'Cool street' } },
@@ -73,7 +73,7 @@ await test('query db', async (t) => {
 
   {
     const res = await db
-      .query2('user')
+      .query('user')
       .include('name')
       .filter('isNice', '=', false)
       .get()
@@ -83,7 +83,7 @@ await test('query db', async (t) => {
 
   {
     const res = await db
-      .query2('user')
+      .query('user')
       .include('name')
       .filter('isNice', '=', true)
       .or('age', '=', 21)
@@ -96,7 +96,7 @@ await test('query db', async (t) => {
 
   // {
   //   const res = await db
-  //     .query2('user')
+  //     .query('user')
   //     .include('name')
   //     .filter('isNice', '=', true)
   //     .or('age', '=', 21)
@@ -110,7 +110,7 @@ await test('query db', async (t) => {
 
   {
     const res = await db
-      .query2('user')
+      .query('user')
       .include('name')
       .filter('isNice', '=', true)
       .or('age', '=', 21)
@@ -121,24 +121,24 @@ await test('query db', async (t) => {
   }
 
   {
-    const res = await db.query2('user').sum('age').get()
+    const res = await db.query('user').sum('age').get()
     deepEqual(res, { age: { sum: 70 } } as any)
   }
 
   // TODO wait for marco to check these
   // {
-  //   const res = await db.query2('user').sum('friend.age').get()
+  //   const res = await db.query('user').sum('friend.age').get()
   //   deepEqual(res, { friend: { age: { sum: 70 } } })
   // }
 
   // {
-  //   const res = await db.query2('user').sum('friends.age').get()
+  //   const res = await db.query('user').sum('friends.age').get()
   //   deepEqual(res, { friends: { age: { sum: 70 } } })
   // }
 
   // {
   //   const res = await db
-  //     .query2('user')
+  //     .query('user')
   //     .sum((select) => select('friends').sum('age'))
   //     .get()
   //   deepEqual(res, { friends: { age: { sum: 21 } } })
@@ -146,7 +146,7 @@ await test('query db', async (t) => {
 
   // // {
   // //   const res = await db
-  // //     .query2('user')
+  // //     .query('user')
   // //     .include((select) => select('friend').sum('age'))
   // //     .get()
 
@@ -154,13 +154,13 @@ await test('query db', async (t) => {
   // // }
 
   // {
-  //   const res = await db.query2('user').sum('age').groupBy('name').get()
+  //   const res = await db.query('user').sum('age').groupBy('name').get()
   //   deepEqual(res, { john: { age: { sum: 21 } }, billy: { age: { sum: 49 } } })
   // }
 
   // {
   //   const res = await db
-  //     .query2('user')
+  //     .query('user')
   //     .filter('isNice', '=', true)
   //     .sum('age')
   //     .groupBy('name')
@@ -169,7 +169,7 @@ await test('query db', async (t) => {
   // }
 
   {
-    const q = db.query2('user').include('friends.$rank', 'friends.$rating')
+    const q = db.query('user').include('friends.$rank', 'friends.$rating')
     const res = await q.get()
     deepEqual(res, [
       { id: 1, friends: [{ id: 2, $rank: 0, $rating: 0 }] },
@@ -178,7 +178,7 @@ await test('query db', async (t) => {
   }
 
   {
-    const q = db.query2('user').include('friends.$friendRef')
+    const q = db.query('user').include('friends.$friendRef')
     const res = await q.get()
     deepEqual(res, [
       {

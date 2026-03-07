@@ -30,7 +30,7 @@ await test('aliasDouble', async (t) => {
 
   deepEqual(
     await db
-      .query2('plot', {
+      .query('plot', {
         slug: 'test-plot-2',
       })
       .get(),
@@ -39,7 +39,7 @@ await test('aliasDouble', async (t) => {
 
   deepEqual(
     await db
-      .query2('plot', {
+      .query('plot', {
         uuid: 'flap2',
       })
       .get(),

@@ -41,7 +41,7 @@ await test('edge enum', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include('name', (q) =>
         q('initiatives').filter('$role', '=', 'a').include('name'),
       )
@@ -58,7 +58,7 @@ await test('edge enum', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include('name', (q) =>
         q('initiatives')
           .filter('$role', '=', 'a')

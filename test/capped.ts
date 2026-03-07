@@ -30,7 +30,7 @@ await test('capped type', async (t) => {
     wind: 50,
   })
 
-  deepEqual(await client.query2('meas').get(), [
+  deepEqual(await client.query('meas').get(), [
     { id: 1, temperature: 0, humidity: 99, wind: 10 },
     { id: 2, temperature: 1, humidity: 98, wind: 10 },
     { id: 3, temperature: 2, humidity: 97, wind: 50 },
@@ -41,7 +41,7 @@ await test('capped type', async (t) => {
     humidity: 1,
   })
 
-  deepEqual(await client.query2('meas').get(), [
+  deepEqual(await client.query('meas').get(), [
     { id: 1, temperature: -100, humidity: 1, wind: 10 },
     { id: 2, temperature: 1, humidity: 98, wind: 10 },
     { id: 3, temperature: 2, humidity: 97, wind: 50 },
@@ -57,7 +57,7 @@ await test('capped type', async (t) => {
     humidity: 1,
   })
 
-  deepEqual(await client.query2('meas').get(), [
+  deepEqual(await client.query('meas').get(), [
     { id: 1, temperature: -100, humidity: 1, wind: 10 },
     { id: 2, temperature: -50, humidity: 1, wind: 5 },
     { id: 3, temperature: -40, humidity: 1, wind: 10 },
@@ -89,7 +89,7 @@ await test('capped type', async (t) => {
     humidity: 1,
   })
 
-  deepEqual(await client.query2('meas').get(), [
+  deepEqual(await client.query('meas').get(), [
     { id: 1, temperature: -40, humidity: 1, wind: 10 },
     { id: 2, temperature: -50, humidity: 1, wind: 10 },
     { id: 3, temperature: -40, humidity: 1, wind: 10 },
@@ -128,7 +128,7 @@ await test('capped references', async (t) => {
     client.create('article', { latest: user })
   }
 
-  deepEqual(await client.query2('user', user).include('**').get(), {
+  deepEqual(await client.query('user', user).include('**').get(), {
     id: 1,
     latestArticles: [{ id: 6 }, { id: 7 }, { id: 8 }, { id: 9 }, { id: 10 }],
   })

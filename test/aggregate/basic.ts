@@ -52,28 +52,28 @@ await test('sum top level', async (t) => {
   db.create('sequence', { votes: [nl1, nl2, au1] })
 
   deepEqual(
-    await db.query2('vote').sum('NL').get(),
+    await db.query('vote').sum('NL').get(),
     { NL: { sum: 30 } },
     'sum, top level, single prop',
   )
 
   deepEqual(
-    await db.query2('vote').sum('NL', 'AU').get(),
+    await db.query('vote').sum('NL', 'AU').get(),
     { NL: { sum: 30 }, AU: { sum: 15 } },
     'sum, top level, multiple props',
   )
 
   throws(async () => {
     // @ts-expect-error
-    await db.query2('vote').sum().get()
+    await db.query('vote').sum().get()
   }, 'sum() returning nothing')
 
-  console.dir(await db.query2('vote').sum('flap.hello').get(), {
+  console.dir(await db.query('vote').sum('flap.hello').get(), {
     maxdepth: null,
   })
 
   deepEqual(
-    await db.query2('vote').sum('flap.hello').get(),
+    await db.query('vote').sum('flap.hello').get(),
     { flap: { hello: { sum: 100 } } },
     'nested object notation',
   )
@@ -127,14 +127,14 @@ await test('top level count', async (t) => {
   // top level  ----------------------------------
 
   deepEqual(
-    await db.query2('vote').count().get(),
+    await db.query('vote').count().get(),
     { count: 3 },
     'count, top level, prop',
   )
 
   // deepEqual(
   //   await db
-  //     .query2('vote')
+  //     .query('vote')
   //     .filter('country', '=', 'aa') // string filter not implemented yet
   //     .count()
   //     .get(),
@@ -143,14 +143,14 @@ await test('top level count', async (t) => {
   // )
 
   deepEqual(
-    await db.query2('vote').include('IT').count().get(),
+    await db.query('vote').include('IT').count().get(),
     { count: 3 },
     'count, top level, ignoring include',
   )
 
   // deepEqual(
   //   await db
-  //     .query2('vote')
+  //     .query('vote')
   //     .filter('country', '=', 'zz') // string filter not implemented yet
   //     .count()
   //     .get(),
@@ -159,13 +159,13 @@ await test('top level count', async (t) => {
   // )
 
   deepEqual(
-    await db.query2('vote').filter('NL', '=', 20).count().get(),
+    await db.query('vote').filter('NL', '=', 20).count().get(),
     { count: 1 },
     'count, with filtering an int value',
   )
 
   deepEqual(
-    await db.query2('vote').filter('NL', '>', 255).count().get(),
+    await db.query('vote').filter('NL', '>', 255).count().get(),
     { count: 0 },
     'count, with no match filtering, int value',
   )
@@ -226,7 +226,7 @@ await test('two phase accumulation', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
-    await db.query2('vote').stddev('NL', { mode: 'sample' }).get(),
+    await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
     {
       NL: { stddev: 15.56598856481656 },
     },
@@ -234,7 +234,7 @@ await test('two phase accumulation', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').stddev('NL', { mode: 'sample' }).get(),
+    await db.query('vote').stddev('NL', { mode: 'sample' }).get(),
     {
       NL: { stddev: 15.56598856481656 },
     },
@@ -242,7 +242,7 @@ await test('two phase accumulation', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').stddev('NL', { mode: 'population' }).get(),
+    await db.query('vote').stddev('NL', { mode: 'population' }).get(),
     {
       NL: { stddev: 13.922643427165687 },
     },
@@ -250,7 +250,7 @@ await test('two phase accumulation', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').sum('NL').get(),
+    await db.query('vote').sum('NL').get(),
     {
       NL: { sum: 118 },
     },
@@ -259,7 +259,7 @@ await test('two phase accumulation', async (t) => {
 
   deepEqual(
     await db
-      .query2('vote')
+      .query('vote')
       .stddev('NL', { mode: 'population' })
       .groupBy('country')
       .get(),
@@ -279,7 +279,7 @@ await test('two phase accumulation', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').stddev('NL', { mode: 'population' }))
       .get(),
     [
@@ -295,7 +295,7 @@ await test('two phase accumulation', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) =>
         q('votes').stddev('NL', { mode: 'population' }).groupBy('country'),
       )
@@ -391,7 +391,7 @@ await test('numeric types', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1, au2, br1] })
 
   deepEqual(
-    await db.query2('vote').groupBy('region').get(),
+    await db.query('vote').groupBy('region').get(),
     {
       bb: {},
       aa: {},
@@ -401,7 +401,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').sum('NL', 'FI').groupBy('region').get(),
+    await db.query('vote').sum('NL', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { sum: 33 },
@@ -420,7 +420,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').count().groupBy('region').get(),
+    await db.query('vote').count().groupBy('region').get(),
     {
       bb: {
         count: 2,
@@ -436,7 +436,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
+    await db.query('vote').avg('NL', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { avg: 16.5 },
@@ -458,7 +458,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').hmean('NL', 'PT', 'FI').groupBy('region').get(),
+    await db.query('vote').hmean('NL', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { hmean: 13.93939393939394 },
@@ -481,7 +481,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('vote')
+      .query('vote')
       .stddev('NL', 'PL', { mode: 'population' })
       .groupBy('region')
       .get(),
@@ -503,7 +503,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').stddev('NL', 'PL').groupBy('region').get(),
+    await db.query('vote').stddev('NL', 'PL').groupBy('region').get(),
     {
       bb: {
         NL: { stddev: 9.192388155425117 },
@@ -523,7 +523,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('vote')
+      .query('vote')
       .var('NL', 'PL', { mode: 'population' })
       .groupBy('region')
       .get(),
@@ -546,7 +546,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('vote')
+      .query('vote')
       .var('NL', 'PL', { mode: 'sample' })
       .groupBy('region')
       .get(),
@@ -559,7 +559,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').var('NL', 'PL').groupBy('region').get(),
+    await db.query('vote').var('NL', 'PL').groupBy('region').get(),
     {
       bb: { NL: { variance: 84.5 }, PL: { variance: 264.5 } },
       aa: { NL: { variance: 24.5 }, PL: { variance: 264.5 } },
@@ -569,7 +569,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+    await db.query('vote').max('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { max: 23 },
@@ -594,7 +594,7 @@ await test('numeric types', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').min('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
+    await db.query('vote').min('NL', 'NO', 'PT', 'FI').groupBy('region').get(),
     {
       bb: {
         NL: { min: 10 },
@@ -620,7 +620,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').sum('NL'))
       .get(),
     [
@@ -636,7 +636,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').avg('NL'))
       .get(),
     [
@@ -652,7 +652,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').hmean('NL'))
       .get(),
     [
@@ -668,7 +668,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').groupBy('region').sum('NL'))
       .get(),
     [
@@ -692,7 +692,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').groupBy('region').count())
       .get(),
     [
@@ -710,7 +710,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) =>
         q('votes').groupBy('region').stddev('NL', { mode: 'population' }),
       )
@@ -736,7 +736,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').groupBy('region').stddev('NL'))
       .get(),
     [
@@ -754,7 +754,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) =>
         q('votes').groupBy('region').var('NL', { mode: 'population' }),
       )
@@ -780,7 +780,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) =>
         q('votes').groupBy('region').var('NL', { mode: 'sample' }),
       )
@@ -800,7 +800,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').groupBy('region').var('NL'))
       .get(),
     [
@@ -818,7 +818,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').groupBy('region').avg('NL'))
       .get(),
     [
@@ -842,7 +842,7 @@ await test('numeric types', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((q) => q('votes').groupBy('region').hmean('NL'))
       .get(),
     [
@@ -898,7 +898,7 @@ await test('fixed length strings', async (t) => {
   }
 
   const fls1 = await db
-    .query2('product')
+    .query('product')
     .include('*')
     .avg('flap')
     .groupBy('name')
@@ -911,7 +911,7 @@ await test('fixed length strings', async (t) => {
   )
 
   const fls2 = await db
-    .query2('shelve')
+    .query('shelve')
     .include((q) => q('products').avg('flap').groupBy('name'))
     .get()
 
@@ -976,7 +976,7 @@ await test('range', async (t) => {
   }
 
   const rgbm1 = await db
-    .query2('job')
+    .query('job')
     .groupBy('day', { step: 'hour', timeZone: 'America/Sao_Paulo' })
     .avg('tip')
     .range(1, 2)
@@ -986,7 +986,7 @@ await test('range', async (t) => {
   deepEqual(Object.keys(rgbm1).length, 2, 'range group by main')
 
   const rgbm2 = await db
-    .query2('employee')
+    .query('employee')
     .include((q) => q('area').groupBy('name').sum('flap'), '*')
     .range(1, 2)
     .get()

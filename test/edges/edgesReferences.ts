@@ -96,7 +96,7 @@ await test('multi reference', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.$age')
       .get()
       .then((v) => v),
@@ -106,7 +106,7 @@ await test('multi reference', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.$friend.name', 'contributors.$friend.location')
       .get(),
     [
@@ -128,7 +128,7 @@ await test('multi reference', async (t) => {
   )
 
   deepEqual(
-    await db.query2('article').include('contributors.$friend').get(),
+    await db.query('article').include('contributors.$friend').get(),
     [
       {
         id: 1,
@@ -239,7 +239,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.id')
       .get()
       .then((v) => v),
@@ -251,7 +251,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.id', 'contributors.$countries.id')
       .get()
       .then((v) => v),
@@ -269,7 +269,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.id', 'contributors.$countries.code')
       .get()
       .then((v) => v),
@@ -303,7 +303,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('contributors.id', 'contributors.$countries')
       .get()
       .then((v) => v),
@@ -337,7 +337,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include((t) => {
         t('contributors').include('$countries').include('name').sort('name')
       })
@@ -375,7 +375,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include((t) => {
         t('contributors').include('name').filter('nationality', '=', nl)
       })
@@ -400,7 +400,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include((t) => {
         t('contributors')
           .include('name')
@@ -433,7 +433,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include((s) => {
         s('contributors')
           .include('name')
@@ -443,8 +443,7 @@ await test('multiple references', async (t) => {
           .sort('name')
           .filter('nationality', '=', nl)
       })
-      .get()
-      ,
+      .get(),
     [
       {
         id: 1,
@@ -465,7 +464,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include((s) => {
         s('contributors')
           .include('name')
@@ -494,7 +493,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include((s) => {
         s('contributors')
           .include('name')
@@ -575,7 +574,7 @@ await test('simple references', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('phase').include('scenarios').get(), [
+  deepEqual(await db.query('phase').include('scenarios').get(), [
     { id: 1, scenarios: [{ id: scenarioId1, name: 'scenario' }] },
   ])
 })
@@ -608,9 +607,9 @@ await test('many to many', async (t) => {
     scenarios: { add: [{ id: phaseId2, $name: 'a' }] },
   })
 
-  // await db.query2('phase').include('scenarios').get().
+  // await db.query('phase').include('scenarios').get().
 
-  deepEqual(await db.query2('phase').include('scenarios').get(), [
+  deepEqual(await db.query('phase').include('scenarios').get(), [
     { id: 1, scenarios: [{ id: 2, name: 'phase' }] },
     { id: 2, scenarios: [{ id: 1, name: 'phase' }] },
     { id: 3, scenarios: [] },
@@ -622,7 +621,7 @@ await test('many to many', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('phase').include('scenarios').get(), [
+  deepEqual(await db.query('phase').include('scenarios').get(), [
     {
       id: 1,
       scenarios: [

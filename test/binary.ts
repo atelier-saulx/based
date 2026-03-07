@@ -24,7 +24,7 @@ await test('simple', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('user').get(),
+    await db.query('user').get(),
     [
       {
         id: 1,
@@ -38,7 +38,7 @@ await test('simple', async (t) => {
     file: new Uint8Array([1, 2, 3, 4]),
   })
 
-  deepEqual(await db.query2('user', id).get(), {
+  deepEqual(await db.query('user', id).get(), {
     id,
     file: new Uint8Array([1, 2, 3, 4]),
   })
@@ -48,7 +48,7 @@ await test('simple', async (t) => {
     file: italyBytes,
   })
 
-  equal((await db.query2('user', id2).get()).file.length, italyBytes.byteLength)
+  equal((await db.query('user', id2).get()).file.length, italyBytes.byteLength)
 })
 
 await test('binary and crc32', async (t) => {
@@ -66,13 +66,13 @@ await test('binary and crc32', async (t) => {
     article: new Uint8Array([1]),
   })
 
-  const checksum = q2checksum(await db.query2('user', user1).get())
+  const checksum = q2checksum(await db.query('user', user1).get())
 
   await db.update('user', user1, {
     article: new Uint8Array([2]),
   })
 
-  const checksum2 = q2checksum(await db.query2('user', user1).get())
+  const checksum2 = q2checksum(await db.query('user', user1).get())
 
   notEqual(checksum, checksum2, 'Checksum is not the same')
 })

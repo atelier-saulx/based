@@ -67,7 +67,7 @@ test('query ctx bound + default verifyAuthState', async (t: T) => {
   const errs: any[] = []
 
   let close = client
-    .query2('counter', {
+    .query('counter', {
       myQuery: 123,
     })
     .subscribe(
@@ -105,7 +105,7 @@ test('query ctx bound + default verifyAuthState', async (t: T) => {
   close()
 
   const r2: any[] = []
-  close = client.query2('counter', 'error').subscribe(
+  close = client.query('counter', 'error').subscribe(
     (d) => {
       r2.push({ ...d })
     },
@@ -118,13 +118,13 @@ test('query ctx bound + default verifyAuthState', async (t: T) => {
 
   close()
 
-  t.deepEqual(await client.query2('counter').get(), { userId: 1, cnt: 0 })
-  t.deepEqual(await client.query2('counter', 'bla').get(), {
+  t.deepEqual(await client.query('counter').get(), { userId: 1, cnt: 0 })
+  t.deepEqual(await client.query('counter', 'bla').get(), {
     userId: 1,
     cnt: 0,
   })
 
-  t.throwsAsync(() => client.query2('counter', 'error').get())
+  t.throwsAsync(() => client.query('counter', 'error').get())
 
   await wait(1000)
 
@@ -184,7 +184,7 @@ test('query ctx bound on authState.token', async (t: T) => {
   const results: any[] = []
 
   const close = client
-    .query2('counter', {
+    .query('counter', {
       myQuery: 123,
     })
     .subscribe((d) => {
@@ -277,7 +277,7 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
   const errs: any[] = []
 
   let close = client
-    .query2('counter', {
+    .query('counter', {
       myQuery: 123,
     })
     .subscribe(
@@ -315,7 +315,7 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
   close()
 
   const r2: any[] = []
-  close = client.query2('counter', 'error').subscribe(
+  close = client.query('counter', 'error').subscribe(
     (d) => {
       r2.push({ ...d })
     },
@@ -328,13 +328,13 @@ test('query ctx bound on authState.userId require auth', async (t: T) => {
 
   close()
 
-  t.deepEqual(await client.query2('counter').get(), { userId: 1, cnt: 0 })
-  t.deepEqual(await client.query2('counter', 'bla').get(), {
+  t.deepEqual(await client.query('counter').get(), { userId: 1, cnt: 0 })
+  t.deepEqual(await client.query('counter', 'bla').get(), {
     userId: 1,
     cnt: 0,
   })
 
-  t.throwsAsync(() => client.query2('counter', 'error').get())
+  t.throwsAsync(() => client.query('counter', 'error').get())
 
   await wait(1000)
 
@@ -414,11 +414,11 @@ test('query ctx bound on geo', async (t: T) => {
 
   const results: any[] = []
 
-  const close = client.query2('counter').subscribe((d) => {
+  const close = client.query('counter').subscribe((d) => {
     results.push({ ...d })
   })
 
-  const close2 = client2.query2('counter').subscribe((d) => {
+  const close2 = client2.query('counter').subscribe((d) => {
     results.push({ ...d })
   })
 
@@ -474,7 +474,7 @@ test('query ctx bound internal (nested calls)', async (t: T) => {
           closeAfterIdleTime: 1,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, update, error, ctx) => {
-            return based.query2('nest', payload, ctx).subscribe(update)
+            return based.query('nest', payload, ctx).subscribe(update)
           },
         },
       },
@@ -489,7 +489,7 @@ test('query ctx bound internal (nested calls)', async (t: T) => {
   })
   await client.once('connect')
   const results: any[] = []
-  const close = client.query2('counter').subscribe((d) => {
+  const close = client.query('counter').subscribe((d) => {
     results.push({ ...d })
   })
   await wait(250)
@@ -542,7 +542,7 @@ test('query ctx bound internal (nested call from call)', async (t: T) => {
           public: true,
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload, ctx) => {
-            return based.query2('nest', payload, ctx).get()
+            return based.query('nest', payload, ctx).get()
           },
         },
       },
@@ -610,7 +610,7 @@ test.serial('ctxBound attachCtx perf', async (t: T) => {
             if (cnt === amount) {
               resolve()
             }
-            return based.query2('nest', payload, ctx).get()
+            return based.query('nest', payload, ctx).get()
           },
         },
       },

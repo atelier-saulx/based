@@ -75,7 +75,7 @@ export const app = () => {
   client.on('connect', (v) => {
     log.innerHTML += `<div>CONNECT: true</div>`
   })
-  client.query2('counter').subscribe(
+  client.query('counter').subscribe(
     (d) => {
       log.innerHTML = `<span>cnt: ${d}</span>`
     },
@@ -86,7 +86,7 @@ export const app = () => {
 
   const text = document.createElement('pre')
   body.appendChild(text)
-  client.query2('text').subscribe(
+  client.query('text').subscribe(
     (d) => {
       text.innerHTML = d.join('\n')
     },

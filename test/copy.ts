@@ -91,7 +91,7 @@ await test('copy', async (t) => {
   })
 
   const res = await db
-    .query2('edition')
+    .query('edition')
     .include('*', 'versionOf', 'versions', 'sequences', 'sequences.pages')
     .get()
 

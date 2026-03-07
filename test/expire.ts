@@ -42,9 +42,9 @@ await test('expire', async (t) => {
   })
 
   await client.update('token', token1, { expiresAt: Date.now() + 1e3 })
-  equal((await client.query2('token').get()).length, 1)
+  equal((await client.query('token').get()).length, 1)
   await setTimeout(2e3)
-  equal((await client.query2('token').get()).length, 0)
+  equal((await client.query('token').get()).length, 0)
 
   const token2 = await client.create('token', {
     name: 'my new token',
@@ -53,7 +53,7 @@ await test('expire', async (t) => {
   await client.update('token', token2, { expiresAt: Date.now() + 1e3 })
 
   await db.save()
-  equal((await client.query2('token').get()).length, 1, '1 token before save')
+  equal((await client.query('token').get()).length, 1, '1 token before save')
   const db2 = new BasedDb({
     path: t.tmp,
   })
@@ -63,13 +63,9 @@ await test('expire', async (t) => {
     hooks: getDefaultHooks(db2.server),
   })
 
-  equal((await client2.query2('token').get()).length, 1, '1 token after load')
+  equal((await client2.query('token').get()).length, 1, '1 token after load')
   await setTimeout(3e3)
-  equal(
-    (await client2.query2('token').get()).length,
-    0,
-    '0 tokens after expiry',
-  )
+  equal((await client2.query('token').get()).length, 0, '0 tokens after expiry')
 })
 
 await test('refresh', async (t) => {
@@ -100,5 +96,5 @@ await test('refresh', async (t) => {
   client.update('user', id1, { deleteBy: Date.now() + 3e3 })
   await client.drain()
   await setTimeout(1100)
-  deepEqual(await client.query2('user', id1).get(), { id: 1, name: 'dude' })
+  deepEqual(await client.query('user', id1).get(), { id: 1, name: 'dude' })
 })

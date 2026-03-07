@@ -60,7 +60,7 @@ await test('save simple range', async (t) => {
     age: 1337,
   })
   await client.drain()
-  deepEqual(await client.query2('user').include('age').range(0, 1).get(), [
+  deepEqual(await client.query('user').include('age').range(0, 1).get(), [
     {
       id: 1,
       age: 1337,
@@ -109,7 +109,7 @@ await test('save simple range', async (t) => {
   notEqual(firstHash, secondHash)
   equal(secondHash, thirdHash)
 
-  deepEqual(await client2.query2('user').include('age').range(0, 1).get(), [
+  deepEqual(await client2.query('user').include('age').range(0, 1).get(), [
     {
       id: 1,
       age: 1337,
@@ -117,7 +117,7 @@ await test('save simple range', async (t) => {
   ])
   deepEqual(
     await client2
-      .query2('user')
+      .query('user')
       .include('age')
       .range(200000, 200000 + 1)
       .get(),
@@ -129,7 +129,7 @@ await test('save simple range', async (t) => {
     ],
   )
 
-  deepEqual(await client2.query2('user').include('name').range(0, 2).get(), [
+  deepEqual(await client2.query('user').include('name').range(0, 2).get(), [
     {
       id: 1,
       name: 'mr flop 1',
@@ -142,7 +142,7 @@ await test('save simple range', async (t) => {
 
   deepEqual(
     await client2
-      .query2('user')
+      .query('user')
       .include('name')
       .range(200_000, 200_000 + 2)
       .get(),

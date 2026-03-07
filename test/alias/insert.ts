@@ -26,7 +26,7 @@ await test('alias insert', async (t) => {
     },
   )
 
-  equal(await db.query2('user').get(), [
+  equal(await db.query('user').get(), [
     {
       id: 1,
       uuid: 'xx',
@@ -46,7 +46,7 @@ await test('alias insert', async (t) => {
     },
   )
 
-  equal(await db.query2('user').get(), [
+  equal(await db.query('user').get(), [
     {
       id: 1,
       uuid: 'xx',
@@ -66,7 +66,7 @@ await test('alias insert', async (t) => {
     },
   )
 
-  equal(await db.query2('user').get(), [
+  equal(await db.query('user').get(), [
     {
       id: 1,
       uuid: 'xx',

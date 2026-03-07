@@ -48,8 +48,8 @@ await test('isomorphic types have equal hashes', async (t) => {
   await client.drain()
 
   deepEqual(
-    checksum(await client.query2('article').get()),
-    checksum(await client.query2('story').get()),
+    checksum(await client.query('article').get()),
+    checksum(await client.query('story').get()),
   )
   assert(
     native.equals(

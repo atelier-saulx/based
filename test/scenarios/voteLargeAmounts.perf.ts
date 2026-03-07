@@ -128,20 +128,20 @@ await test('schema with many uint8 fields', async (t) => {
 
   const timeActions = async () => {
     //console.log('\n------ Status ------')
-    // await db.query2('vote').count().get().inspect()
-    // await db.query2('payment').count().get().inspect()
+    // await db.query('vote').count().get().inspect()
+    // await db.query('payment').count().get().inspect()
     const d = performance.now()
     await db.save()
     const tSave = performance.now() - d
     //console.log('took', tSave.toFixed(2), 'ms to save')
 
-    const cnt = await db.query2('vote').count().get()
+    const cnt = await db.query('vote').count().get()
     // TODO This crashes the test runner if it fails
     //assert(tSave < 1e3) // TODO better assert
     //assert(cnt.execTime < 5)
 
     //await db
-    //  .query2('payment')
+    //  .query('payment')
     //  .include('id')
     //  .filter('status', '=', 'Requested')
     //  .get()
@@ -151,7 +151,7 @@ await test('schema with many uint8 fields', async (t) => {
     //  'group by on all',
     //  (
     //    await db
-    //      .query2('vote')
+    //      .query('vote')
     //      .groupBy('fromCountry')
     //      .sum(...s)
     //      .get()
@@ -160,7 +160,7 @@ await test('schema with many uint8 fields', async (t) => {
     //)
     const n = cnt.count
     const grp = await db
-      .query2('vote')
+      .query('vote')
       .groupBy('fromCountry')
       .sum(...s)
       .get()

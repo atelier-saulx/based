@@ -16,7 +16,7 @@ await test('update with payload.id', async (t) => {
     body: 'xxx',
   })
 
-  deepEqual(await db.query2('article').get(), [
+  deepEqual(await db.query('article').get(), [
     {
       id: 1,
       body: 'xxx',
@@ -69,7 +69,7 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('snurp').get(), [
+  deepEqual(await db.query('snurp').get(), [
     {
       a: 1,
       b: 2,
@@ -114,7 +114,7 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('snurp').get(), [
+  deepEqual(await db.query('snurp').get(), [
     {
       a: 1,
       b: 2,
@@ -143,7 +143,7 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('snurp', 2).get(), {
+  deepEqual(await db.query('snurp', 2).get(), {
     a: 0,
     b: 0,
     c: 0,
@@ -157,7 +157,7 @@ await test('update', async (t) => {
   })
 
   // for individual queries combine them
-  deepEqual(await db.query2('snurp', [2, 1]).get(), [
+  deepEqual(await db.query('snurp', [2, 1]).get(), [
     {
       a: 1,
       b: 2,
@@ -199,15 +199,15 @@ await test('update', async (t) => {
 
   await db.drain()
 
-  equal((await db.query2('snurp', ids).get())?.length, 1e6)
+  equal((await db.query('snurp', ids).get())?.length, 1e6)
 
-  equal((await db.query2('snurp', ids).range(0, 100).get()).length, 100)
+  equal((await db.query('snurp', ids).range(0, 100).get()).length, 100)
 
-  equal((await db.query2('snurp', ids).range(10, 110).get()).length, 100)
+  equal((await db.query('snurp', ids).range(10, 110).get()).length, 100)
 
   deepEqual(
     await db
-      .query2('snurp', ids)
+      .query('snurp', ids)
       .range(1e5, 1e5 + 2)
       .sort('a', 'desc')
       .get(),
@@ -238,7 +238,7 @@ await test('update', async (t) => {
   const promises: any[] = []
   for (var j = 0; j < 1; j++) {
     for (var i = 0; i < 1e5; i++) {
-      promises.push(db.query2('snurp', i).include('a').get())
+      promises.push(db.query('snurp', i).include('a').get())
     }
   }
 

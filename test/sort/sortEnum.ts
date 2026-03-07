@@ -27,19 +27,15 @@ await test('sort Enum', async (t) => {
 
   const q: any[] = []
   for (let i = 0; i < 500; i++) {
-    q.push(db.query2('user', randoIds).get())
+    q.push(db.query('user', randoIds).get())
   }
 
   q.push(
-    db
-      .query2('user')
-      .filter('status', '=', ['a', 'b', 'c'])
-      .range(0, 950)
-      .get(),
+    db.query('user').filter('status', '=', ['a', 'b', 'c']).range(0, 950).get(),
   )
 
   q.push(
-    db.query2('user').filter('status', '=', ['d']).range(0, 600).get(),
+    db.query('user').filter('status', '=', ['d']).range(0, 600).get(),
     // .inspect(1000),
   )
 
@@ -55,6 +51,6 @@ await test('sort Enum', async (t) => {
   //   'creating string sort index should not take longer then 500ms',
   // )
 
-  // const r = await db.query2('user').range(0, 1e5).sort('status').get()
+  // const r = await db.query('user').range(0, 1e5).sort('status').get()
   // filter
 })

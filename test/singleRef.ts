@@ -97,7 +97,7 @@ await test('single simple', async (t) => {
     }),
   })
 
-  deepEqual(await client.query2('simple').include('user.name').get(), [
+  deepEqual(await client.query('simple').include('user.name').get(), [
     {
       id: 1,
       user: {
@@ -111,7 +111,7 @@ await test('single simple', async (t) => {
     user: null,
   })
 
-  deepEqual(await client.query2('simple').include('user.name').get(), [
+  deepEqual(await client.query('simple').include('user.name').get(), [
     {
       id: 1,
       user: null,
@@ -194,26 +194,26 @@ await test('simple nested', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('blup').include('flap').get(), [
+  deepEqual(await db.query('blup').include('flap').get(), [
     {
       id: 1,
       flap: 'B',
     },
   ])
 
-  const result1 = await db.query2('user').include('myBlup.flap').get()
+  const result1 = await db.query('user').include('myBlup.flap').get()
 
   for (const r of result1) {
     equal(r.myBlup.flap, 'B')
   }
 
-  const result = await db.query2('simple').include('user.myBlup.flap').get()
+  const result = await db.query('simple').include('user.myBlup.flap').get()
 
   for (const r of result) {
     equal(r.user.myBlup.flap, 'B')
   }
 
-  deepEqual(await db.query2('user').include('simple').get(), [
+  deepEqual(await db.query('user').include('simple').get(), [
     {
       id: 1,
       simple: { id: 1 },
@@ -226,14 +226,14 @@ await test('simple nested', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('simple').include('user').get(), [
+  deepEqual(await db.query('simple').include('user').get(), [
     {
       id: 1,
       user: null,
     },
   ])
 
-  deepEqual(await db.query2('user').include('simple').get(), [
+  deepEqual(await db.query('user').include('simple').get(), [
     {
       id: 1,
       simple: null,
@@ -301,7 +301,7 @@ await test('single reference object', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('simple').include('admin.user').get(), [
+  deepEqual(await db.query('simple').include('admin.user').get(), [
     {
       id: 1,
       admin: {
@@ -403,12 +403,12 @@ await test('nested', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('simple').include('id').range(0, 1).get(), [
+  deepEqual(await db.query('simple').include('id').range(0, 1).get(), [
     { id: 1 },
   ])
 
   deepEqual(
-    await db.query2('simple').include('user').range(0, 1).get(),
+    await db.query('simple').include('user').range(0, 1).get(),
     [
       {
         id: 1,
@@ -419,7 +419,7 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    await db.query2('simple', lastRes).include('user.location').get(),
+    await db.query('simple', lastRes).include('user.location').get(),
     {
       id: await lastRes,
       user: {
@@ -431,7 +431,7 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    await db.query2('simple', lastRes).include('user').get(),
+    await db.query('simple', lastRes).include('user').get(),
     {
       id: await lastRes,
       user: {
@@ -450,7 +450,7 @@ await test('nested', async (t) => {
 
   deepEqual(
     await db
-      .query2('simple') // lastRes
+      .query('simple') // lastRes
       .include('user.myBlup')
       .range((await lastRes!) - 1, await lastRes)
       .get(),
@@ -464,7 +464,7 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    await db.query2('simple', lastRes).include('user.myBlup').get(),
+    await db.query('simple', lastRes).include('user.myBlup').get(),
     {
       id: await lastRes,
       user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
@@ -473,7 +473,7 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    await db.query2('simple', lastRes).include('user.myBlup', 'lilBlup').get(),
+    await db.query('simple', lastRes).include('user.myBlup', 'lilBlup').get(),
     {
       id: await lastRes,
       user: { id: 1, myBlup: { id: 1, flap: 'A', name: 'blup !' } },
@@ -483,15 +483,15 @@ await test('nested', async (t) => {
   )
 
   equal(
-    (await db.query2('simple', lastRes).include('user.myBlup').get()).node()
-      .user.myBlup.flap,
+    (await db.query('simple', lastRes).include('user.myBlup').get()).node().user
+      .myBlup.flap,
     'A',
     'Read nested field with getter',
   )
 
   deepEqual(
     await db
-      .query2('simple')
+      .query('simple')
       .include('user.myBlup', 'lilBlup', 'user.name')
       .range((await lastRes!) - 1, await lastRes)
       .get(),
@@ -510,18 +510,18 @@ await test('nested', async (t) => {
   )
 
   deepEqual(
-    await db.query2('simple', lastRes).include('user.location.label').get(),
+    await db.query('simple', lastRes).include('user.location.label').get(),
     { id: await lastRes, user: { id: 1, location: { label: 'BLA BLA' } } },
   )
 
-  deepEqual(await db.query2('simple', lastRes).include('user.location').get(), {
+  deepEqual(await db.query('simple', lastRes).include('user.location').get(), {
     id: await lastRes,
     user: { id: 1, location: { label: 'BLA BLA', x: 1, y: 2 } },
   })
 
   deepEqual(
     await db
-      .query2('simple')
+      .query('simple')
       .include('user.myBlup', 'lilBlup')
       .range((await lastRes!) - 1, await lastRes)
       .get(),
@@ -547,7 +547,7 @@ await test('nested', async (t) => {
 
   deepEqual(
     await db
-      .query2('simple')
+      .query('simple')
       .include('user', 'user.myBlup')
       .range((await lastRes!) - 1, await lastRes)
       .get(),
@@ -572,7 +572,7 @@ await test('nested', async (t) => {
 
   deepEqual(
     await db
-      .query2('simple', lastRes)
+      .query('simple', lastRes)
       .include('user', 'user.myBlup', 'lilBlup')
       .get(),
     {
@@ -654,7 +654,7 @@ await test('single reference multi refs strings', async (t) => {
   await db.drain()
 
   const result = await db
-    .query2('simple')
+    .query('simple')
     .include('user', 'user.myBlup', 'lilBlup')
     .get()
 
@@ -669,7 +669,7 @@ await test('single reference multi refs strings', async (t) => {
   await db.drain()
 
   const result2 = await db
-    .query2('simple')
+    .query('simple')
     .filter('age', '=', 5)
     .include('user', 'user.myBlup', 'lilBlup')
     .get()

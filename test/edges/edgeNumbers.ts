@@ -38,7 +38,7 @@ await test('number', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', user2).include('**').get(), {
+  deepEqual(await db.query('user', user2).include('**').get(), {
     id: 2,
     bestFriend: {
       id: 1,

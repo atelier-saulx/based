@@ -42,7 +42,7 @@ await test('alignModify - putrefs', async (t) => {
     })
   }
   await db.drain()
-  const res = await db.query2('user').include('friends', 'str').get()
+  const res = await db.query('user').include('friends', 'str').get()
   deepEqual(res, [
     {
       id: 1,

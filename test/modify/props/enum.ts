@@ -15,7 +15,7 @@ await test('modify enum', async (t) => {
     option: 'first',
   })
 
-  deepEqual(await db.query2('thing', id1).get(), {
+  deepEqual(await db.query('thing', id1).get(), {
     id: id1,
     option: 'first',
   })
@@ -24,7 +24,7 @@ await test('modify enum', async (t) => {
     option: 'second',
   })
 
-  deepEqual(await db.query2('thing', id1).get(), {
+  deepEqual(await db.query('thing', id1).get(), {
     id: id1,
     option: 'second',
   })
@@ -33,7 +33,7 @@ await test('modify enum', async (t) => {
   await db.update('thing', id1, {
     option: null,
   })
-  deepEqual((await db.query2('thing', id1).get())?.option, undefined)
+  deepEqual((await db.query('thing', id1).get())?.option, undefined)
 })
 
 await test('modify enum on edge', async (t) => {
@@ -61,7 +61,7 @@ await test('modify enum on edge', async (t) => {
   })
 
   const res1 = await db
-    .query2('holder', id1)
+    .query('holder', id1)
     .include('toThing.$edgeOption')
     .get()
 
@@ -75,7 +75,7 @@ await test('modify enum on edge', async (t) => {
   })
 
   const res2 = await db
-    .query2('holder', id1)
+    .query('holder', id1)
     .include('toThing.$edgeOption')
     .get()
   deepEqual(res2?.toThing?.$edgeOption, 'second')

@@ -44,7 +44,7 @@ test('query simple', async (t: T) => {
           type: 'query',
           fn: (based, _, update) => {
             update(1)
-            return based.query2('nested').subscribe((r) => {
+            return based.query('nested').subscribe((r) => {
               internal.push(r)
             })
           },
@@ -55,9 +55,9 @@ test('query simple', async (t: T) => {
   await server.start()
 
   client.connect({ url: t.context.ws })
-  client.query2('bla').subscribe(() => {})
+  client.query('bla').subscribe(() => {})
   await wait(1000)
-  client.query2('bla', { x: 1 }).subscribe(() => {})
+  client.query('bla', { x: 1 }).subscribe(() => {})
   await wait(1000)
   t.true(internal.length > 1)
   for (const r of internal) {

@@ -25,7 +25,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', 'like', 'article')
         .include('id')
         .range(0, 1e3)
@@ -37,7 +37,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', 'like', 'snurfelpants')
         .include('id')
         .range(0, 1e3)
@@ -49,7 +49,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', 'like', ['snurfelpants', 'article'])
         .include('id')
         .range(0, 1e3)
@@ -61,7 +61,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', 'like', 'kxngdom')
         .include('id')
         .range(0, 1e3)
@@ -74,7 +74,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', 'like', 'derperp')
         .include('id')
         .range(0, 1e3)
@@ -87,7 +87,7 @@ await test('like filter', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', 'like', 'kxngdom', { score: 0 })
         .include('id')
         .range(0, 1e3)
@@ -124,7 +124,7 @@ await test('compressed', async (t) => {
   // sort + search
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('Netherlands', { body: 0, title: 1 })
       .include('id', 'date')
       .range(0, amount)
@@ -136,7 +136,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('giraffe', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .range(0, amount)
@@ -148,7 +148,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('kingdom', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -161,7 +161,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('Netherlands', { body: 0, title: 1 })
       .include('id', 'date')
       .sort('date')
@@ -174,7 +174,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('giraffe', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -187,7 +187,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('derp', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -200,7 +200,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('giraffe first', { body: 0, title: 1 })
       .include('id', 'date', 'title', 'body')
       .range(0, 1e3)
@@ -212,7 +212,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('first', { body: 0, title: 1 })
       .include('id', 'date', 'title', 'body')
       .sort('date')
@@ -225,7 +225,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('second', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -238,7 +238,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('giraffe first', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -251,7 +251,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('italy netherlands', { body: 0, title: 1 })
       .include('id', 'date', 'title')
       .sort('date')
@@ -264,7 +264,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('italy netherlands', 'body', 'title')
       .include('id', 'date', 'title')
       .sort('date')
@@ -277,7 +277,7 @@ await test('compressed', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('italy netherlands', 'body', 'title')
       .include('id', 'date', 'title')
       .sort('date')
@@ -310,7 +310,7 @@ await test('simple', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('giraffe first', 'body')
       .include('id', 'date', 'title')
       .sort('date')
@@ -323,7 +323,7 @@ await test('simple', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('derp derp', 'body', 'title')
       .include('id', 'date', 'title')
       .sort('date')
@@ -370,7 +370,7 @@ await test('search ids', async (t) => {
 
   equal(
     await db
-      .query2('article', [first, second])
+      .query('article', [first, second])
       .search('first', 'body')
       .include('id', 'date', 'title')
       .range(0, 1e3)
@@ -382,7 +382,7 @@ await test('search ids', async (t) => {
 
   equal(
     await db
-      .query2('article', [first, second])
+      .query('article', [first, second])
       .search('first', 'body')
       .sort('date')
       .include('id', 'date', 'title')
@@ -416,7 +416,7 @@ await test('like filter mbs', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', 'like', 'mihailovitsin')
         .include('id')
         .range(0, 1e3)
@@ -427,7 +427,7 @@ await test('like filter mbs', async (t) => {
   equal(
     (
       await db
-        .query2('article')
+        .query('article')
         .filter('body', 'like', 'mihailovitšin')
         .include('id')
         .range(0, 1e3)
@@ -457,7 +457,7 @@ await test('giraffe first', async (t) => {
 
   equal(
     await db
-      .query2('article')
+      .query('article')
       .search('giraffe first', { body: 0, title: 1 })
       .include('id', 'date', 'title', 'body')
       .range(0, 1e3)
@@ -483,7 +483,7 @@ await test('first letter', async (t) => {
     name: 'Kavel Omval Naast De Poort',
   })
 
-  deepEqual(await db.query2('article').search('Kavel').get(), [
+  deepEqual(await db.query('article').search('Kavel').get(), [
     { id: 1, $searchScore: 0, name: 'Kavel Omval Naast De Poort' },
   ])
 })

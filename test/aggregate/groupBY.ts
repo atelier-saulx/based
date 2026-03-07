@@ -49,7 +49,7 @@ await test('sum group by', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   deepEqual(
-    await db.query2('vote').sum('NL', 'AU').groupBy('country').get(),
+    await db.query('vote').sum('NL', 'AU').groupBy('country').get(),
     {
       bb: { NL: { sum: 10 }, AU: { sum: 0 } },
       aa: { NL: { sum: 20 }, AU: { sum: 15 } },
@@ -58,14 +58,14 @@ await test('sum group by', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').groupBy('country').get(),
+    await db.query('vote').groupBy('country').get(),
     { bb: {}, aa: {} },
     'groupBy with no aggregation function',
   )
 
   // deepEqual(
   //   await db
-  //     .query2('vote')
+  //     .query('vote')
   //     .filter('country', '=', 'bb') // filter string not implemented yet
   //     .groupBy('country')
   //     .sum('NL', 'AU')
@@ -123,7 +123,7 @@ await test('count group by', async (t) => {
   const s = db.create('sequence', { votes: [nl1, nl2, au1] })
 
   deepEqual(
-    await db.query2('vote').count().groupBy('country').get(),
+    await db.query('vote').count().groupBy('country').get(),
     {
       bb: {
         count: 1,
@@ -137,7 +137,7 @@ await test('count group by', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query2('vote')
+  //     .query('vote')
   //     .filter('country', '=', 'bb') // filter string not implemented yet
   //     .groupBy('country')
   //     .count()
@@ -219,7 +219,7 @@ await test('variable key sum', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include((q) => q('contributors').sum('flap'), 'name')
       .get(),
     [
@@ -238,7 +238,7 @@ await test('variable key sum', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').groupBy('name').sum('flap').get(),
+    await db.query('user').groupBy('name').sum('flap').get(),
     {
       Flippie: { flap: { sum: 20 } },
       'Carlo Cipolla': { flap: { sum: 80 } },
@@ -250,7 +250,7 @@ await test('variable key sum', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').groupBy('country').sum('flap').get(),
+    await db.query('user').groupBy('country').sum('flap').get(),
     {
       $undefined: { flap: { sum: 40 } },
       NL: { flap: { sum: 30 } },
@@ -262,7 +262,7 @@ await test('variable key sum', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include((select) => select('contributors').groupBy('name').sum('flap'))
       .get(),
     [
@@ -318,7 +318,7 @@ await test('group by unique numbers', async (t) => {
   })
 
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('vendorIduint8').get(),
+    await db.query('trip').sum('distance').groupBy('vendorIduint8').get(),
     {
       13: {
         distance: { sum: 513.44 },
@@ -327,7 +327,7 @@ await test('group by unique numbers', async (t) => {
     'group by number',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('vendorIdint8').get(),
+    await db.query('trip').sum('distance').groupBy('vendorIdint8').get(),
     {
       13: {
         distance: { sum: 513.44 },
@@ -336,7 +336,7 @@ await test('group by unique numbers', async (t) => {
     'group by number',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('vendorIduint16').get(),
+    await db.query('trip').sum('distance').groupBy('vendorIduint16').get(),
     {
       813: {
         distance: { sum: 513.44 },
@@ -345,7 +345,7 @@ await test('group by unique numbers', async (t) => {
     'group by number',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('vendorIdint16').get(),
+    await db.query('trip').sum('distance').groupBy('vendorIdint16').get(),
     {
       813: {
         distance: { sum: 513.44 },
@@ -354,7 +354,7 @@ await test('group by unique numbers', async (t) => {
     'group by number',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('vendorIduint32').get(),
+    await db.query('trip').sum('distance').groupBy('vendorIduint32').get(),
     {
       813: {
         distance: { sum: 513.44 },
@@ -363,7 +363,7 @@ await test('group by unique numbers', async (t) => {
     'group by number',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('vendorIdint32').get(),
+    await db.query('trip').sum('distance').groupBy('vendorIdint32').get(),
     {
       813: {
         distance: { sum: 513.44 },
@@ -372,7 +372,7 @@ await test('group by unique numbers', async (t) => {
     'group by number',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('vendorIdnumber').get(),
+    await db.query('trip').sum('distance').groupBy('vendorIdnumber').get(),
     {
       813.813: {
         distance: { sum: 513.44 },
@@ -406,5 +406,5 @@ await test.skip('groupBy ranges in numeric properties', async (t) => {
     })
   }
 
-  // await db.query2('trip').sum('distance').groupBy('tripId').get().inspect()
+  // await db.query('trip').sum('distance').groupBy('tripId').get().inspect()
 })

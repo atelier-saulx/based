@@ -26,7 +26,7 @@ await test('undefined numbers', async (t) => {
   })
 
   deepEqual(
-    await db.query2('vote').max('AU', 'FI').groupBy('region').get(),
+    await db.query('vote').max('AU', 'FI').groupBy('region').get(),
     {
       EU: {
         AU: { max: 23 },
@@ -36,7 +36,7 @@ await test('undefined numbers', async (t) => {
     'number is initialized with zero',
   )
   deepEqual(
-    await db.query2('vote').avg('AU', 'FI').groupBy('region').get(),
+    await db.query('vote').avg('AU', 'FI').groupBy('region').get(),
     {
       EU: {
         AU: { avg: 16.5 },
@@ -47,7 +47,7 @@ await test('undefined numbers', async (t) => {
   )
 
   deepEqual(
-    await db.query2('vote').hmean('AU', 'FI').groupBy('region').get(),
+    await db.query('vote').hmean('AU', 'FI').groupBy('region').get(),
     {
       EU: {
         AU: { hmean: 13.93939393939394 },
@@ -118,7 +118,7 @@ await test('boundary cases for validation', async (t) => {
   })
 
   deepEqual(
-    await db.query2('movie').groupBy('year').count().get(),
+    await db.query('movie').groupBy('year').count().get(),
     {
       1994: {
         count: 1,
@@ -131,7 +131,7 @@ await test('boundary cases for validation', async (t) => {
   )
 
   deepEqual(
-    await db.query2('movie').groupBy('genre').min('year').get(),
+    await db.query('movie').groupBy('genre').min('year').get(),
     {
       undefined: {
         year: { min: 1994 },

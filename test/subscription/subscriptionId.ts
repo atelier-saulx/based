@@ -42,12 +42,12 @@ await test('subscriptionId', async (t) => {
   var idCounter = 0
   var idFieldCounter = 0
 
-  const close = clients[0].query2('user', id).subscribe((d) => {
+  const close = clients[0].query('user', id).subscribe((d) => {
     idCounter++
   })
 
   const close2 = clients[0]
-    .query2('user', id)
+    .query('user', id)
     .include('name')
     .subscribe((d) => {
       idFieldCounter++
@@ -104,11 +104,11 @@ await test('update after remove before subs loop', async (t) => {
 
   var cnt1 = 0
   var cnt2 = 0
-  const close = clients[0].query2('user', id).subscribe((d) => {
+  const close = clients[0].query('user', id).subscribe((d) => {
     cnt1++
   })
   const close2 = clients[0]
-    .query2('user', id)
+    .query('user', id)
     .include('name')
     .subscribe((d) => {
       cnt2++

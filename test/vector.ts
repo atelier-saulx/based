@@ -47,7 +47,7 @@ async function initDb(
 await test('vector set/get', async (t) => {
   const db = await initDb(t)
 
-  const res = await db.query2('data').include('name', 'a').get()
+  const res = await db.query('data').include('name', 'a').get()
   for (const r of res) {
     const a = new Uint8Array(r.a.buffer, 0, r.a.byteLength)
     const b = new Uint8Array(new Float32Array(data[r.name]).buffer)
@@ -59,14 +59,14 @@ await test('query by vector', async (t) => {
   const db = await initDb(t)
 
   const r1 = await db
-    .query2('data')
+    .query('data')
     .include('name')
     .filter('a', '=', new Float32Array(data['car'].slice(0, 5)))
     .get()
   deepEqual(r1[0].name, 'car')
 
   const r2 = await db
-    .query2('data')
+    .query('data')
     .include('name')
     .filter('a', '=', new Float32Array(data['car']))
     .get()
@@ -79,7 +79,7 @@ await test.skip('vector like', async (t) => {
 
   const fruit = new Float32Array([-5.1, 2.9, 0.8, 7.9, 3.1])
   const res = await db
-    .query2('data')
+    .query('data')
     .include('name')
     .filter('a', 'like', fruit, { fn: 'euclideanDistance', score: 1 })
     .get()
@@ -101,7 +101,7 @@ await test.skip('vector like', async (t) => {
 
   deepEqual(
     await db
-      .query2('data')
+      .query('data')
       .include('name')
       .range(0, 1e6)
       .filter('a', 'like', fruit, { fn: 'euclideanDistance', score: 1 })
@@ -137,7 +137,7 @@ await test('search', async (t) => {
   // TODO add search
   // deepEqual(
   //   await db
-  //     .query2('data')
+  //     .query('data')
   //     .include('id', 'name')
   //     .range(0, 3)
   //     .search(fruit, 'a', { fn: 'euclideanDistance', score: 1 })

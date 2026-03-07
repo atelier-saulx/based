@@ -43,7 +43,7 @@ test('null', async (t: T) => {
         nestedNull: {
           type: 'query',
           fn: (b, __, update) => {
-            return b.query2('null').subscribe(update)
+            return b.query('null').subscribe(update)
           },
         },
       },
@@ -57,18 +57,18 @@ test('null', async (t: T) => {
     },
   })
 
-  const val = await client.query2('null').get()
+  const val = await client.query('null').get()
   t.deepEqual(val, null)
 
   const x = await client.call('nullFn')
   t.deepEqual(x, null)
 
-  const val2 = await client.query2('nestedNull').get()
+  const val2 = await client.query('nestedNull').get()
   t.deepEqual(val2, null)
 
   const obs: any[] = []
 
-  const close = client.query2('null').subscribe((v) => {
+  const close = client.query('null').subscribe((v) => {
     obs.push(v)
   })
 

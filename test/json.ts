@@ -28,7 +28,7 @@ await test('json', async (t) => {
   await db.create('jsonDerulo', derulo)
 
   deepEqual(
-    await db.query2('jsonDerulo').get(),
+    await db.query('jsonDerulo').get(),
     [
       {
         id: 1,
@@ -43,7 +43,7 @@ await test('json', async (t) => {
   })
 
   deepEqual(
-    await db.query2('jsonDerulo').get(),
+    await db.query('jsonDerulo').get(),
     [
       { id: 1, ...derulo },
       { id: 2, myJson: {}, name: '' },
@@ -56,7 +56,7 @@ await test('json', async (t) => {
   })
 
   deepEqual(
-    await db.query2('jsonDerulo').get(),
+    await db.query('jsonDerulo').get(),
     [
       { id: 1, ...derulo },
       { id: 2, myJson: null, name: '' },
@@ -80,13 +80,13 @@ await test('json and crc32', async (t) => {
     article: 'a',
   })
 
-  const checksum = q2checksum(await db.query2('user', user1).get())
+  const checksum = q2checksum(await db.query('user', user1).get())
 
   await db.update('user', user1, {
     article: 'b',
   })
 
-  const checksum2 = q2checksum(await db.query2('user', user1).get())
+  const checksum2 = q2checksum(await db.query('user', user1).get())
 
   notEqual(checksum, checksum2, 'Checksum is not the same')
 })

@@ -51,7 +51,7 @@ await test('test embedded', async (t) => {
     res = (
       await Promise.all(
         arr.map(() =>
-          db.query2('test').filter('x', '=', 0).range(1, 10_001).get(),
+          db.query('test').filter('x', '=', 0).range(1, 10_001).get(),
         ),
       )
     ).reduce((prev, cur) => prev + cur.length, 0)
@@ -64,7 +64,7 @@ await test('test embedded', async (t) => {
     await Promise.all(
       Array.from({ length: N3 }).map(async (_, i) => {
         await s.acquire()
-        db.query2('test', i + 1)
+        db.query('test', i + 1)
           .get()
           .then(() => s.release())
       }),
@@ -72,7 +72,7 @@ await test('test embedded', async (t) => {
     await s.drain()
     //res = (
     //  await Promise.all(
-    //    Array.from({ length: N3 }).map((_, i) => db.query2('test', i + 1).get()),
+    //    Array.from({ length: N3 }).map((_, i) => db.query('test', i + 1).get()),
     //  )
     //).reduce((prev, cur) => prev + cur.length, 0)
   }, 'q1')
@@ -110,7 +110,7 @@ await test('test client-server', async (t) => {
     res = (
       await Promise.all(
         arr.map(() =>
-          client1.query2('test').filter('x', '=', 0).range(1, 10_001).get(),
+          client1.query('test').filter('x', '=', 0).range(1, 10_001).get(),
         ),
       )
     ).reduce((prev, cur) => prev + cur.length, 0)
@@ -122,7 +122,7 @@ await test('test client-server', async (t) => {
     res = (
       await Promise.all(
         Array.from({ length: N3 }).map((_, i) =>
-          client1.query2('test', i + 1).get(),
+          client1.query('test', i + 1).get(),
         ),
       )
     ).reduce((prev, cur) => prev + cur.length, 0)

@@ -36,7 +36,7 @@ await test.skip('text in an edge prop', async (t) => {
       $x: { en: 'hello' },
     },
   })
-  deepEqual(await db.query2('user', user2).include('**').get(), {
+  deepEqual(await db.query('user', user2).include('**').get(), {
     id: user2,
     bestFriend: {
       id: user1,
@@ -52,12 +52,12 @@ await test.skip('text in an edge prop', async (t) => {
       { id: user2, $x: { en: 'hello' } },
     ],
   })
-  deepEqual(await db.query2('user', user1).include('**').get(), {
+  deepEqual(await db.query('user', user1).include('**').get(), {
     id: user1,
     bestFriend: null,
     friends: [{ id: user3, $x: { en: 'hello' } }],
   })
-  deepEqual(await db.query2('user', user3).include('**').get(), {
+  deepEqual(await db.query('user', user3).include('**').get(), {
     id: user3,
     bestFriend: {
       id: user2,
@@ -72,7 +72,7 @@ await test.skip('text in an edge prop', async (t) => {
   await db.update('user', user3, {
     friends: { update: [{ id: user2, $index: 0 }] },
   })
-  deepEqual(await db.query2('user', user3).include('**').get(), {
+  deepEqual(await db.query('user', user3).include('**').get(), {
     id: user3,
     bestFriend: { id: user2, $x: 0 },
     friends: [

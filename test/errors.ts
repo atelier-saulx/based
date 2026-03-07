@@ -20,7 +20,7 @@ await test('handle errors - references', async (t) => {
     friends: [2],
   })
 
-  equal(await db.query2('user').include('friends').get(), [
+  equal(await db.query('user').include('friends').get(), [
     {
       id: 1,
       friends: [],
@@ -44,7 +44,7 @@ await test('handle errors - single ref', async (t) => {
     friend: 2,
   })
 
-  equal(await db.query2('user').include('friend').get(), [
+  equal(await db.query('user').include('friend').get(), [
     {
       id: 1,
       friend: null,
@@ -67,7 +67,7 @@ await test('handle errors - non existent id', async (t) => {
 
   await db.drain()
 
-  equal(await db.query2('user').get(), [
+  equal(await db.query('user').get(), [
     { id: 1, name: 'bob' },
     { id: 2, name: 'bert' },
   ])

@@ -34,7 +34,7 @@ await test('references modify', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('user', john).include('*', 'friends').get(), {
+  deepEqual(await db.query('user', john).include('*', 'friends').get(), {
     id: 3,
     name: 'john',
     friends: [
@@ -65,7 +65,7 @@ await test('references modify', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', john).include('*', 'friends').get(), {
+  deepEqual(await db.query('user', john).include('*', 'friends').get(), {
     id: 3,
     name: 'john',
     friends: [
@@ -89,7 +89,7 @@ await test('references modify', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', john).include('*', 'friends').get(), {
+  deepEqual(await db.query('user', john).include('*', 'friends').get(), {
     id: 3,
     name: 'john',
     friends: [
@@ -114,7 +114,7 @@ await test('references modify', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', john).include('*', 'friends').get(), {
+  deepEqual(await db.query('user', john).include('*', 'friends').get(), {
     id: 3,
     name: 'john',
     friends: [
@@ -136,7 +136,7 @@ await test('references modify', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', john).include('*', 'friends').get(), {
+  deepEqual(await db.query('user', john).include('*', 'friends').get(), {
     id: 3,
     name: 'john',
     friends: [
@@ -153,7 +153,7 @@ await test('references modify', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', john).include('*', 'friends').get(), {
+  deepEqual(await db.query('user', john).include('*', 'friends').get(), {
     id: 3,
     name: 'john',
     friends: [
@@ -166,7 +166,7 @@ await test('references modify', async (t) => {
     friends: null,
   })
 
-  deepEqual(await db.query2('user', john).include('*', 'friends').get(), {
+  deepEqual(await db.query('user', john).include('*', 'friends').get(), {
     id: 3,
     name: 'john',
     friends: [],
@@ -216,7 +216,7 @@ await test('index>len', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('user', john).include('*', 'friends').get(), {
+  deepEqual(await db.query('user', john).include('*', 'friends').get(), {
     id: 3,
     name: 'john',
     friends: [

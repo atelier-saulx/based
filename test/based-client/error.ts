@@ -137,7 +137,7 @@ test('observable authorize error', async (t: T) => {
 
   // TODO: Check error instance of
   const error = (await new Promise((resolve) => {
-    coreClient.query2('counter', {}).subscribe(
+    coreClient.query('counter', {}).subscribe(
       (v) => {},
 
       (err) => {
@@ -174,7 +174,7 @@ test('throw in an interval', async (t: T) => {
   })
   await t.throwsAsync(
     new Promise((_, reject) =>
-      coreClient.query2('errorTimer', {}).subscribe(() => {}, reject),
+      coreClient.query('errorTimer', {}).subscribe(() => {}, reject),
     ),
   )
 })

@@ -43,7 +43,7 @@ test('query error nested', async (t: T) => {
           type: 'query',
           fn: (based, _, update) => {
             update(1)
-            return based.query2('nested').subscribe(
+            return based.query('nested').subscribe(
               (r) => {
                 r.flap.snurp
               },
@@ -55,7 +55,7 @@ test('query error nested', async (t: T) => {
           type: 'query',
           fn: (based, _, update, onError) => {
             update(1)
-            return based.query2('nested').subscribe(async (r) => {
+            return based.query('nested').subscribe(async (r) => {
               await wait(1)
               r.cookiepants.snurp
             }, onError)
@@ -69,29 +69,29 @@ test('query error nested', async (t: T) => {
   const closers = []
 
   client.connect({ url: t.context.ws })
-  client.query2('bla').subscribe(
+  client.query('bla').subscribe(
     () => {},
     () => {},
   )
   let errs: any[] = []
   await wait(10)
-  client.query2('bla', { x: 1 }).subscribe(
+  client.query('bla', { x: 1 }).subscribe(
     () => {},
     (err) => {
       errs.push(err)
     },
   )
-  client.query2('bla', new Uint8Array(1000)).subscribe(
+  client.query('bla', new Uint8Array(1000)).subscribe(
     () => {},
     () => {},
   )
 
-  client.query2('asyncBla', new Uint8Array(1000)).subscribe(
+  client.query('asyncBla', new Uint8Array(1000)).subscribe(
     () => {},
     () => {},
   )
 
-  client.query2('asyncBla', new Uint8Array(1000)).subscribe(
+  client.query('asyncBla', new Uint8Array(1000)).subscribe(
     () => {},
     (err) => {
       errs.push(err)
@@ -142,7 +142,7 @@ test('query error alternate', async (t: T) => {
   const errs: any[] = []
   const results: any[] = []
 
-  const close = client.query2('bla', { x: 1 }).subscribe(
+  const close = client.query('bla', { x: 1 }).subscribe(
     (d) => {
       results.push(d)
     },
@@ -218,7 +218,7 @@ test('query error alternate auth', async (t: T) => {
   const errs: any[] = []
   const results: any[] = []
 
-  const close = client.query2('bla', { x: 1 }).subscribe(
+  const close = client.query('bla', { x: 1 }).subscribe(
     (d) => {
       results.push(d)
     },

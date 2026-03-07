@@ -61,7 +61,7 @@ await test.skip('basic', async (t) => {
   vec[7] = 7261.0
   await perf(async () => {
     await db
-      .query2('row')
+      .query('row')
       .include('*')
       .filter('vec', 'like', vec, { fn: 'euclideanDistance', score: 1 })
       .get()
@@ -88,7 +88,7 @@ await test('int8 vector', async (t) => {
   }
   await client.drain()
 
-  deepEqual(await client.query2('col').include('str').get(), [
+  deepEqual(await client.query('col').include('str').get(), [
     { id: 1, str: new Int8Array([1, 2, 3, 4]) },
     { id: 2, str: new Int8Array([2, 3, 4, 5]) },
     { id: 3, str: new Int8Array([3, 4, 5, 6]) },
@@ -115,7 +115,7 @@ await test('float32 vector', async (t) => {
       str: Float32Array.from([1.23123, 1.3]),
     })
   }
-  deepEqual(await client.query2('col').include('str').get(), [
+  deepEqual(await client.query('col').include('str').get(), [
     { id: 1, str: new Float32Array([1.23123, 1.3]) },
   ])
 })

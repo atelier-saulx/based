@@ -69,7 +69,7 @@ await test('dont accept modify with mismatch schema', async (t) => {
     name: 'xxx',
   })
 
-  const q1 = client.query2('flurp')
+  const q1 = client.query('flurp')
   const setSchemaPromise = client.setSchema({
     types: {
       flurp: {
@@ -90,7 +90,7 @@ await test('dont accept modify with mismatch schema', async (t) => {
     })
   })
 
-  const res = (await client.query2('flurp').get()) as any
+  const res = (await client.query('flurp').get()) as any
 
   deepEqual(res, [
     { id: 1, title: '' },

@@ -74,7 +74,7 @@ await test('include', async (t) => {
 
   let q: any = []
 
-  const x = client.query2('simple', 1)
+  const x = client.query('simple', 1)
 
   registerQuery(x)
 
@@ -95,7 +95,7 @@ await test('include', async (t) => {
     //.range(0, 1)
     q.push(
       client
-        .query2('simple')
+        .query('simple')
         .range(0, 5e6 + i)
         // .include('id')
         .count()
@@ -163,7 +163,7 @@ await test('include', async (t) => {
       for (let i = 0; i < 5; i++) {
         q.push(
           client
-            .query2('simple')
+            .query('simple')
             .include('id', 'nr')
             // .range(0, 10e6 + i)
             .filter('nr', '=', 100 + i)
@@ -182,7 +182,7 @@ await test('include', async (t) => {
       for (let i = 0; i < 5; i++) {
         q.push(
           client
-            .query2('simple')
+            .query('simple')
             .include('id', 'nr')
             // .range(0, 10e6 + i)
             .filter('nr', '=', 100 + i)
@@ -202,7 +202,7 @@ await test('include', async (t) => {
   })
 
   await client
-    .query2('simple')
+    .query('simple')
     .include('nr') //  'start', 'end', 'target'
     .filter('target.nr', '>', 1001)
     // .or('nr', '=', 100)
@@ -321,7 +321,7 @@ await test.skip('default', async (t) => {
   await perf(
     async () => {
       await db
-        .query2('user')
+        .query('user')
         .include('name', 'bio', 'hack', 'hack2', 'book')
         .get()
         .inspect()

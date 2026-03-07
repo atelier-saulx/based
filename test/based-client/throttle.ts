@@ -51,7 +51,7 @@ test('throttle', async (t: T) => {
   const obs1Results: any[] = []
 
   const close = client
-    .query2('counter', {
+    .query('counter', {
       myQuery: 123,
     })
     .subscribe((d) => {

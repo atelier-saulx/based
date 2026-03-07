@@ -59,7 +59,7 @@ test('observablesDiff', async (t: T) => {
   const results: any[] = []
 
   const close = coreClient
-    .query2('counter', {
+    .query('counter', {
       myQuery: 123,
     })
     .subscribe((d) => {

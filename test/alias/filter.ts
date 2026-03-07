@@ -24,12 +24,10 @@ await test('aliasFilter', async (t) => {
     age: 20,
   })
 
-  const a = await db
-    .query2('plot', { slug: 'kavel-omval-naast-de-poort' })
-    .get()
+  const a = await db.query('plot', { slug: 'kavel-omval-naast-de-poort' }).get()
 
   const b = await db
-    .query2('plot', { slug: 'kavel-omval-naast-de-poort' })
+    .query('plot', { slug: 'kavel-omval-naast-de-poort' })
     .filter('age', '>', 10)
     .get()
 

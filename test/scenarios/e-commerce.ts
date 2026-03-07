@@ -281,10 +281,14 @@ await test('E-commerce Simulation', async (t) => {
         // Update User (Name/Email via Upsert)
         const oldEmail = `user${getRandom(userIds)}@example.com`
         if (oldEmail) {
-          await client.upsert('user', { email: oldEmail }, {
-            name: `Updated Name ${randomString(4)}`,
-            lastLogin: Date.now(),
-          })
+          await client.upsert(
+            'user',
+            { email: oldEmail },
+            {
+              name: `Updated Name ${randomString(4)}`,
+              lastLogin: Date.now(),
+            },
+          )
         }
         totalAliasUpdate++
         totalAliasUpdateTime += performance.now() - d
@@ -331,7 +335,7 @@ await test('E-commerce Simulation', async (t) => {
       const queryType = Math.random()
       if (queryType < 0.1) {
         isSorted(
-          await client.query2('user').sort('lastLogin', 'asc').get(),
+          await client.query('user').sort('lastLogin', 'asc').get(),
           'lastLogin',
           'asc',
         )
@@ -340,7 +344,7 @@ await test('E-commerce Simulation', async (t) => {
         const categoryId = getRandom(categoryIds)
         if (categoryId) {
           await db
-            .query2('product')
+            .query('product')
             .filter('category', '=', categoryId)
             .sort('price', Math.random() > 0.5 ? 'asc' : 'desc')
             .include('name', 'price', 'stock')
@@ -353,7 +357,7 @@ await test('E-commerce Simulation', async (t) => {
         if (userId) {
           // console.log({ userId })
           await db
-            .query2('user', userId)
+            .query('user', userId)
             .include(
               'name',
               'viewedProducts.name',
@@ -367,7 +371,7 @@ await test('E-commerce Simulation', async (t) => {
         const productId = getRandom(productIds)
         if (productId) {
           await db
-            .query2('review')
+            .query('review')
             .filter('product', '=', productId)
             .sort('rating', 'desc')
             .include('rating', 'comment', 'user.name')
@@ -389,7 +393,7 @@ await test('E-commerce Simulation', async (t) => {
         }
         if (searchTerm) {
           await db
-            .query2('product')
+            .query('product')
             .search(searchTerm, 'name', 'description')
             .include('name', 'price')
             .range(0, 5)
@@ -399,7 +403,7 @@ await test('E-commerce Simulation', async (t) => {
         // Get user by email (alias)
         const email = `user${getRandom(userIds)}@example.com`
         if (email) {
-          await client.query2('user', { email }).get()
+          await client.query('user', { email }).get()
         }
       }
     }
@@ -483,7 +487,7 @@ await test('E-commerce Simulation', async (t) => {
   await wait(500)
 
   const finalProductCount = (
-    await client.query2('product').range(0, 10_000_000).get()
+    await client.query('product').range(0, 10_000_000).get()
   ).length
 
   equal(

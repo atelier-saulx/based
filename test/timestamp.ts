@@ -28,7 +28,7 @@ await test('timestamp', async (t) => {
     name: 'youzi',
   })
 
-  let res = await db.query2('user').get()
+  let res = await db.query('user').get()
 
   if (typeof res[0].createdAt !== 'number') {
     throw 'should be number'
@@ -47,7 +47,7 @@ await test('timestamp', async (t) => {
     name: 'youzi1',
   })
 
-  res = await db.query2('user').get()
+  res = await db.query('user').get()
 
   if (!(res[0].updatedAt > res[0].createdAt)) {
     throw 'updatedAt should be updated after update'
@@ -55,7 +55,7 @@ await test('timestamp', async (t) => {
 
   const measure = async (v: number) => {
     deepEqual(
-      Math.floor(((await db.query2('user', youzi).get())?.mrDerp ?? 0) / 10),
+      Math.floor(((await db.query('user', youzi).get())?.mrDerp ?? 0) / 10),
       Math.floor(v / 10),
     )
   }
@@ -94,8 +94,8 @@ await test('timestamp', async (t) => {
     updatedAt: overwriteUpdatedAt,
   })
 
-  const newUser = await db.query2('user', jamex).get()
-  const updatedUser = await db.query2('user', youzi).get()
+  const newUser = await db.query('user', jamex).get()
+  const updatedUser = await db.query('user', youzi).get()
 
   equal(newUser?.createdAt, overwriteCreatedAt)
   equal(newUser?.updatedAt, overwriteUpdatedAt)
@@ -121,6 +121,6 @@ await test('timestamp before 1970', async (t) => {
     bday: d,
   })
 
-  const res = await db.query2('user', user).get()
+  const res = await db.query('user', user).get()
   equal(res?.bday, d.valueOf())
 })

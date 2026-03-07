@@ -15,7 +15,7 @@ await test('modify basic boolean', async (t) => {
   const b = db.create('user', { isNice: true })
   const c = db.create('user', { isNice: false })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, isNice: false },
     { id: 2, isNice: true },
     { id: 3, isNice: false },
@@ -25,7 +25,7 @@ await test('modify basic boolean', async (t) => {
   db.update('user', b, { isNice: true })
   db.update('user', c, { isNice: true })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, isNice: true },
     { id: 2, isNice: true },
     { id: 3, isNice: true },
@@ -34,7 +34,7 @@ await test('modify basic boolean', async (t) => {
   db.update('user', a, { isNice: false })
   db.update('user', b, { isNice: false })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, isNice: false },
     { id: 2, isNice: false },
     { id: 3, isNice: true },
@@ -45,7 +45,7 @@ await test('modify basic boolean', async (t) => {
   db.update('user', b, { isNice: null })
   db.update('user', c, { isNice: null })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, isNice: false },
     { id: 2, isNice: false },
     { id: 3, isNice: false },
@@ -90,19 +90,19 @@ await test('modify boolean on edge', async (t) => {
   // Basic creates
   // Check a (default false?)
   const resA = await db
-    .query2('holder', await a)
+    .query('holder', await a)
     .include('toUser.$edgeBool')
     .get()
   deepEqual(resA?.toUser?.$edgeBool, false)
 
   // Check b (true)
-  const resB = await db.query2('holder', b).include('toUser.$edgeBool').get()
+  const resB = await db.query('holder', b).include('toUser.$edgeBool').get()
   resB?.toUser?.$edgeBool
   deepEqual(resB?.toUser?.$edgeBool, true)
 
   // Check c (false)
   const resC = await db
-    .query2('holder', await c)
+    .query('holder', await c)
     .include('toUser.$edgeBool')
     .get()
 
@@ -114,16 +114,16 @@ await test('modify boolean on edge', async (t) => {
   db.update('holder', await c, { toUser: { id: u1, $edgeBool: true } })
 
   const resA2 = await db
-    .query2('holder', await a)
+    .query('holder', await a)
     .include('toUser.$edgeBool')
     .get()
 
   deepEqual(resA2?.toUser?.$edgeBool, true)
-  const resB2 = await db.query2('holder', b).include('toUser.$edgeBool').get()
+  const resB2 = await db.query('holder', b).include('toUser.$edgeBool').get()
 
   deepEqual(resB2?.toUser?.$edgeBool, true)
   const resC2 = await db
-    .query2('holder', await c)
+    .query('holder', await c)
     .include('toUser.$edgeBool')
     .get()
 
@@ -135,16 +135,16 @@ await test('modify boolean on edge', async (t) => {
   db.update('holder', await c, { toUser: { id: u1, $edgeBool: false } })
 
   const resA3 = await db
-    .query2('holder', await a)
+    .query('holder', await a)
     .include('toUser.$edgeBool')
     .get()
 
   deepEqual(resA3?.toUser?.$edgeBool, false)
-  const resB3 = await db.query2('holder', b).include('toUser.$edgeBool').get()
+  const resB3 = await db.query('holder', b).include('toUser.$edgeBool').get()
 
   deepEqual(resB3?.toUser?.$edgeBool, false)
   const resC3 = await db
-    .query2('holder', await c)
+    .query('holder', await c)
     .include('toUser.$edgeBool')
     .get()
 

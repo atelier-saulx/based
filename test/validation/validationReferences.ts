@@ -37,7 +37,7 @@ await test('update', async (t) => {
 
   await throws(async () => {
     // @ts-expect-error
-    return db.query2('flap').include('x.$derp').get()
+    return db.query('flap').include('x.$derp').get()
   }, 'Non existing reference on flap')
 
   const user1 = await db.create('user', { name: 'user1' })
@@ -64,7 +64,7 @@ await test('update', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', userWithConn)
+      .query('user', userWithConn)
       .include('name', 'connections.id')
       .get(),
     {
@@ -174,7 +174,7 @@ await test('update', async (t) => {
   })
 
   deepEqual(
-    await db.query2('user', userWithFriends).include('name', 'friends').get(),
+    await db.query('user', userWithFriends).include('name', 'friends').get(),
     {
       id: 5,
       name: 'friendlyUser',
@@ -194,7 +194,7 @@ await test('update', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', userWithFriends)
+      .query('user', userWithFriends)
       .include(
         'name',
         'friends.$bestFriend',
@@ -240,7 +240,7 @@ await test('update', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', userWithFriends)
+      .query('user', userWithFriends)
       .include(
         'name',
         'friends.$bestFriend',

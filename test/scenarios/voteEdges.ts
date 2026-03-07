@@ -129,6 +129,6 @@ await test('votesEdges', async (t) => {
     await db.drain()
   }, `Update random order id ${amount} votes, ${a}`)
 
-  await db.query2('vote').get().inspect(1)
-  await db.query2('round', final).include('*', '**').get().inspect(1)
+  await db.query('vote').get().inspect(1)
+  await db.query('round', final).include('*', '**').get().inspect(1)
 })

@@ -59,7 +59,7 @@ test('message incoming/outgoing', async (t: T) => {
   })
 
   let cnt = 0
-  const close = client.query2('counter').subscribe(() => {
+  const close = client.query('counter').subscribe(() => {
     cnt++
   })
 

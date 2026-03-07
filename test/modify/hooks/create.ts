@@ -30,7 +30,7 @@ await test('modify - hooks - create', async (t) => {
 
   {
     const id = await db.create('user', {})
-    deepEqual(await db.query2('user', id).get(), {
+    deepEqual(await db.query('user', id).get(), {
       id,
       rating: 5,
     })

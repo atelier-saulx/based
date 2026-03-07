@@ -23,7 +23,7 @@ await test('include */**', async (t) => {
   db.create('user', { nr: 3 })
 
   deepEqual(
-    await db.query2('user').include('*', '**').range(0, 5).get(),
+    await db.query('user').include('*', '**').range(0, 5).get(),
     [
       {
         id: 1,
@@ -57,7 +57,7 @@ await test('include */**', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').include('friends.*').range(0, 5).get(),
+    await db.query('user').include('friends.*').range(0, 5).get(),
     [
       {
         id: 1,

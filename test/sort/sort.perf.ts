@@ -35,7 +35,7 @@ await test('1M', async (t) => {
   )
 
   const r = await db
-    .query2('user')
+    .query('user')
     .include('age', 'name', 'email')
     .range(0, 1e5)
     .sort('email')

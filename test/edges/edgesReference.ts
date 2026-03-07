@@ -55,7 +55,7 @@ await test('multi reference', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('article').include('contributor.$friend').get(), [
+  deepEqual(await db.query('article').include('contributor.$friend').get(), [
     {
       id: 1,
       contributor: { id: 1, $friend: { id: 2, name: 'Mr Yur' } },
@@ -146,7 +146,7 @@ await test('multiple references', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('name', 'contributor.$countries')
       .get()
       .then((v) => v),
@@ -189,7 +189,7 @@ await test('multiple references', async (t) => {
   }
   await db.drain()
   const articles = (
-    await db.query2('article').include('name', 'contributor.$countries').get()
+    await db.query('article').include('name', 'contributor.$countries').get()
   ).slice(-10)
 
   for (const article of articles) {

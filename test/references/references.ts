@@ -2,8 +2,8 @@ import { BasedDb, getDefaultHooks } from '../../src/index.js'
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
 import { wait } from '../../src/utils/index.js'
-import {testDb} from '../shared/index.js'
-import {DbClientClass} from '../../src/db-client/index.js'
+import { testDb } from '../shared/index.js'
+import { DbClientClass } from '../../src/db-client/index.js'
 
 await test('references', async (t) => {
   const db = await testDb(t, {
@@ -58,7 +58,7 @@ await test('references', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('article').include('contributors.name').get(), [
+  deepEqual(await db.query('article').include('contributors.name').get(), [
     {
       id: await strudelArticle,
       contributors: [{ id: await mrSnurp, name: 'Mr snurp' }],
@@ -72,7 +72,7 @@ await test('references', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('user').include('articles.name').get(), [
+  deepEqual(await db.query('user').include('articles.name').get(), [
     {
       id: 1,
       articles: [
@@ -127,7 +127,7 @@ await test('one to many', async (t) => {
   }
   await db.drain()
 
-  deepEqual(await db.query2('user').include('resources').get(), [
+  deepEqual(await db.query('user').include('resources').get(), [
     {
       id: 1,
       resources: [
@@ -155,7 +155,7 @@ await test('one to many', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('user').include('resources.name').get(), [
+  deepEqual(await db.query('user').include('resources.name').get(), [
     {
       id: 1,
       resources: [
@@ -215,7 +215,7 @@ await test('one to many really', async (t) => {
     resources: [cpu, kbd, mouse, fd],
   })
   await db.drain()
-  deepEqual(await db.query2('user', user).include('resources').get(), {
+  deepEqual(await db.query('user', user).include('resources').get(), {
     id: 1,
     resources: [
       {
@@ -239,7 +239,7 @@ await test('one to many really', async (t) => {
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
-  deepEqual(await db.query2('user', user).include('resources').get(), {
+  deepEqual(await db.query('user', user).include('resources').get(), {
     id: 1,
     resources: [
       {
@@ -260,7 +260,7 @@ await test('one to many really', async (t) => {
   await db.update('user', user, {
     resources: [cpu, kbd, mouse],
   })
-  deepEqual(await db.query2('user', user).include('resources').get(), {
+  deepEqual(await db.query('user', user).include('resources').get(), {
     id: 1,
     resources: [
       {
@@ -281,7 +281,7 @@ await test('one to many really', async (t) => {
   await db.update('user', user, {
     resources: [cpu, kbd, mouse, fd],
   })
-  deepEqual(await db.query2('user', user).include('resources').get(), {
+  deepEqual(await db.query('user', user).include('resources').get(), {
     id: 1,
     resources: [
       {
@@ -306,7 +306,7 @@ await test('one to many really', async (t) => {
   await db.update('user', user, {
     resources: [kbd, cpu, fd, mouse],
   })
-  deepEqual(await db.query2('user', user).include('resources').get(), {
+  deepEqual(await db.query('user', user).include('resources').get(), {
     id: 1,
     resources: [
       {
@@ -332,7 +332,7 @@ await test('one to many really', async (t) => {
   await db.update('resource', joy, { owner: user })
   await db.update('resource', joy, { owner: user })
   await db.update('resource', joy, { owner: user })
-  deepEqual(await db.query2('user', user).include('resources').get(), {
+  deepEqual(await db.query('user', user).include('resources').get(), {
     id: 1,
     resources: [
       {
@@ -366,7 +366,7 @@ await test('one to many really', async (t) => {
       update: [joy],
     },
   })
-  deepEqual(await db.query2('user', user).include('resources').get(), {
+  deepEqual(await db.query('user', user).include('resources').get(), {
     id: 1,
     resources: [
       {
@@ -397,7 +397,7 @@ await test('one to many really', async (t) => {
       update: [joy, kbd, cpu, fd, mouse],
     },
   })
-  deepEqual(await db.query2('user', user).include('resources').get(), {
+  deepEqual(await db.query('user', user).include('resources').get(), {
     id: 1,
     resources: [
       {
@@ -474,7 +474,7 @@ await test('update', async (t) => {
     contributors: [flippie],
   })
   await db.drain()
-  deepEqual(await db.query2('article').include('contributors.name').get(), [
+  deepEqual(await db.query('article').include('contributors.name').get(), [
     {
       id: 1,
       contributors: [
@@ -547,7 +547,7 @@ await test('filter', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('article', strudelArticle).include('contributors').get(),
+    await db.query('article', strudelArticle).include('contributors').get(),
     {
       id: 1,
       contributors: [
@@ -562,7 +562,7 @@ await test('filter', async (t) => {
 
   deepEqual(
     await db
-      .query2('article', strudelArticle)
+      .query('article', strudelArticle)
       .include((q) => q('contributors').include('name').filter('flap', '>', 25))
       .get(),
     {
@@ -577,7 +577,7 @@ await test('filter', async (t) => {
 
   deepEqual(
     await db
-      .query2('article', strudelArticle)
+      .query('article', strudelArticle)
       .include((q) => {
         q('contributors').include('flap')
         q('contributors').include('name')
@@ -594,7 +594,7 @@ await test('filter', async (t) => {
 
   deepEqual(
     await db
-      .query2('article', strudelArticle)
+      .query('article', strudelArticle)
       .include((select) => {
         select('contributors')
           .include('name')
@@ -702,7 +702,7 @@ await test('filter', async (t) => {
 //   })
 
 //   console.dir(
-//     await db.query2('contestant').include('*', '**').get(),
+//     await db.query('contestant').include('*', '**').get(),
 //     {
 //       depth: null,
 //     },
@@ -711,7 +711,7 @@ await test('filter', async (t) => {
 //   const contestant1 = await db.create('contestant')
 
 //   console.dir(
-//     await db.query2('contestant').include('*', '**').get(),
+//     await db.query('contestant').include('*', '**').get(),
 //     {
 //       depth: null,
 //     },
@@ -720,7 +720,7 @@ await test('filter', async (t) => {
 //   const country1 = await db.create('country', { name: 'xxx' })
 
 //   console.dir(
-//     await db.query2('contestant').include('*', '**').get(),
+//     await db.query('contestant').include('*', '**').get(),
 //     {
 //       depth: null,
 //     },
@@ -729,7 +729,7 @@ await test('filter', async (t) => {
 //   console.log(
 //     '--->',
 //     await db
-//       .query2('contestant', contestant1)
+//       .query('contestant', contestant1)
 //       .include('*', '**')
 //       .get()
 //       ,
@@ -742,11 +742,11 @@ await test('filter', async (t) => {
 
 //   console.log(
 //     '--->',
-//     await db.query2('country', country1).include('*', '**').get(),
+//     await db.query('country', country1).include('*', '**').get(),
 //   )
 
 //   console.dir(
-//     await db.query2('contestant').include('*', '**').get(),
+//     await db.query('contestant').include('*', '**').get(),
 //     {
 //       depth: null,
 //     },
@@ -756,7 +756,7 @@ await test('filter', async (t) => {
 //     '--->',
 //     await db
 //       // @ts-ignore
-//       .query2('contestant', {
+//       .query('contestant', {
 //         id: 1,
 //         maxVotes: 0,
 //         price: 0,
@@ -811,7 +811,7 @@ await test('single ref save and load', async (t) => {
     invitedBy: 2,
   })
 
-  deepEqual(await client.query2('user').include('email', 'invitedBy').get(), [
+  deepEqual(await client.query('user').include('email', 'invitedBy').get(), [
     { id: 1, email: '1@saulx.com', invitedBy: null },
     { id: 2, email: '2@saulx.com', invitedBy: null },
     {
@@ -874,8 +874,8 @@ await test('single2many - update refs', async (t) => {
     reviews: [review1, review2, review3],
   })
 
-  const products = await db.query2('product').include('*', '**').get()
-  const reviews = await db.query2('review').include('*', '**').get()
+  const products = await db.query('product').include('*', '**').get()
+  const reviews = await db.query('review').include('*', '**').get()
 
   deepEqual(products, [
     { id: 1, reviews: [] },
@@ -925,7 +925,7 @@ await test('reference to a non-existing node', async (t) => {
     articles: [1],
   })
   // RFE Is this the correct behavior
-  deepEqual(await db.query2('user', mrSnurp).include('**').get(), {
+  deepEqual(await db.query('user', mrSnurp).include('**').get(), {
     id: 1,
     articles: [],
   })
@@ -933,7 +933,7 @@ await test('reference to a non-existing node', async (t) => {
   const article = await db.create('article', {})
   deepEqual(article, 1)
 
-  deepEqual(await db.query2('user', mrSnurp).include('**').get(), {
+  deepEqual(await db.query('user', mrSnurp).include('**').get(), {
     id: 1,
     articles: [],
   })

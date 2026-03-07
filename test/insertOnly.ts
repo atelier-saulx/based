@@ -18,7 +18,7 @@ await test('insert only => no delete', async (t) => {
   const a = await client.create('audit', { v: 100 })
   await client.create('audit', { v: 100 })
   await throws(() => client.delete('audit', a))
-  deepEqual(await client.query2('audit', a).get(), { id: 1, v: 100 })
+  deepEqual(await client.query('audit', a).get(), { id: 1, v: 100 })
 })
 
 await test('colvec requires insertOnly', async (t) => {

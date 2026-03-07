@@ -24,7 +24,7 @@ await test('client server schema updates', async (t) => {
     name: 'jamez',
   })
 
-  deepEqual(await client1.query2('user').get(), [
+  deepEqual(await client1.query('user').get(), [
     { id: 1, name: 'youzi' },
     { id: 2, name: 'jamez' },
   ])
@@ -37,12 +37,12 @@ await test('client server schema updates', async (t) => {
     },
   })
 
-  deepEqual(await client1Updated.query2('user').get(), [
+  deepEqual(await client1Updated.query('user').get(), [
     { id: 1, age: 0 },
     { id: 2, age: 0 },
   ])
 
-  const ageSorted = await client2.query2('user').sort('age', 'asc').get()
+  const ageSorted = await client2.query('user').sort('age', 'asc').get()
 
   await client1.setSchema({
     types: {
@@ -52,7 +52,7 @@ await test('client server schema updates', async (t) => {
     },
   })
 
-  const ageSorted2 = await client1.query2('user').sort('age', 'asc').get()
+  const ageSorted2 = await client1.query('user').sort('age', 'asc').get()
 
   deepEqual(ageSorted, ageSorted2)
 
@@ -67,7 +67,7 @@ await test('client server schema updates', async (t) => {
     },
   })
 
-  const ageSorted3 = await client1.query2('user').sort('age', 'asc').get()
+  const ageSorted3 = await client1.query('user').sort('age', 'asc').get()
 
   deepEqual(ageSorted3, ageSorted2)
 })
@@ -124,7 +124,7 @@ await test('rapid schema updates', async (t) => {
 
   await Promise.all(promises)
 
-  const res = await client1.query2('user').get()
+  const res = await client1.query('user').get()
 
   deepEqual(
     [
@@ -171,13 +171,13 @@ await test('rapid modifies during schema update', async (t) => {
   while (b--) {
     const name = 'jamex' + b
     const id = await client2.create('user', { name })
-    const res = (await client2.query2('user', id).get())!
+    const res = (await client2.query('user', id).get())!
 
     deepEqual(res.id, id)
     deepEqual(res.name, name)
   }
 
-  const all = (await client2.query2('user').range(0, 1000_000).get())!
+  const all = (await client2.query('user').range(0, 1000_000).get())!
   // await wait(1e3)
   // console.log(all.length, all.slice(0, 10), all.slice(-10))
   deepEqual(all[0], { id: 1, name: 'youzi499999', age: 0 } as any)

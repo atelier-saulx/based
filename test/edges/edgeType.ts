@@ -88,7 +88,7 @@ await test('json type edge', async (t) => {
     ],
   })
   const retrieved = await db
-    .query2('serviceAccount', serviceAccountId)
+    .query('serviceAccount', serviceAccountId)
     .include(
       'id',
       'workspaces.id',

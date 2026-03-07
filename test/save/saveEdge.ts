@@ -40,11 +40,14 @@ await test('save edge', async (t) => {
     },
   })
 
-  deepEqual(await client.query2('user', user2).include('**', 'bestFriend.$bond').get(), {
-    id: 2,
-    bestFriend: {
-      id: 1,
-      $bond: 42,
+  deepEqual(
+    await client.query('user', user2).include('**', 'bestFriend.$bond').get(),
+    {
+      id: 2,
+      bestFriend: {
+        id: 1,
+        $bond: 42,
+      },
     },
-  })
+  )
 })

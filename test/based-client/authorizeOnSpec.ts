@@ -91,7 +91,7 @@ test('Specific authorize on spec', async (t: T) => {
 
   t.is(authCalled, 1)
 
-  await client.query2('slax').get()
+  await client.query('slax').get()
 
   t.is(authCalled, 2)
   client.channel('klax').subscribe(() => {})

@@ -60,7 +60,7 @@ await test('hooks - undefined values', async (t) => {
     age: 25,
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       name: 'youzi',
@@ -73,7 +73,7 @@ await test('hooks - undefined values', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('user').filter('age', '<', 50).get(), [
+  deepEqual(await db.query('user').filter('age', '<', 50).get(), [
     {
       id: 2,
       name: 'james',
@@ -85,7 +85,7 @@ await test('hooks - undefined values', async (t) => {
     age: 31,
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       name: 'youzi',
@@ -98,7 +98,7 @@ await test('hooks - undefined values', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('user').filter('age', '<', 50).get(), [
+  deepEqual(await db.query('user').filter('age', '<', 50).get(), [
     {
       id: 1,
       name: 'youzi',
@@ -148,7 +148,7 @@ await test('hooks - private nodes', async (t) => {
     age: 25,
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       private: true,
@@ -166,7 +166,7 @@ await test('hooks - private nodes', async (t) => {
     private: false,
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       name: 'youzi',
@@ -210,7 +210,7 @@ await test('hooks - as SQL CHECK constraints', async (t) => {
     }),
   )
 
-  deepEqual((await db.query2('user').get()).length, 0)
+  deepEqual((await db.query('user').get()).length, 0)
 })
 
 await test('property modify hooks', async (t) => {
@@ -256,7 +256,7 @@ await test('property modify hooks', async (t) => {
     city: 'wut',
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, age: 21, name: 'youzi', city: 'Snurko' },
   ])
 
@@ -264,7 +264,7 @@ await test('property modify hooks', async (t) => {
     city: 'Fail',
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, age: 21, name: 'youzi', city: 'Success' },
   ])
 
@@ -272,7 +272,7 @@ await test('property modify hooks', async (t) => {
     city: 'ignore',
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, age: 21, name: 'youzi', city: 'Success' },
   ])
 })
@@ -316,7 +316,7 @@ await test('property read hooks', async (t) => {
     city: 'wut',
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       age: 21 * 2,
@@ -367,7 +367,7 @@ await test('aggregate hooks', async (t) => {
     age: 100,
   })
 
-  equal((await db.query2('user').sum('age').get()).age.sum, 21)
+  equal((await db.query('user').sum('age').get()).age.sum, 21)
 })
 
 await test('search hooks', async (t) => {
@@ -409,7 +409,7 @@ await test('search hooks', async (t) => {
     age: 100,
   })
 
-  equal((await db.query2('user').search('youzi').get()).length, 1)
+  equal((await db.query('user').search('youzi').get()).length, 1)
 })
 
 await test('groupBy hooks', async (t) => {
@@ -451,7 +451,7 @@ await test('groupBy hooks', async (t) => {
     age: 100,
   })
 
-  equal(await db.query2('user').groupBy('name').sum('age').get(), {
+  equal(await db.query('user').groupBy('name').sum('age').get(), {
     youzi: { age: { sum: 21 } },
   })
 })
@@ -499,7 +499,7 @@ await test('filter hooks', async (t) => {
     age: 100,
   })
 
-  equal(await db.query2('user').filter('name', '=', 'youzi').get(), [
+  equal(await db.query('user').filter('name', '=', 'youzi').get(), [
     { id: 1, age: 21, name: 'youzi' },
   ])
 })
@@ -543,7 +543,7 @@ await test('include hooks', async (t) => {
     age: 100,
   })
 
-  equal(await db.query2('user').include('name', 'age').get(), [
+  equal(await db.query('user').include('name', 'age').get(), [
     { id: 1, age: 21, name: 'youzi' },
   ])
 })
@@ -578,7 +578,7 @@ await test('upsert calls create and/or update hooks', async (t) => {
     },
   )
 
-  const results1 = await db.query2('user').get()
+  const results1 = await db.query('user').get()
 
   equal(results1.length, 1)
 
@@ -594,7 +594,7 @@ await test('upsert calls create and/or update hooks', async (t) => {
     },
   )
 
-  const results2 = await db.query2('user').get()
+  const results2 = await db.query('user').get()
   equal(results2.length, 1)
   equal(results2[0].createdString != 0, true)
   equal(results2[0].updatedString != 0, true)

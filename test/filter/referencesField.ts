@@ -1,9 +1,9 @@
 import test from '../shared/test.js'
 import { deepEqual } from '../shared/assert.js'
-import {testDb} from '../shared/index.js'
+import { testDb } from '../shared/index.js'
 
 await test('filter references shortcut', async (t) => {
-  const db= await testDb(t, {
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -28,7 +28,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include('name', 'age', 'friends')
       .filter('friends.age', '<', 40)
       .get(),
@@ -45,7 +45,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include('name', 'age', 'friends')
       .filter('friends.age', '>', 40)
       .get(),
@@ -62,7 +62,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include('name', 'age', 'friends')
       .filter('friends[*].age', '>', 40)
       .get(),
@@ -79,7 +79,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include('name', 'age', 'friends')
       .filter('friends[0].age', '>', 40)
       .get(),
@@ -100,7 +100,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', mrA)
+      .query('user', mrA)
       .include('name', 'age', 'friends')
       .filter('friends[-1].age', '>', 100)
       .get(),
@@ -127,7 +127,7 @@ await test('filter references shortcut', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', mrA)
+      .query('user', mrA)
       .include('name', 'age', 'friends')
       .filter('friends[2].age', '=', 93)
       .get(),

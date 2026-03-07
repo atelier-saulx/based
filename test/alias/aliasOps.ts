@@ -19,7 +19,7 @@ await test('upsert', async (t) => {
     status: 'a',
   })
 
-  deepEqual(await db.query2('user', user1).get(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     status: 'a',
     externalId: 'cool',
@@ -30,7 +30,7 @@ await test('upsert', async (t) => {
     status: 'b',
   })
 
-  deepEqual(await db.query2('user', user1).get(), {
+  deepEqual(await db.query('user', user1).get(), {
     id: 1,
     status: 'b',
     externalId: '',

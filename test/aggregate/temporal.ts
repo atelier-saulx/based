@@ -29,7 +29,7 @@ await test('group by datetime intervals', async (t) => {
   })
 
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('pickup', 'day').get(),
+    await db.query('trip').sum('distance').groupBy('pickup', 'day').get(),
     {
       11: {
         distance: { sum: 1026.88 },
@@ -39,7 +39,7 @@ await test('group by datetime intervals', async (t) => {
   )
   deepEqual(
     await db
-      .query2('trip')
+      .query('trip')
       .sum('distance')
       .groupBy('pickup', { step: 'day' })
       .get(),
@@ -51,7 +51,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by day, without shorthand',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('pickup', 'hour').get(),
+    await db.query('trip').sum('distance').groupBy('pickup', 'hour').get(),
     {
       11: {
         distance: { sum: 1026.88 },
@@ -60,7 +60,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by hour',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('pickup', 'dow').get(),
+    await db.query('trip').sum('distance').groupBy('pickup', 'dow').get(),
     {
       3: {
         distance: { sum: 1026.88 },
@@ -69,7 +69,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by day of week',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
+    await db.query('trip').sum('distance').groupBy('pickup', 'isoDOW').get(),
     {
       3: {
         distance: { sum: 1026.88 },
@@ -78,7 +78,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by hour',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('pickup', 'doy').get(),
+    await db.query('trip').sum('distance').groupBy('pickup', 'doy').get(),
     {
       345: {
         distance: { sum: 1026.88 },
@@ -87,7 +87,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by hour',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('pickup', 'month').get(),
+    await db.query('trip').sum('distance').groupBy('pickup', 'month').get(),
     {
       11: {
         distance: { sum: 1026.88 },
@@ -96,7 +96,7 @@ await test('group by datetime intervals', async (t) => {
     'group timestamp by month[0-11]',
   )
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('pickup', 'year').get(),
+    await db.query('trip').sum('distance').groupBy('pickup', 'year').get(),
     {
       2024: {
         distance: { sum: 1026.88 },
@@ -140,7 +140,7 @@ await test('group by datetime ranges', async (t) => {
 
   let interval = 40 * 60 // 40 minutes
   let r = await db
-    .query2('trip')
+    .query('trip')
     .sum('distance')
     .groupBy('pickup', interval)
     .get()
@@ -175,7 +175,7 @@ await test('group by datetime ranges', async (t) => {
 
   let interval2 = 60 * 60 * 24 * 12 + 2 * 60 * 60 // 12 days and 2h
   let r2 = await db
-    .query2('trip')
+    .query('trip')
     .sum('distance')
     .groupBy('pickup', interval2)
     .get()
@@ -198,7 +198,7 @@ await test('group by datetime ranges', async (t) => {
   // await throws(
   //   async () => {
   //     await db
-  //       .query2('trip')
+  //       .query('trip')
   //       .sum('distance')
   //       .groupBy('pickup', 2 ** 32 + 1)
   //       .get()
@@ -257,13 +257,13 @@ await test('cardinality with dates', async (t) => {
     ],
   })
 
-  const total = await db.query2('lunch').cardinality('eaters').get()
+  const total = await db.query('lunch').cardinality('eaters').get()
 
   // console.log('Total Eaters: ', total.eaters)
   deepEqual(total.eaters.cardinality, 11, 'Total Eaters')
 
   const groupByDay = await db
-    .query2('lunch')
+    .query('lunch')
     .cardinality('eaters')
     .groupBy('day')
     .get()
@@ -291,7 +291,7 @@ await test('cardinality with dates', async (t) => {
   }
 
   const groupByMonth = await db
-    .query2('lunch')
+    .query('lunch')
     .cardinality('eaters')
     .groupBy('day', 'month')
     .get()
@@ -342,7 +342,7 @@ await test('formating timestamp', async (t) => {
   })
 
   deepEqual(
-    await db.query2('trip').sum('distance').groupBy('pickup').get(),
+    await db.query('trip').sum('distance').groupBy('pickup').get(),
     {
       1733916600000: {
         distance: { sum: 513.44 },
@@ -356,7 +356,7 @@ await test('formating timestamp', async (t) => {
 
   deepEqual(
     await db
-      .query2('trip')
+      .query('trip')
       .sum('distance')
       .groupBy('pickup', { step: 40 * 60, display: dtFormat })
       .get(),
@@ -370,7 +370,7 @@ await test('formating timestamp', async (t) => {
 
   deepEqual(
     await db
-      .query2('trip')
+      .query('trip')
       .sum('distance')
       .groupBy('pickup', { display: dtFormat })
       .get(),
@@ -416,7 +416,7 @@ await test('timezone offsets', async (t) => {
 
   deepEqual(
     await db
-      .query2('trip')
+      .query('trip')
       .sum('distance')
       .groupBy('pickup', { step: 'day', timeZone: 'America/Sao_Paulo' })
       .get(),
@@ -433,7 +433,7 @@ await test('timezone offsets', async (t) => {
   )
   deepEqual(
     await db
-      .query2('trip')
+      .query('trip')
       .sum('distance')
       .groupBy('pickup', { step: 'hour', timeZone: 'America/Sao_Paulo' })
       .get(),
@@ -449,7 +449,7 @@ await test('timezone offsets', async (t) => {
   )
   deepEqual(
     await db
-      .query2('trip')
+      .query('trip')
       .sum('distance')
       .groupBy('dropoff', { step: 'month', timeZone: 'America/Sao_Paulo' })
       .get(),

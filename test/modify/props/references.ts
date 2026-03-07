@@ -23,7 +23,7 @@ await test('modify single reference', async (t) => {
   const realT2 = await t2
 
   {
-    const res = await db.query2('holder', h1).include('dest.id').get()
+    const res = await db.query('holder', h1).include('dest.id').get()
 
     deepEqual(res, {
       id: h1,
@@ -35,7 +35,7 @@ await test('modify single reference', async (t) => {
   await db.update('holder', h1, { dest: t2 })
 
   {
-    const res = await db.query2('holder', h1).include('dest.id').get()
+    const res = await db.query('holder', h1).include('dest.id').get()
 
     deepEqual(res, {
       id: h1,
@@ -47,7 +47,7 @@ await test('modify single reference', async (t) => {
   await db.update('holder', h1, { dest: { id: t1 } })
 
   {
-    const res = await db.query2('holder', h1).include('dest.id').get()
+    const res = await db.query('holder', h1).include('dest.id').get()
 
     deepEqual(res, {
       id: h1,
@@ -57,7 +57,7 @@ await test('modify single reference', async (t) => {
 
   // Delete
   await db.update('holder', h1, { dest: null })
-  deepEqual(await db.query2('holder', h1).include('dest').get(), {
+  deepEqual(await db.query('holder', h1).include('dest').get(), {
     id: h1,
     dest: null,
   })
@@ -92,7 +92,7 @@ await test('modify references', async (t) => {
   const h1 = await db.create('holder', { dests: [t1, t2Promise] })
 
   const check = async (ids: number[], msg) => {
-    const res = await db.query2('holder', h1).include('dests').get()
+    const res = await db.query('holder', h1).include('dests').get()
     const currentIds = res?.dests?.map((v: any) => v.id) || []
     currentIds.sort()
     ids.sort()
@@ -162,7 +162,7 @@ await test('modify references no await', async (t) => {
 
   // Verify
   const res = await db
-    .query2('holder', await h1)
+    .query('holder', await h1)
     .include('dests.id')
     .get()
 
@@ -207,7 +207,7 @@ await test('modify single reference on edge', async (t) => {
   // Verify
   const getEdgeRef = async (id: number) => {
     const res = await db
-      .query2('holder', id)
+      .query('holder', id)
       .include('toThing.$edgeRef.id')
       .get()
 
@@ -275,7 +275,7 @@ await test('modify references on edge', async (t) => {
 
   const check = async (ids: number[], msg) => {
     const res = await db
-      .query2('holder', h1)
+      .query('holder', h1)
       .include('toThing.$edgeRefs.id')
       .get()
 

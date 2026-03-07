@@ -89,7 +89,7 @@ await test('edges aggregation', async (t) => {
   /*---------------------------*/
 
   deepEqual(
-    await db.query2('movie').sum('actors.strong').get(),
+    await db.query('movie').sum('actors.strong').get(),
     //@ts-ignore
     [
       { id: 1, actors: { strong: { sum: 10 } } },
@@ -99,7 +99,7 @@ await test('edges aggregation', async (t) => {
   )
 
   deepEqual(
-    await db.query2('movie').max('actors.$rating').sum('actors.$hating').get(),
+    await db.query('movie').max('actors.$rating').sum('actors.$hating').get(),
     //@ts-ignore
     [
       { id: 1, actors: { $rating: { max: 55 }, $hating: { sum: 5 } } },
@@ -114,7 +114,7 @@ await test('edges aggregation', async (t) => {
 
   deepEqual(
     await db
-      .query2('movie')
+      .query('movie')
       // @ts-ignore
       .include((q) => q('actors').max('$rating'))
       .get(),
@@ -141,7 +141,7 @@ await test('edges aggregation', async (t) => {
 
   deepEqual(
     await db
-      .query2('movie')
+      .query('movie')
       //@ts-ignore
       .include((q) => q('actors').max('$rating').sum('$hating'))
       .get(),
@@ -174,7 +174,7 @@ await test('edges aggregation', async (t) => {
 
   deepEqual(
     await db
-      .query2('movie')
+      .query('movie')
       //@ts-ignore
       .include((q) => q('actors').max('$rating', '$hating'))
       .get(),
@@ -213,7 +213,7 @@ await test('edges aggregation', async (t) => {
 
   // string edge
   const strEdg = await db
-    .query2('movie')
+    .query('movie')
     .sum('actors.strong')
     .groupBy('actors.$role')
     .get()
@@ -238,7 +238,7 @@ await test('edges aggregation', async (t) => {
 
   // enum edge
   const enumEdg = await db
-    .query2('movie')
+    .query('movie')
     .sum('actors.$rating')
     .groupBy('actors.$roleType')
     .get()
@@ -266,7 +266,7 @@ await test('edges aggregation', async (t) => {
 
   // numeric edge
   const numEdg = await db
-    .query2('movie')
+    .query('movie')
     .sum('actors.strong')
     .groupBy('actors.$salary')
     .get()
@@ -284,7 +284,7 @@ await test('edges aggregation', async (t) => {
 
   // temporal interval edge
   const tempIntEdg = await db
-    .query2('movie')
+    .query('movie')
     .sum('actors.strong')
     .groupBy('actors.$hired', { step: 'year' })
     .get()
@@ -301,7 +301,7 @@ await test('edges aggregation', async (t) => {
   )
 
   const numIntEdg = await db
-    .query2('movie')
+    .query('movie')
     .sum('actors.strong')
     .groupBy('actors.$hating', { step: 2 })
     .get()

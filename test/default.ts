@@ -43,7 +43,7 @@ await test('edges', async (t) => {
     friends: [client.create('user', {})],
   })
 
-  deepEqual(await client.query2('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -76,7 +76,7 @@ await test('edges', async (t) => {
     },
   })
 
-  deepEqual(await client.query2('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -109,7 +109,7 @@ await test('edges', async (t) => {
     },
   })
 
-  deepEqual(await client.query2('user', userId).include('friends.**').get(), {
+  deepEqual(await client.query('user', userId).include('friends.**').get(), {
     id: 2,
     friends: [
       {
@@ -171,7 +171,7 @@ await test('separate', async (t) => {
   const userId = await db.create('user', {})
 
   deepEqual(
-    await db.query2('user', userId).include('*', '**').get(),
+    await db.query('user', userId).include('*', '**').get(),
     {
       id: userId,
       flap: {
@@ -192,7 +192,7 @@ await test('separate', async (t) => {
   })
 
   deepEqual(
-    await db.query2('user', userId2).include('*', '**').get(),
+    await db.query('user', userId2).include('*', '**').get(),
     {
       id: userId2,
       flap: {
@@ -277,7 +277,7 @@ await test('default values for all props in user type', async (t) => {
   const userId = await db.create('user', {})
 
   deepEqual(
-    await db.query2('user', userId).include('*', '**').get(),
+    await db.query('user', userId).include('*', '**').get(),
     {
       id: userId,
       isNice: true,
@@ -306,7 +306,7 @@ await test('default values for all props in user type', async (t) => {
   })
 
   deepEqual(
-    await db.query2('user', userNullId).get(),
+    await db.query('user', userNullId).get(),
     {
       id: userNullId,
       label: { en: 'Default Label' },
@@ -346,7 +346,7 @@ await test('default values for all props in user type', async (t) => {
   })
 
   deepEqual(
-    await db.query2('user', userNullId2).get(),
+    await db.query('user', userNullId2).get(),
     {
       id: userNullId2,
       label: { en: 'Default Label' },
@@ -393,7 +393,7 @@ await test('negative default values for numeric types', async (t) => {
   const userId = await db.create('user', {})
 
   deepEqual(
-    await db.query2('user', userId).get(),
+    await db.query('user', userId).get(),
     {
       id: userId,
       negativeNumber: -42,
@@ -412,7 +412,7 @@ await test('negative default values for numeric types', async (t) => {
   })
 
   deepEqual(
-    await db.query2('user', userOverrideId).get(),
+    await db.query('user', userOverrideId).get(),
     {
       id: 2,
       negativeInt8: -50,
@@ -444,7 +444,7 @@ await test('object', async (t) => {
   const snurpId = await db.create('snurp', {})
 
   deepEqual(
-    await db.query2('snurp', snurpId).get(),
+    await db.query('snurp', snurpId).get(),
     {
       id: snurpId,
       preferences: {
@@ -466,7 +466,7 @@ await test('object', async (t) => {
     },
   })
 
-  deepEqual(await db.query2('snurp', snurpCustomId).get(), {
+  deepEqual(await db.query('snurp', snurpCustomId).get(), {
     id: 2,
     preferences: {
       units: 'imperial',

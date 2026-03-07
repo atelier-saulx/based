@@ -50,7 +50,7 @@ await test('sum branched includes', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((select) => select('votes').sum('NL', 'AU'))
       .get(),
     [{ id: 1, votes: { NL: { sum: 30 }, AU: { sum: 15 } } }],
@@ -59,7 +59,7 @@ await test('sum branched includes', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((select) => select('votes').groupBy('country').sum('NL', 'AU'))
       .get(),
     [
@@ -76,7 +76,7 @@ await test('sum branched includes', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query2('sequence')
+  //     .query('sequence')
   //     .include((select) => {
   //       select('votes').filter('country', '=', 'aa').sum('NL', 'AU') // string filter not implemented and also filter in refs group not implemented
   //     })
@@ -135,7 +135,7 @@ await test('count branched includes', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((select) => select('votes').count())
       .get(),
     [{ id: 1, votes: { count: 3 } }],
@@ -144,7 +144,7 @@ await test('count branched includes', async (t) => {
 
   deepEqual(
     await db
-      .query2('sequence')
+      .query('sequence')
       .include((select) => select('votes').groupBy('country').sum('NL', 'AU'))
       .get(),
     [
@@ -161,7 +161,7 @@ await test('count branched includes', async (t) => {
 
   // deepEqual(
   //   await db
-  //     .query2('sequence')
+  //     .query('sequence')
   //     .include((select) => {
   //       select('votes').filter('country', '=', 'aa').count() // string filter not implemented and also filter in refs group not implemented
   //     })
@@ -264,7 +264,7 @@ await test('agg on references', async (t) => {
   })
 
   const result = await db
-    .query2('team')
+    .query('team')
     .include('teamName', 'city', (select) =>
       select('players').groupBy('position').sum('goalsScored', 'gamesPlayed'),
     )
@@ -351,7 +351,7 @@ await test('enums', async (t) => {
   })
 
   deepEqual(
-    await db.query2('beer').avg('price').groupBy('type').get(),
+    await db.query('beer').avg('price').groupBy('type').get(),
     {
       Tripel: {
         price: { avg: 11.85 },
@@ -364,7 +364,7 @@ await test('enums', async (t) => {
   )
 
   deepEqual(
-    await db.query2('beer').hmean('price').groupBy('type').get(),
+    await db.query('beer').hmean('price').groupBy('type').get(),
     {
       Tripel: {
         price: { hmean: 11.839662447257384 },
@@ -415,7 +415,7 @@ await test.skip('refs with enums ', async (t) => {
 
   deepEqual(
     await db
-      .query2('actor')
+      .query('actor')
       .include((q) => q('movies').groupBy('genre').count())
       .get(),
     [
@@ -502,13 +502,13 @@ await test('cardinality', async (t) => {
   })
 
   deepEqual(
-    await db.query2('lunch').cardinality('Mon').get(),
+    await db.query('lunch').cardinality('Mon').get(),
     { Mon: { cardinality: 7 } },
     'main cardinality no group by',
   )
 
   deepEqual(
-    await db.query2('lunch').cardinality('Mon').groupBy('week').get(),
+    await db.query('lunch').cardinality('Mon').groupBy('week').get(),
     {
       27: {
         Mon: { cardinality: 5 },
@@ -557,7 +557,7 @@ await test('cardinality on references', async (t) => {
 
   deepEqual(
     await db
-      .query2('fair')
+      .query('fair')
       .include((s) => s('booths').cardinality('badgesScanned'))
       .get(),
     [
@@ -578,7 +578,7 @@ await test('cardinality on references', async (t) => {
    */
 
   deepEqual(
-    await db.query2('fair').cardinality('booths.badgesScanned').get(),
+    await db.query('fair').cardinality('booths.badgesScanned').get(),
     //@ts-ignore
     [
       {
@@ -594,7 +594,7 @@ await test('cardinality on references', async (t) => {
   )
 
   deepEqual(
-    await db.query2('fair').count().groupBy('day').get(),
+    await db.query('fair').count().groupBy('day').get(),
     {
       [String(fairDate)]: {
         count: 1,
@@ -659,7 +659,7 @@ await test('group by reference ids', async (t) => {
   })
 
   deepEqual(
-    await db.query2('driver').sum('rank').groupBy('vehicle').get(),
+    await db.query('driver').sum('rank').groupBy('vehicle').get(),
     {
       2: {
         rank: { sum: 5 },
@@ -670,7 +670,7 @@ await test('group by reference ids', async (t) => {
 
   deepEqual(
     await db
-      .query2('driver')
+      .query('driver')
       .include((q) => q('trips').groupBy('vehicle').max('distance'))
       .include('*')
       .get(),
@@ -724,10 +724,10 @@ await test('nested references', async (t) => {
     strong: 4,
   })
 
-  // await db.query2('user').include('*', '**').get().inspect(10)
+  // await db.query('user').include('*', '**').get().inspect(10)
 
   deepEqual(
-    await db.query2('user').sum('friends.strong').get(),
+    await db.query('user').sum('friends.strong').get(),
     // @ts-ignore
     [
       { id: 1, friends: { strong: { sum: 4 } } },

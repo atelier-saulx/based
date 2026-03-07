@@ -51,7 +51,7 @@ test('query cache', async (t: T) => {
 
   for (let i = 0; i < 1000; i++) {
     const close = client
-      .query2('counter', {
+      .query('counter', {
         myQuery: i,
       })
       .subscribe((d) => {
@@ -65,7 +65,7 @@ test('query cache', async (t: T) => {
   await wait(1000)
 
   const close = client
-    .query2('counter', {
+    .query('counter', {
       myQuery: 1212,
     })
     .subscribe((d) => {

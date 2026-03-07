@@ -29,21 +29,21 @@ await test('exists', async (t) => {
 
   const id2 = await db.create('user', {})
 
-  deepEqual(await db.query2('user').filter('name', 'exists').get(), [
+  deepEqual(await db.query('user').filter('name', 'exists').get(), [
     {
       id: 1,
       name: 'mr derp',
     },
   ])
 
-  deepEqual(await db.query2('user').filter('name', '!exists').get(), [
+  deepEqual(await db.query('user').filter('name', '!exists').get(), [
     {
       id: 2,
       name: '',
     },
   ])
 
-  deepEqual(await db.query2('user').filter('friend', '!exists').get(), [
+  deepEqual(await db.query('user').filter('friend', '!exists').get(), [
     {
       id: 1,
       name: 'mr derp',
@@ -54,7 +54,7 @@ await test('exists', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('user').filter('friends', '!exists').get(), [
+  deepEqual(await db.query('user').filter('friends', '!exists').get(), [
     {
       id: 1,
       name: 'mr derp',
@@ -67,7 +67,7 @@ await test('exists', async (t) => {
 
   await db.update('user', id1, { friends: [id2] })
 
-  deepEqual(await db.query2('user').filter('friends', 'exists').get(), [
+  deepEqual(await db.query('user').filter('friends', 'exists').get(), [
     {
       id: 1,
       name: 'mr derp',
@@ -80,7 +80,7 @@ await test('exists', async (t) => {
 
   await db.update('user', id1, { friends: null })
 
-  deepEqual(await db.query2('user').filter('friends', 'exists').get(), [])
+  deepEqual(await db.query('user').filter('friends', 'exists').get(), [])
 
   const friends: any[] = []
   for (let i = 0; i < 1e6; i++) {
@@ -91,7 +91,7 @@ await test('exists', async (t) => {
 
   await db.update('user', id1, { friends })
 
-  deepEqual(await db.query2('user').filter('friends', '!exists').get(), [
+  deepEqual(await db.query('user').filter('friends', '!exists').get(), [
     { id: 2, name: '' },
   ])
 })
@@ -130,7 +130,7 @@ await test('with other filters', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include('name')
       .filter('start', '>', 'now')
       .filter('derp', 'exists')
@@ -141,7 +141,7 @@ await test('with other filters', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include('name')
       .filter('name', '!exists')
       .filter('start', '>', 'now')
@@ -151,7 +151,7 @@ await test('with other filters', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').include('name').filter('friends', '!exists').get(),
+    await db.query('user').include('name').filter('friends', '!exists').get(),
     [{ id: id3, name: 'sad guy has no friends' }],
     '!exists refs',
   )

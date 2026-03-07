@@ -67,7 +67,7 @@ await test('subscriptionWorkers', async (t) => {
         let updates = 0
         if (i % 2) {
           close = client
-            .query2('vote')
+            .query('vote')
             .filter('fromCountry', '=', ['AE', 'NL'])
             .subscribe((v) => {
               updates++

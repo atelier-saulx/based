@@ -58,7 +58,7 @@ await test('alias upsert', async (t) => {
     }),
   ])
 
-  const results = await client1.query2('user').get()
+  const results = await client1.query('user').get()
 
   equal(
     results,

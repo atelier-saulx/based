@@ -33,7 +33,7 @@ const setup = async (t: T) => {
           type: 'function',
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload) => {
-            const bla = await based.query2('any', payload).get()
+            const bla = await based.query('any', payload).get()
             return bla
           },
         },
@@ -80,7 +80,7 @@ const setup = async (t: T) => {
           type: 'function',
           uninstallAfterIdleTime: 1e3,
           fn: async (based, payload) => {
-            return based.query2('checkPayload', payload).get()
+            return based.query('checkPayload', payload).get()
           },
         },
       },
@@ -105,14 +105,14 @@ test('get while subscribed', async (t: T) => {
   })
 
   const res0 = await new Promise<any>((resolve) => {
-    coreClient.query2('any', 'xxx').subscribe((res) => {
+    coreClient.query('any', 'xxx').subscribe((res) => {
       resolve(res)
     })
   })
   t.is(res0, 'xxx')
-  const res1 = await coreClient.query2('any', 'xxx').get()
+  const res1 = await coreClient.query('any', 'xxx').get()
   t.is(res1, res0)
-  const res2 = await coreClient.query2('any', 'xxx').get()
+  const res2 = await coreClient.query('any', 'xxx').get()
   t.is(res2, res1)
 })
 
@@ -130,25 +130,25 @@ test('get', async (t: T) => {
     },
   })
 
-  const str = await coreClient.query2('any', 'xxx').get()
+  const str = await coreClient.query('any', 'xxx').get()
   t.is(str, 'xxx')
   const nestedStr = await coreClient.call('nestedAny', 'xxx')
   t.is(nestedStr, 'xxx')
-  const num = await coreClient.query2('any', 19).get()
+  const num = await coreClient.query('any', 19).get()
   t.is(num, 19)
   const nestedNum = await coreClient.call('nestedAny', 19)
   t.is(nestedNum, 19)
-  const boolTrue = await coreClient.query2('any', true).get()
+  const boolTrue = await coreClient.query('any', true).get()
   t.is(boolTrue, true)
   const nestedBoolTrue = await coreClient.call('nestedAny', true)
   t.is(nestedBoolTrue, true)
-  const boolFalse = await coreClient.query2('any', false).get()
+  const boolFalse = await coreClient.query('any', false).get()
   t.is(boolFalse, false)
   const nestedBoolFalse = await coreClient.call('nestedAny', false)
   t.is(nestedBoolFalse, false)
 
   const power = await coreClient
-    .query2('checkPayload', {
+    .query('checkPayload', {
       power: {
         msg: 'powerfull stuff',
       },
@@ -169,24 +169,24 @@ test('get', async (t: T) => {
 
   await wait(1e3)
 
-  t.is(await coreClient.query2('counter').get(), 0)
+  t.is(await coreClient.query('counter').get(), 0)
 
   await wait(100)
 
-  t.is(await coreClient.query2('counter').get(), 0)
+  t.is(await coreClient.query('counter').get(), 0)
 
   await wait(1000)
 
   // stays zero because it has 0 cache time
-  t.is(await coreClient.query2('counter').get(), 0)
+  t.is(await coreClient.query('counter').get(), 0)
 
   await wait(1000)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
-  t.is(await coreClient.query2('counter-cached').get(), 0)
-  t.is(await coreClient.query2('counter-cached').get(), 0)
+  t.is(await coreClient.query('counter-cached').get(), 0)
+  t.is(await coreClient.query('counter-cached').get(), 0)
 
   await wait(1500)
 
@@ -219,14 +219,14 @@ test.only('authorize get', async (t: T) => {
   })
 
   const error: BasedError = await t.throwsAsync(
-    coreClient.query2('counter').get(),
+    coreClient.query('counter').get(),
   )
 
   t.is(error.code, BasedErrorCode.AuthorizeRejectedError)
 
   await coreClient.setAuthState({ token: 'mock_token' })
 
-  await t.notThrowsAsync(coreClient.query2('counter').get())
+  await t.notThrowsAsync(coreClient.query('counter').get())
 })
 
 test('getWhen', async (t: T) => {
@@ -267,7 +267,7 @@ test('getWhen', async (t: T) => {
     },
   })
 
-  const g = await client.query2('flap').getWhen((d) => d.status)
+  const g = await client.query('flap').getWhen((d) => d.status)
 
   t.is(g.count, 2)
 })

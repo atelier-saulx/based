@@ -33,7 +33,7 @@ await test('subscription perf', async (t) => {
 
   const dx = await db.drain()
 
-  const q = db.query2('user', 1)
+  const q = db.query('user', 1)
   const y = await q.get()
   console.log(q.buffer, y)
 
@@ -87,7 +87,7 @@ await test('native single id perf', async (t) => {
     },
   })
 
-  const q = db.query2('user', 1).include('flap')
+  const q = db.query('user', 1).include('flap')
   registerQuery(q)
   registerSubscription(q)
 

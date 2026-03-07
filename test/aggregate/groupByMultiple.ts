@@ -83,7 +83,7 @@ await test('multiple group by', async (t) => {
 
   // get report count by date
   const r1 = await db
-    .query2('report')
+    .query('report')
     .count()
     .groupBy('date', { display: dtFormat })
     .get()
@@ -95,9 +95,9 @@ await test('multiple group by', async (t) => {
   )
 
   // get report count by date per genre
-  //await db.query2('customer').avg('age').groupBy('gender').get()
+  //await db.query('customer').avg('age').groupBy('gender').get()
   const r2 = await db
-    .query2('customer')
+    .query('customer')
     .include('name', (q) => q('reports').count())
     .get()
 

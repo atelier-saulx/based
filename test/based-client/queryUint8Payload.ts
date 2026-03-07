@@ -63,11 +63,11 @@ test('query uint8Array args', async (t: T) => {
 
   flap2[100] = 1
 
-  const close = client.query2('counter', flap).subscribe((d) => {
+  const close = client.query('counter', flap).subscribe((d) => {
     obs1Results.push(d)
   })
 
-  const close2 = client.query2('counter', flap2).subscribe((d) => {
+  const close2 = client.query('counter', flap2).subscribe((d) => {
     obs1Results.push(d)
   })
 
@@ -81,7 +81,7 @@ test('query uint8Array args', async (t: T) => {
   close()
   close2()
 
-  const x = await client.query2('bla', flap2).get()
+  const x = await client.query('bla', flap2).get()
 
   t.is(x.length, 8888890)
 

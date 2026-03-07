@@ -73,7 +73,7 @@ await test.skip('query types', async (t) => {
   // Wait for consistency
   await new Promise((resolve) => setTimeout(resolve, 100))
 
-  const query = db.query2('user')
+  const query = db.query('user')
   const data = await query.get()
 
   if (data.length > 0) {
@@ -87,7 +87,7 @@ await test.skip('query types', async (t) => {
     const unknown = user.something
   }
 
-  const query2 = db.query2('everything')
+  const query2 = db.query('everything')
   const res = await query2.get()
   const everything = res[0]
 
@@ -120,7 +120,7 @@ await test.skip('query types', async (t) => {
   }
 
   {
-    const query = db.query2('everything').include('myEnum')
+    const query = db.query('everything').include('myEnum')
     const data = await query.get()
     if (data.length > 0) {
       const res = data[0]
@@ -132,7 +132,7 @@ await test.skip('query types', async (t) => {
   }
 
   {
-    const query = db.query2('everything').include('*')
+    const query = db.query('everything').include('*')
     const data = await query.get()
     if (data.length > 0) {
       const res = data[0]
@@ -144,7 +144,7 @@ await test.skip('query types', async (t) => {
     }
   }
   {
-    const query = db.query2('everything').include('**')
+    const query = db.query('everything').include('**')
     const data = await query.get()
     if (data.length > 0) {
       const res = data[0]
@@ -166,7 +166,7 @@ await test.skip('query types', async (t) => {
 
   {
     // Combine explicit field + wildcard
-    const query = db.query2('everything').include('myEnum', '**')
+    const query = db.query('everything').include('myEnum', '**')
     const data = await query.get()
     if (data.length > 0) {
       const res = data[0]
@@ -183,7 +183,7 @@ await test.skip('query types', async (t) => {
 
   {
     // Multiple explicit fields
-    const query = db.query2('everything').include('n', 's', 'nested')
+    const query = db.query('everything').include('n', 's', 'nested')
     const data = await query.get()
     if (data.length > 0) {
       const res = data[0]
@@ -200,7 +200,7 @@ await test.skip('query types', async (t) => {
 
   {
     // Scalar wildcard + explicit ref
-    const query = db.query2('everything').include('*', 'myRefs')
+    const query = db.query('everything').include('*', 'myRefs')
     const data = await query.get()
     if (data.length > 0) {
       const res = data[0]
@@ -216,7 +216,7 @@ await test.skip('query types', async (t) => {
 
   {
     // Target specific id
-    const query = db.query2('everything', 1).include('*', 'myRefs')
+    const query = db.query('everything', 1).include('*', 'myRefs')
     const data = await query.get()
 
     // if ('n' in data) {
@@ -234,7 +234,7 @@ await test.skip('query types', async (t) => {
 
   {
     const query = db
-      .query2('everything', 1)
+      .query('everything', 1)
       .include((select) => select('myRefs').include('isNice'))
     const data = await query.get()
     // if ('myRefs' in data) {
@@ -246,7 +246,7 @@ await test.skip('query types', async (t) => {
 
   {
     const query = db
-      .query2('user', 1)
+      .query('user', 1)
       .include((select) => select('backRefs').include('myEnum'))
     const data = await query.get()
 
@@ -257,8 +257,8 @@ await test.skip('query types', async (t) => {
 
   {
     // Sum aggregates
-    const query = db.query2('everything').sum('n', 'i8').sum('card')
-    const queryInvalid = db.query2('everything')
+    const query = db.query('everything').sum('n', 'i8').sum('card')
+    const queryInvalid = db.query('everything')
     // @ts-expect-error
     queryInvalid.sum('s')
     // @ts-expect-error
@@ -285,7 +285,7 @@ await test.skip('query types', async (t) => {
 
   {
     // Aggregate return type check
-    const query = db.query2('everything').sum('n')
+    const query = db.query('everything').sum('n')
     const res = await query.get()
 
     if (res) {
@@ -294,7 +294,7 @@ await test.skip('query types', async (t) => {
       const s = res.s
     }
 
-    const queryGroup = db.query2('everything').groupBy('s').sum('n')
+    const queryGroup = db.query('everything').groupBy('s').sum('n')
     const resGroup = await queryGroup.get()
 
     // resGroup should be Record<string, { n: number }>

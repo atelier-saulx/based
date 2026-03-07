@@ -41,7 +41,7 @@ await test('hll', async (t) => {
   console.log('a')
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
       .get(),
     [
@@ -56,7 +56,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('myUniqueValuesCount')
       .filter('myUniqueValuesCount', '!=', 0)
       .get(),
@@ -92,7 +92,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
       .get(),
     [
@@ -103,7 +103,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('myUniqueValuesCountFromArray')
       .filter('myUniqueValuesCountFromArray', '=', 7)
       .get(),
@@ -117,7 +117,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('myUniqueValuesCount')
       .filter('myUniqueValuesCount', '>', 1)
       .get(),
@@ -149,7 +149,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .include('myUniqueValuesCount', 'myUniqueValuesCountFromArray')
       .get(),
     [
@@ -179,7 +179,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .filter('myUniqueValuesCount', '=', 11)
       .or('myUniqueValuesCountFromArray', '>', 6)
       .get(),
@@ -210,7 +210,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .filter('id', '>=', 3)
       .include('contributors.$tokens')
       .get(),
@@ -255,7 +255,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .filter('id', '>=', 3)
       .include('contributors.$tokens')
       .get(),
@@ -275,7 +275,7 @@ await test('hll', async (t) => {
   // handle undefined case
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .filter('id', '>=', 3)
       .include('contributors.$undeftokens')
       .get(),
@@ -303,7 +303,7 @@ await test('hll', async (t) => {
 
   deepEqual(
     await db
-      .query2('article')
+      .query('article')
       .filter('id', '>=', 3)
       .include('contributors.$undeftokens')
       .get(),
@@ -345,7 +345,7 @@ await test('switches', async (t) => {
   })
 
   deepEqual(
-    await db.query2('store').include('visitors').get(),
+    await db.query('store').include('visitors').get(),
     [
       {
         id: 1,
@@ -362,7 +362,7 @@ await test('switches', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('store').include('visitors').get(),
+    await db.query('store').include('visitors').get(),
     [
       {
         id: 1,
@@ -401,7 +401,7 @@ await test('defaultPrecision', async (t) => {
     customers: [cus],
   })
 
-  const pb = await db.query2('customer').include('productsBought').get()
+  const pb = await db.query('customer').include('productsBought').get()
   // pb.inspect()
   deepEqual(
     pb,
@@ -414,7 +414,7 @@ await test('defaultPrecision', async (t) => {
     'simple cardinality default precision',
   )
 
-  const pbr = await db.query2('store').include('*', '**').get()
+  const pbr = await db.query('store').include('*', '**').get()
   // pbr.inspect()
   deepEqual(
     pbr,

@@ -24,7 +24,7 @@ await test('include ', async (t) => {
   db.create('user', { nr: 3 })
 
   deepEqual(
-    await db.query2('user').include([]).range(0, 5).get(),
+    await db.query('user').include([]).range(0, 5).get(),
     [
       {
         id: 1,
@@ -39,10 +39,10 @@ await test('include ', async (t) => {
     'empty array should return no fields',
   )
 
-  equal((await db.query2('user', 1).get()).id, 1)
-  //equal((await db.query2('user', 1).get()).queryId, 3978712180)
-  equal(checksum(await db.query2('user').get()), 2149520223)
-  equal((await db.query2('user').get()).version, 4507870634704934)
+  equal((await db.query('user', 1).get()).id, 1)
+  //equal((await db.query('user', 1).get()).queryId, 3978712180)
+  equal(checksum(await db.query('user').get()), 2149520223)
+  equal((await db.query('user').get()).version, 4507870634704934)
 })
 
 await test('main', async (t) => {
@@ -67,7 +67,7 @@ await test('main', async (t) => {
   })
 
   deepEqual(
-    await db.query2('user').range(0, 5).get(),
+    await db.query('user').range(0, 5).get(),
     [{ id: 1, c: 10, d: 32, a: 'Derp!', b: 250 }],
     'should return correct fields',
   )

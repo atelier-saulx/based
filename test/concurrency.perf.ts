@@ -42,7 +42,7 @@ await test('concurrency', async (t) => {
     queries++
     try {
       const x = await db
-        .query2('user')
+        .query('user')
         .include((s) => s('friends').range(0, 10))
         .range(0, 1000_000)
         .get()
@@ -109,7 +109,7 @@ await test('many instances', async (t) => {
   }
   await Promise.all(
     dbs.map((db) =>
-      db.query2('t').search('contribution', 's').include('i').get(),
+      db.query('t').search('contribution', 's').include('i').get(),
     ),
   )
   await Promise.all(dbs.map((db) => db.drain()))

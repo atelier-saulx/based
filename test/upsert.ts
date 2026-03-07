@@ -83,7 +83,7 @@ await test('upsert', async (t) => {
     },
   )
 
-  deepEqual(await client1.query2('article').include('*', '**').get(), [
+  deepEqual(await client1.query('article').include('*', '**').get(), [
     {
       id: 1,
       externalId: 'flap',

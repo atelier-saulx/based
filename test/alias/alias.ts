@@ -25,7 +25,7 @@ await test('simple', async (t) => {
   })
 
   deepEqual(
-    await db.query2('user', await user1).get(),
+    await db.query('user', await user1).get(),
     {
       id: 1,
       externalId: 'cool',
@@ -34,13 +34,13 @@ await test('simple', async (t) => {
     'One alias',
   )
 
-  deepEqual(await db.query2('user', await user2).get(), {
+  deepEqual(await db.query('user', await user2).get(), {
     id: 2,
     externalId: 'cool2',
     potato: '',
   })
 
-  deepEqual(await db.query2('user').filter('externalId', '=', 'cool').get(), [
+  deepEqual(await db.query('user').filter('externalId', '=', 'cool').get(), [
     {
       id: 1,
       externalId: 'cool',
@@ -49,7 +49,7 @@ await test('simple', async (t) => {
   ])
 
   deepEqual(
-    await db.query2('user').filter('externalId', 'includes', 'cool').get(),
+    await db.query('user').filter('externalId', 'includes', 'cool').get(),
     [
       {
         id: 1,
@@ -73,7 +73,7 @@ await test('simple', async (t) => {
     },
   )
 
-  deepEqual(await db.query2('user', res1).get(), {
+  deepEqual(await db.query('user', res1).get(), {
     id: 3,
     externalId: 'potato',
     potato: 'success',
@@ -89,26 +89,26 @@ await test('simple', async (t) => {
     },
   )
 
-  deepEqual(await db.query2('user', res2).get(), {
+  deepEqual(await db.query('user', res2).get(), {
     id: 3,
     externalId: 'potato',
     potato: 'wrong',
   })
 
   deepEqual(
-    await db.query2('user', { externalId: 'i-dont-exists-haha!' }).get(),
+    await db.query('user', { externalId: 'i-dont-exists-haha!' }).get(),
     null,
     'Get non existing alias',
   )
 
-  deepEqual(await db.query2('user', 123).get(), null, 'Get non existing id')
+  deepEqual(await db.query('user', 123).get(), null, 'Get non existing id')
 
   await db.create('user', {
     potato: 'power',
     externalId: 'cool',
   })
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     { id: 1, externalId: '', potato: '' },
     { id: 2, externalId: 'cool2', potato: '' },
     { id: 3, externalId: 'potato', potato: 'wrong' },
@@ -153,7 +153,7 @@ await test('alias - references', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').include('email', 'friends').get(),
+    await db.query('user').include('email', 'friends').get(),
     [
       {
         id: 1,
@@ -188,7 +188,7 @@ await test('alias - references', async (t) => {
   )
 
   deepEqual(
-    await db.query2('user').include('friends', 'email').get(),
+    await db.query('user').include('friends', 'email').get(),
     [
       {
         id: 1,
@@ -206,7 +206,7 @@ await test('alias - references', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .filter('email', 'includes', '2', { lowerCase: true })
       .get(),
     [{ id: 2, name: '2', email: '2@saulx.com' }],
@@ -238,7 +238,7 @@ await test('Get single node by alias', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', {
+      .query('user', {
         email: '2@saulx.com',
       })
       .get(),
@@ -278,7 +278,7 @@ await test('Update existing alias field', async (t) => {
     },
   )
 
-  const existingUser = await db.query2('user', { email }).get()
+  const existingUser = await db.query('user', { email }).get()
 
   let newToken =
     'e2d88cf5d303972f2eb0c381e093afb8728eaebc8114a322418403eeaf30eb767d3d7dfaef784e9c2059d6cfa78cea87'
@@ -288,7 +288,7 @@ await test('Update existing alias field', async (t) => {
   })
   await db.drain()
 
-  deepEqual(await db.query2('user', { email }).get(), {
+  deepEqual(await db.query('user', { email }).get(), {
     id: 1,
     name: 'nuno',
     email: 'nuno@saulx.com',
@@ -306,7 +306,7 @@ await test('Update existing alias field', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', {
+      .query('user', {
         email,
       })
       .get(),
@@ -328,7 +328,7 @@ await test('Update existing alias field', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', {
+      .query('user', {
         email,
       })
       .get(),
@@ -351,7 +351,7 @@ await test('Update existing alias field', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', {
+      .query('user', {
         email,
       })
       .get(),
@@ -401,7 +401,7 @@ await test('same-name-alias', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('round').get(), [
+  deepEqual(await db.query('round').get(), [
     { id: 1, name: 'semi1' },
     { id: 2, name: 'semi2' },
     { id: 3, name: 'final' },
@@ -442,7 +442,7 @@ await test('nested alias', async (t) => {
     {},
   )
 
-  deepEqual(await db.query2('thing').get(), [
+  deepEqual(await db.query('thing').get(), [
     { id: 1, obj: { a: 'jibber', b: '' } },
     { id: 2, obj: { b: 'flurp', a: '' } },
   ])
@@ -463,13 +463,13 @@ await test('json and crc32', async (t) => {
     article: 'a',
   })
 
-  const checksum1 = checksum(await db.query2('user', user1).get())
+  const checksum1 = checksum(await db.query('user', user1).get())
 
   await db.update('user', user1, {
     article: 'b',
   })
 
-  const checksum2 = checksum(await db.query2('user', user1).get())
+  const checksum2 = checksum(await db.query('user', user1).get())
 
   notEqual(checksum1, checksum2, 'Checksum is not the same')
 })
@@ -496,7 +496,7 @@ await test('Get single node by alias', async (t) => {
 
   deepEqual(
     await db
-      .query2('user', {
+      .query('user', {
         email: '2@saulx.com',
       })
       .get(),
@@ -542,7 +542,7 @@ await test('alias and ref', async (t) => {
   const user2 = await db.create('user', { name: 'Luigi' })
   await db.upsert('role', { alias: 'admin' }, { users: { add: [user2] } })
 
-  deepEqual(await db.query2('role', adminRole).include('name', 'users').get(), {
+  deepEqual(await db.query('role', adminRole).include('name', 'users').get(), {
     id: 1,
     name: 'Admin Role',
     users: [
@@ -601,7 +601,7 @@ await test('alias and edge ref', async (t) => {
   const user2 = await db.create('user', { name: 'Luigi' })
 
   const adminRole = await db
-    .query2('role', { alias: 'admin' })
+    .query('role', { alias: 'admin' })
     .include('id')
     .get()
 
@@ -611,7 +611,7 @@ await test('alias and edge ref', async (t) => {
 
   deepEqual(
     await db
-      .query2('project', prj)
+      .query('project', prj)
       .include('name', 'users', 'users.$role')
       .get(),
     {

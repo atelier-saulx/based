@@ -4,7 +4,7 @@ import { testDb } from '../shared/index.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('references modify', async (t) => {
-  const db= await testDb(t, {
+  const db = await testDb(t, {
     types: {
       user: {
         props: {
@@ -46,7 +46,7 @@ await test('references modify', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('user').include('*', 'friends').get(),
+    await db.query('user').include('*', 'friends').get(),
     [
       { id: 1, name: 'bob', friends: [] },
       { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
@@ -64,7 +64,7 @@ await test('references modify', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('user').include('*', 'friends').get(),
+    await db.query('user').include('*', 'friends').get(),
     [
       { id: 1, name: 'bob', friends: [{ id: 3, name: 'john' }] },
       { id: 2, name: 'marie', friends: [{ id: 3, name: 'john' }] },
@@ -85,7 +85,7 @@ await test('references modify', async (t) => {
   })
 
   deepEqual(
-    await db.query2('user').include('*', 'friends').get(),
+    await db.query('user').include('*', 'friends').get(),
     [
       { id: 1, name: 'bob', friends: [] },
       { id: 2, name: 'marie', friends: [] },
@@ -183,13 +183,13 @@ await test('reference move', async (t) => {
     bees: [b2],
   })
 
-  deepEqual((await db.query2('a').include('bees').get())[0].bees[0].id, 2)
+  deepEqual((await db.query('a').include('bees').get())[0].bees[0].id, 2)
 
   await db.update('a', a, {
     bees: [b2, b2],
   })
-  deepEqual((await db.query2('a').include('bees').get())[0].bees.length, 1)
-  deepEqual((await db.query2('a').include('bees').get())[0].bees[0].id, 2)
+  deepEqual((await db.query('a').include('bees').get())[0].bees.length, 1)
+  deepEqual((await db.query('a').include('bees').get())[0].bees[0].id, 2)
 })
 
 // https://linear.app/1ce/issue/FDN-1735
@@ -230,7 +230,7 @@ await test('try to modify undefined refs', async (t) => {
   const a1 = db.create('actor', { name: 'Uma Thurman', movies: [m1, m2] })
   db.create('actor', { name: 'John Travolta', movies: [m2] })
 
-  //await db.query2('movie').include('*', '**').get().inspect()
+  //await db.query('movie').include('*', '**').get().inspect()
 
   await db.update('movie', m1, {
     actors: { delete: [a1] },

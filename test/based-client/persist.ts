@@ -70,7 +70,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   const r: any[] = []
 
   const close = client
-    .query2(
+    .query(
       'counter',
       {
         myQuery: 123,
@@ -82,7 +82,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
     })
 
   client
-    .query2(
+    .query(
       'bigData',
       {
         myQuery: 123,
@@ -108,7 +108,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   let fromStorage: any
   await new Promise((resolve) =>
     client2
-      .query2(
+      .query(
         'counter',
         {
           myQuery: 123,
@@ -125,7 +125,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
 
   await new Promise((resolve) =>
     client2
-      .query2(
+      .query(
         'bigData',
         {
           myQuery: 123,

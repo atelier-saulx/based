@@ -86,10 +86,10 @@ const test: {
         const counts: any[] = []
 
         for (const type in db.schema?.types) {
-          let x = await client.query2(type).include('*', '**').get()
+          let x = await client.query(type).include('*', '**').get()
           checksums.push(x['checksum'])
           data.push(x)
-          counts.push((await client.query2(type).count().get()).count)
+          counts.push((await client.query(type).count().get()).count)
         }
 
         return [checksums, data, counts]

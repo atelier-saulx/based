@@ -56,11 +56,11 @@ await test('range', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('user').include('nr').range(1, 2).get(), [
+  deepEqual(await db.query('user').include('nr').range(1, 2).get(), [
     { id: 2, nr: 2 },
   ])
   deepEqual(
-    await db.query2('user').include('nr').sort('email').range(1, 2).get(),
+    await db.query('user').include('nr').sort('email').range(1, 2).get(),
     [{ id: 2, nr: 2 }],
   )
 })
@@ -83,6 +83,6 @@ await test('default range: 1000', async (t) => {
     })
   }
   await db.drain()
-  const res = await db.query2('user').get()
+  const res = await db.query('user').get()
   equal(res.length, 1_000)
 })

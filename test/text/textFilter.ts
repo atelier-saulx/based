@@ -86,7 +86,7 @@ await test('textFilter', async (t) => {
   let searchTerms = ['a', 'ab', 'abc', 'abcd']
 
   for (const term of searchTerms) {
-    await db.query2('project').search(term, 'title', 'abstract').get()
+    await db.query('project').search(term, 'title', 'abstract').get()
     // .inspect()
   }
 
@@ -100,7 +100,7 @@ await test('textFilter', async (t) => {
   for (const term of searchTerms) {
     q.push(
       (async () => {
-        await db.query2('project').search(term, 'title', 'abstract').get()
+        await db.query('project').search(term, 'title', 'abstract').get()
         // .inspect()
       })(),
     )
@@ -186,8 +186,5 @@ await test('compressionFilter', async (t) => {
     msg: derp,
   })
 
-  deepEqual(
-    await db.query2('event').filter('msg', 'includes', 'derp').get(),
-    [],
-  )
+  deepEqual(await db.query('event').filter('msg', 'includes', 'derp').get(), [])
 })

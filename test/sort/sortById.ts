@@ -28,13 +28,13 @@ await test('sort by id', async (t) => {
   }
 
   isSorted(
-    await db.query2('user').include('name').order('asc').get(),
+    await db.query('user').include('name').order('asc').get(),
     'id',
     'asc',
   )
 
   isSorted(
-    await db.query2('user').include('name').order('desc').get(),
+    await db.query('user').include('name').order('desc').get(),
     'id',
     'desc',
   )
@@ -46,7 +46,7 @@ await test('sort by id', async (t) => {
   }
 
   isSorted(
-    await db.query2('user').include('name', 'friends.name').range(0, 1).get(),
+    await db.query('user').include('name', 'friends.name').range(0, 1).get(),
     'id',
     'asc',
   )

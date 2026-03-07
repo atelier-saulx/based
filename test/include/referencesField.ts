@@ -1,5 +1,5 @@
 import test from '../shared/test.js'
-import {testDb} from '../shared/index.js'
+import { testDb } from '../shared/index.js'
 import { deepEqual } from '../shared/assert.js'
 
 await test('references shortcut', async (t) => {
@@ -31,27 +31,27 @@ await test('references shortcut', async (t) => {
   }
 
   deepEqual(
-    await db.query2('user', mrA).include('name', 'age', 'friends[0].age').get(),
+    await db.query('user', mrA).include('name', 'age', 'friends[0].age').get(),
     { id: 2, age: 50, name: 'Mr a', friends: [{ id: 1, age: 25 }] },
     '[0]',
   )
 
   deepEqual(
-    await db.query2('user').at(0).get(),
+    await db.query('user').at(0).get(),
     { id: 1, age: 25, name: 'Mr b' },
     '.at(0)',
   )
 
   deepEqual(
-    await db.query2('user').at(3).get(),
+    await db.query('user').at(3).get(),
     { id: 4, age: 93, name: 'Mr 1' },
     '.at(3)',
   )
 
-  // await db.query2('user').range(-10, -1).get().inspect()
+  // await db.query('user').range(-10, -1).get().inspect()
 
   // deepEqual(
-  //   await db.query2('user').range(-10, -1).get(),
+  //   await db.query('user').range(-10, -1).get(),
   //   { id: 4, age: 93, name: 'Mr 1' },
   //   '.at(3)',
   // )

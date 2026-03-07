@@ -43,7 +43,7 @@ await test('subscriptionMulti', async (t) => {
   await clients[1].drain()
 
   const close2 = clients[1]
-    .query2('user')
+    .query('user')
     .filter('derp', '>', 1e6 - 10)
     .subscribe((q) => {
       console.log(q)

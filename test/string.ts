@@ -39,7 +39,7 @@ await test('simple', async (t) => {
 
   await db.drain()
 
-  deepEqual(await db.query2('user').include('name', 'snurp').get(), [
+  deepEqual(await db.query('user').include('name', 'snurp').get(), [
     {
       id: 1,
       snurp: 'derp derp',
@@ -47,7 +47,7 @@ await test('simple', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('user').include('name', 'snurp', 'age').get(), [
+  deepEqual(await db.query('user').include('name', 'snurp', 'age').get(), [
     {
       id: 1,
       age: 99,
@@ -58,7 +58,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include(
         'name',
         'snurp',
@@ -84,7 +84,7 @@ await test('simple', async (t) => {
     ],
   )
 
-  deepEqual(await db.query2('user').include('location.label').get(), [
+  deepEqual(await db.query('user').include('location.label').get(), [
     {
       id: 1,
       location: {
@@ -93,7 +93,7 @@ await test('simple', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('user').include('location').get(), [
+  deepEqual(await db.query('user').include('location').get(), [
     {
       id: 1,
       location: {
@@ -104,7 +104,7 @@ await test('simple', async (t) => {
     },
   ])
 
-  deepEqual(await db.query2('user').include('location', 'burp').get(), [
+  deepEqual(await db.query('user').include('location', 'burp').get(), [
     {
       id: 1,
       burp: 66,
@@ -118,7 +118,7 @@ await test('simple', async (t) => {
 
   deepEqual(
     await db
-      .query2('user')
+      .query('user')
       .include(
         'age',
         'email',
@@ -141,7 +141,7 @@ await test('simple', async (t) => {
     ],
   )
 
-  deepEqual(await db.query2('user').get(), [
+  deepEqual(await db.query('user').get(), [
     {
       id: 1,
       name: '',
@@ -254,7 +254,7 @@ await test('string + refs', async (t) => {
 
   deepEqual(
     await db
-      .query2('simple')
+      .query('simple')
       .include('user.name', 'user.myBlup.name')
       .range(0, 1)
       .get(),
@@ -280,7 +280,7 @@ await test('string + refs', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('simple').include('user.name', 'user.myBlup.name').get(),
+    await db.query('simple').include('user.name', 'user.myBlup.name').get(),
     [
       {
         id: 1,
@@ -319,7 +319,7 @@ await test('Big string disable compression', async (t) => {
   await db.drain()
 
   equal(
-    (await db.query2('file', file).get()).node().contents,
+    (await db.query('file', file).get()).node().contents,
     euobserver,
     'Get single id',
   )
@@ -330,10 +330,10 @@ await test('Big string disable compression', async (t) => {
 
   await db.drain()
 
-  equal((await db.query2('file').get()).size > 1000 * 1e3, true)
+  equal((await db.query('file').get()).size > 1000 * 1e3, true)
 
   deepEqual(
-    await db.query2('file').get(),
+    await db.query('file').get(),
     [
       {
         id: 1,
@@ -360,7 +360,7 @@ await test('Big string disable compression', async (t) => {
   var mb = 0
   let p: any = []
   for (let i = 0; i < 9; i++) {
-    p.push(db.query2('file').get())
+    p.push(db.query('file').get())
     mb += 74
   }
   await Promise.all(p)
@@ -369,7 +369,7 @@ await test('Big string disable compression', async (t) => {
     mb = 0
     p = []
     for (let i = 0; i < 9; i++) {
-      p.push(db.query2('file').get())
+      p.push(db.query('file').get())
       mb += 74
     }
     await Promise.all(p)
@@ -395,7 +395,7 @@ await test('Big string', async (t) => {
   await db.drain()
 
   equal(
-    (await db.query2('file', file).get()).node().contents,
+    (await db.query('file', file).get()).node().contents,
     euobserver,
     'Get single id',
   )
@@ -408,7 +408,7 @@ await test('Big string', async (t) => {
   await db.drain()
 
   deepEqual(
-    await db.query2('file').get(),
+    await db.query('file').get(),
     [
       {
         id: 1,
@@ -447,13 +447,13 @@ await test('schema compression prop', async (t) => {
   await db.drain()
 
   const uncompressedSize = await db
-    .query2('file')
+    .query('file')
     .include('contentsUncompressed')
     .get()
     .then((v) => v.size)
 
   const compressedSize = await db
-    .query2('file')
+    .query('file')
     .include('contentsCompressed')
     .get()
     .then((v) => v.size)
@@ -487,7 +487,7 @@ await test('string compression - max buf size', async (t) => {
 
   await db.drain()
 
-  const items = await db.query2('file').get()
+  const items = await db.query('file').get()
 
   for (const item of items) {
     equal(item.contents, contents, 'contents are the same')

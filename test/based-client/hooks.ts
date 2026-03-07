@@ -109,14 +109,14 @@ test('Query hook', async (t: T) => {
         flap: {
           type: 'function',
           fn: (based) => {
-            return based.query2('myobs').get()
+            return based.query('myobs').get()
           },
         },
         myobs2: {
           type: 'query',
           closeAfterIdleTime: 500,
           fn: (based, _payload, update) => {
-            return based.query2('myobs').subscribe(update)
+            return based.query('myobs').subscribe(update)
           },
         },
         myobs: {
@@ -135,7 +135,7 @@ test('Query hook', async (t: T) => {
   await client.connect({
     url: async () => t.context.ws,
   })
-  const close = client.query2('myobs', { bla: true }).subscribe(() => {})
+  const close = client.query('myobs', { bla: true }).subscribe(() => {})
 
   await wait(500)
 
@@ -146,7 +146,7 @@ test('Query hook', async (t: T) => {
 
   t.is(unSubCnt, 1)
 
-  await client.query2('myobs').get()
+  await client.query('myobs').get()
 
   t.is(getCnt, 1)
 
@@ -154,7 +154,7 @@ test('Query hook', async (t: T) => {
 
   t.is(getCnt, 2)
 
-  const close2 = client.query2('myobs2', { bla: true }).subscribe(() => {})
+  const close2 = client.query('myobs2', { bla: true }).subscribe(() => {})
 
   await wait(500)
 
