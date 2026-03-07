@@ -10,7 +10,6 @@ const Thread = @import("../../../thread/thread.zig");
 const deflate = @import("./deflate.zig");
 const include = @import("./includes.zig");
 const likeInner = @import("./like.zig").like;
-const MAX_FIXED_LEN = 64;
 
 pub fn parse(
     thread: *Thread.Thread,
