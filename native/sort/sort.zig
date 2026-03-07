@@ -60,7 +60,7 @@ fn getSortFlag(sortFieldType: t.PropType) !selva.SelvaSortOrder {
         .number, .timestamp => {
             return selva.SELVA_SORT_ORDER_DOUBLE_ASC;
         },
-        .stringFixed, .binaryFixed, .jsonFixed, .string, .text, .alias, .binary => {
+        .stringFixed, .binaryFixed, .jsonFixed, .string, .stringLocalized, .alias, .binary => {
             return selva.SELVA_SORT_ORDER_BUFFER_ASC;
         },
         else => {
@@ -148,7 +148,7 @@ pub fn getOrCreateFromCtx(
         sortIndex = try createSortIndexMeta(sortHeader, 0, false);
         if (sortHeader.prop == 0) {
             try tI.main.put(sortHeader.start, sortIndex.?);
-        } else if (sortHeader.propType == t.PropType.text) {
+        } else if (sortHeader.propType == t.PropType.stringLocalized) {
             try tI.text.put(getTextKey(sortHeader.prop, sortHeader.lang), sortIndex.?);
         } else {
             try tI.field.put(sortHeader.prop, sortIndex.?);
@@ -261,7 +261,7 @@ pub fn remove(
             const size = data[start];
             selva.selva_sort_remove_buf(index, parseSimpleString(data[start + 1 .. start + 1 + size]), size, node);
         },
-        .string, .text, .binary => {
+        .string, .stringLocalized, .binary => {
             var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
             selva.selva_sort_remove_buf(index, parseString(decompressor, data, &buf), SIZE, node);
         },
@@ -308,7 +308,7 @@ pub fn insert(
             const size = data[start];
             selva.selva_sort_insert_buf(index, parseSimpleString(data[start + 1 .. start + 1 + size]), size, value);
         },
-        .string, .text, .binary => {
+        .string, .stringLocalized, .binary => {
             var buf: [SIZE]u8 = [_]u8{0} ** SIZE;
             const str = parseString(decompressor, data, &buf);
             selva.selva_sort_insert_buf(index, str, SIZE, value);

@@ -50,7 +50,7 @@ export class BasePropDef implements PropDef {
   validate(value: unknown, lang: LangCodeEnum = LangCode.none) {
     validateBuf ??= new AutoSizedUint8Array()
     validateBuf.length = 0
-    this.pushValue(writeBuf, value, Modify.create, lang)
+    this.pushValue(validateBuf, value, Modify.create, lang)
   }
   pushSelvaSchema(buf: AutoSizedUint8Array): void {
     // To be implemented by subclasses

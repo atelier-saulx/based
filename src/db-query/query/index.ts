@@ -817,7 +817,7 @@ type SelectFn<
 >
 
 // ResolveIncludeArgs needs to stay here because it refers to Query
-export type ResolveIncludeArgs<T> = T extends (
+type ResolveIncludeArgs<T> = T extends (
   q: any,
 ) => Query<
   any,

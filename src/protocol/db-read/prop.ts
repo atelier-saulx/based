@@ -13,7 +13,7 @@ const readStringProp = (
   size: number,
 ) => {
   if (
-    prop.typeIndex === PropType.text ||
+    prop.typeIndex === PropType.stringLocalized ||
     prop.typeIndex === PropType.string ||
     prop.typeIndex === PropType.alias
   ) {
@@ -53,7 +53,7 @@ export const readProp = (
     const size = readUint32(result, i)
     addProp(prop, readStringProp(prop, result, i + 4, size), item)
     i += size + 4
-  } else if (prop.typeIndex == PropType.text) {
+  } else if (prop.typeIndex == PropType.stringLocalized) {
     const size = readUint32(result, i)
     if (size === 0) {
       // do nothing

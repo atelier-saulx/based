@@ -22,7 +22,7 @@ export const toCsvChunk = (
         chunkString += escapeCSVReservedChars(String(row[j]))
       } else if (type === PropType.json) {
         chunkString += escapeCSVReservedChars(JSON.stringify(row[j]))
-      } else if (type === PropType.text) {
+      } else if (type === PropType.stringLocalized) {
         chunkString += escapeCSVReservedChars(row[j][locale] || '')
       } else {
         chunkString += row[j]

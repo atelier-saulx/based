@@ -54,7 +54,7 @@ export const readPropDef = (
     readerPropDef.enum = Array.from(p.vals.keys())
   }
 
-  if (p.type === PropType.text) {
+  if (p.type === PropType.stringLocalized) {
     // @ts-ignore TODO make this nice
     readerPropDef.locales = Object.keys(p.typeDef.schemaRoot.locales).reduce(
       (map, lang: string) => {
@@ -75,7 +75,7 @@ export const readPropDef = (
   //   readerPropDef.cardinalityMode = p.cardinalityMode
   //   readerPropDef.cardinalityPrecision = p.cardinalityPrecision
   // }
-  // if (p.type === PropType.text && opts?.codes) {
+  // if (p.type === PropType.stringLocalized && opts?.codes) {
   //   if (opts.codes.has(0)) {
   //     readerPropDef.locales = locales
   //   } else {
