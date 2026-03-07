@@ -74,7 +74,9 @@ type InferProp<
   Types,
   Locales extends Record<string, any> = Record<string, any>,
 > = Prop extends { type: 'string'; localized: true }
-  ? Partial<Record<keyof Locales, string>>
+  ? [keyof Locales] extends [never]
+    ? { [K in string]?: string }
+    : { [K in Exclude<keyof Locales, symbol | number>]?: string }
   : Prop extends { type: 'object'; props: infer P }
     ? InferType<P, Types, Locales>
     : Prop extends { type: infer T extends keyof TypeMap }

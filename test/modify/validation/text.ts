@@ -10,7 +10,7 @@ await test('modify - validation - text', async (t) => {
     },
     types: {
       thing: {
-        myText: 'text',
+        myText: { type: 'string', localized: true },
       },
     },
   })
@@ -35,6 +35,7 @@ await test('modify - validation - text', async (t) => {
 
   // Extended validation
   await throws(
+    // @ts-expect-error
     () => db.create('thing', { myText: 'hello' }),
     'text should fail if passed as string not object',
   )

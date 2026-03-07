@@ -100,22 +100,22 @@ export class DbClientClass<
   query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id?: number[],
-  ): BasedQuery2<S, T, '*', false>
+  ): BasedQuery2<S, T, { $K: '*'; $Single: false }>
 
   query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id:
       | number
       | (Partial<InferSchemaOutput<S, T>> & { [Symbol.toStringTag]?: never }),
-  ): BasedQuery2<S, T, '*', true>
+  ): BasedQuery2<S, T, { $K: '*'; $Single: true }>
   query<T extends keyof S['types'] & string = keyof S['types'] & string>(
     type: T,
     id?:
       | number
       | number[]
       | (Partial<InferSchemaOutput<S, T>> & { [Symbol.toStringTag]?: never }),
-  ): BasedQuery2<S, T, '*', boolean> {
-    return new BasedQuery2<S, T, '*', any>(this, type, id)
+  ): any {
+    return new BasedQuery2(this, type, id as any)
   }
 
   create<T extends keyof S['types'] & string = keyof S['types'] & string>(

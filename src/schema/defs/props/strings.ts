@@ -69,6 +69,7 @@ export const string = class String extends BasePropDef {
   deflate = true
   declare schema: SchemaString
   override type: PropTypeEnum = PropType.string
+
   pushStringValue(
     buf: AutoSizedUint8Array,
     value: unknown,
@@ -197,13 +198,15 @@ export const json = class Json extends string {
   constructor(prop: SchemaJson, path: string[], typeDef: TypeDef) {
     super(prop as any, path, typeDef)
     this.type = prop.localized ? PropType.jsonLocalized : PropType.json
+    this.pushStringValue = this.pushValue
+    this.pushValue = this.pushJsonValue
   }
-  override pushValue(
+  pushJsonValue(
     buf: AutoSizedUint8Array,
     value: unknown,
     op: ModifyEnum,
     lang: LangCodeEnum = LangCode.none,
   ) {
-    super.pushValue(buf, JSON.stringify(value), op, lang)
+    this.pushStringValue(buf, JSON.stringify(value), op, lang)
   }
 }

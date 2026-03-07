@@ -69,15 +69,10 @@ export const parseVector = (def: Record<string, unknown>): SchemaVector => {
     'Invalid baseType',
   )
   assert(def.default === undefined || isVector(def.default), 'Invalid default')
-
-  return parseBase<SchemaVector>(
-    def,
-    {
-      type: def.type,
-      size: def.size,
-      baseType: def.baseType as SchemaVector['baseType'],
-      default: def.default,
-    },
-    true,
-  )
+  return parseBase<SchemaVector>(def, {
+    type: def.type,
+    size: def.size,
+    baseType: def.baseType as SchemaVector['baseType'],
+    default: def.default,
+  })
 }

@@ -43,6 +43,7 @@ await test('modify - default values basic', async (t) => {
     myTs: 2000,
   })
   const resB = await db.query('thing', b).get()
+
   deepEqual(resB, {
     id: b,
     name: 'Specific',

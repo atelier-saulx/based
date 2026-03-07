@@ -7,6 +7,8 @@ import type {
 } from '../../src/schema/index.js'
 import { DbClient, DbServer, getDefaultHooks } from '../../src/sdk.js'
 import test from './test.js'
+import { getTypeDefs } from '../../src/schema/defs/getTypeDefs.js'
+import { BLOCK_CAPACITY_DEFAULT } from '../../src/db-server/schema.js'
 export * from './assert.js'
 export * from './examples.js'
 export * from './examples.js'
@@ -77,9 +79,9 @@ export const testDbServer = async <const S extends SchemaIn>(
 
 export async function countDirtyBlocks(server: DbServer) {
   let n = 0
-
-  for (const t of Object.keys(server.schemaTypesParsedById)) {
-    n += (await getBlockStatuses(server, Number(t))).reduce(
+  const typeDefs = getTypeDefs(server.schema!)
+  for (const [key, typeDef] of typeDefs) {
+    n += (await getBlockStatuses(server, Number(typeDef.id))).reduce(
       (acc, cur) => acc + ~~!!(cur & 0x4),
       0,
     )
@@ -106,8 +108,10 @@ export const hashType = async (
   db: DbServer,
   typeName: string,
 ): Promise<string> => {
-  const tc = db.schemaTypesParsed[typeName].id
-  const capacity = db.schemaTypesParsed[typeName].blockCapacity
+  const typeDefs = getTypeDefs(db.schema!)
+  const typeDef = typeDefs.get(typeName)!
+  const tc = typeDef.id
+  const capacity = typeDef.schema.blockCapacity || BLOCK_CAPACITY_DEFAULT
   const hash = createHash('sha256')
   const bhs = await Promise.all(
     (await getActiveBlocks(db, tc)).map((block) =>
