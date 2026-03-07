@@ -143,7 +143,7 @@ await test('include', async (t) => {
             // { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
             // { op: 'includes', val: 'giraffe' },
 
-            { op: 'includes', val: ['giraffe', 'mr jim'] },
+            { op: 'like', val: ['giraffe', 'mr jim'] },
             // bigArray
 
             // { op: '=', val: ['ok', 'bad', 'great'] },

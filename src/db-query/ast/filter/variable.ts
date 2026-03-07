@@ -25,6 +25,25 @@ export const variableComparison = (
     prop.validate(v)
   }
 
+  if ((op === Op.like || op === Op.nlike) && val.length > 1) {
+    const values: string[] = []
+    let size = 0
+    for (const v of val) {
+      const value = v.normalize('NFKD')
+      size += native.stringByteLength(value) + 4 // 4 extra for size
+      values.push(value)
+    }
+    op = Op.like ? Op.likeBatch : Op.nlikeBatch
+    const { condition, offset } = createCondition(prop, op, size, 0)
+    let i = offset
+    for (const value of values) {
+      const size = ENCODER.encodeInto(value, condition.subarray(i + 4)).written
+      writeUint32(condition, size, i)
+      i += size + 4
+    }
+    return condition
+  }
+
   if (op === Op.like || op === Op.nlike) {
     const value = val[0].normalize('NFKD')
     const size = native.stringByteLength(value)
@@ -70,7 +89,6 @@ export const variableComparison = (
   }
 
   if (op === Op.inc || op === Op.ninc) {
-    // -------------------------------
     let value: string
     if (opts?.lowerCase) {
       value = val[0].toLowerCase().normalize('NFKD')

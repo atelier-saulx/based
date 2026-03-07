@@ -77,8 +77,19 @@ pub fn incBatchLcaseFast(query: []const u8, value: []const u8) bool {
 pub fn like(query: []const u8, value: []const u8) bool {
     // for search it passes a number might add a comptime var
     const bla = likeInner(3, query, value);
-    // std.debug.print("bla {any} \n", .{bla});
     return bla < 4; // make this config first number in query
+}
+
+pub fn likeBatch(query: []const u8, value: []const u8) bool {
+    var i: usize = 0;
+    while (i < query.len) {
+        const size = utils.read(u32, query, i);
+        if (likeInner(3, query[i + 4 .. i + 4 + size], value) < 4) {
+            return true;
+        }
+        i += size + 4;
+    }
+    return false;
 }
 
 // ---- EqCrc --------
