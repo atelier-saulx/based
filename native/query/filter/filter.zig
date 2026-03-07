@@ -234,7 +234,7 @@ pub inline fn filter(
             .likeBatch,
             .nlikeBatch,
             => |op| blk: {
-                @setEvalBranchQuota(3000);
+                @setEvalBranchQuota(2000);
                 break :blk switch (c.op.prop) {
                     .string, .json, .binary => compareVariable(.default, op, q, v, index, c, ctx.thread),
                     .stringFixed, .jsonFixed, .binaryFixed => compareVariable(.fixed, op, q, v, index, c, ctx.thread),

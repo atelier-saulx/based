@@ -78,7 +78,7 @@ await test('include', async (t) => {
     enum: 'ok',
     derp: 'aa',
     big: 'mr jim',
-    y: 4,
+    y: 15,
     x: false,
     flap: 9999,
     cook: {
@@ -103,7 +103,7 @@ await test('include', async (t) => {
 
   const rand = fastPrng()
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 1e6; i++) {
     client.create('user', {
       // big: syntheticData,
       name: `mr snurf ${i}`,
@@ -151,12 +151,12 @@ await test('include', async (t) => {
     range: { start: 0, end: 1e6 },
     filter: {
       props: {
-        localized: {
+        y: {
           ops: [
-            // { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
+            { op: '=', val: [10, 13, 32, 123, 12, 15, 24, 21, 34] },
             // { op: 'includes', val: 'giraffe' },
 
-            { op: '=', val: ['giraffe', 'mr jim', 'yuzi'] },
+            // { op: '=', val: ['giraffe', 'mr jim', 'yuzi'] },
             // bigArray
 
             // { op: '=', val: ['ok', 'bad', 'great'] },
@@ -208,7 +208,7 @@ await test('include', async (t) => {
 
   console.log('START PERF', Date.now() - d, 'ms')
 
-  await perf.skip(
+  await perf(
     async () => {
       const q: any = []
       for (let i = 0; i < 10; i++) {
@@ -231,7 +231,7 @@ await test('include', async (t) => {
 
   const obj = resultToObject(ctx.readSchema, result, result.byteLength - 4)
 
-  console.dir(obj, { depth: 10 })
+  // console.dir(obj, { depth: 10 })
 
   await wait(1000)
 
