@@ -129,7 +129,6 @@ pub inline fn filter(
             .selectSmallRefs, .selectLargeRefsEdge, .selectLargeRefEdge, .selectLargeRefs => blk: {
                 break :blk true;
             },
-            else => false,
             inline .eq,
             .neq,
             .eqBatch,
@@ -151,39 +150,40 @@ pub inline fn filter(
                     else => Fixed.compare(u8, op, q, v, index, c),
                 };
             },
-            // inline .eqCrc32,
-            // .neqCrc32,
-            // .eqCrc32Batch,
-            // .neqCrc32Batch,
-            // .eqVar,
-            // .neqVar,
-            // .eqVarBatch,
-            // .neqVarBatch,
-            // .inc,
-            // .ninc,
-            // .incLcase,
-            // .nincLcase,
-            // .incLcaseFast,
-            // .nincLcaseFast,
-            // .incBatch,
-            // .nincBatch,
-            // .incBatchLcase,
-            // .nincBatchLcase,
-            // .incBatchLcaseFast,
-            // .nincBatchLcaseFast,
-            // .like,
-            // .nlike,
-            // .likeBatch,
-            // .nlikeBatch,
-            // => |op| blk: {
-            //     @setEvalBranchQuota(2000);
-            //     break :blk switch (c.op.prop) {
-            //         .string, .json, .binary => Variable.compare(.default, op, q, v, index, c, ctx.thread),
-            //         .stringFixed, .jsonFixed, .binaryFixed => Variable.compare(.fixed, op, q, v, index, c, ctx.thread),
-            //         .stringLocalized, .jsonLocalized => Variable.compare(.localized, op, q, v, index, c, ctx.thread),
-            //         else => false,
-            //     };
-            // },
+            inline .eqCrc32,
+            .neqCrc32,
+            .eqCrc32Batch,
+            .neqCrc32Batch,
+            .eqVar,
+            .neqVar,
+            .eqVarBatch,
+            .neqVarBatch,
+            .inc,
+            .ninc,
+            .incLcase,
+            .nincLcase,
+            .incLcaseFast,
+            .nincLcaseFast,
+            .incBatch,
+            .nincBatch,
+            .incBatchLcase,
+            .nincBatchLcase,
+            .incBatchLcaseFast,
+            .nincBatchLcaseFast,
+            .like,
+            .nlike,
+            .likeBatch,
+            .nlikeBatch,
+            => |op| blk: {
+                @setEvalBranchQuota(2000);
+                break :blk switch (c.op.prop) {
+                    .string, .json, .binary => Variable.compare(.default, op, q, v, index, c, ctx.thread),
+                    .stringFixed, .jsonFixed, .binaryFixed => Variable.compare(.fixed, op, q, v, index, c, ctx.thread),
+                    .stringLocalized, .jsonLocalized => Variable.compare(.localized, op, q, v, index, c, ctx.thread),
+                    else => false,
+                };
+            },
+            // else => false,
         };
 
         if (!pass) {
