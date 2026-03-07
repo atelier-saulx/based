@@ -2,7 +2,7 @@ import {
   parseSchema,
   type SchemaOut,
   type SchemaReferences,
-} from '../../../src/schema.js'
+} from '../../../src/schema/index.js'
 import { test } from '../../shared/index.js'
 
 await test('types', async () => {

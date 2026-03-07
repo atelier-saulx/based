@@ -12,8 +12,8 @@ import {
 } from '../utils/index.js'
 import { vectorBaseType2TypedArray } from './schema/vector.js'
 import { PropType, PropTypeInverse } from '../zigTsExports.js'
-import type { SchemaOut } from './schema/schema.js'
 import { stringFormats } from './schema/string.js'
+import type { SchemaOut } from './schema/schema.js'
 
 const UINT8 = 245
 const FALSE = 246

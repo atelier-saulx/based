@@ -3,7 +3,7 @@ import { DbServer } from './index.js'
 import native from '../native.js'
 import { rm, mkdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { loadCommon, } from './blocks.js'
+import { loadCommon } from './blocks.js'
 import { readUint32, wait } from '../utils/index.js'
 import { setSchemaOnServer, makeNativeSchema } from './schema.js'
 import {
@@ -13,7 +13,7 @@ import {
 } from '../zigTsExports.js'
 import { deSerialize } from '../schema/serialize.js'
 import { SCHEMA_FILE } from '../index.js'
-import { SchemaOut } from '../schema.js'
+import { SchemaOut } from '../schema/index.js'
 
 export type StartOpts = {
   clean?: boolean
@@ -76,17 +76,22 @@ export async function realStart(db: DbServer, schema: SchemaOut) {
   let nrThreads: number
   nrThreads =
     ((nrThreads = availableParallelism()), nrThreads < 2 ? 2 : nrThreads - 1)
-  db.dbCtxExternal = native.start((id: BridgeResponseEnum, buffer: any) => {
-    if (id === BridgeResponse.query) {
-      handleQueryResponse(db, buffer)
-    } else if (id === BridgeResponse.modify) {
-      handleModifyResponse(db, buffer)
-    } else if (id === BridgeResponse.flushQuery) {
-      handleQueryResponseFromSingleThread(db, buffer)
-    } else if (id === BridgeResponse.flushModify) {
-      handleModifyResponse(db, buffer)
-    }
-  }, db.fileSystemPath, nrThreads, makeNativeSchema(schema))
+  db.dbCtxExternal = native.start(
+    (id: BridgeResponseEnum, buffer: any) => {
+      if (id === BridgeResponse.query) {
+        handleQueryResponse(db, buffer)
+      } else if (id === BridgeResponse.modify) {
+        handleModifyResponse(db, buffer)
+      } else if (id === BridgeResponse.flushQuery) {
+        handleQueryResponseFromSingleThread(db, buffer)
+      } else if (id === BridgeResponse.flushModify) {
+        handleModifyResponse(db, buffer)
+      }
+    },
+    db.fileSystemPath,
+    nrThreads,
+    makeNativeSchema(schema),
+  )
 
   try {
     setSchemaOnServer(db, schema)
@@ -124,7 +129,9 @@ export async function start(db: DbServer, opts?: StartOpts) {
   await mkdir(path, { recursive: true }).catch(noop)
 
   try {
-    const schema = new Uint8Array((await readFile(join(path, SCHEMA_FILE))).buffer)
+    const schema = new Uint8Array(
+      (await readFile(join(path, SCHEMA_FILE))).buffer,
+    )
     realStart(db, deSerialize(schema))
   } catch (e) {
     if (e.code !== 'ENOENT') {

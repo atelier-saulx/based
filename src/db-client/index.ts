@@ -1,16 +1,14 @@
-import { BasedDbQuery, QueryByAliasObj } from './query/BasedDbQuery.js'
 import { debugMode } from '../utils/debug.js'
-import { SubStore } from './query/subscription/index.js'
 import { DbShared } from '../shared/DbBase.js'
 import { DbClientHooks } from './hooks.js'
 import { setLocalClientSchema } from './setLocalClientSchema.js'
 import {
   parse,
   type SchemaIn,
-  type SchemaMigrateFns,
+  // type SchemaMigrateFns,
   type SchemaOut,
-  type ResolveSchema,
-  type StrictSchema,
+  // type ResolveSchema,
+  // type StrictSchema,
 } from '../schema/index.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
 import { LangCode, Modify } from '../zigTsExports.js'
@@ -20,8 +18,9 @@ import { serializeCreate } from './modify/create.js'
 import { serializeUpdate } from './modify/update.js'
 import { serializeDelete } from './modify/delete.js'
 import { serializeUpsert } from './modify/upsert.js'
-import { BasedQuery2 } from './query2/index.js'
-import type { InferSchemaOutput } from './query2/types.js'
+import { BasedQuery2 } from '../db-query/query/index.js'
+import type { InferSchemaOutput } from '../db-query/query/types.js'
+import type { ResolveSchema, StrictSchema } from '../schema/schema/schema.js'
 
 type DbClientOpts = {
   hooks: DbClientHooks
@@ -67,7 +66,7 @@ export class DbClientClass<
     })
   }
 
-  subs = new Map<BasedDbQuery, SubStore>()
+  // subs = new Map<BasedDbQuery, SubStore>()
   stopped!: boolean
   hooks: DbClientHooks
   modifyCtx: ModifyCtx
@@ -80,13 +79,13 @@ export class DbClientClass<
 
   async setSchema<const T extends SchemaIn>(
     schema: StrictSchema<T>,
-    transformFns?: SchemaMigrateFns,
+    // transformFns?: SchemaMigrateFns,
   ): Promise<DbClientClass<ResolveSchema<T>>> {
     const strictSchema = parse(schema as any).schema
     await this.drain()
     const schemaChecksum = await this.hooks.setSchema(
       strictSchema as SchemaOut,
-      transformFns,
+      // transformFns,
     )
     if (this.stopped) {
       return this as unknown as DbClientClass<ResolveSchema<T>>
@@ -212,10 +211,10 @@ export class DbClientClass<
 
   stop() {
     this.stopped = true
-    for (const [, { onClose }] of this.subs) {
-      onClose()
-    }
-    this.subs.clear()
+    // for (const [, { onClose }] of this.subs) {
+    //   onClose()
+    // }
+    // this.subs.clear()
     // cancel(this.modifyCtx, Error('Db stopped - in-flight modify cancelled'))
   }
 

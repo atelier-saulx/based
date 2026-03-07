@@ -1,4 +1,4 @@
-import type { FilterAst, QueryAst } from '../../db-query/ast/ast.js'
+import type { FilterAst, QueryAst } from '../ast/ast.js'
 import type {
   PickOutput,
   ResolveInclude,
@@ -15,12 +15,18 @@ import type {
   UnionToIntersection,
 } from './types.js'
 import type { ResolvedProps } from '../../schema/index.js'
-import { astToQueryCtx } from '../../db-query/ast/toCtx.js'
+import { astToQueryCtx } from '../ast/toCtx.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import type { DbClient } from '../../sdk.js'
 import { $buffer, proxyResult } from './result.js'
-import type { StepInput, aggFnOptions } from '../query/aggregates/types.js'
 import { readUint32 } from '../../utils/uint8.js'
+import type { StepInput } from '../ast/aggregates.js'
+
+type SetModeString = 'sample' | 'population'
+
+type AggFnOptions = {
+  mode?: SetModeString
+}
 
 class Query<
   S extends { types: any; locales?: any } = { types: any },
@@ -420,7 +426,7 @@ class Query<
 
   stddev<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
     fn: F,
-    opts?: aggFnOptions,
+    opts?: AggFnOptions,
   ): NextBranch<
     S,
     T,
@@ -433,7 +439,7 @@ class Query<
     GroupedKey
   >
   stddev<P extends NumberPaths<S, T>>(
-    ...args: [...P[], aggFnOptions] | [P, ...P[]]
+    ...args: [...P[], AggFnOptions] | [P, ...P[]]
   ): NextBranch<
     S,
     T,
@@ -476,7 +482,7 @@ class Query<
 
   var<F extends (q: SelectFn<S, T>) => AnyQuery<S>>(
     fn: F,
-    opts?: aggFnOptions,
+    opts?: AggFnOptions,
   ): NextBranch<
     S,
     T,
@@ -489,7 +495,7 @@ class Query<
     GroupedKey
   >
   var<P extends NumberPaths<S, T>>(
-    ...args: [...P[], aggFnOptions] | [P, ...P[]]
+    ...args: [...P[], AggFnOptions] | [P, ...P[]]
   ): NextBranch<
     S,
     T,

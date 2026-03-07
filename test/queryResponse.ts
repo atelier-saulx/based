@@ -3,7 +3,7 @@ import { testDb } from './shared/index.js'
 import { equal } from './shared/assert.js'
 import { notEqual } from 'assert'
 import { extractNumber } from '../src/utils/index.js'
-import { checksum } from '../src/db-client/query2/index.js'
+import { checksum } from '../src/db-query/query/index.js'
 
 await test('correct version', async (t) => {
   const db = await testDb(t, {

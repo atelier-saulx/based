@@ -1,21 +1,9 @@
 import { deepEqual as uDeepEqual } from '../../src/utils/index.js'
 import { styleText } from 'node:util'
 import util from 'node:util'
-import { BasedQueryResponse } from '../../src/db-client/query/BasedQueryResponse.js'
-import { PropTypeInverse } from '../../src/zigTsExports.js'
 export { perf } from './perf.js'
 
-export const deepEqual = <A>(
-  a: A,
-  b: NoInfer<A extends BasedQueryResponse ? ReturnType<A['toObject']> : A>,
-  msg?: string,
-) => {
-  if (a instanceof BasedQueryResponse) {
-    a = a
-  }
-  if (b instanceof BasedQueryResponse) {
-    b = b
-  }
+export const deepEqual = <A>(a: A, b: NoInfer<A>, msg?: string) => {
   if (!uDeepEqual(a, b)) {
     const m = `${msg || ``}
 ------------------ EXPECTED ----------------------

@@ -90,3 +90,10 @@ export const proxyResult = (buffer: Uint8Array, schema: ReaderSchema) => {
   result.__proto__ = proxy
   return result
 }
+
+export const isBasedQueryResponse = (
+  obj: unknown,
+): obj is {
+  [$buffer]: Uint8Array
+  [$schema]: ReaderSchema
+} => typeof obj === 'object' && obj !== null && $buffer in obj

@@ -1,4 +1,4 @@
-import {ResolveSchema} from '../../dist/schema.js'
+import { ResolveSchema } from '../../dist/schema/index.js'
 import { type SchemaIn } from '../../src/schema/index.js'
 import { DbClient } from '../../src/sdk.js'
 import { testDb } from './index.js'

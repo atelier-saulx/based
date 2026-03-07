@@ -10,7 +10,6 @@ await test('modify - validation - binary', async (t) => {
       },
     },
   })
-
   // Binary
   await throws(
     // @ts-expect-error
@@ -22,12 +21,12 @@ await test('modify - validation - binary', async (t) => {
     'binary maxBytes',
   )
   await db.create('thing', { myBlob: new Uint8Array(5) })
-
   // MaxBytes validation (configured maxBytes: 10)
   await throws(
     () => db.create('thing', { myBlob: new Uint8Array(11) }),
     'binary fail with maxBytes exceeded',
   )
+
   await db.create('thing', { myBlob: new Uint8Array(10) })
 
   // Extended validation

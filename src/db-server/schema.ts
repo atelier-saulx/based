@@ -2,30 +2,22 @@ import { DbServer } from './index.js'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import {
-  LangCode,
-  Modify,
   PropTypeSelva,
   pushSelvaSchemaHeader,
   pushSelvaSchemaMicroBuffer,
 } from '../zigTsExports.js'
-import {
-  BLOCK_CAPACITY_DEFAULT,
-  serialize,
-  updateTypeDefs,
-  type SchemaOut,
-} from '../schema/index.js'
+import { serialize, type SchemaOut } from '../schema/index.js'
 import { SCHEMA_FILE } from '../index.js'
 import { getTypeDefs, propIndexOffset } from '../schema/defs/getTypeDefs.js'
 import { AutoSizedUint8Array } from '../utils/AutoSizedUint8Array.js'
+
+const BLOCK_CAPACITY_DEFAULT = 100_000
 
 export const setSchemaOnServer = async (
   server: DbServer,
   schema: SchemaOut,
 ) => {
-  const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
   server.schema = schema
-  server.schemaTypesParsed = schemaTypesParsed
-  server.schemaTypesParsedById = schemaTypesParsedById
 }
 
 export const writeSchemaFile = async (server: DbServer, schema: SchemaOut) => {

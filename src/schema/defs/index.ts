@@ -4,7 +4,7 @@ import type {
   SchemaOut,
   SchemaProp,
   SchemaType,
-} from '../../schema.js'
+} from '../../schema/index.js'
 import type {
   LangCodeEnum,
   ModifyEnum,
@@ -26,16 +26,35 @@ export type PropTree = {
   schema: SchemaObject<true> | SchemaType<true>
 }
 
-export type TypeDef = {
-  id: number
-  name: string
-  main: PropDef[]
-  separate: PropDef[]
-  props: Map<string, PropDef>
+export class TypeDef {
+  constructor(schema: SchemaType<true>, schemaRoot: SchemaOut) {
+    this.schemaRoot = schemaRoot
+    this.schema = schema
+    this.tree = {
+      props: new Map(),
+      required: [],
+      path: [],
+      schema,
+    }
+  }
+  id: number = 0
+  name: string = ''
+  main: PropDef[] = []
+  separate: PropDef[] = []
+  props: Map<string, PropDef> = new Map()
   tree: PropTree
   schema: SchemaType<true>
   schemaRoot: SchemaOut
-  propHooks: Record<keyof SchemaHooks, (PropDef | PropTree)[]>
+  propHooks: Record<keyof SchemaHooks, (PropDef | PropTree)[]> = {
+    create: [],
+    update: [],
+    read: [],
+    search: [],
+    include: [],
+    filter: [],
+    groupBy: [],
+    aggregate: [],
+  }
 }
 
 export type PropDef = {

@@ -2,7 +2,7 @@ import { notEqual } from 'assert'
 import { deepEqual } from '../shared/assert.js'
 import test from '../shared/test.js'
 import { testDb } from '../shared/index.js'
-import { checksum } from '../../src/db-client/query2/index.js'
+import { checksum } from '../../src/db-query/query/index.js'
 
 await test('simple', async (t) => {
   const db = await testDb(t, {

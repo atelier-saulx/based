@@ -1,6 +1,6 @@
-import type { IntervalString } from '../../db-client/query/aggregates/types.js'
 import { ReaderLocales, ReaderSchema } from '../../protocol/index.js'
 import { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
+import type { IntervalString } from './aggregates.js'
 
 export type FilterOpts = {
   lowerCase?: boolean

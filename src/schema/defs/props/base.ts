@@ -1,4 +1,4 @@
-import type { SchemaProp } from '../../../schema.js'
+import type { SchemaProp } from '../../../schema/index.js'
 import {
   LangCode,
   Modify,

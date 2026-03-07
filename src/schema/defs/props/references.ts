@@ -19,7 +19,7 @@ import type {
   SchemaProp,
   SchemaReference,
   SchemaReferences,
-} from '../../../schema.js'
+} from '../../../schema/index.js'
 import { BasePropDef } from './base.js'
 import type { PropDef, TypeDef } from '../index.js'
 import {

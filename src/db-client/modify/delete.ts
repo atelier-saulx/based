@@ -1,4 +1,4 @@
-import type { SchemaOut } from '../../schema.js'
+import type { SchemaOut } from '../../schema/index.js'
 import type { AutoSizedUint8Array } from '../../utils/AutoSizedUint8Array.js'
 import { Modify, pushModifyDeleteHeader } from '../../zigTsExports.js'
 import { assignTarget, BasedModify, getTypeDef } from './index.js'

@@ -1,16 +1,16 @@
 import { DbClient } from '../index.js'
 // import { cancel } from './_modify/drain.js'
 // import { Ctx, MODIFY_HEADER_SIZE } from './_modify/Ctx.js'
-import { updateTypeDefs, type SchemaOut } from '../schema/index.js'
+import { type SchemaOut } from '../schema/index.js'
 
 export const setLocalClientSchema = (client: DbClient, schema: SchemaOut) => {
   if (client.schema && client.schema.hash === schema.hash) {
     return client.schema
   }
-  const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
+  // const { schemaTypesParsed, schemaTypesParsedById } = updateTypeDefs(schema)
   client.schema = schema
-  client.schemaTypesParsed = schemaTypesParsed
-  client.schemaTypesParsedById = schemaTypesParsedById
+  // client.schemaTypesParsed = schemaTypesParsed
+  // client.schemaTypesParsedById = schemaTypesParsedById
 
   console.warn('TODO schema CHANGE')
   // if (client.modifyCtx.index > MODIFY_HEADER_SIZE) {
@@ -21,9 +21,9 @@ export const setLocalClientSchema = (client: DbClient, schema: SchemaOut) => {
   // client.modifyCtx = new Ctx(schema.hash, client.modifyCtx.buf)
 
   // resubscribe
-  for (const [q, store] of client.subs) {
-    store.resubscribe(q)
-  }
+  // for (const [q, store] of client.subs) {
+  //   store.resubscribe(q)
+  // }
 
   process.nextTick(() => {
     client.emit('schema', schema)

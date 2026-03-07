@@ -7,7 +7,7 @@ import test from '../shared/test.js'
 import native from '../../src/native.js'
 import { deepEqual } from '../shared/assert.js'
 import { getBlockHash } from '../../src/db-server/blocks.js'
-import { checksum } from '../../src/db-client/query2/index.js'
+import { checksum } from '../../src/db-query/query/index.js'
 
 const sha1 = async (path: string) =>
   createHash('sha1')

@@ -3,7 +3,7 @@ import type {
   SchemaEnum,
   SchemaNumber,
   SchemaProp,
-} from '../../../schema.js'
+} from '../../../schema/index.js'
 import { convertToTimestamp } from '../../../utils/timestamp.js'
 import {
   PropType,
@@ -14,7 +14,6 @@ import {
 import type { AutoSizedUint8Array } from '../../../utils/AutoSizedUint8Array.js'
 import { BasePropDef } from './base.js'
 import type { TypeDef } from '../index.js'
-import { readInt64 } from '../../../utils/uint8.js'
 
 export const number = class Number extends BasePropDef {
   constructor(schema: SchemaNumber, path: string[], typeDef: TypeDef) {

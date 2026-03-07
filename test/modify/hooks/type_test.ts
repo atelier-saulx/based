@@ -1,4 +1,4 @@
-import { parseSchema } from '../../../src/schema.js'
+import { parseSchema } from '../../../src/schema/index.js'
 import type { InferPayload } from '../../../src/schema/schema/payload.js'
 import { testDb } from '../../shared/index.js'
 
@@ -62,7 +62,7 @@ async function check() {
 }
 
 // import type { InferPayload } from '../../../src/db-client/modify/types.js'
-// import { parseSchema, type SchemaIn } from '../../../src/schema.js'
+// import { parseSchema, type SchemaIn } from '../../../src/schema/index.js'
 
 // // Simple test case to verify strict typing of create hook payload
 // const bla = parseSchema({

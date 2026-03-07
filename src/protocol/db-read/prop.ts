@@ -4,7 +4,7 @@ import { addProp, addLangProp } from './addProps.js'
 import { readString } from './string.js'
 import { readVector } from './vector.js'
 import { PropType } from '../../zigTsExports.js'
-import { VECTOR_BASE_TYPE_SIZE_MAP } from '../../schema.js'
+import { VECTOR_BASE_TYPE_SIZE_MAP } from '../../schema/defs/props/vector.js'
 
 const readStringProp = (
   prop: ReaderPropDef,
