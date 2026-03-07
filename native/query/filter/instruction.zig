@@ -16,6 +16,7 @@ pub const Function = enum(u8) {
     eqVar,
     eqVarBatch,
     eqCrc32,
+    eqCrc32Batch,
     like,
 };
 
@@ -37,6 +38,7 @@ fn getFunc(comptime tag: t.FilterOpCompare) Function {
         .eqVar, .neqVar => Function.eqVar,
         .eqVarBatch, .neqVarBatch => Function.eqVarBatch,
         .eqCrc32, .neqCrc32 => Function.eqCrc32,
+        .eqCrc32Batch, .neqCrc32Batch => Function.eqCrc32Batch,
         .like, .nlike => Function.like,
         else => Function.eq, // remove this
     };

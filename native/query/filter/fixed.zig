@@ -10,10 +10,10 @@ pub fn eqBatch(T: type, q: []u8, v: []const u8, i: usize, c: *t.FilterCondition)
     const size = utils.sizeOf(T);
     const vectorLen = 16 / size;
     const value = utils.readPtr(T, v, c.start).*;
-    const values = utils.toSlice(T, q[i + size - c.offset .. c.size + @alignOf(T) - c.offset]);
-    const len = values.len / size;
+    const values = utils.toSlice(T, q[i + size - c.offset .. i + c.size + @alignOf(T) - c.offset]);
+    const len = values.len;
     var j: usize = 0;
-    while (j <= (len)) : (j += vectorLen) {
+    while (j < len - vectorLen) : (j += vectorLen) {
         const vec2: @Vector(vectorLen, T) = values[j..][0..vectorLen].*;
         if (std.simd.countElementsWithValue(vec2, value) != 0) {
             return true;

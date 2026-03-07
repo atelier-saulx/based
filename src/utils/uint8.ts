@@ -363,3 +363,19 @@ export const extractNumber = (b: number) => {
   const FACTOR = 2 ** BITS_FOR_B
   return Math.floor(b / FACTOR)
 }
+
+export const combineToUint64 = (
+  dest: Uint8Array,
+  highUint32: number,
+  lowUint32: number,
+  offset: number,
+): void => {
+  dest[offset] = lowUint32 & 255
+  dest[offset + 1] = (lowUint32 >>> 8) & 255
+  dest[offset + 2] = (lowUint32 >>> 16) & 255
+  dest[offset + 3] = (lowUint32 >>> 24) & 255
+  dest[offset + 4] = highUint32 & 255
+  dest[offset + 5] = (highUint32 >>> 8) & 255
+  dest[offset + 6] = (highUint32 >>> 16) & 255
+  dest[offset + 7] = (highUint32 >>> 24) & 255
+}

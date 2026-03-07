@@ -1,11 +1,14 @@
 import native from '../../../native.js'
 import { PropDef } from '../../../schema/defs/index.js'
+import { debugBuffer } from '../../../sdk.js'
 import { canBitwiseLowerCase } from '../../../utils/canBitwiseLowerCase.js'
-import { ENCODER, writeUint32 } from '../../../utils/uint8.js'
+import { combineToUint64, ENCODER, writeUint32 } from '../../../utils/uint8.js'
 import { FilterOpCompare as Op } from '../../../zigTsExports.js'
 import { FilterOpts, Operator } from '../ast.js'
 import { createCondition } from './condition.js'
 import { isFixedLenString, operatorToEnum } from './operatorToEnum.js'
+
+const VECTOR_BYTES = 16
 
 export const variableComparison = (
   prop: PropDef,
@@ -23,7 +26,11 @@ export const variableComparison = (
         op = op === Op.neq ? Op.neqVar : Op.eqVar
       }
     } else if (prop.size === 0) {
-      op = op === Op.neq ? Op.neqCrc32 : Op.eqCrc32
+      if (val.length > 1) {
+        op = op === Op.neq ? Op.neqCrc32Batch : Op.eqCrc32Batch
+      } else {
+        op = op === Op.neq ? Op.neqCrc32 : Op.eqCrc32
+      }
     }
   }
 
@@ -66,6 +73,30 @@ export const variableComparison = (
     const buf = ENCODER.encode(val[0].normalize('NFKD'))
     writeUint32(condition, native.crc32(buf), offset)
     writeUint32(condition, buf.byteLength, offset + 4)
+    return condition
+  }
+
+  if (op === Op.eqCrc32Batch || op === Op.neqCrc32Batch) {
+    const propSize = 8
+    const size = val.length * propSize
+    const empty = VECTOR_BYTES - (size % VECTOR_BYTES)
+    const rest = empty / propSize
+    const { condition, offset } = createCondition(
+      prop,
+      op,
+      size + empty,
+      propSize,
+    )
+    let i = offset
+    for (const v of val) {
+      const buf = ENCODER.encode(v.normalize('NFKD'))
+      combineToUint64(condition, native.crc32(buf), buf.byteLength, i)
+      i += propSize
+    }
+    for (let j = 0; j < rest; j++) {
+      condition.set(condition.subarray(offset, offset + propSize), i)
+      i += propSize
+    }
     return condition
   }
 
